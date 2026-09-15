@@ -6,6 +6,8 @@ Atlas is being developed for the fictional world of the Diadem. It is experiment
 
 ## Current code — 15 September 2026
 
+**Upload status: source import is not complete yet.** This README describes the prepared export; the source commit is paused while the owner decides whether embedded worldbuilding inputs and internal source references may also be made public.
+
 This is a public source export of the current local development stack, including generator upgrades through R31 and the latest native-terrain R5 storage implementation. It is not the obsolete 1 September backup, a complete installed runtime or a generated Diadem world.
 
 - `engineering/work/generator_upgrade_r*/`: the successive scientific and integration modules, with retained predecessors.
