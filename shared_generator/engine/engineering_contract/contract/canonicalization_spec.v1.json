@@ -1,0 +1,44 @@
+{
+  "schema": "diadem.semantic-canonicalization-spec.v1",
+  "version": 1,
+  "status": "ACTIVE_ENGINEERING_CONTRACT",
+  "core": {
+    "encoding": "UTF-8",
+    "unicode": "NFC",
+    "object_keys": "NFC-normalised then Unicode-codepoint ascending",
+    "arrays": "ordered unless an adapter explicitly declares a named record list unordered",
+    "whitespace": "none",
+    "numbers": "finite decimal, shortest non-exponent fixed representation, negative zero becomes zero",
+    "forbidden": ["NaN", "positive infinity", "negative infinity", "duplicate keys after NFC normalisation", "non-string object keys"]
+  },
+  "fingerprint": {
+    "format": "dgh:v1:<type-tag>:sha256:<64-lowercase-hex>",
+    "reversible": false,
+    "domain_separation": "DIADEM NUL SEMANTIC-FINGERPRINT NUL version NUL type-tag NUL canonicalization-version NUL canonical-bytes",
+    "algorithm": "SHA-256",
+    "type_separation_required": true
+  },
+  "structured_identity": {
+    "format": "dgid:v1:<kind>:<base64url-canonical-payload-without-padding>",
+    "reversible": true,
+    "kinds": ["layer", "resolution", "tile", "feature", "run"],
+    "canonical_reencoding_required": true
+  },
+  "profiles": {
+    "manifest": {
+      "ignored_as_transport_only": ["absolute_path", "archive_format", "codec", "compression", "compression_level", "created_at", "created_utc", "file_path", "last_write_utc", "modified_time", "path", "remote_path", "timestamp", "workspace_path"],
+      "unordered_record_lists": ["artifacts", "entries", "files", "inputs", "sources"],
+      "required_semantic_replacements": "Each omitted path must be represented by both a stable logical ID and semantic content fingerprint. Source/input/parent records must also retain an explicit semantic role. The adapter fails closed otherwise."
+    },
+    "lineage": {
+      "ignored_as_transport_only": ["absolute_path", "archive_format", "codec", "compression", "compression_level", "created_at", "created_utc", "file_path", "last_write_utc", "modified_time", "path", "remote_path", "timestamp", "workspace_path"],
+      "unordered_record_lists": ["parents", "sources", "inputs"],
+      "required_semantic_replacements": "Lineage must retain source ID, role and semantic fingerprint; the adapter fails closed otherwise."
+    },
+    "future_cache_key": {
+      "fields": ["recipe_fingerprint", "input_fingerprints", "parameters", "spatial_unit_id", "code_version", "schema_version"],
+      "input_fingerprints": "sorted as a semantic set",
+      "forbidden_inputs": ["timestamp", "filesystem path", "compression level", "archive format", "last-write time"]
+    }
+  }
+}

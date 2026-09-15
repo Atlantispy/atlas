@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diadem.invalid/schemas/fallback-test-v1",
+  "type": "object",
+  "required": ["schema", "test_id", "optimised_path_id", "reference_path_id", "trigger", "capability_self_test", "fallback", "parity", "status"],
+  "properties": {
+    "schema": {"const": "diadem.engineering.fallback-test.v1"},
+    "test_id": {"type": "string"},
+    "optimised_path_id": {"type": "string"},
+    "reference_path_id": {"type": "string"},
+    "trigger": {"type": "object"},
+    "capability_self_test": {"type": "object"},
+    "fallback": {"type": "object", "required": ["selected", "reason_recorded", "telemetry_recorded"]},
+    "parity": {"type": "object", "required": ["artifact_family", "passed", "report_fingerprint"]},
+    "status": {"enum": ["PASS", "FAIL"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "fallback": {
+            "properties": {
+              "selected": {"const": true},
+              "reason_recorded": {"const": true},
+              "telemetry_recorded": {"const": true}
+            }
+          },
+          "parity": {"properties": {"passed": {"const": true}}}
+        }
+      }
+    }
+  ]
+}

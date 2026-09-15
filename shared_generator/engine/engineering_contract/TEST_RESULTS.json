@@ -1,0 +1,53 @@
+{
+  "schema": "diadem.engineering.identity-acceptance-test-results.v1",
+  "date": "2026-08-29",
+  "status": "PASS",
+  "environment": {
+    "python": "3.12 bundled Codex runtime",
+    "bytecode_writes_disabled": true
+  },
+  "unit_tests": {
+    "command": "python -B tools/run_self_tests.py",
+    "tests_run": 39,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds_last_observed": 0.423,
+    "coverage_claim": [
+      "structured ID round-trip for layer/resolution/tile/feature/run",
+      "10,000 generated tile IDs without a duplicate",
+      "structured-ID and semantic-fingerprint type separation",
+      "canonical JSON ordering and Unicode NFC",
+      "manifest/lineage invariance to declared timestamps, paths and compression",
+      "manifest record-list ordering invariance",
+      "manifest semantic-role swap changes fingerprint",
+      "transport path omission fails without logical ID, content fingerprint and source role",
+      "future cache-key input-order invariance and parameter sensitivity",
+      "exact canonical, exact binary, topology and numerical-tolerance comparators",
+      "portable numerical tolerance fails without exact producer/layer/unit scope",
+      "Boolean values rejected as structured-ID integer coordinates/resolutions",
+      "transactional cancellation before commit and clean equivalent resume",
+      "corrupt staged output rejection",
+      "corrupt cache reconstruction from authority",
+      "capability-triggered portable reference fallback",
+      "corruption PASS requires authority rebuild and unaffected-data recovery",
+      "fallback PASS requires recorded reason and telemetry",
+      "ADOPT evidence IDs resolve exactly once to schema-valid passing evidence of the required type",
+      "fail-closed benchmark and adoption evidence validation",
+      "context and disk-operation metrics retain explicit measured, estimated or not-measurable basis",
+      "not-measurable metrics require null and reject fabricated zero values"
+    ]
+  },
+  "contract_validation": {
+    "command": "python -B tools/validate_contract.py",
+    "preservation_matrix": "PASS",
+    "evidence_documents_validated": 5,
+    "evidence_bundle_references": "PASS",
+    "bundle_issues": 0
+  },
+  "static_checks": {
+    "python_files_compiled_in_memory": 17,
+    "json_schema_files_parsed": 6,
+    "bytecode_files_or_directories_retained": 0
+  },
+  "scope_boundary": "These tests certify the staged contract/identity implementation. Every future optimised generator path must produce and pass its own real benchmark, corruption, cancellation and fallback records before ADOPT."
+}

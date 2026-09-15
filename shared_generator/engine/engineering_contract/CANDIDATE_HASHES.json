@@ -1,0 +1,47 @@
+{
+  "schema": "diadem.engineering.identity-acceptance-candidate-hashes.v1",
+  "date": "2026-08-29",
+  "scope": "All candidate files except CANDIDATE_HASHES.json itself",
+  "algorithm": "sha256-path-nul-filehash-lf-v1",
+  "tree_sha256": "d561a4f2d1ecbd5544c21157da64e6b06adb2c4ddc053014a6be03a259a64186",
+  "file_count": 39,
+  "total_bytes": 120301,
+  "critical": {
+    "contract/canonicalization_spec.v1.json": {
+      "sha256": "316ad1ad4a21dd2f9319b93d8ac63586b2b5c205b4f0eafc4e67216188b67f72",
+      "bytes": 2604
+    },
+    "contract/preservation_matrix.v1.json": {
+      "sha256": "235ddb84be756944aeed5d8622ddc246ba8186c818bbf6acf4b328f2dc80f6e8",
+      "bytes": 5806
+    },
+    "INSTALL_MAP.json": {
+      "sha256": "666d47234fa5c0921e9275307bf7836f0cfba7c1d27fac28f8559015821b81ee",
+      "bytes": 2069
+    },
+    "src/diadem_contract/acceptance.py": {
+      "sha256": "d344e3d215a26b71df83be6416bae79843081ed6d8f175901f538a9c33997959",
+      "bytes": 8312
+    },
+    "src/diadem_contract/adapters.py": {
+      "sha256": "f9ddd70d7cc78769b9964bd55d68c308b3e3a45332f9cfd10c66ca61c93fd704",
+      "bytes": 4323
+    },
+    "src/diadem_contract/canonical.py": {
+      "sha256": "93f7b790428816e5ae1c2b0b11c2d91b20295068ee1760e51fb5b55956475a89",
+      "bytes": 7197
+    },
+    "src/diadem_contract/ids.py": {
+      "sha256": "efdfe943d2bddde73776e61453f087f148a97e33c4d65e5b07dcb20aa54811e4",
+      "bytes": 6766
+    },
+    "src/diadem_contract/validation.py": {
+      "sha256": "fbde2e5149013bc36278854316851619d8db91a10571c2133efa57c340d5d744",
+      "bytes": 20848
+    },
+    "TEST_RESULTS.json": {
+      "sha256": "1881ffe329fc0195c40e125f7db029e9ddd5f803feeaa39b1159e2920ba76fcf",
+      "bytes": 2611
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diadem.invalid/schemas/corruption-test-v1",
+  "type": "object",
+  "required": ["schema", "test_id", "target_path_id", "fault", "expected", "observed", "status"],
+  "properties": {
+    "schema": {"const": "diadem.engineering.corruption-test.v1"},
+    "test_id": {"type": "string"},
+    "target_path_id": {"type": "string"},
+    "fault": {"type": "object", "required": ["kind", "injection_point"]},
+    "expected": {"type": "object", "required": ["detected", "published_partial_forbidden", "rebuild_from_authority", "unaffected_data_recoverable"]},
+    "observed": {"type": "object", "required": ["detected", "published_partial", "rebuilt_from_authority", "unaffected_data_recovered"]},
+    "status": {"enum": ["PASS", "FAIL"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "observed": {
+            "properties": {
+              "detected": {"const": true},
+              "published_partial": {"const": false},
+              "rebuilt_from_authority": {"const": true},
+              "unaffected_data_recovered": {"const": true}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

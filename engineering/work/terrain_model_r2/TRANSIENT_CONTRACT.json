@@ -1,0 +1,22 @@
+{
+  "schema": "diadem.terrain.r2.transient-contract.v1",
+  "status": "NUMERICAL_CONTRACT_BEFORE_SCORING_NOT_PHYSICAL_ACCEPTANCE",
+  "fixture": "two parallel columns of three mixed-bed cells ending at two fixed boundary cells",
+  "rows": 4,
+  "cols": 2,
+  "spacing_m": 100.0,
+  "K_s_per_year": 0.01,
+  "K_r_per_year": 0.005,
+  "cover_m": 1.252762968495368,
+  "expected_unperturbed_erosion_m_per_year": 0.0001,
+  "runoff_m_per_year": 1.0,
+  "settling_m_per_year": 5.0,
+  "cover_scale_m": 1.0,
+  "base_level_step_m": -0.1,
+  "total_duration_years": 1.0,
+  "coarse_dt_years": [0.1, 0.05, 0.025],
+  "fine_dt_years": 0.001,
+  "expected_error_refinement_ratio_minimum": 1.5,
+  "rate_absolute_tolerance_m_per_year": 1e-12,
+  "reason": "Local uniform mixed-regime equilibrium has an independent analytical erosion/flux solution. Following a base-level step the guarded explicit split is first order in time; differences from a separately finer numerical solution must decrease. This is numerical convergence, not an observed-landscape holdout."
+}

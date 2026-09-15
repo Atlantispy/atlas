@@ -1,0 +1,13 @@
+{
+  "recipe": "terrain-refinement-v1",
+  "created_utc": "2026-08-29T00:00:00Z",
+  "sources": [
+    {
+      "source_id": "terrain-parent",
+      "role": "elevation",
+      "path": "C:/wherever/source.tif",
+      "compression": "deflate",
+      "semantic_fingerprint": "dgh:v1:raster:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diadem.invalid/schemas/preservation-matrix-v1",
+  "title": "Diadem whole-engine preservation matrix",
+  "type": "object",
+  "required": ["schema", "contract_id", "version", "status", "artifact_families", "adoption_gates"],
+  "properties": {
+    "schema": {"const": "diadem.engineering.preservation-matrix.v1"},
+    "contract_id": {"type": "string", "minLength": 1},
+    "version": {"const": 1},
+    "status": {"const": "ACTIVE_ENGINEERING_CONTRACT"},
+    "artifact_families": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["family_id", "scope", "comparator", "preserves"],
+        "properties": {
+          "family_id": {"type": "string", "minLength": 1},
+          "scope": {"type": "string", "minLength": 1},
+          "comparator": {"enum": ["EXACT_BYTES", "EXACT_CANONICAL", "EXACT_ARRAY_BITS", "NUMERIC_TOLERANCE", "STRUCTURAL_TOPOLOGY", "NOT_PUBLISHED"]},
+          "preserves": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "producer_id": {"type": "string", "minLength": 1},
+          "layer_id": {"type": "string", "pattern": "^dgid:v1:layer:"},
+          "unit": {"type": "string", "minLength": 1},
+          "tolerance": {"$ref": "#/$defs/tolerance"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"comparator": {"const": "NUMERIC_TOLERANCE"}}},
+            "then": {"required": ["producer_id", "layer_id", "unit", "tolerance"]}
+          }
+        ]
+      }
+    },
+    "adoption_gates": {"type": "object"}
+  },
+  "$defs": {
+    "tolerance": {
+      "type": "object",
+      "required": ["absolute", "relative", "max_ulps", "dtype", "nan_policy"],
+      "properties": {
+        "absolute": {"type": "number", "minimum": 0},
+        "relative": {"type": "number", "minimum": 0},
+        "max_ulps": {"type": "integer", "minimum": 0},
+        "dtype": {"enum": ["float32", "float64"]},
+        "nan_policy": {"enum": ["FORBID", "EQUAL_IF_BOTH"]}
+      }
+    }
+  }
+}

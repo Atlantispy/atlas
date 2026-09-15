@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diadem.invalid/schemas/adoption-decision-v1",
+  "$comment": "JSON Schema validates local shape only. ADOPT is valid only through the executable bundle validator, which resolves every evidence ID exactly once to passing evidence of the required schema.",
+  "type": "object",
+  "required": ["schema", "decision_id", "optimisation_id", "owner", "reason", "feature_flag", "evidence", "thresholds", "observed", "fallback_test_id", "retirement_condition", "decision"],
+  "properties": {
+    "schema": {"const": "diadem.engineering.adoption-decision.v1"},
+    "decision_id": {"type": "string"},
+    "optimisation_id": {"type": "string"},
+    "owner": {"type": "string", "minLength": 1},
+    "reason": {"type": "string", "minLength": 1},
+    "feature_flag": {"type": "string", "minLength": 1},
+    "evidence": {"type": "object"},
+    "thresholds": {"type": "object"},
+    "observed": {"type": "object"},
+    "fallback_test_id": {"type": "string"},
+    "retirement_condition": {"type": "string", "minLength": 1},
+    "decision": {"enum": ["ADOPT", "REJECT", "CONDITIONAL"]}
+  }
+}

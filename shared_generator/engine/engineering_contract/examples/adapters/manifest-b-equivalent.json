@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "semantic_fingerprint": "dgh:v1:rule:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "workspace_path": "D:/new/location/rules.json",
+      "logical_id": "rules"
+    },
+    {
+      "semantic_fingerprint": "dgh:v1:raster:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "workspace_path": "D:/new/location/terrain.zarr",
+      "logical_id": "terrain"
+    }
+  ],
+  "compression_level": 19,
+  "schema_version": 2,
+  "created_utc": "2030-01-01T00:00:00Z"
+}

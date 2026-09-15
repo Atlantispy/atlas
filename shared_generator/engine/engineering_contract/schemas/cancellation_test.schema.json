@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diadem.invalid/schemas/cancellation-test-v1",
+  "type": "object",
+  "required": ["schema", "test_id", "target_path_id", "fault", "expected", "observed", "status"],
+  "properties": {
+    "schema": {"const": "diadem.engineering.cancellation-test.v1"},
+    "test_id": {"type": "string"},
+    "target_path_id": {"type": "string"},
+    "fault": {"type": "object", "required": ["kind", "injection_point"]},
+    "expected": {"type": "object", "required": ["last_committed_digest_preserved", "staging_disposition", "resume_required"]},
+    "observed": {"type": "object", "required": ["last_committed_digest_preserved", "staging_disposition", "resume_digest_equal"]},
+    "status": {"enum": ["PASS", "FAIL"]}
+  }
+}

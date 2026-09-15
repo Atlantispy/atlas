@@ -1,0 +1,29 @@
+{
+  "schema": "diadem.engineering.identity-acceptance-installation-status.v1",
+  "date": "2026-08-29",
+  "status": "INSTALLED_ACTIVE",
+  "staging_root": "work/phase1_completion/identity_acceptance",
+  "proposed_live_destination": "06_Generator_System/engine/engineering_contract",
+  "live_workspace_modified": true,
+  "drive_modified": false,
+  "candidate_validation": {
+    "unit_tests": "PASS_39_OF_39",
+    "contract_validator": "PASS",
+    "evidence_bundle_validator": "PASS_5_OF_5",
+    "bytecode_clean": true
+  },
+  "required_install_gates": [
+    "Create reusable local pre-install recovery snapshot.",
+    "Copy the complete candidate into a private destination-adjacent staging tree.",
+    "Reject reparse points and verify root confinement.",
+    "Run self-tests and validators from the installed-copy staging tree.",
+    "Run current Stage 6C semantic parity baseline unchanged.",
+    "Verify no __pycache__ directories or pyc files are present.",
+    "Atomically promote the complete engineering_contract tree.",
+    "Write installation receipt with source/installed hashes and recovery snapshot ID."
+  ],
+  "install_map": "INSTALL_MAP.json",
+  "installed_at_utc": "2026-08-29T19:34:58.6128988Z",
+  "recovery_snapshot_id": "ea7c1fb4-713e-4a13-b025-7ba5f2135a8c",
+  "installation_transaction": "05_Recovery/phase1_foundation_preinstall_2026-08-29/attempt-20260829T193311514Z-0a9dddb06e22/INSTALL_TRANSACTION.json"
+}

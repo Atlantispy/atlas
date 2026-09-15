@@ -1,0 +1,44 @@
+{
+  "schema": "diadem.engineering.install-map.v1",
+  "plan_kind": "STATUS_NEUTRAL_FROZEN_INSTALLATION_PLAN",
+  "source_root": "work/phase1_completion/identity_acceptance",
+  "live_root": "06_Generator_System",
+  "copy_operations": [
+    {
+      "source": ".",
+      "destination": "06_Generator_System/engine/engineering_contract",
+      "purpose": "Keep code, active contracts, schemas, examples, tests and tools in one independently testable tree"
+    }
+  ],
+  "exclude_patterns": ["__pycache__", "*.pyc", "*.pyo", "*.egg-info", ".pytest_cache"],
+  "installation_sequence": [
+    "Create a reusable pre-install snapshot through the installed local-first safety controls.",
+    "Stage all copy operations privately under the live generator root.",
+    "Run the 39-test suite and contract/evidence validators from the staged installed tree.",
+    "Verify the existing Stage 6C semantic parity baseline remains PASS.",
+    "Atomically promote the complete tree.",
+    "Record source hashes, installed hashes, test results and snapshot ID in one installation receipt.",
+    "Do not upload to Drive until the normal end-of-day publication workflow."
+  ],
+  "integration_points": [
+    {
+      "consumer": "future optimisation benchmark runners",
+      "action": "Emit diadem.engineering.benchmark.v1 and select comparators from preservation_matrix.v1.json"
+    },
+    {
+      "consumer": "future cache/dependency layer",
+      "action": "Use future_cache_key with semantic source/recipe fingerprints and a structured spatial-unit ID"
+    },
+    {
+      "consumer": "future manifests and lineage",
+      "action": "Use fingerprint_manifest/fingerprint_lineage and retain logical IDs when transport paths are omitted"
+    },
+    {
+      "consumer": "future optimisation adoption gate",
+      "action": "Require validated benchmark, corruption, cancellation and fallback records before ADOPT"
+    }
+  ],
+  "python_import_root_after_install": "06_Generator_System/engine/engineering_contract/src",
+  "existing_files_requiring_patch_on_install": [],
+  "drive_changes": false
+}

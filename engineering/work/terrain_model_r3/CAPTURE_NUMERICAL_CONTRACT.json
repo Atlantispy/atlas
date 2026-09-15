@@ -1,0 +1,15 @@
+{
+  "schema": "diadem.terrain.capture.numerical-contract.r3",
+  "status": "WORKING NON-CANON NUMERICAL TEST CONTRACT",
+  "phase_volume_m3": {"atol": 1e-9, "rtol": 1e-12},
+  "rock_derived_mass_kg": {"atol": 1e-6, "rtol": 1e-11},
+  "geometry_m": {"atol": 1e-9, "rtol": 1e-11},
+  "maximum_cells": 4096,
+  "maximum_steps": 4096,
+  "maximum_cell_steps": 2097152,
+  "maximum_wall_seconds": 120,
+  "minimum_smooth_convergence_order": 0.8,
+  "mixing": "deterministic first-order prescribed-port batch mixing; no flood-wave timing",
+  "shoreline_erosion": "UNIMPLEMENTED; no substituted drowned-bed slope",
+  "numerical_contract_is_physical_acceptance": false
+}

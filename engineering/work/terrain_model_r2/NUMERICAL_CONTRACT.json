@@ -1,0 +1,20 @@
+{
+  "schema": "diadem.terrain.r2.bounded-contract.v1",
+  "status": "FROZEN_BEFORE_R2_SCORING_WORKING_NON_CANON",
+  "max_cells": 16384,
+  "max_steps": 4096,
+  "max_workers": 4,
+  "reference_mode": "explicit_finite_volume_operator_split",
+  "mass_kg": {"atol": 0.000001, "rtol": 1e-11},
+  "solid_volume_m3": {"atol": 1e-9, "rtol": 1e-11},
+  "height_m": {"atol": 1e-9, "rtol": 1e-11},
+  "gradient_m_per_m": {"atol": 1e-12, "rtol": 1e-11},
+  "explicit_diffusion_cfl": 0.20,
+  "channel_step_fraction_of_link_relief": 0.20,
+  "linear_sinusoid_amplitude_relative_error_max": 0.005,
+  "linear_sinusoid_grid_refinement_error_ratio_min": 3.5,
+  "linear_sinusoid_fixture": {"length_m": 64.0, "amplitude_m": 0.01, "K_m2_per_year": 0.003, "duration_years": 100.0, "cells": [32,64,128], "time_steps_years": [1.0,0.5,0.25]},
+  "interpretation": "Finite binary64 arithmetic tolerances, plus predeclared discretisation convergence of a small-gradient periodic analytical fixture. Not field morphology or canon acceptance bands.",
+  "physical_acceptance": "INCOMPLETE_REQUIRES_MATCHED_REGIME_HOLDOUTS_AND_OWNER_REVIEW",
+  "production_authorised": false
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "diadem.native-numerical-policy.r2",
+  "source_status": "WORKING NON-CANON",
+  "authority_id": "GEO-NATIVE-NUMERIC-COMPACTION-2026-09-15-R1",
+  "mass_quantum_kg": "1/18446744073709551616",
+  "mass_unit_integer_bits": 256,
+  "maximum_origins": 1024,
+  "maximum_positive_migration_slots_per_origin": 16385,
+  "new_cumulative_bulk_l1_allocation_bound_m3": "1/10000000000",
+  "migration_bulk_l1_allocation_bound_m3": "1/1000000000000",
+  "erosion": "Unchanged R14 proposal/contact timing; partial removed mass rounded downward to a quantum before applied transactions; full contacts exact",
+  "channel": "Unchanged binary64 settling factor; floor outgoing mass to quantum and keep exact deposited complement",
+  "origin_remap": "Integer proportional transportation matrix with exact row/column margins; each incidence floor or ceiling of represented proportional ideal",
+  "migration": "Per original origin, positive-constrained allocation across every currently positive retained/exported slot; exact initial total; preserve every positive predecessor incidence and every layer",
+  "error_accumulator": "Outward-rounded integer quantum-unit L1 bounds, converted using the minimum declared density times solid fraction including deposited packing",
+  "justification": "A quantum is about 5.42e-20 kg; even billions of unit allocation discrepancies remain below the new 1e-10 m3 cap. The cap is 100000 times tighter than the predecessor hillside allocation cap. A separate 1e-12 m3 migration cap is included in the total. Runtime checks enforce both, without post-failure widening.",
+  "error_scope": "Additional local applied-transfer/origin approximation relative to each represented proposal; not predecessor trajectory equivalence or a propagated global nonlinear/empirical error bound",
+  "unchanged": ["physical case and laws", "forcing", "time targets", "physical bands", "native 8192-bit guard", "predecessor sources", "predecessor checkpoints and accepted history"]
+}

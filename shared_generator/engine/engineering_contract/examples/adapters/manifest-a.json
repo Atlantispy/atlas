@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "created_utc": "2026-08-29T00:00:00Z",
+  "compression": "zip",
+  "files": [
+    {
+      "logical_id": "terrain",
+      "path": "C:/old/place/terrain.tif",
+      "semantic_fingerprint": "dgh:v1:raster:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    {
+      "logical_id": "rules",
+      "path": "C:/old/place/rules.json",
+      "semantic_fingerprint": "dgh:v1:rule:sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ]
+}

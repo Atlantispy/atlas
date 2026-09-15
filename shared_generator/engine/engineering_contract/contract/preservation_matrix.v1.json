@@ -1,0 +1,137 @@
+{
+  "schema": "diadem.engineering.preservation-matrix.v1",
+  "contract_id": "whole-engine-output-preservation",
+  "version": 1,
+  "status": "ACTIVE_ENGINEERING_CONTRACT",
+  "scope": "Published generator artefacts and their authoritative semantic content. Internal scheduling history and temporary layout are excluded.",
+  "environment_classes": {
+    "PINNED": "Same code, dependency lock, architecture, worker count and deterministic kernel configuration.",
+    "PERMITTED_PORTABLE": "A separately approved hardware/runtime combination whose floating-point outputs may use the declared tolerance rule. Identifiers, topology, categories and completion states remain exact."
+  },
+  "artifact_families": [
+    {
+      "family_id": "published_release_bytes",
+      "scope": "An immutable release artefact reproduced under the same packaging recipe.",
+      "comparator": "EXACT_BYTES",
+      "preserves": ["all bytes", "member order", "checksums", "manifest binding"]
+    },
+    {
+      "family_id": "structured_identifiers",
+      "scope": "Layer, resolution, tile, feature and run identities.",
+      "comparator": "EXACT_CANONICAL",
+      "preserves": ["kind", "version", "decoded payload", "canonical encoding"]
+    },
+    {
+      "family_id": "semantic_lineage",
+      "scope": "Published source/recipe lineage after the declared transport-only projection.",
+      "comparator": "EXACT_CANONICAL",
+      "preserves": ["source identities", "content fingerprints", "recipe", "parameters", "derivation class"]
+    },
+    {
+      "family_id": "topology_graph",
+      "scope": "Hydrology, routing, connectivity and dependency graph products.",
+      "comparator": "STRUCTURAL_TOPOLOGY",
+      "preserves": ["node IDs", "edge endpoints", "edge keys", "published attributes", "completion state"]
+    },
+    {
+      "family_id": "categorical_results",
+      "scope": "Biome, species, resource, settlement and other categorical conclusions.",
+      "comparator": "EXACT_CANONICAL",
+      "preserves": ["category", "mixture", "confidence", "minority flags", "rule explanation"]
+    },
+    {
+      "family_id": "completion_states",
+      "scope": "Final published task/query status.",
+      "comparator": "EXACT_CANONICAL",
+      "preserves": ["FOUND", "PROVEN_ABSENT", "INCOMPLETE", "CONFLICT", "failure state"]
+    },
+    {
+      "family_id": "integer_mask_array",
+      "scope": "Integer, Boolean, ID and exact-boundary rasters under a canonical dtype/order header.",
+      "comparator": "EXACT_ARRAY_BITS",
+      "preserves": ["shape", "dtype", "byte order", "cell values", "nodata mask"]
+    },
+    {
+      "family_id": "floating_array_pinned",
+      "scope": "Continuous raster/array output in the PINNED environment.",
+      "comparator": "EXACT_ARRAY_BITS",
+      "preserves": ["shape", "dtype", "byte order", "floating-point bits", "nodata mask"]
+    },
+    {
+      "family_id": "float32_elevation_portable",
+      "scope": "Stage 6C terrain-refinement Float32 elevation output in an explicitly PERMITTED_PORTABLE environment.",
+      "comparator": "NUMERIC_TOLERANCE",
+      "producer_id": "stage6c-terrain-refinement-v1",
+      "layer_id": "dgid:v1:layer:eyJuYW1lIjoiZWxldmF0aW9uIiwibmFtZXNwYWNlIjoiZGlhZGVtIn0",
+      "unit": "m",
+      "tolerance": {
+        "absolute": 0.00001,
+        "relative": 0.000001,
+        "max_ulps": 4,
+        "dtype": "float32",
+        "nan_policy": "EQUAL_IF_BOTH"
+      },
+      "preserves": ["shape", "units", "nodata mask", "values within the declared ceiling tolerance"]
+    },
+    {
+      "family_id": "float64_hydrology_reduction_portable",
+      "scope": "Hydrology-reduction Float64 discharge output in an explicitly PERMITTED_PORTABLE environment.",
+      "comparator": "NUMERIC_TOLERANCE",
+      "producer_id": "hydrology-reduction-v1",
+      "layer_id": "dgid:v1:layer:eyJuYW1lIjoiaHlkcm9sb2d5IiwibmFtZXNwYWNlIjoiZGlhZGVtIn0",
+      "unit": "m3/s",
+      "tolerance": {
+        "absolute": 1e-10,
+        "relative": 1e-9,
+        "max_ulps": 16,
+        "dtype": "float64",
+        "nan_policy": "EQUAL_IF_BOTH"
+      },
+      "preserves": ["aggregation membership", "units", "values within the declared ceiling tolerance"]
+    },
+    {
+      "family_id": "internal_scheduler_history",
+      "scope": "Queue order, temporary task boundaries, worker assignment and temporary paths.",
+      "comparator": "NOT_PUBLISHED",
+      "preserves": ["nothing; this state must not determine published semantics"]
+    }
+  ],
+  "tolerance_policy": {
+    "pinned_default": "EXACT_ARRAY_BITS",
+    "unregistered_portable_producer": "FAIL_CLOSED",
+    "portable_use_requires": [
+      "named permitted environment",
+      "declared dtype and units",
+      "versioned family rule",
+      "exact topology/category/identifier parity",
+      "recorded maximum observed absolute, relative and ULP errors"
+    ],
+    "ceiling_rule": "A producer may register a stricter versioned tolerance. A looser tolerance requires a new contract version and explicit user review."
+  },
+  "adoption_gates": {
+    "identical_semantic_inputs": true,
+    "minimum_repetitions_per_path": 3,
+    "required_metrics": [
+      "wall_seconds",
+      "cpu_seconds",
+      "peak_ram_bytes",
+      "disk_read_bytes",
+      "disk_write_bytes",
+      "files_opened",
+      "data_read_bytes",
+      "output_bytes",
+      "context_bytes",
+      "estimated_context_tokens",
+      "disk_read_operations",
+      "disk_write_operations",
+      "measurement_methods"
+    ],
+    "required_fault_tests": ["corruption", "cancellation", "fallback"],
+    "minimum_default_end_to_end_gain_fraction": 0.05,
+    "parity_required": true,
+    "resource_limits_required": true,
+    "feature_flag_required": true,
+    "portable_reference_path_required": true,
+    "owner_reason_and_retirement_condition_required": true
+  }
+}
