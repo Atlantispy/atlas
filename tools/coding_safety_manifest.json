@@ -1,0 +1,266 @@
+{
+  "schema": "atlas.coding-safety-map.v1",
+  "reviewed_public_commit": "15a8e8f217a84ebedc47489dfe9a213efe2baa67",
+  "scope": "Selected direct imports, adapter call sites and helper contracts only; not a runtime binding or scientific validation.",
+  "required_files": [
+    "README.md",
+    "docs/CURRENT_STATE.md",
+    "AGENTS.md",
+    "docs/CODING_SAFETY.md",
+    "engineering/work/generator_runtime_r12/__init__.py",
+    "engineering/work/generator_runtime_r12/executor.py",
+    "engineering/work/generator_runtime_r12/store.py",
+    "engineering/work/generator_runtime_r12/parallel.py",
+    "engineering/work/generator_upgrade_r24/executor.py",
+    "engineering/work/generator_upgrade_r30/registry.py",
+    "engineering/work/generator_upgrade_r30/region.py",
+    "engineering/work/generator_upgrade_r27/__main__.py",
+    "engineering/work/native_terrain_r1/evolve.py",
+    "engineering/work/native_terrain_r2/evolve.py",
+    "engineering/work/native_terrain_r2/numerics.py",
+    "engineering/work/native_terrain_r3/compression.py",
+    "engineering/work/native_terrain_r3/history.py",
+    "engineering/work/native_terrain_r4/scheduling.py",
+    "engineering/work/native_terrain_r4/integrity.py",
+    "engineering/work/native_terrain_r5/history.py",
+    "engineering/work/topography_r1/kernels.py",
+    "engineering/work/topography_r1/terrain.py",
+    "engineering/work/test_r31_registry.py",
+    "engineering/work/test_r30_registry.py",
+    "engineering/work/test_r28_registry.py",
+    "engineering/work/test_r28_preflight.py",
+    "engineering/work/test_r24_inner.py",
+    "engineering/work/test_r24_executor.py",
+    "engineering/work/native_terrain_r5/test_session.py",
+    "engineering/work/native_terrain_r5/test_history.py",
+    "engineering/work/native_terrain_r4/test_session.py",
+    "engineering/work/native_terrain_r4/test_integrity.py",
+    "engineering/work/native_terrain_r4/test_scheduling.py",
+    "engineering/work/native_terrain_r3/test_session.py",
+    "engineering/work/native_terrain_r3/test_compression.py",
+    "engineering/work/native_terrain_r2/test_numerics.py",
+    "engineering/work/native_terrain_r2/test_evolve.py",
+    "engineering/work/native_terrain_r2/test_migration.py",
+    "engineering/work/generator_runtime_r12/test_executor.py",
+    "engineering/work/generator_runtime_r12/test_store.py",
+    "engineering/work/generator_runtime_r12/test_parallel.py"
+  ],
+  "source_checks": [
+    {
+      "path": "engineering/work/generator_upgrade_r31/__main__.py",
+      "imports": [
+        "from work.generator_runtime_r12 import _raw",
+        "from work.generator_upgrade_r27 import __main__ as previous",
+        "from work.generator_upgrade_r28.preflight import clone",
+        "from . import registry"
+      ],
+      "adapters": [
+        "clone(previous.main, registry=registry, __doc__=__doc__)"
+      ],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r31/registry.py",
+      "imports": [
+        "from work.generator_upgrade_r26 import registry as native",
+        "from work.generator_upgrade_r27 import registry as forecast",
+        "from work.generator_upgrade_r28 import registry as previous",
+        "from work.generator_upgrade_r28.preflight import clone",
+        "from work.generator_upgrade_r30 import registry as prior",
+        "from . import provenance as p, topography"
+      ],
+      "adapters": [
+        "clone(prior.run, p=p, _registration=_registration, _OWNERS=_OWNERS, worker_init=worker_init, worker_run=worker_run)"
+      ],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r31/region.py",
+      "imports": [
+        "from work.generator_upgrade_r30.region import recipes, iter_region"
+      ],
+      "adapters": [],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r31/topography.py",
+      "imports": [
+        "from work.generator_upgrade_r24.inner import _module",
+        "from work.generator_upgrade_r28.preflight import clone",
+        "from work.generator_upgrade_r26 import physical",
+        "from work.generator_upgrade_r22 import moving_roots, evaporation",
+        "from work.generator_runtime_r12.store import Store",
+        "from work.geology_r1 import consumer",
+        "from work.topography_r1 import terrain, kernels, transport, provenance as native",
+        "from . import provenance as p"
+      ],
+      "adapters": [
+        "clone(consumer.terrain_step, terrain=kernels)",
+        "_module(moving_roots, transport=transport, p=provenance)",
+        "clone(terrain.view, verify=accepted)"
+      ],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r31/provenance.py",
+      "imports": [
+        "from work.generator_upgrade_r24.verification import Reader",
+        "from work.generator_upgrade_r30 import provenance as retained",
+        "from . import HERE"
+      ],
+      "adapters": [],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r28/preflight.py",
+      "imports": [],
+      "adapters": [
+        "FunctionType(function.__code__, dict(function.__globals__, **overrides), function.__name__, function.__defaults__, function.__closure__)",
+        "clone(snapshot.run, parse=self.parse)"
+      ],
+      "anchors": [
+        "def clone(function, **overrides):\n    result = FunctionType(function.__code__, dict(function.__globals__, **overrides), function.__name__, function.__defaults__, function.__closure__)\n    result.__kwdefaults__ = None if function.__kwdefaults__ is None else function.__kwdefaults__.copy()\n    return result"
+      ]
+    },
+    {
+      "path": "engineering/work/generator_upgrade_r24/inner.py",
+      "imports": [
+        "from work.generator_upgrade_r20 import cache as native_cache",
+        "from work.generator_upgrade_r22 import registry as native, provenance as native_p",
+        "from work.generator_runtime_r12 import store as native_store",
+        "from . import provenance, verification",
+        "from .storage import Store",
+        "from work.generator_upgrade_r22 import crop_development as original",
+        "from work.generator_upgrade_r22 import placement",
+        "from work.generator_upgrade_r22 import terrain",
+        "from work.generator_upgrade_r22 import moving_roots, evaporation"
+      ],
+      "adapters": [
+        "FunctionType(function.__code__, namespace, function.__name__, function.__defaults__, function.__closure__)",
+        "_function(value, result.__dict__)",
+        "_function(native_cache.StageCache._verify, private)",
+        "_function(native_cache.StageCache.reuse, private)",
+        "_function(native_cache.StageCache.__init__, private)",
+        "_module(original)",
+        "_function(value, private.__dict__)",
+        "_module(placement, StageCache=self.StageCache)",
+        "_module(terrain.consumer, p=_Provenance(terrain.consumer.p, self.binding['r18'], self._check))",
+        "_module(terrain.consumer.regional, p=_Provenance(terrain.consumer.regional.p, regional_identity, self._check))",
+        "_module(terrain, consumer=consumer, Store=self.BoundStore, p=_Provenance(native_p, self.binding['r22'], self._check))",
+        "_module(moving_roots, Store=self.BoundStore, p=_Provenance(native_p, self.binding, self._check))"
+      ],
+      "anchors": [
+        "def _function(function, namespace):\n    result = FunctionType(function.__code__, namespace, function.__name__, function.__defaults__, function.__closure__)\n    result.__kwdefaults__ = function.__kwdefaults__\n    result.__annotations__ = function.__annotations__\n    result.__qualname__ = function.__qualname__\n    result.__doc__ = function.__doc__\n    return result",
+        "def _module(original, **overrides):\n    \"\"\"Copy module-owned functions together, preserving private recursion.\"\"\"\n    result = ModuleType(original.__name__)\n    result.__dict__.update(original.__dict__)\n    for name, value in original.__dict__.items():\n        if isinstance(value, FunctionType) and value.__globals__ is original.__dict__:\n            result.__dict__[name] = _function(value, result.__dict__)\n    result.__dict__.update(overrides)\n    return result"
+      ]
+    },
+    {
+      "path": "engineering/work/native_terrain_r3/session.py",
+      "imports": [
+        "from work.generator_runtime_r12 import _CapturedLoader, _raw",
+        "from work.native_terrain_r2 import evolve as numerical",
+        "from . import provenance as p",
+        "from .history import History"
+      ],
+      "adapters": [
+        "FunctionType(function.__code__, namespace, function.__name__, function.__defaults__, function.__closure__)",
+        "_adapt(numerical.validate, p=p)",
+        "_adapt(numerical._seal, p=p)",
+        "_adapt(numerical.Executor.advance, p=p, validate=validate, _seal=_seal, deepcopy=_copy_for_advance)"
+      ],
+      "anchors": [
+        "def _adapt(function, **overrides):\n    namespace = dict(function.__globals__, **overrides)\n    return FunctionType(function.__code__, namespace, function.__name__, function.__defaults__, function.__closure__)"
+      ]
+    },
+    {
+      "path": "engineering/work/native_terrain_r4/session.py",
+      "imports": [
+        "from work.native_terrain_r2 import evolve as numerical",
+        "from work.native_terrain_r3 import session as retained",
+        "from work.native_terrain_r3.history import History, _safe, _read",
+        "from . import provenance as p, integrity"
+      ],
+      "adapters": [
+        "_adapt(numerical.validate, p=p, SCHEMA=SCHEMA)",
+        "_adapt(numerical._seal, p=p, SCHEMA=SCHEMA)",
+        "_adapt(numerical.Executor.advance, p=p, validate=validate, _seal=_seal, deepcopy=retained._copy_for_advance)",
+        "_adapt(retained.load, p=p, STORAGE_SCHEMA=STORAGE_SCHEMA, Session=Session)",
+        "_adapt(retained.save, p=p, STORAGE_SCHEMA=STORAGE_SCHEMA, Session=Session)"
+      ],
+      "anchors": [
+        "_adapt = retained._adapt"
+      ]
+    },
+    {
+      "path": "engineering/work/native_terrain_r5/session.py",
+      "imports": [
+        "from work.native_terrain_r2 import evolve as numerical",
+        "from work.native_terrain_r3 import session as io",
+        "from work.native_terrain_r3.history import _safe",
+        "from work.native_terrain_r4 import session as retained",
+        "from work.native_terrain_r4 import integrity as old_integrity",
+        "from . import provenance as p, integrity",
+        "from .history import History"
+      ],
+      "adapters": [
+        "_adapt(numerical.validate, p=p, SCHEMA=SCHEMA)",
+        "_adapt(numerical._seal, p=p, SCHEMA=SCHEMA)",
+        "_adapt(retained.validate, p=p, History=History, _validate=_validate)",
+        "_adapt(retained._seal, p=p, History=History, _base_seal=_base_seal)",
+        "_adapt(numerical.Executor.advance, p=p, validate=validate, _seal=_seal, deepcopy=io._copy_for_advance)",
+        "_adapt(retained.from_executor, Executor=Executor)",
+        "_adapt(retained.Session.validate, p=p, History=History, validate=validate)"
+      ],
+      "anchors": [
+        "_adapt = io._adapt"
+      ]
+    },
+    {
+      "path": "engineering/work/native_terrain_r5/runner.py",
+      "imports": [
+        "from work.generator_runtime_r12 import _raw",
+        "from work.native_terrain_r3.session import _adapt",
+        "from work.native_terrain_r4 import runner as retained, scheduling as old_schedule",
+        "from . import session as s, provenance as p, history as h"
+      ],
+      "adapters": [
+        "_adapt(old_schedule.propose_duration, latest_accepted_row=latest_accepted_row)",
+        "_adapt(retained.step, s=s, p=p, scheduling=_Schedule)"
+      ],
+      "anchors": [
+        "_Schedule.propose_duration.__kwdefaults__ = dict(old_schedule.propose_duration.__kwdefaults__)"
+      ]
+    },
+    {
+      "path": "engineering/work/native_terrain_r5/provenance.py",
+      "imports": [
+        "from work.generator_runtime_r12 import _raw",
+        "from work.native_terrain_r3 import provenance as logical",
+        "from work.native_terrain_r3.session import _adapt",
+        "from work.native_terrain_r4 import provenance as retained",
+        "from . import HERE, integrity",
+        "from .history import History"
+      ],
+      "adapters": [
+        "_adapt(logical.chunks, History=History)"
+      ],
+      "anchors": []
+    },
+    {
+      "path": "engineering/work/native_terrain_r5/integrity.py",
+      "imports": [
+        "from work.native_terrain_r3.session import _adapt",
+        "from work.native_terrain_r4 import integrity as retained",
+        "from . import history as h",
+        "from .provenance import scientific_sha as logical_sha"
+      ],
+      "adapters": [
+        "_adapt(retained.verify_history, h=h, _verify_source=_verify_source)",
+        "_adapt(retained.commitment, h=h, SCHEMA=SCHEMA, verify_history=verify_history, _verify_source=_verify_source)"
+      ],
+      "anchors": [
+        "return _verify_history(history, full=full)"
+      ]
+    }
+  ]
+}
