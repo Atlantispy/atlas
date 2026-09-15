@@ -1,0 +1,374 @@
+{
+  "schema": "atlas.product-scale-planning-record.v1",
+  "contract_id": "ATLAS-PRODUCT-SCALE-1",
+  "revision": 2,
+  "date": "2026-09-15",
+  "status": "PROPOSED_CONTRACT_FOR_REVIEW",
+  "project_status": "WORKING NON-CANON",
+  "baseline_commit": "3ed5dd95b20150553528d9e83c0520b7617652df",
+  "document": "docs/PRODUCT_AND_SCALE_CONTRACT.md",
+  "record_role": "DOCUMENTATION_NOT_EXECUTABLE_CONFIGURATION",
+  "execution_authorised": false,
+  "proposed_product": {
+    "description": "World-agnostic configurable generator producing reproducible scenario-specific world datasets and selected process histories; Diadem is the primary development case; eventual planetary scope",
+    "modes": [
+      "INTEGRATE_SUPPLIED_WORLD_INPUTS",
+      "GENERATE_OR_EVOLVE_MODELLED_FIELDS"
+    ],
+    "universal_process_grid_selected": false,
+    "universal_simulation_clock_selected": false,
+    "all_category_keys_in_source_order": [
+      "plate_tectonics",
+      "geology",
+      "topography_topology",
+      "hydrology",
+      "political_borders",
+      "settlements",
+      "populations",
+      "biomes",
+      "climate",
+      "precipitation",
+      "plant_animal_ranges",
+      "soils_ground_conditions",
+      "erosion_sediment_transport",
+      "seas_coastal_processes",
+      "resources_land_suitability",
+      "land_use_agriculture",
+      "infrastructure_connectivity",
+      "natural_hazards"
+    ],
+    "scope_tiers": [
+      "COMPONENT_REFERENCE",
+      "REGIONAL",
+      "CONTINENTAL_WORLD",
+      "WHOLE_PLANET_EVENTUAL",
+      "DETAILED_AREA"
+    ],
+    "architecture_roles": [
+      "REUSABLE_ENGINE",
+      "WORLD_PROFILE",
+      "RUN_AND_DETAIL_PROFILE"
+    ],
+    "resolution_policy": {
+      "fixed_project_wide_output_spacing_m": null,
+      "permanent_finest_spacing_limit_m": null,
+      "fine_resolution_example_m": 1,
+      "example_is_current_capability_or_guarantee": false,
+      "scope": "PER_WORLD_EXTENT_LAYER_PROCESS_AND_DETAIL_REGION",
+      "larger_coverage_at_fixed_budget": "GENERALLY_COARSER_BASE_WITH_DETAIL_WHERE_USEFUL",
+      "fine_output_permanently_local_only": false,
+      "dense_full_world_at_finest_spacing_required": false,
+      "multiple_detail_levels_design_requirement": true,
+      "requested_vs_selected_resolution_recorded": true,
+      "silent_coarsening_permitted": false,
+      "null_meaning": "NO_UNIVERSAL_TARGET_OR_CAP_NOT_A_RUNTIME_DEFAULT_OR_UNLIMITED_BUDGET"
+    },
+    "world_generalisation_implemented_claimed": false
+  },
+  "observed_frame": {
+    "classification": "RETAINED_INTERFACE_NOT_FRESH_LIVE_AUTHORITY_VALIDATION",
+    "source_paths": [
+      "shared_generator/engine/stage6c_terrain_authority.py",
+      "shared_generator/engine/stage6c_source_stack.py",
+      "shared_generator/engine/build_stage6c_100m.py"
+    ],
+    "rows": 18600,
+    "columns": 22000,
+    "dtype": "float32",
+    "horizontal_unit": "km",
+    "transform": [
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0
+    ],
+    "frame_label": "LOCAL_CARTESIAN_KM_NO_EPSG",
+    "north_direction": "DECREASING_Y",
+    "land_mask_identity": null,
+    "active_cell_count": null,
+    "scope": "DIADEM_PROFILE_EXAMPLE_NOT_UNIVERSAL_WORLD_GEOMETRY"
+  },
+  "derived_frame_arithmetic": {
+    "classification": "DIADEM_RECTANGULAR_EXAMPLE_NOT_LAND_AREA_GENERIC_WORLD_SIZE_OR_PERFORMANCE",
+    "width_km": 2200,
+    "height_km": 1860,
+    "rectangle_area_km2": 4092000,
+    "cell_count_formula": "rows * columns",
+    "raw_float32_bytes_formula": "rows * columns * 4",
+    "mib_bytes": 1048576,
+    "gib_bytes": 1073741824,
+    "cases": [
+      {
+        "spacing_m": 4000,
+        "rows": 465,
+        "columns": 550,
+        "full_rectangle_cells": 255750,
+        "one_float32_field_bytes": 1023000,
+        "status": "ARITHMETIC_EXAMPLE_NOT_SELECTED_PROCESS_GRID"
+      },
+      {
+        "spacing_m": 1000,
+        "rows": 1860,
+        "columns": 2200,
+        "full_rectangle_cells": 4092000,
+        "one_float32_field_bytes": 16368000,
+        "status": "EXISTING_CARRIER_NOT_UNIVERSAL_SOLVER_GRID"
+      },
+      {
+        "spacing_m": 100,
+        "rows": 18600,
+        "columns": 22000,
+        "full_rectangle_cells": 409200000,
+        "one_float32_field_bytes": 1636800000,
+        "status": "EXISTING_DIADEM_INTERFACE_NOT_UNIVERSAL_OUTPUT_REQUIREMENT"
+      },
+      {
+        "spacing_m": 10,
+        "rows": 186000,
+        "columns": 220000,
+        "full_rectangle_cells": 40920000000,
+        "one_float32_field_bytes": 163680000000,
+        "status": "HYPOTHETICAL_WHOLE_DIADEM_FRAME_WORKLOAD_NOT_SELECTED_RUN_OR_PROHIBITED_TARGET"
+      },
+      {
+        "spacing_m": 1,
+        "rows": 1860000,
+        "columns": 2200000,
+        "full_rectangle_cells": 4092000000000,
+        "one_float32_field_bytes": 16368000000000,
+        "status": "HYPOTHETICAL_WHOLE_DIADEM_FRAME_WORKLOAD_NOT_FEASIBILITY_GUARANTEE"
+      }
+    ],
+    "excludes": [
+      "masks",
+      "multiple_fields",
+      "working_copies",
+      "layers",
+      "objects",
+      "history",
+      "compression",
+      "indexes",
+      "staging",
+      "recovery_copies"
+    ],
+    "tib_bytes": 1099511627776
+  },
+  "observed_limits": {
+    "native_domain_cells": {
+      "value": 256,
+      "unit": "cells",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r1/domain.py",
+      "source_symbol": "MAX_CELLS"
+    },
+    "native_domain_connectors": {
+      "value": 2048,
+      "unit": "connectors",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r1/domain.py",
+      "source_symbol": "MAX_CONNECTORS"
+    },
+    "native_domain_layers": {
+      "value": 8192,
+      "unit": "total_layers",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r1/domain.py",
+      "source_symbol": "MAX_LAYERS"
+    },
+    "native_accepted_intervals_including_predecessor": {
+      "value": 256,
+      "unit": "accepted_intervals",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r1/evolve.py",
+      "source_symbol": "MAX_HISTORY"
+    },
+    "r4_proposal_maximum_request_years": {
+      "value": 5,
+      "unit": "years",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r4/scheduling.py",
+      "source_symbol": "MAX_DURATION_YEARS"
+    },
+    "r4_saved_case_target_elapsed_years": {
+      "value": 1000,
+      "unit": "years",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r4/runner.py",
+      "source_symbol": "step: F(1000) - run.elapsed(envelope)",
+      "qualification": "SAVED_CASE_TARGET_NOT_COMPLETION_OR_PRODUCT_REQUIREMENT"
+    },
+    "climate_transect_cells": {
+      "value": 32,
+      "unit": "cells",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/generator_upgrade_r4/climate.py",
+      "source_symbol": "MAX_CELLS"
+    },
+    "snapshot_stages": {
+      "value": 128,
+      "unit": "stages",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/generator_upgrade_r11/snapshot.py",
+      "source_symbol": "MAX_STAGES"
+    },
+    "snapshot_encoded_bytes": {
+      "value": 8388608,
+      "unit": "bytes",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/generator_upgrade_r11/snapshot.py",
+      "source_symbol": "MAX_BYTES"
+    },
+    "native_mass_quantum": {
+      "value": "1/18446744073709551616",
+      "unit": "kg",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r2/numerics.py",
+      "source_symbol": "Q",
+      "qualification": "ACCOUNTING_QUANTUM_NOT_PHYSICAL_ACCURACY"
+    },
+    "native_integer_bits": {
+      "value": 256,
+      "unit": "bits",
+      "classification": "OBSERVED_SOURCE_DEFINITION_NOT_RUNTIME_EVIDENCE",
+      "source_path": "engineering/work/native_terrain_r2/numerics.py",
+      "source_symbol": "MAX_UNIT_BITS"
+    }
+  },
+  "proposed_release_requirements": {
+    "required_spatial_descriptors": [
+      "evidence_or_assumption_support",
+      "process_support",
+      "exchange_support",
+      "output_sampling"
+    ],
+    "required_time_descriptors": [
+      "snapshot_date",
+      "forcing_or_averaging_period",
+      "physical_duration",
+      "numerical_intervals",
+      "wall_time"
+    ],
+    "required_outputs": [
+      "release_manifest",
+      "physical_spatial_products",
+      "ecological_human_products",
+      "accounting_consistency_evidence",
+      "review_interchange_products",
+      "change_recovery_record"
+    ],
+    "scale_exchange_rules": [
+      "preserve_declared_totals_for_extensive_quantities",
+      "explicit_transfer_for_intensive_quantities",
+      "no_numeric_averaging_of_class_or_identity",
+      "explicit_missing_coverage_and_boundary_ledger"
+    ],
+    "gates": [
+      "product_coverage_and_world_independence",
+      "input_readiness",
+      "scale_time_meaning",
+      "numerical_physical_acceptance",
+      "production_integration",
+      "resource_feasibility",
+      "repeatability_recovery"
+    ],
+    "enforcement": "REVIEW_POLICY_ONLY_NO_NEW_RUNTIME_ENFORCEMENT",
+    "world_profiles": [
+      "geometry_extent_frames_and_units",
+      "applicable_physical_parameters",
+      "calendar",
+      "species_cultures_and_constraints",
+      "authored_or_generated_input_provenance"
+    ],
+    "future_planetary_requirements": [
+      "explicit_surface_geometry_and_size",
+      "valid_neighbours_distances_and_areas",
+      "cross_region_boundary_accounting",
+      "representation_appropriate_wrap_pole_or_seam_handling",
+      "applicable_global_physics_and_forcing_evidence"
+    ],
+    "planetary_representation_or_physics_selected": false,
+    "detail_requirements": [
+      "declared_generation_or_refinement_method",
+      "reproducible_parent_and_seed_binding",
+      "neighbour_and_cross_scale_consistency",
+      "explicit_feedback_to_coarse_world",
+      "revalidate_consumers_if_physical_authority_changes"
+    ]
+  },
+  "open_production_profile": {
+    "status": "NOT_READY_FOR_PRODUCTION_EXECUTION",
+    "producer_delivery_route": null,
+    "domain_mask_identity": null,
+    "regional_footprint": null,
+    "per_process_and_exchange_supports": null,
+    "snapshot_date_and_calendar": null,
+    "forcing_intervals": null,
+    "physical_evolution_horizon": null,
+    "machine_and_runtime": null,
+    "total_peak_ram_limit_bytes": null,
+    "storage_budget_bytes": null,
+    "cold_run_deadline_seconds": null,
+    "incremental_deadline_seconds": null,
+    "worker_ceiling": null,
+    "maximum_tolerated_lost_work": null,
+    "restore_deadline_seconds": null,
+    "fixture_and_input_package_identities": null,
+    "quantitative_acceptance_criteria": null,
+    "null_policy": "UNDECIDED_BLOCKS_PRODUCTION_NOT_ZERO_UNLIMITED_OR_APPROVED_DEFAULT",
+    "world_profile": null,
+    "world_geometry_and_parameters": null,
+    "base_and_detail_output_resolutions": null,
+    "refinement_generation_method": null,
+    "detail_storage_and_generation_strategy": null,
+    "detailed_area_footprints": null
+  },
+  "open_decisions": [
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "D6"
+  ],
+  "scope_exclusions": [
+    "production_bridge_implementation",
+    "limit_or_tolerance_changes",
+    "runtime_installation",
+    "simulation",
+    "benchmark",
+    "source_or_checkpoint_repin",
+    "automatic_sync",
+    "original_Windows_integration",
+    "licence_selection",
+    "planetary_geometry_or_physics_implementation",
+    "one_metre_backend_implementation",
+    "automatic_multiresolution_implementation"
+  ],
+  "owner_confirmed_direction": {
+    "world_agnostic_target": true,
+    "primary_development_case": "Diadem",
+    "eventual_whole_planet_generation_in_scope": true,
+    "resolution_configurable_by_coverage_purpose_and_budget": true,
+    "one_metre_or_finer_eligible_where_feasible": true,
+    "current_planetary_or_one_metre_capability_claimed": false,
+    "source": "OWNER_CLARIFICATION_IN_THIS_REVIEW_NOT_A_RUNTIME_VALIDATION"
+  },
+  "revision_note": "Supersedes unpublished revision 1; corrects Diadem-only product and fixed 100 m / 10 m targets. v1 in schema/filename denotes the planning-record format, not the contract revision.",
+  "resolution_arithmetic": {
+    "scope": "TWO_DIMENSIONAL_FIXED_AREA_SQUARE_CELLS_BOUNDARY_ROUNDING_OMITTED",
+    "cell_count_formula": "area_m2 / spacing_m**2",
+    "factor_for_tenfold_finer_spacing": 100,
+    "factor_100m_to_1m_same_area": 10000,
+    "fixed_cell_budget_spacing_relation": "spacing_m = sqrt(area_m2 / cell_count_budget)",
+    "is_solver_runtime_forecast": false,
+    "local_example": {
+      "width_m": 1000,
+      "height_m": 1000,
+      "spacing_m": 1,
+      "cells": 1000000,
+      "one_float32_field_bytes": 4000000
+    }
+  }
+}

@@ -2,6 +2,32 @@
 
 Source date: 15 September 2026. WORKING NON-CANON. This page is a public technical handover, not an accepted scientific model or a world dataset.
 
+## Product and scale definition (revision 2 review draft)
+
+[ATLAS-PRODUCT-SCALE-1, revision 2](PRODUCT_AND_SCALE_CONTRACT.md) incorporates the
+owner's clarification: Atlas is intended to become **world-agnostic**; the Diadem
+is its primary development case, not its required setting. Eventual scope includes
+potential **whole-planet generation**. These are product directions, not capabilities
+established by the public code.
+
+Resolution is **configurable by coverage, purpose, process and finite budget**,
+including **1 m or finer where feasible**. Larger areas generally favour a coarser
+base under a fixed budget, with finer regions where needed. The existing 100 m
+Diadem authority and 10 m local workflows are implementation examples, not universal
+or permanent delivery targets. Core/world/run-profile separation, multiresolution
+behaviour and planetary geometry require explicit future implementation and tests.
+
+The Diadem interface remains 18,600 × 22,000 cells. The current native common-domain
+limit remains 256 cells, with 256 accepted intervals including predecessors; the
+climate transect limit remains 32 cells. Documentation has not enlarged them.
+The [planning record](contracts/product-scale-v1.json) records revision 2 intentions,
+observations and unresolved run profiles separately; it is not runtime configuration.
+
+This remains recommendation 1 only: no production bridge, model implementation,
+world run, benchmark, numerical change, runtime installation or Windows integration
+was performed. Actual resolutions, masks/regions, physical horizons and budgets
+remain to be selected for the next scoped case.
+
 ## Latest route
 
 The wider generator programme has implementations through [generator upgrade R31](../engineering/work/generator_upgrade_r31/). The latest bounded native experiment is [native terrain R5](../engineering/work/native_terrain_r5/), building on R1–R4, [runtime R12](../engineering/work/generator_runtime_r12/) and other generator/model predecessors. It is only one part of the generator.

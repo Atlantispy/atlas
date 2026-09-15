@@ -2,19 +2,19 @@
 
 **A vibe-coded world generator for physically informed, internally consistent worldbuilding.**
 
-Atlas is being developed for the fictional world of the **Diadem**. Its aim is to connect the physical landscape with the ecological and human systems that depend on it: not just where mountains and rivers appear, but how ground conditions, water, climate, living things, resources and settlements fit together.
+Atlas is intended to become a **world-agnostic generator**, developed primarily for the fictional world of the **Diadem**. The Diadem is its first major use case, not a required setting or a maximum extent: eventual scope may include **whole planets**. Its aim is to connect physical landscapes with their ecological and human systems, at resolutions selected for coverage, purpose and available resources. Current code still contains Diadem-specific dependencies; generalised or planetary generation is not claimed as implemented.
 
 **OpenAI's ChatGPT/Codex does the coding under the project owner's direction.** The owner supplies the worldbuilding requirements, decisions and feedback; AI assistants write the code and carry out much of the technical testing. Vibe-coding describes the development process, not a substitute for source review, reproducible tests or independent scientific validation.
 
 **Current status: experimental, WORKING NON-CANON.** Atlas has implementations across 18 modelling categories, connected execution infrastructure and a runnable public component-development package. It is not yet a complete, independently validated world generator. Mountain and wider terrain realism remain unaccepted.
 
-[The 18 categories](#the-18-modelling-categories) · [How it works](#how-atlas-works) · [Progress](#what-has-been-achieved) · [Outputs](#what-atlas-produces) · [Try it](#try-the-public-development-package) · [Roadmap](#development-direction)
+[Product and scale](#product-and-scale-contract) · [The 18 categories](#the-18-modelling-categories) · [How it works](#how-atlas-works) · [Progress](#what-has-been-achieved) · [Outputs](#what-atlas-produces) · [Try it](#try-the-public-development-package) · [Roadmap](#development-direction)
 
 ## What Atlas is trying to achieve
 
 The goal is an inspectable worldbuilding system in which decisions have traceable consequences. A change to terrain can matter to water movement; water and ground conditions can matter to vegetation and agriculture; those results can inform settlement opportunities, population support and connectivity.
 
-Atlas combines **supplied world constraints** with **explicit modelling choices**. Existing geography, selected species parameters, population records and political decisions are inputs where a component requires them, not facts that the program is entitled to invent. Alternative scenarios should remain distinguishable, and an experimental result should not silently become Diadem canon.
+Atlas combines **supplied world constraints** with **explicit modelling choices and reproducible generation**. Existing geography, species parameters, population records and political decisions are inputs where a component requires them. New worlds may instead use declared generators, parameters and seeds; a complete pre-authored world is not an intended universal prerequisite. Generated assumptions must not masquerade as measured or authored facts. Alternative scenarios remain distinguishable, and experimental results do not silently become accepted world canon.
 
 Three objectives guide the architecture:
 
@@ -23,6 +23,46 @@ Three objectives guide the architecture:
 - **Repeatable experimentation.** Results are tied to the source, inputs and runtime that produced them, with caching, continuation and recovery designed around those identities.
 
 These are project objectives supported by the mechanisms below. They do not imply that every category is fully coupled, calibrated or ready for a whole-world run.
+
+## Product and scale contract
+
+The [product and scale contract, revision 2](docs/PRODUCT_AND_SCALE_CONTRACT.md)
+defines a **world-independent, multiresolution product direction**, not a completed
+generator. The reusable engine is to be separated from world profiles and run/detail
+profiles. Regional, continental and eventual planetary coverage are within scope;
+the current Diadem frame is one case, not a hard-coded universal geometry.
+
+There is **no fixed 100 m/10 m delivery target or permanent finest-resolution cap**.
+Choose resolution per extent, layer and purpose against a finite budget, including
+**1 m or finer where feasible**. At a fixed budget, larger coverage generally calls
+for a coarser base representation, while selected areas can retain finer detail.
+Higher-resolution larger areas remain possible targets where the budget supports
+them; neither a 1 m planet nor automatic adaptive refinement is implemented or
+promised here. Evidence/assumption, process, exchange and output support remain
+separate: generated fine detail is valid worldbuilding but not measured accuracy.
+
+| Scope | Source-defined size or limit | Do not infer |
+| --- | --- | --- |
+| Retained Diadem 100 m terrain interface | **18,600 × 22,000 = 409,200,000 cells** over a **2,200 × 1,860 km** rectangle. A single raw float32 field is **1,636,800,000 bytes (1.52 GiB)**. | Land/active area, a whole-pipeline RAM estimate or a completed world-scale simulation. |
+| Current native R1–R5 common domain | **256 cells** (at most **16 × 16** for a square grid), **2,048 connectors**, **8,192 total layers**. | A production-sized terrain backend or a universal limit for other Atlas routes. |
+| Current native continuation | **256 accepted intervals including predecessor history**. R4/R5 proposal requests are at most **5 years**; the retained case runner targets **1,000 elapsed years**. | Achieved physical duration, a Diadem geological timescale, or permission to raise limits. |
+| Climate transect | **32 cells per transect**. | A global atmospheric-circulation solver. |
+| Existing Diadem 10 m local workflows | Selected footprints; retained local recipes still declare **100 m effective terrain resolution**. | A permanent 10 m product limit, new 10 m evidence, or a ban on feasible 1 m output. |
+
+The contract links each bound to source, uses the Diadem rectangle as an example
+(including hypothetical 1 m coverage), and separates **observed limits**, **derived
+counts**, **owner-confirmed intentions**, **proposed requirements** and **open decisions**. The [planning record](docs/contracts/product-scale-v1.json)
+is documentation, not runnable configuration.
+
+The product is a coherent route through appropriate scientific producers,
+execution infrastructure and spatial delivery machinery—not whichever directory
+has the highest revision. The retained shared builders consume existing terrain
+and water inputs; current bounded native experiments do not yet supply a proven
+world-scale replacement. **Selecting and implementing that production connection
+is still the next task.** World generalisation and eventual planetary geometry,
+coverage and physics remain additional design requirements. Production hardware,
+RAM/disk/time budgets, requested/selected resolutions, per-process supports, masks
+and physical horizons must be specified before a production-size run. This contract does not authorise one.
 
 ## The 18 modelling categories
 
@@ -100,7 +140,7 @@ Progress below describes implemented work or explicitly recorded evidence, not a
 | Recovery support | Dependency inventory, deduplicated byte backup, independently anchored verification and new-directory restoration, with **49 synthetic recovery tests** recorded passing. | A real Windows backup and isolated native restart still need their own evidence. |
 | Independent development | A clean offline public setup recorded **277 passing tests**: 127 runtime, 25 selected numerical and 125 tooling tests, with no failures, errors or skips on Linux/CPython 3.13.5. | This is a dated, explicitly selected test set, not all Atlas tests or a claim about every operating system. |
 
-Evidence: [native development and measurement limits](docs/CURRENT_STATE.md), [R31 integration tests](engineering/work/test_r31_registry.py), [recovery evidence](docs/R5_OPERATIONS_EVIDENCE.md), [independent-development evidence](docs/INDEPENDENT_DEVELOPMENT_EVIDENCE.md). Successive timing ratios have different scopes and must not be added or multiplied into a headline generator speed-up.
+Evidence: [native development and measurement limits](docs/CURRENT_STATE.md), [recovery evidence](docs/R5_OPERATIONS_EVIDENCE.md) and [independent-development evidence](docs/INDEPENDENT_DEVELOPMENT_EVIDENCE.md). [R31 integration test source](engineering/work/test_r31_registry.py) is supplied for inspection; it is **not a public-checkout passing-run receipt**. Original-environment results and publicly runnable component evidence must not be conflated. Successive timing ratios have different scopes and must not be added or multiplied into a headline generator speed-up.
 
 ## What Atlas produces
 
@@ -156,10 +196,10 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 
 The priorities are capability and trustworthy evidence, not simply increasing revision numbers:
 
-1. **Establish physical acceptance.** Test the unresolved terrain/mountain behaviour and other modelling assumptions against appropriate explicit criteria. A reproducible implementation is only the starting point.
-2. **Extend meaningful coupling.** Improve scenario connections across the 18 categories while preserving their units, timing, finite resources, uncertainties and supplied world constraints.
-3. **Complete reproducible scientific installations.** Extend beyond the public component package with compatible, explicitly identified scientific/runtime dependencies and public fixtures. Portability must not masquerade as historical restart compatibility.
-4. **Simplify and harden operation.** Reduce delicate adapter indirection when changing the affected code, maintain source/dependency maps and establish real recovery drills for shared stores and native controls.
+1. **Review the product and scale contract.** The [revised contract](docs/PRODUCT_AND_SCALE_CONTRACT.md) separates the world-agnostic goal and eventual planetary scope from current Diadem-specific implementations. It specifies configurable, budget-dependent resolution including 1 m or finer where feasible, not universal 100 m/10 m targets. Documentation completion is not production acceptance.
+2. **Establish one end-to-end production path.** Use Diadem as the initial case while separating world-specific inputs from reusable interfaces. Select terrain/hydrology producers and delivery interfaces, distinguishing supplied inputs from generated fields. Choose base/detail and process supports against a budget; simplify affected adapters rather than undertaking a blanket rewrite.
+3. **Prove a representative regional case when authorised.** Select its footprint, external dependencies, physical criteria and finite resource budget before execution. Demonstrate cross-boundary accounting, useful outputs and feasible resource use; small reference cases support rather than substitute for that evidence.
+4. **Expand capability and independent reproducibility.** Extend the verified path to other worlds, categories, finer detail and larger extents, eventually assessing whole-planet support. Pair each with suitable geometry, processes, runtime packages, public fixtures and budget/physical evidence. Portability must not masquerade as historical restart compatibility.
 
 These are development priorities, not completed features, delivery dates or permission to start simulations. Optimisations should follow measured bottlenecks in the relevant workload, not speculative whole-generator speed claims.
 
