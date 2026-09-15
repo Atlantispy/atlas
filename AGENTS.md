@@ -16,8 +16,10 @@ code review and scientific acceptance are separate outcomes.
 
 ## Change boundaries
 
-- Make one scoped change on a separate branch. Preserve unrelated work. Do not
-  merge, synchronise or alter the original Windows workspace without instruction.
+- Make one scoped change using the owner's requested delivery route. Direct-to-main
+  updates require focused checks and a non-forced update against the latest state;
+  otherwise use a review branch. Preserve unrelated work. Do not synchronise or
+  alter the original Windows workspace without instruction.
 - Keep source-only guides/tools outside `engineering/work/` and
   `shared_generator/`. Adding a Python file inside a source-bound package can
   change its identity even without editing an existing function.
@@ -27,6 +29,8 @@ code review and scientific acceptance are separate outcomes.
   tolerances or raise the 256 accepted-step ceiling to obtain a pass.
 - Sanitised public bytes do not authenticate historical runs. The original codec,
   pinned libraries, private inputs and checkpoints are not supplied here.
+- For R5 backup/recovery, read `docs/R5_OPERATIONS.md`; tools stay outside the
+  source-bound packages. Never treat a staged byte recovery as a native restart.
 - Shared history stores are dependencies, not disposable caches. No cleanup,
   checkpoint migration, simulation or benchmark is implied by a coding request.
 - Do not publish personal information, credentials, private paths or coordination

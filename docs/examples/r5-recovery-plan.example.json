@@ -1,0 +1,32 @@
+{
+  "schema": "atlas.r5-recovery-plan.v1",
+  "roots": {
+    "workspace": "C:/REPLACE/Atlas-original",
+    "runtime": "C:/REPLACE/Atlas-original-runtime"
+  },
+  "controls": [
+    {"root": "workspace", "path": "engineering/outputs/REPLACE-branch-a/checkpoint.json"},
+    {"root": "workspace", "path": "engineering/outputs/REPLACE-branch-b/checkpoint.json"}
+  ],
+  "dependencies": {
+    "source": {
+      "paths": [
+        {"root": "workspace", "path": "engineering/work"},
+        {"root": "workspace", "path": "engineering/outputs/native-terrain-r1/checkpoint_io.py"}
+      ],
+      "note": "Replace with exact original source closure and retained codec; the sanitised public export cannot authenticate historical runs. Include additional bound source trees wherever the original binding requires them."
+    },
+    "runtime": {
+      "paths": [{"root": "runtime", "path": "."}],
+      "note": "Replace with the original installed runtime prefix including interpreter, packages, native libraries and their dependencies. This is not recreated by installing current versions."
+    },
+    "inputs": {
+      "paths": [{"root": "workspace", "path": "private/REPLACE-authority-inputs"}],
+      "note": "Explicitly select the private authority inputs required by these controls. Empty paths are allowed only here, with an explanation that the selected run has no external input dependency."
+    },
+    "provenance": {
+      "paths": [{"root": "workspace", "path": "private/REPLACE-run-and-environment-records"}],
+      "note": "Include run configuration, source/environment inventory, acceptance records and restore instructions. Keep this plan, the generated inventory and recovery bundles private."
+    }
+  }
+}
