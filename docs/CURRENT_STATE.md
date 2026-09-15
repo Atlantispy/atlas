@@ -29,3 +29,13 @@ Existing local R5 tests established bounded storage/session behaviour and a relo
 For a new authorised coding request, inspect the relevant current module and its retained imports, make a separate change, then run only the relevant tests in a compatible environment. Record untested assumptions plainly. A portability change must preserve source-binding, integrity and numerical checks rather than bypassing them.
 
 This repository is a public point-in-time source handover. It does not mount or automatically synchronise the original Windows workspace. A GitHub change is not a local integration until it has actually been reviewed and applied there.
+
+## Independent public development (separate from historical execution)
+
+The [public development package](INDEPENDENT_DEVELOPMENT.md) provides an offline
+editable source environment, new public execution identities, a synthetic integer
+fixture and focused tests of the actual R12 runtime and selected native numerical
+components. See its [obtained evidence](INDEPENDENT_DEVELOPMENT_EVIDENCE.md).
+This does not supply the excluded recursive scientific seal, native R5 codec,
+Windows runtime, private inputs or saved checkpoints. All original physical,
+numerical and source-identity boundaries above remain in force.

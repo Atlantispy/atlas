@@ -1,0 +1,13 @@
+{
+  "schema": "atlas.public-development.integer-graph.v1",
+  "fixture_id": "four-node-integer-dag-v1",
+  "scope": "PUBLIC_SYNTHETIC_DEVELOPMENT_ONLY",
+  "evidence": "Public integer arithmetic oracle, not Diadem data, physical acceptance or a saved historical checkpoint.",
+  "nodes": [
+    {"id": "a", "base": 2, "parents": []},
+    {"id": "b", "base": 3, "parents": []},
+    {"id": "c", "base": 1, "parents": ["a"]},
+    {"id": "d", "base": 5, "parents": ["b", "c"]}
+  ],
+  "expected": {"a": 2, "b": 3, "c": 3, "d": 11}
+}

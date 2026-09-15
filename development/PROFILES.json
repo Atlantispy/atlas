@@ -1,0 +1,33 @@
+{
+  "schema": "atlas.public-development.profiles.v1",
+  "profiles": {
+    "runtime": {
+      "tests": [
+        "work.generator_runtime_r12.test_executor",
+        "work.generator_runtime_r12.test_store",
+        "work.generator_runtime_r12.test_parallel"
+      ],
+      "coverage": "Retained R12 incremental graph execution, authenticated cache and actual spawned test workers. No sealed scientific bundle."
+    },
+    "numerics": {
+      "tests": [
+        "work.native_terrain_r2.test_numerics",
+        "work.native_terrain_r1.test_hillslope.FaceRequestsTests"
+      ],
+      "coverage": "Retained R2 exact allocation and R1 bounded face requests. Excludes analytical decay trajectories and full native continuation."
+    },
+    "tooling": {
+      "tests": [
+        "test_coding_safety",
+        "test_r5_recovery",
+        "test_development"
+      ],
+      "coverage": "Source wiring, synthetic byte recovery and the public development harness. No live backup."
+    }
+  },
+  "unavailable_routes": {
+    "r31-integration": "Requires the historical R11 recursive scientific seal/bundle and route-specific source/input authorities absent from this public export. No fabricated seal or automatic rebind.",
+    "native-r5-continuation": "Requires the original checkpoint codec, pinned Windows Zstandard library, retained scientific bundle and matching checkpoint/source/store dependencies. Not emulated by the public fixture runtime.",
+    "shared-generator-world": "Requires the separately declared original runtime and large authority datasets. No world-generation command is exposed."
+  }
+}

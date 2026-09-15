@@ -19,6 +19,13 @@ This is a public source export of the current local development stack, including
 
 Private coordination records, personal usage tools, source-owner records, installed libraries, large inputs, saved checkpoints and generated world data are not published here. Local user-directory names and a private project identifier are replaced in public copies; therefore this export must not be described as byte-identical to historical execution bindings. The original local source is unchanged.
 
+## Independent development
+
+A new [offline public development package](docs/INDEPENDENT_DEVELOPMENT.md) runs
+focused runtime, numerical and tooling tests without private inputs or installed
+third-party libraries. It creates fresh, explicitly public execution identities.
+This is not a complete R31/R5 scientific installation or historical restart path.
+
 ## Working with Atlas
 
 Start by reading the current-state page and the module relevant to your change. Inspect dependencies before running anything. The original environment is Windows with Python and pinned numerical/geospatial packages. Native compressed history currently uses a pinned Windows Zstandard library; copying source into Linux does not establish runtime or checkpoint compatibility.

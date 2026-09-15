@@ -36,6 +36,16 @@ code review and scientific acceptance are separate outcomes.
 - Do not publish personal information, credentials, private paths or coordination
   records. Preserve the approved public worldbuilding material and AI disclosure.
 
+## Public development route
+
+For independent component development, read `docs/INDEPENDENT_DEVELOPMENT.md`.
+`tools/develop.py` provides offline bootstrap, explicit NEW public bindings,
+focused `runtime`/`numerics`/`tooling` profiles and an integer-graph smoke fixture.
+`all-public` does not mean all Atlas tests. Original R11 seals and native R5
+checkpoint/runtime dependencies remain unavailable; never invent them. After a
+reviewed source change, capture a new record rather than updating an old binding.
+Do not commit `.atlas-dev/` (local paths, environment and cache state).
+
 ## Check and report
 
 For source-only guidance/tool changes, run from the repository root:

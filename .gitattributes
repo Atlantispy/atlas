@@ -1,0 +1,7 @@
+# Preserve source-bound bytes on Windows checkouts. Do not renormalise old sources.
+engineering/** -text
+shared_generator/** -text
+# New public development tooling uses explicit LF source bytes.
+development/** text eol=lf
+tools/develop.py text eol=lf
+tests/test_development.py text eol=lf

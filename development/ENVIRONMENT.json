@@ -1,0 +1,11 @@
+{
+  "schema": "atlas.public-development.environment.v1",
+  "implementation": "CPython",
+  "python_minors": ["3.12", "3.13"],
+  "third_party_requirements": [],
+  "system_site_packages": false,
+  "pip_required": false,
+  "optimisation": 0,
+  "scope": "PUBLIC_SYNTHETIC_DEVELOPMENT_ONLY",
+  "note": "The exact interpreter and public source bytes are bound locally. Supported minor versions are not a promise of historical or cross-platform bitwise compatibility."
+}
