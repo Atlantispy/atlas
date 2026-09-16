@@ -3,7 +3,8 @@
 **Branch: `remake`. WORKING NON-CANON. Mathematical verification, not accepted terrain.**
 Vibe-coded with OpenAI ChatGPT/Codex doing the coding under Michael's direction.
 
-This new, isolated package starts the revision 3 tectonics plan. It imports neither
+This isolated package supplies the foundation described in the
+[tectonics simulation plan, revision 5](docs/TECTONICS_PLAN.md). It imports neither
 `engineering/work` nor `shared_generator`, alters no historical bindings and does
 not form a new chain of copied predecessor globals. `main` and the original Windows
 installation are not changed by this branch.
@@ -60,8 +61,9 @@ A passed comparison is mathematical evidence only, not geological acceptance.
   grid, material parameters and numerical method. It is not a signed run receipt.
 - Periodic domains are an explicit first verification choice, not a global-world
   assumption. Storage chunks must not become independent physical boundaries.
-- Read the [scientific case](docs/FOUNDATIONS.md) and the
-  [voxel/chunk storage design note](docs/VOXEL_STORAGE.md).
+- Read the [scientific case](docs/FOUNDATIONS.md), the
+  [tectonics simulation plan](docs/TECTONICS_PLAN.md) and the
+  [consolidated optimisation reference](docs/OPTIMISATION_REFERENCE.md).
 
 ## Next development gate
 
@@ -71,13 +73,14 @@ creation/recycling and a physically defined load connection precede a claimed
 extensional terrain experiment. Do not jump to production integration because
 mathematical tests pass. Full 3D storage and global mechanics remain separate tasks.
 
-## Performance findings recorded after the foundation
+## Maintained planning and optimisation documents
 
-See [the performance/language design note](docs/PERFORMANCE_DESIGN.md) for the
-additional mod screening and selective-native-kernel recommendation. It separates
-Python orchestration from bulk native operations, lookup hashing from source
-verification, and safe allocation reuse from mutable aliasing. Viewer/audio/network
-ideas and behaviour-changing shortcuts are not core solver optimisations.
+The [tectonics simulation plan](docs/TECTONICS_PLAN.md) is the maintained scientific
+scope, development sequence, implementation-status and acceptance document.
+The [consolidated optimisation reference](docs/OPTIMISATION_REFERENCE.md) is the
+maintained reference for execution, caching, memory, storage, native-language
+decisions and method studies. It incorporates the former performance and voxel
+storage notes; their earlier versions remain available in Git history.
 
 This is guidance for later scoped development, not another implementation:
 no new backend, benchmark or physical acceptance accompanies the note. The original
