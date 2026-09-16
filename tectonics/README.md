@@ -70,3 +70,15 @@ initial-condition/transport/support cases. Open boundaries, conservative materia
 creation/recycling and a physically defined load connection precede a claimed
 extensional terrain experiment. Do not jump to production integration because
 mathematical tests pass. Full 3D storage and global mechanics remain separate tasks.
+
+## Performance findings recorded after the foundation
+
+See [the performance/language design note](docs/PERFORMANCE_DESIGN.md) for the
+additional mod screening and selective-native-kernel recommendation. It separates
+Python orchestration from bulk native operations, lookup hashing from source
+verification, and safe allocation reuse from mutable aliasing. Viewer/audio/network
+ideas and behaviour-changing shortcuts are not core solver optimisations.
+
+This is guidance for later scoped development, not another implementation:
+no new backend, benchmark or physical acceptance accompanies the note. The original
+[delivery evidence](evidence/DELIVERY.md) remains historical and unchanged.

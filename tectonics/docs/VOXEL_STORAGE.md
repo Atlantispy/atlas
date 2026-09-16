@@ -66,3 +66,21 @@ and cross-chunk results matching a monolithic reference under the declared polic
 Only then choose chunk dimensions, codec or sparse hierarchy. The current small
 1D reference kernels are intentionally storage-agnostic, not the permanent world
 representation and not an obstacle to 3D development.
+
+## Follow-up: allocation, indices and lifecycle
+
+The [performance/language design note](PERFORMANCE_DESIGN.md) adds the later
+Minecraft-mod findings. Separate categorical lookup keys from cryptographic
+content identity; use full-key equality on hash collisions. Any spatial index or
+bounding volume must conservatively retain candidates before exact geometry checks.
+
+Copy elimination needs proven ownership, not just a read-only flag on one view.
+Keep accepted fields, candidate scratch, cache entries and asynchronous writer
+buffers distinct. Private compute buffers may be reused only after every consumer
+finishes; durable history is not an evictable cache.
+
+DashLoader-style restoration and ModernFix-style lazy construction address
+different work. Restore only authenticated completed artefacts; defer only genuinely
+optional preparation. Neither changes whether off-screen geology contributes to
+the physical problem. No chunk format, palette code, native backend or new cache
+implementation has been added by this documentation update.
