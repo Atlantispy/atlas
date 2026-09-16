@@ -1,0 +1,14 @@
+{
+  "case_id": "ATLAS-TECTONICS-FOUNDATIONS-001",
+  "revision": 1,
+  "status": "SYNTHETIC_MATHEMATICAL_VERIFICATION_NOT_PHYSICAL_ACCEPTANCE",
+  "plan": {"id": "ATLAS-TECTONICS-PLAN-1", "revision": 3,
+    "sha256": "c6e63634f7d7c704fd30a17075852b379238472030f70eb3a9ef1e6317e8e74e"},
+  "scope": ["E01_E02_rigid_kinematics", "N01_periodic_thickness_transport", "E04_half_space_cooling", "E12_E13_uniform_periodic_flexure"],
+  "conventions": {"position": "m", "velocity": "m/s", "time": "forward_elapsed_s", "temperature": "K", "load": "Pa_downward_positive", "deflection": "m_downward_positive", "regional_axes": "x_east_y_north", "planetary_axes": "right_handed_geocentric_xyz"},
+  "thermal": {"profile_id": "synthetic-cooling-v1", "provenance": "Analytical verification fixture; not an Earth/Diadem calibration", "surface_temperature_k": 300.0, "mantle_temperature_k": 1300.0, "diffusivity_m2_s": 1.0},
+  "flexure": {"profile_id": "synthetic-elastic-v1", "provenance": "Dimensionally labelled analytical fixture; not a geological material", "young_modulus_pa": 12.0, "elastic_thickness_m": 1.0, "poisson_ratio": 0.0, "density_contrast_kg_m3": 1.0, "gravity_m_s2": 1.0},
+  "acceptance": {"relative_tolerance": 1e-12, "absolute_tolerance": 1e-12, "smooth_transport_order_min": 0.8, "smooth_transport_order_max": 1.2, "smooth_flexure_order_min": 1.8, "smooth_flexure_order_max": 2.2},
+  "execution": {"external_workers": 0, "network": false, "installation": false, "fixture_cells_max": 256, "scope": "bounded mathematical unit tests; not a production workload or speed benchmark"},
+  "exclusions": ["mantle_dynamics", "fault_creation", "collision", "subduction", "calibrated_rheology", "terrain_realism_acceptance", "legacy_checkpoint_migration", "full_planet_generation"]
+}

@@ -1,0 +1,5 @@
+# Explicit LF for this new source package; no old file is renormalised.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf

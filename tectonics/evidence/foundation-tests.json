@@ -1,0 +1,49 @@
+{
+  "schema": "atlas.tectonics.foundation-verification.v1",
+  "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+  "tests_run": 53,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "source_unchanged_during_tests": true,
+  "source_sha256_before": {
+    "verify.py": "0c783c9e9c5a436c6df69a79be6fcf50227156f5ff7125992c1aee27d6968b03",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "src/atlas_tectonics/__init__.py": "917c230e986c92ffbb3d5026c2d066875bb1288dd109d352b64a9c408e46a0a6",
+    "src/atlas_tectonics/_validation.py": "d416e5ab98d046c9bd3acd34e0345899a746fe861d069e228b733ed52667e262",
+    "src/atlas_tectonics/flexure.py": "fbf7075058135266d253062b7319e3ab1564c74bc1c6d48b7c7472f7837c22bd",
+    "src/atlas_tectonics/kinematics.py": "11078df75f15f7d4636ef674a71f0e58ff8ecabc8ccac81f39ab162363c6bad0",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/thermal.py": "9bfd601894f57c3f37c329b283b1c71d7de75d72a7bd5b389d8cacba5d3e0245",
+    "src/atlas_tectonics/transport.py": "f8fd5209e497401b244fe68e8f7c8dcbb9d11fc4b176f196546f158bcdf3137f",
+    "tests/test_foundations.py": "aae637792e2e171a95c6dd1fc28cc46530fef0966300c198df74b5bd0b526abe"
+  },
+  "source_sha256_after": {
+    "verify.py": "0c783c9e9c5a436c6df69a79be6fcf50227156f5ff7125992c1aee27d6968b03",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "src/atlas_tectonics/__init__.py": "917c230e986c92ffbb3d5026c2d066875bb1288dd109d352b64a9c408e46a0a6",
+    "src/atlas_tectonics/_validation.py": "d416e5ab98d046c9bd3acd34e0345899a746fe861d069e228b733ed52667e262",
+    "src/atlas_tectonics/flexure.py": "fbf7075058135266d253062b7319e3ab1564c74bc1c6d48b7c7472f7837c22bd",
+    "src/atlas_tectonics/kinematics.py": "11078df75f15f7d4636ef674a71f0e58ff8ecabc8ccac81f39ab162363c6bad0",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/thermal.py": "9bfd601894f57c3f37c329b283b1c71d7de75d72a7bd5b389d8cacba5d3e0245",
+    "src/atlas_tectonics/transport.py": "f8fd5209e497401b244fe68e8f7c8dcbb9d11fc4b176f196546f158bcdf3137f",
+    "tests/test_foundations.py": "aae637792e2e171a95c6dd1fc28cc46530fef0966300c198df74b5bd0b526abe"
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "scope": "synthetic analytical and numerical unit tests",
+  "physical_validation": false,
+  "production_ready": false,
+  "historical_checkpoint_compatibility": false,
+  "note": "Local evidence record, not a cryptographic signature or performance benchmark."
+}
