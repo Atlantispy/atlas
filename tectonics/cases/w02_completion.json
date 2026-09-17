@@ -1,0 +1,95 @@
+{
+  "schema": "atlas.tectonics.w02-completion-case.v1",
+  "status": "WORKING NON-CANON; regional mathematical verification, not geological acceptance",
+  "scope": "W02 1D regional constant-density shared-velocity kinematics, material history, conservative remap and declared ownership/boundary events",
+  "equations": {
+    "reconstruction": "H_k(x)=H_ki+s_ki*(x-x_ci), positivity-limited on each donor interval",
+    "remap": "H_kj_new*width_j=sum_i integral_over_overlap(H_ki(x) dx)",
+    "moving_volume": "d(H_ki*width_i)/dt=F_ki_left-F_ki_right; F=(u-w)*H_face",
+    "geometry": "x_face(t+dt)=x_face(t)+dt*w_face; width_i=x_i+1-x_i",
+    "markers": "piecewise-affine material map; accumulated strain += log(new_width/old_width)"
+  },
+  "units": {
+    "position": "m",
+    "width": "m",
+    "partial_thickness": "m",
+    "velocity": "m/s",
+    "face_flux": "m^2/s",
+    "inventory": "m^2 per unit transverse width",
+    "time": "s in explicit epoch",
+    "log_stretch": "dimensionless"
+  },
+  "defaults": {
+    "remap": "limited piecewise-linear",
+    "evolution": "MC-MUSCL/SSP-RK2",
+    "backend": "numba",
+    "fastmath": false,
+    "automatic_accuracy_downgrade": false
+  },
+  "boundary_contract": [
+    "Mesh and physical velocity are independent inputs; closed means u-w=0.",
+    "Open relative inflow requires named exterior cohort composition and reservoir.",
+    "Regridding preserves time, frame and full domain extent; no implicit crop/fill.",
+    "MUSCL outgoing Courant bound 0.5 is checked at initial and final geometry.",
+    "Crossed or numerically unresolved cells and known events inside an interval are refused.",
+    "Mean SSP-stage fluxes reconcile whole-domain and neighbouring block accounts."
+  ],
+  "state_contract": [
+    "Cohort origin/formation time survives remaps and plate/block membership changes.",
+    "A shared ordered cut belongs to both neighbours; intervals cover the entire model domain once.",
+    "Splits/merges retain reserved retired IDs and explicit parent lineage; IDs are not recycled.",
+    "Events require current model parent and unused event ID; candidate failure never mutates accepted state.",
+    "Instantaneous ownership reclassification is not material displacement.",
+    "Markers locate material under an explicit material map; they are not mass-carrying parcels.",
+    "Snapshots are self-contained for restoration; prior receipts remain independent history records to retain when required.",
+    "Coarsening can lose spatial information despite conservation; inverse remapping is not promised."
+  ],
+  "verification": {
+    "absolute_tolerance": 1e-12,
+    "relative_tolerance": 1e-12,
+    "roundoff_factor": 128,
+    "smooth_remap_cells": [
+      32,
+      64,
+      128
+    ],
+    "minimum_refinement_ratio": 3.0,
+    "independent_checks": [
+      "Fraction overlap and first-order flux",
+      "affine reconstruction",
+      "uniform moving-mesh GCL",
+      "material-following extension/compression",
+      "fixed-domain variable velocity",
+      "moving external-domain exchange",
+      "cohort and block accounts",
+      "plate split/merge/reactivation/replay",
+      "marker inverse and strain",
+      "cold backup and continuation",
+      "serial/thread/spawn agreement",
+      "cache source/input changes",
+      "corrupt decode and budget/cancellation"
+    ]
+  },
+  "deferred_claims": [
+    "2D/spherical plate polygons and triple junctions",
+    "force-derived plate/boundary motion",
+    "variable density, momentum or energy conservation",
+    "predictive crust-production, accretion or subduction rates",
+    "erosion/loading/W05 terrain",
+    "Windows execution and field-geological validation"
+  ],
+  "sources": [
+    {
+      "url": "https://www.math.ntnu.no/conservation/1998/020.html",
+      "scope": "Fazio and LeVeque moving-mesh conservation; conceptual method reference, not copied implementation"
+    },
+    {
+      "url": "https://epubs.siam.org/doi/10.1137/S1064827501384925",
+      "scope": "Geometric conservation law; primary methods reference"
+    },
+    {
+      "url": "https://www.gplates.org/docs/user-manual/crustaldeformation/",
+      "scope": "Deforming material/geometry distinction; this is not a GPlates integration"
+    }
+  ]
+}

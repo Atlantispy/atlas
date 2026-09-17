@@ -1,0 +1,46 @@
+{
+  "scope": "Default-selection follow-up only; no new benchmark or simulation",
+  "status": "PASS_FOCUSED_CHECKS",
+  "tests_run": 82,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "suites": {
+    "explicit_reference_foundations": 53,
+    "native_transport": 21,
+    "default_selection": 8
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "system": "Linux",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0"
+  },
+  "not_rerun": [
+    "complete storage and persistent-reuse suite",
+    "Windows",
+    "performance benchmarks"
+  ],
+  "cached_temperature_default_check": "AST signature check; no new storage execution",
+  "source_sha256": {
+    "tectonics/src/atlas_tectonics/__init__.py": "917c230e986c92ffbb3d5026c2d066875bb1288dd109d352b64a9c408e46a0a6",
+    "tectonics/src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "tectonics/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/src/atlas_tectonics/flexure.py": "fec98cb525be273f85cdb37808ebfac44e66c478c066481cf28382b80893a98c",
+    "tectonics/src/atlas_tectonics/kinematics.py": "aeabeb7e200b9094c5eda7651707d1e60576bbef6bc4f9abf1306b8b9f623e25",
+    "tectonics/src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "tectonics/src/atlas_tectonics/resources.py": "d75bb42d58e82e613a7c4ca22643d8ea7192dc7a47176d1e568294f55403af8c",
+    "tectonics/src/atlas_tectonics/reuse.py": "7399d4bfd0a3a15e62eb05320a053f226d64b2cbefd8aabedf4a58ba88987d94",
+    "tectonics/src/atlas_tectonics/thermal.py": "9c5cc33af2fbeaf10acf41939b5041f09aa70cad7f564ad221afd577a7670228",
+    "tectonics/src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tectonics/tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+    "tectonics/tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+    "tectonics/tests/test_copy_reuse.py": "16457f40b607a44c15a2247c6bbfb394168673d939d12c1a749c96ff8b6efeee",
+    "tectonics/tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+    "tectonics/tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+    "tectonics/verify.py": "d8bebd69ee0ef3b31d07ba7564ee3525ca7fb41a17e0b820c345a0c92c2189c6"
+  },
+  "remote_changes": false
+}

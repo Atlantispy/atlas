@@ -1,0 +1,214 @@
+{
+  "scope": "bounded storage only; synthetic arrays; no geological or whole-world claim",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "blosc2": "4.3.3",
+    "zstd": "1.5.7",
+    "platform": "Linux"
+  },
+  "source_sha256": "ab053597e10c20155be626f915ba3be41cd1ed70e5011cc0d6044d640ce8f834",
+  "baseline_storage_sha256": "ff3dbe5c2bc59eb99bdef4a76ee04b22bdbd433c75dc41f339067fbf3583514d",
+  "compare": {
+    "raw": {
+      "write": {
+        "previous": {
+          "median_s": 0.03490994399999181,
+          "min_s": 0.0346295919999875,
+          "max_s": 0.03506504900008167,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.03502596900000299,
+          "min_s": 0.03495591399996556,
+          "max_s": 0.03600860099993497,
+          "repetitions": 5
+        }
+      },
+      "warm_read": {
+        "previous": {
+          "median_s": 0.004685008000024027,
+          "min_s": 0.004617776000031881,
+          "max_s": 0.0052991840000231605,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.000668797999992421,
+          "min_s": 0.000655949000019973,
+          "max_s": 0.0006773920000568978,
+          "repetitions": 5
+        }
+      },
+      "first_decode": {
+        "previous": {
+          "median_s": 0.006445654000003742,
+          "min_s": 0.006370501000105833,
+          "max_s": 0.007713797000064915,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.003852151000046433,
+          "min_s": 0.0037928619999547664,
+          "max_s": 0.003931771999987177,
+          "repetitions": 5
+        }
+      },
+      "writer_interval": {
+        "previous": {
+          "median_s": 0.03480020899996816,
+          "min_s": 0.03451543899996068,
+          "max_s": 0.034848482000029435,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.025508901999955924,
+          "min_s": 0.02533444900006998,
+          "max_s": 0.02590065300000788,
+          "repetitions": 5
+        }
+      },
+      "database_bytes": {
+        "previous": 1286144,
+        "current": 1187840
+      },
+      "input_bytes": 2621440,
+      "operations": {
+        "current": {
+          "payload_reads": 26,
+          "decoded_hits": 54,
+          "verified_hits": 0,
+          "encodes": 26,
+          "staged_bytes": 1154044,
+          "prepare_seconds": 0.009371888000032413,
+          "writer_seconds": 0.025394359000074473,
+          "insert_batches": 5
+        }
+      }
+    },
+    "zstd": {
+      "write": {
+        "previous": {
+          "median_s": 0.03275091800003338,
+          "min_s": 0.032502751999913926,
+          "max_s": 0.03287604600006944,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.03654631300003075,
+          "min_s": 0.03606274300000223,
+          "max_s": 0.038750006999975994,
+          "repetitions": 5
+        }
+      },
+      "warm_read": {
+        "previous": {
+          "median_s": 0.004005783000025076,
+          "min_s": 0.003919902999996339,
+          "max_s": 0.0040369199999759076,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.0007087599999522354,
+          "min_s": 0.0006944080000721442,
+          "max_s": 0.0008595069999728366,
+          "repetitions": 5
+        }
+      },
+      "first_decode": {
+        "previous": {
+          "median_s": 0.006807528999956958,
+          "min_s": 0.006635591000076602,
+          "max_s": 0.007262937000064085,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.0042520749999539476,
+          "min_s": 0.004153195999947457,
+          "max_s": 0.004460358999949676,
+          "repetitions": 5
+        }
+      },
+      "writer_interval": {
+        "previous": {
+          "median_s": 0.03259870699992007,
+          "min_s": 0.0323943790000385,
+          "max_s": 0.032759860000055596,
+          "repetitions": 5
+        },
+        "current": {
+          "median_s": 0.020120163000001412,
+          "min_s": 0.019745928000020285,
+          "max_s": 0.022050283999988096,
+          "repetitions": 5
+        }
+      },
+      "database_bytes": {
+        "previous": 917504,
+        "current": 917504
+      },
+      "input_bytes": 2621440,
+      "operations": {
+        "current": {
+          "payload_reads": 26,
+          "decoded_hits": 54,
+          "verified_hits": 0,
+          "encodes": 26,
+          "staged_bytes": 880642,
+          "prepare_seconds": 0.016538438999987193,
+          "writer_seconds": 0.0219273789999761,
+          "insert_batches": 4
+        }
+      }
+    },
+    "incremental": {
+      "previous": {
+        "unchanged_snapshots": {
+          "median_s": 0.005501099000071008,
+          "min_s": 0.005378494000069622,
+          "max_s": 0.007720207000033952,
+          "repetitions": 5
+        },
+        "changed_write_s": 0.005956826999977238,
+        "new_chunks": 1,
+        "initial_chunks": 26,
+        "operations": {}
+      },
+      "current": {
+        "unchanged_snapshots": {
+          "median_s": 0.002098345999911544,
+          "min_s": 0.0019452849999197497,
+          "max_s": 0.002721955999959391,
+          "repetitions": 5
+        },
+        "changed_write_s": 0.002768956999943839,
+        "new_chunks": 1,
+        "initial_chunks": 26,
+        "operations": {
+          "payload_reads": 0,
+          "decoded_hits": 0,
+          "verified_hits": 394,
+          "encodes": 27,
+          "staged_bytes": 47714,
+          "prepare_seconds": 0.02422342099987418,
+          "writer_seconds": 0.00612165500001538,
+          "insert_batches": 5
+        }
+      }
+    },
+    "async_read_probe": {
+      "serial": {
+        "median_s": 0.0048970080000572125,
+        "min_s": 0.004713840000022174,
+        "max_s": 0.005121585999972922,
+        "repetitions": 5
+      },
+      "queued_worker": {
+        "median_s": 0.006509359999995468,
+        "min_s": 0.0060606480000160445,
+        "max_s": 0.007467796000014459,
+        "repetitions": 5
+      },
+      "scope": "four full reads, pre-existing one-thread executor, not overlapped compute"
+    }
+  }
+}

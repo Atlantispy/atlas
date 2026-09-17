@@ -83,10 +83,76 @@ def array(value: Any, name: str, *, ndim: int | None = None,
     return result
 
 
+def _immutable_view(value: Any, *, compact: bool = False) -> FloatArray | None:
+    """Borrow only a C-contiguous binary64 view with an immutable bytes owner.
+
+    A read-only flag, memoryview, mmap or array subclass is insufficient. A fresh
+    descriptor prevents caller edits to shape/dtype from changing our descriptor.
+    The bytes owner, held through the base chain, keeps payload lifetime safe.
+    """
+    if (type(value) is not np.ndarray or value.dtype != np.dtype(np.float64)
+            or not value.flags.c_contiguous or not value.flags.aligned):
+        return None
+    view = value.view()
+    owner = view
+    while type(owner) is np.ndarray:
+        if owner.flags.writeable:
+            return None
+        owner = owner.base
+    if type(owner) is not bytes or (compact and len(owner) != view.nbytes):
+        return None
+    return view
+
+
+def read_array(value: Any, name: str, *, ndim: int | None = None,
+               nonnegative: bool = False) -> FloatArray:
+    """Private read input: borrow proven immutable bytes, otherwise detach once.
+
+    Do not write into the result. Newly detached backing is owned by this call;
+    kernels never expose it. Reusing public writable/read-only aliases is forbidden.
+    Validation is still performed on every call; this is not an identity cache.
+    """
+    result = _immutable_view(value)
+    if result is None:
+        result = array(value, name, ndim=ndim, nonnegative=nonnegative)
+        result.setflags(write=False)
+        return result
+    if ndim is not None and result.ndim != ndim:
+        raise TectonicsError(f"{name}: expected {ndim} dimensions")
+    if result.size == 0 or not np.isfinite(result).all():
+        raise TectonicsError(f"{name}: nonempty finite data required")
+    if nonnegative and np.any(result < 0):
+        raise TectonicsError(f"{name}: nonnegative data required")
+    return result
+
+
+def snapshot(value: Any, name: str, *, nonnegative: bool = False) -> FloatArray:
+    """Immutable validated input for hashing AND calculation; no second kernel copy.
+
+    The caller must not mutate mutable input during capture, just as during array
+    conversion. Once captured, the original may be mutated without affecting us.
+    """
+    result = _immutable_view(value, compact=True)
+    if result is None:
+        shape = input_shape(value, name)
+        if elements(shape) == 0:
+            raise TectonicsError(f"{name}: nonempty data required")
+        try:
+            raw = np.asarray(value, dtype=np.float64, order="C")
+            result = np.frombuffer(raw.tobytes(order="C"), dtype=np.float64).reshape(raw.shape)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise TectonicsError(f"{name}: rectangular binary64 data required") from exc
+    return read_array(result, name, nonnegative=nonnegative)
+
+
 def frozen(value: Any) -> FloatArray:
     """Detached bytes-backed result: callers cannot re-enable write access."""
     input_shape(value, "result")
-    data = np.asarray(value, dtype=np.float64, order="C")
+    # A published small slice must not pin a much larger otherwise-unused owner.
+    reusable = _immutable_view(value, compact=True)
+    data = reusable if reusable is not None else np.asarray(value, dtype=np.float64, order="C")
     if not np.isfinite(data).all():
         raise TectonicsError("numerical result is outside finite binary64 range")
+    if reusable is not None:
+        return reusable
     return np.frombuffer(data.tobytes(order="C"), dtype=np.float64).reshape(data.shape)

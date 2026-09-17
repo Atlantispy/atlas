@@ -1,0 +1,784 @@
+{
+  "schema": "atlas.tectonics.foundation-verification.v6",
+  "profile": "combined-resource-acceptance",
+  "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+  "tests_run": 280,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "source_unchanged_during_tests": true,
+  "source_sha256_before": {
+    "verify.py": "8203f1bdc3de74a631033cfe17ca36cd69a9608404d7a0837c2ed448a914a537",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "pyproject.toml": "8c0f92bbe7756a5cbc028098fe1f25e754d13d37cdf6ce7ff512b73871ace6ae",
+    "src/atlas_tectonics/__init__.py": "f76dd593af15945db3c5b55f0e0df465b589711a4fdd5d5a55465af1a7376d7f",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/execution.py": "3c0d052ec10a0b0af5d7555cd7812f910132fd7739449a620fb0fbca6e7b3910",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "304cd756694b364e5e51fdec809e9abc05a46b757bf006f62524409a277077e2",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tests/check_combined_acceptance.py": "a11f361a486f12b07736aa22b73747302244ac746586512d3d590e86dce62981",
+    "tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+    "tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+    "tests/measure_execution_reuse.py": "ddb1fa03ef5279ecc5b2b2b80682087c93eb82eb9feac7762e41988065cdea0d",
+    "tests/measure_kernel_batches.py": "f79cd63494cf6468c583a4d9880459aa547f2735bda6904378b940c623b9a3f3",
+    "tests/measure_storage_profiles.py": "bf9169414f03415185e83ed0e7e9e7d7742f32ceb93b9f435fb30c9fe7ef0a56",
+    "tests/test_combined_resources.py": "cdd42f6d8b0bdd7f05b92864d10ac202da6413d788230b22c2967f55accc1831",
+    "tests/test_copy_reuse.py": "c90ea68b2087874bb42f3d1946a6a71ed7c2046cf5816ba54fd3f2fb68c89e05",
+    "tests/test_execution_reuse.py": "583e140c352e9c46cdd66401088edacc5bb7bcd179e78c495806fa4ff7e9921a",
+    "tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+    "tests/test_kernel_batches.py": "5273c03a665923504fbffae2f67d807b64594dc82e89019dc31d2bc12f4ec729",
+    "tests/test_memory_storage.py": "1ab4a7acf7b2b97279bc7766e400dd5d4548c339f3ee55ccfd1bc9c3ea7365ab",
+    "tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+    "tests/test_storage_profiles.py": "15f7ffc2c6781ef039a2be02ed891565c54d7ff518be799751e4a3ea154384c2"
+  },
+  "source_sha256_after": {
+    "verify.py": "8203f1bdc3de74a631033cfe17ca36cd69a9608404d7a0837c2ed448a914a537",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "pyproject.toml": "8c0f92bbe7756a5cbc028098fe1f25e754d13d37cdf6ce7ff512b73871ace6ae",
+    "src/atlas_tectonics/__init__.py": "f76dd593af15945db3c5b55f0e0df465b589711a4fdd5d5a55465af1a7376d7f",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/execution.py": "3c0d052ec10a0b0af5d7555cd7812f910132fd7739449a620fb0fbca6e7b3910",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "304cd756694b364e5e51fdec809e9abc05a46b757bf006f62524409a277077e2",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tests/check_combined_acceptance.py": "a11f361a486f12b07736aa22b73747302244ac746586512d3d590e86dce62981",
+    "tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+    "tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+    "tests/measure_execution_reuse.py": "ddb1fa03ef5279ecc5b2b2b80682087c93eb82eb9feac7762e41988065cdea0d",
+    "tests/measure_kernel_batches.py": "f79cd63494cf6468c583a4d9880459aa547f2735bda6904378b940c623b9a3f3",
+    "tests/measure_storage_profiles.py": "bf9169414f03415185e83ed0e7e9e7d7742f32ceb93b9f435fb30c9fe7ef0a56",
+    "tests/test_combined_resources.py": "cdd42f6d8b0bdd7f05b92864d10ac202da6413d788230b22c2967f55accc1831",
+    "tests/test_copy_reuse.py": "c90ea68b2087874bb42f3d1946a6a71ed7c2046cf5816ba54fd3f2fb68c89e05",
+    "tests/test_execution_reuse.py": "583e140c352e9c46cdd66401088edacc5bb7bcd179e78c495806fa4ff7e9921a",
+    "tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+    "tests/test_kernel_batches.py": "5273c03a665923504fbffae2f67d807b64594dc82e89019dc31d2bc12f4ec729",
+    "tests/test_memory_storage.py": "1ab4a7acf7b2b97279bc7766e400dd5d4548c339f3ee55ccfd1bc9c3ea7365ab",
+    "tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+    "tests/test_storage_profiles.py": "15f7ffc2c6781ef039a2be02ed891565c54d7ff518be799751e4a3ea154384c2"
+  },
+  "execution_runtime": {
+    "threadpoolctl": "3.6.0",
+    "process_start_method": "spawn"
+  },
+  "native_runtime": {
+    "method": "periodic-upwind-binary64-exact-positive-sum-numba-v1",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "machine": "x86_64",
+    "fastmath": false,
+    "parallel": false,
+    "disk_jit_cache": false,
+    "nogil": true,
+    "generated_assembly_sha256": "264f24eceedc9597d0f3eaf48efd73b70ba4ff1a6ebd5bb5453b59deb3ad0ffd"
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "resource_acceptance": {
+    "schema": "atlas.combined-resource-acceptance.v1",
+    "status": "PASS_BOUNDED_CURRENT_PLATFORM",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "windows_accepted": false,
+    "measurement_dependency_psutil": "7.2.2",
+    "cross_combination_outputs_bit_equal": true,
+    "cases": [
+      {
+        "case": "serial-raw",
+        "status": "PASS_BOUNDED_COMBINATION",
+        "samples_per_field": 262144,
+        "first_cycle_s": 0.2236043850000442,
+        "warm_cycles_s": [
+          0.16169624700000895,
+          0.18503870099993946,
+          0.18888182999990022,
+          0.1695885139999973,
+          0.17283119800003988
+        ],
+        "warm_median_s": 0.17283119800003988,
+        "initialisation_s": 1.7296666300001107,
+        "native_first_call_s": 1.7150155570000152,
+        "process_rss_before_case_bytes": 151883776,
+        "output_sha256": {
+          "cool-0": "a7e47e8edbf31c172bfefdb4259ee2a1c5049310c4a257b0b837a01329150952",
+          "cool-1": "c8c123b25f20466ac00e3e68e939d5d6c916c4c6edeabd55755dc205b5760148",
+          "flexure": "6e2b0fc37702bd26627612d7afe80cd6ede59f4e44fc7a79326ac0dffc147079",
+          "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+        },
+        "invariants": {
+          "native_transport_bit_equal": true,
+          "no_remaining_inflight": true,
+          "decoded_cache_within_limit": true,
+          "verified_entries_within_limit": true,
+          "independent_backup_after_source_removal": true,
+          "shared_budget_fully_released": true,
+          "shared_budget_within_limit": true,
+          "default_budget_fully_released": true
+        },
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 71860288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 0,
+            "work": 0,
+            "store-retained": 0,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 46153792,
+            "consumer-output": 4194304,
+            "store-stage": 9319008,
+            "store-read": 9043968,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "executor": {
+          "serial_jobs": 30,
+          "parallel_jobs": 0,
+          "completed_jobs": 30,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 46153792,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 100663296,
+            "reserved_bytes": 23609344,
+            "peak_reserved_bytes": 71860288,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 46153792,
+              "consumer-output": 4194304,
+              "store-stage": 9319008,
+              "store-read": 9043968,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "storage": {
+          "unique_chunks": 385,
+          "encoded_payload_bytes": 6307840,
+          "snapshots": 37,
+          "database_bytes": 6897664,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 385,
+          "operations": {
+            "payload_reads": 3584,
+            "decoded_hits": 4491,
+            "verified_hits": 5881,
+            "encodes": 385,
+            "staged_bytes": 0,
+            "prepare_seconds": 0.5070594670003175,
+            "writer_seconds": 0.05940128999964145,
+            "insert_batches": 193,
+            "peak_prepared_bytes": 2121216
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 6832128,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 11573248,
+            "read_workspace_allowance": 9043968,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 33554432,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 100663296,
+            "reserved_bytes": 32653312,
+            "peak_reserved_bytes": 71860288,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 9043968,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 46153792,
+              "consumer-output": 4194304,
+              "store-stage": 9319008,
+              "store-read": 9043968,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          }
+        },
+        "storage_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 11573248,
+          "read_workspace_allowance": 9043968,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "declared_disk_capacity_bytes": 234881024,
+        "stored_bytes_after_backup": 6897664,
+        "runtime": {
+          "python": "3.13.5",
+          "numpy": "2.3.5",
+          "scipy": "1.17.0",
+          "numba": "0.65.1",
+          "blosc2": "4.3.3",
+          "threadpoolctl": "3.6.0",
+          "sqlite": "3.46.1",
+          "native_libraries": [
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            },
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            }
+          ]
+        },
+        "process_tree_memory": {
+          "rss_sum_bytes": 249131008,
+          "uss_sum_bytes": 184926208,
+          "pss_sum_bytes": 210797568,
+          "processes": 1,
+          "threads": 6,
+          "largest_child_rss_bytes": 0,
+          "samples": 327,
+          "missing_full_info_samples": 0,
+          "visible_storage_peak_bytes": 6903561,
+          "sampling_interval_target_s": 0.01,
+          "elapsed_monitored_s": 4.079720893000058,
+          "sampled_rss_ceiling_bytes": 1073741824,
+          "errors": null,
+          "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+        }
+      },
+      {
+        "case": "auto-balanced",
+        "status": "PASS_BOUNDED_COMBINATION",
+        "samples_per_field": 262144,
+        "first_cycle_s": 0.17827825400013353,
+        "warm_cycles_s": [
+          0.140469707000193,
+          0.15276449000020875,
+          0.16144439999993665,
+          0.1435287500000868,
+          0.14765261799993823
+        ],
+        "warm_median_s": 0.14765261799993823,
+        "initialisation_s": 1.670275558999947,
+        "native_first_call_s": 1.6530958870000632,
+        "process_rss_before_case_bytes": 151879680,
+        "output_sha256": {
+          "cool-0": "a7e47e8edbf31c172bfefdb4259ee2a1c5049310c4a257b0b837a01329150952",
+          "cool-1": "c8c123b25f20466ac00e3e68e939d5d6c916c4c6edeabd55755dc205b5760148",
+          "flexure": "6e2b0fc37702bd26627612d7afe80cd6ede59f4e44fc7a79326ac0dffc147079",
+          "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+        },
+        "invariants": {
+          "native_transport_bit_equal": true,
+          "no_remaining_inflight": true,
+          "decoded_cache_within_limit": true,
+          "verified_entries_within_limit": true,
+          "independent_backup_after_source_removal": true,
+          "shared_budget_fully_released": true,
+          "shared_budget_within_limit": true,
+          "default_budget_fully_released": true
+        },
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 74760288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 0,
+            "work": 0,
+            "store-retained": 0,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "consumer-output": 4194304,
+            "store-stage": 10719840,
+            "store-read": 9437184,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "executor": {
+          "serial_jobs": 6,
+          "parallel_jobs": 24,
+          "completed_jobs": 30,
+          "peak_inflight": 2,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 51150944,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 100663296,
+            "reserved_bytes": 23609344,
+            "peak_reserved_bytes": 74760288,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 51150944,
+              "consumer-output": 4194304,
+              "store-stage": 10719840,
+              "store-read": 9437184,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "storage": {
+          "unique_chunks": 97,
+          "encoded_payload_bytes": 3368313,
+          "snapshots": 37,
+          "database_bytes": 3649536,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 97,
+          "operations": {
+            "payload_reads": 896,
+            "decoded_hits": 1131,
+            "verified_hits": 1465,
+            "encodes": 97,
+            "staged_bytes": 0,
+            "prepare_seconds": 0.28059050000069874,
+            "writer_seconds": 0.025104261999786104,
+            "insert_batches": 94,
+            "peak_prepared_bytes": 1306978
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 6832128,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 13146112,
+            "read_workspace_allowance": 9437184,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 33554432,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 100663296,
+            "reserved_bytes": 33046528,
+            "peak_reserved_bytes": 74760288,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 9437184,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 51150944,
+              "consumer-output": 4194304,
+              "store-stage": 10719840,
+              "store-read": 9437184,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          }
+        },
+        "storage_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 13146112,
+          "read_workspace_allowance": 9437184,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "declared_disk_capacity_bytes": 234881024,
+        "stored_bytes_after_backup": 3649536,
+        "runtime": {
+          "python": "3.13.5",
+          "numpy": "2.3.5",
+          "scipy": "1.17.0",
+          "numba": "0.65.1",
+          "blosc2": "4.3.3",
+          "threadpoolctl": "3.6.0",
+          "sqlite": "3.46.1",
+          "native_libraries": [
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            },
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            }
+          ]
+        },
+        "process_tree_memory": {
+          "rss_sum_bytes": 258662400,
+          "uss_sum_bytes": 194105344,
+          "pss_sum_bytes": 220152832,
+          "processes": 1,
+          "threads": 8,
+          "largest_child_rss_bytes": 0,
+          "samples": 299,
+          "missing_full_info_samples": 0,
+          "visible_storage_peak_bytes": 3655432,
+          "sampling_interval_target_s": 0.01,
+          "elapsed_monitored_s": 3.841282137999997,
+          "sampled_rss_ceiling_bytes": 1073741824,
+          "errors": null,
+          "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+        }
+      },
+      {
+        "case": "spawn-compact",
+        "status": "PASS_BOUNDED_COMBINATION",
+        "samples_per_field": 262144,
+        "first_cycle_s": 0.9935456339999291,
+        "warm_cycles_s": [
+          0.12313642999993135,
+          0.11825008100004197,
+          0.11765037700001812,
+          0.11828342100011469,
+          0.15206836999982443
+        ],
+        "warm_median_s": 0.11828342100011469,
+        "initialisation_s": 1.7356027899998026,
+        "native_first_call_s": 1.7197920159999285,
+        "process_rss_before_case_bytes": 151867392,
+        "output_sha256": {
+          "cool-0": "a7e47e8edbf31c172bfefdb4259ee2a1c5049310c4a257b0b837a01329150952",
+          "cool-1": "c8c123b25f20466ac00e3e68e939d5d6c916c4c6edeabd55755dc205b5760148",
+          "flexure": "6e2b0fc37702bd26627612d7afe80cd6ede59f4e44fc7a79326ac0dffc147079",
+          "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+        },
+        "invariants": {
+          "native_transport_bit_equal": true,
+          "no_remaining_inflight": true,
+          "decoded_cache_within_limit": true,
+          "verified_entries_within_limit": true,
+          "independent_backup_after_source_removal": true,
+          "shared_budget_fully_released": true,
+          "shared_budget_within_limit": true,
+          "default_budget_fully_released": true
+        },
+        "shared_budget": {
+          "max_bytes": 402653184,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 282679360,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 0,
+            "work": 0,
+            "store-retained": 0,
+            "executor-inflight": 0,
+            "process-baseline": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "process-baseline": 201326592,
+            "consumer-output": 4194304,
+            "store-stage": 16968288,
+            "store-read": 11010048,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "executor": {
+          "serial_jobs": 0,
+          "parallel_jobs": 30,
+          "completed_jobs": 30,
+          "peak_inflight": 2,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 51150944,
+          "mode": "processes",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 402653184,
+            "reserved_bytes": 224935936,
+            "peak_reserved_bytes": 282679360,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "process-baseline": 201326592,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 51150944,
+              "process-baseline": 201326592,
+              "consumer-output": 4194304,
+              "store-stage": 16968288,
+              "store-read": 11010048,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          },
+          "process_allowance_bytes": 201326592
+        },
+        "storage": {
+          "unique_chunks": 25,
+          "encoded_payload_bytes": 3363675,
+          "snapshots": 37,
+          "database_bytes": 3461120,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 25,
+          "operations": {
+            "payload_reads": 224,
+            "decoded_hits": 291,
+            "verified_hits": 361,
+            "encodes": 25,
+            "staged_bytes": 0,
+            "prepare_seconds": 0.18997054600026786,
+            "writer_seconds": 0.02070729700017182,
+            "insert_batches": 25,
+            "peak_prepared_bytes": 1255800
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 6832128,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 19437568,
+            "read_workspace_allowance": 11010048,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 33554432,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 402653184,
+            "reserved_bytes": 34619392,
+            "peak_reserved_bytes": 282679360,
+            "refusals": 0,
+            "categories": {
+              "caller-retained": 16777216,
+              "work": 0,
+              "store-retained": 6832128,
+              "executor-inflight": 0,
+              "process-baseline": 0,
+              "consumer-output": 0,
+              "store-stage": 0,
+              "store-read": 11010048,
+              "store-output": 0,
+              "caller-load": 0,
+              "pending-result": 0
+            },
+            "category_peaks": {
+              "caller-retained": 16777216,
+              "work": 17178664,
+              "store-retained": 6832128,
+              "executor-inflight": 51150944,
+              "process-baseline": 201326592,
+              "consumer-output": 4194304,
+              "store-stage": 16968288,
+              "store-read": 11010048,
+              "store-output": 4194304,
+              "caller-load": 2097152,
+              "pending-result": 2097152
+            }
+          }
+        },
+        "storage_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 19437568,
+          "read_workspace_allowance": 11010048,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "declared_disk_capacity_bytes": 234881024,
+        "stored_bytes_after_backup": 3461120,
+        "runtime": {
+          "python": "3.13.5",
+          "numpy": "2.3.5",
+          "scipy": "1.17.0",
+          "numba": "0.65.1",
+          "blosc2": "4.3.3",
+          "threadpoolctl": "3.6.0",
+          "sqlite": "3.46.1",
+          "native_libraries": [
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            },
+            {
+              "internal_api": "openblas",
+              "prefix": "libscipy_openblas",
+              "version": "0.3.30",
+              "num_threads": 1,
+              "threading_layer": "pthreads"
+            }
+          ]
+        },
+        "process_tree_memory": {
+          "rss_sum_bytes": 579600384,
+          "uss_sum_bytes": 454717440,
+          "pss_sum_bytes": 486763520,
+          "processes": 4,
+          "threads": 11,
+          "largest_child_rss_bytes": 120315904,
+          "samples": 355,
+          "missing_full_info_samples": 0,
+          "visible_storage_peak_bytes": 6423552,
+          "sampling_interval_target_s": 0.01,
+          "elapsed_monitored_s": 4.934411899999986,
+          "sampled_rss_ceiling_bytes": 1073741824,
+          "errors": null,
+          "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+        }
+      }
+    ],
+    "scope": "Three synthetic integrated combinations, five warm repeats each; not item-1 broad tuning or world simulation.",
+    "limitations": [
+      "Other platforms are not accepted by this run.",
+      "Configured allowances are not a total process RSS cap.",
+      "Sampled RSS can count shared pages more than once; see separate USS/PSS observations.",
+      "No power-loss durability, GPU, distributed mechanics or geological validation."
+    ]
+  },
+  "scope": "synthetic analytical, numerical and resource checks; platform scope is explicit",
+  "physical_validation": false,
+  "production_ready": false,
+  "historical_checkpoint_compatibility": false,
+  "note": "Local evidence record, not a cryptographic signature or performance benchmark."
+}

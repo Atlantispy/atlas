@@ -12,9 +12,12 @@ import math
 
 import numpy as np
 
-from ._validation import FloatArray, TectonicsError, array, frozen, input_shape
+from ._validation import FloatArray, TectonicsError, read_array as array, frozen, input_shape
 from .resources import elements, select_budget
 from .parameters import FlexureParameters, PeriodicGrid1D, identity
+
+
+DEFAULT_FLEXURE_BATCH_BYTES = 8 * 1024**2
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,17 +74,73 @@ class PeriodicFlexure:
         """Retained coefficient storage only; not total FFT/solver memory."""
         return self._gain.nbytes
 
-    def solve(self, downward_load_pa: Any, *, budget=None) -> FloatArray:
+    def _batch_loads(self, batch_loads: int | None) -> int:
+        if batch_loads is None:
+            # Amortise setup without creating a full-world spectrum. One row is a
+            # coupled physical domain and must never be split to meet this target.
+            return max(1, DEFAULT_FLEXURE_BATCH_BYTES // (8 * self.grid.cells))
+        if type(batch_loads) is not int or batch_loads <= 0:
+            raise TectonicsError("batch_loads must be a positive integer or None")
+        return batch_loads
+
+    def work_bytes(self, shape, *, batch_loads: int | None = None) -> int:
+        """Bounded array-work estimate, not process RSS or retained operator bytes."""
+        batch_loads = self._batch_loads(batch_loads)
+        count = elements(shape)
+        if not shape or shape[-1] != self.grid.cells or not count:
+            raise TectonicsError("load must be nonempty with grid cells in its final dimension")
+        rows = count // self.grid.cells
+        return 32 * count + 64 * min(rows, batch_loads) * self.grid.cells + 8192
+
+    def solve(self, downward_load_pa: Any, *, budget=None, batch_loads: int | None = None) -> FloatArray:
+        """Solve independent loads in bounded row batches, using the same global FFT.
+
+        A row always spans the full periodic domain: never split one coupled load
+        into independent spatial tiles. All leading dimensions denote independent
+        load cases. Full output is admitted and returned; use solve_batches for a
+        stream of independently supplied case batches. The default groups up to
+        8 MiB of real load data (at least one full domain); a fitting group keeps
+        the previous lower-overhead FFT path. No worker pool is created.
+        """
         shape = input_shape(downward_load_pa, "downward_load_pa")
-        if not shape or shape[-1] != self.grid.cells:
-            raise TectonicsError("load final dimension must equal grid cells")
-        with select_budget(budget).reserve(128 * elements(shape)):
+        required = self.work_bytes(shape, batch_loads=batch_loads)
+        batch_loads = self._batch_loads(batch_loads)
+        with select_budget(budget).reserve(required):
             load = array(downward_load_pa, "downward_load_pa")
-            if load.ndim < 1 or load.shape[-1] != self.grid.cells:
-                raise TectonicsError("load final dimension must equal grid cells")
+            if load.shape != shape:
+                raise TectonicsError("input shape changed during capture")
+            if load.size // self.grid.cells <= batch_loads:
+                # Reuse the proven contiguous FFT path when a group fits. Forcing
+                # tiny row groups added overhead without a demonstrated gain.
+                with np.errstate(over="ignore", invalid="ignore"):
+                    spectrum = np.fft.rfft(load, axis=-1)
+                    del load
+                    spectrum *= self._gain
+                    result = np.fft.irfft(spectrum, n=self.grid.cells, axis=-1)
+                    del spectrum
+                return frozen(result)
+            rows = load.reshape(-1, self.grid.cells)
+            result = np.empty(load.shape, dtype=np.float64)
+            output = result.reshape(-1, self.grid.cells)
             with np.errstate(over="ignore", invalid="ignore"):
-                return frozen(np.fft.irfft(np.fft.rfft(load, axis=-1) * self._gain,
-                                           n=self.grid.cells, axis=-1))
+                for start in range(0, rows.shape[0], batch_loads):
+                    spectrum = np.fft.rfft(rows[start:start+batch_loads], axis=-1)
+                    spectrum *= self._gain
+                    np.fft.irfft(spectrum, n=self.grid.cells, axis=-1,
+                                 out=output[start:start+batch_loads])
+                    del spectrum
+            del rows, output, load
+            return frozen(result)
+
+    def solve_batches(self, load_batches, *, budget=None, batch_loads: int | None = None):
+        """Lazily yield complete, immutable independent case batches; no prefetch.
+
+        The caller controls retained outputs and may stop/close at any yield.
+        This is result streaming, not restart, asynchronous work or spatial tiling.
+        """
+        for loads in load_batches:
+            yield self.solve(loads, budget=budget, batch_loads=batch_loads)
+            del loads
 
     def __reduce__(self):
         # Rebuild from the typed definition, never deserialize mutable gain data.

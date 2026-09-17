@@ -1,0 +1,72 @@
+{
+  "schema": "atlas.tectonics.regional-case.v1",
+  "status": "WORKING NON-CANON; synthetic verification, not geological acceptance",
+  "scope": "W02 open/closed fixed-grid constant-density 1D transport increment; not all W02",
+  "physical_law": "dH/dt + d(uH)/dx = 0",
+  "units": {
+    "H": "m",
+    "u": "m/s",
+    "flux": "m2/s",
+    "inventory": "m2 per unit width"
+  },
+  "forcing": "velocities and exterior FACE thickness constant for each supplied interval; no automatic substeps",
+  "default": {
+    "backend": "numba",
+    "scheme": "muscl",
+    "limiter": "MC interior; one-sided limited boundary gradients",
+    "time_integrator": "SSP-RK2",
+    "outgoing_fraction_cap": 0.5
+  },
+  "explicit_alternative": {
+    "scheme": "upwind",
+    "outgoing_fraction_cap": 1.0,
+    "reference": "independent NumPy/Python plus math.fsum"
+  },
+  "acceptance": {
+    "reference_rtol": 1e-12,
+    "reference_atol": 1e-12,
+    "roundoff_budget": "128*eps*max(before,after,in,out,tiny)",
+    "smooth_refinement": "three levels; upwind first order, MUSCL near second order",
+    "zero_forcing": "preserve field",
+    "boundary_account": "after-before-left_exchange-right_exchange",
+    "mask_policy": "reject"
+  },
+  "accuracy_cost_experiment": {
+    "profile": "compact sin^4 pulse .2<x<.6 plus .2 background",
+    "duration_s": 0.1,
+    "speed_m_s": 1.0,
+    "cells": [
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "upwind_CFL": 0.8,
+    "muscl_CFL": 0.4,
+    "primary_L1_target_m": 0.002,
+    "timings_not_acceptance_thresholds": true
+  },
+  "execution": {
+    "compiled_default": true,
+    "fastmath": false,
+    "disk_jit_cache": false,
+    "single_domain": "serial compiled stencil; no independent spatial tile solve",
+    "independent_queries": "existing KernelExecutor; serial auto after measured result; threads/spawn explicit",
+    "budget": "existing shared WorkBudget; result lifetimes remain caller responsibility",
+    "persistence": "existing ArrayStore and auto admission, versioned packed payload; parameter/input/boundary/time/compiler identity",
+    "cancellation": "before work and before publication; running native work drains"
+  },
+  "exclusions": [
+    "moving-grid transport",
+    "plate topology",
+    "material cohorts or mixture transport",
+    "internal creation/recycling",
+    "force-predicted motion",
+    "load construction",
+    "accepted mountains",
+    "Windows validation"
+  ]
+}

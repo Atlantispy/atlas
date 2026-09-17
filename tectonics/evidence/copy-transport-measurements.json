@@ -1,0 +1,214 @@
+{
+  "scope": "focused copies and transport only; five rotated-order warm repeats",
+  "baseline_commit": "0590774b9d59fa9e6c9cba8f5306a3e2b9f6bc40",
+  "environment": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "os": "Linux",
+    "machine": "x86_64"
+  },
+  "limitations": [
+    "tracemalloc excludes some native/JIT/library allocations",
+    "not total process RAM, no Windows or world performance claim",
+    "input arrays prepared before timing; calls include validation and publication"
+  ],
+  "transport": [
+    {
+      "cells": 256,
+      "bit_equal_fields_and_sums": true,
+      "paths": {
+        "baseline": {
+          "median_s": 8.9572e-05,
+          "all_seconds": [
+            8.9572e-05,
+            6.2162e-05,
+            0.00010108,
+            6.1871e-05,
+            0.00011537
+          ],
+          "tracked_peak_bytes": 17048,
+          "tracked_retained_bytes": 5826
+        },
+        "current_reference": {
+          "median_s": 6.6659e-05,
+          "all_seconds": [
+            7.4781e-05,
+            6.6659e-05,
+            7.495e-05,
+            6.4104e-05,
+            6.3904e-05
+          ],
+          "tracked_peak_bytes": 17048,
+          "tracked_retained_bytes": 5834
+        },
+        "current_numba": {
+          "median_s": 3.2098e-05,
+          "all_seconds": [
+            3.8987e-05,
+            3.2098e-05,
+            3.1807e-05,
+            3.5893e-05,
+            3.1136e-05
+          ],
+          "tracked_peak_bytes": 11218,
+          "tracked_retained_bytes": 5858
+        }
+      }
+    },
+    {
+      "cells": 65536,
+      "bit_equal_fields_and_sums": true,
+      "paths": {
+        "baseline": {
+          "median_s": 0.005497961,
+          "all_seconds": [
+            0.005573782,
+            0.005644617,
+            0.005497961,
+            0.005454948,
+            0.005434177
+          ],
+          "tracked_peak_bytes": 3672760,
+          "tracked_retained_bytes": 1050306
+        },
+        "current_reference": {
+          "median_s": 0.005697916,
+          "all_seconds": [
+            0.005673199,
+            0.005412274,
+            0.005898432,
+            0.005697916,
+            0.005782861
+          ],
+          "tracked_peak_bytes": 3672760,
+          "tracked_retained_bytes": 1050314
+        },
+        "current_numba": {
+          "median_s": 0.000713392,
+          "all_seconds": [
+            0.00067107,
+            0.000672932,
+            0.000789535,
+            0.000728735,
+            0.000713392
+          ],
+          "tracked_peak_bytes": 2100210,
+          "tracked_retained_bytes": 1050338
+        }
+      }
+    },
+    {
+      "cells": 262144,
+      "bit_equal_fields_and_sums": true,
+      "paths": {
+        "baseline": {
+          "median_s": 0.025682005,
+          "all_seconds": [
+            0.025682005,
+            0.024889646,
+            0.027563922,
+            0.033795684,
+            0.024764922
+          ],
+          "tracked_peak_bytes": 14682808,
+          "tracked_retained_bytes": 4196034
+        },
+        "current_reference": {
+          "median_s": 0.025874559,
+          "all_seconds": [
+            0.025874559,
+            0.025478996,
+            0.029141688,
+            0.025787191,
+            0.026008167
+          ],
+          "tracked_peak_bytes": 14682808,
+          "tracked_retained_bytes": 4196042
+        },
+        "current_numba": {
+          "median_s": 0.003291685,
+          "all_seconds": [
+            0.003291685,
+            0.002884886,
+            0.003433656,
+            0.003341174,
+            0.003080855
+          ],
+          "tracked_peak_bytes": 8391666,
+          "tracked_retained_bytes": 4196066
+        }
+      }
+    }
+  ],
+  "first_native_call_including_import_and_compilation_s": 1.9438305240000773,
+  "immutable_read": {
+    "elements": 262144,
+    "paths": {
+      "baseline_copy": {
+        "median_s": 8.9983e-05,
+        "all_seconds": [
+          9.3598e-05,
+          9.0224e-05,
+          8.8871e-05,
+          8.9983e-05,
+          8.9082e-05
+        ],
+        "tracked_peak_bytes": 2360402,
+        "tracked_retained_bytes": 2097344
+      },
+      "current_safe_borrow": {
+        "median_s": 4.3785e-05,
+        "all_seconds": [
+          4.5657e-05,
+          4.3785e-05,
+          4.3033e-05,
+          4.3495e-05,
+          8.2452e-05
+        ],
+        "tracked_peak_bytes": 263170,
+        "tracked_retained_bytes": 144
+      }
+    }
+  },
+  "cooling_same_backend": {
+    "elements": 262144,
+    "bit_equal": true,
+    "paths": {
+      "baseline": {
+        "median_s": 0.005682072,
+        "all_seconds": [
+          0.005310204,
+          0.006052689,
+          0.006855092,
+          0.005682072,
+          0.00530771
+        ],
+        "tracked_peak_bytes": 10750946,
+        "tracked_retained_bytes": 2098970
+      },
+      "current": {
+        "median_s": 0.00438575,
+        "all_seconds": [
+          0.004384849,
+          0.004257761,
+          0.005676724,
+          0.004470395,
+          0.00438575
+        ],
+        "tracked_peak_bytes": 6556944,
+        "tracked_retained_bytes": 2098889
+      }
+    }
+  },
+  "native": {
+    "method": "periodic-upwind-binary64-exact-positive-sum-numba-v1",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "machine": "x86_64",
+    "fastmath": false,
+    "parallel": false,
+    "disk_jit_cache": false,
+    "nogil": true,
+    "generated_assembly_sha256": "4d7806ff38eb34630a133f7c4f6f39a6eba2c1a19c3d5c4265ffa7ebcd50f281"
+  }
+}

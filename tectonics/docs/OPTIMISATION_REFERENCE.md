@@ -1,9 +1,480 @@
 # Atlas optimisation reference
 
-**ATLAS-OPTIMISATION-REFERENCE | Revision 1 | 16 September 2026**  
+<a id="w02-completion-delivery"></a>
+
+## W02 regional completion — remap, motion, topology and history
+
+**17 September 2026. Implemented and mathematically verified on Linux, not physically
+accepted.** The remaining regional W02 capabilities use nonuniform columns,
+conservative overlap remapping, moving control-volume transport, stable material
+markers and explicit 1D ownership/events. Existing fixed-grid and periodic APIs,
+prior fixtures, tolerances, compression formats and recorded evidence are preserved.
+No new dependencies, separate scheduler/cache, publication or Windows integration.
+
+### Selected methods and accuracy
+
+- `ColumnGrid1D` has immutable explicit edges, a named frame and separate mesh ID.
+  Its widths must be positive and numerically resolvable. The uniform-grid bridge
+  preserves represented inventory and records any required mean-thickness adjustment.
+- `RemapPlan` uses a sorted linear-size overlap sweep and limited linear donor
+  integration; coefficients are immutable/reusable for the identical two meshes.
+  The material field and its history remain separate invocation inputs. Same-grid
+  identity remaps reuse the state; coarsening is not claimed reversible.
+- `advect_ale` solves the conservative moving-volume equation with relative flux
+  `(u-w)*H`, evolving `H*width` through MC-MUSCL/SSP-RK2. Initial/final geometry and
+  interval-mean fluxes enter admission and accounts. No face crossing, missing
+  inward composition, silent time shortening or unresolvable coordinate motion.
+- `PlateTopology1D` stores shared cuts once and distinguishes plate, block, material
+  and mesh identities. Splits/merges, membership and activation/regime events bind
+  an exact parent, retain retired IDs and refuse replay. An ownership-only change
+  records reassigned inventory without moving geology. Advancing cuts uses the same
+  flux on both sides and reconciles block/cohort accounts.
+- `MaterialMarkers1D` maps declared material-following cells and accumulates log
+  stretch; it does not infer arbitrary material motion from mesh motion and is not
+  an extensive-inventory representation.
+- Numba is normal; independent reference and lower-order remap/transport choices
+  are explicit. Runtime, cache admission and memory pressure never reduce order.
+  All new native functions disable fast-math, parallel reductions and disk JIT cache.
+
+### Memory and reuse
+
+Sparse overlap geometry uses O(Ns+Nt) storage, avoiding a dense interpolation matrix.
+Slope and stage vectors are reused across cohorts. Cohort outputs/fluxes still scale
+with C*N; an arbitrary world is not sparse merely because IDs use a compact table.
+Formation times remain once-per-cohort metadata. All accepted arrays/meshes have
+immutable backing; restored models validate state, topology and geometry identities.
+
+Existing WorkBudget/KernelExecutor/ArrayStore/ExecutionContext paths are reused.
+Remap and ALE cache keys include source material/history, exact geometry, forcing,
+boundaries, time, scheme and implementation. Known in-interval events are checked
+before a hit. Independent cases may use threads/spawn; successive states and the
+adjoining blocks of one model are never independent numerical jobs.
+
+Saved model/marker state uses the existing Zstd, deduplication and direct-manifest
+format. No automatic deletion or temporal delta chain is introduced. A cold backup
+was restored after removing the original database and continued to the same model
+identity. Complete earlier receipts are still a caller-owned history retention
+requirement, not automatically rebuilt from the last receipt.
+
+### Obtained measurements, not planetary forecasts
+
+[Recorded measurements](../evidence/w02-completion-measurements.json) compare the
+same selected higher-order models on synthetic arrays, one native inner thread.
+Five alternating-order warm comparisons; native import/compilation is separate.
+
+| Case | Independent reference | Compiled default | Recorded agreement |
+| --- | ---: | ---: | --- |
+| Remap: 2 cohorts, 8,192 source / 12,288 target cells | 172.888 ms | 2.457 ms | Zero maximum thickness difference in this case |
+| ALE: 2 cohorts, 8,192 cells | 75.360 ms | 1.415 ms | 4.44e-16 m maximum difference |
+
+First compiled setup/use took 2.435 s for remapping and
+3.010 s for ALE. Reusing a remap plan reduced a separate warmed
+comparison from 2.306 to
+2.127 ms; the difference is small and no
+hardware-independent gain is assigned. The retained plan occupies 589,808
+bytes, **excluded** from the reused-call tracked allocation of
+425,516 bytes. A reference call including its separate
+setup tracked 3,388,541 bytes, so these are not identical
+retention conditions and are not a universal RAM reduction percentage.
+
+ALE tracked call allocations were 861,258 bytes native
+and 1,710,876 bytes reference. Tracemalloc does not
+include every native/JIT/process allocation. Preserve owner reservations for retained
+states, plans and workers; stated work budgets are not process RSS caps.
+
+Four independent cases with 8 cohorts x 32,768 cells took
+75.339 ms serial and 45.085 ms under two-worker
+auto execution (three paired repetitions). Outputs had identical state identities.
+Peak accounted reservation was 100,958,208
+bytes serial and 201,916,416 bytes threaded;
+all reservations returned to zero. This is throughput of independent cases, not
+parallel splitting of one physically coupled domain.
+
+### Verification and completion boundary
+
+[All 488 checks](../evidence/w02-completion-tests.json) passed: 410 prior + 78 new,
+zero failures/errors/skips. The new suite includes independent Fraction overlaps,
+linear reconstruction, smooth refinement, geometric-conservation and Lagrangian
+limits, per-block/cohort transfers, event replay/lineage, nonuniform source/sink,
+markers, changed cache inputs/source, corruption, budget/cancellation, cold restore
+and serial/thread/spawn equivalence. Existing fixtures and tolerances are unchanged.
+
+This closes the remaining W02 **regional implementation**, not global 2D/spherical
+junctions, force-derived motion, variable-density/thermal mechanics, predictive
+production/subduction or field-geological acceptance. Those require their named
+geometry/process extensions. W04's physical-load connection is next; no additional
+general optimisation audit or extra roadmap is required. Windows remains untested.
+
+
+<a id="w02-materials-delivery"></a>
+
+## W02 material cohorts — delivery and accuracy-first policy, 17 September 2026
+
+This extends the delivered regional kernel; it is not a new physical-solver
+framework or a claim that all W02/W05 work is complete. The user has explicitly
+selected **accuracy before speed**: MC-MUSCL/SSP-RK2 with binary64 and strict native
+arithmetic remains normal. Upwind and the independent reference require explicit
+selection. Automatic worker/cache choices may reduce cost but never order,
+precision, stage count, conservation checks or the physical model.
+
+### Representation and numerical choices
+
+- A `MaterialCohort` stores one stable cohort ID, material class, origin and optional
+  formation time. `MaterialState` has one immutable C-order C×N matrix of partial
+  thicknesses, an explicit forward-time epoch, and parent/last-transition receipts.
+  Same material class with different origins or formation times stays separate.
+- Each cohort solves dH_k/dt + d(u H_k)/dx = 0 using the SAME prescribed face field.
+  Total thickness and fractions are derived when requested, not independently
+  advanced or renormalised. Empty-column fractions need the returned occupancy mask.
+  This is NOT a density/momentum-coupled multifluid scheme. A nonlinear limiter does
+  not commute with summation, so transporting a separately summed scalar H need not
+  produce the same bits. One-cohort outputs agree with the preceding scalar kernel.
+- The compiled multi-row driver reuses two stage vectors across cohorts. Candidate
+  thickness/mean flux cost O(CN); RK scratch costs O(N), not O(CN) per intermediate.
+  Exact nonnegative accumulators are reused for cohort/column volume totals. No
+  full slope arrays, per-cell Python material objects, fast-math or parallel sums.
+- State views have fresh array descriptors backed by immutable compact bytes.
+  Creation/restoration reserves known capture work separately from live stencil
+  scratch, so the same allocation is not charged twice. `material_work_bytes()`
+  provides the composite estimate; retained caller states remain owner costs.
+  This is bounded dense regional cohort storage, NOT a sparse planet-wide solution
+  for an unlimited number of cohorts. Budgets refuse excessive C×N state; numerical
+  histories are never merged or binned merely to fit memory.
+- Formation ages are derived per cohort. No full age field is rewritten each step.
+  None is unknown, not zero. Registration adds zero inventory; retired rows retain
+  their definitions. Birth requires a known time equal to the event time. Addition
+  of existing material keeps its formation history. Removal refuses overdraw.
+- Events require the exact parent state and time, with named external reservoirs,
+  transfer-amount identity and before/after account. A retry on the same immutable
+  parent is deterministic; applying it to the successor refuses. Full historical
+  trajectories require retaining their separate receipts/snapshots: the current
+  state keeps its last transition, not an unbounded embedded event chain.
+
+### Reuse, persistence and execution
+
+`cached_material_transport` uses existing admission, verified execution contexts,
+prepared velocities, same-key coordination and transactional ArrayStore publication.
+Keys include cohort composition/history, epoch, state/lineage, both external maps,
+velocities, time interval, scheme and source/runtime identity. Restored numerical
+accounts are checked against their parent fields and interval-mean boundary flux.
+Missing composition cannot be hidden by a hit. Scalar scheme identities are unchanged;
+new source membership deliberately changes current invocation identities, never
+repins old cached records.
+
+`save_material_state` / `load_material_state` use the existing typed Zstd/deduplicated
+store and retain the complete cohort catalogue, formation times and last receipt.
+Time-only changes reuse payload chunks but have different state/manifest identities.
+A backup restores without the original database or parent snapshots; a parent ID
+is lineage, not a hidden decoder dependency. No snapshots are deleted or migrated.
+
+`KernelExecutor.material_transports` processes independent face-velocity scenarios
+for one immutable parent. Auto retains native serial execution for small cases and
+uses the established parallel-size threshold for larger native batches. Every job
+contains the whole coupled region and all its cohorts. Explicit threads/spawn
+produce checked immutable results. Successive times are never independent jobs;
+no new scheduler or worker-level physics is introduced.
+
+### Checks and measured scope
+
+The new tests supplement every preceding check and leave their fixtures and
+thresholds unchanged. They include independent rational face balances, scalar-row
+comparisons, both numerical schemes, increasing/decreasing velocity, refinement,
+sharp fronts, zero/unknown ages, source/sink accounts, metadata collisions, overflow,
+immutability, cold restore, cache invalidation, cancellation and executor budgets.
+The final [test record](../evidence/w02-material-tests.json) and
+[bounded comparisons](../evidence/w02-material-measurements.json) record actual counts,
+versions, first-call cost and measurements. Windows and physical/geological validity
+remain unverified; no full world run or publication is performed.
+
+The comparison uses four cohorts × 65,536 cells, the SAME MUSCL equation and
+binary64 precision on native/reference paths, and five warmed alternating-order
+calls. Tracked allocations exclude some native/JIT memory; resource reservations
+are estimates, not total RSS. A separate smooth translation check uses 64/128/256
+cells and an explicitly synthetic profile. This is an enabling-method comparison,
+not the skipped general benchmark programme or a forecast for the whole generator.
+
+### Obtained bounded evidence
+
+The final suite passed **410 tests (331 prior + 79 new)**, with no failures,
+errors or skips. On four cohorts × 65,536 cells, native/reference median warmed
+calls were 8.16/27.02 ms with zero measured difference in partial-thickness values.
+Tracked peak allocations were 8,922,927/11,607,368 bytes; these exclude some native
+and JIT memory. First native use, including compilation, was 6.05 s. Four independent
+same-parent scenarios took 52.74 ms serially versus 28.91 ms in automatic mode in
+this environment. These figures are workload-specific, not world forecasts.
+
+The smooth translation mean absolute errors at 64/128/256 cells were
+0.004397/0.001229/0.0003281 m. A time-only snapshot change preserved all formation
+metadata and reused the original 32 payload chunks without adding another chunk.
+Exact test definitions, source hashes and raw measurements remain in the linked
+machine-readable evidence rather than an additional report.
+
+Primary scientific background: the conservation equation and scalar discretisation
+are retained from [the regional case](FOUNDATIONS.md#w02-regional). Multi-component
+sum constraints are a known issue discussed by [Plewa & Mueller](https://arxiv.org/abs/astro-ph/9807241).
+Atlas's present prescribed-velocity, partial-thickness model does NOT implement or
+claim that paper's coupled-hydrodynamic CMA method: it avoids a separate total field
+and tests each conserved component directly. Further density/force coupling needs
+its own consistent interface, not a reuse claim based solely on this comparison.
+
+
+<a id="w02-regional-delivery"></a>
+
+## W02 regional transport — implementation and decisions, 17 September 2026
+
+Local continuation of item 12; no remote publication. The reviewed code source
+baseline exactly matched the item-12 receipt. [331 passing checks](../evidence/w02-regional-tests.json)
+include 51 new regional cases. Existing periodic/cooling/flexure algorithms,
+fixtures, tolerances, storage formats and historical evidence are unchanged.
+This does not complete all W02 or validate physical mountain formation.
+
+### Selected method and execution
+
+The new regional default is compiled MC-limited MUSCL with SSP-RK2, frozen face
+forcing per interval, and a sufficient combined outgoing-fraction limit 1/2.
+First-order upwind (limit 1) and independent NumPy/Python implementations remain
+explicit numerical alternatives. Slopes at the ends use limited one-sided interior
+information; inflow uses an explicit exterior FACE value. Numerical reconstruction
+is limited for positivity; negative candidate cells are refused, never clipped.
+One face flux per stage supports both neighbouring cells. Returned flux is the
+RK2 interval mean. Native totals reuse the existing exact nonnegative accumulator;
+binary64 local updates still have a reported, checked roundoff residual.
+
+| Concern | Implemented decision |
+| --- | --- |
+| Representation | N binary64 means and N+1 face velocities; two boundary records, not per-cell objects or a padded ghost grid. |
+| Temporaries | Local reconstruction; first-order donor loop; only required candidate/flux and the two RK-stage work arrays. No full arrays of every outflow coefficient or slope. |
+| Admission | Shape and shared `WorkBudget` before bulk copies; candidate/codec publication lifetime kept by existing layers. Work estimate is not a total RSS cap. |
+| Reuse | Typed inputs, complete boundary records, grid/frame, duration, scheme and selected compiler/runtime. Prepared immutable inputs use the existing snapshot/digest path. |
+| Persistence | Existing auto admission, single-flight/OS claims, Zstd/dedup store and publication checks; a versioned packed layout avoids a new arbitrary-object serialiser. No I/O inside equations. |
+| Parallel work | Existing executor handles whole independent queries in ordered bounded streams. Serial auto was retained for regional batches after the tested outer-thread path was slower. Explicit threads and spawn passed exact-output tests. A single physical domain is never treated as unrelated tiles. |
+| Correctness | Rational flux oracle, variable-velocity thinning, one-cell/two-sided cases, reversal, closed/no-flow/zero-time, sharp fronts, refinement, reflected coordinates, budget/cancellation, native code mutation and fresh-process cached reuse. |
+| Native identity | Actual Python definitions/JIT options and Numba/LLVM library identity now participate for this backend. Generated assembly hashes remain observed evidence, not authentication of a hostile process. |
+
+### Accuracy versus cost, not a blanket speed claim
+
+The [measurement record](../evidence/w02-regional-measurements.json) uses a compact
+sin^4 pulse with exact translated cell averages. Speed is 1 m/s, duration 0.1 s,
+unit interval; these are synthetic values. Upwind used nominal Courant 0.8,
+MUSCL 0.4, so the cheaper method received its larger admissible step.
+
+| Cells | Upwind mean absolute error (m) | MUSCL mean absolute error (m) |
+| ---: | ---: | ---: |
+| 64 | 0.0061062 | 0.0034967 |
+| 128 | 0.0031250 | 0.0009711 |
+| 256 | 0.0015788 | 0.0002552 |
+| 512 | 0.0007932 | 0.0000654 |
+| 1024 | 0.0003976 | 0.0000165 |
+
+Neither numerical scheme is uniformly fastest. At the preselected coarse L1 target
+0.002 m, upwind at 256 cells took 2.72 ms versus MUSCL at 128 cells taking 4.79 ms
+in the recorded three-run medians. MUSCL is the higher-accuracy regional default,
+not a claim that it wins that coarse target. At finer grids its reduced smoothing
+and smaller required cell count can justify the extra stages. Exact shifts at unit
+Courant particularly favour first-order upwind; no universal superiority is claimed.
+The physical case must choose its accuracy profile rather than using timing to
+change its conservation law. Both selected schemes execute compiled by default.
+
+For the SAME MUSCL scheme at 262,144 cells, five alternating warmed comparisons
+recorded 106.92 ms reference versus 35.18 ms native (67.1% less median time), with
+23,338,303 versus 8,394,850 tracked peak bytes (64.0% lower). The timing spread is
+large (native 12.96–48.70 ms); these are not repeatable machine-independent ratios.
+The compared outputs matched bit-for-bit. Tracemalloc excludes some native and
+JIT memory; the first new native call took 10.41 s including compilation.
+Four independent large batches took median 210.64 ms serial versus 254.90 ms with
+outer threads under the former automatic policy. The delivered auto policy uses
+serial for these regional jobs. This does not prove threads lose at every size.
+The measurement record retains the exact source identities used at measurement
+time. The subsequent changes selected serial automatic regional scheduling and
+hardened packed-result restoration/added native-build reporting; the measured
+native stencil is unchanged. The final regression receipt identifies the delivered
+code separately. Re-running the measurement script now reports the selected serial
+automatic path, not the rejected former threaded automatic path.
+No new GPU, intra-domain worker system, persistent JIT cache or general scheduler
+was introduced. The single-domain native stencil remains serial; distributed or
+parallel spatial transport is not claimed by this increment.
+
+### Scope and continuation
+
+The execution card is `cases/regional_transport.json`; equations and boundary
+meaning are in [the existing foundation case notes](FOUNDATIONS.md#w02-regional).
+`tests/measure_regional_transport.py` reproduces the bounded comparisons without
+installing dependencies. No arbitrary Earth parameters are baked into the kernel.
+Material mixtures/cohorts, internal production/recycling, moving boundaries,
+plate topology, physical loading and geological validation remain later work.
+Windows remains unverified. Update these existing documents; do not create another
+optimisation roadmap for the next physical increment.
+
+
+<a id="combined-acceptance"></a>
+
+## Combined resource/platform acceptance — item 12, 17 September 2026
+
+**Current outcome: implemented and Linux-accepted within the bounded synthetic
+profiles; local Windows acceptance is outstanding.** This closes the available
+platform's combined engineering work, not every future performance candidate or
+any geological acceptance gate. Items 2–11 remain implemented; item 1 was explicitly
+skipped. Changes are delivered locally on top of the items 9–11 package, not pushed
+to origin. The existing tests/records remain historical; this section adds no
+competing general plan.
+
+### Findings corrected in the combined path
+
+1. **Independent limits did not compose.** A local executor and a store could each
+   admit their complete budget at once. A parent-aware `WorkBudget` now reserves
+   distinct ancestors atomically once. Default stores and executors share the
+   existing process-local envelope; explicit budgets let a case select another
+   finite envelope without altering physics. Per-executor limits remain in force.
+2. **Retained and inter-stage allocations had missing lifetimes.** Store capacities
+   for decoded chunks, verified metadata and SQLite pages are reserved until close.
+   Read/codec work, write staging and live streaming manifests have separate
+   reservations. Cached numerical results remain accounted while being checked,
+   compressed and committed after the kernel's scratch scope ends. A wrapper with
+   a store inherits the store's run budget even when cache admission bypasses I/O.
+3. **Shared pressure could cause a scheduling loop.** Admission now drains already
+   pending work when it can help, otherwise refuses without copying. A failed pool
+   creation releases its reservations/slots. An initially cancelled stream does
+   not leave the executor permanently marked active. Reservations for running
+   calls are held until they finish; native kernels are not killed by cancellation.
+4. **Concurrent pools could each assume exclusive CPU use.** Pool capacity is
+   claimed across executors. Existing native-thread controls remain. Spawn baseline
+   allowances are held until shutdown; no new automatic preference for process
+   execution is introduced. It stays an explicit alternative for matched tests.
+5. **Preparation and close could overlap.** A store with active preparation refuses
+   close until the owner cancels/joins that work, rather than releasing memory while
+   a producer still uses the connection. Transaction/corruption semantics remain.
+
+### Exactly what the shared envelope means
+
+- `WorkBudget` remains admission for estimated allocations/capacities, **not an RSS
+  limit**. Maxima are immutable. Accounting categories and high-water records are
+  bounded and detached. Related budgets charge common ancestors once; reservations
+  for different simultaneous allocations remain additive.
+- `ArrayStore(..., budget=run_budget)` reserves decoded-cache capacity, a 1,024-byte
+  per-entry verified-cache allowance, a 16 KiB connection-metadata allowance and a
+  configurable SQLite page-cache allowance (default 2 MiB). The page-cache setting
+  is an SQLite suggestion, not enforcement of all SQLite allocations.
+- `codec_workspace_bytes` defaults to an 8 MiB **allowance**. It is included in read
+  and write admission, not passed off as a native codec heap cap. Actual process
+  memory and headroom must still be measured for the selected compression/build.
+- Write-work estimates now include simultaneously retained Python dependency maps,
+  sets and manifests. They scale with the submitted reference count instead of
+  always charging the maximum permitted count. Limits are checked before encoding.
+- An executor charges a complete in-flight job once to its shared parent and uses
+  an internal job-local check inside the worker. This prevents charging the same
+  worker workspace twice. A pool using spawn also reserves a configurable 96 MiB
+  baseline allowance per worker; job transfer/scratch is additional.
+- Caller-owned input arrays, retained returned outputs, prepared inputs, execution
+  contexts and operator coefficients need owner-side reservations when retained
+  outside a call. Returned plain arrays do not magically transfer a reservation to
+  an arbitrary caller. Count genuinely shared backing once. The drill explicitly
+  reserves caller state and output consumption while workers and storage overlap.
+- `resource_requirements()` reports storage capacities: one database and rollback
+  journal per physical database, one spool per concurrent writer, and each backup
+  separately. Connections to the same database do not create extra database files,
+  but each has its own caches/spool. Free-space checking is not filesystem locking;
+  other applications can consume that space. No automatic deletion is performed.
+- `peak_prepared_bytes` records the largest logical spool prepared. Visible-file
+  telemetry can miss unnamed temporary files and brief journals, so it is not
+  presented as a complete filesystem peak. On-process library/JIT allocations are
+  captured by external memory sampling subject to its documented blind spots.
+
+### Obtained checks and bounded combinations
+
+The [verification record](../evidence/combined-resource-acceptance.json) records
+**280 passing checks: all 254 previous checks plus 26 new combined-resource cases**,
+with no failures/errors/skips. New challenges cover sibling/parent budgets, failed
+admission, cancellation, active preparations, concurrent encoder/executor work,
+retained state, duplicate/cached results, corruption, isolated restoration, spawn
+allowances and overlapping CPU pools. Original mathematical tolerances, fixtures,
+compression formats and provenance checks are not relaxed.
+
+`verify.py --acceptance` runs the complete regression suite and then three fresh
+processes, each using 262,144-sample fields, first use and five warm repetitions:
+
+| Selected combination | Accounted byte envelope | Integrated responsibilities |
+| --- | --- | --- |
+| Serial + raw | 96 MiB | Numerical reference agreement, full persistence path and backup |
+| Auto + balanced Zstd | 96 MiB | Threaded independent batches, compression, caches, deduplication and incremental branches |
+| Spawn + compact Zstd | 384 MiB | Explicit process transfer/restoration, worker lifetime and the same storage/identity checks |
+
+All three combinations produced identical output-byte digests for the compared
+optimised calculations, kept their accounting within their configured envelope and
+released every reservation after consumption/close. The native transport was also
+compared with its reference fields, fluxes and totals. Rotation versus the separate
+formula uses the existing numerical tolerance, not a new claim of bitwise equality.
+
+**Measurement semantics.** A separate parent samples the whole child process tree,
+including spawned workers and native-library memory. RSS sums can overcount shared
+pages; USS and PSS are reported independently when available. Polling may miss
+brief peaks. A 1 GiB sampled-RSS watchdog and a 90-second per-profile timeout bound
+the drill, but neither is an OS memory guarantee. Missing telemetry is not a zero
+value or a pass. First-use import/JIT/pool costs remain separate from five warm
+cycles. This is the focused combined acceptance requested in item 12, not the
+skipped item-1 broad baseline or a geological simulation.
+
+The JSON holds measured values for this machine rather than hardcoding performance
+thresholds into unit tests. It includes source hashes, actual platform/runtime,
+component accounting, process-tree memory, disk capacity and blind spots. The
+resource figures include the Numba compiler's process residency; do not interpret
+an accounted array envelope as the entire Python application's memory.
+
+### Platform decision and continuation
+
+The delivered run is **Linux, CPython 3.13.5, NumPy 2.3.5, SciPy 1.17.0, Numba
+0.65.1, Blosc2 4.3.3, threadpoolctl 3.6.0 and psutil 7.2.2**. The cross-platform
+runner can be invoked locally using `python -I -B tectonics/verify.py --acceptance`.
+It creates only its own temporary test data and the redirected evidence output;
+it performs no installation, publication or Windows workspace integration.
+`psutil` is an optional **acceptance telemetry** dependency, not a slower/default
+numerical backend. Existing optimised computation remains the normal path.
+
+**Windows is pending, not passed by simulation or inference.** A local run must
+exercise the actual libraries, spawn, file locks, permissions and filesystem.
+A failed Windows test is a blocked platform claim, not permission to skip it or
+weaken a tolerance. Linux acceptance is sufficient to continue bounded development
+there; it is not authority to claim the whole tectonic module or universal scale
+complete. Later physical packages inherit these shared-budget and acceptance
+requirements rather than requiring another general optimisation audit.
+
+Primary implementation references (no new external software audit):
+[CPython executor/cancellation semantics](https://docs.python.org/3.13/library/concurrent.futures.html),
+[spawn and Windows requirements](https://docs.python.org/3.13/library/multiprocessing.html),
+[SQLite page-cache semantics](https://www.sqlite.org/pragma.html#pragma_cache_size),
+and [psutil process-memory APIs](https://psutil.readthedocs.io/en/latest/).
+
+
+## Optimised-default policy — 17 September 2026
+
+Accuracy takes priority: preserve the selected highest-accuracy supported scheme.
+Optimise its execution; never select a less accurate equation/discretisation or
+precision merely because it is faster. Use the tested optimised implementation
+as the normal default for supported
+workloads. Reference implementations remain explicitly selectable for verification
+and diagnosis; users should not have to opt into an already accepted acceleration.
+Do not silently enable approximate physics, unsafe arithmetic or an untested
+backend in the name of this policy.
+
+In the delivered optimisation 2/3 follow-up, `advect_thickness` now defaults to
+`backend="numba"`; `half_space_temperature` and `cached_temperature` default to
+`backend="scipy"`. Normal package requirements include the tested Numba pin and
+SciPy range. Explicit `backend="reference"` remains available. Missing required
+optimised dependencies raise an error rather than silently falling back; no
+automatic dependency installation occurs. Historical restored result labels retain
+their recorded backend. First-use compilation and the existing precision,
+conservation, memory and source-validation requirements remain unchanged.
+
+Default verification includes native transport checks. The existing reference
+suite explicitly selects its original backend, so it remains an independent
+comparison rather than comparing the accelerated calculation with itself.
+This changes selection and packaging, not the transport equation or compiler flags.
+No new benchmark or performance claim accompanies this change.
+
+
+**ATLAS-OPTIMISATION-REFERENCE | Revision 4 | 17 September 2026**
 **Consolidates Report 02, Report 06 revision 2, the 84-mod screening, language supplement, and repository performance/voxel notes.**
 
-This is the single maintained optimisation reference for [the tectonics plan, revision 5](TECTONICS_PLAN.md). It distinguishes documented methods, proposed Atlas applications and delivered behaviour. Nothing here is a new optimisation, installation, benchmark or physical acceptance. Atlas remains WORKING NON-CANON, vibe-coded with OpenAI ChatGPT/Codex under Michael’s direction.
+This is the single maintained optimisation reference for [the tectonics plan, revision 7](TECTONICS_PLAN.md). It distinguishes documented methods, proposed Atlas applications and delivered behaviour. The original catalogue remains a set of method studies. The delivery sections record implemented items 2–11 and bounded measurements, not physical acceptance; the broad item-1 programme was not run. Atlas remains WORKING NON-CANON, vibe-coded with OpenAI ChatGPT/Codex under Michael’s direction.
 
 **Start with the selected physical calculation, not the whole catalogue.** Apply the relevant execution and storage contracts, choose only useful method candidates, then compare them at the predeclared numerical/physical error. Continue tectonic development rather than implementing every mod-inspired system first.
 
@@ -27,6 +498,253 @@ The pre-studies reviewed scientific software on 15–16 September 2026 and mods 
 A proposal can span classes. Renderer culling, fewer sounds, reduced game ticking, deleted records, raised limits and omitted checks do not automatically preserve the scientific problem. Hash-table keys are not cryptographic source identities. Prescribed-time queries may be independent; evolving time steps are not. Exact historical accounts and source checks stay protected.
 
 ## 2. Execution, caching, storage and language contracts
+
+<a id="storage-profiles-delivery"></a>
+
+### 2.0d Delivered local increment: checklist items 9, 10 and 11
+
+**17 September 2026.** Based on the local items 6–8 delivery, not a newly pulled
+origin. These storage changes are implemented and tested; none is a new tectonic
+mechanism or a whole-world performance claim. Item 1 stays skipped and item 12's
+combined resource/platform acceptance is still outstanding. Code remains vibe-coded
+with ChatGPT/Codex under Michael's direction. No publication was attempted.
+
+**9 — compression and chunk profiles.** Normal `ArrayStore` construction now uses
+Zstd, Blosc level 1, byte shuffle and exact categorical selection. Blosc2 is a
+normal package requirement. `Compression(codec="raw", palette=False)` remains an
+explicit reference/no-compression path; missing Zstd support never causes fallback.
+An encoded chunk can still choose raw bytes when that exact representation is
+smaller. This is a documented per-chunk selection, not a backend-failure fallback.
+
+`storage_profile()` supplies named, versioned starting configurations:
+
+| Profile | Suggested independent chunk | Compression | Intended trade-off |
+| --- | --- | --- | --- |
+| `fast-v1` | 16 KiB | Zstd level 1, byte shuffle | Fine read/update granularity; more metadata and calls. Not universally the fastest full scan. |
+| `balanced-v1` | 64 KiB | Zstd level 1, byte shuffle | Normal starting profile; low encode cost and bounded decoded blocks. |
+| `compact-v1` | 256 KiB | Zstd level 3, byte shuffle | Lower payload/object overhead in the tested data; larger partial-read and update amplification. |
+
+A caller still supplies total store, array and cache limits. Opening an existing
+store does not change its chunk size or recompress historical objects. Profiles
+are recommendations from bounded synthetic cases, not a claim of optimality for
+every machine or future geological field. Higher levels were not automatically
+better: level 6 and bit shuffle did not consistently beat level 3/byte here.
+
+The tuning record covers 30 level/filter/chunk configurations, with uniform,
+categorical, layered, smooth, noisy and signed-zero fields. It also compares
+Blosc's embedded per-frame dictionary request on small repeated records and
+smooth/noisy fields. Dictionaries did not show a useful size/time win in these
+cases; **dictionary use is not enabled by any normal profile**. Explicit
+`Compression(use_dict=True)` remains available for a justified future comparison.
+Every frame stays independently decodable; no external trained dictionary or
+shared dictionary store was added. Small frames may cause Blosc to omit training.
+
+**10 — compact categoricals and reference-based snapshots.** Eligible integer and
+Boolean data can use 1/2/4/8-bit palette indices or typed run-length records. Packed
+indices retain sign/range exactly, use checked lengths and indices, and reject
+nonzero padding. Floating fields retain exact bytes, including signed zero; there
+is no quantisation. The old raw, uniform, palette8 and Zstd formats remain readable.
+Older programs do not understand the new codec labels and must refuse them; this
+is backward reading support, not a promise of forward-reader compatibility.
+
+`store.reference(parent, name)` returns a small checked descriptor, not an array
+copy. `put_incremental(child, parent, replacements, metadata)` changes specified
+**complete chunks** and directly shares all other parent chunk identities. It
+never accepts a dirty flag as proof that a supplied field is unchanged. Shape and
+datatype changes require an ordinary new array submission. Each resulting manifest
+references its payloads directly; it does not require a chain of parent manifests
+for decoding. Geological provenance still belongs in the supplied metadata.
+
+The first use of a cold reference verifies every required chunk. Repeated use can
+reuse a bounded attestation for the same stable database version. The reference
+record is not a security capability: its path, parent, name and descriptor digest
+are rechecked, including before commit. Source corruption, deleted dependencies,
+changed manifests and incompatible chunk layouts are errors, not missing-cache hits.
+
+**11 — preparation, transactions and loading.** Encoding and exact encode/decode
+verification take place before `BEGIN IMMEDIATE`. A byte-bounded spool retains
+small preparations in memory and spills larger ones to the trusted local folder.
+One encoder per store instance limits scratch; separate connections may prepare
+concurrently. The final transaction rechecks dependencies and concurrent duplicate
+chunks, inserts rows in bounded batches, validates cancellation/source state and
+publishes one complete manifest. It never publishes partially encoded candidates.
+
+New execution limits are `staging_memory_bytes` (256 KiB), `max_staging_bytes`
+(256 MiB), `verified_cache_entries` (2,048) and `insert_batch_bytes` (256 KiB).
+These are overridable execution limits, not physics. Spool and insertion targets
+can transiently hold one additional chunk. Preparation reserves an explicit
+`WorkBudget` envelope; the cache wrapper forwards its budget and cancellation.
+Caller inputs, retained decoded arrays and native codec overhead remain outside
+a process-wide RSS guarantee. Plan for staging storage **in addition to** database,
+rollback journal and independent backups. No automatic history deletion is added.
+
+Read operations pin a SQLite read view before reusing validated data. Source
+manifest hashes are always checked. SQLite `data_version` detects another
+connection's commits; `total_changes` detects direct writes on the same connection.
+Changed settings or either version invalidate the relevant attestation/cache.
+A verified decoded hit avoids repeated payload reads and hashing while the view
+remains valid. `get()` parses the manifest once; streaming releases its read
+transaction between chunks instead of holding a reader lock across user work.
+This relies on trusted SQLite-managed access, not hostile raw-file mutation or
+protection against an attacker replacing both data and checksums. Reopening the
+store starts cold and checks on-disk payloads again.
+
+A focused one-worker queued-read comparison was slower than serial reads for the
+tested local store. No new automatic prefetch, asynchronous writer, compression
+pool or WAL migration is introduced. Existing execution parallelism is unchanged.
+This is an explicit evaluated non-adoption, not an unimplemented default.
+
+**Obtained evidence.** All **254 tests** passed (216 retained + 38 new), with no
+failures, errors or skips. Two old format-specific fixtures now explicitly request
+raw/legacy-palette encoding, retaining their former assertions rather than testing
+the new default accidentally. New tests cover independent packed/RLE decoding,
+malformed data, defaults and missing codecs, cold and hot reference validation,
+changed/deleted dependencies, concurrent creators, unlocked encoding, bounded
+staging and spills, cancellation/rollback, immutable reads and backup restoration.
+No numerical equations, compiler settings, physical fixtures or tolerances changed.
+
+Five paired/order-balanced whole-store comparisons used 2,621,440 bytes of synthetic
+arrays, 64 KiB chunks, Zstd level 3/byte with palettes on both implementations and
+a 4 MiB decoded-cache allowance. The previous implementation is the items 6–8
+source identified in the measurement record. First-write measurement includes
+validation, encoding, publication and trace instrumentation. The transaction
+interval starts at the traced BEGIN and ends on return, including wait/commit cost;
+it is not pure compression time or a guarantee of filesystem power-loss durability.
+
+| Operation | Previous | Current | Calculated difference |
+| --- | ---: | ---: | ---: |
+| Whole first write, identical level-3/byte settings | 32.751 ms | 36.546 ms | -11.6% less time |
+| First decoding (filesystem cache not flushed) | 6.808 ms | 4.252 ms | 37.5% less time |
+| Warm complete read | 4.006 ms | 0.709 ms | 82.3% less time |
+| Write-transaction interval | 32.599 ms | 20.120 ms | 38.3% less time |
+| Unchanged snapshot: full submission versus direct references | 5.501 ms | 2.098 ms | 61.9% less time |
+
+Negative "less time" means a slowdown: the new first-write path can cost more due
+to staging and one-time round-trip attestation. That trade-off buys shorter writer
+occupancy, safely reusable verifications and faster repeated reads/branches; it is
+not claimed as a universal first-write speed-up. The default level-1 profile was
+selected from the separate encode/decode sweep, not from this fixed-level-3 table.
+
+In the raw categorical comparison the complete database changed from
+1,286,144 to 1,187,840 bytes.
+With Zstd enabled both databases occupied 917,504 bytes;
+new categorical representations do not guarantee another reduction when Zstd
+already encodes those fields well. Re-saving an unchanged snapshot added no payloads;
+replacing one chunk added one new payload. A reference still has O(chunk-count)
+metadata/verification bookkeeping: this is not a constant-time world snapshot.
+
+[Test results](../evidence/storage-profiles-tests.json) ·
+[compression/dictionary sweep](../evidence/storage-tuning.json) ·
+[whole-store comparisons](../evidence/storage-comparisons.json).
+The repeatable script is `tests/measure_storage_profiles.py`, with explicit
+`--mode tune|compare`, `--baseline` and `--out` arguments. Measurements use warmed
+imports on Linux/CPython 3.13.5, NumPy 2.3.5, Blosc2 4.3.3 / Zstd 1.5.7 and SQLite
+from that Python build. No dependency was installed, no filesystem cache was
+forcibly cleared, and no Windows or large-world test is implied.
+
+Method references checked for this increment: [Blosc compression API](https://blosc.org/python-blosc2/reference/autofiles/low_level/blosc2.compress2.html),
+[Blosc compression/filter/dictionary parameters](https://blosc.org/python-blosc2/reference/storage.html)
+and [SQLite isolation](https://www.sqlite.org/isolation.html). These inform the
+implementation; the obtained evidence above is Atlas's own bounded testing.
+
+<a id="copy-transport-increment"></a>
+
+### 2.0 Delivered local increment: checklist items 2 and 3
+
+**17 September 2026 — prepared against `remake` commit
+`0590774b9d59fa9e6c9cba8f5306a3e2b9f6bc40`; not published by this task.**
+The scope is redundant-copy/private-buffer reduction and transport optimisation.
+The broad baseline project (item 1) and checklist items 4–12 were not undertaken.
+Focused correctness tests and paired kernel measurements are part of verifying
+these two changes, not a world simulation or a new general benchmark framework.
+
+**Ownership and copies.** Numerical kernels borrow only aligned, C-contiguous
+native binary64 arrays whose base chain ends in immutable `bytes`. Read-only
+flags alone, mutable owners, memory maps and subclasses are insufficient. Every
+borrow has private shape/dtype metadata and is still checked for finite values,
+shape and sign. Other inputs are detached. Cache wrappers capture one immutable
+input snapshot for both hashing and calculation; kernels do not copy it again.
+Publishing a small slice compacts it rather than retaining a larger parent buffer.
+`frozen()` may reuse an already compact immutable payload; new mutable results
+still receive immutable backing. No shared global scratch pool was introduced.
+Cooling reuses its private final arithmetic buffer; flexure multiplies its private
+FFT spectrum in place and releases it before publication. Their equations and
+selected backends are unchanged. Conservative allocation admission stays enabled;
+it is not a process RSS cap.
+
+**Transport.** `advect_thickness(..., backend="numba")` explicitly selects an
+native path, now the default under the optimised-default policy.
+`backend="reference"` remains explicitly available for NumPy/math.fsum verification. The native path combines the field update, face flux and totals in a
+compiled loop after a separate Courant-admission pass. It preserves the reference's
+multiplication and addition order, signs, periodic boundary and refusal behaviour.
+It does not add open boundaries, new physics, automatic substepping or clipping.
+
+The native totals use an original exact nonnegative binary64 superaccumulator:
+represent each value in units of 2^-1074, accumulate into 34 unsigned 64-bit limbs,
+then round once to binary64 nearest/ties-to-even before the unchanged multiplication
+by cell spacing. The 2,176-bit capacity exceeds the less-than-2,161 bits needed for
+any finite positive binary64 value summed over a signed-64-bit-addressable array.
+It is not a signed general-purpose `fsum` replacement or the historical mass ledger.
+Tests compare both `math.fsum` and independently summed exact Python Fractions,
+including ties, subnormals, wide exponents and overflow. Fast-math, reassociation,
+parallel reductions and disk JIT caching are disabled. Results record the selected
+backend and numerical-method name; the verifier records compiler versions and a
+hash of generated assembly. This is evidence, not a runtime security seal.
+
+**Dependency and use (original 2/3 delivery).** The former optional `transport` extra selected `numba==0.65.1`; the optimised-default follow-up makes it a normal requirement.
+No dependency was installed during this task. The default backend does not import
+Numba; explicitly requesting it without the supported dependency fails, never
+silently substitutes another algorithm. First native use imports/compiles; reuse
+within the process amortises that cost. JIT/compiler resident memory is additional
+to the kernel's array budget. No persistent transport-result wrapper or additional
+cache framework is supplied.
+
+```python
+result = advect_thickness(h, u, grid, duration_s, backend="numba", budget=budget)
+```
+
+**Obtained evidence.** [131 passing checks](../evidence/copy-transport-tests.json)
+include all 93 existing cases, 17 new copy/dependency checks and 21 native checks
+(including the nine existing transport cases rerun through the native backend).
+Original fixtures and test tolerances are unchanged. Checks include alias mutation,
+private metadata, cache-miss snapshot sharing, fresh-process reuse, failure/budget
+release, immutable restoration, strict compiler flags and exact comparison of
+100 varied transport fields plus 200 Fraction-verified accumulator cases.
+
+[Focused measurements](../evidence/copy-transport-measurements.json) used five
+rotated-order warmed repetitions on Linux/CPython 3.13.5/NumPy 2.3.5, Numba 0.65.1
+and llvmlite 0.47.0. At 65,536 cells, transport went from 5.498 ms to 0.713 ms;
+at 262,144 cells, from 25.682 ms to 3.292 ms: approximately 87% less elapsed time
+on those synthetic calls. The fresh first call, including import and compilation,
+was 1.944 s. These are not whole-generator forecasts or hardware-independent gains.
+At 262,144 cooling samples with the SAME SciPy backend and immutable input,
+tracked allocation fell from 10,750,946 to 6,556,944 bytes (39.0%). Tracemalloc
+excludes some native/JIT/library allocations; no native or total-RSS memory-saving
+percentage is claimed. Buffer borrowing also avoids an input-sized payload copy;
+validation scans remain. No speed threshold is embedded in unit tests.
+
+Reproduce the correctness checks in an explicitly prepared environment:
+
+```text
+python -I -B tectonics/verify.py             # 110 checks; existing fast/storage extras
+python -I -B tectonics/verify.py --native    # 131 checks; additionally transport extra
+```
+
+The optional focused measurement script is
+`tests/measure_copy_transport.py --baseline PATH_TO_UNMODIFIED_TECTONICS`.
+It validates the relevant baseline files against the pinned Git blob identities,
+and includes validation/publication costs. It does not measure cache tuning,
+compression settings or an entire end-to-end pipeline.
+
+Windows/macOS, Python 3.12, other compiler builds and real geological behaviour
+remain unverified. Source changes naturally invalidate prior result-cache keys;
+old records are not edited, deleted or repinned. The task creates a local patch,
+not a push to origin. Continue to update this reference rather than creating a
+separate optimisation report.
+
+Method references: [Numba execution and fast-math semantics](https://numba.readthedocs.io/en/stable/user/performance-tips.html)
+and [Python accurate summation](https://docs.python.org/3.13/library/math.html#math.fsum).
+The accumulator implementation is newly written, not copied from a mod or solver.
 
 <a id="process-placement"></a>
 
@@ -2525,3 +3243,260 @@ Namespaced MC-S identifiers below preserve the original 50 records; scientific S
 [url-197]: https://www.curseforge.com/minecraft/mc-mods/tetrachord-lib
 [url-198]: https://modrinth.com/mod/tick-tweaks/version/1.1.0-1.17-1.19.2
 [url-199]: https://modrinth.com/mod/tick-tweaks/version/DSTxp1oe
+
+
+<a id="delivered-optimisations-4-5"></a>
+
+## Delivered items 4 and 5 — cooling and rotation/flexure batches
+
+**17 September 2026.** Applied to the previously delivered optimised-defaults
+items 2/3 package, based on `remake` commit
+`0590774b9d59fa9e6c9cba8f5306a3e2b9f6bc40`. Package version `0.1.0.dev4`.
+This is a local delivery, not a remote publication. Item 1's general performance
+baseline and items 6–12 remain outside this increment. Existing physical laws,
+acceptance tolerances, transport implementation, compression/store format and
+source/invalidation safeguards are unchanged.
+
+### Item 4 — cooling: selected profile and bounded broadcast evaluation
+
+**Selected normal profile: SciPy bulk `erf`, no automatic fallback.** The reference
+`math.erf` path remains explicitly available for verification. Both dependencies
+and defaults were established in the preceding delivery; no new package is added.
+The same formula now constructs diffusion lengths once per supplied age **before
+broadcasting**. It does not repeatedly calculate an age's square root for every
+depth. Remaining arithmetic is evaluated in C-order batches, normally **8,192
+samples**, with bounded iterator buffers and immutable output. `batch_elements`
+changes only work granularity; it never changes the physical resolution or time.
+A huge batch hint is capped by actual output size. Full output still needs memory;
+array admission estimates include inputs, length data, buffers and publication.
+The cached wrapper uses the kernel's estimate and retains complete source checks.
+
+Scope tested: scalar and vector inputs; scalar age, varying age and crossed
+age/depth broadcasts; zero-age/surface limits; equal temperatures; strided,
+Fortran-layout and non-native-endian inputs; extreme ranges; masked/invalid input
+refusal; missing SciPy; allocation failures; and repeat/cache/reopen behaviour.
+Changing the tested execution batch sizes preserved bits within each backend.
+SciPy versus the scalar reference remains numerically equivalent, **not promised
+bit-identical**. No approximate error function, new time integration or thermal
+PDE is introduced.
+
+Fresh-process first-call measurements include SciPy's lazy import: median
+**103.9 ms**, followed by **1.34 ms** for the next 65,536-sample
+call. These are three process starts, not OS-cold-disk measurements. The optimised
+backend remains the default even when a one-off tiny call would not amortise its
+initialisation. There is no hidden switch back to the reference.
+
+### Item 5 — rotation and flexure batch decisions
+
+| Calculation | Decision implemented | Limits and interpretation |
+| --- | --- | --- |
+| Rotation | Construct an immutable 3×3 matrix per normalised quaternion and reuse it; matrix application is the default, normally in batches of at most 65,536 vectors. | 72 retained matrix data bytes, excluding Python metadata. `backend="reference"` keeps the prior cross-product formula. Matrix arithmetic changes rounding/order; existing tolerances, independent Rodrigues checks and rigid-motion invariants apply. No universal bitwise equivalence. |
+| Flexure | Retain NumPy FFT and the existing discrete centred-difference operator. Fitting load groups take the earlier contiguous fast path. Default grouping targets at most 8 MiB of real load payload per transform group, but always at least one complete domain. | A group holds independent loads, not independent spatial tiles. An oversized individual domain is refused by its work budget rather than cut into invalid mechanics. Retained operator/coefficients and their physical/numerical identity remain unchanged. |
+| Explicit group sizing | `batch_vectors`, `batch_loads` and `batch_elements` allow a case to declare execution granularity. | Positive integer controls, documented defaults, no automatic machine tuning or worker pool. Different layouts/backends remain subject to the declared equality policy. |
+| Streaming independent requests | `Rotation.apply_batches(...)` and `PeriodicFlexure.solve_batches(...)` lazily yield complete immutable result batches. | No prefetch; memory reservations are released before each yield. Caller-held results still count towards application RAM. Later requests are captured when consumed; this is not one atomic snapshot of all future input. Stopping early stops further calls, not a partly completed physical timestep. |
+
+Forced small flexure groups did **not** show a consistent speed advantage over
+already-batched calls. They remain a memory/granularity control, not the default
+for fitting loads. The existing FFT backend is retained, not rewritten or replaced
+with continuous spectral k^4. Rotation restoration reconstructs its immutable
+matrix; it does not trust pickled mutable derived arrays.
+
+### Obtained focused results and adoption boundary
+
+Five alternating-order warmed comparisons, one native library thread, Linux /
+CPython 3.13.5 / NumPy 2.3.5 / SciPy 1.17.0. Preparation and fresh-process costs
+are separate. No worker-pool, compression or complete-generator benchmark ran.
+
+| Synthetic workload | Previous default | Current default | Interpretation |
+| --- | --- | --- | --- |
+| Cooling: 262,144 samples, fixed age | 6.663 ms | 4.701 ms | 29.4% less elapsed time; same SciPy backend, observed bit equality. |
+| Cooling tracked peak allocation | 6,556,880 bytes | 4,197,209 bytes | 36.0% less; not whole-process RSS or a claim about all native allocations. |
+| Rotation: 262,144 three-dimensional points | 14.615 ms | 2.726 ms | 81.3% less elapsed time; operator setup excluded and measured separately. |
+| Rotation tracked peak allocation | 27,267,792 bytes | 12,584,857 bytes | 53.8% less; input arrays already existed. |
+| Flexure: already-batched loads | Existing FFT | Same FFT with grouping | No material default speedup claimed; retaining the fitting fast path avoids unjustified new overhead. Streaming is a distinct memory-lifetime facility. |
+
+All recorded default cooling and flexure outputs matched the prior defaults
+bit-for-bit on these samples. The largest rotation difference in the 262,144-point
+sample was 1.33e-15 in the synthetic coordinate
+units, within the unchanged test envelope. New source identities prevent old
+persistent results from being mistaken for this implementation. Matrix/reference
+selection must be recorded by future rotation-result consumers; no rotation-result
+persistent wrapper is introduced here.
+
+The small/scalar and varying-age cooling comparisons do not establish a speedup
+in every workload: for example, the 65,536-varying-age sample took slightly longer
+in this run while allocating less. The selected profile favours bounded working
+memory and sustained batch execution; measured improvements are not summed or
+extrapolated to a world run. BLAS backend and thread count can change performance
+and last-bit rounding. Windows/macOS, other builds, large worlds and physical
+realism are not newly verified.
+
+[Full test record](../evidence/kernel-batch-tests.json) and
+[measurements including samples and first use](../evidence/kernel-batch-measurements.json)
+are obtained evidence, not additional planning documents. Reproduce the bounded
+measurement with `tests/measure_kernel_batches.py --baseline PATH_TO_PREVIOUS_TECTONICS`;
+it verifies the relevant prior-delivery source hashes. The new regression cases
+live in `tests/test_kernel_batches.py`; existing tests and fixture tolerances remain
+unchanged. The usual full verifier includes them.
+
+Primary method references: [NumPy matmul](https://numpy.org/doc/stable/reference/generated/numpy.matmul.html)
+for native matrix batches and output buffers, and [SciPy erf](https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.erf.html)
+for the exact selected public array-function interface. Runtime versions above,
+not the moving documentation version, identify the tested environment. These
+sources are method/API references, not evidence of an Atlas performance gain.
+
+
+<a id="execution-reuse-delivery"></a>
+
+## Delivered optimisation items 6–8 — 17 September 2026
+
+**Scope:** continue the delivered 4/5 tree, with its optimised numerical defaults.
+No new physics, changed test tolerances, global performance-baseline programme,
+GPU solver, distributed spatial solve, old-cache migration or remote publication.
+Source and evidence are delivered for Michael to apply to `remake` locally.
+
+### 6. Bounded independent-batch execution
+
+`execution.KernelExecutor` is a caller-owned context with lazy ordered streams for
+cooling queries, rotations and independent flexure load scenarios. It reserves
+estimated capture/work/transfer/output bytes before admission, limits queued jobs,
+reuses its worker pool, and drains running native work before releasing reservations.
+Returned arrays have immutable bytes backing, including after process transport.
+Neither task order nor storage chunks redefine physical coupling. A flexure row
+always spans its whole domain. Iterating another physical timestep is not made
+parallel by this API.
+
+**Default policy:** `mode="auto"`, up to two available CPU workers, one inner native
+thread, four in-flight jobs and a 256 MiB estimated array-work envelope. Small jobs
+remain serial; independent SciPy cooling/FFT batches at least 262,144 elements may
+use threads. Matrix rotations stay serial under auto because forced threading
+regressed the larger comparison. These are named execution settings, not Earth
+parameters, universal optima, or a process-RSS cap. Retained caller outputs, process
+interpreters/native libraries and non-Atlas allocations remain outside this budget.
+
+Explicit threads and persistent **spawn** processes remain comparison/override
+paths. Processes lost on the tested workloads, so are not the default. No
+per-cell futures or GPU choice is added. `threadpoolctl>=3.6,<4` is a declared
+requirement; its existing installed version was used, not installed by this task.
+Thread-limit leases have one driving Python thread and reject conflicting limits.
+Because native thread control is backend-sensitive, explicit threaded matrix runs
+are restricted to the tested OpenBLAS/pthreads arrangement; other arrangements must
+select serial or spawn explicitly. Auto does not rely on threaded BLAS rotations.
+
+Close an iterator on early termination (or exit its executor context). Cancellation
+stops new admission and discards unconsumed results, but cannot instantly interrupt
+a running native operation. Independent outputs already consumed remain outputs;
+this is not an atomic evolving-world step or a replacement runtime graph.
+
+### 7. Reusable verification and prepared immutable inputs
+
+`reuse.ExecutionContext` computes source/code/runtime identities once, then checks
+**complete exact source bytes and membership**, loaded function/code/default and
+callable-alias identity, and relevant module constants before reuse/publication.
+It does not trust mtimes. Repeated source reads remain; repeated SHA hashing,
+code normalisation and marshalling are avoided. Changed source or callable state
+refuses the context and requires a new explicit context/controller. No historical
+identity is overwritten. Inventory size is bounded.
+
+`PreparedInput` captures a compact immutable f64 payload and its typed digest once.
+Each array access returns private shape/dtype metadata; only proven immutable
+payloads can reuse their digest. Mutable arrays are captured/hashes recomputed,
+never cached by object address. Prepared payload lifetime/RAM remains the caller's
+responsibility, and its creation is admitted against a WorkBudget.
+
+The execution/invocation schema is versioned to v2. Old entries remain stored but
+are not repinned into the new schema. Runtime binaries keep the prior explicit
+process-lifetime immutability assumption; this is not a hostile-process sandbox or
+recursively authenticated installation. Hashes/contexts are not geological proof.
+
+### 8. Admission, same-request coordination and safe publication
+
+`cached_temperature` and `cached_flexure` now default to **automatic admission**,
+not unconditional persistence. Small results bypass unnecessary identity/store
+work. For eligible size bands the first call measures a direct calculation;
+subsequent calls pay for persistence only when recorded compute cost and expected
+reuse justify it. Current defaults: 256 KiB–64 MiB candidate result range, 10 ms
+minimum observed compute, and three expected reuses. Cost/profile records are
+bounded to 128 per controller; they choose execution only and never authenticate
+inputs. Actual restoration/write costs feed back into later decisions. A newly
+opened controller learns again; it does not treat another machine's timing as fact.
+
+`CachePolicy(mode="always")` explicitly requests verified persistence, including
+for correctness tests or known expensive repeated products. `mode="off"` avoids
+store access. Native numerical backends do not change with these policies. A
+provided ExecutionContext is still checked on bypass. No existing persisted
+history is deleted, and a corrupt entry that is read remains an error, not a miss.
+
+Admitted identical requests share one in-process computation, bounded to 32 active
+keys and 128 waiters. Futures hold private result descriptors; returned descriptors
+cannot change another caller's result shape. Failure is propagated, completed
+entries are released, retries may become new owners, and a cancelled waiter does
+not cancel the owner. Recursive same-key requests and saturated bounds fail rather
+than deadlock or enqueue unlimited work.
+
+Separate local processes coordinate using crash-released OS locks on 16 fixed
+stripes per store and recheck the database after acquisition. This avoids stale
+lease takeover and unlimited per-key lock files; colliding stripes may serialise
+extra work. Windows locking is implemented but not verified in this environment.
+Trusted local paths only. Direct ArrayStore writers still use existing SQLite
+transactions; callers bypassing these wrappers do not inherit compute suppression.
+
+`ArrayStore.put` has an optional final publication check inside its existing
+transaction. The reuse wrapper rechecks source/cancellation immediately before
+commit; failures roll back candidate rows. Cancellation after publication begins
+cannot revoke a completed atomic snapshot. No schema, codec or deduplication
+algorithm change is introduced here.
+
+### Focused measurements and decisions
+
+Five alternating-order warmed comparisons, 8 independent jobs per batch, two
+outer workers and one inner native thread. Linux/CPython 3.13.5, NumPy 2.3.5,
+SciPy 1.17.0 and threadpoolctl 3.6.0. Full samples, first-use costs, source hashes
+and mode statistics are in the evidence, not inferred from Minecraft performance.
+
+| Workload | Serial batch | Selected automatic path | Observed change |
+| --- | ---: | ---: | --- |
+| Cooling: 8 independent jobs × 262,144 samples | 35.433 ms | 22.361 ms | 36.9% less elapsed time |
+| Flexure: 8 independent jobs × 262,144 samples | 33.578 ms | 21.244 ms | 36.7% less elapsed time |
+
+Rotation auto retained the serial matrix path. Spawn process execution was slower
+for all three larger workloads and is not selected automatically. Serial and
+threaded answers, and the tested process answers, were bit-identical in these
+comparisons; this does not establish universal cross-platform equality.
+
+A repeated context verification took **0.866 ms** versus
+**1.910 ms** for the previous fresh identity function (about
+**54.6% lower**). Fresh creation of the new, stronger context
+is costlier than the previous function; reuse amortises it. Timings compare stated
+operations, not a universal cache speedup. PreparedInput also avoids repeated
+payload hashing, but verification and restore costs do not disappear.
+
+Forced persistent restoration of the tested cooling fields was slower than direct
+SciPy calculation. Auto therefore recalculates these cheap fields, while preserving
+setup reuse and all numerical checks. This closes admission for current workloads
+without pretending a cache hit is invariably faster. Thresholds remain adjustable
+execution policy and should be recalibrated for a materially different workload.
+
+**216 tests passed (169 prior + 47 new), zero failures/errors/skips.** Persistence
+regressions now explicitly select `mode="always"`; they still test their original
+correctness invariants rather than bypassing them through auto admission. No old
+tolerances or fixtures were weakened. New cases cover lazy/bounded admission,
+private results, cancellation, worker failure, nested streams, spawn restoration,
+thread-limit ownership, source/default/alias changes, prepared identities, cache
+policy, same-key contention, creator failure/retry, waiter cancellation/timeout,
+corruption, transactional cancellation and OS-lock recovery after process death.
+
+[Full test evidence](../evidence/execution-reuse-tests.json) and
+[focused measurements](../evidence/execution-reuse-measurements.json) are obtained
+records; older evidence remains unchanged. Reproduce with the usual `verify.py`,
+and `tests/measure_execution_reuse.py --baseline PATH_TO_ITEMS_4_5_TECTONICS`.
+No scientific world simulation or package installation was performed. Windows,
+macOS, other native builds, power-loss recovery and full-world resource behaviour
+remain unverified. Checklist items 9–12 and unbuilt physical mechanisms are not
+silently marked complete by this increment.
+
+Method references: [CPython concurrent futures](https://docs.python.org/3.13/library/concurrent.futures.html),
+[NumPy thread safety](https://numpy.org/doc/stable/reference/thread_safety.html),
+[threadpoolctl and its backend/thread limitations](https://github.com/joblib/threadpoolctl),
+and [OS file locking](https://docs.python.org/3.13/library/fcntl.html).
+They support API semantics, not the obtained Atlas measurements.

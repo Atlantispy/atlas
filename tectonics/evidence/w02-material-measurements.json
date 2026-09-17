@@ -1,0 +1,207 @@
+{
+  "scope": "bounded synthetic cohort transport; no geological validation or world forecast",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "system": "Linux"
+  },
+  "cohorts": 4,
+  "cells": 65536,
+  "scheme": "muscl",
+  "first_native_call_s": 6.051395272000036,
+  "timings": {
+    "native": {
+      "median_s": 0.008156562000067424,
+      "samples_s": [
+        0.009368970999958037,
+        0.007995793999953094,
+        0.008156562000067424,
+        0.008077344999946945,
+        0.008769295000092825
+      ]
+    },
+    "reference": {
+      "median_s": 0.027021809999951074,
+      "samples_s": [
+        0.03250993500000732,
+        0.029905062999887377,
+        0.025972452000132762,
+        0.027021809999951074,
+        0.02518013400003838
+      ]
+    }
+  },
+  "native_reference_max_abs_difference_m": 0.0,
+  "allocations": {
+    "native": {
+      "tracked_peak_bytes": 8922927,
+      "result_payload_bytes": 4194592
+    },
+    "reference": {
+      "tracked_peak_bytes": 11607368,
+      "result_payload_bytes": 4194592
+    }
+  },
+  "peak_accounted_bytes": 27312128,
+  "budget_bytes": 67108864,
+  "formation_metadata_per_cohort": true,
+  "spatial_refinement": [
+    {
+      "cells": 64,
+      "mean_absolute_error_m": 0.004396991066627551
+    },
+    {
+      "cells": 128,
+      "mean_absolute_error_m": 0.001229118669796615
+    },
+    {
+      "cells": 256,
+      "mean_absolute_error_m": 0.0003280877813270923
+    }
+  ],
+  "parallel_scenarios": {
+    "serial": {
+      "median_s": 0.05274212000017542,
+      "samples_s": [
+        0.05274212000017542,
+        0.05288381799982744,
+        0.049570840999876964,
+        0.05891068000005362,
+        0.05026030899989564
+      ]
+    },
+    "auto": {
+      "median_s": 0.028907521000064662,
+      "samples_s": [
+        0.030403137000121205,
+        0.030135712999936004,
+        0.028907521000064662,
+        0.027666000000181157,
+        0.02767027599998073
+      ]
+    },
+    "threads": {
+      "median_s": 0.027683165000098597,
+      "samples_s": [
+        0.02757849099998566,
+        0.02764327700015201,
+        0.027687211000056777,
+        0.027683165000098597,
+        0.02796204699984628
+      ]
+    }
+  },
+  "snapshot": {
+    "initial": {
+      "unique_chunks": 32,
+      "encoded_payload_bytes": 1248730,
+      "snapshots": 1,
+      "database_bytes": 1302528,
+      "decoded_cache_bytes": 0,
+      "verified_cache_entries": 32,
+      "operations": {
+        "payload_reads": 0,
+        "decoded_hits": 0,
+        "verified_hits": 0,
+        "encodes": 32,
+        "staged_bytes": 1255834,
+        "prepare_seconds": 0.01048417399988466,
+        "writer_seconds": 0.0024797680000574474,
+        "insert_batches": 6,
+        "peak_prepared_bytes": 1255834
+      },
+      "resource_allowances": {
+        "retained_ram_allowance": 4276224,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 31766272,
+        "read_workspace_allowance": 13107200,
+        "database_capacity": 33554432,
+        "rollback_journal_capacity": 33554432,
+        "staging_capacity_per_writer": 268435456,
+        "backup_capacity_per_copy": 33554432,
+        "process_rss_cap": false
+      },
+      "shared_budget": {
+        "max_bytes": 67108864,
+        "reserved_bytes": 17383424,
+        "peak_reserved_bytes": 17383424,
+        "refusals": 0,
+        "categories": {
+          "store-retained": 4276224,
+          "store-stage": 0,
+          "store-read": 13107200
+        },
+        "category_peaks": {
+          "store-retained": 4276224,
+          "store-stage": 11637920,
+          "store-read": 13107200
+        }
+      }
+    },
+    "after_time_only_change": {
+      "unique_chunks": 32,
+      "encoded_payload_bytes": 1248730,
+      "snapshots": 2,
+      "database_bytes": 1306624,
+      "decoded_cache_bytes": 65536,
+      "verified_cache_entries": 32,
+      "operations": {
+        "payload_reads": 32,
+        "decoded_hits": 0,
+        "verified_hits": 32,
+        "encodes": 32,
+        "staged_bytes": 0,
+        "prepare_seconds": 0.021701762000020608,
+        "writer_seconds": 0.0029558510000242677,
+        "insert_batches": 6,
+        "peak_prepared_bytes": 1255834
+      },
+      "resource_allowances": {
+        "retained_ram_allowance": 4276224,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 31766272,
+        "read_workspace_allowance": 13107200,
+        "database_capacity": 33554432,
+        "rollback_journal_capacity": 33554432,
+        "staging_capacity_per_writer": 268435456,
+        "backup_capacity_per_copy": 33554432,
+        "process_rss_cap": false
+      },
+      "shared_budget": {
+        "max_bytes": 67108864,
+        "reserved_bytes": 17383424,
+        "peak_reserved_bytes": 29033344,
+        "refusals": 0,
+        "categories": {
+          "store-retained": 4276224,
+          "store-stage": 0,
+          "store-read": 13107200
+        },
+        "category_peaks": {
+          "store-retained": 4276224,
+          "store-stage": 11649920,
+          "store-read": 13107200
+        }
+      }
+    },
+    "new_chunks": 0
+  },
+  "sources": {
+    "regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "execution.py": "cb6e7f0cd81433062c34e2dc1ca43c7b30f82e22bbe68c2490b38f404e05963e",
+    "_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+    "__init__.py": "3476bf0154ec4f35e1f01abee0058c2e7d17fed548fe1c58143a90f866f0212a",
+    "_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "reuse.py": "080247176c9a4b8ea5d742f2bc560f084ea1148884974ba533bc84a336e40f17",
+    "_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "materials.py": "505eeb36203350f05a7d234b6aaf6bc9ce35c5830d2802c174b45d3fc0d9e1b7",
+    "parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b"
+  }
+}

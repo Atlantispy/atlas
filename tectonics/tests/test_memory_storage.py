@@ -25,6 +25,7 @@ from atlas_tectonics import (Rotation, boundary_motion, ThermalParameters,
     advect_thickness, TectonicsError)
 from atlas_tectonics._validation import array
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
+from atlas_tectonics.reuse import CachePolicy
 from atlas_tectonics.storage import ArrayStore, StoreLimits, Compression, StoreError, StoreConflict
 from atlas_tectonics.reuse import cached_temperature, cached_flexure, invocation_identity
 
@@ -143,7 +144,8 @@ class StorageTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory()
         self.path=Path(self.tmp.name)/'store.sqlite'
         self.limits=StoreLimits(1024,1<<20,4<<20,4096)
-        self.store=ArrayStore(self.path,self.limits)
+        # This fixture deliberately tests the raw/legacy-compatible storage path.
+        self.store=ArrayStore(self.path,self.limits,Compression(codec='raw',palette=False))
 
     def tearDown(self):
         self.store.close();self.tmp.cleanup()
@@ -231,7 +233,7 @@ class StorageTests(unittest.TestCase):
                 self.assertTrue(any('blosc2-zstd' in r[0] for r in s._db.execute('SELECT codec FROM chunks')))
 
     def test_palette_index_round_trip(self):
-        with ArrayStore(Path(self.tmp.name)/'pal.db',self.limits,Compression(palette=True)) as s:
+        with ArrayStore(Path(self.tmp.name)/'pal.db',self.limits,Compression(codec='raw',palette=True,categorical='legacy')) as s:
             a=np.resize(np.array([9,21,8000],dtype='u4'),2000)
             s.put(key('p'),{'material':a})
             assert_array_equal(s.get(key('p'))['material'],a)
@@ -325,8 +327,8 @@ class ReuseTests(unittest.TestCase):
 
     def test_temperature_reuse_and_explicit_disable(self):
         args=(np.arange(10.),1.,THERMAL)
-        a=cached_temperature(*args,store=self.store)
-        b=cached_temperature(*args,store=self.store)
+        a=cached_temperature(*args,store=self.store,cache_policy=CachePolicy(mode="always"))
+        b=cached_temperature(*args,store=self.store,cache_policy=CachePolicy(mode="always"))
         assert_array_equal(a,b);assert_array_equal(a,cached_temperature(*args))
         self.assertEqual(self.store.statistics()['snapshots'],1)
 
@@ -345,34 +347,34 @@ class ReuseTests(unittest.TestCase):
         d=np.arange(10.)
         for age,params,backend in ((1,THERMAL,'reference'),(2,THERMAL,'reference'),
                 (1,replace(THERMAL,diffusivity_m2_s=2),'reference'),(1,THERMAL,'scipy')):
-            cached_temperature(d,age,params,backend=backend,store=self.store)
+            cached_temperature(d,age,params,backend=backend,store=self.store,cache_policy=CachePolicy(mode="always"))
         self.assertEqual(self.store.statistics()['snapshots'],4)
 
     def test_flexure_load_and_operator_invalidation(self):
         g=PeriodicGrid1D(16,16);op=PeriodicFlexure(g,ELASTIC)
         for load,operator in ((1,op),(1,op),(2,op),(1,PeriodicFlexure(g,replace(ELASTIC,gravity_m_s2=2)))):
-            a=cached_flexure(operator,np.full(16,float(load)),store=self.store)
+            a=cached_flexure(operator,np.full(16,float(load)),store=self.store,cache_policy=CachePolicy(mode="always"))
             assert_array_equal(a,operator.solve(np.full(16,float(load))))
         self.assertEqual(self.store.statistics()['snapshots'],3)
 
     def test_cache_reopen_returns_immutable_arrays(self):
-        a=cached_temperature(np.arange(10.),1,THERMAL,store=self.store)
+        a=cached_temperature(np.arange(10.),1,THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"))
         self.store.close();self.store=ArrayStore(self.path,self.limits)
-        b=cached_temperature(np.arange(10.),1,THERMAL,store=self.store)
+        b=cached_temperature(np.arange(10.),1,THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"))
         assert_array_equal(a,b)
         with self.assertRaises(ValueError):b.setflags(write=True)
         self.assertEqual(self.store.statistics()['snapshots'],1)
 
     def test_cache_identity_across_fresh_process(self):
         import os,subprocess,sys
-        a=cached_temperature(np.arange(10.),1,THERMAL,store=self.store)
+        a=cached_temperature(np.arange(10.),1,THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"))
         code="""import numpy as np
 from atlas_tectonics.storage import ArrayStore,StoreLimits
 from atlas_tectonics.parameters import ThermalParameters
-from atlas_tectonics.reuse import cached_temperature
+from atlas_tectonics.reuse import cached_temperature, CachePolicy
 import sys
 with ArrayStore(sys.argv[1],StoreLimits(1024,1<<20,4<<20)) as s:
- r=cached_temperature(np.arange(10.),1.,ThermalParameters('synthetic','test only',300,1300,1),store=s)
+ r=cached_temperature(np.arange(10.),1.,ThermalParameters('synthetic','test only',300,1300,1),store=s,cache_policy=CachePolicy(mode="always"))
  print(s.statistics()['snapshots'])
 """
         env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[1]/'src'),PYTHONDONTWRITEBYTECODE='1')
@@ -390,9 +392,9 @@ with ArrayStore(sys.argv[1],StoreLimits(1024,1<<20,4<<20)) as s:
         with self.assertRaisesRegex(ValueError,'bytecode'):module.source_inventory(root)
 
     def test_cache_does_not_hide_invalid_input(self):
-        cached_temperature(np.ones(4),1,THERMAL,store=self.store)
-        with self.assertRaises(TectonicsError):cached_temperature(np.ma.array(np.ones(4)),1,THERMAL,store=self.store)
-        with self.assertRaises(MemoryLimitError):cached_temperature(np.ones((100,1)),np.ones((1,100)),THERMAL,store=self.store,budget=WorkBudget(1000))
+        cached_temperature(np.ones(4),1,THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"))
+        with self.assertRaises(TectonicsError):cached_temperature(np.ma.array(np.ones(4)),1,THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"))
+        with self.assertRaises(MemoryLimitError):cached_temperature(np.ones((100,1)),np.ones((1,100)),THERMAL,store=self.store,cache_policy=CachePolicy(mode="always"),budget=WorkBudget(1000))
 
 
 if __name__=='__main__':unittest.main()

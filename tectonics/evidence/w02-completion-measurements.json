@@ -1,0 +1,199 @@
+{
+  "scope": "W02 bounded synthetic remap/ALE and independent batching; not physical/Windows/global acceptance",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "numba": "0.65.1",
+    "platform": "Linux",
+    "thread_env": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "source_sha256": {
+    "src/atlas_tectonics/__init__.py": "29a36018257548cb5fa1dbf63f8af14b7f28c706207a4cb79de301c7a958b412",
+    "src/atlas_tectonics/_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+    "src/atlas_tectonics/_mesh_native.py": "b92ee48adbca4efee2394ecc0a6ca7c0842e1183e30456b4890ed3a5b20a1b7c",
+    "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/execution.py": "ae550e437fdaab63cbfcb7a58c936537eb75e189f93f7501c1d6bd961fb9fe8f",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/markers.py": "1c290822be25a416e9ec72741c0d63eff6c7d6e7df0e8c6ab592a8c0794e665a",
+    "src/atlas_tectonics/materials.py": "d511e6b73a46b215c4001de6ccf1391d20f1bbd2db6c6545bee3baa7b85b81c8",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/remapping.py": "807cb28fd7e775ed734526745ecfdefa53bba390527f67d9ae55cca43d139d4a",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "a5a58f67aded7dfd7a9dcdbdf26bb33500d07db0a49e759251cccbf01b8b45b8",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7"
+  },
+  "remap": {
+    "source_cells": 8192,
+    "target_cells": 12288,
+    "cohorts": 2,
+    "first_native_with_setup_s": 2.4353111079999508,
+    "comparison_reference_then_native": {
+      "a_median_s": 0.1728878149999673,
+      "b_median_s": 0.0024572570000600535,
+      "a_samples_s": [
+        0.1673656899999969,
+        0.1817959019999762,
+        0.17821993999996266,
+        0.1728878149999673,
+        0.16900509000015518
+      ],
+      "b_samples_s": [
+        0.0024572570000600535,
+        0.002337998000029984,
+        0.0026402519999919605,
+        0.002660701999957382,
+        0.0023438270000042394
+      ]
+    },
+    "fresh_vs_reused_plan": {
+      "a_median_s": 0.0023056299999097973,
+      "b_median_s": 0.002127320999989024,
+      "a_samples_s": [
+        0.0023226650000651716,
+        0.0023056299999097973,
+        0.0022096349998719234,
+        0.002267252000137887,
+        0.0025436459998218197
+      ],
+      "b_samples_s": [
+        0.0021461910000653006,
+        0.0021015239999542246,
+        0.002127320999989024,
+        0.002114612000013949,
+        0.0022103369999513234
+      ]
+    },
+    "plan_bytes": 589808,
+    "max_abs_reference_difference_m": 0.0,
+    "inventory_residual_m2": [
+      0.0,
+      0.0
+    ],
+    "native_tracked_peak_bytes": 425516,
+    "reference_tracked_peak_bytes": 3388541
+  },
+  "ale": {
+    "cells": 8192,
+    "cohorts": 2,
+    "first_native_s": 3.009665049999967,
+    "comparison_reference_then_native": {
+      "a_median_s": 0.07535976100007247,
+      "b_median_s": 0.0014154139998936444,
+      "a_samples_s": [
+        0.07658589099992241,
+        0.07293039699993642,
+        0.07644584099989515,
+        0.07197292999990168,
+        0.07535976100007247
+      ],
+      "b_samples_s": [
+        0.001501553000025524,
+        0.001361592999955974,
+        0.0014277020000008633,
+        0.0012737209999613697,
+        0.0014154139998936444
+      ]
+    },
+    "max_abs_reference_difference_m": 4.440892098500626e-16,
+    "accounts_residual_m2": [
+      1.2289431625123193e-16,
+      1.4647571350279165e-16
+    ],
+    "native_tracked_peak_bytes": 861258,
+    "reference_tracked_peak_bytes": 1710876
+  },
+  "remap_refinement": [
+    {
+      "cells": 32,
+      "L1_thickness_error_m": 0.0010819093175804817
+    },
+    {
+      "cells": 64,
+      "L1_thickness_error_m": 0.00020193684501700933
+    },
+    {
+      "cells": 128,
+      "L1_thickness_error_m": 4.203281206075358e-05
+    }
+  ],
+  "independent_ale_batches": {
+    "a_median_s": 0.07533875000012813,
+    "b_median_s": 0.04508546300007765,
+    "a_samples_s": [
+      0.0755472529999679,
+      0.07533875000012813,
+      0.07448350599997866
+    ],
+    "b_samples_s": [
+      0.04508546300007765,
+      0.04434036499992544,
+      0.04603717100007998
+    ],
+    "identical": true,
+    "serial_stats": {
+      "serial_jobs": 16,
+      "parallel_jobs": 0,
+      "completed_jobs": 16,
+      "peak_inflight": 1,
+      "reserved_bytes": 0,
+      "peak_reserved_bytes": 100958208,
+      "mode": "serial",
+      "max_workers": 2,
+      "inner_threads": 1,
+      "shared_budget": {
+        "max_bytes": 268435456,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 100958208,
+        "refusals": 0,
+        "categories": {
+          "executor-inflight": 0
+        },
+        "category_peaks": {
+          "executor-inflight": 100958208
+        }
+      },
+      "process_allowance_bytes": 0
+    },
+    "auto_stats": {
+      "serial_jobs": 0,
+      "parallel_jobs": 16,
+      "completed_jobs": 16,
+      "peak_inflight": 2,
+      "reserved_bytes": 0,
+      "peak_reserved_bytes": 201916416,
+      "mode": "auto",
+      "max_workers": 2,
+      "inner_threads": 1,
+      "shared_budget": {
+        "max_bytes": 268435456,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 201916416,
+        "refusals": 0,
+        "categories": {
+          "executor-inflight": 0
+        },
+        "category_peaks": {
+          "executor-inflight": 201916416
+        }
+      },
+      "process_allowance_bytes": 0
+    }
+  },
+  "limitations": [
+    "Tracked allocations omit native/compiler/runtime overhead.",
+    "No lower-order method selected for speed; reference and native solve identical selected models.",
+    "Formation metadata not averaged; no variable-density/momentum/energy equation in W02."
+  ]
+}

@@ -1,11 +1,55 @@
 # Atlas tectonics simulation plan
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 5 | 16 September 2026**  
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 11 | 17 September 2026**
 **Status: development plan with a delivered foundation; remaining capabilities are proposed, not physically accepted.**
 
 Atlas is vibe-coded, with OpenAI ChatGPT/Codex doing the coding under Michael’s direction. The owner has selected Earth-like mobile-plate tectonics for the intended 1.0 release. Atlas remains world-agnostic; the Diadem is the principal development case, not the definition of the underlying physics.
 
-**Revision 5 — consolidated maintenance.** Two maintained documents now cover this work: this scientific/development plan and the [optimisation reference](OPTIMISATION_REFERENCE.md). Detailed performance contracts, software/mod methods, language and voxel notes, and all 84 screening records are maintained in the reference rather than separate pages. Scientific equations, K/M modes, parameter separation, W00–W12 dependencies and T01–T16 remain intact. This revision changes documentation only.
+**Revision 11 — regional W02 implementation complete.** The local delivery adds
+conservative nonuniform remapping, ALE moving volumes with u-w fluxes, explicit
+1D plate/block ownership, split/merge/reassignment/activity events, material marker
+maps and self-contained cold restoration. Together with regional/cohort transport
+and prescribed transfers, all named W02 responsibilities now have an executable
+**1D regional, constant-density, prescribed-kinematics** implementation and tests.
+This is not arbitrary-dimensional/planetary topology or physical/geological acceptance.
+Future spherical polygons/junctions and force/productivity laws remain W01/W06–W08
+extensions; they are not silently claimed by a 1D pass. W04 load construction is the
+next physical increment. The [existing optimisation reference](OPTIMISATION_REFERENCE.md#w02-completion-delivery)
+records measured methods, memory and remaining validity boundaries. Accuracy-first
+compiled defaults, W00–W12 dependencies and prior acceptance tolerances are retained.
+
+**Revision 10 — material cohorts and formation history.** The second W02 increment
+adds nonnegative partial-thickness transport by cohort, explicit known/unknown
+formation times, immutable lineage receipts, and prescribed birth/addition/removal
+transactions with per-cohort regional accounts. Higher-accuracy MUSCL/SSP-RK2 is
+the default even when upwind is faster. Runtime, memory pressure and cache policy
+must not silently lower accuracy; optimise execution of the selected equations.
+The existing snapshot store, cache controls and executor are reused. This is
+fixed-grid, common-velocity, constant-density volume accounting, not a variable-
+density or multi-velocity model. Remapping, moving topology and plate-membership
+events remain future W02 work. Physical production/recycling rates, mechanical
+closure and W05 terrain acceptance are not supplied by bookkeeping events.
+See [cohort implementation and checks](OPTIMISATION_REFERENCE.md#w02-materials-delivery).
+
+**Revision 9 — W02 regional transport delivered.** Open/closed fixed-grid transport,
+explicit external accounts, timestep advice, compiled upwind/MUSCL profiles, existing
+executor/cache integration and independent refinement checks are now implemented.
+This is one W02 increment, not all material/event history or a W05 geological pass.
+No prior numerical kernel, fixture or tolerance was altered. Current tests and
+selection limits are recorded in the existing optimisation reference's
+[W02 section](OPTIMISATION_REFERENCE.md#w02-regional-delivery).
+
+**Revision 8 — combined resource acceptance.** Item 12 now adds shared parent/component
+byte admission, retained-state lifetimes, pooled CPU/worker allowances and a combined
+resource/platform acceptance route. The local Linux run passes the regression suite
+and bounded compute/cache/compression/incremental-recovery combinations. **Windows
+acceptance is still pending an actual local run.** Item 1 remains skipped; items
+2–11 and the scientific K/M modes, equations, parameters, W00–W12 and T01–T16 remain
+intact. See the [existing optimisation reference](OPTIMISATION_REFERENCE.md#combined-acceptance)
+for evidence and limits. These are engineering foundations, not geological acceptance
+or completion of the coupled tectonic model. Two maintained documents remain the
+policy: this plan and the optimisation reference, with case/tests beside code.
+No new general roadmap or publication is part of this delivery.
 
 **Navigation:** [Scope](#recommended-architecture-and-10-scope) · [State and interfaces](#scientific-state-and-interface-contracts) · [Equations](#equation-plan-and-gaps-to-close) · [Work packages](#work-packages-and-dependency-gates) · [Coupling](#coupling-timestep-and-state-acceptance-policy) · [Execution and optimisation](#numerical-and-computational-design) · [Validation](#verification-physical-validation-and-decision-rules) · [Milestones](#milestones-decision-ownership-and-risk-control)
 
@@ -35,6 +79,7 @@ This revision consolidates documentation only. No numerical code, Atlas test, si
 
 | Requirement | Consequence for this plan |
 | --- | --- |
+| Accuracy is the default | Keep the most accurate supported selected scheme as normal; optimise it rather than selecting lower order/precision for speed. Refuse an inadequate resource budget instead of silently downgrading physics or accuracy. |
 | Earth-like tectonics for 1.0 | Assume a mobile lithosphere with terrestrial-style physical relationships; do not require a model of the origin of plate tectonics. |
 | Physical parameters are not buried in solver code | Use explicit, versioned Earth-like profiles in 1.0; reserve user-facing customisation for later without making it a release obligation. |
 | Atlas must not require the Diadem | World identity, radius/geometry, material parameters, constraints and initial conditions are inputs. History A is a compatibility example, not a universal template or independent validation case. |
@@ -53,16 +98,27 @@ A successful numerical run is not necessarily geologically plausible. A geologic
 
 ### 1.4 Current implementation and document maintenance
 
+**Current local engineering status:** the item-12 package builds on local items
+2–11 (remote base `0590774b…`). Shared resource and combination tests are Linux-
+accepted within their measured envelope; Windows is unverified. The next scientific
+work now continues from delivered open-boundary transport towards the remaining
+material-history/creation work and physically defined loading.
+Continue using the optimised defaults, and carry resource/ownership tests into each
+physical increment. No statement here means a new remote commit or a passed W05.
+
+
 Verified documentation baseline: `remake` at `612d53eba495202101a8e638578f47fb37752649`; delivered numerical foundation: `11317165b7e2aeab7201a1fe3e3f646cb640d51e`. The [module README][url-006] and [delivery record][url-007] are the source of this status, not a new run.
 
 | Work package | Delivered portion | Still outstanding |
 | --- | --- | --- |
 | W00 | Synthetic foundation case and verification rules. | The next physical case’s complete inputs, observations and acceptance decisions. |
 | W01 | Rotations, boundary diagnostics and immutable parameters. | General geological sampler, plate polygons, topology and independently verified sides. |
-| W02 | Periodic 1D conservative thickness step. | Open boundaries, material birth/recycling and event history. |
+| W02 | Regional implementation complete: cohorts/history, prescribed transfers, conservative nonuniform remap, ALE u-w motion, complete interval ownership, split/merge/reassignment/activity, marker maps, direct snapshot restoration and existing executor/cache integration. | Physical/geological acceptance is not implied. General 2D/spherical junctions and predictive source/force laws require W01/W06–W08 extensions. |
 | W03 | Analytical half-space temperature reference. | Evolving thermal solver, finite plate and compaction. |
 | W04 | Uniform periodic 1D discrete flexure. | Physical load construction and further geometries/boundaries. |
-| W05–W12 | Planning and method studies only. | Coupled mechanisms, physical validation, measured optimisation/scale and production. |
+| W05–W10 | Planning and method studies only. | Coupled mechanisms and independent physical validation. |
+| W11 | Local items 2–12 and W02-specific native, allocation, accuracy-cost and combined-path checks; bounded Linux evidence. Item 1 explicitly skipped. | Windows acceptance, future mechanisms and their physical scale-transfer/world-scale evidence. |
+| W12 | Planning only. | Production integration and release acceptance after scientific and scale gates. |
 
 **Two maintained documents:** update this plan for scope, equations, dependencies and acceptance; update `OPTIMISATION_REFERENCE.md` for execution, storage, language and method detail. Word files are reading editions of the same Markdown content, not extra authorities. Keep change history inside these documents/Git history; do not create another supplement, general review guide, source-register file or performance-plan copy for routine findings. Case specifications and obtained test evidence stay next to code and are not competing roadmaps.
 
@@ -273,6 +329,32 @@ Use the parameter separation in Section 3.4: kernels receive a frozen, identifie
 
 ### W02 — Conservative material history and boundary events
 
+**Regional completion (17 September 2026):** the remaining representation, motion
+and event operations are delivered on ColumnGrid1D. The verification case
+`cases/w02_completion.json` binds equations, coverage, immutability, conservation,
+formation history, cold restoration and optimised defaults. All 488 tests pass on
+the recorded Linux runtime, including 78 new cases. This closes implementation of
+the regional contracts, not every geometry or scientific validation gate.
+The prior fixed-grid subsection below records the earlier delivery state.
+
+
+**Delivered fixed-grid portion (17 September 2026):** regional open/closed transport
+now has cohort partial thicknesses, formation-time metadata, explicit exterior
+composition, and parent-bound prescribed transfer receipts. The sum of cohort
+quantities is the total; no independent total-density constraint is claimed.
+Self-contained snapshots preserve histories and zero-volume catalogue entries.
+See `cases/material_transport.json` and the existing scientific case notes.
+That earlier remaining remap/motion/ownership work is supplied by the regional
+completion above. General planetary geometry and predictive forcing are not supplied.
+
+
+**Delivered increment:** `RegionalGrid1D`, `TransportBoundary`, `advect_regional`
+and timestep advice now supply fixed-grid, constant-density one-field transport.
+Compiled MC-limited MUSCL/SSP-RK2 is the new regional default; first-order upwind and
+independent references are explicit. The two schemes have distinct identities and
+CFL/accuracy envelopes. Source-reservoir labels are provenance, not a transported
+mixture or full history. Remaining W02 responsibilities below are still outstanding.
+
 **Dependencies:** W01. **References:** P02/P05/P11, E03/E10/E11/E23, N01/N02; F02/F04/F06/F07/F13.
 
 Track material identity separately from plate identity and mesh identity. Move material, record birth/removal, and transfer extensive quantities conservatively. Treat particle-to-mesh intensive projection separately. Establish thickness change from area deformation under constant-density analytic cases before variable properties or mixed layers.
@@ -475,7 +557,7 @@ This scale analysis provides an early feasibility/validity filter without a simu
 | W11 | Measure enabling work when needed; then compare accepted behaviour at matched error and broaden the workload envelope. No speculative whole-world speed multiplier. |
 | W12 | Carry only supported backends, compatible fixtures and tested cache/recovery behaviour into production. |
 
-The next substantive work remains extending the existing foundation towards a causal mechanism: open-boundary transport, material creation/recycling where required, and physically defined load construction before the coupled extension claim. Consider a bulk cooling routine or fused transport only when the selected workload warrants it. Viewer, audio, networking and a complete voxel engine do not precede the physics merely because their methods have been catalogued.
+The next substantive work is W04 physical load/buoyancy construction from the delivered regional material state, with W03 thermal/compaction where needed. Reuse W02 transport, cohorts, remapping and events rather than rebuilding them. Apply the existing optimised execution and resource tests during that physical increment.
 
 <a id="verification-physical-validation-and-decision-rules"></a>
 
@@ -621,7 +703,14 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Recommended next task:** continue from the delivered foundation. Specify the next bounded open-boundary/material-transport and physical-load connection, preserving the existing independent reference tests. Complete the relevant W00 acceptance and execution card for that increment, then progress towards W05. Do not rebuild the foundation or start a full rewrite, increase historical bounds, install a borrowed simulator or construct the production chain merely to continue development.
+**Current next task after regional W02:** construct and verify the physical load /
+buoyancy connection in W04 from actual thickness/material changes, with explicit
+densities and reference columns. W03 thermal/compaction extensions remain where
+needed; W05 follows only the relevant physical checks. Do not repeat the general
+optimisation programme or rebuild delivered W02 infrastructure. The guidance below identifies the next physical increment, not another rebuild.
+
+
+**Recommended next task:** implement W04's reference-column/load connection using W02's material inventories. Select explicit densities and reference states; verify signs, limits and independent flexural/buoyancy responses without double counting. Preserve the existing independent tests and resource contracts. Do not repeat W02 or begin full production integration before the relevant physical evidence.
 
 For Claude or another reviewer, review this plan in the following order: (1) whether the two deformation modes are honestly distinguished; (2) whether N01/N02 and E28 close the material/surface links without double counting; (3) whether C01–C07 identify real missing physics rather than hiding it; (4) whether the proposed cases can falsify errors independently of Diadem geometry; (5) whether the core 1.0 scope and later planetary aims are realistic and distinct; (6) whether optimisation is matched to a verified equation and fixed error budget; (7) whether the P01–P15 execution map respects nonlocal/sequential dependencies; (8) whether cache identities, resource admission, random streams and PT01–PT14 tests can catch real failures. Challenge any PF candidate whose added complexity exceeds its demonstrated benefit.
 

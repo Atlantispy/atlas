@@ -4,6 +4,7 @@ Expected values are derived independently of implementation where possible.
 All material constants in foundations.json are synthetic, not Earth calibration.
 """
 from dataclasses import FrozenInstanceError, replace
+from functools import partial
 import json
 import math
 from pathlib import Path
@@ -19,6 +20,11 @@ from atlas_tectonics import (
     half_space_temperature, PeriodicFlexure, identity,
 )
 from atlas_tectonics._validation import array, scalar
+
+# Verification explicitly selects the reference: changing product defaults must
+# not turn independent backend comparisons into self-comparisons.
+advect_thickness = partial(advect_thickness, backend="reference")
+half_space_temperature = partial(half_space_temperature, backend="reference")
 
 CASE = json.loads((Path(__file__).resolve().parents[1] / 'cases/foundations.json').read_text())
 THERMAL = ThermalParameters(**CASE['thermal'])

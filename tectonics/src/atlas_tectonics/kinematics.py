@@ -4,13 +4,13 @@ No plate topology, force balance or interpretation as measured fault slip is inf
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 from typing import Any
 
 import numpy as np
 
-from ._validation import FloatArray, TectonicsError, array, frozen, scalar, input_shape
+from ._validation import FloatArray, TectonicsError, read_array as array, frozen, scalar, input_shape
 from .resources import elements, select_budget
 
 
@@ -36,10 +36,17 @@ def _unit(vector: FloatArray) -> FloatArray:
 class Rotation:
     """Unit quaternion (w,x,y,z); normalisation preserves a proper rotation."""
     quaternion: tuple[float, float, float, float]
+    _matrix: FloatArray = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         q = _vector(self.quaternion, 4, "quaternion")
-        object.__setattr__(self, "quaternion", tuple(float(x) for x in _unit(q)))
+        values = tuple(float(x) for x in _unit(q))
+        object.__setattr__(self, "quaternion", values)
+        w, x, y, z = values
+        matrix = np.array(((1 - 2*(y*y + z*z), 2*(x*y - z*w), 2*(x*z + y*w)),
+                           (2*(x*y + z*w), 1 - 2*(x*x + z*z), 2*(y*z - x*w)),
+                           (2*(x*z - y*w), 2*(y*z + x*w), 1 - 2*(x*x + y*y))))
+        object.__setattr__(self, "_matrix", frozen(matrix))
 
     @classmethod
     def from_axis_angle(cls, axis: Any, angle_rad: float) -> Rotation:
@@ -61,22 +68,77 @@ class Rotation:
         return Rotation((a*w-b*x-c*y-d*z, a*x+b*w+c*z-d*y,
                          a*y-b*z+c*w+d*x, a*z+b*y-c*x+d*w))
 
-    def apply(self, positions_m: Any, *, budget=None) -> FloatArray:
-        """Rotate a vector or an array (...,3); output is detached and immutable."""
+    @property
+    def matrix(self) -> FloatArray:
+        """Immutable 3x3 operator with a private descriptor; 72 retained data bytes."""
+        return self._matrix.view()
+
+    @property
+    def setup_bytes(self) -> int:
+        return self._matrix.nbytes
+
+    def apply(self, positions_m: Any, *, budget=None, backend: str = "matrix",
+              batch_vectors: int = 65_536) -> FloatArray:
+        """Rotate (...,3) positions. Reused matrix batches are the default.
+
+        reference explicitly retains the prior quaternion cross-product formula.
+        Matrix multiplication changes floating-point ordering: equivalence is
+        bounded, not promised bitwise. Do not substitute old cached results.
+        Caller arrays are never modified; all output is published immutably.
+        """
+        if backend not in ("matrix", "reference"):
+            raise TectonicsError("rotation backend must be matrix or reference")
+        if type(batch_vectors) is not int or batch_vectors <= 0:
+            raise TectonicsError("batch_vectors must be a positive integer")
         shape = input_shape(positions_m, "positions_m")
-        if not shape or shape[-1] != 3:
-            raise TectonicsError("positions must have final dimension 3")
-        with select_budget(budget).reserve(128 * elements(shape)):
+        if not shape or shape[-1] != 3 or not elements(shape):
+            raise TectonicsError("positions must be nonempty with final dimension 3")
+        count = elements(shape)
+        required = (128 * count if backend == "reference" else
+                    32 * count + 24 * min(count // 3, batch_vectors) + 8192)
+        with select_budget(budget).reserve(required):
             points = array(positions_m, "positions_m")
-            if points.ndim < 1 or points.shape[-1] != 3:
-                raise TectonicsError("positions must have final dimension 3")
-            w, *xyz = self.quaternion
+            if points.shape != shape:
+                raise TectonicsError("input shape changed during capture")
             try:
                 with np.errstate(over="raise", invalid="raise"):
-                    twice_cross = 2 * np.cross(xyz, points)
-                    return frozen(points + w * twice_cross + np.cross(xyz, twice_cross))
+                    if backend == "reference":
+                        w, *xyz = self.quaternion
+                        twice_cross = 2 * np.cross(xyz, points)
+                        result = points + w * twice_cross + np.cross(xyz, twice_cross)
+                    else:
+                        flat = points.reshape(-1, 3)
+                        result = np.empty(points.shape, dtype=np.float64)
+                        output = result.reshape(-1, 3)
+                        for start in range(0, flat.shape[0], batch_vectors):
+                            np.matmul(flat[start:start+batch_vectors], self._matrix.T,
+                                      out=output[start:start+batch_vectors])
+                        del flat, output
+                del points
+                return frozen(result)
             except FloatingPointError as exc:
                 raise TectonicsError("rotated coordinates exceed numerical range") from exc
+
+    def apply_batches(self, position_batches, *, budget=None, backend="matrix",
+                      batch_vectors=65_536):
+        """Yield one complete immutable result per input batch, without prefetch.
+
+        Consume/discard outputs to keep total RAM bounded. Each batch is a separate
+        capture; mutating not-yet-submitted inputs changes that later request.
+        Closing the iterator schedules nothing further and retains no reservation.
+        """
+        for positions in position_batches:
+            yield self.apply(positions, budget=budget, backend=backend,
+                             batch_vectors=batch_vectors)
+            del positions
+
+    def __reduce__(self):
+        # Do not restore mutable derived matrix state from a generic object pickle.
+        return (type(self), (self.quaternion,))
+
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+        return self
 
 
 def rigid_velocity(positions_m: Any, angular_velocity_rad_s: Any, *, budget=None) -> FloatArray:

@@ -1,0 +1,1149 @@
+{
+  "scope": "bounded items 6-8 execution/reuse comparisons; no world forecast",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "system": "Linux",
+    "machine": "x86_64",
+    "logical_cpus": 5,
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "parallel": [
+    {
+      "kernel": "cooling",
+      "elements_per_job": 256,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.001132066999844028,
+        "auto": 0.000764121999964118,
+        "threads": 0.002673278999964168
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.0006884070000978681,
+          "min_s": 0.0006203249999998661,
+          "max_s": 0.0009288599999308644,
+          "samples_s": [
+            0.0009288599999308644,
+            0.0006768099999590049,
+            0.0006203249999998661,
+            0.0006884070000978681,
+            0.0007319740000184538
+          ]
+        },
+        "auto": {
+          "median_s": 0.0007614270000431134,
+          "min_s": 0.0006831099999544676,
+          "max_s": 0.0008604970000760659,
+          "samples_s": [
+            0.000744771999961813,
+            0.0008275870000034047,
+            0.0008604970000760659,
+            0.0007614270000431134,
+            0.0006831099999544676
+          ]
+        },
+        "threads": {
+          "median_s": 0.0015611080000326183,
+          "min_s": 0.0014923999999609805,
+          "max_s": 0.001605429999926855,
+          "samples_s": [
+            0.0015518089999204676,
+            0.0015960559999257384,
+            0.001605429999926855,
+            0.0014923999999609805,
+            0.0015611080000326183
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 53296,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 53296,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 213184,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "cooling",
+      "elements_per_job": 65536,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.01004682400002821,
+        "auto": 0.008719191999944087,
+        "threads": 0.009560169999986101
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.008467353000014555,
+          "min_s": 0.008447422000017468,
+          "max_s": 0.009120777999896745,
+          "samples_s": [
+            0.009120777999896745,
+            0.008467353000014555,
+            0.008447422000017468,
+            0.0090046530001473,
+            0.00846345700006168
+          ]
+        },
+        "auto": {
+          "median_s": 0.008657768999910331,
+          "min_s": 0.008441703000016787,
+          "max_s": 0.009182840999983455,
+          "samples_s": [
+            0.008657768999910331,
+            0.00869939299991529,
+            0.008639193000135492,
+            0.009182840999983455,
+            0.008441703000016787
+          ]
+        },
+        "threads": {
+          "median_s": 0.007793045999960668,
+          "min_s": 0.007082600999865463,
+          "max_s": 0.00810861200011459,
+          "samples_s": [
+            0.007937943999877461,
+            0.007641247000037765,
+            0.00810861200011459,
+            0.007793045999960668,
+            0.007082600999865463
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 6701104,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 6701104,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 26804416,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "cooling",
+      "elements_per_job": 262144,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.036594006000086665,
+        "auto": 0.027857718999939607,
+        "threads": 0.02855213099996945,
+        "processes": 0.6446110019999196
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.03543307699987963,
+          "min_s": 0.03297180700019453,
+          "max_s": 0.039285162999931345,
+          "samples_s": [
+            0.03297180700019453,
+            0.039285162999931345,
+            0.03405585100017561,
+            0.036464571999886175,
+            0.03543307699987963
+          ]
+        },
+        "auto": {
+          "median_s": 0.022360894000030385,
+          "min_s": 0.02100763399994321,
+          "max_s": 0.024059147999878405,
+          "samples_s": [
+            0.023156763000088176,
+            0.022360894000030385,
+            0.02151721199993517,
+            0.02100763399994321,
+            0.024059147999878405
+          ]
+        },
+        "threads": {
+          "median_s": 0.03360699499990005,
+          "min_s": 0.02523340399989138,
+          "max_s": 0.03877162899993891,
+          "samples_s": [
+            0.026568145000055665,
+            0.03360699499990005,
+            0.034157174000029045,
+            0.02523340399989138,
+            0.03877162899993891
+          ]
+        },
+        "processes": {
+          "median_s": 0.046747620999894934,
+          "min_s": 0.04492265099997894,
+          "max_s": 0.05773983399990357,
+          "samples_s": [
+            0.04993237199983014,
+            0.045180990999824644,
+            0.046747620999894934,
+            0.04492265099997894,
+            0.05773983399990357
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 25575472,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 102301888,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 102301888,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "processes": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 102301888,
+          "mode": "processes",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "rotation",
+      "elements_per_job": 768,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.0005071240000233956,
+        "auto": 0.0002897270001085417,
+        "threads": 0.005114319000085743
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.00029208000000835455,
+          "min_s": 0.0002680939999208931,
+          "max_s": 0.0006309909999799856,
+          "samples_s": [
+            0.0003712799998538685,
+            0.0006309909999799856,
+            0.00028748399995492946,
+            0.0002680939999208931,
+            0.00029208000000835455
+          ]
+        },
+        "auto": {
+          "median_s": 0.0002659409999523632,
+          "min_s": 0.0002590710000731633,
+          "max_s": 0.00034436900000400783,
+          "samples_s": [
+            0.0002659409999523632,
+            0.00034436900000400783,
+            0.000260031999914645,
+            0.00033297200002380123,
+            0.0002590710000731633
+          ]
+        },
+        "threads": {
+          "median_s": 0.004671961999974883,
+          "min_s": 0.004183876000070086,
+          "max_s": 0.006800591000001077,
+          "samples_s": [
+            0.004212629999983619,
+            0.004679122999959873,
+            0.004183876000070086,
+            0.004671961999974883,
+            0.006800591000001077
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 84544,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 84544,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 338176,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "rotation",
+      "elements_per_job": 196608,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.005995978000100877,
+        "auto": 0.004396276000079524,
+        "threads": 0.00785947200006376
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.0043663520000336575,
+          "min_s": 0.004280851999965307,
+          "max_s": 0.0053887930000655615,
+          "samples_s": [
+            0.0053887930000655615,
+            0.004284128000108467,
+            0.0043663520000336575,
+            0.004532662000201526,
+            0.004280851999965307
+          ]
+        },
+        "auto": {
+          "median_s": 0.004666444000122283,
+          "min_s": 0.0042966360001628345,
+          "max_s": 0.005088200000045617,
+          "samples_s": [
+            0.0044021150001753995,
+            0.004666444000122283,
+            0.0042966360001628345,
+            0.005088200000045617,
+            0.004672392999964359
+          ]
+        },
+        "threads": {
+          "median_s": 0.00896320500010006,
+          "min_s": 0.008561414000041623,
+          "max_s": 0.05573055100012425,
+          "samples_s": [
+            0.008561414000041623,
+            0.009728057999836892,
+            0.00896320500010006,
+            0.05573055100012425,
+            0.00864422899985584
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 17318464,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 17318464,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 69273856,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "rotation",
+      "elements_per_job": 786432,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.033780686999989484,
+        "auto": 0.019263274999957503,
+        "threads": 0.027527456000143502,
+        "processes": 0.8942770250000649
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.020199617000116632,
+          "min_s": 0.01934884399997827,
+          "max_s": 0.021657092999930683,
+          "samples_s": [
+            0.019389544999967256,
+            0.02086774300005345,
+            0.021657092999930683,
+            0.01934884399997827,
+            0.020199617000116632
+          ]
+        },
+        "auto": {
+          "median_s": 0.02049097500002972,
+          "min_s": 0.019660773999930825,
+          "max_s": 0.023703778000026432,
+          "samples_s": [
+            0.019660773999930825,
+            0.023703778000026432,
+            0.021585875000027954,
+            0.01994206800009124,
+            0.02049097500002972
+          ]
+        },
+        "threads": {
+          "median_s": 0.026993046000143295,
+          "min_s": 0.026280180999947333,
+          "max_s": 0.02844770799993057,
+          "samples_s": [
+            0.026993046000143295,
+            0.026280180999947333,
+            0.02844770799993057,
+            0.028017149000106656,
+            0.026511079000101745
+          ]
+        },
+        "processes": {
+          "median_s": 0.1414936389999184,
+          "min_s": 0.13654161499994188,
+          "max_s": 0.14210999700003413,
+          "samples_s": [
+            0.13654161499994188,
+            0.1417351930001587,
+            0.14210999700003413,
+            0.1414936389999184,
+            0.13681754499998533
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 64504384,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 64504384,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 258017536,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "processes": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 258017536,
+          "mode": "processes",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "flexure",
+      "elements_per_job": 256,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.0007079340000473167,
+        "auto": 0.00037462299997059745,
+        "threads": 0.0013686269999197975
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.00034159300003011595,
+          "min_s": 0.0003121190000001661,
+          "max_s": 0.0004312280000249302,
+          "samples_s": [
+            0.0004312280000249302,
+            0.00031874899991635175,
+            0.00034159300003011595,
+            0.00037345100008678855,
+            0.0003121190000001661
+          ]
+        },
+        "auto": {
+          "median_s": 0.00035635600011119095,
+          "min_s": 0.0003048880000733334,
+          "max_s": 0.00048409800001536496,
+          "samples_s": [
+            0.00035635600011119095,
+            0.0004342930001257628,
+            0.0003108769999471406,
+            0.00048409800001536496,
+            0.0003048880000733334
+          ]
+        },
+        "threads": {
+          "median_s": 0.0008103879999907804,
+          "min_s": 0.0007595209999635699,
+          "max_s": 0.00096720299984554,
+          "samples_s": [
+            0.0008446399999684218,
+            0.0008103879999907804,
+            0.00096720299984554,
+            0.0007595209999635699,
+            0.0007928820000415726
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 61504,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 61504,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 246016,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "flexure",
+      "elements_per_job": 65536,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.008235637000097995,
+        "auto": 0.007642666000037934,
+        "threads": 0.008915784000009808
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.0073780180000539985,
+          "min_s": 0.007103525000047739,
+          "max_s": 0.008290179000141507,
+          "samples_s": [
+            0.008290179000141507,
+            0.0073780180000539985,
+            0.00711113700003807,
+            0.007103525000047739,
+            0.007820964000075037
+          ]
+        },
+        "auto": {
+          "median_s": 0.007578500000136046,
+          "min_s": 0.007232589999830452,
+          "max_s": 0.008330390000082843,
+          "samples_s": [
+            0.007232589999830452,
+            0.008330390000082843,
+            0.007480873000076826,
+            0.007598258999905738,
+            0.007578500000136046
+          ]
+        },
+        "threads": {
+          "median_s": 0.007623376000083226,
+          "min_s": 0.004999464000093212,
+          "max_s": 0.00811365399999886,
+          "samples_s": [
+            0.007623376000083226,
+            0.00811365399999886,
+            0.005066498000132924,
+            0.004999464000093212,
+            0.007698199000060413
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 11550784,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 11550784,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 46203136,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    },
+    {
+      "kernel": "flexure",
+      "elements_per_job": 262144,
+      "job_count": 8,
+      "bit_equal": true,
+      "first_call_s": {
+        "serial": 0.03363178400013567,
+        "auto": 0.023224146999837103,
+        "threads": 0.021737176999977237,
+        "processes": 0.6247540930000923
+      },
+      "timings": {
+        "serial": {
+          "median_s": 0.033578132999991794,
+          "min_s": 0.032502597000075184,
+          "max_s": 0.037795630999880814,
+          "samples_s": [
+            0.032670409000047584,
+            0.032502597000075184,
+            0.033578132999991794,
+            0.037795630999880814,
+            0.034189912000101685
+          ]
+        },
+        "auto": {
+          "median_s": 0.02124399700005597,
+          "min_s": 0.020295532000091043,
+          "max_s": 0.022829178999927535,
+          "samples_s": [
+            0.020991908000041803,
+            0.022481721000076504,
+            0.020295532000091043,
+            0.02124399700005597,
+            0.022829178999927535
+          ]
+        },
+        "threads": {
+          "median_s": 0.022312431999807814,
+          "min_s": 0.021443126000121993,
+          "max_s": 0.03650994899999205,
+          "samples_s": [
+            0.023726647000103185,
+            0.03650994899999205,
+            0.022312431999807814,
+            0.021444824000127483,
+            0.021443126000121993
+          ]
+        },
+        "processes": {
+          "median_s": 0.06188238000004276,
+          "min_s": 0.05979205300013746,
+          "max_s": 0.07296903599990401,
+          "samples_s": [
+            0.06188238000004276,
+            0.07296903599990401,
+            0.05979205300013746,
+            0.06293947899985142,
+            0.060025128999996014
+          ]
+        }
+      },
+      "execution": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 46153792,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "auto": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 184615168,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 184615168,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1
+        },
+        "processes": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 184615168,
+          "mode": "processes",
+          "max_workers": 2,
+          "inner_threads": 1
+        }
+      }
+    }
+  ],
+  "identity": {
+    "previous_fresh": {
+      "median_s": 0.001910210999994888,
+      "samples_s": [
+        0.0022990150000623544,
+        0.0019266050001078838,
+        0.0017705309999200836,
+        0.0018089990001044498,
+        0.001910210999994888,
+        0.002151934000039546,
+        0.0018363689998750488
+      ]
+    },
+    "context_initial_s": 0.0210338800000045,
+    "current_fresh": {
+      "median_s": 0.005650952999985748,
+      "min_s": 0.005303290000028937,
+      "max_s": 0.006306648000190762,
+      "samples_s": [
+        0.005521928000007392,
+        0.005650952999985748,
+        0.00589184499995099,
+        0.005303290000028937,
+        0.005888378999998167,
+        0.00533851299996968,
+        0.006306648000190762
+      ]
+    },
+    "current_reused_verify": {
+      "median_s": 0.000866392000034466,
+      "min_s": 0.0008165479998751835,
+      "max_s": 0.0012557879999803845,
+      "samples_s": [
+        0.0009920299999066629,
+        0.0008165479998751835,
+        0.0008306889999403211,
+        0.0012557879999803845,
+        0.001082886999938637,
+        0.0008573279999382066,
+        0.000866392000034466
+      ]
+    }
+  },
+  "cache": [
+    {
+      "elements": 256,
+      "first_call_s": {
+        "direct": 0.00017893900007948105,
+        "auto": 0.00010786199982248945,
+        "always_plain": 0.008488365999937741,
+        "always_prepared_context": 0.002408769999874494
+      },
+      "timings": {
+        "direct": {
+          "median_s": 5.381100004342443e-05,
+          "min_s": 4.84619999951974e-05,
+          "max_s": 0.00011466199998722004,
+          "samples_s": [
+            0.00011466199998722004,
+            5.381100004342443e-05,
+            5.060600005890592e-05,
+            5.577299998549279e-05,
+            4.84619999951974e-05
+          ]
+        },
+        "auto": {
+          "median_s": 7.914899993011204e-05,
+          "min_s": 6.442599988076836e-05,
+          "max_s": 0.0001120879999234603,
+          "samples_s": [
+            7.914899993011204e-05,
+            9.307999994234706e-05,
+            6.442599988076836e-05,
+            0.0001120879999234603,
+            6.76510001085262e-05
+          ]
+        },
+        "always_plain": {
+          "median_s": 0.0024687309999080753,
+          "min_s": 0.002175290000195673,
+          "max_s": 0.0026705029999902763,
+          "samples_s": [
+            0.002175290000195673,
+            0.00217817400016429,
+            0.0026705029999902763,
+            0.0024687309999080753,
+            0.002564584999845465
+          ]
+        },
+        "always_prepared_context": {
+          "median_s": 0.00241789400001835,
+          "min_s": 0.0021849540000857814,
+          "max_s": 0.0026626019998730044,
+          "samples_s": [
+            0.00241789400001835,
+            0.0021849540000857814,
+            0.0026626019998730044,
+            0.0024882200000320154,
+            0.002252896000072724
+          ]
+        }
+      },
+      "auto_controller": {
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "bypasses": 6,
+        "recomputes": 0,
+        "cost_records": 0,
+        "admission_profiles": 1,
+        "contexts": 0
+      },
+      "store": {
+        "unique_chunks": 1,
+        "encoded_payload_bytes": 2048,
+        "snapshots": 1,
+        "database_bytes": 24576,
+        "decoded_cache_bytes": 2048
+      },
+      "bit_equal": true
+    },
+    {
+      "elements": 65536,
+      "first_call_s": {
+        "direct": 0.0012036589998842828,
+        "auto": 0.0011899479998191964,
+        "always_plain": 0.011670849000211092,
+        "always_prepared_context": 0.005802110000104221
+      },
+      "timings": {
+        "direct": {
+          "median_s": 0.0010087260000091192,
+          "min_s": 0.000961615000051097,
+          "max_s": 0.0011169189999691298,
+          "samples_s": [
+            0.0011169189999691298,
+            0.0010087260000091192,
+            0.000961615000051097,
+            0.0009852809998847079,
+            0.0010777499999221618
+          ]
+        },
+        "auto": {
+          "median_s": 0.0010884949999763194,
+          "min_s": 0.0010018049999871437,
+          "max_s": 0.0011359669999819744,
+          "samples_s": [
+            0.0010884949999763194,
+            0.0011359669999819744,
+            0.0010077749998345098,
+            0.0011254810001446458,
+            0.0010018049999871437
+          ]
+        },
+        "always_plain": {
+          "median_s": 0.0052367299999787065,
+          "min_s": 0.004964140000083717,
+          "max_s": 0.006198885999992854,
+          "samples_s": [
+            0.0052367299999787065,
+            0.004964140000083717,
+            0.006198885999992854,
+            0.005206994999980452,
+            0.005480766999880871
+          ]
+        },
+        "always_prepared_context": {
+          "median_s": 0.004464609000024211,
+          "min_s": 0.003986360999988392,
+          "max_s": 0.005144612000094639,
+          "samples_s": [
+            0.005144612000094639,
+            0.003986360999988392,
+            0.004464609000024211,
+            0.004706813999973747,
+            0.004186932000038723
+          ]
+        }
+      },
+      "auto_controller": {
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "bypasses": 6,
+        "recomputes": 0,
+        "cost_records": 0,
+        "admission_profiles": 1,
+        "contexts": 0
+      },
+      "store": {
+        "unique_chunks": 16,
+        "encoded_payload_bytes": 524288,
+        "snapshots": 1,
+        "database_bytes": 557056,
+        "decoded_cache_bytes": 262144
+      },
+      "bit_equal": true
+    },
+    {
+      "elements": 262144,
+      "first_call_s": {
+        "direct": 0.004268423999974402,
+        "auto": 0.003949225000042134,
+        "always_plain": 0.022603440000011688,
+        "always_prepared_context": 0.011050597000121343
+      },
+      "timings": {
+        "direct": {
+          "median_s": 0.0040727699999933975,
+          "min_s": 0.003931683000018893,
+          "max_s": 0.00422374699996908,
+          "samples_s": [
+            0.00422374699996908,
+            0.0040289250000569155,
+            0.0040727699999933975,
+            0.004085195000016029,
+            0.003931683000018893
+          ]
+        },
+        "auto": {
+          "median_s": 0.004146381000055044,
+          "min_s": 0.003951968999899691,
+          "max_s": 0.004618107999931453,
+          "samples_s": [
+            0.004146381000055044,
+            0.004020851999939623,
+            0.003951968999899691,
+            0.004205036000030304,
+            0.004618107999931453
+          ]
+        },
+        "always_plain": {
+          "median_s": 0.013109056999837776,
+          "min_s": 0.011846582999851307,
+          "max_s": 0.017061565999938466,
+          "samples_s": [
+            0.012160055000094872,
+            0.011846582999851307,
+            0.013109056999837776,
+            0.01572767500010741,
+            0.017061565999938466
+          ]
+        },
+        "always_prepared_context": {
+          "median_s": 0.011162634999891452,
+          "min_s": 0.010672619999922972,
+          "max_s": 0.015242374999843378,
+          "samples_s": [
+            0.011162634999891452,
+            0.01089336099994398,
+            0.010672619999922972,
+            0.01257334299998547,
+            0.015242374999843378
+          ]
+        }
+      },
+      "auto_controller": {
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "bypasses": 6,
+        "recomputes": 0,
+        "cost_records": 0,
+        "admission_profiles": 1,
+        "contexts": 0
+      },
+      "store": {
+        "unique_chunks": 64,
+        "encoded_payload_bytes": 2097152,
+        "snapshots": 1,
+        "database_bytes": 2166784,
+        "decoded_cache_bytes": 262144
+      },
+      "bit_equal": true
+    }
+  ],
+  "source_sha256": {
+    "src/atlas_tectonics/__init__.py": "f76dd593af15945db3c5b55f0e0df465b589711a4fdd5d5a55465af1a7376d7f",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/execution.py": "0ba80cc9e690fb2f853583de6b7a8520729c6052d3010ae686f31073517d73c7",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "d75bb42d58e82e613a7c4ca22643d8ea7192dc7a47176d1e568294f55403af8c",
+    "src/atlas_tectonics/reuse.py": "cfe376f402faf920cbfaabb84e85704cb2238e979ac124f47002d57a930ec66f",
+    "src/atlas_tectonics/storage.py": "ff3dbe5c2bc59eb99bdef4a76ee04b22bdbd433c75dc41f339067fbf3583514d",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7"
+  },
+  "baseline_source_sha256": {
+    "src/atlas_tectonics/__init__.py": "f76dd593af15945db3c5b55f0e0df465b589711a4fdd5d5a55465af1a7376d7f",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "d75bb42d58e82e613a7c4ca22643d8ea7192dc7a47176d1e568294f55403af8c",
+    "src/atlas_tectonics/reuse.py": "5278ee4807ae182106f9ecdf3267d26c3afb60a580d125cf3fe7cfbcf7cdf719",
+    "src/atlas_tectonics/storage.py": "5d7480d2a68370fce5924c1af65600000d9401a99082af71ea2972cda43b3241",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7"
+  }
+}

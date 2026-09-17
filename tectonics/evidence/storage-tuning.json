@@ -1,0 +1,1770 @@
+{
+  "scope": "bounded storage only; synthetic arrays; no geological or whole-world claim",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "blosc2": "4.3.3",
+    "zstd": "1.5.7",
+    "platform": "Linux"
+  },
+  "source_sha256": "ab053597e10c20155be626f915ba3be41cd1ed70e5011cc0d6044d640ce8f834",
+  "baseline_storage_sha256": "ff3dbe5c2bc59eb99bdef4a76ee04b22bdbd433c75dc41f339067fbf3583514d",
+  "tune": {
+    "candidates": [
+      {
+        "chunk_bytes": 16384,
+        "configuration": "raw",
+        "encoded_bytes": 1048704,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0004590186668262201,
+        "decode_seconds": 6.332333335497727e-05,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 0.0001763803331868985,
+            "decode_seconds": 2.5855333243877492e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 3.636933350511148e-05,
+            "decode_seconds": 4.220666672457203e-06
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 5.5466666670630126e-05,
+            "decode_seconds": 4.076666603699171e-06
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 6.51240000403656e-05,
+            "decode_seconds": 1.4835333331575384e-05
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 6.295666673850064e-05,
+            "decode_seconds": 7.123666819097707e-06
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 6.272166668471375e-05,
+            "decode_seconds": 7.2116666842703125e-06
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-1-none",
+        "encoded_bytes": 523192,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.005319362666379372,
+        "decode_seconds": 0.0019144283333313676,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.261833339574271e-05,
+            "decode_seconds": 1.346700010647813e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16664,
+            "encode_seconds": 0.001870429000026282,
+            "decode_seconds": 0.0003603936667862702
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 886,
+            "encode_seconds": 0.0009725083333478324,
+            "decode_seconds": 0.00016738300003756498
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 247880,
+            "encode_seconds": 0.0007999463331316292,
+            "decode_seconds": 0.00042934966681211034
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 252210,
+            "encode_seconds": 0.0008151073332480033,
+            "decode_seconds": 0.0004452823330893807
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 5424,
+            "encode_seconds": 0.0007887533332298821,
+            "decode_seconds": 0.0004985526664995632
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-1-byte",
+        "encoded_bytes": 453561,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0045631839999866015,
+        "decode_seconds": 0.0011961053332167164,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 8.545233345103043e-05,
+            "decode_seconds": 1.4100666514120045e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 13558,
+            "encode_seconds": 0.0014987673332598206,
+            "decode_seconds": 0.00017648200002895464
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 856,
+            "encode_seconds": 0.0008350496666101511,
+            "decode_seconds": 0.00013726999994408592
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 203356,
+            "encode_seconds": 0.0008417259999760063,
+            "decode_seconds": 0.00029035700003987586
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 234271,
+            "encode_seconds": 0.0008829169998989528,
+            "decode_seconds": 0.00036696299999524246
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 1392,
+            "encode_seconds": 0.00041927166679064004,
+            "decode_seconds": 0.00021093266669443741
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-1-bit",
+        "encoded_bytes": 458064,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0054266423334183855,
+        "decode_seconds": 0.001374542666439993,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 0.00011542766662842041,
+            "decode_seconds": 1.5573666511651634e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12800,
+            "encode_seconds": 0.0016843236667606714,
+            "decode_seconds": 0.00017998366676389801
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 1056,
+            "encode_seconds": 0.0012462709999757255,
+            "decode_seconds": 0.00019833499997427376
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 202235,
+            "encode_seconds": 0.0008810590001833892,
+            "decode_seconds": 0.00033421133324888314
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 240837,
+            "encode_seconds": 0.0009680216667599476,
+            "decode_seconds": 0.00037616999998135725
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 1008,
+            "encode_seconds": 0.0005315393331102314,
+            "decode_seconds": 0.0002702689999599291
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-3-none",
+        "encoded_bytes": 518711,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0063347373331149965,
+        "decode_seconds": 0.0021907019999313584,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.343799999641003e-05,
+            "decode_seconds": 1.3200999849990088e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16664,
+            "encode_seconds": 0.002675355666535021,
+            "decode_seconds": 0.00044937966674751806
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 787,
+            "encode_seconds": 0.001080856999919888,
+            "decode_seconds": 0.00018988100013454337
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 247882,
+            "encode_seconds": 0.0010490720000386016,
+            "decode_seconds": 0.0006829470000487466
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 252210,
+            "encode_seconds": 0.000987221999897277,
+            "decode_seconds": 0.0006085283333353194
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 1040,
+            "encode_seconds": 0.00046879266672779824,
+            "decode_seconds": 0.000246764999815241
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-3-byte",
+        "encoded_bytes": 453199,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.006842098333057341,
+        "decode_seconds": 0.001297067000109564,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.277599998663693e-05,
+            "decode_seconds": 1.3430000118811828e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 14736,
+            "encode_seconds": 0.0018225153332120196,
+            "decode_seconds": 0.00021977833334100674
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 808,
+            "encode_seconds": 0.0009309253332124475,
+            "decode_seconds": 0.0001494590000371924
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 202376,
+            "encode_seconds": 0.0017600830000219503,
+            "decode_seconds": 0.00030874500002179656
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 233759,
+            "encode_seconds": 0.0018121749999788033,
+            "decode_seconds": 0.00036805199999889737
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 1392,
+            "encode_seconds": 0.00044362366664548364,
+            "decode_seconds": 0.00023760266659185922
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-3-bit",
+        "encoded_bytes": 453725,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.006503224999732993,
+        "decode_seconds": 0.0015280806668442892,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.273633339840065e-05,
+            "decode_seconds": 1.3308999958402032e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12776,
+            "encode_seconds": 0.0016829879999704644,
+            "decode_seconds": 0.0001766740000827364
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 947,
+            "encode_seconds": 0.0009867786667048979,
+            "decode_seconds": 0.00018647100012003648
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 200159,
+            "encode_seconds": 0.0015922373332841744,
+            "decode_seconds": 0.0003623936666296383
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 238723,
+            "encode_seconds": 0.0013059306665278807,
+            "decode_seconds": 0.00047458466671438754
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 992,
+            "encode_seconds": 0.0008625539998471746,
+            "decode_seconds": 0.00031464833333908854
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-6-none",
+        "encoded_bytes": 518706,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.025661908666885818,
+        "decode_seconds": 0.001923087666682477,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.278966684983364e-05,
+            "decode_seconds": 1.333033340718733e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16664,
+            "encode_seconds": 0.011855775333287966,
+            "decode_seconds": 0.0004852986665658439
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 786,
+            "encode_seconds": 0.0012143749999798577,
+            "decode_seconds": 0.0001690486666727035
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 247903,
+            "encode_seconds": 0.005757608999980827,
+            "decode_seconds": 0.0005048433333740832
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 252233,
+            "encode_seconds": 0.005828865000201707,
+            "decode_seconds": 0.0004911399999324809
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 992,
+            "encode_seconds": 0.000932494666585626,
+            "decode_seconds": 0.0002594266667301781
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-6-byte",
+        "encoded_bytes": 455152,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.018007947666660584,
+        "decode_seconds": 0.0013932183334948907,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 9.0662666669535e-05,
+            "decode_seconds": 1.4812000131314562e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12974,
+            "encode_seconds": 0.002455877333394104,
+            "decode_seconds": 0.00018559733333252856
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 775,
+            "encode_seconds": 0.0012718703333121084,
+            "decode_seconds": 0.00016351666662709854
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 202135,
+            "encode_seconds": 0.0053088099999361775,
+            "decode_seconds": 0.00035275233324227884
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 238132,
+            "encode_seconds": 0.008226375999962935,
+            "decode_seconds": 0.0004386620000786934
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 1008,
+            "encode_seconds": 0.0006543513333857239,
+            "decode_seconds": 0.00023787800008297685
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 16384,
+        "configuration": "zstd-6-bit",
+        "encoded_bytes": 448179,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.015757199999787492,
+        "decode_seconds": 0.0014625790001900896,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 128,
+            "encode_seconds": 7.466233319064486e-05,
+            "decode_seconds": 2.762799984642091e-05
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12776,
+            "encode_seconds": 0.0016816763333811953,
+            "decode_seconds": 0.00016910800021226655
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 814,
+            "encode_seconds": 0.0012928979998605428,
+            "decode_seconds": 0.00018352433335167007
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 197913,
+            "encode_seconds": 0.006048922000066644,
+            "decode_seconds": 0.00041781166657983704
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 235556,
+            "encode_seconds": 0.00598250099994857,
+            "decode_seconds": 0.0003929566667769298
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 992,
+            "encode_seconds": 0.0006765403333398959,
+            "decode_seconds": 0.0002715503334229652
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "raw",
+        "encoded_bytes": 1048608,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.00011476633339195057,
+        "decode_seconds": 1.6523666848418845e-05,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.2549333279045335e-05,
+            "decode_seconds": 8.368666688814605e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 1.0104666785082372e-05,
+            "decode_seconds": 1.0946666482899066e-06
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 8.920333357309573e-06,
+            "decode_seconds": 1.1150000318593811e-06
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 2.11849998853116e-05,
+            "decode_seconds": 2.0263333529631686e-06
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 2.1189000070383674e-05,
+            "decode_seconds": 1.99333339878649e-06
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 2.0818000014818e-05,
+            "decode_seconds": 1.925666727705296e-06
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-1-none",
+        "encoded_bytes": 522131,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0035662780001833503,
+        "decode_seconds": 0.001195010333162827,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.064933336342316e-05,
+            "decode_seconds": 7.822666589163418e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16454,
+            "encode_seconds": 0.0017237976666895822,
+            "decode_seconds": 0.00022539966668470393
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 590,
+            "encode_seconds": 0.0005125596666933537,
+            "decode_seconds": 5.264566660419708e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248916,
+            "encode_seconds": 0.0003862499999816767,
+            "decode_seconds": 0.0002541803332481625
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251507,
+            "encode_seconds": 0.0004491406666981372,
+            "decode_seconds": 0.00030150800008262496
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 4632,
+            "encode_seconds": 0.0004638806667571771,
+            "decode_seconds": 0.00035345399995397503
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-1-byte",
+        "encoded_bytes": 439926,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0030181623335086747,
+        "decode_seconds": 0.0005462036664312109,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.2749666691718936e-05,
+            "decode_seconds": 7.771666597970276e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 13556,
+            "encode_seconds": 0.001579348666647699,
+            "decode_seconds": 9.783499990589917e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 448,
+            "encode_seconds": 0.0004158810000186956,
+            "decode_seconds": 4.450666665434255e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 193486,
+            "encode_seconds": 0.00034725966664458,
+            "decode_seconds": 0.00012310566667868747
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 232056,
+            "encode_seconds": 0.0005010096667774633,
+            "decode_seconds": 0.0002034563332623899
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 348,
+            "encode_seconds": 0.00014191366672851777,
+            "decode_seconds": 6.95283333319215e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-1-bit",
+        "encoded_bytes": 455169,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0032917016666639634,
+        "decode_seconds": 0.0006820473333088254,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.2297999988865435e-05,
+            "decode_seconds": 7.2116666463747e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12528,
+            "encode_seconds": 0.0015256813333432244,
+            "decode_seconds": 6.762900003802012e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 631,
+            "encode_seconds": 0.00045038266667537147,
+            "decode_seconds": 9.978766661333793e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 201006,
+            "encode_seconds": 0.0004904169999993732,
+            "decode_seconds": 0.00014219766664306613
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 240596,
+            "encode_seconds": 0.0005192269999649094,
+            "decode_seconds": 0.00017022333334656045
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 376,
+            "encode_seconds": 0.0002736956666922197,
+            "decode_seconds": 0.00019499800002146608
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-3-none",
+        "encoded_bytes": 517442,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.004145342999891,
+        "decode_seconds": 0.0008897446665893464,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.084566655312907e-05,
+            "decode_seconds": 7.136999973530085e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16454,
+            "encode_seconds": 0.002456732666625309,
+            "decode_seconds": 0.00022324333334230081
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 404,
+            "encode_seconds": 0.00043310366667507577,
+            "decode_seconds": 5.353666673120946e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248862,
+            "encode_seconds": 0.0005124060000222622,
+            "decode_seconds": 0.0002494799999036938
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251426,
+            "encode_seconds": 0.0005429063333319087,
+            "decode_seconds": 0.0002504673333305618
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 264,
+            "encode_seconds": 0.00016934866668331475,
+            "decode_seconds": 0.00010588033330805047
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-3-byte",
+        "encoded_bytes": 438779,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.005054247999775423,
+        "decode_seconds": 0.0005730666666371084,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.085699991819032e-05,
+            "decode_seconds": 7.420666671957103e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 14520,
+            "encode_seconds": 0.002348772999994253,
+            "decode_seconds": 0.00015789833340325762
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 384,
+            "encode_seconds": 0.000608190999969338,
+            "decode_seconds": 6.036433330791624e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 192025,
+            "encode_seconds": 0.0009316223333068289,
+            "decode_seconds": 0.0001223246666010406
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 231470,
+            "encode_seconds": 0.0009810533333999654,
+            "decode_seconds": 0.00016059899996889726
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 348,
+            "encode_seconds": 0.00015375133318684675,
+            "decode_seconds": 6.44596666840395e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-3-bit",
+        "encoded_bytes": 445293,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0037792576665651723,
+        "decode_seconds": 0.0005788963333467715,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.0976666607784864e-05,
+            "decode_seconds": 7.290666644621524e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12428,
+            "encode_seconds": 0.0015094839999771164,
+            "decode_seconds": 7.040633333114481e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 333,
+            "encode_seconds": 0.0004659296666886803,
+            "decode_seconds": 7.574466667392699e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 195536,
+            "encode_seconds": 0.0008786416666453079,
+            "decode_seconds": 0.00016233800003343882
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 236708,
+            "encode_seconds": 0.0006458113333186096,
+            "decode_seconds": 0.0001206956666616558
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 256,
+            "encode_seconds": 0.0002484143333276734,
+            "decode_seconds": 0.00014242100000198357
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-6-none",
+        "encoded_bytes": 517427,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.016761998999982097,
+        "decode_seconds": 0.0010102306667552814,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.090299992436485e-05,
+            "decode_seconds": 7.37100015157921e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16454,
+            "encode_seconds": 0.013744834666719422,
+            "decode_seconds": 0.00026911899999504385
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 404,
+            "encode_seconds": 0.000618186000034863,
+            "decode_seconds": 7.125733331273902e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248859,
+            "encode_seconds": 0.001036429666631496,
+            "decode_seconds": 0.00026356500003051525
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251426,
+            "encode_seconds": 0.0011242356666798514,
+            "decode_seconds": 0.0002956159999409162
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 252,
+            "encode_seconds": 0.00020740999999209939,
+            "decode_seconds": 0.00010330233332448795
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-6-byte",
+        "encoded_bytes": 446196,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.008372790666574778,
+        "decode_seconds": 0.0005193469999843122,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 5.52436667173121e-05,
+            "decode_seconds": 7.788000099632578e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 14475,
+            "encode_seconds": 0.002483776333330449,
+            "decode_seconds": 0.00011240599997108802
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 386,
+            "encode_seconds": 0.0004907936666616782,
+            "decode_seconds": 5.1320666633121924e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 192922,
+            "encode_seconds": 0.0011182933333202527,
+            "decode_seconds": 0.00011062099990037193
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 238125,
+            "encode_seconds": 0.0038711869999209134,
+            "decode_seconds": 0.00014357666672519068
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 256,
+            "encode_seconds": 0.00035349666662417195,
+            "decode_seconds": 9.363466665490705e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 65536,
+        "configuration": "zstd-6-bit",
+        "encoded_bytes": 441169,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.006593129999979889,
+        "decode_seconds": 0.0005783193334233753,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 32,
+            "encode_seconds": 3.094366661571257e-05,
+            "decode_seconds": 7.484666753043712e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12412,
+            "encode_seconds": 0.001722905666686832,
+            "decode_seconds": 7.430199999210647e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 240,
+            "encode_seconds": 0.0005419010000196067,
+            "decode_seconds": 6.949800001621043e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 193723,
+            "encode_seconds": 0.0025818876666789947,
+            "decode_seconds": 0.00017265433325519552
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 234506,
+            "encode_seconds": 0.0013768303333942338,
+            "decode_seconds": 0.00013020333343168508
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 256,
+            "encode_seconds": 0.0003386616665845092,
+            "decode_seconds": 0.0001241769999751341
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "raw",
+        "encoded_bytes": 1048584,
+        "input_bytes": 1310720,
+        "encode_seconds": 7.902933331630872e-05,
+        "decode_seconds": 1.0869333285275692e-05,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.1629666662192903e-05,
+            "decode_seconds": 7.818000009744234e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 7.181000038751033e-06,
+            "decode_seconds": 6.406666367790118e-07
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 131072,
+            "encode_seconds": 5.388333344550726e-06,
+            "decode_seconds": 6.743333642589278e-07
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 1.1022999994262742e-05,
+            "decode_seconds": 6.276666605723827e-07
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 1.0735999959858114e-05,
+            "decode_seconds": 5.276666570352972e-07
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 262144,
+            "encode_seconds": 2.30713333166932e-05,
+            "decode_seconds": 5.809999568858378e-07
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-1-none",
+        "encoded_bytes": 521752,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.0028844819998994353,
+        "decode_seconds": 0.0009796413333257685,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.039100002093619e-05,
+            "decode_seconds": 7.451333355371996e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16419,
+            "encode_seconds": 0.0013797413333046886,
+            "decode_seconds": 0.00020256233328079057
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 558,
+            "encode_seconds": 0.000352595333311001,
+            "decode_seconds": 3.269300001799517e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248820,
+            "encode_seconds": 0.0003222593333399952,
+            "decode_seconds": 0.000208187666695873
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251411,
+            "encode_seconds": 0.0003289329999536979,
+            "decode_seconds": 0.0002274293332978535
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 4536,
+            "encode_seconds": 0.00048056199996911647,
+            "decode_seconds": 0.00030131766667788423
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-1-byte",
+        "encoded_bytes": 428275,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.002143069666772135,
+        "decode_seconds": 0.00030249399996288656,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.1806333317423803e-05,
+            "decode_seconds": 7.508000029095759e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12615,
+            "encode_seconds": 0.0012030316666672054,
+            "decode_seconds": 5.234566670727266e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 316,
+            "encode_seconds": 0.0003421730000354728,
+            "decode_seconds": 2.743166661881939e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 183886,
+            "encode_seconds": 0.00022428833339442159,
+            "decode_seconds": 5.354766669067127e-05
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 231362,
+            "encode_seconds": 0.00027553900000990933,
+            "decode_seconds": 0.00013400933331316386
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 88,
+            "encode_seconds": 7.623133334770198e-05,
+            "decode_seconds": 2.7651666603863607e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-1-bit",
+        "encoded_bytes": 454793,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.002365609333234412,
+        "decode_seconds": 0.000356518000065383,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.0737999989250966e-05,
+            "decode_seconds": 7.388000009693012e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12496,
+            "encode_seconds": 0.0010638716666259522,
+            "decode_seconds": 4.697066666873676e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 599,
+            "encode_seconds": 0.0003704153332743469,
+            "decode_seconds": 5.6401666673385385e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 200910,
+            "encode_seconds": 0.00038675399999495613,
+            "decode_seconds": 9.869866668547426e-05
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 240500,
+            "encode_seconds": 0.0003904256666752796,
+            "decode_seconds": 7.294366669915082e-05
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 280,
+            "encode_seconds": 0.00013340466667462655,
+            "decode_seconds": 7.411533332894275e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-3-none",
+        "encoded_bytes": 516929,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.003484712666742477,
+        "decode_seconds": 0.0007741546668285082,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.076466671496746e-05,
+            "decode_seconds": 7.361000029959541e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16419,
+            "encode_seconds": 0.0022414210000457993,
+            "decode_seconds": 0.00020894566667569356
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 341,
+            "encode_seconds": 0.00039905866666837636,
+            "decode_seconds": 3.58003333455296e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248754,
+            "encode_seconds": 0.00041579366669945256,
+            "decode_seconds": 0.00025385633333977847
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251303,
+            "encode_seconds": 0.0003373553333100669,
+            "decode_seconds": 0.00021069800004624994
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 104,
+            "encode_seconds": 7.031933330381435e-05,
+            "decode_seconds": 5.7493333391297106e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-3-byte",
+        "encoded_bytes": 427646,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.003110976333346116,
+        "decode_seconds": 0.0003554063333695012,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.0934666622451914e-05,
+            "decode_seconds": 7.281000004392506e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 14578,
+            "encode_seconds": 0.0015518379999927372,
+            "decode_seconds": 0.00011980366669680127
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 316,
+            "encode_seconds": 0.00035382033335433033,
+            "decode_seconds": 2.945766667986997e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 181470,
+            "encode_seconds": 0.0005030856666886999,
+            "decode_seconds": 6.833333335028631e-05
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 231186,
+            "encode_seconds": 0.0006106643333699443,
+            "decode_seconds": 0.00010333266667809464
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 88,
+            "encode_seconds": 7.063333331795245e-05,
+            "decode_seconds": 2.7197999960056524e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-3-bit",
+        "encoded_bytes": 442023,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.002803710000080173,
+        "decode_seconds": 0.00039709266673071397,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.056133337191568e-05,
+            "decode_seconds": 7.307666654317775e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12364,
+            "encode_seconds": 0.0010472000000163462,
+            "decode_seconds": 5.330033335818977e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 265,
+            "encode_seconds": 0.00042069833337639767,
+            "decode_seconds": 6.084200003897422e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 194675,
+            "encode_seconds": 0.0006599523333458516,
+            "decode_seconds": 0.00011463633332671937
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 234611,
+            "encode_seconds": 0.0005113043333343134,
+            "decode_seconds": 8.489133332053218e-05
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 100,
+            "encode_seconds": 0.00014399366663534843,
+            "decode_seconds": 7.611500003198064e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-6-none",
+        "encoded_bytes": 516836,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.01847308800002641,
+        "decode_seconds": 0.0007853120000618219,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.0891000000726006e-05,
+            "decode_seconds": 7.461666693113027e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 16419,
+            "encode_seconds": 0.014250006999986908,
+            "decode_seconds": 0.00023232033337687122
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 341,
+            "encode_seconds": 0.00046419733333398955,
+            "decode_seconds": 4.1095333320602854e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 248699,
+            "encode_seconds": 0.0025204386666549303,
+            "decode_seconds": 0.00023633000000700122
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 251293,
+            "encode_seconds": 0.0009245416666772144,
+            "decode_seconds": 0.00020515966665849797
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 76,
+            "encode_seconds": 0.0002930123333726442,
+            "decode_seconds": 6.29450000057356e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-6-byte",
+        "encoded_bytes": 431651,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.011132594666681447,
+        "decode_seconds": 0.00044521233333701576,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.2617666634990503e-05,
+            "decode_seconds": 8.202000003620924e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 14457,
+            "encode_seconds": 0.003033118666659599,
+            "decode_seconds": 9.834200000113924e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 317,
+            "encode_seconds": 0.00041805733333906875,
+            "decode_seconds": 3.991333331517429e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 180771,
+            "encode_seconds": 0.0025498000000349443,
+            "decode_seconds": 0.00010106266665843577
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 236019,
+            "encode_seconds": 0.004814836999988377,
+            "decode_seconds": 0.00015740433336001539
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 79,
+            "encode_seconds": 0.0002941640000244661,
+            "decode_seconds": 4.028799999863016e-05
+          }
+        },
+        "round_trip": true
+      },
+      {
+        "chunk_bytes": 262144,
+        "configuration": "zstd-6-bit",
+        "encoded_bytes": 432390,
+        "input_bytes": 1310720,
+        "encode_seconds": 0.00759912299993933,
+        "decode_seconds": 0.0006233273333388448,
+        "fields": {
+          "uniform": {
+            "input_bytes": 262144,
+            "encoded_bytes": 8,
+            "encode_seconds": 2.3001333336954605e-05,
+            "decode_seconds": 7.588333270784157e-06
+          },
+          "categories": {
+            "input_bytes": 131072,
+            "encoded_bytes": 12353,
+            "encode_seconds": 0.0015890540000024582,
+            "decode_seconds": 9.87826666687397e-05
+          },
+          "layers": {
+            "input_bytes": 131072,
+            "encoded_bytes": 135,
+            "encode_seconds": 0.0008336103333022038,
+            "decode_seconds": 7.050266663100047e-05
+          },
+          "smooth": {
+            "input_bytes": 262144,
+            "encoded_bytes": 186088,
+            "encode_seconds": 0.0032102259999646776,
+            "decode_seconds": 0.0002595386666826016
+          },
+          "rough": {
+            "input_bytes": 262144,
+            "encoded_bytes": 233725,
+            "encode_seconds": 0.0015217390000164717,
+            "decode_seconds": 9.443900000860594e-05
+          },
+          "signed_zeros": {
+            "input_bytes": 262144,
+            "encoded_bytes": 81,
+            "encode_seconds": 0.00042149233331656433,
+            "decode_seconds": 9.247600007711299e-05
+          }
+        },
+        "round_trip": true
+      }
+    ],
+    "dictionary": [
+      {
+        "bytes": 2048,
+        "kind": "records",
+        "enabled": false,
+        "encoded_bytes": 120,
+        "encode": {
+          "median_s": 4.0870999896469584e-05,
+          "min_s": 3.2318999956260086e-05,
+          "max_s": 9.803800003282959e-05,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.7105999972955033e-05,
+          "min_s": 1.5222999991237884e-05,
+          "max_s": 2.6209999987258925e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 2048,
+        "kind": "records",
+        "enabled": true,
+        "encoded_bytes": 120,
+        "encode": {
+          "median_s": 7.834900009129342e-05,
+          "min_s": 3.509299995130277e-05,
+          "max_s": 7.884900003318762e-05,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.8417999967823562e-05,
+          "min_s": 1.551299999391631e-05,
+          "max_s": 2.4627000016153033e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 2048,
+        "kind": "smooth",
+        "enabled": false,
+        "encoded_bytes": 1796,
+        "encode": {
+          "median_s": 6.37560000313897e-05,
+          "min_s": 5.1818000088132976e-05,
+          "max_s": 0.0001453390000278887,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.7296000009991985e-05,
+          "min_s": 1.6374999972867954e-05,
+          "max_s": 2.5398999923709198e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 2048,
+        "kind": "smooth",
+        "enabled": true,
+        "encoded_bytes": 1796,
+        "encode": {
+          "median_s": 6.745199993929418e-05,
+          "min_s": 5.165800007489452e-05,
+          "max_s": 9.233000002950575e-05,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.7545999980939087e-05,
+          "min_s": 1.5152999935708067e-05,
+          "max_s": 4.675999991832214e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 2048,
+        "kind": "rough",
+        "enabled": false,
+        "encoded_bytes": 1968,
+        "encode": {
+          "median_s": 7.549399992967665e-05,
+          "min_s": 5.6554999900981784e-05,
+          "max_s": 0.00016880399994079198,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.734600004965614e-05,
+          "min_s": 1.552300000184914e-05,
+          "max_s": 6.659000007402938e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 2048,
+        "kind": "rough",
+        "enabled": true,
+        "encoded_bytes": 1968,
+        "encode": {
+          "median_s": 7.460300003003795e-05,
+          "min_s": 6.129199994120427e-05,
+          "max_s": 9.453300003769982e-05,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.689499993062782e-05,
+          "min_s": 1.6193999954339233e-05,
+          "max_s": 2.3824999971111538e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "records",
+        "enabled": false,
+        "encoded_bytes": 120,
+        "encode": {
+          "median_s": 4.450699998415075e-05,
+          "min_s": 3.666500003873807e-05,
+          "max_s": 7.859899994855368e-05,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 2.089199995225499e-05,
+          "min_s": 1.9458999986454728e-05,
+          "max_s": 2.7692000003298745e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "records",
+        "enabled": true,
+        "encoded_bytes": 316,
+        "encode": {
+          "median_s": 0.0019585450000931814,
+          "min_s": 0.0019109730000081981,
+          "max_s": 0.0022381559999757883,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 4.0170000033867836e-05,
+          "min_s": 3.763699999126402e-05,
+          "max_s": 4.6760000032008975e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "smooth",
+        "enabled": false,
+        "encoded_bytes": 6483,
+        "encode": {
+          "median_s": 9.755700000368961e-05,
+          "min_s": 8.388699995975912e-05,
+          "max_s": 0.000137927999958265,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 1.8628000020726176e-05,
+          "min_s": 1.6624999943815055e-05,
+          "max_s": 2.7842000008604373e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "smooth",
+        "enabled": true,
+        "encoded_bytes": 6732,
+        "encode": {
+          "median_s": 0.002576156000031915,
+          "min_s": 0.002421543000082238,
+          "max_s": 0.002759242000024642,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 3.4792000064953754e-05,
+          "min_s": 3.240899991396873e-05,
+          "max_s": 3.575300002012227e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "rough",
+        "enabled": false,
+        "encoded_bytes": 7393,
+        "encode": {
+          "median_s": 9.949000002507091e-05,
+          "min_s": 9.000600005037995e-05,
+          "max_s": 0.0001634259999718779,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 2.2953999973651662e-05,
+          "min_s": 2.179299997351336e-05,
+          "max_s": 3.459199990629713e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 8192,
+        "kind": "rough",
+        "enabled": true,
+        "encoded_bytes": 7932,
+        "encode": {
+          "median_s": 0.002784660999964217,
+          "min_s": 0.0024726310000460217,
+          "max_s": 0.0028486269999348224,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 4.051099995194818e-05,
+          "min_s": 3.614500008097821e-05,
+          "max_s": 4.245400009494915e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "records",
+        "enabled": false,
+        "encoded_bytes": 210,
+        "encode": {
+          "median_s": 9.556400004839816e-05,
+          "min_s": 8.114299998851493e-05,
+          "max_s": 0.00018077300001095864,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 5.99999999622014e-05,
+          "min_s": 5.8158000001640175e-05,
+          "max_s": 6.878400006371521e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "records",
+        "enabled": true,
+        "encoded_bytes": 304,
+        "encode": {
+          "median_s": 0.003720241999985774,
+          "min_s": 0.003424515999995492,
+          "max_s": 0.0040825979999681294,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 8.913499993923324e-05,
+          "min_s": 8.093300004929915e-05,
+          "max_s": 0.00014252500000111468,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "smooth",
+        "enabled": false,
+        "encoded_bytes": 49417,
+        "encode": {
+          "median_s": 0.00023284099995635188,
+          "min_s": 0.0002108880000832869,
+          "max_s": 0.00029057799997644906,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 4.2453999981262314e-05,
+          "min_s": 2.9925999911029066e-05,
+          "max_s": 4.556799990496074e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "smooth",
+        "enabled": true,
+        "encoded_bytes": 50689,
+        "encode": {
+          "median_s": 0.004415531000063311,
+          "min_s": 0.004244782999990093,
+          "max_s": 0.0049099459999979445,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 6.981499996072671e-05,
+          "min_s": 5.1958999961243535e-05,
+          "max_s": 0.00011261999998168903,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "rough",
+        "enabled": false,
+        "encoded_bytes": 57858,
+        "encode": {
+          "median_s": 0.00026394799999707175,
+          "min_s": 0.00021814900003391813,
+          "max_s": 0.0003022759999566915,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 4.4616999957725056e-05,
+          "min_s": 4.100199998902099e-05,
+          "max_s": 5.6265000011990196e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      },
+      {
+        "bytes": 65536,
+        "kind": "rough",
+        "enabled": true,
+        "encoded_bytes": 58948,
+        "encode": {
+          "median_s": 0.00386800499995843,
+          "min_s": 0.0037290559999973993,
+          "max_s": 0.003932863000045472,
+          "repetitions": 3
+        },
+        "decode": {
+          "median_s": 6.125300001258438e-05,
+          "min_s": 6.0801000017818296e-05,
+          "max_s": 6.300600000486156e-05,
+          "repetitions": 3
+        },
+        "exact": true
+      }
+    ]
+  }
+}

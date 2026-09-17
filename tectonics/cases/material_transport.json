@@ -1,0 +1,29 @@
+{
+  "schema": "atlas.material-case.v1",
+  "scope": "W02 fixed-grid constant-density multi-cohort transport, formation ages and prescribed transfer events",
+  "status": "WORKING NON-CANON; synthetic mathematical tests, not geological acceptance",
+  "physical_law": "dH_k/dt + d(u H_k)/dx = 0 between explicit events; total H=sum_k H_k",
+  "units": {"partial_thickness": "m", "inventory": "m^2 per unit width", "velocity": "m/s", "time": "s, forward from named epoch"},
+  "defaults": {"scheme": "muscl", "backend": "numba", "accuracy_before_speed": true},
+  "conventions": [
+    "Each cohort has a stable ID, material class, origin and optional known formation time.",
+    "Unknown formation time is null, not zero; fractions in empty columns need the occupancy mask.",
+    "No separately evolved total is rescaled to match the cohorts.",
+    "Constant face forcing and incoming composition during an interval; split at changes/events.",
+    "Events are given amounts at the exact state time, not generated magmatic/subduction rates.",
+    "Parent-state checks prevent applying the same event to its successor.",
+    "A self-contained snapshot preserves cohorts with zero remaining inventory.",
+    "No lower-order or lower-precision fallback to improve runtime."
+  ],
+  "tests": {
+    "absolute_tolerance": 1e-12,
+    "relative_tolerance": 1e-12,
+    "roundoff_factor": 128,
+    "refinement_cells": [64, 128, 256],
+    "translation_duration_s": 0.25,
+    "cohort_rates": "analytic smooth cell averages; Courant 0.4",
+    "expected_refinement_ratio_minimum": 3.0,
+    "sources_are_synthetic": true
+  },
+  "excluded": ["density or momentum coupling", "thermal/exhumation paths", "automatic topological events", "plate creation/split/merge", "moving grids", "chemical reactions", "scientific acceptance of real terrain"]
+}
