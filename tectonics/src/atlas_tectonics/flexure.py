@@ -8,10 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+import math
 
 import numpy as np
 
-from ._validation import FloatArray, TectonicsError, array, frozen
+from ._validation import FloatArray, TectonicsError, array, frozen, input_shape
+from .resources import elements, select_budget
 from .parameters import FlexureParameters, PeriodicGrid1D, identity
 
 
@@ -37,33 +39,54 @@ class PeriodicFlexure:
     def __post_init__(self) -> None:
         if not isinstance(self.grid, PeriodicGrid1D) or not isinstance(self.parameters, FlexureParameters):
             raise TectonicsError("explicit grid and flexure parameters required")
-        try:
-            with np.errstate(over="raise", divide="raise", invalid="raise", under="ignore"):
-                k = np.arange(self.grid.cells // 2 + 1, dtype=np.float64)
-                fourth_difference_eigenvalue = (2 * np.sin(np.pi * k / self.grid.cells)
-                                                / self.grid.spacing_m)**4
-                denominator = (self.parameters.rigidity_n_m * fourth_difference_eigenvalue
-                               + self.parameters.restoring_pa_per_m)
-                gain = 1 / denominator
-                if np.any(gain <= 0):
-                    raise TectonicsError("flexure transfer underflow")
-        except FloatingPointError as exc:
-            raise TectonicsError("flexure operator outside numerical range") from exc
-        object.__setattr__(self, "_gain", frozen(gain))
+        n = self.grid.cells // 2 + 1
+        with select_budget(None).reserve(96 * n):
+            k = np.arange(n, dtype=np.float64)
+            s = 2 * np.sin(np.pi * k / self.grid.cells)
+            # Normal-range path retains the existing evaluation. A log-domain
+            # path avoids losing D*c when c**4 underflows before multiplication.
+            with np.errstate(all="ignore"):
+                spatial_scale = s / self.grid.spacing_m
+                bending = spatial_scale**4 * self.parameters.rigidity_n_m
+                denom = bending + self.parameters.restoring_pa_per_m
+                gain = 1 / denom
+            risky = ((spatial_scale[1:] < np.finfo(float).tiny**0.25)
+                     | (bending[1:] == 0) | ~np.isfinite(bending[1:]))
+            if np.any(risky):
+                logs = (math.log(self.parameters.rigidity_n_m)
+                        + 4 * (np.log(s[1:]) - math.log(self.grid.spacing_m)))
+                with np.errstate(all="ignore"):
+                    gain[1:] = np.exp(-np.logaddexp(logs,
+                                      math.log(self.parameters.restoring_pa_per_m)))
+            if np.any(~np.isfinite(gain)) or np.any(gain <= 0):
+                raise TectonicsError("flexure transfer outside numerical range")
+            object.__setattr__(self, "_gain", frozen(gain))
         # Nested parameters, grid and method name all participate. This is not
         # a historical execution seal or an authentication of a saved result.
         object.__setattr__(self, "operator_id", identity(_OperatorDefinition(
-            "periodic-centred-fourth-difference-binary64-v1", self.grid, self.parameters)))
+            "periodic-centred-fourth-difference-scaled-binary64-v2", self.grid, self.parameters)))
 
     @property
     def setup_bytes(self) -> int:
         """Retained coefficient storage only; not total FFT/solver memory."""
         return self._gain.nbytes
 
-    def solve(self, downward_load_pa: Any) -> FloatArray:
-        load = array(downward_load_pa, "downward_load_pa")
-        if load.ndim < 1 or load.shape[-1] != self.grid.cells:
+    def solve(self, downward_load_pa: Any, *, budget=None) -> FloatArray:
+        shape = input_shape(downward_load_pa, "downward_load_pa")
+        if not shape or shape[-1] != self.grid.cells:
             raise TectonicsError("load final dimension must equal grid cells")
-        with np.errstate(over="ignore", invalid="ignore"):
-            return frozen(np.fft.irfft(np.fft.rfft(load, axis=-1) * self._gain,
-                                       n=self.grid.cells, axis=-1))
+        with select_budget(budget).reserve(128 * elements(shape)):
+            load = array(downward_load_pa, "downward_load_pa")
+            if load.ndim < 1 or load.shape[-1] != self.grid.cells:
+                raise TectonicsError("load final dimension must equal grid cells")
+            with np.errstate(over="ignore", invalid="ignore"):
+                return frozen(np.fft.irfft(np.fft.rfft(load, axis=-1) * self._gain,
+                                           n=self.grid.cells, axis=-1))
+
+    def __reduce__(self):
+        # Rebuild from the typed definition, never deserialize mutable gain data.
+        return (type(self), (self.grid, self.parameters))
+
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+        return self

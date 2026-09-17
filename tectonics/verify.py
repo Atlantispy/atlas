@@ -19,7 +19,12 @@ ROOT = Path(__file__).resolve().parent
 
 def source_inventory(root: Path) -> dict[str, str]:
     """Hashes are observations of local source bytes, not approval or signatures."""
-    paths = [root / 'verify.py', root / 'cases/foundations.json']
+    # -B prevents writes, not reads. Refuse pre-existing local bytecode rather
+    # than authenticate source while executing a different timestamp cache.
+    for folder in ('src', 'tests'):
+        if next((root / folder).rglob('*.pyc'), None) is not None:
+            raise ValueError('local bytecode exists; use a clean source-only checkout')
+    paths = [root / 'verify.py', root / 'cases/foundations.json', root / 'pyproject.toml']
     paths += sorted((root / 'src').rglob('*.py'))
     paths += sorted((root / 'tests').rglob('*.py'))
     if not (root / 'src/atlas_tectonics/__init__.py').is_file():
@@ -37,9 +42,14 @@ def source_inventory(root: Path) -> dict[str, str]:
 
 
 def main() -> int:
-    if len(sys.argv) != 1:
-        print('Usage: python -I -B tectonics/verify.py', file=sys.stderr)
+    if sys.argv[1:] not in ([], ['--core']):
+        print('Usage: python -I -B tectonics/verify.py [--core]', file=sys.stderr)
         return 2
+    core_only = sys.argv[1:] == ['--core']
+    if not core_only:
+        import importlib.util
+        if any(importlib.util.find_spec(p) is None for p in ('scipy', 'blosc2')):
+            raise ImportError('Full verification needs explicit fast/storage extras; --core tests NumPy foundations only')
     sys.dont_write_bytecode = True
     before = source_inventory(ROOT)
     sys.path.insert(0, str(ROOT / 'src'))
@@ -47,13 +57,14 @@ def main() -> int:
     import atlas_tectonics
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
-    suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_*.py')
+    suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
     result = unittest.TextTestRunner(stream=sys.stderr, verbosity=2).run(suite)
     after = source_inventory(ROOT)
     unchanged = before == after
     passed = (result.wasSuccessful() and result.testsRun > 0 and not result.skipped and unchanged)
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v1',
+        'schema': 'atlas.tectonics.foundation-verification.v2',
+        'profile': 'core' if core_only else 'full-memory-storage',
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
         'failures': len(result.failures), 'errors': len(result.errors),

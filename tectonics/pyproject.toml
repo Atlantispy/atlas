@@ -4,10 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "atlas-tectonics"
-version = "0.1.0.dev0"
+version = "0.1.0.dev1"
 description = "Isolated, mathematically verified foundations for Atlas tectonics"
 requires-python = ">=3.12,<3.14"
 dependencies = ["numpy>=2.0,<3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.optional-dependencies]
+fast = ["scipy>=1.15,<2"]
+storage = ["blosc2>=4.0,<5"]

@@ -1,0 +1,122 @@
+{
+  "scope": "synthetic bounded kernel/storage measurements; warm imports; no world forecast",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "system": "Linux"
+  },
+  "cooling": {
+    "reference": {
+      "median_s": 0.007796410999958425,
+      "min_s": 0.007372698000040145,
+      "max_s": 0.008207184999946548,
+      "repetitions": 5
+    },
+    "scipy": {
+      "median_s": 0.0011468739999145328,
+      "min_s": 0.0011259230000177922,
+      "max_s": 0.0012695169999688005,
+      "repetitions": 5
+    },
+    "max_abs_difference_k": 4.547473508864641e-13
+  },
+  "transport": {
+    "original": {
+      "tracked_peak_bytes": 4728632,
+      "median_s": 0.004980112999987796,
+      "min_s": 0.004901355000015428,
+      "max_s": 0.005353920999937145,
+      "repetitions": 5
+    },
+    "current": {
+      "tracked_peak_bytes": 3672136,
+      "median_s": 0.004964759000017693,
+      "min_s": 0.004818710999984432,
+      "max_s": 0.005571366000026501,
+      "repetitions": 5
+    },
+    "bit_equal_update": true
+  },
+  "storage": {
+    "raw-byte-paletteFalse": {
+      "original_array_bytes": 1179648,
+      "first": {
+        "unique_chunks": 20,
+        "encoded_payload_bytes": 622600,
+        "snapshots": 1,
+        "database_bytes": 659456,
+        "decoded_cache_bytes": 65536
+      },
+      "same_snapshot_extra_chunks": 0,
+      "one_changed_element_extra_chunks": 1,
+      "initial_write_s": 0.004052896000075634,
+      "read": {
+        "median_s": 0.003216317000010349,
+        "min_s": 0.003114614999958576,
+        "max_s": 0.0033901159999913943,
+        "repetitions": 5
+      },
+      "exact_round_trip": true
+    },
+    "raw-byte-paletteTrue": {
+      "original_array_bytes": 1179648,
+      "first": {
+        "unique_chunks": 20,
+        "encoded_payload_bytes": 573478,
+        "snapshots": 1,
+        "database_bytes": 610304,
+        "decoded_cache_bytes": 65536
+      },
+      "same_snapshot_extra_chunks": 0,
+      "one_changed_element_extra_chunks": 1,
+      "initial_write_s": 0.004529960000013489,
+      "read": {
+        "median_s": 0.003700471000001926,
+        "min_s": 0.0035193200000094294,
+        "max_s": 0.0039309840000214535,
+        "repetitions": 5
+      },
+      "exact_round_trip": true
+    },
+    "zstd-byte-paletteTrue": {
+      "original_array_bytes": 1179648,
+      "first": {
+        "unique_chunks": 20,
+        "encoded_payload_bytes": 361545,
+        "snapshots": 1,
+        "database_bytes": 405504,
+        "decoded_cache_bytes": 65536
+      },
+      "same_snapshot_extra_chunks": 0,
+      "one_changed_element_extra_chunks": 1,
+      "initial_write_s": 0.00705745699997351,
+      "read": {
+        "median_s": 0.004047227999990355,
+        "min_s": 0.003966536999996606,
+        "max_s": 0.004523619999986295,
+        "repetitions": 5
+      },
+      "exact_round_trip": true
+    },
+    "zstd-bit-paletteTrue": {
+      "original_array_bytes": 1179648,
+      "first": {
+        "unique_chunks": 20,
+        "encoded_payload_bytes": 359202,
+        "snapshots": 1,
+        "database_bytes": 409600,
+        "decoded_cache_bytes": 65536
+      },
+      "same_snapshot_extra_chunks": 0,
+      "one_changed_element_extra_chunks": 1,
+      "initial_write_s": 0.006681655000079445,
+      "read": {
+        "median_s": 0.0044465449999506745,
+        "min_s": 0.004338072999985343,
+        "max_s": 0.00505479399998876,
+        "repetitions": 5
+      },
+      "exact_round_trip": true
+    }
+  }
+}

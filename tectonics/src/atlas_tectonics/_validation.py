@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+from .resources import elements
 
 FloatArray = NDArray[np.float64]
 
@@ -36,18 +37,36 @@ def text(value: Any, name: str) -> str:
     return value
 
 
-def _reject_bools(value: Any) -> None:
-    # np.asarray([True, 1.0]) would otherwise conceal the Boolean.
-    if isinstance(value, (bool, np.bool_)):
-        raise TectonicsError("Boolean values are not physical quantities")
+def input_shape(value: Any, name: str = "input", _depth: int = 0) -> tuple[int, ...]:
+    """Inspect supported inputs before conversion. Unknown masks never become data."""
+    if _depth > 32:
+        raise TectonicsError(f"{name}: nested/cyclic input exceeds supported depth")
+    if np.ma.isMaskedArray(value) or value is np.ma.masked:
+        raise TectonicsError(f"{name}: masked arrays require an explicit missing-data policy")
+    if isinstance(value, np.ndarray):
+        if value.dtype.kind not in "iuf":
+            raise TectonicsError(f"{name}: real numeric data required")
+        return tuple(int(n) for n in value.shape)
     if isinstance(value, (list, tuple)):
-        for item in value:
-            _reject_bools(item)
+        if not value:
+            raise TectonicsError(f"{name}: nonempty data required")
+        first = input_shape(value[0], name, _depth + 1)
+        for index in range(1, len(value)):
+            if input_shape(value[index], name, _depth + 1) != first:
+                raise TectonicsError(f"{name}: rectangular data required")
+        return (len(value),) + first
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise TectonicsError(f"{name}: real numeric data, not bool/string, required")
+    return ()
 
 
 def array(value: Any, name: str, *, ndim: int | None = None,
           nonnegative: bool = False) -> FloatArray:
-    _reject_bools(value)
+    shape = input_shape(value, name)
+    if ndim is not None and len(shape) != ndim:
+        raise TectonicsError(f"{name}: expected {ndim} dimensions")
+    if elements(shape) == 0:
+        raise TectonicsError(f"{name}: nonempty data required")
     try:
         raw = np.asarray(value)
         if raw.dtype.kind not in "iuf":
@@ -66,6 +85,7 @@ def array(value: Any, name: str, *, ndim: int | None = None,
 
 def frozen(value: Any) -> FloatArray:
     """Detached bytes-backed result: callers cannot re-enable write access."""
+    input_shape(value, "result")
     data = np.asarray(value, dtype=np.float64, order="C")
     if not np.isfinite(data).all():
         raise TectonicsError("numerical result is outside finite binary64 range")

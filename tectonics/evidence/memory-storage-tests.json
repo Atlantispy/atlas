@@ -1,0 +1,60 @@
+{
+  "schema": "atlas.tectonics.foundation-verification.v2",
+  "profile": "full-memory-storage",
+  "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+  "tests_run": 93,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "source_unchanged_during_tests": true,
+  "source_sha256_before": {
+    "verify.py": "eda0da4f8422ab763ae4014a561ba448edd819120e011efcbb52a7bebe68e0c0",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "pyproject.toml": "f7f82a735dee9a2e7639d8c0684bedb4bd21b63d9723c226f82f5844461661ae",
+    "src/atlas_tectonics/__init__.py": "917c230e986c92ffbb3d5026c2d066875bb1288dd109d352b64a9c408e46a0a6",
+    "src/atlas_tectonics/_validation.py": "d2f1504348d268e890f819b36ca04f240e215b1a34e0558b7fa437e580341172",
+    "src/atlas_tectonics/flexure.py": "3146f44227bfa20ca46e1fc90ebe05686b12a5739588936089b7bed0f6a91899",
+    "src/atlas_tectonics/kinematics.py": "d19bccafa3726b164ba32359ebf9b81a605bb1a01ff25b90a82cf4d198e60922",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "d75bb42d58e82e613a7c4ca22643d8ea7192dc7a47176d1e568294f55403af8c",
+    "src/atlas_tectonics/reuse.py": "c96251e7fe6f427233340560c9aef03237408e5e0014bb249424b58d051e1913",
+    "src/atlas_tectonics/storage.py": "5d7480d2a68370fce5924c1af65600000d9401a99082af71ea2972cda43b3241",
+    "src/atlas_tectonics/thermal.py": "0681546f6eded0725b08a4bdf8006c32364f08481b386d38a1aaa03c6f86940f",
+    "src/atlas_tectonics/transport.py": "f3d06451bf3283792d242622cf84c111de9bcf8d88da6daa627c504d531698c9",
+    "tests/test_foundations.py": "aae637792e2e171a95c6dd1fc28cc46530fef0966300c198df74b5bd0b526abe",
+    "tests/test_memory_storage.py": "33f5466245376e3ae90514c95d465d13602403bbdc15b66014d75d4af9416dd7"
+  },
+  "source_sha256_after": {
+    "verify.py": "eda0da4f8422ab763ae4014a561ba448edd819120e011efcbb52a7bebe68e0c0",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "pyproject.toml": "f7f82a735dee9a2e7639d8c0684bedb4bd21b63d9723c226f82f5844461661ae",
+    "src/atlas_tectonics/__init__.py": "917c230e986c92ffbb3d5026c2d066875bb1288dd109d352b64a9c408e46a0a6",
+    "src/atlas_tectonics/_validation.py": "d2f1504348d268e890f819b36ca04f240e215b1a34e0558b7fa437e580341172",
+    "src/atlas_tectonics/flexure.py": "3146f44227bfa20ca46e1fc90ebe05686b12a5739588936089b7bed0f6a91899",
+    "src/atlas_tectonics/kinematics.py": "d19bccafa3726b164ba32359ebf9b81a605bb1a01ff25b90a82cf4d198e60922",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/resources.py": "d75bb42d58e82e613a7c4ca22643d8ea7192dc7a47176d1e568294f55403af8c",
+    "src/atlas_tectonics/reuse.py": "c96251e7fe6f427233340560c9aef03237408e5e0014bb249424b58d051e1913",
+    "src/atlas_tectonics/storage.py": "5d7480d2a68370fce5924c1af65600000d9401a99082af71ea2972cda43b3241",
+    "src/atlas_tectonics/thermal.py": "0681546f6eded0725b08a4bdf8006c32364f08481b386d38a1aaa03c6f86940f",
+    "src/atlas_tectonics/transport.py": "f3d06451bf3283792d242622cf84c111de9bcf8d88da6daa627c504d531698c9",
+    "tests/test_foundations.py": "aae637792e2e171a95c6dd1fc28cc46530fef0966300c198df74b5bd0b526abe",
+    "tests/test_memory_storage.py": "33f5466245376e3ae90514c95d465d13602403bbdc15b66014d75d4af9416dd7"
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "scope": "synthetic analytical and numerical unit tests",
+  "physical_validation": false,
+  "production_ready": false,
+  "historical_checkpoint_compatibility": false,
+  "note": "Local evidence record, not a cryptographic signature or performance benchmark."
+}

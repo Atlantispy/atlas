@@ -10,14 +10,26 @@ from typing import Any
 
 import numpy as np
 
-from ._validation import FloatArray, TectonicsError, array, frozen, scalar
+from ._validation import FloatArray, TectonicsError, array, frozen, scalar, input_shape
+from .resources import elements, select_budget
 
 
 def _vector(value: Any, dimensions: int, name: str) -> FloatArray:
+    if input_shape(value, name) != (dimensions,):
+        raise TectonicsError(f"{name}: expected {dimensions} components")
     out = array(value, name, ndim=1)
     if out.shape != (dimensions,):
         raise TectonicsError(f"{name}: expected {dimensions} components")
     return out
+
+
+def _unit(vector: FloatArray) -> FloatArray:
+    # Scale first: a subnormal norm can round to an incorrect divisor.
+    scale = float(np.max(np.abs(vector)))
+    if scale == 0 or not math.isfinite(scale):
+        raise TectonicsError("finite nonzero vector required")
+    scaled = vector / scale
+    return scaled / math.hypot(*scaled)
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,19 +39,14 @@ class Rotation:
 
     def __post_init__(self) -> None:
         q = _vector(self.quaternion, 4, "quaternion")
-        norm = math.hypot(*q)
-        if not math.isfinite(norm) or norm == 0:
-            raise TectonicsError("finite nonzero quaternion norm required")
-        object.__setattr__(self, "quaternion", tuple(float(x / norm) for x in q))
+        object.__setattr__(self, "quaternion", tuple(float(x) for x in _unit(q)))
 
     @classmethod
     def from_axis_angle(cls, axis: Any, angle_rad: float) -> Rotation:
         vector = _vector(axis, 3, "axis")
-        norm = math.hypot(*vector)
-        if not math.isfinite(norm) or norm == 0:
-            raise TectonicsError("finite nonzero rotation axis required")
+        vector = _unit(vector)
         half_angle = math.remainder(scalar(angle_rad, "angle_rad"), 2 * math.pi) / 2
-        return cls((math.cos(half_angle), *(vector / norm * math.sin(half_angle))))
+        return cls((math.cos(half_angle), *(vector * math.sin(half_angle))))
 
     def inverse(self) -> Rotation:
         w, x, y, z = self.quaternion
@@ -54,28 +61,36 @@ class Rotation:
         return Rotation((a*w-b*x-c*y-d*z, a*x+b*w+c*z-d*y,
                          a*y-b*z+c*w+d*x, a*z+b*y-c*x+d*w))
 
-    def apply(self, positions_m: Any) -> FloatArray:
+    def apply(self, positions_m: Any, *, budget=None) -> FloatArray:
         """Rotate a vector or an array (...,3); output is detached and immutable."""
+        shape = input_shape(positions_m, "positions_m")
+        if not shape or shape[-1] != 3:
+            raise TectonicsError("positions must have final dimension 3")
+        with select_budget(budget).reserve(128 * elements(shape)):
+            points = array(positions_m, "positions_m")
+            if points.ndim < 1 or points.shape[-1] != 3:
+                raise TectonicsError("positions must have final dimension 3")
+            w, *xyz = self.quaternion
+            try:
+                with np.errstate(over="raise", invalid="raise"):
+                    twice_cross = 2 * np.cross(xyz, points)
+                    return frozen(points + w * twice_cross + np.cross(xyz, twice_cross))
+            except FloatingPointError as exc:
+                raise TectonicsError("rotated coordinates exceed numerical range") from exc
+
+
+def rigid_velocity(positions_m: Any, angular_velocity_rad_s: Any, *, budget=None) -> FloatArray:
+    """Instantaneous omega cross r, not a finite-interval chord velocity."""
+    shape = input_shape(positions_m, "positions_m")
+    if not shape or shape[-1] != 3:
+        raise TectonicsError("positions must have final dimension 3")
+    with select_budget(budget).reserve(64 * elements(shape)):
         points = array(positions_m, "positions_m")
+        omega = _vector(angular_velocity_rad_s, 3, "angular_velocity_rad_s")
         if points.ndim < 1 or points.shape[-1] != 3:
             raise TectonicsError("positions must have final dimension 3")
-        w, *xyz = self.quaternion
-        try:
-            with np.errstate(over="raise", invalid="raise"):
-                twice_cross = 2 * np.cross(xyz, points)
-                return frozen(points + w * twice_cross + np.cross(xyz, twice_cross))
-        except FloatingPointError as exc:
-            raise TectonicsError("rotated coordinates exceed numerical range") from exc
-
-
-def rigid_velocity(positions_m: Any, angular_velocity_rad_s: Any) -> FloatArray:
-    """Instantaneous omega cross r, not a finite-interval chord velocity."""
-    points = array(positions_m, "positions_m")
-    omega = _vector(angular_velocity_rad_s, 3, "angular_velocity_rad_s")
-    if points.ndim < 1 or points.shape[-1] != 3:
-        raise TectonicsError("positions must have final dimension 3")
-    with np.errstate(over="ignore", invalid="ignore"):
-        return frozen(np.cross(omega, points))
+        with np.errstate(over="ignore", invalid="ignore"):
+            return frozen(np.cross(omega, points))
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,10 +115,7 @@ def boundary_motion(left_m_s: Any, right_m_s: Any, tangent_xy: Any,
     right = _vector(right_m_s, 2, "right_m_s")
     boundary = _vector(boundary_m_s, 2, "boundary_m_s")
     tangent = _vector(tangent_xy, 2, "tangent_xy")
-    norm = math.hypot(*tangent)
-    if not math.isfinite(norm) or norm == 0:
-        raise TectonicsError("nonzero finite tangent required")
-    tangent = tangent / norm
+    tangent = _unit(tangent)
     normal = np.array((tangent[1], -tangent[0]))
     with np.errstate(over="ignore", invalid="ignore"):
         relative = frozen(right - left)
