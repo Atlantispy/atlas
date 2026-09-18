@@ -1,5 +1,199 @@
 # Atlas tectonics simulation plan
 
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 26 | 18 September 2026**
+
+**Revision 26 — R2 bounded scheduling and spherical candidate indexing.**
+The current package is `0.1.0.dev22`. This increment completes the authorised
+R2 engineering follow-up without adding geological or thermal/mechanical laws.
+The initial-state and sampling scope of revision 25 remains unchanged. **R3 is
+next and has not started.** The original R2 case, all earlier tests/evidence and
+all original PB2002 bytes, strict discrepancies and scoped-use restrictions are
+preserved. The current execution contract takes precedence over historical
+statements below that no worker-pool adapter was present.
+
+<a id="3cr2-scaling"></a>
+
+## R2 execution/indexing follow-up: scientific invariants
+
+The new spherical broad phase computes one conservative hemispherical cap for
+each unique footprint, indexes enclosing Cartesian boxes on the unit sphere,
+and retains exact spherical intersections for uncertain candidates. Caps contain
+minor-arc edges and polygon interiors, not only vertices. No longitude seam or
+polar shortcut is introduced. Footprints sharing a chart no longer receive the
+same ineffective chart-centred enclosure. Repeated footprints reuse one cap and
+sweep their disjoint depth intervals. Contacts remain zero-volume; even tiny
+positive-area intersections still cause rejection when depths overlap.
+
+This is **not** an arbitrary cross-chart polygon repair or global-mesh certificate.
+Where candidate intersection cannot be certified in the existing compatible
+conditioned charts, the same explicit refusal remains. Dense mutually overlapping
+caps can still require quadratic work; sparse indexing is not a universal
+linear-time promise, and the original explicit work/memory envelope still applies.
+
+`PreparedPrecursor` now adapts independent static queries to the existing
+`KernelExecutor`. Complete-request frame, ID, geometry and overlap checks precede
+cell batching. A global ledger preserves hit/row/work ceilings across batches;
+workers cannot multiply them or hide cross-batch material double counting.
+Results retain original query order, with translated sparse row/phase offsets.
+Serial and threaded routes produce the same numerical arrays and current sample
+identity. Changes in actual source/numerical method still correctly invalidate
+prepared identities; historical stored arrays can be restored without regeneration.
+
+Automatic execution selects bounded threading for indexed point requests of at
+least 262,144 points. Smaller and unindexed point requests remain bulk serial.
+Cell threading is implemented and verified, but **the automatic cell default
+remains serial because the bounded matched-work comparisons were slower with
+threads**. An explicit execution policy can select threaded cell work or a
+workload-specific cell threshold; no fictional speed advantage is claimed.
+Full state/geometry, capture, in-flight work, retained batch results and final
+assembly are admitted. Cancellation drains active jobs before releasing admission.
+Binary64, exact unsnapped geometry, fixed per-cell summation and all scientific
+error tolerances are unchanged. No new scheduling or persistence subsystem exists.
+
+The focused registration is [`precursor_r2_scaling.json`](../cases/precursor_r2_scaling.json).
+Fresh evidence belongs to `evidence/3cr2-scaling-tests.json` and
+`evidence/3cr2-scaling-measurements.json`, not to overwritten historical reports.
+Timing is descriptive, not a scientific pass criterion. Linux execution does not
+establish Windows, whole-planet resources, production readiness or physical realism.
+The existing limitations on arbitrary dipping 3D structures, spherical Cartesian-
+prior cell means and full W01-to-W02 evolution remain. W01 as a whole is incomplete.
+
+## Historical revision 25 delivery and unchanged R2 scientific contract
+
+**Revision 25 — 3C-R2 initial geological precursor and bounded sampler, 18 September 2026.**
+R2 is delivered for the registered **static-input and initial-sampling envelope**
+in [`precursor_r2.json`](../cases/precursor_r2.json). **R3 is next and has not
+started.** R1's scoped source-use approval, strict discrepancy failure, source
+pins, exclusions and holdouts are unchanged. W01 as a whole remains incomplete;
+no W03 evolution, rheology or causal plate-generation acceptance is claimed.
+Earlier dated status paragraphs below describe their own revisions, not the
+current next action. The current package is `0.1.0.dev21` on `remake`.
+
+<a id="3cr2-initial-state"></a>
+
+## 3C-R2 delivered scope and scientific contract
+
+**Plate-independent substrate.** `GeologicalDomain` is a bounded planar area,
+conditioned spherical patch, or an entire named reference sphere. It has no
+physical plate or region owners. Existing `GeologicalCase` validates its original
+materials, formation cohorts, ordered columns, thermal profiles, provinces,
+faults and weak zones against this support. Old `BoundaryNetwork`/`SphericalAtlas`
+cases and their serialised definitions remain supported. A pre-partition case
+refuses selectors that require final plate/region IDs; its computational sampling
+cells cannot determine the later physical plate partition.
+
+`PrecursorState` adds one explicit origin assignment per source (observed,
+authored, sampled named prior or model-evolved import), separate known/unknown
+cooling histories, density/volume bases, optional initial scalar fields and
+explicit mantle/slab inputs. An observed label requires a cited record but is not
+independent verification; model-evolved input requires its parent-state identity
+but does not run that model. Formation times are never replaced by cooling dates.
+All times are SI seconds in the case's named epoch; a frame, epoch or depth-datum
+mismatch requires explicit conversion, not a renamed array.
+
+**Inherited and deeper structure.** Existing faults/sutures and weak zones remain
+independent of plate labels. Exact finite-trace corridor membership is available
+at points; overlapping weakness follows the existing explicit precedence without
+invented multiplication, averaging or a damage law. Optional slab/mantle records
+use named footprints and constant surface-relative depth bands with explicit
+body precedence. They can replace column material or extend support below the
+lithosphere base. These are supplied initial structures, not dynamically formed,
+dipping/curved 3D slabs or inferred slab-pull forces.
+
+**Material knowledge and property conditions.** Exact bindings to the existing
+offline Earth-material library retain its full source/condition dependency and
+automatically obtain volume bases. Partial records remain partial; source-bound
+values cannot be silently rebound or extrapolated. Grain volume, reference
+aggregate/matrix volume, explicit pore volume, bulk volume and mass are distinct.
+Additional porosity on an already-bulk reference rock is refused. A bulk-reference
+row does not assert its unknown intrinsic solid/pore split. Optional
+`reference_mass_temperature_k` computes only source-reference-density inventory,
+not in-situ mass of hot/pressurised lithosphere or a common pressure assumption.
+No new hot/high-pressure or constitutive law is selected by R2.
+
+**Sampling added to W01 stage 5.** `PreparedPrecursor` supplies immutable point
+samples and conservative initial inventories for polygon-prism or minor-arc
+shell-sector cells. Province overlap is resolved by subtracting higher-priority
+footprints before integrating lower-priority material; body bands similarly
+replace rather than double-count it. All province candidates are retained at
+points. Layer/body intervals are top-inclusive and bottom-exclusive; cell faces
+have zero extensive volume. A winning centre point is never substituted for a
+mixed-cell average. Unsupported depths, missing required porosity/temperature or
+unresolved property requests fail explicitly. Optional unresolved scalar fields
+and reference masses carry known masks; convenience accessors refuse unknown
+values rather than treating numeric placeholders as physical zeroes.
+
+For planar area A and positive downward depths a,b, V=A(b-a). For a spherical
+footprint whose reference-surface area is A on radius R,
+
+    V = A/(3 R²) * [(R-a)³ - (R-b)³]
+      = A*(b-a)/3 * [((R-a)/R)² + ((R-a)/R)*((R-b)/R) + ((R-b)/R)²].
+
+The factored form avoids subtraction of nearly equal radius cubes. For explicit
+porosity phi, matrix volume is V(1-phi), explicit pore volume is V phi, and each
+constituent receives its declared fraction of matrix volume. Existing fractional
+round-off allowances are not renormalised: bulk-coverage and phase-volume
+residuals are reported separately. Cohort/material indices refer to shared
+immutable records, preserving origins and formation dates without rich objects
+copied into every cell. Crust and lithosphere thickness remain the existing
+separate column quantities.
+
+**Initial thermal/other fields.** Constant and piecewise-linear profiles integrate
+analytically with the appropriate radial metric. The existing E04 half-space
+initial reference uses bounded quadrature for cell means, with an explicit error
+estimate and refusal rather than midpoint fallback. Mean temperature is
+volume-weighted temperature, not heat/enthalpy; this adds no thermal evolution.
+Temperature offsets must also have a non-negative envelope on requested cell
+support; a positive mean cannot conceal potentially sub-zero temperatures.
+Stress, damage and prescribed forcing can be explicitly supplied/unresolved
+scalar components with units and interpretation, not an inferred mechanical state.
+
+A named prior is the bounded Cartesian cosine field
+
+    f(r) = mean + amplitude/N * sum_i cos(k_i dot (r-origin) + phase_i).
+
+SHA256(name, unsigned-64-bit seed, mode index) supplies fixed per-mode streams.
+Amplitude means maximum deviation, not standard deviation; wavelengths are named
+feature scales, not an asserted fitted correlation length. Domain/frame/origin
+and seed belong to the identity. Planar coordinates are (x,y,depth) metres;
+spherical coordinates are geocentric Cartesian metres, without a longitude seam.
+Changing support resolution/order does not redraw the field. Planar polygon-prism
+prior means are analytic Fourier integrals including holes. Statistical inputs
+remain assumptions, not simulated geological events.
+
+**Explicit remaining limits.** General dipping/curved 3D structure and arbitrary
+volumetric interpolation remain unimplemented. Spherical point priors and radial
+base-profile means work, but spherical cell means of Cartesian spectral priors
+are refused. Positive-volume overlap between query cells is refused by default;
+when charts cannot certify disjointness, no snapping or blanket sliver tolerance
+is substituted. Compatible patches are required, or the caller must explicitly
+request non-additive overlapping queries. A set of individually queried spherical
+volumes is not thereby certified as a global disjoint mesh. R2 does not close all
+W01 stage-5 interpolation, stages 6–7 forcing/evolution integration, the combined
+stage-8 gate, or any R3–R9 physics/acceptance work.
+
+**Evidence and acceptance.** Existing T04/T05/T06/T14/T15 and relevant PT families
+are credited only for their static age/thermal/volume/restart and execution
+obligations, not their whole dynamic scopes. New focused tests include analytical
+mixed inventories, shell metrics, formation/cooling distinction, prior
+batch/refinement invariance, retained inherited structure, property conditions,
+immutable ownership, resource refusal/cancellation, changed-input/source
+invalidation, corruption and cold self-contained restoration. The finite
+execution card checks 672 points against exhaustive membership and 1/4/16-cell
+inventories without source tuning. See [`3cr2-tests.json`](../evidence/3cr2-tests.json)
+and [`3cr2-sampling-evidence.json`](../evidence/3cr2-sampling-evidence.json) for
+actual runs, commands, source hashes and platform. Passing these checks is
+implementation/numerical evidence, not physical plate-formation validation.
+
+Execution/storage details and measured costs are maintained only in the
+[optimisation reference](OPTIMISATION_REFERENCE.md#3cr2-initial-execution).
+Michael retains local application/commit/push ownership; this delivery does not
+modify his PC or publish to GitHub.
+
+---
+
+### Retained revision-24 status and R1 decisions
+
 
 **Revision 24 — 3C-R1 bounded reference-use sign-off, 18 September 2026.**
 Source acquisition, full offline processing and the reference-quality/use review
@@ -61,7 +255,7 @@ processing are recorded in `evidence/3cr1-tooling-repair.json`; its strict findi
 and original test record remain unchanged. Revision 24 supplies the source-use
 decision that was still outstanding at that point.
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 24 | 18 September 2026**
+**Retained historical report header: Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 24 | 18 September 2026**
 **Status: development plan with a delivered foundation; remaining capabilities are proposed, not physically accepted.**
 
 Atlas is vibe-coded, with OpenAI ChatGPT/Codex doing the coding under Michael’s direction. The owner has selected Earth-like mobile-plate tectonics for the intended 1.0 release. Atlas remains world-agnostic; the Diadem is the principal development case, not the definition of the underlying physics.
@@ -301,7 +495,7 @@ microphysical grain-damage theory in PF-C02.
 | Stage | Implementation and deliverable | Acceptance before its dependent claim |
 | --- | --- | --- |
 | **3C-R1 — Reference data and success criteria (scoped reference uses delivered)** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
-| **3C-R2 — Initial state before final plate labels** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
+| **3C-R2 — Initial state before final plate labels (bounded static delivery in revision 25)** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
 | **3C-R3 — Freeze the physical closure** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
 | **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
 | **3C-R5 — Process experiments, not decorative contours** | Test weak-zone reactivation against healed/undamaged controls; inherited-structure rifting; segmented spreading and transform development; one-sided subduction with an appropriate surface/interface treatment; curved-trench fragmentation and small-block formation. Use 3D regional geometry when the claimed feature varies along strike. Run paired cases that change one causal ingredient rather than fitting every output. | Each process reproduces its selected independent benchmark/analogue constraints and remains stable under refinement and rotated mesh orientation. Do not require damage to have one universal effect, place a plume beneath every ridge, infer polarity from convergence, or count a 2D cross-section as an along-trench fragmentation test. A failed family remains unsupported. |
@@ -1051,10 +1245,11 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Next separately authorised task:** 3C-R2's pre-boundary state/sampling contract.
-R1's bounded reference-use review is complete under revision 24; raw strict source
-consistency and historical/external-model validation remain distinct unpassed
-claims. **R2 is not started.** Follow the
+**Next separately authorised task:** 3C-R3 — freeze the selected physical closure.
+R2's registered initial-state/sampling envelope is delivered under revision 25;
+its remaining general W01 responsibilities are explicit above. R1's reviewed
+uses stay complete under revision 24, while strict consistency and external-model/
+historical validation remain distinct unpassed claims. **R3 is not started.** Follow the
 [explicit sequence](#plate-formation-implementation-plan). Causal formation later
 requires the named W03/W07 subset; do not smuggle it into an unrelated W01 update.
 Retain the current statistical candidates as controls, the existing geometry and

@@ -10,7 +10,7 @@ from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
 from .flexure import PeriodicFlexure
 
-__version__ = "0.1.0.dev20"
+__version__ = "0.1.0.dev22"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
@@ -104,3 +104,20 @@ from .plate_layout import (PlateLayoutSettings, generate_plate_layout, layout_me
     plate_outline_cycles, evaluate_plate_kinematics, require_geological_layout_acceptance)
 __all__ += ["PlateLayoutSettings", "generate_plate_layout", "layout_metrics",
     "plate_outline_cycles", "evaluate_plate_kinematics", "require_geological_layout_acceptance"]
+
+# 3C-R2: plate-independent initial geology and bounded W01 stage-5 sampling.
+# These inputs/samplers are not thermal evolution, rheology or generated plates.
+from .geological_domain import GeologicalDomain
+from .precursor import (InputOrigin, CoolingHistory, MaterialVolumeBasis,
+    SeededSpatialPrior, InitialScalarField, SubsurfaceBody, PrecursorState,
+    save_precursor_state, load_precursor_state)
+from .precursor_sampling import (PrecursorSamplingLimits, InitialSamplingCell,
+    InitialSamples, PreparedPrecursor, save_initial_samples, load_initial_samples)
+__all__ += ['GeologicalDomain', 'InputOrigin', 'CoolingHistory', 'MaterialVolumeBasis',
+    'SeededSpatialPrior', 'InitialScalarField', 'SubsurfaceBody', 'PrecursorState',
+    'save_precursor_state', 'load_precursor_state', 'PrecursorSamplingLimits',
+    'InitialSamplingCell', 'InitialSamples', 'PreparedPrecursor',
+    'save_initial_samples', 'load_initial_samples']
+
+from .precursor_execution import PrecursorExecutionPolicy
+__all__ += ["PrecursorExecutionPolicy"]

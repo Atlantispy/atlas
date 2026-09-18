@@ -1,5 +1,18 @@
 # Foundation case and numerical contract
 
+**Current R2 extension (18 September 2026):** the original foundation contract
+below is preserved. Version `0.1.0.dev22` additionally supports the plate-independent
+precursor and bounded static W01 stage-5 sampler specified in
+[plan revision 26](TECTONICS_PLAN.md#3cr2-initial-state) and
+[`precursor_r2.json`](../cases/precursor_r2.json). This adds initial material-volume
+accounting and temperature samples, not E04 time integration, a constitutive law,
+a global disjoint dynamics mesh or accepted physical plate generation. R1's
+strict/scoped gates and all original numerical cases remain unchanged. The R2
+execution/indexing follow-up adds conservative candidate pruning and admitted
+independent batches, not equations; its [separate execution case](../cases/precursor_r2_scaling.json)
+preserves the original R2 numerical tolerances and whole-request inventories.
+
+
 **ATLAS-TECTONICS-FOUNDATIONS-001, revision 1, 16 September 2026.**
 Scope: first implementation under ATLAS-TECTONICS-PLAN-1 revision 3. The controlling
 plan's original Markdown SHA256 is recorded in `../cases/foundations.json`. The

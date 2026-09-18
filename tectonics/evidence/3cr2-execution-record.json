@@ -1,0 +1,53 @@
+{
+  "schema": "atlas.r2.execution-record.v1",
+  "status": "COMPLETED_REGRESSION_AND_BOUNDED_SAMPLING",
+  "base_commit": "e79bf94ea5285a36bbce18b503234a8df56e3910",
+  "branch": "remake",
+  "repository_modified": false,
+  "full_regression": {
+    "command": [
+      "/opt/pyvenv/bin/python",
+      "-I",
+      "-B",
+      "tectonics/verify.py"
+    ],
+    "watchdog_seconds": 900,
+    "returncode": 0,
+    "wall_seconds": 101.9745761260001
+  },
+  "focused_tests": {
+    "command": "python -B -m unittest discover -s tectonics/tests -p test_precursor_*.py -q (with local src on PYTHONPATH)",
+    "tests_run": 106,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "log": "Ran 106 tests in 7.995s; OK"
+  },
+  "bounded_sampling": {
+    "command": "python -I -B tectonics/tests/check_precursor_r2.py",
+    "status": "PASS_BOUNDED_R2_INITIAL_SAMPLING"
+  },
+  "offline_example": {
+    "command": "python -I -B tectonics/tools/prepare_precursor_example.py",
+    "status": "PASS_STATIC_EXAMPLE_ONLY"
+  },
+  "preliminary_attempt": {
+    "completed": false,
+    "reason": "Initial full-suite attempt exceeded its 180-second outer execution limit. Its partial log is not claimed as a pass; the subsequent bounded full run completed.",
+    "source_change_to_obtain_pass": false
+  },
+  "syntax_check": {
+    "python_3_12_grammar": true,
+    "python_3_12_runtime_tested": false
+  },
+  "windows_tested": false,
+  "dependency_installation": false,
+  "reference_acquisition": false,
+  "physical_validation": false,
+  "production_ready": false,
+  "historical_evidence_preservation": {
+    "memory-storage-measurements.json": "9f71dd88364231211ea998e92b2309b4deaaaec8",
+    "memory-storage-tests.json": "324345299ef5206a7b592e7ab6295c3a3f2efd15"
+  },
+  "note": "Exact historical JSON bytes were read through the GitHub connector and checked against their existing Git blob IDs. Historical reports have not been rerun or overwritten."
+}

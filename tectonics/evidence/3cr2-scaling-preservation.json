@@ -1,0 +1,43 @@
+{
+  "schema": "atlas.r2-scaling-baseline-preservation.v1",
+  "parent_delivery": "Atlas_Remake_3C_R2_Initial_State_2026-09-18.zip",
+  "parent_sha256": "3b1cb8f68b7466319d393064815104074879cec7b01949680b0bca4989fbdfa9",
+  "parent_payload_files": 183,
+  "missing_files": [],
+  "modified_files": [
+    "tectonics/README.md",
+    "tectonics/docs/FOUNDATIONS.md",
+    "tectonics/docs/OPTIMISATION_REFERENCE.md",
+    "tectonics/docs/TECTONICS_PLAN.md",
+    "tectonics/pyproject.toml",
+    "tectonics/src/atlas_tectonics/__init__.py",
+    "tectonics/src/atlas_tectonics/execution.py",
+    "tectonics/src/atlas_tectonics/geometry_index.py",
+    "tectonics/src/atlas_tectonics/precursor_sampling.py",
+    "tectonics/src/atlas_tectonics/reuse.py",
+    "tectonics/verify.py"
+  ],
+  "protected_original_directories": {
+    "tests": {
+      "files": 43,
+      "all_original_bytes_unchanged": true
+    },
+    "cases": {
+      "files": 15,
+      "all_original_bytes_unchanged": true
+    },
+    "reference_data": {
+      "files": 9,
+      "all_original_bytes_unchanged": true
+    },
+    "evidence": {
+      "files": 65,
+      "all_original_bytes_unchanged": true
+    }
+  },
+  "reference_note": "All eight PB2002 originals, accompanying provenance and -text attributes unchanged; no reacquisition or tolerance change",
+  "python312_grammar_parse": true,
+  "python312_runtime_tested": false,
+  "github_modified": false,
+  "user_pc_modified": false
+}

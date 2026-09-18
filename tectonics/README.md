@@ -8,7 +8,82 @@ This isolated package follows the [tectonics plan](docs/TECTONICS_PLAN.md) and
 neither `engineering/work` nor `shared_generator`. Historical bindings, numerical
 limits, checkpoints, `main` and the original Windows installation remain separate.
 
-## 3C-R1 — reviewed reference uses complete; R2 not started
+
+## Current: 3C-R2 initial state, bounded sampler and execution/indexing follow-up
+
+**Version `0.1.0.dev22`, 18 September 2026. R3 is next; it has not started.**
+R2 adds geological starting states **without requiring or producing final plate
+labels**. It does not generate realistic plate shapes, solve mechanics or evolve
+heat. R1's reviewed uses and deliberately failing strict consistency gate remain
+unchanged. The two maintained plans and the new
+[`precursor_r2.json`](cases/precursor_r2.json) govern the exact scope.
+
+Revision 26 adds conservative spherical candidate indexing and connects the sampler
+to the existing admitted executor. Large indexed point queries automatically use
+bounded threads; small/unindexed queries and cell workloads remain serial where
+threading was not beneficial in the registered comparisons. Threaded cells remain
+an explicit tested route, not an unimplemented feature. Whole-request overlaps,
+row/hit/work limits, binary64 accuracy, immutable results and cancellation/drain
+semantics are preserved. See the current [execution contract](docs/OPTIMISATION_REFERENCE.md#3cr2-scaling-execution)
+and [`precursor_r2_scaling.json`](cases/precursor_r2_scaling.json).
+
+
+| Delivered interface | Meaning |
+|---|---|
+| `GeologicalDomain` and existing `GeologicalCase` | Plate-independent planar/spherical support with immutable sourced materials, formation cohorts, columns, provinces and inherited features. |
+| `PrecursorState` | Explicit input origins, separate cooling histories, source-bound volume conventions, named priors, prescribed/unresolved scalar fields and bounded slab/mantle initial inputs. |
+| `PreparedPrecursor.sample_points` | Indexed point material/temperature queries; retains all province matches and exact inherited weak-zone memberships. |
+| `PreparedPrecursor.sample_cells` | Mixed polygon-prism or shell-sector initial inventories and supported mean temperatures; no centre-point substitution or hidden double counting. |
+| `save/load_precursor_state`, `save/load_initial_samples` | Existing lossless, verified, deduplicated `ArrayStore` snapshots with actual geometry, library dependencies and source/history identities. |
+
+The Earth-material catalogue is reused, not re-entered per cell. Numerical values
+remain reference-condition knowledge, not hot/high-pressure laws. Bulk, matrix,
+true solid, explicit pore and source-reference mass quantities are separately
+labelled. Unknown fields have explicit masks, and normal accessors refuse unknown
+values. A thermal cell mean is not an energy inventory. Slab/mantle records are
+supplied footprint/depth-band inputs, not predictions of dipping 3D geometry.
+
+From the repository root, using the **already declared** Python environment:
+
+```sh
+# Build an authored two-province example offline; output only, no simulation.
+python -I -B tectonics/tools/prepare_precursor_example.py > initial-example.json
+# Explicitly create a new self-contained result store; existing files are refused.
+python -I -B tectonics/tools/prepare_precursor_example.py --save-store initial-example.db
+# Full regression and the separate bounded R2 execution card.
+python -I -B tectonics/verify.py > 3cr2-tests.json
+python -I -B tectonics/tests/check_precursor_r2.py > 3cr2-sampling-evidence.json
+```
+
+The example's geometry, temperatures and history are labelled authored
+assumptions, not a validated Earth-like default. The optional store contains one
+result snapshot; load by its reported `sample_id`, then access `.state`.
+No dependencies, reference data or historical checkpoints are downloaded.
+
+**Limits that remain explicit:** constant-depth column/body descriptions, not
+general 3D/dipping geometry; spherical point priors but no spherical cell average
+of a Cartesian spectral prior; no automatic disjoint-mesh certification across
+incompatible charts. Such overlap checks fail rather than snap boundaries, and
+explicitly overlapping queries are marked non-additive. General remaining W01
+sampling, motion-to-regional forcing, W01-to-W02 evolution integration and the
+combined W01 acceptance gate are not complete. No R3/W03 implementation or
+physical plate-formation acceptance is included.
+
+Tests/evidence: [`3cr2-tests.json`](evidence/3cr2-tests.json),
+[`3cr2-tests.log`](evidence/3cr2-tests.log), and
+[`3cr2-sampling-evidence.json`](evidence/3cr2-sampling-evidence.json).
+Scientific details are in [the plan](docs/TECTONICS_PLAN.md#3cr2-initial-state);
+normal execution, memory ownership and measured costs are in
+[the optimisation reference](docs/OPTIMISATION_REFERENCE.md#3cr2-initial-execution).
+Test results are software/numerical evidence, not production/Windows acceptance.
+
+**Applying this delivery:** merge its `tectonics/` files into the local `remake`
+checkout based on `e79bf94ea5285a36bbce18b503234a8df56e3910`. Review newer local
+edits rather than overwriting them, and preserve unrelated/historical files.
+Do not replace the whole repository or delete the destination folder. Michael
+owns application, commit and push; sandbox files do not change his PC.
+
+## Retained 3C-R1 delivery (revision 24)
 
 **18 September 2026:** source acquisition, offline processing and the bounded
 reference-use review are complete. This is **scoped use of PB2002 evidence**, not

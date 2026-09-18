@@ -117,6 +117,15 @@ class GeometryIndex:
                 self._groups.clear();self._closed=True;self._guard.__exit__(None,None,None)
 
     def query(self,points,*,angular_tolerance_rad=_DEFAULT_ANGULAR_BAND,budget=None,cancel=None):
+        return self._query(points, angular_tolerance_rad=angular_tolerance_rad,
+                           budget=budget, cancel=cancel)
+
+    def _admitted_query(self, points, *, budget, cancel=None):
+        # R2's executor holds the full parent envelope until this query's job has
+        # returned. The detached child records suballocation without double charge.
+        return self._query(points, budget=budget, cancel=cancel, _prepaid=True)
+
+    def _query(self,points,*,angular_tolerance_rad=_DEFAULT_ANGULAR_BAND,budget=None,cancel=None,_prepaid=False):
         """Return all region/trace matches, including every boundary owner candidate.
 
         Spherical numerical bands use a conservative projected envelope followed
@@ -130,13 +139,15 @@ class GeometryIndex:
             dim=3 if self.spherical else 2;shape=_point_shape(points,dim);n=elements(shape)//dim
             tol=scalar(angular_tolerance_rad,'angular tolerance',nonnegative=True)
             maximum=min(n*len(self.features),self.limits.max_hits)
-            groups=list(self._groups);batch=min(self.limits.batch_points,
+            # A tiny query never allocates a full policy-sized point batch.
+            # Clamping only execution scratch leaves every predicate unchanged.
+            groups=list(self._groups);batch=min(max(1,n),self.limits.batch_points,
                 max(1,self.limits.max_hits//max(g[3] for g in groups)))
             # Native result capacity, snapshots and concatenation are all charged.
             required=64*maximum+64*n+1024*batch+16384
             policy=self.budget if budget is None else select_budget(budget)
             from .resources import reserve_budgets
-            with reserve_budgets(required,self.budget,policy,category='geometry-index-query'):
+            with reserve_budgets(required, *((policy,) if _prepaid else (self.budget, policy)), category='geometry-index-query'):
                 p=(_directions(points) if self.spherical else read_array(points,'points')).reshape(-1,dim)
                 rows=[];candidate_count=0;hit_count=0
                 for start in range(0,n,batch):

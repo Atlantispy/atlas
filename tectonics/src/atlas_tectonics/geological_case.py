@@ -31,6 +31,7 @@ from .spherical_geometry import SphericalGeometry, SphericalChart
 from .spherical_atlas import SphericalAtlas, _restore_atlas
 from .boundaries import BoundaryNetwork, BoundaryRegion, build_boundary_network
 from .resources import select_budget
+from .geological_domain import GeologicalDomain, restore_geological_domain
 
 _SCHEMA = 'atlas.geological-case.v1'
 _BUNDLE = 'atlas.geological-case-snapshot.v1'
@@ -124,7 +125,8 @@ def _record_text_bytes(value):
 def _topology_id(topology):
     if type(topology) is BoundaryNetwork: return topology.network_id
     if type(topology) is SphericalAtlas: return topology.atlas_id
-    raise GeologyError('validated BoundaryNetwork or SphericalAtlas required')
+    if type(topology) is GeologicalDomain: return topology.domain_id
+    raise GeologyError('validated BoundaryNetwork, SphericalAtlas or GeologicalDomain required')
 
 
 def _geometry_shape(g):
@@ -132,7 +134,7 @@ def _geometry_shape(g):
 
 
 def _check_geometry_frame(topology, geometry, geometry_limits, budget):
-    if type(topology) is SphericalAtlas:
+    if type(topology) is SphericalAtlas or (type(topology) is GeologicalDomain and topology.full_sphere):
         if type(geometry) is not SphericalGeometry or geometry.chart.sphere != topology.sphere:
             raise GeologyError('feature must use the planetary sphere and frame')
         return  # Every valid patch on the same sphere lies in the planetary domain.
@@ -167,7 +169,7 @@ class GeologicalCase:
     construction uses the shared budget and never creates a new worker/cache pool.
     """
     case_id: str
-    topology: BoundaryNetwork | SphericalAtlas
+    topology: BoundaryNetwork | SphericalAtlas | GeologicalDomain
     time_s: float
     epoch_id: str
     depth_reference_id: str
@@ -243,6 +245,8 @@ class GeologicalCase:
                 if key not in maps[table]: raise GeologyError('unknown '+table+' reference: '+str(key))
                 return maps[table][key]
             ref('sources',source_id)
+            if type(topology) is GeologicalDomain:
+                ref('sources',topology.source_id)
             for name,values in catalogues.items():
                 if name != 'sources':
                     for value in values: ref('sources',value.source_id)
@@ -276,7 +280,7 @@ class GeologicalCase:
                             raise GeologyError('constant initial temperature outside material validity')
             unique_geometries = {g.geometry.geometry_id:g.geometry for g in catalogues['geometries']}
             stored_geometries = dict(unique_geometries)
-            if type(topology) is BoundaryNetwork:
+            if type(topology) is BoundaryNetwork or (type(topology) is GeologicalDomain and not topology.full_sphere):
                 for g in (topology.domain, *(r.geometry for r in topology.regions)):
                     stored_geometries[g.geometry_id] = g
             geometry_bytes = sum(len(g.wkb if type(g) is PlanarGeometry else g._projected.wkb) for g in stored_geometries.values())
@@ -291,6 +295,8 @@ class GeologicalCase:
                 _check_geometry_frame(topology,geometry,gl,budget)
             plate_ids = set(topology.plate_ids); region_ids = set(topology.region_ids)
             def selector(s, *, area=False, half_width=None):
+                if type(topology) is GeologicalDomain and s.kind in ('plates','regions'):
+                    raise GeologyError('pre-partition geology cannot select physical plates or topology regions')
                 if s.kind == 'plates' and not set(s.keys) <= plate_ids:
                     raise GeologyError('selector names unknown plates')
                 if s.kind == 'regions' and not set(s.keys) <= region_ids:
@@ -319,7 +325,7 @@ class GeologicalCase:
                 selector(zone.selector,half_width=zone.half_width_m)
             if precedence.weak_zone_mode == 'ordered_override' and set(precedence.weak_zone_order) != set(maps['weak_zones']):
                 raise GeologyError('weak-zone override must list every zone exactly once')
-            data = {'schema':_SCHEMA,'case_id':case_id,'topology_kind': 'sphere' if type(topology) is SphericalAtlas else 'regional',
+            data = {'schema':_SCHEMA,'case_id':case_id,'topology_kind': ('pre-partition' if type(topology) is GeologicalDomain else 'sphere' if type(topology) is SphericalAtlas else 'regional'),
                 'topology_id':tid,'time_s':time_s,'epoch_id':epoch_id,'depth_reference_id':depth_reference_id,
                 'source_id':source_id,'precedence':asdict(precedence)}
             for name,values in catalogues.items():
@@ -418,7 +424,7 @@ def _snapshot(case):
     td = topology.descriptor()
     if type(topology) is SphericalAtlas:
         arrays['topology_directions'] = topology.vertex_directions
-    else:
+    elif not (type(topology) is GeologicalDomain and topology.full_sphere):
         for g in (topology.domain,*(r.geometry for r in topology.regions)):
             geometries[g.geometry_id] = g
     gd = {}
@@ -492,7 +498,7 @@ def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geome
             raise GeologyError('invalid stored geometry map')
         expected_arrays.add(row['array'])
     if d.get('topology_kind') == 'sphere': expected_arrays.add('topology_directions')
-    elif d.get('topology_kind') != 'regional': raise GeologyError('unsupported topology kind')
+    elif d.get('topology_kind') not in ('regional','pre-partition'): raise GeologyError('unsupported topology kind')
     if set(arrays) != expected_arrays: raise GeologyError('geological snapshot array inventory mismatch')
     # Decode typed bytes without trusting shape arithmetic or mutable array flags.
     views = {}
@@ -536,6 +542,8 @@ def restore_geological_case(metadata, arrays, expected_id, *, limits=None, geome
             td = metadata['topology']
             if d['topology_kind'] == 'sphere':
                 topology = _restore_atlas(td,views['topology_directions'].tobytes(),limits=gl,budget=budget,cancel=cancel)
+            elif d['topology_kind'] == 'pre-partition':
+                topology = restore_geological_domain(td,geometry)
             else:
                 domain = geometry[td['domain']['geometry_id']]
                 regions = tuple(BoundaryRegion(r['region_id'],r['plate_id'],geometry[r['geometry']['geometry_id']]) for r in td['regions'])

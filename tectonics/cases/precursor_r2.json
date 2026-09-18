@@ -1,0 +1,123 @@
+{
+  "schema": "atlas.precursor-r2-case.v1",
+  "case_id": "3C-R2-static-precursor-1",
+  "status": "WORKING_NON_CANON",
+  "governing_scope": "R2 only: initial geological state and necessary W01 stage-5 sampling; R3 and W03 evolution are not included",
+  "baseline_branch": "remake",
+  "baseline_commit": "e79bf94ea5285a36bbce18b503234a8df56e3910",
+  "verification_families": {
+    "T04": "static formation/cooling identity and replacement inventories only; no migration/subduction evolution",
+    "T05": "initial E04 values and volume means only; no heat evolution or finite-plate completion",
+    "T06": "declared matrix/pore/solid volume conventions only; no compaction evolution",
+    "T14": "static mixed-support geometric/extensive invariants only; no coupled dynamics",
+    "T15": "self-contained initial-state/result restoration and stale-source rejection",
+    "PT01-PT02": "bounded concurrent readers, batching/order/prior stability; no process/device speed claim",
+    "PT03-PT06": "input/source identity, corrupt store, immutable arrays and finite shared admission",
+    "PT09-PT11": "cooperative interruption, cold restore and inherited lossless snapshot/dedup path",
+    "PT13-PT14": "existing execution identity, focused cold/prepared/restoration measurements; Linux only"
+  },
+  "family_note": "Uses relevant unit/reference/conservation/reproducibility and execution/resource obligations of the maintained T/PT families; does not complete those whole families.",
+  "scientific_contract": {
+    "geometry": "Plate-independent planar area, conditioned spherical patch, or full framed sphere; computational supports do not determine physical plates",
+    "vertical_structure": "Ordered, surface-relative constant-depth columns and explicitly prioritised footprint/depth-band slab or mantle inputs",
+    "origin_kinds": [
+      "observed",
+      "authored",
+      "sampled_prior",
+      "model_evolved"
+    ],
+    "time": "SI seconds in a named epoch; formation and cooling histories are independent",
+    "planar_volume": "A * (bottom_depth - top_depth)",
+    "spherical_volume": "A/R^2 * ((R-top)^3-(R-bottom)^3)/3; evaluated as a stable factored difference",
+    "phases": "explicit_pore_volume=bulk_volume*porosity; matrix_volume=bulk_volume*(1-porosity); constituent volume=matrix_volume*declared fraction; no renormalisation",
+    "bulk_reference": "Source-specific aggregate matrix volume is not certified true solid volume; adding explicit pores to it is refused",
+    "mass": "Optional source-reference-density mass at explicitly requested reference temperature; not in-situ hot/pressurised mass",
+    "temperature": "Initial point or volume-weighted mean temperature; not heat/enthalpy and not evolution",
+    "thermal_profiles": [
+      "constant",
+      "piecewise_linear_no_extrapolation",
+      "existing_E04_half_space_initial_reference"
+    ],
+    "prior": "mean + amplitude/N * sum cos(k dot (r-origin) + phase); amplitude is maximum-deviation bound; wavelength is feature scale, not an inferred correlation length",
+    "seed_stream": "atlas.cosine-stream.v1: SHA256(name, uint64 seed, mode index); fixed top-53-bit uniforms; mesh-independent Cartesian coordinates",
+    "weakness": "Retained authored faults and exact point weak-zone/corridor membership; no invented damage or rheology"
+  },
+  "numerical_policy": {
+    "dtype": "binary64",
+    "fast_math": false,
+    "geometry": "Existing unsnapped minor-arc/GEOS geometry; no source movement, sliver removal or centre-point approximation of mixed-cell volume",
+    "inventory_relative": 2e-11,
+    "thermal_absolute_k": 1e-08,
+    "thermal_relative": 1e-11,
+    "quadrature_intervals": 128,
+    "prior_modes_max": 64,
+    "prior_phase_absolute_max": 1099511627776,
+    "derivation": "Inventory threshold is a declared binary64 overlay/summation diagnostic, not physical uncertainty. Analytical references and refinement must remain within it without modifying geometry. Thermal quadrature reports its estimate and refuses failures. Independent analytical tests use tighter case-specific bounds. These are new R2 policies, not relaxations of any retained tolerance."
+  },
+  "unsupported": [
+    "Arbitrary dipping/curved volumetric slab geometries or general 3D interpolation",
+    "Spherical cell averages of Cartesian spectral priors; spherical point evaluation and unperturbed radial profile means are supported",
+    "Automatic global disjoint-mesh certification across incompatible conditioned charts; incompatible support queries require explicit non-additive overlap opt-in or compatible patches",
+    "Hot/high-pressure density or thermal constitutive laws, stress solution, thermal evolution, physical plate formation, W01-to-W02 evolution workflow, global mantle spin-up",
+    "Windows and release/platform acceptance"
+  ],
+  "example": {
+    "identity": "authored-reference-profile-example-1",
+    "meaning": "Illustrative authored continental/oceanic columns using sourced reference profiles; not an Earth-calibrated or mechanically equilibrated initial world",
+    "frame_id": "example-local-metres",
+    "epoch_id": "example-initial-epoch",
+    "depth_reference_id": "example-flat-surface",
+    "width_m": 200000.0,
+    "height_m": 100000.0,
+    "ocean_width_m": 80000.0,
+    "lithosphere_thickness_m": 100000.0,
+    "continental_crust_m": 30000.0,
+    "oceanic_crust_m": 7000.0,
+    "continental_profile": "rock.granite",
+    "oceanic_profile": "rock.basalt",
+    "mantle_profile": "rock.peridotite",
+    "reference_property_temperature_k": 293.15,
+    "surface_temperature_k": 293.15,
+    "base_temperature_k": 1573.15,
+    "formation_time_megayears": {
+      "continental": -2000.0,
+      "oceanic": -80.0,
+      "mantle": -3000.0
+    },
+    "cooling_time_megayears": -60.0,
+    "time_unit": "million Julian years; 31557600000000 SI seconds each",
+    "additional_explicit_porosity": 0.0,
+    "intrinsic_aggregate_porosity": "unresolved by the bulk-reference rock profiles; no true-solid volume claimed"
+  },
+  "acceptance_separation": {
+    "implementation_and_numerical_checks": "recorded separately in evidence/3cr2-tests.json and bounded sampling evidence",
+    "physical_validation": false,
+    "production_ready": false,
+    "R1_source_use_and_strict_consistency": "unchanged; no acquisition or source-policy modifications"
+  },
+  "bounded_execution_case": {
+    "point_grid": [
+      28,
+      24
+    ],
+    "cold_repeats": 3,
+    "prepared_repeats": 3,
+    "horizontal_cell_counts": [
+      1,
+      4,
+      16
+    ],
+    "point_reference": "independent per-point exhaustive GEOS membership and scalar layer lookup, same source geometry; verification only, not timed as a complete alternative backend",
+    "point_max_absolute_error_k": 1e-12,
+    "inventory_max_relative_error": 2e-11,
+    "native_timing_includes": "context verification, inputs, native query, field evaluation, immutable output/hash creation; cold includes plan construction and close",
+    "storage": "single actual self-contained result snapshot in temporary Zstd ArrayStore; restore every numeric array exactly",
+    "claims_not_made": [
+      "universal speedup",
+      "RSS cap",
+      "planet-scale capacity",
+      "physical validation",
+      "Windows acceptance"
+    ]
+  }
+}

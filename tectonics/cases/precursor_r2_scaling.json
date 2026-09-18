@@ -1,0 +1,64 @@
+{
+  "schema": "atlas.precursor-r2-scaling-case.v1",
+  "case_id": "3C-R2-execution-indexing-1",
+  "status": "WORKING_NON_CANON",
+  "scope": "R2 static sampling engineering only: exact conservative spherical broad phase and admitted independent sampling batches; no new rheology, dynamics, reference acquisition or full-world run",
+  "github_base": "e79bf94ea5285a36bbce18b503234a8df56e3910",
+  "parent_delivery_sha256": "3b1cb8f68b7466319d393064815104074879cec7b01949680b0bca4989fbdfa9",
+  "scientific_policy": "The original precursor_r2.json and all its numerical tolerances remain unchanged. No truncation, snapping, precision downgrade or approximate cell means.",
+  "spherical_index": {
+    "cap": "local hemispherical vertex-mean cap, conditioned chart-centre fallback; encloses complete minor arcs and interiors",
+    "bounds": "unit-sphere Cartesian chord balls; 2D STRtree plus third-coordinate and angular filtering",
+    "roundoff_guard": "512*binary64_epsilon, outward enclosure arithmetic only; not changed area acceptance tolerance",
+    "exact_stage": "retained spherical overlays and compatible-chart refusals; uncertain candidate retained",
+    "repeated_support": "one cap per unique footprint; disjoint vertical intervals swept before one exact overlay per footprint pair",
+    "worst_case": "dense overlapping caps remain quadratic; explicit work admission and cancellation retained"
+  },
+  "execution_defaults": {
+    "point_batch_size": 32768,
+    "min_parallel_indexed_points": 262144,
+    "unindexed_points_auto": "serial",
+    "cell_batch_size": 64,
+    "cell_auto": "serial; finite tested cell cases were slower with threads",
+    "explicit_comparisons": "serial/threads; optional explicitly selected cell count threshold",
+    "workers": "existing ExecutionPolicy default min(2, available CPUs)",
+    "max_inflight": 4,
+    "inner_native_threads": 1,
+    "processes": "refused for shared prepared native indices",
+    "sampling_prior_batch_points": 32768
+  },
+  "execution_integrity": [
+    "complete-request overlap and unique-ID validation before any workers",
+    "global sparse-row/work/geometry-hit ledgers across every batch",
+    "captured immutable inputs, ordered outputs, translated sparse row/phase offsets",
+    "parent admission holds complete jobs; detached children account suballocations without double charging",
+    "aggregate retention and merge reservation; cancellation drains jobs before memory is released",
+    "source/runtime and loaded-callable verification before/after complete request",
+    "same current scientific sample identity for serial and threaded route; execution configuration excluded",
+    "existing lossless Zstd/Blosc2 snapshots and deduplication"
+  ],
+  "verification_families": {
+    "T14": "unchanged exact mixed-support inventory checks",
+    "T15": "source/sample/storage identity",
+    "PT01-PT02": "bounded batching, ordering and matched-work execution",
+    "PT03-PT06": "global resource limits, immutable inputs and invalidation",
+    "PT09-PT11": "cancel, drain, reuse and exact restore",
+    "PT13-PT14": "finite Linux evidence with first/reused complete-call timings"
+  },
+  "measurements": {
+    "points": 262144,
+    "cells": 512,
+    "spherical_footprints": 128,
+    "work_budget_bytes": 536870912,
+    "complete_call_repetitions": 4,
+    "overlap_repetitions": 2
+  },
+  "acceptance": "all retained and new functional tests; exact serial/thread array identities; identical overlap result; unchanged source inventory; no leaked admissions; timing is descriptive only",
+  "not_claimed": [
+    "arbitrary incompatible-chart global mesh acceptance",
+    "universal multicore speedup",
+    "production RSS ceiling",
+    "Windows execution",
+    "R3 or W03 evolution"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "atlas.r2.baseline-preservation.v1",
+  "baseline_payload_files": 164,
+  "baseline_payload_missing": [],
+  "baseline_payload_changed": [
+    "README.md",
+    "docs/FOUNDATIONS.md",
+    "docs/OPTIMISATION_REFERENCE.md",
+    "docs/TECTONICS_PLAN.md",
+    "pyproject.toml",
+    "src/atlas_tectonics/__init__.py",
+    "src/atlas_tectonics/geological_case.py",
+    "src/atlas_tectonics/reuse.py",
+    "verify.py"
+  ],
+  "baseline_payload_unchanged": 155,
+  "retained_tests_cases_reference_data_and_evidence_unchanged": true,
+  "all_eight_pb2002_originals_unchanged": true,
+  "source_test_case_tool_inventory_matches_executed_full_and_bounded_tests": true,
+  "new_tests": 106,
+  "retained_tests": 1298,
+  "full_tests": 1404,
+  "new_r2_files_excluding_evidence": [
+    "cases/precursor_r2.json",
+    "src/atlas_tectonics/geological_domain.py",
+    "src/atlas_tectonics/precursor.py",
+    "src/atlas_tectonics/precursor_sampling.py",
+    "tests/check_precursor_r2.py",
+    "tests/precursor_fixtures.py",
+    "tests/test_precursor_contracts.py",
+    "tests/test_precursor_example.py",
+    "tests/test_precursor_execution.py",
+    "tests/test_precursor_sampling.py",
+    "tools/prepare_precursor_example.py"
+  ],
+  "baseline": "Atlas_Remake_3C_R1_Reference_Use_2026-09-18.zip",
+  "baseline_sha256": "f75cdafa568a74f2b3a671e0af535aabee58e6d4a1340967d2501df725c6cb23",
+  "base_commit": "e79bf94ea5285a36bbce18b503234a8df56e3910",
+  "policy": "No tolerance changes, old-case edits, source repins or historical answer regeneration."
+}

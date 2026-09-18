@@ -72,7 +72,7 @@ def _normal_code(code):
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
 _IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout")
+                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution")
 
 
 def _source_bytes():
@@ -109,7 +109,12 @@ def _callable_inventory(backend="reference"):
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         for label, obj in sorted(vars(module).items()):
-            if label.isupper() and (type(obj) in (str, int, float, bool, tuple)
+            # These are process-wide resource leases, not scientific constants.
+            # Their changes are guarded by the executor, not source invalidation.
+            transient = name == 'execution' and label in (
+                '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
+                '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
+            if not transient and label.isupper() and (type(obj) in (str, int, float, bool, tuple)
                                    or (is_dataclass(obj) and not isinstance(obj, type))):
                 constants[module.__name__+"."+label] = _constant(obj)
             members = [(label, obj)]

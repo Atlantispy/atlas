@@ -1,5 +1,254 @@
 # Atlas optimisation reference
 
+<a id="3cr2-scaling-execution"></a>
+
+## Current: R2 scheduling/indexing follow-up (18 September 2026)
+
+**Version `0.1.0.dev22`, maintained plan revision 26.** This is an engineering
+extension of R2 only. Scientific scope and numerical acceptance are unchanged;
+R1 sources/evidence are preserved and R3 is not started. The earlier dated R2
+execution section remains as the historical account of revision 25.
+
+### Conservative indexing, exact final predicates
+
+`_spherical_candidates.py` prepares a hemispherical cap `(c,r)` per unique area
+footprint. A normalised vertex-mean centre generally gives a local cap; the
+existing conditioned chart centre is a conservative fallback when the local cap
+would not be hemispherical. Geodesic convexity means that a cap below a hemisphere
+containing all vertices contains their minor arcs and areal hull. Holes only
+subtract area. The cap lies in the unit-sphere Cartesian ball centred at `c` with
+radius `2*sin(r/2)`. Outward bounds use a declared binary64 arithmetic guard of
+512 epsilon; this is not a modified physical/area acceptance tolerance.
+
+A Shapely STRtree indexes the two most informative Cartesian bounding coordinates.
+The omitted coordinate and angular cap-distance predicates reject additional false
+positives. Potential intersections then use the unchanged native spherical overlay.
+No approximate nearest-neighbour query, sampling-phase trick, snapping, longitude
+box or positive-area cutoff is used. Polar and date-line cases are tested. The
+index also prunes spherical province candidates during ordinary cell sampling.
+
+The complete cell-overlap check groups identical footprint IDs and sorts their
+depth intervals. Each group is checked for positive-depth self-overlap; pairs of
+candidate groups use a two-pointer depth sweep before at most one exact footprint
+intersection. Caps and bounds are prepared once per distinct footprint, not once
+per possible cell pair. Queries retain one bounded candidate row rather than an
+all-pairs matrix. Sparse cases improve substantially; dense overlapping enclosures
+can still require quadratic work and are subject to the explicit work limit.
+Prepared area indices remain reserved until close, with concurrent-reader guards.
+
+### Existing scheduler integration and measured automatic selection
+
+`PrecursorExecutionPolicy` selects the normal route without changing equations:
+
+| Request | Normal automatic route |
+|---|---|
+| Indexed point request, at least 262,144 points | Existing bounded thread executor; 32,768-point tasks. |
+| Smaller or unindexed point request | Existing grouped/native serial implementation; no pool created. |
+| Cell request | Serial by default: the measured 512-cell cases were slower with threads. |
+| Explicit threaded cell comparison or owner-selected threshold | The same bounded executor, default 64-cell tasks; identical scientific outputs. |
+
+The existing `ExecutionPolicy` defaults remain two workers (or fewer if only one
+CPU is available), at most four queued/in-flight tasks, and one inner native
+thread. Explicit one-worker policies remain serial. A prepared native index is
+shared in-process, not pickled to spawned workers; requesting that unsupported
+process mode is refused. A pool is created lazily on the driving thread and
+reused. The executor must be driven/closed from that same thread; small independent
+serial readers still share the immutable prepared state. No second scheduler or
+unbounded worker queue was introduced.
+
+The prior-evaluation native batch default is 32,768 rather than 4,096 points.
+This changes scheduling/scratch, not per-point mode summation or numerical order;
+user-specified batch limits are honoured. GeometryIndex scratch also clamps its
+batch to actual query length rather than charging a full policy batch for one
+point. Both changes are covered by equality/refusal tests.
+
+### Admission, global limits, cancellation and identity
+
+Before submission, the full immutable request is captured and an aggregate
+reservation covers retained chunk outputs, merge arrays and final immutable
+bytes. Each existing executor task holds its full parent admission until result
+validation finishes. Detached child WorkBudgets account for nested allocations
+inside that already held envelope, avoiding double charging the shared budget.
+This private admitted-call adapter is not a bypass for unbounded arbitrary jobs.
+Prepared geometry and source contexts remain admitted independently. Complex jobs
+that exceed their declared allowance fail; they never coarsen, reduce precision
+or change model. Interpreter/native allocator baselines and completed results
+retained by the caller still require headroom; admission is not an RSS cap.
+
+The global ledger counts geometry hits, sparse associations and overlay/sampling
+work across all batches. Complete cell-frame/support/unique-ID/overlap validation
+occurs once before workers; batching never implies permission to sum overlapping
+queries. Original errors and the explicit non-additive opt-in remain. Ordered
+assembly shifts sparse offsets and phase-to-row references without re-summing a
+physical cell in a different order. Shared thermal means remain call-local and
+bounded. Worker failures/cancellation abort siblings and drain native work before
+reservations are released; the pool can be reused after the failed request.
+
+Execution configuration, worker order and diagnostics do not enter the scientific
+sample identity. The sampling method is versioned `atlas.precursor-sampling.v2`;
+actual source/runtime and loaded methods are checked before/after each full call.
+The source inventory now includes the index and execution adapter. Only the
+executor's enumerated process-wide resource lease counters/handles are excluded
+from scientific constant checks, not methods, numerical constants or source bytes.
+Stale-source/loaded-executor mutation tests and cleanup tests cover this separation.
+
+The existing ArrayStore remains the only persistence path: lossless Zstd/Blosc2,
+verified chunks, deduplication and self-contained precursor/sample definitions.
+Serial/thread outputs deduplicate to the same current sample; all restored arrays
+are exact. This does not rebind or overwrite historical checkpoints/evidence.
+
+### Focused reproducible evidence
+
+From a clean complete checkout in the already declared environment:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tests/check_precursor_scaling.py
+```
+
+The latter is the finite registered comparison, not the skipped general baseline
+programme. It records source identities before/after, all setup/first/reused complete
+call timings, serial-versus-thread numerical identity, resource admissions, exact
+restoration/deduplication, and the negative threaded-cell performance result.
+Index construction is included in complete overlap-validation timing. Input
+construction is separate. Imported libraries/process caches are shared across
+sequential cases; setup is not an isolated cold-process startup comparison.
+Timing is not a test gate and is not extrapolated to all meshes or machines.
+No R1 reacquisition, full-world simulation, dependency installation, Windows
+acceptance, physical validation or R3 implementation occurs in this increment.
+
+## Historical revision 25 execution delivery
+
+<a id="3cr2-initial-execution"></a>
+
+## 3C-R2 — precursor execution, identities and storage (18 September 2026)
+
+**Current delivery: `0.1.0.dev21`, plan revision 25.** The bounded static precursor
+and necessary initial sampling are delivered; R3 is not started. The scientific
+contract and unsupported spherical/global/volumetric cases are in
+[the maintained plan](TECTONICS_PLAN.md#3cr2-initial-state) and
+[`precursor_r2.json`](../cases/precursor_r2.json). Older dated R1 status below is
+historical; R1 inputs, numerical gates, source-use policy and evidence are unchanged.
+
+### Normal execution path, not an opt-in optimisation
+
+`PreparedPrecursor` shares one immutable case/state, compact unit/cohort/material
+catalogues and existing native geometry indexes. Indexed sparse point hits are
+grouped once; native array unions, grouped depth searches and vector arithmetic
+replace a Python object/set per point. Only actual province/weak-zone associations
+are returned in compact CSR arrays. Cell queries prune area candidates, then use
+unsnapped exact geometry intersections and precedence subtraction; the index
+never decides material ownership or stands in for a conservative average.
+
+Constant-depth breaks are split explicitly. A bounded cache of up to 1,024
+initial-profile interval means avoids repeated integration within one cell call;
+its key includes profile, top, bottom and spherical radius, with a fixed shared
+case time. There is no stale cross-state thermal cache. Streaming compensated
+sums accumulate volume/temperature/error per actual unit portion. Sparse records
+grow only after bounded capacity admission; no dense cell-by-every-material or
+point-by-every-mode cube is formed. Outputs use private immutable bytes and fresh
+shape/dtype views, not a mutable read-only parent array. A changed result-view
+shape cannot change the next view or another reader's metadata.
+
+The default remains binary64 with no fast-math, no precision/coarsening fallback,
+no altered history and no sampled centre replacing an integral. Planar spectral
+prior integrals use polygon boundary Fourier integrals (including holes) and a
+separable vertical factor. Long-wavelength cancellation uses factored/sinc-style
+expressions and fixed summation order. Spherical Cartesian-prior cell integration
+is explicitly unavailable instead of being replaced by a lower-quality route.
+
+### Resource ownership and bounded interruption
+
+The existing `WorkBudget` accounts for active shared state, both native indexes,
+compact maps and an execution-context allowance before setup. That allowance
+covers the existing context's bounded source snapshot, the concurrent comparison
+copy and callable metadata. It remains reserved until plan close; source
+invalidation during close cannot leak its reservation. Per-call capture,
+geometry candidates, fragments, sparse records, native work and immutable-output
+construction have joined allowances, finite row/work/vertex limits and cooperative
+cancellation. Readers can share a prepared plan; close refuses while a read is
+active. Interacting timesteps or mechanical plate solves are not parallelised by
+this static API. No new scheduler, worker pool or unbounded cache was introduced.
+
+Budget figures are admission estimates, **not process-RSS limits**. Returned
+`InitialSamples` and caller input/state references are caller-owned: retaining
+many completed outputs requires aggregate caller/execution admission using their
+reported `nbytes`. Interpreter/native allocator baselines and other retained
+outputs require headroom. Cancellation is cooperative at bounded work points;
+it does not interrupt a GEOS/native call halfway through memory ownership.
+
+### Identity and self-contained persistence
+
+The state identity includes the original case, actual material-library dependency,
+origin classifications, separate cooling dates, volume bases, body/field records
+and explicit precedence. Priors include stream version/name/seed, physical scales,
+amplitude convention, origin and domain/frame. The prepared identity also covers
+numerical limits and the existing verified `ExecutionContext`; the new modules
+are included in its callable/source inventory. Every prepared use verifies the
+source/runtime contract, rather than trusting mutable input digests or mtimes.
+No historical source bindings or expected answers are rewritten.
+
+`save_precursor_state`/`load_precursor_state` use one existing `ArrayStore`
+transaction. `save_initial_samples`/`load_initial_samples` additionally retain the
+actual query support geometries, sample arrays, their complete descriptor and
+the precursor/library decoding dependencies in a **single result snapshot**.
+Restore verifies canonical definitions and every array, and neither reacquires
+sources nor resamples stored outputs. Original sources/unknowns/history survive.
+The existing lossless Zstd/Blosc2, verified chunks, compact categoricals and
+deduplication remain the storage implementation. Small raw chunks are its explicit
+size choice, not a compression-error fallback. No lossy histories, temporal delta
+chains, dictionary dependencies or Numba disk cache are introduced.
+
+### Obtained bounded checks and reproducible commands
+
+Run from the repository root in the existing declared environment:
+
+```sh
+# Entire software regression: source-bound result, not physical validation.
+python -I -B tectonics/verify.py > 3cr2-tests.json
+# Only the declared small R2 measurement/invariant case, with finite repeats.
+python -I -B tectonics/tests/check_precursor_r2.py > 3cr2-sampling-evidence.json
+# Offline authored example using the sourced material catalogue; no file writes.
+python -I -B tectonics/tools/prepare_precursor_example.py > initial-example.json
+# Explicit optional NEW store; existing destinations are refused.
+python -I -B tectonics/tools/prepare_precursor_example.py --save-store initial-example.db
+```
+
+The example is not an equilibrium, mantle law or calibrated Earth starting
+condition. Its temperatures, lateral columns and formation/cooling dates are
+explicit authored inputs. The source catalogue supplies reference material data;
+unknown hot properties, stress/damage and intrinsic aggregate porosity remain
+visible. The optional store contains one complete result snapshot; obtain its
+state through `load_initial_samples(store, report['sample_id']).state`.
+
+The focused execution card uses **672 points**, three cold complete calls, three
+prepared complete calls, and **1/4/16-cell** inventories. Its exhaustive per-point
+oracle checks exactly the same geometry/material/thermal quantities, but is not
+timed as a fully equivalent alternative execution backend. Cold/prepared timings
+both include normal context verification, capture, sampling, immutable output and
+hash creation; cold includes preparation/close. State-construction and storage/
+restoration costs are reported separately. All point temperatures, unit/province
+codes and retained province matches agreed; the three mesh sizes had zero
+reported material/coverage residual in this exactly integrable fixture. Every
+saved numeric array restored exactly, with zero residual budget reservation.
+
+On the obtained Linux run, complete cold calls were approximately **0.290, 0.063
+and 0.065 s**, and prepared calls **0.019–0.025 s**; these are small-case costs,
+not a universal speedup or proof of planetary capacity. The combined check's
+peak **accounted** reservation was 22,231,138 bytes including storage work, not
+measured peak RSS. Exact values, source hashes and runtime are in
+[`3cr2-sampling-evidence.json`](../evidence/3cr2-sampling-evidence.json).
+[`3cr2-tests.json`](../evidence/3cr2-tests.json) and its log record the actual
+complete regression. A Linux/CPython 3.13 execution does not establish Windows,
+other runtimes or general physical adequacy. The broad baseline programme remains
+unperformed, as instructed.
+
+---
+
+### Retained R1 reference-use delivery
+
 <a id="3cr1-reference-tools"></a>
 
 ## 3C-R1 — audited source uses, unchanged strict checks (18 September 2026)

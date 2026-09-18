@@ -105,6 +105,29 @@ def _process_initialise(threads):
 
 
 @dataclass(frozen=True, slots=True)
+class _AdmittedCall:
+    """Internal thread-only adapter to the existing ordered bounded scheduler.
+
+    The caller freezes inputs and owns referenced prepared state. ``run`` receives
+    a detached budget whose complete envelope is already reserved by this executor.
+    ``accept`` validates the result before the reservation is released. ``abort``
+    cooperatively stops sibling calls on failure, then normal draining owns memory
+    until running native work finishes. This is not a public arbitrary task queue.
+    """
+    run: object
+    accept: object
+    abort: object
+    elements: int
+    work_bytes: int
+
+    def __post_init__(self):
+        if not callable(self.run) or not callable(self.accept) or not callable(self.abort):
+            raise TectonicsError('admitted call requires run/accept/abort callbacks')
+        if type(self.elements) is not int or self.elements < 1 or type(self.work_bytes) is not int or self.work_bytes < 1:
+            raise TectonicsError('admitted call needs positive work and memory bounds')
+
+
+@dataclass(frozen=True, slots=True)
 class _Job:
     kind: str
     parameters: object
@@ -114,6 +137,8 @@ class _Job:
 
 
 def _run_job(job: _Job):
+    if job.kind == 'admitted':
+        return job.parameters.run(WorkBudget(job.work_bytes))
     # A process transfer may restore mutable array backing. Re-establish detached
     # immutable inputs in the receiving process, never trust the pickle flags.
     arrays = tuple(snapshot(a,"worker input") for a in job.arrays)
@@ -314,7 +339,21 @@ class KernelExecutor:
         if scheme not in ('linear','constant') or backend not in ('numba','reference'):raise TectonicsError('invalid remap scheme/backend')
         return self._stream('remap',targets,(state,scheme),backend,cancel)
 
+    def _admitted_calls(self, calls, *, cancel=None):
+        """Internal prepared-state jobs: reuse queue, CPU limits and drain policy.
+
+        Shared native indexes and captured closures cannot be sent through spawn.
+        The R2 adapter has already chosen its measured serial/parallel route.
+        """
+        if self.policy.mode == 'processes':
+            raise TectonicsError('prepared-state calls support serial/threads, not processes')
+        return self._stream('admitted', calls, None, 'native', cancel)
+
     def _estimate(self,kind,raw,parameters,backend):
+        if kind == 'admitted':
+            if type(raw) is not _AdmittedCall:
+                raise TectonicsError('typed admitted call required')
+            return (), (), raw.elements, raw.work_bytes
         if kind == 'ale':
             state,dt,left,right,scheme=parameters;n=state.grid.cells;c=len(state.cohorts)
             if not isinstance(raw,(tuple,list)) or len(raw)!=2:raise TectonicsError('physical/mesh velocity pair required')
@@ -475,8 +514,8 @@ class KernelExecutor:
                             captured=tuple(snapshot(a,"submitted input") for a in values)
                             if tuple(a.shape for a in captured)!=shapes:
                                 raise TectonicsError("input metadata changed during capture")
-                            job=_Job(kind,parameters,captured,backend,charge)
-                            checks=None
+                            job=_Job(kind,raw if kind == "admitted" else parameters,captured,backend,charge)
+                            checks=raw if kind == "admitted" else None
                             if kind in ('ale','remap'):
                                 from .mesh import ColumnGrid1D
                                 from .materials import _hash_array
@@ -510,7 +549,9 @@ class KernelExecutor:
                         result=value.result() if parallel else value
                         self._live()
                         if cancel is not None and cancel.is_set(): raise CancelledError("batch stream cancelled")
-                        if kind == "ale":
+                        if kind == "admitted":
+                            result = checks.accept(result)
+                        elif kind == "ale":
                             from .materials import MaterialTransportResult
                             state,dt,left,right,scheme=parameters
                             # Submitted velocities are identified in the returned receipt;
@@ -565,6 +606,9 @@ class KernelExecutor:
                     del result
             finally:
                 # Retain reservations until running calls really finish.
+                if kind == 'admitted':
+                    for _, _, _, task in pending:
+                        task.abort()
                 for parallel,value,_,_checks in pending:
                     if parallel: value.cancel()
                 for parallel,value,reservation,_checks in pending:

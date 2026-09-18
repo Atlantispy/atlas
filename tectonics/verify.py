@@ -94,7 +94,7 @@ def main() -> int:
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v14',
+        'schema': 'atlas.tectonics.foundation-verification.v16',
         'profile': 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
@@ -109,7 +109,9 @@ def main() -> int:
         'native_runtime': (__import__('atlas_tectonics.transport', fromlist=['native_build_info']).native_build_info() if native else None),
         'spherical_atlas_scope': 'closed static conforming patch geometry; no spherical material evolution',
         'earth_material_scope': 'W01 4B sourced reference data and declared mixtures; no hot/high-pressure laws or W03 evolution',
-        'geological_description_scope': 'W01 stage 4 typed initial descriptions; no stage-5 sampling or W03 evolution',
+        'geological_description_scope': 'W01 stage 4 plus R2 pre-partition state and bounded stage-5 point/prism/shell-sector initial sampling; no W03 evolution',
+        'precursor_r2_scaling_scope': 'conservative spherical candidate index and bounded independent sampling batches; auto indexed points, measured serial cell default',
+        'precursor_r2_scope': 'plate-independent immutable state; conservative initial material volumes; no physical plate-formation/rheology/global-mesh acceptance',
         'planetary_generation_scope': 'W01 3C unweighted nearest-site initial geometry; not validated plate history',
         'geometry_runtime': __import__('atlas_tectonics.geometry', fromlist=['geometry_runtime']).geometry_runtime(),
         'runtime': {'python': platform.python_version(), 'numpy': np.__version__,
