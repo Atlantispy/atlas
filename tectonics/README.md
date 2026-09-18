@@ -9,7 +9,117 @@ neither `engineering/work` nor `shared_generator`. Historical bindings, numerica
 limits, checkpoints, `main` and the original Windows installation remain separate.
 
 
-## Current: 3C-R2 initial state, bounded sampler and execution/indexing follow-up
+## Current cleanup — version `0.1.0.dev23`, plan revision 27
+
+The R2 initial-state/sampling and optimisation scope is unchanged. This cleanup
+fixes linked-interpreter portability, consolidates engineering methods, improves
+delivery/evidence hygiene and corrects source-derived diagnostic plots. R1's
+scoped acceptance and strict discrepancy failure remain separate. **R3 has not
+started.** Older delivery paragraphs below are dated history, not current setup.
+
+Atlas aims to investigate whether and how the Diadem's authored geography could
+arise, not to make random worlds reproduce it. A failed explanation, unusual
+explicit event or unresolved mechanism remains a legitimate result. No geography
+is an answer key for tuning general physics. Visual QA uses actual code/data after
+each meaningful stage; it is separate from numerical and physical acceptance.
+
+<a id="environment"></a>
+
+## Tectonics environment
+
+Use a separate Python 3.12 or 3.13 environment for this package, **not** the old
+source-only `tools/develop.py` environment. Dependencies and version ranges live
+in `tectonics/pyproject.toml`; only Numba is exact-pinned there. A passing run must
+record its actual versions, not claim all dependencies are pinned. The optional
+`visual` extra supplies Matplotlib for the diagnostic tool, not the physical core.
+The commands below install dependencies only when you explicitly run them.
+
+From the repository root on Linux/macOS:
+
+```sh
+python3.13 -m venv tectonics/.venv
+tectonics/.venv/bin/python -m pip install -e 'tectonics[visual]'
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  tectonics/.venv/bin/python -I -B tectonics/verify.py > fresh-tests.json
+```
+
+From the repository root in Windows PowerShell:
+
+```powershell
+py -3.13 -m venv tectonics\.venv
+& .\tectonics\.venv\Scripts\python.exe -m pip install -e ".\tectonics[visual]"
+$env:OPENBLAS_NUM_THREADS="1"; $env:OMP_NUM_THREADS="1"; $env:MKL_NUM_THREADS="1"
+& .\tectonics\.venv\Scripts\python.exe -I -B .\tectonics\verify.py > fresh-tests.json
+```
+
+No activation or shell-policy change is necessary. Normal interpreter links and
+copied interpreters are both supported; `--copies` is no longer required as an
+Atlas workaround. Source/data/extension symlink guards remain. Use `-B` for local
+source imports: the verifier intentionally refuses pre-existing local bytecode.
+Do not delete an existing working tree to get a pass; investigate it or use a clean
+copy. Do not use `--system-site-packages` for a fresh independent installation;
+the cleanup test harness used it only to reuse already installed dependencies
+without downloading/installing anything. Linux execution is verified by this
+delivery; Windows/macOS instructions alone are not platform acceptance. Full verification
+also exercises real filesystem symlinks; a host unable to create those fixtures
+has not completed that part of verification. Skips are not counted as a full pass.
+
+Primary environment reference: [Python's venv documentation](https://docs.python.org/3.13/library/venv.html).
+
+## Reproducible diagnostic visuals
+
+```sh
+# Use the environment's Python as above. The destination must not already exist.
+python -I -B tectonics/tools/visual_qa.py --output tectonics/visual_output/review
+```
+
+This runs the unchanged authored R2 example and a fixed seed-41 plate-layout
+candidate, loads the existing pinned PB2002 bytes offline, and records identities
+and provenance next to the PNGs. It adds no physics and changes no source data.
+The source-data inventory is read/verified, not reacquired or requalified.
+Formation ages come from sampled unit/cohort records; cooling age is separate.
+PB2002 segment symbols mean left/right subduction or **non-subducting**, not a
+blanket transform classification. Raw source curves remain separate and are not
+converted into certified morphology. Rendering clips the antimeridian and globe
+limbs; six globe views include both poles. Optional Matplotlib absence fails
+clearly without affecting ordinary numerical use of Atlas.
+
+A visual check records what was inspected and any problems; generating a PNG is
+not automatic approval. No landform, velocity or thermal-evolution result is
+implied. The two earlier chat plots with hard-coded ages and a wrong `-` legend
+are withdrawn as evidence; the corrected plots supersede them.
+
+## Delivery, evidence and licence
+
+Merge a full snapshot into the named `remake` baseline without deleting unrelated
+or newer files. Review the supplied change manifest (old/new hashes) and grouped
+patches first. An update-only bundle must be explicitly labelled and must never
+be run as a standalone package. Michael handles commits/pushes manually.
+Routine new `.log` transcripts are ignored; structured JSON and unique diagnostic
+evidence are retained. Already tracked historical logs and source records remain
+unchanged. Optional visual PNGs stay in the ignored output directory by default.
+
+**No Atlas code licence has been selected or applied.** Apache-2.0 remains a
+proposal requiring Michael's explicit choice and scope. The data licence is not a
+code licence. See [third-party notices](THIRD_PARTY_NOTICES.md). This cleanup does
+not silently grant new rights or relicense the older repository.
+
+
+## Current cleanup evidence
+
+- [Linked-interpreter full suite](evidence/review-cleanup-linked-tests.json):
+  1,512 tests, no failures, errors or skips.
+- [Copied-interpreter full suite](evidence/review-cleanup-copied-tests.json):
+  the same 1,512 tests, no failures, errors or skips.
+- [Cleanup scope and preservation](evidence/review-cleanup.json) and
+  [actual-code visual inspection](evidence/review-cleanup-visual-qa.json).
+
+The environment reuses already available dependency installations; a fresh pip
+installation, macOS and Windows execution were not performed. The tests are
+implementation/numerical checks, not physical realism or release acceptance.
+
+## Historical R2 implementation and execution delivery
+
 
 **Version `0.1.0.dev22`, 18 September 2026. R3 is next; it has not started.**
 R2 adds geological starting states **without requiring or producing final plate
@@ -43,7 +153,7 @@ labelled. Unknown fields have explicit masks, and normal accessors refuse unknow
 values. A thermal cell mean is not an energy inventory. Slab/mantle records are
 supplied footprint/depth-band inputs, not predictions of dipping 3D geometry.
 
-From the repository root, using the **already declared** Python environment:
+From the repository root, using the [tectonics environment](#environment):
 
 ```sh
 # Build an authored two-province example offline; output only, no simulation.
@@ -77,7 +187,7 @@ normal execution, memory ownership and measured costs are in
 [the optimisation reference](docs/OPTIMISATION_REFERENCE.md#3cr2-initial-execution).
 Test results are software/numerical evidence, not production/Windows acceptance.
 
-**Applying this delivery:** merge its `tectonics/` files into the local `remake`
+**Applying the historical revision-25 delivery:** merge its `tectonics/` files into the local `remake`
 checkout based on `e79bf94ea5285a36bbce18b503234a8df56e3910`. Review newer local
 edits rather than overwriting them, and preserve unrelated/historical files.
 Do not replace the whole repository or delete the destination folder. Michael

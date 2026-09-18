@@ -64,6 +64,27 @@ def _loaded_binary(path):
     return _file_hash(path)
 
 
+def _interpreter_binary():
+    """Identify the executable target, not a virtual environment's launch link.
+
+    Python virtual environments may legitimately link their interpreter. Resolve
+    only this interpreter path; source, data and extension-module paths still
+    pass through the unchanged strict hashing rules. The resolved binary bytes,
+    not the installation path, enter the runtime identity. Loaded binaries retain
+    the existing process-lifetime immutability assumption; this is not protection
+    against a hostile process replacing its executable while it runs.
+    """
+    if not isinstance(sys.executable, str) or not sys.executable:
+        raise TectonicsError('Python interpreter path is unavailable')
+    try:
+        target = Path(sys.executable).resolve(strict=True)
+        if not target.is_file():
+            raise TectonicsError('Python interpreter target is not a regular file')
+    except (OSError, RuntimeError) as exc:
+        raise TectonicsError('Python interpreter target cannot be resolved') from exc
+    return str(target)
+
+
 def _normal_code(code):
     return code.replace(co_filename='<atlas>', co_consts=tuple(
         _normal_code(c) if isinstance(c, types.CodeType) else c for c in code.co_consts))
@@ -154,10 +175,11 @@ def _runtime_record(backend):
         raise TectonicsError("unknown execution backend")
     import numpy._core._multiarray_umath as core
     import numpy.fft._pocketfft_umath as fft
-    binaries = {"python": _loaded_binary(sys.executable),
+    interpreter = _interpreter_binary()
+    binaries = {"python": _loaded_binary(interpreter),
                 "numpy_core": _loaded_binary(core.__file__),
                 "numpy_fft": _loaded_binary(fft.__file__),
-                "math": _loaded_binary(getattr(math, "__file__", sys.executable))}
+                "math": _loaded_binary(getattr(math, "__file__", interpreter))}
     versions = {"python": sys.version, "numpy": np.__version__, "machine": platform.machine(),
                 "platform": platform.system(), "byteorder": sys.byteorder}
     if backend == "scipy":

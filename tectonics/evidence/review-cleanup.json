@@ -1,0 +1,412 @@
+{
+  "schema": "atlas.review-cleanup.v1",
+  "date": "2026-09-19",
+  "branch": "remake",
+  "baseline_commit": "bbd3783387c760bb606dc30a64cfc8bb078c52a3",
+  "baseline_tectonics_git_tree": "ced456e89c2d993d347a686788a80f141dbcc2f3",
+  "baseline_payload_files": 192,
+  "baseline_archive_sha256": "be49e3ff90af6e20ff53c66a52e17457f22d5d4feff5a44f96307d04a99b7df1",
+  "baseline_matched_live_git_tree": true,
+  "package_version": "0.1.0.dev23",
+  "maintained_plan_revision": 27,
+  "scope": "Portability, documentation/evidence hygiene and truthful diagnostic visualisation; no numerical-model change.",
+  "portability": {
+    "before_fix": {
+      "exit": 1,
+      "interpreter_is_symlink": true,
+      "error": "TectonicsError: runtime/source file unavailable or linked",
+      "scope": "bounded runtime-identity construction only"
+    },
+    "fix": "Resolve only sys.executable strictly to its regular-file target before hashing; built-in math fallback shares it.",
+    "source_data_extension_link_refusals_preserved": true,
+    "missing_dangling_cyclic_and_directory_targets_refused": true
+  },
+  "verification": {
+    "retained_tests": 1466,
+    "new_runtime_portability_tests": 18,
+    "new_visual_semantics_tests": 28,
+    "total_tests": 1512,
+    "linked": {
+      "command": "env-linked/bin/python -I -B tectonics/verify.py",
+      "exit": 0,
+      "seconds": 83.62893907400007,
+      "watchdog_seconds": 900,
+      "timed_out": false,
+      "prior_attempt": "tool watchdog interrupted before completion at 160 seconds; transcript retained locally"
+    },
+    "copied": {
+      "command": "env-copied/bin/python -I -B tectonics/verify.py",
+      "exit": 0,
+      "seconds": 82.579298537,
+      "watchdog_seconds": 300,
+      "timed_out": false
+    },
+    "both_suites_zero_failures_errors_skips": true,
+    "same_tested_source_inventory": true,
+    "environment": {
+      "python": "3.13.5",
+      "platform": "Linux x86_64",
+      "numpy": "2.3.5",
+      "scipy": "1.17.0",
+      "numba": "0.65.1",
+      "threadpoolctl": "3.6.0",
+      "blosc2": "4.3.3",
+      "shapely": "2.1.2",
+      "matplotlib": "3.10.8",
+      "construction": "Temporary venvs made with symlinks=True and symlinks=False, with_pip=False, system_site_packages=True; a .pth exposes already installed dependency site-packages.",
+      "dependency_installation_or_repin": false,
+      "fresh_pip_install_verified": false,
+      "Windows_tested": false,
+      "macOS_tested": false,
+      "requires_filesystem_symlink_fixtures_for_full_suite": true
+    },
+    "first_attempt": "An initial container watchdog interrupted the linked suite at 160 seconds before it emitted a complete JSON record. The bounded rerun completed successfully; no aborted run is counted as a pass."
+  },
+  "documentation": {
+    "retained_methods": [
+      {
+        "anchor": "method-01",
+        "method": "Measure the whole operation before changing it"
+      },
+      {
+        "anchor": "method-02",
+        "method": "Persist expensive prepared artefacts"
+      },
+      {
+        "anchor": "method-03",
+        "method": "Create visual models only when first needed"
+      },
+      {
+        "anchor": "method-04",
+        "method": "Load optional visual resources on demand"
+      },
+      {
+        "anchor": "method-05",
+        "method": "Defer optional subsystem preparation"
+      },
+      {
+        "anchor": "method-06",
+        "method": "Reuse stable registry and resource-discovery results"
+      },
+      {
+        "anchor": "method-07",
+        "method": "Share equivalent immutable definitions"
+      },
+      {
+        "anchor": "method-08",
+        "method": "Replace repeated categorical objects with compact indices"
+      },
+      {
+        "anchor": "method-09",
+        "method": "Store volume in bounded chunks and compact uniform regions"
+      },
+      {
+        "anchor": "method-10",
+        "method": "Build fresh fields through one controlled batch path"
+      },
+      {
+        "anchor": "method-11",
+        "method": "Prune spatial candidates before exact geometry work"
+      },
+      {
+        "anchor": "method-12",
+        "method": "Use inverted indices for repeated applicability searches"
+      },
+      {
+        "anchor": "method-13",
+        "method": "Reuse valid matches and coalesce intermediate updates"
+      },
+      {
+        "anchor": "method-14",
+        "method": "Invalidate derived data through explicit change events"
+      },
+      {
+        "anchor": "method-15",
+        "method": "Evaluate affected networks without duplicate notifications"
+      },
+      {
+        "anchor": "method-16",
+        "method": "Schedule generation and I/O with explicit dependencies"
+      },
+      {
+        "anchor": "method-17",
+        "method": "Give state one owner and control ownership transitions"
+      },
+      {
+        "anchor": "method-18",
+        "method": "Parallelise genuinely independent scenarios or frozen-input batches"
+      },
+      {
+        "anchor": "method-19",
+        "method": "Budget worker pools, native threads and task granularity"
+      },
+      {
+        "anchor": "method-20",
+        "method": "Release temporary objects when their final consumer finishes"
+      },
+      {
+        "anchor": "method-21",
+        "method": "Keep caches only when their measured value exceeds their cost"
+      },
+      {
+        "anchor": "method-22",
+        "method": "Smooth writes while keeping accepted checkpoints coherent"
+      },
+      {
+        "anchor": "method-23",
+        "method": "Prepare only explicitly selected regions, with resumable tasks"
+      },
+      {
+        "anchor": "method-24",
+        "method": "Batch drawing and minimise repeated graphics submission"
+      },
+      {
+        "anchor": "method-25",
+        "method": "Prepare static visual geometry once per valid revision"
+      },
+      {
+        "anchor": "method-26",
+        "method": "Cull invisible drawing, not invisible physics"
+      },
+      {
+        "anchor": "method-27",
+        "method": "Maintain coarse context and fine detail in the viewer"
+      },
+      {
+        "anchor": "method-28",
+        "method": "Separate viewer-region caches from active compute data"
+      },
+      {
+        "anchor": "method-29",
+        "method": "Use hardware-specific render paths only behind a portable contract"
+      },
+      {
+        "anchor": "method-30",
+        "method": "Refresh the interface according to change, not simulation ticks"
+      },
+      {
+        "anchor": "method-31",
+        "method": "Aggregate only material parcels that remain scientifically equivalent"
+      },
+      {
+        "anchor": "method-32",
+        "method": "Adapt service quality without silently changing the science"
+      },
+      {
+        "anchor": "method-33",
+        "method": "Move selected bulk calculations behind a native interface"
+      },
+      {
+        "anchor": "method-34",
+        "method": "Cache parsing and indexing separately from evaluated results"
+      },
+      {
+        "anchor": "method-35",
+        "method": "Separate lookup hashing from cryptographic provenance"
+      },
+      {
+        "anchor": "method-36",
+        "method": "Bound asynchronous diagnostics and preserve indispensable evidence"
+      },
+      {
+        "anchor": "method-37",
+        "method": "Version random-stream and faster-maths changes explicitly"
+      },
+      {
+        "anchor": "method-38",
+        "method": "Use reversible dictionaries and explicit delta bases for future streaming"
+      },
+      {
+        "anchor": "method-39",
+        "method": "Eliminate copies only with proven ownership and lifetime"
+      }
+    ],
+    "before_words": 47209,
+    "after_words": 38119,
+    "words_removed": 9090,
+    "catalogue_removed": true,
+    "named_scientific_T_PT_and_PF_references_retained": true,
+    "two_maintained_plans_only": true,
+    "Diadem_explanation_not_output_target": true,
+    "no_physics_line_quota_or_W05_pivot": true,
+    "post_stage_actual_code_visual_QA_required": true
+  },
+  "preservation": {
+    "protected_files": {
+      "tectonics/tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+      "tectonics/tests/test_precursor_scaling.py": "7462c5bfc524cb9084aafbdad3150e4bb6915b19e2d67fb10f9a738c3096f58f",
+      "tectonics/tests/precursor_fixtures.py": "9a9b55da52fa40380281d20250e33658998d623d1b1263452e2d1e32c1f50eff",
+      "tectonics/tests/test_combined_resources.py": "cdd42f6d8b0bdd7f05b92864d10ac202da6413d788230b22c2967f55accc1831",
+      "tectonics/tests/test_w01_geometry_corrections.py": "eafa0f14ecea1bbd121edbfbb9e522fe6e10652169a245286ce7707cae438c15",
+      "tectonics/tests/measure_w01_boundaries.py": "f7dd2de7ec3e623d95dbd4520002fed83b93eb58d149011dbfd017363200e5ea",
+      "tectonics/tests/check_precursor_r2.py": "dee40eec860ea2d2ef24a13a7d06a1df5b022d45fe216f5cd7b316a7cdb54324",
+      "tectonics/tests/test_precursor_example.py": "ce613b12ac962e4d9442ce93359fff3503d2eb0afbad981ea0a05225a2b46aab",
+      "tectonics/tests/measure_regional_transport.py": "c08a8490b8ec1bc10e92fcb0503bc801f0475e3317516da8caf0ab0bdddf6393",
+      "tectonics/tests/test_w01_material_library.py": "4111279b7dcd8d49433251e79e40e26bbe229464944fc1c2ddf7f35562e5b54c",
+      "tectonics/tests/test_w02_completion.py": "5d28622f9cd90f283592275fdacec4541d71bb12ef0093e0601016c9e361b523",
+      "tectonics/tests/test_plate_reference_r1.py": "8d19ea9808c1319755461ac24b958316516cac6f2288c125c4ce0d3054e8348d",
+      "tectonics/tests/test_w01_planetary_generation.py": "f76c7396558a6cab3ec4e714c9cb80ffd258becd19afab10e49236943ba3ba3c",
+      "tectonics/tests/test_w01_coordinates.py": "d4055cb177442da678bcae081849b9a2d97865a14a10a0081693976772dec1c9",
+      "tectonics/tests/measure_w01_spherical_atlas.py": "5016b8685232346294dcff450e37802c3009a3c828de2313c1e661a564846318",
+      "tectonics/tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+      "tectonics/tests/measure_material_transport.py": "11c5097963fc542d14876f138b1fa1b720c9466eb31e738b00d3f7071c5bbab4",
+      "tectonics/tests/measure_kernel_batches.py": "f79cd63494cf6468c583a4d9880459aa547f2735bda6904378b940c623b9a3f3",
+      "tectonics/tests/check_combined_acceptance.py": "a11f361a486f12b07736aa22b73747302244ac746586512d3d590e86dce62981",
+      "tectonics/tests/test_w01_spherical_atlas.py": "6edbd05079072cc3b09637e36f63392acf0a7943d1dc147dca72cf86f514137f",
+      "tectonics/tests/test_copy_reuse.py": "c90ea68b2087874bb42f3d1946a6a71ed7c2046cf5816ba54fd3f2fb68c89e05",
+      "tectonics/tests/test_regional_transport.py": "7815837b24e4f72b59c9e3af25d3f194b454adc91465e1623eaa55b871f95532",
+      "tectonics/tests/test_storage_profiles.py": "15f7ffc2c6781ef039a2be02ed891565c54d7ff518be799751e4a3ea154384c2",
+      "tectonics/tests/test_material_transport.py": "2d8f65a72ecac3e5cdf4826b60fd0f83c4361c542cb522d69634e762b80d7fe7",
+      "tectonics/tests/test_execution_reuse.py": "583e140c352e9c46cdd66401088edacc5bb7bcd179e78c495806fa4ff7e9921a",
+      "tectonics/tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+      "tectonics/tests/test_w01_boundaries.py": "90ac3e78e7de7d3e67e3ed9aa63f64dc0258eb365777c91d038f459d326ab201",
+      "tectonics/tests/test_precursor_sampling.py": "36273a2f653feef8a8ba63ad34c3b84ab5d6f4bdf8170d674708159c569c28c3",
+      "tectonics/tests/test_plate_reference_source_repair.py": "f441318c64891155cba848da21426d8baa34c76f515a3661b8e1f14ea4fbd392",
+      "tectonics/tests/test_kernel_batches.py": "5273c03a665923504fbffae2f67d807b64594dc82e89019dc31d2bc12f4ec729",
+      "tectonics/tests/test_precursor_execution.py": "cba57ab5614c0aa9d2626443e2ac29088868b13ae2d357378d212fb5d25a1f74",
+      "tectonics/tests/test_memory_storage.py": "1ab4a7acf7b2b97279bc7766e400dd5d4548c339f3ee55ccfd1bc9c3ea7365ab",
+      "tectonics/tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+      "tectonics/tests/check_precursor_scaling.py": "43569c8b4424aabc7d509939af1b71cf103f39e0457c848ad7461867562b5d17",
+      "tectonics/tests/measure_storage_profiles.py": "bf9169414f03415185e83ed0e7e9e7d7742f32ceb93b9f435fb30c9fe7ef0a56",
+      "tectonics/tests/test_w01_geological_description.py": "19da365f597d06af6e494f8e514f662f1a6009c239b254dba4720c8160e2dcdf",
+      "tectonics/tests/test_w01_geometry.py": "8ea4bf93fc9181ab98d39597d24e1a58fcaf68a99388d63fbd85756d9213bf66",
+      "tectonics/tests/measure_plate_layout.py": "d9da49e16d5dc987f575074e0d4df3f2773fc882b673eed2238e0c95c9815f12",
+      "tectonics/tests/measure_w01_geometry.py": "8730de56e55f3d2f68312957601ed9e29161436ad54fc0800284567d7789691a",
+      "tectonics/tests/measure_w02_completion.py": "840f6757214362cf42f26b515404dec93780183d13b98abc48ee0016cbce516b",
+      "tectonics/tests/measure_execution_reuse.py": "ddb1fa03ef5279ecc5b2b2b80682087c93eb82eb9feac7762e41988065cdea0d",
+      "tectonics/tests/test_precursor_contracts.py": "bf7c373a94f1771c0d89afb8d4c7de4649ab8b54f692fdb802a979bc2417a216",
+      "tectonics/tests/test_plate_layout_revision.py": "39d3a5180c6c31d9589ffbb478076d09da5df9ac86ab51114fefc316ddea35ae",
+      "tectonics/tests/test_plate_reference_use_policy.py": "45f120529545a76eb5816cd5199b8bb306447987691fac9aa1521554b530fd4d",
+      "tectonics/tests/measure_w01_planetary_generation.py": "a9958775e38a47d416286cce0b11329da5e86620eaec917041177585fb6aebb3",
+      "tectonics/cases/plate_reference_r1.json": "6690c832a5d97e0fd488996e339af849a9ff3a5b3f966508d710b8ee8af23648",
+      "tectonics/cases/w01_boundaries.json": "d109e40dc68ee312a45c9c1afacc807b6456617f1861d9ef27d6b0768b6909ea",
+      "tectonics/cases/w01_spherical_atlas.json": "e3691455b2bb539c6b0f2389aef906a4f33878f70eca2f5c9f020d6ad6b26443",
+      "tectonics/cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+      "tectonics/cases/w01_plate_layout_revision.json": "e581f5cdfa0dd3cef73db0d33aeeb4206eded8964b6f081a2f1fdf7e01bded80",
+      "tectonics/cases/w02_completion.json": "89c67d3b93ac17a8a738043220ad57cc0bcf8886a3575e3cec0e6ba1e3663c8c",
+      "tectonics/cases/precursor_r2_scaling.json": "729c8bcdb175c01eeea4c02b8e17fb9040b74b54824fabe1df7a8db61017ba49",
+      "tectonics/cases/w01_coordinates.json": "0bffc87668c35f1184ef3b2b4570dfd2849c9ada34ca042790abfaed9acc095b",
+      "tectonics/cases/w01_geometry.json": "980f1602878146623e778cc90334448ddd4891ddc4989ffada8b74c1cb10972a",
+      "tectonics/cases/material_transport.json": "27142ccc584e972281a93d200e6f5243f57af4c3a2bcb162a7029ec028ae4b6f",
+      "tectonics/cases/w01_earth_materials.json": "14eef13de58f120ef4614d5df07fb9a4e49a7d5d65943e6a1aa3ce0412ecb819",
+      "tectonics/cases/regional_transport.json": "771c718e4fbae7db3e39f8da790b04f69cd86e6d2167e33ff5ca53d8bf1157c5",
+      "tectonics/cases/w01_planetary_generation.json": "b3e511073823870df17053b62db181d415d453860a0e00fa35a6e48568c11af9",
+      "tectonics/cases/plate_reference_use_policy.json": "89c7ad4421b0a796234f24650b1e0fa9c27e520eb4caaf85fd5988fb9aa6b26d",
+      "tectonics/cases/precursor_r2.json": "02808ab17b6a1476ea93f237c56d65587790b52e0a3341edda036953e39d0497",
+      "tectonics/cases/w01_geological_description.json": "1696c2f03a84f1d39dd72a245d094c57243841dea6af04382326eb587be99d30",
+      "tectonics/evidence/w01-stage3b-tests.log": "ca38a64c8973922ff017d9f92a576c25d92139a66f7db19c8231283a38cac959",
+      "tectonics/evidence/3cr1-complete-reference-checks.json": "c02cee385b9e438cdb2bcfeb8a2eeac9d40c751ec155e0a9d3639b3db9ce69cd",
+      "tectonics/evidence/foundation-tests.json": "3a558a13f5b5855cd68dba5c98cae86f72797737e54aafd971bb645807f4028f",
+      "tectonics/evidence/w01-earth-materials-coverage.json": "c9f93e09194c34a33b80a92c622ccd2233e258dac220e1217e29770ad73cbcd4",
+      "tectonics/evidence/w01-stage2-measurements.json": "8976b32281a214d206d3955731759a9f278553df2e33a336c1c8f45e3927c0b3",
+      "tectonics/evidence/DELIVERY.md": "f1e080da81df84d3c15b0e42faeddc554ba1047d54213401199f75abea89dbc6",
+      "tectonics/evidence/3cr2-sampling-evidence.json": "1725c4f6011c7ec5aeeb3e6b6427e94102090235a5b9209f65943891107e0a44",
+      "tectonics/evidence/copy-transport-tests.json": "1fbfa6db7a5998a7d8813a8cbcbc83aa1d857aad7aaaea2e6067b3db9f189459",
+      "tectonics/evidence/w01-stage4-tests.log": "593aa92065cf876a36b6a81cf652c080bb18c6d2ef36d89d3d97342b6667171f",
+      "tectonics/evidence/kernel-batch-tests.json": "bf7242c90fb5b5924e576cbdc0f8880bf498856dce9b718091db4f804f8cdb02",
+      "tectonics/evidence/w01-stage3-tests.json": "16620262c7136121fe9414de0d5ded10d251753195a8165687d45e5573029540",
+      "tectonics/evidence/3cr1-reference-use-tests.json": "b58b541ea4a10cf1593be9dbac7d6fb6e672389f57687db09bdf4a76de13d76c",
+      "tectonics/evidence/w01-stage3b-tests.json": "1d6207ede9c014b61d496eec98ddbb6e6311c1bcf2e2586999f755be056c4b26",
+      "tectonics/evidence/plate-layout-tests.json": "a3ac7c46a624a3d4f1da074cb02eb6ca81463aad53a65148887f35d4381f8454",
+      "tectonics/evidence/w01-stage3b-measurements.json": "0c76d71032c64cd208ed12d0794f2ebea02ad646c4b9dd9ee99a4e56ae796546",
+      "tectonics/evidence/memory-storage-measurements.json": "ab301ca89463013ad3a372fcb666590f39eabd5ed66a62294110d08933c19a68",
+      "tectonics/evidence/3cr2-tests.json": "4024e5c3fc499e2c1cb205f4981ec74d18509f38648d23c4ef5c9ac11a83d856",
+      "tectonics/evidence/w01-stage3-tests.log": "51eb25ad5b235403728088482c51e82c6ac2ce09909de2d28597e505cffab5d7",
+      "tectonics/evidence/execution-reuse-measurements.json": "123915932c11a36a9b1f052d7e3d172caa579db918bb3980dc16fac6a900e3e1",
+      "tectonics/evidence/w01-stage2-corrections.json": "41dd5f42e31b9f8d208e4d34ab895f1ff3644918dfe698ed1c277c76f52b0d85",
+      "tectonics/evidence/3cr1-reference-use-assessment.json": "4c3c9061be507e07a3d456df4736418322d12d448515cee8c437669a79e8a5c8",
+      "tectonics/evidence/3cr1-reference-data-status.json": "a5fad3e044a853e100855472700cb6bf1a1194622bc444a172d74bc958c4303c",
+      "tectonics/evidence/w01-stage1-tests.json": "e8681e3acdaebaad38bf6800ff2869d5bd289a999ac47c9461486622c7e1eaa9",
+      "tectonics/evidence/3cr2-scaling-tests.json": "7e35bd5fa53cd30416e7bc1ff0f91e9d599a0e5e7c1db55e60ea4f6fae008757",
+      "tectonics/evidence/3cr1-tooling-repair-tests.json": "db4255cc86f078aa12e13f9c5f2a69a35c82d3acc6cb9f21786bb623ea9819df",
+      "tectonics/evidence/3cr1-source-discrepancy-review.json": "284e4710f8880f52c510567cf5416eaa3f15e95cd99d9dd42c373f60a22a1e4f",
+      "tectonics/evidence/w02-regional-tests.json": "a3da95c90eee87593a464beb32eb3fff16d1e346df4d50dec16989992a29e0ec",
+      "tectonics/evidence/w01-stage1-tests.log": "e86802c257e1c123914fd901653686be94b412c9cb001634f6bb1ef784f709fd",
+      "tectonics/evidence/optimised-defaults-tests.json": "91fb7a4acb01c548b915ad90a3788ef7a769de49b43feed9d20cbb941e570d33",
+      "tectonics/evidence/w01-stage2-corrections-tests.json": "50bfd2c9917a292f05a73b58a5f69d45410c22735aa4ee3cdf26e1c89d190a61",
+      "tectonics/evidence/3cr2-execution-record.json": "b1e42e8082cbab1c2aab8691dbfcdc8d2beaa728a7ea7e0c366e6e6b9c6299f4",
+      "tectonics/evidence/3cr2-scaling-preservation.json": "eae41e8965535091cf43a6a03904747f60c4c3cfacd8e93e046728bed80599e3",
+      "tectonics/evidence/3cr2-scaling-measurements.json": "5d670b56aeaf2b97e9e90990a1605ec13f6e015b37dd425125125deb2a17b082",
+      "tectonics/evidence/memory-storage-tests.json": "339faefb0c6bf38c390ad7e7de12dad85dc8f9d7929fc281f8b62fe59ef11f62",
+      "tectonics/evidence/w02-material-tests.json": "c8bf122a2ac543cf9525e0b0db60bdceebbd1ad37fafd24c33167238277a2bc9",
+      "tectonics/evidence/3cr2-tests.log": "62f83323c30d2c8681ba1d5ba90964a9b5fedb3c9e674ee53a36fb97ff838c5f",
+      "tectonics/evidence/w01-earth-materials-tests.json": "c9766cac5712b46187596810ea6af0b3d7d292a70b962c7db1b44d068f0aa3dc",
+      "tectonics/evidence/w02-completion-tests.json": "6d38fbefd69f85b63f71be394009679e4951aa662278107b87d04bd68ef81165",
+      "tectonics/evidence/3cr1-tooling-repair.json": "d70ddad7ab3e20232c41bc13cea2cd22dbbc2b09af75ed75d4599ecdd6eb3d78",
+      "tectonics/evidence/storage-comparisons.json": "ff83505bbcfb92846bb2bfc5090c07dbd3db99a32bd03640b1fb488cc787a10b",
+      "tectonics/evidence/storage-profiles-tests.json": "91589aa7a1ea88d1de4644c516fd5a85104192217692a82011104e1db26f287b",
+      "tectonics/evidence/3cr1-reference-tools-tests.json": "b0fc5d6d4bd28fae250d73a2687af7ddfe62a7c7b8911d980a4b510e8f41ca39",
+      "tectonics/evidence/w01-stage4-tests.json": "f1162cb9f89e56c41c7ca9ac6e203ccaaa780d7b42d7c26028b47b075e292682",
+      "tectonics/evidence/w01-stage3c-tests.json": "d6eca05c7c44acb54afb7efb081190a76adc6246ea848526c50c87a7d790d253",
+      "tectonics/evidence/3cr1-source-verification.json": "633a65d744ffbd43b22dfd6e0c058d4fed7a36436e3d80c5aee8ef840ae5c301",
+      "tectonics/evidence/w02-completion-measurements.json": "7ca6c65c66d033c753974e7c4f3f58449b995b3a5445aa0d266e54e1ec3c7cb7",
+      "tectonics/evidence/w01-stage3-measurements.json": "8b811d5de6cd78855698a794653036d8bf4d98b8ec3eb204be2c673e707c98ae",
+      "tectonics/evidence/plate-layout-comparisons.json": "1ecfdf22c660aedeabd37fbf0160b7491e5c5865d14d0fe2776d97a6ab5d694e",
+      "tectonics/evidence/plate-layout-voronoi.png": "c24d586bcb79ea6a1dc141007c910b6c7ca5676f1bda20f049e4a5325becd750",
+      "tectonics/evidence/w02-regional-measurements.json": "d1f1536bcd3b612328526cf33ac2ca6aea298598addfb6bf9cc5a9378ec4db0b",
+      "tectonics/evidence/3cr2-baseline-preservation.json": "d371d5655dbad731443c56a194e6cc3262c33dd8505691de30a9fd730f9b4560",
+      "tectonics/evidence/kernel-batch-measurements.json": "a5a8344f1aa90b193d8399100aa509aa3548104f60dc78ee9168a1c0c3eaabb5",
+      "tectonics/evidence/w01-stage2-corrections-tests.log": "95b63a0366bdb4a0d149e328fb98547d9e1973925945a34ac05397fb95553e6b",
+      "tectonics/evidence/copy-transport-measurements.json": "a61513e2ca4a2e096d9ec802e0c4fab6c5342c98244519c1c9da58ecac9b064d",
+      "tectonics/evidence/plate-layout-candidate.png": "0c3a7de8781b4bb841965bf65c5eff8889e7ec4fe3b80182d0e3fe1eeaabb6d1",
+      "tectonics/evidence/3cr1-reference-use-tests.log": "db286414f97638b58bb94e59f5c8c8a68d09bc69c8a6b8c7829daa2b2a1b1fea",
+      "tectonics/evidence/w01-stage3c-measurements.json": "0dd1c76defac22f4a88b56ab764a9c7c0fa929ce559e84144fa12f91d9b12869",
+      "tectonics/evidence/w01-stage2-tests.log": "09af57f0d8d18e9584c4733f0daa9aa02825ed176d01cd6a1281f4d8525f96aa",
+      "tectonics/evidence/plate-layout-area-spectrum.png": "4f85746b742ff4a0dacf8b81c891fa8e666d572df20a8f39d6f62e2e2b7f2698",
+      "tectonics/evidence/w01-stage3c-tests.log": "dc8485fd37845a665eb7ff7781e1f85b3449d9cb8827dd37d3cc84140d74a48f",
+      "tectonics/evidence/3cr2-scaling-tests.log": "4fe01b873e611891274e67ebd4f3077f9416a2c93dcd653927d4a2be0ffaff31",
+      "tectonics/evidence/3cr2-example.json": "a02a3b084d0da56ff057b6eb63621dc162c5d0a0aa31eb56a939e31e453c8cab",
+      "tectonics/evidence/3cr1-reference-use-coverage.json": "e94bf53cde6648ad9b6a397febcfc7dd91bc76aef4482e84ec979f90d03b9f96",
+      "tectonics/evidence/w02-material-measurements.json": "9a51b73c585cb9c66db3dca9197a66c28a2988b082e6bd5f0a31b55b99234a2a",
+      "tectonics/evidence/3cr1-tooling-repair-tests.log": "c448959d34e31a937eed01a2d313ae6abefb45d885b13e8f75eee6ad3ec66086",
+      "tectonics/evidence/storage-tuning.json": "e4d283669e3e4bb118f961514699f90be08fc5d79cf6e7012c4e743f9bf853dc",
+      "tectonics/evidence/execution-reuse-tests.json": "224ee554c9d44a37170030c261ce977b429245a2ee9714328788a1b1422c3414",
+      "tectonics/evidence/combined-resource-acceptance.json": "b805536029daf0c80b35682ec1989f150111dbd8377ee991ccab8ca55c039d2c",
+      "tectonics/evidence/w01-stage2-tests.json": "daf4b40feceeb0927d74652dcbcc45b815d6398e6517f29cdec48810d1010dd5",
+      "tectonics/reference_data/pb2002/SOURCE_MANIFEST.json": "af018856abd180ab3ed8e819ce067e3396d0ede6eb34f597d3ea5a1b4f2e5820",
+      "tectonics/reference_data/pb2002/LICENSE.md": "aca5f9e92e61843413b9297659af2eef552eb38fef39eae2f701566d985de36c",
+      "tectonics/reference_data/pb2002/original/PB2002_boundaries.dig.txt": "d75631c5c85a1ccf42ba4714902d9bee973069e162403e3467b5855fb9b3efba",
+      "tectonics/reference_data/pb2002/original/PB2002_orogens.dig.txt": "daf4e6ff6c5e6983d70df8977bc989f814b79dd4efda28c24433db012f2e77c6",
+      "tectonics/reference_data/pb2002/original/README.md": "d1bfa5b21ff8a53baaf2bc7c54ee1c51628ef724b82976e4448771e8d31a7b65",
+      "tectonics/reference_data/pb2002/original/PB2002_plates.dig.txt": "ff7e25dbf29658d4330b38e95e876533c5cdfd292ef71fa806e2340edfa3abc0",
+      "tectonics/reference_data/pb2002/original/PB2002_poles.dat.txt": "887d208bda44cea75ee0c778c1883476906757a3d8035608a6cff7b79cf40f2e",
+      "tectonics/reference_data/pb2002/original/PB2002_steps_desc.txt": "ac769f83c60e8bfa0696c8da89658314d45634cd10de141629a425853ad3259a",
+      "tectonics/reference_data/pb2002/original/PB2002_steps.dat.txt": "513babb111c65cd275274e2edcb249085d00e007c79d8755e1b4b79f60806f37"
+    },
+    "protected_count": 139,
+    "protected_bytes_unchanged": true,
+    "deleted_files": [],
+    "modified_existing_files": [
+      "tectonics/verify.py",
+      "tectonics/README.md",
+      "tectonics/pyproject.toml",
+      "tectonics/docs/TECTONICS_PLAN.md",
+      "tectonics/docs/OPTIMISATION_REFERENCE.md",
+      "tectonics/docs/FOUNDATIONS.md",
+      "tectonics/src/atlas_tectonics/reuse.py",
+      "tectonics/src/atlas_tectonics/__init__.py"
+    ],
+    "historical_logs_retained": 11,
+    "new_routine_test_logs_in_delivery": false,
+    "PB2002_byte_and_source_use_policies_unchanged": true,
+    "scientific_tolerances_cases_and_kernels_unchanged": true
+  },
+  "licence": {
+    "status": "OWNER_DECISION_PENDING",
+    "proposal": "Apache-2.0",
+    "active_code_licence_added": false,
+    "third_party_notices_added": true,
+    "third_party_licences_unchanged": true
+  },
+  "claims": {
+    "R1_repeated_or_reacquired": false,
+    "R2_scientific_scope_changed": false,
+    "R3_started": false,
+    "full_world_simulation": false,
+    "physical_validation": false,
+    "production_ready": false,
+    "main_changed": false,
+    "github_modified": false,
+    "user_pc_modified": false
+  }
+}

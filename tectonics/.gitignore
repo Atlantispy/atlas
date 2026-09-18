@@ -1,0 +1,10 @@
+# Routine local output only; existing tracked historical evidence is preserved.
+/evidence/*.log
+/visual_output/
+/.venv*/
+/.local-output/
+__pycache__/
+*.py[cod]
+/src/*.egg-info/
+/build/
+/dist/

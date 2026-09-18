@@ -1,6 +1,43 @@
 # Atlas tectonics simulation plan
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 26 | 18 September 2026**
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 27 | 19 September 2026**
+
+## Current review cleanup and owner decisions
+
+Package `0.1.0.dev23` fixes interpreter-link portability and clarifies the working
+documentation, evidence delivery and visual QA. R1 remains complete only for its
+registered uses. R2's static-state/sampling and engineering envelope is unchanged;
+R3 has not started. The historical revision 26/25 delivery descriptions below
+retain their original scope and evidence. W01 as a whole remains incomplete.
+
+**The Diadem is an explanatory test case, not a generation target.** Atlas should
+investigate whether and through what plausible initial conditions, geological
+processes and history the authored geography could arise. Different conditions
+may produce different worlds; a failure to explain the Diadem is a valid result.
+Do not tune global defaults against the target outline, hide a special collapse
+or other event in a general law, or treat a fitted history as independent evidence.
+Report alternative explanations, unresolved mechanisms and any necessary
+non-Earth-like assumptions explicitly. This does not introduce an inverse solver,
+start W05, change the R3–R9 ordering or bypass scientific acceptance.
+
+**The current infrastructure/physics ratio is intentional.** Do not optimise line
+counts or impose a physics-versus-contract quota. Implement the authorised physical
+stage with the correctness, provenance and resource machinery it actually needs.
+Optimisation is a tested implementation baseline, not postponed cleanup.
+
+**Post-stage visual QA is required where meaningful.** Generate from the actual
+case and current code; record source identities, units and display transformations.
+Check geometry, slivers, field discontinuities, unknowns, material/age joins,
+antimeridian continuity and both poles. Distinguish renderer bugs from model bugs,
+authored inputs from predictions, and observational approval from numerical or
+physical acceptance. Never use plausible-looking illustrations as code evidence.
+A stage with no meaningful visual observable records that limitation explicitly.
+See the [execution and delivery rules](OPTIMISATION_REFERENCE.md#cleanup-execution).
+
+**Licence remains an owner decision.** No code licence is applied by this cleanup.
+The pinned reference-data attribution and licence remain unchanged and separate.
+
+## Historical revision 26 delivery
 
 **Revision 26 — R2 bounded scheduling and spherical candidate indexing.**
 The current package is `0.1.0.dev22`. This increment completes the authorised
@@ -1060,8 +1097,8 @@ The [consolidated optimisation reference](OPTIMISATION_REFERENCE.md) is the sole
 | Host/device working sets, chunks, palettes, streaming and coherent recovery | [Storage contract](OPTIMISATION_REFERENCE.md#storage-contract) and [volumetric representation](OPTIMISATION_REFERENCE.md#volumetric-storage) |
 | Python orchestration and selective native numerical work | [Language and native boundary](OPTIMISATION_REFERENCE.md#native-boundary) |
 | All PF01–PF26 candidate families and PT01–PT14 checks | [Candidate register](OPTIMISATION_REFERENCE.md#candidate-register) and [measurement and tests](OPTIMISATION_REFERENCE.md#performance-tests) |
-| O01–O17 scientific-software methods and MC01–MC39 transferable patterns | [Scientific methods](OPTIMISATION_REFERENCE.md#scientific-methods) and [Minecraft patterns](OPTIMISATION_REFERENCE.md#minecraft-methods) |
-| All 84 named mod records and their limitations | [Screening index](OPTIMISATION_REFERENCE.md#mod-screening) |
+| O01–O17 scientific-software methods and retained engineering patterns | [Scientific methods](OPTIMISATION_REFERENCE.md#scientific-methods) and [engineering methods](OPTIMISATION_REFERENCE.md#engineering-methods) |
+| Retained engineering screening lessons and non-goals | [Adoption and boundaries](OPTIMISATION_REFERENCE.md#method-adoption) |
 | One compact execution record per selected case | [Inline execution-card specification](OPTIMISATION_REFERENCE.md#execution-card) |
 
 ### 7.2 Principles that remain binding
@@ -1322,7 +1359,7 @@ The pre-study register remains historical evidence, not a separate maintained pl
 
 ### Historical research basis
 
-R01 (modelling), R03 (implementation feasibility) and R04 (the 28-equation/15-process cross-reference) are the dated pre-studies already supplied in this conversation. They remain source material, not additional maintained plans, and are not reproduced in this two-document edition. R02’s optimisation methods and R06’s Minecraft methods now have their maintained home in the [optimisation reference](OPTIMISATION_REFERENCE.md). The primary scientific sources above continue to support the plan. A reference to R04 preserves an equation identifier; it does not assert that every R04 equation is fully specified or implemented here.
+R01 (modelling), R03 (implementation feasibility) and R04 (the 28-equation/15-process cross-reference) are the dated pre-studies already supplied in this conversation. They remain source material, not additional maintained plans, and are not reproduced in this two-document edition. R02’s optimisation methods and the retained engineering methods now have their maintained home in the [optimisation reference](OPTIMISATION_REFERENCE.md). The primary scientific sources above continue to support the plan. A reference to R04 preserves an equation identifier; it does not assert that every R04 equation is fully specified or implemented here.
 
 
 [url-001]: https://github.com/Atlantispy/atlas/blob/7d0e707a576fe08b9bcb816466a0a8fb5f115808/docs/CODING_SAFETY.md

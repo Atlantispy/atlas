@@ -1,0 +1,177 @@
+{
+  "schema": "atlas.review-cleanup-visual-inspection.v1",
+  "date": "2026-09-19",
+  "source_manifest_sha256": "e9852a3357ed31b584f323029471fc75245b61dbc2dafea2f96df1ee2d5f9cda",
+  "source_matches_full_regression": true,
+  "source_state_id": "45d95993d012b6291c3303a6b54f74eea756478f5e1695254c0314fd20197c3d",
+  "source_sample_id": "ed1feb8151060bf8edd2d9d8a727bf88d2d4d98a9d3279868f51e7f497c59e50",
+  "status": "ASSISTANT_INSPECTED_OWNER_REVIEW_PENDING",
+  "sample_grid": [
+    160,
+    320
+  ],
+  "sample_count": 51200,
+  "formation_units": [
+    {
+      "unit_code": 0,
+      "unit_id": "32252a997d9d2e56e26a7429ddd41dd7d1cc9f13b08af07649f1bf50fd2abbdd",
+      "layer_id": "continental-crust",
+      "components": [
+        {
+          "cohort_id": "continental",
+          "material_id": "rock.granite",
+          "source_id": "example",
+          "formation_time_s": -6.31152e+16,
+          "age_ma": 2000.0,
+          "declared_matrix_fraction": 1.0
+        }
+      ],
+      "single_formation_age_known": true
+    },
+    {
+      "unit_code": 1,
+      "unit_id": "e9c31e99b33e427565d268fd170997597a12a04f4ae284e815992e678f9f05c9",
+      "layer_id": "continental-mantle",
+      "components": [
+        {
+          "cohort_id": "mantle",
+          "material_id": "rock.peridotite",
+          "source_id": "example",
+          "formation_time_s": -9.46728e+16,
+          "age_ma": 3000.0,
+          "declared_matrix_fraction": 1.0
+        }
+      ],
+      "single_formation_age_known": true
+    },
+    {
+      "unit_code": 2,
+      "unit_id": "73c8be9ab82dcdd6072997d2a07ff45e145f9def497a3281cf2f6df6a7526130",
+      "layer_id": "oceanic-crust",
+      "components": [
+        {
+          "cohort_id": "oceanic",
+          "material_id": "rock.basalt",
+          "source_id": "example",
+          "formation_time_s": -2524608000000000.0,
+          "age_ma": 80.0,
+          "declared_matrix_fraction": 1.0
+        }
+      ],
+      "single_formation_age_known": true
+    },
+    {
+      "unit_code": 3,
+      "unit_id": "d19e877090ef85b75886033640fe515d9e951cd0fafe2d086c50f9c06b247523",
+      "layer_id": "oceanic-mantle",
+      "components": [
+        {
+          "cohort_id": "mantle",
+          "material_id": "rock.peridotite",
+          "source_id": "example",
+          "formation_time_s": -9.46728e+16,
+          "age_ma": 3000.0,
+          "declared_matrix_fraction": 1.0
+        }
+      ],
+      "single_formation_age_known": true
+    }
+  ],
+  "cooling_history": [
+    {
+      "profile_id": "authored-geotherm",
+      "source_id": "example",
+      "cooling_age_ma": 60.0
+    }
+  ],
+  "pb2002": {
+    "dataset_id": "b7c61ba3695535abea8bd2f78c67e8348aee2d4230b55276b367aba4c8ab3e7d",
+    "source_hashes": {
+      "original/PB2002_plates.dig.txt": "ff7e25dbf29658d4330b38e95e876533c5cdfd292ef71fa806e2340edfa3abc0",
+      "original/PB2002_boundaries.dig.txt": "d75631c5c85a1ccf42ba4714902d9bee973069e162403e3467b5855fb9b3efba",
+      "original/PB2002_orogens.dig.txt": "daf4e6ff6c5e6983d70df8977bc989f814b79dd4efda28c24433db012f2e77c6",
+      "original/PB2002_poles.dat.txt": "887d208bda44cea75ee0c778c1883476906757a3d8035608a6cff7b79cf40f2e",
+      "original/PB2002_steps.dat.txt": "513babb111c65cd275274e2edcb249085d00e007c79d8755e1b4b79f60806f37",
+      "original/PB2002_steps_desc.txt": "ac769f83c60e8bfa0696c8da89658314d45634cd10de141629a425853ad3259a",
+      "original/README.md": "d1bfa5b21ff8a53baaf2bc7c54ee1c51628ef724b82976e4448771e8d31a7b65",
+      "LICENSE.md": "aca5f9e92e61843413b9297659af2eef552eb38fef39eae2f701566d985de36c"
+    },
+    "segment_symbol_counts": {
+      "-": 168,
+      "\\": 21,
+      "/": 40
+    },
+    "symbol_labels": {
+      "-": "Non-subducting (not necessarily transform)",
+      "/": "Subduction: right-hand plate beneath left",
+      "\\": "Subduction: left-hand plate beneath right"
+    },
+    "raw_curves_not_morphology_acceptance": true,
+    "attribution": "Peter Bird (2003), doi:10.1029/2001GC000252; fraxen/tectonicplates 339b0c56563c118307b1f4542703047f5f698fae; ODC-By 1.0"
+  },
+  "candidate": {
+    "atlas_id": "e6e6fe52b5320a5149de4fb6ca3d82d72f7477d4cfb1975c1b743adf6f9d8b71",
+    "seed": 41,
+    "plate_count": 12,
+    "support_cells": 512,
+    "interplate_edges": 308,
+    "camera_lon_lat_deg": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        90.0,
+        0.0
+      ],
+      [
+        180.0,
+        0.0
+      ],
+      [
+        270.0,
+        0.0
+      ],
+      [
+        0.0,
+        90.0
+      ],
+      [
+        0.0,
+        -90.0
+      ]
+    ],
+    "all_vertex_directions_visible_in_view_set": true,
+    "antimeridian_crossing_arcs": 5,
+    "display_max_arc_angle_deg": 0.35
+  },
+  "outputs": {
+    "formation_age_corrected.png": "853c76d696e36be21824b0064bc5111a47f11a3f2399b83b570b3f00d66b5ee0",
+    "globe_lon_000.png": "158f004f5ba213630d81e8d7a46c30fe357783525b279811ed784c6e15742297",
+    "globe_lon_090.png": "04689c4eebece2f32faeae90b9669955a1b21a80b641eca91019e743a6802578",
+    "globe_lon_180.png": "915747dd8cc64bc848b504779886f6a1d5f37048ae5d876f25a84d38857d9bcd",
+    "globe_lon_270.png": "f58a3aec97fbad76e82569436c1be985255142eb6fb8b6fe17b00f447cf95caf",
+    "globe_north_pole.png": "d421182ecf16f2ac3eca1ac610dbb6cab421b12a6caa452a1045f3d0c89f6609",
+    "globe_south_pole.png": "1fef0b4adc1f2d740a2d36c784ed7a2f39e4195c1df9663d38573705674b53ae",
+    "pb2002_segment_inventory_corrected.png": "ff83889317a69a03d43a1e7a477bd3291e6201ce3adebc8de2aada55d57de47a"
+  },
+  "observations": [
+    "Formation-age labels are derived from actual sampled cohort records: oceanic 80 Ma, continental 2000 Ma, mantle 3000 Ma; separate cooling age remains 60 Ma.",
+    "PB2002 segments are labelled non-subducting or by explicit subduction polarity; no dash-to-transform shortcut. Source records and byte identities are preserved.",
+    "The corrected maps were inspected for legibility, wrong joins/labels, dropped antimeridian spans and long false seam-crossing lines; none was apparent in this bounded display.",
+    "Four equatorial views and both polar views were inspected; no obvious boundary discontinuity or hidden-hemisphere stroke was apparent.",
+    "The plots display a static authored example and a statistical connected-layout candidate, not realistic generated landforms or evolving thermomechanics."
+  ],
+  "limitations": [
+    "Qualitative assistant inspection is not exhaustive topology certification, owner approval, numerical acceptance or physical validation.",
+    "Display-grid sampling is not an analytical layer-interface reconstruction; original material records remain authoritative.",
+    "No generated morphology is tuned against PB2002 holdouts during this visual check."
+  ],
+  "claims": {
+    "owner_visual_approval": false,
+    "physical_validation": false,
+    "R3_started": false,
+    "reference_data_reacquired": false,
+    "repository_or_user_pc_modified": false
+  }
+}

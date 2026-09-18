@@ -1,5 +1,61 @@
 # Atlas optimisation reference
 
+<a id="cleanup-execution"></a>
+
+## Current: portability and review cleanup — 19 September 2026
+
+**Package `0.1.0.dev23`, maintained plan revision 27.** No equations, scientific
+cases, R1 source-use policy, measured R2 execution thresholds or physical scope
+change. R2 is delivered within its registered envelope; R3 remains unstarted.
+
+### Interpreter identity without weakening source checks
+
+The Python executable path is resolved strictly before hashing its regular-file
+target. This supports linked and copied virtual-environment launchers. Only the
+interpreter receives that treatment, including the built-in `math` fallback.
+Source files, reference data and binary extensions keep their existing symlink
+refusals. Broken/cyclic interpreter links and non-files fail explicitly. Hashes
+identify binary content rather than absolute installation paths; the existing
+process-lifetime immutability assumption for loaded binaries is unchanged.
+This is runtime provenance, not a defence against arbitrary hostile process edits.
+See [environment setup](../README.md#environment) for the independent tectonics
+venv; the older source-only bootstrap is not its dependency environment.
+
+### Delivery and evidence policy
+
+A delivery must state its branch/base commit, full-snapshot versus update-only
+kind, exact added/modified/deleted paths, old/new SHA-256s and suggested logical
+review groups. A complete snapshot is not an instruction to replace a repository
+folder. Merge only reviewed changes and preserve newer local edits. Each manifest
+has an explicit apply root; tests, review patches and visual artefacts are separate.
+Michael retains manual application, commit and push ownership.
+
+Routine unittest stderr logs remain local, ignored artefacts; retain concise JSON
+with actual commands, environment, source hashes, counts, failures and limitations.
+Preserve unique failure diagnostics when needed and explain exceptions to the log
+policy. Already tracked historical logs/JSON/reference originals are not deleted,
+rewritten or rebound by this cleanup. No benchmark is rerun just to refresh a date.
+
+### Visual QA is part of every meaningful stage
+
+Use actual source-bound code output, not image-generation illustrations. Record
+case, seed, units, source/runtime identity, sampling and rendering choices. Check
+labels and joins against source records, including unknown masks and formation
+versus cooling time. Flat global maps need proper seam clipping; globes need both
+polar views as well as equatorial orientations. Inspect slivers, discontinuities,
+coverage and suspicious patterns. Human observations and automated numerical
+checks are separate evidence; neither alone establishes physical adequacy.
+An unchanged runtime-only stage may reuse the same case for a bounded visual
+regression. If nothing meaningful can be visualised, record why rather than
+invent an output. Store a small machine-readable visual record; keep routine PNGs
+outside versioned scientific source. The renderer and its tests remain reproducible.
+
+The previous chat age graphic and boundary-symbol legend are superseded by the
+source-derived visual tool. Cohort dates are read from sampled units; no hand-coded
+age table is used. PB2002 `-` is labelled non-subducting, not transform. Raw
+polylines are display-only; no malformed outline is repaired or granted approval.
+
+
 <a id="3cr2-scaling-execution"></a>
 
 ## Current: R2 scheduling/indexing follow-up (18 September 2026)
@@ -1778,13 +1834,13 @@ No new benchmark or performance claim accompanies this change.
 
 
 **ATLAS-OPTIMISATION-REFERENCE | Revision 4 | 17 September 2026**
-**Consolidates Report 02, Report 06 revision 2, the 84-mod screening, language supplement, and repository performance/voxel notes.**
+**Historical consolidation of scientific-software methods, engineering patterns, language guidance and performance/storage notes.**
 
 This is the single maintained optimisation reference for [the tectonics plan, revision 7](TECTONICS_PLAN.md). It distinguishes documented methods, proposed Atlas applications and delivered behaviour. The original catalogue remains a set of method studies. The delivery sections record implemented items 2–11 and bounded measurements, not physical acceptance; the broad item-1 programme was not run. Atlas remains WORKING NON-CANON, vibe-coded with OpenAI ChatGPT/Codex under Michael’s direction.
 
-**Start with the selected physical calculation, not the whole catalogue.** Apply the relevant execution and storage contracts, choose only useful method candidates, then compare them at the predeclared numerical/physical error. Continue tectonic development rather than implementing every mod-inspired system first.
+**Start with the selected physical calculation, not the whole catalogue.** Apply the relevant execution and storage contracts, choose only useful method candidates, then compare them at the predeclared numerical/physical error. Continue the selected tectonic stage rather than implementing every candidate method first.
 
-**Navigation:** [Current baseline](#current-baseline) · [Process placement](#process-placement) · [Execution](#execution-contract) · [Caches](#cache-contract) · [Storage](#storage-contract) · [3D geology](#volumetric-storage) · [Language](#native-boundary) · [PF candidates](#candidate-register) · [Tests](#performance-tests) · [Execution card](#execution-card) · [Scientific software](#scientific-methods) · [Minecraft methods](#minecraft-methods) · [All 84 mods](#mod-screening) · [Sources and consolidation](#sources)
+**Navigation:** [Current baseline](#current-baseline) · [Process placement](#process-placement) · [Execution](#execution-contract) · [Caches](#cache-contract) · [Storage](#storage-contract) · [3D geology](#volumetric-storage) · [Language](#native-boundary) · [PF candidates](#candidate-register) · [Tests](#performance-tests) · [Execution card](#execution-card) · [Scientific software](#scientific-methods) · [Engineering methods](#engineering-methods) · [Adoption](#method-adoption) · [Sources and consolidation](#sources)
 
 <a id="current-baseline"></a>
 
@@ -1792,7 +1848,7 @@ This is the single maintained optimisation reference for [the tectonics plan, re
 
 The live documentation branch was checked at `612d53eba495202101a8e638578f47fb37752649`. Its numerical foundation remains `11317165b7e2aeab7201a1fe3e3f646cb640d51e`: arrays/batches, rotations, periodic thickness transport, analytical cooling and reusable uniform periodic discrete flexure. See the [pinned module scope][url-001]. No coupled extensional landscape, global mechanics, voxel engine or measured acceleration is implied.
 
-The pre-studies reviewed scientific software on 15–16 September 2026 and mods chiefly through author-maintained descriptions. This consolidation performs no new external software audit. A developer claim stays a developer claim. Version, access and preprint limitations are retained in the source notes. Broad or ambiguous mod descriptions are leads for later inspection, not recovered algorithms.
+The dated pre-studies reviewed scientific software and engineering methods on 15–16 September 2026. This consolidation performs no new external software audit. A developer claim stays a developer claim. Version, access and preprint limitations are retained in the source notes. Broad implementation descriptions are leads for inspection, not recovered algorithms.
 
 | Change class | What changes | Required evidence |
 | --- | --- | --- |
@@ -1801,7 +1857,7 @@ The pre-studies reviewed scientific software on 15–16 September 2026 and mods 
 | M — model reduction | Physical laws, state variables or degrees of freedom. | Separate physical justification and acceptance; not “same physics, faster”. |
 | S — scale/representation | Mesh, partitioning, material representation or resolution hierarchy. | Correct boundary exchange, state transfer, conservation and workload evidence. |
 
-A proposal can span classes. Renderer culling, fewer sounds, reduced game ticking, deleted records, raised limits and omitted checks do not automatically preserve the scientific problem. Hash-table keys are not cryptographic source identities. Prescribed-time queries may be independent; evolving time steps are not. Exact historical accounts and source checks stay protected.
+A proposal can span classes. Renderer culling, reduced display refresh, deleted records, raised limits and omitted checks do not automatically preserve the scientific problem. Hash-table keys are not cryptographic source identities. Prescribed-time queries may be independent; evolving time steps are not. Exact historical accounts and source checks stay protected.
 
 ## 2. Execution, caching, storage and language contracts
 
@@ -2050,7 +2106,7 @@ separate optimisation report.
 
 Method references: [Numba execution and fast-math semantics](https://numba.readthedocs.io/en/stable/user/performance-tips.html)
 and [Python accurate summation](https://docs.python.org/3.13/library/math.html#math.fsum).
-The accumulator implementation is newly written, not copied from a mod or solver.
+The accumulator implementation is newly written, not copied from an external package or solver.
 
 <a id="process-placement"></a>
 
@@ -2163,9 +2219,8 @@ Lossless compression is the default candidate for scientific/restart state. Loss
 
 #### Evidence and representation
 
-- Minecraft developer documentation separates simulation distance, rendering and
-  explicit ticking areas. Stored or visible world data is not all actively updated.
-  [Microsoft's guide][url-009]
+- Numerical domain, storage working set and display range are separate Atlas
+  responsibilities; displaying a region does not define its physical boundary.
 - Tommaso Checchi's Bedrock format note describes local block palettes and packed
   per-block indices. The protocol note is historical, not a claim that every
   current Java/Bedrock detail is identical.
@@ -2199,7 +2254,7 @@ need 4 bits per index in an ideal bit-packed representation: 16,384 bytes (16 Ki
 plus palette and metadata. One binary64 scalar at those locations uses 262,144
 bytes (256 KiB). Eight such fields use 2,097,152 bytes (2 MiB), before working copies,
 solver state or history. Uniform fields can compress well; continuously varying
-fields may not. These are raw storage calculations, not measured Minecraft/Atlas
+fields may not. These are raw storage calculations, not measured Atlas
 memory or proposed final chunk dimensions.
 
 The 3D count grows with depth as well as area. A hypothetical 1 km cubed domain at
@@ -2662,116 +2717,45 @@ Underworld2 and Underworld3 are different implementations; FastScape Python, For
 
 **[SC-S46][url-057] — GDTchron official repository.** Official repository; original review 2026-09-15. 0.1.2 release shown; distinguishes runnable examples from large-data-dependent demonstrations.
 
-<a id="minecraft-methods"></a>
+<a id="engineering-methods"></a>
 
-## 5. Minecraft-derived patterns MC01–MC39
+## 5. Engineering methods and their accuracy boundaries
 
-The original catalogue numbers are retained. These are reusable patterns, not 39 compulsory implementation tasks. Each card retains the proposed Atlas application, the important boundary and its check. The source links identify the documented project method; all 84 subsequently supplied names and individual caveats are in Section 6. “Design now” means preserve the interface/ownership boundary, not build a new subsystem without a workload.
+These 39 retained methods are an engineering reference, not a prerequisite list
+or a claim that every method is implemented. The current delivery sections,
+source and named evidence govern adoption. Each card preserves its Atlas use,
+ownership/accuracy boundary and verification requirements. The source-project
+catalogue has been removed; its history remains in Git, not another active plan.
 
-### DashLoader and the distinct ModernFix modules
+Caching avoids repeated work; lazy preparation avoids work not yet requested.
+Both require measured setup/first-use/reuse cost and complete dependencies.
+"Design now" means preserve the necessary contract, not build speculative systems.
+The general baseline programme remains explicitly skipped; only finite comparisons
+needed for an authorised increment are permitted.
 
-
-
-| Reference | What the method changes | Atlas analogue — proposed |
-| --- | --- | --- |
-| DashLoader | Reuse prepared assets across launches. [[MC-S01][url-058]] | Restore identified, validated derived data instead of preparing them again. |
-| ModernFix: dynamic entity renderers | Construct entity models at first use. [[MC-S02][url-059]] | Create optional visual models/rendering machinery only when requested. |
-| ModernFix: dynamic resources | Defer block/item model loading. [[MC-S03][url-060]] | Keep a resource catalogue separate from a bounded materialised working set. |
-
-
-**Caching avoids repeating work. Lazy loading avoids doing work that is not yet needed.** They may complement each other in a new design, but first-use costs, dependencies and invalidation still have to be measured. This does not imply the Minecraft mods are mutually compatible.
-
-
-ModernFix is a collection of targeted interventions, not one optimisation. Its version-specific summary and changelog are more useful than treating its aggregate memory or launch claims as a transferable Atlas result. [[MC-S02][url-059], [MC-S04][url-061]]
-
-| Module or recorded change | Catalogue connection | What to retain for Atlas |
-| --- | --- | --- |
-| mixin.perf.dynamic_entity_renderers | MC03 • lazy visual models | First-use lifecycle, single-owner initialisation and failure handling—not hidden-cell simulation skipping. |
-| mixin.perf.dynamic_resources | MC04 • resource working set | On-demand models, dependency retention and revision-aware invalidation; not a guarantee that every asset is lazy. |
-| deduplicate_climate_parameters / deduplicate_location | MC07 • immutable definitions | Count allocation and lookup costs together. Sharing is useful only with safe immutability. |
-| Registry snapshot reuse (5.25.0) | MC06 • repeated discovery | Reuse the parsed/indexed description, while retaining source-membership and content checks. |
-| release_protochunks (5.27.0) | MC20 • temporary-data lifetime | Release generation-only state after its last consumer, not while it still supplies a physical boundary. |
-| Reduced permanent model retention (5.27.0) | MC04 / MC21 • working set | Measure how much derived state must stay resident, not just launch-time allocation. |
-| Delayed search preparation (5.22.0) | MC05 • optional initialisation | Move optional work to first need and expose its first-use latency. |
-| Launch/thread/stall diagnostics | MC01 • measurements | Measure stalls and ownership errors in a diagnostic mode without pretending instrumentation is free. |
+**Delivered where relevant:** bulk native operations, immutable definitions and
+compact categoricals, bounded work admission, conservative feature indexing,
+independent-batch scheduling, verified reuse, lossless chunk storage and exact
+restoration. Consult the current R2 and earlier delivery sections for exact scope.
+**Conditional:** volumetric hierarchy, new operator reuse and parcel aggregation
+require their own numerical/workload evidence. **Deferred:** viewer, network and
+hardware-specific rendering work is not a tectonic-solver prerequisite.
 
 
-Module behaviour is sourced from the patch summary, FAQ and versioned changelog; the Atlas column is a proposed design interpretation. [[MC-S02][url-059], [MC-S03][url-060], [MC-S04][url-061]]
+<a id="method-01"></a>
 
-#### Dynamic entity renderers: dependency warning
-
-ModernFix’s **5.22.0** notes deprecate this option: mods that attach rendering to every entity can force eager construction and erase its benefit. The 1.21.1 patch page still documents the option. Neither observation proves its removal from every release. [[MC-S02][url-059], [MC-S04][url-061]]
-
-The lesson is not to reject laziness. It is to inspect the entire demand path: a catalogue-building or extension hook that eagerly asks for all objects defeats the architecture. Atlas should expose lightweight metadata without requiring each visual object to be constructed.
-
-
-The dynamic-resource FAQ concerns block/item **models**, not all textures, sounds or scientific data. Persistent caching and first-use construction can complement each other, but shared consumers may defeat laziness. These are method references, not a recommended mod combination.
-
-| ID | Method | Target / evaluation point |
-| --- | --- | --- |
-| [MC01](#MC01) | Measure the whole operation before changing it | Diagnosis; Design now. |
-| [MC02](#MC02) | Persist expensive prepared artefacts | Start-up / repeat work; When preparation repeats. |
-| [MC03](#MC03) | Create visual models only when first needed | Viewer start-up / RAM; Viewer stage. |
-| [MC04](#MC04) | Load block/item model resources on demand | Viewer assets / working set; Viewer stage. |
-| [MC05](#MC05) | Defer optional subsystem preparation | Start-up / unused work; When optional work exists. |
-| [MC06](#MC06) | Reuse stable registry and resource-discovery results | Repeated metadata scans; When metadata repeats. |
-| [MC07](#MC07) | Share equivalent immutable definitions | Memory / allocations; Design now. |
-| [MC08](#MC08) | Replace repeated categorical objects with compact indices | Categorical storage; Before large storage. |
-| [MC09](#MC09) | Store volume in bounded chunks and compact uniform regions | Volumetric geology; Representation study. |
-| [MC10](#MC10) | Build fresh fields through one controlled batch path | Initial generation; When initialisation is costly. |
-| [MC11](#MC11) | Prune spatial candidates before exact geometry work | Feature queries; When geometry dominates. |
-| [MC12](#MC12) | Use inverted indices for repeated applicability searches | Rule/material lookup; When searches repeat. |
-| [MC13](#MC13) | Reuse valid matches and coalesce intermediate updates | Repeated selection; When batches repeat. |
-| [MC14](#MC14) | Invalidate derived data through explicit change events | Polling / stale caches; Design now. |
-| [MC15](#MC15) | Evaluate affected networks without duplicate notifications | Graph propagation; After the operator is defined. |
-| [MC16](#MC16) | Schedule generation and I/O with explicit dependencies | Parallel execution / I/O; When task volume warrants it. |
-| [MC17](#MC17) | Give state one owner and control ownership transitions | Race safety / partitioning; Before shared-state parallelism. |
-| [MC18](#MC18) | Parallelise genuinely independent scenarios or frozen-input batches | CPU concurrency; When independent work exists. |
-| [MC19](#MC19) | Budget worker pools, native threads and task granularity | Oversubscription / responsiveness; Design now. |
-| [MC20](#MC20) | Release temporary objects when their final consumer finishes | Retained RAM / lifecycle; Design now. |
-| [MC21](#MC21) | Keep caches only when their measured value exceeds their cost | Cache retention / memory; Before adding caches. |
-| [MC22](#MC22) | Smooth writes while keeping accepted checkpoints coherent | I/O / save responsiveness; Persistence stage. |
-| [MC23](#MC23) | Prepare only explicitly selected regions, with resumable tasks | Preparation / predictable latency; When region work is known. |
-| [MC24](#MC24) | Batch drawing and minimise repeated graphics submission | Viewer frame cost; Viewer stage. |
-| [MC25](#MC25) | Prepare static visual geometry once per valid revision | Repeated visual construction; Viewer stage. |
-| [MC26](#MC26) | Cull invisible drawing, not invisible physics | Hidden draw work; Viewer stage. |
-| [MC27](#MC27) | Maintain coarse context and fine detail in the viewer | Display scale / streaming; Viewer stage. |
-| [MC28](#MC28) | Separate viewer-region caches from active compute data | Remote/local streaming; When a viewer connection exists. |
-| [MC29](#MC29) | Use hardware-specific render paths only behind a portable contract | GPU display submission; Optional viewer path. |
-| [MC30](#MC30) | Refresh the interface according to change, not simulation ticks | GUI / idle power; Viewer stage. |
-| [MC31](#MC31) | Aggregate only material parcels that remain scientifically equivalent | Object count / history; Conditional numerical study. |
-| [MC32](#MC32) | Adapt service quality without silently changing the science | Overload / responsiveness; Conditional policy study. |
-| [MC33](#MC33) | Move selected bulk calculations behind a native interface | Numerical kernels / interface overhead; When a measured bulk path warrants it. |
-| [MC34](#MC34) | Cache parsing and indexing separately from evaluated results | Repeated preparation and lookup; When preparation is repeated. |
-| [MC35](#MC35) | Separate lookup hashing from cryptographic provenance | Spatial keys and indexed queries; When lookup cost or collisions are measured. |
-| [MC36](#MC36) | Bound asynchronous diagnostics and preserve indispensable evidence | Blocking I/O and retained diagnostic state; When diagnostic/discovery work is significant. |
-| [MC37](#MC37) | Version random-stream and faster-maths changes explicitly | Numerical semantics / reproducibility; Only when the corresponding cost matters. |
-| [MC38](#MC38) | Use reversible dictionaries and explicit delta bases for future streaming | Optional remote viewer / data transfer; Deferred until an actual streaming workload. |
-| [MC39](#MC39) | Eliminate copies only with proven ownership and lifetime | Allocation / memory traffic; When allocation cost is measured. |
-
-<a id="MC01"></a>
-
-### MC01 — Measure the whole operation before changing it
-
-**References:** spark / ModernFix. [MC-S31][url-062] · [MC-S02][url-059]  
-**Target:** Diagnosis; **stage:** Design now; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** spark exposes CPU and memory diagnostics; ModernFix adds launch profiling and stalled-work/thread diagnostics.
+### Measure the whole operation before changing it
 
 **Atlas application.** Instrument source verification, preparation, kernel work, communication, rejected trials, output and retained memory separately. Give batch work stable operation IDs so sampled hot paths can be tied to their scientific purpose.
 
-**Boundary.** A Minecraft profiler is not a Python/NumPy profiler. Instrumentation itself has a cost; sampling frequency and debug checks must be recorded.
+**Boundary.** Use instrumentation suitable for the actual Python/native runtime. Instrumentation itself has a cost; sampling frequency and debug checks must be recorded.
 
 **Check.** Compare instrumented and uninstrumented bounded runs; distinguish total CPU work from wall time and queue waiting. Locate a repeatable bottleneck before adding another cache or worker pool.
 
-<a id="MC02"></a>
 
-### MC02 — Persist expensive prepared artefacts
+<a id="method-02"></a>
 
-**References:** DashLoader. [MC-S01][url-058]  
-**Target:** Start-up / repeat work; **stage:** When preparation repeats; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** DashLoader caches prepared assets between launches. Its reviewed README warns that initial cache creation is slower; changed content needs an appropriate cache.
+### Persist expensive prepared artefacts
 
 **Atlas application.** Persist verified derived geometry, feature indices or reusable operator data when restoration is cheaper than reconstruction. Bind input content, algorithm, schema, numerical settings and relevant runtime identity. Handle uncacheable items by recomputing them, not omitting them.
 
@@ -2779,14 +2763,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Measure build, write, validation and restore separately. Test source/parameter changes, malformed or oversized records, interrupted writes and exact agreement with the uncached path.
 
-<a id="MC03"></a>
 
-### MC03 — Create visual models only when first needed
+<a id="method-03"></a>
 
-**References:** ModernFix dynamic entity renderers. [MC-S02][url-059] · [MC-S04][url-061]  
-**Target:** Viewer start-up / RAM; **stage:** Viewer stage; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** `mixin.perf.dynamic_entity_renderers` defers entity-model construction until first seen. ModernFix 5.22.0 deprecated it because other mods could force eager construction anyway. Deprecation does not prove removal.
+### Create visual models only when first needed
 
 **Atlas application.** In a future Atlas viewer, hold a small renderer factory per feature type and construct meshes/material pipelines on demand. Prewarm likely first views only when latency evidence justifies it.
 
@@ -2794,14 +2774,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Count models built at launch, first view and repeated view; measure first-use latency and retained RAM/VRAM. Exercise concurrent requests, resource reload and a renderer whose construction fails.
 
-<a id="MC04"></a>
 
-### MC04 — Load block/item model resources on demand
+<a id="method-04"></a>
 
-**References:** ModernFix dynamic resources. [MC-S03][url-060]  
-**Target:** Viewer assets / working set; **stage:** Viewer stage; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** `mixin.perf.dynamic_resources` loads block/item models as needed rather than eagerly preparing all of them. The FAQ documents compatibility risks; it is not a claim that every resource type becomes lazy.
+### Load optional visual resources on demand
 
 **Atlas application.** Keep the asset catalogue separate from materialised visual models and optional derived datasets. Resolve only requested assets, retain dependencies while in use, and evict rebuildable products under a finite budget.
 
@@ -2809,29 +2785,23 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare peak/resident memory, first-use stalls and revisits. Reload an asset while referenced, request it concurrently and reject missing required dependencies rather than silently substituting a valid-looking result.
 
-<a id="MC05"></a>
 
-### MC05 — Defer optional subsystem preparation
+<a id="method-05"></a>
 
-**References:** LazyDFU / ModernFix / VintageFix. [MC-S48][url-063] · [MC-S04][url-061] · [MC-S49][url-064]  
-**Target:** Start-up / unused work; **stage:** When optional work exists; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** LazyDFU delays data-conversion preparation. ModernFix has delayed search preparation; VintageFix is a related older optimisation family, not an independent additive speed claim.
+### Defer optional subsystem preparation
 
 **Atlas application.** Load optional exporters, viewer preparation and specialist diagnostics only when their operation is selected. Keep a small capability description available without importing all expensive implementations.
 
 **Boundary.** Defer preparation, never a required conversion or validation. First use may become slower and failures occur later; make that explicit. Avoid a complex general plug-in framework merely to postpone one import.
 
+**Additional application.** Keep optional online checks explicitly opt-in. Missing required dependencies must produce a diagnostic; never silently remove inputs or alter the requested capability to make loading succeed.
+
 **Check.** Compare cold launch, first invocation and subsequent calls. Confirm skipped capabilities are truly unused and that each capability fails clearly when its dependency is absent.
 
-<a id="MC06"></a>
 
-### MC06 — Reuse stable registry and resource-discovery results
+<a id="method-06"></a>
 
-**References:** ModernFix. [MC-S04][url-061]  
-**Target:** Repeated metadata scans; **stage:** When metadata repeats; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** ModernFix 5.25.0 records reuse of a world-generation registry snapshot instead of repeatedly rebuilding it. Resource-loading changes are version-dependent.
+### Reuse stable registry and resource-discovery results
 
 **Atlas application.** Create a deterministic index of the exact material/law/feature inventory needed by a case. Reuse parsing and lookup structures within an authenticated invocation; consider a persisted index only with complete membership and content identities.
 
@@ -2839,14 +2809,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare indexed and exhaustive resolution. Test added/removed files, reordered declarations, changed content and duplicate identifiers; include validation and index-build cost.
 
-<a id="MC07"></a>
 
-### MC07 — Share equivalent immutable definitions
+<a id="method-07"></a>
 
-**References:** FerriteCore / ModernFix. [MC-S05][url-065] · [MC-S02][url-059]  
-**Target:** Memory / allocations; **stage:** Design now; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** FerriteCore shares equivalent predicates, models and shapes. ModernFix also deduplicates selected metadata; its notes acknowledge that some savings increase construction cost.
+### Share equivalent immutable definitions
 
 **Atlas application.** Intern material-law descriptions, immutable composition classes and repeated geometric metadata. Keep per-cell temperature, stress and history separate. Use canonical content identity rather than object addresses to establish persistent equivalence.
 
@@ -2854,14 +2820,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Measure allocation count, unique definitions and total retained bytes. Test mutation refusal, parameter changes and reference release; retain the method only when sharing exceeds its indexing cost.
 
-<a id="MC08"></a>
 
-### MC08 — Replace repeated categorical objects with compact indices
+<a id="method-08"></a>
 
-**References:** FerriteCore / Lithium / Fast Noise. [MC-S05][url-065] · [MC-S07][url-066] · [MC-S12][url-067]  
-**Target:** Categorical storage; **stage:** Before large storage; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** FerriteCore replaces repeated state structures with compact indexed forms; Lithium and Fast Noise describe palette-related optimisations.
+### Replace repeated categorical objects with compact indices
 
 **Atlas application.** Use chunk-local material palettes and compact integer indices for categorical fields. Decode batches into solver-friendly arrays where necessary. Reserve explicit encodings for unknown, absent and real empty material.
 
@@ -2869,59 +2831,45 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Round-trip single-material, mixed, high-cardinality and unknown-containing chunks. Include decoding and updates in the cost comparison, not disk bytes alone; check canonical identity across palette reorderings.
 
-<a id="MC09"></a>
 
-### MC09 — Store volume in bounded chunks and compact uniform regions
+<a id="method-09"></a>
 
-**References:** CubicChunks / OpenVDB. [MC-S09][url-068] · [MC-S11][url-012]  
-**Target:** Volumetric geology; **stage:** Representation study; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** CubicChunks provides a volumetric chunking reference. OpenVDB, a separate non-Minecraft library, distinguishes voxels, uniform tiles and background values.
+### Store volume in bounded chunks and compact uniform regions
 
 **Atlas application.** Combine compact geological layers/features with detailed volumetric chunks where required. Load selected fields and ranges, using exactly uniform regions without allocating every voxel. Keep the numerical mesh and storage hierarchy independent.
 
-**Boundary.** Do not assume Minecraft uses OpenVDB or that a chunk is a physical boundary. Unknown and uniform background are different. Fine continuous gradients may defeat uniform compression; approximation needs separate error approval.
+**Boundary.** A storage chunk is not a physical boundary. Unknown and uniform background are different. Fine continuous gradients may defeat uniform compression; approximation needs separate error approval.
 
 **Check.** Compare layer, dense-chunk and sparse encodings for uniform, faulted and continuously varying test fields. Verify material budgets, coordinates, boundary samples, decoded identity and peak active working set.
 
-<a id="MC10"></a>
 
-### MC10 — Build fresh fields through one controlled batch path
+<a id="method-10"></a>
 
-**References:** Fast Noise / Noisium. [MC-S12][url-067] · [MC-S13][url-069]  
-**Target:** Initial generation; **stage:** When initialisation is costly; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** Fast Noise targets generation-time storage, allocation and palette/count work under specialised invariants. Noisium supplies a related initial-generation reference.
+### Build fresh fields through one controlled batch path
 
 **Atlas application.** Allocate a candidate field once, evaluate geological features in batches, assemble metadata once and validate the complete candidate before making it visible. Separate construction of new state from arbitrary editing of accepted state.
 
-**Boundary.** Construction shortcuts are valid only under proven preconditions. They must not omit accounting, source checks or events that other components depend on. Related mods are not independent multiplicative speed-ups.
+**Boundary.** Construction shortcuts are valid only under proven preconditions. They must not omit accounting, source checks or events that other components depend on. Related optimisations do not imply independent multiplicative speed-ups.
 
 **Check.** Compare batch construction against a transparent per-item reference, including mixed materials and failed sampling. Interrupt construction and verify no partial accepted field escapes.
 
-<a id="MC11"></a>
 
-### MC11 — Prune spatial candidates before exact geometry work
+<a id="method-11"></a>
 
-**References:** Structure Layout Optimizer / Lithium / VMP. [MC-S14][url-070] · [MC-S07][url-066] · [MC-S16][url-071]  
-**Target:** Feature queries; **stage:** When geometry dominates; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** Structure Layout Optimizer uses a BoxOctree and early rejection for structure intersections. Lithium and VMP provide additional local-query references.
+### Prune spatial candidates before exact geometry work
 
 **Atlas application.** Index fault traces, slab bodies and geological features; query conservative bounds before exact intersection or property evaluation. Batch nearby samples and reuse a valid index until geometry changes.
 
 **Boundary.** Broad-phase pruning must have no false negatives. A missed candidate cannot become an apparently valid default material. A planar box strategy requires adaptation for spherical seams and moving/deforming features.
 
+**Additional application.** Order pure rejection predicates by cost; a cheap rejection must be proven conservative. Range, corner and interval queries can share the same content-identified search structures.
+
 **Check.** Compare with exhaustive geometry checks on touching boundaries, narrow intersections, degeneracy and coordinate seams. Measure candidates per query, rebuild time, exact-check time and index memory.
 
-<a id="MC12"></a>
 
-### MC12 — Use inverted indices for repeated applicability searches
+<a id="method-12"></a>
 
-**References:** FastSuite. [MC-S18][url-072]  
-**Target:** Rule/material lookup; **stage:** When searches repeat; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** FastSuite indexes ingredients to relevant recipes rather than always considering the full recipe set.
+### Use inverted indices for repeated applicability searches
 
 **Atlas application.** Build material-to-law, feature-to-region and changed-parameter-to-dependent-product indices. Apply the full validity rule to the reduced candidate set; preserve a deterministic precedence for overlapping rules.
 
@@ -2929,14 +2877,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare selections and ordering with exhaustive evaluation, including overlapping and unmatched inputs. Measure index build plus all lookups and test content/membership changes.
 
-<a id="MC13"></a>
 
-### MC13 — Reuse valid matches and coalesce intermediate updates
+<a id="method-13"></a>
 
-**References:** FastWorkbench / FastFurnace. [MC-S19][url-073] · [MC-S20][url-074]  
-**Target:** Repeated selection; **stage:** When batches repeat; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** FastWorkbench and FastFurnace reuse recipe matches; FastWorkbench also avoids repeated matching during a batch operation. These improve computation, not in-world processing rates.
+### Reuse valid matches and coalesce intermediate updates
 
 **Atlas application.** Reuse the last applicable material/constitutive selection while its full input signature remains valid. Group related parameter edits before recomputing derived tables or geometry that no consumer needs in intermediate form.
 
@@ -2944,44 +2888,34 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Test repeated identical input, rapid rule changes and a match becoming invalid mid-batch. Compare final results and every required notification with the uncoalesced reference.
 
-<a id="MC14"></a>
 
-### MC14 — Invalidate derived data through explicit change events
+<a id="method-14"></a>
 
-**References:** hopperOptimizations / Lithium. [MC-S21][url-075] · [MC-S07][url-066]  
-**Target:** Polling / stale caches; **stage:** Design now; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** The historical hopperOptimizations project uses modification counters and local tracking; Lithium documents related change-sensitive work.
+### Invalidate derived data through explicit change events
 
 **Atlas application.** Assign each accepted state a revision and mark affected derived geometry/projections stale once per coherent change. Rebuild only when requested. Propagate parameter and topology changes through known dependency relationships.
 
 **Boundary.** The event system must cover in-place writes, boundary edits and shared-array mutations. Continuously evolving physics cannot sleep merely because no user edited it. Counter overflow and object reuse need defined behaviour.
 
+**Additional application.** Compact dispatch/subscription structures are worth considering only after profiling. Propagate invalidation only when dependent output changes, while retaining every required consumer notification.
+
 **Check.** Mutate each permitted input independently and ensure exactly the necessary derived data are invalidated. Test repeated batched edits, no-op changes and a consumer requesting state during an unfinished update.
 
-<a id="MC15"></a>
 
-### MC15 — Evaluate affected networks without duplicate notifications
+<a id="method-15"></a>
 
-**References:** Alternate Current / ScalableLux / Starlight. [MC-S17][url-076] · [MC-S08][url-077]  
-**Target:** Graph propagation; **stage:** After the operator is defined; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** Alternate Current calculates connected redstone work together with deliberate update ordering. ScalableLux builds on Starlight for lighting propagation and parallel updates.
+### Evaluate affected networks without duplicate notifications
 
 **Atlas application.** For a defined dependency or routing operator, gather affected nodes, avoid duplicate work and publish a coherent result after the required propagation. Reuse ordered queues only when graph, event and numerical semantics match.
 
-**Boundary.** Redstone settling and light propagation are not thermal diffusion, stress equilibrium or transient water physics. A changed notification/order rule may change numerical outcomes; it needs an explicit equivalence policy.
+**Boundary.** A generic graph propagation rule is not thermal diffusion, stress equilibrium or transient water physics. A changed notification/order rule may change numerical outcomes; it needs an explicit equivalence policy.
 
 **Check.** Exercise cycles, ties, simultaneous sources, boundary changes and serial versus parallel ordering. Check physical or graph invariants, recomputation count and total convergence work.
 
-<a id="MC16"></a>
 
-### MC16 — Schedule generation and I/O with explicit dependencies
+<a id="method-16"></a>
 
-**References:** C2ME / Moonrise. [MC-S06][url-078] · [MC-S15][url-079]  
-**Target:** Parallel execution / I/O; **stage:** When task volume warrants it; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** C2ME parallelises chunk-related generation/loading/I/O. Moonrise is an alternative replacement chunk-system architecture; overlapping designs are not automatically compatible.
+### Schedule generation and I/O with explicit dependencies
 
 **Atlas application.** Use finite queues and persistent workers for dependency-ready tasks. Distinguish I/O preparation, immutable numerical inputs, candidate calculation and commit. Prioritise work needed to finish an accepted regional result, not unlimited speculative loading.
 
@@ -2989,14 +2923,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare one and several workers under shuffled completion order; stress cancellation, queue pressure, missing dependencies and worker failure. Measure setup, waiting, work and peak combined memory.
 
-<a id="MC17"></a>
 
-### MC17 — Give state one owner and control ownership transitions
+<a id="method-17"></a>
 
-**References:** Folia. [MC-S22][url-080]  
-**Target:** Race safety / partitioning; **stage:** Before shared-state parallelism; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Folia is a server fork, not a mod. Its region rules constrain ownership and splitting/merging while regions execute.
+### Give state one owner and control ownership transitions
 
 **Atlas application.** Give a worker exclusive ownership of its candidate writes; share immutable inputs. Reconcile boundary fluxes and particle migration through explicit transfers, then publish one accepted revision. Perform repartitioning at defined safe boundaries.
 
@@ -3004,29 +2934,21 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Test overlapping requests, migration during repartition, competing commits, abandoned workers and deterministic restart. Verify one owner per conserved transfer and no lost/double material.
 
-<a id="MC18"></a>
 
-### MC18 — Parallelise genuinely independent scenarios or frozen-input batches
+<a id="method-18"></a>
 
-**References:** DimensionalThreading / Async. [MC-S23][url-081] · [MC-S24][url-082]  
-**Target:** CPU concurrency; **stage:** When independent work exists; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** DimensionalThreading distributes dimensions; Async explores entity parallelism with explicit experimental/compatibility limits.
+### Parallelise genuinely independent scenarios or frozen-input batches
 
 **Atlas application.** Parallelise independent world scenarios, parameter-study members or particle queries against a frozen field. Batch enough work to justify scheduling and collect outputs by stable identity rather than completion order.
 
-**Boundary.** Interacting plates are not separate dimensions. Particle deposition into shared cells requires safe reduction. Per-item Python tasks may cost more than their calculation; exceptions must not leave a partly committed state.
+**Boundary.** Interacting plates are not independent scenarios. Particle deposition into shared cells requires safe reduction. Per-item Python tasks may cost more than their calculation; exceptions must not leave a partly committed state.
 
 **Check.** Compare serial/batched results, random-stream identity, allocations and throughput across batch sizes. Test an exception within one batch and confirm other results cannot falsely complete its scenario.
 
-<a id="MC19"></a>
 
-### MC19 — Budget worker pools, native threads and task granularity
+<a id="method-19"></a>
 
-**References:** ThreadTweak / Smooth Boot. [MC-S25][url-083]  
-**Target:** Oversubscription / responsiveness; **stage:** Design now; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** ThreadTweak continues the Smooth Boot lineage of executor/thread-count and priority controls. It does not change the scientific work itself.
+### Budget worker pools, native threads and task granularity
 
 **Atlas application.** Select an outer-worker budget jointly with BLAS/FFT/OpenMP thread counts, reserve memory per admitted task and reuse workers. Choose task size from measured overhead versus work rather than one task per voxel.
 
@@ -3034,14 +2956,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Sweep bounded worker/thread/batch combinations on the same workload and error target. Record wall time, CPU time, memory, queue delays and cancellation latency.
 
-<a id="MC20"></a>
 
-### MC20 — Release temporary objects when their final consumer finishes
+<a id="method-20"></a>
 
-**References:** ModernFix / MemoryLeakFix. [MC-S04][url-061] · [MC-S26][url-084]  
-**Target:** Retained RAM / lifecycle; **stage:** Design now; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** ModernFix 5.27.0 releases generation-only chunks outside the needed area. MemoryLeakFix targets specific retained-memory problems.
+### Release temporary objects when their final consumer finishes
 
 **Atlas application.** Track when temporary decoded geometry, candidates, futures and output buffers have no remaining consumers; release them then. Make lifetime ownership explicit around task failure and branch completion.
 
@@ -3049,14 +2967,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Repeat many small load/compute/release cycles, including failures. Check retained objects and process memory after steady state; confirm shared references remain valid until their true final release.
 
-<a id="MC21"></a>
 
-### MC21 — Keep caches only when their measured value exceeds their cost
+<a id="method-21"></a>
 
-**References:** Saturn / ModernFix. [MC-S27][url-085] · [MC-S04][url-061]  
-**Target:** Cache retention / memory; **stage:** Before adding caches; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** Saturn is a memory-focused reference; ModernFix records clearing conversion caches. No specific Saturn temperature-cache implementation is asserted in this review.
+### Keep caches only when their measured value exceeds their cost
 
 **Atlas application.** Budget each cache by retained bytes and reuse value, not entry count alone. Separate small reusable metadata from large derived fields. Consider recomputing cheap values, eviction, and bounded warm sets.
 
@@ -3064,14 +2978,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Measure hits, misses, bytes, rebuild time and first-use latency under realistic revisit patterns. Compare no-cache, bounded-cache and prewarmed configurations with the same result requirements.
 
-<a id="MC22"></a>
 
-### MC22 — Smooth writes while keeping accepted checkpoints coherent
+<a id="method-22"></a>
 
-**References:** Smooth Chunk Save / FastQuit. [MC-S28][url-086] · [MC-S29][url-087]  
-**Target:** I/O / save responsiveness; **stage:** Persistence stage; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Smooth Chunk Save targets save spikes; FastQuit decouples returning to the interface from continuing save work.
+### Smooth writes while keeping accepted checkpoints coherent
 
 **Atlas application.** Write immutable output chunks through a bounded I/O queue. Publish a manifest naming one coherent state only after every required chunk is durable and verified. Report saving separately from completed recovery readiness.
 
@@ -3079,14 +2989,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Interrupt each write/publication boundary, exhaust disk space and inject a failed chunk. Recovery must find the old complete state or the new complete state, not a convincing partial mixture.
 
-<a id="MC23"></a>
 
-### MC23 — Prepare only explicitly selected regions, with resumable tasks
+<a id="method-23"></a>
 
-**References:** Chunky. [MC-S30][url-088]  
-**Target:** Preparation / predictable latency; **stage:** When region work is known; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** Chunky pregenerates selected regions and provides task controls including pause/resume.
+### Prepare only explicitly selected regions, with resumable tasks
 
 **Atlas application.** Prepare a declared geological region or output request in finite batches, preserving dependencies and resumable progress. Cache only useful intermediate results; keep speculative work behind required calculations.
 
@@ -3094,14 +3000,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Pause, resume and cancel at several stages. Compare results with uninterrupted execution, track unnecessary work and verify progress counts complete verified units rather than merely scheduled tasks.
 
-<a id="MC24"></a>
 
-### MC24 — Batch drawing and minimise repeated graphics submission
+<a id="method-24"></a>
 
-**References:** Sodium / Embeddium / ImmediatelyFast. [MC-S32][url-089] · [MC-S33][url-090] · [MC-S34][url-091]  
-**Target:** Viewer frame cost; **stage:** Viewer stage; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Sodium and its related Embeddium lineage rework rendering; ImmediatelyFast targets drawing/buffer batching.
+### Batch drawing and minimise repeated graphics submission
 
 **Atlas application.** Group compatible chunk meshes, diagnostic lines and overlays into batches; retain prepared buffers across frames. Keep updates granular so a small geological change need not regenerate the whole displayed world.
 
@@ -3109,14 +3011,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Measure draw/submission counts, CPU/GPU frame time, upload bytes and visible latency on fixed views. Verify clipping, transparency and selection after local updates.
 
-<a id="MC25"></a>
 
-### MC25 — Prepare static visual geometry once per valid revision
+<a id="method-25"></a>
 
-**References:** Enhanced Block Entities. [MC-S35][url-092]  
-**Target:** Repeated visual construction; **stage:** Viewer stage; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** Enhanced Block Entities uses prepared block models for eligible visuals instead of repeatedly treating them as dynamic entities.
+### Prepare static visual geometry once per valid revision
 
 **Atlas application.** Cache geological cross-section meshes, unchanged fault surfaces and repeated symbols by scientific/display revision. Isolate animated time interpolation and genuinely moving geometry from static components.
 
@@ -3124,14 +3022,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare static and dynamic reference drawings; change time, clipping and geometry independently. Count rebuilds and verify that inactive visual references release their memory.
 
-<a id="MC26"></a>
 
-### MC26 — Cull invisible drawing, not invisible physics
+<a id="method-26"></a>
 
-**References:** MoreCulling / EntityCulling. [MC-S10][url-093] · [MC-S36][url-094]  
-**Target:** Hidden draw work; **stage:** Viewer stage; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** MoreCulling and EntityCulling avoid drawing geometry or entities that do not contribute to the visible image.
+### Cull invisible drawing, not invisible physics
 
 **Atlas application.** Use conservative view/occlusion tests for opaque rock interiors and off-screen overlays. Keep volumetric scientific data intact and allow cutaways to reveal it without regeneration of the physical model.
 
@@ -3139,14 +3033,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare against an unculled reference view while moving cameras and cut planes; test transparent materials, sudden reveals and picking. Measure culled draws without changing scientific outputs.
 
-<a id="MC27"></a>
 
-### MC27 — Maintain coarse context and fine detail in the viewer
+<a id="method-27"></a>
 
-**References:** Distant Horizons / Voxy / FarPlaneTwo. [MC-S37][url-095] · [MC-S38][url-096] · [MC-S39][url-097]  
-**Target:** Display scale / streaming; **stage:** Viewer stage; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Distant Horizons and Voxy provide terrain LOD references. FarPlaneTwo is an experimental/historical comparison, not evidence of a finished universal system.
+### Maintain coarse context and fine detail in the viewer
 
 **Atlas application.** Derive several display levels from one identified state; request finer visual geometry where needed and retain coarse context elsewhere. Keep seams, surface position and important topology explicit across levels.
 
@@ -3154,14 +3044,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Test seams, silhouette/topology loss, cutaways, rapid movement and revision changes. Report storage, build cost and display error separately from scientific resolution.
 
-<a id="MC28"></a>
 
-### MC28 — Separate viewer-region caches from active compute data
+<a id="method-28"></a>
 
-**References:** Bobby / Bobby Share / Krypton / VMP. [MC-S40][url-098] · [MC-S41][url-099] · [MC-S42][url-100] · [MC-S16][url-071]  
-**Target:** Remote/local streaming; **stage:** When a viewer connection exists; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Bobby retains received chunks; Bobby Share describes streaming/cache controls. Krypton and VMP offer networking-path references.
+### Separate viewer-region caches from active compute data
 
 **Atlas application.** Serve immutable identified region products on request, with bounded queues, cancellation and revision notifications. The viewer may retain data no longer in the solver working set, provided its displayed revision is clear.
 
@@ -3169,14 +3055,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Test reordered/duplicate responses, missed invalidations, reconnects, slow consumers and partial datasets. Verify revision coherence and byte budgets before measuring throughput.
 
-<a id="MC29"></a>
 
-### MC29 — Use hardware-specific render paths only behind a portable contract
+<a id="method-29"></a>
 
-**References:** Nvidium. [MC-S43][url-101]  
-**Target:** GPU display submission; **stage:** Optional viewer path; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Nvidium is a hardware-specific alternative rendering backend, not a general tectonic-compute accelerator.
+### Use hardware-specific render paths only behind a portable contract
 
 **Atlas application.** Keep a portable viewer baseline and isolate eligible hardware-specific drawing kernels behind the same visual-data interface. Profile submission, transfer and device memory before committing to a specialist path.
 
@@ -3184,14 +3066,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Compare images, picking and clipping against the portable path across supported devices. Include initial compilation, uploads, transitions and unsupported-device fallback.
 
-<a id="MC30"></a>
 
-### MC30 — Refresh the interface according to change, not simulation ticks
+<a id="method-30"></a>
 
-**References:** Exordium / Dynamic FPS. [MC-S44][url-102] · [MC-S45][url-103]  
-**Target:** GUI / idle power; **stage:** Viewer stage; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** Exordium reduces repeated GUI drawing; Dynamic FPS adjusts graphics activity when unfocused or idle.
+### Refresh the interface according to change, not simulation ticks
 
 **Atlas application.** Render charts, overlays and panels when their inputs change or a display deadline requires it. Allow an idle/minimised viewer to reduce graphics load while authorised compute continues according to its separate policy.
 
@@ -3199,14 +3077,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Test minimisation, wakeup, updates during long calculations and cancellation. Measure graphics/CPU load and responsiveness without altering accepted numerical steps.
 
-<a id="MC31"></a>
 
-### MC31 — Aggregate only material parcels that remain scientifically equivalent
+<a id="method-31"></a>
 
-**References:** Clumps. [MC-S46][url-104]  
-**Target:** Object count / history; **stage:** Conditional numerical study; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Clumps combines experience orbs to reduce entity overhead. It is an analogy for aggregation, not a geological material model.
+### Aggregate only material parcels that remain scientifically equivalent
 
 **Atlas application.** Investigate grouping parcels with compatible properties into weighted records, preserving extensive totals and the histories required by later diagnostics. Split them again only through an explicitly defined reconstruction or retained distribution.
 
@@ -3214,14 +3088,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Check mass/composition budgets, distribution-sensitive diagnostics and reversible regrouping where claimed. Compare with unaggregated withheld histories before accepting a bounded approximation.
 
-<a id="MC32"></a>
 
-### MC32 — Adapt service quality without silently changing the science
+<a id="method-32"></a>
 
-**References:** ServerCore. [MC-S47][url-105]  
-**Target:** Overload / responsiveness; **stage:** Conditional policy study; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** ServerCore distinguishes optional activation/tick/distance controls that can change game behaviour from other optimisations.
+### Adapt service quality without silently changing the science
 
 **Atlas application.** Under load, lower preview refresh, defer optional exports or limit concurrent scenarios. Any change to physical resolution, timestep policy or active processes must be explicit, identified and checked against the numerical/physical contract.
 
@@ -3229,31 +3099,21 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Inject slow storage and heavy queues; verify priorities and cancellation. Confirm scientific settings remain unchanged unless an explicit new scenario/policy is selected and recorded.
 
-<a id="MC33"></a>
 
-### MC33 — Move selected bulk calculations behind a native interface
+<a id="method-33"></a>
 
-**References:** Accelerated Recoiling / C2ME OpenCL Acceleration Module. [MS01](#MS01) · [MS08](#MS08) · [MS16](#MS16)  
-**Target:** Numerical kernels / interface overhead; **stage:** When a measured bulk path warrants it; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** The selected native-collision and OpenCL projects accelerate particular workloads. Recoiling also changes its algorithm/behaviour; the OpenCL add-on targets selected generation stages.
+### Move selected bulk calculations behind a native interface
 
 **Atlas application.** Keep readable orchestration and independently checked mathematical references. Pass whole arrays to an eligible native CPU or device operation. Evaluate one maintained compilation route, not an entire application rewrite.
 
-**Boundary.** Neither project supplies an Atlas speed multiplier. GPU FP64 support, transfers, numerical libraries, failure handling and binary identity matter. Rendering-native projects are not evidence for mechanical kernels.
+**Boundary.** A native implementation does not imply a fixed Atlas speed multiplier. GPU FP64 support, transfers, numerical libraries, failure handling and binary identity matter. Rendering performance is not evidence for mechanical-kernel speed.
 
 **Check.** Compare complete cold/warm cost, output/error and conservation with the current kernel; cover dtype/stride/alias errors, extremes, cancellation and reproducible packaging.
 
-**PF links:** PF08, PF12.
 
-<a id="MC34"></a>
+<a id="method-34"></a>
 
-### MC34 — Cache parsing and indexing separately from evaluated results
-
-**References:** Command Optimiser / EMIAccelerator / Fast Recipe Search / Quick Pack / ResourcePackCached. [MS09](#MS09) · [MS17](#MS17) · [MS22](#MS22) · [MS40](#MS40) · [MS53](#MS53) · [MS56](#MS56)  
-**Target:** Repeated preparation and lookup; **stage:** When preparation is repeated; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** The screening identifies parse reuse, search/index preparation and resource-loading reuse. Quick Pack is a scope-level lead; its internal index algorithm was not established.
+### Cache parsing and indexing separately from evaluated results
 
 **Atlas application.** Identify the source manifest, parser/schema, symbol table and archive membership when preparing a reusable representation. Give evaluated scientific results their own state/parameter identity. Publish an asynchronous index only once complete.
 
@@ -3261,16 +3121,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Change symbols, parser, parameters and archive membership independently; cancel a scan then complete an older task; no stale generation can replace the newer index.
 
-**PF links:** PF01, PF03, PF04.
 
-<a id="MC35"></a>
+<a id="method-35"></a>
 
-### MC35 — Separate lookup hashing from cryptographic provenance
-
-**References:** EfficientHashing / TetraChord Lib. [MS15](#MS15) · [MS83](#MS83)  
-**Target:** Spatial keys and indexed queries; **stage:** When lookup cost or collisions are measured; **effort judgement:** narrow (not a time estimate).
-
-**Documented pattern.** EfficientHashing concerns hash distribution for lookup keys. TetraChord Lib supplies spatial/range data structures; a library inventory does not establish a gain for a particular workload.
+### Separate lookup hashing from cryptographic provenance
 
 **Atlas application.** Choose explicit compact spatial keys and a suitable index, measuring build, update and query costs. Retain full-key equality on collisions. Hash-table iteration must not become a scientific tie-break rule.
 
@@ -3278,16 +3132,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Adversarial/colliding keys, reordered insertions, negative coordinates, boundary queries and exhaustive-search equivalence; confirm provenance algorithms remain unchanged.
 
-**PF links:** PF02, PF06.
 
-<a id="MC36"></a>
+<a id="method-36"></a>
 
-### MC36 — Bound asynchronous diagnostics and preserve indispensable evidence
-
-**References:** Async Logger / Async Pack Scan / LogCleaner / MemGuard. [MS04](#MS04) · [MS66](#MS66) · [MS67](#MS67) · [MS81](#MS81)  
-**Target:** Blocking I/O and retained diagnostic state; **stage:** When diagnostic/discovery work is significant; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** The named projects respectively describe asynchronous logging/discovery, retention rules and bounded cache/memory assistance. Their JVM-specific internals are not an Atlas implementation.
+### Bound asynchronous diagnostics and preserve indispensable evidence
 
 **Atlas application.** Use bounded queues with separate policies for optional progress noise, errors and required scientific receipts. Define backpressure, shutdown flush, disk-full behaviour and task-generation identity. Keep authoritative records outside disposable retention classes.
 
@@ -3295,16 +3143,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Slow/full storage, saturated queues, cancellation, crash and out-of-order completion; reconcile required record IDs and demonstrate bounded total retained bytes.
 
-**PF links:** PF10, PF14, PF17, PF18.
 
-<a id="MC37"></a>
+<a id="method-37"></a>
 
-### MC37 — Version random-stream and faster-maths changes explicitly
-
-**References:** Faster Random / NumFlux. [MS45](#MS45) · [MS62](#MS62)  
-**Target:** Numerical semantics / reproducibility; **stage:** Only when the corresponding cost matters; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** These project descriptions include altered random or arithmetic paths. They do not establish bitwise or statistical equivalence for Atlas.
+### Version random-stream and faster-maths changes explicitly
 
 **Atlas application.** Assign randomness to stable scientific identities and explicit event/draw counters, not worker completion. A changed generator, vectorised draw mapping, precision or math library acquires a reviewed numerical identity.
 
@@ -3312,16 +3154,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Fixed vectors, worker/batch reordering, restart/retry, declared statistical properties and near-event thresholds. Separate a newly approved stochastic scenario from an execution-only optimisation.
 
-**PF links:** PF08, PF11, PF23.
 
-<a id="MC38"></a>
+<a id="method-38"></a>
 
-### MC38 — Use reversible dictionaries and explicit delta bases for future streaming
-
-**References:** BandwidthOptimizer / Resource Trimmer / Not Enough Bandwidth / Annuus / Raknetify. [MS06](#MS06) · [MS55](#MS55) · [MS70](#MS70) · [MS75](#MS75) · [MS82](#MS82)  
-**Target:** Optional remote viewer / data transfer; **stage:** Deferred until an actual streaming workload; **effort judgement:** architectural (not a time estimate).
-
-**Documented pattern.** Developer descriptions cover compact identifiers, compressed/delta payloads, batching and different delivery channels. Full protocol correctness and throughput were not independently tested.
+### Use reversible dictionaries and explicit delta bases for future streaming
 
 **Atlas application.** Separate control, viewer and authoritative data requirements. Bind schema, dictionary and delta-base identities; cap encoded and decoded sizes; retain a full-snapshot/resynchronisation path.
 
@@ -3329,16 +3165,10 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Exact decode round trips, stale base/dictionary, missing/reordered/duplicated messages, corrupted payloads, bounded decompression and interruption recovery.
 
-**PF links:** PF14, PF17, PF18.
 
-<a id="MC39"></a>
+<a id="method-39"></a>
 
-### MC39 — Eliminate copies only with proven ownership and lifetime
-
-**References:** Jasione / Redirected / Palladium. [MS34](#MS34) · [MS49](#MS49) · [MS65](#MS65)  
-**Target:** Allocation / memory traffic; **stage:** When allocation cost is measured; **effort judgement:** moderate (not a time estimate).
-
-**Documented pattern.** The screening describes eligible immutable reuse and deduplication; Jasione specifically restricts sharing using escape/mutation conditions. Exact eligibility is project/version-specific.
+### Eliminate copies only with proven ownership and lifetime
 
 **Atlas application.** Distinguish immutable definitions, borrowed read-only inputs, private scratch and published outputs. Reuse compatible allocations or transfer ownership only where aliases and asynchronous lifetime are controlled.
 
@@ -3346,853 +3176,28 @@ The dynamic-resource FAQ concerns block/item **models**, not all textures, sound
 
 **Check.** Mutate caller aliases during/after work, reuse scratch while a writer reads it, reject a candidate and race two tasks; accepted state and cached immutable views must not change.
 
-**PF links:** PF05, PF07.
 
-<a id="mod-screening"></a>
+<a id="method-adoption"></a>
 
-## 6. All 84 additional mod records and dispositions
+## 6. Adoption, measurement and non-goals
 
-The exact requested names and order are preserved. This is the earlier developer-description screening, **not 84 full source-code audits**. ImmediatelyFast was already covered; base C2ME and related dimensional-threading projects were family-level references, not prior audits of every add-on. Author/version ambiguities are retained. Methods map to MC and PF IDs above; none is approved or benchmarked by this update. Generic safety rules are not repeated here, but every project-specific limitation is retained.
+Use the existing PF candidate register and T/PT acceptance families; no second
+execution framework or testing taxonomy is introduced. A useful optimisation
+must preserve its named scientific problem or be explicitly classified as a
+numerical/model change. The code path selected by default must be the tested one.
 
-<a id="MS01"></a>
+Keep dependency discovery, parsing, evaluated results and display products as
+separate reuse layers. Share full immutable state in-process where appropriate;
+passing one item per worker or copying a whole world per job is not a useful
+parallelisation. Count retained outputs, queues, native threads and I/O together.
 
-### MS01 — Accelerated Recoiling
+Optional viewer notifications, display quality and network transport may use
+separate budgets, reversible dictionaries or revision-tagged caches. They must
+not govern physical timesteps, drop required evidence, accelerate material ageing,
+or delete required state. A transport-size ceiling is an explicit refusal, not
+permission to truncate a scientific record. Hardware-specific paths and changed
+random/math routines require their own supported-platform and accuracy evidence.
 
-**Disposition:** candidate not benchmarked. **Links:** [MC33](#MC33); PF08, PF12.
-
-**Method:** Routes dense entity-collision work through native C++ using FFM/JNI, with alternative backends and changed broad-phase algorithms. **Limit:** The author reports experimental collision behaviour that is not identical to vanilla. Algorithm changes and native code are confounded; published gains are not language-only or Atlas results.
-
-**Atlas:** Keep a high-level controller while moving an expensive bulk numerical or geometry operation into a native kernel. **Sources:** [Project 1][url-106].
-
-<a id="MS02"></a>
-
-### MS02 — Achievements Optimizer
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC12](#MC12), [MC14](#MC14); PF01, PF02, PF03.
-
-**Method:** Prunes advancement inventory checks with changed-slot handling, cheap filters and reduced scanning/allocation. **Limit:** Every required dependent check must still run. This is not permission to suppress scientific acceptance checks.
-
-**Atlas:** Identify which constraints depend on a changed field; reject impossible candidates cheaply before expensive checks. **Sources:** [Project 1][url-107].
-
-<a id="MS03"></a>
-
-### MS03 — AI Improvements: Performance Tuning
-
-**Selected project:** AI Improvements. **Disposition:** conditional semantic change. **Links:** [MC13](#MC13), [MC32](#MC32); PF01, PF03, PF21, PF25.
-
-**Method:** Targets entity AI, including look-helper reuse; optional settings remove selected idle or watching behaviours. **Limit:** Caching and removing behaviour are different changes. Developer notes also qualify the usefulness on newer game versions.
-
-**Atlas:** Study reuse and separation of indispensable calculation from optional presentation activity. **Sources:** [Project 1][url-108].
-
-<a id="MS04"></a>
-
-### MS04 — Async Logger
-
-**Disposition:** candidate not benchmarked. **Links:** [MC36](#MC36); PF10, PF14, PF17, PF18.
-
-**Method:** Uses asynchronous Log4j logging with the Disruptor mechanism to move log handling off the caller path. **Limit:** Backpressure, shutdown flushing and loss policy must be defined. Required errors and scientific receipts cannot be silently dropped.
-
-**Atlas:** Bounded logging queues, batched output and separate computation from diagnostic I/O. **Sources:** [Project 1][url-109].
-
-<a id="MS05"></a>
-
-### MS05 — BadOptimizations
-
-**Disposition:** candidate not benchmarked. **Links:** [MC14](#MC14), [MC30](#MC30); PF01, PF03, PF14.
-
-**Method:** Includes client-side dirty-state tracking, avoiding unnecessary lightmap/debug work and selected colour calculations. **Limit:** Inspect individual patches and versions; game lighting/colour reuse is not a validity rule for physical heat or climate fields.
-
-**Atlas:** Rebuild derived viewer state only after its complete dependency set changes. **Sources:** [Project 1][url-110].
-
-<a id="MS06"></a>
-
-### MS06 — BandwidthOptimizer
-
-**Disposition:** deferred network. **Links:** [MC38](#MC38); PF14, PF17, PF18.
-
-**Method:** Describes compressed packet transport with dictionaries, batching and full/reference/delta chunk representations. **Limit:** Delta bases, ordering, recovery and resynchronisation are required. Compression saves traffic, not necessarily CPU time.
-
-**Atlas:** Future viewer transfers can send compact, revision-identified records and explicit deltas. **Sources:** [Project 1][url-111].
-
-<a id="MS07"></a>
-
-### MS07 — Better Biome Reblend
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24); PF06, PF12.
-
-**Method:** Updates the Better Biome Blend approach to biome-colour interpolation and larger blending neighbourhoods. **Limit:** Colour blending does not mix geological material or increase physical biome resolution. Project lineage and supported versions matter.
-
-**Atlas:** Compare specialised neighbourhood colour calculations for a future map viewer. **Sources:** [Project 1][url-112].
-
-<a id="MS08"></a>
-
-### MS08 — C2ME OpenCL Acceleration Module
-
-**Disposition:** candidate not benchmarked. **Links:** [MC33](#MC33); PF08, PF12.
-
-**Method:** Experimental OpenCL offload of the noise and biome generation stages; other generation stages remain on the CPU. **Limit:** The documented requirements include FP64 support. Driver and rare boundary-order differences remain; there is no whole-generator GPU or performance guarantee.
-
-**Atlas:** Consider GPU evaluation of large, independent field batches behind an explicit CPU reference and data-transfer interface. **Sources:** [Project 1][url-113].
-
-<a id="MS09"></a>
-
-### MS09 — Command optimizer
-
-**Selected project:** Command Optimiser. **Disposition:** candidate not benchmarked. **Links:** [MC34](#MC34); PF01, PF03, PF04.
-
-**Method:** Reuses command parsing while command text remains unchanged. **Limit:** Atlas would additionally bind parser version, symbol definitions and context. Unchanged text alone does not authenticate unchanged scientific inputs.
-
-**Atlas:** Cache parsed expressions or recipes separately from their evaluated results. **Sources:** [Project 1][url-114].
-
-<a id="MS10"></a>
-
-### MS10 — Create Smart Bounds
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC26](#MC26); PF02.
-
-**Method:** Computes tighter bounds for Create rendering and updates them in response to relevant changes. **Limit:** A bound must contain every relevant feature state. A missed candidate cannot become a scientifically plausible default.
-
-**Atlas:** Use conservative feature bounds to reject irrelevant spatial candidates before exact geometry work. **Sources:** [Project 1][url-115].
-
-<a id="MS11"></a>
-
-### MS11 — Create: Nowheel
-
-**Disposition:** deferred viewer or audio. **Links:** [MC26](#MC26); PF02.
-
-**Method:** Applies occlusion-related rendering reductions to Create machinery, with related bounds and culling integration. **Limit:** This does not accelerate a tectonic equation or justify removing hidden material from a simulation.
-
-**Atlas:** Avoid drawing occluded machinery-like or geological detail in a future viewer. **Sources:** [Project 1][url-116].
-
-<a id="MS12"></a>
-
-### MS12 — Cull Leaves
-
-**Disposition:** deferred viewer or audio. **Links:** [MC26](#MC26); PF02.
-
-**Method:** Reduces rendering of internal leaf faces. **Limit:** Cross-sections and transparency can make formerly hidden faces visible. Geometry for display is not the material ledger.
-
-**Atlas:** Skip demonstrably invisible interior faces in opaque display geometry. **Sources:** [Project 1][url-117].
-
-<a id="MS13"></a>
-
-### MS13 — Datapack Load Error Fix
-
-**Disposition:** not an equivalent optimisation. **Links:** no direct optimisation mapping.
-
-**Method:** Repairs load failures by removing stale records associated with absent mods, with backup-related handling. **Limit:** This is repair by changing data, not an equivalent optimisation. Atlas must never silently delete missing authorities, materials or histories.
-
-**Atlas:** Use the diagnostic idea to report unavailable dependencies and propose a separately reviewed migration. **Sources:** [Project 1][url-118].
-
-<a id="MS14"></a>
-
-### MS14 — Does It Tick?
-
-**Disposition:** conditional semantic change. **Links:** [MC32](#MC32); PF21, PF25.
-
-**Method:** Restricts ticking based on activity/proximity to reduce updates. **Limit:** A player-distance rule does not justify suspending geological evolution; the project warns of gameplay consequences.
-
-**Atlas:** Consider only for non-scientific services or a separately justified inactive-state method. **Sources:** [Project 1][url-119].
-
-<a id="MS15"></a>
-
-### MS15 — EfficientHashing
-
-**Disposition:** candidate not benchmarked. **Links:** [MC35](#MC35); PF02, PF06.
-
-**Method:** Improves hash behaviour for position-like keys to reduce hash-table collisions. **Limit:** This concerns lookup hashing, not cryptographic source integrity. Never replace SHA-based provenance with a faster table hash.
-
-**Atlas:** Investigate spatial-key distributions and table performance for large geometry indices. **Sources:** [Project 1][url-120].
-
-<a id="MS16"></a>
-
-### MS16 — Elytra Optimizations
-
-**Disposition:** candidate not benchmarked. **Links:** [MC13](#MC13), [MC33](#MC33); PF01, PF03, PF08, PF12.
-
-**Method:** Reduces repeated calculations in elytra movement paths. **Limit:** The specific physics is game-specific; confirm that the supposedly invariant quantity truly does not change.
-
-**Atlas:** Hoist quantities invariant over a batch or timestep and reuse them within the valid state. **Sources:** [Project 1][url-121].
-
-<a id="MS17"></a>
-
-### MS17 — EmiAccelerator
-
-**Selected project:** EMIAccelerator. **Disposition:** candidate not benchmarked. **Links:** [MC02](#MC02), [MC34](#MC34); PF01, PF03, PF04.
-
-**Method:** Caches EMI stack/lookup preparation and shifts suitable search-index work away from blocking initialisation. **Limit:** Changed inputs must invalidate the cache; first-use cost, retained memory and index construction all count.
-
-**Atlas:** Persist expensive indices with content identity and publish background-built indices only when complete. **Sources:** [Project 1][url-122].
-
-<a id="MS18"></a>
-
-### MS18 — Fast IP Ping
-
-**Disposition:** deferred network. **Links:** [MC28](#MC28); PF14, PF17.
-
-**Method:** Avoids unnecessary reverse-DNS work for literal IP addresses in server pings. **Limit:** This is a narrow networking issue, not an acceleration of local numerical calculations.
-
-**Atlas:** Keep incidental name resolution and other optional network work out of time-critical paths. **Sources:** [Project 1][url-123].
-
-<a id="MS19"></a>
-
-### MS19 — Fast Item Frames
-
-**Disposition:** deferred viewer or audio. **Links:** [MC25](#MC25); PF03.
-
-**Method:** Represents item frames through block-oriented rendering rather than the usual entity route. **Limit:** Validate interaction, animation and picking separately. Static representation is unsuitable when the object genuinely changes.
-
-**Atlas:** Use prepared static geometry for unchanged visual objects instead of full dynamic-object treatment. **Sources:** [Project 1][url-124].
-
-<a id="MS20"></a>
-
-### MS20 — Fast Items
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC32](#MC32); PF06, PF12, PF21, PF25.
-
-**Method:** Uses simpler flat/billboard-style item rendering rather than all faces of a full item model. **Limit:** This changes rendered geometry. It is not a lossless simplification of scientific spatial data.
-
-**Atlas:** Use cheaper display representations where visual fidelity is deliberately reduced. **Sources:** [Project 1][url-125] · [Project 2][url-126].
-
-<a id="MS21"></a>
-
-### MS21 — Fast Paintings
-
-**Disposition:** deferred viewer or audio. **Links:** [MC25](#MC25); PF03.
-
-**Method:** Uses block-oriented, prepared painting rendering rather than the normal entity treatment. **Limit:** The applicability is presentation-specific; no direct tectonic-method improvement is established.
-
-**Atlas:** Cache static decorative or diagnostic geometry in the viewer. **Sources:** [Project 1][url-127].
-
-<a id="MS22"></a>
-
-### MS22 — Fast Recipe Search
-
-**Disposition:** candidate not benchmarked. **Links:** [MC12](#MC12), [MC34](#MC34); PF01, PF02, PF03, PF04.
-
-**Method:** Indexes recipe ingredients to reduce repeated searches over every recipe. **Limit:** An index supplies candidates, not a scientific truth test. Hash collisions, alternatives and invalidation need coverage.
-
-**Atlas:** Build material-to-law or input-to-applicable-operation indices for repeated selection. **Sources:** [Project 1][url-128] · [Project 2][url-129].
-
-<a id="MS23"></a>
-
-### MS23 — FastEvent
-
-**Disposition:** lead only implementation unverified. **Links:** [MC15](#MC15); PF01, PF02.
-
-**Method:** Targets event-bus dispatch and related event-processing overhead. **Limit:** The exact implementation and semantic guarantees were not audited here. Do not infer safe parallel dispatch from the name.
-
-**Atlas:** Investigate compact dispatch and subscription structures only where profiling shows meaningful overhead. **Evidence:** Primary project scope screened; detailed dispatch implementation unverified **Sources:** [Project 1][url-130].
-
-<a id="MS24"></a>
-
-### MS24 — Flerovium
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC26](#MC26), [MC32](#MC32); PF02, PF06, PF12, PF21, PF25.
-
-**Method:** Combines entity/item/particle rendering optimisations such as culling, light reuse and reduced-detail or faster-math paths. **Limit:** Reduced detail and changed floating-point evaluation are not automatically exact; renderer and version requirements differ.
-
-**Atlas:** Assess individual viewer kernels rather than adopt a general bundle of speed settings. **Sources:** [Project 1][url-131].
-
-<a id="MS25"></a>
-
-### MS25 — Get It Together, Drops!
-
-**Disposition:** conditional semantic change. **Links:** [MC31](#MC31); PF05, PF22.
-
-**Method:** Enlarges the area over which compatible dropped items can be combined, reducing entity count. **Limit:** Nearby parcels are not necessarily equivalent. Preserve age, composition and thermal/deformation distributions where required.
-
-**Atlas:** Explore merging scientifically equivalent material records while conserving quantities and needed history. **Sources:** [Project 1][url-132].
-
-<a id="MS26"></a>
-
-### MS26 — Gnetum
-
-**Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30); PF01, PF14.
-
-**Method:** Distributes GUI/HUD preparation across frames and uses prepared buffers for presentation. **Limit:** Time slicing can add latency. A partially prepared scientific state must not become a finished result because the interface is responsive.
-
-**Atlas:** Keep interface work bounded and display coherent prepared generations. **Sources:** [Project 1][url-133].
-
-<a id="MS27"></a>
-
-### MS27 — GPUBooster
-
-**Selected project:** GPUBooster / GPUTape lineage. **Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC29](#MC29); PF06, PF12.
-
-**Method:** GPUBooster/GPUTape work includes graphics buffer/texture handling, reusable objects and reduced binding overhead. **Limit:** This is rendering infrastructure, not automatic offloading of arbitrary CPU simulation work to the GPU.
-
-**Atlas:** Keep frequently used graphics data resident and avoid repeated graphics API setup. **Sources:** [Project 1][url-134].
-
-<a id="MS28"></a>
-
-### MS28 — Gpushift
-
-**Selected project:** GpuShift. **Disposition:** deferred viewer or audio. **Links:** [MC29](#MC29), [MC32](#MC32); PF12, PF21, PF25.
-
-**Method:** The current description emphasises adaptive rendering/work budgeting; particular experimental versions also discuss GPU particle paths. **Limit:** Do not infer universal CPU-to-GPU transfer. Current scope and experimental release-specific claims must remain distinct.
-
-**Atlas:** Separate an adaptive viewer-quality controller from optional compute backends. **Sources:** [Project 1][url-135].
-
-<a id="MS29"></a>
-
-### MS29 — Huge Structure Blocks
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC14](#MC14); PF01, PF02, PF03.
-
-**Method:** Raises structure-block limits and also caches corner-position information for structure searches. **Limit:** Raising size limits is not itself an optimisation and may increase memory/work. Resource bounds require separate evidence.
-
-**Atlas:** The corner-query cache is relevant to repeated spatial discovery. **Sources:** [Project 1][url-136].
-
-<a id="MS30"></a>
-
-### MS30 — ImmediatelyFast
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24); PF06, PF12.
-
-**Method:** Batches immediate-mode rendering and buffer submission. **Limit:** Already included in MC24. Rendering savings do not accelerate the scientific solver.
-
-**Atlas:** Batch compatible diagnostic geometry, overlays and interface drawing. **Sources:** [Project 1][url-091].
-
-<a id="MS31"></a>
-
-### MS31 — Immersive Optimization
-
-**Disposition:** conditional semantic change. **Links:** [MC32](#MC32); PF21, PF25.
-
-**Method:** Reduces or staggers updates for distant or less active game objects. **Limit:** Changing tick frequency changes behaviour unless a numerical or inactive-state equivalence is established.
-
-**Atlas:** Use as a reference for explicit service-quality policies, not as a physical integration rule. **Sources:** [Project 1][url-137].
-
-<a id="MS32"></a>
-
-### MS32 — Invasive Optimizations
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC12](#MC12), [MC14](#MC14); PF01, PF02, PF03.
-
-**Method:** Module-specific changes include early exits, cached maxima, constant-time metadata, compact tag membership and less repeated serialisation. **Limit:** Some modules change timing or behaviour. Review each patch, ordering assumption and dependency rather than call the complete bundle exact.
-
-**Atlas:** Study pure predicate ordering, indexed membership and reuse of already available metadata. **Sources:** [Project 1][url-138].
-
-<a id="MS33"></a>
-
-### MS33 — Ixeris
-
-**Disposition:** deferred viewer or audio. **Links:** [MC19](#MC19), [MC30](#MC30); PF01, PF09, PF10, PF14, PF15.
-
-**Method:** Separates rendering from main-thread event polling and describes batched Windows raw-input handling. **Limit:** Platform-specific input/render constraints are not a template for mechanically independent tectonic chunks.
-
-**Atlas:** Batch crossings between runtime/native code and keep viewer event handling responsive. **Sources:** [Project 1][url-139].
-
-<a id="MS34"></a>
-
-### MS34 — Jasione
-
-**Disposition:** candidate not benchmarked. **Links:** [MC39](#MC39); PF05, PF07.
-
-**Method:** Analyses eligible enum-array use so a shared immutable array can replace repeated cloning where escape/mutation conditions permit. **Limit:** Atlas currently uses copies deliberately to detach and freeze inputs/results. Removing them without equivalent guarantees would be a regression.
-
-**Atlas:** Eliminate copies only after proving ownership, lifetime and non-mutation requirements. **Sources:** [Project 1][url-140].
-
-<a id="MS35"></a>
-
-### MS35 — KAllFix
-
-**Disposition:** lead only implementation unverified. **Links:** no direct optimisation mapping.
-
-**Method:** Describes bundled fixes and an optional multithreading mode. **Limit:** High-level project claims do not establish the exact algorithm, safe concurrency or Atlas suitability.
-
-**Atlas:** Retain as a lead for a narrowly identified module only after its implementation can be inspected. **Evidence:** Primary project-description screening only; detailed method not established **Sources:** [Project 1][url-141].
-
-<a id="MS36"></a>
-
-### MS36 — Kerria
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC29](#MC29); PF06, PF12.
-
-**Method:** Optimises animated texture handling with GPU-resident data and graphics-buffer transfer mechanisms. **Limit:** Residency still needs bounded memory, invalidation and release; a texture-specific technique does not establish solver compatibility.
-
-**Atlas:** Minimise repeated host-to-device transfers where a future viewer or compute kernel can retain valid data. **Sources:** [Project 1][url-142].
-
-<a id="MS37"></a>
-
-### MS37 — Ksyxis
-
-**Disposition:** conditional semantic change. **Links:** [MC23](#MC23), [MC32](#MC32); PF01, PF10, PF21, PF25.
-
-**Method:** Reduces spawn-chunk loading or preparation work, with behaviour varying by game version. **Limit:** A skipped region may still provide physical boundary conditions. Faster entry does not establish smaller total scientific work.
-
-**Atlas:** Avoid preparing unrequested optional regions; expose which work is deferred. **Sources:** [Project 1][url-143] · [Project 2][url-144].
-
-<a id="MS38"></a>
-
-### MS38 — Leaves Be Gone
-
-**Disposition:** conditional semantic change. **Links:** [MC15](#MC15), [MC32](#MC32); PF01, PF02, PF21, PF25.
-
-**Method:** Uses scheduled faster leaf decay, including persistence of pending work across chunk lifecycle. **Limit:** It deliberately changes timing; geological reaction or erosion rates must not be accelerated merely for performance.
-
-**Atlas:** Study persistence of scheduled tasks, not the accelerated physical/gameplay decay rate. **Sources:** [Project 1][url-145].
-
-<a id="MS39"></a>
-
-### MS39 — Let Me Despawn
-
-**Selected project:** Let Me Despawn (LMD). **Disposition:** conditional semantic change. **Links:** [MC20](#MC20), [MC32](#MC32); PF07, PF16, PF21, PF25.
-
-**Method:** Allows additional equipped mobs to despawn under selected conditions, reducing persistent entities. **Limit:** No direct analogue for deleting conserved rock, water or population records. Required scientific entities cannot disappear because they are expensive.
-
-**Atlas:** The only safe analogy is releasing derived objects after their last required consumer. **Sources:** [Project 1][url-146].
-
-<a id="MS40"></a>
-
-### MS40 — LightSpeedRe
-
-**Disposition:** candidate not benchmarked. **Links:** [MC05](#MC05), [MC34](#MC34); PF01, PF03, PF04.
-
-**Method:** A launch-optimisation successor with version-specific preparation/cache features. **Limit:** The modern port does not imply that every historical LightSpeed optimisation remains applicable; a module-level review is still needed.
-
-**Atlas:** Look for repeated optional discovery and preparation that can be deferred or cached. **Sources:** [Project 1][url-147] · [Project 2][url-148].
-
-<a id="MS41"></a>
-
-### MS41 — ModernUI
-
-**Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30); PF01, PF14.
-
-**Method:** Provides a user-interface, text and layout framework with its own rendering architecture. **Limit:** This adds facilities; it is not a blanket optimisation of a tectonic simulation or a reason to introduce another framework now.
-
-**Atlas:** A possible reference for a future capable viewer/interface. **Sources:** [Project 1][url-149] · [Project 2][url-150].
-
-<a id="MS42"></a>
-
-### MS42 — Mods Optimizer
-
-**Disposition:** not an equivalent optimisation. **Links:** no direct optimisation mapping.
-
-**Method:** Manages duplicate, incompatible or version-selected mods by changing the loaded file set. **Limit:** Automatic removal or version replacement would change source/runtime identity; never silently apply that to Atlas.
-
-**Atlas:** A read-only dependency inventory and compatibility report may be useful. **Sources:** [Project 1][url-151].
-
-<a id="MS43"></a>
-
-### MS43 — Non update Reloaded
-
-**Selected project:** NonUpdate Reloaded. **Disposition:** conditional semantic change. **Links:** [MC05](#MC05), [MC32](#MC32); PF01, PF21, PF25.
-
-**Method:** Suppresses selected update-check and other outgoing requests using configurable rules. **Limit:** Do not block required input retrieval or verification and then report success. Omitted functionality is not an equivalent faster computation.
-
-**Atlas:** Make optional online checks explicit and support a deliberate offline mode. **Sources:** [Project 1][url-152].
-
-<a id="MS44"></a>
-
-### MS44 — Not Enough Recipe Book
-
-**Disposition:** conditional semantic change. **Links:** [MC05](#MC05), [MC32](#MC32); PF01, PF21, PF25.
-
-**Method:** Disables or reduces recipe-book functionality and associated work. **Limit:** The saving comes partly from not providing a feature. Required scientific operations cannot be disabled by analogy.
-
-**Atlas:** Avoid initialising genuinely unused optional interfaces. **Sources:** [Project 1][url-153].
-
-<a id="MS45"></a>
-
-### MS45 — NumFlux
-
-**Disposition:** candidate numerical change. **Links:** [MC37](#MC37); PF08, PF11, PF23.
-
-**Method:** Describes faster arithmetic/random/noise, collision and property-cache paths. **Limit:** Changing a random generator, mathematical approximation or evaluation order can change the generated world or numerical result.
-
-**Atlas:** Study individual kernels and immutable metadata, keeping numerical changes separately identified. **Sources:** [Project 1][url-154].
-
-<a id="MS46"></a>
-
-### MS46 — Opticores
-
-**Disposition:** lead only implementation unverified. **Links:** [MC24](#MC24), [MC26](#MC26); PF02, PF06, PF12.
-
-**Method:** Describes client-side culling and asynchronous rendering-related improvements. **Limit:** The description is not evidence of a general multicore numerical backend or an independently measured benefit.
-
-**Atlas:** Possible future viewer work scheduling after a precise expensive path is identified. **Sources:** [Project 1][url-155].
-
-<a id="MS47"></a>
-
-### MS47 — Optimized Block Entities
-
-**Selected project:** OptimisedBlockEntities (OBE). **Disposition:** deferred viewer or audio. **Links:** [MC25](#MC25); PF03.
-
-**Method:** Bakes static block-entity states while retaining dynamic rendering for relevant animations. **Limit:** Keep dynamic fallback and interaction/picking correct; static display does not imply static scientific state.
-
-**Atlas:** Cache geometry for unchanged visual states and invalidate on animation or material changes. **Sources:** [Project 1][url-156] · [Project 2][url-157].
-
-<a id="MS48"></a>
-
-### MS48 — Packet Fixer
-
-**Disposition:** not an equivalent optimisation. **Links:** no direct optimisation mapping.
-
-**Method:** Addresses packet, NBT and timeout limits that can prevent large transfers or loading. **Limit:** Raising ceilings does not reduce memory or bandwidth. Atlas still needs finite budgets and safe decoders.
-
-**Atlas:** Record transport limits and fail clearly on unsupported payloads. **Sources:** [Project 1][url-158].
-
-<a id="MS49"></a>
-
-### MS49 — Palladium
-
-**Selected project:** PalladiumMod by ITsMrToad. **Disposition:** candidate not benchmarked. **Links:** [MC07](#MC07), [MC39](#MC39); PF05, PF07.
-
-**Method:** The performance project shares/deduplicates selected metadata and includes graphics-state and other targeted patches. **Limit:** This identifies ITsMrToad/PalladiumMod, not similarly named gameplay projects. Archived or successor branches need version-specific inspection.
-
-**Atlas:** Learn compact shared definitions and reuse of unchanged low-level state. **Sources:** [Project 1][url-159].
-
-<a id="MS50"></a>
-
-### MS50 — Particle Core
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC26](#MC26), [MC32](#MC32); PF02, PF06, PF12, PF21, PF25.
-
-**Method:** Optimises particle rendering and related calculations, with optional culling or spawn reductions. **Limit:** Reducing visual particles can be acceptable presentation quality; dropping simulation markers needs a completely different conservation/history proof.
-
-**Atlas:** Batch and cull visual particles without tying them to conserved scientific material. **Sources:** [Project 1][url-160].
-
-<a id="MS51"></a>
-
-### MS51 — Async Particles
-
-**Disposition:** deferred viewer or audio. **Links:** [MC17](#MC17), [MC18](#MC18), [MC24](#MC24); PF06, PF09, PF10, PF11, PF12, PF13.
-
-**Method:** Developer-described versions move particle ticking, light work or extraction to asynchronous paths; newer experimental backends differ. **Limit:** Shared mutable state, cross-mod compatibility and fallback remain important; no universal race-free or GPU-performance claim is adopted.
-
-**Atlas:** Study frozen inputs, private buffers, controlled joins and per-stage ownership. **Sources:** [Project 1][url-161].
-
-<a id="MS52"></a>
-
-### MS52 — Profile Cached
-
-**Disposition:** deferred network. **Links:** [MC21](#MC21), [MC28](#MC28); PF03, PF14, PF17.
-
-**Method:** Caches player-profile responses to reduce repeated network work and improve behaviour during service unavailability. **Limit:** A stale profile cache is not the same as authenticated scientific input. Never use expiry alone as proof of unchanged source data.
-
-**Atlas:** Use TTL-based caches for optional external metadata where stale data are explicitly acceptable. **Sources:** [Project 1][url-162] · [Project 2][url-163].
-
-<a id="MS53"></a>
-
-### MS53 — Quick pack
-
-**Selected project:** Quick Pack. **Disposition:** lead only implementation unverified. **Links:** [MC34](#MC34); PF01, PF03, PF04.
-
-**Method:** Targets resource-pack loading overhead, particularly packs containing many ZIP entries. **Limit:** The index design here is an Atlas proposal; the exact Quick Pack internal algorithm was not established by this screening.
-
-**Atlas:** Investigate building one content-identified archive index and avoiding repeated entry scans. **Evidence:** Primary scope/behaviour screened; exact internal data structure unverified **Sources:** [Project 1][url-164].
-
-<a id="MS54"></a>
-
-### MS54 — Reflex Antilag
-
-**Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30); PF01, PF14.
-
-**Method:** Controls rendering latency and frame pacing based on CPU/GPU timing. **Limit:** Lower input latency is not necessarily more frames or less total compute. Do not infer an NVIDIA SDK integration from the name.
-
-**Atlas:** Keep interactive display latency distinct from simulation throughput. **Sources:** [Project 1][url-165].
-
-<a id="MS55"></a>
-
-### MS55 — Resource Trimmer
-
-**Disposition:** deferred network. **Links:** [MC38](#MC38); PF14, PF17, PF18.
-
-**Method:** Omits a predictable default namespace from transmitted identifiers and restores it when decoding. **Limit:** Do not trim authoritative identifiers in storage without a lossless mapping. This is not a general resource-file deletion tool.
-
-**Atlas:** Compact protocol identifiers with an explicit reversible dictionary or encoding. **Sources:** [Project 1][url-166].
-
-<a id="MS56"></a>
-
-### MS56 — ResourcePackCached
-
-**Disposition:** candidate not benchmarked. **Links:** [MC04](#MC04), [MC21](#MC21), [MC34](#MC34); PF01, PF03, PF04, PF16.
-
-**Method:** Retains suitable resource-pack data for reuse across repeated connection/loading operations. **Limit:** Cache memory can exceed its value; reload and changed pack membership must invalidate it.
-
-**Atlas:** Keep bounded, generation-identified resources when repeated use repays retention. **Sources:** [Project 1][url-167].
-
-<a id="MS57"></a>
-
-### MS57 — Sepals
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC12](#MC12), [MC14](#MC14); PF01, PF02, PF03.
-
-**Method:** Describes AI changes including cheap predicate ordering, target/task reuse and fewer repeated spatial checks. **Limit:** The project documents incomplete equivalence/stability boundaries. Skipping checks with side effects or real physical interactions is not exact optimisation.
-
-**Atlas:** Order pure rejection tests by cost and index repeated queries against immutable inputs. **Sources:** [Project 1][url-168].
-
-<a id="MS58"></a>
-
-### MS58 — Sound Culling
-
-**Selected project:** Sound Culling by Cukkoo. **Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30), [MC32](#MC32); PF01, PF14, PF21, PF25.
-
-**Method:** Cukkoo's Sound Culling reduces duplicated or inaudible sound work before exhausting channels. **Limit:** There are similarly named projects; this row uses the linked Cukkoo project. Suppressing audio is not a scientific compute optimisation.
-
-**Atlas:** Budget optional audio and repeated notifications in a future viewer. **Sources:** [Project 1][url-169] · [Project 2][url-170].
-
-<a id="MS59"></a>
-
-### MS59 — Staaaaaaaaaaack
-
-**Selected project:** Staaaaaaaaaaaack (Stxck). **Disposition:** conditional semantic change. **Links:** [MC31](#MC31); PF05, PF22.
-
-**Method:** Stacks dropped item entities beyond ordinary entity stack limits with configurable merging. **Limit:** Merging changes object granularity and interactions. A conserved amount alone does not preserve a distribution of ages or compositions.
-
-**Atlas:** Consider aggregation only for material records whose required properties/history can be preserved. **Sources:** [Project 1][url-171].
-
-<a id="MS60"></a>
-
-### MS60 — Substrate
-
-**Disposition:** deferred viewer or audio. **Links:** [MC26](#MC26); PF02.
-
-**Method:** A Bedrodium-related approach to skipping block faces treated as permanently occluded by bedrock/void geometry. **Limit:** Excavation, cross-section and transparency modes can invalidate the assumption; no hidden scientific cell may be deleted.
-
-**Atlas:** Exclude hidden interior faces under explicit viewer geometry assumptions. **Sources:** [Project 1][url-172].
-
-<a id="MS61"></a>
-
-### MS61 — Super Resolution
-
-**Disposition:** deferred viewer or audio. **Links:** [MC27](#MC27), [MC32](#MC32); PF21, PF22, PF25.
-
-**Method:** Uses lower-resolution rendering followed by image upscaling such as FSR. **Limit:** Reconstructed pixels are not higher-resolution geological state, more data or finer simulated physics.
-
-**Atlas:** Offer an explicitly visual quality/performance setting. **Sources:** [Project 1][url-173].
-
-<a id="MS62"></a>
-
-### MS62 — Faster Random
-
-**Disposition:** candidate numerical change. **Links:** [MC37](#MC37); PF08, PF11, PF23.
-
-**Method:** Replaces or accelerates selected random-number generation paths. **Limit:** Changing the generator or stream consumption changes reproducibility and potentially statistical behaviour. Record algorithm/stream identity and never silently swap existing seeds.
-
-**Atlas:** Compare random-generation cost only where it is a meaningful workload. **Sources:** [Project 1][url-174].
-
-<a id="MS63"></a>
-
-### MS63 — VulkanMod
-
-**Disposition:** deferred viewer or audio. **Links:** [MC29](#MC29); PF12.
-
-**Method:** Replaces Minecraft Java Edition's rendering backend with Vulkan-based rendering. **Limit:** A renderer rewrite is not a rewrite of the whole game into C++, and rendering performance does not establish scientific-kernel performance.
-
-**Atlas:** Study graphics submission and resource management for a future viewer. **Sources:** [Project 1][url-175].
-
-<a id="MS64"></a>
-
-### MS64 — FeyTweaks
-
-**Disposition:** lead only implementation unverified. **Links:** [MC25](#MC25), [MC26](#MC26); PF02, PF03.
-
-**Method:** Targets the rendering cost of signs and beacons. **Limit:** The exact patch details were not comprehensively inspected; no new core tectonic technique is established.
-
-**Atlas:** A lead for reusable text/overlay geometry and narrowly scoped viewer work. **Sources:** [Project 1][url-176].
-
-<a id="MS65"></a>
-
-### MS65 — Redirected
-
-**Disposition:** candidate not benchmarked. **Links:** [MC39](#MC39); PF05, PF07.
-
-**Method:** A Redirector-related optimisation avoids repeated enum-value array cloning through reuse. **Limit:** Never share mutable values merely because the type looks constant. Preserve Atlas's detachment and source-identity contracts.
-
-**Atlas:** Find allocations that can safely become immutable shared data. **Sources:** [Project 1][url-177].
-
-<a id="MS66"></a>
-
-### MS66 — LogCleaner
-
-**Disposition:** candidate not benchmarked. **Links:** [MC36](#MC36); PF10, PF14, PF17, PF18.
-
-**Method:** Removes old log files under configured retention rules. **Limit:** Scientific receipts, failed-case evidence and checkpoint dependencies are not disposable logs. No automatic cleanup is authorised.
-
-**Atlas:** Explicit retention policies for optional diagnostic logs. **Sources:** [Project 1][url-178].
-
-<a id="MS67"></a>
-
-### MS67 — AsyncPackScan
-
-**Selected project:** Async Pack Scan. **Disposition:** candidate not benchmarked. **Links:** [MC36](#MC36); PF10, PF14, PF17, PF18.
-
-**Method:** Moves repeated resource-pack scanning away from blocking UI calls. **Limit:** Responsiveness may improve without reducing total work. The project notes version-dependent usefulness; never publish an old scan after a newer request.
-
-**Atlas:** Run bounded background discovery with cancellation and generation-tagged completion. **Sources:** [Project 1][url-179].
-
-<a id="MS68"></a>
-
-### MS68 — Create: Threaded Trains
-
-**Disposition:** candidate not benchmarked. **Links:** [MC17](#MC17), [MC18](#MC18); PF09, PF10, PF11, PF13.
-
-**Method:** Moves train calculations into concurrent work and synchronises with the server tick at the required completion boundary. **Limit:** Addon interactions and shared mutable world data complicate safety. Interacting scientific regions are not automatically independent.
-
-**Atlas:** A concrete analogue for frozen-input tasks, private results and an explicit join before publishing a new state. **Sources:** [Project 1][url-180] · [Project 2][url-181].
-
-<a id="MS69"></a>
-
-### MS69 — DimThread
-
-**Disposition:** candidate not benchmarked. **Links:** [MC18](#MC18); PF10, PF11.
-
-**Method:** Runs suitable Minecraft dimensions concurrently; related forks differ in support and implementation. **Limit:** Earlier catalogue covered a DimensionalThreading relative, not every DimThread variant. Adjacent plates sharing a physical system are not separate dimensions.
-
-**Atlas:** Parallelise independent world scenarios or verification cases. **Sources:** [Project 1][url-182].
-
-<a id="MS70"></a>
-
-### MS70 — Raknetify
-
-**Disposition:** deferred network. **Links:** [MC38](#MC38); PF14, PF17, PF18.
-
-**Method:** Uses RakNet-based multi-channel transport to improve responsiveness under difficult network conditions. **Limit:** Check reliability and ordering per channel. A less-blocking display transport cannot weaken delivery of authoritative checkpoints.
-
-**Atlas:** Separate control messages, interactive display and bulk data streams with explicit delivery requirements. **Sources:** [Project 1][url-183] · [Project 2][url-184].
-
-<a id="MS71"></a>
-
-### MS71 — RailOptimization
-
-**Disposition:** candidate not benchmarked. **Links:** [MC14](#MC14), [MC15](#MC15); PF01, PF02, PF03.
-
-**Method:** Stops unnecessary rail-state propagation when a relevant state has not changed. **Limit:** A discrete state fixed point is not a convergence test for a time-dependent PDE. Confirm every dependency and notification remains represented.
-
-**Atlas:** Propagate dirty-state changes only when dependency outputs actually change. **Sources:** [Project 1][url-185].
-
-<a id="MS72"></a>
-
-### MS72 — Fast Server Pings
-
-**Disposition:** deferred network. **Links:** [MC21](#MC21), [MC28](#MC28); PF03, PF14, PF17.
-
-**Method:** Uses asynchronous server-status queries and cached status, including refresh behaviour instead of blocking each display. **Limit:** Stale status needs a timestamp. The same policy is not appropriate for accepting scientific source data or results.
-
-**Atlas:** Cache and refresh optional service status in a viewer. **Sources:** [Project 1][url-186].
-
-<a id="MS73"></a>
-
-### MS73 — Veil
-
-**Disposition:** deferred viewer or audio. **Links:** [MC29](#MC29); PF12.
-
-**Method:** Provides advanced rendering, shader and framebuffer facilities. **Limit:** This is a framework, not evidence of lower cost for an unchanged Atlas workload. Avoid introducing it as an optimisation dependency.
-
-**Atlas:** A possible future viewer capability reference. **Sources:** [Project 1][url-187].
-
-<a id="MS74"></a>
-
-### MS74 — Beryl
-
-**Disposition:** deferred viewer or audio. **Links:** [MC29](#MC29); PF12.
-
-**Method:** Adds shader support in the VulkanMod ecosystem. **Limit:** Added shaders may increase cost. This does not address tectonic numerical performance.
-
-**Atlas:** A renderer-extension design reference only if comparable visual features are required. **Sources:** [Project 1][url-188].
-
-<a id="MS75"></a>
-
-### MS75 — Not Enough Bandwidth
-
-**Disposition:** deferred network. **Links:** [MC38](#MC38); PF14, PF17, PF18.
-
-**Method:** Compresses repeated identifier/data representation in network traffic. **Limit:** Validate exact encode/decode agreement, schema versions and recovery. Network savings do not imply a faster local solver.
-
-**Atlas:** Use explicit dictionaries or negotiated IDs for repeated viewer payload metadata. **Sources:** [Project 1][url-189].
-
-<a id="MS76"></a>
-
-### MS76 — Audio throttle
-
-**Selected project:** AudioThrottle. **Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30), [MC32](#MC32); PF01, PF14, PF21, PF25.
-
-**Method:** Caps or suppresses repeated nearby sounds to reduce audio/channel work. **Limit:** This changes what is played, not the scientific calculation; urgent fault/error reporting must not be suppressed.
-
-**Atlas:** Deduplicate optional audio/notification events with documented presentation limits. **Sources:** [Project 1][url-190].
-
-<a id="MS77"></a>
-
-### MS77 — Audition
-
-**Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30), [MC32](#MC32); PF01, PF14, PF21, PF25.
-
-**Method:** Describes adaptive audio work management and filtering of redundant or low-priority sounds. **Limit:** Audio reduction is not an unchanged-result scientific optimisation; exact behaviour is version-specific.
-
-**Atlas:** Explicit quality budgets for a future audio layer. **Sources:** [Project 1][url-191].
-
-<a id="MS78"></a>
-
-### MS78 — Sound Physics Remastered
-
-**Disposition:** deferred viewer or audio. **Links:** [MC30](#MC30); PF01, PF14.
-
-**Method:** Adds acoustic attenuation, reflections/reverberation and related sound simulation, with performance work on that feature set. **Limit:** It introduces additional modelling and compute. Do not classify the whole feature package as a performance-only improvement.
-
-**Atlas:** An optional acoustic-viewer model reference, not a tectonics requirement. **Sources:** [Project 1][url-192].
-
-<a id="MS79"></a>
-
-### MS79 — Disable Portal Checks
-
-**Disposition:** not an equivalent optimisation. **Links:** no direct optimisation mapping.
-
-**Method:** Disables selected portal destination checks to avoid their cost. **Limit:** Omitting a correctness or safety check changes guarantees. Do not remove numerical, source or boundary validation by analogy.
-
-**Atlas:** No direct adoption; only identify truly redundant checks through an independent proof. **Sources:** [Project 1][url-193].
-
-<a id="MS80"></a>
-
-### MS80 — AcceleratedRendering-reFabricated
-
-**Disposition:** deferred viewer or audio. **Links:** [MC24](#MC24), [MC29](#MC29); PF06, PF12.
-
-**Method:** A port of accelerated rendering methods using GPU-side work and batched/buffered drawing. **Limit:** This is a specific port with compatibility constraints. It does not automatically offload thermal, transport or mechanical equations.
-
-**Atlas:** Compare resident graphics buffers and batched preparation for a future viewer. **Sources:** [Project 1][url-194].
-
-<a id="MS81"></a>
-
-### MS81 — MemGuard
-
-**Disposition:** candidate not benchmarked. **Links:** [MC21](#MC21), [MC36](#MC36); PF03, PF10, PF14, PF17, PF18.
-
-**Method:** Describes bounded NBT caching, memory monitoring and memory-management assistance. **Limit:** Adding a cache can increase memory. JVM garbage-collection settings are not transferable to NumPy buffers; periodic forced collection is not a general fix.
-
-**Atlas:** Study finite cache budgets and retention diagnostics. **Sources:** [Project 1][url-195].
-
-<a id="MS82"></a>
-
-### MS82 — Annuus
-
-**Disposition:** deferred network. **Links:** [MC38](#MC38); PF14, PF17, PF18.
-
-**Method:** Batches and compresses selected chunk/block/recipe traffic with compatibility handling for peers. **Limit:** Fallback negotiation and complete decode correctness matter; no compressed-payload performance numbers were reproduced.
-
-**Atlas:** Consider chunked, versioned viewer transport once a real streaming workload exists. **Sources:** [Project 1][url-196].
-
-<a id="MS83"></a>
-
-### MS83 — TetraChord Lib
-
-**Disposition:** candidate not benchmarked. **Links:** [MC11](#MC11), [MC35](#MC35); PF02, PF06.
-
-**Method:** Offers algorithmic/data-structure utilities including spatial and range-query structures such as k-d and segment trees. **Limit:** A library supplies building blocks, not automatic speed. Measure construction, updates, queries and worst-case completeness.
-
-**Atlas:** Choose an appropriate spatial/range index for faults, features or active intervals rather than scanning all entries. **Sources:** [Project 1][url-197].
-
-<a id="MS84"></a>
-
-### MS84 — TickTweaks
-
-**Disposition:** conditional semantic change. **Links:** [MC32](#MC32); PF21, PF25.
-
-**Method:** Throttles selected entity updates according to distance, activity or load in the documented versions. **Limit:** Skipped ticks are not automatically physically equivalent. Scientific integration needs event/error-based criteria, not camera distance.
-
-**Atlas:** At most a reference for optional service scheduling or a separately verified multirate numerical design. **Sources:** [Project 1][url-198] · [Project 2][url-199].
 
 <a id="sources"></a>
 
@@ -4204,8 +3209,8 @@ The exact requested names and order are preserved. This is the earlier developer
 | --- | --- |
 | Plan revision 4 Sections 7.5–7.15 and separate execution-card policy/template | Sections 2–3 here; plan revision 5 keeps the high-level obligation. |
 | Report 02 optimisation methods | Section 4, with O01–O17 and scientific source caveats retained. |
-| Report 06 revisions 1–2 and DashLoader/ModernFix supplement | Section 5, retaining MC01–MC39 and module distinctions. |
-| The 84-mod screening, standalone crosswalk and language assessment | Sections 2.6 and 6; no separate maintained screening page. |
+| Earlier engineering-method studies | Section 5 retains the 39 methods, their accuracy boundaries and required checks without a source-project catalogue. |
+| Prior screening and language assessment | Methods in Sections 5–6; language contract in Section 2.6. No separate maintained screening page. |
 | Report 03’s later language supplement | Section 2.6; its original scientific feasibility study remains historical research. |
 | Repository PERFORMANCE_DESIGN.md and VOXEL_STORAGE.md | Sections 2.2–2.6 and 5; removed as competing current pages, preserved in Git history. |
 | Separate source-register and review-guide documents | Sources and review questions in these two maintained documents. |
@@ -4215,110 +3220,6 @@ Earlier attachments are not erased. They are superseded where this table says so
 ### Review questions
 
 Challenge the relevant equation/semantics, complete dependency set, ownership and boundaries; whether a proposed speed-up actually changes the model; whether the benchmark compares equal work and error; and whether failure, restart and stale results remain controlled. A review finding should identify the ID, failure mechanism and smallest test/correction. Agreement among reviewers or shared software assumptions is not independent physical evidence.
-
-### Original Minecraft source records
-
-Namespaced MC-S identifiers below preserve the original 50 records; scientific SC-S identifiers above belong to a different source register. The prefixes prevent the previous reports’ repeated “S01” labels from pointing to unrelated sources. All review dates are historical, not a new website refresh.
-
-**[MC-S01][url-058] — DashLoader — developer README.** Reviewed fabric-1.19 README discussing 3.0; historical method reference, not a current installation recommendation. Original check: 2026-09-16.
-
-**[MC-S02][url-059] — ModernFix — 1.21.1 patch summary.** Version-specific module descriptions; wiki edited 2 July 2026. Defaults and compatibility are not universal. Original check: 2026-09-16.
-
-**[MC-S03][url-060] — ModernFix — Dynamic Resources FAQ.** FAQ dated August 2023; concerns block/item models, with compatibility limitations. Original check: 2026-09-16.
-
-**[MC-S04][url-061] — ModernFix — changelog.** Versioned evidence: 5.22.0 deprecation; 5.25.0 registry reuse; 5.27.0 temporary-chunk release. Not all patches exist in every build. Original check: 2026-09-16.
-
-**[MC-S05][url-065] — FerriteCore — technical optimisation summary.** Developer explanation of structures and sharing; examples are not Atlas measurements. Includes disabled-method caveats. Original check: 2026-09-16.
-
-**[MC-S06][url-078] — C2ME — official repository.** Parallel generation/loading/I/O and threading boundaries. Directory names alone do not establish compiler or GPU behaviour. Original check: 2026-09-16.
-
-**[MC-S07][url-066] — Lithium — configuration and method descriptions.** Specific patches and behaviour caveats; development documentation, not a blanket exact-equivalence claim. Original check: 2026-09-16.
-
-**[MC-S08][url-077] — ScalableLux — official repository.** Starlight-derived lighting and parallel-update reference; not heat or mechanical physics. Original check: 2026-09-16.
-
-**[MC-S09][url-068] — CubicChunks — official repository.** Volumetric chunking; older and rewrite lines must be distinguished before implementation study. Original check: 2026-09-16.
-
-**[MC-S10][url-093] — MoreCulling — official repository.** Visibility/render-work reduction; no scientific-cell inactivation implied. Original check: 2026-09-16.
-
-**[MC-S11][url-012] — OpenVDB — data-structure overview.** Non-Minecraft supplementary reference: sparse voxels, uniform tiles and background values. Original check: 2026-09-16.
-
-**[MC-S12][url-067] — Fast Noise — author project description.** ZenXArch/Reverie project; initial-generation storage paths and invariants, not generic FastNoise libraries. Original check: 2026-09-16.
-
-**[MC-S13][url-069] — Noisium — official repository.** Generation-optimisation reference; forks and Minecraft versions may differ. Original check: 2026-09-16.
-
-**[MC-S14][url-070] — Structure Layout Optimizer — author description.** BoxOctree candidate pruning and early rejection; no Atlas benchmark reproduced. Original check: 2026-09-16.
-
-**[MC-S15][url-079] — Moonrise — official repository.** Replacement chunk-system approach. Overlap/incompatibilities matter; not an additive C2ME feature set. Original check: 2026-09-16.
-
-**[MC-S16][url-071] — VMP — official repository.** Area maps, query reuse and asynchronous work; developer feature list may include unreleased work. Original check: 2026-09-16.
-
-**[MC-S17][url-076] — Alternate Current — technical README.** Network-wide redstone calculation with deliberately defined update ordering. Original check: 2026-09-16.
-
-**[MC-S18][url-072] — FastSuite — official repository.** Ingredient-to-recipe indexing. Benefits depend on the query and index-build workload. Original check: 2026-09-16.
-
-**[MC-S19][url-073] — FastWorkbench — official repository.** Last-match reuse and coalescing repeated crafting work. Original check: 2026-09-16.
-
-**[MC-S20][url-074] — FastFurnace — author project description.** Avoids repeated recipe searches; does not increase the simulated smelting rate. Original check: 2026-09-16.
-
-**[MC-S21][url-075] — hopperOptimizations — technical README.** Historical/unmaintained reference; modern related improvements are in Lithium. Change counters and local tracking. Original check: 2026-09-16.
-
-**[MC-S22][url-080] — Folia — region-logic reference.** Server fork, not a mod. Explicit ownership, region states and controlled transitions. Original check: 2026-09-16.
-
-**[MC-S23][url-081] — DimensionalThreading Reforged — repository.** Unofficial port; dimensions as parallel units and synchronisation. Compatibility is not assumed. Original check: 2026-09-16.
-
-**[MC-S24][url-082] — Async — author project description.** Experimental entity parallelism with exclusions and behavioural/crash caveats. Original check: 2026-09-16.
-
-**[MC-S25][url-083] — ThreadTweak — official repository.** Smooth Boot lineage; executor counts/priorities, not a new physical algorithm. Original check: 2026-09-16.
-
-**[MC-S26][url-084] — MemoryLeakFix — official repository.** Specific memory-lifetime fixes, not a universal memory compressor. Original check: 2026-09-16.
-
-**[MC-S27][url-085] — Saturn — author project description.** Memory-focused project. A specific temperature-cache patch was not independently confirmed in this pass. Original check: 2026-09-16.
-
-**[MC-S28][url-086] — Smooth Chunk Save — author project description.** Save-smoothing reference; a coherent scientific checkpoint is a separate Atlas requirement. Original check: 2026-09-16.
-
-**[MC-S29][url-087] — FastQuit — official repository.** Interface responsiveness while saving continues; durable completion remains separate. Original check: 2026-09-16.
-
-**[MC-S30][url-088] — Chunky — official repository.** Region pregeneration and task control; moving work earlier is not necessarily reducing it. Original check: 2026-09-16.
-
-**[MC-S31][url-062] — spark — official documentation.** CPU/memory and server-performance diagnostics. Study the measurements, not installation into Python. Original check: 2026-09-16.
-
-**[MC-S32][url-089] — Sodium — official repository.** Renderer reference, not a scientific solver. Review exact source rights before any copying. Original check: 2026-09-16.
-
-**[MC-S33][url-090] — Embeddium — official repository.** Related Sodium-derived renderer lineage, not automatically identical to current Sodium. Original check: 2026-09-16.
-
-**[MC-S34][url-091] — ImmediatelyFast — official repository.** Immediate-mode render batching and buffer handling. Original check: 2026-09-16.
-
-**[MC-S35][url-092] — Enhanced Block Entities — official repository.** Prepared block models for eligible visual objects; animated behaviour remains distinct. Original check: 2026-09-16.
-
-**[MC-S36][url-094] — EntityCulling — official repository.** Visibility-based draw avoidance; hidden data still exist. Original check: 2026-09-16.
-
-**[MC-S37][url-095] — Distant Horizons — author project description.** Distant terrain level of detail; not numerical adaptive-mesh refinement. Original check: 2026-09-16.
-
-**[MC-S38][url-096] — Voxy — author project description.** Voxel/LOD viewer reference. Exact internal storage and future claims require a separate source study. Original check: 2026-09-16.
-
-**[MC-S39][url-097] — FarPlaneTwo — official repository.** Experimental/historical LOD reference; goals are not treated as completed capabilities. Original check: 2026-09-16.
-
-**[MC-S40][url-098] — Bobby — official repository.** Client retention of received chunks beyond current server view distance. Original check: 2026-09-16.
-
-**[MC-S41][url-099] — Bobby Share — developer repository.** Developer-described streaming/cache controls; no performance claims independently reproduced. Original check: 2026-09-16.
-
-**[MC-S42][url-100] — Krypton — official repository.** Networking path reference; conditional on a future distributed/viewer workload. Original check: 2026-09-16.
-
-**[MC-S43][url-101] — Nvidium — official repository.** Hardware-specific rendering; no general scientific-compute speed claim. Original check: 2026-09-16.
-
-**[MC-S44][url-102] — Exordium — official repository.** Reduced repeated GUI drawing; simulation and display clocks must remain distinct. Original check: 2026-09-16.
-
-**[MC-S45][url-103] — Dynamic FPS — official repository.** Unfocused/idle graphics resource control, not scientific timestep selection. Original check: 2026-09-16.
-
-**[MC-S46][url-104] — Clumps — official repository.** Experience-orb aggregation; geological parcel equivalence is a separate problem. Original check: 2026-09-16.
-
-**[MC-S47][url-105] — ServerCore — official repository.** Optional activation/tick/distance policies can change behaviour; distinguish them from exact optimisations. Original check: 2026-09-16.
-
-**[MC-S48][url-063] — LazyDFU — official repository.** Lazy preparation of data-conversion infrastructure; required conversions cannot be skipped. Original check: 2026-09-16.
-
-**[MC-S49][url-064] — VintageFix — official repository.** Historical 1.12 optimisation family, retained as a related study lead; no additional measured benefit assigned. Original check: 2026-09-16.
-
-**[MC-A01][url-001] — Atlas remake — implemented foundation scope.** Read through connected GitHub. Arrays, batches and immutable flexure-operator reuse already exist; no new Atlas test run. Original check: 2026-09-16.
 
 ### Runtime and language source records
 
@@ -4347,7 +3248,7 @@ Namespaced MC-S identifiers below preserve the original 50 records; scientific S
 - [LS05][url-015] — pybind11: buffer/NumPy interfaces and conversion. Official documentation refreshed 16 September 2026; no package version or installation selected.
 
 
-**Consolidation boundary:** source content, links and document layout were checked; no mod installation, source-code audit, simulation, scientific test, benchmark, numerical change or historical rebind was performed. Source access limitations and unmeasured candidate status are retained.
+**Consolidation boundary:** source content, links and document layout were checked; no dependency installation, source-code audit, simulation, scientific test, benchmark, numerical change or historical rebind was performed. Source access limitations and unmeasured candidate status are retained.
 
 
 [url-001]: https://github.com/Atlantispy/atlas/blob/11317165b7e2aeab7201a1fe3e3f646cb640d51e/tectonics/README.md
@@ -4358,7 +3259,6 @@ Namespaced MC-S identifiers below preserve the original 50 records; scientific S
 [url-006]: https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/
 [url-007]: https://petsc.org/release/manualpages/KSP/KSPSetReusePreconditioner/
 [url-008]: https://zarr.readthedocs.io/en/stable/user-guide/performance/
-[url-009]: https://learn.microsoft.com/en-us/minecraft/creator/documents/simulationrenderdistanceguide?view=minecraft-bedrock-stable
 [url-010]: https://gist.github.com/Tomcc/a96af509e275b1af483b25c543cfbf37
 [url-011]: https://gist.github.com/Tomcc/4be79d3eafcd158c5059abd4ab2e8d35
 [url-012]: https://www.openvdb.org/documentation/doxygen/overview.html
@@ -4407,148 +3307,6 @@ Namespaced MC-S identifiers below preserve the original 50 records; scientific S
 [url-055]: https://github.com/ComputationalThermodynamics/MAGEMin
 [url-056]: https://gchron.copernicus.org/articles/8/209/2026/
 [url-057]: https://github.com/dyvasey/gdtchron
-[url-058]: https://github.com/alphaqu/DashLoader
-[url-059]: https://github.com/embeddedt/ModernFix/wiki/1.21.1-Summary-of-Patches
-[url-060]: https://github.com/embeddedt/ModernFix/wiki/Dynamic-Resources-FAQ
-[url-061]: https://github.com/embeddedt/ModernFix/wiki/Changelog
-[url-062]: https://spark.lucko.me/docs
-[url-063]: https://github.com/astei/lazydfu
-[url-064]: https://github.com/embeddedt/VintageFix
-[url-065]: https://raw.githubusercontent.com/malte0811/FerriteCore/26.1/summary.md
-[url-066]: https://github.com/CaffeineMC/lithium/blob/develop/lithium-neoforge-mixin-config.md
-[url-067]: https://modrinth.com/mod/zfastnoise
-[url-068]: https://github.com/OpenCubicChunks/CubicChunks
-[url-069]: https://github.com/Steveplays28/noisium
-[url-070]: https://modrinth.com/mod/structure-layout-optimizer
-[url-071]: https://github.com/RelativityMC/VMP-fabric
-[url-072]: https://github.com/Shadows-of-Fire/FastSuite
-[url-073]: https://github.com/Shadows-of-Fire/FastWorkbench
-[url-074]: https://modrinth.com/mod/fastfurnace
-[url-075]: https://github.com/2No2Name/hopperOptimizations
-[url-076]: https://github.com/SpaceWalkerRS/alternate-current
-[url-077]: https://github.com/RelativityMC/ScalableLux
-[url-078]: https://github.com/RelativityMC/C2ME-fabric
-[url-079]: https://github.com/Tuinity/Moonrise
-[url-080]: https://docs.papermc.io/folia/reference/region-logic/
-[url-081]: https://github.com/CCr4ft3r/DimensionalThreading-Reforged
-[url-082]: https://modrinth.com/mod/async
-[url-083]: https://github.com/skywardmc/threadtweak
-[url-084]: https://github.com/FxMorin/MemoryLeakFix
-[url-085]: https://modrinth.com/mod/saturn
-[url-086]: https://www.curseforge.com/minecraft/mc-mods/smooth-chunk-save
-[url-087]: https://github.com/contariaa/FastQuit
-[url-088]: https://github.com/pop4959/Chunky
-[url-089]: https://github.com/CaffeineMC/sodium
-[url-090]: https://github.com/FiniteReality/embeddium
-[url-091]: https://github.com/RaphiMC/ImmediatelyFast
-[url-092]: https://github.com/FoundationGames/EnhancedBlockEntities
-[url-093]: https://github.com/fxmorin/MoreCulling
-[url-094]: https://github.com/tr7zw/EntityCulling
-[url-095]: https://modrinth.com/mod/distanthorizons
-[url-096]: https://modrinth.com/mod/voxy
-[url-097]: https://github.com/PorkStudios/FarPlaneTwo
-[url-098]: https://github.com/Johni0702/bobby
-[url-099]: https://github.com/nikitagk22/bobby-share
-[url-100]: https://github.com/astei/krypton
-[url-101]: https://github.com/MCRcortex/nvidium
-[url-102]: https://github.com/tr7zw/Exordium
-[url-103]: https://github.com/juliand665/Dynamic-FPS
-[url-104]: https://github.com/jaredlll08/Clumps
-[url-105]: https://github.com/Wesley1808/ServerCore
-[url-106]: https://modrinth.com/mod/accelerated-recoiling
-[url-107]: https://modrinth.com/mod/achievements-optimizer
-[url-108]: https://modrinth.com/mod/ai-improvements
-[url-109]: https://modrinth.com/mod/asynclogger
-[url-110]: https://modrinth.com/mod/badoptimizations
-[url-111]: https://modrinth.com/mod/bandwidthoptimizer
-[url-112]: https://www.curseforge.com/minecraft/mc-mods/bbrb
-[url-113]: https://www.curseforge.com/minecraft/mc-mods/c2me-ocl
-[url-114]: https://modrinth.com/mod/commandoptimiser
-[url-115]: https://www.curseforge.com/minecraft/mc-mods/create-smart-bounds
-[url-116]: https://www.curseforge.com/minecraft/mc-mods/create-nowheel
-[url-117]: https://modrinth.com/mod/cull-leaves
-[url-118]: https://modrinth.com/mod/datapack-load-error-fix
-[url-119]: https://modrinth.com/mod/does-it-tick
-[url-120]: https://www.curseforge.com/minecraft/mc-mods/efficient-hashing
-[url-121]: https://modrinth.com/mod/elytra-optimizations
-[url-122]: https://www.curseforge.com/minecraft/mc-mods/emiaccelerator
-[url-123]: https://www.curseforge.com/minecraft/mc-mods/fast-ip-ping/files/6666663
-[url-124]: https://modrinth.com/mod/fast-item-frames
-[url-125]: https://modrinth.com/mod/fast-items
-[url-126]: https://github.com/Noryea/fast-items
-[url-127]: https://www.curseforge.com/minecraft/mc-mods/fast-paintings
-[url-128]: https://modrinth.com/mod/fast-recipe-search
-[url-129]: https://www.curseforge.com/minecraft/mc-mods/fast-recipe-search
-[url-130]: https://www.curseforge.com/minecraft/mc-mods/fast-event
-[url-131]: https://www.curseforge.com/minecraft/mc-mods/flerovium
-[url-132]: https://modrinth.com/mod/get-it-together-drops
-[url-133]: https://www.curseforge.com/minecraft/mc-mods/gnetum
-[url-134]: https://github.com/ITsMrToad/GPUBooster
-[url-135]: https://modrinth.com/mod/gpushift
-[url-136]: https://modrinth.com/mod/huge-structure-blocks
-[url-137]: https://modrinth.com/mod/immersive-optimization
-[url-138]: https://www.curseforge.com/minecraft/mc-mods/invasive-optimizations
-[url-139]: https://www.curseforge.com/minecraft/mc-mods/ixeris
-[url-140]: https://modrinth.com/mod/jasione
-[url-141]: https://modrinth.com/mod/kallfix
-[url-142]: https://modrinth.com/mod/kerria-opt
-[url-143]: https://modrinth.com/mod/ksyxis
-[url-144]: https://github.com/VidTu/Ksyxis
-[url-145]: https://modrinth.com/mod/leaves-be-gone
-[url-146]: https://legacy.modrinth.com/mod/lmd
-[url-147]: https://modrinth.com/mod/lightspeedre
-[url-148]: https://www.curseforge.com/minecraft/mc-mods/lightspeedre-launch-optimizations
-[url-149]: https://github.com/BloCamLimb/ModernUI
-[url-150]: https://www.curseforge.com/minecraft/mc-mods/modern-ui
-[url-151]: https://modrinth.com/mod/mods-optimizer
-[url-152]: https://modrinth.com/mod/non-update-reloaded
-[url-153]: https://www.curseforge.com/minecraft/mc-mods/not-enough-recipe-book
-[url-154]: https://modrinth.com/mod/numflux
-[url-155]: https://modrinth.com/mod/opticores
-[url-156]: https://modrinth.com/mod/obe
-[url-157]: https://github.com/maDU59/OptimisedBlockEntities
-[url-158]: https://modrinth.com/mod/packet-fixer
-[url-159]: https://github.com/ITsMrToad/PalladiumMod
-[url-160]: https://www.curseforge.com/minecraft/mc-mods/particle-core
-[url-161]: https://modrinth.com/mod/asyncparticles
-[url-162]: https://modrinth.com/mod/profile-cached
-[url-163]: https://www.curseforge.com/minecraft/mc-mods/profile-cached
-[url-164]: https://modrinth.com/mod/quick-pack
-[url-165]: https://modrinth.com/mod/reflex-antilag
-[url-166]: https://modrinth.com/mod/resource-trimmer
-[url-167]: https://modrinth.com/mod/resourcepackcached
-[url-168]: https://www.curseforge.com/minecraft/mc-mods/sepals
-[url-169]: https://modrinth.com/mod/sound-culling
-[url-170]: https://www.curseforge.com/minecraft/mc-mods/sound-culling
-[url-171]: https://www.curseforge.com/minecraft/mc-mods/staaaaaaaaaaaack
-[url-172]: https://www.curseforge.com/minecraft/mc-mods/substrate-add-on
-[url-173]: https://modrinth.com/mod/superresolution
-[url-174]: https://www.curseforge.com/minecraft/mc-mods/faster-random
-[url-175]: https://github.com/xCollateral/VulkanMod
-[url-176]: https://www.curseforge.com/minecraft/mc-mods/feytweaks
-[url-177]: https://modrinth.com/mod/redirected
-[url-178]: https://www.curseforge.com/minecraft/mc-mods/log-cleaner
-[url-179]: https://modrinth.com/mod/async-pack-scan
-[url-180]: https://modrinth.com/mod/create-threaded-trains
-[url-181]: https://github.com/MisterJulsen/Create-Threaded-Trains
-[url-182]: https://modrinth.com/mod/dimthread
-[url-183]: https://www.curseforge.com/minecraft/mc-mods/raknetify
-[url-184]: https://github.com/RelativityMC/raknetify
-[url-185]: https://modrinth.com/mod/railoptimization
-[url-186]: https://modrinth.com/mod/fastserverpings
-[url-187]: https://modrinth.com/mod/veil
-[url-188]: https://modrinth.com/mod/beryl
-[url-189]: https://www.curseforge.com/minecraft/mc-mods/not-enough-bandwidth
-[url-190]: https://modrinth.com/mod/audiothrottle
-[url-191]: https://modrinth.com/mod/audition
-[url-192]: https://github.com/henkelmax/sound-physics-remastered
-[url-193]: https://modrinth.com/mod/disable-portal-checks
-[url-194]: https://modrinth.com/mod/accrelatedrendering-refabricated
-[url-195]: https://modrinth.com/mod/memguard
-[url-196]: https://www.curseforge.com/minecraft/mc-mods/annuus
-[url-197]: https://www.curseforge.com/minecraft/mc-mods/tetrachord-lib
-[url-198]: https://modrinth.com/mod/tick-tweaks/version/1.1.0-1.17-1.19.2
-[url-199]: https://modrinth.com/mod/tick-tweaks/version/DSTxp1oe
 
 
 <a id="delivered-optimisations-4-5"></a>
@@ -4758,7 +3516,7 @@ algorithm change is introduced here.
 Five alternating-order warmed comparisons, 8 independent jobs per batch, two
 outer workers and one inner native thread. Linux/CPython 3.13.5, NumPy 2.3.5,
 SciPy 1.17.0 and threadpoolctl 3.6.0. Full samples, first-use costs, source hashes
-and mode statistics are in the evidence, not inferred from Minecraft performance.
+and mode statistics are in the evidence, not inferred from unrelated application performance.
 
 | Workload | Serial batch | Selected automatic path | Observed change |
 | --- | ---: | ---: | --- |

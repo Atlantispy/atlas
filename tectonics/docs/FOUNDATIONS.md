@@ -1,3 +1,10 @@
+# Review cleanup: current scope
+
+Version `0.1.0.dev23` changes interpreter-path handling and diagnostic presentation,
+not equations or their tolerances. The [maintained plan](TECTONICS_PLAN.md) revision
+27 and [execution reference](OPTIMISATION_REFERENCE.md#cleanup-execution) govern
+current scope. Older delivery statements below describe their dated increments.
+
 # Foundation case and numerical contract
 
 **Current R2 extension (18 September 2026):** the original foundation contract

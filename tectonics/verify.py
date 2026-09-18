@@ -69,6 +69,7 @@ def main() -> int:
     sys.path.insert(0, str(ROOT / 'src'))
     import numpy as np
     import atlas_tectonics
+    from atlas_tectonics import reuse
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
     suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
@@ -94,11 +95,14 @@ def main() -> int:
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v16',
+        'schema': 'atlas.tectonics.foundation-verification.v17',
         'profile': 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
         'failures': len(result.failures), 'errors': len(result.errors),
+        'failure_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.failures],
+        'error_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.errors],
+        'skip_details': [{'test': t.id(), 'reason': reason} for t, reason in result.skipped],
         'skips': len(result.skipped), 'source_unchanged_during_tests': unchanged,
         'source_sha256_before': before, 'source_sha256_after': after,
         'execution_runtime': ({'threadpoolctl': __import__('threadpoolctl').__version__,
@@ -115,6 +119,8 @@ def main() -> int:
         'planetary_generation_scope': 'W01 3C unweighted nearest-site initial geometry; not validated plate history',
         'geometry_runtime': __import__('atlas_tectonics.geometry', fromlist=['geometry_runtime']).geometry_runtime(),
         'runtime': {'python': platform.python_version(), 'numpy': np.__version__,
+                    'interpreter_launcher_is_symlink': Path(sys.executable).is_symlink(),
+                    'interpreter_target_sha256': reuse._loaded_binary(reuse._interpreter_binary()),
                     'platform': platform.system(), 'machine': platform.machine(),
                     'thread_environment': {k: os.environ.get(k) for k in
                         ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS')}},
