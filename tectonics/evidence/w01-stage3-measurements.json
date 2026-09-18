@@ -1,0 +1,61 @@
+{
+  "scope": "bounded static-geometry/diagnostic comparison; no world or physics acceptance",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "shapely": "2.1.2",
+    "geos": "3.13.1",
+    "platform": "Linux",
+    "native_thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "workload": {
+    "regions": 96,
+    "selected_interplate_edges": 172,
+    "nx": 12,
+    "ny": 8
+  },
+  "build_seconds_single_observation": 0.06251350900004127,
+  "construction": {
+    "attribution_candidates": 2528,
+    "input_segments": 384,
+    "region_candidate_pairs": 326,
+    "segment_candidate_pairs": 2204,
+    "unique_segments": 212,
+    "vertices": 117
+  },
+  "retained_network_estimate_bytes": 220317,
+  "tracked_batch_peak_bytes": 74460,
+  "tracked_memory_scope": "tracemalloc allocations only; excludes some native allocations, pre-existing geometry and callers",
+  "timings": {
+    "batch": {
+      "samples_s": [
+        0.0035462990000496575,
+        0.0027819749999480337,
+        0.0025057619999415692,
+        0.002537294999910955,
+        0.002374568999925941
+      ],
+      "median_s": 0.002537294999910955
+    },
+    "individual": {
+      "samples_s": [
+        0.01688239899999644,
+        0.017111729000021114,
+        0.031955628999980945,
+        0.016920087000016792,
+        0.017998697000052744
+      ],
+      "median_s": 0.017111729000021114
+    }
+  },
+  "max_abs_difference_m_s": 0.0,
+  "bit_equal_compared_diagnostics": true,
+  "source_sha256": {
+    "src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "tests/measure_w01_boundaries.py": "f7dd2de7ec3e623d95dbd4520002fed83b93eb58d149011dbfd017363200e5ea"
+  }
+}

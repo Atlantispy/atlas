@@ -3,3 +3,6 @@
 *.md text eol=lf
 *.json text eol=lf
 *.toml text eol=lf
+
+# Preserve pinned reference bytes; Git must not normalise their line endings.
+reference_data/** -text

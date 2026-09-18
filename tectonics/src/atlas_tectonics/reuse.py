@@ -72,7 +72,7 @@ def _normal_code(code):
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
 _IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers")
+                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout")
 
 
 def _source_bytes():
@@ -105,11 +105,12 @@ def _constant(value):
 
 def _callable_inventory(backend="reference"):
     signatures, tokens, constants = {}, [], {}
-    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native") if backend == "numba" else ())
+    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native") if backend == "numba" else ())
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         for label, obj in sorted(vars(module).items()):
-            if label.isupper() and type(obj) in (str, int, float, bool, tuple):
+            if label.isupper() and (type(obj) in (str, int, float, bool, tuple)
+                                   or (is_dataclass(obj) and not isinstance(obj, type))):
                 constants[module.__name__+"."+label] = _constant(obj)
             members = [(label, obj)]
             if isinstance(obj, type) and obj.__module__ == module.__name__:
@@ -174,6 +175,35 @@ def _runtime_record(backend):
         if len(candidates) != 1:
             raise TectonicsError("cannot identify the selected LLVM native library")
         binaries["llvmlite"] = _loaded_binary(candidates[0])
+    # Global atlas broad-phase queries use SciPy's native spatial tree. Record
+    # that executable dependency even when the requested physical kernel is the
+    # reference backend; ordinary reference calls without a context stay minimal.
+    import scipy
+    import scipy.spatial._ckdtree as spatial_tree
+    versions['scipy_spatial'] = scipy.__version__
+    binaries['scipy_ckdtree'] = _loaded_binary(spatial_tree.__file__)
+    # Stage 3C's native convex hull also participates in execution identity.
+    import scipy.spatial._qhull as qhull
+    binaries['scipy_qhull'] = _loaded_binary(qhull.__file__)
+    # The reference-conditioned layout uses these native sparse-graph routines.
+    # Identify selected implementations; this is not a recursively sealed runtime.
+    import scipy.sparse.csgraph._shortest_path as shortest_path
+    import scipy.sparse.csgraph._traversal as traversal
+    import scipy.sparse._sparsetools as sparse_tools
+    for label, module in (('shortest_path',shortest_path),('traversal',traversal),('sparse_tools',sparse_tools)):
+        binaries['scipy_'+label] = _loaded_binary(module.__file__)
+    import shapely
+    import shapely.lib as geometry_lib
+    versions.update(shapely=shapely.__version__, geos=shapely.geos_version_string)
+    binaries['shapely_extension'] = _loaded_binary(geometry_lib.__file__)
+    # Official wheels place the linked GEOS libraries in a sibling .libs folder.
+    # Non-wheel/system installations need an explicitly supplied deployment audit;
+    # never label a version string alone a sealed native dependency closure.
+    geos_dir = Path(shapely.__file__).parent.parent / 'shapely.libs'
+    geos_files = sorted(p for p in geos_dir.glob('*') if p.is_file() and 'geos' in p.name.lower())
+    versions['geos_binary_scope'] = 'wheel-libraries' if geos_files else 'extension-only; external GEOS unsealed'
+    for p in geos_files:
+        binaries['geos:'+p.name] = _loaded_binary(p)
     return {"versions": versions, "binaries": binaries}
 
 

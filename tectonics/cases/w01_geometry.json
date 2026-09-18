@@ -1,0 +1,29 @@
+{
+  "schema": "atlas.w01.geometry-case.v1",
+  "status": "WORKING NON-CANON; representation verification, not geological acceptance",
+  "scope": "W01 catch-up stage 2: Cartesian polygons/traces and conditioned open-hemisphere minor-arc spherical patches; static coverage diagnostics",
+  "acceptance": {
+    "relative_tolerance": 1e-12,
+    "unit_sphere_absolute_rad": 2e-12,
+    "planar_absolute_m": 1e-12,
+    "small_spherical_area_relative": 1e-7,
+    "reference_radius_m": 2.0,
+    "accuracy_before_speed": true
+  },
+  "invariants": [
+    "No invalid-geometry repair, snapping, precision reduction or erased slivers.",
+    "Coordinate frames and sphere radii must match before combining geometry.",
+    "Spherical metrics are not projected Euclidean metrics.",
+    "All point/line contacts are retained; indexing returns all feature candidates in stable order.",
+    "A numerical boundary band is uncertainty, not a plate-ownership assignment.",
+    "Feature geometry is independent of a computational grid and of material/plate IDs.",
+    "Native objects and spatial indexes rebuild from verified definitions after restoration.",
+    "No claim of arbitrary full-sphere booleans or spherical W02 transport."
+  ],
+  "primary_references": [
+    "https://shapely.readthedocs.io/en/2.1.2/strtree.html",
+    "https://shapely.readthedocs.io/en/2.1.2/reference/shapely.intersection.html",
+    "https://shapely.readthedocs.io/en/2.1.2/reference/shapely.prepare.html",
+    "https://proj.org/en/stable/operations/projections/gnom.html"
+  ]
+}

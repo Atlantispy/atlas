@@ -1,9 +1,144 @@
 # Atlas tectonics simulation plan
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 11 | 17 September 2026**
+
+**Revision 23 — 3C-R1 offline tooling repair, 18 September 2026:** the full
+baseline and eight checksum-verified PB2002 source files are now available together.
+The complete reference command runs to completion; the former missing import was
+an overlay-only test setup, not an absent baseline implementation. The importer
+preserves exact repeated endpoints and open source outlines, measurements use
+explicit derived views, and unresolved source geometry remains visible.
+
+**R1 is OPEN for source-consistency/source-use sign-off, not blocked by download or
+imports.** All 52 plate area calculations and 5,819 motion rows were processed;
+13 deformation outlines were inspected, of which one is open and unmeasured.
+Five connectivity discrepancies and an ON area-table mismatch remain reported.
+The strict gate returns `REFERENCE_DISCREPANCIES_REQUIRE_REVIEW`; no tolerance,
+source identity or original scientific case is altered to turn it green.
+See the [source review](../evidence/3cr1-source-discrepancy-review.json) and the
+[maintained reference](OPTIMISATION_REFERENCE.md#3cr1-reference-tools).
+R2–R9, W01 stages 5–8 and W03 are not advanced by this repair. The complete package
+is copy-ready for a local `remake` checkout; Michael retains commit/push ownership.
+
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 23 | 18 September 2026**
 **Status: development plan with a delivered foundation; remaining capabilities are proposed, not physically accepted.**
 
 Atlas is vibe-coded, with OpenAI ChatGPT/Codex doing the coding under Michael’s direction. The owner has selected Earth-like mobile-plate tectonics for the intended 1.0 release. Atlas remains world-agnostic; the Diadem is the principal development case, not the definition of the underlying physics.
+
+**Revision 21 — plate-formation implementation plan.** A nine-stage, accuracy-first
+sequence now connects observed reference tests, pre-boundary geological state,
+selected physical closures, verified regional thermomechanics, process experiments,
+spherical dynamics, boundary extraction/history and independent acceptance.
+This is a proposed sequence, not a new completed implementation. The named subset
+of W03/W07 must be brought forward explicitly to make causal formation claims;
+statistical layouts remain priors/controls. No out-of-scope coding is started.
+The implemented layout revision and subsequent 15-study literature update are both
+preserved in the maintained reference. The
+[implementation sequence](#plate-formation-implementation-plan) and
+[execution contract](OPTIMISATION_REFERENCE.md#plate-formation-execution-plan)
+take precedence over older next-step statements. Current default/source/tests and
+historic evidence are unchanged. Michael retains manual commit/push ownership.
+
+**Revision 20 — stage 3C scientific acceptance reopened.** A gap-free spherical
+Voronoi partition is not an accepted Earth-like plate-layout model. A separate
+PB2002 area-conditioned, connected-layout candidate and independent outline/
+Euler-motion checks now exist, with recorded limitations. Size fit is calibration;
+full boundary morphology and geological history remain unaccepted. Do not claim
+W01's Earth-like generation requirement is satisfied or silently promote this
+candidate to a validated default. The original Voronoi API remains an explicitly
+limited fixture, not discarded source. The geometry, material library and regional
+physics remain useful and unchanged. See the [single optimisation reference](OPTIMISATION_REFERENCE.md#plate-layout-science-correction).
+**Current blocker before scientific stage-3C sign-off:** scale-matched multi-plate
+outline and kinematic/geological evidence, not merely additional boundary wiggles.
+W01 stages 5–8 and W03 remain unimplemented in this correction. The dated summaries
+below describe the earlier delivery claims and must be read with this correction.
+
+
+**Revision 19 — W01 stage 4B, sourced reference materials.** The existing case
+schema now has a versioned offline library covering 67 principal rock/mineral/fluid
+profiles and seven declared sediment/regolith recipes. Original units, source
+locations, ranges, reference coordinates and interval-mean expansion semantics are
+preserved. Prepared native property tables, per-capability preflight, exact
+stage-4 layer bindings, mixture/assay rules and self-contained library storage are
+implemented. This is reference knowledge, not a general high-temperature/pressure
+law or a W03 solver. Some profiles are deliberately partial; 44 have density,
+specific heat and conductivity together at nominal 293.15 K. The original
+instantaneous expansion/heat-source gaps are not hidden by zeroes or secant values.
+See [the existing optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage4b-delivery).
+**Next is W01 stage 5; W03 remains paused.** No new scientific evolution,
+publication or Windows acceptance is claimed.
+
+**Revision 18 — W01 stage 4, geological descriptions.** Typed, immutable initial
+material/cohort/layer/thermal/fault/weak-zone records now attach to the validated
+regional or planetary geometry. Explicit precedence, complete catalogue references,
+unknown-value reporting and self-contained definition restoration are implemented.
+The supported stack is surface-relative and piecewise constant by province; the
+records specify initial geology, not sampled cell fields or validated constitutive
+laws. **Stages 5–8 remain outstanding; W03 implementation remains paused.** See
+[the single optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage4-delivery).
+Older revision summaries below describe the status at their respective deliveries.
+
+**Revision 17 — W01 stage 3C, generated initial partitions.** The initial world
+partition can now be constructed from an explicit sphere, plate count and seed,
+with shared topology and working patches generated together. Its unweighted
+nearest-site prior and bounded, recorded candidate conditioning are assumptions,
+not an observed plate distribution. Authored site inputs and the existing authored
+atlas route remain separate and are never randomly replaced. Alternate working
+patch layouts preserve intrinsic ownership and boundary geometry. This closes the
+explicit 3C subdivision, not stages 4–8 or W01 as a whole. W03 remains paused.
+See the [single optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage3c-delivery).
+
+**Revision 16 — W01 stage 3B, closed spherical geometry.** The static world can now
+be a closed, conforming atlas of local charts with shared canonical vertices and
+edges, globally reconciled ownership/junctions, and plate identities spanning any
+number of patches. Stage-3 networks can be joined using explicit shared-vertex
+bindings; mismatches are rejected, not automatically welded. This is not an
+unrestricted polygon-soup repair algorithm, spherical W02 dynamics or a generated
+planet. **W01 stages 4–8 remain outstanding; W03 implementation remains paused.**
+See the [stage-3B contract and evidence](OPTIMISATION_REFERENCE.md#w01-stage3b-delivery).
+The following revision summaries describe their historical delivery scopes.
+
+**Revision 15 — W01 stage-3 shared boundaries.** A verified static network now
+connects the supported planar/spherical-patch regions through single shared edges,
+left/right owners, direction-reversal checks, adjacency, cyclic junction sectors
+and point-contact distinctions. Same-plate seams stay separate from interplate
+boundaries. Batch frame/motion diagnostics and existing snapshot/resource systems
+are connected; no velocity, force, subduction polarity or geological sampler is
+invented. Spherical networks remain within an explicit common conditioned domain
+chart; unresolved reprojection joins and whole-sphere stitching are not silently
+accepted. **W01 stages 4–8 remain outstanding; W03 has not started.** See the
+[stage-3 entry](OPTIMISATION_REFERENCE.md#w01-stage3-delivery) for evidence and scope.
+
+**Revision 14 — targeted stage-2 correctness corrections.** The independent
+recheck identified short-arc cancellation, inconsistent zero-edge validation on
+import, nonfinite metre-distance publication and empty-query cancellation. The
+corrected delivery adds regression tests for those cases without changing the
+original geometric tolerance or broadening hemisphere support. Fresh obtained
+evidence is recorded separately from the original stage-2 result. No W03 work,
+new physical mechanism or repository publication is part of this change. See the
+[existing correction entry](OPTIMISATION_REFERENCE.md#w01-stage2-corrections).
+At revision 14, W01 stages 3–8 remained; revision 15 above supplies supported stage 3.
+
+**Revision 13 — W01 stage-2 supported geometry delivered.** The implementation
+adds native planar regions/traces, minor-arc spherical patches with conditioned
+hemisphere charts, metrics/set operations, shared immutable spatial indexing,
+explicit static coverage diagnostics and verified definition persistence. No invalid
+shape is repaired or ambiguity resolved by deleting coverage. **W01 remains partial:
+stages 3–8 are outstanding.** Stage 3 must construct shared boundaries, orientation,
+side ownership and appropriate patch/junction reconciliation. Arbitrary full-sphere
+Boolean topology, geological sampling, plate-history forcing and spherical W02
+transport are not inferred from this primitive layer. See the existing
+[optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage2-delivery).
+
+**Revision 12 — W01 coordinate/time stage delivered.** Stage 1 supplies explicit
+spherical/geocentric, planet-centred and regional Cartesian conventions; static and
+instantaneous moving-frame transformations; legacy handedness/unit conversion; and
+named forward/before time axes with explicit inter-epoch offsets. Cases and tests
+are added beside the existing source, with shared resource and identity checks.
+**At revision 12, stages 2–8 remained. W03 starts after the required W01
+initialisation and supported W01-to-W02 link are complete.** This supersedes the
+older W04-first sequencing suggestion. No whole-work-package completion, physical
+acceptance, Windows pass or remote publication is implied. The optimisation
+reference remains the sole performance reference.
 
 **Revision 11 — regional W02 implementation complete.** The local delivery adds
 conservative nonuniform remapping, ALE moving volumes with u-w fluxes, explicit
@@ -13,8 +148,8 @@ and prescribed transfers, all named W02 responsibilities now have an executable
 **1D regional, constant-density, prescribed-kinematics** implementation and tests.
 This is not arbitrary-dimensional/planetary topology or physical/geological acceptance.
 Future spherical polygons/junctions and force/productivity laws remain W01/W06–W08
-extensions; they are not silently claimed by a 1D pass. W04 load construction is the
-next physical increment. The [existing optimisation reference](OPTIMISATION_REFERENCE.md#w02-completion-delivery)
+extensions; they are not silently claimed by a 1D pass. The earlier W04-first sequencing suggestion is
+superseded by revision 12 above. The [existing optimisation reference](OPTIMISATION_REFERENCE.md#w02-completion-delivery)
 records measured methods, memory and remaining validity boundaries. Accuracy-first
 compiled defaults, W00–W12 dependencies and prior acceptance tolerances are retained.
 
@@ -53,6 +188,136 @@ No new general roadmap or publication is part of this delivery.
 
 **Navigation:** [Scope](#recommended-architecture-and-10-scope) · [State and interfaces](#scientific-state-and-interface-contracts) · [Equations](#equation-plan-and-gaps-to-close) · [Work packages](#work-packages-and-dependency-gates) · [Coupling](#coupling-timestep-and-state-acceptance-policy) · [Execution and optimisation](#numerical-and-computational-design) · [Validation](#verification-physical-validation-and-decision-rules) · [Milestones](#milestones-decision-ownership-and-risk-control)
 
+<a id="plate-formation-implementation-plan"></a>
+
+## Plate formation correction: implementation sequence (18 September 2026)
+
+**Status: proposed implementation plan; no new solver, scientific pass or default
+change is delivered here.** This section governs the reopened stage-3C scientific
+work and supersedes conflicting older next-step sentences. It preserves the
+existing geometry, material library, regional W02 work, the PB2002-conditioned
+candidate and its obtained evidence. Neither Voronoi nor the area-conditioned
+candidate is promoted from a prior/control to accepted dynamics.
+
+### Objective and scope boundary
+
+Build an initialisation and evolution path in which material/thermal structure,
+inherited weakness, forcing, deformation and plate geometry are consistent. The
+normal accuracy policy is unchanged: choose the scientifically appropriate model
+and numerical error requirements first, then its fastest verified implementation.
+No exact universal plate count, Earth-outline copying, random-wiggle score, or fit
+to the Diadem's desired mountains is an acceptance criterion.
+
+Separate origin from execution: a **reference/statistical initial state**, a
+**prescribed-kinematic history**, and a **dynamically produced state** make different
+scientific claims. They are not fast/slow backends of the same equation. Preserve
+the existing K/M model modes. Record origin independently; an M-mode calculation
+may start from an explicitly statistical prior. Selecting a mature starting epoch
+does not require simulating a planet from a magma ocean.
+
+**Sequencing consequence:** causal boundary formation requires thermal and
+mechanical capabilities that belong to W03 and W07. The proposal is to bring
+forward only their named benchmarkable subset below, credit it to those work
+packages, and reuse it later. This does not mark W03, W07 or planetary W02 complete.
+No W03/W07 coding or large simulation is authorised by this planning-only update.
+W01's remaining sampler and integration responsibilities are not silently erased.
+
+### Scientific responsibilities and numerical baseline
+
+Use an explicitly scaled, incompressible, inertia-free thermochemical reference:
+
+\[
+\nabla\cdot\mathbf u=0,\qquad
+-\nabla p+\nabla\cdot(2\eta\dot{\boldsymbol\epsilon})+\rho'\mathbf g=0,
+\]
+\[
+\rho_0c_p(\partial_tT+\mathbf u\cdot\nabla T)=\nabla\cdot(k\nabla T)+Q,
+\qquad
+\partial_t C+\mathbf u\cdot\nabla C=0.
+\]
+
+Here \(\mathbf u\) is velocity, \(p\) the selected pressure variable,
+\(\dot{\boldsymbol\epsilon}\) symmetric strain rate, \(\eta\) viscosity,
+\(\rho'\) buoyancy density contrast, \(T\) temperature, and \(C\) composition.
+\(Q\) is the heating included in the selected approximation, in W/m³. Declare
+Boussinesq/reference-density assumptions, pressure reference, boundary tractions,
+thermal boundaries and nondimensionalisation. Do not present this reference as a
+compressible, phase-changing, elastic or full free-surface model.
+
+Start with constant-viscosity verification, then reproduce one published
+viscoplastic specification before adding memory. Proposed memory prototype:
+strain-weakening with temperature-dependent healing in the Fuchs/Becker family
+(PF-C03/C04), with a damage-free control. In general form,
+\(D_t d=S_d-\mathcal H_d\); this is an interface, **not an already selected
+constitutive law**. Its exact published source/saturation/healing and strength
+coupling, units, numerical regularisation and supported parameter ranges must be
+transcribed and independently checked in 3C-R3. Do not relabel it the distinct
+microphysical grain-damage theory in PF-C02.
+
+### Nine implementation stages
+
+| Stage | Implementation and deliverable | Acceptance before its dependent claim |
+| --- | --- | --- |
+| **3C-R1 — Reference data and success criteria** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
+| **3C-R2 — Initial state before final plate labels** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
+| **3C-R3 — Freeze the physical closure** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
+| **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
+| **3C-R5 — Process experiments, not decorative contours** | Test weak-zone reactivation against healed/undamaged controls; inherited-structure rifting; segmented spreading and transform development; one-sided subduction with an appropriate surface/interface treatment; curved-trench fragmentation and small-block formation. Use 3D regional geometry when the claimed feature varies along strike. Run paired cases that change one causal ingredient rather than fitting every output. | Each process reproduces its selected independent benchmark/analogue constraints and remains stable under refinement and rotated mesh orientation. Do not require damage to have one universal effect, place a plume beneath every ridge, infer polarity from convergence, or count a 2D cross-section as an along-trench fragmentation test. A failed family remains unsupported. |
+| **3C-R6 — Spherical dynamics and plate identification** | Extend the verified formulation to a coupled 3D spherical shell, using globally consistent metric terms and pressure/interface treatment. Existing surface patches are output geometry, not a ready volume mesh. Recover coherent surface regions from independently calculated velocity/strain/damage fields, and fit Euler rotations to candidate interiors. Keep distributed deformation explicitly represented. | Spherical benchmark and rotation/seam tests, conservation, parameter and resolution sensitivity, declared spin-up and sample-selection rules, rigidity residuals and stable segmentation thresholds. A warm-up ends by registered diagnostics, not because one image looks Earth-like. Never prescribe Euler poles then claim recovering them proves independent rigidity. |
+| **3C-R7 — Shared geometry and causal event history** | Convert supported field-derived boundaries into the existing shared-edge atlas; maintain one edge, two sides and consistent junctions. Fit boundary/junction velocities subject to the selected kinematic rules. Track persistent material, weakness, plates and events separately; record splits, merges, reactivation, accretion/export and candidate rejection. Use conservative multidimensional transfers where needed; reuse W02 contracts, not its 1D equations under a spherical name. | Underlying surface coverage remains complete without forcing every cell into a perfectly rigid plate; deformation zones do not vanish as polygon gaps. Boundary extraction has a spatial error budget and does not move material. Junction compatibility is stricter than the telescoping sum of relative velocities. Preserve origin/energy/history through events and cold restoration. |
+| **3C-R8 — Initialisation and W01 integration** | Supply a named starting-epoch workflow: load an authored/reconstructed state, use a declared statistical candidate, or evolve an accepted dynamic precursor and select its state by the recorded rule. Any faster reduced generator must be calibrated on process results and checked independently before adoption. Map the resulting geology, supported motion and fields through W01 sampling into appropriate regional W02 scenarios. | No manual stitching, unknown-as-zero state or regenerated world on restore. Identical provenance yields the agreed reproducibility. Exact plate-count requests are only supported where the selected origin model warrants them; dynamic mode does not forcibly merge bodies to hit a UI number. An initialisation pass is not complete global material/thermal evolution. |
+| **3C-R9 — Independent acceptance and selected default** | Run predeclared ensembles, holdout-data challenges, mesh/time/parameter sensitivity, controls and ablations, then combined execution/cache/storage/restoration/platform checks. Record accepted regimes and unresolved failures in the two maintained documents and obtained case records. | Keep calibration, numerical verification, physical validation and fictional compatibility separate. No universal percentage realism score; no pass from a lone attractive map or small global-average error hiding lost microplates. Promote the appropriate accuracy-first optimised recipe only for supported regimes. Report platform/resource limits and retain explicit verification/control paths. |
+
+### Required observations and failure tests
+
+Use multi-scale area distribution, compactness, elongation/concavity, turning and
+segmentation by boundary type, topology and adjacency, small-plate position relative
+to margins, intraplate deformation, relative motion, weak-zone persistence,
+reorganisation and heat/material accounts. Plates and broad deformation zones are
+not interchangeable labels (PF-C15). Total perimeter must ignore computational
+seams. Sampling density must not improve a morphology score by adding vertices.
+A plate population is temporally variable; do not fit exactly one modern spectrum
+(PF-C10). Held-out observables must not have already selected the same parameters.
+
+Numerical thresholds come from the declared equations, source precision and
+refinement study, not convenient post-hoc tolerance changes. Use at least three
+resolutions for appropriate convergence cases, vary time step independently, and
+keep geometric tolerances distinct from physical uncertainty. Model ensembles and
+steady/transient sampling windows are registered before scoring, including failed
+seeds and error bars. Data versions with shared ancestry are sensitivity challenges,
+not additional independent samples.
+
+### Stop points and package accounting
+
+* **After R1–R3:** scientific specification and test inputs ready; no claim of
+  simulated boundary formation. These are the immediate next coding increments.
+* **After R4–R5:** verified solver and individually supported process behaviours;
+  no whole-planet acceptance from regional results.
+* **After R6–R9:** a bounded planetary formation/initialisation route can be accepted
+  only for the regimes, material laws, resolution and data challenges it passed.
+
+R2/R8 close relevant portions of W01 stages 5–7; their unimplemented responsibilities
+remain visible. R3–R6 credit the actual W03/W07 subset and relevant W06/W08 process
+work rather than duplicate those modules. W03 sediment compaction, full W04 loading,
+other W08 regimes, W09 surface processes and production integration remain separate.
+W11's relevant work is performed within every stage; there is no later blanket
+optimisation pass. The existing one-dimensional W02 completion boundary is retained.
+The proposed sequence is larger than a polygon patch because causal formation is
+larger than geometry; progress reports must not disguise that fact.
+
+### Execution and delivery
+
+The [formation execution contract](OPTIMISATION_REFERENCE.md#plate-formation-execution-plan)
+assigns optimisations and checks to each stage. No new general cache, scheduler,
+compression format or report is required. Comments beside code must cover equations,
+units, assumptions, ownership, invalidation and failure cases. Case contracts/tests
+stay next to implementation. Deliver one copy-ready update relative to the known
+remake baseline, preserving unrelated files; Michael commits and pushes manually.
+
+This document update changes no numerical source or tests, installs nothing,
+executes no geological case and makes no claim to access the PC or update origin.
+
+
 ## Executive decision
 
 Develop a **physically tested, multiscale tectonics system**, not a mountain-placement algorithm and not a collection of seventeen integrated software packages. Use a shared description of the world, plate history and material accounts, with two explicitly different ways to calculate deformation: prescribed kinematic experiments and regional mechanical calculations. Couple only the surface and thermal processes required to interpret each experiment. Design for efficient execution from the outset. Verify any enabling acceleration against an appropriate numerical reference while the physical investigation proceeds; later optimise and scale accepted behaviour at matched error. Build production interfaces only after the relevant scientific and resource gates.
@@ -71,7 +336,7 @@ Reports 01–03 supply the modelling, optimisation and implementation assessment
 
 The repository baseline described in those studies is `7d0e707a576fe08b9bcb816466a0a8fb5f115808`. This is **not a fresh audit of GitHub or the Windows workspace**. The studies identify an active tectonic snapshot adapter, existing geometry/route reuse, a native 256-cell domain and a fixed-quantum material ledger. Preserve them as historical implementations with their own meanings; new experiments must not silently alter their bindings or relax their limits. [[R03](#research-basis); [A01][url-001]; [A02][url-002]; [A04][url-003]; [A06][url-004]; [A07][url-005]]
 
-This revision consolidates documentation only. No numerical code, Atlas test, simulation, benchmark, source repinning, dependency installation or Windows integration is part of this update. Any companion repository-documentation publication is recorded separately; checking documents is not running the model. Execution references PS01–PS08 and language references LS01–LS05 are retained with the optimisation reference; no scientific-software re-audit was performed.
+The original consolidation changed documentation only. Later numbered implementation increments above record their own source changes and obtained checks; they do not repin historical evidence or imply Windows integration. Any companion repository-documentation publication is recorded separately; checking documents is not running the model. Execution references PS01–PS08 and language references LS01–LS05 are retained with the optimisation reference; no scientific-software re-audit was performed.
 
 **Implementation status supplement:** the historical pre-study baseline above is preserved. The subsequent remake foundation at `11317165b7e2aeab7201a1fe3e3f646cb640d51e` provides the restricted kernels listed in the optimisation reference’s current-baseline section. This does not complete W01–W04 or validate real terrain. The current update changes documents, not that implementation.
 
@@ -112,7 +377,7 @@ Verified documentation baseline: `remake` at `612d53eba495202101a8e638578f47fb37
 | Work package | Delivered portion | Still outstanding |
 | --- | --- | --- |
 | W00 | Synthetic foundation case and verification rules. | The next physical case’s complete inputs, observations and acceptance decisions. |
-| W01 | Rotations, boundary diagnostics and immutable parameters. | General geological sampler, plate polygons, topology and independently verified sides. |
+| W01 | Geometric/declarative stages 1–4B (including 3B/3C): optimised coordinates/time, corrected geometry, shared/global boundaries, seeded partitions, and typed geological descriptions with explicit evidence, layers, thermal initial conditions and precedence, plus the sourced material library and condition-aware mixtures. | Stage-3C Earth-like scientific acceptance is reopened; a reference-conditioned candidate exists but its full morphology/history is not accepted. Stages 5–8: initial-condition sampler, motion-to-regional adapter, W01→W02 workflow and combined acceptance. Static geometry/descriptions do not supply evolving spherical material physics. W01 remains partial. |
 | W02 | Regional implementation complete: cohorts/history, prescribed transfers, conservative nonuniform remap, ALE u-w motion, complete interval ownership, split/merge/reassignment/activity, marker maps, direct snapshot restoration and existing executor/cache integration. | Physical/geological acceptance is not implied. General 2D/spherical junctions and predictive source/force laws require W01/W06–W08 extensions. |
 | W03 | Analytical half-space temperature reference. | Evolving thermal solver, finite plate and compaction. |
 | W04 | Uniform periodic 1D discrete flexure. | Physical load construction and further geometries/boundaries. |
@@ -316,6 +581,42 @@ Create three distinct evidence sets: exact/manufactured verification, analogue/o
 **Output/gate:** one reviewable case specification with a physical question and quantitative acceptance procedure. Add the compact execution card from [the optimisation reference’s execution card](OPTIMISATION_REFERENCE.md#execution-card): candidate task independence, state ownership, cost/memory estimates, cache identities, equality policy and applicable PF/PT checks. Select finite resources for the specific proposed experiment; unresolved values are not unlimited. No production integration or universal configuration framework.
 
 ### W01 — Coordinates, rotations and initial geological fields
+
+**Stage 4B reference-library status:** sourced principal-material records,
+condition-aware property resolution and exact layer bindings are now supplied.
+Stage 5 must preserve the distinction between grain/bulk properties, explicit
+pore fluids, scalar reference values and still-needed constitutive laws.
+
+**Current stage-4 status:** descriptions and their structural/identity validation
+are implemented for regional and global initial configurations. No stage-5 field
+sampler or W03 thermal/compaction calculation is delivered. W02 cohort identity is
+referenced, not converted into an initial evolving state without stage-5 sampling.
+
+
+
+**Prior stage-3C scope (retained for context):** automatic initial spherical
+partition construction/validation is implemented. Stage 4 above now supplies the
+initial geological description. Stage 5 (sampling), stage 6 (motion adapter),
+stage 7 (W01–W02 integration) and stage 8 (combined acceptance) remain outstanding.
+
+
+**Stages 1–3 delivered within the declared regional/hemisphere-patch scope:** see `cases/w01_coordinates.json`, `cases/w01_geometry.json` and
+[coordinate/time implementation](OPTIMISATION_REFERENCE.md#w01-stage1-delivery).
+This is stage-level completion only. The agreed remaining sequence is:
+
+| W01 stage | State and completion responsibility |
+| --- | --- |
+| 1 — Coordinate/frame/time conventions | Implemented; explicit spherical, local and legacy axes, unit/epoch conversions and independent numerical checks. |
+| 2 — Plate and feature geometry | Implemented for planar polygons/traces and conditioned minor-arc spherical patches, with metrics/overlays, spatial indexes, gap/overlap diagnostics and checked persistence. No arbitrary whole-sphere Boolean engine is claimed. |
+| 3 — Shared boundaries and sidedness | Implemented: complete static domain coverage, single shared segments, verified sides/orientation, same-plate seams, cyclic junction sectors, point contacts, metric frames and prescribed velocity diagnostics. Spherical networks require a coherent common domain chart; arbitrary full-sphere stitching remains unsupported. |
+| 3B — Shared whole-sphere geometry | Delivered with canonical shared vertices, matching seams and global ownership; not dynamics. |
+| 3C — Generated initial partition | Geometry fixture complete. Earth-like scientific acceptance REOPENED: calibrated connected candidate plus independent limited challenges delivered; full outline/motion validation outstanding. |
+| 4 — Initial geological description | Delivered: typed crust/material/cohort/ordered-layer/thermal/fault/weak-zone descriptions, explicit provenance and precedence, regional/planetary attachment, and self-contained verified storage. Point/cell sampling remains stage 5. |
+| 5 — Initial-condition sampler | Outstanding: grid-independent features, appropriate point/average/inventory sampling and missing-data rules. |
+| 6 — Motion to regional forcing | Outstanding: explicit supported reduction from prescribed plate motion, without dropping cross-transect transport silently. |
+| 7 — W01-to-W02 workflow | Outstanding: initialise and evolve a known case without ad hoc intermediate arrays; preserve W03 input descriptions. |
+| 8 — Combined W01 acceptance | Outstanding: original geometric/scientific gates plus resource/cache/restoration checks; then assess whole-package completion. |
+
 
 **Dependencies:** W00. **References:** P01/P03, E01/E02/E04, F01/F03.
 
@@ -703,14 +1004,13 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Current next task after regional W02:** construct and verify the physical load /
-buoyancy connection in W04 from actual thickness/material changes, with explicit
-densities and reference columns. W03 thermal/compaction extensions remain where
-needed; W05 follows only the relevant physical checks. Do not repeat the general
-optimisation programme or rebuild delivered W02 infrastructure. The guidance below identifies the next physical increment, not another rebuild.
-
-
-**Recommended next task:** implement W04's reference-column/load connection using W02's material inventories. Select explicit densities and reference states; verify signs, limits and independent flexural/buoyancy responses without double counting. Preserve the existing independent tests and resource contracts. Do not repeat W02 or begin full production integration before the relevant physical evidence.
+**Current next task:** implement 3C-R1's reference fixtures and registered
+acceptance criteria, then 3C-R2's pre-boundary state/sampling contract. Follow the
+[explicit sequence](#plate-formation-implementation-plan). Causal formation later
+requires the named W03/W07 subset; do not smuggle it into an unrelated W01 update.
+Retain the current statistical candidates as controls, the existing geometry and
+material knowledge, and regional W02. Complete remaining W01 stage-5–8 work through
+the planned connections; no spherical geometry-to-1D physics equivalence is implied.
 
 For Claude or another reviewer, review this plan in the following order: (1) whether the two deformation modes are honestly distinguished; (2) whether N01/N02 and E28 close the material/surface links without double counting; (3) whether C01–C07 identify real missing physics rather than hiding it; (4) whether the proposed cases can falsify errors independently of Diadem geometry; (5) whether the core 1.0 scope and later planetary aims are realistic and distinct; (6) whether optimisation is matched to a verified equation and fixed error budget; (7) whether the P01–P15 execution map respects nonlocal/sequential dependencies; (8) whether cache identities, resource admission, random streams and PT01–PT14 tests can catch real failures. Challenge any PF candidate whose added complexity exceeds its demonstrated benefit.
 

@@ -1,0 +1,51 @@
+{
+  "schema": "atlas.w01.plate-layout-revision.v1",
+  "date": "2026-09-18",
+  "scope": "Correction of stage-3C scientific role, reference-conditioned candidate and independent limited challenges; not a completed Earth-like morphology model",
+  "calibration": {
+    "source": "Bird 2003, DOI 10.1029/2001GC000252, Table 1",
+    "count": 52,
+    "unit": "steradian",
+    "printed_area_resolution_sr": 1e-05,
+    "rank_selection": "largest N, proportionally renormalised; N=2..52",
+    "rule_status": "explicit initialisation prior; not a universal plate-size distribution"
+  },
+  "withheld_challenges": {
+    "Cocos": "complete CO outline from curator GeoJSON blob 879951b5d17c0e11926025223378174fcb9f41f6, 158 positions including closure",
+    "AF_AN": "signed poles and first 12 boundary steps from original PB2002 electronic data; not used by generation"
+  },
+  "candidate": {
+    "method": "pb2002-ranked-connected-geodesic-cuts-v1",
+    "default_support_cells": 1024,
+    "area_l1_limit": 0.04,
+    "per_plate_relative_area_limit": 0.25,
+    "assumptions": [
+      "static shared Voronoi support is not the tectonic plate population",
+      "connected recursive graph cuts, not a mantle/strain-driven fragmentation law",
+      "support count controls generating boundary scale; changed support is a new prior",
+      "fine/rare microplates can be unresolved and cause refusal",
+      "no silent resolution/tolerance changes, scalar-law substitution or generation retries to hide a failed area fit"
+    ]
+  },
+  "acceptance": {
+    "geometry_angular_tolerance_rad": 2e-12,
+    "geometry_area_closure_sr": 2e-11,
+    "source_motion_allowance_mm_a": 0.2,
+    "source_motion_allowance_reason": "0.001-degree endpoint rounding and 0.1 mm/a table rounding; a source-resolution bound, not a changed solver tolerance",
+    "cocos_area_table_allowance_sr": 5e-06,
+    "geological_layout_accepted": false,
+    "distinction": "area agreement is calibration; matching local kinematic formulae is not validation of generated global plate velocities"
+  },
+  "closure_needed": [
+    "full-scale-matched outline population comparisons including several large plates and microplates",
+    "supported connection from geological mechanisms to boundary shape/type and plate motion",
+    "reference-model variation and nonrigid/deforming regions",
+    "independent evolutionary and geological validation; W03 and W01 stages5-8 are not implemented here"
+  ],
+  "no_changes": [
+    "previous scientific fixtures and test tolerances",
+    "historical geometry identities and authored inputs",
+    "Windows files",
+    "GitHub origin"
+  ]
+}

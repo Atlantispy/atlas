@@ -1,0 +1,78 @@
+{
+  "scope": "synthetic stage-2 geometry; no performance thresholds or planetary forecast",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "shapely": "2.1.2",
+    "geos": "3.13.1",
+    "overlay_precision": "binary64, grid_size=0, no repair/snap",
+    "spherical_model": "minor great-circle arcs in an explicit open-hemisphere chart"
+  },
+  "planar_index": {
+    "features": 200,
+    "queries": 2000,
+    "setup_s": 0.0010440529999868886,
+    "median_s": {
+      "exhaustive": 0.13216871200006608,
+      "indexed": 0.0022538759999406466
+    },
+    "samples_s": {
+      "exhaustive": [
+        0.12556245000018862,
+        0.13216871200006608,
+        0.1446926490000351,
+        0.13228159200002665,
+        0.1300299150000228
+      ],
+      "indexed": [
+        0.0030431349998707447,
+        0.0022538759999406466,
+        0.001934234000145807,
+        0.0018364560000918573,
+        0.003005227000130617
+      ]
+    },
+    "candidate_pairs": 2000,
+    "exhaustive_pairs": 400000,
+    "output_pairs": 2000,
+    "exact_same_hits": true,
+    "tracked_query_peak_bytes": 345966,
+    "memory_scope": "tracemalloc excludes some native GEOS/index/runtime allocations"
+  },
+  "spherical_distance": {
+    "queries": 2048,
+    "first_use_s": 0.7507657380001547,
+    "warm_median_s": 0.0004326419998506026,
+    "max_abs_error_m": 4.440892098500626e-16
+  },
+  "source_sha256": {
+    "src/atlas_tectonics/__init__.py": "b2ee5215c2f1268418dd804b2474e7c03fd5d8ae4427f8b07426e7b0396e8850",
+    "src/atlas_tectonics/_geometry_native.py": "9d5087f25c92097def359e6dd978501818df66ff986a88f4e0feb842330091f4",
+    "src/atlas_tectonics/_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+    "src/atlas_tectonics/_mesh_native.py": "b92ee48adbca4efee2394ecc0a6ca7c0842e1183e30456b4890ed3a5b20a1b7c",
+    "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "src/atlas_tectonics/execution.py": "ae550e437fdaab63cbfcb7a58c936537eb75e189f93f7501c1d6bd961fb9fe8f",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/geometry.py": "bd910707e96e7285f42b1748966bcc08094b36def60816c7947dfa7d21d7fbff",
+    "src/atlas_tectonics/geometry_index.py": "f04f48f8f2d9ddadb6c657c558416ab40d9ef7a7623d8432d59cbb554d7b5d57",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/markers.py": "1c290822be25a416e9ec72741c0d63eff6c7d6e7df0e8c6ab592a8c0794e665a",
+    "src/atlas_tectonics/materials.py": "d511e6b73a46b215c4001de6ccf1391d20f1bbd2db6c6545bee3baa7b85b81c8",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/remapping.py": "807cb28fd7e775ed734526745ecfdefa53bba390527f67d9ae55cca43d139d4a",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "9c2b182936107e6f48f4f24ef1cd9637c8389d933611290e8e3a68ce4a0a8f92",
+    "src/atlas_tectonics/spherical_geometry.py": "5e6656b1f7d008d46fdeea4d9fc8b6184708a82774ec7b880ff9816c28efa3d9",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7"
+  }
+}

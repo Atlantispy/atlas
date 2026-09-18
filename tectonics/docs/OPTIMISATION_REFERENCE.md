@@ -1,5 +1,1038 @@
 # Atlas optimisation reference
 
+<a id="3cr1-reference-tools"></a>
+
+## 3C-R1 — complete offline sources and tooling repair (18 September 2026)
+
+**Acquisition and tooling repaired; strict source-consistency acceptance remains
+OPEN.** The previous reference-tools ZIP omitted unchanged baseline files because
+it was a cumulative update relative to `ecac085f…`. It was incorrectly executed
+as a standalone package. Rebuilding from the W02 delivery plus that update matched
+all 89 previously recorded source/test/case/tool hashes. `_validation.py` and the
+other baseline modules were restored byte-for-byte, not replaced with stubs.
+The complete delivery now contains baseline, updates, tests and all eight raw
+PB2002 originals under `reference_data/pb2002`.
+
+The source pin stays `fraxen/tectonicplates` commit
+`339b0c56563c118307b1f4542703047f5f698fae`. All eight byte lengths and Git-blob
+identities pass, with SHA-256 records as additional local integrity evidence.
+Licence, author-format conventions and original line endings are retained.
+Git attributes mark reference data `-text` so a Windows checkout must not normalise
+these bytes. Linux was exercised; Windows execution is still unverified.
+
+From the repository root, in the declared existing Python environment:
+
+```sh
+# Complete offline reference inspection; no installation or Git operation.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-reference.json
+# Full implementation regression, including source-preservation regressions.
+python -I -B tectonics/verify.py
+```
+
+No download is required for this delivery. `--data PATH` selects another complete
+source directory. The optional `--download` path refuses an existing dataset and
+still checks unchanged pins before all-or-nothing publication. No network is used
+by the offline command or normal model calculations. The automatic recovery task
+was disabled after the uploaded archive supplied all eight originals.
+
+### Real-source handling and results
+
+- All 52 original plate outlines contain repeated shared endpoints: **452 exact
+  adjacent repetitions** in total. Raw arrays keep all 12,148 coordinates and
+  repeated-point indices. Numerical views omit only exactly equal adjacent pairs;
+  no nearby unequal point is snapped and no physical arc or material is moved.
+- General `parse_dig()`/`ReferenceCurve` defaults remain strict. The complete-source
+  loader explicitly selects evidence preservation only after all eight byte
+  identities pass. Evidence preservation is not geometric approval.
+- All 52 plate areas are measured through both registered formulae; they agree
+  within the original numerical bounds. All 5,819 motion rows satisfy their
+  individual existing rounding bounds and align with all 229 original segments.
+- Five exact source-connectivity discrepancies remain: two coincident/retraced
+  boundary spans and three polygon connector spans absent from the single-boundary
+  file. No duplicate physical boundary is silently merged, and no step is invented.
+- The ON polygon area differs from the stored Table-1 value beyond the registered
+  source-rounding allowance, despite close agreement between the two numerical
+  formulae. The table value and allowance remain unchanged.
+- All 13 orogens are retained. The Peru record's endpoints are about 8.70 km apart;
+  its polygon metrics are null, with an explicit unresolved-source error. The other
+  12 orogens are measured. No implicit closing arc is manufactured.
+
+The command returns exit **1** with a complete machine-readable review report.
+Exit **0** is reserved for a clean registered consistency pass; exit **2** means
+prerequisites or data prevented completion. Completing the pipeline does not
+convert a questionable source topology into valid simulation input.
+
+See [full reference checks](../evidence/3cr1-complete-reference-checks.json),
+[source review](../evidence/3cr1-source-discrepancy-review.json),
+[source identities](../evidence/3cr1-source-verification.json) and
+[repair tests](../evidence/3cr1-tooling-repair-tests.json).
+Original `3cr1-reference-tools-tests.json` and `3cr1-reference-data-status.json`
+remain historical records of the earlier 1,224-test, acquisition-blocked delivery.
+
+### Optimisation and regression constraints
+
+Exact-repetition masks are vectorised and restricted to small immutable reference
+arrays. The existing memory admission, cancellation, numerical routines, compact
+record layout and lossless compressed/deduplicated report store are reused. No new
+scheduler, cache framework, dependency or numerical backend was introduced.
+Report metadata use JSON-native lists, so a full real-data report survives JSON,
+compressed storage and independent-backup restoration without tuple/list drift.
+The CLI checks incomplete source layouts and local bytecode before package import.
+
+The original 89 source/test/case/tool hashes were checked before edits, and the
+unmodified baseline regression passed 1,224 tests. Thirty additional regressions
+cover exact source preservation, unchanged strict refusals, full-source reporting,
+open geometry, no false acceptance, corruption, cancellation, memory admission,
+compressed storage/deduplication/backup and actionable incomplete-checkout errors.
+Existing test sources, numerical tolerances, raw source pins, registered protocol
+and historical evidence remain unchanged. No R2 or W03 work is included.
+
+The final complete clean-copy regression passed **1,254 tests**, with zero failures,
+errors or skips and all 90 recorded source/test/case/tool hashes unchanged during
+the run. This is implementation verification, not a clean source-consistency pass.
+
+**R1 remains open for a documented source-use decision or independently supported
+corrections.** The original strict consistency gate has not passed. Do not hide
+these defects by repinning data, widening bounds or automatically repairing geometry.
+
+### What the implementation checks
+
+- Original DIG segment titles, directions, explicit closure and source locators;
+  fixed-width step columns, left/right ownership, signed Euler poles, class and
+  deformation flags. Unknown seafloor ages remain unknown.
+- Spherical area through independent Gauss-Bonnet and solid-angle formulations;
+  great-circle perimeter without a planar projection or hemisphere-only shortcut.
+  Oriented complements are explicit; clockwise rings are not silently reversed.
+- Shape at 100, 250 and 500 km observation scales, using equal-arc sampling and two
+  sampling phases. Coarse samples of small plates are labelled unresolved. Extra
+  collinear vertices cannot improve the measurements. Boundary moment eigenvalues
+  are a boundary-shape diagnostic, not falsely labelled an area inertia tensor.
+- Exact source-decimal shared-edge incidence, adjacency, junction owner sets,
+  full step-to-boundary sequence alignment, per-class lengths and margin context.
+  Orogens remain overlapping deformation overlays, not additional rigid plates.
+- Per-step opening, right-lateral velocity, speed and length with separate numerical
+  and source-rounding bounds. Observed SUB classifications are not manufactured
+  from convergent velocity; rounding bounds are not geological confidence intervals.
+
+### Data use is declared before further generator tuning
+
+All 52 areas are already-exposed calibration. Cocos morphology and the first 12
+AF-AN motion steps remain marked previously exposed. New morphology for
+`KE, MA, MN, NB, NI, PS, SB, SS, TO, WL` is reserved; all boundary segments touching
+those plates share the held-out designation. Orogen shapes are reserved from
+layout tuning. Numerical verification of these records is not use for fitting.
+
+This is a **within-PB2002 spatial/observable holdout**, not an independent second
+Earth. Boundary neighbours and common reconstruction assumptions remain correlated.
+A separate reconstruction/model and temporal histories have NOT been acquired by
+this increment. The protocol keeps those gates unavailable; a current Euler pole
+cannot fabricate a historical plate-shape series.
+
+Evaluation records require an explicit purpose, split, candidate identity and run
+ID. An area-calibrated result cannot be rebranded as held-out area validation. Each
+metric is reported independently, with observation scale and unresolved-object
+counts. No single realism score, invented scientific threshold or automatic
+scientific pass is supplied. Realism acceptance remains at the later registered
+process/population gates.
+
+### Optimisation and ownership
+
+The code uses compact immutable coordinate payloads, shared catalogues, native
+NumPy geometry, finite parser limits, scoped memory admission and uniform-arc
+sampling. It does not allocate all-pairs point/edge matrices. Parsed references
+can be retained by their caller; data are never cached by a mutable array's object
+identity. The optional report persistence uses the existing exact ArrayStore and
+its compression/deduplication/backup semantics. No new runtime or cache framework
+is introduced. Caller-retained references and native overhead remain outside the
+per-call budget estimate.
+
+Unit verification and full-source verification are deliberately separate. The
+new regression tests cover malformed sources, known areas, oriented complements,
+source signs, vertex-density/rotation/seam invariance, explicit holdouts, corrupted
+records, bounded memory and failed acquisition cleanup. The original numerical
+and generator implementations remain unchanged. No W03/R2 work is authorised or
+implemented here.
+
+Sources and conventions: [Bird (2003)](https://doi.org/10.1029/2001GC000252),
+[original format documentation](https://github.com/fraxen/tectonicplates/blob/339b0c56563c118307b1f4542703047f5f698fae/original/README.md),
+[Table-2 fields](https://github.com/fraxen/tectonicplates/blob/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_steps_desc.txt),
+and [data licence](https://github.com/fraxen/tectonicplates/blob/339b0c56563c118307b1f4542703047f5f698fae/LICENSE.md).
+
+<a id="plate-formation-execution-plan"></a>
+
+## Execution plan for the causal plate-formation correction (18 September 2026)
+
+**Planning-only; no measured gains or new backend selection are claimed.** Stages
+3C-R1–R9 and their scientific gates are in the
+[maintained tectonics plan](TECTONICS_PLAN.md#plate-formation-implementation-plan).
+This section makes their execution requirements explicit, rather than adding a
+second scientific roadmap or postponing optimisation until after implementation.
+
+The code-revision and subsequent literature documents were prepared from different
+document baselines. This version retains BOTH the implemented PB2002-conditioned
+candidate/evidence section and the 15-study causal review below, then gives the
+new plan precedence. Old measurements remain observations of their exact source,
+not tests rerun during this planning update. No historical test record is edited.
+
+### Stage-specific implementation contracts
+
+| Technique | Where and how used | Correctness/measurement gate |
+| --- | --- | --- |
+| Native arrays and compact records | R2–R9: shared material/law catalogues and stable IDs; contiguous numerical fields. Batch property evaluation and traversal; avoid Python objects per solver cell or complete per-cohort thermal grids without a physical need. | Explicit array layout/units, independently verified property laws, safe capture and publication, stable material history and masks. Unknown is not zero. |
+| Linear-size geometry and sparse connectivity | R1/R7/R8: reuse spherical atlas, conservative bounds and native spatial trees; store each physical edge once and separate output patches from solver partitions. | Indexed queries reproduce exhaustive results, with ambiguous memberships retained. No chart-count or vertex-count dependence of physical metrics. |
+| Native structured Stokes and thermal calculations | R4–R6: compile assembly/transport/property kernels; use sparse direct reference at small size and block-preconditioned iterative solves where justified. Investigate geometric/algebraic multigrid for the actual operator. | Compare total cost at matched velocity, pressure, divergence, thermal and integrated-account error. Test pressure null spaces, sharp viscosity contrasts and nonlinear convergence. No unapproved external-package integration or whole-application language rewrite. |
+| Reusable setup | R4–R6: reuse mesh connectivity, sparsity, geometric factors and compatible preconditioners; reuse numerical factors only for the same matrix. | Separate pattern identity from numeric operator identity. Changed damage, composition, temperature, dt or boundary terms invalidate the relevant numeric setup. A reused preconditioner still needs residual/iteration checks. |
+| Warm starts | R4–R6: previous accepted velocity/pressure and damage state initialise new nonlinear iterations. | Enforce current residual and error criteria. Detect changed solution branch or stagnation; do not accept a previous solution merely because it is nearby. |
+| Shared allocation admission | All: existing WorkBudget across state, candidate, nonlinear workspaces, operators, extraction, workers, staging, codec and retained output. Preflight size before materialising. | Coupled peak, cancellation, failed admission and last-reader lifetime tests. Counts are not an RSS cap. Include native/preconditioner/JIT headroom using measured process-tree memory. |
+| In-memory versus persistent reuse | R1/R2/R8: prepare immutable reference data, profiles and derived mesh plans once. Keep expensive repeatable results eligible for existing admission; evolving states are primarily checkpoints, not assumed cache hits. | Exact dependencies include case/law/reference versions, initial fields, boundary/forcing history, numerical policy and runtime. No timestamp-only invalidation. Selected calibration and diagnostic settings participate where they change the product. |
+| Parallel execution | R1/R5/R9: independent cases/ensembles through existing bounded executor. R4/R6: native parallelism or genuine coupled domain decomposition only after numerical verification. | Do not run adjacent plates or successive times independently. Coordinate inner/outer threads, partition faces, reductions and global pressure coupling. Compare cold transfer/setup plus warm full-call time, not isolated kernel timing. |
+| Adaptive space and time | R4–R7: focus support on thermal boundary layers, damage/shear zones and selected slab/ridge structure; split accepted steps at physical/topological events. | Check convergence and regularisation length; resolution must not create the shear-band width or erase small plates. Mesh/frame rotation tests detect preferred numerical directions. Never silently lower order/precision or relax physical error targets under pressure. |
+| Conservative transfer | R2/R4/R6/R7: extend W02's separation of extensive inventory and intensive fields to chosen multidimensional thermal/compositional transport. Advect damage with its explicit production/healing equation. | Shared flux once, correct units/densities, source/destination accounts, no heat or material change from remap alone. Damage is not falsely conserved in the presence of its physical source/sink. |
+| Incremental boundary work | R7: reuse unaffected topology/metrics where actual dependency changes are local; rebuild when a long-range operator or reorganisation invalidates them. | Coarse bounds never omit relevant contacts. Small field changes can cross a classification threshold: compare incremental with full extraction and retain threshold uncertainty/hysteresis definition. |
+| Lossless storage and deduplication | R1–R9: current Zstd, shuffling, compact categories, immutable chunks and direct manifests. Save required composition/damage/thermal/history fields, not just pretty outlines. Active solvers use normal arrays. | Exact round trip, independent backup/cold continuation, corrupt-chunk refusal, restored ownership. Deduplication of changing fields is not promised; shared data are not independent backups. Dictionaries/delta chains only with a measured use case and explicit decode dependencies. |
+| Lazy output | R1/R5/R9: plots and optional derived diagnostics on demand, generated from actual stored numerical data. Keep required conservation, acceptance and restart records. | Display resolution cannot create a scientific claim. Release caller-retained arrays; no indefinite in-memory history or drawing one pixel per simulation element. |
+| Determinism and identity | All: stable seeded independent streams, fixed law/solver/source IDs and documented reduction order/equivalence. Keep observed geometry and reference files immutable. | Same inputs under the declared reproducibility policy; result origins statistical/kinematic/dynamic remain distinguishable. No automatic switches between physical models. |
+| GPU/distributed/other precision | Conditional only after R4/R6 reveal an eligible workload. Native CPU is the initial route; existing geometry charts do not imply a distributed volume solver. | Include device transfers, supported double precision, solver/codec workspace and numerical agreement. Mixed precision, fast-math, surrogates or physical simplifications are new reviewed numerical/model policies, never automatic speed settings. |
+
+### Model extraction is itself an accuracy-sensitive calculation
+
+For a proposed plate interior p, fit the Euler vector to independently solved
+surface velocities using area weights:
+
+\[
+\widehat{\boldsymbol\omega}_p=
+\arg\min_{\boldsymbol\omega}\sum_{i\in p}A_i
+\left\|\mathbf v_i-\boldsymbol\omega\times\mathbf r_i\right\|^2.
+\]
+
+Report residuals, condition/rank, fitted support, reference frame and excluded
+boundary/deformation bands. This is a diagnostic adapted from the PF-C12 research
+direction, not a claim that fitting poles validates forces. Prescribed Euler
+velocities are suitable unit fixtures only. Thresholds, smoothing length and
+minimum resolved region are scientific configuration, not hidden cleanup settings.
+The shared atlas remains downstream of the continuum/kinematic scientific state;
+it cannot erase significant non-rigid deformation just to complete a polygon map.
+
+### Minimum combined checks in every delivered increment
+
+A new calculation needs: independent reference/invariants; accepted uncertainty
+and convergence criterion; unsupported-input refusal; memory/ownership and
+cancellation checks; updated identities; cache-fresh agreement where eligible;
+restart dependencies; and focused cost/peak-memory evidence for its actual work.
+R9 composes these contracts and tests resource pressure, but does not introduce
+basic cache or ownership design for the first time. Existing unchanged evidence
+is reused rather than repeated as an unrelated broad audit. Scientific realism is
+never scored by counting tests, source lines or implemented optimisation names.
+
+No percentage speed/memory improvement is forecast here. Global process resolution
+must resolve the selected physics; a later 1 m visual/terrain export is not a 1 m
+whole-mantle calculation. Conversely, a coarse calculation cannot claim resolved
+microplates or kilometre-scale transforms merely because the display is detailed.
+
+### Primary-method connections
+
+Preserve PF-C01–PF-C15 below. The implementation's required source extraction
+focuses on [Tosi et al. 2015](https://doi.org/10.1002/2015GC005807) for the nonlinear
+reference suite, [Fuchs & Becker 2022](https://doi.org/10.1029/2022GL099574) and
+[Becker & Fuchs 2023](https://doi.org/10.1029/2023GC011179) for the candidate
+memory-rheology experiments, [Gouiza & Naliboff 2021](https://doi.org/10.1038/s41467-021-24945-5)
+for inherited-structure tests, [Langemeyer et al. 2021](https://doi.org/10.1038/s43247-021-00139-1)
+for the limits of ridge/transform/global interpretations, and
+[Guerrero et al. 2025](https://doi.org/10.1038/s41598-025-14903-2) for independent
+surface-rigidity diagnostics. Web-readable methods were re-examined for this plan;
+supplementary inputs/tables not yet extracted remain an R1/R3 task, not silently
+transcribed benchmark data. No software installation or numerical run occurred.
+
+
+<a id="plate-formation-evidence-20260918"></a>
+
+## Plate formation and shape: scientific correction to stage 3C (18 September 2026)
+
+**Status: literature-informed design and acceptance correction, not a replacement
+solver or an obtained scientific pass.** The unweighted nearest-site generator is
+implemented and geometrically checked. Its original completion statement does not
+establish an Earth-like initial plate population. It remains a geometry fixture or
+an explicitly chosen statistical initial condition; the scientific selection of a
+normal Earth-like generation recipe is reopened. No generator default or numerical
+code is changed by this documentation update. W03 implementation remains paused.
+
+The 18 September diagnostic progress package supplied a comparison against an
+approximate published count/area relation. It did not finish individual observed
+outline comparisons. This literature pass adds causal requirements; it does not
+upgrade that comparison into a completed validation dataset.
+
+### Evidence and what it does, and does not, justify
+
+The sources below distinguish observational constraints, process experiments,
+kinematic theory and numerical verification. None supplies an exact universal
+formula for the shape of a plate. Findings from idealised experiments are not
+universal parameter values for Atlas. Access extent is recorded deliberately;
+abstract-level findings cannot authorise copying an unseen constitutive law.
+
+| ID / primary work | Finding relevant to Atlas | Modelling consequence and limitation | Content examined |
+| --- | --- | --- | --- |
+| PF-C01: [Mallard et al. (2016), *Subduction controls the distribution and fragmentation of Earth's tectonic plates*](https://doi.org/10.1038/nature17992) | Spherical convection experiments connect large-plate organisation to slab spacing and smaller fragments to trench-bending stresses. | Test size populations jointly with subduction geometry and the spatial location of small plates. A fitted size histogram is not a fragmentation model. | Publisher abstract, extended-data descriptions and reference trail; not the complete main methods. |
+| PF-C02: [Bercovici & Ricard (2014), *Plate tectonics, damage and inheritance*](https://doi.org/10.1038/nature13072) | A proposed damage/healing mechanism produces persistent weak zones whose accumulation helps establish plate boundaries. | Preserve inherited weakness and test its reactivation. This is one mechanistic theory, not a uniquely established law or permission to insert arbitrary noise. | Publisher abstract and editorial description; not the complete constitutive derivation. |
+| PF-C03: [Fuchs & Becker (2022), *On the Role of Rheological Memory for Convection-Driven Plate Reorganizations*](https://doi.org/10.1029/2022GL099574) | Their global oceanic-only models preferentially reuse damaged zones and alter reorganisation behaviour. | Distinguish active boundaries from advected inactive weakness. The paper's reduced convective vigour and absence of continents limit direct calibration to Earth. | Accessible methods, results, discussion and data-availability sections. |
+| PF-C04: [Becker & Fuchs (2023), *Generation of Evolving Plate Boundaries and Toroidal Flow From Visco-Plastic Damage-Rheology Mantle Convection and Continents*](https://doi.org/10.1029/2023GC011179) | Damage and continental rafts affect multiscale tectonics; undulating divergent margins can evolve into overlapping ridges and microplates. | Do not treat continental structure and weakness as decorations assigned after a final shape. Damaged and undamaged rheologies are alternative experiments, not claims that one parameterisation is settled. | Publisher abstract and accessible discussion/conclusions; complete numerical setup still needs extraction before reproduction. |
+| PF-C05: [Gouiza & Naliboff (2021), *Rheological inheritance controls the formation of segmented rifted margins in cratonic lithosphere*](https://doi.org/10.1038/s41467-021-24945-5) | Labrador-constrained thermo-mechanical models connect inherited lithospheric structure to rift segmentation and breakup differences. | Generate or supply initial material/thermal structure before modelling rift localisation. Their specific region and parameter cases are not universal rifting defaults. | Full accessible article including methods and uncertainty discussion. |
+| PF-C06: [Gerya (2010), *Dynamical Instability Produces Transform Faults at Mid-Ocean Ridges*](https://doi.org/10.1126/science.1191349) | Numerical models produce transform development from asymmetric plate growth and weakening rather than requiring every offset to pre-exist. | Ridge offsets need process/history and motion compatibility; inherited faults are not the sole permissible origin. | Publisher abstract and accessible article page; supplement not reproduced. |
+| PF-C07: [Langemeyer, Lowman & Tackley (2021), *Global mantle convection models produce transform offsets along divergent plate boundaries*](https://doi.org/10.1038/s43247-021-00139-1) | Viscoplastic spherical convection develops segmented divergent boundaries distinct from continuous convergent margins. | Evaluate morphology separately by boundary regime. Their passive-spreading examples show that a deep plume need not sit beneath every ridge; their convergent downwellings are not realistic one-sided subduction. | Full accessible results, equations and methods. |
+| PF-C08: [Crameri et al. (2012), *A free plate surface and weak oceanic crust produce single-sided subduction on Earth*](https://doi.org/10.1029/2011GL050046) | Modelled free-surface behaviour and weak crust influence subduction asymmetry and trench curvature. | Convergence or a curved outline alone does not select polarity or establish a correct slab model. | Publisher abstract and accessible article introduction. |
+| PF-C09: [McKenzie & Morgan (1969), *Evolution of Triple Junctions*](https://doi.org/10.1038/224125a0) | Kinematic compatibility distinguishes junctions that can maintain their configuration during plate motion from those that cannot. | Require closure of relative velocities and compatibility of junction motion with the incident boundaries. Do not force every junction to 120 degrees. | Publisher abstract; classification tables not transcribed. |
+| PF-C10: [Morra et al. (2013), *Organization of the tectonic plates in the last 200 Myr*](https://doi.org/10.1016/j.epsl.2013.04.020) | Reconstructed small and large plate populations have different statistical behaviour, with large-plate organisation changing through time. | Validate ensembles and different histories, not one fixed count or one modern histogram; treat reconstruction uncertainty separately. | Publisher abstract/highlights and authors' related preprint abstract; not numerical tables. |
+| PF-C11: [van Heck & Tackley (2008), *Planforms of self-consistently generated plates in 3D spherical geometry*](https://doi.org/10.1029/2008GL035190) | Changing rheology in a dynamic spherical model produces materially different tectonic regimes and geometries. | A convection calculation is not automatically Earth-like. Check parameter sensitivity, resolution and rotational invariance rather than equating physics code with realism. | Accessible full article, including assumptions and discussion. |
+| PF-C12: [Guerrero et al. (2025), *A rapid tectonic plate reorganization event driven by changes at subduction locations in a mantle convection model*](https://doi.org/10.1038/s41598-025-14903-2) | Evolving model plates are assessed using fitted Euler vectors; reorganisation is connected to changed subduction locations. | Measure agreement of a derived intraplate velocity field with rigid rotation. Agreement is tautological if velocities were assigned from those same poles. | Full accessible article, including plate identification and kinematic diagnostics. |
+| PF-C13: [Moulin & Jonsson (2025), *Persisting influence of continental inheritance on early oceanic spreading*](https://doi.org/10.1038/s41598-025-93942-1) | Observations in a plume-assisted setting support inherited influence extending into early spreading. | Do not reset inherited structure automatically at continental breakup. The reported setting does not justify a universal plume requirement. | Accessible abstract, results/discussion and observational methods. |
+| PF-C14: [Tosi et al. (2015), *A community benchmark for viscoplastic thermal convection in a 2-D square box*](https://doi.org/10.1002/2015GC005807) | Independent codes compare nonlinear thermal-convection regimes and resolution behaviour. | Reproduce an applicable numerical benchmark before using a new rheology to support causal claims. Passing a 2-D test is not spherical or geological acceptance. | Accessible benchmark methods/results; reference numbers are not copied into a new fixture here. |
+| PF-C15: [Hasterok et al. (2022), *New maps of global geological provinces and tectonic plates*](https://doi.org/10.1016/j.earscirev.2022.104069) | Geological provinces, plate models and deformation zones use multiple observational constraints. | Separate geological provinces from rigid-plate identities and accommodate distributed deformation. It is an observational map compilation, not a formation simulator. | Authors' institutional-repository abstract; datasets not downloaded or numerically compared here. |
+
+### Required scientific state before a shape can be called process-informed
+
+A replacement must jointly specify (or explicitly derive) the thermal and
+mechanical background, continental versus oceanic structure, supported inherited
+weak zones, boundary regimes, relative motion and history. The existing stage-4
+schema and material catalogue are useful inputs; room-condition mineral values
+are not a creep/yield law. Missing stress, slab or damage information must remain
+missing, not be manufactured by adding an unlabeled random field.
+
+For a mature initial world, choose a declared starting epoch. It need not simulate
+planet formation from a magma ocean. A candidate can be an evidence-constrained
+statistical initial state, a replayed kinematic history, or a state generated by
+validated dynamics. These are different scientific claims, not interchangeable
+backends. State the mode in the recipe and its provenance.
+
+The intended causal loop is:
+
+**initial thermo-compositional structure and inherited weakness -> applied or
+computed forcing -> localised deformation and boundary motion -> material and
+weakness history -> changed forcing and subsequent geometry.**
+
+Plate regions are the relatively coherent moving interiors of that network, not
+independently drawn polygons later decorated with arbitrary boundary labels.
+This is an Atlas modelling requirement inferred from PF-C01--PF-C13, not a claim
+that this whole loop is implemented.
+
+### Minimum mathematical and numerical contracts
+
+For a declared rigid kinematic plate p, use the existing relation
+
+\[
+\mathbf v_p(\mathbf r)=\boldsymbol\omega_p\times\mathbf r.
+\]
+
+At the same boundary location, relative velocity is
+
+\[
+\Delta\mathbf v=(\boldsymbol\omega_R-\boldsymbol\omega_L)\times\mathbf r,
+\quad v_n=\Delta\mathbf v\cdot\mathbf n,\quad
+v_t=\Delta\mathbf v\cdot\mathbf t,
+\]
+
+where n points from the declared left owner to the right owner. Keep convergence,
+divergence and tangential motion separate; zero-speed classification needs a
+physical uncertainty band, not a tolerance borrowed from geometric predicates.
+Negative opening does not choose which plate subducts. A sharp boundary also does
+not stand in for every diffuse deforming zone.
+
+At a junction, relative velocities formed at one location obey
+v_AB + v_BC + v_CA = 0. A junction velocity must additionally satisfy the normal
+motion constraints of all incident boundary segments. Algebraic closure alone
+is not a dynamical stability test; incompatible or transient junctions require
+an explicit evolution/reorganisation treatment.
+
+For a dynamical claim, use the selected momentum/continuity/thermal formulation
+and an explicitly sourced constitutive law. As an illustrative *model family*,
+not a newly selected Atlas closure, incompressible Stokes flow satisfies
+
+\[
+-\nabla p+\nabla\cdot(2\eta\dot{\boldsymbol\epsilon})
++\rho'\mathbf g=0,\qquad \nabla\cdot\mathbf v=0.
+\]
+
+Here p is the dynamic-pressure convention and rho-prime is the buoyancy density
+relative to the declared reference, rather than a second mass ledger. Energy advection/diffusion and heating close the temperature field.
+The actual pressure convention, viscosity/strength law, regularisation, boundary
+conditions, internal heating and basal forcing must be fixed in the case. No
+abstract-level paper citation supplies missing constants or numerical settings.
+
+Damage memory, when used, needs an advected state plus separately specified
+production and healing terms. A static spatial-noise texture is not equivalent.
+Choose either a calibrated reduced damage law or a particular microphysical
+formulation; do not combine unrelated papers' laws or coefficients silently.
+
+Rigid-plate diagnostics should fit omega to independently calculated/supplied
+interior velocities and measure the residual, together with strain localisation.
+A perfect fit to v=omega cross r assigned by construction only checks plumbing.
+
+### Validation required before promoting a replacement
+
+1. **Geometry:** retain whole-sphere coverage, shared-edge and junction invariants,
+   patch-layout independence, pole/seam checks and the existing error thresholds.
+2. **Observed morphology:** compare individual outlines at declared angular/physical
+   resolution; area distributions, shape compactness, elongation, boundary turning
+   and adjacency must not depend on arbitrary vertex density. Count uncertainty in
+   small plates and diffuse regions. PB2002 is a reference, not a unique definition
+   of Earth's plate inventory or a prescribed target for every synthetic world.
+3. **Process-conditioned morphology:** compare divergent segmentation, convergent
+   curvature, inherited rift orientations and small-plate locations near active
+   margins separately. Globally scattered fragments with the right histogram do
+   not pass this test.
+4. **Kinematics and history:** check interior coherence, boundary motion components,
+   admissible junction evolution, material birth/retirement accounts and persistence
+   of inherited features. Use explicit time/epoch and thermal history.
+5. **Numerics:** quantify resolution/time-step and regularisation dependence,
+   invariance under rigid rotation, sensitivity to initial conditions, and effects
+   of numerical remeshing. Artificial cracks following the grid do not pass.
+6. **Independence:** separate calibration cases/parameters from withheld test cases.
+   Keep unsuccessful candidates and the reasons for rejection. Do not tune on a
+   single observed map and call the same-map fit independent validation.
+
+The immediately usable references are the existing diagnostic code plus the
+paper requirements above. Individual PB2002/Hasterok polygon comparison and a
+reproduced physical-formation benchmark remain open; this update reports no new
+measurements or passing scientific thresholds.
+
+### Optimisation without changing the scientific question
+
+Retain the existing shared spherical graph, compact material IDs, native batches,
+bounded spatial indexes, memory budgets, lossless storage and verified identities.
+Refine geometric or mechanical support where the selected process needs it, with
+explicit convergence and cross-region exchange. A smaller *validated* physical
+model is legitimate; merely labelling a coarse calculation accurate is not.
+
+Preserve sparse inherited features and share immutable reference definitions.
+Cache an operator only when its geometry, rheology, constraints and discretisation
+match; evolving damage invalidates affected setup. Parallelise independent cases
+or legitimate domain-decomposition work, not mechanically interacting plates as
+isolated jobs. Use analytic kinematics where that is the claimed model. Never use
+faster damage healing, reduced strength, noise, or skipped small plates as
+undocumented performance switches.
+
+**Decision:** do not promote weighted Voronoi, arbitrary agglomeration or decorative
+edge perturbations as the scientific fix merely because they look irregular. They
+remain possible empirical candidates only with explicit assumptions and the
+relevant observed tests. Causal generation requires a verified process model; it
+cannot be obtained by renaming a statistical prior.
+
+This research update changes only the two maintained documents. No new numerical
+implementation, runtime dependency, full-world simulation or W03 implementation
+is delivered. The existing generator code and its historical test records are
+unchanged; stage-3C scientific acceptance remains open.
+
+<a id="plate-layout-science-correction"></a>
+
+## Stage 3C scientific correction — 18 September 2026
+
+**Stage 3C was complete as a shared-geometry generator, NOT as an Earth-like
+plate-layout model. Its scientific acceptance is reopened.** The old nearest-site
+API remains a reproducible mathematical fixture and authored Voronoi route; its
+unchanged numerical meaning must not be relabelled geological evidence.
+
+This corrective increment adds `PlateLayoutSettings` / `generate_plate_layout`:
+a **candidate**, not a newly certified default. A fine shared spherical subdivision
+is grouped by connected geodesic cuts using the published PB2002 rank/area spectrum.
+This permits unequal, connected, concave owners without independently drawing and
+repairing their borders. The candidate records calibration, unresolved shape and
+motion gates, reference identity and generating resolution with every result.
+`require_geological_layout_acceptance` explicitly refuses a scientific acceptance
+claim that the supplied evidence does not establish. It is not a bypassable
+user-metadata flag. No code claims a validated Earth-like production route exists.
+
+The prior is intentionally conditional: for N<52, the largest N published areas
+are renormalised; omitted small plates are not individually reconstructed. This
+is a modelling choice, NOT a measurement of another planet or an invariant
+historical Earth distribution. Plate count above 52 requires another declared
+prior. Original geometry-fixture support for other counts is unchanged. A global
+L1 area check AND per-plate relative check reject insufficient resolution; the
+algorithm never conceals a lost microplate inside a small global average error.
+Coarse support can fail these checks. There is no automatic memory-driven loss of
+accuracy and no claim that a successful coarse prior resolves detailed boundaries.
+
+### Evidence and what it does not prove
+
+* **Calibration:** all 52 area values from Bird (2003), Table 1, retained at their
+  printed precision. Their slight sum discrepancy from 4*pi is tabulation rounding.
+* **Independent outline challenge:** the complete Cocos plate ring, 157 edges plus
+  the repeated closure point. Spherical area agrees with the separately printed
+  Table 1 area. This tests genuine concavity, perimeter and turning; it is one
+  withheld small-plate outline, NOT the entire Earth's morphology distribution.
+* **Independent motion sample:** the original signed AF/AN Euler poles and 12
+  original boundary steps reproduce the published opening/right-lateral values
+  within their rounded source precision. The sign convention is explicit.
+* **Generated motion diagnostic:** supplied angular velocities produce boundary
+  motion with an analytic great-circle integral for each rigid plate's closed
+  area-rate account. This is rigid kinematic consistency, not force balance,
+  subduction polarity or an evolved plate history.
+
+`plate_outline_cycles` ignores same-plate patch seams; simple-ring diagnostics
+refuse pinched ownership cycles rather than choose an arbitrary continuation.
+The separate simple-outline metric requires a conditioned hemisphere; global
+area/perimeter/adjacency diagnostics still operate on the complete atlas.
+Perimeter and nonzero turning are invariant to adding points on an existing arc.
+A finer GENERATING subdivision changes the prior; it is not mere display zoom.
+
+### Execution and storage
+
+Three native sparse shortest-path solves per cut, compact dual adjacency and
+bounded connectedness checks replace dense feature-pair comparisons. Geometry
+construction reuses the audited native generator and global coverage checks.
+Candidates, queries and stored state use existing budgets/immutable geometry and
+ArrayStore. There is no new scheduler or general cache. Parent support geometry
+is charged while the derived atlas is built. Native library allocations remain
+estimated, not a process RSS guarantee. Source and reference definitions participate
+in the existing ExecutionContext. The old physics, storage formats, data library,
+authored geometry routes and numerical defaults are retained.
+
+### Obtained evidence for this corrective increment
+
+[Full regression](../evidence/plate-layout-tests.json): **1,134 passing tests**, all
+1,091 earlier tests plus 43 new checks, zero failures/errors/skips. All prior test
+sources, physical fixtures and tolerances are byte-for-byte unchanged. Checks
+include exact octant/Gauss–Bonnet identities, complete source-outline area,
+source motion signs/units, area resolution refusal, connectedness, sphere coverage,
+immutable queries, source mutation, stage-4 geological attachment, and cold/backup
+restoration. Source inventory: 84 files, unchanged during the final run.
+
+[Three preselected seeds](../evidence/plate-layout-comparisons.json), 12 plates and
+512 support cells: median rank-area L1 mismatch against the DECLARED largest-12
+calibration prior is 0.32368058 for the Voronoi fixture and 0.00784261 for the candidate.
+This is a calibration improvement, NOT a percentage improvement in geological
+realism. Each configuration was timed once per seed, not a robust speed benchmark.
+The new finer construction is slower and retains more geometry; those costs are
+reported without a claim of end-to-end improvement. A coarse 52-plate request is
+explicitly refused when small plates cannot meet the relative area bound.
+
+The source Cocos outline area is 0.072230194879 sr,
+consistent with the separately printed 0.07223 sr. The largest difference in the
+12-step AF/AN comparison is 0.06247472 mm/a, within
+its source-specific 0.2 mm/a rounding allowance. These calculations do not validate
+arbitrarily generated motion or the complete population of plate outlines.
+
+Actual geometry diagrams: [old fixture](../evidence/plate-layout-voronoi.png),
+[connected candidate](../evidence/plate-layout-candidate.png), and
+[area calibration](../evidence/plate-layout-area-spectrum.png). These are plots of
+model data, not an artist's impression or a finished globe viewer.
+
+Tested on Linux / CPython 3.13.5 with the existing declared dependencies. Windows,
+full plate-morphology acceptance, physical histories and world-scale performance
+are unverified. No installation, origin publication, prior-store migration or
+W03 implementation occurred.
+
+### Remaining scientific work
+
+The connected candidate is more flexible and better area-calibrated than the old
+one-site/one-plate fixture. **It must not be promoted merely because it looks more
+irregular.** Scale-matched multi-plate outline and boundary-type/kinematic evidence,
+including deformation-zone treatment and reference-model variability, is still
+needed before a validated Earth-like default can be claimed. This increment
+records that open gate rather than changing the definition of “complete”.
+No W03 work or general optimisation pass is performed. The old dated delivery
+summaries below remain historical; this section controls the present status.
+
+Sources: [Bird 2003](https://doi.org/10.1029/2001GC000252),
+[original digital documentation](https://github.com/fraxen/tectonicplates/blob/master/original/README.md),
+[curator and data licence](https://nordpil.com/resources/tectonic-plates-gis-data/index.html),
+[time-dependent hierarchy study](https://arxiv.org/abs/1011.2752), and
+[alternative finite-area statistical model](https://arxiv.org/abs/cond-mat/0202320).
+PB2002 numerical data are credited to Peter Bird; curated conversion to Hugo
+Ahlenius/Nordpil and GeoJSON preparation to csterling, under the Open Data Commons
+Attribution Licence 1.0. No third-party implementation is copied. Source selectors
+and blob identities are embedded in `plate_reference.py`.
+
+<a id="w01-stage4b-delivery"></a>
+
+## W01 stage 4B — reference materials, conditions and mixtures (17 September 2026)
+
+This increment populates the stage-4 descriptions with a bounded offline reference
+library: **67 profiles**, **7 declared matrix recipes**, and **11 source/method
+records**. It is not W03 thermal evolution, W07 material mechanics or a validated
+planetary composition model. It builds on the stage-4 delivery; the copy-ready
+package is cumulative from `ecac085fb64b7bd862580f996c61d5bf7c9088e2`.
+
+| Concern | Implemented decision and scope |
+| --- | --- |
+| Breadth | 39 named bulk-rock profiles across main igneous, metamorphic, sedimentary and ultramafic families; 25 mineral/endmember profiles; fresh water, seawater and ice. This is not every mineral, metamorphic facies or arbitrary composition. |
+| Evidence | Property-level source and table/section, original unit, printed range, selection meaning and temperature reference. Literature ranges are not calibrated distributions or matched specimens. No paper text/images or third-party implementation is bundled. |
+| Scientific eligibility | `missing`, `require`, `unresolved` and condition-specific coverage. 44 profiles have rho/cp/k together at nominal 293.15 K; others retain useful partial/different-temperature data. No pressure law or instantaneous expansion law is inferred. |
+| Expansion | 30 interval secants retained separately. Ordinary scalar-alpha export refuses to mislabel them. No density-temperature model is supplied merely by possessing a mean expansion value. |
+| Mixtures | Explicit mass/volume fractions, additive density/heat inventory, named pore fluid, grain/bulk distinction. Conductivity bounds are default; geometry-dependent estimates require explicit selection. Unknown radiogenic input is never zero. |
+| Radiogenic inputs | Two sourced shale-population values and an explicit natural-present-day U/Th/K conversion. No universal heat-production property for each rock name, isotope history or assumed zero mantle heating. |
+| Existing geology | Normal stage-4 material/source records plus exact layer-binding verification. Conflicting properties or changed library versions are refused instead of overwritten. Cohort origin/formation metadata remain independent. |
+| Memory/layout | One immutable bounded catalogue per process; compact numeric table and known-value mask, integer map codes, bounded native gather. Source strings/objects are not copied per cell. Owner accounts retained table/catalogue; admission covers conversion/gather/restore work. |
+| Computation | Convert reference units and compile a table once; reuse it for many native gathers. Small scalar mixture calculations use accurate sums. No new compiler, worker pool, GPU or scientific-library dependency is justified for metadata. |
+| Identity | Raw data are source bytes, included in existing source checks. Loaded library routines and data/unit constants participate in the existing ExecutionContext. Complete manifests and prepared-table identities include data interpretation and conditions. |
+| Persistence | Canonical library JSON is a chunked byte dataset through existing Zstd/deduplication. Actual sources/data restore with the library, not just an installed-version dependency. Corruption, malformed records, oversized inventories and wrong bindings refuse. No external fetch during generation. |
+| Reuse | Repeated library lookup shares the immutable catalogue; prepared tables are caller-owned, no global unbounded table cache. Repeated snapshots deduplicate exact payload. A new data revision gets a new identity, not repinned old records. |
+| Default accuracy | Unsupported scalar conductivity is returned as bounds, not a fabricated point. Same-temperature eligibility is checked, not assumed. A partial reference remains partial even when convenient extrapolation would let a downstream solver run. |
+
+**Obtained checks:** all **1,091 tests (1,005 prior + 86 new)** pass on the recorded
+Linux environment without failures/errors/skips. New cases check independent
+source anchors and exact-rational synthetic mixture expectations, ranges/unit
+conversion, secant/temperature refusal, porous/bulk separation, explicit assay
+units, table masks, immutable serialisation, bounded/cancelled/concurrent gathers,
+source/default changes, case binding, saved libraries/cases and cold independent
+restoration. All earlier tests/fixtures/tolerances remain unchanged. No broad
+performance pass, simulator run, dependency installation or Windows test is implied.
+
+The [coverage record](../evidence/w01-earth-materials-coverage.json) reports actual
+payload/table/store sizes and the complete capability/missing-field map; they are
+not a whole-run RAM estimate or a claimed physical error bound. The method is
+native table gathering by construction; no unmeasured speed-up percentage is claimed.
+See [tests](../evidence/w01-earth-materials-tests.json) and
+[reference equations/source interpretation](FOUNDATIONS.md#w01-earth-materials).
+
+**Next:** W01 stage 5 sampling uses these definitions and must preserve their
+basis/condition flags. W03's temperature/compaction laws and W04's load conversion
+remain separate; no supported hot-rock law is silently added by a room-condition
+constant. No new general plan is created, and W03 remains paused.
+
+
+<a id="w01-stage4-delivery"></a>
+
+## W01 stage 4 — compact geological descriptions (17 September 2026)
+
+This delivery supplies typed input descriptions and their validation, not numerical
+sampling/evolution. The stage-3C ZIP is its immediate source baseline; the copy-ready
+update remains cumulative from remote `ecac085fb64b7bd862580f996c61d5bf7c9088e2`.
+Accuracy-first numerical defaults and all previous physical kernels are unchanged.
+
+| Concern | Selected implementation and completion boundary |
+| --- | --- |
+| Representation | Immutable, slotted records containing SI scalars/tuples; shared material, cohort and thermal catalogues. Constant bulk layer stacks vary laterally through explicit provinces. No per-cell Python object engine. |
+| Plate/geology separation | Geological provinces may select plates, regions, or independent geometric pieces. A continental/oceanic classification is never inferred from a plate label or random seed. |
+| Units and uncertainty | Positive finite dimensions and appropriate property ranges; solid-volume fractions distinguished from mass/bulk fractions; formation separate from cooling age. Unknown values carry reasons and survive persistence. |
+| Precedence | Caller supplies a complete highest-first province order and one explicit whole-domain background. Candidate resolution uses prepared ranks, O(k log k) for k matches, not an O(P) scan of all P provinces. All matches remain in the selection receipt. |
+| Overlapping structures | Faults coexist. Weak zones coexist or use a named explicit override order; no automatic factor multiplication or duplicate deformation contribution. Corridor width is an exact distance specification, not a new polygonal buffer. |
+| Geometry reuse | Immutable stage-2 objects, regional networks and global atlases are referenced, not regenerated. Regional containment uses existing native predicates; out-of-domain supplied geometries are refused rather than repaired. A corridor's line must lie in-domain; its predicate is evaluated only for in-domain queries at stage 5. |
+| Memory | Preflight counts catalogues, nested layers/components, strings, profile samples and geometry bytes. Shared WorkBudget charges construction/restore/save workspace; caller owns retained case/geometry objects. Explicit byte/record limits, not arbitrary unlimited metadata. |
+| Persistence/compression | ONE ArrayStore snapshot includes all geometry and topology dependencies. Canonical description bytes are a chunked numeric byte dataset, so profile/description text benefits from current Zstd profiles. Geometry aliases use one payload; descriptors refer by identity. |
+| Identity and reuse | Complete case ID includes topology, properties, thermal history, evidence, depth/epoch frame and precedence. Catalogue order is canonical; physical layer/profile/precedence order is retained. Source/instruction context includes both new modules. A definition identity is not scientific acceptance or a hostile-runtime signature. |
+| Concurrency | Immutable descriptions support concurrent reads. Existing store transactions, cancellation and shared budgets handle writes. No new pool, cache, native solver or GPU path for small declarative records. |
+| Restoration | Validate canonical definition, inventories, shapes/dtypes and byte limits; rebuild and verify geometry/topology; reconstruct typed records and compare full identity. Missing or corrupt data is not a cache miss or permission to reroll the planet. |
+| Numerical choices | No new evolution approximation. New fraction/stack consistency thresholds are explicit in the case fixture; previous numerical/geometric tolerances are unchanged. No renormalisation, smoothing, snapping or hidden lower accuracy. |
+
+### Supported scope and outstanding work
+
+A stage-4 case can retain unresolved facts; it reports them and never fills them.
+A successful description check means internal structural consistency, not that its
+rock properties/thermal assumptions were measured or physically calibrated. Source
+links/checksums are declared provenance, not fetched/authenticated evidence.
+
+Tabulated profiles specify linear interpolation with no extrapolation. Half-space
+initialisation records explicit cooling-start time/parameters, independent of cohort
+formation. Stage 5 must evaluate those profiles at actual locations, honour layer
+arrangement, calculate mixed-cell quantities and check spatially varying property
+validity. W03 thermal evolution, heat sources, compaction and mechanical response
+are NOT executed here; W03 remains paused.
+
+Initial layer thickness is constant within an assigned column profile; multiple
+provinces describe lateral changes. Arbitrary dipping layer-interface functions and
+volumetric fault meshes are not silently approximated by these scalar records.
+Dip/depth fault metadata and weakness modifiers are explicit declarations, not slip,
+force balance or a calibrated failure law. No full W01 completion claim is made.
+
+### Verification
+
+The complete regression run passed **1,005 tests** (915 existing + 90 new), with
+no failures, errors or skips. Linux/CPython 3.13.5, NumPy 2.3.5, SciPy 1.17.0,
+Numba 0.65.1 and Shapely 2.1.2 were already installed; no dependencies were added.
+Windows execution and physical calibration remain unverified.
+
+The [test record](../evidence/w01-stage4-tests.json) and new
+`test_w01_geological_description.py` cover complete/missing catalogues, explicit
+units and unknowns, layer/porosity/mixture consistency, independent formation/cooling
+times, frame/coverage refusal, generated-planet attachment, deterministic precedence,
+immutable ownership, source-context changes, compression/deduplication, cancellation,
+failed writes, corruption, fresh-process and independent-backup restoration.
+Tests also assert that constructing a description does not call the thermal solver,
+transport, or point-membership sampler. All prior fixtures/tests remain unchanged.
+No speed percentage or global geological acceptance is claimed for metadata work.
+
+Primary implementation references: the existing Atlas stage-2/3/3B/3C/W02 contracts;
+[Python dataclasses](https://docs.python.org/3.13/library/dataclasses.html) for frozen
+record semantics, and [Shapely geometry immutability](https://shapely.readthedocs.io/en/2.1.2/release/2.x.html)
+for shared native geometry. Plain frozen dataclasses alone do not freeze arbitrary
+contained arrays; these records prohibit mutable nested payloads and reuse existing
+bytes-backed geometric objects.
+
+<a id="w01-stage3c-delivery"></a>
+
+## W01 stage 3C — automatic conforming initial partitions (17 September 2026)
+
+**Implemented and tested on Linux.** Seeded geometry uses a declared unweighted
+spherical Voronoi prior. Native generation constructs its shared vertex/edge
+registry first, derives charts afterwards and independently validates the atlas;
+no manual stitch, repaired polygon soup or desired mountain outline is involved.
+The authored-site preparation API never changes inputs to find an easier result.
+
+### Adopted execution choices
+
+| Decision | Selected implementation and boundary |
+| --- | --- |
+| Global geometry algorithm | One native Qhull calculation for >=4 sites, followed by sparse incidence traversal. No dense pairwise distance matrix, repeated polygon intersection, or angle-sorted dual rings. Explicit 1/2/3-site constructions avoid pretending a degenerate 3D hull is well-defined. |
+| Shared topology | Each junction is created once from a canonical site triple, and shared arcs come from primal-edge incidence. Derived local faces refer to that registry. Full stage-3B manifold/coverage checks remain on. |
+| Prepared reuse | `PlanetaryPartitionPlan` holds immutable sites, vertices and ring definitions. Repeated patch construction does not rebuild the hull. Existing atlas indexes handle repeated spatial queries; no new general cache or search framework. |
+| Working patch default | Retain conditioned cells when possible; fan only when needed. All-triangle layout is explicitly available for numerical/layout checks. This changes representation cost, not physical plate geometry or precision. |
+| Reproducibility | Named deterministic seed-to-direction mapping; sorted IDs and adjacency traversal. Candidate failures are bounded and counted. No global RNG, time, worker count or scheduling-dependent draws. Exact cross-backend equality is not asserted. |
+| Resources and cancellation | Bounds precede RNG/native allocation; one serial native hull per candidate and finite native-memory allowances. Cancellation is checked between phases/loops; a running native hull is not forcibly terminated. Budget/cancellation/audit failures are not permission to reroll. |
+| Persistence | Existing Zstd/deduplicated atlas snapshots retain resolved sites, source/runtime identity and full canonical geometry. Corruption is not repaired by regenerating another world. Cold restoration validates topology without a parent-chain dependency. |
+| Parallelism | A single closed partition is globally coordinated. No per-plate pool is added; independent calls are concurrency-tested against shared budgets. Larger workloads may justify a measured scheduler decision later, not thread count for its own sake. |
+| Accuracy | Binary64 native geometry; no QJ, snapping, fast-maths, lossy coordinates, relaxed prior tolerances or raster substitution. The prior is not an Earth plate-size or force model. |
+
+Near-duplicate sites, non-spanning >=4-site hulls and unresolved cofacets are rejected.
+For generated data the full candidate is redrawn within the explicit limit, with
+the accepted attempt and reasons retained; this conditioning is a declared prior.
+Authored diagrams with these conditions fail explicitly rather than being modified.
+A supported whole-planet layout is not a claim that arbitrary input is repairable.
+
+The two layout modes share an intrinsic `partition_id` and physical interplate
+edge IDs. Extra triangles are same-owner seams, excluded from plate adjacency
+and perimeters. `repatch_planetary_partition()` uses saved sites, not a new seed
+or an untracked stochastic draw. Repeated in-process layouts should use the
+prepared plan instead of reconstructing it from an atlas.
+
+### Obtained verification and bounded costs
+
+[Fresh regression evidence](../evidence/w01-stage3c-tests.json): **915 passes,
+847 preceding checks plus 68 new checks**, no failures/errors/skips. All prior
+test sources, fixtures and tolerances are unchanged. The new suite checks direct
+nearest-site predictions, analytical whole-sphere/hemisphere/lune and symmetric
+areas, coverage/junction invariants, patch changes, native/reference geometry
+comparison, deterministic order, invalid inputs, failure/cancellation, shared
+budgets, immutable metadata and compressed/fresh-process/backup restoration.
+
+[Focused measurements](../evidence/w01-stage3c-measurements.json), five warmed
+observations per operation, one native-library thread. Full generation includes
+the seeded candidate and complete atlas validation, not merely the hull:
+
+| Plates | Generate and validate | Prepare shared topology | Auto layout from plan | Triangle layout from plan | Patches auto / triangles |
+| --- | --- | --- | --- | --- | --- |
+| 12 | 28.49 ms | 2.14 ms | 26.80 ms | 108.50 ms | 12 / 60 |
+| 64 | 155.35 ms | 10.35 ms | 144.50 ms | 669.35 ms | 64 / 372 |
+| 128 | 303.66 ms | 20.90 ms | 308.79 ms | 1396.29 ms | 128 / 756 |
+
+The first 12-plate generation took 245.86 ms including lazy
+native setup inside the call; this is separate from the warmed observations.
+The maximum measured auto/fan area difference was below 5e-16 sr. Query ownership
+also matched an independent site-dot-product calculation. Different layouts have
+different amounts of representation work; these timings are not a speed-up against
+an earlier planet generator (there was none), or a whole-world physics forecast.
+The script is `tests/measure_w01_planetary_generation.py`. It does not revive the
+skipped broad baseline item. Accounted memory and retained estimates are not RSS;
+caller-owned plans, returned atlas data and indexes must retain owner reservations.
+
+No additional dependencies were installed or added: the existing SciPy native
+hull/tree, NumPy and Shapely/GEOS stack is reused. Runtime identity now includes
+the Qhull extension. Existing physical kernels and storage formats are untouched.
+Copy-ready delivery is on the stage-3B source over remote `ecac085f…`; nothing is
+pushed. Windows and physical validity remain unverified. **Next: W01 stage 4;
+stages 4–8 remain open and W03 remains paused.**
+
+<a id="w01-stage3b-delivery"></a>
+
+## W01 stage 3B — closed planetary patch geometry (17 September 2026)
+
+**Implemented and mathematically checked on Linux:** a closed, conforming static
+spherical atlas, using the existing stage-2 primitives and stage-3 side conventions.
+The global geometry no longer needs to fit a single hemisphere chart. Local faces
+still use conditioned charts. Every source seam uses explicit shared vertices and
+matching subdivisions, rather than automatic nearest-neighbour welding.
+
+### Execution and representation decisions
+
+- `SphericalAtlas` holds one canonical coordinate per global vertex and one shared
+  edge with two opposite owners. Vertex links, connectedness, Euler characteristic
+  and independent area sums validate closure without an all-faces intersection
+  matrix. Perimeter and adjacency ignore same-owner patch cuts. Region/plate IDs
+  are independent of patch IDs, including owners spanning more than a hemisphere.
+- Existing stage-3 networks attach through `stitch_spherical_networks()` and explicit
+  local-to-global vertex bindings. Each attachment is checked against the supplied
+  canonical geometry; a fixed 64-epsilon angular round-off allowance and observed
+  errors are recorded. Larger disagreement is refused. No source files or shapes
+  are silently modified. Repeated attachment preserves already-unit coordinates
+  rather than normalising them repeatedly and drifting their byte identities.
+- Areas and edge frames use canonical spherical directions. Working-chart changes
+  leave the geometry identity and edge metrics unchanged. A changed mesh/patch
+  subdivision is a changed representation identity, not new physical geology.
+- Point membership uses reusable **radius-bucketed spherical caps and native SciPy
+  cKDTree queries**. Tight cap centres are chosen only when all face vertices lie
+  in the resulting convex hemisphere cap. Otherwise the declared chart cap is
+  retained. Native vector operations prune candidates; existing spherical polygon
+  predicates decide final membership. Approximate tree search is not enabled.
+- A preliminary cap implementation used overly broad common-chart centres and
+  per-candidate Python arithmetic. It was replaced before delivery by tighter
+  per-face bounds and batched chord comparisons. Candidate pruning must improve
+  total query work, not merely make the reported candidate count smaller.
+- Queries return all boundary owners, deduplicating repeated hits from patches of
+  one owner. No 'first plate wins' or nearest-owner fallback is supplied. Index
+  construction and active queries obey the existing shared memory admission.
+  A retained index holds its reservation until closed; atlas payloads and returned
+  arrays remain owner-side costs. Native-memory allowances are not an RSS cap.
+- Source, material and geometry identities remain separate. The existing execution
+  context now includes this module and the SciPy spatial native binary. Contexts
+  retain their documented process-lifetime/runtime assumptions, not a security seal.
+- Existing `ArrayStore` saves the canonical numeric registry with the complete
+  static definition. Identical registries deduplicate across chart-only changes.
+  Native indexes rebuild on restore and are never pickled as trusted structures.
+  No new cache, scheduler, codec, automatic history cleanup or dependency is added.
+
+### Checks and measured behaviour
+
+[The fresh verification record](../evidence/w01-stage3b-tests.json) reports
+**847 passing checks: all 756 previous tests and 91 new tests**, no failures,
+errors or skips. It records 67 source/test/case hashes before and after execution.
+Previous fixture/test sources and their tolerances are unchanged. New coverage
+includes closed octant/cube/random triangulated spheres; large, holed, disconnected
+and whole-sphere owners; chart/rotation/refinement invariance; invalid seams/folds;
+short arcs; frame reversal; input immutability; budget/cancellation/concurrency;
+explicit stage-3 bindings; corrupted objects; backup and fresh-process restoration.
+
+The additional rotated-seam check found a coordinate re-normalisation drift during
+development. It was corrected and three successive restitch/rebuild tests now keep
+the canonical coordinate and shared-edge bytes stable. This did not require changing
+old angular tolerances or widening the source-attachment band.
+
+[Focused measurements](../evidence/w01-stage3b-measurements.json) compare the same
+ownership query on **216 spherical patches and 2,048 query directions**, five
+paired alternating-order warmed repetitions, without other test runs in progress:
+
+| Quantity | Obtained result |
+| --- | --- |
+| Exhaustive feature/query pairs | 442,368 |
+| Accepted cap candidates | 3,847 (99.1% fewer) |
+| Median exhaustive query | 153.00 ms |
+| Median indexed query | 27.18 ms (82.2% less time) |
+| Full atlas construction, one observation | 396.81 ms |
+| First index setup, including native spatial import, one observation | 212.15 ms |
+
+All reported owner pairs matched exactly. The retained atlas estimate was
+984,910 bytes, not a measured process peak.
+Construction/import costs are not hidden inside warmed speed claims. Results do
+not establish whole-world generation throughput, material-physics performance or
+Windows compatibility. The repeatable focused script is
+`python -B tectonics/tests/measure_w01_spherical_atlas.py`; it runs only the named
+synthetic geometry workload, not a new general benchmark programme.
+
+**Completion boundary:** stage 3B supplies static closed spherical geometry for
+explicit conforming patch meshes, not automatic repair/tessellation of unrelated
+polygon inputs. General evolving spherical W02 transport, generated plate motion,
+forces and geology remain separate. W01 stages **4–8** are still outstanding.
+W03 is not implemented by this increment. The two existing maintained documents
+remain the authorities; this delivery is copy-ready, not remotely published.
+
+References and the structural acceptance reasoning are in the existing
+[scientific notes](FOUNDATIONS.md#w01-stage3b). S2/CGAL were method references only.
+
+<a id="w01-stage3-delivery"></a>
+
+## W01 stage 3 — static shared boundaries (17 September 2026)
+
+This delivery builds on the **corrected** stage-2 source, not the unrelated W03
+attempt. It implements the supported static geometry/side/junction responsibilities;
+W01 stages 4–8, generated forcing, moving spherical topology and physical/geological
+acceptance remain separate. No numerical transport/thermal kernel is changed.
+
+### Implementation and accuracy
+
+`BoundaryRegion` pairs an immutable areal geometry with separate region and plate
+identities. `build_boundary_network` requires complete nonoverlapping coverage in
+one identified plane or a declared spherical domain chart. An STRtree prunes
+candidate region/segment comparisons; native predicates still check each relevant
+case. Source rings are consistently oriented (CCW shells, CW holes), then native
+noding splits shared linework at intersections and vertices. Each atomic segment
+receives at most one occupied owner on each side using original directed segments.
+There are **no epsilon-offset sampling probes, snapping, precision grids, silent
+repairs, dropped overlaps or tolerance-based gap closure**.
+
+The graph stores vertices, edges, left/right region indices and two compressed-row
+incidence tables: vertex→outgoing rays and region→directed edge uses. Each interior
+edge appears once, referenced with opposite signs. A junction's left sector must
+match the next CCW ray's right sector. Point-only contacts and same-plate patch
+seams are explicit, not promoted to interplate adjacency. Content IDs preserve the
+current inputs and derived connectivity; they do not replace persistent geological
+identifiers in W02 or a future boundary history.
+
+`frames()` uses native array batches for tangent/right-normal/metric calculations.
+A spherical normal uses the corrected stable sum/difference plane normal; true
+arc fractions and lengths use the radius. `motion()` consumes named plate velocity
+vectors, with region geometry deciding the side assignment. Results use the same
+conventions as `boundary_motion`; no material/slab velocity is inferred. Radial
+relative velocity is exposed for spherical diagnostics, not discarded as a valid
+one-dimensional reduction. `validate_trace()` uses the retained native edge tree
+and checks all overlapping pieces and their directed owners.
+
+### Execution, memory and reuse decisions
+
+- Reuse native Shapely/GEOS noding and indexing already required by stage 2.
+  No alternative geometry framework, dependency installation or new worker pool.
+- Source-side/ring preparation occurs once per network. Shared input metadata is
+  hashed once, then its digest is reused in edge/node IDs instead of repeatedly
+  hashing a region-sized header for every edge. Region incidence avoids scanning
+  the full network once per region; velocity ownership groups are built in one pass.
+- Compact immutable byte-backed arrays provide private returned descriptors.
+  Traces/frames are queried in bounded batches, and required output/arrangement
+  envelopes are admitted before bulk allocation. No full edge×query matrix is kept.
+- WorkBudget reservations cover build/query estimates. Network/geometry ownership
+  persists beyond each call: the caller must account `retained_bytes_estimate`
+  and genuinely shared source geometry once. GEOS and STRtree overhead is an
+  allowance, not a hard cap or measured whole-process RSS.
+- Native read queries are reusable and tested concurrently. Indexes rebuild after
+  serialization/storage; no mutable prepared object is accepted by trust in pickle
+  flags. Save/load uses the existing ArrayStore, lossless Zstd and chunk deduplication.
+  One snapshot contains all input WKB definitions; no long manifest dependency chain.
+- Updating geometry or plate labels creates a new identified network. Existing
+  execution contexts include the new module and refuse changed source/methods.
+  Cancellation is checked at safe boundaries, not claimed to kill a running GEOS call.
+
+### Spherical support and numerical refusal
+
+The topology chart is dimensionless and orientation-preserving on its supported
+hemisphere. Adjacent regions may use distinct compatible charts only when exact
+conversion to the **declared domain chart** passes coverage and source-side tests.
+Reprojection may expose a numerical sliver even for intended coincident source
+arcs. Such input is refused rather than joined by tolerance or repair; use a
+coherent common definition. The tests preserve a refusal case and a successful
+compatible-chart case. A planet-spanning atlas without a supported common chart
+requires a separate explicit seam/stitching extension. This release does not
+claim that extension, global coverage, moving junctions or spherical W02 transport.
+
+### Obtained evidence
+
+The fresh [test record](../evidence/w01-stage3-tests.json) and
+[log](../evidence/w01-stage3-tests.log) record the complete current suite. The new
+84 cases cover independent rational partitions/perimeter integrals, holes, T/four-way
+junctions, point contacts, trace reversal, short arcs, polar/seam frames, co-rotation,
+compatible/inexact recharting, invalid coverage, allocation/cancellation, identity,
+concurrent reads, source changes, corruption and fresh-process/backup restoration.
+All prior test sources/cases and geometric tolerances remain unchanged.
+
+[Focused measurements](../evidence/w01-stage3-measurements.json) use 96 rectangular
+regions, 212 unique edges and 172 interplate edges. Five paired warmed comparisons
+of the same velocity diagnostics gave median 17.112 ms through individual diagnostic
+calls and 2.537 ms through the new batch interface, with identical compared output
+bytes. Single-observation network preparation took 62.514 ms. Candidate checks
+and retained/tracked memory scopes are recorded; these are not world forecasts,
+hardware-independent improvements or an audit of all future geometry sizes.
+No timing threshold is embedded in tests. Windows and geological validation are
+unverified; no publication or edits on the owner's PC occur here.
+
+Primary method references (no external code copied):
+- [Native noding](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.node.html).
+- [Occupied ring orientation](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.orient_polygons.html).
+- [Directed shared paths](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.shared_paths.html).
+- [Spherical gnomonic scope](https://proj.org/en/stable/operations/projections/gnom.html).
+
+
+<a id="w01-stage2-corrections"></a>
+
+## W01 stage 2 — targeted correctness corrections, 17 September 2026
+
+The four double-check findings are corrected in `0.1.0.dev13`, without another
+architecture/optimisation pass. The three changed implementation files are
+`_geometry_native.py`, `geometry.py` and `spherical_geometry.py`.
+
+| Finding | Correction and regression boundary |
+| --- | --- |
+| Short-arc distance and missed matches | Compute `(a+b) × (b-a)` instead of subtracting nearly equal products in `a × b`; scale the normal before taking its norm. Preserve exact finite-arc membership testing and the endpoint fallback, not an infinite-great-circle approximation or enlarged corridor. Tests use 90-digit independent products of captured endpoints, multiple orientations, short lengths, offsets and reversal. |
+| Constructor/import mismatch | Apply shared coordinate-sequence checks after native parsing, including individual multiline/polygon/collection parts. Duplicate adjacent vertices are rejected, not removed; a legitimate ring closure and equal endpoints belonging to distinct components remain valid. |
+| Infinite output distance | Apply the region-interior zero convention before converting radians to metres, then reject unrepresentable outputs before publication. Representable extreme-radius results remain supported. |
+| Empty-query cancellation | Check cancellation before allocation and at the empty-result return, including invalid tokens and cancellation raised during the call. Reserved work is released on refusal. |
+
+The metric stays compiled with `fastmath=False`, no parallel reductions and no
+points-by-edges scratch matrix. Validation changes do not alter the WKB schema or
+valid definition IDs; existing source/execution identities prevent silently
+reusing results of the old numerical implementation. Invalid definitions formerly
+admitted by the importer now refuse restoration. No historical snapshot is rewritten.
+
+The previously failing probes are retained as permanent tests, alongside endpoint,
+near-miss, serialisation, storage/index and cleanup checks. Original fixtures and
+previous test sources remain unchanged. See [fresh full tests](../evidence/w01-stage2-corrections-tests.json)
+and [the correction record](../evidence/w01-stage2-corrections.json). These are
+correctness checks, not new performance measurements or geological acceptance.
+Windows remains unverified. W01 stage 3 and W03 are not part of this delivery.
+
+Method references: [S2 stable cross-product explanation and implementation](https://s2sphere.sidewalklabs.com/en/latest/_modules/s2sphere/sphere.html#robust_cross_prod)
+and [Shapely's documented limits on WKB validity checking](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.from_wkb.html).
+The algebraic identity is used directly; no external implementation is imported.
+
+<a id="w01-stage2-delivery"></a>
+
+## W01 stage 2 — geometry, predicates and spatial queries
+
+**17 September 2026.** Native double-precision Shapely/GEOS is the normal planar
+backend; spherical geometry uses its topology inside conditioned gnomonic charts,
+with separately calculated spherical metrics. No runtime choice lowers precision,
+repairs an invalid feature or treats geographic degrees as Cartesian metres.
+See [the scientific scope](FOUNDATIONS.md#w01-geometry). W01 stages 3–8 remain.
+
+| Concern | Implemented decision and boundary |
+| --- | --- |
+| Native calculations | Shapely 2.1+ vectorised native predicates/overlays; compiled finite-arc distance loops with `fastmath=False`, `cache=False`, no parallel reductions. Reference-only package use does not eagerly require Numba. |
+| Setup reuse | Immutable WKB-backed geometry prepares its native predicate structure once. Indexes share feature definitions and build native STRtrees once. Equal-identity overlays reuse the verified definition where mathematically appropriate. |
+| Candidate pruning | Index multipart components separately without creating new geological IDs. Per-chart spherical boxes are conservative broad phases; final predicates/arc-distance bands retain all candidates. Stable sorted output never assumes a nearest/first-hit owner. Hole validation also uses an index rather than rebuilding all prior holes. |
+| Memory | Bound query chunks and match count before native calls, including candidate/result tables. No points-by-edges distance matrix. The index holds an estimated native/setup allowance until close; caller-held geometry/results remain owner costs. Native GEOS/JIT allocator memory is not a promised RSS cap. |
+| Overlay size | Account for a conservative intersection envelope and refuse excessive pairs before allocation. Provably disjoint bounding boxes avoid that quadratic envelope. No downsampling to fit the budget. |
+| Spherical representation | One conditioned open-hemisphere chart per patch; cross-seam and polar support. Indexed queries may group several charts. Global patch seam/coverage construction is deferred to the explicit topology stages, not silently replaced by flat geometry. |
+| Storage and identity | Existing Zstd/deduplicated ArrayStore holds bounded WKB definitions plus frame/chart metadata. Restore rebuilds geometry, verifies its descriptor/ID and recreates derived setup. No new disk cache, pickle store or state migration. |
+| Dependency verification | Geometry modules join the fixed callable inventory; native metric source/flags join the selected Numba identity. Shapely extension and bundled GEOS binaries join runtime identity. System/non-wheel GEOS remains explicitly unsealed where those binaries are not discoverable. |
+| Parallelism | Independent immutable queries may share an index. Tests exercise concurrent reads; close refuses active readers. No extra worker hierarchy, GPU path, eager prefetch or automatic parallelisation of coupled topology is added. |
+| Cancellation/failure | Check at bounded query boundaries and before publishing results. Invalid masks, frames, shapes and native failures are explicit. Geometry is never mutated by a rejected query/overlay. |
+
+**Focused evidence:** `tests/measure_w01_geometry.py` compares exhaustive feature
+queries with the reusable index on 200 separated rectangles and 2,000 sample points,
+with five alternating-order warmed repetitions and separately recorded setup.
+The result includes candidate counts and exact hit equality; it is not a forecast
+for overlapping global plates. Native/internal allocations are not fully captured
+by Python allocation tracking. Spherical metric checks measure finite arcs against
+independent equatorial expectations, recording first compilation separately.
+[Measurements](../evidence/w01-stage2-measurements.json) and
+[full regression record](../evidence/w01-stage2-tests.json) report actual outcomes.
+
+**Not adopted:** dense all-pairs cell/feature tables, maximum compression in hot
+loops, persistent predicate-result caches for these cheap queries, a separate geometry
+scheduler, automatic coordinate snapping/repair, low-precision GPU predicates, or
+an unvalidated full-sphere rewrite. The existing optimized numerical backends and
+W02 contracts remain unchanged. Shapely is a declared dependency already present in
+the development environment; no installation or publication was performed.
+
+<a id="w01-stage1-delivery"></a>
+
+## W01 stage 1 — coordinate/time conventions, 17 September 2026
+
+**Scope:** coordinate representation and explicit time/units only; not a complete
+W01 geological sampler or W01-to-W02 forcing adapter. The branch baseline is
+`ecac085fb64b7bd862580f996c61d5bf7c9088e2`. This is a local copy-ready delivery.
+Physical/numerical accuracy remains ahead of speed; no untested lower precision,
+fast-maths, implicit unit guesses or silent reference-frame substitutions occur.
+
+| Concern | Implemented decision |
+| --- | --- |
+| Bulk geometry | NumPy native ufunc/matrix batches, normally 65,536 points; input capture, output and bounded scratch use the existing shared WorkBudget. Invalid shapes are refused before bulk conversion. |
+| Reusable setup | Each local frame retains one immutable 3x3 basis (72 numerical bytes, excluding metadata/origin). Its identity covers radius, parent frame, origin, local name and orientation. Restore reconstructs derived setup. |
+| Copies/lifetime | Existing read-array borrowing for proven immutable backing; detached mutable capture; compact immutable outputs. Direct local-to-local transforms compose their small operators rather than produce a full intermediate XYZ field. |
+| Persistence | Existing ArrayStore supports coordinate products/metadata; no bespoke coordinate cache. Frames/time axes supply content identities, not complete scientific-result identities. Complete invocation records must still include inputs and execution identity. |
+| Verification | Fixed execution-dependency inventory now includes coordinates/timebase and immutable named unit records, preventing stale loaded-code/unit reuse. Old caches are not repinned. |
+| Time efficiency | Direct axis conversion combines origins before scaling and avoids a huge intermediate absolute timestamp. This preserves small local intervals where possible; lost positive steps or wholly lost offsets are refused. |
+| Parallelism | Conversions are independent only for independent batches and immutable frames. They require no new pool. Existing matrix/native controls remain; no automatic process/GPU backend is introduced. |
+| Resource meaning | Per-call reservation covers estimated input/candidate/publication arrays and batch scratch, not total RSS or caller-retained results. Large outputs need explicit budgets or caller-supplied chunking; smaller scratch does not remove output memory. |
+
+Numerical reference: the ESA ENU basis, specialised to a sphere, and independent
+scalar trigonometry/cardinal-frame cases. Fixed Julian units use the explicitly
+named IAU definition, not an implicit civil or planetary year. See
+[scientific case notes](FOUNDATIONS.md#w01-coordinates) for equations and sources.
+Coordinate roundoff is a representation error separate from geological uncertainty.
+The local frame is an affine three-dimensional chord frame, not a flat surface map;
+no surface-area, polygon or force-derived-motion claim follows from passing it.
+
+[Obtained verification](../evidence/w01-stage1-tests.json) records the full suite.
+New checks include poles/seams, tiny/large values, input/mask/budget refusal, polar
+and axial legacy reflection, moving-frame velocity terms, time/epoch consistency,
+immutable restoration, shared-thread execution and existing store/context reuse.
+No new performance benchmark or universal speed/RAM percentage is claimed. No
+Windows or geological validation is inferred. Stages 2–8 of W01 remain outstanding.
+
+
 <a id="w02-completion-delivery"></a>
 
 ## W02 regional completion — remap, motion, topology and history

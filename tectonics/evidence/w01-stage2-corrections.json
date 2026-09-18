@@ -1,0 +1,89 @@
+{
+  "schema": "atlas.w01.stage2-targeted-corrections.v1",
+  "date": "2026-09-17",
+  "status": "FOUR_IDENTIFIED_STAGE2_CORRECTIONS_PASS_CURRENT_LINUX_SUITE",
+  "version": "0.1.0.dev13",
+  "baseline": "W01 stage-2 delivery on supplied W02 completion / ecac085fb64b7bd862580f996c61d5bf7c9088e2",
+  "baseline_stage2_archive_sha256": "d01e322f0884f59a6a52f6a6a09b3a921e1f92c459904d4d3f72991bea55d919",
+  "previous_record_verified_source_case_test_files": 58,
+  "reproduced_before_correction": {
+    "review_tests": 13,
+    "passed": 6,
+    "failures": 7,
+    "distinct_issues": 4
+  },
+  "correction_scope": [
+    "stable finite short-arc metric normal",
+    "shared zero-edge validation on import and restoration",
+    "finite metre-distance refusal",
+    "empty spherical query cancellation"
+  ],
+  "regression_suite": {
+    "tests_run": 672,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "prior_tests": 646,
+    "new_test_methods": 26,
+    "original_review_probes_retained": 13,
+    "additional_targeted_test_methods": 13,
+    "source_unchanged_during_tests": true
+  },
+  "midpoint_reproduction": {
+    "old_distance_rad": 1.6024688798133013e-09,
+    "corrected_distance_rad": 0.0,
+    "independent_decimal_distance_rad": 4.99999997843146e-91,
+    "unchanged_angular_tolerance_rad": 2e-12
+  },
+  "adversarial_arc_checks": {
+    "orientations": 16,
+    "half_arc_lengths_rad": [
+      0.01,
+      0.0001,
+      1e-06,
+      1e-08,
+      1e-10,
+      1e-12
+    ],
+    "offsets_rad": [
+      0.0,
+      1e-14,
+      1e-10,
+      1e-08
+    ],
+    "public_metric_and_reversed_native_arc_compared": true,
+    "reference": "90-digit Decimal dot/cross arithmetic on captured endpoints; oriented half-space membership"
+  },
+  "preserved": {
+    "all_previous_test_and_case_files_byte_identical": true,
+    "prior_numerical_tolerances_unchanged": true,
+    "original_evidence_unchanged": true,
+    "no_fastmath_parallel_reduction_or_tolerance_widening": true,
+    "valid_geometry_definition_ids_and_storage_schema_unchanged": true
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "numba": "0.65.1",
+    "shapely": "2.1.2",
+    "geos": "3.13.1",
+    "platform": "linux"
+  },
+  "checks_run": [
+    "baseline independent double-check (expected seven failing probes)",
+    "corrected independent double-check (13 pass)",
+    "test_w01_geometry_corrections.py (26 pass)",
+    "python -I -B tectonics/verify.py (672 pass)"
+  ],
+  "not_claimed": [
+    "Windows validation",
+    "unrestricted whole-sphere polygon engine",
+    "W01 stages 3-8 completion",
+    "geological validation",
+    "performance benchmark",
+    "W03 implementation",
+    "edits on user PC",
+    "GitHub publication"
+  ],
+  "copy_ready_delivery": "cumulative W01 stage 1 + stage 2 + targeted corrections; no deletions"
+}

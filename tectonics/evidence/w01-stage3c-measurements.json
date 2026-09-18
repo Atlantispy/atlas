@@ -1,0 +1,163 @@
+{
+  "scope": "W01 3C synthetic geometry only; warmed comparisons; no global-world evolution",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "platform": "Linux"
+  },
+  "first_generation_s": 0.24586027700001978,
+  "cases": [
+    {
+      "plate_count": 12,
+      "generation": {
+        "median_s": 0.028492949999986195,
+        "min_s": 0.027281269000013708,
+        "max_s": 0.03221842300001754,
+        "repetitions": 5
+      },
+      "prepare_topology": {
+        "median_s": 0.002136543000005986,
+        "min_s": 0.0019854690000329356,
+        "max_s": 0.00275467199992363,
+        "repetitions": 5
+      },
+      "build_auto_from_plan": {
+        "median_s": 0.02680159699991691,
+        "min_s": 0.025866638000024977,
+        "max_s": 0.0318053889999419,
+        "repetitions": 5
+      },
+      "build_fan_from_plan": {
+        "median_s": 0.10850294500005475,
+        "min_s": 0.10753452699998434,
+        "max_s": 0.10968509199994969,
+        "repetitions": 5
+      },
+      "patch_counts": {
+        "auto": 12,
+        "triangles": 60
+      },
+      "prepared_bytes_estimate": 22670,
+      "atlas_bytes_estimate": 72253,
+      "peak_reserved_bytes": 1814380,
+      "reservations_released": true,
+      "candidate_count": 1,
+      "area_closure_residual_sr": 0.0,
+      "layout_max_area_difference_sr": 4.440892098500626e-16,
+      "same_intrinsic_partition": true,
+      "index_setup_s": 0.0009544370000185154,
+      "query_512": {
+        "median_s": 0.003475692000051822,
+        "min_s": 0.0032739429999537606,
+        "max_s": 0.0040016549999108975,
+        "repetitions": 5
+      },
+      "query_candidate_pairs": 1232,
+      "exhaustive_pairs": 6144,
+      "independent_nearest_site_agreement": true
+    },
+    {
+      "plate_count": 64,
+      "generation": {
+        "median_s": 0.15534515599995302,
+        "min_s": 0.15086964499994338,
+        "max_s": 0.15950691499995173,
+        "repetitions": 5
+      },
+      "prepare_topology": {
+        "median_s": 0.010350743000003604,
+        "min_s": 0.009903979999990042,
+        "max_s": 0.010735804999967513,
+        "repetitions": 5
+      },
+      "build_auto_from_plan": {
+        "median_s": 0.14449761000003036,
+        "min_s": 0.14289088399993943,
+        "max_s": 0.1466149249999944,
+        "repetitions": 5
+      },
+      "build_fan_from_plan": {
+        "median_s": 0.6693457110000054,
+        "min_s": 0.6493112349999137,
+        "max_s": 0.685238776999995,
+        "repetitions": 5
+      },
+      "patch_counts": {
+        "auto": 64,
+        "triangles": 372
+      },
+      "prepared_bytes_estimate": 134161,
+      "atlas_bytes_estimate": 430903,
+      "peak_reserved_bytes": 8970834,
+      "reservations_released": true,
+      "candidate_count": 1,
+      "area_closure_residual_sr": 0.0,
+      "layout_max_area_difference_sr": 1.1102230246251565e-16,
+      "same_intrinsic_partition": true,
+      "index_setup_s": 0.0031227289999833374,
+      "query_512": {
+        "median_s": 0.008655006000026333,
+        "min_s": 0.008607004000054985,
+        "max_s": 0.00953863800009458,
+        "repetitions": 5
+      },
+      "query_candidate_pairs": 1241,
+      "exhaustive_pairs": 32768,
+      "independent_nearest_site_agreement": true
+    },
+    {
+      "plate_count": 128,
+      "generation": {
+        "median_s": 0.3036648999999443,
+        "min_s": 0.30294267700003275,
+        "max_s": 0.350584448999939,
+        "repetitions": 5
+      },
+      "prepare_topology": {
+        "median_s": 0.02090424899995469,
+        "min_s": 0.020457205000070644,
+        "max_s": 0.02171796799996173,
+        "repetitions": 5
+      },
+      "build_auto_from_plan": {
+        "median_s": 0.3087888310000153,
+        "min_s": 0.2833913179999854,
+        "max_s": 0.458303141999977,
+        "repetitions": 5
+      },
+      "build_fan_from_plan": {
+        "median_s": 1.3962861989999737,
+        "min_s": 1.3033008279999194,
+        "max_s": 1.680729886999984,
+        "repetitions": 5
+      },
+      "patch_counts": {
+        "auto": 128,
+        "triangles": 756
+      },
+      "prepared_bytes_estimate": 271402,
+      "atlas_bytes_estimate": 872337,
+      "peak_reserved_bytes": 17778820,
+      "reservations_released": true,
+      "candidate_count": 1,
+      "area_closure_residual_sr": 0.0,
+      "layout_max_area_difference_sr": 5.551115123125783e-17,
+      "same_intrinsic_partition": true,
+      "index_setup_s": 0.006352324999966186,
+      "query_512": {
+        "median_s": 0.014797057999999197,
+        "min_s": 0.014275302999976702,
+        "max_s": 0.01570863200004169,
+        "repetitions": 5
+      },
+      "query_candidate_pairs": 1328,
+      "exhaustive_pairs": 65536,
+      "independent_nearest_site_agreement": true
+    }
+  ],
+  "source_sha256": {
+    "src/atlas_tectonics/planetary_generation.py": "6cf276573e853149e31d4b698cac9dee72311cebcb0a910fcce132c831b8ec77",
+    "tests/measure_w01_planetary_generation.py": "a9958775e38a47d416286cce0b11329da5e86620eaec917041177585fb6aebb3"
+  }
+}

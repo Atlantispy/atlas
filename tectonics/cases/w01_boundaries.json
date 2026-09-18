@@ -1,0 +1,24 @@
+{
+  "schema": "atlas.w01.boundaries-case.v1",
+  "status": "WORKING NON-CANON; representation verification, not geological acceptance",
+  "scope": "W01 stage 3: shared static polygon boundaries, oriented sides, regional adjacency, point contacts and cyclic junction sectors in a plane or one declared conditioned spherical domain chart",
+  "acceptance": {"relative_tolerance": 1e-12, "planar_absolute_m": 1e-12, "unit_sphere_absolute_rad": 2e-12},
+  "invariants": [
+    "Exactly one stored directed atomic segment per geometric boundary; no separately guessed neighbour traces.",
+    "Areal coverage is complete and nonoverlapping, with no clipping, snapping, tolerance-based repair or deleted slivers.",
+    "Occupied material is left of a normalised CCW shell or CW hole. Direction reversal swaps owners and signs.",
+    "Region identity differs from plate identity; same-plate patch joins are explicitly seams, not tectonic boundaries.",
+    "Point contact is not positive-length adjacency, and ordinary corners are not claimed tectonic junctions.",
+    "Cyclic junction sectors agree between outgoing half-edges; no averaged tangent at a junction.",
+    "Spherical topology uses one declared valid chart; metric tangent/normal/distance uses the sphere, not chart metres.",
+    "Numerical reprojection gaps are refused; arbitrary whole-sphere atlas stitching remains unsupported.",
+    "Velocity diagnostics consume supplied motion; they do not predict forces, slab polarity or stage-6 forcing.",
+    "No field transport, material-event, numerical tolerance, or W03 code is modified."
+  ],
+  "primary_references": [
+    "https://shapely.readthedocs.io/en/2.1.2/reference/shapely.node.html",
+    "https://shapely.readthedocs.io/en/2.1.2/reference/shapely.orient_polygons.html",
+    "https://shapely.readthedocs.io/en/2.1.2/reference/shapely.shared_paths.html",
+    "https://proj.org/en/stable/operations/projections/gnom.html"
+  ]
+}

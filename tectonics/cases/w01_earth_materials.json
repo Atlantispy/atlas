@@ -1,0 +1,41 @@
+{
+  "schema": "atlas.tectonics.earth-reference-case.v1",
+  "scope": "W01 4B sourced reference materials and property-resolution contracts; no spatial sampling, thermal evolution, EOS, rheology or calibration",
+  "status": "WORKING NON-CANON",
+  "reference_library": "earth-reference-2026-09-17.v1",
+  "expected_profile_count": 67,
+  "expected_recipe_count": 7,
+  "reference_conditions": {
+    "ordinary_nominal_temperature_k": 293.15,
+    "ice_temperature_k": 273.15,
+    "pressure_law": null,
+    "nominal_temperature_is_measured_temperature": false,
+    "unsupported_conditions": "refuse extrapolation; reference coordinates are retained per datum"
+  },
+  "independent_source_anchors": [
+    {"source": "GOTO2008", "locator": "Table 3 quartz", "density_kg_m3": 2648.0, "specific_heat_j_kg_k": 741.0, "conductivity_w_m_k": 7.69},
+    {"source": "KAKOKO2023", "locator": "Table 3 granite literature range at 20 C", "density_range_kg_m3": [2600.0, 2700.0], "specific_heat_range_j_kg_k": [600.0, 950.0]},
+    {"source": "LEE2015", "locator": "Table 1 microcline cp", "specific_heat_j_kg_k": 680.0, "temperature_k": 273.15},
+    {"source": "LEE2015", "locator": "Table 5 quartz expansion", "volumetric_secant_per_k": 0.0000498, "interval_k": [293.15, 673.15]},
+    {"source": "HUOTARI2004", "locator": "Table 3 granite/rhyolite Dane reference", "linear_secant_per_k": 0.000008, "interval_k": [293.15, 373.15], "isotropic_conversion": 3.0}
+  ],
+  "mixture_rules": {
+    "fraction_bases": ["mass", "volume"],
+    "density": "sum(volume_fraction * density)",
+    "volumetric_heat_capacity": "sum(volume_fraction * density * specific_heat)",
+    "specific_heat": "volumetric_heat_capacity / bulk_density",
+    "mass_to_volume": "(mass_fraction / density) / sum(mass_fraction / density)",
+    "conductivity_default": "harmonic/arithmetic bounds; no unjustified central estimate",
+    "explicit_conductivity_alternatives": ["series", "parallel", "geometric"],
+    "porosity": "may be added only to grain properties with an explicit fluid; not to already-bulk rock references",
+    "thermal_expansion": "no scalar mixture invented without a selected mechanical model",
+    "radiogenic_heat": "unknown is not zero; reference populations or explicit U/Th/K assay only"
+  },
+  "acceptance": {
+    "source_unit_transcription": "independent table anchors and retained raw units/ranges",
+    "mixtures": "exact rational synthetic quantities and independent two-phase examples",
+    "validity": "separate nominal/reference/interval meaning; no high-T/P extrapolation",
+    "ownership": "immutable metadata and numerical buffers, stable identities, bounded gather",
+    "persistence": "canonical self-contained library and geological-case snapshots, exact round trip, corruption refusal and fresh-process backup restoration"
+  }
+}

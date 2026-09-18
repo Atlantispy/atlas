@@ -1,0 +1,353 @@
+{
+  "schema": "atlas.3cr1-source-discrepancy-review.v1",
+  "date": "2026-09-18",
+  "dataset_id": "b7c61ba3695535abea8bd2f78c67e8348aee2d4230b55276b367aba4c8ab3e7d",
+  "source_pins_changed": false,
+  "numerical_tolerances_changed": false,
+  "source_bytes_changed": false,
+  "geological_model_accepted": false,
+  "strict_reference_gate_passed": false,
+  "interpretation": "Inspection of verified source records and independent numerical formulae; not a corrected edition of PB2002 or a waiver of preregistered checks.",
+  "exact_duplicate_endpoints": {
+    "count": 452,
+    "handling": "All original coordinates retained. Only exactly identical adjacent pairs are excluded from numerical views; no coordinate moved, rounded, interpolated or snapped."
+  },
+  "connectivity": [
+    {
+      "edge": [
+        [
+          "125.969",
+          "0.189999"
+        ],
+        [
+          "126.144",
+          "1.00135"
+        ]
+      ],
+      "polygon_uses": 4,
+      "boundary_uses": 2,
+      "polygon_owner_directions": [
+        [
+          "SU",
+          [
+            "125.969",
+            "0.189999"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ],
+        [
+          "BH",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "125.969",
+            "0.189999"
+          ]
+        ],
+        [
+          "MS",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "125.969",
+            "0.189999"
+          ]
+        ],
+        [
+          "MS",
+          [
+            "125.969",
+            "0.189999"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ]
+      ],
+      "boundary_owner_directions": [
+        [
+          "MS",
+          "SU",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "125.969",
+            "0.189999"
+          ]
+        ],
+        [
+          "MS",
+          "BH",
+          [
+            "125.969",
+            "0.189999"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ]
+      ],
+      "length_m": 92292.5676962562,
+      "review": "Coincident source boundaries and a retraced Molucca Sea (MS) polygon section. Not merged into a fictitious two-owner edge; simple-ring morphology remains conditional.",
+      "handling": "Retain discrepancy; do not snap or merge source records."
+    },
+    {
+      "edge": [
+        [
+          "126.144",
+          "1.00135"
+        ],
+        [
+          "126.426",
+          "1.70646"
+        ]
+      ],
+      "polygon_uses": 4,
+      "boundary_uses": 2,
+      "polygon_owner_directions": [
+        [
+          "SU",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "126.426",
+            "1.70646"
+          ]
+        ],
+        [
+          "BH",
+          [
+            "126.426",
+            "1.70646"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ],
+        [
+          "MS",
+          [
+            "126.426",
+            "1.70646"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ],
+        [
+          "MS",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "126.426",
+            "1.70646"
+          ]
+        ]
+      ],
+      "boundary_owner_directions": [
+        [
+          "MS",
+          "SU",
+          [
+            "126.426",
+            "1.70646"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ],
+        [
+          "MS",
+          "BH",
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "126.426",
+            "1.70646"
+          ]
+        ]
+      ],
+      "length_m": 84439.25657476926,
+      "review": "Coincident source boundaries and a retraced Molucca Sea (MS) polygon section. Not merged into a fictitious two-owner edge; simple-ring morphology remains conditional.",
+      "handling": "Retain discrepancy; do not snap or merge source records."
+    },
+    {
+      "edge": [
+        [
+          "149.816",
+          "-3.61764"
+        ],
+        [
+          "149.817",
+          "-3.61656"
+        ]
+      ],
+      "polygon_uses": 2,
+      "boundary_uses": 0,
+      "polygon_owner_directions": [
+        [
+          "SB",
+          [
+            "149.817",
+            "-3.61656"
+          ],
+          [
+            "149.816",
+            "-3.61764"
+          ]
+        ],
+        [
+          "NB",
+          [
+            "149.816",
+            "-3.61764"
+          ],
+          [
+            "149.817",
+            "-3.61656"
+          ]
+        ]
+      ],
+      "boundary_owner_directions": [],
+      "length_m": 163.51401516350967,
+      "review": "Polygon contains a connector absent from the single-boundary file; no extra step is invented.",
+      "handling": "Retain discrepancy; do not snap or merge source records."
+    },
+    {
+      "edge": [
+        [
+          "32.1252",
+          "-46.9975"
+        ],
+        [
+          "32.1258",
+          "-46.9998"
+        ]
+      ],
+      "polygon_uses": 2,
+      "boundary_uses": 0,
+      "polygon_owner_directions": [
+        [
+          "AF",
+          [
+            "32.1258",
+            "-46.9998"
+          ],
+          [
+            "32.1252",
+            "-46.9975"
+          ]
+        ],
+        [
+          "SO",
+          [
+            "32.1252",
+            "-46.9975"
+          ],
+          [
+            "32.1258",
+            "-46.9998"
+          ]
+        ]
+      ],
+      "boundary_owner_directions": [],
+      "length_m": 259.7645883135459,
+      "review": "Polygon contains a connector absent from the single-boundary file; no extra step is invented.",
+      "handling": "Retain discrepancy; do not snap or merge source records."
+    },
+    {
+      "edge": [
+        [
+          "68.2738",
+          "-6.8109"
+        ],
+        [
+          "68.2738",
+          "-6.81092"
+        ]
+      ],
+      "polygon_uses": 2,
+      "boundary_uses": 0,
+      "polygon_owner_directions": [
+        [
+          "IN",
+          [
+            "68.2738",
+            "-6.8109"
+          ],
+          [
+            "68.2738",
+            "-6.81092"
+          ]
+        ],
+        [
+          "AU",
+          [
+            "68.2738",
+            "-6.81092"
+          ],
+          [
+            "68.2738",
+            "-6.8109"
+          ]
+        ]
+      ],
+      "boundary_owner_directions": [],
+      "length_m": 2.223898532842259,
+      "review": "Polygon contains a connector absent from the single-boundary file; no extra step is invented.",
+      "handling": "Retain discrepancy; do not snap or merge source records."
+    }
+  ],
+  "unresolved_orogens": [
+    {
+      "source_id": "orogen:11:Peru                       Peter Bird, June 2002",
+      "kind": "orogen",
+      "source_record": 11,
+      "source_title": "Peru                       Peter Bird, June 2002",
+      "raw_coordinate_count": 49,
+      "explicitly_closed": false,
+      "repeated_coordinate_numbers": [],
+      "exact_repeated_coordinate_count": 0,
+      "raw_coordinates_preserved": true,
+      "endpoint_gap_m": 8699.65876350681,
+      "handling": "Retain all points, no inferred closing arc; polygon metrics remain null."
+    }
+  ],
+  "area_table_mismatch": [
+    {
+      "kind": "area",
+      "plate": "ON",
+      "source_table_difference_sr": -2.0168255699143378e-05,
+      "source_table_bound_sr": 1.5027414136271524e-05,
+      "formula_disagreement_sr": 1.0148132334464322e-15,
+      "formula_bound_sr": 2e-12
+    }
+  ],
+  "remaining_decision": "R1 scientific source-use sign-off stays open. Decide and document allowable reference uses, or acquire independently sourced corrections, without altering raw pins or retroactively widening thresholds. R2 is not started.",
+  "numerical_evidence": {
+    "all_52_area_formulations_agree_within_registered_bounds": true,
+    "all_5819_motion_rows_within_individual_registered_rounding_bounds": true,
+    "all_source_step_endpoints_align": true,
+    "planetary_area_closure_error_sr": -1.2434497875801753e-14
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "atlas.w01.planetary-generation-case.v1",
+  "status": "WORKING NON-CANON; initial geometry, not a physical plate history",
+  "scope": "W01 stage 3C; automatically constructed shared spherical partition and working patches",
+  "prior": "Nearest angular site; uniformly sampled directions conditioned on nondegeneracy and strict centre-spanning for four or more sites",
+  "random_mapping": "SHAKE256 domain-separated candidate stream; little-endian uint64 top 53 bits; uniform z and longitude",
+  "numerics": "One SciPy/Qhull hull; adjacency-based dual ordering; no QJ, snap, raster, repair, or lower-precision fallback",
+  "acceptance": {
+    "angular_absolute_rad": 2e-12,
+    "relative_tolerance": 1e-12,
+    "area_closure_absolute_sr": 2e-11,
+    "nearest_score_exclusion": 1e-10,
+    "site_separation_chord_minimum": 1e-9,
+    "dual_separation_chord_minimum": 1e-10,
+    "centre_spanning_margin": 1e-10
+  },
+  "required_checks": [
+    "one plate whole sphere, two hemispheres, three lunes, regular tetrahedron and octahedral sites",
+    "known areas and metric scaling; closed atlas edge pairs, junction links, Euler and global area",
+    "membership compared with independent site dot products and full owner sets on boundaries",
+    "cell/fan working layouts preserve physical boundary IDs, lengths, areas, adjacency and membership",
+    "same seed and runtime yield exact identity, independent of batch limits, RNG state and worker order",
+    "authored site order, supplied radii, seams, poles, antipodal pairs and rotation covariance",
+    "bounded rejected candidates recorded; no resampling of authored sites or hidden geometry repair",
+    "immutable plans, concurrent builds, compact source data, budgets, cancellation and source invalidation",
+    "compressed self-contained atlas snapshots, corruption refusal and fresh-process/backup restoration"
+  ],
+  "boundaries": [
+    "This initial Voronoi prior does not claim observed plate-area distributions or plausible tectonic evolution",
+    "Authored four-or-more site diagrams currently require strictly centre-spanning nondegenerate hulls; otherwise explicit rejection, not jitter",
+    "Stage 3B still accepts separately authored compatible atlases; they are never replaced by this generator",
+    "Exact geometry reproducibility is qualified by resolved binary64 data and runtime identity, not guaranteed across backend upgrades",
+    "WorkBudget controls estimated allocations, not all Qhull/GEOS/native allocations or total process RSS",
+    "No generated velocities, crustal properties, W03 work or global W02 material evolution"
+  ]
+}

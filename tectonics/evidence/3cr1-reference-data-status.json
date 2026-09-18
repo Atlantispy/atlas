@@ -1,0 +1,50 @@
+{
+  "schema": "atlas.3cr1.reference-delivery-status.v1",
+  "date": "2026-09-18",
+  "implementation": "REFERENCE_IMPORT_MEASUREMENT_AND_EVIDENCE_PROTOCOL_TESTED",
+  "r1_complete": false,
+  "complete_pb2002_source_files_acquired": false,
+  "complete_pb2002_source_records_checked": false,
+  "reference_acceptance": "BLOCKED_PENDING_COMPLETE_SOURCE_RUN",
+  "blocking_observation": {
+    "status": "BLOCKED_REFERENCE_ACCEPTANCE",
+    "error": "<urlopen error [Errno -3] Temporary failure in name resolution>",
+    "full_dataset_tested": false,
+    "geological_model_accepted": false
+  },
+  "tool_tests": {
+    "tests_run": 1224,
+    "new_r1_tests": 90,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "runtime": {
+      "python": "3.13.5",
+      "numpy": "2.3.5",
+      "platform": "Linux",
+      "machine": "x86_64",
+      "thread_environment": {
+        "OPENBLAS_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    },
+    "evidence": "3cr1-reference-tools-tests.json",
+    "clean_copy": true
+  },
+  "data_used_in_tool_tests": "Synthetic author-format fixtures, already exposed Cocos outline and twelve AF-AN steps from the prior unchanged curated reference, analytic geometry and malformed-input/corruption probes. Not the full PB2002 dataset.",
+  "source_repository": "fraxen/tectonicplates",
+  "source_commit": "339b0c56563c118307b1f4542703047f5f698fae",
+  "source_contents_url": "https://github.com/fraxen/tectonicplates/tree/339b0c56563c118307b1f4542703047f5f698fae/original",
+  "next_command": "python -I -B tectonics/tools/prepare_plate_reference.py --download > 3cr1-reference.json",
+  "subsequent_command": "python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-reference.json",
+  "independent_reference_model_acquired": false,
+  "temporal_history_dataset_acquired": false,
+  "no_geological_acceptance": true,
+  "no_generation_algorithm_changes": true,
+  "windows_verified": false,
+  "published": false,
+  "user_pc_modified": false,
+  "baseline_remote_commit": "ecac085fb64b7bd862580f996c61d5bf7c9088e2",
+  "local_baseline": "Plate Layout Revision plus Plate Formation Implementation Plan, 18 September 2026"
+}

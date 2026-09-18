@@ -1,0 +1,62 @@
+{
+  "files": [
+    {
+      "path": "original/PB2002_plates.dig.txt",
+      "bytes": 329608,
+      "git_blob": "90f1d48ecc58201d54d9a02b92c46c7846ee5af9",
+      "sha256": "ff7e25dbf29658d4330b38e95e876533c5cdfd292ef71fa806e2340edfa3abc0",
+      "passed": true
+    },
+    {
+      "path": "original/PB2002_boundaries.dig.txt",
+      "bytes": 181502,
+      "git_blob": "94924e66808da7dccd1fcdcc0b86682231ea6f25",
+      "sha256": "d75631c5c85a1ccf42ba4714902d9bee973069e162403e3467b5855fb9b3efba",
+      "passed": true
+    },
+    {
+      "path": "original/PB2002_orogens.dig.txt",
+      "bytes": 31662,
+      "git_blob": "1c261ecc04c2c6e3f5c604f6b8d7695637b15cfb",
+      "sha256": "daf4e6ff6c5e6983d70df8977bc989f814b79dd4efda28c24433db012f2e77c6",
+      "passed": true
+    },
+    {
+      "path": "original/PB2002_poles.dat.txt",
+      "bytes": 2802,
+      "git_blob": "5aef5844405fed9858565e3076ba0288d2cf1116",
+      "sha256": "887d208bda44cea75ee0c778c1883476906757a3d8035608a6cff7b79cf40f2e",
+      "passed": true
+    },
+    {
+      "path": "original/PB2002_steps.dat.txt",
+      "bytes": 564443,
+      "git_blob": "b48506d79c614b241ce26cf949492ee7c6676d60",
+      "sha256": "513babb111c65cd275274e2edcb249085d00e007c79d8755e1b4b79f60806f37",
+      "passed": true
+    },
+    {
+      "path": "original/PB2002_steps_desc.txt",
+      "bytes": 1528,
+      "git_blob": "bd98759bf71a5ccb03f8093d98ea65801c445d7c",
+      "sha256": "ac769f83c60e8bfa0696c8da89658314d45634cd10de141629a425853ad3259a",
+      "passed": true
+    },
+    {
+      "path": "original/README.md",
+      "bytes": 8019,
+      "git_blob": "0b16b27e087586e8d40137e6bb29fb6031c9470a",
+      "sha256": "d1bfa5b21ff8a53baaf2bc7c54ee1c51628ef724b82976e4448771e8d31a7b65",
+      "passed": true
+    },
+    {
+      "path": "LICENSE.md",
+      "bytes": 186,
+      "git_blob": "288735dda9191adf22f0de1c980b7b72e8b9c9c9",
+      "sha256": "aca5f9e92e61843413b9297659af2eef552eb38fef39eae2f701566d985de36c",
+      "passed": true
+    }
+  ],
+  "source_commit": "339b0c56563c118307b1f4542703047f5f698fae",
+  "all_passed": true
+}

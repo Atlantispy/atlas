@@ -1,0 +1,84 @@
+{
+  "schema": "atlas.pb2002-source-pins.v1",
+  "commit": "339b0c56563c118307b1f4542703047f5f698fae",
+  "family": "PB2002-Bird-2003",
+  "doi": "10.1029/2001GC000252",
+  "curator": "Hugo Ahlenius / Nordpil / fraxen",
+  "author": "Peter Bird",
+  "licence": "Open Data Commons Attribution 1.0",
+  "licence_url": "https://opendatacommons.org/licenses/by/1.0/",
+  "files": [
+    {
+      "path": "original/PB2002_plates.dig.txt",
+      "git_blob": "90f1d48ecc58201d54d9a02b92c46c7846ee5af9",
+      "bytes": 329608,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_plates.dig.txt"
+    },
+    {
+      "path": "original/PB2002_boundaries.dig.txt",
+      "git_blob": "94924e66808da7dccd1fcdcc0b86682231ea6f25",
+      "bytes": 181502,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_boundaries.dig.txt"
+    },
+    {
+      "path": "original/PB2002_orogens.dig.txt",
+      "git_blob": "1c261ecc04c2c6e3f5c604f6b8d7695637b15cfb",
+      "bytes": 31662,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_orogens.dig.txt"
+    },
+    {
+      "path": "original/PB2002_poles.dat.txt",
+      "git_blob": "5aef5844405fed9858565e3076ba0288d2cf1116",
+      "bytes": 2802,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_poles.dat.txt"
+    },
+    {
+      "path": "original/PB2002_steps.dat.txt",
+      "git_blob": "b48506d79c614b241ce26cf949492ee7c6676d60",
+      "bytes": 564443,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_steps.dat.txt"
+    },
+    {
+      "path": "original/PB2002_steps_desc.txt",
+      "git_blob": "bd98759bf71a5ccb03f8093d98ea65801c445d7c",
+      "bytes": 1528,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/PB2002_steps_desc.txt"
+    },
+    {
+      "path": "original/README.md",
+      "git_blob": "0b16b27e087586e8d40137e6bb29fb6031c9470a",
+      "bytes": 8019,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/original/README.md"
+    },
+    {
+      "path": "LICENSE.md",
+      "git_blob": "288735dda9191adf22f0de1c980b7b72e8b9c9c9",
+      "bytes": 186,
+      "url": "https://raw.githubusercontent.com/fraxen/tectonicplates/339b0c56563c118307b1f4542703047f5f698fae/LICENSE.md"
+    }
+  ],
+  "warnings": [
+    "single present-day model, not a time series",
+    "orogens are overlapping deformation overlays, not extra plates",
+    "coordinate precision is not geological accuracy",
+    "derived GIS copies are not independent evidence"
+  ],
+  "dataset_id": "b7c61ba3695535abea8bd2f78c67e8348aee2d4230b55276b367aba4c8ab3e7d",
+  "raw_sha256": {
+    "original/PB2002_plates.dig.txt": "ff7e25dbf29658d4330b38e95e876533c5cdfd292ef71fa806e2340edfa3abc0",
+    "original/PB2002_boundaries.dig.txt": "d75631c5c85a1ccf42ba4714902d9bee973069e162403e3467b5855fb9b3efba",
+    "original/PB2002_orogens.dig.txt": "daf4e6ff6c5e6983d70df8977bc989f814b79dd4efda28c24433db012f2e77c6",
+    "original/PB2002_poles.dat.txt": "887d208bda44cea75ee0c778c1883476906757a3d8035608a6cff7b79cf40f2e",
+    "original/PB2002_steps.dat.txt": "513babb111c65cd275274e2edcb249085d00e007c79d8755e1b4b79f60806f37",
+    "original/PB2002_steps_desc.txt": "ac769f83c60e8bfa0696c8da89658314d45634cd10de141629a425853ad3259a",
+    "original/README.md": "d1bfa5b21ff8a53baaf2bc7c54ee1c51628ef724b82976e4448771e8d31a7b65",
+    "LICENSE.md": "aca5f9e92e61843413b9297659af2eef552eb38fef39eae2f701566d985de36c"
+  },
+  "counts": {
+    "plates": 52,
+    "boundaries": 229,
+    "orogens": 13,
+    "poles": 52,
+    "steps": 5819
+  }
+}

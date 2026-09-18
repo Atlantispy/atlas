@@ -1,0 +1,1355 @@
+{
+  "schema": "atlas.earth-material-coverage.v1",
+  "scope": "actual reference catalogue and one small persistence example, not a simulation or performance benchmark",
+  "library_id": "74b8592dba7c2cd7c486a318e04dc4cdca086853580ce331d87e8764eaa653b9",
+  "library_version": "earth-reference-2026-09-17.v1",
+  "profile_count": 67,
+  "source_records": 11,
+  "recipe_count": 7,
+  "families": {
+    "fluid": 2,
+    "ice": 1,
+    "igneous_felsic": 4,
+    "igneous_intermediate": 3,
+    "igneous_mafic": 3,
+    "igneous_volcaniclastic": 1,
+    "mantle_ultramafic": 4,
+    "metamorphic": 10,
+    "rock_forming_mineral": 25,
+    "sedimentary_carbonate": 3,
+    "sedimentary_evaporite": 3,
+    "sedimentary_organic": 1,
+    "sedimentary_siliciclastic": 7
+  },
+  "canonical_manifest_bytes": 94519,
+  "prepared_rho_cp_k_table_rows": 44,
+  "prepared_table_payload_and_mask_bytes": 1188,
+  "full_python_heap_or_process_memory_measured": false,
+  "coverage_at_nominal_293_15k": {
+    "inventory": [
+      "fluid.fresh_water",
+      "fluid.seawater",
+      "mineral.albite",
+      "mineral.almandine",
+      "mineral.andalusite",
+      "mineral.anorthite",
+      "mineral.aragonite",
+      "mineral.augite",
+      "mineral.calcite",
+      "mineral.chlorite",
+      "mineral.diopside",
+      "mineral.enstatite",
+      "mineral.fayalite",
+      "mineral.forsterite",
+      "mineral.halite",
+      "mineral.hematite",
+      "mineral.hornblende",
+      "mineral.illite",
+      "mineral.kyanite",
+      "mineral.magnetite",
+      "mineral.microcline",
+      "mineral.muscovite",
+      "mineral.orthoclase",
+      "mineral.pyrite",
+      "mineral.quartz",
+      "mineral.sillimanite",
+      "mineral.smectite",
+      "rock.aluminous_shale",
+      "rock.amphibolite",
+      "rock.andesite",
+      "rock.anhydrite",
+      "rock.argillite",
+      "rock.basalt",
+      "rock.calcareous_sandstone",
+      "rock.coal",
+      "rock.diorite",
+      "rock.dolerite",
+      "rock.dolostone",
+      "rock.gabbro",
+      "rock.gneiss",
+      "rock.granite",
+      "rock.granodiorite",
+      "rock.gypsum",
+      "rock.harzburgite",
+      "rock.hornfels",
+      "rock.iron_rich_shale",
+      "rock.lherzolite",
+      "rock.limestone",
+      "rock.marble",
+      "rock.marl",
+      "rock.pegmatite",
+      "rock.peridotite",
+      "rock.phyllite",
+      "rock.pyroxenite",
+      "rock.quartzite",
+      "rock.quartzitic_sandstone",
+      "rock.rhyolite",
+      "rock.rock_salt",
+      "rock.sandstone",
+      "rock.schist",
+      "rock.serpentinite",
+      "rock.siltstone",
+      "rock.slate",
+      "rock.soapstone",
+      "rock.syenite",
+      "rock.tuff"
+    ],
+    "sensible_heat_reference": [
+      "fluid.fresh_water",
+      "fluid.seawater",
+      "mineral.albite",
+      "mineral.anorthite",
+      "mineral.calcite",
+      "mineral.chlorite",
+      "mineral.illite",
+      "mineral.muscovite",
+      "mineral.orthoclase",
+      "mineral.quartz",
+      "mineral.smectite",
+      "rock.aluminous_shale",
+      "rock.amphibolite",
+      "rock.andesite",
+      "rock.anhydrite",
+      "rock.argillite",
+      "rock.basalt",
+      "rock.calcareous_sandstone",
+      "rock.coal",
+      "rock.diorite",
+      "rock.dolerite",
+      "rock.dolostone",
+      "rock.gabbro",
+      "rock.gneiss",
+      "rock.granite",
+      "rock.granodiorite",
+      "rock.gypsum",
+      "rock.harzburgite",
+      "rock.hornfels",
+      "rock.iron_rich_shale",
+      "rock.lherzolite",
+      "rock.limestone",
+      "rock.marble",
+      "rock.marl",
+      "rock.pegmatite",
+      "rock.peridotite",
+      "rock.phyllite",
+      "rock.pyroxenite",
+      "rock.quartzite",
+      "rock.quartzitic_sandstone",
+      "rock.rhyolite",
+      "rock.rock_salt",
+      "rock.sandstone",
+      "rock.schist",
+      "rock.serpentinite",
+      "rock.siltstone",
+      "rock.slate",
+      "rock.soapstone",
+      "rock.syenite",
+      "rock.tuff"
+    ],
+    "conduction_reference": [
+      "fluid.fresh_water",
+      "fluid.seawater",
+      "mineral.albite",
+      "mineral.anorthite",
+      "mineral.calcite",
+      "mineral.chlorite",
+      "mineral.illite",
+      "mineral.muscovite",
+      "mineral.orthoclase",
+      "mineral.quartz",
+      "mineral.smectite",
+      "rock.aluminous_shale",
+      "rock.andesite",
+      "rock.anhydrite",
+      "rock.argillite",
+      "rock.basalt",
+      "rock.calcareous_sandstone",
+      "rock.coal",
+      "rock.diorite",
+      "rock.dolerite",
+      "rock.dolostone",
+      "rock.gabbro",
+      "rock.gneiss",
+      "rock.granite",
+      "rock.granodiorite",
+      "rock.gypsum",
+      "rock.hornfels",
+      "rock.iron_rich_shale",
+      "rock.limestone",
+      "rock.marble",
+      "rock.marl",
+      "rock.peridotite",
+      "rock.phyllite",
+      "rock.quartzite",
+      "rock.quartzitic_sandstone",
+      "rock.rhyolite",
+      "rock.rock_salt",
+      "rock.sandstone",
+      "rock.schist",
+      "rock.serpentinite",
+      "rock.siltstone",
+      "rock.soapstone",
+      "rock.syenite",
+      "rock.tuff"
+    ],
+    "radiogenic_reference": [
+      "rock.aluminous_shale",
+      "rock.iron_rich_shale"
+    ],
+    "instantaneous_buoyancy": [],
+    "expansion_secant": [
+      "mineral.albite",
+      "mineral.almandine",
+      "mineral.andalusite",
+      "mineral.anorthite",
+      "mineral.aragonite",
+      "mineral.augite",
+      "mineral.calcite",
+      "mineral.diopside",
+      "mineral.enstatite",
+      "mineral.fayalite",
+      "mineral.forsterite",
+      "mineral.halite",
+      "mineral.hematite",
+      "mineral.hornblende",
+      "mineral.kyanite",
+      "mineral.magnetite",
+      "mineral.microcline",
+      "mineral.orthoclase",
+      "mineral.pyrite",
+      "mineral.quartz",
+      "mineral.sillimanite",
+      "rock.andesite",
+      "rock.basalt",
+      "rock.diorite",
+      "rock.dolerite",
+      "rock.gabbro",
+      "rock.granite",
+      "rock.quartzite",
+      "rock.rhyolite",
+      "rock.slate"
+    ]
+  },
+  "profiles": [
+    {
+      "material_id": "fluid.fresh_water",
+      "family": "fluid",
+      "basis": "fluid",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "fluid.seawater",
+      "family": "fluid",
+      "basis": "fluid",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "mineral.albite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.almandine",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.andalusite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.anorthite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.aragonite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.augite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.calcite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.chlorite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "mineral.diopside",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.enstatite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.fayalite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile",
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.forsterite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile",
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.halite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile",
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.hematite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.hornblende",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.illite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "mineral.kyanite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.magnetite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.microcline",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.muscovite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "mineral.orthoclase",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.pyrite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.quartz",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.sillimanite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "mineral.smectite",
+      "family": "rock_forming_mineral",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.aluminous_shale",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "heat_production"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": true,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.amphibolite",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.andesite",
+      "family": "igneous_intermediate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.anhydrite",
+      "family": "sedimentary_evaporite",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.argillite",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.basalt",
+      "family": "igneous_mafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.calcareous_sandstone",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.coal",
+      "family": "sedimentary_organic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.diorite",
+      "family": "igneous_intermediate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.dolerite",
+      "family": "igneous_mafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.dolostone",
+      "family": "sedimentary_carbonate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.gabbro",
+      "family": "igneous_mafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.gneiss",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.granite",
+      "family": "igneous_felsic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.granodiorite",
+      "family": "igneous_felsic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.gypsum",
+      "family": "sedimentary_evaporite",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.harzburgite",
+      "family": "mantle_ultramafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.hornfels",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.iron_rich_shale",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "heat_production"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": true,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.lherzolite",
+      "family": "mantle_ultramafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.limestone",
+      "family": "sedimentary_carbonate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.marble",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.marl",
+      "family": "sedimentary_carbonate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.pegmatite",
+      "family": "igneous_felsic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.peridotite",
+      "family": "mantle_ultramafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.phyllite",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.pyroxenite",
+      "family": "mantle_ultramafic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.quartzite",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.quartzitic_sandstone",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.rhyolite",
+      "family": "igneous_felsic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.rock_salt",
+      "family": "sedimentary_evaporite",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.sandstone",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.schist",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.serpentinite",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.siltstone",
+      "family": "sedimentary_siliciclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.slate",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "thermal_expansion"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "conductivity: not supplied for this profile"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": true
+    },
+    {
+      "material_id": "rock.soapstone",
+      "family": "metamorphic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.syenite",
+      "family": "igneous_intermediate",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "rock.tuff",
+      "family": "igneous_volcaniclastic",
+      "basis": "bulk_reference",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    },
+    {
+      "material_id": "solid.ice",
+      "family": "ice",
+      "basis": "grain",
+      "reference_properties": [
+        "density",
+        "heat_capacity",
+        "conductivity"
+      ],
+      "conduction_reference_gaps_293_15k": [
+        "density: requested temperature differs from supplied reference; no extrapolation",
+        "heat_capacity: requested temperature differs from supplied reference; no extrapolation",
+        "conductivity: requested temperature differs from supplied reference; no extrapolation"
+      ],
+      "heat_production_known": false,
+      "expansion_is_interval_secant": null
+    }
+  ],
+  "source_scopes": [
+    {
+      "id": "ANDUJAR2016",
+      "citation": "And\u00fajar M\u00e1rquez, Mart\u00ednez Boh\u00f3rquez and G\u00f3mez Melgar (2016), Sensors 16, 306; doi:10.3390/s16030306",
+      "scope": "Table 1 thermal conductivity reference values. Rock-class typical values, not calibrated mantle-temperature laws. Actual pore state and exact measurement conditions are not resolved by this compilation.",
+      "url": "https://www.mdpi.com/1424-8220/16/3/306"
+    },
+    {
+      "id": "BANKS2025",
+      "citation": "Banks (2025), porosity and saturation effects; doi:10.47248/ges2505030007",
+      "scope": "Bulk volumetric heat capacity is volume-weighted. Conductivity depends on geometry/saturation; geometric mixing is not universally valid for dry porous material. Conductivity bounds and explicit structure selection are retained.",
+      "url": "https://eprints.gla.ac.uk/365772/"
+    },
+    {
+      "id": "BURNMAN",
+      "citation": "BurnMan composite and averaging-scheme documentation",
+      "scope": "Distinguishes mass, mole and volume fractions and properties evaluated at a thermodynamic state. Method reference only; no BurnMan code/database is bundled.",
+      "url": "https://burnman.readthedocs.io/en/latest/materials_05_composite.html"
+    },
+    {
+      "id": "GOTO2008",
+      "citation": "Goto and Matsubayashi (2008), JGR; doi:10.1029/2007JB005119",
+      "scope": "Table 3, room-condition constituent values, with upstream references and calculated entries. 293.15 K is the library nominal room reference, not a claim of identical experimental temperatures.",
+      "url": "https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2007JB005119"
+    },
+    {
+      "id": "HASTEROK2018",
+      "citation": "Hasterok, Gard and Webb (2018), Geoscience Frontiers 9, 1777\u20131794; doi:10.1016/j.gsf.2017.10.012",
+      "scope": "Author-posted preprint, section 5.3: aluminous shale 2.9 and iron-rich shale 1.7 microW/m3. Population representatives, not universal source rates or cooling ages.",
+      "url": "https://www.researchgate.net/publication/321043977_On_the_radiogenic_heat_production_of_metamorphic_igneous_and_sedimentary_rocks"
+    },
+    {
+      "id": "HUOTARI2004",
+      "citation": "Huotari and Kukkonen (2004), Posiva Working Report 2004-04, Geological Survey of Finland",
+      "scope": "Full report mirror, Table 3, Dane (1942) population values over 20\u2013100 \u00b0C. Linear coefficients converted to volumetric by 3 only under the explicitly assumed isotropic reference. Not a tensor or a temperature-dependent law.",
+      "url": "https://studylib.net/doc/8402570/thermal-expansion-properties-of-rocks"
+    },
+    {
+      "id": "KAKOKO2023",
+      "citation": "Kakoko, Jande et al. (2023), ACS Omega 8, 18554\u201318565; doi:10.1021/acsomega.3c00314",
+      "scope": "Table 3, literature compilation at 20 \u00b0C. Factual values only; no article text or illustrations distributed. Natural ranges are not confidence intervals or a matched specimen.",
+      "url": "https://pubs.acs.org/doi/10.1021/acsomega.3c00314"
+    },
+    {
+      "id": "LEE2015",
+      "citation": "Lee, Park, Park and Park (2015), Tunnel and Underground Space 25(1), 1\u201323; doi:10.7474/TUS.2015.25.1.001",
+      "scope": "Author-posted full report. Tables 1/2/5/6/7/8. Table 8 credits Waples and Waples (2004); table 5 credits Skinner/Robie/Robertson. Table 1 heat capacities mostly at 0 \u00b0C; table 5 expansion is a 20\u2013400 \u00b0C secant, NOT instantaneous room-temperature expansion. Ambiguous and anomalous rows are excluded.",
+      "url": "https://www.researchgate.net/publication/277645110_Current_Status_of_Research_on_Thermal_and_Mechanical_Properties_of_Rock_under_High-Temperature_Condition"
+    },
+    {
+      "id": "RYBACH2023",
+      "citation": "Application of in-situ gamma spectrometry (2023), Geothermal Energy; doi:10.1186/s40517-023-00273-3",
+      "scope": "Equation 2 reproduces the Rybach model: microW/m3 = rho[kg/m3]*1e-5*(9.52 U[ppm]+2.56 Th[ppm]+3.48 K[wt%]). The published prose omits the coefficient scalings; this library follows the dimensioned equation. Natural present-day isotope mixture, not radioactive evolution.",
+      "url": "https://link.springer.com/article/10.1186/s40517-023-00273-3"
+    },
+    {
+      "id": "WATER2019",
+      "citation": "Evaluation of Heat Transfer Performance of a Multi-Disc Sorption Bed (2019), Energies 12, 4660; doi:10.3390/en12244660",
+      "scope": "Table 2 liquid-water model inputs. 20 \u00b0C is an explicit nominal reference for this rounded engineering set, not a full IAPWS equation of state.",
+      "url": "https://www.mdpi.com/1996-1073/12/24/4660"
+    },
+    {
+      "id": "WATER2024",
+      "citation": "Vukeli\u0107 and \u0160porin (2024), Groundwater Potential for the Utilisation of Shallow Geothermal Energy from a Closed Coal Mine, Water 16, 1572; doi:10.3390/w16111572",
+      "scope": "Table 6 ranges used only for shale and gypsum conductivity, and stated ice reference. Excludes inconsistent air density and reversed sand heat-capacity range in this table.",
+      "url": "https://www.mdpi.com/2073-4441/16/11/1572"
+    }
+  ],
+  "store_sample": {
+    "first": {
+      "unique_chunks": 24,
+      "encoded_payload_bytes": 25121,
+      "snapshots": 1,
+      "database_bytes": 61440,
+      "decoded_cache_bytes": 0,
+      "verified_cache_entries": 24,
+      "operations": {
+        "payload_reads": 0,
+        "decoded_hits": 0,
+        "verified_hits": 0,
+        "encodes": 24,
+        "staged_bytes": 30416,
+        "prepare_seconds": 0.011059467999984918,
+        "writer_seconds": 0.0006612280001263571,
+        "insert_batches": 1,
+        "peak_prepared_bytes": 30416
+      },
+      "resource_allowances": {
+        "retained_ram_allowance": 4218880,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 29800192,
+        "read_workspace_allowance": 12615680,
+        "database_capacity": 16777216,
+        "rollback_journal_capacity": 16777216,
+        "staging_capacity_per_writer": 268435456,
+        "backup_capacity_per_copy": 16777216,
+        "process_rss_cap": false
+      },
+      "shared_budget": {
+        "max_bytes": 67108864,
+        "reserved_bytes": 16834560,
+        "peak_reserved_bytes": 16834560,
+        "refusals": 0,
+        "categories": {
+          "store-retained": 4218880,
+          "store-stage": 0,
+          "store-read": 12615680
+        },
+        "category_peaks": {
+          "store-retained": 4218880,
+          "store-stage": 9653560,
+          "store-read": 12615680
+        }
+      }
+    },
+    "repeat": {
+      "unique_chunks": 24,
+      "encoded_payload_bytes": 25121,
+      "snapshots": 1,
+      "database_bytes": 61440,
+      "decoded_cache_bytes": 4407,
+      "verified_cache_entries": 24,
+      "operations": {
+        "payload_reads": 48,
+        "decoded_hits": 0,
+        "verified_hits": 24,
+        "encodes": 24,
+        "staged_bytes": 0,
+        "prepare_seconds": 0.015378475000034086,
+        "writer_seconds": 0.0009502650002559676,
+        "insert_batches": 1,
+        "peak_prepared_bytes": 30416
+      },
+      "resource_allowances": {
+        "retained_ram_allowance": 4218880,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 29800192,
+        "read_workspace_allowance": 12615680,
+        "database_capacity": 16777216,
+        "rollback_journal_capacity": 16777216,
+        "staging_capacity_per_writer": 268435456,
+        "backup_capacity_per_copy": 16777216,
+        "process_rss_cap": false
+      },
+      "shared_budget": {
+        "max_bytes": 67108864,
+        "reserved_bytes": 16834560,
+        "peak_reserved_bytes": 26488120,
+        "refusals": 0,
+        "categories": {
+          "store-retained": 4218880,
+          "store-stage": 0,
+          "store-read": 12615680,
+          "store-output": 0,
+          "material-restore": 0
+        },
+        "category_peaks": {
+          "store-retained": 4218880,
+          "store-stage": 9653560,
+          "store-read": 12615680,
+          "store-output": 189038,
+          "material-restore": 4545104
+        }
+      }
+    },
+    "new_chunks_on_repeat": 0,
+    "exact_round_trip": true,
+    "reservations_after_close": 0
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "system": "Linux"
+  },
+  "boundaries": [
+    "No hot/high-pressure equations of state",
+    "No inferred instantaneous alpha from secants",
+    "No zero substitution for unknown radiogenic heating",
+    "No inferred porosity for bulk specimens",
+    "No Windows acceptance or geological calibration"
+  ]
+}

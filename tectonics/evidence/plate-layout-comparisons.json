@@ -1,0 +1,2933 @@
+{
+  "schema": "atlas.plate-layout-comparison.v1",
+  "scope": "calibration and held-out limited references; no geological acceptance",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux"
+  },
+  "seeds": [
+    41,
+    42,
+    43
+  ],
+  "plate_count": 12,
+  "candidate_support_cells": 512,
+  "reference": {
+    "schema": "bird-2003-pb2002-table1-areas-v1",
+    "area_unit": "steradian",
+    "areas": {
+      "AF": 1.44065,
+      "AM": 0.13066,
+      "AN": 1.43268,
+      "AP": 0.0205,
+      "AR": 0.12082,
+      "AS": 0.00793,
+      "AT": 0.01418,
+      "AU": 1.13294,
+      "BH": 0.01295,
+      "BR": 0.00481,
+      "BS": 0.01715,
+      "BU": 0.0127,
+      "CA": 0.07304,
+      "CL": 0.03765,
+      "CO": 0.07223,
+      "CR": 0.00356,
+      "EA": 0.00411,
+      "EU": 1.1963,
+      "FT": 0.00079,
+      "GP": 0.00036,
+      "IN": 0.30637,
+      "JF": 0.00632,
+      "JZ": 0.00241,
+      "KE": 0.01245,
+      "MA": 0.01037,
+      "MN": 0.0002,
+      "MO": 0.00284,
+      "MS": 0.0103,
+      "NA": 1.36559,
+      "NB": 0.00956,
+      "ND": 0.02394,
+      "NH": 0.01585,
+      "NI": 0.00306,
+      "NZ": 0.39669,
+      "OK": 0.07482,
+      "ON": 0.00802,
+      "PA": 2.57685,
+      "PM": 0.00674,
+      "PS": 0.13409,
+      "RI": 0.00249,
+      "SA": 1.03045,
+      "SB": 0.00762,
+      "SC": 0.0419,
+      "SL": 0.00178,
+      "SO": 0.47192,
+      "SS": 0.00317,
+      "SU": 0.21967,
+      "SW": 0.00454,
+      "TI": 0.0087,
+      "TO": 0.00625,
+      "WL": 0.01116,
+      "YA": 0.05425
+    },
+    "sources": [
+      [
+        "areas",
+        "https://doi.org/10.1029/2001GC000252",
+        "Table 1"
+      ],
+      [
+        "area_transcription",
+        "https://www.yumpu.com/en/document/view/19285879/an-updated-digital-model-of-plate-boundaries-peter-bird",
+        "paper page 6; areas only"
+      ],
+      [
+        "poles",
+        "https://github.com/fraxen/tectonicplates/blob/master/original/PB2002_poles.dat.txt",
+        "git blob 5aef5844405fed9858565e3076ba0288d2cf1116; rows AF/AN"
+      ],
+      [
+        "steps",
+        "https://github.com/fraxen/tectonicplates/blob/master/original/PB2002_steps.dat.txt",
+        "git blob b48506d79c614b241ce26cf949492ee7c6676d60; steps 1-12"
+      ],
+      [
+        "limitations",
+        "https://arxiv.org/abs/1011.2752",
+        "time-dependent hierarchy; not universal present-day fit"
+      ],
+      [
+        "alternative_statistics",
+        "https://arxiv.org/abs/cond-mat/0202320",
+        "finite-area constrained power law; an alternative statistical interpretation"
+      ]
+    ],
+    "pole_reference_frame": "Pacific-fixed",
+    "signed_poles": [
+      [
+        "AF",
+        59.16,
+        -73.174,
+        0.927
+      ],
+      [
+        "AN",
+        64.315,
+        -83.984,
+        0.8695
+      ]
+    ],
+    "boundary_steps": [
+      [
+        -0.438,
+        -54.852,
+        -0.039,
+        -54.677,
+        1.2,
+        13.1
+      ],
+      [
+        -0.039,
+        -54.677,
+        0.443,
+        -54.451,
+        0.9,
+        13.1
+      ],
+      [
+        0.443,
+        -54.451,
+        0.965,
+        -54.832,
+        13.1,
+        -1.1
+      ],
+      [
+        0.965,
+        -54.832,
+        1.695,
+        -54.399,
+        -0.4,
+        13.2
+      ],
+      [
+        1.695,
+        -54.399,
+        2.36,
+        -54.037,
+        0.4,
+        13.2
+      ],
+      [
+        2.36,
+        -54.037,
+        3.025,
+        -53.651,
+        0.2,
+        13.2
+      ],
+      [
+        3.025,
+        -53.651,
+        3.369,
+        -53.834,
+        13.2,
+        0.5
+      ],
+      [
+        3.369,
+        -53.834,
+        3.956,
+        -54.127,
+        13.2,
+        0.8
+      ],
+      [
+        3.956,
+        -54.127,
+        4.415,
+        -54.43,
+        13.2,
+        -1.2
+      ],
+      [
+        4.415,
+        -54.43,
+        4.827,
+        -54.162,
+        -0.2,
+        13.3
+      ],
+      [
+        4.827,
+        -54.162,
+        5.084,
+        -54.309,
+        13.3,
+        -0.5
+      ],
+      [
+        5.084,
+        -54.309,
+        5.495,
+        -54.543,
+        13.3,
+        -0.5
+      ]
+    ],
+    "boundary_motion_sample": "12-step AF-AN excerpt; complete Cocos outline is separately identified",
+    "limitations": [
+      "single present-day reconstruction",
+      "rounded values",
+      "diffuse orogens unresolved",
+      "small-plate incompleteness"
+    ],
+    "reference_sha256": "2f6bc4048f883170ebbe7ac4022443567dc8bdb6d79df0437cbebf0d15ed4ad0"
+  },
+  "outline_reference": {
+    "schema": "pb2002-cocos-complete-outline-v1",
+    "plate_code": "CO",
+    "source": "https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_plates.json",
+    "source_blob": "879951b5d17c0e11926025223378174fcb9f41f6",
+    "selection": "complete CO feature, line 52, closing point retained",
+    "attribution": "Peter Bird (2003); curation Hugo Ahlenius / Nordpil; GeoJSON preparation csterling",
+    "licence": "Open Data Commons Attribution Licence 1.0",
+    "coordinate_units": "longitude/latitude degrees",
+    "coordinates": [
+      [
+        -86.648,
+        10.235
+      ],
+      [
+        -86.4487,
+        9.9383
+      ],
+      [
+        -86.2036,
+        9.68364
+      ],
+      [
+        -85.9105,
+        9.42337
+      ],
+      [
+        -85.6124,
+        9.20327
+      ],
+      [
+        -85.3805,
+        9.08908
+      ],
+      [
+        -85.0438,
+        8.93723
+      ],
+      [
+        -84.6858,
+        8.77169
+      ],
+      [
+        -84.4187,
+        8.63674
+      ],
+      [
+        -84.1577,
+        8.47377
+      ],
+      [
+        -84.0072,
+        8.30028
+      ],
+      [
+        -83.8377,
+        8.18189
+      ],
+      [
+        -83.6054,
+        8.04445
+      ],
+      [
+        -83.3599,
+        7.92759
+      ],
+      [
+        -83.2331,
+        7.84854
+      ],
+      [
+        -83.0742,
+        7.59169
+      ],
+      [
+        -82.8748,
+        7.36639
+      ],
+      [
+        -82.8749,
+        7.11804
+      ],
+      [
+        -82.875,
+        6.56231
+      ],
+      [
+        -82.875,
+        5.83296
+      ],
+      [
+        -82.875,
+        5.05417
+      ],
+      [
+        -82.875,
+        4.56303
+      ],
+      [
+        -82.875,
+        4.07188
+      ],
+      [
+        -82.875,
+        3.5949
+      ],
+      [
+        -82.8064,
+        3.11792
+      ],
+      [
+        -83.3779,
+        3.16485
+      ],
+      [
+        -83.9225,
+        3.13869
+      ],
+      [
+        -84.4671,
+        3.11226
+      ],
+      [
+        -84.5667,
+        2.53424
+      ],
+      [
+        -84.5713,
+        2.06618
+      ],
+      [
+        -84.5759,
+        1.59812
+      ],
+      [
+        -85.3494,
+        1.64441
+      ],
+      [
+        -85.3861,
+        0.831804
+      ],
+      [
+        -86.2656,
+        0.880462
+      ],
+      [
+        -87.145,
+        0.928909
+      ],
+      [
+        -88.0245,
+        0.977144
+      ],
+      [
+        -88.9041,
+        1.02514
+      ],
+      [
+        -89.7836,
+        1.0729
+      ],
+      [
+        -90.6632,
+        1.12041
+      ],
+      [
+        -90.6973,
+        1.73615
+      ],
+      [
+        -91.5608,
+        1.81659
+      ],
+      [
+        -91.5376,
+        2.01117
+      ],
+      [
+        -92.1183,
+        1.99009
+      ],
+      [
+        -92.0902,
+        2.19975
+      ],
+      [
+        -92.2451,
+        2.22695
+      ],
+      [
+        -92.9279,
+        2.29988
+      ],
+      [
+        -93.6107,
+        2.37248
+      ],
+      [
+        -94.4044,
+        2.43994
+      ],
+      [
+        -95.1982,
+        2.50694
+      ],
+      [
+        -95.2241,
+        2.22175
+      ],
+      [
+        -96.1202,
+        2.23785
+      ],
+      [
+        -96.175,
+        1.87283
+      ],
+      [
+        -96.88,
+        1.88568
+      ],
+      [
+        -97.5851,
+        1.89824
+      ],
+      [
+        -97.5512,
+        2.08841
+      ],
+      [
+        -97.8463,
+        2.07656
+      ],
+      [
+        -98.3674,
+        2.14463
+      ],
+      [
+        -98.8886,
+        2.21253
+      ],
+      [
+        -98.9175,
+        2.11218
+      ],
+      [
+        -99.657,
+        2.19007
+      ],
+      [
+        -99.7389,
+        2.26882
+      ],
+      [
+        -99.8108,
+        2.2726
+      ],
+      [
+        -99.9129,
+        2.27227
+      ],
+      [
+        -100.047,
+        2.29966
+      ],
+      [
+        -100.066,
+        2.20704
+      ],
+      [
+        -100.394,
+        2.2065
+      ],
+      [
+        -100.644,
+        2.2044
+      ],
+      [
+        -101.067,
+        2.21046
+      ],
+      [
+        -101.196,
+        2.1989
+      ],
+      [
+        -101.203,
+        2.24142
+      ],
+      [
+        -101.512,
+        2.23226
+      ],
+      [
+        -101.49,
+        2.60499
+      ],
+      [
+        -101.697,
+        2.63971
+      ],
+      [
+        -101.878,
+        2.64213
+      ],
+      [
+        -102.068,
+        2.63532
+      ],
+      [
+        -102.109,
+        2.78564
+      ],
+      [
+        -102.096,
+        2.79833
+      ],
+      [
+        -102.118,
+        2.89294
+      ],
+      [
+        -102.145,
+        2.88876
+      ],
+      [
+        -102.193,
+        3.07219
+      ],
+      [
+        -102.219,
+        3.23869
+      ],
+      [
+        -102.199,
+        3.45816
+      ],
+      [
+        -102.259,
+        3.75071
+      ],
+      [
+        -102.184,
+        3.77753
+      ],
+      [
+        -102.32,
+        4.65326
+      ],
+      [
+        -102.457,
+        5.52897
+      ],
+      [
+        -102.558,
+        6.35535
+      ],
+      [
+        -102.659,
+        7.18172
+      ],
+      [
+        -102.81,
+        7.79085
+      ],
+      [
+        -102.961,
+        8.39993
+      ],
+      [
+        -103.595,
+        8.37048
+      ],
+      [
+        -104.229,
+        8.34001
+      ],
+      [
+        -104.258,
+        8.45574
+      ],
+      [
+        -104.296,
+        9.17474
+      ],
+      [
+        -104.296,
+        10.0171
+      ],
+      [
+        -103.598,
+        10.1232
+      ],
+      [
+        -103.628,
+        10.2746
+      ],
+      [
+        -103.739,
+        10.9366
+      ],
+      [
+        -103.807,
+        11.4045
+      ],
+      [
+        -103.875,
+        11.8723
+      ],
+      [
+        -103.772,
+        11.8904
+      ],
+      [
+        -103.927,
+        12.5868
+      ],
+      [
+        -104.181,
+        13.3284
+      ],
+      [
+        -104.437,
+        14.0698
+      ],
+      [
+        -104.563,
+        14.6722
+      ],
+      [
+        -104.69,
+        15.2745
+      ],
+      [
+        -105.32,
+        15.1076
+      ],
+      [
+        -105.357,
+        15.5576
+      ],
+      [
+        -105.398,
+        16.2605
+      ],
+      [
+        -105.367,
+        17.0308
+      ],
+      [
+        -105.399,
+        17.7679
+      ],
+      [
+        -105.586,
+        17.8808
+      ],
+      [
+        -105.51,
+        18.1403
+      ],
+      [
+        -105.442,
+        18.3552
+      ],
+      [
+        -105.352,
+        18.5511
+      ],
+      [
+        -105.247,
+        18.7619
+      ],
+      [
+        -105.043,
+        18.6216
+      ],
+      [
+        -104.725,
+        18.3684
+      ],
+      [
+        -104.406,
+        18.209
+      ],
+      [
+        -104.191,
+        18.1383
+      ],
+      [
+        -103.792,
+        17.92
+      ],
+      [
+        -103.2,
+        17.6155
+      ],
+      [
+        -102.432,
+        17.2799
+      ],
+      [
+        -101.703,
+        17.0256
+      ],
+      [
+        -100.867,
+        16.6363
+      ],
+      [
+        -100.336,
+        16.4424
+      ],
+      [
+        -99.806,
+        16.298
+      ],
+      [
+        -99.4347,
+        16.134
+      ],
+      [
+        -99.0281,
+        15.9191
+      ],
+      [
+        -98.5878,
+        15.7715
+      ],
+      [
+        -98.1657,
+        15.6399
+      ],
+      [
+        -97.6914,
+        15.508
+      ],
+      [
+        -97.2174,
+        15.3584
+      ],
+      [
+        -96.727,
+        15.3601
+      ],
+      [
+        -96.219,
+        15.3609
+      ],
+      [
+        -95.7986,
+        15.2765
+      ],
+      [
+        -95.4663,
+        15.0902
+      ],
+      [
+        -95.117,
+        14.8866
+      ],
+      [
+        -94.8729,
+        14.6998
+      ],
+      [
+        -94.5422,
+        14.4786
+      ],
+      [
+        -94.0552,
+        14.2221
+      ],
+      [
+        -93.6558,
+        14.0161
+      ],
+      [
+        -93.3094,
+        13.7932
+      ],
+      [
+        -92.9619,
+        13.7221
+      ],
+      [
+        -92.5992,
+        13.498
+      ],
+      [
+        -92.2724,
+        13.2233
+      ],
+      [
+        -92.0632,
+        13.2712
+      ],
+      [
+        -91.7186,
+        13.0801
+      ],
+      [
+        -91.3079,
+        12.8322
+      ],
+      [
+        -90.898,
+        12.5837
+      ],
+      [
+        -90.2927,
+        12.5426
+      ],
+      [
+        -89.619,
+        12.2948
+      ],
+      [
+        -88.9197,
+        11.9992
+      ],
+      [
+        -88.319,
+        11.6968
+      ],
+      [
+        -87.8901,
+        11.3967
+      ],
+      [
+        -87.4621,
+        11.0959
+      ],
+      [
+        -86.9749,
+        10.5473
+      ],
+      [
+        -86.648,
+        10.235
+      ]
+    ],
+    "role": "held-out numerical/morphology challenge; not used to fit generator",
+    "limitation": "one small oceanic plate cannot validate the complete global shape distribution",
+    "record_sha256": "18194b5ee0f1666f3bada259be4b92f9ad012c01ac07f06ec7c0b697328ef387"
+  },
+  "cocos_metrics": {
+    "area_steradians": 0.07223019487944166,
+    "perimeter_radians": 1.2688030125969152,
+    "compactness": 0.5605789256507532,
+    "orientation": -1,
+    "reflex_turning_radians": 36.109103685570275,
+    "absolute_turning_radians": 78.42916248344069,
+    "signed_turning_radians": 6.210955112300145,
+    "max_segment_radians": 0.015630578865551387,
+    "segments": 157
+  },
+  "sampled_motion_columns": [
+    "calculated_opening",
+    "calculated_right_lateral",
+    "published_opening",
+    "published_right_lateral"
+  ],
+  "sampled_motion_unit": "mm per Julian year",
+  "sampled_motion_rows": [
+    [
+      1.1659191015765806,
+      13.106342534989118,
+      1.2,
+      13.1
+    ],
+    [
+      0.8837552918901692,
+      13.130642078070496,
+      0.9,
+      13.1
+    ],
+    [
+      13.13555244453104,
+      -1.12036872419879,
+      13.1,
+      -1.1
+    ],
+    [
+      -0.41129236774132655,
+      13.197536065123998,
+      -0.4,
+      13.2
+    ],
+    [
+      0.39989030679267523,
+      13.197770453601755,
+      0.4,
+      13.2
+    ],
+    [
+      0.20783650694338646,
+      13.2032858438133,
+      0.2,
+      13.2
+    ],
+    [
+      13.208686224005582,
+      0.4795707091808367,
+      13.2,
+      0.5
+    ],
+    [
+      13.226476001063105,
+      0.7726303464742135,
+      13.2,
+      0.8
+    ],
+    [
+      13.229602210148746,
+      -1.2186964311388853,
+      13.2,
+      -1.2
+    ],
+    [
+      -0.2173316897941271,
+      13.300572250391541,
+      -0.2,
+      13.3
+    ],
+    [
+      13.303712580045449,
+      -0.4375252800308056,
+      13.3,
+      -0.5
+    ],
+    [
+      13.324091640618743,
+      -0.5005868344364864,
+      13.3,
+      -0.5
+    ]
+  ],
+  "motion_max_abs_difference_mm_a": 0.0624747199691944,
+  "results": [
+    {
+      "seed": 41,
+      "method": "voronoi-fixture",
+      "accepted": true,
+      "atlas_id": "3b9fa663ebf1c2d3afa11d43c26c6ba6ad56659c8788c40deaae89580f16ba90",
+      "generation_seconds": 0.27204023800004506,
+      "peak_accounted_bytes": 1328503,
+      "area_rank_l1": 0.202215925768337,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.1247510777966097,
+          0.10414568061175958,
+          0.07162722299112083,
+          0.14222764635173435,
+          0.03587399558409415,
+          0.024665271371038515,
+          0.07895952729078834,
+          0.05268775566052714,
+          0.08755580866038166,
+          0.14990956329824118,
+          0.1022130630491996,
+          0.025383387334504896
+        ],
+        "ranked_area_fractions": [
+          0.14990956329824118,
+          0.14222764635173435,
+          0.1247510777966097,
+          0.10414568061175958,
+          0.1022130630491996,
+          0.08755580866038166,
+          0.07895952729078834,
+          0.07162722299112083,
+          0.05268775566052714,
+          0.03587399558409415,
+          0.025383387334504896,
+          0.024665271371038515
+        ],
+        "area_steradians": [
+          1.5676682781329512,
+          1.3087332204520514,
+          0.9000942301837725,
+          1.7872853156639033,
+          0.45080592392761143,
+          0.30995294135221296,
+          0.9922346834706537,
+          0.6620938644689844,
+          1.1002587410662745,
+          1.8838191310424341,
+          1.2844472319051032,
+          0.31897705269321913
+        ],
+        "perimeter_radians": [
+          4.595252625148171,
+          4.070119885667468,
+          3.554630417729361,
+          4.734207022203193,
+          2.8125876576751674,
+          2.1524205764158286,
+          3.703549462432222,
+          2.986249401786335,
+          4.128430347220669,
+          4.821605558881529,
+          4.148452894083861,
+          2.4700745020197927
+        ],
+        "compactness": [
+          0.8165388173971764,
+          0.8893730790112439,
+          0.8310579970837798,
+          0.8595701100971033,
+          0.6904323659003885,
+          0.819983369261162,
+          0.8372722237148947,
+          0.8838334348272033,
+          0.7401863616979357,
+          0.8656270898426361,
+          0.842029073681007,
+          0.6402992742364962
+        ],
+        "neighbour_count": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          6,
+          5,
+          6,
+          4,
+          4
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.14990956329824118,
+        "smallest_fraction": 0.024665271371038515,
+        "area_ratio": 6.077758523032594,
+        "boundary_length_radians": 22.0887901756318,
+        "maximum_support_area_sr": 1.8838191310424341,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "rings": [
+            {
+              "area_steradians": 1.5676682781329512,
+              "perimeter_radians": 4.59525262514817,
+              "compactness": 0.8165388173971766,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.7155170290466355,
+              "signed_turning_radians": 4.7155170290466355,
+              "max_segment_radians": 1.6697630007539148,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 1.3087332204520514,
+              "perimeter_radians": 4.070119885667468,
+              "compactness": 0.8893730790112439,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.974452086727535,
+              "signed_turning_radians": 4.974452086727535,
+              "max_segment_radians": 1.089799743790548,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 0.9000942301837725,
+              "perimeter_radians": 3.554630417729361,
+              "compactness": 0.8310579970837798,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.383091076995814,
+              "signed_turning_radians": 5.383091076995814,
+              "max_segment_radians": 1.1389432093062126,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 1.7872853156639033,
+              "perimeter_radians": 4.734207022203194,
+              "compactness": 0.8595701100971029,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.495899991515683,
+              "signed_turning_radians": 4.495899991515683,
+              "max_segment_radians": 1.6697630007539148,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 0.4508059239276113,
+              "perimeter_radians": 2.812587657675167,
+              "compactness": 0.6904323659003885,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.8323793832519755,
+              "signed_turning_radians": 5.8323793832519755,
+              "max_segment_radians": 0.9485340314512652,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 0.30995294135221313,
+              "perimeter_radians": 2.1524205764158286,
+              "compactness": 0.8199833692611624,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.973232365827373,
+              "signed_turning_radians": 5.973232365827373,
+              "max_segment_radians": 0.5349762349793499,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 0.9922346834706537,
+              "perimeter_radians": 3.703549462432222,
+              "compactness": 0.8372722237148947,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.290950623708933,
+              "signed_turning_radians": 5.290950623708933,
+              "max_segment_radians": 1.1389432093062126,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 0.6620938644689844,
+              "perimeter_radians": 2.986249401786335,
+              "compactness": 0.8838334348272033,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.621091442710602,
+              "signed_turning_radians": 5.621091442710602,
+              "max_segment_radians": 0.7582945269889545,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 1.100258741066275,
+              "perimeter_radians": 4.128430347220669,
+              "compactness": 0.7401863616979361,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.182926566113311,
+              "signed_turning_radians": 5.182926566113311,
+              "max_segment_radians": 1.5999951256524392,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 1.8838191310424346,
+              "perimeter_radians": 4.821605558881529,
+              "compactness": 0.8656270898426364,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.399366176137152,
+              "signed_turning_radians": 4.399366176137152,
+              "max_segment_radians": 1.5999951256524392,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 1.284447231905103,
+              "perimeter_radians": 4.148452894083862,
+              "compactness": 0.8420290736810065,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.998738075274483,
+              "signed_turning_radians": 4.998738075274483,
+              "max_segment_radians": 1.2609891205575046,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 0.3189770526932192,
+              "perimeter_radians": 2.4700745020197927,
+              "compactness": 0.6402992742364964,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.964208254486367,
+              "signed_turning_radians": 5.964208254486367,
+              "max_segment_radians": 0.9485340314512652,
+              "segments": 4
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 3.143117669239969e-31,
+      "geological_validation": false
+    },
+    {
+      "seed": 41,
+      "method": "connected-reference-candidate",
+      "accepted": true,
+      "atlas_id": "b718774a1c25ee9856ab3b3c97794e9f3cac71d0d2ad2a5e75a184ad5afcce37",
+      "generation_seconds": 3.6935213279998607,
+      "peak_accounted_bytes": 48615673,
+      "area_rank_l1": 0.008267554286620607,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.21993837711057146,
+          0.12300276172246974,
+          0.12260323341031097,
+          0.11606196955032735,
+          0.10242282644600462,
+          0.09754391417464092,
+          0.08889027553344697,
+          0.04006961226143047,
+          0.033909090018894465,
+          0.02488119233226009,
+          0.020883164170972555,
+          0.00979358326867045
+        ],
+        "ranked_area_fractions": [
+          0.21993837711057146,
+          0.12300276172246974,
+          0.12260323341031097,
+          0.11606196955032735,
+          0.10242282644600462,
+          0.09754391417464092,
+          0.08889027553344697,
+          0.04006961226143047,
+          0.033909090018894465,
+          0.02488119233226009,
+          0.020883164170972555,
+          0.00979358326867045
+        ],
+        "area_steradians": [
+          2.763827159092131,
+          1.5456982903942669,
+          1.5406776695527504,
+          1.4584777236018827,
+          1.287083196490682,
+          1.2257729766937808,
+          1.117028146365798,
+          0.5035295980508059,
+          0.42611419237309534,
+          0.31266628417433195,
+          0.26242558057294785,
+          0.1230697969967
+        ],
+        "perimeter_radians": [
+          7.624943539283427,
+          6.0574013986576,
+          6.132191854644517,
+          6.72459705616241,
+          5.663649888275858,
+          6.410290033586495,
+          5.304395870481089,
+          3.500795061177803,
+          3.0819866334947124,
+          2.5579121616040084,
+          2.877616008455604,
+          1.853248031860832
+        ],
+        "compactness": [
+          0.4659897800831191,
+          0.46425876241071773,
+          0.45173757246601043,
+          0.35826051947184845,
+          0.4525801340136077,
+          0.3382911414955625,
+          0.45454073078013635,
+          0.4956113376056241,
+          0.5446184594998817,
+          0.5855678117490621,
+          0.3899283996561728,
+          0.44588205023962424
+        ],
+        "neighbour_count": [
+          8,
+          4,
+          4,
+          7,
+          4,
+          5,
+          5,
+          5,
+          5,
+          5,
+          4,
+          4
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.21993837711057146,
+        "smallest_fraction": 0.00979358326867045,
+        "area_ratio": 22.45739593741461,
+        "boundary_length_radians": 28.894513768842177,
+        "maximum_support_area_sr": 0.09446306957293685,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "rings": [
+            {
+              "area_steradians": 2.7638271590921324,
+              "perimeter_radians": 7.6249435392834295,
+              "compactness": 0.4659897800831189,
+              "orientation": 1,
+              "reflex_turning_radians": 31.256864373183195,
+              "absolute_turning_radians": 66.03308689445385,
+              "signed_turning_radians": 3.519358148087454,
+              "max_segment_radians": 0.25728653467686835,
+              "segments": 91
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 1.5456982903942662,
+              "perimeter_radians": 6.057401398657601,
+              "compactness": 0.46425876241071734,
+              "orientation": 1,
+              "reflex_turning_radians": 24.981281762082745,
+              "absolute_turning_radians": 54.700050540950805,
+              "signed_turning_radians": 4.7374870167853205,
+              "max_segment_radians": 0.25728653467686835,
+              "segments": 69
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 1.5406776695527504,
+              "perimeter_radians": 6.132191854644517,
+              "compactness": 0.45173757246601043,
+              "orientation": 1,
+              "reflex_turning_radians": 25.419928246371487,
+              "absolute_turning_radians": 55.58236413036981,
+              "signed_turning_radians": 4.7425076376268365,
+              "max_segment_radians": 0.22617776801202194,
+              "segments": 71
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 1.4584777236018829,
+              "perimeter_radians": 6.72459705616241,
+              "compactness": 0.35826051947184856,
+              "orientation": 1,
+              "reflex_turning_radians": 29.137032302159795,
+              "absolute_turning_radians": 63.09877218789729,
+              "signed_turning_radians": 4.824707583577704,
+              "max_segment_radians": 0.27226506766938235,
+              "segments": 71
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 1.287083196490682,
+              "perimeter_radians": 5.663649888275859,
+              "compactness": 0.4525801340136076,
+              "orientation": 1,
+              "reflex_turning_radians": 22.3449291054783,
+              "absolute_turning_radians": 49.6859603216455,
+              "signed_turning_radians": 4.996102110688904,
+              "max_segment_radians": 0.23838412414885068,
+              "segments": 57
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 1.2257729766937808,
+              "perimeter_radians": 6.410290033586497,
+              "compactness": 0.33829114149556233,
+              "orientation": 1,
+              "reflex_turning_radians": 24.066109085773363,
+              "absolute_turning_radians": 53.18963050203253,
+              "signed_turning_radians": 5.057412330485805,
+              "max_segment_radians": 0.23838412414885068,
+              "segments": 62
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 1.117028146365798,
+              "perimeter_radians": 5.30439587048109,
+              "compactness": 0.45454073078013624,
+              "orientation": 1,
+              "reflex_turning_radians": 19.754373302561774,
+              "absolute_turning_radians": 44.67490376593734,
+              "signed_turning_radians": 5.166157160813789,
+              "max_segment_radians": 0.23489114339354655,
+              "segments": 53
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 0.503529598050806,
+              "perimeter_radians": 3.500795061177803,
+              "compactness": 0.49561133760562415,
+              "orientation": 1,
+              "reflex_turning_radians": 12.644163191338853,
+              "absolute_turning_radians": 31.06798209180649,
+              "signed_turning_radians": 5.779655709128781,
+              "max_segment_radians": 0.27226506766938235,
+              "segments": 41
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 0.42611419237309534,
+              "perimeter_radians": 3.081986633494713,
+              "compactness": 0.5446184594998816,
+              "orientation": 1,
+              "reflex_turning_radians": 8.920800472152798,
+              "absolute_turning_radians": 23.698672059112088,
+              "signed_turning_radians": 5.857071114806492,
+              "max_segment_radians": 0.21194537695929114,
+              "segments": 30
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 0.31266628417433184,
+              "perimeter_radians": 2.5579121616040092,
+              "compactness": 0.5855678117490614,
+              "orientation": 1,
+              "reflex_turning_radians": 7.135995369417141,
+              "absolute_turning_radians": 20.242509761839536,
+              "signed_turning_radians": 5.970519023005255,
+              "max_segment_radians": 0.2519155236702067,
+              "segments": 28
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 0.2624255805729478,
+              "perimeter_radians": 2.877616008455604,
+              "compactness": 0.3899283996561727,
+              "orientation": 1,
+              "reflex_turning_radians": 8.937511418013809,
+              "absolute_turning_radians": 23.895782562634256,
+              "signed_turning_radians": 6.020759726606639,
+              "max_segment_radians": 0.29218335456798844,
+              "segments": 28
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 0.12306979699670002,
+              "perimeter_radians": 1.8532480318608322,
+              "compactness": 0.4458820502396243,
+              "orientation": 1,
+              "reflex_turning_radians": 4.30073992160658,
+              "absolute_turning_radians": 14.761595353396045,
+              "signed_turning_radians": 6.1601155101828855,
+              "max_segment_radians": 0.29218335456798844,
+              "segments": 15
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 2.2865603264737458e-31,
+      "geological_validation": false
+    },
+    {
+      "seed": 42,
+      "method": "voronoi-fixture",
+      "accepted": true,
+      "atlas_id": "5e34bbb691a20ae4d03417d3bb8d9ae3ea8b1da3ba653f1cbdd4f4aec97ea4e7",
+      "generation_seconds": 0.08883124699968903,
+      "peak_accounted_bytes": 1328497,
+      "area_rank_l1": 0.32368058498978747,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.036551815055220975,
+          0.04003737996594387,
+          0.08868460009258528,
+          0.07331327923467859,
+          0.07084912792522625,
+          0.13141976862652813,
+          0.07846149894891773,
+          0.07007824360777222,
+          0.08128114080426405,
+          0.05087987708969505,
+          0.13813436542127425,
+          0.14030890322789372
+        ],
+        "ranked_area_fractions": [
+          0.14030890322789372,
+          0.13813436542127425,
+          0.13141976862652813,
+          0.08868460009258528,
+          0.08128114080426405,
+          0.07846149894891773,
+          0.07331327923467859,
+          0.07084912792522625,
+          0.07007824360777222,
+          0.05087987708969505,
+          0.04003737996594387,
+          0.036551815055220975
+        ],
+        "area_steradians": [
+          0.45932365461142005,
+          0.5031245550799697,
+          1.1144435525496583,
+          0.9212818378169735,
+          0.890316399212537,
+          1.6514695186142845,
+          0.9859762747502528,
+          0.8806291811786123,
+          1.021408939304294,
+          0.6393753923221503,
+          1.7358476304630523,
+          1.7631736784559684
+        ],
+        "perimeter_radians": [
+          3.136940941151292,
+          2.8660832231803566,
+          4.623894137644707,
+          3.763848400299082,
+          4.029397302493578,
+          4.848493829011689,
+          3.8448689587661793,
+          3.7722223362237353,
+          4.018582423305961,
+          3.502349753445271,
+          4.658071440804333,
+          4.683689108035761
+        ],
+        "compactness": [
+          0.5651247837203115,
+          0.7388599158600705,
+          0.5969265341800558,
+          0.7573054250573383,
+          0.6402657832503366,
+          0.766790409959155,
+          0.7723723669942623,
+          0.7231939435398105,
+          0.730207668092905,
+          0.6216814881035883,
+          0.8664604406207678,
+          0.8683029311260211
+        ],
+        "neighbour_count": [
+          5,
+          4,
+          6,
+          5,
+          4,
+          5,
+          7,
+          4,
+          4,
+          5,
+          5,
+          6
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.14030890322789372,
+        "smallest_fraction": 0.036551815055220975,
+        "area_ratio": 3.8386302572367694,
+        "boundary_length_radians": 23.87422092718098,
+        "maximum_support_area_sr": 1.7631736784559684,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "rings": [
+            {
+              "area_steradians": 0.45932365461141983,
+              "perimeter_radians": 3.136940941151292,
+              "compactness": 0.5651247837203112,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.823861652568167,
+              "signed_turning_radians": 5.823861652568167,
+              "max_segment_radians": 1.3660554219656038,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 0.5031245550799696,
+              "perimeter_radians": 2.8660832231803566,
+              "compactness": 0.7388599158600703,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.780060752099617,
+              "signed_turning_radians": 5.780060752099617,
+              "max_segment_radians": 1.001096249509396,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 1.114443552549658,
+              "perimeter_radians": 4.623894137644708,
+              "compactness": 0.5969265341800555,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.168741754629928,
+              "signed_turning_radians": 5.168741754629928,
+              "max_segment_radians": 1.9580355036427508,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 0.9212818378169735,
+              "perimeter_radians": 3.7638484002990817,
+              "compactness": 0.7573054250573384,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.3619034693626135,
+              "signed_turning_radians": 5.3619034693626135,
+              "max_segment_radians": 1.357117214101714,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 0.890316399212537,
+              "perimeter_radians": 4.029397302493578,
+              "compactness": 0.6402657832503366,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.392868907967049,
+              "signed_turning_radians": 5.392868907967049,
+              "max_segment_radians": 1.7469743247971248,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 1.6514695186142845,
+              "perimeter_radians": 4.848493829011689,
+              "compactness": 0.766790409959155,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.631715788565302,
+              "signed_turning_radians": 4.631715788565302,
+              "max_segment_radians": 1.9580355036427508,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 0.9859762747502527,
+              "perimeter_radians": 3.8448689587661793,
+              "compactness": 0.772372366994262,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.2972090324293335,
+              "signed_turning_radians": 5.2972090324293335,
+              "max_segment_radians": 1.389581205957738,
+              "segments": 7
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 0.8806291811786126,
+              "perimeter_radians": 3.7722223362237357,
+              "compactness": 0.7231939435398105,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.402556126000974,
+              "signed_turning_radians": 5.402556126000974,
+              "max_segment_radians": 1.1998754562830107,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 1.021408939304294,
+              "perimeter_radians": 4.018582423305962,
+              "compactness": 0.7302076680929047,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.261776367875292,
+              "signed_turning_radians": 5.261776367875292,
+              "max_segment_radians": 1.526444717546688,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 0.6393753923221506,
+              "perimeter_radians": 3.502349753445271,
+              "compactness": 0.6216814881035885,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.643809914857436,
+              "signed_turning_radians": 5.643809914857436,
+              "max_segment_radians": 1.3660554219656038,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 1.7358476304630528,
+              "perimeter_radians": 4.658071440804333,
+              "compactness": 0.866460440620768,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.547337676716534,
+              "signed_turning_radians": 4.547337676716534,
+              "max_segment_radians": 1.389581205957738,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 1.763173678455968,
+              "perimeter_radians": 4.683689108035761,
+              "compactness": 0.8683029311260211,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.520011628723618,
+              "signed_turning_radians": 4.520011628723618,
+              "max_segment_radians": 1.526444717546688,
+              "segments": 6
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 4.807121141190541e-31,
+      "geological_validation": false
+    },
+    {
+      "seed": 42,
+      "method": "connected-reference-candidate",
+      "accepted": true,
+      "atlas_id": "44f1c8e042bc00f8e33aad2d7a1002e37c0ac349221979b118a91df58e592960",
+      "generation_seconds": 4.827867677000086,
+      "peak_accounted_bytes": 48615739,
+      "area_rank_l1": 0.00784261380933989,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.21937326951968722,
+          0.12241879304755554,
+          0.12323735318765618,
+          0.11793964460141264,
+          0.10203391846959309,
+          0.09505784374974542,
+          0.08972222301867261,
+          0.040409890314325625,
+          0.03429041867437181,
+          0.02533741440005431,
+          0.019096880268874388,
+          0.011082350748051284
+        ],
+        "ranked_area_fractions": [
+          0.21937326951968722,
+          0.12323735318765618,
+          0.12241879304755554,
+          0.11793964460141264,
+          0.10203391846959309,
+          0.09505784374974542,
+          0.08972222301867261,
+          0.040409890314325625,
+          0.03429041867437181,
+          0.02533741440005431,
+          0.019096880268874388,
+          0.011082350748051284
+        ],
+        "area_steradians": [
+          2.7567258076680923,
+          1.538359923598119,
+          1.5486462536887653,
+          1.4820732841871562,
+          1.2821960347242143,
+          1.1945320943611466,
+          1.1274827067968276,
+          0.5078056581754189,
+          0.43090610958369896,
+          0.31839933976068346,
+          0.23997847503671862,
+          0.13926492677833305
+        ],
+        "perimeter_radians": [
+          7.3991449335423845,
+          6.375079535891708,
+          6.205433591657685,
+          5.846129860182597,
+          5.3675783792832785,
+          5.58290462908375,
+          6.085150774991541,
+          3.433425803061047,
+          3.452534762041371,
+          2.5512557178101427,
+          2.3922265547918298,
+          2.082680082613826
+        ],
+        "compactness": [
+          0.49395090544393894,
+          0.41743025291253577,
+          0.4430980764721451,
+          0.480663262058923,
+          0.5021892782730462,
+          0.4358209357389145,
+          0.3482980209773944,
+          0.5194429179414345,
+          0.4386952540544023,
+          0.5991400282042791,
+          0.516896575813141,
+          0.39899423393482825
+        ],
+        "neighbour_count": [
+          5,
+          4,
+          6,
+          4,
+          6,
+          7,
+          4,
+          6,
+          4,
+          5,
+          4,
+          5
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.21937326951968722,
+        "smallest_fraction": 0.011082350748051284,
+        "area_ratio": 19.794831846326623,
+        "boundary_length_radians": 28.386772312475582,
+        "maximum_support_area_sr": 0.07625719546316792,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "rings": [
+            {
+              "area_steradians": 2.7567258076680914,
+              "perimeter_radians": 7.3991449335423845,
+              "compactness": 0.4939509054439388,
+              "orientation": 1,
+              "reflex_turning_radians": 29.104050298013618,
+              "absolute_turning_radians": 61.73456009553873,
+              "signed_turning_radians": 3.5264594995114944,
+              "max_segment_radians": 0.2924613214599081,
+              "segments": 70
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 1.5383599235981185,
+              "perimeter_radians": 6.375079535891706,
+              "compactness": 0.41743025291253605,
+              "orientation": 1,
+              "reflex_turning_radians": 28.36731811571524,
+              "absolute_turning_radians": 61.47946161501194,
+              "signed_turning_radians": 4.744825383581469,
+              "max_segment_radians": 0.2540154813903365,
+              "segments": 76
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 1.548646253688765,
+              "perimeter_radians": 6.205433591657686,
+              "compactness": 0.44309807647214483,
+              "orientation": 1,
+              "reflex_turning_radians": 24.0550420944762,
+              "absolute_turning_radians": 52.84462324244322,
+              "signed_turning_radians": 4.7345390534908205,
+              "max_segment_radians": 0.3413541543838048,
+              "segments": 69
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 1.4820732841871564,
+              "perimeter_radians": 5.846129860182595,
+              "compactness": 0.4806632620589233,
+              "orientation": 1,
+              "reflex_turning_radians": 20.8779141307799,
+              "absolute_turning_radians": 46.55694028455223,
+              "signed_turning_radians": 4.80111202299243,
+              "max_segment_radians": 0.2924613214599081,
+              "segments": 54
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 1.2821960347242143,
+              "perimeter_radians": 5.3675783792832785,
+              "compactness": 0.5021892782730462,
+              "orientation": 1,
+              "reflex_turning_radians": 19.819092556935303,
+              "absolute_turning_radians": 44.639174386325976,
+              "signed_turning_radians": 5.000989272455373,
+              "max_segment_radians": 0.3413541543838048,
+              "segments": 49
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 1.1945320943611466,
+              "perimeter_radians": 5.582904629083749,
+              "compactness": 0.4358209357389146,
+              "orientation": 1,
+              "reflex_turning_radians": 21.810665009745094,
+              "absolute_turning_radians": 48.70998323230863,
+              "signed_turning_radians": 5.088653212818439,
+              "max_segment_radians": 0.27448010990682953,
+              "segments": 61
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 1.1274827067968278,
+              "perimeter_radians": 6.08515077499154,
+              "compactness": 0.3482980209773946,
+              "orientation": 1,
+              "reflex_turning_radians": 22.677475244527656,
+              "absolute_turning_radians": 50.51065308943807,
+              "signed_turning_radians": 5.1557026003827575,
+              "max_segment_radians": 0.27448010990682953,
+              "segments": 56
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 0.507805658175419,
+              "perimeter_radians": 3.433425803061047,
+              "compactness": 0.5194429179414346,
+              "orientation": 1,
+              "reflex_turning_radians": 10.179031616185739,
+              "absolute_turning_radians": 26.133442881375647,
+              "signed_turning_radians": 5.775379649004168,
+              "max_segment_radians": 0.22532120726500046,
+              "segments": 33
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 0.4309061095836991,
+              "perimeter_radians": 3.45253476204137,
+              "compactness": 0.43869525405440274,
+              "orientation": 1,
+              "reflex_turning_radians": 11.72363295344641,
+              "absolute_turning_radians": 29.299545104488708,
+              "signed_turning_radians": 5.852279197595888,
+              "max_segment_radians": 0.24410499170754635,
+              "segments": 31
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 0.31839933976068346,
+              "perimeter_radians": 2.551255717810143,
+              "compactness": 0.599140028204279,
+              "orientation": 1,
+              "reflex_turning_radians": 8.837812613169946,
+              "absolute_turning_radians": 23.640411193758794,
+              "signed_turning_radians": 5.964785967418903,
+              "max_segment_radians": 0.21052548187822706,
+              "segments": 26
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 0.23997847503671862,
+              "perimeter_radians": 2.3922265547918298,
+              "compactness": 0.516896575813141,
+              "orientation": 1,
+              "reflex_turning_radians": 8.446851160164442,
+              "absolute_turning_radians": 22.936909152471753,
+              "signed_turning_radians": 6.043206832142867,
+              "max_segment_radians": 0.23254663240554274,
+              "segments": 24
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 0.13926492677833302,
+              "perimeter_radians": 2.082680082613826,
+              "compactness": 0.3989942339348282,
+              "orientation": 1,
+              "reflex_turning_radians": 5.56565393269844,
+              "absolute_turning_radians": 17.275228245798136,
+              "signed_turning_radians": 6.143920380401254,
+              "max_segment_radians": 0.214121728392561,
+              "segments": 27
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 1.0260767936915262e-31,
+      "geological_validation": false
+    },
+    {
+      "seed": 43,
+      "method": "voronoi-fixture",
+      "accepted": true,
+      "atlas_id": "57e667c9307be6d8322f4295bb1c6f05257bfae53b6b7762820821d759d8a7aa",
+      "generation_seconds": 0.0377967899999021,
+      "peak_accounted_bytes": 1328479,
+      "area_rank_l1": 0.323819031933323,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.031577981641851806,
+          0.06823000457012493,
+          0.10192172446194606,
+          0.09306071461193949,
+          0.06898038368520519,
+          0.1255300029967219,
+          0.07342926243517094,
+          0.1225685375295614,
+          0.07899026772449703,
+          0.08222019276309353,
+          0.10318439279471013,
+          0.05030653478517759
+        ],
+        "ranked_area_fractions": [
+          0.1255300029967219,
+          0.1225685375295614,
+          0.10318439279471013,
+          0.10192172446194606,
+          0.09306071461193949,
+          0.08222019276309353,
+          0.07899026772449703,
+          0.07342926243517094,
+          0.06898038368520519,
+          0.06823000457012493,
+          0.05030653478517759,
+          0.031577981641851806
+        ],
+        "area_steradians": [
+          0.39682062056493994,
+          0.8574035244476099,
+          1.2807861632434114,
+          1.1694354294507416,
+          0.8668330665089834,
+          1.5774565408784251,
+          0.9227393256993999,
+          1.5402416682564597,
+          0.9926209791534832,
+          1.0332094142450852,
+          1.2966533214759397,
+          0.6321705604346932
+        ],
+        "perimeter_radians": [
+          2.73465851367759,
+          3.988031191421432,
+          4.4332028895703175,
+          4.343302598810137,
+          3.6082079183957245,
+          4.743575691739878,
+          3.87965516323631,
+          4.726336847343335,
+          3.7663174282487564,
+          4.095473000586349,
+          4.300071477071996,
+          3.357840229724679
+        ],
+        "compactness": [
+          0.6457472223039459,
+          0.6312287295110417,
+          0.7354708541390323,
+          0.7065194952328983,
+          0.7789705784090424,
+          0.7703720380508274,
+          0.7138076908325567,
+          0.760260792313074,
+          0.8098856303289762,
+          0.7104419252726039,
+          0.790288294398691,
+          0.6691254137848623
+        ],
+        "neighbour_count": [
+          4,
+          4,
+          6,
+          4,
+          5,
+          3,
+          6,
+          6,
+          5,
+          7,
+          6,
+          4
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.1255300029967219,
+        "smallest_fraction": 0.031577981641851806,
+        "area_ratio": 3.9752383296832057,
+        "boundary_length_radians": 23.98833647491325,
+        "maximum_support_area_sr": 1.5774565408784251,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "rings": [
+            {
+              "area_steradians": 0.39682062056494016,
+              "perimeter_radians": 2.7346585136775903,
+              "compactness": 0.645747222303946,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.886364686614646,
+              "signed_turning_radians": 5.886364686614646,
+              "max_segment_radians": 1.0224301559865379,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 0.8574035244476099,
+              "perimeter_radians": 3.9880311914214324,
+              "compactness": 0.6312287295110416,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.425781782731976,
+              "signed_turning_radians": 5.425781782731976,
+              "max_segment_radians": 1.2591270758692643,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 1.2807861632434114,
+              "perimeter_radians": 4.433202889570317,
+              "compactness": 0.7354708541390326,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.002399143936175,
+              "signed_turning_radians": 5.002399143936175,
+              "max_segment_radians": 1.652365214403862,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 1.1694354294507419,
+              "perimeter_radians": 4.343302598810137,
+              "compactness": 0.7065194952328984,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.113749877728845,
+              "signed_turning_radians": 5.113749877728845,
+              "max_segment_radians": 1.7102008821332353,
+              "segments": 4
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 0.8668330665089835,
+              "perimeter_radians": 3.6082079183957254,
+              "compactness": 0.778970578409042,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.416352240670603,
+              "signed_turning_radians": 5.416352240670603,
+              "max_segment_radians": 1.1277812903502786,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 1.577456540878425,
+              "perimeter_radians": 4.743575691739878,
+              "compactness": 0.7703720380508272,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.705728766301161,
+              "signed_turning_radians": 4.705728766301161,
+              "max_segment_radians": 1.6970758327578612,
+              "segments": 3
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 0.9227393256993998,
+              "perimeter_radians": 3.8796551632363103,
+              "compactness": 0.7138076908325565,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.360445981480186,
+              "signed_turning_radians": 5.360445981480186,
+              "max_segment_radians": 1.0082329986618428,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 1.5402416682564601,
+              "perimeter_radians": 4.726336847343335,
+              "compactness": 0.7602607923130743,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.742943638923126,
+              "signed_turning_radians": 4.742943638923126,
+              "max_segment_radians": 1.7102008821332353,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 0.9926209791534831,
+              "perimeter_radians": 3.7663174282487573,
+              "compactness": 0.8098856303289756,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.290564328026103,
+              "signed_turning_radians": 5.290564328026103,
+              "max_segment_radians": 1.1514237982201976,
+              "segments": 5
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 1.033209414245085,
+              "perimeter_radians": 4.095473000586348,
+              "compactness": 0.710441925272604,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.249975892934501,
+              "signed_turning_radians": 5.249975892934501,
+              "max_segment_radians": 1.5516603286696538,
+              "segments": 7
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 1.2966533214759395,
+              "perimeter_radians": 4.300071477071996,
+              "compactness": 0.7902882943986909,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 4.986531985703647,
+              "signed_turning_radians": 4.986531985703647,
+              "max_segment_radians": 1.394134644578154,
+              "segments": 6
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 0.632170560434693,
+              "perimeter_radians": 3.3578402297246788,
+              "compactness": 0.6691254137848623,
+              "orientation": 1,
+              "reflex_turning_radians": 0.0,
+              "absolute_turning_radians": 5.6510147467448935,
+              "signed_turning_radians": 5.6510147467448935,
+              "max_segment_radians": 1.2591270758692643,
+              "segments": 4
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 3.5071184287291565e-31,
+      "geological_validation": false
+    },
+    {
+      "seed": 43,
+      "method": "connected-reference-candidate",
+      "accepted": true,
+      "atlas_id": "bd3b073f3fec332858f0d91079fd4371cec4443e6882577d568925748c6ad086",
+      "generation_seconds": 3.275473780000084,
+      "peak_accounted_bytes": 48615928,
+      "area_rank_l1": 0.0071094141837615595,
+      "metrics": {
+        "schema": "atlas.plate-layout-metrics.v1",
+        "plate_ids": [
+          "plate-000000",
+          "plate-000001",
+          "plate-000002",
+          "plate-000003",
+          "plate-000004",
+          "plate-000005",
+          "plate-000006",
+          "plate-000007",
+          "plate-000008",
+          "plate-000009",
+          "plate-000010",
+          "plate-000011"
+        ],
+        "area_fractions": [
+          0.22107095969427915,
+          0.12251890361916187,
+          0.12179880672172577,
+          0.1172404195322398,
+          0.10108037001763213,
+          0.09675692673021007,
+          0.08878438689599431,
+          0.039792980881832994,
+          0.03497727267417353,
+          0.025942198132947313,
+          0.019023918085867456,
+          0.01101285701393568
+        ],
+        "ranked_area_fractions": [
+          0.22107095969427915,
+          0.12251890361916187,
+          0.12179880672172577,
+          0.1172404195322398,
+          0.10108037001763213,
+          0.09675692673021007,
+          0.08878438689599431,
+          0.039792980881832994,
+          0.03497727267417353,
+          0.025942198132947313,
+          0.019023918085867456,
+          0.01101285701393568
+        ],
+        "area_steradians": [
+          2.7780596115903706,
+          1.5396179501433394,
+          1.5305689456519072,
+          1.4732865628250795,
+          1.2702133914781244,
+          1.2158834007982153,
+          1.1156975105037186,
+          0.5000533456112225,
+          0.43953737150316236,
+          0.3259992762897525,
+          0.23906160520422082,
+          0.13839164276006063
+        ],
+        "perimeter_radians": [
+          7.70682546136677,
+          6.043033926042404,
+          6.099525262853238,
+          5.696702394304631,
+          5.952501710490288,
+          5.382072625050982,
+          6.206132347341088,
+          3.907322065992108,
+          3.0617282374764923,
+          3.36858312703936,
+          2.138315035966232,
+          2.0234695120334973
+        ],
+        "compactness": [
+          0.4578237024923289,
+          0.4648903530441241,
+          0.45400926498101796,
+          0.5036078232495834,
+          0.40495648454391325,
+          0.4764390233803213,
+          0.3316923192221663,
+          0.39521430677990355,
+          0.56860402956327,
+          0.3516549145507994,
+          0.644517530359902,
+          0.4200655286247847
+        ],
+        "neighbour_count": [
+          9,
+          4,
+          4,
+          5,
+          6,
+          4,
+          6,
+          5,
+          4,
+          6,
+          3,
+          4
+        ],
+        "connected_components": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "largest_fraction": 0.22107095969427915,
+        "smallest_fraction": 0.01101285701393568,
+        "area_ratio": 20.073897210736117,
+        "boundary_length_radians": 28.793105852978545,
+        "maximum_support_area_sr": 0.07688145695582595,
+        "morphology_validated": false,
+        "dynamics_validated": false
+      },
+      "outlines": [
+        {
+          "plate_id": "plate-000000",
+          "not_measured": "outline is outside supported hemisphere"
+        },
+        {
+          "plate_id": "plate-000001",
+          "rings": [
+            {
+              "area_steradians": 1.5396179501433391,
+              "perimeter_radians": 6.043033926042405,
+              "compactness": 0.464890353044124,
+              "orientation": 1,
+              "reflex_turning_radians": 24.35600593448243,
+              "absolute_turning_radians": 53.455579226001106,
+              "signed_turning_radians": 4.743567357036246,
+              "max_segment_radians": 0.27155700840976355,
+              "segments": 62
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000002",
+          "rings": [
+            {
+              "area_steradians": 1.5305689456519074,
+              "perimeter_radians": 6.099525262853238,
+              "compactness": 0.454009264981018,
+              "orientation": 1,
+              "reflex_turning_radians": 24.971013062895643,
+              "absolute_turning_radians": 54.69464248731897,
+              "signed_turning_radians": 4.75261636152768,
+              "max_segment_radians": 0.2376748624692368,
+              "segments": 67
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000003",
+          "rings": [
+            {
+              "area_steradians": 1.4732865628250793,
+              "perimeter_radians": 5.6967023943046335,
+              "compactness": 0.5036078232495829,
+              "orientation": 1,
+              "reflex_turning_radians": 19.851082363965507,
+              "absolute_turning_radians": 44.51206347228552,
+              "signed_turning_radians": 4.8098987443545065,
+              "max_segment_radians": 0.2512017406518634,
+              "segments": 64
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000004",
+          "rings": [
+            {
+              "area_steradians": 1.2702133914781244,
+              "perimeter_radians": 5.952501710490289,
+              "compactness": 0.40495648454391314,
+              "orientation": 1,
+              "reflex_turning_radians": 23.228210326715764,
+              "absolute_turning_radians": 51.469392569132985,
+              "signed_turning_radians": 5.0129719157014625,
+              "max_segment_radians": 0.2512017406518634,
+              "segments": 61
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000005",
+          "rings": [
+            {
+              "area_steradians": 1.215883400798215,
+              "perimeter_radians": 5.382072625050982,
+              "compactness": 0.47643902338032124,
+              "orientation": 1,
+              "reflex_turning_radians": 21.927255829623945,
+              "absolute_turning_radians": 48.92181356562926,
+              "signed_turning_radians": 5.067301906381371,
+              "max_segment_radians": 0.26593043791648624,
+              "segments": 64
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000006",
+          "rings": [
+            {
+              "area_steradians": 1.115697510503719,
+              "perimeter_radians": 6.2061323473410885,
+              "compactness": 0.3316923192221664,
+              "orientation": 1,
+              "reflex_turning_radians": 26.095109866489675,
+              "absolute_turning_radians": 57.35770752965522,
+              "signed_turning_radians": 5.167487796675868,
+              "max_segment_radians": 0.26593043791648624,
+              "segments": 66
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000007",
+          "rings": [
+            {
+              "area_steradians": 0.5000533456112224,
+              "perimeter_radians": 3.9073220659921084,
+              "compactness": 0.39521430677990343,
+              "orientation": 1,
+              "reflex_turning_radians": 16.33022194602331,
+              "absolute_turning_radians": 38.44357585361499,
+              "signed_turning_radians": 5.7831319615683645,
+              "max_segment_radians": 0.2402821352292592,
+              "segments": 39
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000008",
+          "rings": [
+            {
+              "area_steradians": 0.4395373715031624,
+              "perimeter_radians": 3.0617282374764927,
+              "compactness": 0.5686040295632699,
+              "orientation": 1,
+              "reflex_turning_radians": 12.333869162783245,
+              "absolute_turning_radians": 30.511386261242915,
+              "signed_turning_radians": 5.843647935676423,
+              "max_segment_radians": 0.24274671930307126,
+              "segments": 34
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000009",
+          "rings": [
+            {
+              "area_steradians": 0.3259992762897524,
+              "perimeter_radians": 3.36858312703936,
+              "compactness": 0.3516549145507993,
+              "orientation": 1,
+              "reflex_turning_radians": 14.757836015128545,
+              "absolute_turning_radians": 35.47285806114692,
+              "signed_turning_radians": 5.957186030889835,
+              "max_segment_radians": 0.21523400784380836,
+              "segments": 37
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000010",
+          "rings": [
+            {
+              "area_steradians": 0.23906160520422085,
+              "perimeter_radians": 2.138315035966232,
+              "compactness": 0.6445175303599021,
+              "orientation": 1,
+              "reflex_turning_radians": 6.445070339903719,
+              "absolute_turning_radians": 18.934264381782803,
+              "signed_turning_radians": 6.044123701975365,
+              "max_segment_radians": 0.18976380415835362,
+              "segments": 27
+            }
+          ]
+        },
+        {
+          "plate_id": "plate-000011",
+          "rings": [
+            {
+              "area_steradians": 0.13839164276006066,
+              "perimeter_radians": 2.023469512033497,
+              "compactness": 0.420065528624785,
+              "orientation": 1,
+              "reflex_turning_radians": 6.6821274705622065,
+              "absolute_turning_radians": 19.50904860554394,
+              "signed_turning_radians": 6.1447936644195265,
+              "max_segment_radians": 0.2751426365765091,
+              "segments": 22
+            }
+          ]
+        }
+      ],
+      "kinematic_case": "synthetic prescribed Euler vectors, NOT inferred physical motions",
+      "maximum_rigid_plate_area_residual_sr_s": 1.2114099350195714e-31,
+      "geological_validation": false
+    }
+  ],
+  "unresolved": [
+    "not all 52 full plate outlines compared",
+    "no validated boundary-type/shape generative law",
+    "support discretisation remains a generating prior",
+    "no force-derived or evolving global plate motion",
+    "small-plate resolution can cause explicit refusal",
+    "Windows not tested"
+  ]
+}

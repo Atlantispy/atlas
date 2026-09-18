@@ -1,0 +1,38 @@
+{
+  "schema": "atlas.w01-geological-description-case.v1",
+  "scope": "W01 stage 4 geological input descriptions; no stage-5 spatial sampling or W03 evolution",
+  "status": "WORKING NON-CANON; synthetic contract tests, not Earth calibration",
+  "assumptions": [
+    "Surface-relative, ordered, constant-bulk-thickness layers within each assigned column profile.",
+    "Lateral changes are declared by provinces on the existing regional or planetary geometry.",
+    "Solid-volume fractions describe homogeneous mixtures within a layer, not mass fractions or resolved bedding.",
+    "Sediment contributes to crust thickness; lithospheric mantle contributes only to lithosphere thickness.",
+    "Unknown material/porosity/formation/thermal values are retained explicitly and never guessed.",
+    "Half-space cooling-start time is independent of formation time, in the same declared case epoch.",
+    "Feature selection needs an explicit complete precedence order; faults and retain-all weak zones do not implicitly alter rock properties.",
+    "Fault traces plus dip/depth describe ribbons; no displacement, weakness mechanism, or fault-surface mesh is generated.",
+    "A constant reference property record is not an implementation or validation of a material law.",
+    "The explicitly supplied whole-domain background closes coverage; it may declare unknown geology.",
+    "Stage 5 must compute actual feature membership, cell averages, depth validity and W02 initial fields."
+  ],
+  "units": {
+    "depth_and_thickness": "m, positive down from a named local surface reference",
+    "temperature": "K",
+    "time": "s in a named forward-running epoch",
+    "density": "kg/m^3 reference property",
+    "conductivity": "W/(m K)",
+    "specific_heat": "J/(kg K)",
+    "heat_production": "W/m^3",
+    "thermal_expansion": "1/K",
+    "dip": "radians down from horizontal to a declared trace side",
+    "porosity": "pore volume divided by bulk volume",
+    "component_fraction": "solid component volume divided by total solid volume"
+  },
+  "acceptance": {
+    "fraction_absolute_tolerance": 1e-12,
+    "stack_relative_tolerance": 1e-12,
+    "identity": "exact canonical descriptor and geometry identities; includes evidence and precedence",
+    "restoration": "self-contained snapshot must reconstruct the same geological definition after independent backup",
+    "physics": "no geological validity or numerical evolution claim"
+  }
+}

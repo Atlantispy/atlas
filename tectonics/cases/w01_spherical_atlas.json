@@ -1,0 +1,31 @@
+{
+  "schema": "atlas.w01.spherical-atlas-case.v1",
+  "status": "WORKING NON-CANON; static mathematical geometry only",
+  "scope": "W01 stage 3B: closed conforming spherical patch geometry, not global W02 transport",
+  "definition": "Canonical shared unit directions, minor arcs, owner-on-left oriented local polygon rings; region and plate IDs are independent of patch IDs",
+  "acceptance": {
+    "angular_absolute_rad": 2e-12,
+    "relative_tolerance": 1e-12,
+    "area_closure_absolute_sr": 2e-11,
+    "ambiguity_refusal_rad": 1.4210854715202004e-14,
+    "source_attachment_rad": 1.4210854715202004e-14
+  },
+  "required_checks": [
+    "octahedron 8 octants sum to 4*pi steradians and Euler V-E+F=2",
+    "every edge has opposite uses and every vertex link covers one full turn",
+    "plate larger than a hemisphere, whole-sphere plate, disconnected and holed regions",
+    "chart changes, cyclic ring starts, patch order and interior subdivisions preserve geography",
+    "seams, poles, rotations, interplate reversal and metric radius scaling",
+    "missing faces, duplicate ownership, unpaired/T-junction seams and pinches are refused",
+    "indexed matches equal exhaustive matches; boundary queries report all owners",
+    "explicit stage-3 vertex binding checks and no implicit snapping",
+    "immutable return metadata, byte identities, bounds, cancellation and concurrent reads",
+    "self-contained compressed snapshots, corrupt data refusal and fresh-process restoration"
+  ],
+  "limitations": [
+    "Input patch mesh is authored/prescribed and conforming; no automatic arbitrary polygon repair or tessellation",
+    "Each individual face has a well-conditioned local hemisphere chart; the atlas and its grouped plates have no hemisphere cap",
+    "Boundary bands report numerical ambiguity rather than choosing an arbitrary owner",
+    "No forces, plate motion, spherical material transport, new thermal physics or Windows acceptance"
+  ]
+}

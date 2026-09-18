@@ -1,0 +1,29 @@
+{
+  "schema": "atlas.tectonics.w01-coordinate-case.v1",
+  "status": "WORKING NON-CANON; synthetic mathematical verification only",
+  "scope": "W01 stage 1: spherical, Cartesian, local-frame, unit and time conventions; not polygons or a W01-W02 forcing adapter",
+  "conventions": {
+    "spherical": "longitude east-positive, geocentric latitude north-positive, radial height up-positive; explicit sphere radius",
+    "cartesian": "planet-centred right-handed X at lon=0/lat=0, Y at lon=pi/2/lat=0, Z north; identified axes",
+    "local": "ENU at explicit origin; optional positive rotation of local X from east towards north; full 3D chord coordinates, NOT a flattening map",
+    "longitude": "canonical [-pi,pi) or [-180,180); inverse longitude is zero only on the exact polar axis",
+    "pole_orientation": "local-frame origin longitude explicitly selects its polar meridian; no inferred east at a pole",
+    "legacy": "east/south/up reflection; polar and axial vector rules are distinct",
+    "time": "SI seconds increasing forward within a named epoch; geological-before coordinates require an explicit reverse axis",
+    "year": "Julian year = 31557600 SI seconds only when explicitly selected; no calendar/UTC/TAI conversion"
+  },
+  "acceptance": {
+    "angle_absolute_rad": 1e-12,
+    "relative_tolerance": 1e-12,
+    "scaled_position_roundoff_factor": 64,
+    "reference_radius_m": 6400000.0,
+    "reference_radius_meaning": "synthetic test scale, not Earth calibration",
+    "test_batch_points": [1, 7, 65536],
+    "old_tolerances": "unchanged",
+    "unsupported": "nonfinite or masked inputs, centre of sphere, unresolved nonzero height/time increments, unrelated frames/epochs without explicit mapping"
+  },
+  "references": [
+    "https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates",
+    "https://iauarchive.eso.org/public/themes/measuring/"
+  ]
+}

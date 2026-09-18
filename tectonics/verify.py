@@ -30,6 +30,7 @@ def source_inventory(root: Path) -> dict[str, str]:
         raise ValueError('foundation case is missing')
     paths += sorted((root / 'src').rglob('*.py'))
     paths += sorted((root / 'tests').rglob('*.py'))
+    paths += sorted((root / 'tools').glob('*.py'))
     if not (root / 'src/atlas_tectonics/__init__.py').is_file():
         raise ValueError('tectonics source package is missing')
     if not list((root / 'tests').glob('test_*.py')):
@@ -57,7 +58,7 @@ def main() -> int:
     native = not core_only
     if not core_only:
         import importlib.util
-        if any(importlib.util.find_spec(p) is None for p in ('scipy', 'numba', 'blosc2', 'threadpoolctl')):
+        if any(importlib.util.find_spec(p) is None for p in ('scipy', 'numba', 'blosc2', 'threadpoolctl', 'shapely')):
             raise ImportError('Full verification needs scipy, numba and the storage extra; --core explicitly tests reference foundations only')
     if native:
         import importlib.util
@@ -93,7 +94,7 @@ def main() -> int:
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v9',
+        'schema': 'atlas.tectonics.foundation-verification.v14',
         'profile': 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
@@ -106,11 +107,17 @@ def main() -> int:
         'material_runtime': (__import__('atlas_tectonics.materials', fromlist=['material_native_build_info']).material_native_build_info() if native else None),
         'regional_runtime': (__import__('atlas_tectonics.regional', fromlist=['regional_native_build_info']).regional_native_build_info() if native else None),
         'native_runtime': (__import__('atlas_tectonics.transport', fromlist=['native_build_info']).native_build_info() if native else None),
+        'spherical_atlas_scope': 'closed static conforming patch geometry; no spherical material evolution',
+        'earth_material_scope': 'W01 4B sourced reference data and declared mixtures; no hot/high-pressure laws or W03 evolution',
+        'geological_description_scope': 'W01 stage 4 typed initial descriptions; no stage-5 sampling or W03 evolution',
+        'planetary_generation_scope': 'W01 3C unweighted nearest-site initial geometry; not validated plate history',
+        'geometry_runtime': __import__('atlas_tectonics.geometry', fromlist=['geometry_runtime']).geometry_runtime(),
         'runtime': {'python': platform.python_version(), 'numpy': np.__version__,
                     'platform': platform.system(), 'machine': platform.machine(),
                     'thread_environment': {k: os.environ.get(k) for k in
                         ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS')}},
         'resource_acceptance': resource_record,
+        'plate_reference_r1_scope': 'parser/metric/policy checks; complete external PB2002 verification requires explicit reference command',
         'scope': 'synthetic analytical, numerical and resource checks; platform scope is explicit',
         'physical_validation': False, 'production_ready': False,
         'historical_checkpoint_compatibility': False,

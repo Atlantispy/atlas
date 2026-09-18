@@ -1,0 +1,251 @@
+{
+  "schema": "atlas.tectonics.foundation-verification.v9",
+  "profile": "full-native-transport",
+  "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+  "tests_run": 554,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "source_unchanged_during_tests": true,
+  "source_sha256_before": {
+    "verify.py": "73fdd34fabe1abbc24e4e99fea7bded85c21377dcfc2f4ef46f15c2c790fb93d",
+    "pyproject.toml": "b38e14257e28f5886aab0babd4c3f5ac6befc7fc8554cd34e6406409c7e7561e",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "cases/material_transport.json": "27142ccc584e972281a93d200e6f5243f57af4c3a2bcb162a7029ec028ae4b6f",
+    "cases/regional_transport.json": "771c718e4fbae7db3e39f8da790b04f69cd86e6d2167e33ff5ca53d8bf1157c5",
+    "cases/w01_coordinates.json": "0bffc87668c35f1184ef3b2b4570dfd2849c9ada34ca042790abfaed9acc095b",
+    "cases/w02_completion.json": "89c67d3b93ac17a8a738043220ad57cc0bcf8886a3575e3cec0e6ba1e3663c8c",
+    "src/atlas_tectonics/__init__.py": "dc1341164455e35f26c98eb16d062fe438878eab9a229524340e6c7cecbb7bb1",
+    "src/atlas_tectonics/_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+    "src/atlas_tectonics/_mesh_native.py": "b92ee48adbca4efee2394ecc0a6ca7c0842e1183e30456b4890ed3a5b20a1b7c",
+    "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "src/atlas_tectonics/execution.py": "ae550e437fdaab63cbfcb7a58c936537eb75e189f93f7501c1d6bd961fb9fe8f",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/markers.py": "1c290822be25a416e9ec72741c0d63eff6c7d6e7df0e8c6ab592a8c0794e665a",
+    "src/atlas_tectonics/materials.py": "d511e6b73a46b215c4001de6ccf1391d20f1bbd2db6c6545bee3baa7b85b81c8",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/remapping.py": "807cb28fd7e775ed734526745ecfdefa53bba390527f67d9ae55cca43d139d4a",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "f1c3859d7d53ebac53c4460ec21c086064748b9791da0301bbcae9e4e9a4393f",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tests/check_combined_acceptance.py": "a11f361a486f12b07736aa22b73747302244ac746586512d3d590e86dce62981",
+    "tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+    "tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+    "tests/measure_execution_reuse.py": "ddb1fa03ef5279ecc5b2b2b80682087c93eb82eb9feac7762e41988065cdea0d",
+    "tests/measure_kernel_batches.py": "f79cd63494cf6468c583a4d9880459aa547f2735bda6904378b940c623b9a3f3",
+    "tests/measure_material_transport.py": "11c5097963fc542d14876f138b1fa1b720c9466eb31e738b00d3f7071c5bbab4",
+    "tests/measure_regional_transport.py": "c08a8490b8ec1bc10e92fcb0503bc801f0475e3317516da8caf0ab0bdddf6393",
+    "tests/measure_storage_profiles.py": "bf9169414f03415185e83ed0e7e9e7d7742f32ceb93b9f435fb30c9fe7ef0a56",
+    "tests/measure_w02_completion.py": "840f6757214362cf42f26b515404dec93780183d13b98abc48ee0016cbce516b",
+    "tests/test_combined_resources.py": "cdd42f6d8b0bdd7f05b92864d10ac202da6413d788230b22c2967f55accc1831",
+    "tests/test_copy_reuse.py": "c90ea68b2087874bb42f3d1946a6a71ed7c2046cf5816ba54fd3f2fb68c89e05",
+    "tests/test_execution_reuse.py": "583e140c352e9c46cdd66401088edacc5bb7bcd179e78c495806fa4ff7e9921a",
+    "tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+    "tests/test_kernel_batches.py": "5273c03a665923504fbffae2f67d807b64594dc82e89019dc31d2bc12f4ec729",
+    "tests/test_material_transport.py": "2d8f65a72ecac3e5cdf4826b60fd0f83c4361c542cb522d69634e762b80d7fe7",
+    "tests/test_memory_storage.py": "1ab4a7acf7b2b97279bc7766e400dd5d4548c339f3ee55ccfd1bc9c3ea7365ab",
+    "tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+    "tests/test_regional_transport.py": "7815837b24e4f72b59c9e3af25d3f194b454adc91465e1623eaa55b871f95532",
+    "tests/test_storage_profiles.py": "15f7ffc2c6781ef039a2be02ed891565c54d7ff518be799751e4a3ea154384c2",
+    "tests/test_w01_coordinates.py": "d4055cb177442da678bcae081849b9a2d97865a14a10a0081693976772dec1c9",
+    "tests/test_w02_completion.py": "5d28622f9cd90f283592275fdacec4541d71bb12ef0093e0601016c9e361b523"
+  },
+  "source_sha256_after": {
+    "verify.py": "73fdd34fabe1abbc24e4e99fea7bded85c21377dcfc2f4ef46f15c2c790fb93d",
+    "pyproject.toml": "b38e14257e28f5886aab0babd4c3f5ac6befc7fc8554cd34e6406409c7e7561e",
+    "cases/foundations.json": "3a0a5f1bb99286fab0035023fa2736359a72ac11882cf855999faf0dc757984d",
+    "cases/material_transport.json": "27142ccc584e972281a93d200e6f5243f57af4c3a2bcb162a7029ec028ae4b6f",
+    "cases/regional_transport.json": "771c718e4fbae7db3e39f8da790b04f69cd86e6d2167e33ff5ca53d8bf1157c5",
+    "cases/w01_coordinates.json": "0bffc87668c35f1184ef3b2b4570dfd2849c9ada34ca042790abfaed9acc095b",
+    "cases/w02_completion.json": "89c67d3b93ac17a8a738043220ad57cc0bcf8886a3575e3cec0e6ba1e3663c8c",
+    "src/atlas_tectonics/__init__.py": "dc1341164455e35f26c98eb16d062fe438878eab9a229524340e6c7cecbb7bb1",
+    "src/atlas_tectonics/_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+    "src/atlas_tectonics/_mesh_native.py": "b92ee48adbca4efee2394ecc0a6ca7c0842e1183e30456b4890ed3a5b20a1b7c",
+    "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "src/atlas_tectonics/execution.py": "ae550e437fdaab63cbfcb7a58c936537eb75e189f93f7501c1d6bd961fb9fe8f",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/markers.py": "1c290822be25a416e9ec72741c0d63eff6c7d6e7df0e8c6ab592a8c0794e665a",
+    "src/atlas_tectonics/materials.py": "d511e6b73a46b215c4001de6ccf1391d20f1bbd2db6c6545bee3baa7b85b81c8",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/remapping.py": "807cb28fd7e775ed734526745ecfdefa53bba390527f67d9ae55cca43d139d4a",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "f1c3859d7d53ebac53c4460ec21c086064748b9791da0301bbcae9e4e9a4393f",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tests/check_combined_acceptance.py": "a11f361a486f12b07736aa22b73747302244ac746586512d3d590e86dce62981",
+    "tests/check_native_transport.py": "ed46c690b5a74a69855f5222c9d99c7ca7c12bff9ca08702358b4ba10c42d9b2",
+    "tests/measure_copy_transport.py": "49696a95ea06151845b766177a7b4d845cdc5588fdd84b3af07cb423d45135d8",
+    "tests/measure_execution_reuse.py": "ddb1fa03ef5279ecc5b2b2b80682087c93eb82eb9feac7762e41988065cdea0d",
+    "tests/measure_kernel_batches.py": "f79cd63494cf6468c583a4d9880459aa547f2735bda6904378b940c623b9a3f3",
+    "tests/measure_material_transport.py": "11c5097963fc542d14876f138b1fa1b720c9466eb31e738b00d3f7071c5bbab4",
+    "tests/measure_regional_transport.py": "c08a8490b8ec1bc10e92fcb0503bc801f0475e3317516da8caf0ab0bdddf6393",
+    "tests/measure_storage_profiles.py": "bf9169414f03415185e83ed0e7e9e7d7742f32ceb93b9f435fb30c9fe7ef0a56",
+    "tests/measure_w02_completion.py": "840f6757214362cf42f26b515404dec93780183d13b98abc48ee0016cbce516b",
+    "tests/test_combined_resources.py": "cdd42f6d8b0bdd7f05b92864d10ac202da6413d788230b22c2967f55accc1831",
+    "tests/test_copy_reuse.py": "c90ea68b2087874bb42f3d1946a6a71ed7c2046cf5816ba54fd3f2fb68c89e05",
+    "tests/test_execution_reuse.py": "583e140c352e9c46cdd66401088edacc5bb7bcd179e78c495806fa4ff7e9921a",
+    "tests/test_foundations.py": "08542998cb2a7e5c6f680f320a216616881aaf02bcbc0d496fe14d77e70a7d4f",
+    "tests/test_kernel_batches.py": "5273c03a665923504fbffae2f67d807b64594dc82e89019dc31d2bc12f4ec729",
+    "tests/test_material_transport.py": "2d8f65a72ecac3e5cdf4826b60fd0f83c4361c542cb522d69634e762b80d7fe7",
+    "tests/test_memory_storage.py": "1ab4a7acf7b2b97279bc7766e400dd5d4548c339f3ee55ccfd1bc9c3ea7365ab",
+    "tests/test_optimised_defaults.py": "9f788041fcb71efeb014a27a50be606dba1964cf7316e7df2f757a991bf15afb",
+    "tests/test_regional_transport.py": "7815837b24e4f72b59c9e3af25d3f194b454adc91465e1623eaa55b871f95532",
+    "tests/test_storage_profiles.py": "15f7ffc2c6781ef039a2be02ed891565c54d7ff518be799751e4a3ea154384c2",
+    "tests/test_w01_coordinates.py": "d4055cb177442da678bcae081849b9a2d97865a14a10a0081693976772dec1c9",
+    "tests/test_w02_completion.py": "5d28622f9cd90f283592275fdacec4541d71bb12ef0093e0601016c9e361b523"
+  },
+  "execution_runtime": {
+    "threadpoolctl": "3.6.0",
+    "process_start_method": "spawn"
+  },
+  "w02_runtime": {
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "disk_jit_cache": false,
+    "methods": {
+      "overlap_geometry": {
+        "signatures": [
+          "(Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True))"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "7032351b554522a0a6f0d7502e389978cc5cd57da6491843151cc019c68236fc"
+      },
+      "remap_rows": {
+        "signatures": [
+          "(Array(float64, 2, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(int64, 1, 'C', True, aligned=True), Array(int64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), bool)"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "4a57a2259f6c3edcd3fc52d83e5447a31c0ef9bf73888a24af80c1f865a15477"
+      },
+      "inventories": {
+        "signatures": [
+          "(Array(float64, 2, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True))",
+          "(Array(float64, 2, 'C', False, aligned=True), Array(float64, 1, 'C', True, aligned=True))",
+          "(Array(float64, 2, 'A', True, aligned=True), Array(float64, 1, 'C', True, aligned=True))"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "34d1dea18fb9fa3a727750c44073b27ad68b4122c67ee3dc38782530135c2da3"
+      },
+      "advance_ale": {
+        "signatures": [
+          "(Array(float64, 2, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', False, aligned=True), float64, Array(float64, 1, 'C', False, aligned=True), Array(float64, 1, 'C', False, aligned=True), bool)"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "f6ba15895be668c7f1eeef2b9d0e5a29a7be167c9a2b5d555e4c23e92faa9c26"
+      },
+      "block_inventories": {
+        "signatures": [
+          "(Array(float64, 2, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(int64, 1, 'C', False, aligned=True))"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "8c5264c0e0992a5f2e695401f7aa5606e9327bc282da19df6848eebcbb57cdc1"
+      },
+      "mapped_points": {
+        "signatures": [
+          "(Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True), Array(float64, 1, 'C', True, aligned=True))"
+        ],
+        "fastmath": false,
+        "nogil": true,
+        "parallel": false,
+        "generated_assembly_sha256": "2263ecb2b4e5e6af5ad08dd350f385245d6aba54cb1a09796a92de2b10ba9fba"
+      }
+    },
+    "scope": "compiled kernels exercised by this verification process"
+  },
+  "material_runtime": {
+    "method": "cohort-partial-thickness-regional-v1",
+    "default_scheme": "muscl",
+    "default_backend": "numba",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "fastmath": false,
+    "disk_jit_cache": false,
+    "assembly_sha256": "ce49b9c9deb9d6c65c3515e597783c93160588116e961693f4386eee15902585"
+  },
+  "regional_runtime": {
+    "schemes": [
+      "upwind",
+      "muscl"
+    ],
+    "default_scheme": "muscl",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "fastmath": false,
+    "nogil": true,
+    "disk_jit_cache": false,
+    "compiled_assembly_sha256": "5fe68ea899bdc7b9e8b97954593660b97c04839442c95e8e7a69622968e65e39"
+  },
+  "native_runtime": {
+    "method": "periodic-upwind-binary64-exact-positive-sum-numba-v1",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "machine": "x86_64",
+    "fastmath": false,
+    "parallel": false,
+    "disk_jit_cache": false,
+    "nogil": true,
+    "generated_assembly_sha256": "46c7caa19da8c6064b677e648fb6112960402be5d18d53caa88374d40efac4a9"
+  },
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "resource_acceptance": null,
+  "scope": "synthetic analytical, numerical and resource checks; platform scope is explicit",
+  "physical_validation": false,
+  "production_ready": false,
+  "historical_checkpoint_compatibility": false,
+  "note": "Local evidence record, not a cryptographic signature or performance benchmark.",
+  "delivery": {
+    "scope": "W01 stage 1 coordinate/frame/unit/time conventions only; W01 stages 2\u20138 remain",
+    "base_branch": "remake",
+    "base_commit": "ecac085fb64b7bd862580f996c61d5bf7c9088e2",
+    "package_version": "0.1.0.dev11",
+    "previous_tests": 488,
+    "new_tests": 66,
+    "command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -I -B tectonics/verify.py",
+    "source_tests_cases_docs_baseline": "Verified Git tree IDs against remote ecac085f; archived old evidence is not modified or published anew",
+    "physical_validation": false,
+    "windows_validation": false,
+    "installed_dependencies": false,
+    "publication": false,
+    "numeric_kernels_preexisting": "unchanged; rotation, transport, thermal, flexure, material/remap/topology implementations preserved",
+    "new_executable_identity": "New modules and named immutable time constants participate; no historical result repinning"
+  }
+}

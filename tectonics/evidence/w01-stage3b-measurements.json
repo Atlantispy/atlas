@@ -1,0 +1,42 @@
+{
+  "scope": "static spherical geometry only; warm paired queries, not planet generation",
+  "runtime": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux"
+  },
+  "patches": 216,
+  "points": 2048,
+  "build_seconds": 0.3968121620000602,
+  "index_setup_seconds": 0.21215393599982235,
+  "candidate_pairs": 3847,
+  "exhaustive_pairs": 442368,
+  "all_owner_matches_equal": true,
+  "retained_atlas_bytes_estimate": 984910,
+  "query_seconds": {
+    "exhaustive": {
+      "median": 0.15300000000002,
+      "samples": [
+        0.16172026100002768,
+        0.15123743599997397,
+        0.1506492910000361,
+        0.20613339700003053,
+        0.15300000000002
+      ]
+    },
+    "indexed": {
+      "median": 0.027180928000007043,
+      "samples": [
+        0.029441060999943147,
+        0.02702148800017312,
+        0.026992994000011095,
+        0.027180928000007043,
+        0.02967713599991839
+      ]
+    }
+  },
+  "source_sha256": {
+    "src/atlas_tectonics/spherical_atlas.py": "d336265c574e5c571dd8a8bab499e5afb1fb0f88fd1b8c0967863ea611c4cb00",
+    "tests/measure_w01_spherical_atlas.py": "5016b8685232346294dcff450e37802c3009a3c828de2313c1e661a564846318"
+  }
+}
