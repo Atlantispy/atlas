@@ -1,0 +1,1364 @@
+{
+  "schema": "atlas.plate-reference-use-coverage.r1.v1",
+  "dataset_id": "b7c61ba3695535abea8bd2f78c67e8348aee2d4230b55276b367aba4c8ab3e7d",
+  "policy_id": "89c7ad4421b0a796234f24650b1e0fa9c27e520eb4caaf85fd5988fb9aa6b26d",
+  "strict_report_sha256": "b1db42349af1aab058744e984d24cf4fa087ac6c6ba92858b327fc2215cf5f9f",
+  "source_geometry_and_findings_unchanged": true,
+  "new_generation_experiments": 0,
+  "regression_generator_fixtures": "Existing verification cases only; not calibration or new physics experiments.",
+  "source_inspection_not_candidate_tuning": true,
+  "r2_started": false,
+  "selections": [
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "compactness",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "reflex_turning_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 41,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 40,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 36,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 10,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 9,
+      "excluded": [],
+      "unresolved": [
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 51,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": 100000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 49,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 250000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.0,
+      "area_basis": null
+    },
+    {
+      "metric": "boundary_length_radians",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 45,
+      "excluded": [
+        {
+          "plate_id": "MS",
+          "reason": "ordinary_surface_morphology: restricted by source review"
+        }
+      ],
+      "unresolved": [
+        {
+          "plate_id": "FT",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "GP",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "JZ",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "MN",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "RI",
+          "reason": "UNRESOLVED_AT_SCALE"
+        },
+        {
+          "plate_id": "SL",
+          "reason": "UNRESOLVED_AT_SCALE"
+        }
+      ],
+      "observation_scale_m": 500000.0,
+      "sampling_phase": 0.5,
+      "area_basis": null
+    },
+    {
+      "metric": "neighbour_count",
+      "split": "development",
+      "expected_population_count": 42,
+      "included_count": 35,
+      "excluded": [
+        {
+          "plate_id": "AF",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "AU",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "BH",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "IN",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "MS",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SO",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SU",
+          "reason": "surface_neighbour_count: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": null,
+      "sampling_phase": null,
+      "area_basis": null
+    },
+    {
+      "metric": "neighbour_count",
+      "split": "withheld",
+      "expected_population_count": 10,
+      "included_count": 8,
+      "excluded": [
+        {
+          "plate_id": "NB",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SB",
+          "reason": "surface_neighbour_count: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": null,
+      "sampling_phase": null,
+      "area_basis": null
+    },
+    {
+      "metric": "neighbour_count",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 43,
+      "excluded": [
+        {
+          "plate_id": "AF",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "AU",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "BH",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "IN",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "MS",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "NB",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SB",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SO",
+          "reason": "surface_neighbour_count: restricted by source review"
+        },
+        {
+          "plate_id": "SU",
+          "reason": "surface_neighbour_count: restricted by source review"
+        }
+      ],
+      "unresolved": [],
+      "observation_scale_m": null,
+      "sampling_phase": null,
+      "area_basis": null
+    },
+    {
+      "metric": "area_fraction",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 52,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": null,
+      "sampling_phase": null,
+      "area_basis": "published_table"
+    },
+    {
+      "metric": "area_fraction",
+      "split": "source-verification",
+      "expected_population_count": 52,
+      "included_count": 52,
+      "excluded": [],
+      "unresolved": [],
+      "observation_scale_m": null,
+      "sampling_phase": null,
+      "area_basis": "source_outline"
+    }
+  ],
+  "preparation_observation": {
+    "elapsed_seconds": 2.013398875999883,
+    "work_budget_statistics": {
+      "max_bytes": 268435456,
+      "reserved_bytes": 0,
+      "peak_reserved_bytes": 118362368,
+      "refusals": 0,
+      "categories": {
+        "plate-reference-use": 0,
+        "plate-reference-input": 0,
+        "plate-reference-report": 0,
+        "plate-reference-metrics": 0,
+        "plate-reference-sampling-input": 0,
+        "plate-reference-sampling": 0
+      },
+      "category_peaks": {
+        "plate-reference-use": 16777216,
+        "plate-reference-input": 22110304,
+        "plate-reference-report": 100663296,
+        "plate-reference-metrics": 921856,
+        "plate-reference-sampling-input": 318208,
+        "plate-reference-sampling": 441856
+      }
+    },
+    "scope": "One warm-environment observation, not a speedup claim or measured peak RSS.",
+    "exact_shared_boundary_key_count": 5817
+  }
+}

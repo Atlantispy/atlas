@@ -2,98 +2,122 @@
 
 <a id="3cr1-reference-tools"></a>
 
-## 3C-R1 — complete offline sources and tooling repair (18 September 2026)
+## 3C-R1 — audited source uses, unchanged strict checks (18 September 2026)
 
-**Acquisition and tooling repaired; strict source-consistency acceptance remains
-OPEN.** The previous reference-tools ZIP omitted unchanged baseline files because
-it was a cumulative update relative to `ecac085f…`. It was incorrectly executed
-as a standalone package. Rebuilding from the W02 delivery plus that update matched
-all 89 previously recorded source/test/case/tool hashes. `_validation.py` and the
-other baseline modules were restored byte-for-byte, not replaced with stubs.
-The complete delivery now contains baseline, updates, tests and all eight raw
-PB2002 originals under `reference_data/pb2002`.
-
-The source pin stays `fraxen/tectonicplates` commit
-`339b0c56563c118307b1f4542703047f5f698fae`. All eight byte lengths and Git-blob
-identities pass, with SHA-256 records as additional local integrity evidence.
-Licence, author-format conventions and original line endings are retained.
-Git attributes mark reference data `-text` so a Windows checkout must not normalise
-these bytes. Linux was exercised; Windows execution is still unverified.
-
-From the repository root, in the declared existing Python environment:
+**The bounded reference-use review is complete; R2 is not started.** This closes
+the source-use decision left open by the offline tooling repair, not the failed
+strict consistency gate and not the later tectonic-realism gates. The complete
+package still contains all baseline files and the eight unmodified PB2002 originals
+under `reference_data/pb2002`. No additional acquisition or dependency is needed.
 
 ```sh
-# Complete offline reference inspection; no installation or Git operation.
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-reference.json
-# Full implementation regression, including source-preservation regressions.
-python -I -B tectonics/verify.py
+# Raw source consistency: currently exit 1, including all unresolved findings.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-strict.json
+# Exact reviewed source uses: exit 0 only within the registered finite policy.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
 ```
 
-No download is required for this delivery. `--data PATH` selects another complete
-source directory. The optional `--download` path refuses an existing dataset and
-still checks unchanged pins before all-or-nothing publication. No network is used
-by the offline command or normal model calculations. The automatic recovery task
-was disabled after the uploaded archive supplied all eight originals.
+Exit 2 still means an input/prerequisite failure. No network access occurs with
+`--verify-only`. A scoped exit 0 must never replace the strict result in reporting.
+The policy, dataset, original protocol and actual strict report have distinct
+identities. Unknown source findings or failed numerical checks refuse scoped use.
 
-### Real-source handling and results
+### Source investigation and restrictions
 
-- All 52 original plate outlines contain repeated shared endpoints: **452 exact
-  adjacent repetitions** in total. Raw arrays keep all 12,148 coordinates and
-  repeated-point indices. Numerical views omit only exactly equal adjacent pairs;
-  no nearby unequal point is snapped and no physical arc or material is moved.
-- General `parse_dig()`/`ReferenceCurve` defaults remain strict. The complete-source
-  loader explicitly selects evidence preservation only after all eight byte
-  identities pass. Evidence preservation is not geometric approval.
-- All 52 plate areas are measured through both registered formulae; they agree
-  within the original numerical bounds. All 5,819 motion rows satisfy their
-  individual existing rounding bounds and align with all 229 original segments.
-- Five exact source-connectivity discrepancies remain: two coincident/retraced
-  boundary spans and three polygon connector spans absent from the single-boundary
-  file. No duplicate physical boundary is silently merged, and no step is invented.
-- The ON polygon area differs from the stored Table-1 value beyond the registered
-  source-rounding allowance, despite close agreement between the two numerical
-  formulae. The table value and allowance remain unchanged.
-- All 13 orogens are retained. The Peru record's endpoints are about 8.70 km apart;
-  its polygon metrics are null, with an explicit unresolved-source error. The other
-  12 orogens are measured. No implicit closing arc is manufactured.
+The [versioned source-use case](../cases/plate_reference_use_policy.json) gives
+primary-source locators and how each was accessed. Bird's **Table 1** confirms
+ON=0.00802 sr; our transcription is not the cause of its outline disagreement.
+The outline gives approximately 0.0079998317443 sr under both existing area
+formulations. Neither value is changed. Table calibration and outline diagnostics
+remain distinct, and ON cannot be used to claim table/outline equivalence.
 
-The command returns exit **1** with a complete machine-readable review report.
-Exit **0** is reserved for a clean registered consistency pass; exit **2** means
-prerequisites or data prevented completion. Completing the pipeline does not
-convert a questionable source topology into valid simulation input.
+Bird's **paragraphs 44 and 65** explain the subsurface Molucca representation;
+paragraph 65 gives SU/MS\BH, consistent with the archived BH-side owner. Paragraph
+44's different PS reference is documented rather than used to reassign owners.
+Two coincident spans and the MS retraced branch remain original evidence.
+MS is excluded from ordinary simple-ring morphology at all scales/phases. In
+particular, a source-preserving diagnostic at one scale produces compactness above
+one; it remains visible in the raw report, not clipped or selected away by phase.
+Individual source boundary/step kinematics remain labelled source observations,
+not independent dynamics validation or unique surface edges.
 
-See [full reference checks](../evidence/3cr1-complete-reference-checks.json),
-[source review](../evidence/3cr1-source-discrepancy-review.json),
-[source identities](../evidence/3cr1-source-verification.json) and
-[repair tests](../evidence/3cr1-tooling-repair-tests.json).
-Original `3cr1-reference-tools-tests.json` and `3cr1-reference-data-status.json`
-remain historical records of the earlier 1,224-test, acquisition-blocked delivery.
+Three polygon-only connectors (approximately 163.51, 259.76 and 2.22 m) have no
+corresponding original boundary step. Their cause is not established. All five
+incidence-affected edges fail the two-owner surface-edge interface; near points
+are not snapped. Surface-neighbour statistics conservatively exclude the nine
+touching owners `AF, AU, BH, IN, MS, NB, SB, SO, SU`. Unaffected original records
+remain available, but the source is not accepted as a globally consistent mesh.
 
-### Optimisation and regression constraints
+Peru's 49-point deformation trace is open by approximately 8.70 km. The publication
+and pinned format documentation specify polygon outlines; no explicit exception
+was found that justifies fabricating closure. Record 11 cannot supply polygon
+metrics. Original `in_orogen` flags are retained as source values, never recomputed
+from an incomplete 12-outline mask. A complete derived mask is refused.
 
-Exact-repetition masks are vectorised and restricted to small immutable reference
-arrays. The existing memory admission, cancellation, numerical routines, compact
-record layout and lossless compressed/deduplicated report store are reused. No new
-scheduler, cache framework, dependency or numerical backend was introduced.
-Report metadata use JSON-native lists, so a full real-data report survives JSON,
-compressed storage and independent-backup restoration without tuple/list drift.
-The CLI checks incomplete source layouts and local bytecode before package import.
+### Prepared use plan, resources and evidence identities
 
-The original 89 source/test/case/tool hashes were checked before edits, and the
-unmodified baseline regression passed 1,224 tests. Thirty additional regressions
-cover exact source preservation, unchanged strict refusals, full-source reporting,
-open geometry, no false acceptance, corruption, cancellation, memory admission,
-compressed storage/deduplication/backup and actionable incomplete-checkout errors.
-Existing test sources, numerical tolerances, raw source pins, registered protocol
-and historical evidence remain unchanged. No R2 or W03 work is included.
+`plate_reference_use.prepare_reference_use()` loads the checksum-verified originals,
+runs the unchanged complete report and admits **16 MiB additional** preparation
+workspace through the existing parent WorkBudget, alongside the report's existing
+reservation. This estimate is not an operating-system RSS limit. Returned data
+and indexes are explicitly caller-owned. A frozen shared report tree backs record
+indexes without copying its numerical/metadata payload for each query. All exact
+boundary-edge keys are built once, so subsequent membership/refusal is a set
+lookup, not a repeated full boundary walk. No general cache or scheduler is added.
 
-The final complete clean-copy regression passed **1,254 tests**, with zero failures,
-errors or skips and all 90 recorded source/test/case/tool hashes unchanged during
-the run. This is implementation verification, not a clean source-consistency pass.
+`observations()` selects every eligible reference in the named original split;
+it does not accept arbitrary record masks. Shape observations require a named
+100/250/500 km physical scale and phase (0 or 0.5). Area data require the explicit
+`published_table` or `source_outline` basis and use physical `4*pi` normalisation,
+not the sum of surviving/tuned records. `compare()` requires the same candidate
+scale/phase, a run/candidate identity, total population and unresolved count.
+Raw generic diagnostic primitives remain unchanged; qualification is a separate
+interface, and callers must not describe unqualified primitives as approved uses.
 
-**R1 remains open for a documented source-use decision or independently supported
-corrections.** The original strict consistency gate has not passed. Do not hide
-these defects by repinning data, widening bounds or automatically repairing geometry.
+The selection uses bounded native arrays and a 256 KiB metadata envelope; candidate
+and empirical-distribution work join the same budget. Cancellation/refusal releases
+all work reservations. Missing scientific information is never inferred by a memory
+fallback. No fast-maths, lowered precision, source repin or old tolerance change.
+Concurrent reads share immutable prepared setup. Returned reports are detached.
+
+The complete qualified comparison identity binds policy, source, strict report,
+reference split/scale/phase, area basis, exclusions and actual comparison values.
+The existing ArrayStore lossless Zstd/deduplication/backup path stores the **unchanged
+strict report**; receipts name the separate policy and assessment. Cold assessment
+rechecks source/policy identities; it never trusts an obsolete cached exemption.
+
+### Coverage and scope acceptance
+
+- 52 table areas and 52 native area-formula checks remain labelled diagnostics or
+  exposed calibration. ON table/outline equivalence is unavailable (51 eligible).
+- 51 plates are eligible for ordinary morphology before observation-scale limits.
+  MS remains present as raw evidence, not removed from planetary accounting.
+- 43 plates support the conservative surface-neighbour-count population.
+- 12 of 13 orogens support closed-polygon diagnostics; no complete derived mask.
+- All 229 boundary segments and 5,819 motion rows remain source records, not a
+  unique two-owner surface network. Duplicate spatial traces are not collapsed.
+
+The ten predeclared morphology holdouts are unchanged. Scale-unresolved cases
+(for example Manus at 250/500 km) remain in expected counts and are reported, not
+assigned a misleading zero. Within-model holdouts are correlated evidence, not
+an independent second Earth. Historical/external-model challenges remain at R9.
+No combined realism score or automatic generated-world approval is produced.
+
+The [scoped assessment](../evidence/3cr1-reference-use-assessment.json),
+[coverage](../evidence/3cr1-reference-use-coverage.json) and
+[regression](../evidence/3cr1-reference-use-tests.json) record this decision.
+The [strict report](../evidence/3cr1-complete-reference-checks.json) and prior repair
+tests are preserved byte-for-byte. New tests cover policy identity, unknown findings,
+MS/ON/Peru restrictions, all five exact edges, preserved holdouts, candidate counts,
+phase/scale compatibility, immutable/concurrent reads, budgets/cancellation and
+fresh-process offline/storage restoration. No R2, W03, generator change or publishing.
+
+The full regression passed **1,298 tests** (1,254 retained plus 44 new), with zero
+failures/errors/skips and 93 unchanged verification-input hashes. All old tests,
+source data, numerical kernels and historical evidence remain byte-identical.
+For either phase, whole-inventory compactness coverage is 51/52 at 100 km, 49/52
+at 250 km and 45/52 at 500 km: MS is excluded and all other absences are explicitly
+scale-unresolved. These are reporting populations, not candidate scores.
 
 ### What the implementation checks
 

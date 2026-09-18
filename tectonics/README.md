@@ -8,57 +8,70 @@ This isolated package follows the [tectonics plan](docs/TECTONICS_PLAN.md) and
 neither `engineering/work` nor `shared_generator`. Historical bindings, numerical
 limits, checkpoints, `main` and the original Windows installation remain separate.
 
-## 3C-R1 — complete offline tooling; source-consistency review remains open
+## 3C-R1 — reviewed reference uses complete; R2 not started
 
-**18 September 2026 repair:** the earlier update ZIP was an overlay, not a
-standalone installation. Running it without the W02 baseline caused the missing
-`atlas_tectonics._validation` import. The full baseline was recovered and all
-**89 previously recorded source/test/case/tool hashes matched** before changes.
-No replacement validation module was written. This delivery contains the complete
-`tectonics` package and all eight checksum-verified PB2002 originals.
+**18 September 2026:** source acquisition, offline processing and the bounded
+reference-use review are complete. This is **scoped use of PB2002 evidence**, not
+a claim that its raw records form a perfect two-owner mesh or that generated
+tectonics are geologically accepted. The complete distribution includes all eight
+unchanged, attributed source files; it needs no further reference download.
 
-The pinned-source loader now retains **452 exactly repeated coordinates** in the
-52 original plate outlines. A separate numerical view excludes only those exact
-repetitions. Strict general-purpose parsing and existing numerical thresholds stay
-unchanged. Open source polygons are retained as unresolved evidence, never silently
-closed, and do not stop reports for the remaining records. The command diagnoses
-an incomplete checkout before imports. Full-report JSON/storage round trips retain
-the detailed source discrepancies.
-
-Run offline from the repository root with the existing declared dependencies:
+Two deliberately different offline commands run from the repository root:
 
 ```sh
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-reference.json
+# Original strict consistency: exit 1, with every discrepancy still reported.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-strict.json
+# Reviewed permitted uses: exit 0 only for the exact audited dataset and findings.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
 python -I -B tectonics/verify.py
 ```
 
-The first command now checks all **52 plates, 229 boundary segments, 52 poles and
-5,819 motion rows**, and inspects all 13 deformation-region records. It deliberately
-returns **exit 1 / `REFERENCE_DISCREPANCIES_REQUIRE_REVIEW`**, not a traceback:
-five exact connectivity discrepancies, one area-table mismatch (ON), and one open
-Peru deformation outline remain visible. Twelve deformation outlines are measured;
-Peru's polygon metrics are explicitly unavailable. Both area formulae agree within
-the registered bounds for all 52 plates, and all motion/source-order checks pass.
-That numerical agreement does not certify simple, non-overlapping source topology.
+`--assess-use` does not waive or rewrite strict checks. Both commands return exit 2
+for unavailable/changed inputs. Unknown findings prevent a scoped-use approval.
+The default command remains strict; dependencies are never installed automatically.
 
-The complete clean-copy regression passed **1,254 tests: 1,224 retained plus
-30 new**, with no failures, errors or skips.
+| Source issue | Enforced treatment |
+|---|---|
+| ON published area versus outline | Publication confirms the stored 0.00802 sr. Table and computed outline values remain separately labelled; no substitution, averaging or relaxed rounding check. The discrepancy's cause is not established. |
+| MS coincident/retraced branch | Documented subsurface representation, not an ordinary simple surface ring. Retain original boundary kinematics; exclude MS ordinary morphology at **all** scales and phases. |
+| Three polygon-only connectors | Preserve the finite gaps and refuse the affected surface-edge uses, including the approximately 2 m connector; do not invent motion rows. |
+| Peru open deformation outline | Retain the raw 49-point trace; refuse closed-polygon metrics and a complete recomputed deformation mask. Original source-provided flags are not recomputed from an incomplete mask. |
 
-See the [complete report](evidence/3cr1-complete-reference-checks.json),
-[source review](evidence/3cr1-source-discrepancy-review.json),
-[raw identities](evidence/3cr1-source-verification.json) and
-[repair regression](evidence/3cr1-tooling-repair-tests.json).
-An implementation-test pass is not a scientific reference-gate pass. **R1 source-use
-sign-off remains open; R2 and W03 have not started.** No source pin, registered
-case, old test, solver tolerance or plate-generator algorithm changed.
+All 52 labelled area records and 5,819 individual source-motion rows remain
+available for their stated uses. Ordinary plate morphology has **51 eligible
+records** before scale-dependent unresolved cases; **12 of 13** deformation
+outlines support closed-polygon diagnostics. Conservative surface-neighbour
+statistics exclude all nine owners touching an incidence discrepancy, retaining
+43 of 52. These populations are not interchangeable or complete global coverage.
 
-Exit 0 means all registered source-consistency checks pass; exit 1 means a complete
-report contains discrepancies needing review; exit 2 means a prerequisite/input
-failure prevented the complete run. No network is used with `--verify-only`.
-`--download` remains an explicit optional acquisition command, refuses an existing
-dataset, and is unnecessary for this self-contained delivery. No dependencies are
-installed automatically. Raw data attribution/licence accompanies the sources, and
-`.gitattributes` preserves their exact bytes, including line endings.
+`plate_reference_use.prepare_reference_use(data_directory)` verifies sources,
+recomputes the unchanged strict report, and prepares immutable shared indexes.
+`observations()` requires a named split/run and a physical scale **and** phase for
+shape metrics; area observations require an explicit table or outline basis.
+`compare()` adds candidate identity, expected population and unresolved counts.
+Selections include every eligible record in their registered split and disclose
+all restrictions/unresolved records. No caller-selected mask, subset-area
+renormalisation or aggregate realism pass is provided. Raw diagnostic APIs remain
+available as raw evidence, not an alternative route to qualified approval.
+
+The policy is a pinned, versioned **post-source-audit** decision in
+[cases/plate_reference_use_policy.json](cases/plate_reference_use_policy.json).
+It does not alter the original preregistered split or numerical case. All 52 areas
+remain previously exposed calibration; ten morphology holdouts remain reserved.
+Historical reconstructions and an external model are still unavailable later-stage
+validation requirements. **R2, W03 and the plate-generation algorithms are untouched.**
+
+See [scope and evidence](evidence/3cr1-reference-use-assessment.json),
+[coverage by scale](evidence/3cr1-reference-use-coverage.json),
+[unchanged strict report](evidence/3cr1-complete-reference-checks.json),
+and [fresh regression](evidence/3cr1-reference-use-tests.json).
+**Verification:** all 1,298 implementation tests passed (1,254 retained plus 44
+new), with zero failures, errors or skips. The 93 recorded source/test/case/tool
+hashes were unchanged during the run. This does not change the strict gate.
+
+The earlier incomplete-import incident was running an update-only ZIP without
+its baseline, corrected in the preceding complete delivery. Sources, previous
+test files, numerical kernels/tolerances and historical evidence remain intact.
 
 ## Initial plate layouts: corrected scientific status (18 September 2026)
 

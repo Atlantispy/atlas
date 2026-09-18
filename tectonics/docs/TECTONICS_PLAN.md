@@ -1,25 +1,67 @@
 # Atlas tectonics simulation plan
 
 
-**Revision 23 — 3C-R1 offline tooling repair, 18 September 2026:** the full
-baseline and eight checksum-verified PB2002 source files are now available together.
-The complete reference command runs to completion; the former missing import was
-an overlay-only test setup, not an absent baseline implementation. The importer
-preserves exact repeated endpoints and open source outlines, measurements use
-explicit derived views, and unresolved source geometry remains visible.
+**Revision 24 — 3C-R1 bounded reference-use sign-off, 18 September 2026.**
+Source acquisition, full offline processing and the reference-quality/use review
+are complete **for the scopes below**. R2 has not started. No new thermal,
+mechanical, sampling or plate-generation implementation is included.
 
-**R1 is OPEN for source-consistency/source-use sign-off, not blocked by download or
-imports.** All 52 plate area calculations and 5,819 motion rows were processed;
-13 deformation outlines were inspected, of which one is open and unmeasured.
-Five connectivity discrepancies and an ON area-table mismatch remain reported.
-The strict gate returns `REFERENCE_DISCREPANCIES_REQUIRE_REVIEW`; no tolerance,
-source identity or original scientific case is altered to turn it green.
-See the [source review](../evidence/3cr1-source-discrepancy-review.json) and the
-[maintained reference](OPTIMISATION_REFERENCE.md#3cr1-reference-tools).
-R2–R9, W01 stages 5–8 and W03 are not advanced by this repair. The complete package
-is copy-ready for a local `remake` checkout; Michael retains commit/push ownership.
+The original strict source-consistency gate remains
+`REFERENCE_DISCREPANCIES_REQUIRE_REVIEW` (exit 1). The separate source-use result
+is `ACCEPTED_FOR_SCOPED_REFERENCE_USE`: it approves only enumerated observations
+from the exact source/protocol and exact audited findings. It does not alter the
+strict report, accept a whole-planet mesh or validate any generated world.
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 23 | 18 September 2026**
+- **ON area:** original publication Table 1 confirms 0.00802 sr, so Atlas's
+  transcription is correct. Retain table and outline-derived values separately;
+  no equivalence, averaging, source replacement or retrospective tolerance change.
+  The origin of their difference is not established.
+- **MS coincident geometry:** Bird paragraphs 44 and 65 support deliberate
+  subsurface representation; paragraph 65 uses the archived BH-side label.
+  Retain both source traces and their kinematics. MS ordinary simple-ring
+  morphology is unavailable at every scale/phase, even where a diagnostic looks
+  plausible. No fictitious two-owner surface edge is created.
+- **Polygon-only connectors:** the three exact spans absent from boundary data
+  remain unresolved source-representation differences. Neither source is snapped
+  and no new motion step is invented. All five incidence-affected edges are
+  refused for local two-owner surface use. Nine touching owners are conservatively
+  excluded from surface-neighbour-count comparisons.
+- **Peru:** no documented closure exception justifies inventing an edge. Retain
+  the original open trace and exclude only closed-polygon uses; a derived complete
+  global deformation mask is unavailable. The other 12 outlines remain usable.
+
+**Executable acceptance:** the versioned, pinned
+[`plate_reference_use_policy.json`](../cases/plate_reference_use_policy.json)
+records decisions, source locators, exact finding identities and restrictions.
+[`plate_reference_use.py`](../src/atlas_tectonics/plate_reference_use.py)
+checks that nothing unreviewed has changed; it prepares shared immutable indexes,
+enforces uses, and reports every omission plus remaining coverage. A scoped result
+requires all original numerical checks apart from the specifically recorded
+non-equivalence finding to remain satisfied; the original strict gate still fails.
+
+The retained inventory is 52 separately labelled areas/native formula checks,
+51 ordinary-morphology eligible plates before scale limits, 12 closed orogens,
+229 original boundary segments and 5,819 original motion records. Surface-neighbour
+counts retain 43 plates. These are different qualified populations, not a 51-plate
+world or a complete deformation mask. Ten morphology holdouts remain reserved;
+all 52 areas remain exposed calibration. Known source exclusions are never chosen
+from candidate errors and must not be hidden in model comparisons.
+
+**R1's finite reference-use review is closed; unrestricted PB2002 source consistency
+is not accepted.** Historical/external-model challenges remain explicitly unavailable
+for R9. W01 stages 5–8, R2–R9 and W03 do not advance through this review. The next
+separately authorised task remains R2. Michael retains local commit/push ownership.
+See the [assessment](../evidence/3cr1-reference-use-assessment.json),
+[scale coverage](../evidence/3cr1-reference-use-coverage.json),
+[regression](../evidence/3cr1-reference-use-tests.json), and the
+[maintained optimisation contract](OPTIMISATION_REFERENCE.md#3cr1-reference-tools).
+
+*Revision 23 repair is historical:* baseline/import repair and source-preserving
+processing are recorded in `evidence/3cr1-tooling-repair.json`; its strict findings
+and original test record remain unchanged. Revision 24 supplies the source-use
+decision that was still outstanding at that point.
+
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 24 | 18 September 2026**
 **Status: development plan with a delivered foundation; remaining capabilities are proposed, not physically accepted.**
 
 Atlas is vibe-coded, with OpenAI ChatGPT/Codex doing the coding under Michael’s direction. The owner has selected Earth-like mobile-plate tectonics for the intended 1.0 release. Atlas remains world-agnostic; the Diadem is the principal development case, not the definition of the underlying physics.
@@ -258,7 +300,7 @@ microphysical grain-damage theory in PF-C02.
 
 | Stage | Implementation and deliverable | Acceptance before its dependent claim |
 | --- | --- | --- |
-| **3C-R1 — Reference data and success criteria** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
+| **3C-R1 — Reference data and success criteria (scoped reference uses delivered)** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
 | **3C-R2 — Initial state before final plate labels** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
 | **3C-R3 — Freeze the physical closure** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
 | **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
@@ -267,6 +309,11 @@ microphysical grain-damage theory in PF-C02.
 | **3C-R7 — Shared geometry and causal event history** | Convert supported field-derived boundaries into the existing shared-edge atlas; maintain one edge, two sides and consistent junctions. Fit boundary/junction velocities subject to the selected kinematic rules. Track persistent material, weakness, plates and events separately; record splits, merges, reactivation, accretion/export and candidate rejection. Use conservative multidimensional transfers where needed; reuse W02 contracts, not its 1D equations under a spherical name. | Underlying surface coverage remains complete without forcing every cell into a perfectly rigid plate; deformation zones do not vanish as polygon gaps. Boundary extraction has a spatial error budget and does not move material. Junction compatibility is stricter than the telescoping sum of relative velocities. Preserve origin/energy/history through events and cold restoration. |
 | **3C-R8 — Initialisation and W01 integration** | Supply a named starting-epoch workflow: load an authored/reconstructed state, use a declared statistical candidate, or evolve an accepted dynamic precursor and select its state by the recorded rule. Any faster reduced generator must be calibrated on process results and checked independently before adoption. Map the resulting geology, supported motion and fields through W01 sampling into appropriate regional W02 scenarios. | No manual stitching, unknown-as-zero state or regenerated world on restore. Identical provenance yields the agreed reproducibility. Exact plate-count requests are only supported where the selected origin model warrants them; dynamic mode does not forcibly merge bodies to hit a UI number. An initialisation pass is not complete global material/thermal evolution. |
 | **3C-R9 — Independent acceptance and selected default** | Run predeclared ensembles, holdout-data challenges, mesh/time/parameter sensitivity, controls and ablations, then combined execution/cache/storage/restoration/platform checks. Record accepted regimes and unresolved failures in the two maintained documents and obtained case records. | Keep calibration, numerical verification, physical validation and fictional compatibility separate. No universal percentage realism score; no pass from a lone attractive map or small global-average error hiding lost microplates. Promote the appropriate accuracy-first optimised recipe only for supported regimes. Report platform/resource limits and retain explicit verification/control paths. |
+
+The R1 delivery is limited to the reviewed present-day PB2002 uses described in
+revision 24. It does not satisfy the independent-model or historical challenges
+reserved for R9. Those unavailable observations cannot be filled from modern Euler
+poles or another reformat of PB2002.
 
 ### Required observations and failure tests
 
@@ -1004,8 +1051,10 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Current next task:** implement 3C-R1's reference fixtures and registered
-acceptance criteria, then 3C-R2's pre-boundary state/sampling contract. Follow the
+**Next separately authorised task:** 3C-R2's pre-boundary state/sampling contract.
+R1's bounded reference-use review is complete under revision 24; raw strict source
+consistency and historical/external-model validation remain distinct unpassed
+claims. **R2 is not started.** Follow the
 [explicit sequence](#plate-formation-implementation-plan). Causal formation later
 requires the named W03/W07 subset; do not smuggle it into an unrelated W01 update.
 Retain the current statistical candidates as controls, the existing geometry and

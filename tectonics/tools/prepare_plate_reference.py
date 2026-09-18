@@ -84,11 +84,18 @@ def main(argv=None):
     group.add_argument('--download',action='store_true',help='explicitly download pinned public PB2002 files')
     group.add_argument('--verify-only',action='store_true',help='offline; fail if any source is missing or changed')
     parser.add_argument('--data',type=Path,default=ROOT/'reference_data'/'pb2002')
+    parser.add_argument('--assess-use', action='store_true',
+        help='assess reviewed limited source uses; does not pass strict consistency or geological validation')
     args=parser.parse_args(argv)
     if args.download:
         # Only the known default container directory is created as a convenience.
         if args.data==ROOT/'reference_data'/'pb2002':args.data.parent.mkdir(exist_ok=True)
         acquire(args.data)
+    if args.assess_use:
+        from atlas_tectonics.plate_reference_use import prepare_reference_use
+        plan = prepare_reference_use(args.data)
+        print(json.dumps(plan.summary(), indent=2, allow_nan=False))
+        return 0
     report=reference_dataset_report(load_pb2002(args.data))
     print(json.dumps(report,indent=2,allow_nan=False))
     return 0 if report['status']=='PASS_COMPLETE_REFERENCE_CHECKS' else 1

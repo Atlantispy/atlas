@@ -1,0 +1,497 @@
+{
+  "schema": "atlas.plate-reference-use-assessment.r1.v1",
+  "status": "ACCEPTED_FOR_SCOPED_REFERENCE_USE",
+  "dataset_id": "b7c61ba3695535abea8bd2f78c67e8348aee2d4230b55276b367aba4c8ab3e7d",
+  "policy_id": "89c7ad4421b0a796234f24650b1e0fa9c27e520eb4caaf85fd5988fb9aa6b26d",
+  "protocol_id": "297291d7eb632965f6207e0b9865da8ad2b03bb65e52d0aae6ecabe0f395e38d",
+  "strict_report_sha256": "b1db42349af1aab058744e984d24cf4fa087ac6c6ba92858b327fc2215cf5f9f",
+  "strict_status": "REFERENCE_DISCREPANCIES_REQUIRE_REVIEW",
+  "strict_reference_gate_passed": false,
+  "geological_model_accepted": false,
+  "r2_started": false,
+  "coverage": {
+    "table_area_records": 52,
+    "native_area_formula_checks": 52,
+    "ordinary_surface_morphology_eligible": 51,
+    "table_outline_equivalence_eligible": 51,
+    "closed_orogen_metrics_eligible": 12,
+    "source_boundary_segments": 229,
+    "source_motion_rows": 5819,
+    "withheld_morphology_eligible": 10,
+    "surface_neighbour_count_eligible": 43
+  },
+  "restrictions": {
+    "ordinary_surface_morphology_excluded": [
+      "MS"
+    ],
+    "table_outline_equivalence_excluded": [
+      "ON"
+    ],
+    "surface_neighbour_count_excluded": [
+      "AF",
+      "AU",
+      "BH",
+      "IN",
+      "MS",
+      "NB",
+      "SB",
+      "SO",
+      "SU"
+    ],
+    "closed_orogen_metrics_excluded": [
+      11
+    ],
+    "unavailable_global_uses": [
+      "unique_surface_topology",
+      "complete_deformation_mask",
+      "historical_validation",
+      "independent_model_validation",
+      "geological_generator_acceptance"
+    ]
+  },
+  "decisions": [
+    {
+      "id": "ON-TABLE-OUTLINE",
+      "records": [
+        "plate:29:ON"
+      ],
+      "classification": "UNRESOLVED_SOURCE_REPRESENTATION_DISAGREEMENT",
+      "table_area_sr": 0.00802,
+      "outline_area_sr": 0.007999831744300856,
+      "allowed": [
+        "original table value as labelled calibration",
+        "outline-derived values as labelled geometry diagnostics"
+      ],
+      "forbidden": [
+        "table-outline equivalence",
+        "averaging or substituting the two values",
+        "widening the strict rounding allowance"
+      ],
+      "evidence": [
+        "bird-table1",
+        "pinned ON outline; two independent existing spherical area formulations"
+      ],
+      "cause": "NOT_ESTABLISHED"
+    },
+    {
+      "id": "MS-COINCIDENT",
+      "records": [
+        "plate:43:MS"
+      ],
+      "classification": "DOCUMENTED_NONSTANDARD_SUBSURFACE_REPRESENTATION",
+      "allowed": [
+        "individual original boundary/step kinematics",
+        "signed-ring numerical diagnostics"
+      ],
+      "forbidden": [
+        "MS ordinary simple-ring morphology",
+        "collapse into one two-owner surface edge",
+        "add area to a zero-width branch"
+      ],
+      "evidence": [
+        "bird-molucca",
+        "two exact pinned coincident spans"
+      ]
+    },
+    {
+      "id": "PERU-OPEN",
+      "records": [
+        "orogen:11:Peru                       Peter Bird, June 2002"
+      ],
+      "classification": "UNRESOLVED_OPEN_SOURCE_RING",
+      "endpoint_gap_m": 8699.65876350681,
+      "allowed": [
+        "original open trace inspection",
+        "source-provided in-orogen flags with their provenance"
+      ],
+      "forbidden": [
+        "closed-polygon metrics for record 11",
+        "complete recomputed deformation mask",
+        "invented closing arc"
+      ],
+      "evidence": [
+        "bird-format",
+        "pinned original/PB2002_orogens.dig.txt record 11"
+      ]
+    }
+  ],
+  "connectivity_decisions": [
+    {
+      "id": "INCIDENCE-1",
+      "fingerprint": "89ce9f1e7c417601856206996d0b2ad4130860b3fc0d32c35b5adf0239d465fb",
+      "finding": {
+        "edge": [
+          [
+            "125.969",
+            "0.189999"
+          ],
+          [
+            "126.144",
+            "1.00135"
+          ]
+        ],
+        "polygon_uses": 4,
+        "boundary_uses": 2,
+        "polygon_owner_directions": [
+          [
+            "SU",
+            [
+              "125.969",
+              "0.189999"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ],
+          [
+            "BH",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "125.969",
+              "0.189999"
+            ]
+          ],
+          [
+            "MS",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "125.969",
+              "0.189999"
+            ]
+          ],
+          [
+            "MS",
+            [
+              "125.969",
+              "0.189999"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ]
+        ],
+        "boundary_owner_directions": [
+          [
+            "MS",
+            "SU",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "125.969",
+              "0.189999"
+            ]
+          ],
+          [
+            "MS",
+            "BH",
+            [
+              "125.969",
+              "0.189999"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ]
+        ]
+      },
+      "length_m": 92292.5676962562,
+      "classification": "COINCIDENT_NONSTANDARD_SURFACE_INCIDENCE",
+      "decision": "Retain separate labelled kinematic records; no ordinary two-owner surface edge.",
+      "evidence": [
+        "bird-molucca",
+        "pinned original boundary and plate records"
+      ]
+    },
+    {
+      "id": "INCIDENCE-2",
+      "fingerprint": "32e469ed77f8813b301ac79cd550da624604557b8332d7cdfd009559a6a78ed9",
+      "finding": {
+        "edge": [
+          [
+            "126.144",
+            "1.00135"
+          ],
+          [
+            "126.426",
+            "1.70646"
+          ]
+        ],
+        "polygon_uses": 4,
+        "boundary_uses": 2,
+        "polygon_owner_directions": [
+          [
+            "SU",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "126.426",
+              "1.70646"
+            ]
+          ],
+          [
+            "BH",
+            [
+              "126.426",
+              "1.70646"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ],
+          [
+            "MS",
+            [
+              "126.426",
+              "1.70646"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ],
+          [
+            "MS",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "126.426",
+              "1.70646"
+            ]
+          ]
+        ],
+        "boundary_owner_directions": [
+          [
+            "MS",
+            "SU",
+            [
+              "126.426",
+              "1.70646"
+            ],
+            [
+              "126.144",
+              "1.00135"
+            ]
+          ],
+          [
+            "MS",
+            "BH",
+            [
+              "126.144",
+              "1.00135"
+            ],
+            [
+              "126.426",
+              "1.70646"
+            ]
+          ]
+        ]
+      },
+      "length_m": 84439.25657476926,
+      "classification": "COINCIDENT_NONSTANDARD_SURFACE_INCIDENCE",
+      "decision": "Retain separate labelled kinematic records; no ordinary two-owner surface edge.",
+      "evidence": [
+        "bird-molucca",
+        "pinned original boundary and plate records"
+      ]
+    },
+    {
+      "id": "INCIDENCE-3",
+      "fingerprint": "6189da1c8123d46e8c45b4488ccc877ebc825c4ed81ecece5f6c652e3ca8794d",
+      "finding": {
+        "edge": [
+          [
+            "149.816",
+            "-3.61764"
+          ],
+          [
+            "149.817",
+            "-3.61656"
+          ]
+        ],
+        "polygon_uses": 2,
+        "boundary_uses": 0,
+        "polygon_owner_directions": [
+          [
+            "SB",
+            [
+              "149.817",
+              "-3.61656"
+            ],
+            [
+              "149.816",
+              "-3.61764"
+            ]
+          ],
+          [
+            "NB",
+            [
+              "149.816",
+              "-3.61764"
+            ],
+            [
+              "149.817",
+              "-3.61656"
+            ]
+          ]
+        ],
+        "boundary_owner_directions": []
+      },
+      "length_m": 163.51401516350967,
+      "classification": "POLYGON_ONLY_CONNECTOR_UNRESOLVED",
+      "decision": "Keep each source representation separate; do not manufacture a missing boundary step, class, polarity or slip.",
+      "evidence": [
+        "bird-format",
+        "pinned original boundary and plate records"
+      ]
+    },
+    {
+      "id": "INCIDENCE-4",
+      "fingerprint": "952638ee7827aaa1c2362a93031f891d2e4881046ded2b3c6dbaff3b237259d7",
+      "finding": {
+        "edge": [
+          [
+            "32.1252",
+            "-46.9975"
+          ],
+          [
+            "32.1258",
+            "-46.9998"
+          ]
+        ],
+        "polygon_uses": 2,
+        "boundary_uses": 0,
+        "polygon_owner_directions": [
+          [
+            "AF",
+            [
+              "32.1258",
+              "-46.9998"
+            ],
+            [
+              "32.1252",
+              "-46.9975"
+            ]
+          ],
+          [
+            "SO",
+            [
+              "32.1252",
+              "-46.9975"
+            ],
+            [
+              "32.1258",
+              "-46.9998"
+            ]
+          ]
+        ],
+        "boundary_owner_directions": []
+      },
+      "length_m": 259.7645883135459,
+      "classification": "POLYGON_ONLY_CONNECTOR_UNRESOLVED",
+      "decision": "Keep each source representation separate; do not manufacture a missing boundary step, class, polarity or slip.",
+      "evidence": [
+        "bird-format",
+        "pinned original boundary and plate records"
+      ]
+    },
+    {
+      "id": "INCIDENCE-5",
+      "fingerprint": "5802996cf1785c451985f28c0299386c220ceede1ed22be13f0c1d002157547b",
+      "finding": {
+        "edge": [
+          [
+            "68.2738",
+            "-6.8109"
+          ],
+          [
+            "68.2738",
+            "-6.81092"
+          ]
+        ],
+        "polygon_uses": 2,
+        "boundary_uses": 0,
+        "polygon_owner_directions": [
+          [
+            "IN",
+            [
+              "68.2738",
+              "-6.8109"
+            ],
+            [
+              "68.2738",
+              "-6.81092"
+            ]
+          ],
+          [
+            "AU",
+            [
+              "68.2738",
+              "-6.81092"
+            ],
+            [
+              "68.2738",
+              "-6.8109"
+            ]
+          ]
+        ],
+        "boundary_owner_directions": []
+      },
+      "length_m": 2.223898532842259,
+      "classification": "POLYGON_ONLY_CONNECTOR_UNRESOLVED",
+      "decision": "Keep each source representation separate; do not manufacture a missing boundary step, class, polarity or slip.",
+      "evidence": [
+        "bird-format",
+        "pinned original boundary and plate records"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "bird-table1",
+      "url": "https://doi.org/10.1029/2001GC000252",
+      "locator": "Table 1, ON row",
+      "access": "Publisher-indexed full text checked 18 September 2026; PDF and supplementary download unavailable.",
+      "facts": {
+        "plate": "ON",
+        "area_steradians": "0.00802"
+      },
+      "interpretation": "Atlas transcription agrees. Cause of the outline/table disagreement remains unresolved; no corrected edition is asserted."
+    },
+    {
+      "id": "bird-molucca",
+      "url": "https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2001gc000252",
+      "locator": "Sections 5.6 and 5.10, paragraphs 44 and 65",
+      "access": "Publisher-indexed full text checked 18 September 2026.",
+      "interpretation": "Coincident subduction traces intentionally retain a subsurface plate without surface area locally. Paragraph 44 describes PS, whereas paragraph 65 explicitly gives SU/MS\\BH, matching the BH label in these archived spans. Preserve the archived labels; the differing prose is not authority to reassign owners or merge subsurface boundaries."
+    },
+    {
+      "id": "bird-format",
+      "url": "https://doi.org/10.1029/2001GC000252",
+      "locator": "Sections 6 and 7, paragraphs 111-124; pinned original/README.md, Data files 1-3",
+      "interpretation": "Polygon rings and boundary segments are distinct representations. Closure is explicit for plates and the same polygon format is specified for orogens; no exception authorising inferred Peru closure was found."
+    }
+  ],
+  "interpretation": "Reference-use review complete for these finite scopes; not perfect source geometry or accepted generated tectonics.",
+  "missing_later_validation": [
+    "independent reconstruction/model",
+    "historical evolution",
+    "field-derived rigidity",
+    "geological generation acceptance"
+  ]
+}

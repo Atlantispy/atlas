@@ -934,3 +934,38 @@ Both area formulae agree within the existing numerical bounds for all 52 measure
 plates, and all 5,819 motion rows satisfy the existing per-record rounding bounds.
 These checks verify computation and source interpretation, not geological realism.
 None accepts a generated planet or claims present-day poles specify past history.
+
+
+## 3C-R1 reviewed source-use contract (18 September 2026)
+
+The original numerical/source protocol above is unchanged. The separately pinned
+`cases/plate_reference_use_policy.json` is a **post-audit** policy bound to the exact
+PB2002 dataset and original protocol; it is not retrospective preregistration or a
+numerical waiver. `plate_reference_use.py` supplies the qualified observation route.
+
+A successful scoped assessment is distinct from raw strict consistency (still exit
+1) and from geological model acceptance (always false here). Exact finding
+fingerprints restrict the policy to the reviewed five incidence discrepancies,
+one ON source/table disagreement and one open Peru polygon. Additional failures,
+changed coverage or unreviewed inputs require another decision, not silent reuse.
+
+Ordinary MS simple-ring metrics are excluded at every scale/phase; the original
+signed-ring and multiscale diagnostics remain visible even where outside a simple
+polygon's range. Coincident subsurface boundaries are not collapsed. The three
+missing source connectors are not filled. ON's published and outline-derived
+areas retain distinct identities; Peru remains an open trace. A complete derived
+deformation mask and unique two-owner planetary mesh are not supported uses.
+
+Qualified populations retain original calibration/holdout roles. Shape comparison
+requires matched physical observation scales and sampling phases, and all excluded
+or unresolved records remain in reported expected counts. Areas use A/(4*pi),
+not renormalisation after quality screening. Counts cannot authenticate arbitrary
+caller-supplied candidate provenance; they make incomplete candidate populations
+explicit. Source numerical checks are not independent physical validation.
+
+The scope is 51 eligible ordinary plate shapes before scale limits, 43 conservative
+surface-neighbour counts, 12 closed orogens, 52 separately labelled areas and all
+5,819 original step records. This supports the finite R1 reference-use work, not
+R2 or any new thermal/mechanical evolution. Sources and decisions are referenced
+in the two maintained plan/optimisation documents and executable policy; no extra
+general planning page is introduced.
