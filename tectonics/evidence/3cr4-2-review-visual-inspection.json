@@ -1,0 +1,50 @@
+{
+  "schema": "atlas.r4-2-review-visual-inspection.v1",
+  "date": "2026-09-19",
+  "inspected_by": "assistant",
+  "images_individually_inspected": 7,
+  "plots": [
+    {
+      "path": "01_initial_temperature.png",
+      "sha256": "375c2421c7a231200168623234df86386253c583f33dd1a9ce6a4b306e43cdb8",
+      "observation": "Authored initial cell averages explicitly labelled; smooth central warm perturbation, no visible checkerboard. Initial/final range uses 300\u20131600 K."
+    },
+    {
+      "path": "02_evolved_temperature.png",
+      "sha256": "93c6c52fa67ac3af297384e29e45c49d127184403755adc98d941fd69b61f4f6",
+      "observation": "Actually evolved central upwelling and side return structure; shared initial/final colour range and physical units. Finite cells remain visible."
+    },
+    {
+      "path": "03_initial_composition.png",
+      "sha256": "67121fb05ca9370d36901c95465055d8aa0e2b8c79d1bd12ffa79e32a38b294a",
+      "observation": "Authored enriched constituent around 450 km height; common 0\u20131 fraction range, not a generated geological-history claim."
+    },
+    {
+      "path": "04_evolved_composition.png",
+      "sha256": "ea437f9b32632f5f17968bc472bec3f1d8cb4b532a55d63dee8de4d981eb729f",
+      "observation": "Enriched constituent rises and deforms; no visible negative/overshooting fraction artefact or cell-scale alternating pattern. Numerical spreading remains visible."
+    },
+    {
+      "path": "05_temperature_change.png",
+      "sha256": "e7b0a03ab95bd160886dc0ed57c100f30925194ed5d9451ee62ef551e993bad6",
+      "observation": "Final-minus-initial signed change; warm central region and cooler sides, explicit K label, no invented texture."
+    },
+    {
+      "path": "06_endpoint_velocity.png",
+      "sha256": "21ba88ee84948a2f7f9910faa8732668b90726c6c33254f10c1b18c8da88d7dd",
+      "observation": "Arrows are solved again from the final accepted fields, central upward flow and side returns; display-centred speed is explicitly labelled and is not a new boundary condition."
+    },
+    {
+      "path": "07_conservation_residuals.png",
+      "sha256": "d419005fb989b879d8fee6e7097e8b0bb9445982bc904996a1a9468502b58869",
+      "observation": "Heat includes signed conductive boundary exchange; material is closed. Roughly 10^-18 interval residuals are correctly labelled numerical residuals, not physical loss."
+    }
+  ],
+  "source_inventory_matches_full_regression": true,
+  "visual_manifest_sha256": "9a837500a1c0e13ea46c0a5a16bbacb9676b579b58d92db00043e9a37b8b8e22",
+  "actual_data_sha256": "493ab61bd125e6b13e8ae51e41f2a77d532637b8d169d42422e2c29a5d68b793",
+  "user_visual_review_completed": false,
+  "conclusion": "No obvious incorrect labels, checkerboarding, disconnected patterns or unexplained sign reversal in the registered displays. Qualitative inspection is not exhaustive geometry or physical validation.",
+  "R4_status": "IN_PROGRESS",
+  "physical_validation": false
+}

@@ -10,7 +10,7 @@ from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
 from .flexure import PeriodicFlexure
 
-__version__ = "0.1.0.dev25"
+__version__ = "0.1.0.dev30"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
@@ -132,3 +132,25 @@ __all__ += ["ConstitutiveLimits", "DiffusiveScales", "RheologyProfile", "referen
     "evaluate_rheology", "advance_memory", "strain_rate_invariant", "BoussinesqMaterial", "stress_and_dissipation",
     "boussinesq_response", "PreparedRheology", "LawResult", "save_law_result", "load_law_result",
     "DamageLengthScale", "PreparedDamageRegularisation"]
+
+# R4 is in progress: constant-viscosity mechanical increment only.
+from .stokes import StokesBox2D, StokesSolvePolicy, face_force_from_density
+from .stokes_execution import (PreparedStokes2D, StokesSolution,
+                               save_stokes_solution, load_stokes_solution)
+__all__ += ["StokesBox2D", "StokesSolvePolicy", "face_force_from_density",
+            "PreparedStokes2D", "StokesSolution", "save_stokes_solution", "load_stokes_solution"]
+
+from .thermochemical import ThermalBoundary2D, ThermochemicalPolicy, ThermochemicalProblem
+from .thermochemical_execution import (ThermochemicalState, ThermochemicalStep,
+    PrescribedMACVelocity, PreparedThermochemical2D, CourantLimitError,
+    save_thermochemical_state, load_thermochemical_state)
+__all__ += ["ThermalBoundary2D", "ThermochemicalPolicy", "ThermochemicalProblem",
+    "ThermochemicalState", "ThermochemicalStep", "PrescribedMACVelocity",
+    "PreparedThermochemical2D", "CourantLimitError", "save_thermochemical_state", "load_thermochemical_state"]
+
+# R4.3 variable-stress and yielding mechanics; full R4 benchmark acceptance remains open.
+from .variable_stokes import NonlinearStokesPolicy
+from .variable_stokes_execution import (PreparedVariableStokes2D, VariableStokesSolution,
+    save_variable_stokes_solution, load_variable_stokes_solution)
+__all__ += ['NonlinearStokesPolicy', 'PreparedVariableStokes2D', 'VariableStokesSolution',
+            'save_variable_stokes_solution', 'load_variable_stokes_solution']

@@ -1,0 +1,138 @@
+{
+  "schema": "atlas.variable-stokes-r4-3-case.v1",
+  "case_id": "3C-R4.3-variable-stress-1",
+  "status": "WORKING_NON_CANON",
+  "scope": "R4.3 only: variable-viscosity/yielding closed 2D mechanics and explicit integration with retained R4.2 heat/binary composition",
+  "baseline_package": "0.1.0.dev29",
+  "baseline_branch": "remake",
+  "last_checked_origin": "c0a097be2150a8df4f0de7ccd3f6224c317c65e5",
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false,
+  "next_increment": "R4.4 applicable published convection benchmarks and combined acceptance",
+  "physics": {
+    "momentum": "-grad(p) + div(2 eta e) + f = 0; e=(grad v + grad v.T)/2; div(v)=0",
+    "domain": "uniform Cartesian 2D rectangle; x-right/z-up; eliminated normal wall velocities, zero tangential shear traction; zero domain-mean dynamic pressure",
+    "normal_stress": "2 eta_cell du/dx and 2 eta_cell dw/dz at centres",
+    "shear_stress": "eta_vertex*(du/dz+dw/dx) at interior vertices; zero wall shear",
+    "rheology": "unchanged R3 constant, Tosi-linear and Tosi-plastic profiles; no new parameters inferred from room-temperature mineral library",
+    "invariant": "eII=sqrt(e:e/2); at each stress site reconstruct missing strain components by symmetric adjacent-centre/vertex arithmetic means",
+    "temperature": "supplied centre T; interior-vertex T is adjacent four-centre arithmetic mean; depth is down from top using distinct R3 depth scale",
+    "plastic_conventions": "retain Tosi Frobenius q=sqrt(2)*eII and factor-two harmonic mean; no artificial minimum rate; linear controls remain distinct",
+    "memory": "BF profile permitted only for separate mechanical snapshots with an explicitly supplied frozen damage field; no advection, healing, or coupled localisation claim",
+    "composition": "named binary fraction contributes buoyancy; no unregistered compositional strength factor",
+    "heating": "no extra dissipation/slab pull/latent/adiabatic source; retained R4.2 explicit source accounting unchanged",
+    "coupling": "explicit mechanical_mode=variable-r4.3; existing two RK stages independently converge current rheology before their fluxes are accepted; retained Strang thermal operators, Courant and balance gates",
+    "legacy": "default constant-r4.2 contract and canonical old descriptors unchanged; decoded snapshots do not gain new guarantees or permit changed-source continuation"
+  },
+  "numerics": {
+    "dtype": "binary64",
+    "fast_math": false,
+    "sparse_velocity": "2 Bx.T eta_c Bx + 2 Bz.T eta_c Bz + S.T eta_v S",
+    "normal_solve": "matrix-free full saddle matvec with sparse velocity-ILU/block triangular preconditioner and native GMRES",
+    "pressure_preconditioner": "projected local -2*eta_cell inverse-Schur approximation; gauge handled separately; contrast-sensitive, not exact spectral inverse",
+    "reference": "small independently assembled sparse-direct saddle solve, explicitly selected; no fallback",
+    "nonlinear": "fixed-policy Picard, default relaxation 1; true updated-law momentum and log-viscosity change required, then independent returned-SI gates",
+    "linear_rtol": 1e-12,
+    "momentum_tolerance": 1e-09,
+    "divergence_tolerance": 1e-10,
+    "gauge_tolerance": 1e-12,
+    "work_balance_tolerance": 1e-09,
+    "viscosity_log_change_tolerance": 1e-08,
+    "max_picard_iterations": 100,
+    "gmres_restart": 60,
+    "gmres_max_cycles": 20,
+    "ilu_drop_tolerance": 0.0001,
+    "ilu_fill_factor": 12.0,
+    "viscosity_contrast_envelope": 1000000000000.0,
+    "limits_meaning": "finite admission/convergence envelope, not acceptance of every coefficient field within it; failure is explicit, no law/tolerance downgrade",
+    "factor_reuse": "symbolic derivative matrices retained; at most one numerical factor keyed by exact normalised coefficient bytes; unchanged reuse, changed coefficients rebuild",
+    "publication": "actual returned SI velocity, pressure and viscosity checked against independent stress/continuity/work balances; updated rheology re-evaluated at rounded returned fields"
+  },
+  "verification": {
+    "families": [
+      "T05",
+      "T08",
+      "T09",
+      "T14",
+      "T15",
+      "PT01-PT06",
+      "PT09-PT14"
+    ],
+    "scope_note": "selected unit/numerical/execution obligations, not completion of the whole T/PT families",
+    "continuum": "rectangular trigonometric streamfunction plus independent pressure and exponential eta gradients; force derived analytically, not K*x; grids 16x8,32x16,64x32",
+    "nonlinear_oracle": "independent 2x2 circulation scalar root, with independently written Tosi formula",
+    "time_oracle": "eight-variable thermal/composition ODE using independent scalar-root mechanics + donor/heat matrices, DOP853; no Atlas mechanical operator in RHS",
+    "controls": "full-stress sparse/stencil equality, adjointness, positive work, hydrostatics, pressure checkerboard, axis swap, sharp viscosity jump, existing constant limit",
+    "not_claimed": [
+      "full Tosi convection reproduction",
+      "observational physical validation",
+      "mesh-independent shear localisation",
+      "global or 3D geometry",
+      "variable heat capacity/conductivity",
+      "general multicomponent/cohort evolution",
+      "Windows/macOS execution",
+      "universal speedup or RSS cap"
+    ]
+  },
+  "reproducibility": {
+    "source_identity": "kernel-execution.v3 fixes object-reference-sensitive marshal hashing using protocol 2 inside the pinned Python runtime; complete bytes, code, defaults, constants and native identities remain checked",
+    "historical_identity": "new source changes identities; old snapshots decode exactly without new acceptance or automatic rebinding",
+    "storage": "existing ArrayStore verified chunks/lossless Zstd/dedup; steady mechanics plus continued two-field states self-contained; not complete flux trajectories"
+  },
+  "sources": [
+    {
+      "id": "PETSc-DMStag-ex4",
+      "url": "https://petsc.org/release/src/dm/impls/stag/tutorials/ex4.c.html",
+      "use": "primary staggered variable-coefficient Stokes placement/block-solve corroboration; code not copied, no benchmark execution claimed"
+    },
+    {
+      "id": "SciPy-GMRES",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.gmres.html",
+      "use": "restart, callback pr_norm and true residual semantics"
+    },
+    {
+      "id": "SciPy-spilu",
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.spilu.html",
+      "use": "native CSC incomplete factor, drop/fill policy; not a total-process memory cap"
+    },
+    {
+      "id": "Python-marshal",
+      "url": "https://docs.python.org/3.13/library/marshal.html",
+      "use": "version 3 introduces object instancing; protocol-2 code identity is runtime-specific, not unsafe deserialisation"
+    },
+    {
+      "id": "retained-R3",
+      "path": "cases/physical_closure_r3.json",
+      "use": "existing fully sourced constitutive definitions; no R1 reacquisition"
+    }
+  ],
+  "bounded_measurement": {
+    "repetitions": 3,
+    "prescribed_grids": [
+      16,
+      64
+    ],
+    "nonlinear_grids": [
+      16,
+      32,
+      64
+    ],
+    "profile": "tosi-2",
+    "temperature": "2-z+0.02*cos(pi*x)*sin(pi*z), SI numerical controls Ts=1, DeltaT=1, L=1, eta_ref=1, kappa=1",
+    "forcing": "fx=0, fz=100*(adjacent-centre-mean(T)-1)",
+    "coupled_grid": 16,
+    "coupled_dt_s": 0.001,
+    "setup_and_first_call": "recorded separately; reuse timings include capture, source checks, nonlinear solves, diagnostics and output",
+    "linear_comparison_grid": 12,
+    "no_cold_process_timing": true
+  },
+  "visual_case": {
+    "snapshot_grid": 32,
+    "profile": "tosi-2",
+    "coupled_grid": 16,
+    "coupled_steps": 8,
+    "coupled_dt_s": 0.002,
+    "outputs": "actual solved flow, dynamic pressure, log viscosity, continuous reduction relative to zero-rate response, nonlinear residuals, continuum refinement, coupled T/C and endpoint flow",
+    "meaning": "authored numerical forcing/state, solved/evolved outputs; no source holdout tuning, full published convection or Earth explanation"
+  }
+}

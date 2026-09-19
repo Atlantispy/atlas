@@ -1,0 +1,34 @@
+{
+  "schema": "atlas.r4-1-preservation-and-scope.v1",
+  "base_commit": "c0a097be2150a8df4f0de7ccd3f6224c317c65e5",
+  "baseline_tectonics_git_tree": "5d1e49a229fb585c2110798cedcd9e11a1cb9116",
+  "baseline_payload_hashes_verified": true,
+  "protected_baseline_files": 161,
+  "protected_baseline_files_unchanged": true,
+  "previous_tests_retained": 1696,
+  "new_tests": 120,
+  "full_tests_run": 1816,
+  "all_test_measurement_visual_source_inventories_equal": true,
+  "source_inventory_entries": 132,
+  "python312_grammar_files": 113,
+  "local_documentation_links_checked": 254,
+  "local_documentation_link_issues": [],
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false,
+  "next_increment": "R4.2 heat and conservative composition evolution",
+  "initial_test_attempt": {
+    "status": "TOOL_TIMEOUT_NO_COMPLETE_RESULT",
+    "timeout_seconds": 240,
+    "counted_as_pass": false
+  },
+  "final_full_run": {
+    "status": "COMPLETED",
+    "returncode": 0,
+    "elapsed_s": 129.30191232300012,
+    "timeout_s": 900
+  },
+  "pre_delivery_correction": "Made extreme/subnormal cell-to-face density interpolation symmetric and explicitly refuse an unrepresentable nonzero mean; added three tests without changing old tests or tolerances.",
+  "dependency_installation": false,
+  "windows_or_macos_execution": false,
+  "github_or_user_pc_modified": false
+}

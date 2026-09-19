@@ -1,0 +1,23 @@
+{
+  "schema": "atlas.r4-3-execution-record.v1",
+  "full_suite": {
+    "status": "COMPLETED",
+    "returncode": 0,
+    "elapsed_s": 286.999993463,
+    "timeout_s": 600
+  },
+  "runner_reported_tests_seconds": 282.077,
+  "tests_run": 2120,
+  "new_tests": 122,
+  "retained_tests": 1998,
+  "source_inventory_entries": 160,
+  "visual_archive": "Atlas_R4_3_Actual_Visual_QA_2026-09-19.zip",
+  "visual_archive_sha256": "f57c0d1f3c7d389e48ee6f4423697d84bf97452c3026df30665b9805680ad8e6",
+  "full_convection_benchmark": false,
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false,
+  "Windows_or_macOS_execution": false,
+  "dependency_installation": false,
+  "reference_reacquisition": false,
+  "github_or_user_pc_modified": false
+}

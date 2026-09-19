@@ -1,0 +1,83 @@
+{
+  "schema": "atlas.stokes-r4-1-publication-review.v1",
+  "case_id": "R4.1-published-SI-accuracy-1",
+  "date": "2026-09-19",
+  "baseline": "Atlas_Remake_3C_R4_1_Mechanical_Core_2026-09-19.zip; SHA256 fbab37d11e5d24cb2bede6a63fa7031afdad647331d8b5136e7cc6031594a6fc",
+  "scope": "R4.1 numerical correction only; same MAC equations, rheology, boundaries, grid, reference model and residual tolerances",
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false,
+  "R4_2_started": false,
+  "publication": {
+    "force_normalisation": "F=max absolute ORIGINAL SI face force; rhs=f/F; no preliminary component division by a possibly extreme reference force scale",
+    "velocity_conversion": "u_SI = u_hat * F * L^2 / eta_SI; multiply scalar mantissas and accumulate integer exponents before final binary64 conversion",
+    "pressure_conversion": "p_SI = p_hat * F * L",
+    "diagnostics": "one independent ghost-stencil and work pass on returned SI velocity/pressure rescaled using these physical factors; all original gates apply",
+    "subnormal": "retain adequate nonzero subnormal solutions; refuse rounded fields failing the unchanged gates; nonzero-to-zero loss still refused",
+    "record": "new publication_contract=atlas.stokes-published-si-gates.v1; descriptive old force_normalisation retained, force_amplitude_n_m3 added; old snapshots are restored without claiming new publication acceptance",
+    "density_to_force": "Shared-exponent endpoint interpolation and gravity product; weights stay exactly one half and endpoints remain symmetric; final nonzero-to-zero loss and overflow remain errors."
+  },
+  "counterexamples": [
+    {
+      "name": "2x2 circulation output rounding",
+      "force": "20 * smallest positive binary64",
+      "unit_scales": true,
+      "old_force_relative_residual": 0.2,
+      "old_reported_residual": 0.0,
+      "expected": "explicit residual refusal; no binary64 output meets the registered gate"
+    },
+    {
+      "name": "arbitrary reference scale affects SI solution",
+      "force_n_m3": 1e-200,
+      "eta_pa_s": 1e+100,
+      "reference_diffusivity_m2_s": 1e+22,
+      "length_m": 1.0,
+      "expected_u_m_s": 6.25e-302,
+      "old_relative_error": 0.01186870831750697,
+      "expected": "recover the original SI solution, independent of arbitrary reference diffusivity"
+    },
+    {
+      "name": "face density mean rounded before gravity",
+      "density_endpoints": "[tiny,2*tiny], tiny=smallest positive binary64",
+      "gravity_m_s2": 1e+100,
+      "old_relative_error": 0.3333333333333333,
+      "expected": "apply arithmetic mean and gravity with a shared binary exponent before final force rounding"
+    }
+  ],
+  "extra_verification": [
+    "continuous quartic streamfunction refinement, square and rectangular supports",
+    "axis transposition symmetry",
+    "independent discrete 2*eta*strain:strain versus external force work",
+    "nonuniform hydrostatics",
+    "zero forcing and direct/iterative parity",
+    "Decimal scale products, final overflow and underflow refusal",
+    "failure cleanup, exact snapshots and old metadata preservation"
+  ],
+  "bounded_measurements": {
+    "grids": [
+      64,
+      256
+    ],
+    "reused_repetitions": 5,
+    "seed_formula": "319+n",
+    "native_threads": 1,
+    "budget_bytes": 268435456
+  },
+  "no_changes": [
+    "old tests, registered numerical gates, prior case files, PB2002 bytes, physical equations, R1-R3 approval limits, AGPL-3.0-only"
+  ],
+  "references": [
+    {
+      "source": "PETSc DMStag ex2",
+      "url": "https://petsc.org/release/src/dm/impls/stag/tutorials/ex2.c.html",
+      "use": "independent staggered isoviscous/free-slip/nullspace reference; no external code copied"
+    },
+    {
+      "source": "NumPy frexp/ldexp",
+      "urls": [
+        "https://numpy.org/doc/stable/reference/generated/numpy.frexp.html",
+        "https://numpy.org/doc/stable/reference/generated/numpy.ldexp.html"
+      ],
+      "use": "mantissa/exponent operation semantics; installed NumPy 2.3.5 used, no dependency update"
+    }
+  ]
+}

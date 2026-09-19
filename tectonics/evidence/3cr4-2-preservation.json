@@ -1,0 +1,16 @@
+{
+  "schema": "atlas.r4-2-baseline-preservation.v1",
+  "delivery_baseline": "Atlas_Remake_3C_R4_1_Reviewed_2026-09-19.zip",
+  "baseline_archive_sha256": "9197bb7c9dce21b9d57480528b6c8fdc9f90cc4305751fa53ef47d08bd8f01a4",
+  "previous_package": "0.1.0.dev27",
+  "previous_tests": 1854,
+  "new_tests": 109,
+  "protected_files": 179,
+  "protected_bytes_unchanged": true,
+  "old_scientific_kernels_changed": false,
+  "old_tolerances_changed": false,
+  "old_case_or_source_repin": false,
+  "original_PB2002_reacquired": false,
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "atlas.r4-3-visual-inspection.v1",
+  "package": "0.1.0.dev30",
+  "source_inventory_matches_full_tests": true,
+  "source_inventory_entries": 160,
+  "all_outputs_individually_inspected": true,
+  "images_inspected": 8,
+  "findings": [
+    {
+      "file": "01_solved_velocity.png",
+      "sha256": "afbd814b10258db28e8a80cc75e0a1b563fd0b497004da562f2ed6bf4695ab4c",
+      "observation": "Solved low-viscosity basal recirculation with a slow upper region. Face values are interpolated only for arrows; no prescribed velocity is presented as solved. Some long arrows meet the figure boundary; raw impermeable-wall velocities are retained."
+    },
+    {
+      "file": "02_variable_viscosity.png",
+      "sha256": "81af49e58d03b85dda44c6b0a266fe6befbb34323af7486cd65abaea598eeba7",
+      "observation": "Smooth logarithmic viscosity variation with temperature; no obvious checkerboard pattern. This is a Tosi numerical control, not measured mantle viscosity."
+    },
+    {
+      "file": "03_viscosity_reduction.png",
+      "sha256": "116f72f7a63e80ec42c4e872b397d465be46757b70f77e556519330946c36164",
+      "observation": "Continuous ratio to the zero-rate response, not a binary yielded/un-yielded mask. Ratio labels and scale are consistent with the local law."
+    },
+    {
+      "file": "04_dynamic_pressure.png",
+      "sha256": "a59e76e8b474e57544dfe0778fc1e3179bce15db4c2aa7d44add7d8c30879c41",
+      "observation": "Smooth pressure field, labelled zero-domain-mean dynamic pressure, not lithostatic pressure."
+    },
+    {
+      "file": "05_nonlinear_convergence.png",
+      "sha256": "c3d9585a10a4acc6f65d67be1f796e137516242c379afc9d3996fe0feb8afb91",
+      "observation": "Updated-law momentum residual and viscosity log change both decrease to their separate acceptance gates; not merely a lagged linear-solver residual."
+    },
+    {
+      "file": "06_spatial_convergence.png",
+      "sha256": "e9bc36ee04e4c38a77fa3d33b773411e4a5e12ea7f3f83bf09f9ef4268c4a885",
+      "observation": "Velocity and pressure manufactured-solution errors decrease approximately fourfold on grid doubling. Axes are labelled numerical error, not physical realism."
+    },
+    {
+      "file": "07_coupled_temperature_change.png",
+      "sha256": "3da94fbd73fee1e28efd996b7a8c6c993b6b2ece90331f7555e70b968aecde63",
+      "observation": "Actual short coupled-run temperature change is resolved on the displayed grid. It is not an authored final field or a completed published convection benchmark."
+    },
+    {
+      "file": "08_coupled_composition_flow.png",
+      "sha256": "21fb839228c754856088e3cfaeb61d5e15cc688446a880b283df70637922e26a",
+      "observation": "Composition and final-state flow are coherent; the endpoint velocity is re-solved from the final state. Coarse cells and weak arrows remain visible without cosmetic smoothing."
+    }
+  ],
+  "overall": "No obvious incorrect label, checkerboard artefact or unexplained discontinuity in these registered displays. This is qualitative inspection, not exhaustive mathematical or physical acceptance.",
+  "user_visual_review_completed": false,
+  "physical_validation": false,
+  "full_convection_benchmark": false,
+  "R4_status": "IN_PROGRESS"
+}

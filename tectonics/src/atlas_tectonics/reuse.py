@@ -93,7 +93,7 @@ def _normal_code(code):
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
 _IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation")
+                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution")
 
 
 def _source_bytes():
@@ -126,7 +126,7 @@ def _constant(value):
 
 def _callable_inventory(backend="reference"):
     signatures, tokens, constants = {}, [], {}
-    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native") if backend == "numba" else ())
+    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native") if backend == "numba" else ())
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         for label, obj in sorted(vars(module).items()):
@@ -182,7 +182,7 @@ def _runtime_record(backend):
                 "math": _loaded_binary(getattr(math, "__file__", interpreter))}
     versions = {"python": sys.version, "numpy": np.__version__, "machine": platform.machine(),
                 "platform": platform.system(), "byteorder": sys.byteorder}
-    if backend == "scipy":
+    if backend in ("scipy", "numba"):
         try:
             import scipy
             import scipy.special._ufuncs as sf
@@ -192,6 +192,12 @@ def _runtime_record(backend):
         versions["scipy"] = scipy.__version__
         binaries["scipy_special"] = _loaded_binary(sf.__file__)
         binaries["scipy_lapack"] = _loaded_binary(lapack.__file__)
+        # R4.1 native sparse LU and separable FFT preconditioner. These identities
+        # are explicit dependencies, not a claim to seal every linked system lib.
+        import scipy.sparse.linalg._dsolve._superlu as superlu
+        import scipy.fft._pocketfft.pypocketfft as pocketfft
+        binaries["scipy_superlu"] = _loaded_binary(superlu.__file__)
+        binaries["scipy_fft"] = _loaded_binary(pocketfft.__file__)
     if backend == "numba":
         import numba, llvmlite
         import numba._helperlib as helper
@@ -249,10 +255,16 @@ class ExecutionContext:
         self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
         signatures, self._tokens, self._constants = _callable_inventory(backend)
         self._sources = _source_bytes()
-        loaded = {k: {"code": _digest(marshal.dumps(_normal_code(code))),
+        # Protocol >=3 records object-sharing/reference state. Holding a constant
+        # tuple returned by a profile factory can therefore change its code hash
+        # without changing code or values. Protocol 2 encodes this acyclic code
+        # inventory without object-instance references. Exact source, methods,
+        # defaults/constants and runtime still participate; this is not a claim
+        # of cross-Python-version code compatibility, nor untrusted unmarshalling.
+        loaded = {k: {"code": _digest(marshal.dumps(_normal_code(code), 2)),
                       "defaults": _digest(_json(defaults))}
                   for k, (code, defaults) in signatures.items()}
-        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v2",
+        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v3", "code_marshal_format": 2,
             "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()},
             "loaded_code": loaded, "constants": _digest(self._constants),
             "runtime": self._runtime}))

@@ -95,7 +95,7 @@ def main() -> int:
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v18',
+        'schema': 'atlas.tectonics.foundation-verification.v22',
         'profile': 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
@@ -111,7 +111,12 @@ def main() -> int:
         'material_runtime': (__import__('atlas_tectonics.materials', fromlist=['material_native_build_info']).material_native_build_info() if native else None),
         'regional_runtime': (__import__('atlas_tectonics.regional', fromlist=['regional_native_build_info']).regional_native_build_info() if native else None),
         'native_runtime': (__import__('atlas_tectonics.transport', fromlist=['native_build_info']).native_build_info() if native else None),
-        'physical_closure_r3_scope': 'local Tosi/BF2023 constitutive laws, explicit material-point memory and 1D fixed-length operator; no R4 PDE or coupled localisation acceptance',
+        'R4_status': 'IN_PROGRESS',
+        'R4_complete': False,
+        'thermochemical_r4_2_scope': 'retained constant-property rectangular heat/binary composition evolution and local same-source restart; explicit R4.3 mode adds nonlinear mechanics, not full convection benchmark acceptance',
+        'stokes_r4_1_scope': 'retained constant-viscosity closed free-slip 2D steady mechanics; variable-stress assembly is the separate R4.3 component, not an unmodified vector Laplacian',
+        'variable_stokes_r4_3_scope': 'closed 2D rectangular symmetric-stress variable-viscosity mechanics, updated-law Picard yielding and explicit two-stage Tosi thermochemical coupling; no evolving damage or full R4.4 convection benchmark acceptance',
+        'physical_closure_r3_scope': 'local Tosi/BF2023 constitutive laws, explicit material-point memory and 1D fixed-length operator; R3 alone does not establish coupled localisation or R4 completion',
         'spherical_atlas_scope': 'closed static conforming patch geometry; no spherical material evolution',
         'earth_material_scope': 'W01 4B sourced reference data and declared mixtures; no hot/high-pressure laws or W03 evolution',
         'geological_description_scope': 'W01 stage 4 plus R2 pre-partition state and bounded stage-5 point/prism/shell-sector initial sampling; no W03 evolution',

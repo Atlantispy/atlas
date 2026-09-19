@@ -1,5 +1,131 @@
 # Atlas tectonics remake
 
+## Current remake delivery: R4.3 (`0.1.0.dev30`)
+
+The variable-viscosity/yielding stress-divergence solver and its explicit two-stage
+heat/composition coupling are delivered within the
+[revision-34 scope](docs/TECTONICS_PLAN.md#3cr4-3-variable-mechanics).
+**R4 is IN_PROGRESS. R4.4 full convection benchmarks and combined acceptance
+remain outstanding.** This is not global plate dynamics or Diadem terrain.
+
+`PreparedVariableStokes2D` uses the existing R3 profiles, native sparse/block
+preconditioned GMRES, true nonlinear convergence and returned-SI diagnostics.
+The small independently assembled direct reference is explicit, not a fallback.
+Use `ThermochemicalProblem(..., mechanical_mode='variable-r4.3')` and optional
+`nonlinear_policy=NonlinearStokesPolicy(...)` for constant/Tosi evolving coupling.
+The historical default stays `constant-r4.2`; BF needs explicit frozen damage in
+a separate snapshot and is not silently enabled in two-field evolution.
+
+The [execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) records
+optimisation, limits, source-safe restart and the exact test/visual commands.
+New evidence is in `evidence/3cr4-3-tests.json` and
+`evidence/3cr4-3-measurements.json`; prior results are historical, not overwritten.
+Actual-code visual QA uses `tools/visual_variable_stokes_r4_3.py`.
+
+
+## Current R4.2 review — version 0.1.0.dev29
+
+The constant-property thermal/binary evolution component now uses reference-
+independent insulated diffusion, conditioned short-step exponentials and safe
+source products. Published time intervals are checked against the integrated
+duration before evolution; old snapshots decode unchanged without a source
+rebind. Unused insulated time-average transforms are eliminated. See the
+[scientific review](docs/TECTONICS_PLAN.md#3cr4-2-review) and
+[execution review](docs/OPTIMISATION_REFERENCE.md#3cr4-2-review-execution).
+
+**R4 remains in progress. R4.3 is next; R4.4 benchmarks/acceptance remain open.**
+New results are in `evidence/3cr4-2-review-tests.json` and
+`evidence/3cr4-2-review-measurements.json`. Earlier numerical cases, evidence and
+third-party bytes remain unchanged. This is not a calibrated Earth/Diadem model.
+
+
+## Current development: R4.2 delivered within scope; R4 remains in progress
+
+**`0.1.0.dev28` / plan revision 32.** The reviewed mechanical core now drives
+constant-property heat and binary-composition evolution in the closed uniform
+2D Boussinesq box. Temperature and material fraction are actually advanced;
+buoyancy velocity is solved at both transport RK stages. No first-order fallback,
+field clipping or automatic timestep reduction is used.
+
+The normal route uses a prepared discrete thermal exponential and fused native
+MC/SSPRK2 face transport. Conductive boundary heat, internal/external heating,
+constituent inventory and shared-face balances are checked on returned fields.
+Same-source saved endpoints restore and continue exactly through the existing
+lossless store. This is not yet a complete cohort-history/world adapter.
+
+**Next: R4.3 variable-viscosity/yielding mechanics. R4.4 full benchmark/combined
+acceptance remains outstanding.** R4 and W03/W07 are not declared complete.
+See the [current numerical contract](docs/TECTONICS_PLAN.md#3cr4-2-thermochemical),
+[execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-2-execution) and
+[progress table](docs/TECTONICS_PLAN.md#3cr4-progress).
+
+```sh
+# Complete software regression, not a global simulation.
+python -I -B tectonics/verify.py
+# Finite component references and same-equation timing.
+python -I -B tectonics/tests/check_thermochemical_r4_2.py
+# Optional Matplotlib extra: real authored-start / evolved-endpoint comparison.
+python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /path/to/new/r4-2-visuals
+```
+
+The visual example advances 40 explicit steps on a 48-by-48, 1,000-km box.
+Initial fields are authored cell averages; final fields are solver results.
+The separately plotted endpoint velocity is recomputed from that accepted endpoint,
+not borrowed from an operator-split intermediate. No calibrated Earth/Diadem state,
+full Tosi convection reproduction, spherical evolution or platform acceptance is
+implied. The first mechanical example below remains useful as a steady control;
+its historical limitations/next-step sentences describe R4.1, not current R4.2.
+
+
+## Historical R4.1 development and retained mechanical example
+
+**`0.1.0.dev27` / plan revision 31 — R4.1 mechanical core with reviewed SI publication.**
+Atlas now solves steady velocity and dynamic pressure in a uniform 2D free-slip,
+impermeable box. This is the first component of R4, **not completion of R4**.
+The next increment is **R4.2: heat evolution and conservative composition transport**;
+variable viscosity/yielding and applicable full convection benchmarks follow.
+See the [maintained progress table](docs/TECTONICS_PLAN.md#3cr4-progress).
+
+The [R4.1 review correction](docs/TECTONICS_PLAN.md#3cr4-1-publication-review)
+checks residuals against the actual returned SI fields, not only the internal
+normalised solution. It prevents unit-scale distortion and refuses inadequate
+subnormal output rounding without relaxing tolerances. The physical model,
+solver/preconditioner and pending R4 increments are unchanged.
+
+
+The ordinary solver is matrix-free preconditioned MINRES with a separable native
+velocity inverse; a small explicit sparse direct solve is retained for comparison.
+Inputs use a named Cartesian x-right/z-up frame, R3 constant rheology and explicit
+SI scales. Inward-depth R2 data are not silently renamed. No temperature evolution,
+plate motion, variable law or terrain is invented by a steady mechanical solve.
+
+```python
+import numpy as np
+from atlas_tectonics import (
+    StokesBox2D, DiffusiveScales, reference_rheology, PreparedStokes2D,
+)
+box = StokesBox2D(32, 32, 1.0, 1.0, "analytical-x-right-z-up")
+scales = DiffusiveScales("declared-unit-SI", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+# Uniform downward body force: a hydrostatic pressure response, no circulation.
+fx = np.zeros((box.nz, box.nx - 1))
+fz = np.full((box.nz - 1, box.nx), -1.0)
+with PreparedStokes2D(box, reference_rheology("constant"), scales) as plan:
+    result = plan.solve(fx, fz, frame_id=box.frame_id,
+                        epoch_id="analytical-steady", time_s=0.0,
+                        source="Authored hydrostatic verification case")
+pressure_pa = result.array("pressure_pa")
+```
+
+In the separately documented tectonics environment, run
+`python -I -B tectonics/tests/check_stokes_r4_1.py` for bounded numerical/timing
+evidence and `python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/path`
+for actual solved velocity/pressure, residuals, and the separately labelled
+**authored** temperature input. The visual tool requires the optional visual extra.
+Use new output paths; raw numerical fields and provenance are retained.
+
+Older dated sections below describe their delivery-time state. The latest plan
+and current progress table take precedence; previous evidence remains unchanged.
+
 **Branch: `remake`. WORKING NON-CANON. Mathematical verification, not accepted terrain.**
 Vibe-coded with OpenAI ChatGPT/Codex under Michael's direction.
 

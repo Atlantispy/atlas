@@ -1,0 +1,27 @@
+{
+  "schema": "atlas.r4-1-review-visual-inspection.v1",
+  "status": "ASSISTANT_INSPECTED_FIVE_ACTUAL_CODE_PLOTS",
+  "visual_manifest_sha256": "0c744b14ea7a7b348a6a67816d57d15565438f07a3a0ff5644199521c62d2f07",
+  "source_inventory_entries": 135,
+  "source_matches_full_regression": true,
+  "outputs_sha256": {
+    "01_solved_velocity.png": "b9a1fcf0c00ff6e3da3ce064e1bedef4eab45fb455631f66254bd2a862fc32f4",
+    "02_dynamic_pressure.png": "ed19ec9a36f6c212b82700010e63aee538ffc8c01b304c021e34b5ce02058e03",
+    "03_divergence_residual.png": "58a60bc8497c16fb175d66d98e71f033a4e64501bc62b614531d05c88c8280ea",
+    "04_authored_forcing_temperature.png": "1fa561d039292f9a6e96f7ef4aa13b43ce57509889fb844a8bcb0babd2b5f8d2",
+    "05_mechanical_convergence.png": "73cfef408c76889385724e87c636b13b117a26597e42564b19dc0690934223b7"
+  },
+  "observations": {
+    "01_solved_velocity.png": "Central upwelling, lateral return flow and no apparent discontinuity in the stationary free-slip box. Arrows are documented display-centred values; raw staggered data retained.",
+    "02_dynamic_pressure.png": "Smooth pressure field, no visible checkerboard; legend explicitly says dynamic pressure, zero domain mean, not absolute lithostatic pressure.",
+    "03_divergence_residual.png": "Actual finite residual at round-off scale; not relabelled as compression or zeroed for display.",
+    "04_authored_forcing_temperature.png": "Temperature explicitly labelled authored, not evolved; no thermal-evolution claim.",
+    "05_mechanical_convergence.png": "Velocity and pressure errors track the displayed second-order slope; labels match their manufactured-solution origin."
+  },
+  "max_abs_divergence_s_1": 6.66757641293585e-28,
+  "assistant_visual_review_completed": true,
+  "user_visual_review_completed": false,
+  "physical_validation": false,
+  "R4_complete": false,
+  "thermal_evolution": false
+}

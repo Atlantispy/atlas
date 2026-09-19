@@ -1,5 +1,39 @@
 # R3 current local-law contract
 
+## R4.3 variable-stress component (revision 34)
+
+The rectangular variable-viscosity MAC component uses normal stress at centres,
+shear stress at interior vertices, explicit full stress divergence and a
+zero-mean dynamic-pressure gauge. Native block-preconditioned GMRES and a small
+independent sparse-direct route share true returned-field diagnostics, not a
+constant-viscosity Laplacian substitution. Existing Tosi laws are evaluated at
+both stress supports and converged with updated-law Picard residuals. The
+[maintained plan](TECTONICS_PLAN.md#3cr4-3-variable-mechanics) is authoritative
+for collocation, units, tests and limits; the
+[execution contract](OPTIMISATION_REFERENCE.md#3cr4-3-execution) covers reuse.
+The optional new thermochemical mechanical mode preserves legacy descriptors
+and rejects unsupported damage evolution. R4.4 benchmark/combined acceptance is
+still outstanding; R4 remains IN_PROGRESS.
+
+
+R4.2 review (dev29 / revision 33): see the [current scientific contract](TECTONICS_PLAN.md#3cr4-2-review) for conditioned diffusion, source products, clock precision and unchanged ongoing R4 scope. Historical sections below retain their dated meaning.
+
+
+## R4.1 addition — mechanical component, not full R4
+
+`stokes.py` defines the uniform MAC support, exact free-slip stencils, pressure
+nullspace augmentation and separable constant-coefficient velocity inverse.
+`stokes_execution.py` reuses source contexts, budgets/native-thread control and
+ArrayStore for prepared steady solves and lossless result restoration. Dynamic
+pressure, body-force signs and all-cell divergence are explicit. The reference
+sparse operator is assembled independently; no normal equations or dense inverse
+are substituted. Existing R3 laws and R1/R2 evidence are unchanged.
+
+See the [R4 continuation table](TECTONICS_PLAN.md#3cr4-progress) and
+[execution details](OPTIMISATION_REFERENCE.md#3cr4-1-execution). Heat/composition
+integration, variable viscosity/yielding and applicable convection benchmarks are
+still outstanding. Numerical component tests and visual QA do not close R4.
+
 Version `0.1.0.dev24`, [plan revision 28](TECTONICS_PLAN.md#3cr3-physical-closure),
 adds local constitutive and material-point memory calculations, not a solver.
 The original foundations and every retained case/test remain unchanged.

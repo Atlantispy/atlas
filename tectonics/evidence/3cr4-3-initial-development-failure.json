@@ -1,0 +1,19 @@
+{
+  "schema": "atlas.r4-3-initial-development-failure.v1",
+  "status": "INITIAL_FAILURE_NOT_FINAL_SOURCE",
+  "note": "Retained diagnostic from a development tree, not a final-source verification record. The failed fresh-process continuation exposed marshal v4 object-sharing-dependent code identities; corrected before the final complete suite. No previous test or numerical tolerance was changed.",
+  "record": {
+    "tests_run": 101,
+    "failures": 1,
+    "errors": 0,
+    "skips": 0,
+    "elapsed_s": 31.397962949000203,
+    "failure_details": [
+      {
+        "test": "test_fresh_process_continuation (test_variable_coupling_r4_3.CoupledPersistence.test_fresh_process_continuation)",
+        "traceback": "Traceback (most recent call last):\n  File \"/mnt/data/atlas_r4_3_work/tectonics/tests/test_variable_coupling_r4_3.py\", line 180, in test_fresh_process_continuation\n    self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(result.stdout.strip(),self.expected.state_id)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"<string>\", line 7, in <module>\n    with PreparedThermochemical2D(r.problem) as p:r=p.advance(r,.001,source='second').state\n                                                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/data/atlas_r4_3_work/tectonics/src/atlas_tectonics/thermochemical_execution.py\", line 411, in advance\n    raise TectonicsError('continued state source/policy changed; no automatic rebind')\natlas_tectonics._validation.TectonicsError: continued state source/policy changed; no automatic rebind\n\n"
+      }
+    ],
+    "error_details": []
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "original_archive_sha256": "fbab37d11e5d24cb2bede6a63fa7031afdad647331d8b5136e7cc6031594a6fc",
+  "all_original_payload_and_review_hashes_verified": true,
+  "original_payload_count": 237,
+  "protected_original_files": 171,
+  "protected_files_unchanged": true,
+  "python_312_grammar_files": 115,
+  "documentation_links_checked": 256,
+  "documentation_link_issues": [],
+  "scope": "Python 3.12 grammar only, not runtime compatibility; local documented links only",
+  "schema": "atlas.r4-1-review-preservation.v1",
+  "new_tests": 38,
+  "retained_tests": 1816,
+  "full_tests": 1854,
+  "full_run": {
+    "complete": true,
+    "returncode": 0,
+    "wall_s": 193.0338131860001,
+    "watchdog_s": 600
+  },
+  "initial_full_attempt": {
+    "complete": false,
+    "counted_as_pass": false,
+    "reason": "container 180-second watchdog interrupted before final JSON; no suite changes"
+  },
+  "original_physical_case_unchanged": true,
+  "source_inventory_entries": 135,
+  "tests_measurements_visual_sources_identical": true
+}

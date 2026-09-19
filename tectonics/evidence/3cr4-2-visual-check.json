@@ -1,0 +1,46 @@
+{
+  "schema": "atlas.r4-2-visual-inspection.v1",
+  "status": "ASSISTANT_VISUAL_REVIEW_COMPLETED",
+  "images_individually_inspected": 7,
+  "observations": [
+    "Initial/final temperature share the same 300-1600 K colour scale and show central upward heat transport.",
+    "Initial/final composition share the same 0-1 fraction scale; the enriched region moves upward and deforms.",
+    "The difference field shows warming centrally and cooling at the side returns, without an obvious checkerboard.",
+    "Endpoint velocity is recomputed from final accepted fields, with upward central flow and downward returns.",
+    "Residuals are labelled numerical interval balances, not physical heating or composition loss.",
+    "Visible coarse cell structure is the actual 48x48 display; no smoothing or added terrain/geometry was invented."
+  ],
+  "limitations": [
+    "Qualitative inspection is not PDE convergence or geological validation.",
+    "The user has not yet reviewed this visual set."
+  ],
+  "final_pngs_identical_to_inspected": {
+    "04_evolved_composition.png": true,
+    "06_endpoint_velocity.png": true,
+    "02_evolved_temperature.png": true,
+    "01_initial_temperature.png": true,
+    "05_temperature_change.png": true,
+    "03_initial_composition.png": true,
+    "07_conservation_residuals.png": true
+  },
+  "png_hashes": {
+    "01_initial_temperature.png": "375c2421c7a231200168623234df86386253c583f33dd1a9ce6a4b306e43cdb8",
+    "02_evolved_temperature.png": "93c6c52fa67ac3af297384e29e45c49d127184403755adc98d941fd69b61f4f6",
+    "03_initial_composition.png": "67121fb05ca9370d36901c95465055d8aa0e2b8c79d1bd12ffa79e32a38b294a",
+    "04_evolved_composition.png": "ea437f9b32632f5f17968bc472bec3f1d8cb4b532a55d63dee8de4d981eb729f",
+    "05_temperature_change.png": "e7b0a03ab95bd160886dc0ed57c100f30925194ed5d9451ee62ef551e993bad6",
+    "06_endpoint_velocity.png": "21ba88ee84948a2f7f9910faa8732668b90726c6c33254f10c1b18c8da88d7dd",
+    "07_conservation_residuals.png": "883b141c8d84cbfd885cfd4c0d5f095beb68af0615cb658c83f87b090dc677a8"
+  },
+  "excess_constituent_centroid_height_m": {
+    "initial_composition": 450000.02654668567,
+    "final_composition": 520184.3552502526
+  },
+  "final_time_s": 40000000000000.0,
+  "user_visual_review_completed": false,
+  "physical_validation": false,
+  "R4_complete": false,
+  "visual_archive": "Atlas_R4_2_Actual_Visual_QA_2026-09-19.zip",
+  "visual_archive_sha256": "f3dcbb7956519ea55c6081982c43927960324a9ca2ec75571610f4363b8db386",
+  "source_inventory_sha256": "5e21c0bc7cc4b26b388faeee8895dd323d7e41f07378953ce196d75a9e4e0b43"
+}

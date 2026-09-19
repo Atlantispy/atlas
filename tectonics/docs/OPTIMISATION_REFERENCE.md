@@ -1,5 +1,432 @@
 # Atlas optimisation reference
 
+<a id="3cr4-3-execution"></a>
+
+## Current: R4.3 variable stress, nonlinear iteration and source-safe continuation
+
+**Version `0.1.0.dev30`, maintained plan revision 34. R4 remains IN_PROGRESS.**
+The scientific contract is in [the maintained plan](TECTONICS_PLAN.md#3cr4-3-variable-mechanics)
+and [`variable_stokes_r4_3.json`](../cases/variable_stokes_r4_3.json). R4.4 full
+convection benchmarks and combined acceptance remain outstanding.
+
+### Numerical work that is reused, and work that must not be reused stale
+
+The full saddle operator is applied with native array stress/gradient/divergence
+stencils. Sparse derivative topology is assembled once. The velocity block needed
+for the ILU preconditioner is assembled natively from those derivatives and the
+current centre/vertex viscosities. A bounded restarted GMRES solves the full
+system using a block-triangular approximate inverse. The velocity inverse is
+SuperLU ILU; the pressure approximation is the projected local `-2*eta_cell`
+inverse Schur action, with the mean-pressure/gauge pair handled separately.
+
+This preconditioner is nonsymmetric, so the normal route is GMRES, **not MINRES**.
+It is approximate and contrast-sensitive; it is not R4.1's exact separable
+constant-coefficient inverse. No dense inverse or whole saddle matrix is built on
+the normal route. The explicitly selected small direct reference independently
+assembles the saddle matrix and uses sparse LU; no automatic fallback is allowed.
+The direct reference may be faster for small cases and is not a realistic large-
+problem memory forecast. Advanced multigrid or universally mesh-independent
+iteration counts are not claimed by this increment.
+
+Default restart is 60 with at most 20 restart cycles. ILU drop tolerance `1e-4`
+and fill factor 12 are numerical policy, not changes to viscosity. Increasing
+fill can alter solver cost, not the accepted physical equations. The full true
+residual is checked separately from the preconditioned residual. Failure in
+factorisation or iteration is explicit. SciPy's fill policy does not cap total
+native process memory. The public WorkBudget remains estimated admission with
+required external/interpreter headroom, not an OS RSS limiter.
+
+At most one numerical factor is retained, keyed by the exact normalised centre
+and vertex viscosity bytes. Unchanged coefficients reuse it; changed coefficients
+rebuild it while the sparse derivatives remain. Each complete nonlinear request
+starts from its declared zero-rate control; it does not depend on hidden history
+from the previous request. Picard iterations reuse their previous vector as the
+next *linear* initial guess, but do not reuse a stale matrix as the physical
+operator. Fixed-coefficient repeated requests preserve exact result identities.
+Actual source/numerical-policy changes still intentionally change identities.
+
+### Ownership, admission, cancellation and numerical integrity
+
+Prepared plans are driven and closed by one thread. Global mechanics is not split
+into independent plates or uncoupled grid tiles. Native-thread leases reuse the
+existing implementation; no new pool or persistence subsystem is introduced.
+Admission covers sparse derivatives, conservative overlapping factor lifetimes,
+normalised inputs, a bounded GMRES basis, lagged/new material arrays, tensor
+reconstruction, result copies and diagnostic scratch. Results retain immutable
+bytes with private shapes. Returned results kept by callers need separate headroom.
+
+Cancellation is checked before/after factorisation and during iterative calls;
+native factorisation is allowed to return before its temporary memory is released.
+Failures publish no result, and close releases the retained factor, derivatives
+and source context. Factor construction counters are diagnostic state, not
+scientific constants. No unsupported conditional change to equations, precision,
+viscosity limits or material inventories follows a resource refusal.
+
+For coupled work, existing thermal transforms and fused transport remain the
+normal route. Each RK stage invokes the prepared nonlinear mechanics with new
+current fields and checks true convergence. Both-stage and whole-step limits,
+energy/material accounting and complete interval publication remain mandatory.
+There is no extra heating channel. The `mechanical_mode='variable-r4.3'` switch
+prevents legacy constant-only descriptors being reinterpreted silently. Supplying
+an unused constant/nonlinear solver policy to the opposite mode is refused.
+
+### Stable code identity and lossless restart
+
+The new fresh-process nonlinear restart test exposed a provenance defect in
+Python's default marshal encoding: format >=3 records object-reference state,
+so retaining a returned constant tuple could change a code digest without changing
+code or source. Execution schema `atlas.kernel-execution.v3` explicitly encodes
+normalised acyclic code with marshal **format 2**, still within the exact pinned
+Python runtime. Code objects are not decoded from untrusted input; cross-Python
+code compatibility is not claimed. Source bytes, callable objects/instructions,
+defaults, scientific constants and native binaries remain independently checked.
+Tests still detect actual method/source changes. The initial failed regression
+is retained; an old success receipt is not regenerated or relabelled.
+
+The existing lossless Zstd/ArrayStore stores complete prescribed/rheological
+mechanical inputs and outputs, and complete evolving thermal/composition states.
+Both nonlinear stage IDs and true diagnostics survive restoration. Identical
+repeated writes deduplicate. Same-source/policy continuation works after reopening
+and in a fresh process. Historical R4.2 states remain exactly decodable; changing
+source still refuses automatic continued calculation. No parent delta chain,
+lossy field or whole-trajectory retention claim is introduced.
+
+### Registered bounded measurements and actual-code visual checks
+
+From a complete checkout in the declared installed environment:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tests/check_variable_stokes_r4_3.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/visual_variable_stokes_r4_3.py --output NEW_DIRECTORY
+```
+
+These are finite R4.3 component cases, not the skipped general benchmark programme
+or full published convection. Setup, first and repeated complete-call costs,
+iteration counts, native factor reuse/rebuild and memory admissions are separated.
+No isolated cold-process timing or universal speedup is inferred. The declared
+synthetic fields are fixed; failures are not discarded through a favourable seed.
+Independent continuous-variable-coefficient, scalar nonlinear and coupled ODE
+controls check accuracy separately from time. The optional plots use actual
+registered numerical output and explicit labels; no renderer invents physics.
+
+Routine stderr transcripts remain local. Structured evidence includes failures,
+counts and source hashes. Earlier tests, source cases and historical evidence are
+retained. Every implementation/review response carries a copy-ready Git changelog.
+No reference reacquisition, dependency installation, R4.4 or R5 work is implied.
+
+## Historical revision 33 and earlier execution contracts
+
+
+<a id="3cr4-2-review-execution"></a>
+
+## Current: R4.2 numerical conditioning and insulated-work reduction
+
+**Version `0.1.0.dev29`, plan revision 33. R4 remains IN_PROGRESS.**
+The [scientific review](TECTONICS_PLAN.md#3cr4-2-review) describes the unchanged
+physical equations and new publication guard. No temperature clipping, source
+renormalisation, mesh change, lowered order or tolerance relaxation is introduced.
+
+The thermal cache still holds just one interval. In addition to rates and the
+existing exp/phi coefficients, short-interval change coefficients and weighted
+source factors/masks are prepared once and reused. Source-dependent mode products
+still run per call; no field is cached under an incomplete identity. The original
+128-byte/cell retained admission covers these linear-size arrays. No dense matrix/exponential is constructed. An observed midrange offset
+under insulation uses two native field reductions; it is not a new material input.
+The short-interval increment form avoids adding a round-trip error to the whole
+field. Long-interval absolute evaluation avoids cancellation of a nearly fully
+decayed field. The source-product fallback now includes nonzero subnormal
+intermediate factors; its normal route remains native bulk arithmetic.
+
+Under insulated walls the time-average field is unused and integrated boundary
+heat is exactly zero. Each thermal half-step therefore performs one rather than
+two two-dimensional inverse transforms. Fixed-temperature walls retain both,
+including the independent signed boundary-heat account. No globally coupled solve
+or successive physical interval is incorrectly parallelised.
+
+The finite review observer compares old/new COMPLETE steps at 64/256-square fixed
+and insulated prescribed-flow cases, plus 128-square coupled flow. It records
+preparation, first calls and five reused calls, output comparisons and budget
+reservations. The benchmark script can explicitly select the old checkout with
+`--root`; its own hash is recorded separately from the target source inventory.
+No baseline input, old test or previous evidence is regenerated. Timings are not
+correctness gates or whole-world forecasts; native/library process caches and
+machine conditions affect them. Inspect positive and negative timing results.
+
+New state records carry the clock/conditioning publication contract. Older state
+metadata is retained on decode, and source identity prevents silently claiming
+that old endpoints can continue under the new implementation. The real original
+snapshot restoration and new same-source restart checks are separate experiments.
+No new cache, scheduler or persistence subsystem is added.
+
+Run from the complete checkout in its documented environment:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -I -B tectonics/verify.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -I -B tectonics/tests/check_thermochemical_review_r4_2.py
+```
+
+New tests, source-bound measurements and actual-code plots accompany the review.
+Historical reports remain at their existing paths. R4.3 variable/yielding
+mechanics and R4.4 benchmark/combined acceptance have not started.
+
+## Historical revision 32: initial R4.2 execution
+
+
+<a id="3cr4-2-execution"></a>
+
+## Current: R4.2 thermal/composition execution, version 0.1.0.dev28 / revision 32
+
+R4.2 is delivered only for its [registered constant-property rectangular/binary
+scope](TECTONICS_PLAN.md#3cr4-2-thermochemical). **R4 remains IN_PROGRESS; continue
+with R4.3, then R4.4.** The old R4.1 next-step sentences below are historical.
+
+### Native transport and a prepared discrete thermal exponential
+
+The default combines fused Numba MC face reconstruction and Euler accumulation
+with SciPy's native orthonormal sine/cosine transforms. `fastmath=False`, binary64
+and disabled disk JIT caching remain explicit. One x/z face transfer is computed
+once for temperature and composition, not independently by adjacent cells. The
+NumPy slope-array formulation is an explicit same-equation verification/comparison
+route, not a lower-order fallback. Buffers and `dt*u/h` transfers avoid unnecessary
+physical-flux intermediates. A Neumaier reduction gives deterministic inventory
+accounting without parallel reduction reassociation.
+
+The thermal solve reuses O(N) discrete rates and one timestep coefficient entry;
+changing dt replaces that entry rather than accumulating an unbounded cache.
+The fixed source transform is reused in both thermal half steps. A stationary
+boundary lift handles fixed face temperatures. `phi1` and `phi2` are evaluated
+with series/expm1 near zero, not subtractive cancellation. Source weighting occurs
+before a potentially overflowing source impulse, with an exponent fallback for
+rare products; large attenuated modes have a log-tail path. This is not a lossy
+history codec or an approximation to a different physical equation.
+
+No dense global thermal matrix/exponential is formed in the normal route. Its
+native transform work is O(N log N), retained arrays/scratch O(N); the independent
+dense exponential is confined to small tests. Avoiding an explicit diffusion
+CFL removes a stability bottleneck, not the requirement to refine time and space.
+Variable conductivity, irregular geometry or other boundary conditions need an
+explicitly verified operator rather than silently reusing this diagonalisation.
+
+### Existing mechanics, execution and resource ownership
+
+Constant-viscosity mechanics is prepared lazily and reused. Its source-verified
+matrix-free solver is called at BOTH transport RK stages. These globally coupled
+solves and successive physical timesteps are not independent jobs. No new thread
+pool or scheduler is created. Native inner threads are bounded by the existing
+lease; the driver is single-thread-owned and concurrent driving is refused.
+
+One verified `ExecutionContext` covers Python/source/loaded numerical methods,
+Numba/LLVM and the actual SciPy FFT/LAPACK/SuperLU binaries used together. The
+new native transport module participates in that inventory. Source inclusion
+changes identity intentionally, never an old evidence binding. Preparation is
+shared; verification occurs around the full step, not per face/cell in hot loops.
+SciPy/Numba are not imported into the old NumPy-only reference route by preparation
+side effects; constructing a new thermochemical plan requires its declared engines.
+
+`WorkBudget` admits preparation (including source context), accepted-state/source
+capture, RK candidates, shared-face transfers, transform scratch, both stage
+solutions, diagnostic arrays and final immutable publication. The nested existing
+Stokes solver has its own admission. Failure/cancellation closes active call scopes
+before memory is released, and publishes no endpoint. Completed results retained by
+callers and interpreter/native allocator baselines still need headroom: this is
+not a process-RSS cap. No budget failure changes order, precision, mesh or model.
+
+Immutable bytes-backed state/step arrays have private shape metadata. Mutable
+caller arrays are captured; returned views cannot become writable. Shared state and
+compact problem definitions replace per-cell rich objects. There is no implicit
+pruning of required material history; this binary pilot does not migrate the
+existing cohort/history systems in the first place.
+
+### Persistence, identity and finite evidence
+
+The existing lossless Zstd/Blosc2 store remains the only persistent engine. Each
+endpoint contains current T/C, problem, frame/epoch, source/policy, time/index and
+last-step records. This supports exact same-source continuation without replaying
+a parent delta chain. Future source/velocity input remains explicit. A decoded
+historical record is not relabelled as meeting a newer method's acceptance.
+Routine logs stay local; source-bound structured results include real failures.
+
+Commands, from a clean complete checkout in the documented environment:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -I -B tectonics/verify.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -I -B tectonics/tests/check_thermochemical_r4_2.py
+python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /path/to/new/r4-2-visuals
+```
+
+The finite comparison records native-versus-NumPy transport for complete
+64/256-square prescribed-flow steps, plus actual two-stage coupled 128-square
+steps. Setup, first calls and all reused-call repetitions are separated. Source
+hashes are checked before/after. Different backend/runtime identities remain
+distinct even when numerical arrays agree. These are sequential same-host
+measurements, not isolated cold-process or whole-planet predictions. No universal
+speedup, RSS bound, complete Tosi benchmark, Windows/macOS run or R4 completion is
+claimed. `evidence/3cr4-2-tests.json` and `evidence/3cr4-2-measurements.json` are new
+obtained records; earlier test sources/cases/reference bytes/evidence are retained.
+
+## Historical R4.1 execution and review
+
+
+<a id="3cr4-1-execution"></a>
+
+## Historical: R4.1 mechanical execution — R4 remains IN PROGRESS
+
+**Version `0.1.0.dev27`, plan revision 31.** This increment implements only the
+constant-viscosity, uniform rectangular, closed free-slip mechanical component.
+The authoritative [continuation table](TECTONICS_PLAN.md#3cr4-progress) keeps heat/
+composition evolution, variable viscosity/yielding and full R4 benchmarks open.
+Optimisation is part of each increment, not a reason to call the wider stage done.
+
+### Review correction: numerical accuracy after SI publication
+
+The original force snapshot is now normalised once, before applying any arbitrary
+reference force scale. Velocity/pressure conversions use physical force, length
+and viscosity factors in mantissa/exponent form. A normal, representable scalar factor uses one bulk multiplication;
+only extreme factors require array decomposition. Native binary64 `frexp/ldexp`
+work avoids intermediate scale underflow/overflow. Density-to-face interpolation
+also evaluates the endpoint mean and gravity at a shared exponent rather than
+rounding a tiny mean before multiplying. This is not higher-precision
+physics, a lossier approximation or a new solver.
+
+The private solve vector is reused for reconstructed published fields before the
+single independent ghost-stencil/work pass. There is no second solve, second
+full diagnostic pass, matrix construction or per-cell Python arithmetic. The
+existing 768-byte/unknown solve admission includes these temporary conversion
+buffers. FFT preconditioner reuse, coupled MINRES, direct-reference selection,
+native-thread limits, cancellation and source identity remain in place.
+
+`publication_contract=atlas.stokes-published-si-gates.v1` distinguishes current
+checks from historical snapshots. The old `force_normalisation` is retained as
+a descriptive reference quantity, not used to rescale the solved physics;
+`force_amplitude_n_m3` records the actual original SI normalisation. Source changes
+create new scientific identities. No old snapshot or test evidence is repinned.
+
+`tests/check_stokes_publication_r4_1.py` performs the registered range/publication probes and
+bounded 64/256-grid complete-call timings, including preparation, first and five
+reused calls. An explicit `--root` may select the original code in a separate
+process; the observer script hash is recorded separately. This is not a broad
+benchmark or proof of universal speedup. The original favourable three-iteration
+special-case preconditioner is unchanged. See the
+[scientific review](TECTONICS_PLAN.md#3cr4-1-publication-review).
+
+### Obtained review evidence
+
+All 1,854 tests pass, including 38 new publication/scaling/physical-control tests.
+The complete 256-by-256 reused-call median changed from 0.068989 s to 0.072163 s
+in the bounded sequential comparison (about 4.6% more elapsed time). Three
+MINRES iterations remained sufficient in that specific geometry. The 64-by-64
+comparison was faster after correction, but these timings are not a universal
+speedup claim. The extra SI-output adequacy check is retained rather than
+sacrificing accuracy for the smaller timing. All repetitions and setup costs
+are in [the review record](../evidence/3cr4-1-review-measurements.json).
+The two ordinary workloads have exactly matching old/new force, velocity and
+pressure arrays; divergence diagnostics and source-bound result identities
+are intentionally updated. A genuine dev26 snapshot also restores unchanged,
+without retroactively claiming the new publication guarantee.
+
+### Matrix-free ordinary path and a separate small direct reference
+
+`PreparedStokes2D` captures one named grid, R3 constant law, explicit SI scales,
+pressure gauge and solve policy. Physical constant viscosity is divided out with
+corresponding pressure/force scales; the RHS is normalised by its maximum absolute
+force. Exact-zero force has an exact-zero result. Scientific precision, grid,
+physical model and tolerances are never reduced after admission or convergence
+failure. All physical outputs remain binary64 SI arrays.
+
+MINRES applies the symmetric augmented MAC operator using native array stencils.
+The velocity preconditioner is an exact **discrete** separable inverse in this
+specific geometry: DST-I on wall-normal interior nodes, DCT-II on wall-tangential
+cell centres, retained spectral eigenvalues, inverse transforms. Pressure's
+mean-zero Schur block is identity after constant-viscosity scaling; its constant
+mode is paired with the gauge multiplier. Full residual checks remain necessary
+in finite precision. This is not a preconditioner claim for variable coefficients,
+irregular supports, non-free-slip boundaries or a 3D spherical shell.
+
+The explicit `method='direct'` route assembles the operator from independent
+Kronecker/face-incidence stencils and retains SuperLU factors. It is a small
+verification route, not automatically selected on failed MINRES. No dense inverse
+is formed. Later thermal/nonlinear work must distinguish reusable symbolic geometry
+from numeric factors that become invalid when coefficients change.
+
+### Resource bounds, native threads and cancellation
+
+Preparation reserves existing source/context storage and O(N) spectral/operator
+metadata. The direct route additionally reserves `64*N_unknowns^2` bytes as a
+conservative dense-fill factor/work allowance before sparse assembly, rather than
+assuming favourable fill. This intentionally limits the direct control under a
+finite budget. The normal matrix-free path needs only linear retained/workspace
+admission; transform complexity is O(N log N). Independent task-level parallelism
+is not used to split a globally coupled stress solution into separate plates.
+
+The existing WorkBudget admits captured forces, RHS, MINRES vectors, FFT scratch,
+independent residuals and immutable publication before allocation. FFT workers are
+explicitly one. The existing coordinated native-thread lease also limits linked
+BLAS work to one, without a second executor/control subsystem. A plan has one
+driving thread and one active solve; another thread may signal cancellation through
+an event, not concurrently mutate/close its native state. Native calls complete
+before resource release; cancelled calls leave the retained plan reusable.
+
+Current policy bounds unknowns, direct-reference size and iterations. They are
+explicit request limits, not permanent metre/planet product ceilings. A budget is
+an admission estimate, **not a process RSS cap**; caller-retained outputs, interpreter
+and native allocators still require headroom. Nonfinite or unrepresentable SI
+conversions and unsuitable spectral condition estimates fail explicitly.
+
+### Source identity, persistence and independent gates
+
+Existing `ExecutionContext` checks current source bytes, loaded callables and
+constants before/after each complete solve, not inside every Krylov iteration.
+The new modules and selected native FFT/SuperLU binaries participate in the runtime
+record; this is still not a recursively sealed system-library deployment. Reused
+context identifiers avoid redundant whole-context validation inside publication.
+Changes in grid, scales, law, boundary or numerical policy alter the prepared
+identity; changes in forcing/provenance/epoch/time alter the result identity.
+
+MINRES `info=0` alone is insufficient. Independent ghost-stencil momentum, all-cell
+divergence (without gauge correction), gauge multiplier/mean pressure and discrete
+mechanical work must pass the separately registered limits. The sparse direct
+reference and continuous manufactured cases test more than one matrix assembly.
+The two linear solvers may differ at round-off and are NOT claimed bit-identical.
+Repeated same-route outputs are deterministic in the tested environment.
+
+The sole persistence path remains lossless Zstd/Blosc2 ArrayStore with verified
+chunks and deduplication. A snapshot includes the full steady problem and actual
+u/w/p/divergence/forcing arrays, not mutable factors. Cold restoration does not
+re-run a solver or replace old source identities. Evolving-state recovery remains
+an explicit future R4 requirement, not inferred from restoring a steady snapshot.
+
+### Reproducible bounded evidence and next work
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tests/check_stokes_r4_1.py
+python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/visual/directory
+```
+
+The first command is the regression suite, not a world run. The second compares
+16/24-cell-per-axis direct and iterative cases, plus 64/128/256 iterative cases,
+with three reused calls and separate preparation/first calls. Input construction
+is outside timing. It records every repeat, actual iteration counts, native thread
+environment, admitted memory, numerical agreement and exact restored-array identity.
+No speed ratio is generalised to nonlinear or whole-planet workloads; native direct
+factorisation can be faster at small sizes while its memory scaling is worse.
+New evidence goes into distinct `3cr4-1-*.json` files, never historical repins.
+
+The visual tool labels supplied temperature separately from solved velocity and
+pressure. Raw staggered arrays remain authoritative; centred arrows are rendering
+interpolation. Visual review is recorded after inspection, not automatically green
+because PNG files exist. This component establishes no thermal trajectory, Tosi
+convection solution, pressure-dependent rheology, coupled localisation or geological
+acceptance. **Continue with R4.2; do not mark R4 complete or jump to R5.**
+
+## Historical revision 29 — retained R3 numerical hardening
+
 <a id="3cr3-stress-arithmetic"></a>
 
 ## Current: R3 stress arithmetic hardening — 19 September 2026

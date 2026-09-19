@@ -1,0 +1,15 @@
+{
+  "schema": "atlas.r4-3-historical-restore.v1",
+  "source_version": "0.1.0.dev29",
+  "decoder_version": "0.1.0.dev30",
+  "state_id": "e483a272c6173f0a5595316bb6cd38abe148a6bac91d858f590474671ac6500f",
+  "descriptor_exact": true,
+  "all_arrays_exact": true,
+  "changed_source_continuation_refused": true,
+  "refusal": "continued state source/policy changed; no automatic rebind",
+  "historical_acceptance_not_relabelled": true,
+  "arrays": {
+    "composition": "e1b1c8fe3eb751448d6e330909cf229037a8bc0a18313a92ba2ed16b44182bf8",
+    "temperature_k": "41c7f66c7aa6f10d3ead3bda4ef6a41f865d9a631df81d707cad80ff2684d438"
+  }
+}

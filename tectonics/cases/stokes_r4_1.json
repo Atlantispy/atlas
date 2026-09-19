@@ -1,0 +1,90 @@
+{
+  "schema": "atlas.stokes-r4-first-increment.v1",
+  "case_id": "3C-R4.1-constant-viscosity-box-1",
+  "branch": "remake",
+  "baseline_commit": "c0a097be2150a8df4f0de7ccd3f6224c317c65e5",
+  "status": "WORKING_NON_CANON",
+  "R4_status": "IN_PROGRESS",
+  "R4_complete": false,
+  "increment": "R4.1 constant-viscosity mechanical core",
+  "next_increment": "R4.2 heat evolution and conservative composition transport",
+  "continuation": [
+    {"stage": "R4.1", "scope": "2D constant-viscosity steady mechanics", "status": "implemented; only registered numerical component acceptance"},
+    {"stage": "R4.2", "scope": "heat evolution, composition transport, explicit material/heat accounts and time convergence", "status": "not_started"},
+    {"stage": "R4.3", "scope": "variable viscosity and yielding, nonlinear coupling to retained R3 laws", "status": "not_started"},
+    {"stage": "R4.4", "scope": "applicable Tosi convection benchmarks, evolving-state recovery and combined R4 acceptance", "status": "not_started"}
+  ],
+  "verification_families": {
+    "T08": "manufactured velocity/pressure, force residual, divergence, pressure null-space, free-slip boundary treatment",
+    "T14": "zero-forcing, force separation, hydrostatic balance and discrete mechanical work; no time coupling yet",
+    "T15": "source-bound steady snapshot restoration and refusal of stale live preparations; not a thermal restart",
+    "PT01-PT06": "native bulk/stencil and FFT work, retained preconditioner or LU, shared finite admission, source-sensitive identity",
+    "PT09-PT11": "cooperative cancellation, local cleanup, existing lossless Zstd snapshots and deduplication",
+    "PT13-PT14": "native dependency identity and bounded cold/reused complete-call comparison; Linux only"
+  },
+  "equations": {
+    "momentum": "-grad(p) + eta*laplacian(v) + f = 0; eta constant and div(v)=0",
+    "continuity": "div(v)=0; all cells retained",
+    "stress_note": "For constant eta and incompressibility, div(2 eta e)=eta laplacian(v). This identity must NOT replace variable-viscosity stress divergence in R4.3.",
+    "pressure": "dynamic pressure with zero domain mean; not absolute pressure, not input to a pressure-sensitive rheology",
+    "coordinates": "uniform rectangle; x right, z upward from bottom; metres. R2 inward depth requires an explicit transform.",
+    "boundary": "all four walls impermeable/free slip: zero normal velocity, zero normal derivative of tangential velocity",
+    "forcing": "explicit body-force density at interior velocity faces, N/m^3; consumed once; no hidden density, gravity, plate velocity or slab traction",
+    "time": "snapshot time in a named epoch labels the input only; no elapsed interval is integrated"
+  },
+  "discretisation": {
+    "placement": "MAC: pressure at cell centres, u and w on their respective faces; normal wall DOFs eliminated",
+    "order": "centred second-order space on the registered smooth rectangular cases",
+    "adjoint": "G=-D.T with uniform cell/dual-cell weights; no checkerboard pressure null mode",
+    "gauge": "symmetric augmented [A,G,0;G.T,0,c;0,c.T,0], c=ones/sqrt(Np); multiplier checked, no continuity row dropped",
+    "normal_path": "matrix-free native stencils + MINRES with exact discrete separable velocity inverse and identity pressure/gauge preconditioning",
+    "preconditioner": "orthonormal DST-I on normal velocity nodes, DCT-II on tangential centres; velocity eigenvalues are sums of 4 sin^2(k*pi/(2n))/h^2, inverted by division; mean-zero pressure Schur block is identity in this special constant/free-slip geometry",
+    "reference_path": "small independently assembled sparse Kronecker/face-incidence system, SuperLU factor reused; explicitly selected, never fallback",
+    "density_interpolation": "optional explicit arithmetic cell-to-interior-face average on this uniform support; not a general conservative remap",
+    "tensor_and_signs": "assembled A=-laplacian, G=grad p, rhs=f; hydrostatic and warm-upward body-force tests. Tosi's printed sign ambiguity is NOT resolved by asserting a full convection comparison."
+  },
+  "default_policy": {
+    "method": "minres",
+    "max_unknowns": 400000,
+    "direct_max_unknowns": 4096,
+    "max_iterations": 128,
+    "krylov_rtol": 1e-12,
+    "momentum_tolerance": 1e-9,
+    "divergence_tolerance": 1e-10,
+    "gauge_tolerance": 1e-12,
+    "work_balance_tolerance": 1e-9
+  },
+  "numerical_contract": {
+    "dtype": "binary64; no fast-math or precision downgrade",
+    "scaling": "reuse explicit R3 DiffusiveScales and constant RheologyProfile; divide out constant viscosity; force-normalise rhs to max absolute component=1 (zero case exact)",
+    "residuals": "independent ghost/central stencil momentum and full uncorrected cell divergence, not only MINRES info or algebraic augmented residual",
+    "tolerance_basis": "new registered residual limits exceed binary64 stencil round-off at the bounded tested grids while remaining far below measured O(h^2) continuum errors; separate momentum, continuity, gauge and work gates. They are not physical uncertainties or relaxed historical tolerances.",
+    "work_units": "force-normalised dimensionless mechanical work over the box; not a local heat source or thermal evolution",
+    "range": "finite scales/coefficient spectrum, velocity block condition estimate <=1e12, finite SI fields; unrepresentable conversions fail explicitly",
+    "limits": "owner-configurable per-request admission/work limits, not universal Atlas resolution ceilings; no automatic coarsening, weakening tolerance or backend substitution"
+  },
+  "analytical_cases": {
+    "manufactured": "psi=A sin(kx*x) sin(kz*z); u=psi_z, w=-psi_x; p=P cos(ax*x) cos(az*z). Derive continuous f=eta*(kx^2+kz^2)*v+grad(p), independently of the discrete matrix.",
+    "main_parameters": {"A":0.05,"P":0.3,"velocity_modes":[1,1],"pressure_modes":[2,1],"square_grids":[8,16,32,64]},
+    "expected_refinement": "second-order velocity and pressure errors, asymptotic ratios approximately four; fixed independent continuous input, never regenerated expected answers from the solver",
+    "rectangular": "unequal physical extents/spacings, 2n by n cells, width=3 m height=1 m",
+    "other": ["zero forcing", "hydrostatic vertical pressure sign", "horizontal conservative force", "no checkerboard pressure mode", "random-force direct versus iterative", "superposition and reversal", "SI scale invariance", "R3 Boussinesq warm-upward response"]
+  },
+  "primary_sources": [
+    {"source":"PETSc DMStag tutorial ex2", "url":"https://petsc.org/release/src/dm/impls/stag/tutorials/ex2.c.html", "used":"rectangular isoviscous staggered Stokes layout, free-slip boundary and pressure-nullspace reference. Atlas derives its own trigonometric cases and implementation; tutorial code was not copied. PETSc's displayed forcing sign differs from Atlas's explicit f convention.","retrieved":"2026-09-19"},
+    {"source":"SciPy MINRES API", "url":"https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.minres.html", "used":"symmetric indefinite solve, preconditioner/callback/iteration-limit API. Installed SciPy 1.17.0 was inspected and tested; online page may describe a newer release.","retrieved":"2026-09-19"},
+    {"source":"SciPy SuperLU API", "url":"https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html", "used":"explicit sparse CSC reference factorisation and repeated solve; not an added dependency", "retrieved":"2026-09-19"},
+    {"source":"Atlas derivation", "used":"free-slip MAC sine/cosine diagonalisation and pressure Schur identity, independently checked against dense and sparse operators. This special-case preconditioner is not a claim about nonlinear, irregular or spherical systems."}
+  ],
+  "bounded_execution": {
+    "comparisons": [16,24],
+    "larger_iterative_grids": [64,128,256],
+    "repeats": 3,
+    "timing_scope": "preparation (context, operators/factors), first complete call, then three reused complete calls including validation/residual/publication; not isolated process startup",
+    "native_threads": 1,
+    "memory": "existing WorkBudget; O(N) matrix-free path; explicit direct reference reserves conservative dense-fill 64*N^2 plus linear retained allowance before assembly. Not a process RSS cap.",
+    "out_of_scope": "no broad performance programme, R1 reacquisition, whole-world simulation, dependency installation or Windows/macOS claim"
+  },
+  "acceptance": {"implementation":"new evidence/3cr4-1-tests.json", "numerical_component_only":true,"physical_validation":false,"R4_complete":false,"thermal_evolution":false,"composition_transport_2d":false,"variable_viscosity":false,"Tosi_convection_benchmark_reproduced":false,"evolving_restart":false},
+  "unsupported": ["nonuniform/adaptive or spherical/3D grids", "nonzero normal boundary flow, no-slip, tractions or free surface", "variable viscosity, yielding or damage feedback", "thermal and composition time evolution", "coupled localisation or tectonic plate/terrain generation", "full W01/W03/W07 or R4 completion", "platform/release acceptance beyond exercised Linux cases"]
+}

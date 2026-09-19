@@ -1,0 +1,67 @@
+{
+  "schema": "atlas.thermochemical-review-r4-2.v1",
+  "case_id": "R4.2-corrective-review",
+  "branch": "remake",
+  "baseline_archive": "Atlas_Remake_3C_R4_2_Thermochemical_Evolution_2026-09-19.zip",
+  "baseline_sha256": "14848ff86e8af279b3818457fa7e857cdbb3b97157ff46623460abdbbdaed3ff",
+  "scope": "Correction of arithmetic/clock defects and removal of unused insulated work; same finite-volume Strang/SSPRK2 equations and original validity envelopes.",
+  "defects": {
+    "insulated_offset": "Buoyancy reference temperature must not control diffusion conditioning. Alpha=0 isolates identical physics in the offset probe.",
+    "source_product": "Nonzero subnormal weight*dt was prematurely rounded before multiplication by a large source mode.",
+    "clock": "A 3 s request at epoch 1e16 s was integrated as 3 s but the stored clock advanced by 4 s. Odd subnormal half-intervals also cannot preserve the requested duration."
+  },
+  "numerical_guards": {
+    "incremental_max_rate_dt": 0.5,
+    "clock_relative": 2e-11,
+    "clock_policy": "min(inventory_rtol, clock_relative); no silent timestep change",
+    "publication_contract": "atlas.thermochemical-conditioned-diffusion-and-clock.v1",
+    "legacy": "Original metadata/identity decode exactly; do not attach current contract or silently rebind source."
+  },
+  "verification": {
+    "new_tests": "test_thermochemical_review_r4_2.py",
+    "performance_grids": [
+      64,
+      256
+    ],
+    "coupled_grid": 128,
+    "reused_repeats": 5,
+    "diffusion_boundaries": [
+      "fixed-top-bottom",
+      "insulated"
+    ],
+    "physical_controls": [
+      "independent dense diffusion exponential",
+      "heated steady parabolic continuum cell averages",
+      "insulated variance decay",
+      "composition/complement covariance",
+      "axis transpose",
+      "independent source and boundary energy"
+    ],
+    "prior_tests": "Retain every original test and tolerance; no R1 reacquisition or convection benchmark claim."
+  },
+  "references": [
+    {
+      "url": "https://pages.nist.gov/fipy/en/stable/numerical/discret.html",
+      "use": "Finite-volume control-volume and shared-face heat/material accounting"
+    },
+    {
+      "url": "https://gkeyll.readthedocs.io/en/latest/dev/ssp-rk.html",
+      "use": "SSPRK2 composition, not unconditional stability of every spatial scheme"
+    },
+    {
+      "url": "https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.dst.html",
+      "use": "Orthogonal DST-II half-grid reflection convention"
+    },
+    {
+      "url": "https://www.clawpack.org/pyclaw/evolve/limiters.html",
+      "use": "MC limiter definition; no external code copied"
+    }
+  ],
+  "R4_complete": false,
+  "R4_status": "IN_PROGRESS",
+  "R4_3_started": false,
+  "next_increment": "R4.3 variable-viscosity/yielding mechanics; then R4.4 combined benchmark acceptance",
+  "physical_validation": false,
+  "Windows_or_macOS_tested": false,
+  "default_native_route": "unchanged fused Numba transport, matrix-free mechanics, bounded native transforms and existing lossless storage"
+}
