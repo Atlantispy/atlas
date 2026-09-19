@@ -1,8 +1,188 @@
 # Atlas tectonics simulation plan
 
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 27 | 19 September 2026**
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 29 | 19 September 2026**
 
-## Current review cleanup and owner decisions
+<a id="3cr3-stress-hardening"></a>
+
+## Current R3 numerical hardening and review workflow
+
+**19 September 2026, version `0.1.0.dev25`, revision 29.** A review found that
+`stress_and_dissipation()` could return zero heat after squaring a tiny strain
+rate even when the final heat rate was representable. For viscosity 1e100 and
+strain diag(1e-170, -1e-170), the previous zero is replaced by approximately
+4e-240 in the caller's consistent units. This is an extreme arithmetic test,
+not an observed failure of a mantle-scale simulation.
+
+The equations remain `tau = 2*eta*e`, `Q = tau:e = 2*eta*sum(e_ij^2)`.
+Mantissa/exponent evaluation avoids premature overflow/underflow in `2*eta`,
+`e^2` and the strain invariant. Each component of tau is evaluated independently;
+Q is summed at a power-of-two-normalised scale before final range conversion.
+Finite subnormal results are retained. A non-zero physical result that rounds to
+zero, or a result outside finite binary64 range, is refused explicitly. Zero
+strain is still a valid zero response. Symmetry and tracelessness use the existing
+64-epsilon relative criterion in normalised coordinates; no physical tolerance,
+source data, constitutive parameter or original test is changed.
+
+New tests independently contract exact input floats using Decimal, including
+ordinary scales, underflow/overflow counterexamples, subnormal outputs, 3D
+invariants, broadcasting, detached arrays and memory refusal/release. Numerical
+identities depend on the changed source, so historical records are not repinned.
+**R4 remains unstarted.** The current R3 laws and registered physical scope below
+are unchanged, and no new mantle model or PDE solver is added.
+
+**Owner review convention:** a request to check whether the current stage is
+accurate/optimised authorises fixing verified defects in that stage, not only
+listing them. Diagnose, repair, test and report the change without another
+approval loop for a scoped correction. It does not authorise a new stage,
+scientific-model substitution, tolerance relaxation, publishing, dependency
+installation or destruction of historical evidence. Include a copy-ready Git
+changelog in each delivery response, and perform meaningful actual-code visual QA.
+
+<a id="3cr3-physical-closure"></a>
+
+## Current: R3 local physical closure
+
+**Package `0.1.0.dev25`.** The selected local constitutive laws, material-point
+memory update and an explicit fixed-length regularisation primitive are delivered
+in [`physical_closure_r3.json`](../cases/physical_closure_r3.json). These are actual
+array kernels and independent numerical tests, not a Stokes/convection solution.
+**R4 is next and has not started.** R1's registered source-use approval and strict
+source discrepancies remain unchanged. R2's accepted static-input/sampling scope
+is retained; W01, W03 and W07 are not declared complete. Historical statuses below
+must be read in their dated context.
+
+### Selected models, not a universal mantle law
+
+The order is the constant-viscosity analytical control, the Tosi et al. (2015)
+local-law benchmark family, then the Becker & Fuchs (2023) strain-memory family
+with a damage-free control. The full published methods and relevant parameter
+tables were read before implementation. The exact locations, access limits and
+primary-repository corroboration are recorded in the case file. No publication
+PDF, ASPECT/CitcomS source, new PB2002 data or new dependency is bundled.
+
+For the Tosi reference, `e = (grad(u) + grad(u).T)/2`,
+`eII = sqrt(e:e/2)` and `q = sqrt(2)*eII`. The implemented local formulae are
+
+```
+L = exp(-log(contrast_T)*T + log(contrast_z)*z)
+P = eta_star + sigma_Y/q
+eta = 2/(1/L + 1/P)
+```
+
+The Frobenius norm in `P` and factor **two** in the harmonic mean follow the
+source; neither is silently replaced by a conventional yield cap. Table-1 cases
+1 and 3 use `L` directly. Cases 2, 4 and 5a use the harmonic law, with the named
+source values. At zero strain rate and positive sigma_Y its viscosity tends to
+`2*L`; zero-stress variants have their separate analytical limit. Case 5b's
+periodic-regime survey and all Nusselt/velocity convection comparisons are **not**
+run or accepted here. Sources: [Tosi et al., equations 6–10 and Table 1](https://doi.org/10.1002/2015GC005807).
+
+For the selected BF2023 **model-19 local-law subset**, define
+
+```
+eta_T = eta0*exp(E/(T+1) - E/2)
+f = 1 - Gamma*min(d,dcrit)/dcrit
+sigma_y = (a+b*z)*f
+eta = min(eta_T, sigma_y/(2*eII))
+h(T) = B*exp(-Ed/(T+1) + Ed/2)
+D_t d = eII - h*d
+```
+
+The registered values are E=40, eta0=1, a=1e6, b=1.51e7, dcrit=10, Gamma=0.9,
+Ed=46.1 and B=2.44e9. Gamma=0 supplies the damage-free control. This reproduces
+local equations 6–8 and their table values, **not** the paper's full spherical
+experiment. Asthenospheric/melt multipliers, continental rafts, empirical 0.1
+time rescaling and unspecified absolute viscosity-clipping bounds are absent,
+not hidden defaults. This family is not relabelled microphysical grain damage.
+Source: [Becker & Fuchs, section 2.3, equations 6–8 and Table 1](https://doi.org/10.1029/2023GC011179).
+
+Damage is an unbounded strain-like history within an explicit computational
+limit. Only its **strength effect** saturates; stored damage above dcrit is not
+clipped away. Initial damage must be supplied explicitly, including a deliberate
+zero. For constant strain rate and temperature over one supplied interval,
+`d_new = d*exp(-h*dt) + eII/h*(1-exp(-h*dt))` is evaluated with stable small-h
+limits. This is not a spatial advection method or exact integration for varying
+thermal/mechanical fields. Existing W02 histories are not silently converted.
+
+### Units, force ownership and R4 boundary choices
+
+Local rheology inputs use T,z in [0,1], with finite parameter/rate/history
+limits and binary64 arithmetic. SI conversion requires a named `DiffusiveScales`:
+`t0=L^2/kappa`, `u0=kappa/L`, `stress0=eta_ref/t0` and `rate0=1/t0`.
+The **diffusive length and depth normalisation are separate required quantities**
+(radius versus layer thickness must not be conflated). The 20°C material library
+is unchanged and is never extrapolated into these phenomenological laws.
+Optional viscosity bounds are explicit numerical choices; every clipped point
+is reported, and no floor is treated as measured strength or localisation length.
+
+The local thermochemical reference is the selected constant-property Boussinesq
+approximation, with `rho'=-rho0*alpha*(T-Tref)+delta_rho*C`, `f=rho'*g`,
+`q=-k*grad(T)` and reference heat capacity `rho0*cp`. Each SI material profile
+names its source and validity interval. C is a supplied volume fraction in
+[0,1], not a renamed plate or provenance ID. The R4 Tosi control has C=0, no
+compositional strength multiplier and H=0. A future continental-strength model
+requires its own explicit profile; the BF continental-raft extension is not
+silently selected. The viscous stress/dissipation helper takes a traceless
+symmetric strain tensor; it refuses compressible input rather than inventing a
+bulk law or hiding divergence by automatic trace removal.
+
+The pressure variable for the initial R4 box is dynamic pressure with an
+Atlas-selected zero-domain-mean gauge. It is **not** fed into the depth-only
+BF yield law, a high-pressure EOS or a tensile/friction law. Free-slip, impermeable
+walls, fixed top/bottom temperatures and insulated sides are selected for the
+Tosi unit box. These are recorded boundary choices, not an implemented boundary
+assembler. Body-force density owns thermal/compositional buoyancy once; no extra
+slab-pull traction, prescribed plate motion, latent heat or adiabatic work is
+added. Viscous dissipation can be computed separately and included only through
+the explicit heat-source argument when that approximation is selected.
+
+**Source-convention issue retained:** the printed Tosi momentum equation's
+right-hand-side sign with its stated upward unit vector does not directly match
+Atlas's `-grad(p)+div(tau)+rho'*g=0` body-force convention. The density/gravity
+implementation in the tagged ASPECT benchmark was checked and supports warm
+upward buoyancy. This is not an author-confirmed erratum. The case records the
+three exact ASPECT file identities. R4 must verify assembly signs, tensor factors,
+pressure normalisation and the full numerical benchmark before claiming its
+convection solution reproduces the paper. R3 local-law tests do not settle a
+future PDE comparison by omission.
+
+### Fixed length and what remains unaccepted
+
+An **explicit Atlas-selected extension**, separate from both published local
+controls, solves `d_bar - ell^2*d_bar_xx = d` on a 1D cell-centred uniform support
+with zero normal gradient at its ends. The positive physical ell does not change
+with mesh size. The banded SPD operator is tested against independent dense and
+analytic modal solutions, including second-order refinement at fixed ell,
+constant preservation, integral preservation and non-negativity. Its linear
+factorisation is reused; no dense inverse, numerical viscosity floor or repeated
+mutation of raw history is used as a substitute for a physical length.
+
+**This operator verification is not a mesh-independent coupled localisation
+result.** The primitive is optional and never silently alters the BF reference
+input. Raw history and a strength-driving filtered field must remain distinct.
+A 2D/3D coupled shear-band model, its boundary behaviour and a physically justified
+length require R4/R5 verification before localisation is claimed. The first R4
+control is constant viscosity, followed by the unchanged Tosi local laws; it does
+not depend on pretending this later gate is already passed.
+
+### Evidence and stage completion
+
+The existing verification runner discovers the new law, execution/storage and
+case/visual tests. Obtained results are retained in `evidence/3cr3-tests.json`;
+finite matched-work comparisons and length-refinement evidence are in
+`evidence/3cr3-measurements.json`. `tools/visual_r3.py` generates actual temperature,
+yield, healing, length-response and buoyancy curves with source/result identities.
+Visual review is a separate recorded step; plots are not physics acceptance.
+
+The existing [execution reference](OPTIMISATION_REFERENCE.md#3cr3-execution)
+specifies native batching, measured serial/thread selection, resource admission,
+source-sensitive reuse and exact lossless persistence. **Every implementation
+delivery now includes a copy-ready changelog in the accompanying response**,
+as well as precise before/after hashes and grouped diffs. Historical case/test/
+reference/evidence bytes remain unchanged. AGPL-3.0-only is the selected code
+licence; the PB2002 licence and notices remain separate.
+
+## Retained cleanup decisions — revision 27
 
 Package `0.1.0.dev23` fixes interpreter-link portability and clarifies the working
 documentation, evidence delivery and visual QA. R1 remains complete only for its
@@ -34,8 +214,9 @@ physical acceptance. Never use plausible-looking illustrations as code evidence.
 A stage with no meaningful visual observable records that limitation explicitly.
 See the [execution and delivery rules](OPTIMISATION_REFERENCE.md#cleanup-execution).
 
-**Licence remains an owner decision.** No code licence is applied by this cleanup.
-The pinned reference-data attribution and licence remain unchanged and separate.
+**Licence update (revision 28):** the owner selected AGPL-3.0-only after the
+cleanup. It now applies to Atlas-owned code. The pinned reference-data attribution
+and licence remain unchanged and separate.
 
 ## Historical revision 26 delivery
 
@@ -518,7 +699,8 @@ thermal boundaries and nondimensionalisation. Do not present this reference as a
 compressible, phase-changing, elastic or full free-surface model.
 
 Start with constant-viscosity verification, then reproduce one published
-viscoplastic specification before adding memory. Proposed memory prototype:
+viscoplastic specification before adding memory. The revision-28 local implementation now selects the BF2023 model-19 subset
+described [above](#3cr3-physical-closure). The original design direction was
 strain-weakening with temperature-dependent healing in the Fuchs/Becker family
 (PF-C03/C04), with a damage-free control. In general form,
 \(D_t d=S_d-\mathcal H_d\); this is an interface, **not an already selected
@@ -533,7 +715,7 @@ microphysical grain-damage theory in PF-C02.
 | --- | --- | --- |
 | **3C-R1 — Reference data and success criteria (scoped reference uses delivered)** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
 | **3C-R2 — Initial state before final plate labels (bounded static delivery in revision 25)** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
-| **3C-R3 — Freeze the physical closure** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
+| **3C-R3 — Freeze the physical closure (local laws and 1D length primitive delivered)** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
 | **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
 | **3C-R5 — Process experiments, not decorative contours** | Test weak-zone reactivation against healed/undamaged controls; inherited-structure rifting; segmented spreading and transform development; one-sided subduction with an appropriate surface/interface treatment; curved-trench fragmentation and small-block formation. Use 3D regional geometry when the claimed feature varies along strike. Run paired cases that change one causal ingredient rather than fitting every output. | Each process reproduces its selected independent benchmark/analogue constraints and remains stable under refinement and rotated mesh orientation. Do not require damage to have one universal effect, place a plume beneath every ridge, infer polarity from convergence, or count a 2D cross-section as an along-trench fragmentation test. A failed family remains unsupported. |
 | **3C-R6 — Spherical dynamics and plate identification** | Extend the verified formulation to a coupled 3D spherical shell, using globally consistent metric terms and pressure/interface treatment. Existing surface patches are output geometry, not a ready volume mesh. Recover coherent surface regions from independently calculated velocity/strain/damage fields, and fit Euler rotations to candidate interiors. Keep distributed deformation explicitly represented. | Spherical benchmark and rotation/seam tests, conservation, parameter and resolution sensitivity, declared spin-up and sample-selection rules, rigidity residuals and stable segmentation thresholds. A warm-up ends by registered diagnostics, not because one image looks Earth-like. Never prescribe Euler poles then claim recovering them proves independent rigidity. |
@@ -1282,11 +1464,13 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Next separately authorised task:** 3C-R3 — freeze the selected physical closure.
+**Next separately authorised task:** 3C-R4 — verify the thermal/mechanical core.
+R3's local-law and 1D regularisation-primitive scope is delivered under revision 28;
+coupled localisation and full benchmark reproduction remain explicit R4/R5 gates.
 R2's registered initial-state/sampling envelope is delivered under revision 25;
 its remaining general W01 responsibilities are explicit above. R1's reviewed
 uses stay complete under revision 24, while strict consistency and external-model/
-historical validation remain distinct unpassed claims. **R3 is not started.** Follow the
+historical validation remain distinct unpassed claims. **R4 is not started.** Follow the
 [explicit sequence](#plate-formation-implementation-plan). Causal formation later
 requires the named W03/W07 subset; do not smuggle it into an unrelated W01 update.
 Retain the current statistical candidates as controls, the existing geometry and

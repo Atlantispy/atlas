@@ -1,8 +1,142 @@
 # Atlas optimisation reference
 
+<a id="3cr3-stress-arithmetic"></a>
+
+## Current: R3 stress arithmetic hardening — 19 September 2026
+
+**Version `0.1.0.dev25`, plan revision 29.** This is a local numerical correction,
+not a new physical closure. The former evaluation squared the strain invariant
+before multiplying by viscosity, causing avoidable underflow; `2*eta` and the
+invariant itself could also overflow before a representable final product.
+
+The normal path remains native binary64 array work. `frexp` splits viscosity,
+each strain component and the largest tensor magnitude into binary significands
+and integer exponents. `ldexp` applies the combined exponent only after bounded
+significand multiplication. Heating uses a power-of-two-normalised square sum,
+with both off-diagonal entries retained, before the final conversion. There are
+no logarithmic approximations, dense inverses, extended-precision hot paths,
+per-point Python loops or arbitrary epsilon rates. Decimal appears only in the
+independent test oracle. True final overflow or a non-zero output rounded to zero
+is refused; representable subnormals remain supported.
+
+The helper no longer calls `strain_rate_invariant` just to repeat capture,
+normalisation and validation, or computes a square root only to square it again.
+Symmetry and trace checks share normalised input. Read-only broadcast views,
+in-place stress buffers and existing immutable publication are retained. The
+unchanged WorkBudget subsystem admits capture, mantissas/exponents, scratch,
+outputs and immutable copies before allocation; it is not a process-RSS cap.
+
+Run `python -I -B tectonics/tests/check_stress_hardening_r3.py` for the bounded
+current-source probe. Optional `--baseline <prior tectonics directory>` compares
+the untouched previous source in an isolated process. The 8,192/65,536-point
+full-call timings include validation, capture and output publication. The first
+call and five repeats are recorded; inputs are constructed outside timing and
+no universal speedup is claimed. New structured records preserve the old failing
+probe separately from corrected results. No historical evidence is overwritten.
+
+Accuracy/optimisation reviews include repair of verified in-stage defects under
+the owner's standing instruction, followed by tests, meaningful visual QA and
+a response changelog. That convention does not permit later-stage development,
+new dependencies, source repinning, numerical downgrades or automatic Git writes.
+
+
+<a id="3cr3-execution"></a>
+
+## R3 local-law implementation (original delivery) — 19 September 2026
+
+**Version `0.1.0.dev24`, plan revision 28.** The science and exact source locations
+are in [the maintained plan](TECTONICS_PLAN.md#3cr3-physical-closure) and
+[`physical_closure_r3.json`](../cases/physical_closure_r3.json). This increment
+implements local viscosity/yield/memory, force/heat accounting and a 1D physical-
+length operator, not the R4 thermal/Stokes solver. R1 and R2 are not repeated.
+
+### Native work and measured scheduling
+
+`evaluate_rheology` uses binary64 native array operations and bounded buffered
+iteration (32,768 points by default), supporting strided/broadcast arrays without
+point-by-parameter object graphs. Analytical zero-rate and zero-healing limits
+avoid arbitrary epsilon rates. The memory update uses `expm1` for small intervals.
+An explicit range/refusal is preferred to numerical zero, an altered law or a
+hidden viscosity clamp. Registered parameter profiles remain immutable.
+
+`PreparedRheology` captures mutable input once into compact immutable bytes,
+reuses those bytes for calculation/hashing, and shares the existing verified
+source context. An optional explicit `ExecutionPolicy` connects to the existing
+bounded `KernelExecutor`; no new worker pool implementation exists. Only independent
+local evaluations are batched, not successive physical timesteps. Ordered output
+assembly preserves the same arrays and result identity for serial and threads.
+
+**The normal path is native bulk serial.** The finite local-law workloads did not
+establish a repeatable thread speed advantage once source checks, capture and
+output publication were included. Optional auto/thread policies remain available
+for owner-measured workloads; there is no automatic whole-solver speed claim or
+reason to impose threading on small ufunc batches. R2's separate measured point
+threshold and cell defaults are unchanged. The new measurement driver records
+first calls, setup, each repeat and both modes, not just a favourable timing.
+
+The 1D regularisation operator factors an SPD banded matrix once and reuses the
+factor in O(n) solves. It does not form a dense inverse. An independent flux
+residual, positivity, integral and modal/refinement tests constrain its numerical
+behaviour. This does not certify coupled localisation or a 2D/3D solver.
+
+### Memory, cancellation and persistence
+
+The existing `WorkBudget` admits the source context, full input capture, held
+batch outputs, final assembly, per-job native scratch, banded factor and store
+operations. Admission estimates are not process-RSS limits; caller-retained
+completed outputs and allocator/interpreter baselines need additional headroom.
+Excess requests fail rather than changing precision, law, history or resolution.
+The complete request's count bound applies before jobs are submitted. A failed
+or cancelled worker aborts siblings and drains active native work before releasing
+reservations; a failed request does not poison the pool. Closing a live plan or
+its executor from the wrong driving thread is refused without discarding its
+live reservation. No unbounded task queue is added.
+
+New loaded modules participate in the existing callable/source inventory. The
+SciPy LAPACK binary is recorded for the banded solver alongside existing SciPy
+runtime identities. Profile, named scales, source/runtime and method identity
+bind the output; worker count/order does not. Interpreter link portability and
+source/data/compiled-extension link protections retain the cleanup contract.
+
+`LawResult` holds complete local inputs, outputs, exact profile/scales and original
+source identity. Memory-step records include before/after damage and interval.
+`save_law_result`/`load_law_result` use the existing lossless Zstd/Blosc2 `ArrayStore`,
+verified chunks and deduplication. Restore validates recorded definitions and
+result identity without rerunning the model or rebinding historical bytes to the
+current context. No new storage system or lossy history is introduced. Hashes
+identify the record; they do not authenticate an outside producer's claims.
+
+### Bounded evidence and visual inspection
+
+From a clean checkout in the separately documented environment:
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py > fresh-r3-tests.json
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tests/check_constitutive_r3.py > fresh-r3-measurements.json
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/visual_r3.py --output r3-visuals
+```
+
+The output directory must be new. The visual tool publishes its five figures,
+raw curve arrays and a manifest atomically. A successful render remains
+`RENDERED_AWAITING_VISUAL_REVIEW`; inspection must be recorded separately. These
+are material responses and an authored fixed-length test, not invented mountains
+or evolved plate boundaries. The local references are independent scalar/decimal,
+analytic and dense-matrix checks, not cross-code full-convection acceptance.
+Linux evidence does not establish Windows/macOS, global scale or physical validity.
+
+Every delivery response includes a **copy-ready commit title and changelog**,
+covering actual changes, tests, provenance and important limits. Keep structured
+JSON evidence; routine new unittest logs remain local. Preserve old evidence,
+include exact before/after hashes, and distinguish a complete package from its
+review patch. The owner applies/commits/pushes manually. The selected code
+licence is AGPL-3.0-only; third-party terms remain separate.
+
 <a id="cleanup-execution"></a>
 
-## Current: portability and review cleanup — 19 September 2026
+## Historical: portability and review cleanup — 19 September 2026
 
 **Package `0.1.0.dev23`, maintained plan revision 27.** No equations, scientific
 cases, R1 source-use policy, measured R2 execution thresholds or physical scope

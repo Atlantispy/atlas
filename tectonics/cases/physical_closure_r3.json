@@ -1,0 +1,348 @@
+{
+  "schema": "atlas.physical-closure-r3.v1",
+  "case_id": "3C-R3-local-closure-1",
+  "branch": "remake",
+  "baseline_commit": "210e377905891a4d4ed714337d73954fef7dd9a6",
+  "status": "WORKING_NON_CANON",
+  "scope": "R3 local constitutive evaluation, fixed-coefficient material-point memory and a one-dimensional nonlocal length operator; NOT R4 thermal/Stokes solution",
+  "primary_sources": [
+    {
+      "id": "PF-C14",
+      "doi": "10.1002/2015GC005807",
+      "authors": "Tosi et al.",
+      "year": 2015,
+      "title": "A community benchmark for viscoplastic thermal convection in a 2-D square box",
+      "url": "https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1002/2015GC005807",
+      "used": "Full main-paper model/benchmark methods; equations 1-11 and Table 1 (printed pages 2176-2179). PDF equations/table visually inspected.",
+      "access": "Publisher PDF read through research tool on 2026-09-19; no local PDF byte/hash claimed.",
+      "not_obtained_or_not_used": "Supplementary numerical convection tables are not used; no Nu/RMS/stagnant/mobile/periodic-flow benchmark result is claimed by R3."
+    },
+    {
+      "id": "PF-C04",
+      "doi": "10.1029/2023GC011179",
+      "authors": "Becker and Fuchs",
+      "year": 2023,
+      "title": "Generation of Evolving Plate Boundaries and Toroidal Flow From Visco-Plastic Damage-Rheology Mantle Convection and Continents",
+      "url": "https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2023GC011179",
+      "used": "Full article theoretical/numerical methods section 2.3, equations 6-8, Table 1/model19 and associated notes; Appendix A supplementary discussion.",
+      "access": "Publisher full text including in-article Appendix A read on 2026-09-19; no publication PDF or CitcomS code is redistributed.",
+      "not_reproduced": "Spherical convection, asthenosphere/melt masks, continental rafts, empirical 0.1 time rescaling, unspecified exact viscosity clipping bounds or published plate/velocity spectra."
+    },
+    {
+      "id": "ASPECT-TOSI-SIGN-CHECK",
+      "repository": "geodynamics/aspect",
+      "ref": "v3.0.0",
+      "purpose": "Check thermal density/gravity convention against an actual benchmark implementation, not copy code or benchmark performance.",
+      "files": {
+        "benchmarks/tosi_et_al_2015_gcubed/Tosi_base.prm": "389f084fdf9cefaf27a09576100a6e5fabdd0ca9",
+        "benchmarks/tosi_et_al_2015_gcubed/tosi.cc": "def6629ea401db0ddc95a03988e40088bd647d3b",
+        "source/gravity_model/vertical.cc": "77cb9c434bde25459d5f8ab4ef6cffb5aad1d773"
+      },
+      "source_identity": "Git blob IDs from the primary repository; files inspected, not redistributed.",
+      "observation": "The material model reduces density for warming; vertical gravity has a negative final Cartesian component. This agrees with the Atlas rho_anomaly*g convention."
+    }
+  ],
+  "reference_profiles": {
+    "constant": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "constant-unit-viscosity-v1",
+      "family": "constant",
+      "source": "Atlas analytical verification control",
+      "parameters": [
+        [
+          "eta",
+          1.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "eec93b3a029ff775a3f616f284df6b652893ff4619f02c0b7bda312d1f37402a"
+    },
+    "tosi-1": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "tosi-1-constitutive-v1",
+      "family": "tosi-linear",
+      "source": "10.1002/2015GC005807",
+      "parameters": [
+        [
+          "contrast_T",
+          100000.0
+        ],
+        [
+          "contrast_z",
+          1.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "c8be619db8c0531d4b2cc4930785028ab8b553197759838567d0b9d21750893c"
+    },
+    "tosi-2": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "tosi-2-constitutive-v1",
+      "family": "tosi-plastic",
+      "source": "10.1002/2015GC005807",
+      "parameters": [
+        [
+          "contrast_T",
+          100000.0
+        ],
+        [
+          "contrast_z",
+          1.0
+        ],
+        [
+          "eta_star",
+          0.001
+        ],
+        [
+          "sigma_y",
+          1.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "4fe0ba349cf938119ce0dd085caffc7971e866a8da444c655d89eed679535002"
+    },
+    "tosi-3": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "tosi-3-constitutive-v1",
+      "family": "tosi-linear",
+      "source": "10.1002/2015GC005807",
+      "parameters": [
+        [
+          "contrast_T",
+          100000.0
+        ],
+        [
+          "contrast_z",
+          10.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "79d26dd591ff224a81090bf5a6c0ddffe62eaf4970c8b725019e9673cd38af10"
+    },
+    "tosi-4": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "tosi-4-constitutive-v1",
+      "family": "tosi-plastic",
+      "source": "10.1002/2015GC005807",
+      "parameters": [
+        [
+          "contrast_T",
+          100000.0
+        ],
+        [
+          "contrast_z",
+          10.0
+        ],
+        [
+          "eta_star",
+          0.001
+        ],
+        [
+          "sigma_y",
+          1.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "d34df75a5a5edd553001397afdc563c328c5e09cded118f5a47dc38599151f28"
+    },
+    "tosi-5a": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "tosi-5a-constitutive-v1",
+      "family": "tosi-plastic",
+      "source": "10.1002/2015GC005807",
+      "parameters": [
+        [
+          "contrast_T",
+          100000.0
+        ],
+        [
+          "contrast_z",
+          10.0
+        ],
+        [
+          "eta_star",
+          0.001
+        ],
+        [
+          "sigma_y",
+          4.0
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "a5afa04b0ff59c69541e07ebd4283f38842dc06841d7d827770bf56b52a7c6be"
+    },
+    "bf23-memory": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "bf23-memory-model19-local-v1",
+      "family": "bf23-memory",
+      "source": "10.1029/2023GC011179",
+      "parameters": [
+        [
+          "E",
+          40.0
+        ],
+        [
+          "eta0",
+          1.0
+        ],
+        [
+          "a",
+          1000000.0
+        ],
+        [
+          "b",
+          15100000.0
+        ],
+        [
+          "dcrit",
+          10.0
+        ],
+        [
+          "weakening",
+          0.9
+        ],
+        [
+          "B",
+          2440000000.0
+        ],
+        [
+          "Ed",
+          46.1
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "c62838781c1498b1e957536e73ea5692a4b9b3f503ae92818fe167fa4f6eb48f"
+    },
+    "bf23-no-damage": {
+      "method": "atlas.constitutive-r3.v1",
+      "name": "bf23-no-damage-model19-local-v1",
+      "family": "bf23-memory",
+      "source": "10.1029/2023GC011179",
+      "parameters": [
+        [
+          "E",
+          40.0
+        ],
+        [
+          "eta0",
+          1.0
+        ],
+        [
+          "a",
+          1000000.0
+        ],
+        [
+          "b",
+          15100000.0
+        ],
+        [
+          "dcrit",
+          10.0
+        ],
+        [
+          "weakening",
+          0.0
+        ],
+        [
+          "B",
+          2440000000.0
+        ],
+        [
+          "Ed",
+          46.1
+        ]
+      ],
+      "viscosity_bounds": null,
+      "profile_id": "b5a5d46a1b22b9cfccfd88269dd14a2c1b8d097b9bffb009c0f9de0537c72c55"
+    }
+  },
+  "equations": {
+    "strain": "e=(grad(u)+transpose(grad(u)))/2; eII=sqrt(e:e/2); tau=2*eta*e; dissipation=tau:e=4*eta*eII^2",
+    "tosi": "eta_lin=exp(-ln(contrast_T)*T+ln(contrast_z)*z); eta_plastic=eta_star+sigma_Y/(sqrt(2)*eII); eta=2/(1/eta_lin+1/eta_plastic). Cases1/3 use eta_lin directly.",
+    "tosi_zero_rate": "For positive sigma_Y, eta tends to 2*eta_lin. No invented positive strain-rate floor. For zero sigma_Y the plastic viscosity is eta_star, including the zero-rate limit.",
+    "bf23": "eta_T=eta0*exp(E/(T+1)-E/2); sigma_y=(a+b*z)*(1-Gamma*min(d,dcrit)/dcrit); eta=min(eta_T,sigma_y/(2*eII)). At eII=0 select eta_T.",
+    "memory": "Dd/Dt=eII-h(T)*d; h=B*exp(-Ed/(T+1)+Ed/2); B is a rate, not a time. Stored d is NOT clipped at dcrit.",
+    "memory_integrator": "Exact constant-T/constant-rate update using expm1; not an exact variable-coefficient or advective evolution method.",
+    "density": "rho_anomaly=-rho0*alpha*(T_K-Tref_K)+delta_rho*C; force=rho_anomaly*gravity_vector; rho0 remains the heat-capacity reference.",
+    "heat": "q=-k*grad(T_K); Q=Q_internal plus explicitly selected viscous dissipation once. No pressure/adiabatic/latent heat in the frozen Boussinesq reference."
+  },
+  "scales": {
+    "length": "Diffusive length L is explicit, not implicitly planet radius or layer thickness.",
+    "time": "L^2/kappa",
+    "velocity": "kappa/L",
+    "stress": "eta0*kappa/L^2",
+    "strain_rate": "kappa/L^2",
+    "temperature": "(T_K-Tsurface_K)/delta_T_K",
+    "depth": "depth_m/depth_scale_m; separately required",
+    "rayleigh": "rho0*g*alpha*delta_T*L^3/(kappa*eta0)",
+    "source_interpretation": "BF model19 is registered as a local dimensionless law subset. No unique Earth SI scaling is inferred from its paper or the R2 room-temperature catalogue."
+  },
+  "frozen_solver_contract_for_R4": {
+    "PDE": "div u=0; -grad p+div(2 eta e)+rho_anomaly*g=0; rho0 cp DT/Dt=div(k grad T)+Q; DC/Dt=0",
+    "pressure": "Dynamic pressure only with a zero-mean gauge in the closed box; hydrostatic reference already removed. The gauge is an explicit Atlas choice; ASPECT example uses zero surface average. Gauge-invariant velocity comparisons are distinct from pressure comparisons.",
+    "coordinates": "Cartesian x horizontal, y upward; z depth downward. Gravity supplied as a vector; no longitude or vertical sign guessed.",
+    "first_case": "Tosi unit square, constant viscosity verification followed by published variable/viscoplastic cases.",
+    "mechanical_boundaries": "All four walls impermeable free-slip: u dot n=0, tangential traction=0. No free surface, moving topography or elastic lid.",
+    "thermal_boundaries": "Ttop=0, Tbottom=1, insulated sidewalls; internal heating H=0 for Tosi.",
+    "initial_temperature": "T=1-y+0.01*cos(pi*x)*sin(pi*y), as source equation11; NOT evolved here.",
+    "composition": "Uniform C=0 for the first benchmark. Optional Boussinesq density contrast is an explicit local material coefficient, not a default continental rheology/mixture law.",
+    "damage_control": "Tosi benchmark has no damage. BF local law is a distinct memory-bearing candidate with Gamma=0 control; not spliced into and called the Tosi benchmark.",
+    "heating_control": "The BF publication uses internally heated convection; that is recorded context, not silently applied to the Tosi bottom-heated box.",
+    "forcing_ownership": "Buoyancy is applied once as a body force. No separate slab-pull traction or prescribed plate velocity in this closed benchmark. Future tractions require a separately named case showing non-duplication.",
+    "preflight": "Initial damage and strain-rate inputs must be explicit. Missing temperatures or pressure-dependent properties are not zeros; absent R4 fields/BCs block a solver run.",
+    "printed_momentum_sign_note": "Tosi printed eq2 puts +Ra*T*e_y on the right and calls e_y upward. Atlas does not silently copy that sign into its left-side body-force formulation. Its explicit density/gravity convention makes warm buoyancy upward and is checked against ASPECT v3.0.0 benchmark density and gravity definitions. No author-confirmed erratum is claimed. R4 must reconcile its assembled sign/gauge/normalisation before claiming the complete published benchmark."
+  },
+  "regularisation": {
+    "method": "atlas.damage-helmholtz-1d.v1",
+    "origin": "Atlas-declared numerical/model extension, not Becker-Fuchs equation7/8 or a microphysical grain-size law.",
+    "equation": "d_bar - ell^2*d_bar_xx = d with zero normal derivative at endpoints",
+    "meaning": "Strength may consume explicitly selected filtered d_bar; raw d remains retained. ell is a named positive physical length independent of grid spacing.",
+    "discretisation": "Uniform cell-centred 1D finite volume; SPD tridiagonal M-matrix; reusable banded Cholesky.",
+    "verification": "Constant/zero state, positivity, integral, independent dense solve, discrete cosine eigenvalue and continuum second-order refinement.",
+    "not_accepted": "No 2D/3D regularisation, mesh-independent coupled shear-band width or localisation/plate-generation acceptance. These remain mandatory R4/R5 tests, not waived by this operator."
+  },
+  "numerical_policy": {
+    "dtype": "binary64",
+    "fast_math": false,
+    "temperature_depth_interval": [
+      0,
+      1
+    ],
+    "rate_max": 1e+16,
+    "stored_damage_max": 1000000000000.0,
+    "elapsed_max": 1000000000000.0,
+    "viscosity_bounds": "No default clipping in the local reference presets. Explicit named bounds report floor/ceiling codes; never measured strength or mesh regularisation.",
+    "unknowns": "Explicit initial damage required for BF laws. No phase/temperature/pressure/stress law inferred from a reference-density mineral record.",
+    "thresholds": "Existing tolerances unchanged. New constitutive tests use independent case-specific round-off bounds; no physics uncertainty inferred from these bounds."
+  },
+  "execution": {
+    "normal": "Prepared, native vectorised bulk serial; measured local-law tests did not justify default threading.",
+    "parallel": "Optional explicit auto/threads policy uses the existing bounded KernelExecutor, global point admission and deterministic ordered assembly. No process mode.",
+    "memory": "Captured inputs, source context, retained batch outputs and final result bytes admitted. Not a process-RSS cap.",
+    "identity": "Exact profile+method+runtime/source+input/output bytes; worker count, chunking and timings excluded.",
+    "storage": "Existing lossless Zstd ArrayStore, self-contained profile/scales/inputs/outputs and original context identity; no fresh store implementation."
+  },
+  "bounded_measurements": {
+    "points": [
+      65536,
+      262144
+    ],
+    "repeats": 4,
+    "warmup": 1,
+    "regularisation_cells": [
+      24,
+      48,
+      96
+    ],
+    "timing": "Complete calls with input capture, source checks, computation, publication/hash. Setup/first call recorded separately. Shared process/library caches, not isolated cold processes."
+  },
+  "acceptance": {
+    "local_implementation": "verification required",
+    "coupled_solver": false,
+    "physical_validation": false,
+    "production_ready": false,
+    "Windows_tested": false,
+    "R1_changed": false,
+    "R4_started": false
+  }
+}

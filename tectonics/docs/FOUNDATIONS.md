@@ -1,4 +1,27 @@
-# Review cleanup: current scope
+# R3 current local-law contract
+
+Version `0.1.0.dev24`, [plan revision 28](TECTONICS_PLAN.md#3cr3-physical-closure),
+adds local constitutive and material-point memory calculations, not a solver.
+The original foundations and every retained case/test remain unchanged.
+[`physical_closure_r3.json`](../cases/physical_closure_r3.json) is the exact
+registration; the [execution reference](OPTIMISATION_REFERENCE.md#3cr3-execution)
+defines resource/reuse/storage behaviour. R4 has not started.
+
+Use `eII=sqrt(e:e/2)`. Tosi's plastic denominator uses `sqrt(2)*eII` and its
+harmonic mean has factor two; its linear controls are not passed through that
+mean. BF2023's plastic cap uses `sigma_y/(2*eII)`, with a separate prescribed
+strain-memory law. The code and decimal/scalar tests preserve these differences.
+Zero-rate/zero-healing limits are analytical; missing initial damage is an error.
+Do not infer a mantle law from the unchanged room-temperature material catalogue.
+
+The selected 1D no-flux length operator is an explicit Atlas extension. Its
+fixed-length modal/refinement tests do not certify a coupled localisation model.
+The local force convention is `rho_anomaly*g`; warm material has upward buoyancy
+under downward gravity. The printed-source sign/normalisation issue is recorded
+for R4 rather than hidden by a benchmark claim. Pressure-dependent yielding,
+elasticity, general creep and high-pressure phase laws remain unimplemented.
+
+# Historical review cleanup: scope at revision 27
 
 Version `0.1.0.dev23` changes interpreter-path handling and diagnostic presentation,
 not equations or their tolerances. The [maintained plan](TECTONICS_PLAN.md) revision

@@ -10,7 +10,7 @@ from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
 from .flexure import PeriodicFlexure
 
-__version__ = "0.1.0.dev23"
+__version__ = "0.1.0.dev25"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
@@ -121,3 +121,14 @@ __all__ += ['GeologicalDomain', 'InputOrigin', 'CoolingHistory', 'MaterialVolume
 
 from .precursor_execution import PrecursorExecutionPolicy
 __all__ += ["PrecursorExecutionPolicy"]
+
+# R3: local physical closure and tested execution; no coupled PDE solver.
+from .constitutive import (ConstitutiveLimits, DiffusiveScales, RheologyProfile,
+    reference_rheology, evaluate_rheology, advance_memory, strain_rate_invariant,
+    BoussinesqMaterial, boussinesq_response, stress_and_dissipation)
+from .constitutive_execution import PreparedRheology, LawResult, save_law_result, load_law_result
+from .damage_regularisation import DamageLengthScale, PreparedDamageRegularisation
+__all__ += ["ConstitutiveLimits", "DiffusiveScales", "RheologyProfile", "reference_rheology",
+    "evaluate_rheology", "advance_memory", "strain_rate_invariant", "BoussinesqMaterial", "stress_and_dissipation",
+    "boussinesq_response", "PreparedRheology", "LawResult", "save_law_result", "load_law_result",
+    "DamageLengthScale", "PreparedDamageRegularisation"]

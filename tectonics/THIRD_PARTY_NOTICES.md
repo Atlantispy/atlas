@@ -2,9 +2,14 @@
 
 ## Atlas code
 
-An Atlas code licence has not yet been selected by the owner. This notice is
-attribution and inventory, not a new licence grant. A future project licence must
-identify its intended code scope and must not overwrite third-party licences.
+Atlas-owned source, tests and supporting code are licensed **AGPL-3.0-only**.
+The complete [licence text](LICENSE) is included in this package. The repository's
+`LICENSING.md` records the owner's scope and third-party exclusions. This replaces
+the earlier, unapplied Apache proposal; it does not change third-party terms.
+
+The R3 implementation is original Atlas code based on the cited equations. The
+Tosi (2015) and Becker & Fuchs (2023) publications are cited, not bundled or
+relicensed. No CitcomS or ASPECT implementation was copied into this delivery.
 
 ## PB2002 reference data
 

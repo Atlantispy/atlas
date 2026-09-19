@@ -9,7 +9,66 @@ neither `engineering/work` nor `shared_generator`. Historical bindings, numerica
 limits, checkpoints, `main` and the original Windows installation remain separate.
 
 
-## Current cleanup — version `0.1.0.dev23`, plan revision 27
+## Current R3 — version `0.1.0.dev25`, plan revision 29
+
+The [R3 arithmetic correction](docs/TECTONICS_PLAN.md#3cr3-stress-hardening)
+fixes premature underflow/overflow in stress and viscous heating without changing
+the physical equations. Non-zero unrepresentable outputs now fail explicitly;
+finite subnormals and exact zero-strain responses remain supported. The actual
+review convention is to fix verified in-stage defects, test the result and supply
+a Git changelog, rather than stop at reporting the issue. Historical source-bound
+reports remain intact; fresh results are `evidence/3cr3-hardening-tests.json` and
+`evidence/3cr3-hardening-measurements.json`.
+
+The [R3 local physical closure](docs/TECTONICS_PLAN.md#3cr3-physical-closure) is
+implemented: constant and Tosi benchmark rheology, one sourced BF2023 memory/
+healing model with a damage-free control, explicit thermochemical force/heat
+accounting, and a separately declared 1D fixed-length regularisation primitive.
+**R4 is next and has not started.** A local viscosity or healing curve is not a
+convection solution, localisation acceptance or geologically accepted world.
+R1/R2 and their source restrictions remain unchanged. Historical delivery
+paragraphs below describe their dated scope.
+
+```python
+from atlas_tectonics import PreparedRheology, reference_rheology
+
+# Named dimensionless local reference; initial damage is deliberately supplied.
+with PreparedRheology(reference_rheology("bf23-memory")) as law:
+    response = law.evaluate(temperature=[0.0, 0.5, 1.0], depth=0.1,
+                            strain_rate_ii=1.0, damage=0.0)
+    memory = law.advance(damage=20.0, strain_rate_ii=0.0,
+                         temperature=0.0, elapsed=1.0)
+viscosity = response.array("viscosity")  # immutable result, not mantle calibration
+healed_damage = memory.array("damage_after")
+```
+
+T and depth must be in [0,1]. SI input requires a named `DiffusiveScales` with
+**separate diffusive length and depth normalisation**; outputs remain explicitly
+scaled and retain that conversion record. Do not pass kelvin/metres as if they
+were dimensionless. Pressure is not a hidden yield-law input. Numerical
+viscosity bounds are optional, explicit and diagnosed, not measured strength.
+The 1D length operator is an Atlas extension, not an unlabelled change to the
+published model or evidence of mesh-independent coupled shear bands.
+
+The normal evaluator uses native buffered serial operations; threaded evaluation
+is available through the existing bounded execution policy. The finite measured
+workloads did not justify threading by default. Full inputs, profile, outputs,
+scales and source identity can be saved/restored with the existing lossless store.
+See [execution and evidence](docs/OPTIMISATION_REFERENCE.md#3cr3-execution).
+
+From the repository root in the declared environment, the new bounded checks are:
+
+```sh
+python -I -B tectonics/tests/check_constitutive_r3.py
+python -I -B tectonics/tools/visual_r3.py --output r3-visuals
+```
+
+The second command needs the existing optional `visual` extra and a new output
+directory. It renders actual local-law, healing, buoyancy and fixed-length curves
+with their numerical data and source identities; inspection is a separate step.
+Every implementation delivery includes a copy-ready Git changelog in its response.
+
+## Historical cleanup — version `0.1.0.dev23`, plan revision 27
 
 The R2 initial-state/sampling and optimisation scope is unchanged. This cleanup
 fixes linked-interpreter portability, consolidates engineering methods, improves
@@ -99,10 +158,11 @@ Routine new `.log` transcripts are ignored; structured JSON and unique diagnosti
 evidence are retained. Already tracked historical logs and source records remain
 unchanged. Optional visual PNGs stay in the ignored output directory by default.
 
-**No Atlas code licence has been selected or applied.** Apache-2.0 remains a
-proposal requiring Michael's explicit choice and scope. The data licence is not a
-code licence. See [third-party notices](THIRD_PARTY_NOTICES.md). This cleanup does
-not silently grant new rights or relicense the older repository.
+**Atlas-owned code is licensed AGPL-3.0-only**, as selected by the owner on
+19 September 2026. See [the complete licence](LICENSE) and
+[project scope](../LICENSING.md). PB2002 and other third-party material retain
+their existing licences; see [third-party notices](THIRD_PARTY_NOTICES.md). The
+earlier unapplied Apache proposal is superseded, not an alternative grant.
 
 
 ## Current cleanup evidence

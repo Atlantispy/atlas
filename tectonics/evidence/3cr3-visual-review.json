@@ -1,0 +1,32 @@
+{
+  "schema": "atlas.r3-visual-review.v1",
+  "date": "2026-09-19",
+  "reviewer": "ChatGPT",
+  "status": "NO_OBVIOUS_RENDER_OR_RESPONSE_ANOMALY_IN_FIVE_REGISTERED_PLOTS",
+  "programmatic_manifest_sha256": "f7b6c2bf8593bf9d8af1a47d79083d27a1baada7d57d33781727520b1f926869",
+  "source_unchanged": true,
+  "files_inspected": {
+    "01_viscosity_temperature.png": "4d02333ff0d5800d010748c531c942815dedcc2d0c52aaf53fee3a85ed4b0b73",
+    "02_yield_weakening.png": "5c0491a3f59da702e79be519191153b19d3d25bd16f19b847320db298a232ad1",
+    "03_memory_healing.png": "84f3f5d4f84fac65f12298907f4d5b0e0ffd7c31bb91846f1e0e33376144f96b",
+    "04_fixed_length_refinement.png": "2b09d5d913a5aa68fb367abb33b812b49d3f214105caa367d24b39bdc9dbaa9f",
+    "05_buoyancy_sign.png": "438cf8ed64a650a678768591f42ea6abf6b56ba6d0c831dc5208842092857788"
+  },
+  "checks": [
+    "Viscosity uses the declared dimensionless temperature/depth/rate; source profile labels match the actual output records.",
+    "Yield-stress plateaus decrease in the registered damage order. The most damaged curve is already yielding at the lowest plotted rate; this is not a missed initial segment or new strain localisation.",
+    "Healing starts at stored damage 20 and crosses the strength-saturation threshold 10 smoothly; higher held temperature heals faster without capping initial history.",
+    "Fixed physical length is unchanged across 24, 48 and 96 cells. The numerical curves approach the independent continuum reference; this is not a coupled shear-band-width check.",
+    "Warm thermal anomalies create upward body force under downward gravity; explicit buoyant composition shifts the curves upward. Values are an authored SI demonstration, not calibrated mantle observations.",
+    "No clipped labels, incorrect units, nonfinite drawn values, invented spatial geometry or fictitious convection output were observed."
+  ],
+  "limits": [
+    "Qualitative visual inspection is not exhaustive numerical or physical acceptance.",
+    "These local constitutive plots do not exercise antimeridian or polar geometry; those outputs were not changed by R3.",
+    "The yielding plot deliberately spans a broad rate range; the rate sampling is not an exact drawing of the nonsmooth transition.",
+    "Owner visual review remains pending."
+  ],
+  "owner_visual_review_completed": false,
+  "physical_validation": false,
+  "R4_started": false
+}

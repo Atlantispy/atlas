@@ -93,7 +93,7 @@ def _normal_code(code):
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
 _IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution")
+                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation")
 
 
 def _source_bytes():
@@ -186,10 +186,12 @@ def _runtime_record(backend):
         try:
             import scipy
             import scipy.special._ufuncs as sf
+            import scipy.linalg._flapack as lapack
         except ImportError as exc:
             raise TectonicsError("requested scipy runtime unavailable") from exc
         versions["scipy"] = scipy.__version__
         binaries["scipy_special"] = _loaded_binary(sf.__file__)
+        binaries["scipy_lapack"] = _loaded_binary(lapack.__file__)
     if backend == "numba":
         import numba, llvmlite
         import numba._helperlib as helper
