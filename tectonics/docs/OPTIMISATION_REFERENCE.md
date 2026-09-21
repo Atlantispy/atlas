@@ -1,5 +1,587 @@
 # Atlas optimisation reference
 
+<a id="3cr4-4-preconditioner-reuse-execution"></a>
+
+## Current: dev39 request-local velocity ILU reuse
+
+**Package `0.1.0.dev39`, maintained plan revision 43, 20 September 2026.**
+
+The assessed guarded four-use option is integrated through the existing owned
+mechanics plan. Reuse never means stale equations: only the approximate velocity
+ILU may lag; physical operator and pressure approximation remain current. The
+factor-origin hash is never relabelled with the new viscosity. Exact-coefficient
+cache hits remain allowed across calls; approximate reuse state does not.
+
+An active Tosi-plastic request admits `64*cells + 262144 + 2048*max_picard_iterations`
+additional bytes for coefficient copies, guard scratch and bounded decision records.
+The existing retained factor budget and 1 GiB runner default remain unchanged.
+Strain-independent cases allocate no request history. Python/compiler/native, database,
+exception traceback and caller-retained result memory require separate headroom;
+WorkBudget is not a hard RSS limit. Cancellation is cooperative at existing boundaries.
+
+The numerical linear body, current-law residual checks and independent sparse-direct
+route remain unchanged. A rebuild failure or GMRES failure propagates without retry.
+Each request records origin hashes and deterministic guards; actual cache-hit/build
+counts remain outside result identity. All request references clear in `finally`.
+Source verification includes the policy/helper module and is not skipped or cached.
+The analyser checks policy agreement in all recorded stages and saved state records.
+
+Matched performance must include guards, result/seed capture and both stages;
+preparation, first calls and endpoint sampling are separate. Fewer factor builds
+alone are not proof of faster complete timesteps. Expensive long-running numerical
+campaigns remain bounded/exported tasks, not appended to implementation work.
+
+<a id="3cr4-4-cross-step-start-execution"></a>
+
+## Current: dev38 checkpoint-owned cross-step seeds
+
+**Version `0.1.0.dev38`, maintained plan revision 42, 20 September 2026.**
+
+The opt-in `previous-stage1` mode extends the existing typed `NonlinearStokesGuess`
+and storage path, not a new scheduler or persistence engine. The accepted state owns
+one immutable u/w/p seed from its solved second stage. `state.next_initial_guess`
+is read-only; `state.array_names` includes the three `next_guess_*` arrays only on
+v2 cross-step endpoints. Stage-0 data and full stage results do not accumulate across
+steps. The old v1 numerical fields and default semantics remain supported.
+
+The core step admits an additional `1024*cells + 524288` bytes while capturing the
+second full result, immutable seed and successor state. State capture adds
+`128*cells + 262144` bytes. Existing save/decode admission uses the expanded `nbytes`;
+all arrays/metadata share the existing snapshot transaction and checksum machinery.
+Caller-retained outputs need separate headroom. Admitted memory is not a process-RSS
+cap; Python/compiler/native/database/exception objects still need external headroom.
+The benchmark WorkBudget is not increased to accommodate starting data.
+
+The input guess is read only from the explicit accepted state. Both new physical
+operators use current viscosity, and the existing exact-byte factor reuse/rebuild
+rule is unchanged. Failed/cancelled steps neither publish partial starting data nor
+silently cold-retry. Mechanical diagnostics do not alter future starting data.
+
+The runner stores the policy in its immutable configuration and captures input/output
+seed provenance for EVERY accepted step. The auditor checks previous-state and
+previous-stage links through the complete ledger and checks all stored seed arrays
+through the typed state decoder, including off-cadence saved endpoints. A complete
+saved v2 state is sufficient for exact next-step reconstruction without its parents.
+The first state remains an unseeded v1 initialisation; subsequent cross steps require
+complete v2 data. Source/runtime/start/algorithm changes remain explicit refusals.
+
+Measured comparisons must include seed capture and all stage work. Report preparation,
+first cold step, saving and endpoint diagnostics separately. The benchmark fixture
+arrays are explicit new-source initialisations, never rebound old trajectories. The
+Anderson/previous-stage1 combination is the exercised candidate, not a universal
+fastest-method claim. Long-run and refined nonlinear adequacy remain R4.4 work.
+
+<a id="3cr4-4-anderson-execution"></a>
+
+## Current: dev37 request-local Anderson execution
+
+**Version `0.1.0.dev37`, maintained plan revision 41, 20 September 2026.
+Anderson integration only; R4.4/R4 remain IN_PROGRESS.**
+
+The opt-in `AndersonPolicy` is forwarded to the coupled plan's existing owned
+mechanical plan. Both transport stages and independent cold endpoint diagnostics
+use that plan, without duplicating retained ILU memory. The existing compiled
+operator, fixed sparse structure and current-coefficient factor rebuilds remain
+unchanged. Picard's branch and default metadata remain unchanged when acceleration
+is not selected. Default starting mode remains `zero-rate`; `rk-stage0` is still a
+separate explicit intra-step starting policy.
+
+Each accelerated solve admits additional history/mixing scratch before allocation:
+`8 * unknowns * (8 * (depth + 1) + 32) + 262144` bytes. At default depth five this
+is 640 bytes per unknown plus 262144 bytes. It conservatively covers bounded image
+and error histories, difference matrices, proposal vectors, least-squares scratch
+and additional law/diagnostic work. The reservation releases on success, cancellation,
+linear failure or rejected requests. Retained caller results, interpreter, compiler,
+LAPACK/native allocator and database memory need external headroom; WorkBudget is
+not an OS RSS cap. No runner budget is raised to accommodate this feature.
+
+No nonlinear history is cached across requests. Mixed vectors, errors and output
+buffers have private ownership. Failed proposals may keep the already-computed
+Picard image, but no failed physical linear solve is retried with changed tolerances,
+direct mechanics, a different timestep or a cold fallback. Native calls and SVD
+remain cooperatively cancellable at their existing boundaries, not hard interruptible.
+
+The new source module, policies, helper functions and actual least-squares callable
+alias enter the existing live callable/source inventory. Verification frequency is
+not reduced. Algorithm controls and safeguard counts are saved in mechanical/stage
+provenance; standalone records retain per-iteration decisions. The runner, auditor
+and renderer use the same declared option. Resume uses frozen policies and refuses
+resupplied algorithm options; receipt/configuration/source identities remain mandatory.
+
+New invocations opt in with `--nonlinear-solver anderson`; adding
+`--nonlinear-start rk-stage0` also enables the existing intra-step guess. No old
+trajectory is rebound to dev37. This release is a complete scoped package with a
+single dev36 Sparse Structure patch base (SHA-256
+`0327283a8d57be7d8d2bb99fc367d30a492b4f0736a68a35949881d25254526c`).
+The separately named Sparse Layout build must not be substituted by version label.
+
+Performance evidence compares full prepared timesteps at identical inputs/settings,
+with first-call/preparation and cold endpoint costs reported separately. Bare mixing
+or standalone first-stage gains must not be labelled whole-campaign speedups.
+
+
+<a id="3cr4-4-sparse-template-execution"></a>
+
+## Current: dev36 fixed sparse-structure execution reuse
+
+**Version `0.1.0.dev36`, maintained plan revision 40, 20 September 2026.
+Optimisation item 4 only; R4.4/R4 remain IN_PROGRESS.**
+
+Prepared GMRES mechanics now owns an immutable geometry-only CSC template for the velocity
+block. Preparation constructs fixed CSC indices/indptr plus ordered contribution tables. At
+each new viscosity field, the compiled fill routine reads the current centre/vertex viscosity
+and writes a fresh numerical data vector; the resulting CSC matrix uses the fixed structure.
+No viscosity value or factor is retained by the template. Existing exact coefficient-keyed ILU
+reuse remains unchanged: changed viscosity still rebuilds the factor.
+
+The explicit direct reference does not allocate/use the template and keeps the predecessor
+SciPy sparse expression. This preserves an independent construction route. Source/native
+identity includes the new fill callable/options. Template tables are read-only, and factor
+construction cannot mutate them. Numerical data/results are fresh per request.
+
+The retained template is admitted at `768 * nx * nz + 8` bytes; a conservative transient
+build allowance is separately reserved while constructing it. If actual retained bytes exceed
+the bound, preparation refuses. This is WorkBudget admission, not total-process RSS. The
+extra one-time preparation cost is measured separately from warm per-step timings.
+
+The first prototype, which precomputed algebraically equivalent coefficient products, was
+rejected after round-off differences amplified in the nonlinear yielding trajectory. The
+retained implementation preserves dev35 operation association. Tests cover exact sparse-value
+reproduction, fresh/no-alias data, immutable viscosity-independent tables, factor rebuilds on
+changed viscosity, direct-route independence, budget refusal/release and source-callable
+invalidation.
+
+Isolated assembly improves by approximately **14.6x (16x16)** and **4.70x (64x64) and 5.34x (128x128)** on
+the exercised host. Developed case-2 prepared timesteps improve about **3.6% cold / 7.5%
+`rk-stage0`**, with exact physical arrays and identical iteration histories. Initial 64/128
+whole-step ranges overlap and do not establish a general speedup. No source checks, solver
+tolerances, timestep controls or nonlinear policies are weakened.
+
+Final regression, actual-run recovery/resource evidence and package hashes are bound to the
+frozen dev36 source. The item is an execution optimisation only; R4.4 physical acceptance
+remains separately gated.
+
+### Previous dev35 implementation and retained history
+
+<a id="3cr4-4-source-verification-execution"></a>
+
+## Current: dev35 streaming exact live verification
+
+**Version `0.1.0.dev35`, maintained plan revision 39, 20 September 2026.
+Optimisation item 3 only is selected; R4.4/R4 remain IN_PROGRESS.**
+
+Identity preparation still uses `_callable_inventory` to capture ordered tokens,
+constant bytes and loaded-code signatures. Repeated verification now scans live
+module and class dictionaries against held expected bindings instead of building
+new sorted member lists, a signature dictionary that is discarded, and a complete
+replacement token tuple. A no-defaults (`None`) path avoids needless recursive
+normalisation. Every mutable default and native option is still normalised each
+time; registered constants are still canonically encoded and compared each time.
+No acceptance cache, source mtime shortcut, delayed check or skipped nested check
+is introduced. `_source_bytes`, `_runtime_record` and the normaliser are unchanged.
+
+Each verification consumes a PRIVATE shallow copy of the expected-key table.
+It neither changes the retained baseline nor shares scratch across concurrent
+readers. Consuming every key detects missing entries and duplicate qualified
+names, not just a coincidentally equal count. Ambiguous names present at capture
+use the original full comparison, not a weaker fast path. The new comparison
+helper is checked before entering it as well as through the live inventory.
+Function/code identity uses held objects, so object-id recycling is not relied on.
+
+The additional retained Python lookup table shares existing token objects. Its
+memory is context/interpreter overhead, not an extra numerical array or a claim
+that WorkBudget bounds total RSS. Timing and allocation probes are separate:
+profiling/tracemalloc results must not be reported as unprofiled timestep timing.
+Current-byte source reads, method/default/constant/native-option checks and all
+original entry/exit checks continue. Arbitrary concurrent source mutation and
+hostile in-process modification are not made atomic or sandboxed by this change.
+
+The new test catalogue compares success/refusal with the retained full-inventory
+oracle, including live code, methods/descriptors, nested mutable defaults and
+constants, JIT options, same-size/same-time file edits, aliases, duplicate names,
+new/removed source and lifecycle/recovery controls. Preconditioning, compiled
+mechanics, nonlinear starts and their numerical acceptance gates are unchanged.
+
+### Obtained dev35 evidence
+
+The final frozen source passed **2,342 tests (51 new), zero failures/errors/skips**,
+with all **175** executable/case/test/tool hashes unchanged and
+`PASS_BOUNDED_CURRENT_PLATFORM`. The retained full-inventory method independently
+checks success/refusal equivalence. Same-length/same-mtime file changes, nested
+mutable defaults, methods/descriptors, JIT options, added/deleted aliases and
+qualified-name collisions remain detected.
+
+Seven unprofiled batches of 20 checks per backend measured verification time
+reductions of **26.6% (reference), 28.2% (SciPy) and 29.9% (Numba)**. The separate
+call profile retains six verification calls and six source-byte reads per coupled
+timestep in both cold and opt-in warm modes; no check is removed.
+
+Five unprofiled repetitions per version and mode compare complete prepared steps:
+
+| Workload, opt-in rk-stage0 | dev34 median, s | dev35 median, s | Less time | Repetition ranges overlap? |
+|---|---:|---:|---:|---|
+| Initial case 1 16×16 | 0.067993 | 0.054048 | 20.5% | No |
+| Developed case 2 16×16 | 0.960354 | 0.976468 | -1.7% | Yes |
+| Initial case 2 16×16 | 0.136271 | 0.123985 | 9.0% | No |
+| Initial case 1 64×64 | 0.222662 | 0.204905 | 8.0% | No |
+| Initial case 1 128×128 | 1.210126 | 1.201074 | 0.7% | Yes |
+
+Negative reduction means slower. Developed nonlinear and 128×128 measurements
+have overlapping ranges and do not establish a dependable complete-step gain;
+cold medians there were 3.0% and 2.7% slower respectively. Small initial cases
+show the clearest benefit. Preparation/first calls, all raw ranges and endpoint
+times are retained separately. These are not whole-campaign forecasts.
+
+All 11 compared physical arrays are byte-identical to dev34 in each of ten
+workload/mode pairs; iteration counts are unchanged. An actual warm 128×128
+four-step CLI/store run equals two fresh-process two-step segments after source
+relocation and store copying. A separate dev34 run gives identical temperature
+and composition bytes. Changed-source continuation is refused in both directions;
+changed starting policy is refused and the original partial store is unchanged.
+Peak admitted numerical memory remains **719,543,976 bytes**, with zero retained
+reservations, under the existing 1 GiB budget. Each retained expected-binding table
+has measured shallow size **51,968 bytes**, sharing captured tokens, plus one
+private shallow copy while checking. Python/JIT/database/native allocator headroom
+is separate; none of these observations is a total-process RSS cap.
+
+See `../evidence/3cr4-4-dev35-tests.json` and
+`../evidence/3cr4-4-dev35-measurements.json` for the source-bound results. Matching
+arrays and passing component/workflow tests do not complete mature convection,
+mesh/time/nonlinear adequacy, outstanding references or R4.4 campaign acceptance.
+
+### Previous dev34 implementation and retained history
+
+<a id="3cr4-4-intra-step-guess-execution"></a>
+
+## Current: dev34 explicit warm-input ownership and reproducible coupling
+
+**Version `0.1.0.dev34`, maintained plan revision 38. R4.4 and R4 remain IN_PROGRESS.**
+
+Only the selected initial-guess optimisation is added. General coupling and the
+R4.4 driver retain cold `zero-rate` defaults. New runs can explicitly select
+`--nonlinear-start rk-stage0`; that value enters the frozen run configuration and
+coupling plan identity. Resumption refuses resupplied/changed starting policy.
+The trajectory auditor checks the new per-stage links and agrees with each saved
+state's policy/ledger; it does not infer policy from low iteration counts.
+
+`NonlinearStokesGuess` owns immutable binary64 SI u/w/p bytes, a canonical bound
+descriptor and its own content identity. It is constructed from a current typed
+mechanical solution, or restored from its own complete saved descriptor/arrays.
+No recursive trajectory or previous solution is needed to decode it. It is NOT
+an accepted answer for another force/temperature. Solve input validation requires
+matching current plan/source, box, scales, rheology and epoch, and a nonfuture
+seed time. Normalisation uses the NEW force scale; current-zero forcing starts
+at zero. The current constitutive law is evaluated afresh from the seed velocity.
+Changed coefficients still rebuild the exact-key numerical factor. Every existing
+source and convergence check remains active. No automatic cold retry follows a
+warm failure, and no BF warm-start extension is implied.
+
+During a coupled step the stage-0 solution and its three-field guess are local
+variables. Their extra live memory and publication copies are conservatively
+admitted in the existing parent WorkBudget; the original memory ceiling is not
+raised. No starting-field reference is retained on the prepared plan across steps,
+including failed/cancelled calls. Caller-retained results or exception tracebacks
+need their own headroom. The retained mechanics contains only the existing one numerical
+factor, NOT a hidden last-velocity guess. Standalone caller-retained guesses need
+caller headroom, like retained solutions. Memory refusal remains MemoryLimitError,
+not an error reclassified as invalid physics. Compiler/interpreter/native allocator
+memory is still external headroom, not covered by a claim of OS RSS limiting.
+
+The accepted physical fields and stage identities fully determine future steps.
+A fresh process reconstructs stage 0 cold and then stage 1 from that stage-0 result;
+there is no extra numerical history to serialise into the two-field checkpoint.
+The final diagnostic endpoint remains independently cold-solved. Neither an RK
+stage nor a previous endpoint is relabelled as the next solved flow.
+
+Performance comparisons alternate cold/warm order across repeated serial runs,
+keep exact inputs/precision/tolerances/fill/timestep fixed, and report preparation
+and first calls separately from retained-plan operations. Compare actual complete
+steps as well as iteration counts, and include a pristine dev33 cold baseline so
+new validation/provenance overhead is not concealed by same-version comparisons.
+Do not multiply this speedup by old measured gains to forecast an unrun campaign.
+
+### Obtained dev34 verification and measured limits
+
+The frozen executable source passed **2,291 tests, including 47 new tests**,
+with zero failures/errors/skips and `PASS_BOUNDED_CURRENT_PLATFORM`. All
+173 source/case/test/tool hashes were unchanged during verification.
+Five serial unprofiled repetitions per route compare exact physical inputs and
+unchanged precision/timestep/ILU/convergence gates. Pristine dev33 and dev34 cold
+fields agree bit-for-bit across all five measured workloads; explicit-start
+results are close, **not** relabelled as bit-identical to cold results.
+
+| Workload | dev33 cold, s | dev34 cold, s | dev34 explicit start, s | Same-source speedup |
+|---|---:|---:|---:|---:|
+| Developed case 2, 16×16 timestep | 1.153824 | 1.186607 | 0.978180 | 1.213× |
+| Initial case 2, 16×16 timestep | 0.170884 | 0.157192 | 0.133826 | 1.175× |
+| Initial case 1, 16×16 timestep | 0.069182 | 0.068943 | 0.070019 | 0.985× |
+| Initial case 1, 64×64 timestep | 0.228984 | 0.223949 | 0.215555 | 1.039× |
+| Initial case 1, 128×128 timestep | 1.234523 | 1.225195 | 1.177197 | 1.041× |
+
+
+For developed case 2, stage 1 fell from 76 to 55 Picard iterations while stage 0
+remained cold with 75. The complete prepared timestep is 17.6% cheaper within
+dev34 and 15.2% cheaper than the matched dev33 cold baseline on this host. Initial
+case 2 falls from 11 to 6 stage-1 Picard iterations. Case-1 Picard counts remain
+1/1, although the supplied linear guess reduces some GMRES work. Repeat ranges are retained
+for each route; small single-host differences are not universal speedups or
+whole-campaign forecasts. Preparation, first-call and independent cold
+endpoint timings are in `../evidence/3cr4-4-dev34-measurements.json`.
+
+Independent scalar-root, full coupled ODE/time-refinement, failure/cancellation,
+source/policy refusal and self-contained saved-input tests passed. All 26 Tosi
+input configurations passed matched two-step 4×4 checks under both modes. A
+separate developed 16×16 transient passed 20 steps per mode; maximum final
+warm/cold temperature difference was 1.815e-12 K. These are numerical/short-path
+checks, not mature published convection or a guarantee of a unique nonlinear root.
+A real 128×128 four-step run matched two fresh-process two-step segments exactly
+after source relocation and store copying. Actual run maximum admitted memory
+was 719,543,976 bytes under the retained 1 GiB budget; all closures released their
+reservations, and both changed-source and changed-start-policy continuation were
+refused. WorkBudget is not an OS total-RSS limiter.
+
+One one-step feasibility pilot preceded the new comparison specification; its
+comparison gates were fixed before formal tests/measurements and never loosened.
+The initial descriptor list/tuple mismatch and memory-exception reclassification
+were corrected before final evidence. R4.4 remains IN_PROGRESS; this completes
+only the separately selected explicit-start optimisation, retained as opt-in.
+
+### Previous dev33 implementation and retained history
+
+<a id="3cr4-4-native-execution"></a>
+
+## Current: dev33 compiled mechanical action and exact ownership
+
+**Version `0.1.0.dev33`, maintained plan revision 37. R4.4 and R4 remain IN_PROGRESS.**
+
+The first selected follow-up optimisation fuses the existing variable-stress saddle
+operator into `_mechanics_native.stress_saddle`. Only prepared GMRES selects this
+path; the separately selected direct reference and the NumPy operator/residual
+expressions are unchanged. It uses the existing pinned Numba dependency with
+`fastmath=False`, `cache=False`, no parallel loops and no parallel reduction.
+Each call allocates three local stress arrays and a fresh binary64 result vector.
+There is no persistent shared scratch and no returned-buffer alias: SciPy may keep
+or mutate old matvec outputs. Input vector and current centre/vertex viscosities
+are read-only by contract. Existing conservative per-solve scratch admission is
+retained, not raised. Compiler/interpreter memory still requires external headroom.
+
+A tiny declared signature is compiled during prepared-mechanics construction.
+First-process compilation and preparation must be recorded separately from warm
+accepted-step measurements. Disabled JIT or failed compilation is refused, not
+silently routed through a different algorithm. Cancellation is checked around
+preparation and each existing operator callback; native compilation/application
+may finish before a pending cancellation is observed. No hard wall-time limit is
+claimed. The general single-driving-thread prepared-plan rule remains unchanged.
+
+ExecutionContext's existing `numba` route records the selected Numba/LLVM binary
+runtime and the new native callable/options; all existing per-operation checks
+remain. No source inventory caching optimisation or skipped verification is part
+of this task. Exact unchanged-viscosity factor reuse, changed-viscosity rebuild,
+GMRES policy, true residual checks and cold independent nonlinear requests remain
+as before. Performance acceptance uses process-isolated dev32/dev33 comparisons
+of identical explicit physical inputs and solver policies. Whole accepted steps
+and developed endpoint solves are measured separately from bare operator calls.
+Neither a microbenchmark speedup nor a short probe is a full campaign forecast.
+
+### Obtained dev33 verification and matched measurements
+
+The final frozen source passes **2,244 tests (26 new)**, with zero failures,
+errors or skips and `PASS_BOUNDED_CURRENT_PLATFORM`. The 171-file executable/
+case/test/tool inventory is unchanged before and after the run. Separate matched
+comparisons use five repetitions per workload, identical explicit inputs, one
+native thread and serial version-isolated processes. Across all seven workloads, the compared saved
+field/operator arrays are bit-for-bit equal on the exercised runtime, including
+the developed transient nonlinear fixture. This is not a universal bit-identity
+claim across other platforms or every admitted input.
+
+| Workload | dev32 seconds | dev33 seconds | Speedup | Less time |
+|---|---:|---:|---:|---:|
+| Initial case 1, 16×16 timestep | 0.077054 | 0.072601 | 1.061× | 5.8% |
+| Initial case 1, 64×64 timestep | 0.234096 | 0.227106 | 1.031× | 3.0% |
+| Initial case 1, 128×128 timestep | 1.281421 | 1.255447 | 1.021× | 2.0% |
+| Developed case 2, 16×16 endpoint solve | 0.772995 | 0.628282 | 1.230× | 18.7% |
+| Developed case 2, 16×16 timestep | 1.572853 | 1.211589 | 1.298× | 23.0% |
+
+
+These are prepared-operation medians, not startup-inclusive campaign timings.
+Ranges and preparation/first-call costs are retained in
+`../evidence/3cr4-4-dev33-measurements.json`. Small initial-grid gains have overlapping
+repeat ranges; their median differences are not treated as established universal
+speedups. Compilation costs are paid during preparation and no disk JIT cache is
+used. Larger bare-operator gains must not be substituted for complete-step gains.
+An extra SciPy column-vector check found an interface error after an initial
+2,242-test pass; the callback now normalises `(N,)`/`(N,1)` inputs to its declared
+length, and two new tests cover column/matrix use and incorrect length. The earlier
+pass is superseded. The independent NumPy residual checks remain unchanged.
+
+### Previous dev32 execution contract and retained history
+
+<a id="3cr4-4-execution"></a>
+
+## Current: R4.4 measured mechanical-solver optimisation and audited execution
+
+**Version `0.1.0.dev32`, maintained plan revision 36. R4.4 and R4 remain IN_PROGRESS.**
+The current scientific contract is the [R4.4 plan section](TECTONICS_PLAN.md#3cr4-4-convection)
+and [`convection_r4_4.json`](../cases/convection_r4_4.json). Reference agreements,
+actual mature regimes and mesh/time/nonlinear adequacy remain separate from
+passing implementation tests. This increment optimises the existing rectangular
+variable-Stokes execution path; it does not introduce a different physical model
+or a new global solver.
+
+### Reuse and bounded execution
+
+The existing thermal transforms, fused conservative transport, bounded restarted
+GMRES, one coefficient-keyed ILU factor, source identity, thread leases, WorkBudget
+and ArrayStore are reused. The physical equations and convergence gates are unchanged.
+The stress operator avoids per-matvec padding allocations and its weighted sparse
+velocity matrix is assembled by exact row scaling of the fixed derivatives. New R4.4
+runs explicitly use ILU fill factor 17; the general R4.3 policy default stays 12.
+Sampling re-solves the final physical endpoint using the coupled plan's same owned
+prepared mechanics object; it does **not** retain or reuse a stale RK-stage flow.
+This removes the formerly redundant second retained factor. Independent case processes
+may run concurrently with a declared native-thread budget. A single globally coupled
+mechanical system is never split into unrelated local solves.
+
+`run_convection_r4_4.py` has an explicit finite overall schedule and bounded
+per-invocation segments. No long run is dependent on an unsaved conversational
+claim. Source files, driver bytes, case specification, runtime, material, grid,
+forcing, step size and solver policies are bound to the run configuration. The
+default 400 Picard-iteration allowance is an explicitly different **cost limit**,
+not a tolerance relaxation. A failed Courant or nonlinear gate stops that run;
+the driver does not silently change the timestep, law, mesh or numerical route.
+
+Each complete accepted step records input time, dt, state identity, original
+heat/material/Courant balances and both mechanical stages' identities, convergence
+diagnostics and iteration counts. Full fields are saved at declared checkpoints;
+scalar samples have a separate fixed cadence. Fixed-step continuation includes
+the future schedule, not just a two-field snapshot. Increasing a completed run's
+maximum step count or modifying its schedule is not an implicit resume operation.
+A new schedule requires an explicitly separate, scientifically justified run.
+
+### Publication, ownership, cancellation and recovery
+
+The existing transactional state store commits first. Complete JSON receipts are
+flushed and exclusively hard-linked into place with a parent-receipt hash. Existing
+outputs are not overwritten. Unreceipted orphan states are not silently promoted.
+A single exclusive run claim prevents concurrent writers. A hard-kill claim remains
+for deliberate investigation; the program does not guess whether another process
+is dead and remove its ownership record. Cooperative SIGINT/SIGTERM/time bounds
+save only the last fully accepted state, then close plans and storage normally.
+These are cooperative bounds, not hard interruption of a native factorisation.
+
+Same-source fresh-process and relocated-source/store-copy continuations must have
+exact final state identities and field arrays matching an uninterrupted run.
+Changing actual source, specification or schedule is refused. The new mid-second-RK
+cancellation test verifies that recovery does not advance time or preserve a
+partially accepted temperature, and that the next uncancelled step is exactly
+reproducible. The broader old resource drill is retained but is not renamed as a
+full long-run R4.4 campaign test.
+
+The auditor refuses live runs, missing or reordered receipt/step chains, changed
+case/source identities, sample/state/clock disagreement and changed source/receipts
+during the audit. It reopens and decodes each referenced stored checkpoint. Its
+recent-field retention has an explicit 1 GiB array envelope; it does not retain
+the entire spin-up in RAM. Periodic checks require real field cadence as well as
+scalar cadence, and report insufficient coverage rather than interpolating an
+underresolved trajectory into a false pass.
+
+### Resource scope and measurements
+
+Core WorkBudget admissions remain estimates, **not an OS RSS cap**. The runner's
+Python receipt ledger, JSON serialisation, interpreter/native runtime, diagnostic
+plotting and retained caller outputs require separate headroom. The default
+500-step receipt cadence bounds pending ledger growth; large explicitly selected
+cadences require correspondingly more memory. ArrayStore's declared 2 GiB store
+limit is not a limit on the whole run directory: receipts, evidence and plots are
+additional disk use. Finite schedule limits are not a universal machine-capacity
+guarantee. Do not describe zero remaining core reservations as zero process memory.
+
+A sampled Linux process RSS/high-water measurement is current-host evidence only.
+Dev31 profiling found six exact source/callable verifications per ordinary timestep;
+they dominate some small simple workloads but were only about 2.6% of the developed
+16x16 nonlinear step and 0.45% of the 128x128 initial step. Those checks are therefore
+left unchanged in dev32. The dominant costs were mechanics: roughly 93% linear-solve/
+factor work in the developed nonlinear sample and 99% at 128x128. Matched measurements
+on this Linux runtime show the prepared case-1 step median changing from about 0.0813,
+0.1090, 0.3577 and 11.6406 seconds at 16/32/64/128 in dev31 to about 0.0726, 0.0967,
+0.2365 and 1.2645 seconds with the retained dev32 policy/kernels. The developed case-2
+16x16 endpoint solve changed from about 0.9944 to 0.7770 seconds with identical velocity
+array hash and the same 75-Picard/2508-linear-iteration history. These measurements are
+matched-workload evidence, not universal speed guarantees or whole-planet forecasts.
+Source verification is not replaced with timestamps, stale caches or skipped checks.
+
+### Running, auditing and actual-code visual QA
+
+From the scoped source root, using the declared installed environment (no automatic
+installation or repinning):
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/run_convection_r4_4.py \
+  --output NEW_RUN --case tosi-1 --cells 16 --dt 1e-5 \
+  --max-steps 30000 --segment-steps 1000 --sample-every 25 --save-every 500
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/run_convection_r4_4.py \
+  --output NEW_RUN --resume --segment-steps 1000
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/analyse_convection_r4_4.py \
+  --run CLOSED_RUN --output NEW_ANALYSIS.json
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/visual_convection_r4_4.py \
+  --run CLOSED_RUN --output NEW_VISUAL_DIRECTORY
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py --acceptance
+```
+
+These example run controls are exploratory, not the registered 32/64/128 adequacy
+triplet and not a guarantee of a mature state by the selected terminal time.
+`--seconds` requests a cooperative per-invocation bound. A genuine physical refusal
+needs investigation, not an automatic retry under weaker controls. Successful
+finite-schedule completion means only that the predeclared steps were accepted.
+
+For an actual three-run study, give the auditor three `--run` paths in coarse-to-fine
+order and `--study-axis mesh`, `timestep` or `nonlinear`. It verifies the non-varied
+controls and actual mature regimes before considering differences. Fill a copy of
+`convection_r4_4_campaign.example.json` with actual run paths, the final unchanged
+source's `verify.py --acceptance` record and separately recorded source-bound visual
+inspections. Run `assess_convection_suite_r4_4.py --manifest CAMPAIGN.json --output
+NEW_SUITE_RESULT.json`. Missing evidence returns `INCOMPLETE_R4_4` and exit status 1;
+malformed or unsafe input is refused with exit status 2. A fabricated PASS field in
+a campaign manifest is not consumed as evidence.
+
+Visuals come from decoded actual states and re-solved simultaneous endpoint flow.
+Raw arrays, complete source/state/flow identities and file hashes are retained.
+Temperature/viscosity/pressure displays use unsmoothed original cells; velocity
+arrows use declared face-to-centre averages without unit-vector normalisation.
+Histories are saved diagnostic samples. Assistant inspection and Michael's visual
+approval are separate records; the renderer asserts neither. Initial transient
+pictures are not promoted to mature convection or observational evidence.
+
+### Evidence and application
+
+Run affected and full regression only after source/tests/tools are frozen. A run
+whose tests pass but whose before/after inventory differs is **incomplete**, not a
+final-source validation. Retain that attempt accurately rather than replacing its
+status with a later count. Routine unittest stderr stays local; structured results,
+unique failures, commands, runtime and hashes belong in the delivered evidence.
+
+The delivery is a complete scoped `tectonics/` merge plus unchanged root licensing,
+not the whole Atlas repository. Michael applies and pushes manually. Preserve newer
+local changes and unrelated files; use a reviewed merge or exactly one correctly
+based checked patch, never both. Archived old-source states remain losslessly
+readable but do not automatically continue under dev31. No package changes the
+remote branch or the user's PC by being generated here.
+
+---
+
+## Retained revision-34 history (not the current task status)
+
+# Atlas optimisation reference
+
 <a id="3cr4-3-execution"></a>
 
 ## Current: R4.3 variable stress, nonlinear iteration and source-safe continuation

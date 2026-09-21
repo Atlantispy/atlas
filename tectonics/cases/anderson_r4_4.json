@@ -1,0 +1,50 @@
+{
+  "schema": "atlas.anderson-integration-r4-4.v1",
+  "version": "0.1.0.dev37",
+  "plan_revision": 41,
+  "scope": "Explicit production-integrated safeguarded Anderson acceleration for constant/Tosi variable Stokes and both coupled stages. Not mature convection acceptance.",
+  "baseline_archive_sha256": "0327283a8d57be7d8d2bb99fc367d30a492b4f0736a68a35949881d25254526c",
+  "default": "picard",
+  "opt_in": {
+    "api": "anderson_policy=AndersonPolicy()",
+    "cli": "--nonlinear-solver anderson"
+  },
+  "method": "atlas.anderson-type2-velocity.v1",
+  "mixing": {
+    "depth": 5,
+    "rcond": 1e-10,
+    "coefficient_l1_limit": 10.0,
+    "warmup_maps": 2
+  },
+  "safeguard": "Actual current-law maximum normalised momentum/divergence/gauge/work merit no worse than the current Picard image. Invalid or unhelpful proposal clears history and retains that already-computed image.",
+  "final_acceptance": "Fresh ordinary Picard image plus unchanged returned-SI current-law checks; never accept mixing/update norm alone.",
+  "no_changes": [
+    "binary64",
+    "viscosity law and limits",
+    "boundary equations",
+    "linear_rtol=1e-12",
+    "momentum=1e-9",
+    "continuity=1e-10",
+    "gauge=1e-12",
+    "work=1e-9",
+    "viscosity_log_change=1e-8",
+    "ILU current-coefficient rebuild",
+    "timestep",
+    "cold nonlinear-start default"
+  ],
+  "memory": "Additional per request: 8*unknowns*(8*(depth+1)+32)+262144 bytes of conservative history/LAPACK scratch admission. Not RSS cap.",
+  "ownership": "Request-local immutable input and private mixing buffers; no cross-step/nonlinear history persisted or hidden. Each restored step recreates deterministic history from its declared inputs.",
+  "persistence": "Optional policy in plan/state/run bindings; algorithm and safeguard counts in both stage records; full iteration provenance in standalone mechanical results; Picard metadata omits new optional fields.",
+  "unsupported": [
+    "BF frozen-damage acceleration",
+    "nonunit Picard relaxation",
+    "prescribed-viscosity Anderson plan",
+    "cross-timestep initial-guess integration"
+  ],
+  "R4_status": "IN_PROGRESS",
+  "physical_validation": false,
+  "references": [
+    "https://petsc.org/release/manualpages/SNES/SNESANDERSON/",
+    "https://numpy.org/doc/2.3/reference/generated/numpy.linalg.lstsq.html"
+  ]
+}

@@ -8,6 +8,7 @@ Tosi variable-viscosity/yielding feedback; full convection benchmark acceptance
 and multidimensional damage remain future work. Legacy R4.2 is not relabelled.
 """
 from __future__ import annotations
+from . import preconditioner_reuse as _pr
 from contextlib import contextmanager
 from dataclasses import asdict
 import hashlib
@@ -16,7 +17,7 @@ import math
 import threading
 import numpy as np
 from ._validation import TectonicsError, scalar, text, input_shape, read_array, frozen
-from .resources import select_budget
+from .resources import select_budget, MemoryLimitError
 from .constitutive import _cancel, _json
 from .reuse import ExecutionContext
 from .stokes import face_force_from_density, StokesSolvePolicy
@@ -82,10 +83,55 @@ def _check_step_record(record, time_s, source):
         try:
             nm=record['nonlinear_mechanics'];np_=NonlinearStokesPolicy(**nm['policy'])
             _hex(nm['profile_id'],'coupled rheology')
+            warm='nonlinear_start' in nm
+            cross=warm and nm['nonlinear_start']=='previous-stage1'
+            if warm and nm['nonlinear_start'] not in ('rk-stage0','previous-stage1'):
+                raise TectonicsError('unsupported stored nonlinear starting policy')
+            reused='preconditioner_reuse_policy' in nm
+            pp=None
+            if reused:
+                pp=_pr.PreconditionerReusePolicy(**nm['preconditioner_reuse_policy']);_pr.check_policy(pp,np_)
+                if _json(asdict(pp))!=_json(nm['preconditioner_reuse_policy']):raise TectonicsError('noncanonical reuse policy')
+            accelerated='anderson_policy' in nm
+            ap=None
+            if accelerated:
+                from .anderson import AndersonPolicy, check_policy, check_summary
+                ap=AndersonPolicy(**nm['anderson_policy']);check_policy(ap,np_)
+                if _json(asdict(ap))!=_json(nm['anderson_policy']):raise TectonicsError('noncanonical acceleration policy')
+            if set(nm)!={'profile_id','policy','stages'}|({'nonlinear_start'} if warm else set())|({'anderson_policy'} if accelerated else set())|({'cross_step_start'} if cross else set())|({'preconditioner_reuse_policy'} if reused else set()):
+                raise TectonicsError('noncanonical stored nonlinear starting record')
             if len(nm['stages'])!=2 or _json(asdict(np_))!=_json(nm['policy']):
                 raise TectonicsError('invalid nonlinear stages/policy')
+            if cross:
+                cs=nm['cross_step_start']
+                if type(cs) is not dict or set(cs)!={'input_state_id','input_guess_id',
+                        'input_stage1_result_id','mechanical_plan_id','output_guess_id'}:
+                    raise TectonicsError('incomplete cross-step starting record')
+                for key in ('input_state_id','mechanical_plan_id','output_guess_id'):
+                    _hex(cs[key],key)
+                if cs['input_guess_id'] is None:
+                    if cs['input_stage1_result_id'] is not None:
+                        raise TectonicsError('cold first stage cannot claim a previous result')
+                else:
+                    _hex(cs['input_guess_id'],'previous starting guess')
+                    _hex(cs['input_stage1_result_id'],'previous second-stage result')
             for i,s in enumerate(nm['stages']):
                 if s['result_id']!=record['stage_flow_ids'][i]:raise TectonicsError('nonlinear stage identity differs')
+                if warm:
+                    if i==0:
+                        expected=(cs['input_guess_id'],cs['input_stage1_result_id']) if cross else (None,None)
+                        if (s['initial_guess_id'],s['initial_guess_result_id'])!=expected:
+                            raise TectonicsError('first RK stage starting data differs from declared policy')
+                    else:
+                        _hex(s['initial_guess_id'],'stage starting guess')
+                        if s['initial_guess_result_id']!=record['stage_flow_ids'][0]:
+                            raise TectonicsError('second RK stage guess must come from the first stage')
+                elif 'initial_guess_id' in s or 'initial_guess_result_id' in s:
+                    raise TectonicsError('unrecorded nonlinear starting policy')
+                if reused:_pr.check_summary(s['preconditioner_reuse'],s['nonlinear_iterations'],pp)
+                elif 'preconditioner_reuse' in s:raise TectonicsError('undeclared stage preconditioner reuse')
+                if accelerated:check_summary(s['nonlinear_acceleration'],s['nonlinear_iterations'],ap)
+                elif 'nonlinear_acceleration' in s:raise TectonicsError('undeclared stage acceleration')
                 _check_diagnostics(s['diagnostics'],np_)
                 if type(s['nonlinear_iterations']) is not int or not 1<=s['nonlinear_iterations']<=np_.max_picard_iterations:
                     raise TectonicsError('invalid coupled nonlinear iteration count')
@@ -115,13 +161,14 @@ class ThermochemicalState:
     """Self-contained immutable cell-average state; parent IDs are provenance only.
 
     A saved state includes its complete problem definition and current arrays;
+    cross-step mode also owns its explicit previous stage-1 starting data.
     it does not need a chain of earlier deltas to decode. Continued calculation
     requires the recorded source/execution identity, rather than silently rebasing.
     No full material-cohort/history migration is claimed for one binary fraction.
     """
-    __slots__=('problem','_metadata','_temperature','_composition','state_id')
+    __slots__=('problem','_metadata','_temperature','_composition','_next_initial_guess','state_id')
     def __init__(self,problem,temperature_k,composition,*,time_s,source,parent_id=None,
-                 step_index=0,execution_id=None,step_record=None,budget=None):
+                 step_index=0,execution_id=None,step_record=None,next_initial_guess=None,budget=None):
         if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         n=problem.box.nx*problem.box.nz
         if n>ThermochemicalPolicy().max_cells:
@@ -147,7 +194,28 @@ class ThermochemicalState:
             elif mode=='buoyancy-coupled-constant-viscosity' and problem.mechanical_mode!='constant-r4.2':
                 raise TectonicsError('constant mechanical record cannot describe a variable-rheology step')
             if step_index>stored_policy.max_steps: raise TectonicsError('stored step index exceeds declared envelope')
-        with select_budget(budget).reserve(80*n+131072,category='thermochemical-state'):
+        cross=(step_record is not None and
+               step_record.get('nonlinear_mechanics',{}).get('nonlinear_start')=='previous-stage1')
+        if cross:
+            from .variable_stokes_execution import NonlinearStokesGuess
+            if type(next_initial_guess) is not NonlinearStokesGuess:
+                raise TectonicsError('cross-step endpoint requires complete immutable starting data')
+            nm=step_record['nonlinear_mechanics'];cs=nm['cross_step_start']
+            gm=next_initial_guess.descriptor()
+            if (cs['input_state_id']!=parent_id or
+                    (cs['input_guess_id'] is None)!=(step_index==1)):
+                raise TectonicsError('previous starting data must belong to the accepted parent step')
+            if (gm['time_s']!=time_s or gm['epoch_id']!=problem.epoch_id or
+                    _json(gm['box'])!=_json(asdict(problem.box)) or
+                    _json(gm['scales'])!=_json(asdict(problem.scales)) or
+                    _json(gm['rheology'])!=_json(problem.rheology.descriptor()) or
+                    gm['plan_id']!=cs['mechanical_plan_id'] or
+                    gm['source_result_id']!=step_record['stage_flow_ids'][1] or
+                    next_initial_guess.guess_id!=cs['output_guess_id']):
+                raise TectonicsError('saved next guess is not this accepted step second-stage solution')
+        elif next_initial_guess is not None:
+            raise TectonicsError('starting data supplied without a completed cross-step policy')
+        with select_budget(budget).reserve(80*n+131072+(128*n+262144 if cross else 0),category='thermochemical-state'):
             T=read_array(temperature_k,'temperature',ndim=2);C=read_array(composition,'composition',ndim=2)
             _,excursion=_check_fields(problem,T,C)
             meta=dict(schema='atlas.thermochemical-state.v1',problem=problem.descriptor(),
@@ -155,11 +223,20 @@ class ThermochemicalState:
                 step_index=step_index,execution_id=execution_id,step_record=step_record,
                 composition_bound_excursion=excursion,units='SI cell averages; x-right z-up; budgets per 1 m thickness',
                 R4_complete=False,physical_validation=False)
+            if cross:
+                meta['schema']='atlas.thermochemical-state.v2'
+                meta['next_initial_guess']=dict(guess_id=next_initial_guess.guess_id,
+                                                descriptor=next_initial_guess.descriptor())
             raw=_json(meta)
             if len(raw)>131072: raise TectonicsError('state metadata exceeds finite envelope')
             self.problem=problem;self._metadata=raw
             self._temperature=T.tobytes();self._composition=C.tobytes()
-            self.state_id=hashlib.sha256(raw+self._temperature+self._composition).hexdigest()
+            self._next_initial_guess=next_initial_guess
+            h=hashlib.sha256(raw+self._temperature+self._composition)
+            if cross:
+                for key in ('u_m_s','w_m_s','pressure_pa'):
+                    h.update(next_initial_guess.array(key).tobytes())
+            self.state_id=h.hexdigest()
 
     def __setattr__(self,k,v):
         if hasattr(self,k): raise TectonicsError('thermochemical state is immutable')
@@ -170,8 +247,20 @@ class ThermochemicalState:
     @property
     def step_index(self): return self.descriptor()['step_index']
     @property
-    def nbytes(self): return len(self._metadata)+len(self._temperature)+len(self._composition)
+    def nbytes(self):
+        return (len(self._metadata)+len(self._temperature)+len(self._composition)+
+                (0 if self._next_initial_guess is None else self._next_initial_guess.nbytes))
+    @property
+    def next_initial_guess(self):
+        """Immutable preceding stage-1 fields for the next stage-0 solve, not endpoint flow."""
+        return self._next_initial_guess
+    @property
+    def array_names(self):
+        return ('temperature_k','composition')+(() if self._next_initial_guess is None else
+               ('next_guess_u_m_s','next_guess_w_m_s','next_guess_pressure_pa'))
     def array(self,name):
+        if self._next_initial_guess is not None and name in self.array_names[2:]:
+            return self._next_initial_guess.array(name[len('next_guess_'):])
         if name not in ('temperature_k','composition'): raise TectonicsError('unknown thermochemical field')
         raw=self._temperature if name=='temperature_k' else self._composition
         return np.frombuffer(raw,dtype='f8').reshape(self.problem.box.nz,self.problem.box.nx)
@@ -179,14 +268,30 @@ class ThermochemicalState:
     @classmethod
     def restore(cls,meta,arrays,*,budget=None):
         try:
-            if meta.get('schema')!='atlas.thermochemical-state.v1' or set(arrays)!= {'temperature_k','composition'}:
-                raise TectonicsError('incomplete thermal/composition snapshot')
+            cross=meta.get('schema')=='atlas.thermochemical-state.v2'
+            names={'temperature_k','composition'}
+            guess=None
+            if cross:
+                names|={'next_guess_u_m_s','next_guess_w_m_s','next_guess_pressure_pa'}
+            if (meta.get('schema') not in ('atlas.thermochemical-state.v1','atlas.thermochemical-state.v2')
+                    or set(arrays)!=names):
+                raise TectonicsError('incomplete thermal/composition/starting snapshot')
+            if cross:
+                from .variable_stokes_execution import NonlinearStokesGuess
+                entry=meta['next_initial_guess']
+                if type(entry) is not dict or set(entry)!={'guess_id','descriptor'}:
+                    raise TectonicsError('incomplete stored next-guess identity')
+                guess=NonlinearStokesGuess.restore(entry['descriptor'],
+                    {k:arrays['next_guess_'+k] for k in ('u_m_s','w_m_s','pressure_pa')},
+                    entry['guess_id'],budget=budget)
             p=ThermochemicalProblem.from_descriptor(meta['problem'])
             out=cls(p,arrays['temperature_k'],arrays['composition'],time_s=meta['time_s'],source=meta['source'],
                 parent_id=meta['parent_id'],step_index=meta['step_index'],execution_id=meta['execution_id'],
-                step_record=meta['step_record'],budget=budget)
+                step_record=meta['step_record'],next_initial_guess=guess,budget=budget)
             if _json(out.descriptor())!=_json(meta): raise TectonicsError('state metadata/array mismatch')
             return out
+        except MemoryLimitError:
+            raise
         except (ValueError,TypeError,KeyError) as exc:
             raise TectonicsError('invalid thermal/composition snapshot') from exc
 
@@ -243,6 +348,12 @@ class ThermochemicalStep:
         record=state.descriptor()['step_record']
         if _json(record)!=_json(metadata.get('record')) or record['input_time_s']!=before.time_s:
             raise TectonicsError('step record does not describe both endpoints')
+        nm=record.get('nonlinear_mechanics',{})
+        if nm.get('nonlinear_start')=='previous-stage1':
+            previous=before.next_initial_guess;cs=nm['cross_step_start']
+            if (cs['input_guess_id']!=(None if previous is None else previous.guess_id) or
+                    cs['input_stage1_result_id']!=(None if previous is None else previous.descriptor()['source_result_id'])):
+                raise TectonicsError('step guess provenance differs from its accepted parent')
         owned=[]
         for k,shape in sorted(shapes.items()):
             if input_shape(arrays[k])!=shape: raise TectonicsError('wrong step-array shape')
@@ -294,7 +405,7 @@ class PreparedThermochemical2D:
     or cancellation publish no endpoint. Sequential physical steps are NOT jobs
     sent to independent workers. No new scheduler or persistence implementation.
     """
-    def __init__(self,problem,*,policy=None,stokes_policy=None,nonlinear_policy=None,backend='numba',budget=None,cancel=None):
+    def __init__(self,problem,*,policy=None,stokes_policy=None,nonlinear_policy=None,nonlinear_start='zero-rate',anderson_policy=None,preconditioner_reuse_policy=None,backend='numba',budget=None,cancel=None):
         if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         policy=ThermochemicalPolicy() if policy is None else policy
         if type(policy) is not ThermochemicalPolicy: raise TectonicsError('typed thermal policy required')
@@ -312,7 +423,23 @@ class PreparedThermochemical2D:
                 raise TectonicsError('use nonlinear_policy for variable mechanics; constant stokes_policy would be ignored')
         elif nonlinear_policy is not None:
             raise TectonicsError('constant rheology uses stokes_policy, not an unused nonlinear policy')
-        self.nonlinear_policy=nonlinear_policy
+        if type(nonlinear_start) is not str or nonlinear_start not in ('zero-rate','rk-stage0','previous-stage1'):
+            raise TectonicsError('explicit zero-rate, rk-stage0 or previous-stage1 nonlinear start required')
+        if nonlinear_start!='zero-rate' and nonlinear_policy is None:
+            raise TectonicsError('nonlinear starting policy requires variable mechanics')
+        if nonlinear_start=='previous-stage1' and problem.rheology.family=='bf23-memory':
+            raise TectonicsError('cross-step starting policy does not support evolving BF damage')
+        if anderson_policy is not None:
+            from .anderson import check_policy
+            if nonlinear_policy is None:raise TectonicsError('Anderson requires variable mechanics')
+            check_policy(anderson_policy,nonlinear_policy)
+        if preconditioner_reuse_policy is not None:
+            _pr.check_policy(preconditioner_reuse_policy,nonlinear_policy)
+            if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
+                raise TectonicsError('preconditioner reuse supports constant/Tosi only')
+        self.preconditioner_reuse_policy=preconditioner_reuse_policy
+        self.anderson_policy=anderson_policy
+        self.nonlinear_policy=nonlinear_policy;self.nonlinear_start=nonlinear_start
         self._stage_mechanics=[]
         self._owner=threading.get_ident();self._active=False;self._closed=False
         self._mechanics=None;self._context=None;self._diffusion=None
@@ -332,6 +459,9 @@ class PreparedThermochemical2D:
                 stokes_policy=asdict(self.stokes_policy),backend=backend,context=self._context.identity)
             if nonlinear_policy is not None:
                 binding['nonlinear_policy']=asdict(nonlinear_policy)
+            if nonlinear_start!='zero-rate':binding['nonlinear_start']=nonlinear_start
+            if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
+            if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
             self.identity=_digest(binding)
             _cancel(cancel)
         except BaseException:
@@ -339,7 +469,7 @@ class PreparedThermochemical2D:
             self._guard.__exit__(None,None,None)
             raise
     def __setattr__(self,k,v):
-        if k in ('problem','policy','backend','budget','identity','stokes_policy','nonlinear_policy') and hasattr(self,k):
+        if k in ('problem','policy','backend','budget','identity','stokes_policy','nonlinear_policy','nonlinear_start','anderson_policy','preconditioner_reuse_policy') and hasattr(self,k):
             raise TectonicsError('thermal prepared binding is immutable')
         object.__setattr__(self,k,v)
     def __enter__(self):
@@ -370,27 +500,63 @@ class PreparedThermochemical2D:
     def _sum(self,a):
         return float(self._native.sum_compensated(a)) if self.backend=='numba' else math.fsum(a.flat)
 
-    def _flow(self,T,C,time,stage,source,cancel):
-        rho,_=_check_fields(self.problem,T,C)
+    def _mechanics_plan(self,cancel):
         p=self.problem
         if self._mechanics is None:
             if self.nonlinear_policy is None:
                 self._mechanics=PreparedStokes2D(p.box,p.rheology,p.scales,policy=self.stokes_policy,budget=self.budget,cancel=cancel)
             else:
                 from .variable_stokes_execution import PreparedVariableStokes2D
-                self._mechanics=PreparedVariableStokes2D(p.box,p.scales,policy=self.nonlinear_policy,budget=self.budget,cancel=cancel)
+                self._mechanics=PreparedVariableStokes2D(p.box,p.scales,policy=self.nonlinear_policy,anderson_policy=self.anderson_policy,preconditioner_reuse_policy=self.preconditioner_reuse_policy,budget=self.budget,cancel=cancel)
+        return self._mechanics
+
+    def _flow(self,T,C,time,stage,source,cancel,*,initial_guess=None,capture_solution=False):
+        rho,_=_check_fields(self.problem,T,C)
+        p=self.problem;mechanics=self._mechanics_plan(cancel)
         fx,fz=face_force_from_density(p.box,rho,p.gravity_m_s2,budget=self.budget)
         request=dict(frame_id=p.box.frame_id,epoch_id=p.epoch_id,time_s=time,
             source=source+'; '+stage+' operator-split intermediate, not accepted endpoint',cancel=cancel)
         if self.nonlinear_policy is None:
-            flow=self._mechanics.solve(fx,fz,**request)
+            flow=mechanics.solve(fx,fz,**request)
         else:
-            flow=self._mechanics.solve_rheology(fx,fz,T,p.rheology,**request)
+            if initial_guess is not None:request['initial_guess']=initial_guess
+            flow=mechanics.solve_rheology(fx,fz,T,p.rheology,**request)
             m=flow.descriptor()
             self._stage_mechanics.append(dict(result_id=flow.result_id,diagnostics=m['diagnostics'],
                 nonlinear_iterations=len(m['nonlinear_history']),
                 linear_iterations=sum(x['linear_iterations'] for x in m['nonlinear_history'])))
-        return flow.array('u_m_s'),flow.array('w_m_s'),flow.result_id
+            if self.preconditioner_reuse_policy is not None:
+                self._stage_mechanics[-1]['preconditioner_reuse']=m['preconditioner_reuse']
+            if self.anderson_policy is not None:
+                self._stage_mechanics[-1]['nonlinear_acceleration']=m['nonlinear_acceleration']
+            if self.nonlinear_start!='zero-rate':
+                self._stage_mechanics[-1]['initial_guess_id']=None if initial_guess is None else initial_guess.guess_id
+                self._stage_mechanics[-1]['initial_guess_result_id']=None if initial_guess is None else initial_guess.descriptor()['source_result_id']
+        values=(flow.array('u_m_s'),flow.array('w_m_s'),flow.result_id)
+        # Preserve the legacy callback protocol; explicitly requested seed capture needs the full result.
+        return (*values,flow) if capture_solution else values
+
+    def mechanical_snapshot(self,state,*,source,cancel=None):
+        """Solve this plan's exact accepted state without retaining a second plan.
+
+        This is a diagnostic snapshot only: it does not advance time, mutate the
+        state or append an RK-stage record.  It deliberately reuses the same
+        prepared mechanics owned by the coupled plan so sampling does not double
+        retained ILU memory.
+        """
+        if type(state) is not ThermochemicalState or state.problem.problem_id!=self.problem.problem_id:
+            raise TectonicsError('state/problem mismatch; no implicit remapping')
+        text(source,'mechanical snapshot provenance')
+        if len(source)>2048:raise TectonicsError('mechanical snapshot source too long')
+        with self._operation(cancel):
+            T=state.array('temperature_k');C=state.array('composition')
+            rho,_=_check_fields(self.problem,T,C);p=self.problem
+            mechanics=self._mechanics_plan(cancel)
+            fx,fz=face_force_from_density(p.box,rho,p.gravity_m_s2,budget=self.budget)
+            request=dict(frame_id=p.box.frame_id,epoch_id=p.epoch_id,time_s=state.time_s,source=source,cancel=cancel)
+            if self.nonlinear_policy is None:
+                return mechanics.solve(fx,fz,**request)
+            return mechanics.solve_rheology(fx,fz,T,p.rheology,**request)
 
     def advance(self,state,dt_s,*,source,extra_heating_w_m3=0.0,velocity=None,cancel=None):
         """One Strang/SSPRK2 step. Source is held fixed over the WHOLE interval.
@@ -401,6 +567,8 @@ class PreparedThermochemical2D:
         select the retained Tosi viscosity/yield law at both mechanical stages.
         Extra heating is nonnegative and added ONCE to the material's internal H;
         this API does not infer shear/adiabatic/latent heating or composition sources.
+        The previous-stage1 mode reads its next first-stage seed only from the
+        accepted input state, then publishes the new seed with the final state.
         No implicit adaptive steps, order reduction or returned-value clipping.
         """
         if type(state) is not ThermochemicalState or state.problem.problem_id!=self.problem.problem_id:
@@ -416,10 +584,22 @@ class PreparedThermochemical2D:
         if input_shape(extra_heating_w_m3) not in ((),shape): raise TectonicsError('heating must be scalar or cell array')
         if velocity is not None and (type(velocity) is not PrescribedMACVelocity or velocity.box!=b):
             raise TectonicsError('prescribed velocity support differs')
+        if velocity is not None and self.preconditioner_reuse_policy is not None:
+            raise TectonicsError('preconditioner reuse is unused for prescribed velocity')
+        if velocity is not None and self.anderson_policy is not None:
+            raise TectonicsError('Anderson is unused with prescribed velocity')
+        if velocity is not None and self.nonlinear_start!='zero-rate':
+            raise TectonicsError('explicit nonlinear starting policy cannot be ignored by prescribed velocity')
         # Accepted inputs, source capture, 2 fields, RK candidates/fluxes, spectral
         # scratch, stage solutions, diagnostics and final immutable result copies.
         # Nested Stokes reserves separately. This is admission, not an RSS cap.
-        with self._operation(cancel),self.budget.reserve(1408*n+524288,category='thermochemical-step'):
+        cross=self.nonlinear_start=='previous-stage1'
+        previous=state.next_initial_guess if cross else None
+        if cross and state.step_index and previous is None:
+            raise TectonicsError('cross-step continuation is missing its explicit accepted starting data')
+        with self._operation(cancel),self.budget.reserve(1408*n+524288+
+                (256*n+131072 if self.nonlinear_start!='zero-rate' else 0)+
+                (1024*n+524288 if cross else 0),category='thermochemical-step'):
             self._stage_mechanics=[]
             T=state.array('temperature_k');C=state.array('composition')
             raw=read_array(extra_heating_w_m3,'extra heating',nonnegative=True)
@@ -437,7 +617,11 @@ class PreparedThermochemical2D:
             flux=self._native.face_transfers if self.backend=='numba' else _reference_transfers
             update=self._native.euler_update if self.backend=='numba' else None
             if velocity is None:
-                u0,w0,id0=self._flow(*q0,time,'advection RK stage 0 after first diffusion half',source,cancel)
+                if self.nonlinear_start in ('rk-stage0','previous-stage1'):
+                    request={} if not cross else {'initial_guess':previous}
+                    u0,w0,id0,flow0=self._flow(*q0,time,'advection RK stage 0 after first diffusion half',source,cancel,capture_solution=True,**request)
+                else:
+                    u0,w0,id0=self._flow(*q0,time,'advection RK stage 0 after first diffusion half',source,cancel)
             else:u0,w0,id0=velocity.array('u_m_s'),velocity.array('w_m_s'),velocity.velocity_id
             cx,cz,cfl0,div0=_courant_arrays(b,u0,w0,dt,self.policy)
             flux(q0,cx,cz,fx,fz)
@@ -446,7 +630,16 @@ class PreparedThermochemical2D:
             _check_fields(self.problem,*q1);_cancel(cancel)
             meanx=fx*.5;meanz=fz*.5
             if velocity is None:
-                u1,w1,id1=self._flow(*q1,time+dt,'advection RK stage 1 before final diffusion half',source,cancel)
+                guess=None
+                if self.nonlinear_start in ('rk-stage0','previous-stage1'):
+                    from .variable_stokes_execution import NonlinearStokesGuess
+                    guess=NonlinearStokesGuess(flow0,budget=self.budget)
+                if cross:
+                    u1,w1,id1,flow1=self._flow(*q1,time+dt,'advection RK stage 1 before final diffusion half',source,cancel,initial_guess=guess,capture_solution=True)
+                else:
+                    u1,w1,id1=self._flow(*q1,time+dt,'advection RK stage 1 before final diffusion half',source,cancel,initial_guess=guess)
+                del guess
+                if self.nonlinear_start in ('rk-stage0','previous-stage1'):del flow0
             else:u1,w1,id1=u0,w0,id0
             cx,cz,cfl1,div1=_courant_arrays(b,u1,w1,dt,self.policy)
             flux(q1,cx,cz,fx,fz)
@@ -497,8 +690,25 @@ class PreparedThermochemical2D:
             if velocity is None and self.nonlinear_policy is not None:
                 record['nonlinear_mechanics']=dict(profile_id=self.problem.rheology.profile_id,
                     policy=asdict(self.nonlinear_policy),stages=list(self._stage_mechanics))
+                if self.nonlinear_start!='zero-rate':record['nonlinear_mechanics']['nonlinear_start']=self.nonlinear_start
+                if self.anderson_policy is not None:record['nonlinear_mechanics']['anderson_policy']=asdict(self.anderson_policy)
+                if self.preconditioner_reuse_policy is not None:record['nonlinear_mechanics']['preconditioner_reuse_policy']=asdict(self.preconditioner_reuse_policy)
+            next_guess=None
+            if cross:
+                # Capture only after BOTH stages and all final transport/heat checks pass.
+                # This immutable output is not assigned to the plan: failed steps cannot
+                # replace the caller's accepted starting data. No recursive flow chain.
+                next_guess=NonlinearStokesGuess(flow1,budget=self.budget)
+                record['nonlinear_mechanics']['cross_step_start']=dict(
+                    input_state_id=state.state_id,
+                    input_guess_id=None if previous is None else previous.guess_id,
+                    input_stage1_result_id=None if previous is None else previous.descriptor()['source_result_id'],
+                    mechanical_plan_id=self._mechanics.identity,output_guess_id=next_guess.guess_id)
+                del flow1
+            _cancel(cancel)
             final=ThermochemicalState(self.problem,tf,cf,time_s=end_time,source=source,
-                parent_id=state.state_id,step_index=state.step_index+1,execution_id=self.identity,step_record=record,budget=self.budget)
+                parent_id=state.state_id,step_index=state.step_index+1,execution_id=self.identity,
+                step_record=record,next_initial_guess=next_guess,budget=self.budget)
             meta=dict(schema='atlas.thermochemical-step.v1',method=_METHOD,record=record,
                 before_id=state.state_id,after_id=final.state_id,
                 stage_velocity_semantics='operator-split RK intermediate fields, not final-time mechanical solution',
@@ -514,7 +724,7 @@ def save_thermochemical_state(state,store,*,budget=None,cancel=None):
     policy=select_budget(store._budget if budget is None else budget)
     _cancel(cancel)
     with policy.reserve(3*state.nbytes+65536,category='thermochemical-save'):
-        return store.put(state.state_id,{k:state.array(k) for k in ('temperature_k','composition')},state.descriptor(),budget=policy,cancel=cancel)
+        return store.put(state.state_id,{k:state.array(k) for k in state.array_names},state.descriptor(),budget=policy,cancel=cancel)
 
 
 def load_thermochemical_state(store,state_id,*,budget=None,cancel=None):

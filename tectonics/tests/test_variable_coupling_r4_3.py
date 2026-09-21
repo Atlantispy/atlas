@@ -14,8 +14,8 @@ from unittest import mock
 from concurrent.futures import CancelledError
 import numpy as np
 from atlas_tectonics import (PreparedThermochemical2D,ThermochemicalProblem,ThermochemicalState,
-    NonlinearStokesPolicy,StokesSolvePolicy,reference_rheology,save_thermochemical_state,
-    load_thermochemical_state,TectonicsError)
+    NonlinearStokesPolicy,PreparedVariableStokes2D,StokesSolvePolicy,reference_rheology,save_thermochemical_state,
+    load_thermochemical_state,tosi_endpoint_flow,TectonicsError)
 from atlas_tectonics.resources import WorkBudget,MemoryLimitError
 from atlas_tectonics.storage import ArrayStore,StoreLimits
 from atlas_tectonics import thermochemical_execution as tx, variable_stokes_execution as vx
@@ -108,6 +108,18 @@ class NonlinearCoupling(unittest.TestCase):
         p=coupled_problem(5)
         with PreparedThermochemical2D(p) as q:r=q.advance(initial(p),.001,source='time semantics')
         self.assertIn('not final-time',r.descriptor()['stage_velocity_semantics'])
+    def test_mechanical_snapshot_reuses_owned_plan_and_matches_independent_endpoint(self):
+        p=coupled_problem(5);s=initial(p);b=WorkBudget(128<<20);pol=NonlinearStokesPolicy()
+        source='R4.4 accepted endpoint '+s.state_id
+        with PreparedThermochemical2D(p,nonlinear_policy=pol,budget=b) as q:
+            a=q.mechanical_snapshot(s,source=source);owned=q._mechanics
+            again=q.mechanical_snapshot(s,source=source)
+            self.assertIs(q._mechanics,owned);self.assertEqual(a.result_id,again.result_id)
+        with PreparedVariableStokes2D(p.box,p.scales,policy=pol,budget=b) as m:
+            expected=tosi_endpoint_flow(s,m,budget=b)
+        self.assertEqual(a.result_id,expected.result_id)
+        for key in a.array_names:np.testing.assert_array_equal(a.array(key),expected.array(key))
+        self.assertEqual(b.statistics()['reserved_bytes'],0)
     def test_changed_nonlinear_policy_cannot_rebind_continuation(self):
         p=coupled_problem(5)
         with PreparedThermochemical2D(p) as q:s=q.advance(initial(p),.001,source='first').state

@@ -1,0 +1,172 @@
+{
+  "baseline": {
+    "package": "0.1.0.dev31",
+    "profiling_measurements_sha256": "dbc4e0596595e547878bd0c852d90be842036558c2cc195c3cf1ad76343a02bc"
+  },
+  "branch": "remake",
+  "changes": [
+    "R4.4 new-run ILU fill factor 17; general R4.3 default remains 12.",
+    "Eliminate np.pad temporaries from the matrix-free symmetric-stress MAC stencil.",
+    "Row-scale fixed sparse derivatives instead of materialising diagonal sparse matrices.",
+    "Reuse the coupled plan owned mechanics for endpoint diagnostic solves; no stale RK-stage flow reuse."
+  ],
+  "date": "2026-09-19",
+  "developed_case2_n16_endpoint": {
+    "all_repetitions_same_record": true,
+    "dev31_median_s": 1.0070870119999995,
+    "dev32_median_s": 0.7675766209999892,
+    "linear_iterations": 2508,
+    "picard_iterations": 75,
+    "speedup_x": 1.3120345050217646,
+    "velocity_sha256": "4df6f7617338cde93ee59929a6c6d90df9031b6b035384f0290ffa3a7691d254",
+    "wall_time_reduction_percent": 23.782492291739576
+  },
+  "fill12_vs_fill17_accuracy_128": {
+    "budget": {
+      "categories": {
+        "convection-initial": 0,
+        "stokes-face-force": 0,
+        "thermochemical-plan-retained": 0,
+        "thermochemical-state": 0,
+        "thermochemical-step": 0,
+        "variable-stokes-retained": 0,
+        "variable-stokes-solve": 0
+      },
+      "category_peaks": {
+        "convection-initial": 1114112,
+        "stokes-face-force": 1638400,
+        "thermochemical-plan-retained": 8388608,
+        "thermochemical-state": 1441792,
+        "thermochemical-step": 23592960,
+        "variable-stokes-retained": 569584896,
+        "variable-stokes-solve": 106141808
+      },
+      "max_bytes": 3221225472,
+      "peak_reserved_bytes": 707708272,
+      "refusals": 0,
+      "reserved_bytes": 0
+    },
+    "composition_max_abs": 0.0,
+    "fill12_elapsed_s": 11.633398553999996,
+    "fill12_endpoint_diag": {
+      "body_force_work": 7.303214793582754e-05,
+      "divergence_linf": 1.038613639536834e-12,
+      "gauge_multiplier_abs": 1.946210486304362e-16,
+      "momentum_linf": 1.4622386634854934e-11,
+      "pressure_gauge_relative": 1.3877787807814457e-17,
+      "pressure_work": 5.9597633851912355e-15,
+      "viscous_stress_work": 7.303214793046669e-05,
+      "work_balance_relative": 5.9891328008099265e-16
+    },
+    "fill12_stage_iterations": [
+      748,
+      749
+    ],
+    "fill17_elapsed_s": 1.3344423730000017,
+    "fill17_endpoint_diag": {
+      "body_force_work": 7.303214793415526e-05,
+      "divergence_linf": 4.799827202361939e-12,
+      "gauge_multiplier_abs": 1.7426749874652884e-16,
+      "momentum_linf": 3.145227134293549e-14,
+      "pressure_gauge_relative": 0.0,
+      "pressure_work": 4.886767893411314e-15,
+      "viscous_stress_work": 7.303214792926864e-05,
+      "work_balance_relative": 1.4907779871675686e-19
+    },
+    "fill17_stage_iterations": [
+      35,
+      35
+    ],
+    "p_max_abs": 1.8193446749137365e-11,
+    "temperature_l2": 1.1839408294544687e-16,
+    "temperature_max_abs": 1.1102230246251565e-15,
+    "u_max_abs": 9.727685323923652e-11,
+    "w_max_abs": 3.4720670782917296e-11
+  },
+  "final_runner_128_1gib": {
+    "elapsed_s": 4.195382855000389,
+    "last_step": 1,
+    "last_time": 1e-06,
+    "max_budget_bytes": 1073741824,
+    "peak_reserved_bytes": 711918960,
+    "reserved_after_close_bytes": 0,
+    "status": "FINITE_SCHEDULE_COMPLETE"
+  },
+  "limits": [
+    "Performance figures are current-host matched workloads, not universal speed guarantees.",
+    "Existing dev31 saved trajectories are not rebound to dev32 source.",
+    "Case-5a/5b reference questions and mature mesh/time/nonlinear benchmark acceptance remain open.",
+    "R4.4 and R4 remain IN_PROGRESS; no R5 work is included."
+  ],
+  "matched_performance": [
+    {
+      "cells": 16,
+      "dev31_median_s": 0.08134521350001478,
+      "dev32_median_s": 0.07228198799975871,
+      "dev32_peak_admitted_bytes": 24106864,
+      "dev32_stage_linear_iterations": [
+        31,
+        31
+      ],
+      "speedup_x": 1.12538705355318,
+      "wall_time_reduction_percent": 11.14168260220304
+    },
+    {
+      "cells": 32,
+      "dev31_median_s": 0.10898033149999264,
+      "dev32_median_s": 0.09875749499997255,
+      "dev32_peak_admitted_bytes": 56367472,
+      "dev32_stage_linear_iterations": [
+        28,
+        28
+      ],
+      "speedup_x": 1.1035145383145142,
+      "wall_time_reduction_percent": 9.380441735966627
+    },
+    {
+      "cells": 64,
+      "dev31_median_s": 0.3576899795000088,
+      "dev32_median_s": 0.2374502789998587,
+      "dev32_peak_admitted_bytes": 186285424,
+      "dev32_stage_linear_iterations": [
+        32,
+        32
+      ],
+      "speedup_x": 1.5063784342835902,
+      "wall_time_reduction_percent": 33.61561894135956
+    },
+    {
+      "cells": 128,
+      "dev31_median_s": 11.64064987300003,
+      "dev32_median_s": 1.257999259999906,
+      "dev32_peak_admitted_bytes": 707708272,
+      "dev32_stage_linear_iterations": [
+        35,
+        35
+      ],
+      "speedup_x": 9.253304229289371,
+      "wall_time_reduction_percent": 89.19304958292939
+    }
+  ],
+  "package": "0.1.0.dev32",
+  "plan_revision": 36,
+  "schema": "atlas.tectonics.r4.4-optimisation-evidence.v1",
+  "scope": "Measured execution optimisation only; no mature convection benchmark acceptance.",
+  "status": "PASS_OPTIMISATION_VERIFICATION_R4_4_STILL_IN_PROGRESS",
+  "verification": {
+    "errors": 0,
+    "failures": 0,
+    "machine": "x86_64",
+    "numpy": "2.3.5",
+    "platform": "Linux",
+    "profile": "combined-resource-acceptance",
+    "python": "3.13.5",
+    "resource_status": "PASS_BOUNDED_CURRENT_PLATFORM",
+    "skips": 0,
+    "source_inventory_count": 169,
+    "source_inventory_map_sha256": "0045e844cbfa328b8d6e6e0ce7e55e4a89effc367d0a029a5eeec5dd4801b0ca",
+    "source_unchanged_during_tests": true,
+    "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+    "tests_run": 2218
+  }
+}

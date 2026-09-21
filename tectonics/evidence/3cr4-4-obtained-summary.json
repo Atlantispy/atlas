@@ -1,0 +1,209 @@
+{
+  "R4_status": "IN_PROGRESS",
+  "core_source_inventory_entries": 169,
+  "full_benchmark_accepted": false,
+  "initial_two_step_configurations": 26,
+  "inspected_final_plots": 18,
+  "long_accepted_steps": 31218,
+  "regression": {
+    "errors": 0,
+    "failures": 0,
+    "profile": "combined-resource-acceptance",
+    "skips": 0,
+    "source_unchanged_during_tests": true,
+    "status": "PASS_MATHEMATICAL_TESTS_ONLY",
+    "tests_run": 2213
+  },
+  "remaining": [
+    "Mature applicable convection regimes and all reference comparisons",
+    "Registered 32/64/128 mesh studies",
+    "Matched-regime timestep/nonlinear refinement",
+    "Case5a printed dissipation convention",
+    "Case5b supplementary numeric targets",
+    "Complete 26-case campaign acceptance"
+  ],
+  "resource_acceptance": "PASS_BOUNDED_CURRENT_PLATFORM",
+  "runs": [
+    {
+      "accepted_step_count": 15000,
+      "accepted_time": 0.15000000000000924,
+      "diagnostic_samples": 601,
+      "every_accepted_step": {
+        "conservation_passed": true,
+        "count": 15000,
+        "max_linear_iterations": 37,
+        "max_picard_iterations": 1,
+        "maxima": {
+          "advective_local_residual": 1.7367411440847614e-16,
+          "composition_relative_residual": 0.0,
+          "courant_stage0": 0.03655285437106676,
+          "courant_stage1": 0.03654864119048386,
+          "heat_relative_residual": 4.6148185705510197e-17
+        }
+      },
+      "label": "case1_n8",
+      "latest_diagnostic_time": 0.15000000000000924,
+      "latest_sample_is_saved_endpoint": true,
+      "mature_regime_gate": false,
+      "outcome_status": "FINITE_SCHEDULE_COMPLETE",
+      "saved_checkpoints": 31,
+      "saved_field_steady_gate": {
+        "change_linf": 0.037947094679249505,
+        "limitation": "Finite stored-field sampling, not a proof that no between-sample oscillation exists",
+        "passed": false
+      },
+      "state_id": "959d1a10f736e8de5d610e081456525d7b94c567377676f346bc9e07c2ec6d5b",
+      "steady_heat_flux_gate": {
+        "passed": false,
+        "relative_imbalance": 0.06384728050811316
+      },
+      "steady_sampling": {
+        "full_benchmark_accepted": false,
+        "relative_ranges": {
+          "Nu_bottom": 0.07191945253862715,
+          "Nu_top": 0.05863674079791792,
+          "dissipation_over_Ra": 0.010856245913555749,
+          "surface_velocity_max": 0.0629122501960507,
+          "surface_velocity_rms": 0.06234398727693583,
+          "temperature_mean": 0.024119806690192768,
+          "velocity_rms": 0.06424812174991443,
+          "viscosity_max": 0.0,
+          "viscosity_min": 0.0,
+          "work": 0.010856245913104539
+        },
+        "sample_count": 200,
+        "steady_samples": false,
+        "sufficient_history": true
+      },
+      "work_gate": {
+        "maximum_percent": 7.537793147599426e-09,
+        "passed": true
+      }
+    },
+    {
+      "accepted_step_count": 15000,
+      "accepted_time": 0.15000000000000924,
+      "diagnostic_samples": 601,
+      "every_accepted_step": {
+        "conservation_passed": true,
+        "count": 15000,
+        "max_linear_iterations": 38,
+        "max_picard_iterations": 1,
+        "maxima": {
+          "advective_local_residual": 2.1673121568410057e-16,
+          "composition_relative_residual": 0.0,
+          "courant_stage0": 0.12284561157225447,
+          "courant_stage1": 0.12299247229170589,
+          "heat_relative_residual": 2.104473854506113e-17
+        }
+      },
+      "label": "case1_n16",
+      "latest_diagnostic_time": 0.15000000000000924,
+      "latest_sample_is_saved_endpoint": true,
+      "mature_regime_gate": false,
+      "outcome_status": "FINITE_SCHEDULE_COMPLETE",
+      "saved_checkpoints": 31,
+      "saved_field_steady_gate": {
+        "change_linf": 0.0436649827503377,
+        "limitation": "Finite stored-field sampling, not a proof that no between-sample oscillation exists",
+        "passed": false
+      },
+      "state_id": "c0841f8c43aff05e1c9504a83d7cce63aefa6f54b0b7cab0ab9bd5bdddcb1546",
+      "steady_heat_flux_gate": {
+        "passed": false,
+        "relative_imbalance": 0.03415556473082422
+      },
+      "steady_sampling": {
+        "full_benchmark_accepted": false,
+        "relative_ranges": {
+          "Nu_bottom": 0.0822923094407338,
+          "Nu_top": 0.040370370372957445,
+          "dissipation_over_Ra": 0.04424233968085708,
+          "surface_velocity_max": 0.018696602166679944,
+          "surface_velocity_rms": 0.017779228244739348,
+          "temperature_mean": 0.01755156808923073,
+          "velocity_rms": 0.050858870081348484,
+          "viscosity_max": 0.0,
+          "viscosity_min": 0.0,
+          "work": 0.04424233968195942
+        },
+        "sample_count": 200,
+        "steady_samples": false,
+        "sufficient_history": true
+      },
+      "work_gate": {
+        "maximum_percent": 1.4092002073419107e-08,
+        "passed": true
+      }
+    },
+    {
+      "accepted_step_count": 1218,
+      "accepted_time": 0.012179999999999672,
+      "diagnostic_samples": 49,
+      "every_accepted_step": {
+        "conservation_passed": true,
+        "count": 1218,
+        "max_linear_iterations": 2681,
+        "max_picard_iterations": 128,
+        "maxima": {
+          "advective_local_residual": 1.9697611814647e-16,
+          "composition_relative_residual": 0.0,
+          "courant_stage0": 0.2224583502746397,
+          "courant_stage1": 0.22267753250419464,
+          "heat_relative_residual": 1.666084030412272e-17
+        }
+      },
+      "label": "case2_n16",
+      "latest_diagnostic_time": 0.01199999999999968,
+      "latest_sample_is_saved_endpoint": false,
+      "mature_regime_gate": false,
+      "outcome_status": "CANCELLED_ACCEPTED_STATE_SAVED",
+      "saved_checkpoints": 4,
+      "saved_field_steady_gate": {
+        "change_linf": null,
+        "limitation": "Finite stored-field sampling, not a proof that no between-sample oscillation exists",
+        "passed": false
+      },
+      "state_id": "10b69a407675124d8576604ae2f914b5e789bb971b33e86af188d3a387feb171",
+      "steady_heat_flux_gate": {
+        "passed": false,
+        "relative_imbalance": 0.09782138527394521
+      },
+      "steady_sampling": {
+        "full_benchmark_accepted": false,
+        "relative_ranges": {
+          "Nu_bottom": 0.9215680737223978,
+          "Nu_top": 0.9240770576429376,
+          "dissipation_over_Ra": 0.9999586538733507,
+          "surface_velocity_max": 0.9998991162177832,
+          "surface_velocity_rms": 0.9998982239851807,
+          "temperature_mean": 0.018490059023607924,
+          "velocity_rms": 0.9944321031965624,
+          "viscosity_max": 0.9565016231785393,
+          "viscosity_min": 0.0015603641582596845,
+          "work": 0.99995865387335
+        },
+        "sample_count": 49,
+        "steady_samples": false,
+        "sufficient_history": false
+      },
+      "work_gate": {
+        "maximum_percent": 4.612658994600203e-09,
+        "passed": true
+      }
+    }
+  ],
+  "same_source_long_recovery": {
+    "end_step": 1220,
+    "limitation": "Two-step continuation from the actual saved nonlinear trajectory; receipt chains intentionally differ because save boundaries differ. Not a mature benchmark or cross-platform proof.",
+    "matched_state_id": "404dde3f5231e208bec4f1f268d01be9e8d4e82f5521aa86c76fef273b6c27cb",
+    "original_unchanged": true,
+    "schema": "atlas.long-nonlinear-checkpoint-recovery-r4-4.v1",
+    "split_latest_receipt_sha256": "675c2f87da8e1454791cabff39e85ec4aa6c870d5d041c27aa82f8a4fb2e74e4",
+    "start_step": 1218,
+    "status": "PASS_SAME_SOURCE_RECOVERY",
+    "uninterrupted_latest_receipt_sha256": "a52e823f03d2cceb6f177f2738922356e5cd27bd02010437b48d58374e0502fe"
+  },
+  "schema": "atlas.r4-4-obtained-summary.v1",
+  "user_visual_approval": "NOT_RECORDED"
+}

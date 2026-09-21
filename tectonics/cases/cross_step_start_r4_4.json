@@ -1,0 +1,33 @@
+{
+  "schema": "atlas.cross-step-start-r4-4.v1",
+  "mode": "previous-stage1",
+  "state_schema": "atlas.thermochemical-state.v2",
+  "seed_fields": [
+    "u_m_s",
+    "w_m_s",
+    "pressure_pa"
+  ],
+  "origin": "previous accepted step second RK mechanical stage, before final diffusion half",
+  "first_step": "cold stage 0; current-stage0 guess for stage 1",
+  "subsequent_steps": "accepted previous stage1 guess for stage0; current-stage0 guess for stage1",
+  "endpoint_diagnostics": "independent cold solve, never replaces stored seed",
+  "hidden_plan_seed": false,
+  "persistence": "self-contained state snapshot, same atomic ArrayStore record; complete scalar provenance in every accepted-step ledger",
+  "failure": "no accepted endpoint/seed published on either-stage, final-budget, cancellation or residual failure; no cold/direct retry",
+  "identity": "source, execution, problem, geometry, scales, epoch, time, start/Anderson policies and seed bytes remain bound",
+  "extra_step_admitted_bytes": "1024 * cells + 524288",
+  "extra_state_capture_admitted_bytes": "128 * cells + 262144",
+  "default_start": "zero-rate",
+  "unchanged_intra_step_mode": "rk-stage0",
+  "anderson": "separately selected; mixing history remains request-local",
+  "invalidation": "old-source/old-policy continuation refused; v1 snapshots remain decodable, not silently migrated",
+  "precision": "binary64",
+  "linear_rtol": 1e-12,
+  "momentum_tolerance": 1e-09,
+  "continuity_tolerance": 1e-10,
+  "pressure_gauge_tolerance": 1e-12,
+  "work_tolerance": 1e-09,
+  "viscosity_log_tolerance": 1e-08,
+  "R4_complete": false,
+  "R4_status": "IN_PROGRESS"
+}

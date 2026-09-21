@@ -95,7 +95,7 @@ def main() -> int:
               and (not acceptance or (resource_record is not None and
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
-        'schema': 'atlas.tectonics.foundation-verification.v22',
+        'schema': 'atlas.tectonics.foundation-verification.v23',
         'profile': 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': 'PASS_MATHEMATICAL_TESTS_ONLY' if passed else 'FAIL_OR_INCOMPLETE',
         'tests_run': result.testsRun,
@@ -113,6 +113,7 @@ def main() -> int:
         'native_runtime': (__import__('atlas_tectonics.transport', fromlist=['native_build_info']).native_build_info() if native else None),
         'R4_status': 'IN_PROGRESS',
         'R4_complete': False,
+        'convection_r4_4_scope': 'published-case definitions, independent endpoint diagnostics, immutable trajectory runner, per-run and refinement gates, combined recovery tests; passing tests does not establish mature published convection or complete R4.4 acceptance',
         'thermochemical_r4_2_scope': 'retained constant-property rectangular heat/binary composition evolution and local same-source restart; explicit R4.3 mode adds nonlinear mechanics, not full convection benchmark acceptance',
         'stokes_r4_1_scope': 'retained constant-viscosity closed free-slip 2D steady mechanics; variable-stress assembly is the separate R4.3 component, not an unmodified vector Laplacian',
         'variable_stokes_r4_3_scope': 'closed 2D rectangular symmetric-stress variable-viscosity mechanics, updated-law Picard yielding and explicit two-stage Tosi thermochemical coupling; no evolving damage or full R4.4 convection benchmark acceptance',

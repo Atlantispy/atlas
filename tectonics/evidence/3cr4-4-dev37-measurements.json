@@ -1,0 +1,2067 @@
+{
+  "schema": "atlas.dev37.coupled-matched-timings.v1",
+  "repetitions": 5,
+  "workloads": [
+    {
+      "name": "developed_700",
+      "controls": {
+        "name": "developed_700",
+        "case": "tosi-2",
+        "n": 16,
+        "dt": 1e-05,
+        "time": 0.007009999999999883,
+        "input_file": "from_700.npz",
+        "input_id": "20a3ce66896c910e898aabb116f598cff67a3b7c9d3c3f6bfb949adae8477410",
+        "input_sha256": "3f083f65870f8390271c66b483d68137ccf8ef601122a9f83e86cd742fb7e782",
+        "input_source_archive_sha256": "b2a7ab77ab6005c65dc6d1061054c08f3e8c1ea993ecd305ecffffce33648ec6"
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.9556717294999544,
+          "min_s": 0.8995289280001089,
+          "max_s": 0.9670027909999135,
+          "field_hashes": {
+            "temperature_k": "51e022a154003def49e0515ff6b8b71665f494eabc6055f0dab7acc5133e84a7",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "b39ac75831aff6118bb5c87e065cee5a1a86a7871606d3aa49dce2a3d0033497",
+            "flux_z_increment": "79b787e05f130ea94f7a8dcb78dc214bd07eb14d416403a255468bee8d8f260b",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "8bd71619965f0118a3a3c06be3fbd5692f3b0d27f9032d4023933031b0d11207",
+            "u_stage1_m_s": "ab2ee4fb28d76cd9c3bf17dc8e99e20bdd6de42906256bca87493039ac384e51",
+            "w_stage0_m_s": "bb2890b93d06db6e30ad199d55c8d6dfcdb3a8cf7e762a17688651fe8392b0d3",
+            "w_stage1_m_s": "57efdaee885d74940919bce4a3e7b48dac0b8a1ee843285096775af91563ec99",
+            "u_m_s": "964c36cfd9ccf6cd5e5a24fdfa9eeb2bb3ab58a1528d5c185def85144bfe434f",
+            "w_m_s": "a1b25685aeb267f187469367ef6e8fb56e9c3d530f87d57f253df70ab4df452b",
+            "pressure_pa": "5076a4580c0cd40325a7f2bdd8ebd78b717d24ca29e03911e17e6a3c98718360",
+            "viscosity_cell_pa_s": "6d1c80cd8f6e7e3ae0a65dabaa3e3318a77cfbd3d4eec0b348a16876d96c5fae",
+            "viscosity_vertex_pa_s": "b999db2b34672db87eb4f89599903973f67c3726aa2f1ec45f5dff55381e6b27"
+          },
+          "iterations": [
+            [
+              104,
+              82
+            ],
+            [
+              103,
+              82
+            ]
+          ],
+          "first_preparation_s": 1.0652129700001751,
+          "mean_preparation_s": 0.3538961621999988,
+          "median_endpoint_s": 0.5501661180001065
+        },
+        "dev37-anderson": {
+          "median_s": 0.3830745150000894,
+          "min_s": 0.3623814585000673,
+          "max_s": 0.39432920350009226,
+          "field_hashes": {
+            "temperature_k": "39b86029c0470dfcce82b91397d2413520cc456fe209f2cdfcbaaa6403094302",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "d87920013fba257e5f368c07849d7d489c2e054dbe58a9c50cbf4067332cb9ac",
+            "flux_z_increment": "712fd875a0fc41cfca6f7a2f3eebbc8878ef1474ccedece4dea0115ecfbc5a8a",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "e4a267a49adfc63e1228838501e4c0d4c639206362d1a6e5173ecd713ec8bf52",
+            "u_stage1_m_s": "a8fdca1e304e6d254d51642d61e2ea8bf8cc766901ad039d7d36ebd1e5696049",
+            "w_stage0_m_s": "980b77b6262c173c4af7122e0be98776bc173e0f447e5f9afd7812da5b8bc903",
+            "w_stage1_m_s": "d3f8d5c32bdeee23747bd02a1e8efee329eb4f23e5eb99738072cb86938a0943",
+            "u_m_s": "b45b7281f49a7d04c34ac1879e454d1a57675f9b188df4c436a4cd84213cd71e",
+            "w_m_s": "08839fa2856f1c72d86f840da7617fc8e1cc4d942c8985836ad188ef3922fb87",
+            "pressure_pa": "4aec6f528a2a39f120c2378caa2be32594df55ef47dd254bf92f1752c6cdbaf6",
+            "viscosity_cell_pa_s": "c94317cff3c39fcf3eba6fad7c924a6896ca90f3f924c6ad498f6be97b2e92be",
+            "viscosity_vertex_pa_s": "d4bfc16c20f813d600f6f4158e289bf01f7b186fb672504edc13494eae9da0be"
+          },
+          "iterations": [
+            [
+              39,
+              25
+            ],
+            [
+              39,
+              25
+            ]
+          ],
+          "first_preparation_s": 0.1839419969996925,
+          "mean_preparation_s": 0.181279627999902,
+          "median_endpoint_s": 0.23597984599973643
+        },
+        "dev37-picard": {
+          "median_s": 0.9727755460000935,
+          "min_s": 0.8842816935000428,
+          "max_s": 1.0025115529999766,
+          "field_hashes": {
+            "temperature_k": "51e022a154003def49e0515ff6b8b71665f494eabc6055f0dab7acc5133e84a7",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "b39ac75831aff6118bb5c87e065cee5a1a86a7871606d3aa49dce2a3d0033497",
+            "flux_z_increment": "79b787e05f130ea94f7a8dcb78dc214bd07eb14d416403a255468bee8d8f260b",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "8bd71619965f0118a3a3c06be3fbd5692f3b0d27f9032d4023933031b0d11207",
+            "u_stage1_m_s": "ab2ee4fb28d76cd9c3bf17dc8e99e20bdd6de42906256bca87493039ac384e51",
+            "w_stage0_m_s": "bb2890b93d06db6e30ad199d55c8d6dfcdb3a8cf7e762a17688651fe8392b0d3",
+            "w_stage1_m_s": "57efdaee885d74940919bce4a3e7b48dac0b8a1ee843285096775af91563ec99",
+            "u_m_s": "964c36cfd9ccf6cd5e5a24fdfa9eeb2bb3ab58a1528d5c185def85144bfe434f",
+            "w_m_s": "a1b25685aeb267f187469367ef6e8fb56e9c3d530f87d57f253df70ab4df452b",
+            "pressure_pa": "5076a4580c0cd40325a7f2bdd8ebd78b717d24ca29e03911e17e6a3c98718360",
+            "viscosity_cell_pa_s": "6d1c80cd8f6e7e3ae0a65dabaa3e3318a77cfbd3d4eec0b348a16876d96c5fae",
+            "viscosity_vertex_pa_s": "b999db2b34672db87eb4f89599903973f67c3726aa2f1ec45f5dff55381e6b27"
+          },
+          "iterations": [
+            [
+              104,
+              82
+            ],
+            [
+              103,
+              82
+            ]
+          ],
+          "first_preparation_s": 1.1184190930002842,
+          "mean_preparation_s": 0.37041439519998676,
+          "median_endpoint_s": 0.5471074570000383
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.1073551858696862e-08,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.1960208061567342e-08,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.3780691520880284e-05,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.376726629212391e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.596749858187373e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.6050372740146334e-05,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.379367186358565e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.604176873426378e-05,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.186755662620029e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 1.0562075167447717e-07,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 7.159188339254933e-08,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 5.970779426434092e-13,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": false
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 4.36610643472779e-12,
+            "limit": 1.1073551858696862e-08,
+            "passed": true,
+            "exact": false
+          },
+          "flux_z_increment": {
+            "max_abs": 3.980712027368272e-12,
+            "limit": 1.1960208061567342e-08,
+            "passed": true,
+            "exact": false
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 3.143806637240232e-08,
+            "limit": 3.3780691520880284e-05,
+            "passed": true,
+            "exact": false
+          },
+          "u_stage1_m_s": {
+            "max_abs": 1.8750370145426132e-08,
+            "limit": 3.376726629212391e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage0_m_s": {
+            "max_abs": 2.9178614635583244e-08,
+            "limit": 3.596749858187373e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage1_m_s": {
+            "max_abs": 2.3841929319701194e-08,
+            "limit": 3.6050372740146334e-05,
+            "passed": true,
+            "exact": false
+          },
+          "u_m_s": {
+            "max_abs": 3.313121510473138e-08,
+            "limit": 3.379367186358565e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_m_s": {
+            "max_abs": 2.855797731626808e-08,
+            "limit": 3.604176873426378e-05,
+            "passed": true,
+            "exact": false
+          },
+          "pressure_pa": {
+            "max_abs": 4.736808278948956e-09,
+            "limit": 3.186755662620029e-06,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 5.83467385517622e-10,
+            "limit": 1.0562075167447717e-07,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 3.691680849904344e-10,
+            "limit": 7.159188339254933e-08,
+            "passed": true,
+            "exact": false
+          }
+        }
+      },
+      "same_source_less_time": 0.6062046208138825,
+      "same_source_speedup": 2.539389878232611,
+      "net_speedup": 2.4947410805955896,
+      "ranges_overlap": false
+    },
+    {
+      "name": "developed_900",
+      "controls": {
+        "name": "developed_900",
+        "case": "tosi-2",
+        "n": 16,
+        "dt": 1e-05,
+        "time": 0.009009999999999801,
+        "input_file": "from_900.npz",
+        "input_id": "ed35574b2316e81c0349a91f149c9feb5b4d2411847151efc7aba50df2efeae9",
+        "input_sha256": "7284398ed3b3603683a89e31e639d135a7d9d9a372047ccd7b509450bc1d1062",
+        "input_source_archive_sha256": "b2a7ab77ab6005c65dc6d1061054c08f3e8c1ea993ecd305ecffffce33648ec6"
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.5267171729999518,
+          "min_s": 0.5122486140001001,
+          "max_s": 0.5805556494999564,
+          "field_hashes": {
+            "temperature_k": "1c32e6c10ec33790081524b033f830a0060c89ce911aa94e7f2ba03c5eb23b3b",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "6d79becb72d7d31d270e95d03ed6229edf217cf08bc5ae72cd28d32612ab5050",
+            "flux_z_increment": "b17860be93a64d86f5797535f3b2780ee13cce1a5fc690a792c88ed1f8d7de79",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "c72fed0701b5f4e54ead806f77ee7a1713367ea2dae2ac16af01370523b764c9",
+            "u_stage1_m_s": "356ef9ea6e51e846b88e6cf61a82b82ed7efa7d242dd5fb8dd2f0c65c9369cd8",
+            "w_stage0_m_s": "720b309a235db45587ccf0ed2accc70488c440bedf595c3a1e5e8839d185d483",
+            "w_stage1_m_s": "b5291b0a5c7351e9267c827da86b7b75d48b6efe2c55d55dfb4e0bb3f3964a66",
+            "u_m_s": "b563afa4fd09aa4f21f11a3524bc9732a6c2b25186c0a69619124b5fa43545a1",
+            "w_m_s": "44d4a6765f41c4e80c3ee3a6a8a01a62e8b8edd60ed928be34ebaf41fb92cf86",
+            "pressure_pa": "65367d95679e0246597cc349e68bc61fc211d15f35fa6587580ca1cfbb2167fc",
+            "viscosity_cell_pa_s": "e3310e2189e68a152611ce14c613cd670cf80da5437be15e42ae0e972319762e",
+            "viscosity_vertex_pa_s": "79736f2c8b694be6f0e6617fa8a9a47e49db5bbd5f560f302e84c153d9466bfd"
+          },
+          "iterations": [
+            [
+              56,
+              40
+            ],
+            [
+              56,
+              39
+            ]
+          ],
+          "first_preparation_s": 1.0623070359997655,
+          "mean_preparation_s": 0.3589768806000393,
+          "median_endpoint_s": 0.32656708300009996
+        },
+        "dev37-anderson": {
+          "median_s": 0.3194218855003328,
+          "min_s": 0.3091623539999091,
+          "max_s": 0.33851876300036565,
+          "field_hashes": {
+            "temperature_k": "a445d4ae78ef11ca41d94141ebeef4e6ff3d89852099734b8124b47676f6ff05",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "4b871095f04702d2dadc6646ab65d26d7882a0b4c45c736337adffe670c7a165",
+            "flux_z_increment": "6d09528674cd2786a7a07fde2e7996887fc129245e8809b58c5462b841f0b7f1",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "2c080ee1a1e699ca0f6fcb8839fba4870eeefa92854152850f0a97c800b34379",
+            "u_stage1_m_s": "3eec7996a248c771883b06902ddc8996102de4eb3df4b816bbeefb1ddba66b3b",
+            "w_stage0_m_s": "5c98403f8fbcc4de563abdef66bef6663c483196880b341002b5442cc0dd64dd",
+            "w_stage1_m_s": "64ed7978a45015f955d85816fa2cd40fc606f5946b8e2681153755eb67d6c2a1",
+            "u_m_s": "115910edd76aea1a9c2237a364b9c4265a92d74b5c1f89cdaedd4c9c502c6554",
+            "w_m_s": "6c022f406adef57ced5dd6a996019bec8ac7af4047fe38bf98dc55e44c084448",
+            "pressure_pa": "e4b8934df49e7a5ecc66e3736fb439cf8f3d3569b7357862781e05536d40f2f2",
+            "viscosity_cell_pa_s": "807056a254383b2518033ea384b3171eace3223257356e3a54e5fb6fbf47d4d2",
+            "viscosity_vertex_pa_s": "785a7b1e50172a6b81c1e58f36e310497f29d45768fcb5219aff87bc7987e02c"
+          },
+          "iterations": [
+            [
+              27,
+              18
+            ],
+            [
+              27,
+              18
+            ]
+          ],
+          "first_preparation_s": 0.18184659700000338,
+          "mean_preparation_s": 0.18503925759996492,
+          "median_endpoint_s": 0.20948874099985915
+        },
+        "dev37-picard": {
+          "median_s": 0.5269268244999239,
+          "min_s": 0.5122752259999288,
+          "max_s": 0.614426675499999,
+          "field_hashes": {
+            "temperature_k": "1c32e6c10ec33790081524b033f830a0060c89ce911aa94e7f2ba03c5eb23b3b",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "6d79becb72d7d31d270e95d03ed6229edf217cf08bc5ae72cd28d32612ab5050",
+            "flux_z_increment": "b17860be93a64d86f5797535f3b2780ee13cce1a5fc690a792c88ed1f8d7de79",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "c72fed0701b5f4e54ead806f77ee7a1713367ea2dae2ac16af01370523b764c9",
+            "u_stage1_m_s": "356ef9ea6e51e846b88e6cf61a82b82ed7efa7d242dd5fb8dd2f0c65c9369cd8",
+            "w_stage0_m_s": "720b309a235db45587ccf0ed2accc70488c440bedf595c3a1e5e8839d185d483",
+            "w_stage1_m_s": "b5291b0a5c7351e9267c827da86b7b75d48b6efe2c55d55dfb4e0bb3f3964a66",
+            "u_m_s": "b563afa4fd09aa4f21f11a3524bc9732a6c2b25186c0a69619124b5fa43545a1",
+            "w_m_s": "44d4a6765f41c4e80c3ee3a6a8a01a62e8b8edd60ed928be34ebaf41fb92cf86",
+            "pressure_pa": "65367d95679e0246597cc349e68bc61fc211d15f35fa6587580ca1cfbb2167fc",
+            "viscosity_cell_pa_s": "e3310e2189e68a152611ce14c613cd670cf80da5437be15e42ae0e972319762e",
+            "viscosity_vertex_pa_s": "79736f2c8b694be6f0e6617fa8a9a47e49db5bbd5f560f302e84c153d9466bfd"
+          },
+          "iterations": [
+            [
+              56,
+              40
+            ],
+            [
+              56,
+              39
+            ]
+          ],
+          "first_preparation_s": 1.117810119999831,
+          "mean_preparation_s": 0.3726780424000026,
+          "median_endpoint_s": 0.3403696800000944
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 2.5602832892964246e-08,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 4.165445488789774e-08,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 9.015244156359495e-05,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.929525412967078e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 0.00013747287911202002,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 0.0001370634039761903,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.933835287008251e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 0.00013696851084424647,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.495395247836453e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 1.0791221339880771e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 4.543541985454452e-09,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 5.526690216584029e-13,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": false
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 1.686557143942835e-12,
+            "limit": 2.5602832892964246e-08,
+            "passed": true,
+            "exact": false
+          },
+          "flux_z_increment": {
+            "max_abs": 1.5329248287399011e-12,
+            "limit": 4.165445488789774e-08,
+            "passed": true,
+            "exact": false
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 4.474707537838185e-08,
+            "limit": 9.015244156359495e-05,
+            "passed": true,
+            "exact": false
+          },
+          "u_stage1_m_s": {
+            "max_abs": 2.6699822797127126e-08,
+            "limit": 8.929525412967078e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage0_m_s": {
+            "max_abs": 3.2245111469819676e-08,
+            "limit": 0.00013747287911202002,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage1_m_s": {
+            "max_abs": 1.8435400761518395e-08,
+            "limit": 0.0001370634039761903,
+            "passed": true,
+            "exact": false
+          },
+          "u_m_s": {
+            "max_abs": 2.7469397423374176e-08,
+            "limit": 8.933835287008251e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_m_s": {
+            "max_abs": 2.4699886580492603e-08,
+            "limit": 0.00013696851084424647,
+            "passed": true,
+            "exact": false
+          },
+          "pressure_pa": {
+            "max_abs": 2.490731398907542e-09,
+            "limit": 3.495395247836453e-06,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 1.0058789912115174e-10,
+            "limit": 1.0791221339880771e-08,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 8.126543882269743e-11,
+            "limit": 4.543541985454452e-09,
+            "passed": true,
+            "exact": false
+          }
+        }
+      },
+      "same_source_less_time": 0.3938021929259763,
+      "same_source_speedup": 1.6496265547821234,
+      "net_speedup": 1.6489702080836381,
+      "ranges_overlap": false
+    },
+    {
+      "name": "developed_979",
+      "controls": {
+        "name": "developed_979",
+        "case": "tosi-2",
+        "n": 16,
+        "dt": 1e-05,
+        "time": 0.009799999999999769,
+        "input_file": "from_979.npz",
+        "input_id": "28da71dce82aff6918f862a3cd79299016d30fe75020364d97cd7ae2c69903b6",
+        "input_sha256": "b24a10a021997218814b7975e8d0cf634db8d187c4d6ebdf798e5bcdbd2408b0",
+        "input_source_archive_sha256": "b2a7ab77ab6005c65dc6d1061054c08f3e8c1ea993ecd305ecffffce33648ec6"
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.9183535165000194,
+          "min_s": 0.9010024939998402,
+          "max_s": 0.9437722759996632,
+          "field_hashes": {
+            "temperature_k": "e3a0ff8e531c9858b5f1e09f2ebceeb75957abed15941321d936f308f2ddcc80",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "4b1771afbe086310d93adaa802732f3d69744f7467d509523d9395a92a3b313c",
+            "flux_z_increment": "25d2c4cad1ffacfe0a6694f53e71147d5c3c58197ba82574924546974b13d9e3",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "22c026d393a5e014d13007fecd73e21a8cbe7b66fa5f3341a53d5834b8d5bb0d",
+            "u_stage1_m_s": "50836c537e2ef49b80b2c09603298ed7e0568a763864feded76da84ee6f2bf3d",
+            "w_stage0_m_s": "9ad585899a7cfc2ffe3c158dafe1bf18afea8d0aba6bb1bbe7bbd6eb7a027fb6",
+            "w_stage1_m_s": "26e18c88720387f79bcbe3a168e933800907db044de2acc1ad485cb200cd277f",
+            "u_m_s": "5c835c6d066b1195474be5ab198728cc30fd7944e6aa63c99fbe34e919758d75",
+            "w_m_s": "5ae95674f607608de0b42d177a2f2bcb8ffb3d55e8e56b816d1417e0d826e8d7",
+            "pressure_pa": "6f7bb629598dd60d4501034d15e46332ac856a844413d4b1cfb8a9707adf6b1d",
+            "viscosity_cell_pa_s": "72e8a3015d73290c63eeccbdaa8374f90e3900f62bef3495dcbc1303d874b50f",
+            "viscosity_vertex_pa_s": "c0acef1093ce9ae2a1873ca7c98a821a8e1358f9034dbb453c330b66024b0039"
+          },
+          "iterations": [
+            [
+              89,
+              68
+            ],
+            [
+              91,
+              69
+            ]
+          ],
+          "first_preparation_s": 1.0678073220001352,
+          "mean_preparation_s": 0.3569782946000487,
+          "median_endpoint_s": 0.5531169189998764
+        },
+        "dev37-anderson": {
+          "median_s": 0.39404606650009555,
+          "min_s": 0.38300112850015466,
+          "max_s": 0.43827616249996026,
+          "field_hashes": {
+            "temperature_k": "87cace96a18b9d27edcdcaed873f8d39ca829a9359b109d029f6cdf05216c974",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "88943ccbbb8e6bb4bce34fea58d67dc797dbd3d9818c453cba17da1c3a958773",
+            "flux_z_increment": "3dccb520e911cb91d7835c653d73b8d99d2f5fc8d9b7a2a0bf8a41bee8244366",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "7031b61ad0f957b38a6a9d95be276d283b41f9245dcc3d5df38907ffb1320824",
+            "u_stage1_m_s": "c2a34c8ae56bbb0e27b4a13511506b9e03bc23d1aa3c7b93ffe02174deca7d7f",
+            "w_stage0_m_s": "0358ba829f8c7f184cec5b8ea90647b3e066dcb721fdce94ea744f92b9996958",
+            "w_stage1_m_s": "a12e86701a93d7dc1cd0dff59ad62e7080fb7b105be7e17889288e360b650d1b",
+            "u_m_s": "71b403b2493d1c5057b485c8c68c13802ed65cb71f835acca45258d61d0b6144",
+            "w_m_s": "fa3dc0a7738e99236afb30788cb8577c7747f09af945ab22f8675180c4be8f0c",
+            "pressure_pa": "80ea6f188ea993d15e2ef3493fa12ab276d294e545188be7cd01b09255ec487f",
+            "viscosity_cell_pa_s": "317e37354f7c2adc95f3bd82993741cc989267c3a45c82b96820b4e668f5c01f",
+            "viscosity_vertex_pa_s": "2ca65f4b20640497056ce37e8eaa8e78ff52482177c733f8eacb90116b3ceba5"
+          },
+          "iterations": [
+            [
+              33,
+              21
+            ],
+            [
+              33,
+              23
+            ]
+          ],
+          "first_preparation_s": 0.17377740499978245,
+          "mean_preparation_s": 0.1824514347999866,
+          "median_endpoint_s": 0.25526185199987594
+        },
+        "dev37-picard": {
+          "median_s": 0.8938134964998881,
+          "min_s": 0.8725430225001674,
+          "max_s": 0.9783199635000983,
+          "field_hashes": {
+            "temperature_k": "e3a0ff8e531c9858b5f1e09f2ebceeb75957abed15941321d936f308f2ddcc80",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "4b1771afbe086310d93adaa802732f3d69744f7467d509523d9395a92a3b313c",
+            "flux_z_increment": "25d2c4cad1ffacfe0a6694f53e71147d5c3c58197ba82574924546974b13d9e3",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "22c026d393a5e014d13007fecd73e21a8cbe7b66fa5f3341a53d5834b8d5bb0d",
+            "u_stage1_m_s": "50836c537e2ef49b80b2c09603298ed7e0568a763864feded76da84ee6f2bf3d",
+            "w_stage0_m_s": "9ad585899a7cfc2ffe3c158dafe1bf18afea8d0aba6bb1bbe7bbd6eb7a027fb6",
+            "w_stage1_m_s": "26e18c88720387f79bcbe3a168e933800907db044de2acc1ad485cb200cd277f",
+            "u_m_s": "5c835c6d066b1195474be5ab198728cc30fd7944e6aa63c99fbe34e919758d75",
+            "w_m_s": "5ae95674f607608de0b42d177a2f2bcb8ffb3d55e8e56b816d1417e0d826e8d7",
+            "pressure_pa": "6f7bb629598dd60d4501034d15e46332ac856a844413d4b1cfb8a9707adf6b1d",
+            "viscosity_cell_pa_s": "72e8a3015d73290c63eeccbdaa8374f90e3900f62bef3495dcbc1303d874b50f",
+            "viscosity_vertex_pa_s": "c0acef1093ce9ae2a1873ca7c98a821a8e1358f9034dbb453c330b66024b0039"
+          },
+          "iterations": [
+            [
+              89,
+              68
+            ],
+            [
+              91,
+              69
+            ]
+          ],
+          "first_preparation_s": 1.0388608740004202,
+          "mean_preparation_s": 0.34971748620009746,
+          "median_endpoint_s": 0.5447665560000132
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0131663594120251e-08,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.4848061561561162e-08,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.5739305565315954e-05,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.524317864026416e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 5.047373364160828e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 4.9884917493207845e-05,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.527476151310064e-05,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 4.987315673749796e-05,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.060301043183879e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 6.883936859535329e-09,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 5.078047754184267e-09,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 1.3111733920823099e-12,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": false
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 2.648558239046195e-12,
+            "limit": 1.0131663594120251e-08,
+            "passed": true,
+            "exact": false
+          },
+          "flux_z_increment": {
+            "max_abs": 2.4841378953865956e-12,
+            "limit": 1.4848061561561162e-08,
+            "passed": true,
+            "exact": false
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 1.6160623061978185e-08,
+            "limit": 3.5739305565315954e-05,
+            "passed": true,
+            "exact": false
+          },
+          "u_stage1_m_s": {
+            "max_abs": 4.816043919220192e-08,
+            "limit": 3.524317864026416e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage0_m_s": {
+            "max_abs": 1.6119713563966798e-08,
+            "limit": 5.047373364160828e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage1_m_s": {
+            "max_abs": 4.6148272758728126e-08,
+            "limit": 4.9884917493207845e-05,
+            "passed": true,
+            "exact": false
+          },
+          "u_m_s": {
+            "max_abs": 3.9239179017158676e-08,
+            "limit": 3.527476151310064e-05,
+            "passed": true,
+            "exact": false
+          },
+          "w_m_s": {
+            "max_abs": 3.572631612769328e-08,
+            "limit": 4.987315673749796e-05,
+            "passed": true,
+            "exact": false
+          },
+          "pressure_pa": {
+            "max_abs": 2.835324863781352e-09,
+            "limit": 3.060301043183879e-06,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 1.5722482343827338e-10,
+            "limit": 6.883936859535329e-09,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 8.696749917436186e-11,
+            "limit": 5.078047754184267e-09,
+            "passed": true,
+            "exact": false
+          }
+        }
+      },
+      "same_source_less_time": 0.5591406170938873,
+      "same_source_speedup": 2.268296964460807,
+      "net_speedup": 2.3305739977480444,
+      "ranges_overlap": false
+    },
+    {
+      "name": "initial_tosi-2_16",
+      "controls": {
+        "name": "initial_tosi-2_16",
+        "case": "tosi-2",
+        "n": 16,
+        "dt": 1e-06,
+        "time": 0.0,
+        "input_file": null
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.11954321250004796,
+          "min_s": 0.11839633149998008,
+          "max_s": 0.12450311199995667,
+          "field_hashes": {
+            "temperature_k": "ae4b5309111fb96366a08f34ec4b4cd7dceef5b32f44d1bb04c750d0fc1e855d",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "1085dc3bf0f5c5694180b1d912323dc0f4767295e9e0db2d632dc488bf9c5961",
+            "flux_z_increment": "e6a28c64180f514a3893f1d183fff1c13d6ff4072a0292d685d775d177b36504",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "f9e0beb535453d38b449cd569ec0956d0753d67667a90029b5bbce88aa1164ab",
+            "u_stage1_m_s": "e5d3a30bcca8c29024a629bef1bcb68a311add0e38828ccfa614dfe0a09eb1ff",
+            "w_stage0_m_s": "42c612fa1cd0148bf082bb39fe826d57e9a7c1c2c7225be0467bce114e180d38",
+            "w_stage1_m_s": "679d51f147dcb436444a2332fe3dc7186bdb2780655311e810e34354c5878109",
+            "u_m_s": "466d2f620f4714146d61e0c6ac8d9a73afeaf6ae66bf573098e6936122376a37",
+            "w_m_s": "1cf9ab7b472e9961aa4261ce028843045822cdfc3b13c78ee411cc6db2dd1424",
+            "pressure_pa": "df0c62d801354ffae7b439ca6eabe91fe59f826b736636adc283d8e55ca2fd15",
+            "viscosity_cell_pa_s": "a0e81857edb26aa661679df66d193565523347d13b77e3987b44c75e9c133502",
+            "viscosity_vertex_pa_s": "970e7a1473d5c65f4693cb5dcffcd6ceb8d5f9a289c6abb98e4caba2c8c8c080"
+          },
+          "iterations": [
+            [
+              11,
+              6
+            ],
+            [
+              11,
+              6
+            ]
+          ],
+          "first_preparation_s": 1.0278744110000844,
+          "mean_preparation_s": 0.3484711410000273,
+          "median_endpoint_s": 0.07995296299986876
+        },
+        "dev37-anderson": {
+          "median_s": 0.11836349600002904,
+          "min_s": 0.10803869200003646,
+          "max_s": 0.12256362399966747,
+          "field_hashes": {
+            "temperature_k": "13299bcde728807a2be622de4bf7add8edc6361b485be9ce3b219985566f044f",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "180e3b5c3cddd5d8c8beeb43e180eb1b2b5e7cb27558ada0e7ab0323a0ed1f3e",
+            "flux_z_increment": "ec98ff2a05295eb9f1073a1a9cc5e548be64fd3221be8bab4bb8bb68f98bf7ea",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "21017ef81dc501b77212920f0d2fc3ae4e7ece5412143758261ebd2dc8cf30b1",
+            "u_stage1_m_s": "eb78705929d5aff6cc9c987137e539d3ade9b89b9c4aff1d268350de533d9f3b",
+            "w_stage0_m_s": "911f73ef834e04ee84146772c0a86acd278b0219abac3dd865b7f94644eb0e61",
+            "w_stage1_m_s": "0981de347519b5089670a1542179404f6066625fe09154430e1ac21193826eea",
+            "u_m_s": "7e12ab5223f8c3fcde1e8bd98ef6b3251c3e0029008b8154cdfbf16663aff115",
+            "w_m_s": "5a7f4ad496491fbad5b114b8c2e22afd62d5a3a2fb428066f8d68e3c2d073ddb",
+            "pressure_pa": "5176a3b2284d9ba55caac8b819cb0e3099a4990f06c81b1569876007347d22c5",
+            "viscosity_cell_pa_s": "1a58a8b4899cc27a52ed03e0863f6fdc6f962e2798efae34cad0b273f0b58dfd",
+            "viscosity_vertex_pa_s": "968db12895d57b34ca41d2f2baf5c228045030df6a2dbd22ba8d9980a72eb57f"
+          },
+          "iterations": [
+            [
+              8,
+              5
+            ],
+            [
+              8,
+              5
+            ]
+          ],
+          "first_preparation_s": 0.17910673200003657,
+          "mean_preparation_s": 0.18126732679993438,
+          "median_endpoint_s": 0.07056001999990258
+        },
+        "dev37-picard": {
+          "median_s": 0.12347531099999287,
+          "min_s": 0.11611928750016887,
+          "max_s": 0.1260944075002044,
+          "field_hashes": {
+            "temperature_k": "ae4b5309111fb96366a08f34ec4b4cd7dceef5b32f44d1bb04c750d0fc1e855d",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "1085dc3bf0f5c5694180b1d912323dc0f4767295e9e0db2d632dc488bf9c5961",
+            "flux_z_increment": "e6a28c64180f514a3893f1d183fff1c13d6ff4072a0292d685d775d177b36504",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "f9e0beb535453d38b449cd569ec0956d0753d67667a90029b5bbce88aa1164ab",
+            "u_stage1_m_s": "e5d3a30bcca8c29024a629bef1bcb68a311add0e38828ccfa614dfe0a09eb1ff",
+            "w_stage0_m_s": "42c612fa1cd0148bf082bb39fe826d57e9a7c1c2c7225be0467bce114e180d38",
+            "w_stage1_m_s": "679d51f147dcb436444a2332fe3dc7186bdb2780655311e810e34354c5878109",
+            "u_m_s": "466d2f620f4714146d61e0c6ac8d9a73afeaf6ae66bf573098e6936122376a37",
+            "w_m_s": "1cf9ab7b472e9961aa4261ce028843045822cdfc3b13c78ee411cc6db2dd1424",
+            "pressure_pa": "df0c62d801354ffae7b439ca6eabe91fe59f826b736636adc283d8e55ca2fd15",
+            "viscosity_cell_pa_s": "a0e81857edb26aa661679df66d193565523347d13b77e3987b44c75e9c133502",
+            "viscosity_vertex_pa_s": "970e7a1473d5c65f4693cb5dcffcd6ceb8d5f9a289c6abb98e4caba2c8c8c080"
+          },
+          "iterations": [
+            [
+              11,
+              6
+            ],
+            [
+              11,
+              6
+            ]
+          ],
+          "first_preparation_s": 1.1179091080002763,
+          "mean_preparation_s": 0.3679283225999825,
+          "median_endpoint_s": 0.07921524099992894
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0442908141657163e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0121874424881857e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 1.4065817904683713e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 1.4075351244419346e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 4.062806825219669e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 4.0656369182113307e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 1.4075213011819316e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 4.0655954506526336e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.0314313249594757e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 1.3450594655782497e-07,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.309659193034323e-08,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 6.661338147750939e-16,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": false
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 1.003396499866865e-15,
+            "limit": 1.0442908141657163e-09,
+            "passed": true,
+            "exact": false
+          },
+          "flux_z_increment": {
+            "max_abs": 1.1279327894863495e-15,
+            "limit": 1.0121874424881857e-09,
+            "passed": true,
+            "exact": false
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 7.600954587960729e-11,
+            "limit": 1.4065817904683713e-06,
+            "passed": true,
+            "exact": false
+          },
+          "u_stage1_m_s": {
+            "max_abs": 1.3624895656150215e-10,
+            "limit": 1.4075351244419346e-06,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage0_m_s": {
+            "max_abs": 6.050824945258437e-11,
+            "limit": 4.062806825219669e-07,
+            "passed": true,
+            "exact": false
+          },
+          "w_stage1_m_s": {
+            "max_abs": 1.4516325641533712e-10,
+            "limit": 4.0656369182113307e-07,
+            "passed": true,
+            "exact": false
+          },
+          "u_m_s": {
+            "max_abs": 7.611863916956452e-11,
+            "limit": 1.4075213011819316e-06,
+            "passed": true,
+            "exact": false
+          },
+          "w_m_s": {
+            "max_abs": 6.059636646627009e-11,
+            "limit": 4.0655954506526336e-07,
+            "passed": true,
+            "exact": false
+          },
+          "pressure_pa": {
+            "max_abs": 3.92866184029117e-10,
+            "limit": 3.0314313249594757e-06,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 8.997571576685459e-10,
+            "limit": 1.3450594655782497e-07,
+            "passed": true,
+            "exact": false
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 1.9345669510784091e-10,
+            "limit": 9.309659193034323e-08,
+            "passed": true,
+            "exact": false
+          }
+        }
+      },
+      "same_source_less_time": 0.041399490785361315,
+      "same_source_speedup": 1.0431874283264038,
+      "net_speedup": 1.0099668946920817,
+      "ranges_overlap": true
+    },
+    {
+      "name": "initial_tosi-1_16",
+      "controls": {
+        "name": "initial_tosi-1_16",
+        "case": "tosi-1",
+        "n": 16,
+        "dt": 1e-06,
+        "time": 0.0,
+        "input_file": null
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.06324632699988797,
+          "min_s": 0.0555850425000699,
+          "max_s": 0.0644732920000024,
+          "field_hashes": {
+            "temperature_k": "e8ef76276d149ba0c871c51ac2df8369e4b628ffa8f844aefd4fe7ca10f2967a",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "a7bf8c0568ff8d7bcfe81b42ab7efb274596b119ca00c49130e738e5f17697b3",
+            "flux_z_increment": "6fcbb47afc3addb142ecdf6005acbf34ef5a2912c15bfa777640da17cbae8907",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "4413f3d5f4e388a2ac8fb70275af2fc5ccd6e6613234947e38f4f6ee84f91260",
+            "u_stage1_m_s": "9adab34be71d4dcaf5216541e456062e585bdd6a9cab783a8d8d97e33b5805ee",
+            "w_stage0_m_s": "b7bfdeec5ed0c9a5aa8463e9c9ac277545e282f4b83e89c6c9f3ee0ba7e556b0",
+            "w_stage1_m_s": "c6bbef8a851bde80902477a1c43226b69a51ed0e06f6cb2514eebad9af6e0f85",
+            "u_m_s": "6beca2c541c8748c1423491f2b0b3765b7f72b78c9c25f19b5c225ee6429e98d",
+            "w_m_s": "2860e853094a7fab5ba7bef8db02173937860035fab403ca6a88ea9868ade988",
+            "pressure_pa": "051697f46225f9617582f5c0bd60af5e44fce5c2af0ae3babf884001273102c1",
+            "viscosity_cell_pa_s": "69d2e51b47c6bf9059dd31d6ecd4305d812c995c2d4a9573909fe1ee77203d77",
+            "viscosity_vertex_pa_s": "ea3ea2e7f947741a6cdd5787d82b486c9b8a21da1bcd74f7d823084e4f99beda"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.0768502260002606,
+          "mean_preparation_s": 0.36188717960012584,
+          "median_endpoint_s": 0.03849796899976354
+        },
+        "dev37-anderson": {
+          "median_s": 0.06473178999999618,
+          "min_s": 0.054721549999840136,
+          "max_s": 0.0690883379998013,
+          "field_hashes": {
+            "temperature_k": "e8ef76276d149ba0c871c51ac2df8369e4b628ffa8f844aefd4fe7ca10f2967a",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "a7bf8c0568ff8d7bcfe81b42ab7efb274596b119ca00c49130e738e5f17697b3",
+            "flux_z_increment": "6fcbb47afc3addb142ecdf6005acbf34ef5a2912c15bfa777640da17cbae8907",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "4413f3d5f4e388a2ac8fb70275af2fc5ccd6e6613234947e38f4f6ee84f91260",
+            "u_stage1_m_s": "9adab34be71d4dcaf5216541e456062e585bdd6a9cab783a8d8d97e33b5805ee",
+            "w_stage0_m_s": "b7bfdeec5ed0c9a5aa8463e9c9ac277545e282f4b83e89c6c9f3ee0ba7e556b0",
+            "w_stage1_m_s": "c6bbef8a851bde80902477a1c43226b69a51ed0e06f6cb2514eebad9af6e0f85",
+            "u_m_s": "6beca2c541c8748c1423491f2b0b3765b7f72b78c9c25f19b5c225ee6429e98d",
+            "w_m_s": "2860e853094a7fab5ba7bef8db02173937860035fab403ca6a88ea9868ade988",
+            "pressure_pa": "051697f46225f9617582f5c0bd60af5e44fce5c2af0ae3babf884001273102c1",
+            "viscosity_cell_pa_s": "69d2e51b47c6bf9059dd31d6ecd4305d812c995c2d4a9573909fe1ee77203d77",
+            "viscosity_vertex_pa_s": "ea3ea2e7f947741a6cdd5787d82b486c9b8a21da1bcd74f7d823084e4f99beda"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 0.17941203100008352,
+          "mean_preparation_s": 0.17957860159995107,
+          "median_endpoint_s": 0.03587156200001118
+        },
+        "dev37-picard": {
+          "median_s": 0.06608100349990309,
+          "min_s": 0.055055778500218366,
+          "max_s": 0.07159622900007889,
+          "field_hashes": {
+            "temperature_k": "e8ef76276d149ba0c871c51ac2df8369e4b628ffa8f844aefd4fe7ca10f2967a",
+            "composition": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "flux_x_increment": "a7bf8c0568ff8d7bcfe81b42ab7efb274596b119ca00c49130e738e5f17697b3",
+            "flux_z_increment": "6fcbb47afc3addb142ecdf6005acbf34ef5a2912c15bfa777640da17cbae8907",
+            "total_heating_w_m3": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+            "u_stage0_m_s": "4413f3d5f4e388a2ac8fb70275af2fc5ccd6e6613234947e38f4f6ee84f91260",
+            "u_stage1_m_s": "9adab34be71d4dcaf5216541e456062e585bdd6a9cab783a8d8d97e33b5805ee",
+            "w_stage0_m_s": "b7bfdeec5ed0c9a5aa8463e9c9ac277545e282f4b83e89c6c9f3ee0ba7e556b0",
+            "w_stage1_m_s": "c6bbef8a851bde80902477a1c43226b69a51ed0e06f6cb2514eebad9af6e0f85",
+            "u_m_s": "6beca2c541c8748c1423491f2b0b3765b7f72b78c9c25f19b5c225ee6429e98d",
+            "w_m_s": "2860e853094a7fab5ba7bef8db02173937860035fab403ca6a88ea9868ade988",
+            "pressure_pa": "051697f46225f9617582f5c0bd60af5e44fce5c2af0ae3babf884001273102c1",
+            "viscosity_cell_pa_s": "69d2e51b47c6bf9059dd31d6ecd4305d812c995c2d4a9573909fe1ee77203d77",
+            "viscosity_vertex_pa_s": "ea3ea2e7f947741a6cdd5787d82b486c9b8a21da1bcd74f7d823084e4f99beda"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.0760068059998957,
+          "mean_preparation_s": 0.3580240932000379,
+          "median_endpoint_s": 0.03905599399968196
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0875901537538556e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0240661173453562e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.7797962871365263e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.783487548163939e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.010193522788105e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.021149257207849e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.783461946849514e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.0210735868166e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.031422501659515e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 7.156857080988174e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 5.0767357237664414e-08,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0875901537538556e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0240661173453562e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.7797962871365263e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.783487548163939e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.010193522788105e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.021149257207849e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 2.783461946849514e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.0210735868166e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.031422501659515e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 7.156857080988174e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 5.0767357237664414e-08,
+            "passed": true,
+            "exact": true
+          }
+        }
+      },
+      "same_source_less_time": 0.02041756977720366,
+      "same_source_speedup": 1.0208431359600436,
+      "net_speedup": 0.9770520327012694,
+      "ranges_overlap": true
+    },
+    {
+      "name": "initial_tosi-1_64",
+      "controls": {
+        "name": "initial_tosi-1_64",
+        "case": "tosi-1",
+        "n": 64,
+        "dt": 1e-06,
+        "time": 0.0,
+        "input_file": null
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 0.20563605350002945,
+          "min_s": 0.20241148199988857,
+          "max_s": 0.2279388954998467,
+          "field_hashes": {
+            "temperature_k": "5271c74a371aa8b90d755756d4b1eb39b9697da539d29cd4fd938a28e7b31d3b",
+            "composition": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "flux_x_increment": "cc67276a81da41c8222fad2bf37919900c206efb61ff0e03c7c46c1a2b559418",
+            "flux_z_increment": "e0ddb22c79c795e140b1b4bc2fc6993989149dd034ce21fef34b5a943c3614d3",
+            "total_heating_w_m3": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "u_stage0_m_s": "48a4adfa3607e0238a56bce5874f2b096f9f22f5d41586b7706756d0f1b078d1",
+            "u_stage1_m_s": "27da1311c6815138f3da8a837b28fa1067651cc688eecd53de980389b9f10d7c",
+            "w_stage0_m_s": "46a9684a08b98bc58cbe4b4318b8546c87c0cba9a8fde16088e789b2d372dba4",
+            "w_stage1_m_s": "ebf75ffe756a69a438983b5553d50f601149479878b8a0ff60397ffbc6f93371",
+            "u_m_s": "30ccd1f2b1987031863e1af289c97b354be0d678638e9471a1aabb7ac135c6f0",
+            "w_m_s": "69beca5e24b014ad2c265d111025dc984e40226dd9c7ea2599963e8cf883a836",
+            "pressure_pa": "3e07fb4a553c608df525ca0325b4521775584cdf4af339bff929c7ee9937d84f",
+            "viscosity_cell_pa_s": "2b2dd24a14d0ca943e977111023660b1dc6b0aae723ed0739bd75fc81c31c375",
+            "viscosity_vertex_pa_s": "146c06c04497176ac2d7fdc7978f0254f50502a20e43c0d3739b3823bc9867d6"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.2748039029997926,
+          "mean_preparation_s": 0.3996766825999657,
+          "median_endpoint_s": 0.11323219999985668
+        },
+        "dev37-anderson": {
+          "median_s": 0.21070275899978697,
+          "min_s": 0.20548092449985234,
+          "max_s": 0.23249602650025736,
+          "field_hashes": {
+            "temperature_k": "5271c74a371aa8b90d755756d4b1eb39b9697da539d29cd4fd938a28e7b31d3b",
+            "composition": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "flux_x_increment": "cc67276a81da41c8222fad2bf37919900c206efb61ff0e03c7c46c1a2b559418",
+            "flux_z_increment": "e0ddb22c79c795e140b1b4bc2fc6993989149dd034ce21fef34b5a943c3614d3",
+            "total_heating_w_m3": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "u_stage0_m_s": "48a4adfa3607e0238a56bce5874f2b096f9f22f5d41586b7706756d0f1b078d1",
+            "u_stage1_m_s": "27da1311c6815138f3da8a837b28fa1067651cc688eecd53de980389b9f10d7c",
+            "w_stage0_m_s": "46a9684a08b98bc58cbe4b4318b8546c87c0cba9a8fde16088e789b2d372dba4",
+            "w_stage1_m_s": "ebf75ffe756a69a438983b5553d50f601149479878b8a0ff60397ffbc6f93371",
+            "u_m_s": "30ccd1f2b1987031863e1af289c97b354be0d678638e9471a1aabb7ac135c6f0",
+            "w_m_s": "69beca5e24b014ad2c265d111025dc984e40226dd9c7ea2599963e8cf883a836",
+            "pressure_pa": "3e07fb4a553c608df525ca0325b4521775584cdf4af339bff929c7ee9937d84f",
+            "viscosity_cell_pa_s": "2b2dd24a14d0ca943e977111023660b1dc6b0aae723ed0739bd75fc81c31c375",
+            "viscosity_vertex_pa_s": "146c06c04497176ac2d7fdc7978f0254f50502a20e43c0d3739b3823bc9867d6"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 0.18009136999990005,
+          "mean_preparation_s": 0.1786374488000547,
+          "median_endpoint_s": 0.11213760900000125
+        },
+        "dev37-picard": {
+          "median_s": 0.2066941969999334,
+          "min_s": 0.20186572349985,
+          "max_s": 0.24817460050007867,
+          "field_hashes": {
+            "temperature_k": "5271c74a371aa8b90d755756d4b1eb39b9697da539d29cd4fd938a28e7b31d3b",
+            "composition": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "flux_x_increment": "cc67276a81da41c8222fad2bf37919900c206efb61ff0e03c7c46c1a2b559418",
+            "flux_z_increment": "e0ddb22c79c795e140b1b4bc2fc6993989149dd034ce21fef34b5a943c3614d3",
+            "total_heating_w_m3": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+            "u_stage0_m_s": "48a4adfa3607e0238a56bce5874f2b096f9f22f5d41586b7706756d0f1b078d1",
+            "u_stage1_m_s": "27da1311c6815138f3da8a837b28fa1067651cc688eecd53de980389b9f10d7c",
+            "w_stage0_m_s": "46a9684a08b98bc58cbe4b4318b8546c87c0cba9a8fde16088e789b2d372dba4",
+            "w_stage1_m_s": "ebf75ffe756a69a438983b5553d50f601149479878b8a0ff60397ffbc6f93371",
+            "u_m_s": "30ccd1f2b1987031863e1af289c97b354be0d678638e9471a1aabb7ac135c6f0",
+            "w_m_s": "69beca5e24b014ad2c265d111025dc984e40226dd9c7ea2599963e8cf883a836",
+            "pressure_pa": "3e07fb4a553c608df525ca0325b4521775584cdf4af339bff929c7ee9937d84f",
+            "viscosity_cell_pa_s": "2b2dd24a14d0ca943e977111023660b1dc6b0aae723ed0739bd75fc81c31c375",
+            "viscosity_vertex_pa_s": "146c06c04497176ac2d7fdc7978f0254f50502a20e43c0d3739b3823bc9867d6"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.1195925389997683,
+          "mean_preparation_s": 0.3665319640000234,
+          "median_endpoint_s": 0.1123210040000231
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.3902195828049802e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0960062910101898e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0594374760742347e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0636171783628258e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.073334362285267e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.083471854316711e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0635888863822333e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.083394147850352e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.259942262675314e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.265662763981034e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 8.500853378858119e-08,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.3902195828049802e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.0960062910101898e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0594374760742347e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0636171783628258e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.073334362285267e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.083471854316711e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0635888863822333e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.083394147850352e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.259942262675314e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.265662763981034e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 8.500853378858119e-08,
+            "passed": true,
+            "exact": true
+          }
+        }
+      },
+      "same_source_less_time": -0.019393684283525614,
+      "same_source_speedup": 0.9809752752223923,
+      "net_speedup": 0.9759533025395143,
+      "ranges_overlap": true
+    },
+    {
+      "name": "initial_tosi-1_128",
+      "controls": {
+        "name": "initial_tosi-1_128",
+        "case": "tosi-1",
+        "n": 128,
+        "dt": 1e-06,
+        "time": 0.0,
+        "input_file": null
+      },
+      "routes": {
+        "dev36-picard": {
+          "median_s": 1.229923255499898,
+          "min_s": 1.1949172074998842,
+          "max_s": 1.3536391134998667,
+          "field_hashes": {
+            "temperature_k": "81b6ba6d10f8c2e7b6b3c5c7a9be7b5c404e01390a224d4805f537b360458376",
+            "composition": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "flux_x_increment": "23741c6f7f28be0b91c03aadc1ec14959669e58e6134802ad65f2c0cf77a1ad9",
+            "flux_z_increment": "cfe2d939673cd0191c95f50746f96f72c7924ffb479c5d2c7233847ca7ea981d",
+            "total_heating_w_m3": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "u_stage0_m_s": "162f1c89ca6816aa2dfbea9dc92d55cdfbcceff1b3668b4a2d68a220ee4c69c5",
+            "u_stage1_m_s": "b60a79ccaf33cea8d90274d15a9c5f3611e324cc50b90476232be211004cc571",
+            "w_stage0_m_s": "8147b0b37ed0c4ee07cc64c3d60c88e9ca6e71aff7c751bf09f9a1cc05f61274",
+            "w_stage1_m_s": "4b197197979e010387dc2a3a758ae36d78daf870686f00fdd8f46932dbe922f0",
+            "u_m_s": "69cd6ee1b1d7b54d841741dcfecf29920178ce9d9a649ba8654cba8c7dfb3919",
+            "w_m_s": "eb72de0d5ccbdfa7ef45feb381bdc17deb8da37f55f74a6c3d316df9f0efc04e",
+            "pressure_pa": "9eb4ecb6360211009394f0cb819a079cd475f9235a57e2ee927a433959d58dbd",
+            "viscosity_cell_pa_s": "2bbd5b70772e66410d8408662d8db968804c7c08362a6420244b8bcd4419914d",
+            "viscosity_vertex_pa_s": "633bc02b75402a9830111c8b96422bcbe5fc3be2b1534af1d09016b982ac1412"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.097277245999976,
+          "mean_preparation_s": 0.36516969840004093,
+          "median_endpoint_s": 0.6253973689999839
+        },
+        "dev37-anderson": {
+          "median_s": 1.2602717089998805,
+          "min_s": 1.231019101999891,
+          "max_s": 1.2982077214999208,
+          "field_hashes": {
+            "temperature_k": "81b6ba6d10f8c2e7b6b3c5c7a9be7b5c404e01390a224d4805f537b360458376",
+            "composition": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "flux_x_increment": "23741c6f7f28be0b91c03aadc1ec14959669e58e6134802ad65f2c0cf77a1ad9",
+            "flux_z_increment": "cfe2d939673cd0191c95f50746f96f72c7924ffb479c5d2c7233847ca7ea981d",
+            "total_heating_w_m3": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "u_stage0_m_s": "162f1c89ca6816aa2dfbea9dc92d55cdfbcceff1b3668b4a2d68a220ee4c69c5",
+            "u_stage1_m_s": "b60a79ccaf33cea8d90274d15a9c5f3611e324cc50b90476232be211004cc571",
+            "w_stage0_m_s": "8147b0b37ed0c4ee07cc64c3d60c88e9ca6e71aff7c751bf09f9a1cc05f61274",
+            "w_stage1_m_s": "4b197197979e010387dc2a3a758ae36d78daf870686f00fdd8f46932dbe922f0",
+            "u_m_s": "69cd6ee1b1d7b54d841741dcfecf29920178ce9d9a649ba8654cba8c7dfb3919",
+            "w_m_s": "eb72de0d5ccbdfa7ef45feb381bdc17deb8da37f55f74a6c3d316df9f0efc04e",
+            "pressure_pa": "9eb4ecb6360211009394f0cb819a079cd475f9235a57e2ee927a433959d58dbd",
+            "viscosity_cell_pa_s": "2bbd5b70772e66410d8408662d8db968804c7c08362a6420244b8bcd4419914d",
+            "viscosity_vertex_pa_s": "633bc02b75402a9830111c8b96422bcbe5fc3be2b1534af1d09016b982ac1412"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 0.1787653040000805,
+          "mean_preparation_s": 0.1780411594000725,
+          "median_endpoint_s": 0.6235425649997524
+        },
+        "dev37-picard": {
+          "median_s": 1.232055227500041,
+          "min_s": 1.2159065660000579,
+          "max_s": 1.2454345895000642,
+          "field_hashes": {
+            "temperature_k": "81b6ba6d10f8c2e7b6b3c5c7a9be7b5c404e01390a224d4805f537b360458376",
+            "composition": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "flux_x_increment": "23741c6f7f28be0b91c03aadc1ec14959669e58e6134802ad65f2c0cf77a1ad9",
+            "flux_z_increment": "cfe2d939673cd0191c95f50746f96f72c7924ffb479c5d2c7233847ca7ea981d",
+            "total_heating_w_m3": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+            "u_stage0_m_s": "162f1c89ca6816aa2dfbea9dc92d55cdfbcceff1b3668b4a2d68a220ee4c69c5",
+            "u_stage1_m_s": "b60a79ccaf33cea8d90274d15a9c5f3611e324cc50b90476232be211004cc571",
+            "w_stage0_m_s": "8147b0b37ed0c4ee07cc64c3d60c88e9ca6e71aff7c751bf09f9a1cc05f61274",
+            "w_stage1_m_s": "4b197197979e010387dc2a3a758ae36d78daf870686f00fdd8f46932dbe922f0",
+            "u_m_s": "69cd6ee1b1d7b54d841741dcfecf29920178ce9d9a649ba8654cba8c7dfb3919",
+            "w_m_s": "eb72de0d5ccbdfa7ef45feb381bdc17deb8da37f55f74a6c3d316df9f0efc04e",
+            "pressure_pa": "9eb4ecb6360211009394f0cb819a079cd475f9235a57e2ee927a433959d58dbd",
+            "viscosity_cell_pa_s": "2bbd5b70772e66410d8408662d8db968804c7c08362a6420244b8bcd4419914d",
+            "viscosity_vertex_pa_s": "633bc02b75402a9830111c8b96422bcbe5fc3be2b1534af1d09016b982ac1412"
+          },
+          "iterations": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "first_preparation_s": 1.152226538999912,
+          "mean_preparation_s": 0.37984808299997896,
+          "median_endpoint_s": 0.6187339339999198
+        }
+      },
+      "comparisons": {
+        "dev37-picard": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.785786083839531e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.1918892668610437e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.074382246376759e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.078575982157188e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.07556064138782e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.085845384739136e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0785475611981865e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.085767801957995e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.2987186283070025e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.67375293435154e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.265663682370635e-08,
+            "passed": true,
+            "exact": true
+          }
+        },
+        "dev37-anderson": {
+          "temperature_k": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "composition": {
+            "max_abs": 0.0,
+            "limit": 1e-10,
+            "passed": true,
+            "exact": true
+          },
+          "flux_x_increment": {
+            "max_abs": 0.0,
+            "limit": 1.785786083839531e-09,
+            "passed": true,
+            "exact": true
+          },
+          "flux_z_increment": {
+            "max_abs": 0.0,
+            "limit": 1.1918892668610437e-09,
+            "passed": true,
+            "exact": true
+          },
+          "total_heating_w_m3": {
+            "max_abs": 0.0,
+            "limit": 1e-09,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.074382246376759e-06,
+            "passed": true,
+            "exact": true
+          },
+          "u_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.078575982157188e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage0_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.07556064138782e-07,
+            "passed": true,
+            "exact": true
+          },
+          "w_stage1_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.085845384739136e-07,
+            "passed": true,
+            "exact": true
+          },
+          "u_m_s": {
+            "max_abs": 0.0,
+            "limit": 3.0785475611981865e-06,
+            "passed": true,
+            "exact": true
+          },
+          "w_m_s": {
+            "max_abs": 0.0,
+            "limit": 8.085767801957995e-07,
+            "passed": true,
+            "exact": true
+          },
+          "pressure_pa": {
+            "max_abs": 0.0,
+            "limit": 3.2987186283070025e-06,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_cell_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.67375293435154e-08,
+            "passed": true,
+            "exact": true
+          },
+          "viscosity_vertex_pa_s": {
+            "max_abs": 0.0,
+            "limit": 9.265663682370635e-08,
+            "passed": true,
+            "exact": true
+          }
+        }
+      },
+      "same_source_less_time": -0.022901961592333375,
+      "same_source_speedup": 0.977610795117958,
+      "net_speedup": 0.9759191186446086,
+      "ranges_overlap": true
+    }
+  ],
+  "source_unchanged": true
+}

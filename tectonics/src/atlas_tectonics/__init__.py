@@ -10,7 +10,7 @@ from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
 from .flexure import PeriodicFlexure
 
-__version__ = "0.1.0.dev30"
+__version__ = "0.1.0.dev39"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
@@ -150,7 +150,20 @@ __all__ += ["ThermalBoundary2D", "ThermochemicalPolicy", "ThermochemicalProblem"
 
 # R4.3 variable-stress and yielding mechanics; full R4 benchmark acceptance remains open.
 from .variable_stokes import NonlinearStokesPolicy
-from .variable_stokes_execution import (PreparedVariableStokes2D, VariableStokesSolution,
+from .variable_stokes_execution import (PreparedVariableStokes2D, VariableStokesSolution, NonlinearStokesGuess,
     save_variable_stokes_solution, load_variable_stokes_solution)
-__all__ += ['NonlinearStokesPolicy', 'PreparedVariableStokes2D', 'VariableStokesSolution',
+__all__ += ['NonlinearStokesPolicy', 'PreparedVariableStokes2D', 'VariableStokesSolution', 'NonlinearStokesGuess',
             'save_variable_stokes_solution', 'load_variable_stokes_solution']
+
+# R4.4 diagnostics and explicit published cases; acceptance remains independently gated.
+from .convection_benchmark import (TosiCase, tosi_initial_temperature, tosi_endpoint_flow,
+    convection_diagnostics, tosi_state_diagnostics, steady_window, periodic_window,
+    refinement_differences)
+__all__ += ['TosiCase', 'tosi_initial_temperature', 'tosi_endpoint_flow',
+    'convection_diagnostics', 'tosi_state_diagnostics', 'steady_window',
+    'periodic_window', 'refinement_differences']
+
+# Explicit safeguarded acceleration; Picard remains the default.
+from .anderson import AndersonPolicy
+from .preconditioner_reuse import PreconditionerReusePolicy
+__all__ += ["AndersonPolicy"]

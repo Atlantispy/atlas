@@ -1,0 +1,38 @@
+{
+  "schema": "atlas.sparse-velocity-reuse-r4-4.v1",
+  "task": "isolated optimisation item 4",
+  "scope": "reuse viscosity-independent velocity-block sparsity and contribution ordering; never reuse viscosity-dependent values or factors",
+  "predecessor": "0.1.0.dev35",
+  "unchanged": [
+    "Variable-stress equations, MAC geometry and boundary conditions",
+    "Binary64 precision and compiled mechanical action",
+    "ILU fill/drop policy, GMRES/Picard convergence gates and nonlinear-start policy",
+    "Changed-viscosity numerical factor rebuild rule",
+    "Explicit sparse-direct reference assembly",
+    "Source verification, restart/source identity and recovery rules"
+  ],
+  "implementation": [
+    "Prepare fixed CSC indices/indptr once for GMRES plans",
+    "Prepare geometry-only contribution tables once",
+    "Preserve predecessor Bx/Bz/shear accumulation grouping and multiplication association",
+    "Rebuild fresh CSC numerical data from current centre/vertex viscosity every factorisation",
+    "Keep direct-reference path on predecessor SciPy sparse products",
+    "Admit retained template and transient symbolic-build memory separately"
+  ],
+  "acceptance": {
+    "matrix": "exact binary64 matrix equality with predecessor sparse assembly for matched tested viscosities/geometries",
+    "fields": "exact binary64 physical-field equality with dev35 on matched end-to-end workloads",
+    "factor_policy": "identical coefficients may reuse; changed viscosity increases factor builds",
+    "performance": "five serial unprofiled repetitions on declared workloads plus isolated assembly timing; report preparation and ranges",
+    "memory": "template retained bytes within declared 768 bytes/cell bound; actual 128x128 runner remains inside existing 1 GiB numerical WorkBudget",
+    "verification": "full frozen-source regression, bounded resource acceptance, independently patch-applied focused suite"
+  },
+  "excluded": [
+    "factor reuse across changed viscosity",
+    "new preconditioner/tolerance/timestep policy",
+    "cross-step warm state",
+    "source-check weakening",
+    "parallel benchmark scheduling",
+    "full R4.4 convection acceptance"
+  ]
+}

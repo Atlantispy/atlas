@@ -20,9 +20,9 @@ from dataclasses import dataclass
 import math
 import numpy as np
 try:
-    from scipy.sparse import coo_matrix, bmat, diags
+    from scipy.sparse import coo_matrix, bmat, diags, csc_matrix
 except ImportError:
-    coo_matrix = bmat = diags = None
+    coo_matrix = bmat = diags = csc_matrix = None
 from ._validation import TectonicsError, scalar
 from .constitutive import DiffusiveScales, RheologyProfile
 from .stokes import StokesBox2D, _MACOperator
@@ -107,11 +107,18 @@ def check_coupled_rheology(box,scales,profile):
 
 class _StressMACOperator(_MACOperator):
     """Unchecked private native arrays; preparation/solve owns admission and limits."""
-    def __init__(self,box,hx,hz):
+    def __init__(self,box,hx,hz,*,compiled=False):
         super().__init__(box,hx,hz)
+        self._native=None
+        if compiled:
+            from . import _mechanics_native
+            _mechanics_native.prepare()
+            self._native=_mechanics_native
         if coo_matrix is None:
             raise TectonicsError('SciPy sparse operators unavailable')
         self._build_derivatives()
+        if compiled:self._build_velocity_template()
+        else:self.velocity_template_nbytes=0
         self.eta_c=np.ones((self.nz,self.nx))
         self.eta_v=np.ones((self.nz-1,self.nx-1))
 
@@ -135,27 +142,102 @@ class _StressMACOperator(_MACOperator):
         self.cvec=coo_matrix((np.full(self.np,self.c),(np.arange(self.np),np.zeros(self.np,dtype=int))),
                              shape=(self.np,1)).tocsc()
 
+    def _build_velocity_template(self):
+        """Prepare the fixed CSC pattern and exact predecessor contribution order.
+
+        Bx/Bz rows contribute centre viscosity and shear rows contribute vertex
+        viscosity.  Terms are sorted stably by final CSC entry, preserving their
+        predecessor component/source order inside each entry.  No numerical
+        viscosity value is retained in this geometry-only template.
+        """
+        chunks=[]
+        for matrix,offset,component in ((self.bx,0,0),(self.bz,0,1),(self.shear,self.np,2)):
+            matrix=matrix.tocsr();lengths=np.diff(matrix.indptr)
+            for width in np.unique(lengths):
+                width=int(width)
+                if width==0:continue
+                source=np.flatnonzero(lengths==width);starts=matrix.indptr[source]
+                locations=starts[:,None]+np.arange(width)[None,:]
+                indices=matrix.indices[locations];values=matrix.data[locations]
+                rows=np.broadcast_to(indices[:,:,None],(len(source),width,width)).reshape(-1).astype(np.int32)
+                cols=np.broadcast_to(indices[:,None,:],(len(source),width,width)).reshape(-1).astype(np.int32)
+                coefficients=np.repeat((offset+source).astype(np.int32),width*width)
+                left=np.broadcast_to(values[:,:,None],(len(source),width,width)).reshape(-1).copy()
+                right=np.broadcast_to(values[:,None,:],(len(source),width,width)).reshape(-1).copy()
+                components=np.full(len(coefficients),component,dtype=np.uint8)
+                chunks.append((rows,cols,coefficients,left,right,components))
+        rows=np.concatenate([x[0] for x in chunks]);cols=np.concatenate([x[1] for x in chunks])
+        coefficient=np.concatenate([x[2] for x in chunks]);left=np.concatenate([x[3] for x in chunks])
+        right=np.concatenate([x[4] for x in chunks]);component=np.concatenate([x[5] for x in chunks]);del chunks
+        key=cols.astype(np.int64)*self.nv+rows.astype(np.int64);del rows,cols
+        unique,entry=np.unique(key,return_inverse=True);del key
+        order=np.argsort(entry,kind='stable');entry=entry[order]
+        coefficient=coefficient[order];left=left[order];right=right[order];component=component[order]
+        counts=np.bincount(entry,minlength=len(unique));term_indptr=np.empty(len(unique)+1,dtype=np.int32)
+        term_indptr[0]=0;np.cumsum(counts,out=term_indptr[1:]);del entry,counts,order
+        column=(unique//self.nv).astype(np.int32);indices=(unique%self.nv).astype(np.int32);del unique
+        counts=np.bincount(column,minlength=self.nv);indptr=np.empty(self.nv+1,dtype=np.int32);indptr[0]=0
+        np.cumsum(counts,out=indptr[1:]);del column,counts
+        self._velocity_indices=indices;self._velocity_indptr=indptr;self._velocity_term_indptr=term_indptr
+        self._velocity_term_component=component;self._velocity_term_coefficient=coefficient
+        self._velocity_term_left=left;self._velocity_term_right=right
+        values=(self._velocity_indices,self._velocity_indptr,self._velocity_term_indptr,
+                self._velocity_term_component,self._velocity_term_coefficient,
+                self._velocity_term_left,self._velocity_term_right)
+        for value in values:value.setflags(write=False)
+        self.velocity_template_nbytes=sum(value.nbytes for value in values)
+
     def set_viscosity(self,cell,vertex):
         self.eta_c=cell;self.eta_v=vertex
 
     def strains(self,u,w):
-        un=np.pad(u,((0,0),(1,1)))
-        wn=np.pad(w,((1,1),(0,0)))
-        return (np.diff(un,axis=1)/self.hx,np.diff(wn,axis=0)/self.hz,
-                np.diff(u,axis=0)/self.hz+np.diff(w,axis=1)/self.hx)
+        # Form the eliminated zero-normal-wall differences directly.  This is
+        # algebraically the same MAC stencil as padding with zero wall faces,
+        # but avoids two padded temporary arrays on every matrix-vector call.
+        a=np.empty((self.nz,self.nx));b=np.empty((self.nz,self.nx))
+        a[:,0]=u[:,0]/self.hx;a[:,-1]=-u[:,-1]/self.hx
+        a[:,1:-1]=np.diff(u,axis=1)/self.hx
+        b[0]=w[0]/self.hz;b[-1]=-w[-1]/self.hz
+        b[1:-1]=np.diff(w,axis=0)/self.hz
+        return (a,b,np.diff(u,axis=0)/self.hz+np.diff(w,axis=1)/self.hx)
 
     def velocity(self,u,w):
         a,b,gamma=self.strains(u,w)
         xx=2*self.eta_c*a;zz=2*self.eta_c*b;shear=self.eta_v*gamma
-        return (-np.diff(xx,axis=1)/self.hx-np.diff(np.pad(shear,((1,1),(0,0))),axis=0)/self.hz,
-                -np.diff(zz,axis=0)/self.hz-np.diff(np.pad(shear,((0,0),(1,1))),axis=1)/self.hx)
+        au=-np.diff(xx,axis=1)/self.hx
+        aw=-np.diff(zz,axis=0)/self.hz
+        # Zero shear traction at the outer vertices, written without np.pad.
+        au[0]-=shear[0]/self.hz;au[-1]+=shear[-1]/self.hz
+        au[1:-1]-=np.diff(shear,axis=0)/self.hz
+        aw[:,0]-=shear[:,0]/self.hx;aw[:,-1]+=shear[:,-1]/self.hx
+        aw[:,1:-1]-=np.diff(shear,axis=1)/self.hx
+        return au,aw
+
+    def matvec(self,vector):
+        # Explicit prepared native path; the NumPy operator and independent
+        # returned-field residual checks remain separate verification routes.
+        # A fresh returned vector is essential: GMRES can keep/mutate old ones.
+        if self._native is None:
+            return super().matvec(vector)
+        # SciPy also permits an (N, 1) matvec input (including matmat fallback).
+        # Normalise its view and reject wrong lengths before unchecked native access.
+        vector=vector.reshape(self.n)
+        pressure_sum=float(np.sum(vector[self.nv:-1]))
+        return self._native.stress_saddle(vector,self.eta_c,self.eta_v,
+                                         self.hx,self.hz,self.c,pressure_sum)
 
     def velocity_matrix(self):
-        # Numerical coefficients change; symbolic derivatives retain original
-        # geometry. Native sparse multiplication remains O(N) stencil assembly.
-        weights=diags(2*self.eta_c.ravel(),format='csr')
-        return (self.bx.T@weights@self.bx+self.bz.T@weights@self.bz+
-                self.shear.T@diags(self.eta_v.ravel(),format='csr')@self.shear).tocsc()
+        # The explicit sparse-direct reference retains the predecessor SciPy
+        # assembly.  GMRES alone reuses the geometry-only symbolic template;
+        # numerical viscosity values and factors are still rebuilt as required.
+        if self._native is None:
+            centre=(2*self.eta_c.ravel())[:,None];vertex=self.eta_v.ravel()[:,None]
+            return (self.bx.T@self.bx.multiply(centre)+self.bz.T@self.bz.multiply(centre)+
+                    self.shear.T@self.shear.multiply(vertex)).tocsc()
+        data=self._native.weighted_velocity_data(self._velocity_term_indptr,self._velocity_term_component,
+            self._velocity_term_coefficient,self._velocity_term_left,self._velocity_term_right,
+            self.eta_c,self.eta_v,self.np,len(self._velocity_indices))
+        return csc_matrix((data,self._velocity_indices,self._velocity_indptr),shape=(self.nv,self.nv),copy=False)
 
     def sparse_reference(self):
         a=self.velocity_matrix()

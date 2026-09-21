@@ -1,0 +1,46 @@
+{
+  "schema": "atlas.nonlinear-start-verification.v1",
+  "purpose": "Isolated item 2: explicit stage-0-to-stage-1 guesses; not convection acceptance",
+  "default": "zero-rate",
+  "opt_in": "rk-stage0",
+  "scope": [
+    "constant/Tosi mechanical snapshots",
+    "variable-r4.3 intra-step coupling"
+  ],
+  "excluded": [
+    "BF warm starts",
+    "cross-timestep hidden state",
+    "tolerance relaxation",
+    "timestep changes",
+    "automatic failure fallback"
+  ],
+  "unchanged_gates": {
+    "linear_rtol": 1e-12,
+    "momentum_tolerance": 1e-09,
+    "divergence_tolerance": 1e-10,
+    "gauge_tolerance": 1e-12,
+    "work_balance_tolerance": 1e-09,
+    "viscosity_rtol": 1e-08
+  },
+  "matched_comparison": {
+    "definition": "Compare maximum absolute difference to absolute + relative times maximum absolute cold field; both solves independently satisfy all original gates",
+    "mechanical_relative": 1e-07,
+    "mechanical_absolute": 1e-09,
+    "temperature_absolute": 1e-09,
+    "composition_absolute": 1e-10,
+    "meaning": "Engineering comparison gates for bounded optimisation experiments, not discretisation error or published benchmark acceptance"
+  },
+  "required_checks": [
+    "independent nonlinear scalar root",
+    "independent coupled ODE time-refinement",
+    "changed-force SI normalisation",
+    "cold-versus-warm matched workloads",
+    "all 26 Tosi input paths",
+    "same-source fresh-process restart",
+    "wrong-policy restart refusal",
+    "stage failure and cancellation recovery",
+    "standalone initial-guess round-trip",
+    "source guards and memory closure"
+  ],
+  "pilot_not_acceptance": "A one-step developed-flow feasibility pilot preceded this specification; final verification and matched timing use this fixed specification."
+}

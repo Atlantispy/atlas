@@ -1,5 +1,632 @@
 # Atlas tectonics simulation plan
 
+<a id="3cr4-4-preconditioner-reuse"></a>
+
+## Current: dev39 guarded request-local preconditioner reuse
+
+**Package `0.1.0.dev39`, maintained plan revision 43, 20 September 2026.
+Preconditioner integration only. R4.4/R4 remain IN_PROGRESS.**
+
+`PreconditionerReusePolicy(max_uses=4)` is an explicit production option on
+standalone/coupled variable mechanics. New runs can select
+`--nonlinear-solver anderson --nonlinear-start previous-stage1 --preconditioner-max-uses 4`.
+The existing defaults remain unchanged. Only the Tosi plastic law activates
+approximate velocity-ILU reuse. Strain-independent constant/Tosi-linear laws bypass
+its history and guard work. Prescribed-viscosity, direct and BF/damage uses refuse
+an unused/unsupported reuse policy rather than silently changing their contracts.
+
+The full physical stress/pressure/divergence operator and cheap pressure
+approximation use CURRENT viscosity on every linear call. The velocity factor may
+serve up to four calls inside one nonlinear request, subject to origin-relative
+maximum log-viscosity change <= log(2), and a previous linear iteration count <=
+max(40, 1.5 times its factor-origin solve's count). A guard requests a current factor
+before the next solve; a failed linear solve is not retried. The first linear call
+of each request obtains a current factor; exact-coefficient cache reuse is still
+valid. No changed-coefficient reuse crosses requests, RK stages or timesteps.
+The preconditioner stays fixed INSIDE each GMRES call.
+
+This extends the older rebuild-on-every-change contract ONLY under the explicit
+policy. The original no-policy branch, true updated-law checks, fresh final Picard
+image, binary64, residual thresholds, timestep, physics and ILU parameters remain.
+No adaptive tolerances, Krylov recycling, Newton or multigrid are integrated here.
+Those are separate assessment tracks, not accepted production capabilities.
+
+Mechanical results retain coefficient-origin/current hashes, deterministic rebuild/
+reuse decisions and policy. Coupled records retain policy and validated summaries;
+runner, analyser and visual endpoint solves use the same recorded policy. Cache-hit
+counters and timings are telemetry, not inputs to scientific identities. Request
+history is released after success or failure and is not checkpoint state.
+Source/policy changes still refuse continuation; no old trajectory is rebound.
+Historical evidence and all later R4.4 acceptance requirements remain in force.
+
+<a id="3cr4-4-cross-step-start"></a>
+
+## Current: dev38 explicit cross-timestep starting guesses
+
+**Package `0.1.0.dev38`, maintained plan revision 42, 20 September 2026.
+Cross-step starting data is integrated as an explicit option. R4.4/R4 remain IN_PROGRESS.**
+
+`PreparedThermochemical2D(..., nonlinear_start='previous-stage1')`, or the runner's
+`--nonlinear-start previous-stage1`, keeps the preceding accepted timestep's second
+RK-stage SI velocity and pressure as explicit starting data for the next first-stage
+mechanical solve. The first step of a newly initialised run starts cold. The current
+first stage still seeds the current second stage. `--nonlinear-solver anderson` is
+independent and is used for the measured nonlinear configuration; Picard, zero-rate
+and the earlier intra-step `rk-stage0` options remain available and unchanged.
+
+The seed is the solved **operator-split second stage before the final diffusion half**,
+not simultaneous endpoint flow. Every new solve re-evaluates its own temperature,
+forces, viscosity and residuals. Current force/scales normalise the stored SI guess.
+The existing zero-current-force convention remains exact. Independent endpoint
+sampling stays cold and never replaces the seed. No cross-step Anderson history,
+preconditioner lagging, inexact inner tolerance or automatic solver retry is added.
+
+Only a step that passes both mechanical stages, Courant limits, final transport,
+thermal/material balances and cancellation checks publishes a successor state with
+new starting data. Caller-owned accepted states and seeds are immutable; the prepared
+plan holds no hidden seed. Repeating or interleaving requests does not change their
+result. Failed, cancelled or refused steps leave the last accepted state/seed intact.
+
+New cross-step endpoints use `atlas.thermochemical-state.v2`: the complete two
+physical fields plus an immutable, source-bound u/w/p seed are captured in the same
+state identity and stored atomically in one ArrayStore snapshot. The next guess is
+bound to the generating step's second-stage result, exact epoch/time, problem,
+geometry, scales and mechanical plan. Every step records its input state/guess/result
+and output guess IDs. There is no recursive result chain and no missing-field fill.
+V1 initial/intra-step/cold snapshots remain exactly decodable. Readability does not
+authorise old-source or changed-policy continuation; no automatic migration occurs.
+
+The independent numerical acceptance requirements and full symmetric-stress model
+remain unchanged. The registered contract is `cases/cross_step_start_r4_4.json`.
+Obtained final-source tests and measurements are retained in separate dev38 evidence.
+Short comparisons and recovery tests are not mature published convection, mesh/time/
+nonlinear adequacy or whole-campaign acceptance. R5 is not part of this increment.
+
+<a id="3cr4-4-anderson"></a>
+
+## Current: dev37 explicit safeguarded Anderson integration
+
+**Package `0.1.0.dev37`, maintained plan revision 41, 20 September 2026.
+The isolated Anderson integration is implemented. R4.4/R4 remain IN_PROGRESS.**
+
+`PreparedVariableStokes2D(..., anderson_policy=AndersonPolicy())` and
+`PreparedThermochemical2D(..., anderson_policy=AndersonPolicy())` explicitly enable the
+previously assessed type-II Anderson algorithm. The runner selects it with
+`--nonlinear-solver anderson`. Picard remains the default. The existing independent
+`--nonlinear-start rk-stage0` option is unchanged; it does not carry a guess between
+steps. Endpoint diagnostics remain cold-started at their own accepted temperature,
+using the selected nonlinear algorithm, not an earlier integration-stage answer.
+
+The unchanged Picard map freezes viscosity at the current flow and solves the full
+symmetric-stress equations. Anderson fits recent velocity fixed-point differences
+with SVD-based least squares and applies the resulting affine coefficients to the
+entire velocity/pressure/gauge vector. Default depth five, rank cutoff 1e-10,
+coefficient L1 bound ten and two-map warmup are explicit. Rank-deficient history is
+reduced oldest-first; unsupported proposals are rejected. Every mixed candidate is
+re-evaluated with current viscosity and actual physical residuals. It is retained
+only when the maximum normalised momentum, continuity, gauge and work merit is no
+worse than the current ordinary Picard image. Otherwise that already-computed
+image is used and history cleared. This is a declared solver safeguard, not a
+change to the physical equations or a hidden direct/cold fallback.
+
+**Final acceptance still requires a newly computed ordinary Picard image**, the
+original momentum and log-viscosity-change tests, then the independent returned-SI
+checks with rheology re-evaluated on the rounded fields. No update-size-only gate,
+viscosity floor, precision change, new strain regularisation, inexact inner solve
+or stale-viscosity factor reuse is introduced. Failed linear solves, cancellation
+and memory errors propagate without an accepted endpoint. General BF/damage
+acceleration and nonunit Picard relaxation are explicitly refused, not ignored.
+
+Policy, per-request safeguard counts and algorithm identity are included in saved
+mechanical results and the two stage records. The optional policy enters prepared
+plan, coupled-state and frozen-run identities. Old fields remain decodable, but
+changed-source or changed-algorithm continuation is refused. This is **not** the
+separate proposed cross-step starting-guess extension: mixing history lives only
+inside one nonlinear request and never needs to be restored across timesteps.
+
+The retained scientific requirements remain unchanged: applicable mature published
+convection diagnostics, reference resolution, mesh/time/nonlinear adequacy and
+assembled acceptance. Component, short-path and recovery tests do not close R4.4.
+Final obtained evidence for this source is in the dev37 test/measurement records;
+historical dev36 records below are not fresh verification of dev37.
+
+
+<a id="3cr4-4-sparse-template"></a>
+
+## Current: dev36 exact sparse velocity-template reuse
+
+**Package `0.1.0.dev36`, maintained plan revision 40, 20 September 2026.
+Optimisation item 4 only; R4.4 and R4 remain IN_PROGRESS.**
+
+The variable-Stokes velocity block now retains a geometry-only CSC template for the normal
+and shear stress contributions used by the GMRES route. The template contains fixed output
+indices/indptr and the ordered derivative-pair contributions needed to reproduce the existing
+SciPy expression. Numerical matrix data are still regenerated from the CURRENT cell/vertex
+viscosity for every requested coefficient field. No viscosity-dependent matrix value, ILU
+factor or nonlinear state is cached by this change. The existing factor identity/rebuild rule
+therefore remains authoritative.
+
+The first algebraically equivalent prototype was rejected because round-off-order changes in
+the sparse coefficients amplified through the yielding nonlinear iteration. The retained
+implementation preserves the predecessor component grouping and floating-operation ordering;
+all tested sparse entries and matched evolved physical arrays are exact versus dev35. The
+explicit small sparse-direct reference deliberately retains the predecessor SciPy assembly,
+so it remains independent of the compiled template path.
+
+The template is immutable and viscosity-independent after preparation. A fresh numerical data
+array and CSC matrix are produced per assembly; current viscosity is read on every call. Its
+retained and transient construction memory is admitted only for the GMRES route. The declared
+retained-template bound is 768 bytes per cell plus eight bytes; direct solves retain no
+template. Current physics, precision, ILU fill 17 R4.4 policy, convergence gates, source
+verification and explicit `rk-stage0` starting policy are unchanged.
+
+### Obtained dev36 evidence
+
+Isolated matrix assembly medians improve from dev35 by **14.6x at 16x16**, **4.70x at
+64x64** and **5.34x at 128x128**, while the saved CSC matrices have zero differing entries.
+The one-time prepared-operator cost increases because the fixed contribution map is built and
+retained; this trade-off is recorded separately.
+
+For complete prepared steps, the strongest relevant result is developed case-2 16x16: cold
+mode improves by **3.6%** and opt-in `rk-stage0` by **7.5%**, with non-overlapping repetition
+ranges and byte-identical physical arrays. Initial 64/128-grid measurements have overlapping
+ranges and include medians that are slightly slower; they are retained rather than described
+as gains. The optimisation is therefore retained for repeated nonlinear assembly, not claimed
+as a universal step-speedup.
+
+Final regression/resource/recovery and delivery evidence are recorded in the associated
+source-bound dev36 evidence files. This optimisation does not complete the outstanding mature
+published convection, mesh/time/nonlinear adequacy, reference resolution or combined R4.4
+campaign acceptance.
+
+### Previous dev35 implementation and retained history
+
+<a id="3cr4-4-exact-source-verification"></a>
+
+## Current: dev35 exact source-verification optimisation
+
+**Package `0.1.0.dev35`, maintained plan revision 39, 20 September 2026.
+Optimisation item 3 only; R4.4 and R4 remain IN_PROGRESS.**
+
+The physical/numerical model is unchanged. This increment makes the existing
+`ExecutionContext.verify()` calls cheaper without removing any call site or
+reducing the source, callable/default, constant or native-option checks. The
+capture path and v3 execution identity with marshal format 2 are retained.
+The new comparison path visits every current registered module/class member,
+checks current function/code identities against held strong references, and
+normalises mutable defaults, registered constants and JIT options anew. It does
+not cache a successful verification or use file metadata instead of file bytes.
+
+Source reading and source-membership limits are unchanged. A private temporary
+key table detects added, removed, replaced and colliding qualified bindings;
+ambiguously named inventories captured at preparation use the retained complete
+legacy comparison. The full capture remains an independent verification oracle.
+Ordinary untracked runtime state and native-binary process-lifetime assumptions
+are unchanged; this is provenance/invalidation, not a hostile-runtime sandbox.
+
+Rheology, floating-point precision, operators, matrix factors, thermal transport,
+timesteps, convergence checks, cold defaults and opt-in `rk-stage0` policy are
+unchanged. Binary64 field equality against dev34 is the matched numerical
+requirement for this nonnumerical change. Same-source saved recovery and changed-
+source refusal still apply; new executable bytes cannot rebind dev34 trajectories.
+The comparison/verification specification is
+[`source_verification_r4_4.json`](../cases/source_verification_r4_4.json).
+
+No new matrix-layout reuse, cross-step starting data, timestep policy, parallel
+campaign or R5 work is included. Mature convection, mesh/time/nonlinear adequacy,
+reference resolution and combined campaign acceptance remain R4.4 requirements.
+
+### Obtained dev35 evidence
+
+The final frozen source passed **2,342 tests (51 new), zero failures/errors/skips**,
+with all **175** executable/case/test/tool hashes unchanged and
+`PASS_BOUNDED_CURRENT_PLATFORM`. The retained full-inventory method independently
+checks success/refusal equivalence. Same-length/same-mtime file changes, nested
+mutable defaults, methods/descriptors, JIT options, added/deleted aliases and
+qualified-name collisions remain detected.
+
+Seven unprofiled batches of 20 checks per backend measured verification time
+reductions of **26.6% (reference), 28.2% (SciPy) and 29.9% (Numba)**. The separate
+call profile retains six verification calls and six source-byte reads per coupled
+timestep in both cold and opt-in warm modes; no check is removed.
+
+Five unprofiled repetitions per version and mode compare complete prepared steps:
+
+| Workload, opt-in rk-stage0 | dev34 median, s | dev35 median, s | Less time | Repetition ranges overlap? |
+|---|---:|---:|---:|---|
+| Initial case 1 16×16 | 0.067993 | 0.054048 | 20.5% | No |
+| Developed case 2 16×16 | 0.960354 | 0.976468 | -1.7% | Yes |
+| Initial case 2 16×16 | 0.136271 | 0.123985 | 9.0% | No |
+| Initial case 1 64×64 | 0.222662 | 0.204905 | 8.0% | No |
+| Initial case 1 128×128 | 1.210126 | 1.201074 | 0.7% | Yes |
+
+Negative reduction means slower. Developed nonlinear and 128×128 measurements
+have overlapping ranges and do not establish a dependable complete-step gain;
+cold medians there were 3.0% and 2.7% slower respectively. Small initial cases
+show the clearest benefit. Preparation/first calls, all raw ranges and endpoint
+times are retained separately. These are not whole-campaign forecasts.
+
+All 11 compared physical arrays are byte-identical to dev34 in each of ten
+workload/mode pairs; iteration counts are unchanged. An actual warm 128×128
+four-step CLI/store run equals two fresh-process two-step segments after source
+relocation and store copying. A separate dev34 run gives identical temperature
+and composition bytes. Changed-source continuation is refused in both directions;
+changed starting policy is refused and the original partial store is unchanged.
+Peak admitted numerical memory remains **719,543,976 bytes**, with zero retained
+reservations, under the existing 1 GiB budget. Each retained expected-binding table
+has measured shallow size **51,968 bytes**, sharing captured tokens, plus one
+private shallow copy while checking. Python/JIT/database/native allocator headroom
+is separate; none of these observations is a total-process RSS cap.
+
+See `../evidence/3cr4-4-dev35-tests.json` and
+`../evidence/3cr4-4-dev35-measurements.json` for the source-bound results. Matching
+arrays and passing component/workflow tests do not complete mature convection,
+mesh/time/nonlinear adequacy, outstanding references or R4.4 campaign acceptance.
+
+### Previous dev34 implementation and retained history
+
+<a id="3cr4-4-intra-step-guess"></a>
+
+## Current: dev34 explicit intra-step nonlinear starting guesses
+
+**Package `0.1.0.dev34`, maintained plan revision 38, 20 September 2026. R4.4 and R4 remain IN_PROGRESS.**
+
+Selected optimisation item 2 introduces an **opt-in** `nonlinear_start='rk-stage0'`
+for the existing variable-r4.3 thermal/compositional solver. Stage 0 still starts
+from the declared zero-rate control. Its converged SI velocity and pressure form
+an explicit immutable `NonlinearStokesGuess` for stage 1 of the SAME step. Stage 1
+re-evaluates viscosity at its own new temperature, strain rate and forcing, rebuilds
+changed-viscosity factors, and satisfies the unchanged linear, true nonlinear,
+continuity, gauge, work and viscosity-change gates. The previous stage is only an
+initial iterate, never the answer to the new equations. The default remains
+`zero-rate` for both general coupling and the R4.4 runner; enabling the new route
+is an explicit recorded numerical-policy choice, not a changed physical law.
+
+`PreparedVariableStokes2D.solve_rheology(..., initial_guess=guess)` supports explicit
+constant/Tosi snapshot guesses. SI velocities/pressure are renormalised using the
+CURRENT force amplitude and reference scales; a zero current force uses the exact
+zero start. Source/plan, geometry/scales, rheology, epoch and nonfuture time must
+match. BF/damage warm starts are outside this increment and are refused. An accepted
+result records the guess descriptor, its identity, original result identity and
+all three starting fields, so decoding/reproducing the input needs no recursive
+parent-result chain. Historical cold records remain decodable without inventing
+an initial guess. Immutable result identities include the new starting input.
+
+The coupling plan identity includes the opt-in policy. Records explicitly link
+stage 1 to this step's stage-0 result; stage 0 cannot inherit a cross-step guess.
+No solver iterate is stored in persistent mutable warm state. Recovery starts a
+new whole step from the saved physical state and deterministically reconstructs
+both stages. Switching starting policy on continuation is refused. Endpoint
+mechanical snapshots remain freshly cold-solved and cannot seed the next step.
+Prescribed velocities cannot silently ignore an explicitly selected warm policy.
+
+The existing binary64/native operator, rheology, Strang/SSPRK2 integrator,
+timesteps, ILU settings, convergence tolerances and independent residual/physical
+reference checks are unchanged. A failed warm solve raises its error; it does not
+restart silently with zero, clip values, weaken a gate or publish a partial step.
+New source bytes change execution identity: do not rebind dev33 trajectories.
+Matched use of old saved physical arrays is a new explicit experiment.
+
+The verification contract is `../cases/nonlinear_start_r4_4.json`. Independent
+scalar-root and coupled ODE/time-refinement checks complement cold/warm field
+comparisons, current-source regression, ownership/resource checks and actual
+fresh-process restart. Short comparisons cannot prove unique nonlinear roots or
+mature steady/periodic regime agreement for every case. Published convection,
+mesh/time/nonlinear adequacy and unresolved reference questions remain R4.4 work.
+No source-check optimisation, cross-step warm cache, timestep change or campaign
+parallelism is included in this isolated task.
+
+### Obtained dev34 verification and measured limits
+
+The frozen executable source passed **2,291 tests, including 47 new tests**,
+with zero failures/errors/skips and `PASS_BOUNDED_CURRENT_PLATFORM`. All
+173 source/case/test/tool hashes were unchanged during verification.
+Five serial unprofiled repetitions per route compare exact physical inputs and
+unchanged precision/timestep/ILU/convergence gates. Pristine dev33 and dev34 cold
+fields agree bit-for-bit across all five measured workloads; explicit-start
+results are close, **not** relabelled as bit-identical to cold results.
+
+| Workload | dev33 cold, s | dev34 cold, s | dev34 explicit start, s | Same-source speedup |
+|---|---:|---:|---:|---:|
+| Developed case 2, 16×16 timestep | 1.153824 | 1.186607 | 0.978180 | 1.213× |
+| Initial case 2, 16×16 timestep | 0.170884 | 0.157192 | 0.133826 | 1.175× |
+| Initial case 1, 16×16 timestep | 0.069182 | 0.068943 | 0.070019 | 0.985× |
+| Initial case 1, 64×64 timestep | 0.228984 | 0.223949 | 0.215555 | 1.039× |
+| Initial case 1, 128×128 timestep | 1.234523 | 1.225195 | 1.177197 | 1.041× |
+
+
+For developed case 2, stage 1 fell from 76 to 55 Picard iterations while stage 0
+remained cold with 75. The complete prepared timestep is 17.6% cheaper within
+dev34 and 15.2% cheaper than the matched dev33 cold baseline on this host. Initial
+case 2 falls from 11 to 6 stage-1 Picard iterations. Case-1 Picard counts remain
+1/1, although the supplied linear guess reduces some GMRES work. Repeat ranges are retained
+for each route; small single-host differences are not universal speedups or
+whole-campaign forecasts. Preparation, first-call and independent cold
+endpoint timings are in `../evidence/3cr4-4-dev34-measurements.json`.
+
+Independent scalar-root, full coupled ODE/time-refinement, failure/cancellation,
+source/policy refusal and self-contained saved-input tests passed. All 26 Tosi
+input configurations passed matched two-step 4×4 checks under both modes. A
+separate developed 16×16 transient passed 20 steps per mode; maximum final
+warm/cold temperature difference was 1.815e-12 K. These are numerical/short-path
+checks, not mature published convection or a guarantee of a unique nonlinear root.
+A real 128×128 four-step run matched two fresh-process two-step segments exactly
+after source relocation and store copying. Actual run maximum admitted memory
+was 719,543,976 bytes under the retained 1 GiB budget; all closures released their
+reservations, and both changed-source and changed-start-policy continuation were
+refused. WorkBudget is not an OS total-RSS limiter.
+
+One one-step feasibility pilot preceded the new comparison specification; its
+comparison gates were fixed before formal tests/measurements and never loosened.
+The initial descriptor list/tuple mismatch and memory-exception reclassification
+were corrected before final evidence. R4.4 remains IN_PROGRESS; this completes
+only the separately selected explicit-start optimisation, retained as opt-in.
+
+### Previous dev33 implementation and retained history
+
+<a id="3cr4-4-native-mechanics"></a>
+
+## Current: dev33 fused mechanical operator — isolated R4.4 optimisation
+
+**Package `0.1.0.dev33`, maintained plan revision 37, 19 September 2026. R4.4 and R4 remain IN_PROGRESS.**
+
+Only the implementation of the existing GMRES matrix-vector action changes. The
+uniform staggered Cartesian box, eliminated zero normal wall velocities, zero
+shear traction, variable symmetric stress, pressure-gradient/divergence adjoint,
+and mean-pressure gauge are unchanged. A private Numba binary64 kernel combines
+normal/shear stress formation, stress divergence, pressure gradient and continuity.
+The final pressure sum uses the existing NumPy reduction. No physical coefficient,
+constitutive law, discretisation order, timestep, convergence tolerance, ILU fill
+policy, or nonlinear starting guess is changed. R4.4 still uses explicit fill 17;
+the R4.3 general default remains 12.
+
+The NumPy stress action and separately written `_stress_residuals` remain available
+as independent checks. The explicit small sparse-direct route remains independent;
+it is not an automatic fallback. Every nonlinear iterate and returned SI field
+must still satisfy the original updated-law, force, divergence, pressure-gauge,
+work and viscosity-change requirements. Operator equality on finite test inputs
+is numerical verification, not a proof for every supported floating-point input
+or a completed physical convection benchmark.
+
+New GMRES mechanics now binds the existing `numba` execution context (including
+SciPy, Numba and LLVM dependencies) and the new native callable/JIT options.
+Real source, dispatcher, option or callable-membership changes remain detectable.
+Dev32 snapshots remain readable evidence; source-changing continuation is not
+silently rebound. Explicitly reconstructed identical physical fields in matched
+performance probes are new experiments, not continuations of an old trajectory.
+
+The isolated completion boundary is compiled-kernel implementation, independent
+operator/ownership/provenance checks, full current-source regression, and matched
+short-workload performance measurements. Long convection, mesh/time/nonlinear
+adequacy and unresolved published reference conventions remain R4.4 requirements.
+Nonlinear warm starts, source-check efficiency, further sparse assembly work,
+parallel campaign scheduling and timestep policy are not implemented by this task.
+
+### Obtained dev33 verification and matched measurements
+
+The final frozen source passes **2,244 tests (26 new)**, with zero failures,
+errors or skips and `PASS_BOUNDED_CURRENT_PLATFORM`. The 171-file executable/
+case/test/tool inventory is unchanged before and after the run. Separate matched
+comparisons use five repetitions per workload, identical explicit inputs, one
+native thread and serial version-isolated processes. Across all seven workloads, the compared saved
+field/operator arrays are bit-for-bit equal on the exercised runtime, including
+the developed transient nonlinear fixture. This is not a universal bit-identity
+claim across other platforms or every admitted input.
+
+| Workload | dev32 seconds | dev33 seconds | Speedup | Less time |
+|---|---:|---:|---:|---:|
+| Initial case 1, 16×16 timestep | 0.077054 | 0.072601 | 1.061× | 5.8% |
+| Initial case 1, 64×64 timestep | 0.234096 | 0.227106 | 1.031× | 3.0% |
+| Initial case 1, 128×128 timestep | 1.281421 | 1.255447 | 1.021× | 2.0% |
+| Developed case 2, 16×16 endpoint solve | 0.772995 | 0.628282 | 1.230× | 18.7% |
+| Developed case 2, 16×16 timestep | 1.572853 | 1.211589 | 1.298× | 23.0% |
+
+
+These are prepared-operation medians, not startup-inclusive campaign timings.
+Ranges and preparation/first-call costs are retained in
+`../evidence/3cr4-4-dev33-measurements.json`. Small initial-grid gains have overlapping
+repeat ranges; their median differences are not treated as established universal
+speedups. Compilation costs are paid during preparation and no disk JIT cache is
+used. Larger bare-operator gains must not be substituted for complete-step gains.
+An extra SciPy column-vector check found an interface error after an initial
+2,242-test pass; the callback now normalises `(N,)`/`(N,1)` inputs to its declared
+length, and two new tests cover column/matrix use and incorrect length. The earlier
+pass is superseded. The independent NumPy residual checks remain unchanged.
+
+### Previous dev32 contract and retained history
+
+**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 36 | 19 September 2026**
+
+## Current: R4.4 benchmark execution optimisation and explicit unclosed acceptance
+
+**Package `0.1.0.dev32`. R4.4 and R4 remain IN_PROGRESS.** The published-case,
+endpoint-diagnostic, finite-trajectory, refinement-audit and campaign machinery
+from dev31 is retained. This increment optimises the measured R4.4 mechanical
+execution bottlenecks without changing the governing equations, physical laws,
+floating-point precision or convergence gates. It does not turn a short or coarse
+simulation into a completed convection benchmark. The current reference contract
+is [`convection_r4_4.json`](../cases/convection_r4_4.json). R5 is not started or
+authorised by this package.
+
+<a id="3cr4-4-convection"></a>
+
+### Accuracy-preserving R4.4 execution optimisation
+
+Profiling of dev31 separated initial/developed states and 16/32/64/128 grids.
+The expensive mature/nonlinear and 128-grid workloads were dominated by variable
+Stokes matrix/factor/GMRES work, not by source verification. The R4.3 general
+`NonlinearStokesPolicy` default therefore remains unchanged at ILU fill factor 12,
+while new R4.4 benchmark runs explicitly register fill factor **17**. On the
+measured 128x128 initial workload this moved both stage solves from roughly
+750 GMRES iterations to 35 while retaining the same `1e-12` linear request and
+all true residual/conservation gates. The larger fill is an execution policy,
+not a viscosity, rheology, timestep or tolerance change.
+
+The symmetric-stress matrix-free stencil now forms eliminated zero-wall
+differences directly rather than allocating padded temporary arrays at every
+operator application. Sparse velocity assembly row-scales the fixed derivative
+operators instead of materialising temporary diagonal sparse matrices; this is
+algebraically the same `B.T @ diag(weight) @ B` operator. Endpoint diagnostic
+flow now reuses the coupled plan's owned mechanics object, rather than retaining
+a second equivalent ILU plan solely for sampling. That ownership change is needed
+for the stronger R4.4 preconditioner to remain within the declared 1 GiB runner
+WorkBudget at 128x128. It does not reuse a stale RK-stage velocity: every sampled
+accepted endpoint is still solved anew.
+
+Matched measurements and exact/equivalent-field checks are evidence for these
+execution changes only. They are not benchmark acceptance, mesh adequacy or a
+whole-world performance forecast. Existing dev31 trajectories are changed-source
+artefacts and must not be rebound automatically to dev32.
+
+### Published cases, conventions and source limits
+
+The primary reference remains **Tosi et al. (2015), A community benchmark for
+viscoplastic thermal convection in a 2-D square box**, DOI
+`10.1002/2015GC005807`, equations 1–21 and Tables 1–2. Case definitions include
+1–4, periodic case 5a and **all 21 separately identified case-5b yield values
+3.0 through 5.0 at spacing 0.1**. These are 26 configurations, not 26 completed
+runs. Case 5b is not excluded because its supplemental numerical targets have
+not yet been obtained. The reference file contains 490 numerical entries for ten codes solving the
+full two-dimensional viscosity problem: 470 individually transcribed Table 2
+cells, plus 20 case-1 viscosity-limit entries obtained by applying the two exact
+boundary values in its footnote to each code.
+MC3D is explicitly excluded from this particular comparison envelope because
+its viscosity is laterally averaged, a different equation system discussed in
+the paper; the exclusion is not based on Atlas output.
+
+There are two unresolved source requirements. The publisher's supporting-file
+retrievals failed, and the actual case-5b numerical tables have not been
+transcribed. The main paper's case-5a Table 2 labels its dissipation extrema
+`Phi`, whereas the preceding cases explicitly label `Phi/Ra`. The numerical
+magnitude suggests a scaling issue but is not an author-confirmed correction.
+Both raw and Rayleigh-scaled Atlas dissipation are retained, the printed values
+are retained under explicitly ambiguous keys, and that comparison cannot pass
+until the convention is resolved from adequate primary evidence. Supplement
+retrieval failures do not establish universal unavailability. The comparison
+contains scientific facts and source attribution, not copied article prose or
+figures; the article's separate rights notice is not replaced by the code licence.
+
+The unit square is embedded in positive SI-valued controls with dimensionless
+`theta = T_K - 1`, unit diffusivity, and `Ra=100`. This is a numerical embedding,
+not Earth calibration. Initial temperatures are exact cell averages of equation
+11, including both trigonometric integration factors. Bottom/top theta are 1/0;
+sidewalls are insulating and velocity walls are impermeable/free-slip. Zero
+composition and zero additional heating are explicit. The retained R3 warm-upward
+force convention remains unchanged; no new erratum is asserted for the printed
+momentum-sign issue. Changing source cannot rebind an old trajectory automatically.
+
+### Independent, simultaneous endpoint diagnostics
+
+`convection_benchmark.py` re-solves each sampled **accepted endpoint** before
+reporting its flow. The two stored RK-stage velocities are not relabelled as that
+endpoint. State, force, temperature, rheology, box, time, scaling and clipping
+checks bind the new diagnostic to the actual endpoint result.
+
+The diagnostic set includes mean temperature, instantaneous top/bottom Nusselt
+numbers, domain and surface RMS velocity, **signed** maximum horizontal surface
+velocity, boundary-inclusive sampled viscosity extrema, work, raw dissipation,
+`Phi/Ra`, percentage work/dissipation discrepancy, divergence and temperature
+bounds. Surface absolute speed and stress-support-only viscosity extrema remain
+separate additional channels. The half-cell wall flux is instantaneous, not the
+interval-integrated boundary heat in the transport ledger.
+
+MAC dual-volume quadrature is used for RMS velocity. Normal-strain dissipation
+is reconstructed at cell centres and shear dissipation at vertices, independently
+of the solver's acceptance scalar. The work quadrature uses cell temperature and
+centred vertical face velocity. Surface tangential velocity and normal strains
+use the nearest interior row; free-slip wall shear is zero. Wall rheology uses
+exact fixed-wall temperatures and depth, not adjacent cell temperatures mislabeled
+as boundary values. These are declared smooth-field, second-order reconstructions;
+they do not find unobserved subcell extrema or prove shear-band resolution.
+
+### Predeclared gates, not fitted tolerances
+
+The JSON contract was saved before the new long trajectories. Its multi-code
+reference envelope is the minimum/maximum of the ten applicable reported values,
+expanded by 0.5% for rounding/discretisation. This is not a statistical confidence
+interval and is only one necessary gate. The published paper does not supply all
+of the following universal stopping tolerances; they are Atlas's explicit
+numerical acceptance choices, not quotations from the paper.
+
+For steady flow: minimum dimensionless time 0.1, a final window of 0.05 with at
+least 101 samples, all ten diagnostic ranges no greater than `1e-4` relative
+(with a separate `1e-8` absolute scale), saved temperature-field change no greater
+than `1e-4`, and top/bottom heat-flux imbalance no greater than `1e-3`. A finite
+sample series cannot prove absence of all between-sample oscillations. A sampled
+endpoint must actually match the saved final state for the mature-regime gate.
+
+For periodic flow: ten complete cycles, at least 100 diagnostic samples per
+period, stable periods and extrema within 1%, and temperature fields compared
+phase-by-phase over the complete cycles with a 1% absolute dimensionless-field
+tolerance. Field archives must themselves resolve each period; densely sampled
+scalar diagnostics cannot hide sparse stored fields. Case 5b reports **both**
+mean cycle minima and maxima, averaged over ten complete cycles, as requested by
+the paper. Phase interpolation is a diagnostic only, never an evolved state.
+
+Matched mature-regime adequacy uses meshes 32/64/128, timestep factors 1/0.5/0.25,
+and nonlinear tolerance factors 1/0.1/0.01. Finest-pair relative diagnostic-change
+gates are respectively 1%, 0.5% and 0.1%, with decreasing, monotone changes or an
+explicit unresolved result. Roundoff-level identical values are not assigned an
+invented convergence order. Small-grid/transient studies are explicitly exploratory
+and cannot satisfy these full-run gates. Tightening includes linear, true momentum
+and viscosity-change tolerances together. Non-varied controls and regime/source
+identity must match; one endpoint comparison cannot establish adequacy.
+
+`analyse_convection_r4_4.py` verifies actual saved trajectories and reports these
+separate gates. `assess_convection_suite_r4_4.py` requires actual three-run studies
+for every applicable configuration, reference agreement, conservation/work and
+mature-regime checks, actual-code visual inspection, plus a full regression and
+bounded resource record bound to the exact current source inventory. Missing or
+ambiguous evidence cannot become PASS. The campaign example deliberately has
+empty study lists and therefore reports INCOMPLETE_R4_4. Passing these numerical
+gates would still not establish Earth/Diadem validity or global tectonic realism.
+
+### Evolved execution and acceptance boundary
+
+The fixed future timestep and finite total-step envelope are recorded before
+execution. The runner selects an explicit maximum of 400 Picard iterations by
+default, rather than R4.3's 100; this increases the iteration allowance **without
+weakening any convergence tolerance or changing the law**. There is no automatic
+timestep shrinkage, tolerance relaxation, viscosity floor, alternate-solver fallback
+or promotion of an unconverged mechanical state. Both transport stages retain
+their independent current-law acceptance and whole-step heat/inventory controls.
+
+Accepted states, exact input/source/runtime identities, two-stage mechanical
+records, complete per-step balance summaries and diagnostic samples are retained.
+Store transactions precede exclusive atomic receipt publication. Fresh-process,
+relocated-source and store-copy continuation reuse the same existing core. A
+changed source, case specification, future schedule or loaded runtime is refused.
+A leftover hard-kill claim is not automatically removed. A failed or cancelled
+stage does not publish a partial physical endpoint; only the last accepted state
+may be checkpointed. Additional operational details and resource limits are in
+the maintained optimisation reference, not a new competing roadmap.
+
+New independent checks cover analytic quadratures, second-order diagnostic
+refinement, boundary rheology, signed surface velocity, periodic extrema/phase
+alias refusal, complete-source recovery, and controlled cancellation inside the
+second RK mechanical stage. The latter uses the supported cancellation protocol,
+not a modified production solver. Its next uncancelled step must match a clean
+run exactly. Tests and an existing bounded resource drill are supporting evidence,
+not replacements for the uncompleted mature benchmark campaign.
+
+The delivered evidence distinguishes original dev30 validation, interrupted or
+source-changing test attempts, final-source regression, actual long trajectories,
+reference/adequacy reports and visual inspection. Only an unchanged final-source
+verification record counts as the new pass. Exact obtained counts and run endpoints
+are recorded in the delivery's verification/report, not inferred from this plan.
+
+**Still open:** mature published-case reproduction at adequate resolution;
+mesh/time/nonlinear adequacy; the two source-convention/data requirements above;
+the complete case-5b regime/reference comparison; and all campaign-level gates
+that depend on those results. No passing unit test, finite run completion, attractive
+plot or historical R4.3 result closes R4.4 by itself.
+
+---
+
+## Retained revision-34 history (not the current task status)
+
+# Atlas tectonics simulation plan
+
 **Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 34 | 19 September 2026**
 
 ## Current: R4.3 variable-viscosity and yielding mechanics

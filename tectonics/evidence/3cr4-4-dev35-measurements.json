@@ -1,0 +1,687 @@
+{
+  "schema": "atlas.source-verification-measurements.v1",
+  "baseline": "0.1.0.dev34",
+  "candidate": "0.1.0.dev35",
+  "workloads": [
+    {
+      "name": "initial_case1_n16",
+      "label": "Initial case 1 \u00b7 16\u00d716",
+      "mode": "zero-rate",
+      "dev34_median_s": 0.06957215749997658,
+      "dev35_median_s": 0.05679096149998486,
+      "speedup": 1.2250568693047243,
+      "time_reduction_percent": 18.37113647078722,
+      "dev34_range_s": [
+        0.06907809550000366,
+        0.08445671449999281
+      ],
+      "dev35_range_s": [
+        0.05449301350000724,
+        0.06055128649995822
+      ],
+      "repeat_ranges_overlap": false,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            31
+          ],
+          [
+            1,
+            31
+          ]
+        ],
+        [
+          [
+            1,
+            31
+          ],
+          [
+            1,
+            31
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case1_n16",
+      "label": "Initial case 1 \u00b7 16\u00d716",
+      "mode": "rk-stage0",
+      "dev34_median_s": 0.06799280650000128,
+      "dev35_median_s": 0.05404817049998201,
+      "speedup": 1.2580038486228486,
+      "time_reduction_percent": 20.50898722649287,
+      "dev34_range_s": [
+        0.06556988849996515,
+        0.06966694950000374
+      ],
+      "dev35_range_s": [
+        0.05370218600000953,
+        0.05652344949999133
+      ],
+      "repeat_ranges_overlap": false,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            31
+          ],
+          [
+            1,
+            22
+          ]
+        ],
+        [
+          [
+            1,
+            31
+          ],
+          [
+            1,
+            22
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "developed_case2_n16",
+      "label": "Developed case 2 \u00b7 16\u00d716",
+      "mode": "zero-rate",
+      "dev34_median_s": 1.1984036884999796,
+      "dev35_median_s": 1.2343482279999876,
+      "speedup": 0.9708797414824755,
+      "time_reduction_percent": -2.9993682299992885,
+      "dev34_range_s": [
+        1.1742011670000352,
+        1.2135591995000254
+      ],
+      "dev35_range_s": [
+        1.2016425809999873,
+        1.2558958405000453
+      ],
+      "repeat_ranges_overlap": true,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            75,
+            2520
+          ],
+          [
+            76,
+            2536
+          ]
+        ],
+        [
+          [
+            75,
+            2527
+          ],
+          [
+            76,
+            2518
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "developed_case2_n16",
+      "label": "Developed case 2 \u00b7 16\u00d716",
+      "mode": "rk-stage0",
+      "dev34_median_s": 0.9603538935000415,
+      "dev35_median_s": 0.9764683009999544,
+      "speedup": 0.9834972548689898,
+      "time_reduction_percent": -1.6779655509265856,
+      "dev34_range_s": [
+        0.9573053369999798,
+        0.9946931979999931
+      ],
+      "dev35_range_s": [
+        0.9624793964999867,
+        0.9920805699999846
+      ],
+      "repeat_ranges_overlap": true,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            75,
+            2517
+          ],
+          [
+            55,
+            1500
+          ]
+        ],
+        [
+          [
+            75,
+            2528
+          ],
+          [
+            55,
+            1489
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case2_n16",
+      "label": "Initial case 2 \u00b7 16\u00d716",
+      "mode": "zero-rate",
+      "dev34_median_s": 0.1655567514999916,
+      "dev35_median_s": 0.14762246999998752,
+      "speedup": 1.1214874774822938,
+      "time_reduction_percent": 10.832709229623294,
+      "dev34_range_s": [
+        0.1607119345000001,
+        0.16989069599998174
+      ],
+      "dev35_range_s": [
+        0.1465983599999845,
+        0.15528329049999456
+      ],
+      "repeat_ranges_overlap": false,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            11,
+            182
+          ],
+          [
+            11,
+            182
+          ]
+        ],
+        [
+          [
+            11,
+            182
+          ],
+          [
+            11,
+            182
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case2_n16",
+      "label": "Initial case 2 \u00b7 16\u00d716",
+      "mode": "rk-stage0",
+      "dev34_median_s": 0.13627110049998237,
+      "dev35_median_s": 0.12398498800001789,
+      "speedup": 1.0990935491316312,
+      "time_reduction_percent": 9.015934013071291,
+      "dev34_range_s": [
+        0.13582399649999388,
+        0.14046701800003802
+      ],
+      "dev35_range_s": [
+        0.12190711400000964,
+        0.1303720250000424
+      ],
+      "repeat_ranges_overlap": false,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            11,
+            182
+          ],
+          [
+            6,
+            82
+          ]
+        ],
+        [
+          [
+            11,
+            182
+          ],
+          [
+            6,
+            82
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case1_n64",
+      "label": "Initial case 1 \u00b7 64\u00d764",
+      "mode": "zero-rate",
+      "dev34_median_s": 0.22653975100001844,
+      "dev35_median_s": 0.21159710150004685,
+      "speedup": 1.0706184035321877,
+      "time_reduction_percent": 6.596038635166668,
+      "dev34_range_s": [
+        0.22399026450000292,
+        0.23344084949997068
+      ],
+      "dev35_range_s": [
+        0.2100782919999915,
+        0.23322497549997934
+      ],
+      "repeat_ranges_overlap": true,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            32
+          ],
+          [
+            1,
+            32
+          ]
+        ],
+        [
+          [
+            1,
+            32
+          ],
+          [
+            1,
+            32
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case1_n64",
+      "label": "Initial case 1 \u00b7 64\u00d764",
+      "mode": "rk-stage0",
+      "dev34_median_s": 0.2226620275000073,
+      "dev35_median_s": 0.20490485049998597,
+      "speedup": 1.0866605985982871,
+      "time_reduction_percent": 7.974946244491887,
+      "dev34_range_s": [
+        0.21447254150001527,
+        0.24267928149998852
+      ],
+      "dev35_range_s": [
+        0.19772166149999748,
+        0.21231710999995812
+      ],
+      "repeat_ranges_overlap": false,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            32
+          ],
+          [
+            1,
+            23
+          ]
+        ],
+        [
+          [
+            1,
+            32
+          ],
+          [
+            1,
+            23
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case1_n128",
+      "label": "Initial case 1 \u00b7 128\u00d7128",
+      "mode": "zero-rate",
+      "dev34_median_s": 1.2310428345000446,
+      "dev35_median_s": 1.2648722034999764,
+      "speedup": 0.9732547138704416,
+      "time_reduction_percent": -2.7480253368820318,
+      "dev34_range_s": [
+        1.2066462055000216,
+        1.3233780470000056
+      ],
+      "dev35_range_s": [
+        1.2044005515000435,
+        1.3181863594999186
+      ],
+      "repeat_ranges_overlap": true,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            35
+          ],
+          [
+            1,
+            35
+          ]
+        ],
+        [
+          [
+            1,
+            35
+          ],
+          [
+            1,
+            35
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    },
+    {
+      "name": "initial_case1_n128",
+      "label": "Initial case 1 \u00b7 128\u00d7128",
+      "mode": "rk-stage0",
+      "dev34_median_s": 1.2101258874999985,
+      "dev35_median_s": 1.2010743800000228,
+      "speedup": 1.0075361756529813,
+      "time_reduction_percent": 0.7479806517217247,
+      "dev34_range_s": [
+        1.17671522400002,
+        1.3446079825000083
+      ],
+      "dev35_range_s": [
+        1.1452161500000102,
+        1.230650790000027
+      ],
+      "repeat_ranges_overlap": true,
+      "arrays_byte_identical": {
+        "temperature_k": true,
+        "composition": true,
+        "u_stage0_m_s": true,
+        "w_stage0_m_s": true,
+        "u_stage1_m_s": true,
+        "w_stage1_m_s": true,
+        "endpoint_u_m_s": true,
+        "endpoint_w_m_s": true,
+        "endpoint_pressure_pa": true,
+        "endpoint_viscosity_cell_pa_s": true,
+        "endpoint_viscosity_vertex_pa_s": true
+      },
+      "repeated_array_hashes_identical": true,
+      "stage_iteration_pairs": [
+        [
+          [
+            1,
+            35
+          ],
+          [
+            1,
+            27
+          ]
+        ],
+        [
+          [
+            1,
+            35
+          ],
+          [
+            1,
+            27
+          ]
+        ]
+      ],
+      "budgets_closed": true
+    }
+  ],
+  "guard_checks": [
+    {
+      "backend": "reference",
+      "dev34_median_s": 0.008029566799996246,
+      "dev35_median_s": 0.00589399494999725,
+      "time_reduction_percent": 26.59635199747009,
+      "speedup": 1.3623301119387612,
+      "dev34_range_s": [
+        0.007456543950002015,
+        0.011269661799997267
+      ],
+      "dev35_range_s": [
+        0.005734796500001948,
+        0.006196146650000856
+      ],
+      "source_reads_each": 50,
+      "new_full_inventory_rebuilds": 0,
+      "expected_lookup_shallow_bytes": 51968
+    },
+    {
+      "backend": "scipy",
+      "dev34_median_s": 0.008042988350001678,
+      "dev35_median_s": 0.005775010700000393,
+      "time_reduction_percent": 28.198196383074603,
+      "speedup": 1.3927226749555859,
+      "dev34_range_s": [
+        0.007875965099998439,
+        0.011551281549998293
+      ],
+      "dev35_range_s": [
+        0.005724963049999587,
+        0.005879895650002709
+      ],
+      "source_reads_each": 50,
+      "new_full_inventory_rebuilds": 0,
+      "expected_lookup_shallow_bytes": 51968
+    },
+    {
+      "backend": "numba",
+      "dev34_median_s": 0.0076901114500003585,
+      "dev35_median_s": 0.005393947700002855,
+      "time_reduction_percent": 29.858653738983154,
+      "speedup": 1.4256926239748837,
+      "dev34_range_s": [
+        0.007241215049998573,
+        0.01081388090000246
+      ],
+      "dev35_range_s": [
+        0.005308180949998587,
+        0.005544742099999667
+      ],
+      "source_reads_each": 50,
+      "new_full_inventory_rebuilds": 0,
+      "expected_lookup_shallow_bytes": 51968
+    }
+  ],
+  "actual_step_counts": [
+    {
+      "state": "initial",
+      "mode": "zero-rate",
+      "dev34": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 12,
+        "_verify_callable_inventory": 0
+      },
+      "dev35": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 0,
+        "_verify_callable_inventory": 12
+      },
+      "profiled_and_unprofiled_fields_exact": true
+    },
+    {
+      "state": "initial",
+      "mode": "rk-stage0",
+      "dev34": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 12,
+        "_verify_callable_inventory": 0
+      },
+      "dev35": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 0,
+        "_verify_callable_inventory": 12
+      },
+      "profiled_and_unprofiled_fields_exact": true
+    },
+    {
+      "state": "developed",
+      "mode": "zero-rate",
+      "dev34": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 12,
+        "_verify_callable_inventory": 0
+      },
+      "dev35": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 0,
+        "_verify_callable_inventory": 12
+      },
+      "profiled_and_unprofiled_fields_exact": true
+    },
+    {
+      "state": "developed",
+      "mode": "rk-stage0",
+      "dev34": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 12,
+        "_verify_callable_inventory": 0
+      },
+      "dev35": {
+        "verify": 12,
+        "_source_bytes": 12,
+        "_callable_inventory": 0,
+        "_verify_callable_inventory": 12
+      },
+      "profiled_and_unprofiled_fields_exact": true
+    }
+  ],
+  "measurements_complete": true,
+  "physical_fields_byte_identical": true,
+  "no_numerical_changes": true,
+  "note": "Independent unprofiled timing, profile call counts and allocation observations. Short same-host probes, not campaign forecasts. Preparation/first calls are in each raw RESULT.json."
+}

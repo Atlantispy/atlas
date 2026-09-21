@@ -82,8 +82,9 @@ class Execution(unittest.TestCase):
             with self.assertRaises(MemoryLimitError):self.plan(budget=b)
         self.assertEqual(b.reserved_bytes,0)
     def test_scratch_refusal_releases_without_destroying_plan(self):
-        pol=NonlinearStokesPolicy();held=6*1024**2+int((640+640*pol.ilu_fill_factor)*self.b.unknowns)
-        b=WorkBudget(held+100)
+        pol=NonlinearStokesPolicy();held=6*1024**2+(768*self.b.nx*self.b.nz+8)+int((640+640*pol.ilu_fill_factor)*self.b.unknowns)
+        template_build=4096*self.b.nx*self.b.nz+65536
+        b=WorkBudget(held+template_build+100)
         with self.plan(budget=b) as p:
             with self.assertRaises(MemoryLimitError):self.solve(p)
             self.assertEqual(b.reserved_bytes,held)

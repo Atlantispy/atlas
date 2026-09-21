@@ -1,0 +1,778 @@
+{
+  "R4_status": "IN_PROGRESS",
+  "R5_authorised": false,
+  "campaign_sha256": "b3d40fd1d590784b66d7b3738c3535a62fd9c907fc45923e6d0b3dc1d5875d54",
+  "cases": [
+    {
+      "case": {
+        "name": "tosi-1",
+        "yield_stress": null
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-2",
+        "yield_stress": null
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-3",
+        "yield_stress": null
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-4",
+        "yield_stress": null
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5a",
+        "yield_stress": null
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.0
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.1
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.2
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.3
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.4
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.5
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.6
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.7
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.8
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.9
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.0
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.1
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.2
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.3
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.4
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.5
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.6
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.7
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.8
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.9
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 5.0
+      },
+      "finest_run_gates": [],
+      "passed": false,
+      "studies": {
+        "mesh": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "nonlinear": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        },
+        "timestep": {
+          "passed": false,
+          "status": "MISSING_THREE_RUN_STUDY"
+        }
+      },
+      "visual_qa": {
+        "passed": false,
+        "reason": "No actual-code visual inspection record supplied"
+      }
+    }
+  ],
+  "combined": {
+    "bounded_platform_resources_passed": true,
+    "limitation": "Current tested platform only; hashes are integrity observations, not signatures",
+    "passed": true,
+    "record_sha256": "cfc739cd0cff343553f08555a217d7180cb7b528197e23b19ff96d7281c23f5d",
+    "runtime": {
+      "interpreter_launcher_is_symlink": false,
+      "interpreter_target_sha256": "17b78e0a93175e86f9ac03141924fd7a7f0c0c52e66b34bfa0de20ffef989df1",
+      "machine": "x86_64",
+      "numpy": "2.3.5",
+      "platform": "Linux",
+      "python": "3.13.5",
+      "thread_environment": {
+        "MKL_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      }
+    },
+    "tests_passed_on_current_source": true,
+    "tests_run": 2213
+  },
+  "evaluated_distinct_trajectories": 0,
+  "evaluator_sha256": "e43d502b42753aee60c94c997dabdba29d65b6fb37ef7c325e0362b8bd2e2881",
+  "expected_case_configurations": 26,
+  "full_benchmark_accepted": false,
+  "limitation": "No Earth/Diadem observational validation, spherical dynamics, universal scaling or additional platform acceptance",
+  "passed_cases": 0,
+  "schema": "atlas.convection-suite-acceptance-r4-4.v1",
+  "source": {
+    "case_specification": "a5c0aff86d0172d02d103e8bf4fb3a10822e2039f2be8dd90eea3201f27a1de7",
+    "runner": "91dc858ebc3f45d4c9049a16aa0b398089e2b17f18cbff801e0917cb3323dc93",
+    "source": {
+      "src/atlas_tectonics/__init__.py": "7ee5d3436ecfe208686f90d5640bbd61eedb588d23db95a07ad0211ee07171c4",
+      "src/atlas_tectonics/_geometry_native.py": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a",
+      "src/atlas_tectonics/_materials_native.py": "8254aed5b56ced15f3712b4dd7bd2e79d8ce9ed995a58d6b642a5d9d7895bcfa",
+      "src/atlas_tectonics/_mesh_native.py": "b92ee48adbca4efee2394ecc0a6ca7c0842e1183e30456b4890ed3a5b20a1b7c",
+      "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+      "src/atlas_tectonics/_spherical_candidates.py": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c",
+      "src/atlas_tectonics/_thermochemical_native.py": "0a64776d1e8b78810fa83670efb35e5769cbba6f394da70eacc5f8929a8247b3",
+      "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+      "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+      "src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+      "src/atlas_tectonics/constitutive_execution.py": "43f26528dd911677ba3288a2b4d25b8080ec934948b1d51600a3fce7b957b8b0",
+      "src/atlas_tectonics/convection_benchmark.py": "558f37ebaab1069e3a62431887e7e7629703773552e00c52ad112c17fbbf12fb",
+      "src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+      "src/atlas_tectonics/damage_regularisation.py": "892647330307f6b7293f5f1ceeedacc480f53308d630e5ef57fe7a2ca5a3049a",
+      "src/atlas_tectonics/earth_material_data.py": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f",
+      "src/atlas_tectonics/execution.py": "b860388f8b2d1e8bc23073674adcd9a03032844dee44efb1129b535d1fc9ac42",
+      "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+      "src/atlas_tectonics/geological_case.py": "954def0ef83e64f9a2846cc2822ac30cb092cb38284d66cb18aab1e0993f2173",
+      "src/atlas_tectonics/geological_domain.py": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d",
+      "src/atlas_tectonics/geological_records.py": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23",
+      "src/atlas_tectonics/geometry.py": "6dd3c6642484501d5b9c79777c948e4d7680dada34c45c23d1eb95f417a12b81",
+      "src/atlas_tectonics/geometry_index.py": "b0d97d386673a941ae791c298423d68a451593b0225a1a744f2594953e2c72d1",
+      "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+      "src/atlas_tectonics/markers.py": "1c290822be25a416e9ec72741c0d63eff6c7d6e7df0e8c6ab592a8c0794e665a",
+      "src/atlas_tectonics/material_library.py": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59",
+      "src/atlas_tectonics/materials.py": "d511e6b73a46b215c4001de6ccf1391d20f1bbd2db6c6545bee3baa7b85b81c8",
+      "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+      "src/atlas_tectonics/parameters.py": "d3f537ce7832e4f282a0a6e26639042310b43dd8dae819d92341c54a3a36fb6b",
+      "src/atlas_tectonics/planetary_generation.py": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d",
+      "src/atlas_tectonics/plate_layout.py": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca",
+      "src/atlas_tectonics/plate_reference.py": "bad89431a04b04544fe83621dbf91a4ce7125eb6706df3e3e19cd97ccae87a1d",
+      "src/atlas_tectonics/plate_reference_acceptance.py": "9bd03946e5fd2724ab37860afbcd37fd0ca1307520efa9c995c5a64588bebd9e",
+      "src/atlas_tectonics/plate_reference_dataset.py": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e",
+      "src/atlas_tectonics/plate_reference_use.py": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449",
+      "src/atlas_tectonics/precursor.py": "40f1244de33a293a427ab3ba3be56d788b0ccb6bc889a0b0842a53002a623420",
+      "src/atlas_tectonics/precursor_execution.py": "83c2e0dfbffe020a14fb202d0487d7bbf22be4ebe3468f4fd4dd801ddab7cee2",
+      "src/atlas_tectonics/precursor_sampling.py": "0007b504fe9a4588dd1bb8926569b9c8615460c88b055b8b992df825303978f9",
+      "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+      "src/atlas_tectonics/remapping.py": "807cb28fd7e775ed734526745ecfdefa53bba390527f67d9ae55cca43d139d4a",
+      "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+      "src/atlas_tectonics/reuse.py": "a9da093d6bcfab5bd49e1a7ca8b5c758c1216934ac6b4b2eb8b1da1faae6dab2",
+      "src/atlas_tectonics/spherical_atlas.py": "d336265c574e5c571dd8a8bab499e5afb1fb0f88fd1b8c0967863ea611c4cb00",
+      "src/atlas_tectonics/spherical_geometry.py": "755111edf0479b94c7e1d8b01c01b1d37f6398b61feeba328d3c69c87f9a48c7",
+      "src/atlas_tectonics/stokes.py": "02ed16281f9e41ded1b28924ad3cf023fc148aad817d52c162aab079939b207d",
+      "src/atlas_tectonics/stokes_execution.py": "aaa917c4b965fb6b0004645f4769cfb6d11f2efb622600c178aac5e3dbe2032f",
+      "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+      "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+      "src/atlas_tectonics/thermochemical.py": "aa6980c6a4706b68d57ae56bbd4653b920d7d195ade8738e2511fd020250d358",
+      "src/atlas_tectonics/thermochemical_execution.py": "248ade74b39cd301a9c1543a3a9c8d0c2ff70bf47b1fbc142e0a5c066c2d8ea5",
+      "src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+      "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+      "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+      "src/atlas_tectonics/variable_stokes.py": "1331a2a2b93720835ebc8baff46c0d4a31b528199646004e53b191c665e000c2",
+      "src/atlas_tectonics/variable_stokes_execution.py": "378c037e29886cf61d350f7f66726ae3774ad7c3b1684f347172199edd5da4c0"
+    }
+  },
+  "status": "INCOMPLETE_R4_4",
+  "unresolved_reference_requirements": [
+    "Case 5b numerical reference targets not verified",
+    "Case 5a printed dissipation normalisation unresolved"
+  ],
+  "visual_user_approval": "NOT_ASSERTED"
+}

@@ -21,6 +21,27 @@ class VariableOperatorTests(unittest.TestCase):
         self.op.set_viscosity(self.c,self.v);self.x=rng.normal(size=self.op.n)
     def test_sparse_derivatives_match_independent_stress_stencil(self):
         np.testing.assert_allclose(self.op.matvec(self.x),self.op.sparse_reference()@self.x,rtol=2e-14,atol=2e-12)
+    def test_direct_wall_differences_match_padded_reference_exactly(self):
+        u,w,_,_=self.op.split(self.x)
+        got=self.op.strains(u,w)
+        expected=(np.diff(np.pad(u,((0,0),(1,1))),axis=1)/self.op.hx,
+                  np.diff(np.pad(w,((1,1),(0,0))),axis=0)/self.op.hz,
+                  np.diff(u,axis=0)/self.op.hz+np.diff(w,axis=1)/self.op.hx)
+        for a,b in zip(got,expected):np.testing.assert_array_equal(a,b)
+        a,b,gamma=expected;xx=2*self.c*a;zz=2*self.c*b;shear=self.v*gamma
+        expected_velocity=(-np.diff(xx,axis=1)/self.op.hx-
+                           np.diff(np.pad(shear,((1,1),(0,0))),axis=0)/self.op.hz,
+                           -np.diff(zz,axis=0)/self.op.hz-
+                           np.diff(np.pad(shear,((0,0),(1,1))),axis=1)/self.op.hx)
+        for a,b in zip(self.op.velocity(u,w),expected_velocity):np.testing.assert_array_equal(a,b)
+    def test_sparse_assembly_matches_diagonal_reference_to_roundoff(self):
+        from scipy.sparse import diags
+        centre=diags(2*self.c.ravel(),format='csr')
+        vertex=diags(self.v.ravel(),format='csr')
+        expected=(self.op.bx.T@centre@self.op.bx+self.op.bz.T@centre@self.op.bz+
+                  self.op.shear.T@vertex@self.op.shear).tocsc()
+        actual=self.op.velocity_matrix()
+        np.testing.assert_allclose(actual.toarray(),expected.toarray(),rtol=3e-16,atol=2e-14)
     def test_operator_is_symmetric(self):
         a=self.op.sparse_reference();np.testing.assert_allclose((a-a.T).data,0.,atol=2e-12)
     def test_velocity_energy_is_positive(self):

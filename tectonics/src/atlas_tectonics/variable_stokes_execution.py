@@ -23,7 +23,9 @@ try:
 except ImportError:
     LinearOperator = gmres = spilu = splu = None
 from ._validation import TectonicsError, text, scalar, input_shape, read_array
-from .resources import select_budget
+from .resources import select_budget, MemoryLimitError
+from . import anderson as _aa
+from . import preconditioner_reuse as _pr
 from .reuse import ExecutionContext
 from .constitutive import (DiffusiveScales, RheologyProfile, ConstitutiveLimits,
                            _native_law, _check_fields, _json, _cancel)
@@ -103,10 +105,39 @@ class VariableStokesSolution:
                     scalar(row[k],k,nonnegative=True)
                 if type(row['linear_iterations']) is not int or not 0<=row['linear_iterations']<=pol.restart*pol.max_cycles:
                     raise TectonicsError('invalid linear iteration count')
+            if 'preconditioner_reuse' in metadata:
+                if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
+                    raise TectonicsError('unsupported preconditioner-reuse rheology')
+                if metadata['preconditioner_reuse']['active']!=(rp.family=='tosi-plastic'):
+                    raise TectonicsError('preconditioner activation differs from rheology')
+                _pr.check_history(metadata['preconditioner_reuse'],metadata['preconditioner_history'],hist,pol)
+            elif 'preconditioner_history' in metadata:
+                raise TectonicsError('undeclared preconditioner history')
+            if 'nonlinear_acceleration' in metadata:
+                if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
+                    raise TectonicsError('Anderson supports constant/Tosi rheology only')
+                ap=_aa.check_summary(metadata['nonlinear_acceleration'],len(hist))
+                _aa.check_policy(ap,pol)
+                _aa.check_history(hist,metadata['nonlinear_acceleration'])
+            elif any('anderson' in row for row in hist):
+                raise TectonicsError('undeclared Anderson iteration history')
             if hist[-1]['momentum_linf']>pol.momentum_tolerance or hist[-1]['viscosity_log_change']>pol.viscosity_rtol:
                 raise TectonicsError('nonlinear record is unconverged')
         except (KeyError,TypeError,ValueError) as exc:
             raise TectonicsError('invalid variable mechanical metadata') from exc
+        guess_record=metadata.get('initial_guess')
+        if 'initial_guess' in metadata:
+            if rp is None or rp.family=='bf23-memory':
+                raise TectonicsError('initial guesses support constant/Tosi rheology only')
+            if type(guess_record) is not dict or set(guess_record)!={'guess_id','descriptor'}:
+                raise TectonicsError('invalid recorded initial guess')
+            try:
+                guess=NonlinearStokesGuess.restore(guess_record['descriptor'],
+                    {k:arrays['initial_guess_'+k] for k in ('u_m_s','w_m_s','pressure_pa')},
+                    guess_record['guess_id'])
+            except (KeyError,TypeError,ValueError) as exc:
+                raise TectonicsError('invalid recorded initial-guess fields') from exc
+            _check_guess_binding(guess,metadata['plan_id'],rp,metadata['epoch_id'],metadata['time_s'],box=b,scales=sc)
         shape=(b.nz,b.nx);vertex=(b.nz-1,b.nx-1)
         shapes={'force_x_n_m3':(b.nz,b.nx-1),'force_z_n_m3':(b.nz-1,b.nx),
                 'u_m_s':(b.nz,b.nx+1),'w_m_s':(b.nz+1,b.nx),'pressure_pa':shape,
@@ -115,6 +146,9 @@ class VariableStokesSolution:
         if rp is not None:
             shapes.update(temperature_k=shape,clipped_cell=shape,clipped_vertex=vertex)
             if rp.family=='bf23-memory':shapes['frozen_damage']=shape
+        if guess_record is not None:
+            shapes.update(initial_guess_u_m_s=(b.nz,b.nx+1),
+                          initial_guess_w_m_s=(b.nz+1,b.nx),initial_guess_pressure_pa=shape)
         if type(arrays) is not dict or set(arrays)!=set(shapes):raise TectonicsError('complete mechanical arrays required')
         data=[]
         for k,s in sorted(shapes.items()):
@@ -147,6 +181,99 @@ class VariableStokesSolution:
         raise TectonicsError('unknown variable mechanical array')
 
 
+class NonlinearStokesGuess:
+    """Explicit immutable SI starting fields, not an accepted answer to a new solve.
+
+    Capture only velocity and pressure, not a recursive chain of earlier results.
+    Source/plan, rheology, geometry, epoch and time bindings remain explicit.
+    Recorded guesses restore without the original solution or an earlier store.
+    Caller-retained instances need headroom outside the prepared solver budget.
+    """
+    __slots__=('_metadata','_arrays','guess_id')
+
+    def __init__(self,solution,*,budget=None):
+        if type(solution) is not VariableStokesSolution:
+            raise TectonicsError('initial guess requires a typed mechanical solution')
+        m=solution.descriptor()
+        if m['mode']!='rheology' or m['rheology']['family']=='bf23-memory':
+            raise TectonicsError('initial guesses support constant/Tosi rheology only')
+        meta=dict(schema='atlas.nonlinear-stokes-guess.v1',box=m['box'],scales=m['scales'],
+                  rheology=m['rheology'],plan_id=m['plan_id'],epoch_id=m['epoch_id'],
+                  time_s=m['time_s'],source_result_id=solution.result_id)
+        self._capture(meta,{k:solution.array(k) for k in ('u_m_s','w_m_s','pressure_pa')},budget)
+
+    def _capture(self,meta,arrays,budget):
+        try:
+            keys={'schema','box','scales','rheology','plan_id','epoch_id','time_s','source_result_id'}
+            if type(meta) is not dict or set(meta)!=keys or meta['schema']!='atlas.nonlinear-stokes-guess.v1':
+                raise TectonicsError('invalid initial-guess descriptor')
+            b=StokesBox2D(**meta['box']);sc=DiffusiveScales(**meta['scales'])
+            check_variable_support(b,sc)
+            rp=_profile_restore(meta['rheology'])
+            if rp is None or rp.family=='bf23-memory':
+                raise TectonicsError('initial guesses support constant/Tosi rheology only')
+            for k in ('plan_id','source_result_id'):_hex(meta[k],k)
+            text(meta['epoch_id'],'initial-guess epoch');scalar(meta['time_s'],'initial-guess time')
+            if (len(meta['epoch_id'])>4096 or _json(asdict(b))!=_json(meta['box']) or
+                    _json(asdict(sc))!=_json(meta['scales'])):
+                raise TectonicsError('noncanonical initial-guess geometry/scales')
+            shapes={'u_m_s':(b.nz,b.nx+1),'w_m_s':(b.nz+1,b.nx),'pressure_pa':(b.nz,b.nx)}
+            if type(arrays) is not dict or set(arrays)!=set(shapes):
+                raise TectonicsError('complete initial-guess fields required')
+            if any(input_shape(arrays[k])!=shape for k,shape in shapes.items()):
+                raise TectonicsError('initial-guess field shape differs')
+            with select_budget(budget).reserve(64*b.nx*b.nz+131072,category='nonlinear-stokes-guess'):
+                data=[]
+                for k,shape in sorted(shapes.items()):
+                    a=read_array(arrays[k],k)
+                    if ((k=='u_m_s' and np.any(a[:,[0,-1]])) or
+                            (k=='w_m_s' and np.any(a[[0,-1]]))):
+                        raise TectonicsError('initial guess violates normal wall boundary')
+                    data.append((k,shape,a.tobytes()))
+                raw=_json(meta)
+                if len(raw)>65536:raise TectonicsError('oversized initial-guess metadata')
+                h=hashlib.sha256(raw)
+                for k,shape,v in data:h.update(_json([k,shape,'binary64']));h.update(v)
+                self._metadata=raw;self._arrays=tuple(data);self.guess_id=h.hexdigest()
+        except MemoryLimitError:
+            raise
+        except (KeyError,TypeError,ValueError) as exc:
+            raise TectonicsError('invalid nonlinear initial guess') from exc
+
+    def __setattr__(self,k,v):
+        if hasattr(self,k):raise TectonicsError('initial guess is immutable')
+        object.__setattr__(self,k,v)
+
+    def descriptor(self):return json.loads(self._metadata)
+
+    @property
+    def nbytes(self):return len(self._metadata)+sum(len(v) for _,_,v in self._arrays)
+
+    def array(self,key):
+        for k,shape,v in self._arrays:
+            if k==key:return np.frombuffer(v,dtype='f8').reshape(shape)
+        raise TectonicsError('unknown initial-guess field')
+
+    @classmethod
+    def restore(cls,metadata,arrays,guess_id,*,budget=None):
+        _hex(guess_id,'initial guess')
+        out=object.__new__(cls);out._capture(metadata,arrays,budget)
+        if out.guess_id!=guess_id:raise TectonicsError('initial-guess identity differs')
+        return out
+
+
+def _check_guess_binding(guess,plan_id,profile,epoch,time,*,box,scales):
+    if type(guess) is not NonlinearStokesGuess:
+        raise TectonicsError('typed explicit nonlinear initial guess required')
+    m=guess.descriptor()
+    if m['plan_id']!=plan_id or _json(m['box'])!=_json(asdict(box)) or _json(m['scales'])!=_json(asdict(scales)):
+        raise TectonicsError('initial-guess source/plan/geometry/scales/policy differs')
+    if _json(m['rheology'])!=_json(profile.descriptor()):
+        raise TectonicsError('initial-guess rheology differs')
+    if m['epoch_id']!=epoch or m['time_s']>time:
+        raise TectonicsError('initial-guess epoch/time is incompatible')
+
+
 class PreparedVariableStokes2D:
     """One driving thread, reusable sparse derivatives and one numerical factor.
 
@@ -156,7 +283,7 @@ class PreparedVariableStokes2D:
     inverse. Fixed coefficients reuse one factor; changed eta replaces it. No
     factor, source verification or accuracy gate is carried stale across a call.
     """
-    def __init__(self,box,scales,*,policy=None,budget=None,cancel=None):
+    def __init__(self,box,scales,*,policy=None,anderson_policy=None,preconditioner_reuse_policy=None,budget=None,cancel=None):
         hx,hz=check_variable_support(box,scales)
         if gmres is None or spilu is None:raise TectonicsError('SciPy variable mechanics unavailable')
         policy=NonlinearStokesPolicy() if policy is None else policy
@@ -164,28 +291,48 @@ class PreparedVariableStokes2D:
         if box.unknowns>policy.max_unknowns:raise TectonicsError('variable mechanics exceeds unknown envelope')
         if policy.method=='direct' and box.unknowns>policy.direct_max_unknowns:
             raise TectonicsError('direct variable reference exceeds envelope')
+        if anderson_policy is not None:_aa.check_policy(anderson_policy,policy)
+        if preconditioner_reuse_policy is not None:_pr.check_policy(preconditioner_reuse_policy,policy)
+        self.preconditioner_reuse_policy=preconditioner_reuse_policy
+        self._reuse_request=None
+        self._approximate_reuses=0
+        self.anderson_policy=anderson_policy
         self.box,self.scales,self.policy=box,scales,policy
         self.budget=select_budget(budget);self._closed=False;self._active=False;self._owner=threading.get_ident()
         self._context=None;self._op=None;self._factor=None;self._factor_key=None;self._factor_builds=0;self._factor_reuses=0
         # Sparse derivatives, two overlapping factor lifetimes during replacement,
         # native fill/workspace and captured source. fill_factor is a solver hint,
         # not a hard allocator cap; generous admission remains an estimate.
-        retained=6*1024**2+int((640+640*policy.ilu_fill_factor)*box.unknowns)
+        # GMRES retains a geometry-only velocity-block template (<=768 B/cell).
+        # Its one-time symbolic construction has a separate conservative transient
+        # allowance. The explicit direct reference keeps predecessor sparse assembly.
+        compiled=policy.method=='gmres'
+        template_retained=(768*box.nx*box.nz+8) if compiled else 0
+        template_build=(4096*box.nx*box.nz+65536) if compiled else 0
+        retained=6*1024**2+template_retained+int((640+640*policy.ilu_fill_factor)*box.unknowns)
         if policy.method=='direct':retained+=64*box.unknowns**2
         self._guard=self.budget.reserve(retained,category='variable-stokes-retained');self._guard.__enter__()
         self._retained=retained
         try:
             _cancel(cancel)
-            self._op=_StressMACOperator(box,hx,hz)
-            self._context=ExecutionContext('scipy');self._context_id=self._context.identity
-            self.identity=_digest(dict(method=_METHOD,box=asdict(box),scales=asdict(scales),
-                                       policy=asdict(policy),context=self._context_id))
+            if compiled:
+                with self.budget.reserve(template_build,category='variable-stokes-template-build'):
+                    self._op=_StressMACOperator(box,hx,hz,compiled=True)
+                if self._op.velocity_template_nbytes>template_retained:
+                    raise TectonicsError('velocity template exceeds admitted retained estimate')
+            else:self._op=_StressMACOperator(box,hx,hz,compiled=False)
+            self._context=ExecutionContext('numba' if compiled else 'scipy');self._context_id=self._context.identity
+            binding=dict(method=_METHOD,box=asdict(box),scales=asdict(scales),
+                         policy=asdict(policy),context=self._context_id)
+            if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
+            if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
+            self.identity=_digest(binding)
             _cancel(cancel)
         except BaseException:
             self._op=None;self._context=None;self._closed=True;self._guard.__exit__(None,None,None)
             raise
     def __setattr__(self,k,v):
-        if k in ('box','scales','policy','budget','identity','_context_id') and hasattr(self,k):
+        if k in ('box','scales','policy','anderson_policy','preconditioner_reuse_policy','budget','identity','_context_id') and hasattr(self,k):
             raise TectonicsError('variable mechanics binding immutable')
         object.__setattr__(self,k,v)
     def __enter__(self):
@@ -212,7 +359,7 @@ class PreparedVariableStokes2D:
             self._context=None;self._op=None;self._factor=None;self._factor_key=None
             self._guard.__exit__(None,None,None)
     def statistics(self):
-        return dict(factor_builds=self._factor_builds,factor_reuses=self._factor_reuses,retained_admitted_bytes=self._retained)
+        return dict(factor_builds=self._factor_builds,factor_reuses=self._factor_reuses,retained_admitted_bytes=self._retained, approximate_factor_reuses=self._approximate_reuses)
 
     def _coefficients(self,c,v):
         if not np.isfinite(c).all() or not np.isfinite(v).all() or min(c.min(),v.min())<=0:
@@ -222,7 +369,32 @@ class PreparedVariableStokes2D:
             raise TectonicsError('viscosity contrast exceeds declared solve envelope')
         self._op.set_viscosity(c,v)
 
+    @contextmanager
+    def _preconditioner_request(self,profile):
+        # Bypass known strain-independent laws without allocating history/maps.
+        if self.preconditioner_reuse_policy is None or profile.family!='tosi-plastic':
+            yield
+            return
+        extra=_pr.request_bytes(self.box.nx*self.box.nz,self.policy.max_picard_iterations)
+        with self.budget.reserve(extra,category='preconditioner-reuse-request'):
+            self._reuse_request=_pr._Request(self.preconditioner_reuse_policy)
+            try:yield
+            finally:self._reuse_request=None
+
     def _factorise(self,cancel):
+        _cancel(cancel)
+        reuse=self._reuse_request
+        if reuse is None:
+            return self._factorise_current(cancel)
+        decision=reuse.decision(self._op,self._factor_key)
+        if decision[0]=='bounded_reuse':
+            if self._factor is None:raise TectonicsError('absent factor cannot be reused')
+            self._approximate_reuses+=1
+        else:self._factorise_current(cancel)
+        reuse.selected(self._op,self._factor_key,decision)
+        _cancel(cancel)
+
+    def _factorise_current(self,cancel):
         op=self._op;key=hashlib.sha256(op.eta_c.tobytes()+op.eta_v.tobytes()).hexdigest()
         if self._factor_key==key:
             self._factor_reuses+=1;return
@@ -237,6 +409,14 @@ class PreparedVariableStokes2D:
         self._factor=factor;self._factor_key=key;self._factor_builds+=1
 
     def _linear(self,rhs,guess,cancel):
+        if self._reuse_request is None:
+            return self._linear_impl(rhs,guess,cancel)
+        self._reuse_request.pending=None
+        vector,count=self._linear_impl(rhs,guess,cancel)
+        self._reuse_request.complete(self._op,count)
+        return vector,count
+
+    def _linear_impl(self,rhs,guess,cancel):
         op=self._op;pol=self.policy
         if not np.any(rhs):return np.zeros(op.n),0
         self._factorise(cancel)
@@ -286,6 +466,10 @@ class PreparedVariableStokes2D:
     def solve(self,force_x_n_m3,force_z_n_m3,viscosity_cell_pa_s,viscosity_vertex_pa_s,*,
               frame_id,epoch_id,time_s,source,cancel=None):
         """Prescribed viscosity at centres AND interior vertices, no hidden averaging."""
+        if self.anderson_policy is not None:
+            raise TectonicsError('Anderson policy is unused for prescribed viscosity; select a Picard plan')
+        if self.preconditioner_reuse_policy is not None:
+            raise TectonicsError('preconditioner reuse is unused for prescribed viscosity')
         time_s=scalar(time_s,'mechanical time')
         op=self._op
         if self._closed:raise TectonicsError('variable plan closed')
@@ -312,28 +496,51 @@ class PreparedVariableStokes2D:
         return (1200+16*self.policy.restart)*self.box.unknowns+524288
 
     def solve_rheology(self,force_x_n_m3,force_z_n_m3,temperature_k,profile,*,
-                       frame_id,epoch_id,time_s,source,frozen_damage=None,cancel=None):
+                       frame_id,epoch_id,time_s,source,frozen_damage=None,initial_guess=None,cancel=None):
         """Solve the retained local law, not merely freeze eta from a guessed rate.
 
         T is cell-centred; interior-vertex T is its four-cell arithmetic mean.
         Depth is measured DOWN from the box top and divided by the named R3
         depth scale. Dynamic pressure is never an absolute-pressure law input.
         BF damage, when requested, is an explicit fixed snapshot; no time evolves.
+        By default every request starts at zero rate. An explicit constant/Tosi
+        guess is rescaled from SI to THIS force/reference and evaluated with THIS
+        temperature. No viscosity, factor, accepted solution or convergence gate
+        is borrowed from the seed. Zero current forcing uses the exact zero start.
         """
         time_s=scalar(time_s,'mechanical time')
         if type(profile) is not RheologyProfile:raise TectonicsError('typed R3 rheology required')
+        if self.preconditioner_reuse_policy is not None and profile.family not in ('constant','tosi-linear','tosi-plastic'):
+            raise TectonicsError('preconditioner reuse supports constant/Tosi only')
+        if self.anderson_policy is not None and profile.family not in ('constant','tosi-linear','tosi-plastic'):
+            raise TectonicsError('Anderson supports constant/Tosi only; frozen damage remains Picard')
         b=self.box;shape=(b.nz,b.nx)
         if input_shape(temperature_k)!=shape:raise TectonicsError('temperature shape differs')
         if b.height_m>self.scales.depth_scale_m:raise TectonicsError('box exceeds depth normalisation')
         if (profile.family=='bf23-memory') != (frozen_damage is not None):
             raise TectonicsError('explicit frozen damage is required only for BF snapshots')
         if frozen_damage is not None and input_shape(frozen_damage)!=shape:raise TectonicsError('frozen damage shape differs')
-        with self._operation(cancel),self.budget.reserve(self._scratch_bytes(),category='variable-stokes-solve'):
+        if initial_guess is not None:
+            if profile.family=='bf23-memory':raise TectonicsError('BF warm starts are outside this increment')
+            _check_guess_binding(initial_guess,self.identity,profile,epoch_id,time_s,box=self.box,scales=self.scales)
+        extra=0 if initial_guess is None else 8*initial_guess.nbytes+131072
+        with self._operation(cancel),self.budget.reserve(self._scratch_bytes()+extra,category='variable-stokes-solve'),self._preconditioner_request(profile):
             fx,fz,F,rhs=self._inputs(force_x_n_m3,force_z_n_m3,frame_id,epoch_id,time_s,source)
             T=read_array(temperature_k,'temperature');damage=None if frozen_damage is None else read_array(frozen_damage,'damage',nonnegative=True)
             eta=self.scales.viscosity_pa_s
             law=self._law_inputs(T,damage)
-            vector=np.zeros(self._op.n);ec,ev,_,_=self._law(vector,F,eta,profile,law)
+            vector=np.zeros(self._op.n)
+            if initial_guess is not None and F:
+                u,w,p,_=self._op.split(vector);L=self.scales.length_m
+                u[:]=_factored_scale(initial_guess.array('u_m_s')[:,1:-1],(eta,),(F,L,L),'initial u normalisation')
+                w[:]=_factored_scale(initial_guess.array('w_m_s')[1:-1],(eta,),(F,L,L),'initial w normalisation')
+                p[:]=_factored_scale(initial_guess.array('pressure_pa'),(),(F,L),'initial p normalisation')
+            ec,ev,_,_=self._law(vector,F,eta,profile,law)
+            if self.anderson_policy is not None:
+                with self.budget.reserve(_aa.history_bytes(self._op.n,self.anderson_policy),
+                                         category='anderson-history'):
+                    return self._anderson_solve(vector,ec,ev,rhs,fx,fz,F,eta,profile,T,law,
+                                                epoch_id,time_s,source,cancel,initial_guess)
             history=[]
             for _ in range(self.policy.max_picard_iterations):
                 _cancel(cancel);self._coefficients(ec,ev)
@@ -348,8 +555,58 @@ class PreparedVariableStokes2D:
                 vector=candidate;ec,ev=nc,nv
                 if (d['momentum_linf']<=self.policy.momentum_tolerance and change<=self.policy.viscosity_rtol):
                     _check_diagnostics(d,self.policy)
-                    return self._publish(vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch_id,time_s,source,cancel)
+                    return self._publish(vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch_id,time_s,source,cancel,initial_guess=initial_guess)
             raise TectonicsError('nonlinear rheology failed within fixed Picard envelope; no endpoint published; residual='+str(history[-1]['momentum_linf']))
+
+
+    def _anderson_solve(self,vector,ec,ev,rhs,fx,fz,F,eta,profile,T,law,
+                        epoch,time,source,cancel,initial_guess):
+        """Bounded request-local history; every accepted output is a fresh Picard image."""
+        policy=self.anderson_policy
+        images=[];errors=[];history=[];accepted=rejected=0
+        for index in range(self.policy.max_picard_iterations):
+            _cancel(cancel);self._coefficients(ec,ev)
+            image,it=self._linear(rhs,vector,cancel)
+            nc,nv,_,_=self._law(image,F,eta,profile,law)
+            change=max(float(np.max(np.abs(np.log(nc)-np.log(ec)))),
+                       float(np.max(np.abs(np.log(nv)-np.log(ev)))))
+            self._coefficients(nc,nv)
+            d,_=_diagnostics(self._op,image,rhs,self.policy,enforce=False)
+            row=dict(action='not_proposed',picard_merit=_aa._merit(d,self.policy),trial_merit=None,depth_used=0)
+            history.append(dict(momentum_linf=d['momentum_linf'],viscosity_log_change=change,
+                                linear_iterations=it,anderson=row))
+            if d['momentum_linf']<=self.policy.momentum_tolerance and change<=self.policy.viscosity_rtol:
+                _check_diagnostics(d,self.policy)
+                acceleration=_aa.summary(policy,len(history),accepted,rejected)
+                return self._publish(image,rhs,fx,fz,F,eta,profile,T,None,history,epoch,time,source,cancel,
+                                     initial_guess=initial_guess,acceleration=acceleration)
+            images.append(image.copy());errors.append(image-vector)
+            del images[:-policy.depth-1];del errors[:-policy.depth-1]
+            if len(images)>=policy.warmup_maps:
+                _cancel(cancel)
+                proposal,details=_aa._propose(images,errors,self._op.nv,policy)
+                row['depth_used']=details.get('depth_used',0)
+                row['action']='rejected_history'
+                if proposal is not None:
+                    _cancel(cancel)
+                    try:
+                        ac,av,_,_=self._law(proposal,F,eta,profile,law)
+                        self._coefficients(ac,av)
+                        ad,_=_diagnostics(self._op,proposal,rhs,self.policy,enforce=False)
+                        row['trial_merit']=_aa._merit(ad,self.policy)
+                        if row['trial_merit']<=row['picard_merit']:
+                            vector,ec,ev=proposal,ac,av
+                            accepted+=1;row['action']='accepted'
+                            continue
+                        row['action']='rejected_true_residual'
+                    except (TectonicsError,FloatingPointError,OverflowError):
+                        # Numerical invalidity of a proposal is rejectable. Cancellation,
+                        # memory refusal and native/linear failures MUST propagate.
+                        row['action']='rejected_invalid_trial'
+                rejected+=1;images.clear();errors.clear()
+            vector,ec,ev=image,nc,nv
+            self._coefficients(ec,ev)
+        raise TectonicsError('Anderson exceeded fixed nonlinear envelope; no endpoint published; residual='+str(history[-1]['momentum_linf']))
 
     def _law_inputs(self,T,damage):
         b=self.box;s=self.scales
@@ -378,7 +635,7 @@ class PreparedVariableStokes2D:
         c=_native_law(profile,tc,zc,ec,dc);v=_native_law(profile,tv,zv,ev,dv)
         return c[0],v[0],c[-1],v[-1]
 
-    def _publish(self,vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch,time,source,cancel):
+    def _publish(self,vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch,time,source,cancel,*,initial_guess=None,acceleration=None):
         op=self._op;L=self.scales.length_m
         u,w,p,_=op.split(vector)
         usi=np.zeros((op.nz,op.nx+1));wsi=np.zeros((op.nz+1,op.nx))
@@ -418,6 +675,15 @@ class PreparedVariableStokes2D:
             nonlinear_history=history,diagnostics=diagnostics,publication_contract='true-rheology-returned-si-v1',
             strain_collocation='normal centre and shear vertex; symmetric arithmetic reconstruction of missing tensor components',
             R4_status='IN_PROGRESS',physical_validation=False)
+        if self.preconditioner_reuse_policy is not None:
+            rows=[] if self._reuse_request is None else self._reuse_request.rows
+            metadata['preconditioner_reuse']=_pr.summary(self.preconditioner_reuse_policy,
+                profile.family=='tosi-plastic',len(history),rows)
+            metadata['preconditioner_history']=rows
+        if acceleration is not None:metadata['nonlinear_acceleration']=acceleration
+        if initial_guess is not None:
+            metadata['initial_guess']=dict(guess_id=initial_guess.guess_id,descriptor=initial_guess.descriptor())
+            arrays.update({'initial_guess_'+k:initial_guess.array(k) for k in ('u_m_s','w_m_s','pressure_pa')})
         _cancel(cancel)
         return VariableStokesSolution(metadata,arrays)
 

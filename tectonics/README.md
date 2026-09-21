@@ -1,3 +1,113 @@
+# Current scoped package: 0.1.0.dev39
+
+## Current dev39 — guarded request-local preconditioner reuse
+
+New nonlinear runs can select:
+
+```text
+--nonlinear-solver anderson --nonlinear-start previous-stage1 --preconditioner-max-uses 4
+```
+
+The equations and pressure approximation stay current. Only the approximate velocity
+ILU can be reused, with age, viscosity-change and linear-work guards. Reuse stays
+inside each nonlinear request; known strain-independent laws bypass it. Defaults
+remain unchanged. Source and policy changes cannot silently resume old trajectories.
+See revision 43 of the two maintained documents and `cases/preconditioner_reuse_r4_4.json`.
+R4.4/R4 remain IN_PROGRESS; this is not mature convection acceptance.
+
+## Current dev38 — explicit cross-timestep starting guesses
+
+Use `--nonlinear-solver anderson --nonlinear-start previous-stage1` on a NEW run
+to combine Anderson with the checkpoint-owned previous second-stage starting guess.
+The existing Picard/zero-rate defaults and intra-step `rk-stage0` option are unchanged.
+Initial stage 0 remains cold. All subsequent first stages use the exact seed saved
+with the previous accepted step; both stages still solve their current equations.
+Checkpoint, failure and identity contracts are in revision 42 of the two maintained
+documents. Old-source runs are not silently migrated. R4.4/R4 remain IN_PROGRESS.
+
+## Current — dev37 / plan revision 41
+
+Safeguarded Anderson acceleration is now an explicit production solver option.
+Picard remains the default. New benchmark runs opt in with
+`--nonlinear-solver anderson`; `--nonlinear-start rk-stage0` independently selects
+the existing intra-step guess. Mixing history is local to each request; restart
+retains no hidden solver history. Physical equations and all convergence gates
+are unchanged. R4.4/R4 remain IN_PROGRESS; this is not mature benchmark acceptance.
+
+See the current headings of `docs/TECTONICS_PLAN.md` and
+`docs/OPTIMISATION_REFERENCE.md`, and `cases/anderson_r4_4.json`.
+Use the exact dev36 Sparse Structure baseline for the incremental patch, not the
+separate same-version Sparse Layout build. Changed-source continuation is refused.
+
+
+## Current dev36: exact sparse velocity-template reuse
+
+Optimisation item 4 reuses only the viscosity-independent CSC sparsity and contribution
+ordering of the variable-Stokes velocity block. Every matrix call still reads the current
+cell/vertex viscosity, constructs fresh numerical data, and rebuilds the ILU whenever the
+existing coefficient identity requires it. The explicit sparse-direct reference keeps the
+predecessor SciPy assembly and does not use this template.
+
+The retained template reproduces dev35 sparse-matrix values exactly on the tested grids and
+matched physical fields remain byte-identical. It primarily reduces repeated nonlinear
+assembly cost; initial 64/128-grid whole-step timings do not show a dependable gain. Read the
+revision-40 headings of `docs/TECTONICS_PLAN.md` and `docs/OPTIMISATION_REFERENCE.md`.
+R4.4/R4 remain IN_PROGRESS. Apply either the reviewed dev35-based patch or a complete merge,
+never both; do not resume dev35 trajectories under changed dev36 source.
+
+### Retained dev35 and earlier history
+
+# Current scoped package: 0.1.0.dev35
+
+## Current dev35: cheaper exact source verification
+
+Optimisation item 3 avoids rebuilding discarded callable inventories during each
+live verification. All current-source reads, membership checks, function/code
+identity, mutable-default/constant/native-option checks and original verification
+call sites remain. The physical solver and existing opt-in warm-start policy are
+unchanged. Read the revision-39 headings of `docs/TECTONICS_PLAN.md` and
+`docs/OPTIMISATION_REFERENCE.md`; lower "current" headings are retained release
+history, not today's source authority. R4.4/R4 remain IN_PROGRESS. Use exactly one
+dev34-based patch or a reviewed source merge; do not resume dev34 trajectories
+under changed dev35 source.
+
+### Retained dev34 and earlier history
+
+## Previous dev34: explicit intra-step nonlinear guesses (opt-in)
+
+The isolated second optimisation adds `nonlinear_start='rk-stage0'` to
+`PreparedThermochemical2D` and `--nonlinear-start rk-stage0` to new R4.4 runner
+invocations. The default remains cold `zero-rate`. Only stage 1 is initialised
+from the current step's stage-0 solution; both stages still solve their own
+unchanged equations and meet all existing convergence checks. No hidden
+cross-step state, tolerance relaxation or automatic failure fallback is added.
+
+Standalone current-source constant/Tosi solves may explicitly pass
+`initial_guess=NonlinearStokesGuess(previous_solution)` to `solve_rheology`.
+The immutable starting fields and provenance are stored with the result. Saved
+physical states remain self-contained, and restarting with another source or
+starting policy is refused. `mechanical_snapshot` remains cold and independent.
+
+See the revision-38 sections of the two maintained documents and the new
+`cases/nonlinear_start_r4_4.json` verification contract. This implements item 2,
+not mature convection/mesh/time/nonlinear campaign acceptance; R4.4/R4 remain
+IN_PROGRESS. Apply one dev33-based patch or a reviewed source merge, not both.
+
+Dev33 compiles the existing variable-stress GMRES matrix-vector action without fast-math or disk JIT caching. NumPy residual checks and the explicit sparse-direct reference remain independent. See the revision-37 headings of `docs/TECTONICS_PLAN.md` and `docs/OPTIMISATION_REFERENCE.md`. This is the isolated mechanical-kernel optimisation, not nonlinear warm starts or R4.4 benchmark completion.
+
+R4.4 published-case/diagnostic/trajectory/acceptance machinery is implemented and
+the benchmark execution path has a measured solver optimisation pass, but **R4.4
+and R4 remain IN_PROGRESS**. Mature published-case reproduction and the full
+adequacy/campaign gates have not been demonstrated. The current authorities
+are revision 37 of [the scientific plan](docs/TECTONICS_PLAN.md#3cr4-4-native-mechanics)
+and [the execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-4-native-execution).
+Read those current headings before retained historical status text below.
+No R5, spherical dynamics or Earth/Diadem observational validation is claimed.
+The release application instructions and evidence distinguish new final-source
+verification from original dev30 results and incomplete attempts.
+
+---
+
 # Atlas tectonics remake
 
 ## Current remake delivery: R4.3 (`0.1.0.dev30`)

@@ -1,0 +1,18 @@
+{
+  "schema": "atlas.preconditioner-reuse-contract.v1",
+  "package": "0.1.0.dev39",
+  "plan_revision": 43,
+  "policy": {
+    "max_uses": 4,
+    "maximum_log_change": 0.6931471805599453,
+    "iteration_growth": 1.5,
+    "iteration_floor": 40
+  },
+  "active_family": "tosi-plastic",
+  "scope": "velocity ILU only, request-local; fixed inside GMRES",
+  "current_physical_operator": true,
+  "current_pressure_diagonal": true,
+  "failed_solve_retry": false,
+  "default_enabled": false,
+  "R4_status": "IN_PROGRESS"
+}

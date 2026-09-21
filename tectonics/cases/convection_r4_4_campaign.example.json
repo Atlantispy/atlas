@@ -1,0 +1,267 @@
+{
+  "schema": "atlas.convection-campaign-r4-4.v1",
+  "purpose": "Fill each triplet with paths to actual closed mature runs, ordered coarse to fine. Empty lists are missing, never passes. Paths are relative to this manifest or absolute.",
+  "combined_verification": null,
+  "cases": [
+    {
+      "case": {
+        "name": "tosi-1",
+        "yield_stress": null
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-2",
+        "yield_stress": null
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-3",
+        "yield_stress": null
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-4",
+        "yield_stress": null
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5a",
+        "yield_stress": null
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.0
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.1
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.2
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.3
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.4
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.5
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.6
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.7
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.8
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 3.9
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.0
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.1
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.2
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.3
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.4
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.5
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.6
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.7
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.8
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 4.9
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    },
+    {
+      "case": {
+        "name": "tosi-5b",
+        "yield_stress": 5.0
+      },
+      "mesh": [],
+      "timestep": [],
+      "nonlinear": [],
+      "visual_qa": null
+    }
+  ]
+}

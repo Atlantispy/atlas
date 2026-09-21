@@ -1,0 +1,39 @@
+{
+  "schema": "atlas.source-verification-r4-4.v1",
+  "task": "isolated optimisation item 3",
+  "scope": "cheaper same-content live source/callable checks; not weaker provenance or a hostile-runtime sandbox",
+  "unchanged": [
+    "Every existing verify call site",
+    "Full current source bytes and membership on every verify",
+    "Exact function and code object identities",
+    "Repeated normalisation of mutable defaults, registered constants and JIT options",
+    "Loaded binary process-lifetime immutability assumption",
+    "schema atlas.kernel-execution.v3 and marshal format 2",
+    "No numerical or solver policy changes"
+  ],
+  "implementation": [
+    "Preserve full capture/oracle",
+    "Stream live module/class inventory against captured tokens",
+    "Consume private expected-key table for exact membership",
+    "Legacy full comparison for ambiguous captured qualified names",
+    "None-only normalisation fast path"
+  ],
+  "acceptance": {
+    "all_new_and_existing_tests": "no failures/errors/skips; unchanged final source",
+    "oracle": "same outcomes on mutation/control catalogue",
+    "same_source_identity": "identical to independent full-inventory reconstruction",
+    "matched_fields": "exact binary64 field equality versus dev34 for identical inputs and modes",
+    "performance": "five serial unprofiled repetitions; no required speed threshold in unit tests; report ranges/preparation",
+    "recovery": "actual runner fresh-process source-relocated copied-store replay; changed source/policy refused"
+  },
+  "excluded": [
+    "source-check skipping",
+    "timestamp-based verification",
+    "cached acceptance",
+    "dependency changes",
+    "matrix layout changes",
+    "timestep changes",
+    "parallel campaigns",
+    "full convection acceptance"
+  ]
+}

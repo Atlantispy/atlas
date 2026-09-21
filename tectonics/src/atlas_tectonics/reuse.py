@@ -93,7 +93,7 @@ def _normal_code(code):
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
 _IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution")
+                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "convection_benchmark")
 
 
 def _source_bytes():
@@ -126,7 +126,7 @@ def _constant(value):
 
 def _callable_inventory(backend="reference"):
     signatures, tokens, constants = {}, [], {}
-    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native") if backend == "numba" else ())
+    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native", "_mechanics_native") if backend == "numba" else ())
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         for label, obj in sorted(vars(module).items()):
@@ -168,6 +168,79 @@ def _callable_inventory(backend="reference"):
                     key = module.__name__+"."+label2
                     tokens.append((key, fn, None, b""))
     return signatures, tuple(tokens), _json(constants)
+
+
+def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes) -> None:
+    """Compare live bindings without constructing discarded signature/token tables.
+
+    ``expected`` retains the original objects, codes and detached defaults. Every
+    current module/class member is still visited, including added aliases. Mutable
+    defaults, JIT options and registered constants are normalised again on EVERY
+    call. There is no cached acceptance result or metadata-based source shortcut.
+    Canonical key uniqueness is checked at preparation; ambiguous legacy keys use
+    the unchanged full inventory comparison in ExecutionContext.verify instead.
+    """
+    constants = {}
+    # Consuming a PRIVATE shallow table enforces exact membership, including
+    # duplicate qualified names introduced after preparation. Tokens themselves
+    # retain strong references and detached defaults and are not mutated here.
+    remaining = expected.copy()
+    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native", "_mechanics_native") if backend == "numba" else ())
+    for name in modules:
+        module = importlib.import_module("atlas_tectonics."+name)
+        prefix = module.__name__+"."
+        for label, obj in vars(module).items():
+            transient = name == 'execution' and label in (
+                '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
+                '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
+            if not transient and label.isupper() and (type(obj) in (str, int, float, bool, tuple)
+                                   or (is_dataclass(obj) and not isinstance(obj, type))):
+                constants[prefix+label] = _constant(obj)
+            members = ((label, obj),)
+            if isinstance(obj, type) and obj.__module__ == module.__name__:
+                members = vars(obj).items()
+                member_prefix = prefix+label+"."
+            else:
+                member_prefix = prefix
+            for member, fn in members:
+                # Descriptors are unwrapped ONLY for locally defined classes,
+                # exactly as in the capture/oracle path.
+                if member_prefix != prefix:
+                    if isinstance(fn, (staticmethod, classmethod)):
+                        fn = fn.__func__
+                    elif isinstance(fn, property):
+                        fn = fn.fget
+                if hasattr(fn, "py_func") and inspect.isfunction(fn.py_func):
+                    origin = fn.py_func
+                    defaults = (_constant(origin.__defaults__), _constant(origin.__kwdefaults__),
+                                _constant(fn.targetoptions))
+                    code = origin.__code__
+                elif inspect.isfunction(fn):
+                    # None has no mutable contents; the common no-defaults path
+                    # needs no recursive normaliser calls or tuple allocation.
+                    key = member_prefix+member
+                    old = remaining.pop(key, None)
+                    if old is None or fn is not old[1] or fn.__code__ is not old[2]:
+                        raise TectonicsError("loaded implementation changed")
+                    values = old[3]
+                    if len(values) != 2 or (
+                        (fn.__defaults__ is not None or values[0] is not None)
+                        and _constant(fn.__defaults__) != values[0]
+                    ) or (
+                        (fn.__kwdefaults__ is not None or values[1] is not None)
+                        and _constant(fn.__kwdefaults__) != values[1]
+                    ):
+                        raise TectonicsError("loaded implementation changed")
+                    continue
+                elif callable(fn) and not isinstance(fn, type):
+                    code, defaults = None, b""
+                else:
+                    continue
+                old = remaining.pop(member_prefix+member, None)
+                if old is None or fn is not old[1] or code is not old[2] or defaults != old[3]:
+                    raise TectonicsError("loaded implementation changed")
+    if remaining or _json(constants) != constants_expected:
+        raise TectonicsError("loaded implementation changed")
 
 
 def _runtime_record(backend):
@@ -246,14 +319,23 @@ class ExecutionContext:
     """Reusable identity preparation, not a promise that live files cannot change.
 
     Every use compares the complete current source bytes and callable/default
-    inventory with the captured state. Only repeated SHA/marshal/normalisation is
-    removed. Timestamps are never used as evidence. Runtime binaries retain the
+    inventory with the captured state. Identity preparation avoids repeated
+    code SHA/marshal work; verification streams current bindings against captured
+    tokens without rebuilding discarded signature inventories. Mutable defaults,
+    constants and native options are normalised on every check. Timestamps are
+    never used as evidence. Runtime binaries retain the
     pre-existing process-lifetime immutability assumption. This is not a sandbox.
     """
     def __init__(self, backend="reference"):
         self.backend = backend
         self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
         signatures, self._tokens, self._constants = _callable_inventory(backend)
+        self._expected = {token[0]: token for token in self._tokens}
+        # Preserve the full legacy check for deliberately ambiguous dotted aliases.
+        if len(self._expected) != len(self._tokens):
+            self._expected = None
+        self._comparison_token = (None if self._expected is None else
+                                  self._expected[__name__+"._verify_callable_inventory"])
         self._sources = _source_bytes()
         # Protocol >=3 records object-sharing/reference state. Holding a constant
         # tuple returned by a profile factory can therefore change its code hash
@@ -282,6 +364,16 @@ class ExecutionContext:
         # Exact equality, including inventory membership. No cached mtime check.
         if _source_bytes() != self._sources:
             raise TectonicsError("source changed; create a new execution context")
+        if self._expected is not None:
+            # Check the new comparison function before entering it as well as
+            # through its ordinary live-inventory entry. A replaced/no-op helper
+            # must not turn the verification call itself into an acceptance.
+            helper = self._comparison_token
+            if (_verify_callable_inventory is not helper[1]
+                    or _verify_callable_inventory.__code__ is not helper[2]):
+                raise TectonicsError("loaded implementation changed")
+            _verify_callable_inventory(self.backend, self._expected, self._constants)
+            return
         _, tokens, constants = _callable_inventory(self.backend)
         if constants != self._constants or len(tokens) != len(self._tokens):
             raise TectonicsError("loaded implementation changed")
