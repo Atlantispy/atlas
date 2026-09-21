@@ -126,12 +126,15 @@ def _slopes_reference(h,x,linear):
     """Independent scalar reconstruction; endpoints preserve the mean and positivity."""
     n=len(h);out=np.zeros(n)
     if not linear or n==1:return out
-    widths=np.diff(x);centres=x[:-1]+widths/2
+    widths=np.diff(x)
+    # Adjacent centres are separated by their half widths. Subtracting rounded
+    # absolute centres can change that distance under a coordinate translation.
+    distances=.5*widths[:-1]+.5*widths[1:]
     for i in range(n):
-        if i==0:s=(h[1]-h[0])/(centres[1]-centres[0])
-        elif i==n-1:s=(h[-1]-h[-2])/(centres[-1]-centres[-2])
+        if i==0:s=(h[1]-h[0])/distances[0]
+        elif i==n-1:s=(h[-1]-h[-2])/distances[-1]
         else:
-            dl=centres[i]-centres[i-1];dr=centres[i+1]-centres[i]
+            dl=distances[i-1];dr=distances[i]
             a=(h[i]-h[i-1])/dl;b=(h[i+1]-h[i])/dr
             if not ((a>0 and b>0) or (a<0 and b<0)):continue
             s=math.copysign(min(abs((a*dr+b*dl)/(dl+dr)),2*abs(a),2*abs(b)),a)

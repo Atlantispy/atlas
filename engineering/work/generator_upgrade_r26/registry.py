@@ -194,7 +194,7 @@ def run(recipe,*,cache=True,cache_root=None,stop_after=None,resume=None,
             return {'artifacts':{},'diagnostics':{}}
         graph = executor.run(snapshot,recipe,registrations,store=store,stop_after=stop_after,
             resume=resume,backend=backend,stats=statistics,
-            on_restore=restored,on_computed=computed)
+            **parent.source_hooks(recipe,on_restore=restored,on_computed=computed))
     except BaseException as exc:
         primary_error = exc
         raise

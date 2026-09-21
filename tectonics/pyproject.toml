@@ -4,18 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "atlas-tectonics"
-version = "0.1.0.dev39"
+version = "0.1.0.dev40"
 license = {file = "LICENSE"}
 description = "Isolated, mathematically verified foundations for Atlas tectonics"
 requires-python = ">=3.12,<3.14"
-dependencies = ["numpy>=2.0,<3", "scipy>=1.15,<2", "numba==0.65.1", "threadpoolctl>=3.6,<4", "blosc2>=4.0,<5", "shapely>=2.1,<3"]
+# Runtime authentication currently identifies SciPy's pocketfft binary.
+# SciPy 1.18 switched to duccfft; supporting it needs an explicit identity review.
+dependencies = ["numpy>=2.0,<3", "scipy>=1.15,<1.18", "numba==0.65.1", "threadpoolctl>=3.6,<4", "blosc2>=4.0,<5", "shapely>=2.1,<3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [project.optional-dependencies]
 # Retained compatibility extras; optimised backends are normal requirements.
-fast = ["scipy>=1.15,<2"]
+fast = ["scipy>=1.15,<1.18"]
 storage = ["blosc2>=4.0,<5"]
 transport = ["numba==0.65.1"]
 

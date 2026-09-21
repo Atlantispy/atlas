@@ -31,6 +31,7 @@ def render(run,output):
         state=atlas.load_thermochemical_state(store,records[-1]['state_id'],budget=budget)
     with atlas.PreparedVariableStokes2D(state.problem.box,state.problem.scales,
             policy=atlas.NonlinearStokesPolicy(**config['nonlinear_policy']),
+            adaptive_inner_policy=None if 'adaptive_inner_policy' not in config else atlas.AdaptiveInnerPolicy(**config['adaptive_inner_policy']),
             anderson_policy=None if 'anderson_policy' not in config else atlas.AndersonPolicy(**config['anderson_policy']),
             preconditioner_reuse_policy=None if 'preconditioner_reuse_policy' not in config else atlas.PreconditionerReusePolicy(**config['preconditioner_reuse_policy']),budget=budget) as mechanics:
         flow=atlas.tosi_endpoint_flow(state,mechanics,budget=budget)

@@ -115,6 +115,11 @@ def read_run(path, *, budget=None):
     nonlinear_start=config.get('nonlinear_start','zero-rate')
     if nonlinear_start not in ('zero-rate','rk-stage0','previous-stage1'):
         raise ValueError('unsupported nonlinear starting policy')
+    ip=None if 'adaptive_inner_policy' not in config else atlas.AdaptiveInnerPolicy(**config['adaptive_inner_policy'])
+    if ip is not None:
+        from atlas_tectonics.adaptive_inner import check_policy as check_inner_policy
+        check_inner_policy(ip,atlas.NonlinearStokesPolicy(**config['nonlinear_policy']))
+        if encode(asdict(ip))!=encode(config['adaptive_inner_policy']):raise ValueError('noncanonical adaptive policy')
     ap=None if 'anderson_policy' not in config else atlas.AndersonPolicy(**config['anderson_policy'])
     if ap is not None and encode(asdict(ap))!=encode(config['anderson_policy']):raise ValueError('noncanonical Anderson policy')
     pp=None if 'preconditioner_reuse_policy' not in config else atlas.PreconditionerReusePolicy(**config['preconditioner_reuse_policy'])
@@ -125,12 +130,21 @@ def read_run(path, *, budget=None):
     steps=[step for record in records for step in record['stage_iteration_counts']]
     if [step['step'] for step in steps]!=list(range(1,records[-1]['step']+1)):
         raise ValueError('missing, duplicate or reordered accepted-step ledger')
+    inner_active=atlas.TosiCase(**config['case']).rheology().family=='tosi-plastic' if ip is not None else False
     previous_step=None
     for step in steps:
         if step['dt']!=config['dt'] or len(step['mechanics'])!=2:
             raise ValueError('changed step schedule or missing current mechanical stage')
         from atlas_tectonics.anderson import check_summary
         for stage in step['mechanics']:
+            from atlas_tectonics.adaptive_inner import check_stage as check_inner
+            if ip is not None:
+                check_inner(stage['adaptive_inner'],stage['adaptive_inner_history'],
+                            stage['nonlinear_iterations'],stage['linear_iterations'],
+                            atlas.NonlinearStokesPolicy(**config['nonlinear_policy']),ip)
+                if stage['adaptive_inner']['active']!=inner_active:raise ValueError('adaptive activation differs from law')
+            elif 'adaptive_inner' in stage or 'adaptive_inner_history' in stage:
+                raise ValueError('undeclared adaptive inner accuracy')
             from atlas_tectonics.preconditioner_reuse import check_summary as check_reuse
             if pp is not None:check_reuse(stage['preconditioner_reuse'],stage['nonlinear_iterations'],pp)
             elif 'preconditioner_reuse' in stage:raise ValueError('undeclared preconditioner reuse')
@@ -201,6 +215,7 @@ def read_run(path, *, budget=None):
                 record=state.descriptor()['step_record']['nonlinear_mechanics']
                 if record.get('nonlinear_start','zero-rate')!=nonlinear_start:
                     raise ValueError('saved state uses a different nonlinear starting policy')
+                if record.get('adaptive_inner_policy')!=config.get('adaptive_inner_policy'):raise ValueError('saved adaptive policy differs')
                 if record.get('anderson_policy')!=config.get('anderson_policy'):raise ValueError('saved Anderson policy differs')
                 if record.get('preconditioner_reuse_policy')!=config.get('preconditioner_reuse_policy'):raise ValueError('saved reuse policy differs')
                 if record['stages']!=steps[state.step_index-1]['mechanics']:
@@ -216,7 +231,72 @@ def read_run(path, *, budget=None):
     return config,records,samples,steps,states,head
 
 
-def analyse_run(path):
+def final_cycle_fields(report,states,peak_times,*,samples_per_period):
+    """Ephemeral, receipt-bound phase samples; never serialise a field history.
+
+    Temperature is already scaled by the benchmark's unit wall-temperature
+    difference. At most 64 MiB is retained for one final complete Nu_top cycle.
+    """
+    binding={k:report[k] for k in ('config_id','receipt_head','source')}
+    result=dict(binding,status='INCOMPLETE',cells=report['configuration']['cells'])
+    if len(peak_times)>=2 and states:
+        times=np.array([t for t,_ in states])
+        first=max(int(np.searchsorted(times,peak_times[-2],side='right'))-1,0)
+        last=min(int(np.searchsorted(times,peak_times[-1],side='left'))+1,len(states))
+        states=states[first:last]
+    gate=phase_field_gate(states,peak_times,cycles=1,samples_per_period=samples_per_period)
+    if not gate['passed']:return dict(result,reason=gate['reason'])
+    n=result['cells'];count=samples_per_period+1
+    if count*n*n*8>(64<<20):return dict(result,reason='final cycle exceeds 64 MiB phase-field envelope')
+    if any(np.shape(field)!=(n,n) for _,field in states):
+        return dict(result,reason='saved field support differs from declared cells')
+    start,end=map(float,peak_times[-2:]);times=np.array([t for t,_ in states])
+    fields=np.empty((count,n,n))
+    for i,time in enumerate(np.linspace(start,end,count)):
+        j=min(max(int(np.searchsorted(times,time,side='right'))-1,0),len(times)-2)
+        weight=(time-times[j])/(times[j+1]-times[j])
+        fields[i]=(1-weight)*states[j][1]+weight*states[j+1][1]
+    return dict(result,status='READY',peak_times=[start,end],maximum_gap=gate['maximum_gap'],
+                phase_samples=count,fields=fields)
+
+
+def cross_run_phase_field_gate(reports,cycles,axis,*,samples_per_period,tolerance):
+    """Compare bound final cycles, restricting fine cell averages for mesh only."""
+    incomplete=lambda reason:dict(status='INCOMPLETE',passed=False,reason=reason)
+    if cycles is None or len(cycles)!=3 or any(not c or c.get('status')!='READY' for c in cycles):
+        return incomplete('three adequately sampled authenticated final cycles are required')
+    target=min(r['configuration']['cells'] for r in reports);fields=[];evidence=[]
+    for report,cycle in zip(reports,cycles):
+        if any(cycle.get(k)!=report.get(k) for k in ('config_id','receipt_head','source')):
+            return incomplete('cycle source/configuration/receipt binding differs from run analysis')
+        n=report['configuration']['cells'];a=cycle.get('fields');peaks=cycle.get('peak_times',[])
+        if (cycle.get('cells')!=n or not isinstance(a,np.ndarray) or
+                a.shape!=(samples_per_period+1,n,n) or not np.isfinite(a).all() or
+                len(peaks)!=2 or not np.isfinite(peaks).all() or peaks[1]<=peaks[0]):
+            return incomplete('cycle fields, phases or declared spatial support are missing or mismatched')
+        gap=cycle.get('maximum_gap',math.inf)
+        if not math.isfinite(gap) or gap<=0 or gap>(peaks[1]-peaks[0])/samples_per_period*(1+1e-9):
+            return incomplete('stored field cadence underresolves the final cycle')
+        if n!=target:
+            if axis!='mesh' or n%target:return incomplete('fields do not share a nested common cell support')
+            factor=n//target
+            a=a.reshape(samples_per_period+1,target,factor,target,factor).mean(axis=(2,4))
+        fields.append(a)
+        evidence.append(dict(config_id=cycle['config_id'],receipt_head=cycle['receipt_head'],
+                             peak_times=peaks,maximum_gap=gap,cells=n))
+    first=fields[1]-fields[0];second=fields[2]-fields[1]
+    coarse=float(np.max(np.abs(first)));fine=float(np.max(np.abs(second)))
+    noise=64*np.finfo(float).eps*np.maximum(1.,np.abs(fields[2]))
+    monotone=bool(np.all((first*second>=0)|(np.maximum(np.abs(first),np.abs(second))<=noise)))
+    passed=bool(fine<=tolerance and fine<=coarse+1e-14 and monotone)
+    return dict(status='PASSED' if passed else 'FAILED',passed=passed,coarse_to_middle_linf=coarse,
+        middle_to_fine_linf=fine,monotone=monotone,tolerance=tolerance,common_cells=target,
+        phase_samples=samples_per_period+1,cycles=evidence,
+        meaning='Temperature difference divided by the unit imposed wall-temperature difference; Nu_top peak-aligned complete cycles')
+
+
+def analyse_run(path,*,phase_fields=None):
+    if phase_fields is not None:phase_fields.clear()
     spec=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())
     config,records,samples,steps,states,head=read_run(path)
     case=config['case']['name'];policy=spec['predeclared_acceptance']
@@ -291,6 +371,9 @@ def analyse_run(path):
         report['mature_regime_gate']=stable or cyclic
         report['regime']='steady' if stable else ('periodic' if cyclic else 'unresolved')
     report['mature_regime_gate']=bool(report['mature_regime_gate'] and endpoint_sample)
+    if phase_fields is not None and report.get('regime')=='periodic':
+        phase_fields.update(final_cycle_fields(report,states,ext.get('peak_times',[]),
+            samples_per_period=policy['periodic']['samples_per_period']))
     report['remaining_required_gates']=['Full matched-regime mesh adequacy','Full matched-regime timestep adequacy',
         'Full matched-regime nonlinear adequacy','Applicable case5b reference/regime comparison',
         'Case5a dissipation label resolution','Case5a/5b phase-matched field convergence',
@@ -299,17 +382,10 @@ def analyse_run(path):
     return report
 
 
-def study(reports,axis):
-    if len(reports)!=3:raise ValueError('three source-bound run analyses required')
-    if axis not in ('mesh','timestep','nonlinear'):raise ValueError('explicit study axis required')
-    case=reports[0]['case']
-    if any(r['case']!=case or r['source']!=reports[0]['source'] for r in reports):
-        raise ValueError('study mixes cases or source identities')
-    if not all(r.get('mature_regime_gate') for r in reports):
-        return {'status':'NOT_A_MATURE_REGIME_ADEQUACY_STUDY','axis':axis,
-                'full_benchmark_accepted':False,'reason':'All three independent mature-regime gates must pass first'}
-    configs=[r['configuration'] for r in reports]
-    settings=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())['predeclared_acceptance']['adequacy']
+def study_controls(configs,axis,settings):
+    """Read-only configuration checks shared by preflight and full assessment."""
+    if len(configs)!=3 or axis not in ('mesh','timestep','nonlinear'):
+        raise ValueError('three configurations and an explicit study axis required')
     normalised=[]
     for c in configs:
         d=json.loads(json.dumps(c))
@@ -335,6 +411,21 @@ def study(reports,axis):
         for k in ('linear_rtol','viscosity_rtol'):
             if not np.allclose([c['nonlinear_policy'][k]/configs[0]['nonlinear_policy'][k] for c in configs],expected,rtol=1e-12,atol=0):
                 raise ValueError('incomplete declared nonlinear tightening study')
+    return coordinate,expected
+
+
+def study(reports,axis,*,phase_fields=None):
+    if len(reports)!=3:raise ValueError('three source-bound run analyses required')
+    if axis not in ('mesh','timestep','nonlinear'):raise ValueError('explicit study axis required')
+    case=reports[0]['case']
+    if any(r['case']!=case or r['source']!=reports[0]['source'] for r in reports):
+        raise ValueError('study mixes cases or source identities')
+    if not all(r.get('mature_regime_gate') for r in reports):
+        return {'status':'NOT_A_MATURE_REGIME_ADEQUACY_STUDY','axis':axis,
+                'full_benchmark_accepted':False,'reason':'All three independent mature-regime gates must pass first'}
+    policy=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())['predeclared_acceptance']
+    settings=policy['adequacy'];configs=[r['configuration'] for r in reports]
+    coordinate,expected=study_controls(configs,axis,settings)
     if not np.allclose(coordinate,expected,rtol=1e-12,atol=0):
         return {'status':'EXPLORATORY_NOT_PREDECLARED_ADEQUACY_GRID','axis':axis,
             'coordinates':coordinate,'required':expected,'full_benchmark_accepted':False}
@@ -358,9 +449,17 @@ def study(reports,axis):
         a,b,c=(m[key] for m in metric_sets)
         monotone=(b-a)*(c-b)>=0 or max(abs(b-a),abs(c-b))<=64*np.finfo(float).eps*max(1.,abs(c))
         checks[key]=bool(d['middle_to_fine']<=threshold and d['middle_to_fine']<=d['coarse_to_middle']+1e-14 and monotone)
-    return {'status':'ADEQUACY_GATE_PASSED' if all(checks.values()) else 'ADEQUACY_GATE_FAILED',
+    field_gate=None
+    if regimes[0]=='periodic':
+        field_gate=cross_run_phase_field_gate(reports,phase_fields,axis,
+            samples_per_period=policy['periodic']['samples_per_period'],tolerance=threshold)
+    status='ADEQUACY_GATE_PASSED' if all(checks.values()) else 'ADEQUACY_GATE_FAILED'
+    if field_gate is not None:
+        if field_gate['status']=='INCOMPLETE':status='INCOMPLETE_PHASE_FIELD_ADEQUACY'
+        elif not field_gate['passed']:status='ADEQUACY_GATE_FAILED'
+    return {'status':status,
             'axis':axis,'coordinates':coordinate,'threshold':threshold,'diagnostic_differences':differences,
-            'per_metric_passed':checks,'full_benchmark_accepted':False}
+            'per_metric_passed':checks,'phase_field_comparison':field_gate,'full_benchmark_accepted':False}
 
 
 
@@ -370,9 +469,12 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--study-axis',choices=('mesh','timestep','nonlinear'))
     args=p.parse_args();safe_path(args.output)
-    reports=[analyse_run(path.absolute()) for path in args.run]
+    if args.study_axis and len(args.run)!=3:p.error('a study requires exactly three runs')
+    cycles=[{} for _ in args.run]
+    reports=[analyse_run(path.absolute(),phase_fields=cycle if args.study_axis else None)
+             for path,cycle in zip(args.run,cycles)]
     out={'runs':reports,'full_benchmark_accepted':False}
-    if args.study_axis:out['study']=study(reports,args.study_axis)
+    if args.study_axis:out['study']=study(reports,args.study_axis,phase_fields=cycles)
     atomic_new(args.output,out)
     print(json.dumps({'analysed_runs':len(reports),'output':str(args.output),'full_benchmark_accepted':False}))
 

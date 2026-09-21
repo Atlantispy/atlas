@@ -73,6 +73,16 @@ class MeshRemapTests(unittest.TestCase):
         s=MaterialState(g,(COHORTS[0],),(2+3*g.centres_m)[None,:],time_s=1,epoch_id='e')
         t=ColumnGrid1D([0,.0625,.1875,.375,.625,.875,1],frame_id='test-frame')
         r=remap_materials(s,t);close(r.thickness_m[0],2+3*t.centres_m);close(inv(s),inv(r))
+    def test_affine_remap_is_independent_of_absolute_coordinate_origin(self):
+        for origin in (0.,1e16,-1e16):
+            g=ColumnGrid1D(origin+np.array([0.,6.,12.,18.]),frame_id='test-frame')
+            t=ColumnGrid1D(origin+np.array([0.,4.,8.,12.,18.]),frame_id='test-frame')
+            s=MaterialState(g,(COHORTS[0],),[[13.,19.,25.]],time_s=1,epoch_id='e')
+            for backend in ('reference','numba'):
+                with self.subTest(origin=origin,backend=backend):
+                    r=remap_materials(s,t,backend=backend)
+                    assert_array_equal(r.thickness_m,[[12.,16.,20.,25.]])
+                    close(inv(s),inv(r))
     def test_constant_remap_fraction_reference(self):
         g=ColumnGrid1D([0,.25,.75,1],frame_id='test-frame')
         s=MaterialState(g,(COHORTS[0],),[[1,3,2]],time_s=1,epoch_id='e')
@@ -124,6 +134,26 @@ class MeshRemapTests(unittest.TestCase):
         r=apply_material_event(s,e,[.5,0,0]);self.assertAlmostEqual(r.transferred_volume_m2,.05);close(inv(r.state),[.95,1])
 
 class MovingVolumeTests(unittest.TestCase):
+    def test_increasing_clock_cannot_mislabel_ale_interval(self):
+        g=ColumnGrid1D([0.,1.,2.],frame_id='test-frame')
+        s=MaterialState(g,(COHORTS[0],),[[1.,0.]],time_s=1e16,epoch_id='e')
+        for backend in ('reference','numba'):
+            with self.subTest(backend=backend),self.assertRaisesRegex(TectonicsError,'represented clock interval'):
+                advect_ale(s,[0.,.1,0.],[0.,0.,0.],3.,left=CLOSED,right=CLOSED,
+                           scheme='upwind',backend=backend)
+        assert_array_equal(s.thickness_m,[[1.,0.]])
+    def test_ale_reconstruction_is_independent_of_absolute_coordinate_origin(self):
+        results=[]
+        for origin in (0.,1e16,-1e16):
+            g=ColumnGrid1D(origin+np.array([0.,6.,12.,18.]),frame_id='test-frame')
+            s=MaterialState(g,(COHORTS[0],),[[13.,19.,25.]],time_s=1,epoch_id='e')
+            for backend in ('reference','numba'):
+                with self.subTest(origin=origin,backend=backend):
+                    r=advect_ale(s,[0.,.1,.1,0.],[0.,0.,0.,0.],.5,
+                                 left=CLOSED,right=CLOSED,backend=backend)
+                    results.append(r.state.thickness_m)
+                    close(inv(s),inv(r.state))
+        for result in results[1:]:close(result,results[0])
     def test_lagrangian_translation(self):
         s=state();u=np.full(17,.3);r=advect_ale(s,u,u,.25,left=CLOSED,right=CLOSED)
         close(r.state.grid.edges_m,s.grid.edges_m+.075);close(r.state.thickness_m,s.thickness_m);close(r.accounts[:,2:4],0)

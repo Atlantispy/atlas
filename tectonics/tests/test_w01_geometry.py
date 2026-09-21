@@ -133,6 +133,20 @@ class PlanarGeometryTests(unittest.TestCase):
         self.assertEqual(a.overlay(b,'difference').area_m2,3)
         self.assertEqual(a.overlay(b,'symmetric_difference').area_m2,6)
 
+    def test_point_touching_hole_overlay_and_wkb_preserve_exact_geometry(self):
+        shell=[[0,0],[4,0],[4,4],[0,4]];hole=[[0,2],[1,1],[1,3]]
+        # Authored holes are strictly interior, but exact subtraction can create
+        # a valid shell/hole point contact that must survive storage unchanged.
+        with self.assertRaisesRegex(GeometryError,'strictly inside'):
+            PG.polygon(shell,holes=(hole,),frame_id='p')
+        result=PG.polygon(shell,frame_id='p').overlay(PG.polygon(hole,frame_id='p'),'difference')
+        self.assertEqual(result.kind,'Polygon');self.assertEqual(result.area_m2,15)
+        self.assertEqual(len(result._geom.interiors),1)
+        restored=PG.from_wkb(result.wkb,frame_id='p')
+        self.assertEqual(restored.wkb,result.wkb);self.assertEqual(restored.geometry_id,result.geometry_id)
+        for geometry in (result,restored):
+            assert_array_equal(geometry.classify([[0,2],[.5,2],[2,2]]),[0,-1,1])
+
     def test_touching_edge_retained(self):
         g=box().overlay(box(2,0,4,2));self.assertEqual(g.kind,'LineString');self.assertEqual(g.length_m,2)
 

@@ -9,6 +9,7 @@ and multidimensional damage remain future work. Legacy R4.2 is not relabelled.
 """
 from __future__ import annotations
 from . import preconditioner_reuse as _pr
+from . import adaptive_inner as _ai
 from contextlib import contextmanager
 from dataclasses import asdict
 import hashlib
@@ -87,6 +88,11 @@ def _check_step_record(record, time_s, source):
             cross=warm and nm['nonlinear_start']=='previous-stage1'
             if warm and nm['nonlinear_start'] not in ('rk-stage0','previous-stage1'):
                 raise TectonicsError('unsupported stored nonlinear starting policy')
+            adapted='adaptive_inner_policy' in nm
+            ip=None
+            if adapted:
+                ip=_ai.AdaptiveInnerPolicy(**nm['adaptive_inner_policy']);_ai.check_policy(ip,np_)
+                if _json(asdict(ip))!=_json(nm['adaptive_inner_policy']):raise TectonicsError('noncanonical adaptive policy')
             reused='preconditioner_reuse_policy' in nm
             pp=None
             if reused:
@@ -98,7 +104,7 @@ def _check_step_record(record, time_s, source):
                 from .anderson import AndersonPolicy, check_policy, check_summary
                 ap=AndersonPolicy(**nm['anderson_policy']);check_policy(ap,np_)
                 if _json(asdict(ap))!=_json(nm['anderson_policy']):raise TectonicsError('noncanonical acceleration policy')
-            if set(nm)!={'profile_id','policy','stages'}|({'nonlinear_start'} if warm else set())|({'anderson_policy'} if accelerated else set())|({'cross_step_start'} if cross else set())|({'preconditioner_reuse_policy'} if reused else set()):
+            if set(nm)!={'profile_id','policy','stages'}|({'nonlinear_start'} if warm else set())|({'anderson_policy'} if accelerated else set())|({'cross_step_start'} if cross else set())|({'preconditioner_reuse_policy'} if reused else set())|({'adaptive_inner_policy'} if adapted else set()):
                 raise TectonicsError('noncanonical stored nonlinear starting record')
             if len(nm['stages'])!=2 or _json(asdict(np_))!=_json(nm['policy']):
                 raise TectonicsError('invalid nonlinear stages/policy')
@@ -128,6 +134,11 @@ def _check_step_record(record, time_s, source):
                             raise TectonicsError('second RK stage guess must come from the first stage')
                 elif 'initial_guess_id' in s or 'initial_guess_result_id' in s:
                     raise TectonicsError('unrecorded nonlinear starting policy')
+                if adapted:
+                    _ai.check_stage(s['adaptive_inner'],s['adaptive_inner_history'],
+                        s['nonlinear_iterations'],s['linear_iterations'],np_,ip)
+                elif 'adaptive_inner' in s or 'adaptive_inner_history' in s:
+                    raise TectonicsError('undeclared adaptive stage')
                 if reused:_pr.check_summary(s['preconditioner_reuse'],s['nonlinear_iterations'],pp)
                 elif 'preconditioner_reuse' in s:raise TectonicsError('undeclared stage preconditioner reuse')
                 if accelerated:check_summary(s['nonlinear_acceleration'],s['nonlinear_iterations'],ap)
@@ -191,6 +202,13 @@ class ThermochemicalState:
             if mode=='buoyancy-coupled-variable-viscosity':
                 if problem.mechanical_mode!='variable-r4.3' or step_record['nonlinear_mechanics']['profile_id']!=problem.rheology.profile_id:
                     raise TectonicsError('stored nonlinear rheology differs from problem')
+                nm=step_record['nonlinear_mechanics']
+                if 'adaptive_inner_policy' in nm:
+                    if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
+                        raise TectonicsError('stored adaptive policy uses unsupported rheology')
+                    active=problem.rheology.family=='tosi-plastic'
+                    if any(stage['adaptive_inner']['active']!=active for stage in nm['stages']):
+                        raise TectonicsError('stored adaptive activation differs from rheology')
             elif mode=='buoyancy-coupled-constant-viscosity' and problem.mechanical_mode!='constant-r4.2':
                 raise TectonicsError('constant mechanical record cannot describe a variable-rheology step')
             if step_index>stored_policy.max_steps: raise TectonicsError('stored step index exceeds declared envelope')
@@ -386,8 +404,15 @@ def _courant_arrays(box,u,w,dt,policy):
     cz=_factored_scale(w,(dt,),(dz,),'vertical Courant field')
     outgoing=np.maximum(cx[:,1:],0)+np.maximum(-cx[:,:-1],0)+np.maximum(cz[1:],0)+np.maximum(-cz[:-1],0)
     maxout=float(np.max(outgoing))
-    if not math.isfinite(maxout) or maxout>policy.outgoing_courant:
-        raise CourantLimitError('outgoing Courant sum exceeds the explicit MC bound; reduce dt, no auto-substepping')
+    if not math.isfinite(maxout):
+        raise CourantLimitError('nonfinite outgoing Courant sum; no partial state or automatic retry')
+    if maxout>policy.outgoing_courant:
+        limit=dt*(policy.outgoing_courant/maxout)
+        raise CourantLimitError(
+            f'outgoing Courant sum {maxout:.17g} exceeds explicit MC bound '
+            f'{policy.outgoing_courant:.17g} at dt_s={dt:.17g}; '
+            f'same-velocity timestep ceiling is {limit:.17g} s '
+            '(advisory only: changed stages must be checked again); no auto-substepping')
     # Relative divergence is checked on the actual supplied SI velocities.
     div=np.diff(cx,axis=1)+np.diff(cz,axis=0)
     velocity_scale=max(float(np.max(np.abs(cx))),float(np.max(np.abs(cz))))
@@ -405,7 +430,7 @@ class PreparedThermochemical2D:
     or cancellation publish no endpoint. Sequential physical steps are NOT jobs
     sent to independent workers. No new scheduler or persistence implementation.
     """
-    def __init__(self,problem,*,policy=None,stokes_policy=None,nonlinear_policy=None,nonlinear_start='zero-rate',anderson_policy=None,preconditioner_reuse_policy=None,backend='numba',budget=None,cancel=None):
+    def __init__(self,problem,*,policy=None,stokes_policy=None,nonlinear_policy=None,nonlinear_start='zero-rate',anderson_policy=None,preconditioner_reuse_policy=None,adaptive_inner_policy=None,backend='numba',budget=None,cancel=None):
         if type(problem) is not ThermochemicalProblem: raise TectonicsError('typed thermochemical problem required')
         policy=ThermochemicalPolicy() if policy is None else policy
         if type(policy) is not ThermochemicalPolicy: raise TectonicsError('typed thermal policy required')
@@ -437,6 +462,11 @@ class PreparedThermochemical2D:
             _pr.check_policy(preconditioner_reuse_policy,nonlinear_policy)
             if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
                 raise TectonicsError('preconditioner reuse supports constant/Tosi only')
+        if adaptive_inner_policy is not None:
+            _ai.check_policy(adaptive_inner_policy,nonlinear_policy)
+            if problem.rheology.family not in ('constant','tosi-linear','tosi-plastic'):
+                raise TectonicsError('adaptive inner supports constant/Tosi only')
+        self.adaptive_inner_policy=adaptive_inner_policy
         self.preconditioner_reuse_policy=preconditioner_reuse_policy
         self.anderson_policy=anderson_policy
         self.nonlinear_policy=nonlinear_policy;self.nonlinear_start=nonlinear_start
@@ -452,7 +482,9 @@ class PreparedThermochemical2D:
             self._native=native
             if backend=='numba':
                 a=np.zeros((2,2,2));cx=np.zeros((2,3));cz=np.zeros((3,2));fx=np.empty((2,2,3));fz=np.empty((2,3,2))
-                native.face_transfers(a,cx,cz,fx,fz);native.euler_update(a,fx,fz,a.copy());native.sum_compensated(a)
+                walls=((problem.boundary.bottom_temperature_k,problem.boundary.top_temperature_k)
+                       if problem.boundary.kind=='fixed-top-bottom' else None)
+                native.face_transfers(a,cx,cz,fx,fz,walls);native.euler_update(a,fx,fz,a.copy());native.sum_compensated(a)
             self._diffusion=_Diffusion2D(problem)
             self._context=ExecutionContext('numba' if backend=='numba' else 'scipy')
             binding=dict(method=_METHOD,problem=problem.descriptor(),policy=asdict(policy),
@@ -462,6 +494,7 @@ class PreparedThermochemical2D:
             if nonlinear_start!='zero-rate':binding['nonlinear_start']=nonlinear_start
             if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
+            if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
             self.identity=_digest(binding)
             _cancel(cancel)
         except BaseException:
@@ -469,7 +502,7 @@ class PreparedThermochemical2D:
             self._guard.__exit__(None,None,None)
             raise
     def __setattr__(self,k,v):
-        if k in ('problem','policy','backend','budget','identity','stokes_policy','nonlinear_policy','nonlinear_start','anderson_policy','preconditioner_reuse_policy') and hasattr(self,k):
+        if k in ('problem','policy','backend','budget','identity','stokes_policy','nonlinear_policy','nonlinear_start','anderson_policy','preconditioner_reuse_policy','adaptive_inner_policy') and hasattr(self,k):
             raise TectonicsError('thermal prepared binding is immutable')
         object.__setattr__(self,k,v)
     def __enter__(self):
@@ -507,7 +540,7 @@ class PreparedThermochemical2D:
                 self._mechanics=PreparedStokes2D(p.box,p.rheology,p.scales,policy=self.stokes_policy,budget=self.budget,cancel=cancel)
             else:
                 from .variable_stokes_execution import PreparedVariableStokes2D
-                self._mechanics=PreparedVariableStokes2D(p.box,p.scales,policy=self.nonlinear_policy,anderson_policy=self.anderson_policy,preconditioner_reuse_policy=self.preconditioner_reuse_policy,budget=self.budget,cancel=cancel)
+                self._mechanics=PreparedVariableStokes2D(p.box,p.scales,policy=self.nonlinear_policy,anderson_policy=self.anderson_policy,preconditioner_reuse_policy=self.preconditioner_reuse_policy,adaptive_inner_policy=self.adaptive_inner_policy,budget=self.budget,cancel=cancel)
         return self._mechanics
 
     def _flow(self,T,C,time,stage,source,cancel,*,initial_guess=None,capture_solution=False):
@@ -525,6 +558,9 @@ class PreparedThermochemical2D:
             self._stage_mechanics.append(dict(result_id=flow.result_id,diagnostics=m['diagnostics'],
                 nonlinear_iterations=len(m['nonlinear_history']),
                 linear_iterations=sum(x['linear_iterations'] for x in m['nonlinear_history'])))
+            if self.adaptive_inner_policy is not None:
+                self._stage_mechanics[-1]['adaptive_inner']=m['adaptive_inner']
+                self._stage_mechanics[-1]['adaptive_inner_history']=m['adaptive_inner_history']
             if self.preconditioner_reuse_policy is not None:
                 self._stage_mechanics[-1]['preconditioner_reuse']=m['preconditioner_reuse']
             if self.anderson_policy is not None:
@@ -584,6 +620,8 @@ class PreparedThermochemical2D:
         if input_shape(extra_heating_w_m3) not in ((),shape): raise TectonicsError('heating must be scalar or cell array')
         if velocity is not None and (type(velocity) is not PrescribedMACVelocity or velocity.box!=b):
             raise TectonicsError('prescribed velocity support differs')
+        if velocity is not None and self.adaptive_inner_policy is not None:
+            raise TectonicsError('adaptive inner is unused for prescribed velocity')
         if velocity is not None and self.preconditioner_reuse_policy is not None:
             raise TectonicsError('preconditioner reuse is unused for prescribed velocity')
         if velocity is not None and self.anderson_policy is not None:
@@ -616,6 +654,9 @@ class PreparedThermochemical2D:
             fx=np.empty((2,b.nz,b.nx+1));fz=np.empty((2,b.nz+1,b.nx))
             flux=self._native.face_transfers if self.backend=='numba' else _reference_transfers
             update=self._native.euler_update if self.backend=='numba' else None
+            boundary=self.problem.boundary
+            walls=((boundary.bottom_temperature_k,boundary.top_temperature_k)
+                   if boundary.kind=='fixed-top-bottom' else None)
             if velocity is None:
                 if self.nonlinear_start in ('rk-stage0','previous-stage1'):
                     request={} if not cross else {'initial_guess':previous}
@@ -623,8 +664,11 @@ class PreparedThermochemical2D:
                 else:
                     u0,w0,id0=self._flow(*q0,time,'advection RK stage 0 after first diffusion half',source,cancel)
             else:u0,w0,id0=velocity.array('u_m_s'),velocity.array('w_m_s'),velocity.velocity_id
-            cx,cz,cfl0,div0=_courant_arrays(b,u0,w0,dt,self.policy)
-            flux(q0,cx,cz,fx,fz)
+            try:
+                cx,cz,cfl0,div0=_courant_arrays(b,u0,w0,dt,self.policy)
+            except CourantLimitError as exc:
+                raise CourantLimitError('advection RK stage 0: '+str(exc)) from exc
+            flux(q0,cx,cz,fx,fz,walls)
             if update is None:q1[:]=q0+(fx[:,:,:-1]-fx[:,:,1:])+(fz[:,:-1,:]-fz[:,1:,:])
             else:update(q0,fx,fz,q1)
             _check_fields(self.problem,*q1);_cancel(cancel)
@@ -641,8 +685,11 @@ class PreparedThermochemical2D:
                 del guess
                 if self.nonlinear_start in ('rk-stage0','previous-stage1'):del flow0
             else:u1,w1,id1=u0,w0,id0
-            cx,cz,cfl1,div1=_courant_arrays(b,u1,w1,dt,self.policy)
-            flux(q1,cx,cz,fx,fz)
+            try:
+                cx,cz,cfl1,div1=_courant_arrays(b,u1,w1,dt,self.policy)
+            except CourantLimitError as exc:
+                raise CourantLimitError('advection RK stage 1: '+str(exc)) from exc
+            flux(q1,cx,cz,fx,fz,walls)
             if update is None:q2[:]=q1+(fx[:,:,:-1]-fx[:,:,1:])+(fz[:,:-1,:]-fz[:,1:,:])
             else:update(q1,fx,fz,q2)
             _check_fields(self.problem,*q2)
@@ -693,6 +740,7 @@ class PreparedThermochemical2D:
                 if self.nonlinear_start!='zero-rate':record['nonlinear_mechanics']['nonlinear_start']=self.nonlinear_start
                 if self.anderson_policy is not None:record['nonlinear_mechanics']['anderson_policy']=asdict(self.anderson_policy)
                 if self.preconditioner_reuse_policy is not None:record['nonlinear_mechanics']['preconditioner_reuse_policy']=asdict(self.preconditioner_reuse_policy)
+                if self.adaptive_inner_policy is not None:record['nonlinear_mechanics']['adaptive_inner_policy']=asdict(self.adaptive_inner_policy)
             next_guess=None
             if cross:
                 # Capture only after BOTH stages and all final transport/heat checks pass.

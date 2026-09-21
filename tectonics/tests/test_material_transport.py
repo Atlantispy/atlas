@@ -240,6 +240,25 @@ class MaterialTransportTests(unittest.TestCase):
         with self.assertRaises(TectonicsError):step(state(time=1e30),dt=.2)
         with self.assertRaises(TectonicsError):step(dt=-1)
 
+    def test_increasing_clock_cannot_mislabel_integrated_interval(self):
+        s=state(np.array([[1.,0.]]),time=1e16,cohorts=(COHORTS[0],))
+        for backend in ('reference','numba'):
+            with self.subTest(backend=backend),self.assertRaisesRegex(TectonicsError,'represented clock interval'):
+                step(s,np.array([0.,.1,0.]),3.,left=CLOSED,right=CLOSED,
+                     scheme='upwind',backend=backend)
+        assert_array_equal(s.thickness_m,[[1.,0.]])
+
+    def test_representable_large_epoch_and_ordinary_fractional_intervals(self):
+        for start,dt,expected in ((1e16,4.,[[.6,.4]]),(.1,.2,[[.98,.02]]),(1e16,0.,[[1.,0.]])):
+            s=state(np.array([[1.,0.]]),time=start,cohorts=(COHORTS[0],))
+            for backend in ('reference','numba'):
+                with self.subTest(start=start,dt=dt,backend=backend):
+                    r=step(s,np.array([0.,.1,0.]),dt,left=CLOSED,right=CLOSED,
+                           scheme='upwind',backend=backend)
+                    self.assertEqual(r.state.time_s,start+dt)
+                    self.assertEqual(r.state.transition_record['duration_s'],dt)
+                    assert_allclose(r.state.thickness_m,expected,rtol=RTOL,atol=ATOL)
+
     def test_expanding_and_contracting_uniform_material(self):
         s=state();u=.05*(np.arange(17)-8)
         r=step(s,u)

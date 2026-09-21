@@ -271,6 +271,10 @@ def periodic_window(times, values, *, cycles=10, period_relative_range=.01,
     excluded. This is a period/extrema screening gate, not automatic regime or
     field convergence. Stable Nu cycles must be cross-checked against the other
     published signals and mesh/time/nonlinear studies.
+
+    The last resolved peak must remain current: allow one longest observed
+    cycle plus the sample needed to confirm its next peak. Older stable cycles
+    cannot establish maturity after a longer unresolved trajectory tail.
     """
     if type(cycles) is not int or cycles < 2 or type(samples_per_period) is not int or samples_per_period < 10:
         raise TectonicsError('finite multi-cycle sampling policy required')
@@ -294,7 +298,10 @@ def periodic_window(times, values, *, cycles=10, period_relative_range=.01,
     highs = x[peaks[1:]]
     scale = max(float(np.max(np.abs(x[peaks[0]:peaks[-1]+1]))), np.finfo(float).tiny)
     period = float(periods.mean())
-    stable = (float(np.ptp(periods))/period <= period_relative_range and
+    endpoint_gap = float(t[-1]-tp[-1])
+    endpoint_limit = float(periods.max()+dt)
+    endpoint_current = endpoint_gap <= endpoint_limit+16*np.finfo(float).eps*max(1., abs(t[-1]))
+    stable = (endpoint_current and float(np.ptp(periods))/period <= period_relative_range and
               float(np.ptp(lows))/scale <= extrema_relative_range and
               float(np.ptp(highs))/scale <= extrema_relative_range and
               float((highs-lows).min())/scale >= minimum_relative_amplitude and
@@ -304,6 +311,9 @@ def periodic_window(times, values, *, cycles=10, period_relative_range=.01,
             'minimum': float(lows.min()), 'maximum': float(highs.max()),
             'mean_cycle_peak': float(highs.mean()), 'samples_per_period': period/dt,
             'first_cycle_time': float(tp[0]), 'last_cycle_time': float(tp[-1]),
+            'endpoint_cycle_gate': {'passed': bool(endpoint_current),
+                                    'elapsed_since_last_peak': endpoint_gap,
+                                    'maximum_elapsed': endpoint_limit},
             'full_benchmark_accepted': False}
 
 

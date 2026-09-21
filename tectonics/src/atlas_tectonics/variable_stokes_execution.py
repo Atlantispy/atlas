@@ -26,6 +26,7 @@ from ._validation import TectonicsError, text, scalar, input_shape, read_array
 from .resources import select_budget, MemoryLimitError
 from . import anderson as _aa
 from . import preconditioner_reuse as _pr
+from . import adaptive_inner as _ai
 from .reuse import ExecutionContext
 from .constitutive import (DiffusiveScales, RheologyProfile, ConstitutiveLimits,
                            _native_law, _check_fields, _json, _cancel)
@@ -105,6 +106,14 @@ class VariableStokesSolution:
                     scalar(row[k],k,nonnegative=True)
                 if type(row['linear_iterations']) is not int or not 0<=row['linear_iterations']<=pol.restart*pol.max_cycles:
                     raise TectonicsError('invalid linear iteration count')
+            if 'adaptive_inner' in metadata:
+                if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
+                    raise TectonicsError('adaptive inner supports constant/Tosi only')
+                if metadata['adaptive_inner']['active'] != (rp.family == 'tosi-plastic'):
+                    raise TectonicsError('adaptive activation differs from rheology')
+                _ai.check_history(metadata['adaptive_inner'],metadata['adaptive_inner_history'],hist,pol)
+            elif 'adaptive_inner_history' in metadata:
+                raise TectonicsError('undeclared adaptive-inner history')
             if 'preconditioner_reuse' in metadata:
                 if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
                     raise TectonicsError('unsupported preconditioner-reuse rheology')
@@ -283,7 +292,7 @@ class PreparedVariableStokes2D:
     inverse. Fixed coefficients reuse one factor; changed eta replaces it. No
     factor, source verification or accuracy gate is carried stale across a call.
     """
-    def __init__(self,box,scales,*,policy=None,anderson_policy=None,preconditioner_reuse_policy=None,budget=None,cancel=None):
+    def __init__(self,box,scales,*,policy=None,anderson_policy=None,preconditioner_reuse_policy=None,adaptive_inner_policy=None,budget=None,cancel=None):
         hx,hz=check_variable_support(box,scales)
         if gmres is None or spilu is None:raise TectonicsError('SciPy variable mechanics unavailable')
         policy=NonlinearStokesPolicy() if policy is None else policy
@@ -293,6 +302,9 @@ class PreparedVariableStokes2D:
             raise TectonicsError('direct variable reference exceeds envelope')
         if anderson_policy is not None:_aa.check_policy(anderson_policy,policy)
         if preconditioner_reuse_policy is not None:_pr.check_policy(preconditioner_reuse_policy,policy)
+        if adaptive_inner_policy is not None:_ai.check_policy(adaptive_inner_policy,policy)
+        self.adaptive_inner_policy=adaptive_inner_policy
+        self._adaptive_request=None
         self.preconditioner_reuse_policy=preconditioner_reuse_policy
         self._reuse_request=None
         self._approximate_reuses=0
@@ -326,13 +338,14 @@ class PreparedVariableStokes2D:
                          policy=asdict(policy),context=self._context_id)
             if anderson_policy is not None:binding['anderson_policy']=asdict(anderson_policy)
             if preconditioner_reuse_policy is not None:binding['preconditioner_reuse_policy']=asdict(preconditioner_reuse_policy)
+            if adaptive_inner_policy is not None:binding['adaptive_inner_policy']=asdict(adaptive_inner_policy)
             self.identity=_digest(binding)
             _cancel(cancel)
         except BaseException:
             self._op=None;self._context=None;self._closed=True;self._guard.__exit__(None,None,None)
             raise
     def __setattr__(self,k,v):
-        if k in ('box','scales','policy','anderson_policy','preconditioner_reuse_policy','budget','identity','_context_id') and hasattr(self,k):
+        if k in ('box','scales','policy','anderson_policy','preconditioner_reuse_policy','adaptive_inner_policy','budget','identity','_context_id') and hasattr(self,k):
             raise TectonicsError('variable mechanics binding immutable')
         object.__setattr__(self,k,v)
     def __enter__(self):
@@ -381,6 +394,86 @@ class PreparedVariableStokes2D:
             try:yield
             finally:self._reuse_request=None
 
+    @contextmanager
+    def _adaptive_operation(self,profile):
+        if self.adaptive_inner_policy is None or profile.family != 'tosi-plastic':
+            yield
+            return
+        extra=_ai.request_bytes(self.box.unknowns,self.policy.max_picard_iterations)
+        with self.budget.reserve(extra,category='adaptive-inner-request'):
+            self._adaptive_request=_ai._Request(self.adaptive_inner_policy)
+            try:yield
+            finally:self._adaptive_request=None
+
+    def _adaptive_linear(self,rhs,guess,cancel):
+        """Provisional correction; only a strict, freshly checked image can publish.
+
+        The absolute target uses the original RHS norm. There is deliberately no
+        round-off enlargement of the strict target and no failed-solve retry.
+        """
+        op=self._op;pol=self.policy;request=self._adaptive_request
+        x0=np.zeros(op.n) if guess is None else np.asarray(guess,dtype=np.float64)
+        _cancel(cancel)
+        defect=rhs-op.matvec(x0)
+        norm_b=float(np.linalg.norm(rhs));norm_d=float(np.linalg.norm(defect))
+        if not math.isfinite(norm_b) or not math.isfinite(norm_d):
+            raise TectonicsError('nonfinite adaptive linear defect')
+        forced=request.strict_phase
+        target,strict=_ai.target(request.policy,pol.linear_rtol,norm_b,norm_d,forced)
+        reset=bool(strict and not request.has_strict)
+        if strict:request.strict_phase=True;request.has_strict=True
+        count=0
+        if np.any(rhs):
+            self._factorise(cancel)
+            def matvec(x):_cancel(cancel);return op.matvec(x)
+            def precondition(x):
+                _cancel(cancel)
+                _,_,r,g=op.split(x)
+                mean=float(np.mean(r));p=-2*op.eta_c*(r-mean)
+                p-=np.mean(p);p+=op.c*g
+                vu=self._factor.solve(x[:op.nv]-op.g@p.ravel())
+                return np.concatenate((vu,p.ravel(),[mean/op.c]))
+            def iteration(_):
+                nonlocal count
+                count+=1;_cancel(cancel)
+            a=LinearOperator((op.n,op.n),matvec=matvec,dtype=np.float64)
+            m=LinearOperator((op.n,op.n),matvec=precondition,dtype=np.float64)
+            delta,info=gmres(a,defect,M=m,rtol=0.,atol=target,
+                restart=pol.restart,maxiter=pol.max_cycles,
+                callback=iteration,callback_type='pr_norm')
+            if info!=0:raise TectonicsError('adaptive correction GMRES failed; no retry')
+            vector=x0+delta
+        else:
+            vector=np.zeros(op.n)
+        _cancel(cancel)
+        residual=float(np.linalg.norm(rhs-op.matvec(vector)))
+        if not np.isfinite(vector).all() or not math.isfinite(residual) or residual>target:
+            raise TectonicsError('adaptive correction failed its true linear target')
+        # Provisional images are internal only. Do not enforce final physical
+        # gates against an intentionally loose intermediate linear solution.
+        _diagnostics(op,vector,rhs,pol,enforce=strict)
+        request.rows.append(dict(rhs_l2=norm_b,defect_l2=norm_d,target_l2=target,
+            residual_l2=residual,strict_requested=forced,strict_certified=strict,
+            history_reset=reset,iterations=count))
+        if strict:
+            request.cert_c=op.eta_c.copy();request.cert_v=op.eta_v.copy()
+            request.coefficient_hash=_pr.coefficient_key(op)
+        return vector,count
+
+    def _certify_adaptive_publication(self,vector,rhs,cancel):
+        """Recheck the strict linear system after SI round-trip, before new-law checks."""
+        request=self._adaptive_request
+        if request is None:return
+        if not request.rows or not request.rows[-1]['strict_certified']:
+            raise TectonicsError('provisional adaptive result cannot be published')
+        _cancel(cancel)
+        self._coefficients(request.cert_c,request.cert_v)
+        residual=float(np.linalg.norm(rhs-self._op.matvec(vector)))
+        target=self.policy.linear_rtol*float(np.linalg.norm(rhs))
+        if not math.isfinite(residual) or residual>target:
+            raise TectonicsError('returned fields fail strict linear certification')
+        request.returned_residual=residual
+
     def _factorise(self,cancel):
         _cancel(cancel)
         reuse=self._reuse_request
@@ -417,6 +510,7 @@ class PreparedVariableStokes2D:
         return vector,count
 
     def _linear_impl(self,rhs,guess,cancel):
+        if self._adaptive_request is not None:return self._adaptive_linear(rhs,guess,cancel)
         op=self._op;pol=self.policy
         if not np.any(rhs):return np.zeros(op.n),0
         self._factorise(cancel)
@@ -466,6 +560,8 @@ class PreparedVariableStokes2D:
     def solve(self,force_x_n_m3,force_z_n_m3,viscosity_cell_pa_s,viscosity_vertex_pa_s,*,
               frame_id,epoch_id,time_s,source,cancel=None):
         """Prescribed viscosity at centres AND interior vertices, no hidden averaging."""
+        if self.adaptive_inner_policy is not None:
+            raise TectonicsError('adaptive inner is unused for prescribed viscosity')
         if self.anderson_policy is not None:
             raise TectonicsError('Anderson policy is unused for prescribed viscosity; select a Picard plan')
         if self.preconditioner_reuse_policy is not None:
@@ -510,6 +606,8 @@ class PreparedVariableStokes2D:
         """
         time_s=scalar(time_s,'mechanical time')
         if type(profile) is not RheologyProfile:raise TectonicsError('typed R3 rheology required')
+        if self.adaptive_inner_policy is not None and profile.family not in ('constant','tosi-linear','tosi-plastic'):
+            raise TectonicsError('adaptive inner supports constant/Tosi only')
         if self.preconditioner_reuse_policy is not None and profile.family not in ('constant','tosi-linear','tosi-plastic'):
             raise TectonicsError('preconditioner reuse supports constant/Tosi only')
         if self.anderson_policy is not None and profile.family not in ('constant','tosi-linear','tosi-plastic'):
@@ -524,7 +622,7 @@ class PreparedVariableStokes2D:
             if profile.family=='bf23-memory':raise TectonicsError('BF warm starts are outside this increment')
             _check_guess_binding(initial_guess,self.identity,profile,epoch_id,time_s,box=self.box,scales=self.scales)
         extra=0 if initial_guess is None else 8*initial_guess.nbytes+131072
-        with self._operation(cancel),self.budget.reserve(self._scratch_bytes()+extra,category='variable-stokes-solve'),self._preconditioner_request(profile):
+        with self._operation(cancel),self.budget.reserve(self._scratch_bytes()+extra,category='variable-stokes-solve'),self._preconditioner_request(profile),self._adaptive_operation(profile):
             fx,fz,F,rhs=self._inputs(force_x_n_m3,force_z_n_m3,frame_id,epoch_id,time_s,source)
             T=read_array(temperature_k,'temperature');damage=None if frozen_damage is None else read_array(frozen_damage,'damage',nonnegative=True)
             eta=self.scales.viscosity_pa_s
@@ -554,6 +652,9 @@ class PreparedVariableStokes2D:
                 history.append(dict(momentum_linf=d['momentum_linf'],viscosity_log_change=change,linear_iterations=it))
                 vector=candidate;ec,ev=nc,nv
                 if (d['momentum_linf']<=self.policy.momentum_tolerance and change<=self.policy.viscosity_rtol):
+                    if self._adaptive_request is not None and not self._adaptive_request.rows[-1]['strict_certified']:
+                        self._adaptive_request.strict_phase=True
+                        continue
                     _check_diagnostics(d,self.policy)
                     return self._publish(vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch_id,time_s,source,cancel,initial_guess=initial_guess)
             raise TectonicsError('nonlinear rheology failed within fixed Picard envelope; no endpoint published; residual='+str(history[-1]['momentum_linf']))
@@ -567,6 +668,8 @@ class PreparedVariableStokes2D:
         for index in range(self.policy.max_picard_iterations):
             _cancel(cancel);self._coefficients(ec,ev)
             image,it=self._linear(rhs,vector,cancel)
+            if self._adaptive_request is not None and self._adaptive_request.rows[-1]['history_reset']:
+                images.clear();errors.clear()
             nc,nv,_,_=self._law(image,F,eta,profile,law)
             change=max(float(np.max(np.abs(np.log(nc)-np.log(ec)))),
                        float(np.max(np.abs(np.log(nv)-np.log(ev)))))
@@ -576,6 +679,13 @@ class PreparedVariableStokes2D:
             history.append(dict(momentum_linf=d['momentum_linf'],viscosity_log_change=change,
                                 linear_iterations=it,anderson=row))
             if d['momentum_linf']<=self.policy.momentum_tolerance and change<=self.policy.viscosity_rtol:
+                if self._adaptive_request is not None and not self._adaptive_request.rows[-1]['strict_certified']:
+                    # Do not publish a provisional image or carry its differences
+                    # into the fresh strict-certification phase.
+                    self._adaptive_request.strict_phase=True
+                    images.clear();errors.clear()
+                    vector,ec,ev=image,nc,nv
+                    continue
                 _check_diagnostics(d,self.policy)
                 acceleration=_aa.summary(policy,len(history),accepted,rejected)
                 return self._publish(image,rhs,fx,fz,F,eta,profile,T,None,history,epoch,time,source,cancel,
@@ -647,6 +757,7 @@ class PreparedVariableStokes2D:
             w[:]=_factored_scale(wsi[1:-1],(eta,),(F,L,L),'returned w normalisation')
             p[:]=_factored_scale(psi,(),(F,L),'returned p normalisation')
         else:psi=np.zeros((op.nz,op.nx))
+        self._certify_adaptive_publication(vector,rhs,cancel)
         if profile is not None:
             ec,ev,clipc,clipv=self._law(vector,F,eta,profile,self._law_inputs(T,damage))
             self._coefficients(ec,ev)
@@ -655,6 +766,14 @@ class PreparedVariableStokes2D:
         # Actual viscosity as well as u/p must survive publication accurately.
         self._coefficients(_checked_scale(ecsi,eta,'returned centre viscosity',divide=True),
                            _checked_scale(evsi,eta,'returned vertex viscosity',divide=True))
+        if self._adaptive_request is not None:
+            # Re-evaluate the nonlinear change on the actual returned viscosity,
+            # not just the pre-publication iterate. All original limits apply.
+            change=max(float(np.max(np.abs(np.log(op.eta_c)-np.log(self._adaptive_request.cert_c)))),
+                       float(np.max(np.abs(np.log(op.eta_v)-np.log(self._adaptive_request.cert_v)))))
+            if not math.isfinite(change) or change>self.policy.viscosity_rtol:
+                raise TectonicsError('returned viscosity fails strict nonlinear certification')
+            history[-1]['viscosity_log_change']=change
         diagnostics,div=_diagnostics(op,vector,rhs,self.policy)
         ic,iv=op.invariant_sites(u,w)
         if F:
@@ -675,6 +794,10 @@ class PreparedVariableStokes2D:
             nonlinear_history=history,diagnostics=diagnostics,publication_contract='true-rheology-returned-si-v1',
             strain_collocation='normal centre and shear vertex; symmetric arithmetic reconstruction of missing tensor components',
             R4_status='IN_PROGRESS',physical_validation=False)
+        if self.adaptive_inner_policy is not None:
+            metadata['adaptive_inner']=_ai.summary(self.adaptive_inner_policy,
+                self._adaptive_request,len(history),self.policy)
+            metadata['adaptive_inner_history']=[] if self._adaptive_request is None else self._adaptive_request.rows
         if self.preconditioner_reuse_policy is not None:
             rows=[] if self._reuse_request is None else self._reuse_request.rows
             metadata['preconditioner_reuse']=_pr.summary(self.preconditioner_reuse_policy,

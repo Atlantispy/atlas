@@ -4,6 +4,8 @@ GEOS supplies robust double-precision planar predicates/overlays through Shapely
 No make_valid, snapping, buffering-to-repair or tolerance-driven deletion occurs.
 Polygons describe occupied area; polylines describe zero-width fault/feature traces.
 A distance query can describe a weak-zone corridor without polygonising a circle.
+Authored polygon holes must not touch. Overlays and WKB restoration retain valid
+point-touching holes produced by set operations, subject to structural validation.
 
 Coordinates are metres in an identified Cartesian plane, NOT longitude/latitude.
 The geometry does not assign plate ownership or decide which overlapping feature
@@ -276,6 +278,8 @@ class PlanarGeometry:
 
         Invalid holes, crossings, degeneracy and duplicate vertices are errors.
         Closing a ring does not change its vertices or make invalid input valid.
+        Non-touching holes are an authoring restriction; overlays and WKB restore
+        may retain valid point contacts without repairing or removing them.
         """
         limits = _limits(limits)
         if type(holes) not in (tuple, list):
@@ -287,7 +291,7 @@ class PlanarGeometry:
             shape = Polygon(outer, inner)
             _validate_shape(shape, limits, allow_empty=False)
             # GEOS allows point-touching holes in some valid configurations. This
-            # contract chooses strictly interior, mutually disjoint closed holes.
+            # authoring constructor chooses strictly interior, disjoint holes.
             shell = Polygon(outer)
             hole_shapes = [Polygon(h) for h in inner]
             if hole_shapes:
@@ -313,6 +317,11 @@ class PlanarGeometry:
 
     @classmethod
     def from_wkb(cls, raw, *, frame_id, limits=None, budget=None):
+        """Restore validated geometry, including valid overlay point contacts.
+
+        Uses the overlay-output contract, not polygon()'s stricter authored-hole
+        rule, so storing an exact set operation does not change its admissibility.
+        """
         limits = _limits(limits)
         if type(raw) is not bytes or len(raw) > 64*limits.max_vertices+4096:
             raise GeometryError('bounded immutable WKB bytes required')

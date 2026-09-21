@@ -14,6 +14,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import numpy as np
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode=True
@@ -85,6 +86,70 @@ def visual_gate(entry, base, case, representatives):
         user_visual_approval=inspection.get('user_visual_approval','NOT_RECORDED'))
 
 
+def unresolved_references(spec):
+    result=[]
+    if spec['cases'].get('case5b_numerical_targets') is None:
+        result.append('Case 5b numerical reference targets not verified')
+    if any(k.startswith('printed_Phi') for k in spec['reported_values'].get('tosi-5a',{})):
+        result.append('Case 5a printed dissipation normalisation unresolved')
+    return result
+
+
+def preflight(manifest_path):
+    """Inspect only the plan, run configurations and specification, never arrays."""
+    from run_convection_r4_4 import schedule_feasibility
+    safe_path(manifest_path);manifest=json.loads(manifest_path.read_bytes());base=manifest_path.parent
+    if manifest.get('schema')!='atlas.convection-campaign-r4-4.v1':raise ValueError('unknown campaign schema')
+    spec=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes());current=source_record()
+    expected={case_key(c) for c in expected_cases()};requested={};issues=[];runs={};references=[]
+    for entry in manifest.get('cases',[]):
+        key=case_key(entry['case'])
+        if key in requested:issues.append('duplicate campaign case: '+str(key))
+        if key not in expected:issues.append('unexpected campaign case: '+str(key))
+        requested[key]=entry
+    for case in expected_cases():
+        key=case_key(case);entry=requested.get(key,{})
+        for axis in ('mesh','timestep','nonlinear'):
+            values=entry.get(axis,[]);label=str(key)+' '+axis
+            if type(values) is not list or len(values)!=3 or any(type(v) is not str for v in values):
+                issues.append(label+': three planned run paths required');continue
+            paths=[resolve(base,v) for v in values];configs=[]
+            if len(set(paths))!=3:issues.append(label+': repeated path cannot supply three independent study coordinates')
+            for path in paths:
+                references.append(str(path))
+                if path not in runs:
+                    config_path=path/'run.json';safe_path(config_path)
+                    if not config_path.is_file():runs[path]={'path':str(path),'status':'MISSING_RUN_CONFIGURATION'}
+                    else:
+                        try:
+                            config=json.loads(config_path.read_bytes())
+                            runs[path]=dict(path=str(path),status='CONFIGURATION_READ',configuration=config,
+                                schedule=schedule_feasibility(config,spec))
+                        except (ValueError,KeyError,TypeError,ArithmeticError,atlas.TectonicsError) as exc:
+                            runs[path]=dict(path=str(path),status='INVALID_RUN_CONFIGURATION',reason=str(exc))
+                run=runs[path];config=run.get('configuration')
+                if config is None:issues.append(label+': '+run['status']+' '+str(path));continue
+                try:
+                    if case_key(config['case'])!=key:raise ValueError('run belongs to another case')
+                    if config['identities']!=current:raise ValueError('run source/runner/specification differs')
+                    configs.append(config)
+                except (ValueError,KeyError,TypeError,atlas.TectonicsError) as exc:issues.append(label+': '+str(exc))
+            if len(configs)==3:
+                try:
+                    coordinate,required=audit.study_controls(configs,axis,spec['predeclared_acceptance']['adequacy'])
+                    if not np.allclose(coordinate,required,rtol=1e-12,atol=0):
+                        issues.append(label+': coordinates do not match the predeclared adequacy study')
+                except (ValueError,KeyError,TypeError,ArithmeticError) as exc:issues.append(label+': '+str(exc))
+    for run in runs.values():run.pop('configuration',None)
+    reuse=[dict(path=path,planned_uses=references.count(path)) for path in sorted(set(references)) if references.count(path)>1]
+    return dict(schema='atlas.convection-suite-preflight-r4-4.v1',status='PLANNING_ONLY_NOT_ACCEPTANCE',
+        unresolved_reference_requirements=unresolved_references(spec),study_configuration_issues=issues,
+        planned_run_references=len(references),distinct_planned_runs=len(runs),planned_run_reuse=reuse,
+        runs=list(runs.values()),run_arrays_read=False,full_benchmark_accepted=False,
+        campaign_sha256=digest(manifest_path.read_bytes()),source=current,
+        limitation='Configurations and necessary schedule conditions only; normal assessment must authenticate all trajectories and gates')
+
+
 def assess(manifest_path):
     safe_path(manifest_path)
     manifest=json.loads(manifest_path.read_bytes());base=manifest_path.parent
@@ -95,7 +160,7 @@ def assess(manifest_path):
         key=case_key(entry['case'])
         if key in requested:raise ValueError('duplicate campaign case')
         requested[key]=entry
-    cached={};case_reports=[]
+    cached={};cycle_cache={};case_reports=[]
     for case in expected_cases():
         key=case_key(case);entry=requested.get(key,{})
         studies={};representatives=[]
@@ -103,14 +168,18 @@ def assess(manifest_path):
             paths=entry.get(axis,[])
             if len(paths)!=3:
                 studies[axis]={'status':'MISSING_THREE_RUN_STUDY','passed':False};continue
+            paths=[resolve(base,value) for value in paths]
+            # At most the current three final cycles; scalar reports remain cached.
+            cycle_cache={path:value for path,value in cycle_cache.items() if path in paths}
             reports=[]
-            for value in paths:
-                path=resolve(base,value)
-                if path not in cached:cached[path]=audit.analyse_run(path)
+            for path in paths:
+                if path not in cached or (cached[path].get('regime')=='periodic' and path not in cycle_cache):
+                    cycle={};cached[path]=audit.analyse_run(path,phase_fields=cycle)
+                    if cached[path].get('regime')=='periodic':cycle_cache[path]=cycle
                 report=cached[path]
                 if case_key(report['case'])!=key:raise ValueError('study path belongs to another campaign case')
                 reports.append(report)
-            result=audit.study(reports,axis)
+            result=audit.study(reports,axis,phase_fields=[cycle_cache.get(path) for path in paths])
             result['passed']=result['status']=='ADEQUACY_GATE_PASSED'
             result['run_config_ids']=[r['config_id'] for r in reports]
             studies[axis]=result;representatives.append(reports[-1])
@@ -131,10 +200,7 @@ def assess(manifest_path):
     combined=verification_gate(None if verification is None else resolve(base,verification))
     # Reference blocks are explicit even if no expensive run has been supplied.
     spec=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())
-    unresolved=[]
-    if spec['cases'].get('case5b_numerical_targets') is None:unresolved.append('Case 5b numerical reference targets not verified')
-    if any(k.startswith('printed_Phi') for k in spec['reported_values'].get('tosi-5a',{})):
-        unresolved.append('Case 5a printed dissipation normalisation unresolved')
+    unresolved=unresolved_references(spec)
     passed=bool(not unresolved and combined['passed'] and all(r['passed'] for r in case_reports))
     return dict(schema='atlas.convection-suite-acceptance-r4-4.v1',
         status='PASS_R4_4_NUMERICAL_SCOPE' if passed else 'INCOMPLETE_R4_4',
@@ -150,8 +216,12 @@ def assess(manifest_path):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--preflight',action='store_true',help='read only configurations and specification; do not open run arrays')
     args=p.parse_args();safe_path(args.output)
-    report=assess(args.manifest.absolute());atomic_new(args.output,report)
+    report=(preflight if args.preflight else assess)(args.manifest.absolute());atomic_new(args.output,report)
+    if args.preflight:
+        print(json.dumps({k:report[k] for k in ('status','distinct_planned_runs','full_benchmark_accepted')}))
+        return 0
     print(json.dumps({k:report[k] for k in ('status','expected_case_configurations','passed_cases','full_benchmark_accepted')}))
     return 0 if report['full_benchmark_accepted'] else 1
 

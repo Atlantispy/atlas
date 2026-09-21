@@ -10,7 +10,7 @@ from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
 from .flexure import PeriodicFlexure
 
-__version__ = "0.1.0.dev39"
+__version__ = "0.1.0.dev40"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
@@ -167,3 +167,5 @@ __all__ += ['TosiCase', 'tosi_initial_temperature', 'tosi_endpoint_flow',
 from .anderson import AndersonPolicy
 from .preconditioner_reuse import PreconditionerReusePolicy
 __all__ += ["AndersonPolicy"]
+
+from .adaptive_inner import AdaptiveInnerPolicy

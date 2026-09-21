@@ -22,13 +22,22 @@ def _mc(left, right):
 
 
 @njit(nogil=True, fastmath=False, cache=False)
-def face_transfers(q, cx, cz, fx, fz):
-    """MC reconstruction with zero boundary-cell normal slopes; zero wall flux.
+def face_transfers(q, cx, cz, fx, fz, temperature_walls=None):
+    """Bounded MC reconstruction with zero material flux through every wall.
 
-    Each reconstruction is between its two neighbouring cell averages. Thus
+    Optional bottom/top Dirichlet values reconstruct field 0 (temperature) at
+    vertical boundary cells using reflected ghosts. The slope is also limited
+    by the reflected-wall jump: the extrapolated wall state cannot overshoot
+    the supplied wall value. This retains exact linear reconstruction without
+    relying on a reflected ghost being inside the physical temperature range.
+    Insulated walls, sidewalls and composition retain zero boundary slopes.
+
+    Each interior-face reconstruction lies between adjacent cell averages. Thus
     q_face <= 2*q_cell and 1-q_face <= 2*(1-q_cell) for bounded fractions.
     sum(outgoing Courant) <= 1/2 is a sufficient multidimensional Euler bound
     for both q and its complement when the MAC velocity is divergence-free.
+    The wall-limited thermal slopes give the same bound relative to the range
+    containing the input temperatures and supplied wall values.
     There is no post-update clipping, mass renormalisation or first-order fallback.
     """
     nf, nz, nx = q.shape
@@ -48,6 +57,14 @@ def face_transfers(q, cx, cz, fx, fz):
                 slope = 0.0
                 if 0 < donor < nz-1:
                     slope = _mc(q[a,donor,i]-q[a,donor-1,i], q[a,donor+1,i]-q[a,donor,i])
+                elif a == 0 and temperature_walls is not None:
+                    if donor == 0:
+                        wall_jump = 2.0*(q[a,0,i]-temperature_walls[0])
+                        slope = _mc(wall_jump, q[a,1,i]-q[a,0,i])
+                    else:
+                        wall_jump = 2.0*(temperature_walls[1]-q[a,-1,i])
+                        slope = _mc(q[a,-1,i]-q[a,-2,i], wall_jump)
+                    slope = math.copysign(min(abs(slope), abs(wall_jump)), slope)
                 value = q[a,donor,i] + (0.5*slope if cz[j,i] >= 0.0 else -0.5*slope)
                 fz[a,j,i] = cz[j,i]*value
 

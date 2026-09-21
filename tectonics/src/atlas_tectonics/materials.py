@@ -312,8 +312,19 @@ def material_work_bytes(cohorts, cells, *, scheme='muscl'):
 
 
 def _end_time(state,dt):
+    """Publish only a clock interval that represents the integrated duration.
+
+    An increasing endpoint alone can label three integrated seconds as four at
+    a large epoch. Apply the existing relative roundoff envelope; never change
+    the caller's duration or silently rebase its named epoch. Zero steps remain
+    explicit no-time transitions.
+    """
     end=scalar(state.time_s+dt,'end time')
     if dt>0 and end<=state.time_s:raise TectonicsError('positive interval is unresolvable in this time epoch')
+    if dt>0:
+        represented=end-state.time_s
+        if not math.isfinite(represented) or abs(represented-dt)/dt>_ROUNDOFF:
+            raise TectonicsError('represented clock interval differs from integrated duration; use a suitable epoch or interval')
     return end
 
 

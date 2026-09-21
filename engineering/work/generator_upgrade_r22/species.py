@@ -29,6 +29,8 @@ PLANT_UNITS = {
 SPATIAL_UNITS = {'habitat.suitability_minimum': '1',
     'occupancy.logit_intercept': '1', 'occupancy.logit_slope': '1 per unit habitat_support',
     'occupancy.conditional_occupied_fraction': '1'}
+OPERATIONS = frozenset({'species_density', 'species_stock', 'species_range',
+    'species_residence', 'species_recruitment'})
 
 
 def _plain(value):
@@ -92,8 +94,9 @@ def _checked(path, expected):
 def load_register(path, expected_sha256):
     """Read exactly the requested register and its explicitly declared bindings."""
     document = json.loads(_checked(path, expected_sha256))
-    for ref in document.get('source_bindings', []): _checked(ref['path'], ref['sha256'])
-    return Registry(document, register_sha256=expected_sha256)
+    result = Registry(document, register_sha256=expected_sha256)
+    result.verify_sources()
+    return result
 
 
 def bind_application(owner_document, organism_id, context, *, application_ref):
@@ -131,7 +134,7 @@ def bind_application(owner_document, organism_id, context, *, application_ref):
 
 
 class Registry:
-    """Validated pure consumer; caller verifies source bytes or uses load_register."""
+    """Pure validated values; execution callers must also use verify_sources."""
     def __init__(self, document, *, register_sha256=None):
         if type(document) is not dict or document.get('schema') != SCHEMA:
             raise ValueError('R22 numerical selection register required')
@@ -163,7 +166,8 @@ class Registry:
             refs = r.get('source_refs')
             if type(refs) is not list or not refs: raise ValueError('each field needs source evidence')
             for ref in refs + ([r['use_decision_ref']] if r.get('use_decision_ref') else []):
-                if self.bindings.get(ref.get('path')) != ref.get('sha256'): raise ValueError('unbound field source')
+                if ref.get('path') not in self.bindings or self.bindings[ref['path']] != ref.get('sha256'):
+                    raise ValueError('unbound field source')
                 _text(ref.get('locator'), 'source locator'); _text(ref.get('raw_source_status'), 'raw source status')
             if r['model_use'] == 'SELECTED_FOR_R22':
                 if r['source_status'] not in KNOWN or r.get('value') is None or not r.get('use_decision_ref'):
@@ -177,9 +181,65 @@ class Registry:
                 raise ValueError('unknown field needs owner and resolving action')
             self.records.append(deepcopy(r))
 
+    def verify_sources(self):
+        """Read declared bytes freshly; a cached receipt does not authenticate them.
+
+        The existing in-memory test marker is not a path or an owner source. It
+        remains available only to explicitly synthetic records and references;
+        synthetic scope alone never exempts an actual file from verification.
+        """
+        for path, expected in self.bindings.items():
+            if path == 'SYNTHETIC_ONLY_SOURCE':
+                if self.scope != 'SYNTHETIC TEST':
+                    raise ValueError('synthetic source marker cannot enter a working register')
+                for row in self.records:
+                    refs = row['source_refs'] + ([row['use_decision_ref']] if row.get('use_decision_ref') else [])
+                    marked = [ref for ref in refs if ref['path'] == path]
+                    if marked and (row['source_status'] != 'SYNTHETIC TEST' or any(
+                            ref['raw_source_status'] != 'SYNTHETIC TEST' for ref in marked)):
+                        raise ValueError('synthetic source marker requires synthetic field evidence')
+            else:
+                _checked(path, expected)
+
     def profile(self, organism_id, context):
         _text(organism_id, 'organism'); _context(context)
         return Profile(self, organism_id, context)
+
+
+def source_hooks(recipe, *, on_restore=None, on_computed=None):
+    """Check explicit or upstream registers before graph results are accepted.
+
+    Existing native callbacks still run. Accepted parent values are invocation
+    local, so cached and resumed dependency-provided registers use the same
+    source checks as explicit inputs, before any descendant can execute.
+    """
+    stages = {stage['stage_id']: stage for stage in recipe['stages']}
+    accepted = {}
+
+    def verify(ident, row):
+        stage = stages[ident]
+        if row['producer_executed'] and stage['producer_id'] in OPERATIONS:
+            incoming = {name: accepted[dep['stage_id']][dep['output']]
+                        for name, dep in stage['dependencies'].items()}
+            if set(stage['inputs']) & set(incoming):
+                raise ValueError('dependency cannot overwrite explicit input')
+            arguments = {**stage['inputs'], **incoming}
+            Registry(arguments['register_document']).verify_sources()
+        accepted[ident] = row['product']['values']
+
+    def restored(ident, record):
+        verify(ident, record['row'])
+        if on_restore is not None:
+            on_restore(ident, record)
+        elif record['artifacts'] or record['diagnostics']:
+            raise ValueError('undeclared species graph side artifacts')
+
+    def computed(ident, row):
+        verify(ident, row)
+        return ({'artifacts': {}, 'diagnostics': {}} if on_computed is None
+                else on_computed(ident, row))
+
+    return {'on_restore': restored, 'on_computed': computed}
 
 
 class Profile:

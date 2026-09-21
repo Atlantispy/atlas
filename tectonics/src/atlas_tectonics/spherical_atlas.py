@@ -810,7 +810,10 @@ def stitch_spherical_networks(networks, vertices, vertex_bindings, *, region_bin
                             'region_bindings': [[r.region_id, provided.get((name,r.region_id),r.region_id)]
                                                 for r in network.regions]})
             for region_index, region in enumerate(network.regions):
-                shape = shapely.orient_polygons(region.geometry._projected._geom)
+                # The network retains authored regions in their source charts,
+                # but its atomic edges and index use the declared domain chart.
+                aligned = region.geometry.in_chart(network.domain.chart, limits=limits, budget=policy)
+                shape = shapely.orient_polygons(aligned._projected._geom)
                 parts = [shape] if shape.geom_type == 'Polygon' else list(shape.geoms)
                 for component, poly in enumerate(parts):
                     ring_ids = []

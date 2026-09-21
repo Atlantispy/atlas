@@ -196,6 +196,22 @@ class TemporalScreeningTests(unittest.TestCase):
         d=a.periodic_window(t,x);self.assertTrue(d['periodic_samples'])
         self.assertAlmostEqual(d['period'],1.,places=10);self.assertEqual(d['complete_cycles'],10)
         self.assertAlmostEqual(d['mean_cycle_peak'],5,places=4);self.assertFalse(d['full_benchmark_accepted'])
+    def test_resolved_cycles_allow_current_partial_cycle(self):
+        for stop in (12.7,13.25,13.2505):
+            with self.subTest(stop=stop):
+                t=np.arange(0,stop,.0005);x=4+np.sin(2*np.pi*t)
+                d=a.periodic_window(t,x)
+                self.assertTrue(d['periodic_samples'])
+                self.assertTrue(d['endpoint_cycle_gate']['passed'])
+    def test_old_stable_cycles_with_long_unresolved_tail_not_periodic(self):
+        t=np.arange(0,16,.002)
+        for slope in (0.,-.02):
+            with self.subTest(tail='constant' if slope==0 else 'drifting'):
+                x=np.where(t<=12.25,4+np.sin(2*np.pi*t),5+slope*(t-12.25))
+                d=a.periodic_window(t,x)
+                self.assertEqual(d['complete_cycles'],10)
+                self.assertFalse(d['periodic_samples'])
+                self.assertFalse(d['endpoint_cycle_gate']['passed'])
     def test_constant_is_not_periodic(self):
         t=np.linspace(0,20,2001);self.assertFalse(a.periodic_window(t,np.ones_like(t))['periodic_samples'])
     def test_fewer_than_ten_cycles_not_accepted(self):

@@ -88,21 +88,90 @@ class Cancellation:
 
 
 def read_receipts(out, config_id):
+    """Read the immutable chain, folding diagnostic-only repairs into their state.
+
+    A repair is a new linked receipt, never an overwrite or an extra physical
+    step. The returned head commits to it as well as the accepted-state ledger.
+    """
     records = []
     previous = None
     for path in sorted(out.glob('receipt_*.json')):
         safe_path(path)
-        record = json.loads(path.read_bytes())
+        raw = path.read_bytes()
+        record = json.loads(raw)
         if record['config_id'] != config_id or record['parent_receipt'] != previous:
             raise ValueError('receipt/configuration chain changed')
-        if path.name != f"receipt_{record['step']:09d}.json":
+        repair = record.get('kind') == 'endpoint-diagnostic'
+        if record.get('kind') not in (None, 'endpoint-diagnostic'):
+            raise ValueError('unknown receipt kind')
+        suffix = '_diagnostic' if repair else ''
+        if path.name != f"receipt_{record['step']:09d}{suffix}.json":
             raise ValueError('receipt filename/step mismatch')
+        if repair:
+            if (not records or any(record[k] != records[-1][k] for k in ('step', 'time', 'state_id'))
+                    or record['stage_iteration_counts'] or len(record['samples']) != 1):
+                raise ValueError('diagnostic repair must attach to the same accepted endpoint')
+            sample = record['samples'][0]
+            if (any(sample[k] != record[k] for k in ('step', 'time', 'state_id'))
+                    or any(s['step'] >= record['step'] for s in records[-1]['samples'])):
+                raise ValueError('diagnostic repair has a duplicate or mismatched endpoint sample')
+            records[-1]['samples'].append(sample)
+            previous = digest(raw)
+            continue
         if records and (record['step'] <= records[-1]['step'] or record['time'] <= records[-1]['time']):
             raise ValueError('non-monotone accepted receipt chain')
-        previous = digest(path.read_bytes())
+        previous = digest(raw)
         records.append(record)
     if not records: raise ValueError('no committed receipt; orphan states cannot be resumed')
     return records, previous
+
+
+def schedule_feasibility(config, specification):
+    """Cheap necessary maturity conditions, not sufficient convergence evidence.
+
+    Short explicit smoke/diagnostic runs remain allowed. In particular, ten
+    observed periods are only a lower duration bound: spin-up and peak alignment
+    require additional time. No schedule or acceptance tolerance is changed.
+    """
+    dt = config['dt']
+    if type(dt) not in (int,float) or not math.isfinite(dt) or dt <= 0:
+        raise ValueError('schedule dt must be finite and positive')
+    for key in ('maximum_steps','sample_every','save_every'):
+        if type(config[key]) is not int or config[key] <= 0:
+            raise ValueError('schedule counts must be positive integers')
+    if config['sample_every'] > config['save_every'] or config['save_every'] % config['sample_every']:
+        raise ValueError('save cadence must be a positive multiple of sample cadence')
+    duration = dt*config['maximum_steps']
+    sample_gap = dt*config['sample_every']
+    field_gap = dt*config['save_every']
+    policy = specification['predeclared_acceptance']
+    case = config['case']['name']
+    if case not in ('tosi-1','tosi-2','tosi-3','tosi-4','tosi-5a','tosi-5b'):
+        raise ValueError('unrecognised benchmark case')
+    blockers = []
+    unknowns = ['A feasible schedule does not establish maturity or reference agreement.']
+    if config['maximum_steps'] % config['sample_every']:
+        blockers.append('Final scheduled state has no uniformly spaced diagnostic sample.')
+    if case in ('tosi-1','tosi-2','tosi-3','tosi-4'):
+        steady = policy['steady']
+        if duration < steady['minimum_time']:
+            blockers.append('Maximum duration is shorter than the registered steady-state minimum time.')
+        if sample_gap*(steady['minimum_samples']-1) > steady['window']*(1+1e-12):
+            blockers.append('Diagnostic cadence cannot fit the required sample count in the steady window.')
+    elif case == 'tosi-5a':
+        periods = specification['reported_values'][case]['period'].values()
+        low, high = min(periods), max(periods)
+        periodic = policy['periodic']
+        if duration < periodic['cycles']*high:
+            blockers.append('Duration cannot cover the required cycles across the published period range, even before spin-up.')
+        if sample_gap*periodic['samples_per_period'] > low*(1+1e-12):
+            blockers.append('Diagnostic cadence underresolves the shortest published period.')
+        if field_gap*periodic['samples_per_period'] > low*(1+1e-12):
+            blockers.append('Saved-field cadence underresolves the shortest published period.')
+    else:
+        unknowns.append('Case 5b regime and period must be established for this yield; no universal duration is inferred.')
+    return dict(status='INSUFFICIENT_FOR_MATURITY' if blockers else 'NO_KNOWN_SCHEDULE_BLOCKER',
+                known_blockers=blockers, unknowns=unknowns, benchmark_accepted=False)
 
 
 def main(args):
@@ -114,7 +183,7 @@ def main(args):
         raise ValueError('positive finite cooperative time allowance required')
     supplied = ('case', 'yield_stress', 'cells', 'dt', 'max_steps', 'save_every',
                 'sample_every', 'max_picard', 'linear_rtol', 'momentum_tolerance',
-                'viscosity_rtol', 'ilu_fill_factor', 'nonlinear_start', 'nonlinear_solver', 'preconditioner_max_uses')
+                'viscosity_rtol', 'ilu_fill_factor', 'nonlinear_start', 'nonlinear_solver', 'preconditioner_max_uses', 'adaptive_inner')
     identities = source_record()
     if args.resume:
         if any(getattr(args, k) is not None for k in supplied):
@@ -137,6 +206,8 @@ def main(args):
         if (type(save) is not int or type(sample) is not int or
                 not 1 <= sample <= save <= 100000 or save % sample):
             raise ValueError('save cadence must be a positive multiple of sample cadence')
+        if steps % sample:
+            raise ValueError('maximum steps must be a multiple of sample cadence so the final state can be assessed')
         # A larger *iteration count*, not weaker convergence, is explicitly selected.
         pol = atlas.NonlinearStokesPolicy(
             max_picard_iterations=400 if args.max_picard is None else args.max_picard,
@@ -154,10 +225,13 @@ def main(args):
             nonlinear_start=nonlinear_start, nonlinear_policy=asdict(pol), thermal_policy=asdict(atlas.ThermochemicalPolicy(max_steps=steps)),
             forcing='two-current-stage-mechanics; zero composition; zero extra heating',
             field_source=STEP_SOURCE, benchmark_accepted=False)
+        if args.adaptive_inner:config['adaptive_inner_policy']=asdict(atlas.AdaptiveInnerPolicy())
         if args.nonlinear_solver=='anderson':config['anderson_policy']=asdict(atlas.AndersonPolicy())
         if args.preconditioner_max_uses is not None:config['preconditioner_reuse_policy']=asdict(atlas.PreconditionerReusePolicy(max_uses=args.preconditioner_max_uses))
         output.mkdir(parents=False, exist_ok=False)
         atomic_new(output/'run.json', config)
+        specification = json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())
+        print(json.dumps({'schedule_feasibility': schedule_feasibility(config, specification)}), flush=True)
     config_id = digest(encode(config))
     # The lock remains after a hard kill; never remove another process's claim.
     lock = output/'RUNNING.lock'
@@ -177,6 +251,11 @@ def main(args):
         problem = case.problem(config['cells'])
         pol = atlas.NonlinearStokesPolicy(**config['nonlinear_policy'])
         thermal = atlas.ThermochemicalPolicy(**config['thermal_policy'])
+        ip=None if 'adaptive_inner_policy' not in config else atlas.AdaptiveInnerPolicy(**config['adaptive_inner_policy'])
+        if ip is not None:
+            from atlas_tectonics.adaptive_inner import check_policy
+            check_policy(ip,pol)
+            if encode(asdict(ip))!=encode(config['adaptive_inner_policy']):raise ValueError('noncanonical adaptive policy')
         ap=None if 'anderson_policy' not in config else atlas.AndersonPolicy(**config['anderson_policy'])
         if ap is not None and encode(asdict(ap))!=encode(config['anderson_policy']):raise ValueError('noncanonical Anderson policy')
         with ExecutionContext('numba') as context:
@@ -203,22 +282,31 @@ def main(args):
 
             def save():
                 nonlocal parent, pending, last_saved, stage_iterations
-                if state.step_index == last_saved: return
+                repair = state.step_index == last_saved
+                if repair and not pending: return
+                if repair and (stage_iterations or len(pending) != 1 or
+                        any(pending[0][k] != value for k, value in
+                            (('step', state.step_index), ('time', state.time_s), ('state_id', state.state_id)))):
+                    raise ValueError('only a missing endpoint diagnostic may amend a saved state')
                 if source_record() != identities:
                     raise ValueError('source/runner/specification changed before publication')
-                atlas.save_thermochemical_state(state, store, budget=budget)
+                if not repair: atlas.save_thermochemical_state(state, store, budget=budget)
                 rec = dict(config_id=config_id, parent_receipt=parent, state_id=state.state_id,
                     step=state.step_index, time=state.time_s, samples=pending,
                     stage_iteration_counts=stage_iterations)
-                path = output/f'receipt_{state.step_index:09d}.json'
+                if repair: rec['kind'] = 'endpoint-diagnostic'
+                suffix = '_diagnostic' if repair else ''
+                path = output/f'receipt_{state.step_index:09d}{suffix}.json'
                 atomic_new(path, rec)
                 parent = digest(path.read_bytes()); last_saved = state.step_index
                 pending = []; stage_iterations = []
 
             with atlas.PreparedThermochemical2D(problem, policy=thermal, nonlinear_policy=pol,
-                    nonlinear_start=config.get('nonlinear_start','zero-rate'),anderson_policy=ap,preconditioner_reuse_policy=None if 'preconditioner_reuse_policy' not in config else atlas.PreconditionerReusePolicy(**config['preconditioner_reuse_policy']),budget=budget) as solver:
+                    nonlinear_start=config.get('nonlinear_start','zero-rate'),adaptive_inner_policy=ip,anderson_policy=ap,preconditioner_reuse_policy=None if 'preconditioner_reuse_policy' not in config else atlas.PreconditionerReusePolicy(**config['preconditioner_reuse_policy']),budget=budget) as solver:
                 try:
-                    if not args.resume:
+                    needs_sample = (state.step_index % config['sample_every'] == 0 and
+                        (not args.resume or not any(s['step'] == state.step_index for s in last['samples'])))
+                    if needs_sample:
                         flow = solver.mechanical_snapshot(state, source='R4.4 accepted endpoint '+state.state_id, cancel=cancel)
                         pending.append(atlas.tosi_state_diagnostics(state, flow, budget=budget)); save()
                     target = min(config['maximum_steps'], state.step_index+args.segment_steps)
@@ -282,6 +370,8 @@ def parser():
     p.add_argument('--momentum-tolerance', type=float)
     p.add_argument('--viscosity-rtol', type=float)
     p.add_argument('--ilu-fill-factor', type=float)
+    p.add_argument('--adaptive-inner', action='store_true', default=None,
+                   help='opt-in bounded provisional linear accuracy; strict final certification')
     p.add_argument('--preconditioner-max-uses', type=int, choices=range(1,9),
                    help='Opt-in guarded request-local velocity ILU reuse; assessed value 4')
     p.add_argument('--nonlinear-solver', choices=('picard','anderson'),

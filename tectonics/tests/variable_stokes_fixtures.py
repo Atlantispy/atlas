@@ -87,12 +87,13 @@ def independent_nonlinear_two_cell_rhs(problem,y):
     The four pressure cells leave one circulation. For a unit box its work
     equation is 16*a*sum(eta_i(a))=g dot force, with engineering shear zero at
     the only interior vertex. Thus differing centre temperatures/viscosities
-    still give a scalar root. The retained independent donor/heat matrices
+    still give a scalar root. The independent donor/heat matrices and explicit
+    fixed-wall temperature reconstruction
     complete the eight-variable continuous-time semidiscrete ODE.
     """
     import math
     from scipy.optimize import brentq
-    from thermochemical_fixtures import dense_upwind,dense_diffusion
+    from thermochemical_fixtures import dense_upwind,dense_diffusion,two_cell_temperature_advection
     from atlas_tectonics import PrescribedMACVelocity
     b=problem.box;m=problem.material;s=problem.scales
     if b.nx!=2 or b.nz!=2 or b.width_m!=1. or b.height_m!=1. or problem.rheology.name!='tosi-2-constitutive-v1':
@@ -111,4 +112,4 @@ def independent_nonlinear_two_cell_rhs(problem,y):
     u=np.zeros((2,3));w=np.zeros((3,2));u[:,1]=(amplitude,-amplitude);w[1]=(-amplitude,amplitude)
     v=PrescribedMACVelocity(b,u,w,source='independent variable-viscosity scalar root')
     A=dense_upwind(problem,v);D,fixed=dense_diffusion(problem)
-    return np.r_[D@T.ravel()+fixed+A@T.ravel()+m.internal_heating_w_m3/problem.heat_capacity_j_m3_k,A@C.ravel()]
+    return np.r_[D@T.ravel()+fixed+two_cell_temperature_advection(problem,v,T,A)+m.internal_heating_w_m3/problem.heat_capacity_j_m3_k,A@C.ravel()]

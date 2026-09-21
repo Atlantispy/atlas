@@ -9,6 +9,7 @@ from .inner import Adapter
 from .storage import Store
 
 OPERATIONS = native.OPERATIONS
+source_hooks = native.species.source_hooks
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]/'c24'
 
 
@@ -125,7 +126,8 @@ def run(recipe, *, cache=True, cache_root=None, stop_after=None, resume=None,
             from types import SimpleNamespace
             backend = SimpleNamespace(execute=pool.execute)
         graph = executor.run(snapshot,recipe,registrations,store=store,
-            stop_after=stop_after,resume=resume,backend=backend,stats=statistics)
+            stop_after=stop_after,resume=resume,backend=backend,stats=statistics,
+            **source_hooks(recipe))
     except BaseException as exc:
         primary_error = exc
         raise

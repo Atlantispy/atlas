@@ -69,7 +69,7 @@ def dense_diffusion(p):
 
 
 def dense_upwind(p,v):
-    """Independent donor-cell matrix (MC slopes vanish on the registered 2x2 grid)."""
+    """Independent donor-cell matrix (2x2 composition/insulated slopes vanish)."""
     b=p.box;A=np.zeros((b.nx*b.nz,b.nx*b.nz));u=v.array('u_m_s');w=v.array('w_m_s')
     for j in range(b.nz):
         for i in range(1,b.nx):
@@ -80,6 +80,27 @@ def dense_upwind(p,v):
             lower=(j-1)*b.nx+i;upper=lower+b.nx;speed=w[j,i]/(b.height_m/b.nz);donor=lower if speed>=0 else upper
             A[lower,donor]-=speed;A[upper,donor]+=speed
     return A
+
+
+def two_cell_temperature_advection(p,v,T,A):
+    """Independent 2x2 donor matrix plus the fixed-wall thermal face correction.
+
+    At the only internal vertical face, write the limited donor-to-face change
+    directly from the wall-to-cell and cell-to-neighbour differences. No Atlas
+    reconstruction kernel supplies this continuous-time ODE reference.
+    """
+    out=(A@T.ravel()).reshape(2,2)
+    if p.boundary.kind=='fixed-top-bottom':
+        walls=(p.boundary.bottom_temperature_k,p.boundary.top_temperature_k)
+        for i,speed in enumerate(v.array('w_m_s')[1]):
+            donor=0 if speed>=0 else 1
+            toward=T[1-donor,i]-T[donor,i]
+            away=T[donor,i]-walls[donor]
+            if toward*away>0:
+                change=np.sign(toward)*min(abs(away),.5*abs(away)+.25*abs(toward),abs(toward))
+                transfer=speed*change/(p.box.height_m/2)
+                out[0,i]-=transfer;out[1,i]+=transfer
+    return out.ravel()
 
 
 def rotating_cell_averages(n,angle):
@@ -132,4 +153,4 @@ def independent_two_by_two_rhs(p,y):
     u[:,1]=(a,-a);w[1]=(-a*hz/hx,a*hz/hx)
     v=PrescribedMACVelocity(b,u,w,source='independent projected 2x2 circulation')
     A=dense_upwind(p,v);D,fixed=dense_diffusion(p)
-    return np.concatenate((D@T.ravel()+fixed+A@T.ravel()+m.internal_heating_w_m3/p.heat_capacity_j_m3_k,A@C.ravel()))
+    return np.concatenate((D@T.ravel()+fixed+two_cell_temperature_advection(p,v,T,A)+m.internal_heating_w_m3/p.heat_capacity_j_m3_k,A@C.ravel()))

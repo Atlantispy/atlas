@@ -349,7 +349,7 @@ class _Diffusion2D:
         return updated,(lower,upper)
 
 
-def _reference_transfers(q,cx,cz,fx,fz):
+def _reference_transfers(q,cx,cz,fx,fz,temperature_walls=None):
     """Independent NumPy formulation for a focused same-equation timing/reference.
 
     Not the default and not a second numerical-order option. It constructs slope
@@ -360,6 +360,15 @@ def _reference_transfers(q,cx,cz,fx,fz):
         return np.where(((a>0)&(b>0))|((a<0)&(b<0)),np.sign(a)*np.minimum(np.minimum(2*np.abs(a),2*np.abs(b)),np.abs(.5*a+.5*b)),0.)
     sx[:,:,1:-1]=limiter(q[:,:,1:-1]-q[:,:,:-2],q[:,:,2:]-q[:,:,1:-1])
     sz[:,1:-1,:]=limiter(q[:,1:-1,:]-q[:,:-2,:],q[:,2:,:]-q[:,1:-1,:])
+    if temperature_walls is not None:
+        lower=2.*(q[0,0]-temperature_walls[0])
+        upper=2.*(temperature_walls[1]-q[0,-1])
+        low_slope=limiter(lower,q[0,1]-q[0,0])
+        high_slope=limiter(q[0,-1]-q[0,-2],upper)
+        # Keep reconstructed wall states inside the cell/wall interval. The
+        # reflected ghosts themselves need not lie in the admissible range.
+        sz[0,0]=np.sign(low_slope)*np.minimum(np.abs(low_slope),np.abs(lower))
+        sz[0,-1]=np.sign(high_slope)*np.minimum(np.abs(high_slope),np.abs(upper))
     fx.fill(0.);fz.fill(0.)
     fx[:,:,1:-1]=cx[None,:,1:-1]*np.where(cx[None,:,1:-1]>=0,q[:,:,:-1]+.5*sx[:,:,:-1],q[:,:,1:]-.5*sx[:,:,1:])
     fz[:,1:-1,:]=cz[None,1:-1,:]*np.where(cz[None,1:-1,:]>=0,q[:,:-1,:]+.5*sz[:,:-1,:],q[:,1:,:]-.5*sz[:,1:,:])

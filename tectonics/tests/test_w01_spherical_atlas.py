@@ -456,6 +456,25 @@ class Stage3Stitching(unittest.TestCase):
         self.assertEqual(joined.areas(),self.a.areas())
         self.assertEqual(set(joined.edge_ids),set(self.a.edge_ids))
         self.assertTrue(all(row['maximum_attachment_error_rad']<2e-14 for row in joined.descriptor()['source_bindings']['networks']))
+    def test_region_chart_can_differ_from_network_domain_chart(self):
+        v=dict(zip(self.a.vertex_ids,self.a.vertex_directions))
+        baseline=stitch(self.n,v,self.b,region_bindings=self.r)
+        name=sorted(self.n)[0];original=self.n[name]
+        centre=np.array(original.domain.chart.centre);centre[0]*=1.3
+        chart=SphericalChart(SPHERE,tuple(centre))
+        changed=build_boundary_network(original.domain.in_chart(chart),original.regions)
+        self.assertNotEqual(changed.regions[0].geometry.chart.identity,changed.domain.chart.identity)
+        directions=chart._unproject(changed.vertex_xy)
+        indices=np.argmin(np.linalg.norm(directions[:,None,:]-self.a.vertex_directions[None,:,:],axis=2),axis=1)
+        self.n[name]=changed;self.b[name]=tuple(self.a.vertex_ids[i] for i in indices)
+        joined=stitch(self.n,v,self.b,region_bindings=self.r)
+        self.assertEqual(joined.adjacency(),baseline.adjacency())
+        self.assertEqual(set(joined.edge_ids),set(baseline.edge_ids))
+        assert_array_equal(joined.vertex_directions,baseline.vertex_directions)
+        for method in ('areas','perimeters'):
+            expected=getattr(baseline,method)();actual=getattr(joined,method)()
+            self.assertEqual(set(actual),set(expected))
+            assert_allclose([actual[k] for k in expected],list(expected.values()),atol=ATOL,rtol=RTOL)
     def test_binding_not_nearest_welding(self):
         b=dict(self.b);name=next(iter(b));v=list(b[name]);v[0],v[1]=v[1],v[0];b[name]=tuple(v)
         with self.assertRaises(GeometryError):stitch(self.n,dict(zip(self.a.vertex_ids,self.a.vertex_directions)),b)

@@ -12,7 +12,7 @@ import time
 from work.generator_upgrade_r21 import _snapshot_contract as snapshot
 from work.generator_runtime_r12 import executor
 from work.generator_runtime_r12.store import Store
-from . import provenance as p
+from . import provenance as p, species
 
 OPERATIONS = frozenset({'crop_soil', 'moving_roots', 'terrain_from_seed', 'terrain_advance',
     'terrain_view', 'population_reference', 'population_scenario', 'human_service',
@@ -56,14 +56,17 @@ def invoke(operation, arguments, *, cache=True, cache_root=None):
         from . import placement
         return {'population_reference': placement.assign_reference, 'population_scenario': placement.place,
                 'human_service': placement.connect_human}[operation](**args, cache=cache, cache_root=cache_root)
-    from . import species, _native_stock as stock, _native_spatial as spatial
+    from . import _native_stock as stock, _native_spatial as spatial
     register = species.Registry(args.pop('register_document'))
-    if operation == 'species_density': return species.run_density(stock, register, **args)
-    if operation == 'species_stock': return species.run_stock(stock, register, **args)
-    if operation == 'species_range': return species.run_range(spatial, register, **args)
-    if operation == 'species_residence': return species.residence_exposure(register, **args)
-    if operation == 'species_recruitment': return species.recruitment_flux(register, **args)
-    raise ValueError('unknown R22 operation')
+    register.verify_sources()
+    if operation == 'species_density': result = species.run_density(stock, register, **args)
+    elif operation == 'species_stock': result = species.run_stock(stock, register, **args)
+    elif operation == 'species_range': result = species.run_range(spatial, register, **args)
+    elif operation == 'species_residence': result = species.residence_exposure(register, **args)
+    elif operation == 'species_recruitment': result = species.recruitment_flux(register, **args)
+    else: raise ValueError('unknown R22 operation')
+    register.verify_sources()
+    return result
 
 
 def registration(operation, port, *, cache=True, cache_root=None):
@@ -108,7 +111,8 @@ def run(recipe, *, cache=True, cache_root=None, stop_after=None, resume=None):
     store = Store(root.resolve(), namespace) if cache else None
     statistics = {}
     result = executor.run(snapshot, recipe, registrations, store=store,
-        stop_after=stop_after, resume=resume, stats=statistics)
+        stop_after=stop_after, resume=resume, stats=statistics,
+        **species.source_hooks(recipe))
     return {'schema': 'diadem.r22-connected-receipt-graph', 'graph': result,
         'elapsed_seconds': time.perf_counter()-start, 'execution': statistics,
         'whole_diadem_year_verified': False, 'physical_acceptance_granted': False,

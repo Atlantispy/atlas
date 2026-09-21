@@ -1,4 +1,39 @@
-# Current scoped package: 0.1.0.dev39
+# Current scoped package: 0.1.0.dev40
+
+## Current dev40 candidate — thermal accuracy and benchmark assessment
+
+The reviewed adaptive-inner optimisation is also available on NEW nonlinear runs
+with `--adaptive-inner`, optionally combined with `--nonlinear-solver anderson
+--nonlinear-start previous-stage1 --preconditioner-max-uses 4`. It relaxes only
+intermediate linear solves, then requires fresh strict final certification.
+The default remains unchanged. The bounded Windows dev40 comparison saved 26.06 ms
+per prepared timestep (8.42%); this is not a full-campaign or whole-generator claim.
+See [adaptive-inner review and measurements](evidence/r4-4-dev40-adaptive-inner.md).
+
+The remake review repairs add append-only recovery of cancelled endpoint
+diagnostics, cross-chart spherical-network stitching, represented-duration checks
+for material transport, and translation-stable reference remapping. The retained
+generator also verifies species source files on fresh execution and cached/resumed
+acceptance. See [review-fix scope and verification](../docs/REMAKE_REVIEW_FIXES.md).
+
+Fixed-temperature walls now inform bounded thermal advection reconstruction;
+insulated walls, composition transport, conservation and Courant limits are
+unchanged. Courant refusals report the failing RK stage, measured limit and an
+advisory same-velocity timestep ceiling. SciPy is constrained to `<1.18`, matching
+the authenticated FFT backend (1.18 changed it).
+
+Periodic maturity must extend to the actual endpoint. Periodic mesh/time/nonlinear
+studies now compare authenticated final-cycle temperature fields as well as scalars;
+absent or undersampled fields are INCOMPLETE. The existing campaign tool's
+`--preflight` reads configurations and known reference blockers without opening run
+arrays. New schedules must include a uniformly sampled final endpoint; short
+explicit diagnostic schedules remain allowed but warn when they cannot mature.
+
+`tools/probe_convection_r4_4.py` isolates frozen-field resolution effects without
+claiming coupled convergence. See revision 44 of the maintained documents and
+[bounded evidence](evidence/r4-4-dev40-numerical-assessment.md).
+**R4.4/R4 remain IN_PROGRESS.** No old checkpoint is rebound to changed source.
+This is a local review candidate, not a published release or complete campaign.
 
 ## Current dev39 — guarded request-local preconditioner reuse
 

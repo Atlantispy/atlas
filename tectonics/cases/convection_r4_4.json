@@ -4,7 +4,7 @@
   "cases": {
     "case5b_applicable": true,
     "case5b_numerical_targets": null,
-    "case5b_requirement": "Published regime/transition and mean of peak Nu over 10 periods, with grid sensitivity; obtain applicable reference data before acceptance.",
+    "case5b_requirement": "Published regime/transition; for periodic solutions, both minimum and maximum surface Nu averaged over 10 cycles; for steady solutions, surface Nu. Include grid sensitivity and obtain applicable reference data before acceptance (Tosi et al. 2015, section 5.4, supplementary Tables S14-S23).",
     "case5b_yields": [
       3.0,
       3.1,

@@ -1,5 +1,55 @@
 # Atlas optimisation reference
 
+## Dev40 addendum — reviewed adaptive intermediate linear accuracy
+
+Opt-in `AdaptiveInnerPolicy()` / runner `--adaptive-inner` applies bounded
+defect-correction tolerances to Tosi-plastic intermediate solves. Constant and
+Tosi-linear laws bypass it. Fresh strict certification of the final linear system
+after SI publication, current-law nonlinear gates and conservation limits remain
+mandatory. Anderson history is cleared on entering the strict phase; checkpoint
+and receipt records bind the policy and actual per-stage tolerance history.
+Defaults and historical source-binding refusal are unchanged.
+
+Independent Windows dev40 measurement: 309.46 -> 283.40 ms per prepared timestep,
+26.06 ms / 8.42% saved on one 16x16 developed fixture. This is narrower than the
+chat's Linux dev39 evidence and not a universal speed forecast. Full protocol,
+raw samples, review correction and test limits are in the
+[adaptive-inner evidence](../evidence/r4-4-dev40-adaptive-inner.md).
+
+## Current: dev40 — avoid uninformative work before optimising iteration counts
+
+**Package `0.1.0.dev40`, maintained plan revision 44, 21 September 2026.
+Local review candidate; this thermal/assessment increment itself claims no solver speed-up.**
+
+Use campaign `--preflight` before expensive archive reads or extending a proposed
+benchmark schedule. It reports known source/control/reference and maturity-schedule
+blockers without reading arrays or solving physics. It is not authentication or
+acceptance. Actual acceptance still reads and verifies the original evidence.
+The existing within-invocation scalar-analysis cache remains; periodic comparisons
+retain only three bounded final-cycle sidecars. Repeated runs may require reanalysis
+when their sidecars are no longer held; this deliberately bounds additional memory.
+
+The frozen-field resolution probe separates mechanical resolution, surface sampling
+and inherited temperature error. Its first mesh can include compilation, so its
+mesh timings must not be presented as comparative speed gains. Short evolved runs
+likewise do not establish mature accuracy. Numerical values, elapsed times and
+retained evidence identifiers are in
+[dev40 evidence](../evidence/r4-4-dev40-numerical-assessment.md).
+
+Algorithm result: the bounded thermal-wall correction is integrated for accuracy.
+An experimental point-reconstructed stress-support temperature reduced domain-RMS
+mesh spread but only reduced surface-RMS mesh spread by 1.15%; it was not promoted.
+Do not tune physics or loosen tolerances to fit the published table. Benchmark
+future algorithms by elapsed time to the same physical duration and accuracy,
+separating preparation/JIT, steady stepping, checkpointing and analysis costs.
+
+One shared-workflow candidate remains unimplemented: separate reviewed physics
+dependency identities from assessment/report identities while retaining complete
+provenance. Current package-wide source hashing deliberately invalidates reuse
+even after assessment-only edits. Any separation needs an explicit dependency
+closure and recovery tests; ignoring hashes or silently migrating existing runs
+is not an acceptable shortcut. No percentage saving is inferred for this candidate.
+
 <a id="3cr4-4-preconditioner-reuse-execution"></a>
 
 ## Current: dev39 request-local velocity ILU reuse
