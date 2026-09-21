@@ -1,5 +1,20 @@
 # Atlas optimisation reference
 
+## Dev42 — diagnostic seed reuse and fixed V-cycle zero-start shortcut
+
+Use the existing explicit previous-stage1 profile to retain accepted seeds.
+Diagnostic snapshots now consume that seed without changing it or the physical
+trajectory; current equations and strict certificates remain mandatory. Fixed
+GMG pre-smoothing omits A @ 0, retaining independent buffers and the degree-four
+recurrence. No shared scratch or extra coefficient cache was adopted.
+
+Local three-pair developed-input batches measured 19.052% savings from diagnostic
+reuse and a separate incremental 4.165% from the cycle change. These percentages
+must not be added or extrapolated to the default sampling cadence or a campaign.
+The symbolic Galerkin assembly candidate was rejected on its returned negative
+coupled benchmarks. See [scope, raw timing and verification](../evidence/r4-4-dev42-diagnostic-and-cycle.md).
+Changed source requires NEW runs, never a silent checkpoint rebind.
+
 ## Dev40 addendum — reviewed adaptive intermediate linear accuracy
 
 Opt-in `AdaptiveInnerPolicy()` / runner `--adaptive-inner` applies bounded

@@ -145,12 +145,12 @@ class CrossStepTests(unittest.TestCase):
             q.advance(self.s,.002,source='other')
             c=q.advance(a,.001,source='repeat')
         self.assertEqual(b.result_id,c.result_id)
-    def test_endpoint_sampling_is_cold_and_cannot_seed_next_step(self):
+    def test_endpoint_sampling_uses_accepted_seed_without_replacing_it(self):
         with plan(self.p,anderson_policy=at.AndersonPolicy()) as q:
             a=q.advance(self.s,.001,source='first').state
             b=q.advance(a,.001,source='second')
             f=q.mechanical_snapshot(a,source='different endpoint label')
-            self.assertNotIn('initial_guess',f.descriptor())
+            self.assertEqual(f.descriptor()['initial_guess']['guess_id'],a.next_initial_guess.guess_id)
             c=q.advance(a,.001,source='second')
         self.assertEqual(b.result_id,c.result_id)
     def test_saved_next_data_has_no_recursive_ancestor_arrays(self):

@@ -578,7 +578,11 @@ class PreparedThermochemical2D:
         This is a diagnostic snapshot only: it does not advance time, mutate the
         state or append an RK-stage record.  It deliberately reuses the same
         prepared mechanics owned by the coupled plan so sampling does not double
-        retained ILU memory.
+        retained ILU memory. The accepted state's immutable stage-1 seed is only
+        an initial guess: current temperature, composition-derived forcing and
+        epoch/time are solved again under the existing mechanical binding and
+        publication gates. Never replace next_initial_guess with this diagnostic;
+        subsequent physical steps must be independent of sampling frequency.
         """
         if type(state) is not ThermochemicalState or state.problem.problem_id!=self.problem.problem_id:
             raise TectonicsError('state/problem mismatch; no implicit remapping')
@@ -592,6 +596,8 @@ class PreparedThermochemical2D:
             request=dict(frame_id=p.box.frame_id,epoch_id=p.epoch_id,time_s=state.time_s,source=source,cancel=cancel)
             if self.nonlinear_policy is None:
                 return mechanics.solve(fx,fz,**request)
+            if state.next_initial_guess is not None:
+                request['initial_guess']=state.next_initial_guess
             return mechanics.solve_rheology(fx,fz,T,p.rheology,**request)
 
     def advance(self,state,dt_s,*,source,extra_heating_w_m3=0.0,velocity=None,cancel=None):

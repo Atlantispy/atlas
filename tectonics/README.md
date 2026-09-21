@@ -1,6 +1,20 @@
-# Current scoped package: 0.1.0.dev41
+# Current scoped package: 0.1.0.dev42
 
-## Current dev41 — strict publication refinement and selective multigrid
+## Current dev42 — seeded diagnostics and cheaper fixed multigrid cycles
+
+Accepted-state diagnostic snapshots reuse the immutable stage-1 initial guess,
+while solving the current equations under unchanged publication gates. Fixed GMG
+cycles skip the known-zero first sparse product without shared scratch or changed
+smoothing. The zero-rate default and automatic GMG selection are unchanged.
+
+Three-pair local developed-input measurements: diagnostic 7.841676 -> 2.096511 s
+(73.265% saved); the two-step batch plus final diagnostic saved 19.052%. The
+cycle change then saved another 0.905394 s / 4.165% on its paired sampled batch.
+These are separate incremental comparisons, not additive or campaign forecasts.
+Physical arrays matched exactly. See [review and raw timings](evidence/r4-4-dev42-diagnostic-and-cycle.md).
+NEW source-bound runs only; R4.4 remains IN_PROGRESS / WORKING NON-CANON.
+
+## Predecessor dev41 — strict publication refinement and selective multigrid
 
 Strict adaptive results that lose sufficient accuracy during SI conversion now
 receive a recorded refinement inside the unchanged nonlinear iteration envelope.
@@ -23,6 +37,17 @@ an automatic default. Stronger pressure preconditioning remains experimental.
 See [dev41 implementation and focused evidence](evidence/r4-4-dev41-multigrid.md).
 Changed source/policies require NEW runs; no old checkpoint is rebound.
 **R4.4/R4 remain IN_PROGRESS; physical acceptance is unchanged.**
+
+## Verified dev41 combined warm-start profile
+
+For the tested NEW Tosi case-2 128x128 workloads, combine
+`--nonlinear-start previous-stage1 --nonlinear-solver anderson --adaptive-inner
+--preconditioner-max-uses 4 --velocity-preconditioner gmg`.
+Matched two-step medians saved **0.542237 s / 21.639%** on the analytic initial
+field and **15.036685 s / 42.852%** on a developed-field-derived new input.
+Original strict gates passed; this is not a mature-campaign forecast or a
+blanket default change. See the [measured profile, raw timings, storage cost and
+reproduction limits](evidence/r4-4-dev41-combined-start-profile.md).
 
 ## Predecessor dev40 — thermal accuracy and benchmark assessment
 

@@ -21,6 +21,60 @@ from variable_stokes_fixtures import analytic_variable
 
 
 class MultigridTests(unittest.TestCase):
+    def test_zero_start_smoother_matches_original_and_skips_one_product(self):
+        def original(matrix, inverse, upper, rhs, x):
+            lower=upper/20; theta=(upper+lower)/2; delta=(upper-lower)/2
+            sigma=theta/delta; rho=1/sigma
+            direction=inverse*(rhs-matrix@x)/theta; x=x+direction
+            for _ in range(3):
+                next_rho=1/(2*sigma-rho)
+                direction=(next_rho*rho)*direction+(2*next_rho/delta)*inverse*(rhs-matrix@x)
+                x=x+direction; rho=next_rho
+            return x
+        class Counted:
+            def __init__(self, matrix): self.matrix=matrix; self.calls=0
+            def __matmul__(self, x): self.calls+=1; return self.matrix@x
+        op=_StressMACOperator(unit_box(8),1/8,1/8)
+        op.set_viscosity(*analytic_variable(unit_box(8))[2:4])
+        matrix=op.velocity_matrix().tocsr(); inverse=1/matrix.diagonal()
+        upper=float(np.max(np.asarray(abs(matrix).sum(axis=1)).ravel()*inverse))
+        rng=np.random.default_rng(21)
+        for rhs in (rng.normal(size=2*op.nv)[::2], np.zeros(op.nv)):
+            rhs.setflags(write=False)
+            counted=Counted(matrix)
+            expected=original(counted,inverse,upper,rhs,np.zeros_like(rhs))
+            self.assertEqual(counted.calls,4); counted.calls=0
+            result=mg.GeometricVcycle.smooth(counted,inverse,upper,rhs,None)
+            self.assertEqual(counted.calls,3)
+            self.assertEqual(expected.tobytes(),result.tobytes())
+            self.assertFalse(np.shares_memory(result,rhs))
+            start=rng.normal(size=op.nv); saved=start.copy(); counted.calls=0
+            expected=original(matrix,inverse,upper,rhs,start)
+            result=mg.GeometricVcycle.smooth(counted,inverse,upper,rhs,start)
+            self.assertEqual(counted.calls,4)
+            self.assertEqual(expected.tobytes(),result.tobytes())
+            np.testing.assert_array_equal(start,saved)
+
+    def test_zero_start_cycles_match_explicit_zero_and_own_results(self):
+        class ExplicitZero(mg.GeometricVcycle):
+            @staticmethod
+            def smooth(matrix,inverse,upper,rhs,x):
+                return mg.GeometricVcycle.smooth(matrix,inverse,upper,rhs,
+                    np.zeros_like(rhs) if x is None else x)
+        op=_StressMACOperator(unit_box(16),1/16,1/16)
+        op.set_viscosity(*analytic_variable(unit_box(16))[2:4])
+        transfers=mg.hierarchy_transfers(16,lambda:None)
+        new=mg.GeometricVcycle(op.velocity_matrix(),transfers,lambda:None)
+        old=ExplicitZero(op.velocity_matrix(),transfers,lambda:None)
+        rng=np.random.default_rng(22); rhs=rng.normal(size=op.nv)
+        first=new.solve(rhs); saved=first.copy()
+        self.assertEqual(first.tobytes(),old.solve(rhs).tobytes())
+        second=new.solve(2*rhs)
+        self.assertFalse(np.shares_memory(first,second))
+        self.assertEqual(first.tobytes(),saved.tobytes())
+        self.assertEqual(new.solve(rhs).tobytes(),saved.tobytes())
+        self.assertEqual(new.nbytes,old.nbytes)
+
     def test_transfer_walls_and_fixed_linearity(self):
         np.testing.assert_array_equal(mg.prolongation_1d(8, True) @ np.ones(4), np.ones(8))
         np.testing.assert_array_equal(mg.prolongation_1d(8, False) @ np.ones(3), [.5,1,1,1,1,1,.5])

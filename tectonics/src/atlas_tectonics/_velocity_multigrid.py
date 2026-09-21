@@ -85,8 +85,14 @@ class GeometricVcycle:
         lower = upper / 20
         theta = (upper + lower) / 2; delta = (upper - lower) / 2
         sigma = theta / delta; rho = 1 / sigma
-        direction = inverse_diagonal * (rhs - matrix @ x) / theta
-        x = x + direction
+        if x is None:
+            # The pre-smoother starts at exactly zero. Avoid A @ 0, while
+            # retaining independently owned iterate and recurrence storage.
+            direction = inverse_diagonal * rhs / theta
+            x = direction.copy()
+        else:
+            direction = inverse_diagonal * (rhs - matrix @ x) / theta
+            x = x + direction
         for _ in range(3):
             next_rho = 1 / (2 * sigma - rho)
             direction = (next_rho * rho) * direction + (2 * next_rho / delta) * inverse_diagonal * (rhs - matrix @ x)
@@ -98,7 +104,7 @@ class GeometricVcycle:
             return self.coarse.solve(rhs)
         matrix, inverse_diagonal, upper = self.levels[level]
         transfer = self.transfers[level]
-        x = self.smooth(matrix, inverse_diagonal, upper, rhs, np.zeros_like(rhs))
+        x = self.smooth(matrix, inverse_diagonal, upper, rhs, None)
         x += transfer @ self._cycle(level + 1, transfer.T @ (rhs - matrix @ x))
         return self.smooth(matrix, inverse_diagonal, upper, rhs, x)
 
