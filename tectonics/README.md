@@ -1,5 +1,16 @@
 # Current scoped package: 0.1.0.dev42
 
+## Local unreleased W01 Stage 6
+
+Prescribed plate motion now feeds checked regional face velocities for explicit
+planar/axial-Euler reductions. Unsupported cross-section motion and discontinuous
+internal interfaces are refused, including boundaries hidden between grid faces.
+Stage-5 changes are preserved. Local review: 200 focused checks passed; vectorised
+queries used 27.1267% less time than the same adapter's scalar control in the
+bounded benchmark. See [scope, checks and timings](docs/W01_MOTION_FORCING.md).
+Stage 7 remains outstanding; R4.4 remains held. This is not a released version or
+whole-generator scientific acceptance.
+
 ## Current dev42 — seeded diagnostics and cheaper fixed multigrid cycles
 
 Accepted-state diagnostic snapshots reuse the immutable stage-1 initial guess,
@@ -739,16 +750,19 @@ See [case](cases/w01_earth_materials.json),
 These are reference-data/numerical checks, not physical calibration. No prior
 numerical test, tolerance, equation or historical evidence has been replaced.
 
-**Next is W01 stage 5, geological sampling.** Reference-only properties must not be
+**W01 stage 5 is implemented for the declared representation.** See
+[initial-condition sampling](docs/W01_INITIAL_SAMPLING.md) for the topology-aware
+entry point, numerical checks and explicit limits. Reference-only properties must not be
 silently applied at a different temperature/pressure; selected W03/W07 laws remain
-separate responsibilities. W01 stages 5–8 remain; W03 implementation is paused.
+separate responsibilities. W01 stages 6–8 remain; W03 implementation is paused.
 
 ## W01 stage 4 — initial geological descriptions (17 September 2026)
 
 `GeologicalCase` now attaches a compact, validated initial geological description
 to a stage-3 regional `BoundaryNetwork` or the stage-3B/3C `SphericalAtlas`.
 It preserves topology/generation provenance but does not sample or evolve it.
-**Stage 4 is the description/validation layer; stages 5–8 remain. W03 is paused.**
+**Stage 4 is the description/validation layer. Stage 5 sampling is now supplied;
+stages 6–8 remain. W03 is paused.**
 
 - Shared material reference properties use explicit SI quantities, sources and
   optional validity intervals. Unknown properties remain `None` with reasons.
@@ -785,9 +799,9 @@ layer thicknesses by province, ordered flat stacks and explicitly homogeneous
 solid mixtures. Fault ribbons are descriptions, not meshed fault surfaces. Detailed
 variable interfaces, point/cell sampling, spatial thermal evaluation, deformation,
 compaction and physically calibrated rock laws are not claimed by these records.
-Stage 5 must calculate membership, mixed-cell integrals and relevant depth/property
-validity before constructing simulation arrays; returning one point winner is not
-permission to assign an entire mixed cell to it.
+The separate [Stage-5 sampler](docs/W01_INITIAL_SAMPLING.md) now calculates
+membership, mixed-cell integrals and relevant depth/temperature validity;
+returning one point winner is not permission to assign an entire mixed cell to it.
 
 **Verification:** all **1,005 checks passed** (915 prior + 90 new), with no failures,
 errors or skips, on Linux/CPython 3.13.5. Earlier test sources and fixtures remain
@@ -1574,11 +1588,11 @@ The [first delivery record](evidence/DELIVERY.md) remains historical and unchang
 
 ## Next development gate
 
-Continue with **W01 stage 5: sample the geological description** onto explicit
-point/cell supports without moving features, guessing unknowns or treating a
-point-wise winner as a conservative mixed-cell integral. Stages 1–4 (including
-3B/3C) supply geometry and description infrastructure; stages 5–8 remain before
-W01 completion. W03 stays paused until the required initialisation and supported
+Continue with **W01 stage 7: connect initialisation and supported evolution**
+without manually assembling intermediate arrays. Stages 5 and 6 now supply
+declared sampling and checked prescribed motion; stages 7–8 remain before W01
+completion. Preserve geological, thermal, inventory-metric and source provenance.
+W03 stays paused until the required initialisation and supported
 W01-to-W02 link are complete. Reuse the existing W02 regional implementation,
 accuracy-first defaults, storage and resource controls; no broad rewrite is needed.
 

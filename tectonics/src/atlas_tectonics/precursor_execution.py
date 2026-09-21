@@ -109,7 +109,7 @@ def _executor(plan):
 def _point_bounds(plan, count, fields):
     case = plan.state.case
     rows = min(count*(len(case.provinces)+len(case.weak_zones)+1), plan.limits.max_rows)
-    hits = min(count*len(case.geometries), plan.geometry_limits.max_hits)
+    hits = min(count*len(plan.state._maps['geometry']), plan.geometry_limits.max_hits)
     geometry_batch = min(count, plan.geometry_limits.batch_points)
     prior_batch = min(count, plan.limits.batch_points)
     # Joined local suballocations: capture/grouped arrays, index hits, geometry
@@ -129,7 +129,7 @@ def _cell_rows(plan, count):
 
 def _cell_bounds(plan, cells, fields):
     rows, phases = _cell_rows(plan, len(cells))
-    vertices = max(c.footprint.vertex_count for c in cells)+sum(g.geometry.vertex_count for g in plan.state.case.geometries)
+    vertices = max(c.footprint.vertex_count for c in cells)+sum(g.vertex_count for g in plan.state._maps['geometry'].values())
     support = sum(c.footprint.retained_bytes for c in cells)
     # Existing GEOS admission may still refuse a particularly complex evolving
     # fragment rather than exceeding this finite per-job allowance. No fallback
@@ -226,11 +226,11 @@ def sample_points(plan, points, depths_m, **kwargs):
     fields = kwargs.get('fields', ()); cancel = kwargs.get('cancel')
     plan._check_request(kwargs['frame_id'], kwargs['epoch_id'], kwargs['depth_reference_id'])
     shape = input_shape(points, 'sampling points')
-    dim = 2 if plan.state.case.topology.sphere is None else 3
+    dim = 2 if plan.state.sampling_domain.sphere is None else 3
     if len(shape) != 2 or shape[1] != dim or not 0 < shape[0] <= plan.limits.max_points:
         raise GeologyError('point dimensions or count outside sampling envelope')
     n = shape[0]
-    if not plan.execution_policy.parallel('points', n, indexed_points=bool(plan.state.case.geometries)):
+    if not plan.execution_policy.parallel('points', n, indexed_points=bool(plan.state._maps['geometry'])):
         plan._last_execution = {'route': 'serial', 'batches': 1, 'parallel_jobs': 0}
         return plan._sample_points_serial(points, depths_m, **kwargs)
     _names(fields, 'requested fields', ordered=True)
@@ -245,7 +245,7 @@ def sample_points(plan, points, depths_m, **kwargs):
     rows = min(n*(len(plan.state.case.provinces)+len(plan.state.case.weak_zones)+1), plan.limits.max_rows)
     # Captured inputs, ALL retained results, merged arrays and final immutable
     # bytes are held under one aggregate reservation, not lost when jobs yield.
-    retained = (3*(53+8*dim+9*len(fields)) + 2*(8*dim+8))*n + 12*rows + 65536*(count+1)
+    retained = (3*(54+8*dim+9*len(fields)) + 2*(8*dim+8))*n + 12*rows + 65536*(count+1)
     with plan._dispatch_lock, plan._operation(cancel), plan.budget.reserve(retained, category='precursor-batch-results'):
         p = snapshot(points, 'point request'); z = snapshot(depths_m, 'depth request')
         if p.shape != shape or z.shape != depth_shape:
@@ -306,7 +306,7 @@ def sample_cells(plan, cells, **kwargs):
             _check_cancel(cancel)
             _check_geometry_frame(plan.state.case.topology, g, plan.geometry_limits, plan.budget)
         if not overlap:
-            _check_cell_overlaps(cells, plan.geometry_limits, plan.limits, plan.budget, cancel)
+            plan._validate_cell_overlaps(cells, plan.budget, cancel)
         aborted = threading.Event(); combined = _Cancellation(cancel, aborted)
         ledger = _RequestLedger(plan.limits, plan.geometry_limits)
         batch = plan.execution_policy.cell_batch_size

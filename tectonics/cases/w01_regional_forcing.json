@@ -1,0 +1,17 @@
+{
+  "case_id": "w01-stage6-motion-to-regional-forcing",
+  "status": "WORKING NON-CANON; reviewed and integrated locally 2026-09-22",
+  "baseline": "supplied S6-src.zip: dev42 plus parent Stage-5 changes",
+  "physical_scope": "Prescribed kinematics; not force, stress or mantle evolution",
+  "input_units": {"length": "m", "velocity": "m/s", "angular_velocity": "rad/s", "time": "forward SI s in a named epoch"},
+  "temporal_policy": "Explicit frozen-at-start spatial prescription for the exact requested interval, not exact moving-topology evolution",
+  "reductions": {
+    "planar-columns": "Relative rigid angular rate zero; relative translation along section, no transverse/vertical flux",
+    "great-circle-columns": "Relative Euler vector parallel to great-circle pole; volume/(reference arc length * explicit reference_width_m), not raw radial thickness"
+  },
+  "ownership": "Preserve every inclusive owner row; no averaging discontinuous velocities; continuous-section interface checks refuse discontinuities even between grid faces",
+  "boundary_conditions": "No zeroing prescribed face velocities; caller supplies required exterior material",
+  "outputs": "All-owner diagnostic components or checked RegionalGrid1D N+1 face velocities, with source/frame/epoch/interval/reduction identity",
+  "verification": "Independent synthetic kinematics, seam/refusal/covariance, unchanged geology, grid/order reuse, source/store checks and one three-cell regional transport witness",
+  "exclusions": ["Stages 7 and 8", "R4.4 campaign", "arbitrary 3-D reduction", "unrepresented cross-transect flow", "consumer fidelity presets"]
+}

@@ -2189,16 +2189,20 @@ Stage 5 must preserve the distinction between grain/bulk properties, explicit
 pore fluids, scalar reference values and still-needed constitutive laws.
 
 **Current stage-4 status:** descriptions and their structural/identity validation
-are implemented for regional and global initial configurations. No stage-5 field
-sampler or W03 thermal/compaction calculation is delivered. W02 cohort identity is
-referenced, not converted into an initial evolving state without stage-5 sampling.
+are implemented for regional and global initial configurations. Stage 5 now
+samples those descriptions through `InitialConditionState` and the shared
+prepared sampler; see [scope and checks](W01_INITIAL_SAMPLING.md). W03
+thermal/compaction evolution and Stage-7 W02 initialisation remain separate.
 
 
 
 **Prior stage-3C scope (retained for context):** automatic initial spherical
 partition construction/validation is implemented. Stage 4 above now supplies the
-initial geological description. Stage 5 (sampling), stage 6 (motion adapter),
-stage 7 (W01–W02 integration) and stage 8 (combined acceptance) remain outstanding.
+initial geological description. Stage 5 supplies supported point, cell-average
+and inventory sampling. Stage 6 has a reviewed, locally integrated kinematic
+adapter with continuous-section interface checks and measured vectorisation;
+see [motion reduction](W01_MOTION_FORCING.md). Stages 7
+(W01–W02 integration) and 8 (combined acceptance) remain outstanding.
 
 
 **Stages 1–3 delivered within the declared regional/hemisphere-patch scope:** see `cases/w01_coordinates.json`, `cases/w01_geometry.json` and
@@ -2213,8 +2217,8 @@ This is stage-level completion only. The agreed remaining sequence is:
 | 3B — Shared whole-sphere geometry | Delivered with canonical shared vertices, matching seams and global ownership; not dynamics. |
 | 3C — Generated initial partition | Geometry fixture complete. Earth-like scientific acceptance REOPENED: calibrated connected candidate plus independent limited challenges delivered; full outline/motion validation outstanding. |
 | 4 — Initial geological description | Delivered: typed crust/material/cohort/ordered-layer/thermal/fault/weak-zone descriptions, explicit provenance and precedence, regional/planetary attachment, and self-contained verified storage. Point/cell sampling remains stage 5. |
-| 5 — Initial-condition sampler | Outstanding: grid-independent features, appropriate point/average/inventory sampling and missing-data rules. |
-| 6 — Motion to regional forcing | Outstanding: explicit supported reduction from prescribed plate motion, without dropping cross-transect transport silently. |
+| 5 — Initial-condition sampler | Implemented for the declared Stage-4 representation: topology-aware fixed features, point/average/inventory sampling, material-temperature checks, missing-data rules and verified restoration. See `W01_INITIAL_SAMPLING.md` for explicit supported geometry/field limits; not scientific acceptance or W02 evolution. |
+| 6 — Motion to regional forcing | Reviewed and locally integrated for supported planar/axial-Euler reductions: moving-frame components, explicit frozen interval, sided ownership and checked N+1 velocities. Continuous-section checks refuse unsupported interfaces even between grid faces. 200 focused checks; vectorised adapter used 27.1267% less query time than its scalar reference in the measured workload. See `W01_MOTION_FORCING.md`; no force inference or Stage-7 evolution. |
 | 7 — W01-to-W02 workflow | Outstanding: initialise and evolve a known case without ad hoc intermediate arrays; preserve W03 input descriptions. |
 | 8 — Combined W01 acceptance | Outstanding: original geometric/scientific gates plus resource/cache/restoration checks; then assess whole-package completion. |
 

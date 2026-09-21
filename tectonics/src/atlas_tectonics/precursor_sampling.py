@@ -9,6 +9,8 @@ The spherical metric uses true radial shell volume, not surface area * depth.
 from __future__ import annotations
 
 from contextlib import contextmanager, ExitStack, nullcontext
+from bisect import bisect_left, bisect_right
+from collections import Counter
 from dataclasses import dataclass, field, asdict
 import hashlib
 import json
@@ -28,13 +30,13 @@ from .geometry import PlanarGeometry, GeometryLimits, GeometryError, _check_canc
 from .spherical_geometry import SphericalGeometry, _directions
 from .geometry_index import GeometryIndex, GeometryFeature
 from ._spherical_candidates import SphericalCandidateIndex
-from .precursor import PrecursorState, SeededSpatialPrior, _digest
+from .precursor import PrecursorState, InitialConditionState, SeededSpatialPrior, _digest
 from .parameters import ThermalParameters
 from .thermal import half_space_temperature
 from .resources import select_budget
 from .reuse import ExecutionContext
 
-_METHOD = 'atlas.precursor-sampling.v2'
+_METHOD = 'atlas.precursor-sampling.v3'
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,10 +153,14 @@ def _profile_mean(profile, top, bottom, time_s, radius, limits, cancel):
     if profile.mode == 'tabulated':
         if bottom > profile.depths_m[-1]:
             raise GeologyError('thermal table extrapolation is refused')
-        cuts = (top, *(z for z in profile.depths_m if top < z < bottom), bottom)
+        lo = bisect_right(profile.depths_m, top)
+        hi = bisect_left(profile.depths_m, bottom)
+        cuts = (top, *profile.depths_m[lo:hi], bottom)
+        # Capture/interpolate the table once, not once per integration segment.
+        # Same knots, segment formula and fsum order as the retained algorithm.
+        temperatures = np.interp(cuts, profile.depths_m, profile.temperatures_k)
         values = []
-        for a, b in zip(cuts, cuts[1:]):
-            ta, tb = np.interp((a, b), profile.depths_m, profile.temperatures_k)
+        for a, b, ta, tb in zip(cuts, cuts[1:], temperatures, temperatures[1:]):
             h = b-a
             if radius is None:
                 value = h*(ta+tb)/2
@@ -194,6 +200,52 @@ def _profile_mean(profile, top, bottom, time_s, radius, limits, cancel):
     if not math.isfinite(mean) or not math.isfinite(error) or mean < 0 or error > max(limits.thermal_absolute_k, limits.thermal_relative*abs(mean)):
         raise GeologyError('initial thermal quadrature error exceeds its registered policy')
     return mean, error
+
+
+def _temperature_bounds(profile, top, bottom, time_s, budget):
+    """Extrema of the declared constant, piecewise-linear or monotone E04 profile."""
+    if profile.mode == 'constant':
+        return profile.temperatures_k[0], profile.temperatures_k[0]
+    if profile.mode == 'tabulated':
+        zs, ts = profile.depths_m, profile.temperatures_k
+        if top < 0 or bottom > zs[-1]:
+            raise GeologyError('thermal table extrapolation is refused')
+        def at(z):
+            i = bisect_right(zs, z)-1
+            if i == len(zs)-1:
+                return ts[i]
+            return ts[i]+(ts[i+1]-ts[i])*((z-zs[i])/(zs[i+1]-zs[i]))
+        a, b = at(top), at(bottom)
+        lower, upper = min(a,b), max(a,b)
+        for i in range(bisect_right(zs, top), bisect_left(zs, bottom)):
+            lower = min(lower,ts[i]); upper = max(upper,ts[i])
+        return lower, upper
+    values = _temperature(profile, np.array([top, bottom]), time_s, budget)
+    return float(min(values)), float(max(values))
+
+
+def _material_temperature_validity(state, unit, lower, upper):
+    """Check declared temperature ranges, without inventing constitutive laws.
+
+    Missing ranges are explicitly uncertified. An out-of-range active solid or
+    pore fluid refuses the requested thermal result, even if its cell mean fits.
+    """
+    known = True
+    for mid in _active_materials(state, unit):
+        interval = state._maps['materials'][mid].valid_temperature_k
+        if interval is None:
+            known = False
+        elif np.any(lower < interval[0]) or np.any(upper > interval[1]):
+            raise GeologyError('initial temperature outside material validity: '+mid)
+    return known
+
+
+def _active_materials(state, unit):
+    materials = {state._maps['cohorts'][c.cohort_id].material_id for c in unit.layer.components
+                 if c.solid_volume_fraction > 0}
+    if unit.fluid_material_id is not None and unit.layer.porosity != 0:
+        materials.add(unit.fluid_material_id)
+    return materials
 
 
 def _sinc_minus_one(x):
@@ -363,7 +415,7 @@ class PreparedPrecursor:
 
     def __init__(self, state, *, limits=None, geometry_limits=None, budget=None, cancel=None, execution_policy=None):
         _check_cancel(cancel)
-        if type(state) is not PrecursorState:
+        if type(state) not in (PrecursorState, InitialConditionState):
             raise GeologyError('typed geological precursor required')
         from .precursor_execution import PrecursorExecutionPolicy
         self.execution_policy = PrecursorExecutionPolicy() if execution_policy is None else execution_policy
@@ -383,17 +435,18 @@ class PreparedPrecursor:
         # shared geometry and GeometryIndex. The 5 MiB allowance covers the
         # existing context's <=2 MiB source snapshot, its verification copy and
         # callable metadata. Charge before native setup; this is not an RSS cap.
-        setup_allowance = (state.retained_bytes_estimate + 512*len(state.case.geometries)
+        setup_allowance = (state.retained_bytes_estimate + 512*len(state._maps['geometry'])
                            + 512*len(state.units) + 5*1024**2)
         self._guard = self.budget.reserve(setup_allowance, category='precursor-plan-retained')
         self._guard.__enter__(); self._index = None; self._context = None; self._spherical_areas = None
         try:
-            features = tuple(GeometryFeature(g.key, g.geometry) for g in state.case.geometries)
+            self._topology_footprints = frozenset(r.geometry.geometry_id for r in state.case.topology.regions)
+            features = tuple(GeometryFeature(k, g) for k, g in state._maps['geometry'].items())
             if features:
                 self._index = GeometryIndex(features, limits=self.geometry_limits, budget=self.budget)
-            self._area_keys = tuple(g.key for g in state.case.geometries if g.geometry.kind in ('Polygon', 'MultiPolygon'))
+            self._area_keys = tuple(k for k, g in state._maps['geometry'].items() if g.kind in ('Polygon', 'MultiPolygon'))
             self._area_tree = None
-            if self._area_keys and state.case.topology.sphere is None:
+            if self._area_keys and state.sampling_domain.sphere is None:
                 # Bounds only prune candidates; exact overlays remain authoritative.
                 self._area_tree = STRtree([state._maps['geometry'][k]._geom for k in self._area_keys])
             elif self._area_keys:
@@ -409,6 +462,18 @@ class PreparedPrecursor:
                     self._body_units[u.owner_id] = i
             self._column_units = MappingProxyType({k: tuple(v) for k, v in self._column_units.items()})
             self._body_units = MappingProxyType(self._body_units)
+            self._column_edges = MappingProxyType({c.column_id: c.layer_edges_m for c in state.case.columns})
+            self._column_edge_arrays = MappingProxyType({k: np.frombuffer(np.asarray(v, dtype='f8').tobytes(), dtype='f8')
+                                                        for k, v in self._column_edges.items()})
+            lower = []; upper = []; known = []
+            for unit in state.units:
+                ranges = [state._maps['materials'][mid].valid_temperature_k for mid in _active_materials(state, unit)]
+                lower.append(max((r[0] for r in ranges if r is not None), default=-math.inf))
+                upper.append(min((r[1] for r in ranges if r is not None), default=math.inf))
+                known.append(all(r is not None for r in ranges))
+            self._unit_lower = np.frombuffer(np.asarray(lower, dtype='f8').tobytes(), dtype='f8')
+            self._unit_upper = np.frombuffer(np.asarray(upper, dtype='f8').tobytes(), dtype='f8')
+            self._unit_validity_known = np.frombuffer(np.asarray(known, dtype='?').tobytes(), dtype='?')
             self._province_codes = MappingProxyType({p.province_id: i for i, p in enumerate(state.case.provinces)})
             self._zone_codes = MappingProxyType({z.zone_id: i for i, z in enumerate(state.case.weak_zones)})
             self._cohort_ids = tuple(c.cohort.cohort_id for c in state.case.cohorts)
@@ -478,13 +543,13 @@ class PreparedPrecursor:
         if self._closed:
             raise GeologyError('precursor plan is closed')
         case = self.state.case
-        if frame_id != case.topology.frame_id or epoch_id != case.epoch_id or depth_reference_id != case.depth_reference_id:
+        if frame_id != self.state.sampling_domain.frame_id or epoch_id != case.epoch_id or depth_reference_id != case.depth_reference_id:
             raise GeologyError('sampling frame, epoch or depth reference differs; explicit conversion is required')
 
     def _coordinate_points(self, points, depths):
-        if self.state.case.topology.sphere is None:
+        if self.state.sampling_domain.sphere is None:
             return np.column_stack((points, depths))
-        return points*(self.state.case.topology.sphere.radius_m-depths[:, None])
+        return points*(self.state.sampling_domain.sphere.radius_m-depths[:, None])
 
     def _field_arrays(self, names, coordinates, cancel, budget=None):
         budget = self.budget if budget is None else budget
@@ -500,6 +565,12 @@ class PreparedPrecursor:
                     budget=budget, cancel=cancel, batch_points=self.limits.batch_points)
                 known[:, j] = True
         return values, known
+
+    def _check_unit_temperature(self, code, lower, upper):
+        if lower < self._unit_lower[code] or upper > self._unit_upper[code]:
+            # Preserve the precise offending material diagnostic on refusal.
+            _material_temperature_validity(self.state, self.state.units[code], lower, upper)
+        return self._unit_validity_known[code]
 
     def execution_statistics(self):
         """Detached last-dispatch diagnostics; not part of scientific identity."""
@@ -525,7 +596,7 @@ class PreparedPrecursor:
         if type(require_temperature) is not bool:
             raise GeologyError('require_temperature must be bool')
         shape = input_shape(points, 'sampling points')
-        dim = 2 if self.state.case.topology.sphere is None else 3
+        dim = 2 if self.state.sampling_domain.sphere is None else 3
         if len(shape) != 2 or shape[1] != dim or not 0 < shape[0] <= self.limits.max_points:
             raise GeologyError('point dimensions or count outside sampling envelope')
         _names(fields, 'requested fields', ordered=True)
@@ -537,7 +608,7 @@ class PreparedPrecursor:
         # Worst-case hit counts are bounded before allocation; no dense N*feature
         # array is constructed. Native index query has its own joined allowance.
         row_bound = min(n*(len(self.state.case.provinces)+len(self.state.case.weak_zones)+1), self.limits.max_rows)
-        hit_bound = min(n*len(self.state.case.geometries), self.geometry_limits.max_hits)
+        hit_bound = min(n*len(self.state._maps['geometry']), self.geometry_limits.max_hits)
         required = 256*n + 32*n*len(fields) + 96*row_bound + 48*hit_bound + 65536
         with (self._operation(cancel) if _admitted_budget is None else nullcontext()), budget.reserve(required, category='precursor-points'):
             p = read_array(points, 'sampling points', ndim=2)
@@ -549,7 +620,7 @@ class PreparedPrecursor:
             z = np.full(n, float(zraw)) if zraw.ndim == 0 else zraw
             if z.shape != (n,):
                 raise GeologyError('depth shape changed during capture')
-            domain = self.state.case.topology
+            domain = self.state.sampling_domain
             if not domain.full_sphere and np.any(domain.domain.classify(p, limits=self.geometry_limits, budget=budget, cancel=cancel) < 0):
                 raise GeologyError('sampling point outside declared geological domain')
             if domain.sphere is not None and np.any(z >= domain.sphere.radius_m):
@@ -574,7 +645,7 @@ class PreparedPrecursor:
             def selected_points(selector):
                 if selector.kind == 'domain':
                     return all_points
-                parts = [feature_points[k] for k in selector.keys if k in feature_points]
+                parts = [feature_points[k] for k in self.state.selector_keys(selector) if k in feature_points]
                 return np.unique(np.concatenate(parts)) if parts else np.empty(0, dtype=np.int64)
             case = self.state.case
             pcodes = np.full(n, -1, dtype=np.int32); ucodes = np.full(n, -1, dtype=np.int32)
@@ -599,7 +670,7 @@ class PreparedPrecursor:
                     raise GeologyError('precursor provinces leave uncovered points')
                 selected = np.flatnonzero(pcodes == code)
                 column = case.column(case.provinces[int(code)].column_id)
-                j = np.searchsorted(column.layer_edges_m, z[selected], side='right')-1
+                j = np.searchsorted(self._column_edge_arrays[column.column_id], z[selected], side='right')-1
                 known = (j >= 0) & (j < len(column.layers))
                 ucodes[selected[known]] = np.asarray(self._column_units[column.column_id], dtype=np.int32)[j[known]]
             for body_id in reversed(self.state.body_order):
@@ -633,6 +704,11 @@ class PreparedPrecursor:
                 raise GeologyError('initial temperature is below absolute zero')
             if require_temperature and not tknown.all():
                 raise GeologyError('requested initial temperature is unresolved')
+            bad = tknown & ((temperature < self._unit_lower[ucodes]) | (temperature > self._unit_upper[ucodes]))
+            if np.any(bad):
+                i = int(np.flatnonzero(bad)[0])
+                self._check_unit_temperature(int(ucodes[i]), temperature[i], temperature[i])
+            validity = tknown & self._unit_validity_known[ucodes]
             # Exact finite-trace distances, never buffer-polygon membership. Work
             # remains batched and bounded; each corridor is traversed separately.
             weak_rows = []; weak_values = []; weak_count = 0
@@ -668,10 +744,12 @@ class PreparedPrecursor:
             arrays = dict(points=p, depths_m=z, unit_code=ucodes, province_code=pcodes,
                 province_offsets=np.asarray(offsets, dtype=np.int64), province_candidates=np.asarray(candidate_codes, dtype=np.int32),
                 weak_zone_offsets=np.asarray(wo, dtype=np.int64), weak_zone_codes=np.asarray(wc, dtype=np.int32),
-                temperature_k=temperature, temperature_known=tknown, field_values=fv, field_known=fk)
+                temperature_k=temperature, temperature_known=tknown, field_values=fv, field_known=fk,
+                material_temperature_validity_known=validity)
             return InitialSamples(self.state, 'points', {'plan_id': self.identity, 'requested_fields': fields,
                 'frame_id': frame_id, 'epoch_id': epoch_id, 'time_s': case.time_s, 'depth_reference_id': depth_reference_id,
                 'temperature_semantics': 'initial point temperature; not evolved heat',
+                'material_temperature_validity': 'declared ranges only; unknown ranges masked; not constitutive-law approval',
                 'interval_policy': 'top-inclusive, bottom-exclusive; explicit areal precedence'}, arrays)
 
     def _candidate_keys(self, footprint, *, budget=None, prepaid=False, cancel=None):
@@ -680,6 +758,27 @@ class PreparedPrecursor:
         if self._spherical_areas is not None:
             return {self._area_keys[int(i)] for i in self._spherical_areas.query(footprint, budget=budget, prepaid=prepaid, cancel=cancel)}
         return set()
+
+    def _validate_cell_overlaps(self, cells, budget, cancel):
+        """Reuse certified whole-sphere face disjointness, not a giant overlay.
+
+        Only exact topology-owned footprints qualify. Arbitrary query polygons
+        retain the existing explicit geometric overlap checks and refusals.
+        """
+        from .spherical_atlas import SphericalAtlas
+        topology = self.state.case.topology
+        if type(topology) is SphericalAtlas:
+            if all(c.footprint.geometry_id in self._topology_footprints for c in cells):
+                bands = {}
+                for c in cells:
+                    _check_cancel(cancel)
+                    bands.setdefault(c.footprint.geometry_id, []).append((c.top_depth_m, c.bottom_depth_m))
+                for intervals in bands.values():
+                    intervals.sort()
+                    if any(b[0] < a[1] for a, b in zip(intervals, intervals[1:])):
+                        raise GeologyError('sampling cells overlap in positive volume')
+                return
+        _check_cell_overlaps(cells, self.geometry_limits, self.limits, budget, cancel)
 
     def _take(self, remaining, selector, possible, cancel, work, budget=None):
         """Take a selector union once from an existing cell-local remainder.
@@ -693,13 +792,20 @@ class PreparedPrecursor:
         if selector.kind == 'domain':
             return [remaining], None
         selected = []
-        for key in selector.keys:
+        for key in self.state.selector_keys(selector):
             if key not in possible or remaining is None:
                 continue
             work[0] += 1
             if work[0] > self.limits.max_work_items:
                 raise GeologyError('cell overlay work exceeds explicit policy')
             g = self.state._maps['geometry'][key]
+            if remaining.geometry_id == g.geometry_id:
+                selected.append(remaining)
+                return selected, None
+            if remaining.geometry_id in self._topology_footprints and g.geometry_id in self._topology_footprints:
+                # Distinct validated topology faces have no positive-area
+                # overlap. Shared seams do not require a cross-horizon overlay.
+                continue
             if _provably_disjoint(remaining, g):
                 continue
             part = remaining.overlay(g, 'intersection', limits=self.geometry_limits, budget=budget, cancel=cancel)
@@ -750,36 +856,60 @@ class PreparedPrecursor:
                 raise GeologyError('unknown requested field: '+name)
         reference_t = None
         if reference_mass_temperature_k is not None:
-            reference_t = self.state.require_reference_densities(reference_mass_temperature_k)
+            reference_t = scalar(reference_mass_temperature_k, 'density reference temperature', nonnegative=True)
         n = len(cells); state = self.state; case = state.case
         unique_supports = {c.footprint.geometry_id: c.footprint for c in cells}
         vertices = sum(g.vertex_count for g in unique_supports.values())
         if vertices > self.geometry_limits.max_vertices:
             raise GeologyError('cell support vertices exceed explicit geometry policy')
         input_allowance = sum(g.retained_bytes for g in unique_supports.values())
-        required = input_allowance + 256*n + 32*n*len(fields) + 512*vertices + 65536
+        repeated_supports = len(unique_supports) < n
+        required = (input_allowance + 256*n + 32*n*len(fields) + 512*vertices + 65536
+                    + (128*len(unique_supports) if repeated_supports else 0))
         with (self._operation(cancel) if _admitted_budget is None else nullcontext()), budget.reserve(required, category='precursor-cells'), ExitStack() as retained_rows:
+            support_counts = Counter(c.footprint.geometry_id for c in cells) if repeated_supports else {}
             if not _prevalidated:
                 for g in unique_supports.values():
                     _check_geometry_frame(case.topology, g, self.geometry_limits, budget)
                 if not allow_overlapping_queries:
-                    _check_cell_overlaps(cells, self.geometry_limits, self.limits, budget, cancel)
+                    self._validate_cell_overlaps(cells, budget, cancel)
             expected = np.asarray([c.volume_m3 for c in cells], dtype=np.float64)
             totals = np.zeros(n); residual = np.zeros(n)
             tv = np.zeros(n); tk = np.full(n, include_temperature, dtype=bool); te = np.zeros(n)
+            validity = np.full(n, include_temperature, dtype=bool)
             fv = np.zeros((n, len(fields))); fk = np.zeros_like(fv, dtype=bool)
             offsets = [0]; rows = []; phase_rows = []
             from .precursor_execution import _WorkCounter
             thermal_cache = {}; work = _WorkCounter(_ledger); reserved_capacity = 0
+            density_cache = {}; routing_cache = {}
+            def reference_mass(mid, volume):
+                if reference_t is None or volume == 0:
+                    return 0.
+                if mid not in density_cache:
+                    state.require_reference_densities(reference_t, material_ids=(mid,))
+                    density_cache[mid] = state._maps['materials'][mid].density_kg_m3
+                return volume*density_cache[mid]
             offset_field = next((f for f in state.fields if f.role == 'temperature_offset'), None)
             for cell_index, cell in enumerate(cells):
                 _check_cancel(cancel)
-                possible = self._candidate_keys(cell.footprint, budget=budget, prepaid=_admitted_budget is not None, cancel=cancel)
-                candidate_provinces = [p for p in case.provinces if p.selector.kind == 'domain' or possible.intersection(p.selector.keys)]
-                candidate_provinces.sort(key=lambda p: case._province_rank[p.province_id])
-                candidate_bodies = [state._maps['bodies'][k] for k in state.body_order if
-                    state._maps['bodies'][k].selector.kind == 'domain' or possible.intersection(state._maps['bodies'][k].selector.keys)]
-                local_vertices = cell.footprint.vertex_count + sum(state._maps['geometry'][k].vertex_count for k in possible)
+                gid = cell.footprint.geometry_id
+                route = routing_cache.get(gid)
+                if route is None:
+                    possible = self._candidate_keys(cell.footprint, budget=budget, prepaid=_admitted_budget is not None, cancel=cancel)
+                    candidate_provinces = [p for p in case.provinces if p.selector.kind == 'domain' or possible.intersection(state.selector_keys(p.selector))]
+                    candidate_provinces.sort(key=lambda p: case._province_rank[p.province_id])
+                    candidate_bodies = [state._maps['bodies'][k] for k in state.body_order if
+                        state._maps['bodies'][k].selector.kind == 'domain' or possible.intersection(state._maps['bodies'][k].selector.keys)]
+                    local_vertices = cell.footprint.vertex_count + sum(state._maps['geometry'][k].vertex_count for k in possible)
+                    # Only footprint routing is shared; depth, overlays and work
+                    # accounting still run for every cell. Query-local, bounded,
+                    # explicitly charged storage avoids shared mutable plan state.
+                    if support_counts.get(gid, 0) > 1 and len(routing_cache) < 1024:
+                        retained_rows.enter_context(budget.reserve(512+256*(len(possible)+len(candidate_provinces)+len(candidate_bodies)),
+                                                                 category='precursor-cell-routing'))
+                        routing_cache[gid] = (possible, candidate_provinces, candidate_bodies, local_vertices)
+                else:
+                    possible, candidate_provinces, candidate_bodies, local_vertices = route
                 local_allowance = 4096*local_vertices + 4096*(len(candidate_bodies)+len(candidate_provinces)+1) + 131072
                 with budget.reserve(local_allowance, category='precursor-cell-fragments'):
                     portions = []
@@ -804,30 +934,28 @@ class PreparedPrecursor:
                             radius = fragment.chart.sphere.radius_m if type(fragment) is SphericalGeometry else None
                             key = (u.thermal_profile_id, top, bottom, radius)
                             if key in thermal_cache:
-                                mean, error = thermal_cache[key]
+                                mean, error, lower, upper = thermal_cache[key]
                             else:
+                                lower, upper = _temperature_bounds(profile, top, bottom, case.time_s, budget)
                                 mean, error = _profile_mean(profile, top, bottom, case.time_s, radius, self.limits, cancel)
                                 if len(thermal_cache) < 1024:
-                                    thermal_cache[key] = (mean, error)
+                                    thermal_cache[key] = (mean, error, lower, upper)
                             if offset_field is not None:
                                 if offset_field.unknown_reason is not None:
                                     raise GeologyError('initial temperature offset is unresolved')
                                 # A positive mean alone cannot legitimise negative
                                 # absolute temperatures hidden inside a mixed cell.
-                                if profile.mode == 'constant':
-                                    lower = profile.temperatures_k[0]
-                                elif profile.mode == 'tabulated':
-                                    lower = min(*np.interp((top,bottom), profile.depths_m, profile.temperatures_k),
-                                        *(t for z,t in zip(profile.depths_m,profile.temperatures_k) if top < z < bottom))
-                                else:
-                                    lower = min(_temperature(profile, np.array([top,bottom]), case.time_s, budget))
                                 field_lower = (offset_field.constant_value if offset_field.prior is None
                                                else offset_field.prior.mean-offset_field.prior.amplitude)
-                                if lower+field_lower < 0:
+                                field_upper = (offset_field.constant_value if offset_field.prior is None
+                                               else offset_field.prior.mean+offset_field.prior.amplitude)
+                                lower += field_lower; upper += field_upper
+                                if lower < 0:
                                     raise GeologyError('cell temperature envelope permits sub-zero values; no physical mean is certified')
                                 mean += offset_field.constant_value if offset_field.prior is None else _prior_mean(offset_field.prior, fragment, top, bottom, cancel)
                             if mean < 0 or not math.isfinite(mean):
                                 raise GeologyError('invalid initial mean temperature')
+                            validity[cell_index] &= self._check_unit_temperature(unit_code, lower, upper)
                         key = (unit_code, province_code)
                         if key not in accum:
                             if len(accum)+len(rows) >= self.limits.max_rows:
@@ -837,7 +965,7 @@ class PreparedPrecursor:
                     for p, footprint in portions:
                         column = case.column(p.column_id)
                         a, b = cell.top_depth_m, cell.bottom_depth_m
-                        cuts = sorted({a, b, *(z for z in column.layer_edges_m if a < z < b),
+                        cuts = sorted({a, b, *(z for z in self._column_edges[column.column_id] if a < z < b),
                             *(z for body in candidate_bodies for z in (body.top_depth_m, body.bottom_depth_m) if a < z < b)})
                         for top, bottom in zip(cuts, cuts[1:]):
                             _check_cancel(cancel)
@@ -850,8 +978,9 @@ class PreparedPrecursor:
                                     for fragment in pieces:
                                         account(fragment, top, bottom, self._body_units[body.body_id], -1)
                             if rest is not None and rest.area_m2 > 0:
-                                j = int(np.searchsorted(column.layer_edges_m, top, side='right'))-1
-                                if j < 0 or j >= len(column.layers) or bottom > column.layer_edges_m[j+1]:
+                                edges = self._column_edges[column.column_id]
+                                j = bisect_right(edges, top)-1
+                                if j < 0 or j >= len(column.layers) or bottom > edges[j+1]:
                                     raise GeologyError('cell extends below supplied column/mantle-body support')
                                 account(rest, top, bottom, self._column_units[column.column_id][j], self._province_codes[p.province_id])
                     # Reserve retained sparse records BEFORE building them. Capacity
@@ -877,11 +1006,11 @@ class PreparedPrecursor:
                         for component in u.layer.components:
                             cohort = state._maps['cohorts'][component.cohort_id]
                             volume = matrix*component.solid_volume_fraction
-                            mass = 0. if reference_t is None else volume*state._maps['materials'][cohort.material_id].density_kg_m3
+                            mass = reference_mass(cohort.material_id, volume)
                             phase_rows.append((row_index, self._cohort_codes[cohort.cohort_id], self._material_codes[cohort.material_id], 0, volume, mass))
                         if phi > 0:
                             mid = u.fluid_material_id
-                            mass = 0. if reference_t is None else pores*state._maps['materials'][mid].density_kg_m3
+                            mass = reference_mass(mid, pores)
                             phase_rows.append((row_index, -1, self._material_codes[mid], 1, pores, mass))
                         cell_volumes.append(v); cell_temperatures.append(temperature_integral); cell_errors.append(error_integral)
                     offsets.append(len(rows))
@@ -901,7 +1030,8 @@ class PreparedPrecursor:
                             fk[cell_index, j] = True
             arrays = dict(cell_volume_m3=expected, accounted_volume_m3=totals, coverage_residual_m3=residual,
                 cell_offsets=np.asarray(offsets, dtype=np.int64), temperature_k=tv, temperature_known=tk,
-                temperature_quadrature_error_k=te, field_values=fv, field_known=fk)
+                temperature_quadrature_error_k=te, field_values=fv, field_known=fk,
+                material_temperature_validity_known=validity)
             # Explicit integer/float arrays preserve large IDs and avoid the silent
             # int->float->int route of a heterogeneous matrix conversion.
             for j, name, dtype in ((0, 'row_cell', 'i8'), (1, 'unit_code', 'i4'), (2, 'province_code', 'i4'),
@@ -930,6 +1060,7 @@ class PreparedPrecursor:
                 'reference_mass_conditions': 'source-specific reference conditions; no common pressure inferred',
                 'overlapping_queries_allowed': allow_overlapping_queries,
                 'temperature_semantics': 'volume-weighted initial mean, not heat/energy inventory',
+                'material_temperature_validity': 'whole-fragment envelope in declared ranges; unknown ranges masked; not constitutive-law approval',
                 'solid_semantics': 'known only for grain-matrix rows; bulk-reference intrinsic pores unresolved',
                 'weak_zones': 'point membership supported; no fabricated averaged damage',
                 'overlay_work_items': work[0]}, arrays)

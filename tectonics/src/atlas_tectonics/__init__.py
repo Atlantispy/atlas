@@ -109,12 +109,12 @@ __all__ += ["PlateLayoutSettings", "generate_plate_layout", "layout_metrics",
 # These inputs/samplers are not thermal evolution, rheology or generated plates.
 from .geological_domain import GeologicalDomain
 from .precursor import (InputOrigin, CoolingHistory, MaterialVolumeBasis,
-    SeededSpatialPrior, InitialScalarField, SubsurfaceBody, PrecursorState,
+    SeededSpatialPrior, InitialScalarField, SubsurfaceBody, PrecursorState, InitialConditionState,
     save_precursor_state, load_precursor_state)
 from .precursor_sampling import (PrecursorSamplingLimits, InitialSamplingCell,
     InitialSamples, PreparedPrecursor, save_initial_samples, load_initial_samples)
 __all__ += ['GeologicalDomain', 'InputOrigin', 'CoolingHistory', 'MaterialVolumeBasis',
-    'SeededSpatialPrior', 'InitialScalarField', 'SubsurfaceBody', 'PrecursorState',
+    'SeededSpatialPrior', 'InitialScalarField', 'SubsurfaceBody', 'PrecursorState', 'InitialConditionState',
     'save_precursor_state', 'load_precursor_state', 'PrecursorSamplingLimits',
     'InitialSamplingCell', 'InitialSamples', 'PreparedPrecursor',
     'save_initial_samples', 'load_initial_samples']
@@ -169,3 +169,15 @@ from .preconditioner_reuse import PreconditionerReusePolicy
 __all__ += ["AndersonPolicy"]
 
 from .adaptive_inner import AdaptiveInnerPolicy
+
+# W01 Stage 6: explicit checked kinematic reduction, not geological evolution.
+from .regional_forcing import (
+    MotionReductionError, PrescribedPlateMotion, PlanarRegionalSection,
+    SphericalRegionalSection, RegionalReduction, RegionalMotionDefinition,
+    SectionMotionSamples, RegionalFaceForcing, PreparedRegionalForcing,
+    save_regional_forcing, load_regional_forcing,
+)
+__all__ += ["MotionReductionError", "PrescribedPlateMotion", "PlanarRegionalSection",
+            "SphericalRegionalSection", "RegionalReduction", "RegionalMotionDefinition",
+            "SectionMotionSamples", "RegionalFaceForcing", "PreparedRegionalForcing",
+            "save_regional_forcing", "load_regional_forcing"]
