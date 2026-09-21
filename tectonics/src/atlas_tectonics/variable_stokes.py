@@ -34,8 +34,9 @@ _METHOD = 'atlas.variable-stress-mac-2d.v1'
 class NonlinearStokesPolicy:
     """Explicit work and error limits; no silent law/mesh/precision fallback.
 
-    GMRES uses a bounded restarted basis and a nonsymmetric velocity-ILU/block
-    triangular preconditioner. MINRES would not be valid with that preconditioner.
+    GMRES uses a bounded restarted basis and a block-triangular preconditioner
+    with ILU or a fixed linear geometric velocity V-cycle. Auto selects GMG
+    only on assessed size/workload supports; MINRES is not valid for this block.
     Numerical fill is admitted conservatively before native factorisation; this
     accounting is not an operating-system RSS cap. Nonlinear acceptance always
     checks the true newly evaluated law at the returned physical fields.
@@ -56,10 +57,15 @@ class NonlinearStokesPolicy:
     ilu_drop_tolerance: float = 1e-4
     ilu_fill_factor: float = 12.0
     max_viscosity_contrast: float = 1e12
+    velocity_preconditioner: str = 'auto'
 
     def __post_init__(self):
         if self.method not in ('gmres', 'direct'):
             raise TectonicsError('variable mechanics requires gmres or explicit direct reference')
+        if self.velocity_preconditioner not in ('auto', 'ilu', 'gmg'):
+            raise TectonicsError('velocity preconditioner must be auto, ilu or gmg')
+        if self.method == 'direct' and self.velocity_preconditioner == 'gmg':
+            raise TectonicsError('multigrid requires GMRES')
         for key in ('max_unknowns','direct_max_unknowns','restart','max_cycles','max_picard_iterations'):
             if type(getattr(self,key)) is not int or getattr(self,key)<1:
                 raise TectonicsError(key+' must be a positive integer')

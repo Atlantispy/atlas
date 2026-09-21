@@ -1,4 +1,4 @@
-"""Guarded, request-local velocity-ILU reuse. The physical operator stays current.
+"""Guarded, request-local velocity-preconditioner reuse; current physical operator.
 
 SPDX-License-Identifier: AGPL-3.0-only
 This is a numerical helper policy, never permission to solve stale equations.
@@ -13,7 +13,7 @@ import numpy as np
 from ._validation import TectonicsError, scalar
 from .constitutive import _json
 
-_METHOD = 'atlas.velocity-ilu-request-reuse.v1'
+_METHOD = 'atlas.velocity-preconditioner-request-reuse.v2'
 _REASONS = ('request_start', 'exact_match', 'age_limit', 'viscosity_change',
             'linear_work_growth', 'bounded_reuse', 'zero_rhs')
 

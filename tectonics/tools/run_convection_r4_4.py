@@ -183,7 +183,7 @@ def main(args):
         raise ValueError('positive finite cooperative time allowance required')
     supplied = ('case', 'yield_stress', 'cells', 'dt', 'max_steps', 'save_every',
                 'sample_every', 'max_picard', 'linear_rtol', 'momentum_tolerance',
-                'viscosity_rtol', 'ilu_fill_factor', 'nonlinear_start', 'nonlinear_solver', 'preconditioner_max_uses', 'adaptive_inner')
+                'viscosity_rtol', 'ilu_fill_factor', 'nonlinear_start', 'nonlinear_solver', 'preconditioner_max_uses', 'adaptive_inner', 'velocity_preconditioner')
     identities = source_record()
     if args.resume:
         if any(getattr(args, k) is not None for k in supplied):
@@ -214,7 +214,8 @@ def main(args):
             linear_rtol=1e-12 if args.linear_rtol is None else args.linear_rtol,
             momentum_tolerance=1e-9 if args.momentum_tolerance is None else args.momentum_tolerance,
             viscosity_rtol=1e-8 if args.viscosity_rtol is None else args.viscosity_rtol,
-            ilu_fill_factor=17.0 if args.ilu_fill_factor is None else args.ilu_fill_factor)
+            ilu_fill_factor=17.0 if args.ilu_fill_factor is None else args.ilu_fill_factor,
+            velocity_preconditioner=args.velocity_preconditioner or 'auto')
         if pol.linear_rtol > 1e-12 or pol.momentum_tolerance > 1e-9 or pol.viscosity_rtol > 1e-8:
             raise ValueError('benchmark runner refuses weaker-than-R4.3 convergence gates')
         nonlinear_start = 'zero-rate' if args.nonlinear_start is None else args.nonlinear_start
@@ -370,6 +371,8 @@ def parser():
     p.add_argument('--momentum-tolerance', type=float)
     p.add_argument('--viscosity-rtol', type=float)
     p.add_argument('--ilu-fill-factor', type=float)
+    p.add_argument('--velocity-preconditioner', choices=('auto','ilu','gmg'),
+                   help='default auto: measured size/workload rule; explicit ilu/gmg for comparison')
     p.add_argument('--adaptive-inner', action='store_true', default=None,
                    help='opt-in bounded provisional linear accuracy; strict final certification')
     p.add_argument('--preconditioner-max-uses', type=int, choices=range(1,9),

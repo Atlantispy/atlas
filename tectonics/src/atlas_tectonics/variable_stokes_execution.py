@@ -73,6 +73,43 @@ def _check_diagnostics(d,policy):
             raise TectonicsError('variable Stokes '+key+' gate failed: '+str(d[key]))
 
 
+class _PublicationRefinementRequired(TectonicsError):
+    """A valid strict image lost accuracy only in its returned SI representation."""
+    def __init__(self,residual,target):
+        super().__init__('returned fields fail strict linear certification')
+        self.residual=residual;self.target=target
+
+
+def _check_publication_history(history,metadata,policy):
+    """Keep failed SI attempts visible without inventing extra linear solves."""
+    attempts=[(i,row['publication']) for i,row in enumerate(history) if 'publication' in row]
+    if not attempts:return
+    adaptive=metadata.get('adaptive_inner')
+    if adaptive is None or not adaptive['active']:
+        raise TectonicsError('publication refinement requires active adaptive history')
+    linear=metadata['adaptive_inner_history']
+    for index,row in attempts:
+        if type(row) is not dict or set(row)!={'status','internal_residual_l2','returned_residual_l2','target_l2'}:
+            raise TectonicsError('invalid publication attempt')
+        for key in ('internal_residual_l2','returned_residual_l2','target_l2'):
+            scalar(row[key],key,nonnegative=True)
+        target=policy.linear_rtol*linear[index]['rhs_l2']
+        if (not linear[index]['strict_certified'] or row['target_l2']!=target or
+                row['internal_residual_l2']>target):
+            raise TectonicsError('publication attempt lacks valid strict input')
+        if row['status']=='refine':
+            if index==len(history)-1 or row['returned_residual_l2']<=target:
+                raise TectonicsError('invalid publication refinement')
+        elif row['status']=='accepted':
+            if index!=len(history)-1 or row['returned_residual_l2']>target:
+                raise TectonicsError('invalid publication acceptance')
+            if row['returned_residual_l2']!=adaptive['final_certification']['returned_residual_l2']:
+                raise TectonicsError('publication differs from final certification')
+        else:raise TectonicsError('unknown publication attempt status')
+    if history[-1].get('publication',{}).get('status')!='accepted':
+        raise TectonicsError('publication refinement lacks final acceptance')
+
+
 class VariableStokesSolution:
     """Immutable complete mechanical input/response; not a time-integrated state."""
     __slots__=('_metadata','_arrays','result_id')
@@ -114,6 +151,7 @@ class VariableStokesSolution:
                 _ai.check_history(metadata['adaptive_inner'],metadata['adaptive_inner_history'],hist,pol)
             elif 'adaptive_inner_history' in metadata:
                 raise TectonicsError('undeclared adaptive-inner history')
+            _check_publication_history(hist,metadata,pol)
             if 'preconditioner_reuse' in metadata:
                 if rp is None or rp.family not in ('constant','tosi-linear','tosi-plastic'):
                     raise TectonicsError('unsupported preconditioner-reuse rheology')
@@ -286,7 +324,7 @@ def _check_guess_binding(guess,plan_id,profile,epoch,time,*,box,scales):
 class PreparedVariableStokes2D:
     """One driving thread, reusable sparse derivatives and one numerical factor.
 
-    Native sparse velocity ILU supplies a block-triangular GMRES preconditioner.
+    Native velocity ILU or fixed GMG supplies a triangular GMRES preconditioner.
     Pressure uses a projected viscosity-weighted inverse Schur approximation.
     It is approximate and contrast-sensitive, NOT the exact constant-eta FFT
     inverse. Fixed coefficients reuse one factor; changed eta replaces it. No
@@ -297,6 +335,9 @@ class PreparedVariableStokes2D:
         if gmres is None or spilu is None:raise TectonicsError('SciPy variable mechanics unavailable')
         policy=NonlinearStokesPolicy() if policy is None else policy
         if type(policy) is not NonlinearStokesPolicy:raise TectonicsError('typed nonlinear solve policy required')
+        from ._velocity_multigrid import supported
+        if policy.velocity_preconditioner == 'gmg' and not supported(box):
+            raise TectonicsError('multigrid requires an isotropic square power-of-two grid >=8')
         if box.unknowns>policy.max_unknowns:raise TectonicsError('variable mechanics exceeds unknown envelope')
         if policy.method=='direct' and box.unknowns>policy.direct_max_unknowns:
             raise TectonicsError('direct variable reference exceeds envelope')
@@ -308,6 +349,10 @@ class PreparedVariableStokes2D:
         self.preconditioner_reuse_policy=preconditioner_reuse_policy
         self._reuse_request=None
         self._approximate_reuses=0
+        self._preconditioner_workload=None
+        self._factor_kind=None
+        self._gmg_transfers=None
+        self._gmg_builds=0
         self.anderson_policy=anderson_policy
         self.box,self.scales,self.policy=box,scales,policy
         self.budget=select_budget(budget);self._closed=False;self._active=False;self._owner=threading.get_ident()
@@ -322,6 +367,13 @@ class PreparedVariableStokes2D:
         template_retained=(768*box.nx*box.nz+8) if compiled else 0
         template_build=(4096*box.nx*box.nz+65536) if compiled else 0
         retained=6*1024**2+template_retained+int((640+640*policy.ilu_fill_factor)*box.unknowns)
+        # Hierarchy, transfers, overlapping replacement and sparse build scratch.
+        # Conservative admission, not a peak-RSS claim; retained sparse bytes are
+        # checked on each build. No extra reservation for an ILU-only plan.
+        self._gmg_allowance=(4096*box.nx*box.nz if compiled and supported(box) and
+            (policy.velocity_preconditioner=='gmg' or
+             (policy.velocity_preconditioner=='auto' and box.nx>=128)) else 0)
+        retained+=self._gmg_allowance
         if policy.method=='direct':retained+=64*box.unknowns**2
         self._guard=self.budget.reserve(retained,category='variable-stokes-retained');self._guard.__enter__()
         self._retained=retained
@@ -370,9 +422,11 @@ class PreparedVariableStokes2D:
             if self._context is not None:self._context.close()
         finally:
             self._context=None;self._op=None;self._factor=None;self._factor_key=None
+            self._gmg_transfers=None;self._factor_kind=None
             self._guard.__exit__(None,None,None)
     def statistics(self):
-        return dict(factor_builds=self._factor_builds,factor_reuses=self._factor_reuses,retained_admitted_bytes=self._retained, approximate_factor_reuses=self._approximate_reuses)
+        return dict(factor_builds=self._factor_builds,factor_reuses=self._factor_reuses,retained_admitted_bytes=self._retained, approximate_factor_reuses=self._approximate_reuses,
+                    multigrid_builds=self._gmg_builds,velocity_preconditioner=self._factor_kind)
 
     def _coefficients(self,c,v):
         if not np.isfinite(c).all() or not np.isfinite(v).all() or min(c.min(),v.min())<=0:
@@ -384,15 +438,33 @@ class PreparedVariableStokes2D:
 
     @contextmanager
     def _preconditioner_request(self,profile):
-        # Bypass known strain-independent laws without allocating history/maps.
-        if self.preconditioner_reuse_policy is None or profile.family!='tosi-plastic':
-            yield
-            return
-        extra=_pr.request_bytes(self.box.nx*self.box.nz,self.policy.max_picard_iterations)
-        with self.budget.reserve(extra,category='preconditioner-reuse-request'):
-            self._reuse_request=_pr._Request(self.preconditioner_reuse_policy)
-            try:yield
-            finally:self._reuse_request=None
+        self._preconditioner_workload=profile.family
+        try:
+            # Bypass strain-independent laws without allocating history/maps.
+            if self.preconditioner_reuse_policy is None or profile.family!='tosi-plastic':
+                yield
+            else:
+                extra=_pr.request_bytes(self.box.nx*self.box.nz,self.policy.max_picard_iterations)
+                with self.budget.reserve(extra,category='preconditioner-reuse-request'):
+                    self._reuse_request=_pr._Request(self.preconditioner_reuse_policy)
+                    try:yield
+                    finally:self._reuse_request=None
+        finally:self._preconditioner_workload=None
+
+    def _velocity_method(self):
+        if self.policy.method=='direct':return 'direct'
+        choice=self.policy.velocity_preconditioner
+        if choice!='auto':return choice
+        from ._velocity_multigrid import supported
+        # Deterministic measured-workload rule, not online duplicate solves or a
+        # timer-dependent scientific decision. Small/constant/unknown workloads
+        # keep ILU. Plasticity requires the measured guarded-reuse configuration.
+        measured_workload=(self._preconditioner_workload=='tosi-linear' or
+            (self._preconditioner_workload=='tosi-plastic' and self._reuse_request is not None and
+             self.anderson_policy is not None and self.adaptive_inner_policy is not None))
+        if supported(self.box) and self.box.nx>=128 and measured_workload:
+            return 'gmg'
+        return 'ilu'
 
     @contextmanager
     def _adaptive_operation(self,profile):
@@ -470,8 +542,10 @@ class PreparedVariableStokes2D:
         self._coefficients(request.cert_c,request.cert_v)
         residual=float(np.linalg.norm(rhs-self._op.matvec(vector)))
         target=self.policy.linear_rtol*float(np.linalg.norm(rhs))
-        if not math.isfinite(residual) or residual>target:
+        request.returned_residual=None
+        if not math.isfinite(residual):
             raise TectonicsError('returned fields fail strict linear certification')
+        if residual>target:raise _PublicationRefinementRequired(residual,target)
         request.returned_residual=residual
 
     def _factorise(self,cancel):
@@ -489,17 +563,27 @@ class PreparedVariableStokes2D:
 
     def _factorise_current(self,cancel):
         op=self._op;key=hashlib.sha256(op.eta_c.tobytes()+op.eta_v.tobytes()).hexdigest()
-        if self._factor_key==key:
+        kind=self._velocity_method()
+        if self._factor_key==key and self._factor_kind==kind:
             self._factor_reuses+=1;return
         _cancel(cancel)
         try:
             if self.policy.method=='direct':factor=splu(op.sparse_reference(),permc_spec='COLAMD')
+            elif kind=='gmg':
+                from ._velocity_multigrid import hierarchy_transfers, GeometricVcycle
+                if self._gmg_transfers is None:
+                    self._gmg_transfers=hierarchy_transfers(op.nx,lambda:_cancel(cancel))
+                factor=GeometricVcycle(op.velocity_matrix(),self._gmg_transfers,lambda:_cancel(cancel))
+                if 2*factor.nbytes>self._gmg_allowance:
+                    raise MemoryLimitError('multigrid hierarchy exceeds admitted retained estimate')
             else:
                 factor=spilu(op.velocity_matrix(),drop_tol=self.policy.ilu_drop_tolerance,
                              fill_factor=self.policy.ilu_fill_factor,permc_spec='COLAMD')
         except RuntimeError as exc:raise TectonicsError('variable viscosity factorisation failed; no direct fallback') from exc
         _cancel(cancel)
         self._factor=factor;self._factor_key=key;self._factor_builds+=1
+        self._factor_kind=kind
+        if kind=='gmg':self._gmg_builds+=1
 
     def _linear(self,rhs,guess,cancel):
         if self._reuse_request is None:
@@ -656,7 +740,14 @@ class PreparedVariableStokes2D:
                         self._adaptive_request.strict_phase=True
                         continue
                     _check_diagnostics(d,self.policy)
-                    return self._publish(vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch_id,time_s,source,cancel,initial_guess=initial_guess)
+                    try:
+                        return self._publish(vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch_id,time_s,source,cancel,initial_guess=initial_guess)
+                    except _PublicationRefinementRequired:
+                        # The actual SI round-trip is the next strict iterate.
+                        # Its fresh solve remains inside the original envelope
+                        # and receives an ordinary linear/nonlinear history row.
+                        ec,ev,_,_=self._law(vector,F,eta,profile,law)
+                        continue
             raise TectonicsError('nonlinear rheology failed within fixed Picard envelope; no endpoint published; residual='+str(history[-1]['momentum_linf']))
 
 
@@ -688,8 +779,14 @@ class PreparedVariableStokes2D:
                     continue
                 _check_diagnostics(d,self.policy)
                 acceleration=_aa.summary(policy,len(history),accepted,rejected)
-                return self._publish(image,rhs,fx,fz,F,eta,profile,T,None,history,epoch,time,source,cancel,
-                                     initial_guess=initial_guess,acceleration=acceleration)
+                try:
+                    return self._publish(image,rhs,fx,fz,F,eta,profile,T,None,history,epoch,time,source,cancel,
+                                         initial_guess=initial_guess,acceleration=acceleration)
+                except _PublicationRefinementRequired:
+                    # A rounded publication attempt is not an Anderson image.
+                    images.clear();errors.clear();vector=image
+                    ec,ev,_,_=self._law(vector,F,eta,profile,law)
+                    continue
             images.append(image.copy());errors.append(image-vector)
             del images[:-policy.depth-1];del errors[:-policy.depth-1]
             if len(images)>=policy.warmup_maps:
@@ -747,6 +844,16 @@ class PreparedVariableStokes2D:
 
     def _publish(self,vector,rhs,fx,fz,F,eta,profile,T,damage,history,epoch,time,source,cancel,*,initial_guess=None,acceleration=None):
         op=self._op;L=self.scales.length_m
+        request=self._adaptive_request
+        if request is not None:
+            # Only representation loss may request another nonlinear iteration.
+            # An already-invalid strict image is a hard failure, not repairable
+            # by this path (and no GMRES failure is caught here).
+            try:self._certify_adaptive_publication(vector,rhs,cancel)
+            except _PublicationRefinementRequired as exc:
+                raise TectonicsError('pre-publication fields fail strict linear certification') from exc
+            internal_residual=request.returned_residual
+            request.returned_residual=None
         u,w,p,_=op.split(vector)
         usi=np.zeros((op.nz,op.nx+1));wsi=np.zeros((op.nz+1,op.nx))
         if F:
@@ -757,7 +864,15 @@ class PreparedVariableStokes2D:
             w[:]=_factored_scale(wsi[1:-1],(eta,),(F,L,L),'returned w normalisation')
             p[:]=_factored_scale(psi,(),(F,L),'returned p normalisation')
         else:psi=np.zeros((op.nz,op.nx))
-        self._certify_adaptive_publication(vector,rhs,cancel)
+        try:self._certify_adaptive_publication(vector,rhs,cancel)
+        except _PublicationRefinementRequired as exc:
+            history[-1]['publication']=dict(status='refine',internal_residual_l2=internal_residual,
+                returned_residual_l2=exc.residual,target_l2=exc.target)
+            raise
+        if request is not None:
+            history[-1]['publication']=dict(status='accepted',internal_residual_l2=internal_residual,
+                returned_residual_l2=request.returned_residual,
+                target_l2=self.policy.linear_rtol*float(np.linalg.norm(rhs)))
         if profile is not None:
             ec,ev,clipc,clipv=self._law(vector,F,eta,profile,self._law_inputs(T,damage))
             self._coefficients(ec,ev)

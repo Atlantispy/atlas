@@ -92,7 +92,7 @@ def _normal_code(code):
 
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
-_IDENTITY_MODULES = ("_validation", "resources", "parameters", "kinematics",
+_IDENTITY_MODULES = ("_velocity_multigrid", "_validation", "resources", "parameters", "kinematics",
                      "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "adaptive_inner", "convection_benchmark")
 
 

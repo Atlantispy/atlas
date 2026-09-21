@@ -1,6 +1,30 @@
-# Current scoped package: 0.1.0.dev40
+# Current scoped package: 0.1.0.dev41
 
-## Current dev40 candidate — thermal accuracy and benchmark assessment
+## Current dev41 — strict publication refinement and selective multigrid
+
+Strict adaptive results that lose sufficient accuracy during SI conversion now
+receive a recorded refinement inside the unchanged nonlinear iteration envelope.
+The actual returned fields must still pass the original strict residual and
+physical gates; invalid internal images and failed linear solves still refuse.
+
+NEW variable-mechanics plans default to `velocity_preconditioner='auto'` (CLI:
+`--velocity-preconditioner auto`). On square power-of-two, isotropic grids from
+128x128, auto uses a fixed geometric velocity V-cycle for Tosi-linear rheology,
+or Tosi-plastic with Anderson, adaptive inner and guarded preconditioner reuse
+all enabled. Smaller, constant, prescribed, unknown or other configurations use
+ILU. Explicit `ilu` and `gmg` remain available for scoped comparisons; explicit
+GMG requires a supported grid >=8x8 and GMRES. No hidden solver fallback.
+
+Bounded Windows coupled trials, including preparation and guarded reuse: case 1
+128x128 saved **0.682812 s / 33.138% per two-step batch**; developed case 2 128x128
+saved **7.401708 s / 28.322% per step**. These are not mature-campaign forecasts.
+The measured smaller 64x64 plastic gain was only 4.098%; it was not promoted as
+an automatic default. Stronger pressure preconditioning remains experimental.
+See [dev41 implementation and focused evidence](evidence/r4-4-dev41-multigrid.md).
+Changed source/policies require NEW runs; no old checkpoint is rebound.
+**R4.4/R4 remain IN_PROGRESS; physical acceptance is unchanged.**
+
+## Predecessor dev40 — thermal accuracy and benchmark assessment
 
 The reviewed adaptive-inner optimisation is also available on NEW nonlinear runs
 with `--adaptive-inner`, optionally combined with `--nonlinear-solver anderson
