@@ -1,0 +1,41 @@
+{
+  "status": "PASS_INDEPENDENT_SCALAR_AGREEMENT",
+  "columns": 65536,
+  "phases": 8,
+  "thermal_phases": 1,
+  "repetitions": 3,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "setup_seconds": 0.02747329999692738,
+  "timings_seconds": {
+    "scalar_reference": [
+      0.29055990010965616,
+      0.28938660002313554,
+      0.2886411000508815
+    ],
+    "batched": [
+      0.008304700022563338,
+      0.007943799952045083,
+      0.00861689995508641
+    ]
+  },
+  "median_scalar_seconds": 0.28938660002313554,
+  "median_batched_seconds": 0.008304700022563338,
+  "saved_seconds": 0.2810819000005722,
+  "saved_percent": 97.13024030072594,
+  "speedup": 34.84612318769982,
+  "max_absolute_difference_by_field": [
+    0.0,
+    0.0,
+    2.842170943040401e-14,
+    3.637978807091713e-12
+  ],
+  "accounted_peak_workspace_bytes": 16785408,
+  "scope": "New kernel versus straightforward scalar equations on identical prepared snapshots. Includes all four accounts. Construction separate. No full terrain, flexure, whole-generator, cache-hit or parallel speed claim.",
+  "source_sha256": {
+    "src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "src/atlas_tectonics/reuse.py": "54c149f26c46ce42e319dd1cb094949d53196574dcaf35d755bc02faa3907405",
+    "tools/benchmark_w04_loads.py": "c37fbf1c1621dc46b29d84642dd2cb863885a9d752a07f902fc0f7e2ad1462d5"
+  }
+}

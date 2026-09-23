@@ -10,7 +10,7 @@ import hashlib
 import json
 import numpy as np
 from ._validation import snapshot, scalar, TectonicsError
-from .materials import _name, _json, _immutable_bytes
+from .materials import _name, _json, _immutable_bytes, _end_time
 from .mesh import ColumnGrid1D
 from .resources import select_budget
 from .regional import _cancelled
@@ -59,9 +59,8 @@ def move_material_markers(markers,source,target,duration_s,*,budget=None,cancel=
         raise TectonicsError('typed markers and source/target meshes required')
     if source.cells!=target.cells or source.frame_id!=target.frame_id or source.frame_id!=markers.frame_id:
         raise TectonicsError('material map needs corresponding faces in the same frame')
-    dt=scalar(duration_s,'duration',nonnegative=True);end=scalar(markers.time_s+dt,'end time')
+    dt=scalar(duration_s,'duration',nonnegative=True);end=_end_time(markers,dt)
     if dt==0 and source!=target:raise TectonicsError('nonzero material motion needs nonzero time')
-    if dt>0 and end<=markers.time_s:raise TectonicsError('unresolvable marker interval')
     with select_budget(budget).reserve(64*len(markers.marker_ids)+4096,category='marker-motion'):
         from ._mesh_native import mapped_points
         try:

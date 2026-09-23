@@ -1,0 +1,19 @@
+{
+  "schema": "atlas.w05-support-case.v1",
+  "status": "WORKING NON-CANON SYNTHETIC",
+  "motion_case": "w05_motion.json",
+  "motion_case_sha256": "dd7d15a03096ba7eb993d28bc24ac3899a1dff6883f4e8c5b1ec4490d804151f",
+  "young_modulus_pa": 70000000000.0,
+  "elastic_thickness_m": 5000.0,
+  "poisson_ratio": 0.25,
+  "mantle_density_kg_m3": 3300.0,
+  "gravity_m_s2": 9.81,
+  "max_abs_displacement_m": 1000.0,
+  "max_abs_slope": 0.1,
+  "max_bending_strain": 0.01,
+  "max_omitted_displacement_m": 0.01,
+  "smooth_reference_error_m": 1.0,
+  "reference_uncertainty_m": 0.01,
+  "matched_convolution_atol_m": 1e-10,
+  "note": "Frozen step-1 support subset. Step 3 verifies component coupling, not combined W05 acceptance or empirical landscape validation."
+}

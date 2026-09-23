@@ -4,16 +4,35 @@ Vibe-coded with OpenAI ChatGPT/Codex under the owner's direction.
 No imports, migration or replacement of historical Atlas implementations.
 """
 from ._validation import TectonicsError
-from .parameters import FlexureParameters, PeriodicGrid1D, ThermalParameters, identity
+from .parameters import FlexureParameters, PeriodicGrid1D, ThermalParameters, PlateCoolingParameters, identity
 from .kinematics import BoundaryMotion, Rotation, boundary_motion, rigid_velocity
 from .transport import TransportResult, advect_thickness
 from .thermal import half_space_temperature
+from .plate_cooling import (finite_plate_temperature, plate_cooling_heat,
+                            ThermalAgeColumns, plate_cooling_columns)
+from .thermal_support import (ThermalSupportParameters, thermal_density,
+    thermal_column_response, plate_thermal_response, ThermalSupportColumns,
+    thermal_support_columns)
+from .compaction import CompactionParameters, compaction_response
+from .compaction_columns import (GrainComponent, CompactionParcel, DrainedCompactionConditions,
+    CompactionState, CompactionTransition, compaction_geometry, advance_compaction,
+    compaction_from_geological_column, save_compaction_state, load_compaction_state)
 from .flexure import PeriodicFlexure
+from .column_loads import LoadSupport, LoadPhase, ColumnLoadState, column_load_change
 
 __version__ = "0.1.0.dev42"
 __all__ = ["TectonicsError", "FlexureParameters", "PeriodicGrid1D", "ThermalParameters",
            "identity", "BoundaryMotion", "Rotation", "boundary_motion", "rigid_velocity",
            "TransportResult", "advect_thickness", "half_space_temperature", "PeriodicFlexure"]
+__all__ += ['PlateCoolingParameters', 'finite_plate_temperature', 'plate_cooling_heat',
+            'ThermalAgeColumns', 'plate_cooling_columns']
+__all__ += ['ThermalSupportParameters', 'thermal_density', 'thermal_column_response',
+            'plate_thermal_response', 'ThermalSupportColumns', 'thermal_support_columns']
+__all__ += ['CompactionParameters', 'compaction_response', 'GrainComponent', 'CompactionParcel',
+    'DrainedCompactionConditions', 'CompactionState', 'CompactionTransition',
+    'compaction_geometry', 'advance_compaction', 'compaction_from_geological_column',
+    'save_compaction_state', 'load_compaction_state']
+__all__ += ['LoadSupport', 'LoadPhase', 'ColumnLoadState', 'column_load_change']
 
 from .regional import (RegionalGrid1D, TransportBoundary, RegionalTransportResult,
                        TransportStepLimit, advect_regional, transport_timestep_limit)
@@ -181,3 +200,84 @@ __all__ += ["MotionReductionError", "PrescribedPlateMotion", "PlanarRegionalSect
             "SphericalRegionalSection", "RegionalReduction", "RegionalMotionDefinition",
             "SectionMotionSamples", "RegionalFaceForcing", "PreparedRegionalForcing",
             "save_regional_forcing", "load_regional_forcing"]
+
+# W01 Stage 7: source-bound initialisation and bounded cohort transport.
+from .regional_workflow_geometry import RegionalColumnSupport
+from .regional_workflow import (PoreFluidCohort, RegionalWorkflowState,
+    PreparedRegionalWorkflow, save_regional_workflow, load_regional_workflow)
+__all__ += ["RegionalColumnSupport", "PoreFluidCohort", "RegionalWorkflowState",
+            "PreparedRegionalWorkflow", "save_regional_workflow", "load_regional_workflow"]
+
+from .w03_workflow import (W03ExecutionContext, W03ThermalBinding, W03ColumnState, initialise_w03_columns,
+    advance_w03_columns, evolve_w03_columns, save_w03_columns, load_w03_columns)
+__all__ += ["W03ExecutionContext", "W03ThermalBinding", "W03ColumnState", "initialise_w03_columns",
+            "advance_w03_columns", "evolve_w03_columns", "save_w03_columns", "load_w03_columns"]
+
+from .finite_flexure import FiniteRegionFlexure, FlexureBoundary1D
+from .variable_flexure import RigidityProfile1D, VariableFlexureAccuracy, VariableRigidityFlexure
+__all__ += ['RigidityProfile1D','VariableFlexureAccuracy','VariableRigidityFlexure']
+from .w04_workflow import (W04SurfaceInputs, W04ExteriorLoads, W04SupportPolicy, W04SupportResult,
+                          PreparedW04Support, project_w04_support)
+__all__ += ["FiniteRegionFlexure", "FlexureBoundary1D", "W04SurfaceInputs", "W04ExteriorLoads", "W04SupportPolicy", "W04SupportResult",
+            "PreparedW04Support", "project_w04_support"]
+
+from .extension import ListricGeometry, hangingwall_cell_means, PreparedListricExtension, ExtensionState
+__all__ += ['ListricGeometry', 'hangingwall_cell_means', 'PreparedListricExtension', 'ExtensionState']
+from .extension_support import (ExtensionSupportPolicy, PreparedExtensionSupport,
+                                ExtensionSupportResult, ContinuousCellMeanFlexure)
+__all__ += ['ExtensionSupportPolicy', 'PreparedExtensionSupport',
+            'ExtensionSupportResult', 'ContinuousCellMeanFlexure']
+from .extension_workflow import PreparedExtensionWorkflow, ExtensionWorkflowCheckpoint
+__all__ += ['PreparedExtensionWorkflow', 'ExtensionWorkflowCheckpoint']
+
+from .spreading import (RidgeMotion, SpreadingPhase, BirthStrip, SpreadingState,
+                        ridge_cell_geometry, PreparedRidgeSpreading)
+__all__ += ['RidgeMotion', 'SpreadingPhase', 'BirthStrip', 'SpreadingState',
+            'ridge_cell_geometry', 'PreparedRidgeSpreading']
+
+from .spreading_integrals import spreading_thermal_means
+from .spreading_cooling import (OceanCoolingParameters, ThermalExport,
+                               SpreadingThermalState, PreparedSpreadingCooling)
+__all__ += ['spreading_thermal_means', 'OceanCoolingParameters', 'ThermalExport',
+            'SpreadingThermalState', 'PreparedSpreadingCooling']
+
+from .margin_cooling import PreparedMarginCooling, MarginThermalResult, MarginSupportResult
+__all__ += ['PreparedMarginCooling', 'MarginThermalResult', 'MarginSupportResult']
+
+from .spreading_history import (PlateReassignment, RidgeHistoryEvent, HistoryBirthStrip,
+    HistoryExport, HistorySpreadingState, PreparedSpreadingHistory)
+from .spreading_history_cooling import (HistoryThermalExport, HistoryThermalState,
+    PreparedHistoryCooling)
+__all__ += ['PlateReassignment', 'RidgeHistoryEvent', 'HistoryBirthStrip', 'HistoryExport',
+            'HistorySpreadingState', 'PreparedSpreadingHistory', 'HistoryThermalExport',
+            'HistoryThermalState', 'PreparedHistoryCooling']
+
+from .w06_workflow import MarginWorkflowPolicy, W06WorkflowCheckpoint, PreparedW06Workflow
+__all__ += ['MarginWorkflowPolicy', 'W06WorkflowCheckpoint', 'PreparedW06Workflow']
+
+# W07 step 2: source-bound steady regional mechanics, not geological evolution.
+from .regional_execution import (RegionalMechanicsScales, RegionalReferencePressure,
+    RegionalMechanicalSnapshot, PreparedRegionalStokes2D)
+__all__ += ['RegionalMechanicsScales', 'RegionalReferencePressure',
+            'RegionalMechanicalSnapshot', 'PreparedRegionalStokes2D']
+
+from .regional_transport import (RectangularTransportGrid, HeatBoundary,
+    PreparedHeatTransport, MaterialRegion2D, translate_material_regions)
+from .regional_rheology import RegionalRheologyResult, solve_regional_rheology
+from .regional_thermomechanical import (RegionalThermalBodyForce,
+    RegionalThermomechanicalResult, temperature_stress_sites, advance_regional_thermomechanics)
+__all__ += ['RectangularTransportGrid','HeatBoundary','PreparedHeatTransport',
+    'MaterialRegion2D','translate_material_regions','RegionalRheologyResult',
+    'solve_regional_rheology','RegionalThermalBodyForce','RegionalThermomechanicalResult',
+    'temperature_stress_sites','advance_regional_thermomechanics']
+
+from .regional_strength import DryStrengthProfile, RegionalStrengthResult, evaluate_dry_strength, solve_regional_strength
+from .free_surface import PreparedFreeSurface2D, FreeSurfaceAdvance
+__all__ += ['DryStrengthProfile','RegionalStrengthResult','evaluate_dry_strength',
+    'solve_regional_strength','PreparedFreeSurface2D','FreeSurfaceAdvance']
+
+from .regional_geology import (GeologicalMaterialLaw, RegionalPhysicsOwnership,
+    RegionalGeologicalInputs, bind_regional_geology)
+from .w07_workflow import W07BoundaryMotion, W07WorkflowOutput, PreparedW07Workflow
+__all__ += ['GeologicalMaterialLaw','RegionalPhysicsOwnership','RegionalGeologicalInputs',
+    'bind_regional_geology','W07BoundaryMotion','W07WorkflowOutput','PreparedW07Workflow']

@@ -1,0 +1,44 @@
+{
+  "status": "PASS_MATCHED_CELL_LOADS_AND_ALL_DERIVATIVES",
+  "cells": 2048,
+  "length_m": 400000.0,
+  "calls_per_repeat": 12,
+  "repetitions": 3,
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "timings_seconds": {
+    "direct_cell_superposition": [
+      0.10142149997409433,
+      0.10095150000415742,
+      0.10143439995590597
+    ],
+    "prepared_linear_fft": [
+      0.011561500024981797,
+      0.010139699908904731,
+      0.01074910000897944
+    ]
+  },
+  "median_direct_seconds": 0.10142149997409433,
+  "median_fft_seconds": 0.01074910000897944,
+  "saved_seconds": 0.09067239996511489,
+  "saved_percent": 89.40155685754496,
+  "speedup": 9.435348065360838,
+  "per_solve_direct_seconds": 0.00845179166450786,
+  "per_solve_fft_seconds": 0.00089575833408162,
+  "direct_setup_seconds": 0.0012859998969361186,
+  "fft_setup_seconds": 0.001994500053115189,
+  "prepared_fft_storage_bytes": 524352,
+  "maximum_absolute_error": [
+    1.8214596497756474e-17,
+    5.029258124322408e-22,
+    2.261821987449685e-26,
+    1.7749370367472766e-30
+  ],
+  "comparison_tolerance": "max abs error per derivative <= 5e-13 * that derivative max abs direct response",
+  "scope": "New uniform finite-region kernel only; identical cell pressures and face/centre w,w1,w2,w3. Precomputed integrated kernel for both. Explicit zero far-field changes. Input validation, memory admission and immutable output included. No cache hits/workers, no W03 evolution/source checks or full terrain. Not an old-release or whole-generator speed claim.",
+  "source_sha256": {
+    "src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "tools/benchmark_w04_finite_region.py": "0ded01aa06f1c464c4bafe4d82d634e9d10cdebdf7a86f496e8fe259a9d30f02"
+  }
+}

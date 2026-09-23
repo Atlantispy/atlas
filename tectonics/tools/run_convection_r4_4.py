@@ -28,6 +28,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT/'src'))
+sys.path.insert(0, str(ROOT/'tools'))
 import numpy as np
 import atlas_tectonics as atlas
 from atlas_tectonics.resources import WorkBudget
@@ -68,6 +69,9 @@ def safe_path(path):
 
 def source_record():
     safe_path(ROOT)
+    import tosi_case5b_reference
+    specification=json.loads((ROOT/'cases/convection_r4_4.json').read_bytes())
+    _,reference_sha=tosi_case5b_reference.load_reference(specification)
     inventory = {}
     for p in sorted((ROOT/'src').rglob('*')):
         safe_path(p)
@@ -75,7 +79,9 @@ def source_record():
             raise ValueError('pre-existing bytecode is refused')
         if p.is_file(): inventory[p.relative_to(ROOT).as_posix()] = digest(p.read_bytes())
     return dict(source=inventory, runner=digest(Path(__file__).read_bytes()),
-                case_specification=digest((ROOT/'cases/convection_r4_4.json').read_bytes()))
+                case_specification=digest((ROOT/'cases/convection_r4_4.json').read_bytes()),
+                case5b_reference=reference_sha,
+                case5b_comparator=digest((ROOT/'tools/tosi_case5b_reference.py').read_bytes()))
 
 
 class Cancellation:

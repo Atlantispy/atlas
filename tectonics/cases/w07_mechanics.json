@@ -1,0 +1,547 @@
+{
+  "schema": "atlas.w07-mechanics-design.v1",
+  "case_id": "W07-regional-mechanics-design-1",
+  "source_status": "WORKING NON-CANON",
+  "status": "DESIGN_COMPLETE_IMPLEMENTATION_PENDING",
+  "frozen_design": {
+    "path": "docs/W07_REGIONAL_MECHANICS.md",
+    "sha256": "1748c9e2bd43f71ad0ce65fb9d68343d3f1379570f1b2b74882b85fa2c644378"
+  },
+  "step": 1,
+  "authorised_output": "Model and benchmark specification only",
+  "acceptance": {
+    "design_complete": true,
+    "regional_implementation_complete": false,
+    "benchmark_executed": false,
+    "backend_comparison_executed": false,
+    "physical_validation": false,
+    "W07_complete": false,
+    "R4_4_status": "HELD_INCOMPLETE"
+  },
+  "model": {
+    "dimension": 2,
+    "kinematics": "plane_strain",
+    "regime": "incompressible_inertia_free",
+    "initial_material": "constant_newtonian",
+    "coordinates": "x_right_z_up",
+    "stress": "sigma=-P*I+2*eta*D",
+    "momentum": "-div(2*eta*D)+grad(pi)=(rho_b-rho_ref)*g+f_external",
+    "continuity": "div(v)=0",
+    "pressure": "P=P_ref+pi; datum and numerical gauge are distinct",
+    "surface_choice": "true_body_fitted_ALE_in_step_4",
+    "localisation": "requires independent physical length and mesh/time evidence before claim"
+  },
+  "discretisation": {
+    "first_candidate": "structured_MAC_full_symmetric_stress",
+    "comparator": "Q2_P1_discontinuous_mixed_FE",
+    "winner": "PENDING_MATCHED_ERROR_COMPARISON",
+    "comparison_mac_grids": [
+      4,
+      8,
+      16
+    ],
+    "comparison_fe_elements": [
+      2,
+      4,
+      8
+    ],
+    "comparison": "same continuum fields/boundaries, common independent quadrature; no raw DOF comparison"
+  },
+  "numerical_gates": {
+    "dtype": "binary64",
+    "fast_math": false,
+    "linear_rtol": 1e-12,
+    "scaled_momentum_max": 1e-9,
+    "scaled_divergence_max": 1e-10,
+    "scaled_gauge_max": 1e-12,
+    "scaled_work_max": 1e-9,
+    "nonlinear_log_viscosity_change_max": 1e-8,
+    "normalisation": "declared characteristic and separate body/boundary scales; no near-zero net-load division",
+    "old_thresholds": "never relaxed"
+  },
+  "resource_plan": {
+    "work_budget_bytes": 134217728,
+    "numerical_threads": 1,
+    "max_accepted_intervals": 256,
+    "direct_memory_admission": "existing 64*N^2 plus linear allowance; reference is explicitly selected, not fallback",
+    "runtime_cap_claim": false,
+    "process_RSS_cap": false,
+    "large_simulation_authorised": false,
+    "initial_workloads": "steady snapshots and bounded analytical transients"
+  },
+  "benchmarks": [
+    {
+      "id": "B00",
+      "name": "hydrostatic_pressure_and_datum",
+      "step": 2,
+      "domain": [
+        2,
+        3
+      ],
+      "grids": [
+        [
+          8,
+          8
+        ],
+        [
+          16,
+          16
+        ]
+      ],
+      "input": {
+        "eta": 1,
+        "body_force": [
+          0,
+          -7
+        ],
+        "top_pressure_for_traction_variant": 2
+      },
+      "oracle": "mean-zero pi=-7*(z-1.5), v=0; top-traction P=2+7*(3-z)",
+      "gates": {
+        "scaled_field_max_error": 1e-9
+      },
+      "variants": [
+        "closed_free_slip_mean_zero",
+        "top_normal_traction_physical_pressure",
+        "explicit_background_pressure_no_double_force"
+      ]
+    },
+    {
+      "id": "B01",
+      "name": "retained_continuous_manufactured_fields",
+      "step": 2,
+      "case_refs": [
+        "stokes_r4_1.json",
+        "variable_stokes_r4_3.json"
+      ],
+      "variable_operator_step": 3,
+      "grids": [
+        [
+          8,
+          8
+        ],
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ]
+      ],
+      "unequal_spacing_grids": [
+        [
+          16,
+          8
+        ],
+        [
+          32,
+          16
+        ],
+        [
+          64,
+          32
+        ]
+      ],
+      "oracle": "Retained analytic sine streamfunction and independently varying pressure; exponential-viscosity variant includes coefficient derivatives.",
+      "gates": {
+        "old_case_thresholds": "UNCHANGED",
+        "reuse_rule": "Existing evidence only when exact affected code, case, dependency, configuration and execution bindings remain valid."
+      }
+    },
+    {
+      "id": "B02",
+      "name": "no_slip_polynomial_vortex",
+      "step": 2,
+      "domain": [
+        1,
+        1
+      ],
+      "grids": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          64,
+          64
+        ]
+      ],
+      "input": {
+        "eta": 1,
+        "A_coefficients_ascending": [
+          0,
+          0,
+          1,
+          -2,
+          1
+        ],
+        "pressure_terms": [
+          [
+            1,
+            3,
+            0
+          ],
+          [
+            1,
+            0,
+            3
+          ],
+          [
+            -0.5,
+            0,
+            0
+          ]
+        ]
+      },
+      "oracle": "u=A(x)*A'(z);w=-A'(x)*A(z);pi=x^3+z^3-1/2;f=grad(pi)-laplacian(v)",
+      "boundary": "exact zero velocity on all four walls; mean-zero pressure",
+      "gates": {
+        "velocity_relative_l2_max": 0.01,
+        "pressure_relative_l2_max": 0.01,
+        "min_successive_refinement_ratio": 3.2
+      }
+    },
+    {
+      "id": "B03",
+      "name": "affine_extension_and_translation",
+      "step": 2,
+      "domain": [
+        2,
+        1
+      ],
+      "grids": [
+        [
+          8,
+          4
+        ],
+        [
+          16,
+          8
+        ]
+      ],
+      "input": {
+        "eta": 1,
+        "strain_rate": 1,
+        "translation": [
+          0.3,
+          -0.2
+        ]
+      },
+      "oracle": "u=x-1,w=-(z-0.5),pi=0;D=diag(1,-1);tau=diag(2,-2);dissipation=boundary_work=8",
+      "boundary": "full exact Dirichlet; integrated outward volume flux zero",
+      "gates": {
+        "scaled_field_max_error": 1e-9
+      },
+      "variants": [
+        "untranslated",
+        "translated",
+        "unbalanced_flux_refusal"
+      ]
+    },
+    {
+      "id": "B04",
+      "name": "mixed_traction_couette",
+      "step": 2,
+      "domain": [
+        1,
+        1
+      ],
+      "grids": [
+        [
+          8,
+          8
+        ],
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ]
+      ],
+      "input": {
+        "eta": 1,
+        "top_traction": [
+          1,
+          -2
+        ],
+        "body_force": [
+          0,
+          0
+        ]
+      },
+      "oracle": "u=z,w=0,P=2,tau_xz=1;dissipation=boundary_work=1",
+      "boundary": "bottom zero velocity; exact velocity on sides; full top traction; no mean-pressure gauge",
+      "gates": {
+        "scaled_field_max_error": 1e-9
+      }
+    },
+    {
+      "id": "B05",
+      "name": "nullspaces_and_incompatible_boundaries",
+      "step": 2,
+      "grids": [
+        [
+          4,
+          4
+        ],
+        [
+          8,
+          8
+        ]
+      ],
+      "variants": [
+        "pure_traction_translation_rotation_modes_with_explicit_constraints",
+        "unconstrained_rigid_modes_refusal",
+        "incompatible_net_force_or_torque_refusal",
+        "zero_strain_rigid_rotation_with_prescribed_velocity",
+        "checkerboard_is_not_pressure_nullspace",
+        "conflicting_velocity_traction_component_refusal"
+      ],
+      "gates": {
+        "scaled_zero_strain_max": 1e-9
+      }
+    },
+    {
+      "id": "B06",
+      "name": "independent_viscosity_interfaces",
+      "step": 3,
+      "domain": [
+        1,
+        1
+      ],
+      "grids": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          64,
+          64
+        ]
+      ],
+      "unaligned_solcx_grids": [
+        [
+          17,
+          17
+        ],
+        [
+          33,
+          33
+        ],
+        [
+          65,
+          65
+        ]
+      ],
+      "layered": {
+        "interfaces": [
+          0.5,
+          0.37
+        ],
+        "eta_bottom": 1,
+        "eta_top": 1000,
+        "u_bottom": 0,
+        "u_top": 1,
+        "oracle": "tau=1/(a+(1-a)/1000);u=tau*z below a,tau*(a+(z-a)/1000) above;w=0;explicit top physical pressure=10",
+        "boundary": "bottom/top imposed velocity, side exact traces; physical pressure datum separate",
+        "coefficient_support": "exact compliance integral over each shear-control interval crossing the horizontal material interface, not a hidden arithmetic mean"
+      },
+      "solcx": {
+        "gravity": [
+          0,
+          -1
+        ],
+        "density": "sin(pi*x)*cos(pi*z)",
+        "eta_left": 1,
+        "eta_right": 1000000,
+        "interface_x": 0.5,
+        "boundary": "all free-slip; zero domain-mean pressure",
+        "reference": "ASPECT documented corrected-sign analytic solution, independently implemented and source-bound before use"
+      },
+      "gates": {
+        "layer_velocity_relative_l2_max": 0.01,
+        "layer_integrated_work_relative_error_max": 0.01,
+        "solcx_velocity_relative_l2_max": 0.02,
+        "solcx_pressure_relative_l2_max": 0.05,
+        "discontinuous_pressure_order": "not prescribed; errors must decrease"
+      }
+    },
+    {
+      "id": "B07",
+      "name": "thermal_material_and_ALE_transport",
+      "step": 3,
+      "domain": [
+        1,
+        1
+      ],
+      "grids": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          64,
+          64
+        ]
+      ],
+      "input": {
+        "U": 1,
+        "kappa": 0.01,
+        "k": "2*pi",
+        "T0": 1,
+        "amplitude": 0.1,
+        "final_time": 0.1
+      },
+      "oracle": "T=T0+A*exp(-kappa*k^2*t)*cos(k*(x-U*t)); exact matching inflow/outflow/thermal boundary traces",
+      "material_oracle": "exact translated region intersections and named finite boundary inventories",
+      "variants": [
+        "fixed_grid",
+        "prescribed_ALE_mesh_motion"
+      ],
+      "gates": {
+        "temperature_perturbation_relative_l2_max": 0.01,
+        "scaled_storage_flux_residual_max": 1e-9,
+        "convergence": "decreasing separate spatial and temporal errors; maximum principle"
+      }
+    },
+    {
+      "id": "B08",
+      "name": "pressure_sensitive_material_point",
+      "step": 4,
+      "input": {
+        "cohesion": 2,
+        "friction_angle": "pi/6",
+        "physical_pressure": 10,
+        "pore_pressure": 0,
+        "creep_viscosity": 100,
+        "tensile_strength": 0
+      },
+      "oracle": "tau_y=C*cos(phi)+P_effective*sin(phi);eta_eff=min(eta_creep,tau_y/(2*eII));eta_eff=eta_creep at eII=0",
+      "variants": [
+        "low_rate_creep",
+        "yielding",
+        "zero_rate",
+        "gauge_change_same_physical_pressure",
+        "changed_physical_pressure",
+        "tension_refusal",
+        "viscosity_envelope_refusal"
+      ],
+      "gates": {
+        "material_law_relative_or_scaled_absolute_error_max": 1e-10
+      },
+      "not_claimed": "physical localisation width or strain-weakening law"
+    },
+    {
+      "id": "B09",
+      "name": "finite_depth_free_surface_relaxation",
+      "step": 4,
+      "domain": [
+        2,
+        1
+      ],
+      "grids": [
+        [
+          16,
+          8
+        ],
+        [
+          32,
+          16
+        ],
+        [
+          64,
+          32
+        ]
+      ],
+      "input": {
+        "eta": 1,
+        "rho_times_g": 1,
+        "k": "pi",
+        "initial_amplitudes": [
+          0.0001,
+          0.00005
+        ],
+        "surface_tension": 0
+      },
+      "boundary": "no-slip bottom, free-slip sides, material traction-free top; flat reference height zero with bottom -H",
+      "oracle": "h=a*exp(-gamma*t)*cos(k*x);gamma=(rho*g)/(2*eta*k)*(sinh(2*k*H)-2*k*H)/(cosh(2*k*H)+1+2*(k*H)^2)",
+      "output_gamma_times": [
+        0,
+        0.25,
+        0.5,
+        1
+      ],
+      "accepted_step_counts": [
+        16,
+        32,
+        64
+      ],
+      "gates": {
+        "finest_relative_amplitude_error_max": 0.01,
+        "scaled_volume_residual_max": 1e-9,
+        "convergence": "decreasing separate mesh and time errors; amplitude-halving distinguishes linearisation"
+      },
+      "reference_check": "independent traction BVP; reject sign-inconsistent printed evolution equation; gamma positive, correct thin/deep limits"
+    }
+  ],
+  "performance_plan": {
+    "repeats": 3,
+    "order": "rotating",
+    "metrics": [
+      "setup_seconds",
+      "coefficient_seconds",
+      "preconditioner_seconds",
+      "solve_seconds",
+      "diagnostics_seconds",
+      "storage_seconds",
+      "end_to_end_seconds",
+      "unknown_count",
+      "iterations",
+      "error",
+      "peak_accounted_bytes"
+    ],
+    "modes": [
+      "cold",
+      "prepared_repeated_rhs",
+      "verified_reuse",
+      "partial_restart_when_workflow_exists"
+    ],
+    "acceptance": "matched physical output and error; no speedup percentage claimed by this design"
+  },
+  "implementation_gaps": [
+    "regional velocity/traction boundary conditions and rigid-mode handling",
+    "physical pressure datum and full stress/traction output",
+    "source-bound geological-state to force/stress-site viscosity mapping",
+    "compatible open/moving-domain thermal and material transport",
+    "true ALE metrics/surface evolution",
+    "new pressure-sensitive constitutive family and separately gated localisation"
+  ],
+  "reuse_sources": [
+    "src/atlas_tectonics/stokes.py",
+    "src/atlas_tectonics/stokes_execution.py",
+    "src/atlas_tectonics/variable_stokes.py",
+    "src/atlas_tectonics/variable_stokes_execution.py",
+    "src/atlas_tectonics/_mechanics_native.py",
+    "src/atlas_tectonics/_velocity_multigrid.py",
+    "src/atlas_tectonics/preconditioner_reuse.py",
+    "src/atlas_tectonics/constitutive.py",
+    "src/atlas_tectonics/reuse.py",
+    "src/atlas_tectonics/resources.py",
+    "src/atlas_tectonics/storage.py"
+  ]
+}

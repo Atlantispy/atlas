@@ -1,0 +1,134 @@
+{
+  "status": "PASS_W05_STEP_3_COMPONENTS",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "numerical_threads": 1,
+  "accuracy": [
+    {
+      "dx_m": 500,
+      "cells": 800,
+      "point_probes": 84,
+      "max_point_w_error_m": 0.01620816004583503,
+      "mean_probes": 9,
+      "max_mean_w_error_m": 0.01615246627528677,
+      "max_reference_uncertainty_m": 1.3528259096574324e-7,
+      "surface_min_m": -739.187999594872,
+      "surface_max_m": 180.67800860137058,
+      "max_mean_vs_centre_difference_m": 0.00812609856745894,
+      "exterior_right_bound_pa": 0.001090573996201732,
+      "omitted_response_bounds": [
+        2.3820846634539862e-8,
+        1.9133263262133905e-12,
+        1.5368125603365836e-16
+      ],
+      "continuous_validity_bounds": [
+        218.37941614879327,
+        0.008385349966035923,
+        8.522914402527008e-7
+      ],
+      "max_bending_strain_bound": 0.002130728600631752
+    },
+    {
+      "dx_m": 250,
+      "cells": 1600,
+      "point_probes": 84,
+      "max_point_w_error_m": 0.004051991906266039,
+      "mean_probes": 9,
+      "max_mean_w_error_m": 0.004045823916356994,
+      "max_reference_uncertainty_m": 1.3528259096574324e-7,
+      "surface_min_m": -751.4229843553578,
+      "surface_max_m": 181.43267309193084,
+      "max_mean_vs_centre_difference_m": 0.0020323715400820674,
+      "exterior_right_bound_pa": 0.001090573996201732,
+      "omitted_response_bounds": [
+        2.3820846634539862e-8,
+        1.9133263262133905e-12,
+        1.5368125603365836e-16
+      ],
+      "continuous_validity_bounds": [
+        212.87306352991897,
+        0.00794260082269461,
+        8.169649821211385e-7
+      ],
+      "max_bending_strain_bound": 0.002042412455302846
+    },
+    {
+      "dx_m": 125,
+      "cells": 3200,
+      "point_probes": 84,
+      "max_point_w_error_m": 0.0010129949615418354,
+      "mean_probes": 9,
+      "max_mean_w_error_m": 0.0010122725990697745,
+      "max_reference_uncertainty_m": 1.3528259096574324e-7,
+      "surface_min_m": -757.6205781282023,
+      "surface_max_m": 181.80434812226113,
+      "max_mean_vs_centre_difference_m": 0.0005081157078166143,
+      "exterior_right_bound_pa": 0.001090573996201732,
+      "omitted_response_bounds": [
+        2.3820846634539862e-8,
+        1.9133263262133905e-12,
+        1.5368125603365836e-16
+      ],
+      "continuous_validity_bounds": [
+        210.06299627841483,
+        0.007716858720917942,
+        7.988662793473534e-7
+      ],
+      "max_bending_strain_bound": 0.0019971656983683835
+    }
+  ],
+  "domain_crop_surface_difference_m": 6.59916565837193e-13,
+  "direct_fft_max_mean_error_m": 8.526512829121202e-14,
+  "cell_mean_kernel_timing": {
+    "calls_per_repeat": 12,
+    "baseline_seconds": [
+      0.013878800091333687,
+      0.013806600007228553,
+      0.013764600036665797
+    ],
+    "prepared_seconds": [
+      0.0016364000039175153,
+      0.0015788000309839845,
+      0.0017019999213516712
+    ],
+    "baseline_median_seconds": 0.013806600007228553,
+    "prepared_median_seconds": 0.0016364000039175153,
+    "saved_seconds": 0.012170200003311038,
+    "saved_percent": 88.1476974558489,
+    "speedup": 8.437179158015018
+  },
+  "three_output_projection_timing": {
+    "calls_per_repeat": 1,
+    "baseline_seconds": [
+      0.5016300000716001,
+      0.5330464999424294,
+      0.48652610008139163
+    ],
+    "prepared_seconds": [
+      0.3087595999240875,
+      0.3251474000280723,
+      0.35321749991271645
+    ],
+    "baseline_median_seconds": 0.5016300000716001,
+    "prepared_median_seconds": 0.3251474000280723,
+    "saved_seconds": 0.17648260004352778,
+    "saved_percent": 35.18182724684281,
+    "speedup": 1.5427772143596743
+  },
+  "one_support_preparation_seconds": 0.05187999992631376,
+  "reused_sequence_plus_one_setup_seconds": 0.37702739995438606,
+  "retained_operator_bytes": 1179728,
+  "scope": "Three frozen grids with 81-84 point and 9 mean probes each; full-domain validity envelopes. Matched cell means compare identical cell-constant loads, exact precomputed weights, direct versus linear FFT. Projection compares rebuilding with reusing support geometry on identical three material states; load snapshots, identity and budget checks included. Common material-generation cost excluded. No external package or field validation; combined W05 acceptance remains a later step.",
+  "source_sha256": {
+    "cases/w05_support.json": "16f92c7a91089f98e327c06c945d06fcb72b40bfe9f1f484ed6584058742a575",
+    "cases/w05_motion.json": "dd7d15a03096ba7eb993d28bc24ac3899a1dff6883f4e8c5b1ec4490d804151f",
+    "tools/benchmark_w05_support.py": "fb515d62896d2a7aeab35d7c1d5b8aa448295b16465672f3b4d885963c43e3de",
+    "tests/w05_support_reference.py": "b9b6bafee5c36378e548faa99c52a9de4e1679f693be4d289cbb95afa9c9cbc3",
+    "src/atlas_tectonics/extension_support.py": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8",
+    "src/atlas_tectonics/reuse.py": "2027a9a65197e8e55f585e453024c6e69fda2a07d288c2610a2a42674890d591",
+    "src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067"
+  }
+}

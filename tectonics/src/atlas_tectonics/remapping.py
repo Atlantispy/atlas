@@ -17,6 +17,41 @@ from .materials import (MaterialState, MaterialBoundary, MaterialTransportResult
     _json, _immutable_bytes, _hash_array, _account, _backend, _end_time, _state_work_bytes)
 
 
+# Existing local-field verification tolerance in cases/w02_completion.json.
+# This geometry admission bound does not replace the tighter inventory accounts.
+_GEOMETRY_RTOL = 1e-12
+
+
+def _ale_geometry(grid,w,dt,*,budget=None):
+    """Refuse materially rounded motion without changing the requested velocity.
+
+    Scale by adjacent cell widths, never the absolute coordinate origin. A
+    displacement-relative check alone would reject harmless small movements;
+    a width-only check would miss an incorrectly rounded rigid translation.
+    Use the same guard on execution and restoration, including cached results.
+    """
+    with select_budget(budget).reserve(96*(grid.cells+1)+4096,category='ale-geometry'):
+        try:
+            with np.errstate(over='raise',invalid='raise',divide='raise'):
+                x=grid.edges_m;displacement=dt*w;edges=x+displacement
+                target=ColumnGrid1D(edges,frame_id=grid.frame_id,budget=budget)
+                if dt>0 and np.any((w!=0)&(edges==x)):
+                    raise TectonicsError('mesh motion is unresolvable at this coordinate magnitude')
+                before=grid.widths_m;after=target.widths_m
+                scale=np.minimum(before,after)
+                face_scale=np.empty(grid.cells+1)
+                face_scale[0]=scale[0];face_scale[-1]=scale[-1]
+                face_scale[1:-1]=np.minimum(scale[:-1],scale[1:])
+                if np.any(np.abs((edges-x)-displacement)/face_scale>_GEOMETRY_RTOL):
+                    raise TectonicsError('represented mesh motion differs from prescribed displacement; use a suitable frame or interval')
+                expected=before+np.diff(displacement)
+                if np.any(np.abs(after-expected)/scale>_GEOMETRY_RTOL):
+                    raise TectonicsError('represented cell widths disagree with prescribed mesh motion; use a suitable frame or interval')
+                return target
+        except FloatingPointError as exc:
+            raise TectonicsError('mesh motion exceeds numerical range') from exc
+
+
 def _mesh_state(state):
     if type(state) is not MaterialState or type(state.grid) is not ColumnGrid1D:
         raise TectonicsError('MaterialState on ColumnGrid1D required; use to_column_state explicitly')
@@ -249,12 +284,10 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
         u=snapshot(face_velocity_m_s,'physical face velocity');w=snapshot(mesh_velocity_m_s,'mesh velocity')
         try:
             with np.errstate(over='raise',invalid='raise'):
-                relative=u-w;edges=state.grid.edges_m+dt*w
+                relative=u-w
         except FloatingPointError as exc:
             raise TectonicsError('physical/mesh motion exceeds numerical range') from exc
-        target=ColumnGrid1D(edges,frame_id=state.grid.frame_id,budget=budget)
-        if dt>0 and np.any((w!=0)&(target.edges_m==state.grid.edges_m)):
-            raise TectonicsError('mesh motion is unresolvable at this coordinate magnitude')
+        target=_ale_geometry(state.grid,w,dt,budget=budget)
         el=_boundary_values(state,relative,left,True);er=_boundary_values(state,relative,right,False)
         try:
             if backend=='numba':
@@ -335,7 +368,7 @@ def restore_ale_result(parent,u,w,dt,left,right,scheme,backend,packed,*,budget=N
     raw=snapshot(packed,'ALE result')
     h=raw[:,:n];flux=raw[:,n:2*n+1];stored=raw[:,2*n+1:]
     if np.any(h<0):raise TectonicsError('negative restored ALE state')
-    target=ColumnGrid1D(parent.grid.edges_m+dt*w,frame_id=parent.grid.frame_id,budget=budget)
+    target=_ale_geometry(parent.grid,w,dt,budget=budget)
     relative=u-w;_boundary_values(parent,relative,left,True);_boundary_values(parent,relative,right,False)
     before=_inventories(parent.thickness_m,parent.grid,backend);after=_inventories(h,target,backend)
     maximum=float(stored[0,5])

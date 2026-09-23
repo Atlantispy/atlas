@@ -18,13 +18,18 @@ import analyse_convection_r4_4 as audit
 from run_convection_r4_4 import atomic_new,digest,safe_path,source_record
 
 
-def render(run,output):
+def render(run,output,*,raw_only=False):
     safe_path(output)
+    plt=None
+    if not raw_only:
+        try:
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ValueError('Plotting requires the optional visual dependencies; use --raw-only to export numerical data without them') from exc
     config,records,samples,steps,states,head=audit.read_run(run)
     output.mkdir(parents=False,exist_ok=False)
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
     budget=WorkBudget(512<<20)
     limits=StoreLimits(chunk_bytes=65536,max_store_bytes=2<<30,max_array_bytes=32<<20)
     with ArrayStore(run/'states.sqlite',limits,budget=budget) as store:
@@ -42,9 +47,27 @@ def render(run,output):
     arrays['sample_times']=np.array([s['time'] for s in samples])
     for key in audit._METRICS:arrays['history_'+key]=np.array([s['diagnostics'][key] for s in samples])
     np.savez_compressed(output/'raw_fields_and_history.npz',**arrays)
+    if not raw_only:_plots(plt,arrays,config,state.time_s,diagnostic,output)
+    metadata=dict(schema='atlas.convection-visual-r4-4.v1',source=source_record(),receipt_head=head,
+        renderer_sha256=digest(Path(__file__).read_bytes()),configuration=config,diagnostic=diagnostic,
+        state_id=state.state_id,flow_id=flow.result_id,time=state.time_s,step=state.step_index,
+        units='All plotted quantities dimensionless; stored SI-named flow arrays equal unit-box nondimensional values in this numerical embedding',
+        output_kind='RAW_DATA_ONLY' if raw_only else 'RAW_DATA_AND_PLOTS',
+        sampling=dict(images='NOT_RENDERED' if raw_only else 'original cell arrays displayed with nearest-neighbour interpolation; no smoothing',
+            arrows='NOT_RENDERED' if raw_only else f'centred face averages at every {max(1,(config["cells"]+31)//32)} cell, linear arrow lengths, no unit-vector normalisation; automatic within-plot vector scale, not a common scale across figures',
+            viscosity='cell support only; exact-wall diagnostic extrema are reported separately'),
+        assistant_visual_inspection='NOT_RECORDED_BY_RENDERER',user_visual_approval='NOT_RECORDED',
+        full_benchmark_accepted=False,budget_after_close=budget.statistics(),
+        files={p.name:digest(p.read_bytes()) for p in sorted(output.iterdir()) if p.is_file()})
+    atomic_new(output/'metadata.json',metadata)
+    return metadata
+
+
+def _plots(plt,arrays,config,time_s,diagnostic,output):
+    """Display the exported arrays; never feed plotted values into the solver."""
     case_label=config['case']['name']
     if config['case']['yield_stress'] is not None:case_label+=f" (yield = {config['case']['yield_stress']:.1f})"
-    title=f"{case_label}, {config['cells']} × {config['cells']}, t = {state.time_s:.6g}"
+    title=f"{case_label}, {config['cells']} × {config['cells']}, t = {time_s:.6g}"
     def finish(fig,name):
         fig.tight_layout();fig.savefig(output/name,dpi=160);plt.close(fig)
     def image(field,label,name):
@@ -76,25 +99,14 @@ def render(run,output):
     ax.set(xlabel='Dimensionless time',ylabel='Mean dimensionless temperature',
         title=title+'\nActual saved diagnostic history')
     finish(fig,'06_temperature_history.png')
-    metadata=dict(schema='atlas.convection-visual-r4-4.v1',source=source_record(),receipt_head=head,
-        renderer_sha256=digest(Path(__file__).read_bytes()),configuration=config,diagnostic=diagnostic,
-        state_id=state.state_id,flow_id=flow.result_id,time=state.time_s,step=state.step_index,
-        units='All plotted quantities dimensionless; stored SI-named flow arrays equal unit-box nondimensional values in this numerical embedding',
-        sampling=dict(images='one pixel per original cell, nearest display, no interpolation/smoothing',
-            arrows=f'centred face averages at every {stride} cell, linear arrow lengths, no unit-vector normalisation; automatic within-plot vector scale, not a common scale across figures',
-            viscosity='cell support only; exact-wall diagnostic extrema are reported separately'),
-        assistant_visual_inspection='NOT_RECORDED_BY_RENDERER',user_visual_approval='NOT_RECORDED',
-        full_benchmark_accepted=False,budget_after_close=budget.statistics(),
-        files={p.name:digest(p.read_bytes()) for p in sorted(output.iterdir()) if p.is_file()})
-    atomic_new(output/'metadata.json',metadata)
-    return metadata
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--run',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    args=p.parse_args();result=render(args.run.absolute(),args.output.absolute())
-    print(json.dumps({'output':str(args.output),'state_id':result['state_id'],'full_benchmark_accepted':False}))
+    p.add_argument('--raw-only',action='store_true',help='Export authenticated arrays/metadata without matplotlib or visual acceptance')
+    args=p.parse_args();result=render(args.run.absolute(),args.output.absolute(),raw_only=args.raw_only)
+    print(json.dumps({'output':str(args.output),'state_id':result['state_id'],'output_kind':result['output_kind'],'full_benchmark_accepted':False}))
 
 
 if __name__=='__main__':

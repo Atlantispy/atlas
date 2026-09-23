@@ -221,13 +221,21 @@ def _source_weight(weight,dt):
     return factor,unsafe if np.any(unsafe) else None
 
 
-def _weighted_source(modes,weight,dt,*,prepared=None):
+def _weighted_source(modes,weight,dt,*,prepared=None,source_exponent=0):
     """Form weight*dt BEFORE multiplying forcing; scale extreme products safely.
 
     dt*phi1 is bounded by 1/rate away from the zero mode. Multiplying an
     enormous source impulse before its attenuation is both wasteful and unsafe.
     The rare subnormal/overflow path combines exponents before final rounding.
     """
+    if source_exponent:
+        # The transform was normalised BEFORE its internal sums. Restore its
+        # scale only in the complete response, not as an overflowing raw mode.
+        a,ea=np.frexp(modes);b,eb=np.frexp(weight);c,ec=math.frexp(dt)
+        with np.errstate(over='ignore',under='ignore',invalid='ignore'):
+            out=np.ldexp((a*b)*c,ea+eb+ec+source_exponent)
+        if not np.isfinite(out).all(): raise TectonicsError('diffusive forcing response outside finite range')
+        return out
     factor,unsafe=_source_weight(weight,dt) if prepared is None else prepared
     with np.errstate(over='ignore',under='ignore',invalid='ignore'):
         out=modes*factor
@@ -249,6 +257,48 @@ def _attenuated_modes(modes,x,exponential):
         with np.errstate(under='ignore'):
             out[extreme]=np.sign(modes[extreme])*np.exp(np.log(np.abs(modes[extreme]))-x[extreme])
     return out
+
+
+def _normalise_extreme(values):
+    """Rare power-of-two normalisation, refusing even nonzero rounding loss."""
+    maximum=float(np.max(np.abs(values)))
+    if not math.isfinite(maximum): raise TectonicsError('thermal source outside finite range')
+    exponent=math.frexp(maximum)[1]
+    with np.errstate(under='ignore'):
+        scaled=np.ldexp(values,-exponent)
+        restored=np.ldexp(scaled,exponent)
+    if not np.array_equal(restored,values):
+        raise TectonicsError('thermal normalisation loses represented values')
+    return scaled,exponent
+
+
+def _scaled_thermal_sum(values,numerator,denominator=()):
+    """Rare scaled reduction: never materialise an overflowing sum or factor."""
+    scaled,exponent=_normalise_extreme(values)
+    total=math.fsum(scaled.flat)
+    if total==0:return 0.
+    mantissa,power=math.frexp(total);power+=exponent
+    for factor in numerator:
+        m,e=math.frexp(factor);mantissa*=m;power+=e
+    for factor in denominator:
+        m,e=math.frexp(factor);mantissa/=m;power-=e
+    try: result=math.ldexp(mantissa,power)
+    except OverflowError as exc: raise TectonicsError('thermal account outside finite range') from exc
+    if not math.isfinite(result) or (result==0 and mantissa!=0):
+        raise TectonicsError('thermal account outside representable range')
+    return result
+
+
+def _wall_heat(gradient,k,dx,dz,dt):
+    if dt==0:return 0.
+    # Keep ordinary operation order; detect unsafe intermediate coefficients
+    # as well as an unsafe reduction before using the exponent-safe route.
+    a=2*k;b=a*dx;c=b/dz;factor=c*dt
+    safe=all(math.isfinite(v) and v>=np.finfo(float).tiny for v in (a,b,c,factor))
+    try: total=math.fsum(gradient.tolist()) if safe else None
+    except OverflowError: total=None
+    if total is not None:return factor*total
+    return _scaled_thermal_sum(gradient,(2.,k,dx,dt),(dz,))
 
 
 class _Diffusion2D:
@@ -292,7 +342,15 @@ class _Diffusion2D:
         t=(idst if self.fixed else idct)(a,type=2,axis=0,norm='ortho',workers=1)
         return idct(t,type=2,axis=1,norm='ortho',workers=1,overwrite_x=True)
 
-    def advance(self,T,source_modes,dt,cancel):
+    def prepare_source(self,Q):
+        # Headroom for FFT internal sums, not just the final orthonormal mode.
+        # The ordinary source transform is unchanged; no trajectory cache grows.
+        if float(np.max(np.abs(Q)))>np.finfo(float).max/(8*Q.size):
+            scaled,exponent=_normalise_extreme(Q)
+            return self.transform(scaled),exponent
+        return self.transform(Q),0
+
+    def advance(self,T,source_modes,dt,cancel,*,source_exponent=0):
         _cancel(cancel)
         if self._dt!=dt:
             with np.errstate(over='raise',invalid='raise'):
@@ -318,7 +376,7 @@ class _Diffusion2D:
         modes=self.transform(T-lift)
         with np.errstate(over='raise',invalid='raise'):
             try:
-                source_response=_weighted_source(source_modes,p,dt,prepared=self._source_weight)
+                source_response=_weighted_source(source_modes,p,dt,prepared=self._source_weight,source_exponent=source_exponent)
                 if self._incremental:
                     updated=T+self.inverse(self._decay_increment*modes+source_response)
                 else:
@@ -326,7 +384,7 @@ class _Diffusion2D:
                 # With insulation there is no boundary-heat contraction and this
                 # time-average field is unused: do not perform its inverse FFT.
                 if self.fixed:
-                    source_average=_weighted_source(source_modes,s,dt,prepared=self._source_average_weight)
+                    source_average=_weighted_source(source_modes,s,dt,prepared=self._source_average_weight,source_exponent=source_exponent)
                     if self._incremental:
                         # phi1-1=-x*phi2, evaluated without subtracting near-ones.
                         average=T+self.inverse(self._mean_increment*modes+source_average)
@@ -340,9 +398,9 @@ class _Diffusion2D:
         # at a HALF-cell separation, not a full-cell distance. Side flux is zero.
         b=self.problem.box;k=self.problem.material.conductivity_w_m_k
         if self.fixed:
-            factor=2*k*(b.width_m/b.nx)/(b.height_m/b.nz)*dt
-            lower=factor*math.fsum((average[0]-self.problem.boundary.bottom_temperature_k).tolist())
-            upper=factor*math.fsum((average[-1]-self.problem.boundary.top_temperature_k).tolist())
+            dx=b.width_m/b.nx;dz=b.height_m/b.nz
+            lower=_wall_heat(average[0]-self.problem.boundary.bottom_temperature_k,k,dx,dz,dt)
+            upper=_wall_heat(average[-1]-self.problem.boundary.top_temperature_k,k,dx,dz,dt)
         else: lower=upper=0.
         if not all(math.isfinite(v) for v in (lower,upper)):
             raise TectonicsError('boundary heat account outside finite range')

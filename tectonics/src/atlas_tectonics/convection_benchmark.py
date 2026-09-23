@@ -200,10 +200,12 @@ def tosi_state_diagnostics(state, flow, *, budget=None):
             problem.material.density_kg_m3 != 1. or problem.material.expansion_per_k != .01 or
             problem.material.heat_capacity_j_kg_k != 1. or problem.material.conductivity_w_m_k != 1. or
             problem.material.reference_temperature_k != 1. or
-            problem.material.composition_density_contrast_kg_m3 != 0.):
+            problem.material.composition_density_contrast_kg_m3 != 0. or
+            problem.material.internal_heating_w_m3 != 0.):
         raise TectonicsError('diagnostics require the declared unit numerical embedding')
     if (desc['time_s'] != state.time_s or desc['epoch_id'] != problem.epoch_id or
             desc['box'] != problem.descriptor()['box'] or
+            desc['scales'] != problem.descriptor()['scales'] or
             desc['rheology']['profile_id'] != problem.rheology.profile_id or
             not np.array_equal(flow.array('temperature_k'), state.array('temperature_k'))):
         raise TectonicsError('flow is not the simultaneous state/temperature/rheology')

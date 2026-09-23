@@ -1,0 +1,127 @@
+{
+  "status": "PASS_W05_STEP_2_MOTION",
+  "case_id": "w05-dry-listric-20260922",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "threads": 1,
+  "accuracy": [
+    {
+      "dx_m": 500.0,
+      "cells": 800,
+      "maximum_crop_h_error_m": 3.637978807091713e-12,
+      "relative_crop_h_l1": 9.195370605669965e-17,
+      "exchange_m2": [
+        [
+          0.0,
+          -2499999.999900741
+        ],
+        [
+          0.0,
+          -7499999.999702223
+        ]
+      ],
+      "max_cohort_balance_residual_m2": 4.237517714500427e-08
+    },
+    {
+      "dx_m": 250.0,
+      "cells": 1600,
+      "maximum_crop_h_error_m": 3.637978807091713e-12,
+      "relative_crop_h_l1": 8.699047130649483e-17,
+      "exchange_m2": [
+        [
+          0.0,
+          -2499999.999900741
+        ],
+        [
+          0.0,
+          -7499999.999702223
+        ]
+      ],
+      "max_cohort_balance_residual_m2": 4.237517714500427e-08
+    },
+    {
+      "dx_m": 125.0,
+      "cells": 3200,
+      "maximum_crop_h_error_m": 3.637978807091713e-12,
+      "relative_crop_h_l1": 8.616154932020543e-17,
+      "exchange_m2": [
+        [
+          0.0,
+          -2499999.999900741
+        ],
+        [
+          0.0,
+          -7499999.999702223
+        ]
+      ],
+      "max_cohort_balance_residual_m2": 2.3096799850463867e-07
+    }
+  ],
+  "partition_counts": [
+    64,
+    128
+  ],
+  "partition_thickness_and_export": "EXACT",
+  "domain_crop_surface_difference_m": 0.0,
+  "maximum_kernel_error_m": 5.4569682106375694e-12,
+  "cell_integral_comparison": {
+    "baseline_seconds": [
+      0.01536580000538379,
+      0.015387399937026203,
+      0.015877500060014427
+    ],
+    "optimised_seconds": [
+      0.00015029998030513525,
+      9.8800053820014e-05,
+      0.0001471999567002058
+    ],
+    "median_baseline_seconds": 0.015387399937026203,
+    "median_optimised_seconds": 0.0001471999567002058,
+    "saved_seconds": 0.015240199980325997,
+    "saved_percent": 99.04337342694262,
+    "speedup": 104.53399771281786
+  },
+  "three_output_workflow_comparison": {
+    "baseline_seconds": [
+      0.28879040002357215,
+      0.29583429999183863,
+      0.29602070001419634
+    ],
+    "optimised_seconds": [
+      0.28514060005545616,
+      0.2684289999306202,
+      0.2703540000366047
+    ],
+    "median_baseline_seconds": 0.29583429999183863,
+    "median_optimised_seconds": 0.2703540000366047,
+    "saved_seconds": 0.02548029995523393,
+    "saved_percent": 8.613030996046392,
+    "speedup": 1.0942479118185195
+  },
+  "preparation_seconds": {
+    "reference": 0.12789110001176596,
+    "numba": 0.2109320000745356
+  },
+  "execution_identities": [
+    "d45d411ed158e2aba528d68cc0890a3ed18db628a862a82fdea075883699adea",
+    "3415bb9b93dd8111b249b3b70690c85163906e728f22d4168a9e04a7a416bb3f"
+  ],
+  "muscl_diagnostic": {
+    "cells": 3200,
+    "steps": 128,
+    "seconds": 8.176097800023854,
+    "maximum_crop_h_error_m": 24.584781512074883,
+    "accepted": false,
+    "note": "Not a speedup baseline: MUSCL smooths the moving edge beyond the frozen 10 m gate."
+  },
+  "scope": "3200-cell prescribed constant-speed listric family, 2 constant-fraction cohorts. Cell-integral baseline is independent adaptive quadrature; workflow baseline is the SAME exact method with Python reference inventory/total reductions versus native reductions. Three alternating repeats, prepared contexts, no disk cache, no workers. Workflow includes provenance, budgets, histories, exports and geometry fields at 3 output times. No support, full terrain, empirical or old-release timing claim.",
+  "source_sha256": {
+    "cases/w05_motion.json": "dd7d15a03096ba7eb993d28bc24ac3899a1dff6883f4e8c5b1ec4490d804151f",
+    "tools/benchmark_w05_motion.py": "6c4f7626bafdb9e49afec9c78daa5f7ae065c912d1fb3566feef8b2c354b2fb8",
+    "tests/w05_reference.py": "76d83ba211e2550f7b527d3c386acbf576e5acdb98f86051e4640b32935d7621",
+    "src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "src/atlas_tectonics/reuse.py": "1cab1d1aa7363d389034859b8d3cd52c749b807f8e7ee380f8813bd981d984ca"
+  }
+}

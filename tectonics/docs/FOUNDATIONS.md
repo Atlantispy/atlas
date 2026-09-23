@@ -254,19 +254,43 @@ roundoff rule is retained per cohort. Incoming/outgoing amounts are nonnegative;
 left/right exchanges are signed into the domain. Native totals use the existing
 exact nonnegative accumulator before rounding. Required fields remain binary64.
 
-MC-limited MUSCL/SSP-RK2 remains the accuracy-first default with outgoing fraction
-at most 1/2. Upwind's bound 1 is available only by explicit selection. Execution
-or memory pressure never reduces order or changes the requested timestep. The
-native row driver shares O(N) RK scratch and retains O(CN) candidate/flux outputs;
-reference calculations use the independently implemented regional NumPy law.
+Sum-consistent MC-MUSCL/SSP-RK2 (`cohort-partial-thickness-regional-v2`) remains the
+accuracy-first default with outgoing fraction at most 1/2. V1 limited each cohort
+independently: although each inventory conserved, the nonlinear slopes could
+create artificial total-depth variations even from constant total thickness.
+V2 replaces that reconstruction explicitly; old V1 transitions are not V2 results.
+Upwind's bound 1 and its existing scalar-row arithmetic remain available only by
+explicit selection. Execution or memory pressure never reduces order or changes
+the requested timestep. Both backends retain O(CN) joint RK stage/flux storage;
+the native reconstruction uses O(N+C) scratch, while the independent NumPy
+reference uses O(CN) scratch. `material_work_bytes` includes both allowances.
+
+At each stage derive H, its scalar MC slope S, and cohort MC candidates a_k.
+With f_k=H_k/H in a nonempty cell, set
+
+$$b_k=f_k S,\quad d_k=a_k-f_k\sum_j a_j,\quad s_k=b_k+\theta d_k.$$
+
+One common theta in [0,1] enforces -2H_k <= s_k <= 2H_k for every cohort; empty
+cells have zero slopes. The limiter bounds are rounded inward to accommodate
+binary64 evaluation, and negative traces/states still refuse. Thus the linear
+face traces H_k +/- s_k/2 are nonnegative, retain cell mean H_k, and sum to the
+scalar traces H +/- S/2 within roundoff. A shared face flux is used with opposite
+signs by neighbours. The unchanged outgoing-Courant bound 1/2 preserves Euler
+stage nonnegativity; SSP-RK2 applies this same joint reconstruction again to its
+first-stage fields. The returned flux is the two-stage mean. There is no
+post-update clipping, total-field overwrite or flux/fraction renormalisation.
+The candidate projection preserves smooth second-order consistency. Individual
+cohorts need not be TVD when total thickness varies; nonnegativity bounds each
+cohort by the local total, not by its old individual extrema.
 
 Total thickness is derived, not separately evolved. Consequently fractions are
 nonnegative and sum to one within rounding wherever H>0; in empty cells they are
 undefined and accompanied by an occupancy mask. No normalisation alters conserved
-partial thickness. Limiting is nonlinear: sum(limited H_k) does not generally equal
-limiting(sum H_k). This model does not claim equivalence to a solver separately
-advancing density/momentum, equal-volume immiscible fluids, or a VOF method.
-Those couplings need consistent total/component transport in their own case.
+partial thickness. The derived total follows the scalar regional transport law
+within roundoff because both stage flux sums are consistent. This is still a
+prescribed common-velocity, constant-density column model, not a momentum/density
+solver, a model of relative material motion, or a VOF interface method. ALE and
+remap are separate versioned methods and are not changed by this correction.
 
 A material class and origin share one catalogue record. Formation time is a cohort
 attribute with an explicit epoch; age t-t_form is queried, not transported as an
@@ -291,7 +315,9 @@ chain requires preserving those records, but decoding a snapshot never depends o
 all previous manifests. Zero-inventory cohorts remain identified.
 
 Tests include exact rational upwind fluxes, a one-cohort scalar equivalence check,
-random independent-reference cases, smooth refinement, rare/sharp cohorts, zero and
+random independent-reference cases, both-stage total-trace consistency, constant
+total two/three-cohort transport with reversed inflow, variable-total scalar
+agreement, smooth refinement, rare/sharp cohorts, zero and
 unknown ages, cold backup restoration, stale identities, source/sink accounts,
 immutable views, memory refusal, cancellation and independent scenario execution.
 These are mathematical checks, not observational geological validation.

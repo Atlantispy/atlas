@@ -1,0 +1,125 @@
+{
+  "schema": "atlas.w06-history-case.v1",
+  "status": "WORKING NON-CANON SYNTHETIC",
+  "case_id": "w06-piecewise-history-20260922",
+  "spreading_case": "w06_spreading.json",
+  "cooling_case": "w06_cooling.json",
+  "frozen_design": {
+    "path": "docs/W06_SPREADING.md",
+    "sha256": "fc52728845d62bfd575a3d22e6a46796d3d36120b8ab1f65668379b38e0be285",
+    "section": "Frozen design case for steps 2-5"
+  },
+  "seconds_per_year": 31557600.0,
+  "duration_years": 20000000.0,
+  "output_years": [0.0, 5000000.0, 10000000.0, 20000000.0],
+  "partial_cell_years": 15006250.0,
+  "domain_m": [-500000.0, 500000.0],
+  "crop_m": [-150000.0, 150000.0],
+  "enlarged_domain_m": [-600000.0, 600000.0],
+  "export_domain_m": [-100000.0, 100000.0],
+  "grid_spacing_m": [1000.0, 500.0, 250.0],
+  "time_intervals": [64, 128],
+  "maximum_intervals": 256,
+  "work_budget_bytes": 134217728,
+  "position_error_m": 1e-7,
+  "age_error_s": 1.0,
+  "partition_support_error_m": 0.01,
+  "enlarged_crop_support_error_m": 0.001,
+  "thermal_model_id": "w06-newborn-ocean-cooling-20260922",
+  "scenarios": {
+    "motion_switch": {
+      "events": [
+        {
+          "offset_years": 0.0,
+          "ridge_position_m": 0.0,
+          "left_velocity_m_per_year": -0.02,
+          "right_velocity_m_per_year": 0.02,
+          "ridge_velocity_m_per_year": 0.0,
+          "left_plate_id": "synthetic-left-plate",
+          "right_plate_id": "synthetic-right-plate",
+          "ridge_id": "synthetic-onset-ridge",
+          "event_id": "synthetic-ocean-onset",
+          "source_id": "w06-prescribed-motion",
+          "active": true,
+          "reassignments": []
+        },
+        {
+          "offset_years": 10000000.0,
+          "ridge_position_m": 0.0,
+          "left_velocity_m_per_year": -0.015,
+          "right_velocity_m_per_year": 0.035,
+          "ridge_velocity_m_per_year": 0.005,
+          "left_plate_id": "synthetic-left-plate",
+          "right_plate_id": "synthetic-right-plate",
+          "ridge_id": "synthetic-onset-ridge",
+          "event_id": "synthetic-rate-change-10myr",
+          "source_id": "w06-declared-asymmetric-rate-change",
+          "active": true,
+          "reassignments": []
+        }
+      ],
+      "expected_final": {
+        "ridge_position_m": 50000.0,
+        "oldest_edges_m": [-350000.0, 550000.0],
+        "created_width_m": 900000.0,
+        "represented_width_m": 850000.0,
+        "left_export_width_m": 0.0,
+        "right_export_width_m": 50000.0,
+        "created_phase_mass_kg": [1.827e13, 2.7621e14],
+        "represented_phase_mass_kg": [1.7255e13, 2.60865e14],
+        "right_export_phase_mass_kg": [1.015e12, 1.5345e13],
+        "birth_enthalpy_j": 3.861e20,
+        "exported_birth_interval_years": [0.0, 2500000.0],
+        "right_first_exit_years": 18571428.57142857,
+        "right_last_exit_years": 20000000.0,
+        "right_exit_age_endpoints_years": [18571428.57142857, 17500000.0]
+      }
+    },
+    "stop": {
+      "base_scenario": "motion_switch",
+      "replace_event_1": {
+        "left_velocity_m_per_year": 0.0,
+        "right_velocity_m_per_year": 0.0,
+        "ridge_velocity_m_per_year": 0.0,
+        "event_id": "synthetic-welded-stop-10myr",
+        "source_id": "w06-declared-allzero-stop",
+        "active": false
+      },
+      "expected_final": {
+        "ridge_position_m": 0.0,
+        "oldest_edges_m": [-200000.0, 200000.0],
+        "created_width_m": 400000.0,
+        "represented_width_m": 400000.0,
+        "left_export_width_m": 0.0,
+        "right_export_width_m": 0.0,
+        "created_phase_mass_kg": [8.12e12, 1.2276e14],
+        "birth_enthalpy_j": 1.716e20,
+        "youngest_age_years": 10000000.0,
+        "oldest_age_years": 20000000.0
+      }
+    },
+    "ownership_reassignment": {
+      "base_scenario": "motion_switch",
+      "replace_event_1": {
+        "left_plate_id": "synthetic-reassigned-left-plate",
+        "right_plate_id": "synthetic-reassigned-right-plate",
+        "event_id": "synthetic-side-reassignment-10myr",
+        "source_id": "w06-declared-side-ownership-change",
+        "reassignments": [
+          {
+            "side": "left",
+            "from_plate_id": "synthetic-left-plate",
+            "to_plate_id": "synthetic-reassigned-left-plate",
+            "source_id": "w06-left-ownership-transfer"
+          },
+          {
+            "side": "right",
+            "from_plate_id": "synthetic-right-plate",
+            "to_plate_id": "synthetic-reassigned-right-plate",
+            "source_id": "w06-right-ownership-transfer"
+          }
+        ]
+      }
+    }
+  }
+}

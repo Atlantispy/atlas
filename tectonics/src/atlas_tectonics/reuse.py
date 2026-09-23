@@ -34,6 +34,7 @@ from .resources import elements, select_budget, MemoryLimitError
 from .storage import ArrayStore
 from .thermal import half_space_temperature, cooling_work_bytes
 from .flexure import PeriodicFlexure
+from .finite_flexure import FiniteRegionFlexure
 from .parameters import ThermalParameters
 
 
@@ -92,8 +93,12 @@ def _normal_code(code):
 
 # Fixed kernel dependency set: unrelated later imports cannot change a cache key.
 # New package source files still participate in source membership verification.
-_IDENTITY_MODULES = ("regional_forcing", "_velocity_multigrid", "_validation", "resources", "parameters", "kinematics",
-                     "thermal", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "adaptive_inner", "convection_benchmark")
+_IDENTITY_MODULES = ("regional_thermomechanical", "regional_rheology", "regional_transport", "regional_execution", "regional_stokes", "w06_workflow", "spreading_checkpoint", "spreading_history", "spreading_history_cooling", "margin_cooling", "spreading_integrals", "spreading_cooling", "spreading", "extension_workflow", "extension_support", "extension", "variable_flexure", "finite_flexure", "w04_workflow", "column_loads", "w03_workflow", "compaction", "compaction_columns", "plate_integrals", "thermal_support", "regional_workflow", "regional_workflow_geometry", "regional_forcing", "_velocity_multigrid", "_validation", "resources", "parameters", "kinematics",
+                     "thermal", "plate_cooling", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "adaptive_inner", "convection_benchmark")
+
+
+_IDENTITY_MODULES += ("regional_strength", "regional_surface_stokes", "surface_geometry", "free_surface")
+_IDENTITY_MODULES += ("regional_geology", "regional_checkpoint", "w07_workflow")
 
 
 def _source_bytes():
@@ -839,6 +844,167 @@ def cached_temperature(depth_m, age_s, parameters: ThermalParameters, *,
             cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
 
 
+def cached_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
+                             store=None, budget=None, context=None, controller=None,
+                             cache_policy=None, cancel=None, wait_timeout=30.):
+    """Same verified auto-reuse policy as half-space cooling, including cell means."""
+    from .plate_cooling import finite_plate_temperature, plate_cooling_work_bytes
+    from .parameters import PlateCoolingParameters
+    if type(parameters) is not PlateCoolingParameters:
+        raise TectonicsError('explicit PlateCoolingParameters required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    raw = {'depth': depth_m, 'age': age_s}
+    if cell_bottom_m is not None:
+        raw['bottom'] = cell_bottom_m
+    shapes = {key: _shape(value) for key, value in raw.items()}
+    try:
+        shape = np.broadcast_shapes(*shapes.values())
+    except ValueError as exc:
+        raise TectonicsError('plate cooling inputs cannot broadcast') from exc
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'plate-cooling', 'scipy')
+    def compute(values, resource):
+        return finite_plate_temperature(values['depth'], values['age'], parameters,
+            cell_bottom_m=values.get('bottom'), budget=resource, cancel=cancel)
+    if not use:
+        values = {k: v.array if type(v) is PreparedInput else v for k, v in raw.items()}
+        return _direct(lambda: compute(values, budget), control, key, policy, cancel, context, 'scipy')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes.values())):
+        captured = {k: _capture(v, k, nonnegative=True) for k, v in raw.items()}
+        values = {k: v[0] for k, v in captured.items()}
+        ctx = control.context('scipy') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'scipy':
+            raise TectonicsError('context/backend mismatch')
+        with resource.reserve(plate_cooling_work_bytes(shapes['depth'], shapes['age'], shapes.get('bottom'))):
+            record = _invocation_record('finite-plate-temperature-v1', values, asdict(parameters),
+                'scipy', context=ctx, digests={k: v[1] for k, v in captured.items()})
+        return _evaluate(store, record, lambda: compute(values, resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_plate_thermal_response(age_s, reference_age_s, plate, material, parameters, *,
+                                  store=None, budget=None, context=None, controller=None,
+                                  cache_policy=None, cancel=None, wait_timeout=30.):
+    """Source-bound whole-column thermal load/support; auto skips cheap persistence."""
+    from .thermal_support import plate_thermal_response, _plate_material
+    _plate_material(plate, material, parameters)
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shapes = (_shape(age_s), _shape(reference_age_s))
+    try:
+        age_shape = np.broadcast_shapes(*shapes)
+    except ValueError as exc:
+        raise TectonicsError('cooling/reference ages cannot broadcast') from exc
+    shape = age_shape+(3,)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'plate-thermal-support', 'scipy')
+    def compute(age, reference, resource):
+        return plate_thermal_response(age, reference, plate, material, parameters,
+            budget=resource, cancel=cancel)
+    if not use:
+        age = age_s.array if type(age_s) is PreparedInput else age_s
+        reference = reference_age_s.array if type(reference_age_s) is PreparedInput else reference_age_s
+        return _direct(lambda: compute(age, reference, budget), control, key, policy, cancel, context, 'scipy')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes)+128*elements(age_shape)+8192):
+        age, ah = _capture(age_s, 'cooling age', nonnegative=True)
+        reference, rh = _capture(reference_age_s, 'reference cooling age', nonnegative=True)
+        ctx = control.context('scipy') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'scipy':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('plate-thermal-support-v1', {'age': age, 'reference_age': reference},
+            {'plate': asdict(plate), 'material': asdict(material), 'support': asdict(parameters),
+             'layout': 'buoyancy-sheet-kg/m2,downward-Pa,total-reference-downward-m'},
+            'scipy', context=ctx, digests={'age': ah, 'reference_age': rh})
+        # BoussinesqMaterial carries a tuple validity interval; persisted JSON
+        # represents it as a list. Preserve strict equality using canonical form.
+        record = json.loads(_json(record))
+        return _evaluate(store, record, lambda: compute(age, reference, resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_compaction_response(void_ratio, stress_pa, maximum_stress_pa, new_stress_pa, parameters, *,
+        store=None, budget=None, context=None, controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """History-aware constitutive reuse; cheap calculations auto-bypass persistence."""
+    from .compaction import CompactionParameters, compaction_response
+    if type(parameters) is not CompactionParameters:
+        raise TectonicsError('explicit CompactionParameters required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    inputs = (void_ratio, stress_pa, maximum_stress_pa, new_stress_pa)
+    shapes = tuple(_shape(a) for a in inputs)
+    try:
+        shape = np.broadcast_shapes(*shapes)+(2,)
+    except ValueError as exc:
+        raise TectonicsError('compaction fields cannot broadcast') from exc
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'drained-compaction', 'reference')
+    def compute(arrays, resource):
+        return compaction_response(*arrays, parameters, budget=resource, cancel=cancel)
+    if not use:
+        arrays = tuple(a.array if type(a) is PreparedInput else a for a in inputs)
+        return _direct(lambda: compute(arrays, budget), control, key, policy, cancel, context, 'reference')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes)+64*elements(shape)+8192):
+        names = ('void_ratio', 'stress_pa', 'maximum_stress_pa', 'new_stress_pa')
+        captures = [_capture(a, name, nonnegative=True) for name, a in zip(names, inputs)]
+        arrays = dict(zip(names, (a for a, _ in captures)))
+        digests = dict(zip(names, (h for _, h in captures)))
+        ctx = control.context('reference') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'reference':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('drained-compaction-v1', arrays,
+            {'parameters': asdict(parameters), 'layout': 'void-ratio,maximum-effective-stress-Pa'},
+            'reference', context=ctx, digests=digests)
+        return _evaluate(store, record, lambda: compute(tuple(arrays.values()), resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_column_load_change(reference, current, gravity_m_s2, *, store=None,
+        budget=None, context=None, controller=None, cache_policy=None, cancel=None,
+        batch_columns=32768, wait_timeout=30.):
+    """Reuse immutable source-bound load states through the existing cache policy.
+
+    State identities cover captured bytes, catalogue, fixed geometry, source and
+    epoch. No duplicate captures/hashes of those immutable arrays are needed.
+    Execution/source/runtime identity is still verified by the normal machinery.
+    Cheap loads default to direct computation, not mandatory persistence.
+    """
+    from .column_loads import column_load_change, _compatible
+    g = _compatible(reference, current, gravity_m_s2, batch_columns)
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shape = (len(reference.support.column_ids), 4)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'fixed-column-loads', 'reference')
+    def compute():
+        return column_load_change(reference, current, g, budget=budget,
+                                  cancel=cancel, batch_columns=batch_columns)
+    if not use:
+        return _direct(compute, control, key, policy, cancel, context, 'reference')
+    resource = select_budget(budget)
+    ctx = control.context('reference') if context is None else context
+    if not isinstance(ctx, ExecutionContext) or ctx.backend != 'reference':
+        raise TectonicsError('context/backend mismatch')
+    record = _invocation_record('fixed-column-loads-v1', {},
+        {'reference_state': reference.state_id, 'current_state': current.state_id,
+         'gravity_m_s2': g, 'support': reference.support.support_id,
+         'layout': 'inventory-kg/m2,replacement-kg/m2,thermal-buoyancy-kg/m2,total-downward-Pa'},
+        'reference', context=ctx)
+    return _evaluate(store, record, compute, shape, resource, context=ctx,
+        controller=control, cache_policy=policy, cancel=cancel, wait_timeout=wait_timeout,
+        admission_key=key)
+
+
 def cached_flexure(operator: PeriodicFlexure, load_pa, *, store: ArrayStore | None = None,
                    budget=None, context=None, controller=None, cache_policy=None,
                    cancel=None, wait_timeout=30.):
@@ -865,6 +1031,66 @@ def cached_flexure(operator: PeriodicFlexure, load_pa, *, store: ArrayStore | No
                  "operator_id":operator.operator_id},"reference",context=ctx,digests={"load":digest})
         return _evaluate(store,record,lambda:operator.solve(load,budget=resource),shape,resource,
             context=ctx,controller=control,cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
+
+
+def cached_finite_flexure(operator, load_pa, *, store=None, budget=None, context=None,
+                         controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """Verified reuse of the distinct continuous regional operator and derivatives."""
+    if type(operator) is not FiniteRegionFlexure:
+        raise TectonicsError('explicit FiniteRegionFlexure required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shape = _shape(load_pa)
+    operator.work_bytes(shape)
+    output_shape = (2*operator.grid.cells+1, 4)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(output_shape),
+        controller, 'finite-region-flexure', 'fft')
+    if not use:
+        load = load_pa.array if type(load_pa) is PreparedInput else load_pa
+        return _direct(lambda: operator.solve(load,budget=budget), control,key,policy,cancel,context,'reference')
+    resource = select_budget(budget)
+    with resource.reserve(16*elements(shape)):
+        load, digest = _capture(load_pa,'regional_load')
+        ctx = control.context('reference') if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend != 'reference':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('continuous-regional-flexure-v1',{'regional_load':load},
+            {'grid':asdict(operator.grid),'material':asdict(operator.parameters),
+             'boundary':asdict(operator.boundary),'operator_id':operator.operator_id},
+            'reference',context=ctx,digests={'regional_load':digest})
+        return _evaluate(store,record,lambda:operator.solve(load,budget=resource),output_shape,resource,
+            context=ctx,controller=control,cache_policy=policy,cancel=cancel,
+            wait_timeout=wait_timeout,admission_key=key)
+
+
+def cached_variable_flexure(operator, load_pa, *, store=None, budget=None, context=None,
+                           controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """Source-bound adaptive Hermite response; SciPy/LAPACK identity is required."""
+    from .variable_flexure import VariableRigidityFlexure
+    if type(operator) is not VariableRigidityFlexure or operator._closed:
+        raise TectonicsError('live explicit variable-rigidity operator required')
+    wait_timeout=_timeout(wait_timeout);_cancelled(cancel)
+    if budget is None and isinstance(store,ArrayStore): budget=store._budget
+    shape=_shape(load_pa);operator.work_bytes(shape)
+    output_shape=(operator.grid.cells,5,4)
+    policy,control,use,key=_prepare_reuse(store,cache_policy,8*elements(output_shape),controller,
+                                         'variable-rigidity-flexure','scipy')
+    if not use:
+        load=load_pa.array if type(load_pa) is PreparedInput else load_pa
+        return _direct(lambda:operator.solve(load,budget=budget,cancel=cancel),control,key,policy,cancel,context,'scipy')
+    resource=select_budget(budget)
+    with resource.reserve(16*elements(shape)):
+        load,digest=_capture(load_pa,'regional_load')
+        ctx=control.context('scipy') if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend!='scipy':
+            raise TectonicsError('context/backend mismatch')
+        record=_invocation_record('hermite-variable-rigidity-refined-v1',{'regional_load':load},
+            {'operator_id':operator.operator_id,'profile_id':operator.profile.profile_id,
+             'accuracy':asdict(operator.accuracy)},'scipy',context=ctx,digests={'regional_load':digest})
+        return _evaluate(store,record,lambda:operator.solve(load,budget=resource,cancel=cancel),output_shape,resource,
+            context=ctx,controller=control,cache_policy=policy,cancel=cancel,
+            wait_timeout=wait_timeout,admission_key=key)
 
 
 def cached_regional_transport(thickness_m, face_velocity_m_s, grid, duration_s, *,

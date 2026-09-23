@@ -1,0 +1,76 @@
+{
+  "status": "PASS_BITWISE_ALL_CHANGING_LOAD_RESPONSES_AND_MESH_GATES",
+  "source": "synthetic changing-load timing fixture; not geological calibration",
+  "cells": 512,
+  "length_m": 400000.0,
+  "calls_per_repeat": 12,
+  "repetitions": 3,
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "timings_seconds": {
+    "rebuild_each_load": [
+      0.03769299993291497,
+      0.0397282000631094,
+      0.03966240002773702
+    ],
+    "reuse_profile_factors": [
+      0.020635399967432022,
+      0.02067270001862198,
+      0.019881200045347214
+    ]
+  },
+  "median_rebuild_seconds": 0.03966240002773702,
+  "median_reuse_seconds": 0.020635399967432022,
+  "saved_seconds": 0.019027000060305,
+  "saved_percent": 47.97238706432008,
+  "speedup": 1.9220562766088618,
+  "per_solve_rebuild_seconds": 0.0033052000023114183,
+  "per_solve_reuse_seconds": 0.0017196166639526684,
+  "maximum_retained_factor_bytes": 1352512,
+  "maximum_accounted_peak_bytes": 18465600,
+  "accuracy": {
+    "source_id": "synthetic changing-load timing fixture; not geological calibration",
+    "relative_tolerance": 0.001,
+    "absolute_displacement_m": 1e-08,
+    "absolute_slope": 1e-11,
+    "absolute_curvature_per_m": 1e-14,
+    "max_refinements": 6,
+    "max_elements": 65536,
+    "max_element_over_alpha": 0.5
+  },
+  "accepted_subdivisions": [
+    2,
+    2,
+    4,
+    4,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8,
+    8
+  ],
+  "response_sha256": [
+    "b271b5ca1555f7970ecc8957dafb8c2fdb8138981ca22ae3f45df314740dc598",
+    "b1be16414617f4d944ae367f100e4214127b83b48a51dc374821a2f8e246a130",
+    "c9d451b6687b7c4476815701d0bf64689fae5f348ecb275b8d50e1ecf7cea969",
+    "4c5c63ea61237b8ef3034d66a89d4a4a9e4935ed4dbca105d8c87b0f12e7f4b8",
+    "991f217fc7fa996a5520a468a7fbaaba0f2bf049ffec55dd4c8e3bb268fc59d1",
+    "fab3600f49e4cfa0079cbccd973118cfc31d16058c9f4631cdf75fc0297e7748",
+    "7e017e16b9a5d0b548987a7853168b6c4b8868185be66297a1a12b7922463bfb",
+    "7e39e2feacad97e16484443a9b5b15d5e5b82d693614ada191bbeceed2a1d298",
+    "2ac7a47d72c7b8d154c71e3b5d2ae8894fb7eadbece674df134636d129094cef",
+    "6f80f9c0e4012d8bc4187b16758874eb76a867e72433316fc6c32e08c1c33081",
+    "b94bd1baf76cab29be643702cd5d344674be9a81bbe698d794757feaf644fe84",
+    "60446e07342f3fd4075eb56b389aea68a34083a3ebed4392ddfbef24995ad7a9"
+  ],
+  "scope": "Variable-rigidity 1D kernel, 12 different pressure fields, same profile and accuracy. Both include cold setup; alternating three batches. Includes validation, all refinement solves, polynomial diagnostics, reservations, immutable outputs and close. No result-cache hits, workers, W03 evolution/source-context checks or terrain generation. Not a whole-generator or old-release speed claim. Accounted bytes are not measured RSS.",
+  "source_sha256": {
+    "src/atlas_tectonics/variable_flexure.py": "174baa0a339d5c472fb1b6d3174c6be246eaa4034cf24e4b9743d4704e9eb634",
+    "tools/benchmark_w04_variable_rigidity.py": "1df17743c8b90a03a8079f3ab81f0ef975e82bba61fbb7909fce3e74420083b8"
+  }
+}

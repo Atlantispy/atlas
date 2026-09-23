@@ -3,6 +3,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 These tests do not claim a mature published convection benchmark result.
 """
 from dataclasses import replace
+from decimal import Decimal
 import math
 from pathlib import Path
 import json
@@ -76,16 +77,61 @@ class PublishedCaseTests(unittest.TestCase):
             self.assertEqual(set(ref['reported_values'][name]),set(_METRICS))
         self.assertEqual(ref['reported_values']['tosi-1']['temperature_mean']['ASPECT'],.7768)
         self.assertEqual(ref['reported_values']['tosi-5a']['period']['ASPECT'],.0768)
-        self.assertIsNone(ref['cases']['case5b_numerical_targets'])
+        self.assertEqual(ref['cases']['case5b_numerical_targets']['schema'],'atlas.tosi-case5b-reference.v1')
         self.assertFalse(ref['benchmark_accepted'])
-    def test_case5a_dissipation_ambiguity_not_silently_resolved(self):
+    def test_case5a_dissipation_interpretation_preserves_printed_source(self):
         ref=json.loads((Path(__file__).parents[1]/'cases/convection_r4_4.json').read_bytes())
         self.assertIn('printed_Phi_min',ref['reported_values']['tosi-5a'])
         self.assertNotIn('dissipation_over_Ra_min',ref['reported_values']['tosi-5a'])
-        self.assertIn('unresolved',ref['conventions']['case5a_Phi'])
+        mapping=ref['reference_policy']['case5a_dissipation']
+        self.assertEqual(mapping['status'],'ADOPTED_DERIVED_INTERPRETATION')
+        self.assertFalse(mapping['author_confirmed'])
+        self.assertEqual(mapping['diagnostics']['printed_Phi_min'],'dissipation_over_Ra_min')
+        self.assertIn('not an author-confirmed erratum',ref['conventions']['case5a_Phi'])
+    def test_case5a_inferred_scaling_arithmetic_without_promoting_acceptance(self):
+        ref=json.loads((Path(__file__).parents[1]/'cases/convection_r4_4.json').read_text(),parse_float=Decimal)
+        case=ref['reported_values']['tosi-5a'];margin=ref['predeclared_acceptance']['table_relative_margin']
+        for key,expected in [('printed_Phi_min',('1.3238855','1.3697145')),
+                             ('printed_Phi_max',('9.0923','9.5877'))]:
+            values=list(case[key].values());lo=min(values);hi=max(values);m=margin*max(abs(lo),abs(hi))
+            self.assertEqual((lo-m,hi+m),tuple(map(Decimal,expected)))
+        for code in ref['included_codes']:
+            # Wbar >= minimum(Nu_top)-1, whereas raw-Phi reading gives a
+            # contradictory upper bound Wbar <= maximum(printed Phi)/Ra.
+            self.assertGreater(case['Nu_top_min'][code]-1,case['printed_Phi_max'][code]/100)
+        self.assertEqual(ref['reference_review_2026_09_22']['case5a_scaling_status'],
+                         'ADOPTED_DERIVED_INTERPRETATION')
+        self.assertFalse(ref['benchmark_accepted'])
+        self.assertEqual(ref['cases']['case5b_numerical_targets']['selection'],'finest-published-column-no-fallback.v1')
 
 
 class QuadratureTests(unittest.TestCase):
+    def test_constant_viscosity_buoyancy_solution_and_work_sign(self):
+        from stokes_fixtures import unit_box,unit_scales,request
+        # Independent continuum Stokes solution (not a thermal steady state).
+        # eta=1, Ra=100, A=.01; C=Ra*A/(4*eta*pi^2).
+        C=1/(4*math.pi**2);errors=[]
+        for n in (8,16,32):
+            box=unit_box(n);xw,yw=np.meshgrid(*box.axes('force_z'))
+            force=100*(1-yw+.01*np.cos(math.pi*xw)*np.sin(math.pi*yw))
+            with a.PreparedStokes2D(box,a.reference_rheology('constant'),unit_scales()) as plan:
+                result=plan.solve(np.zeros((n,n-1)),force,**request(box))
+            x,y=np.meshgrid(*box.axes('pressure'))
+            temperature=1-y+.01*np.cos(math.pi*x)*np.sin(math.pi*y)
+            u=result.array('u_m_s');w=result.array('w_m_s')
+            exact_w=C*np.cos(math.pi*xw)*np.sin(math.pi*yw)
+            self.assertGreater(float(np.sum(exact_w*w[1:-1])),0.)
+            expected_p=100*(y-y*y/2)-.5/math.pi*np.cos(math.pi*x)*np.cos(math.pi*y)
+            expected_p-=expected_p.mean()
+            d=a.convection_diagnostics(temperature,u,w,np.ones((n,n)),np.ones((n-1,n-1)),a.reference_rheology('tosi-1'))
+            self.assertGreater(d['work'],0.)
+            self.assertEqual(d['dissipation_over_Ra'],d['dissipation']/100)
+            errors.append([float(np.sqrt(np.mean((w[1:-1]-exact_w)**2))),
+                           float(np.sqrt(np.mean((result.array('pressure_pa')-expected_p)**2))),
+                           abs(d['work']-.01*C/4),abs(d['dissipation']-C*C*math.pi**2)])
+        # Same existing second-order refinement criterion, no fitted tolerance.
+        for coarse,fine in zip(errors,errors[1:]):
+            self.assertTrue(all(3.7<c/f<4.6 for c,f in zip(coarse,fine)),errors)
     def test_conductive_flux_mean_and_zero_work(self):
         n=12;T=np.broadcast_to(1-(np.arange(n)+.5)[:,None]/n,(n,n)).copy()
         u=np.zeros((n,n+1));w=np.zeros((n+1,n))
@@ -245,6 +291,10 @@ class EndpointAndIdentityTests(unittest.TestCase):
         cls.p=a.TosiCase('tosi-1').problem(4)
         cls.s=a.ThermochemicalState(cls.p,a.tosi_initial_temperature(4),np.zeros((4,4)),time_s=0.,source='independent endpoint test')
         with a.PreparedVariableStokes2D(cls.p.box,cls.p.scales) as m:cls.f=a.tosi_endpoint_flow(cls.s,m)
+        cls.small_p=a.TosiCase('tosi-1').problem(2)
+        cls.small_s=a.ThermochemicalState(cls.small_p,a.tosi_initial_temperature(2),np.zeros((2,2)),time_s=0.,source='two-cell endpoint binding test')
+        with a.PreparedVariableStokes2D(cls.small_p.box,cls.small_p.scales,policy=a.NonlinearStokesPolicy(method='direct')) as m:
+            cls.small_f=a.tosi_endpoint_flow(cls.small_s,m)
     def test_endpoint_identity_and_independent_work(self):
         d=a.tosi_state_diagnostics(self.s,self.f)
         self.assertEqual(d['state_id'],self.s.state_id);self.assertEqual(d['flow_id'],self.f.result_id)
@@ -262,6 +312,26 @@ class EndpointAndIdentityTests(unittest.TestCase):
         p=replace(self.p,material=replace(self.p.material,conductivity_w_m_k=2.))
         s=a.ThermochemicalState(p,self.s.array('temperature_k'),np.zeros((4,4)),time_s=0.,source='different diffusivity')
         with self.assertRaises(a.TectonicsError):a.tosi_state_diagnostics(s,self.f)
+    def test_two_cell_valid_embedding_retains_unaccepted_status(self):
+        d=a.tosi_state_diagnostics(self.small_s,self.small_f)
+        self.assertEqual(d['state_id'],self.small_s.state_id)
+        self.assertEqual(d['flow_id'],self.small_f.result_id)
+        self.assertFalse(d['full_benchmark_accepted'])
+    def test_different_flow_scales_refused(self):
+        p=self.small_p;s=self.small_s
+        scales=replace(p.scales,viscosity_pa_s=2.)
+        with a.PreparedVariableStokes2D(p.box,scales,policy=a.NonlinearStokesPolicy(method='direct')) as m:
+            flow=m.solve_rheology(self.small_f.array('force_x_n_m3'),self.small_f.array('force_z_n_m3'),
+                s.array('temperature_k'),p.rheology,frame_id=p.box.frame_id,epoch_id=p.epoch_id,
+                time_s=s.time_s,source='valid mechanics with different viscosity scale')
+        self.assertGreater(float(np.max(np.abs(flow.array('u_m_s')-self.small_f.array('u_m_s')))),0.)
+        with self.assertRaisesRegex(a.TectonicsError,'not the simultaneous'):
+            a.tosi_state_diagnostics(s,flow)
+    def test_internal_heating_not_published_case(self):
+        p=replace(self.small_p,material=replace(self.small_p.material,internal_heating_w_m3=1.))
+        s=a.ThermochemicalState(p,self.small_s.array('temperature_k'),np.zeros((2,2)),time_s=0.,source='internally heated case')
+        with self.assertRaisesRegex(a.TectonicsError,'declared unit numerical embedding'):
+            a.tosi_state_diagnostics(s,self.small_f)
     def test_new_module_callable_identity_is_guarded(self):
         with ExecutionContext('scipy') as context:
             with mock.patch('atlas_tectonics.convection_benchmark.tosi_initial_temperature',lambda n:None):

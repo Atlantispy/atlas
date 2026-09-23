@@ -6,7 +6,7 @@ under coarsening; mesh motion is not automatically geological material motion.
 from concurrent.futures import CancelledError
 from dataclasses import replace
 from fractions import Fraction
-import copy, math, pickle, tempfile, threading, unittest
+import copy, json, math, pickle, tempfile, threading, unittest
 from pathlib import Path
 from unittest import mock
 import numpy as np
@@ -17,7 +17,7 @@ from atlas_tectonics.materials import (MaterialCohort,MaterialState,MaterialBoun
     apply_material_event,save_material_state,load_material_state,advect_materials)
 from atlas_tectonics.mesh import ColumnGrid1D
 from atlas_tectonics.remapping import (RemapPlan,remap_materials,advect_ale,ale_timestep_limit,
-    to_column_state,_inventories)
+    to_column_state,_inventories,restore_ale_result,_GEOMETRY_RTOL)
 from atlas_tectonics.topology import (PlateRecord,BlockRecord,BoundaryRecord,PlateTopology1D,
     TectonicState1D,split_block,merge_blocks,reassign_blocks,change_boundary,move_partition,
     advance_plate_state,regrid_plate_state,apply_plate_material_event,save_tectonic_state,load_tectonic_state)
@@ -89,6 +89,20 @@ class MeshRemapTests(unittest.TestCase):
         r=remap_materials(s,ColumnGrid1D([0,.5,1],frame_id='test-frame'),scheme='constant')
         expected=[(Fraction(1,4)+3*Fraction(1,4))/Fraction(1,2),(3*Fraction(1,4)+2*Fraction(1,4))/Fraction(1,2)]
         assert_array_equal(r.thickness_m,[[float(x) for x in expected]])
+    def test_affine_remap_across_binary_exponent_boundary(self):
+        # Test endpoint and interior slopes using exact local cell averages,
+        # not rounded absolute centres or a second implementation as the oracle.
+        for local,target in (([0,3,8],[0,2,4,8]),
+                             ([0,3,8,14,20],[0,2,4,8,12,16,20])):
+            x=np.array(local,dtype=float);y=np.array(target,dtype=float)
+            h=10+x[:-1]+.5*np.diff(x);expected=10+y[:-1]+.5*np.diff(y)
+            g=ColumnGrid1D((2**53-6)+x,frame_id='test-frame')
+            t=ColumnGrid1D((2**53-6)+y,frame_id='test-frame')
+            s=MaterialState(g,(COHORTS[0],),h[None,:],time_s=1,epoch_id='e')
+            for backend in ('reference','numba'):
+                with self.subTest(cells=len(h),backend=backend):
+                    r=remap_materials(s,t,backend=backend)
+                    assert_array_equal(r.thickness_m[0],expected);close(inv(s),inv(r))
     def test_sharp_front_nonnegative_and_conserved(self):
         h=np.zeros((2,64));h[0,:23]=2;h[1,23:]=3;s=state(64,h)
         r=remap_materials(s,ColumnGrid1D(np.linspace(0,1,91)**1.1,frame_id='test-frame'))
@@ -134,6 +148,54 @@ class MeshRemapTests(unittest.TestCase):
         r=apply_material_event(s,e,[.5,0,0]);self.assertAlmostEqual(r.transferred_volume_m2,.05);close(inv(r.state),[.95,1])
 
 class MovingVolumeTests(unittest.TestCase):
+    def test_geometry_tolerance_matches_existing_case(self):
+        case=json.loads((Path(__file__).parents[1]/'cases'/'w02_completion.json').read_text())
+        self.assertEqual(_GEOMETRY_RTOL,case['verification']['relative_tolerance'])
+    def test_materially_rounded_mesh_motion_refused(self):
+        g=ColumnGrid1D([1e16,1e16+8],frame_id='test-frame')
+        s=MaterialState(g,(COHORTS[0],),[[1.]],time_s=1,epoch_id='e')
+        for u,w,left,right in (([0.,0.],[0.,6.],CLOSED,MaterialBoundary('open',{'a':1.},'outside')),
+                               ([6.,6.],[6.,6.],CLOSED,CLOSED)):
+            # Expansion breaks GCL; rounded rigid translation breaks the path
+            # even though its cell widths and material inventory are unchanged.
+            for backend in ('reference','numba'):
+                for scheme in ('upwind','muscl'):
+                    with self.subTest(w=w,backend=backend,scheme=scheme):
+                        with self.assertRaisesRegex(TectonicsError,'represented mesh motion'):
+                            advect_ale(s,u,w,.5,left=left,right=right,scheme=scheme,backend=backend)
+        assert_array_equal(s.thickness_m,[[1.]])
+    def test_fine_mesh_small_motion_preserves_uniform_field(self):
+        # The established 8192-cell workload must not be rejected merely because
+        # displacement-relative rounding exceeds the inventory roundoff factor.
+        s=state(8192);w=.02*np.sin(np.pi*s.grid.edges_m);w[-1]=0.
+        r=advect_ale(s,np.zeros(8193),w,2/8192,left=CLOSED,right=CLOSED)
+        close(r.state.thickness_m,s.thickness_m);close(inv(s),inv(r.state))
+    def test_zero_and_exact_large_origin_motion(self):
+        g=ColumnGrid1D([1e16,1e16+8],frame_id='test-frame')
+        s=MaterialState(g,(COHORTS[0],),[[1.]],time_s=1,epoch_id='e')
+        for dt in (0.,1.):
+            r=advect_ale(s,[4.,4.],[4.,4.],dt,left=CLOSED,right=CLOSED)
+            assert_array_equal(r.state.grid.edges_m,g.edges_m+4*dt)
+            assert_array_equal(r.state.thickness_m,s.thickness_m)
+    def test_restore_cannot_bypass_mesh_precision_guard(self):
+        g=ColumnGrid1D([1e16,1e16+8],frame_id='test-frame')
+        s=MaterialState(g,(COHORTS[0],),[[1.]],time_s=1,epoch_id='e')
+        # Historical invalid one-cell result: Q=11, width=12, right influx=3.
+        packed=np.array([[11/12,0.,-6.,8.,11.,3.,0.,0.,.375,0.,3.]])
+        for backend in ('reference','numba'):
+            with self.subTest(backend=backend),self.assertRaisesRegex(TectonicsError,'represented mesh motion'):
+                restore_ale_result(s,np.zeros(2),np.array([0.,6.]),.5,CLOSED,
+                    MaterialBoundary('open',{'a':1.},'outside'),'muscl',backend,packed)
+    def test_ale_reconstruction_across_binary_exponent_boundary(self):
+        results=[]
+        for origin in (0.,float(2**53-6)):
+            g=ColumnGrid1D(origin+np.array([0.,3.,8.,14.,20.]),frame_id='test-frame')
+            s=MaterialState(g,(COHORTS[0],),[[11.5,15.5,21.,27.]],time_s=1,epoch_id='e')
+            for backend in ('reference','numba'):
+                r=advect_ale(s,[0.,.1,.1,.1,0.],np.zeros(5),.5,
+                    left=CLOSED,right=CLOSED,backend=backend)
+                results.append(r.state.thickness_m);close(inv(s),inv(r.state))
+        for actual in results[1:]:close(actual,results[0])
     def test_increasing_clock_cannot_mislabel_ale_interval(self):
         g=ColumnGrid1D([0.,1.,2.],frame_id='test-frame')
         s=MaterialState(g,(COHORTS[0],),[[1.,0.]],time_s=1e16,epoch_id='e')
@@ -310,6 +372,15 @@ class TopologyTests(unittest.TestCase):
         self.assertEqual(pickle.loads(pickle.dumps(r)).model_id,r.model_id)
 
 class MarkerTests(unittest.TestCase):
+    def test_marker_clock_uses_material_interval_validation(self):
+        m=MaterialMarkers1D(('a',),('c',),[.5],time_s=1e16,epoch_id='e',frame_id='test-frame')
+        g=grid(1)
+        with self.assertRaisesRegex(TectonicsError,'represented clock interval'):
+            move_material_markers(m,g,g,3.)
+        with self.assertRaisesRegex(TectonicsError,'unresolvable'):
+            move_material_markers(m,g,g,1.)
+        self.assertEqual(move_material_markers(m,g,g,4.).time_s-m.time_s,4.)
+        self.assertEqual(move_material_markers(m,g,g,0.).marker_state_id,m.marker_state_id)
     def test_affine_map_inverse_and_ids(self):
         g=grid(8);t=ColumnGrid1D(2*g.edges_m+3,frame_id='test-frame')
         m=MaterialMarkers1D(('x','y','z'),('a','b','a'),[0,.25,1],time_s=1,epoch_id='e',frame_id='test-frame')
@@ -461,7 +532,9 @@ class IntegratedW02Tests(unittest.TestCase):
         budget=WorkBudget(8<<20);s=state(256)
         r=remap_materials(s,grid(511),budget=budget)
         u=np.full(512,.1);w=np.zeros(512)
-        out=advect_ale(r,u,w,.001,left=ext(),right=ext(),budget=budget)
+        # Keep this allocation test inside the existing clock-resolution
+        # contract: 1 + .001 does not represent .001 within 128eps.
+        out=advect_ale(r,u,w,1/1024,left=ext(),right=ext(),budget=budget)
         self.assertLess(budget.peak_reserved_bytes,budget.max_bytes);self.assertEqual(budget.reserved_bytes,0)
         with tempfile.TemporaryDirectory() as tmp,ArrayStore(Path(tmp)/'x.db',limits(),budget=WorkBudget(64<<20)) as store:
             save_material_state(out.state,store);restored=load_material_state(store,out.state.state_id)

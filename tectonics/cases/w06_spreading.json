@@ -1,0 +1,47 @@
+{
+  "schema": "atlas.w06-spreading-case.v1",
+  "status": "WORKING NON-CANON SYNTHETIC",
+  "case_id": "w06-newborn-ocean-20260922",
+  "frozen_design": {
+    "path": "docs/W06_SPREADING.md",
+    "sha256": "fc52728845d62bfd575a3d22e6a46796d3d36120b8ab1f65668379b38e0be285",
+    "section": "Frozen design case for steps 2-5"
+  },
+  "seconds_per_year": 31557600.0,
+  "time_s": 0.0,
+  "epoch_id": "w06-synthetic-forward-epoch",
+  "frame_id": "w06-synthetic-planar-section",
+  "width_m": 1.0,
+  "motion": {
+    "ridge_position_m": 0.0,
+    "left_velocity_m_per_year": -0.02,
+    "right_velocity_m_per_year": 0.02,
+    "ridge_velocity_m_per_year": 0.0,
+    "left_plate_id": "synthetic-left-plate",
+    "right_plate_id": "synthetic-right-plate",
+    "ridge_id": "synthetic-onset-ridge",
+    "event_id": "synthetic-ocean-onset",
+    "source_id": "w06-prescribed-motion"
+  },
+  "phases": [
+    {"phase_id": "crust", "source_id": "finite-hot-crust-feed", "thickness_m": 7000.0, "density_kg_m3": 2900.0, "stock_kg": 20000000000000.0},
+    {"phase_id": "mantle", "source_id": "finite-mantle-feed", "thickness_m": 93000.0, "density_kg_m3": 3300.0, "stock_kg": 300000000000000.0}
+  ],
+  "duration_years": 20000000.0,
+  "output_years": [0.0, 5000000.0, 10000000.0, 20000000.0],
+  "partial_cell_years": 5006250.0,
+  "domain_m": [-500000.0, 500000.0],
+  "crop_m": [-150000.0, 150000.0],
+  "enlarged_domain_m": [-600000.0, 600000.0],
+  "export_domain_m": [-100000.0, 100000.0],
+  "grid_spacing_m": [1000.0, 500.0, 250.0],
+  "time_intervals": [32, 64, 128],
+  "maximum_intervals": 256,
+  "work_budget_bytes": 134217728,
+  "position_error_m": 1e-7,
+  "age_error_s": 1.0,
+  "material_roundoff_eps_multiplier": 128,
+  "final_created_width_m": 800000.0,
+  "final_created_mass_kg": [16240000000000.0, 245520000000000.0],
+  "note": "Frozen Step-1 motion/material subset, initially empty. Mantle is the disjoint 7-100 km layer, not another full 100 km. Constant prescribed velocities only; no changing histories, cooling, support, heat/water, persistent cache or combined W06 acceptance. The design hash is an explicit source binding; do not silently repin it."
+}

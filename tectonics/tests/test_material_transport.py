@@ -1,7 +1,8 @@
 """W02 cohort verification: conserved extensive data, not advected material IDs.
 
 Analytic and rational expectations, native/reference comparisons, lossless state
-round trips and pressure/failure checks. No timing thresholds or changed old tests.
+round trips and pressure/failure checks. V2 jointly limits MUSCL cohort slopes;
+independent scalar-row equivalence is retained only for upwind/single cohorts.
 """
 from concurrent.futures import CancelledError, ThreadPoolExecutor
 from dataclasses import replace
@@ -156,9 +157,9 @@ class MaterialTransportTests(unittest.TestCase):
             self.assertEqual(a.state.thickness_m[0].tobytes(),b.thickness_m.tobytes())
             self.assertEqual(a.face_flux_m2_s[0].tobytes(),b.face_flux_m2_s.tobytes())
 
-    def test_multi_matches_individual_native_rows(self):
+    def test_upwind_multi_matches_individual_native_rows(self):
         rng=np.random.default_rng(2507);s=state(rng.uniform(.1,10,(2,31)));u=rng.uniform(-1,1,32)
-        for scheme in ('muscl','upwind'):
+        for scheme in ('upwind',):
             result=step(s,u,scheme=scheme)
             for k,c in enumerate(s.cohorts):
                 amount=1 if k==0 else 2
@@ -268,17 +269,23 @@ class MaterialTransportTests(unittest.TestCase):
         self.assertTrue(np.all(r2.state.thickness_m[:,1:-1]>s.thickness_m[:,1:-1]))
 
     def test_thin_sharp_front_nonnegative(self):
-        h=np.zeros((2,64));h[0,15:25]=1.;h[1,30:45]=1e-8;s=state(h)
+        h=np.zeros((2,64));h[0,15:25]=1.;h[1,30:45]=1e-8
         empty=MaterialBoundary('open',{},'outside')
-        for _ in range(20):s=step(s,np.ones(65),.4,left=empty,right=empty).state
-        self.assertTrue(np.all(s.thickness_m>=0));self.assertLessEqual(s.thickness_m[0].max(),1+ATOL)
-        self.assertEqual(s.ages_s(),(108.,18.))
+        for backend in ('reference','numba'):
+            s=state(h)
+            for _ in range(20):s=step(s,np.ones(65),.4,left=empty,right=empty,backend=backend).state
+            self.assertTrue(np.all(s.thickness_m>=0));self.assertLessEqual(s.thickness_m[0].max(),1+ATOL)
+            self.assertEqual(s.ages_s(),(108.,18.))
 
     def test_native_flags_and_no_auto_precision(self):
         step();from atlas_tectonics._materials_native import advance_cohorts
+        from atlas_tectonics.materials import material_native_build_info
         self.assertFalse(advance_cohorts.targetoptions['fastmath']);self.assertTrue(advance_cohorts.targetoptions['nogil'])
         self.assertNotIn('parallel',advance_cohorts.targetoptions)
         self.assertEqual(step().state.thickness_m.dtype,np.dtype('f8'))
+        info=material_native_build_info()
+        self.assertEqual(info['method'],'cohort-partial-thickness-regional-v2')
+        self.assertEqual(len(info['assembly_sha256']),64)
 
     def test_missing_native_never_falls_back(self):
         import builtins
@@ -475,10 +482,11 @@ class MaterialPersistenceTests(unittest.TestCase):
     def test_native_definition_change_invalidates_context(self):
         from atlas_tectonics import _materials_native as native
         ctx=ExecutionContext('numba');ctx.verify()
-        original=native.advance_cohorts
-        with mock.patch.object(native,'advance_cohorts',lambda *a:None):
-            with self.assertRaises(TectonicsError):ctx.verify()
-        self.assertIs(native.advance_cohorts,original)
+        for name in ('advance_cohorts','cohort_fluxes'):
+            original=getattr(native,name)
+            with mock.patch.object(native,name,lambda *a:None):
+                with self.assertRaises(TectonicsError):ctx.verify()
+            self.assertIs(getattr(native,name),original)
 
     def test_cache_fresh_process_preserves_one_snapshot(self):
         a=self.cached()
@@ -600,7 +608,118 @@ class MaterialReceiptTests(unittest.TestCase):
         self.assertEqual(b.reserved_bytes,0)
 
 
+class JointMaterialTransportTests(unittest.TestCase):
+    """V2 total-trace invariants replace independent nonlinear-row equivalence."""
+
+    def test_method_version_and_joint_stage_budget(self):
+        s=state();r=step(s)
+        self.assertEqual(r.state.transition_record['operation'],'cohort-partial-thickness-regional-v2')
+        self.assertIn('regional-v2',r.numerical_method)
+        self.assertGreater(material_work_bytes(8,64),material_work_bytes(8,64,scheme='upwind'))
+        receipt=r.state.transition_record;receipt['operation']='cohort-partial-thickness-regional-v1'
+        tid=hashlib.sha256(json.dumps(receipt,ensure_ascii=True,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
+        old=MaterialState(s.grid,s.cohorts,r.state.thickness_m,time_s=.2,epoch_id=s.epoch_id,
+                          parent_state_id=s.state_id,transition_id=tid,transition=receipt)
+        old_result=replace(r,state=old)
+        self.assertIn('regional-v1',old_result.numerical_method)
+        with self.assertRaisesRegex(TectonicsError,'numerical receipt'):
+            validate_material_result(old_result,s,.2)
+
+    def test_each_stage_donor_traces_sum_to_scalar_total(self):
+        from atlas_tectonics._materials_native import cohort_fluxes
+        from atlas_tectonics._regional_native import fluxes
+        from atlas_tectonics.materials import _cohort_fluxes_reference
+        fields=(np.array([[3.9,3.,2.],[.1,1.,2.]]),
+                np.array([[0.,1.,2.,0.,4.],[3.,0.,.2,2.,0.],[1.,3.,.8,1.,0.],[0.,0.,0.,0.,0.]]))
+        for h in fields:
+            left=np.zeros(h.shape[0]);left[0]=4.
+            right=np.zeros(h.shape[0]);right[-2]=4.
+            for direction in (-1.,1.):
+                u=np.full(h.shape[1]+1,direction)
+                for backend in ('numba','reference'):
+                    stage=h.copy()
+                    for _ in range(2):
+                        if backend=='numba':
+                            partial=np.empty((h.shape[0],h.shape[1]+1))
+                            cohort_fluxes(stage,u,left,right,partial)
+                        else:partial=_cohort_fluxes_reference(stage,u,left,right)
+                        total=np.array([math.fsum(stage[:,i]) for i in range(stage.shape[1])])
+                        expected=np.empty(total.size+1)
+                        fluxes(total,u,math.fsum(left),math.fsum(right),True,expected)
+                        assert_allclose(partial.sum(axis=0),expected,rtol=RTOL,atol=ATOL)
+                        self.assertTrue(np.all(partial/direction>=0))
+                        stage=stage+.4*partial[:,:-1]-.4*partial[:,1:]
+                        self.assertTrue(np.all(stage>=0))
+
+    def test_varying_total_follows_scalar_and_conserves_each_cohort(self):
+        rng=np.random.default_rng(822)
+        cs=COHORTS+(MaterialCohort('c','rock','third',0.),)
+        h=rng.uniform(.01,4.,(3,37));h[:,12]=0;h[1,5:10]=0
+        s=state(h,cohorts=cs);u=rng.uniform(-1,1,38)
+        left=MaterialBoundary('open',{'a':2.,'b':0.,'c':1.},'left')
+        right=MaterialBoundary('open',{'a':0.,'b':3.,'c':2.},'right')
+        results=[]
+        for backend in ('numba','reference'):
+            r=step(s,u,.25,left=left,right=right,backend=backend)
+            scalar_result=advect_regional(s.total_thickness(),u,s.grid,.25,
+                left=TransportBoundary('open',3.),right=TransportBoundary('open',5.),backend=backend)
+            assert_allclose(r.state.total_thickness(),scalar_result.thickness_m,rtol=RTOL,atol=ATOL)
+            assert_allclose(r.face_flux_m2_s.sum(axis=0),scalar_result.face_flux_m2_s,rtol=RTOL,atol=ATOL)
+            self.assertTrue(np.all(r.state.thickness_m>=0))
+            for k,a in enumerate(r.accounts):
+                residual=math.fsum((math.fsum(r.state.thickness_m[k]),-math.fsum(h[k]),-a[6],-a[7]))
+                self.assertLessEqual(abs(residual),128*np.finfo(float).eps*max(a[:4]))
+            results.append(r)
+        assert_allclose(results[0].state.thickness_m,results[1].state.thickness_m,rtol=RTOL,atol=ATOL)
+        assert_allclose(results[0].face_flux_m2_s,results[1].face_flux_m2_s,rtol=RTOL,atol=ATOL)
+
+    def test_constant_total_two_and_three_cohorts_through_reversed_inflow(self):
+        for c in (2,3):
+            n=24;x=(np.arange(n)+.5)*3/n;a=np.floor(x)+1.
+            h=np.vstack((a,4-a)) if c==2 else np.vstack((a,(4-a)*(.2+.1*np.cos(5*x)),(4-a)*(.8-.1*np.cos(5*x))))
+            cs=COHORTS if c==2 else COHORTS+(MaterialCohort('c','rock','third',0.),)
+            for direction in (-1.,1.):
+                for backend in ('numba','reference'):
+                    values=h if direction>0 else h[:,::-1]
+                    s=MaterialState(RegionalGrid1D(n,3.),cs,values,time_s=0.,epoch_id='synthetic')
+                    incoming=MaterialBoundary('open',{'a':4.},'source')
+                    outgoing=MaterialBoundary('open',None,'sink')
+                    left,right=(incoming,outgoing) if direction>0 else (outgoing,incoming)
+                    while s.time_s<.5:
+                        r=advect_materials(s,direction*np.ones(n+1),min(.05,.5-s.time_s),
+                                           left=left,right=right,backend=backend)
+                        s=r.state
+                        assert_allclose(s.total_thickness(),4.,rtol=RTOL,atol=ATOL)
+                        self.assertTrue(np.all(s.thickness_m>=0))
+                        self.assertLessEqual(float(s.thickness_m.max()),4.+ATOL)
+                    if c==2:
+                        assert_allclose([math.fsum(row)*s.grid.spacing_m*2 for row in s.thickness_m],
+                                        [13.,11.],rtol=RTOL,atol=ATOL)
+
+
 class MaterialAccuracyTests(unittest.TestCase):
+    def test_three_cohort_smooth_constant_total_refinement(self):
+        errors=[];cs=COHORTS+(MaterialCohort('c','rock','third',0.),)
+        for n in CASE['tests']['refinement_cells']:
+            grid=RegionalGrid1D(n,4.,-2.);dx=grid.spacing_m
+            x=-2.+(np.arange(n)+.5)*dx
+            def values(y):
+                a=1.+.1*np.cos(2*np.pi*y)*np.sinc(dx)
+                b=1.+.1*np.sin(2*np.pi*y)*np.sinc(dx)
+                return np.vstack((a,b,4.-a-b))
+            s=MaterialState(grid,cs,values(x),time_s=0.,epoch_id='synthetic')
+            stop=CASE['tests']['translation_duration_s']
+            while s.time_s<stop:
+                dt=min(.4*dx,stop-s.time_s);phase=2*np.pi*(-2.-s.time_s-dt/2)
+                a=1.+.1*math.cos(phase);b=1.+.1*math.sin(phase)
+                left=MaterialBoundary('open',{'a':a,'b':b,'c':4.-a-b},'left')
+                s=advect_materials(s,np.ones(n+1),dt,left=left,right=MaterialBoundary('open',None,'right')).state
+            interior=(x>-1.4)&(x<1.4)
+            errors.append(float(np.mean(np.abs(s.thickness_m[:,interior]-values(x-stop)[:,interior]))))
+            assert_allclose(s.total_thickness(),4.,rtol=RTOL,atol=ATOL)
+        for a,b in zip(errors,errors[1:]):
+            self.assertGreater(a/b,CASE['tests']['expected_refinement_ratio_minimum'])
+
     def test_smooth_cohort_refinement_second_order(self):
         errors=[]
         for n in CASE['tests']['refinement_cells']:

@@ -1,0 +1,46 @@
+{
+  "status": "PASS_SAME_MODEL",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "columns": 2048,
+  "reference_cells": 256,
+  "repetitions": 3,
+  "output_fields": [
+    "buoyancy_sheet_kg_m2",
+    "downward_load_pa",
+    "downward_displacement_m"
+  ],
+  "max_absolute_difference": [
+    1.862645149230957e-9,
+    1.4901161193847656e-8,
+    9.094947017729282e-13
+  ],
+  "timings_seconds": {
+    "sampled_256_cells": [
+      0.04551799991168082,
+      0.04564699996262789,
+      0.04518140002619475
+    ],
+    "whole_column_integral": [
+      0.0009426000760868192,
+      0.0008771000429987907,
+      0.0009340000106021762
+    ]
+  },
+  "median_reference_seconds": 0.04551799991168082,
+  "median_integral_seconds": 0.0009340000106021762,
+  "saved_seconds": 0.04458399990107864,
+  "saved_percent": 97.9480644746816,
+  "speedup": 48.7344747269693,
+  "scope": "Same constant-property model. Cached reference grid in baseline; no disk cache or JIT warmup in timings. Not whole-generator or external-software timing.",
+  "source_sha256": {
+    "src/atlas_tectonics/thermal_support.py": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e",
+    "src/atlas_tectonics/plate_integrals.py": "46a0cf85badcda7b3297d81e2527c425ce0ceecf9f48f460f58a19d713e33a1f",
+    "src/atlas_tectonics/plate_cooling.py": "9754d10bec2711f4a6a2d6ab5b53ad36d5ab943dd7791487e872219e7e8652e0",
+    "src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "tools/benchmark_w03_support.py": "b0c5c477026ebe5e51580bd5757aa84b47726f2965d48888c631cfd2db8bd803"
+  }
+}

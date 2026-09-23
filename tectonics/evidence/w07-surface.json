@@ -1,0 +1,1488 @@
+{
+  "schema": "atlas.w07-surface-evidence.v1",
+  "source_status": "WORKING NON-CANON",
+  "mode": "all",
+  "runtime": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "threadpools": [
+      {
+        "internal_api": "openblas",
+        "num_threads": 1
+      },
+      {
+        "internal_api": "openblas",
+        "num_threads": 1
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "B09/independent-oracle",
+      "status": "PASS",
+      "result": {
+        "gamma": 0.14424591716886523,
+        "biharmonic_boundary_value_relative_errors": [
+          5.551115123125783e-16,
+          1.3322676295501878e-15,
+          4.440892098500626e-16,
+          2.220446049250313e-15,
+          1.865174681370263e-14
+        ],
+        "thin_limit_relative_error": 1.799999937990293e-08,
+        "deep_limit_relative_error": 0.0,
+        "convention": "positive decay; no-slip bottom, free-slip vertical sides, tractionfree top"
+      },
+      "elapsed_seconds": 0.008533800020813942
+    },
+    {
+      "name": "B09/4x2/64/0.0001",
+      "status": "PASS",
+      "result": {
+        "nx": 4,
+        "nz": 2,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 0.0001,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 9.940492044654332e-05,
+            "reference_amplitude_m": 0.0001,
+            "relative_amplitude_error": 0.0059507955345667884,
+            "second_harmonic_m": 5.300573365239801e-19,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 7.733744345985573e-05,
+            "reference_amplitude_m": 7.78800783071405e-05,
+            "relative_amplitude_error": 0.00696756935894105,
+            "second_harmonic_m": -4.0756547850929004e-10,
+            "volume_relative_error": 1.5543122344752192e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 6.016919885321066e-05,
+            "reference_amplitude_m": 6.065306597126335e-05,
+            "relative_amplitude_error": 0.007977620097258442,
+            "second_harmonic_m": -5.955981552751071e-10,
+            "volume_relative_error": 1.5543122344752192e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 4.6812469293194717e-05,
+            "reference_amplitude_m": 4.723665527410147e-05,
+            "relative_amplitude_error": 0.00898001728626463,
+            "second_harmonic_m": -6.594050133687404e-10,
+            "volume_relative_error": 2.4424906541753444e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 3.6421033093904904e-05,
+            "reference_amplitude_m": 3.678794411714424e-05,
+            "relative_amplitude_error": 0.009973675671327897,
+            "second_harmonic_m": -6.553232471053009e-10,
+            "volume_relative_error": 3.552713678800501e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500626e-16,
+          "mass_residual_scaled": 2.2204460492503136e-16,
+          "uniform_density_residual_scaled": 5.881131779406733e-13,
+          "momentum_residual": 2.6104118866498993e-14,
+          "weak_continuity_scaled_max": 2.6626699299268133e-14,
+          "normalised_work_residual": 9.047101834160916e-20,
+          "linear_residual": 1.5236178450359802e-13
+        },
+        "final_surface_elevation_m": [
+          1.000035461366004,
+          1.000026396078257,
+          1.0000000008229697,
+          0.9999736039071692,
+          0.9999645370464236,
+          0.9999736039071173,
+          1.0000000008231882,
+          1.0000263960782647,
+          1.000035461365683
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 1234880,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 1350016,
+            "peak_reserved_bytes": 3169536,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 1234880,
+              "surface-fe-topology": 40960,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 74176,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 1234880,
+              "surface-fe-topology": 40960,
+              "surface-fe-admission": 1893696,
+              "surface-fe-metrics": 74176,
+              "surface-fe-solve": 1819520,
+              "surface-mesh-laplacian": 1819520
+            }
+          }
+        },
+        "elapsed_seconds": 1.0305598999839276
+      },
+      "elapsed_seconds": 1.0388295999728143
+    },
+    {
+      "name": "B09/8x4/64/0.0001",
+      "status": "PASS",
+      "result": {
+        "nx": 8,
+        "nz": 4,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 0.0001,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 9.996098975445525e-05,
+            "reference_amplitude_m": 0.0001,
+            "relative_amplitude_error": 0.00039010245544757183,
+            "second_harmonic_m": 9.814332531819163e-20,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 7.785172904558829e-05,
+            "reference_amplitude_m": 7.78800783071405e-05,
+            "relative_amplitude_error": 0.00036401172377364954,
+            "second_harmonic_m": -4.264756719587735e-10,
+            "volume_relative_error": 1.3322676295501878e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 6.0632569614270585e-05,
+            "reference_amplitude_m": 6.065306597126335e-05,
+            "relative_amplitude_error": 0.00033792779745833723,
+            "second_harmonic_m": -6.319626556924162e-10,
+            "volume_relative_error": 1.9984014443252818e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 4.722192442525637e-05,
+            "reference_amplitude_m": 4.723665527410147e-05,
+            "relative_amplitude_error": 0.00031185207249806446,
+            "second_harmonic_m": -7.098719452041068e-10,
+            "volume_relative_error": 3.1086244689504383e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 3.6777430622426556e-05,
+            "reference_amplitude_m": 3.678794411714424e-05,
+            "relative_amplitude_error": 0.00028578641644672054,
+            "second_harmonic_m": -7.161157711276281e-10,
+            "volume_relative_error": 3.552713678800501e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500624e-16,
+          "mass_residual_scaled": 2.220446049250314e-16,
+          "uniform_density_residual_scaled": 3.6501877054839197e-13,
+          "momentum_residual": 5.741921025901133e-14,
+          "weak_continuity_scaled_max": 3.438464936755091e-15,
+          "normalised_work_residual": 5.035813530676891e-20,
+          "linear_residual": 6.366769603708628e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000367027439254,
+          1.0000340333203495,
+          1.0000259532907083,
+          1.0000140977625904,
+          1.0000000007688612,
+          0.999985903211288,
+          0.9999740467647871,
+          0.9999659656502909,
+          0.9999632958293478,
+          0.9999659656502747,
+          0.9999740467648089,
+          0.9999859032112952,
+          1.0000000007688445,
+          1.000014097762598,
+          1.0000259532906914,
+          1.0000340333203521,
+          1.0000367027439838
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 1754048,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 2102272,
+            "peak_reserved_bytes": 6013440,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 1754048,
+              "surface-fe-topology": 65536,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 282688,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 1754048,
+              "surface-fe-topology": 65536,
+              "surface-fe-admission": 4193856,
+              "surface-fe-metrics": 282688,
+              "surface-fe-solve": 3911168,
+              "surface-mesh-laplacian": 3911168
+            }
+          }
+        },
+        "elapsed_seconds": 1.3007931999163702
+      },
+      "elapsed_seconds": 1.3095191000029445
+    },
+    {
+      "name": "B09/16x8/16/0.0001",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 16,
+        "initial_amplitude_m": 0.0001,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 9.999753259275436e-05,
+            "reference_amplitude_m": 0.0001,
+            "relative_amplitude_error": 2.467407245643205e-05,
+            "second_harmonic_m": -5.3442855592740436e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 7.789183829426977e-05,
+            "reference_amplitude_m": 7.78800783071405e-05,
+            "relative_amplitude_error": 0.00015100122373912228,
+            "second_harmonic_m": -4.328876932698404e-10,
+            "volume_relative_error": 1.5543122344752192e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 6.067288180220858e-05,
+            "reference_amplitude_m": 6.065306597126335e-05,
+            "relative_amplitude_error": 0.00032670781975996377,
+            "second_harmonic_m": -6.400477590697895e-10,
+            "volume_relative_error": 3.3306690738754696e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 4.726038915335085e-05,
+            "reference_amplitude_m": 4.723665527410147e-05,
+            "relative_amplitude_error": 0.0005024462276521646,
+            "second_harmonic_m": -7.173419430882688e-10,
+            "volume_relative_error": 4.440892098500626e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 3.6812894324342364e-05,
+            "reference_amplitude_m": 3.678794411714424e-05,
+            "relative_amplitude_error": 0.0006782169484296219,
+            "second_harmonic_m": -7.22031912755853e-10,
+            "volume_relative_error": 5.551115123125783e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 6.661338147750935e-16,
+          "mass_residual_scaled": 1.110223024625157e-16,
+          "uniform_density_residual_scaled": 3.5122454612273357e-12,
+          "momentum_residual": 2.3262603643426797e-14,
+          "weak_continuity_scaled_max": 8.392241870831047e-15,
+          "normalised_work_residual": 2.382162064733232e-19,
+          "linear_residual": 7.109327168604044e-13
+        },
+        "final_surface_elevation_m": [
+          1.00003682408891,
+          1.0000361003081135,
+          1.0000340211805576,
+          1.0000306046503604,
+          1.0000260390805207,
+          1.000020449830759,
+          1.0000140927677177,
+          1.000007181590187,
+          1.000000000737334,
+          0.9999928197298944,
+          0.9999859082793443,
+          0.9999795507112555,
+          0.9999739609354156,
+          0.9999693947915982,
+          0.9999659778040599,
+          0.9999638983559676,
+          0.9999631744684456,
+          0.999963898356155,
+          0.9999659778040333,
+          0.9999693947914454,
+          0.9999739609354562,
+          0.9999795507113999,
+          0.9999859082793683,
+          0.999992819729784,
+          1.0000000007372407,
+          1.000007181590223,
+          1.0000140927678085,
+          1.0000204498308194,
+          1.000026039080578,
+          1.000030604650385,
+          1.0000340211805128,
+          1.000036100308118,
+          1.0000368240889919
+        ],
+        "statistics": {
+          "mechanical_solves": 33,
+          "latest_result_hits": 3,
+          "accepted_steps": 16,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 0.9797797999344766
+      },
+      "elapsed_seconds": 0.9890709000173956
+    },
+    {
+      "name": "B09/16x8/32/0.0001",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 32,
+        "initial_amplitude_m": 0.0001,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 9.999753259275436e-05,
+            "reference_amplitude_m": 0.0001,
+            "relative_amplitude_error": 2.467407245643205e-05,
+            "second_harmonic_m": -5.3442855592740436e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 7.788179739432441e-05,
+            "reference_amplitude_m": 7.78800783071405e-05,
+            "relative_amplitude_error": 2.207351637650845e-05,
+            "second_harmonic_m": -4.333610567074535e-10,
+            "volume_relative_error": 1.5543122344752192e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 6.0657240341626096e-05,
+            "reference_amplitude_m": 6.065306597126335e-05,
+            "relative_amplitude_error": 6.882373208849657e-05,
+            "second_harmonic_m": -6.406717393106156e-10,
+            "volume_relative_error": 3.1086244689504383e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 4.724211474835862e-05,
+            "reference_amplitude_m": 4.723665527410147e-05,
+            "relative_amplitude_error": 0.00011557707093090563,
+            "second_harmonic_m": -7.179660935069607e-10,
+            "volume_relative_error": 4.218847493575595e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 3.679391605294183e-05,
+            "reference_amplitude_m": 3.678794411714424e-05,
+            "relative_amplitude_error": 0.0001623340455931821,
+            "second_harmonic_m": -7.225936983669176e-10,
+            "volume_relative_error": 5.551115123125783e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500626e-16,
+          "mass_residual_scaled": 1.110223024625157e-16,
+          "uniform_density_residual_scaled": 3.4642845961739715e-12,
+          "momentum_residual": 2.322940328708666e-14,
+          "weak_continuity_scaled_max": 8.394706332722724e-15,
+          "normalised_work_residual": 2.0186457507607267e-19,
+          "linear_residual": 7.097147739888135e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000368051133162,
+          1.000036081691687,
+          1.0000340036495161,
+          1.0000305888683418,
+          1.0000260256631464,
+          1.000020439285908,
+          1.0000140855066904,
+          1.0000071778877726,
+          1.0000000007378969,
+          0.9999928234333428,
+          0.9999859155411754,
+          0.9999795612565361,
+          0.9999739743527927,
+          0.9999694105731873,
+          0.999965995334307,
+          0.999963916971355,
+          0.9999631934429173,
+          0.9999639169715395,
+          0.999965995334281,
+          0.9999694105730376,
+          0.9999739743528322,
+          0.9999795612566776,
+          0.9999859155411989,
+          0.9999928234332343,
+          1.0000000007378047,
+          1.0000071778878075,
+          1.0000140855067794,
+          1.000020439285968,
+          1.000026025663204,
+          1.0000305888683645,
+          1.000034003649473,
+          1.0000360816916907,
+          1.0000368051133965
+        ],
+        "statistics": {
+          "mechanical_solves": 65,
+          "latest_result_hits": 3,
+          "accepted_steps": 32,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 1.476571899955161
+      },
+      "elapsed_seconds": 1.4850742999697104
+    },
+    {
+      "name": "B09/16x8/64/0.0001",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 0.0001,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 9.999753259275436e-05,
+            "reference_amplitude_m": 0.0001,
+            "relative_amplitude_error": 2.467407245643205e-05,
+            "second_harmonic_m": -5.3442855592740436e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 7.787935496053284e-05,
+            "reference_amplitude_m": 7.78800783071405e-05,
+            "relative_amplitude_error": 9.287954293002443e-06,
+            "second_harmonic_m": -4.3347723017175155e-10,
+            "volume_relative_error": 1.7763568394002505e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 6.065343588406666e-05,
+            "reference_amplitude_m": 6.065306597126335e-05,
+            "relative_amplitude_error": 6.098831071277289e-06,
+            "second_harmonic_m": -6.408249518232138e-10,
+            "volume_relative_error": 3.3306690738754696e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 4.723767023830218e-05,
+            "reference_amplitude_m": 4.723665527410147e-05,
+            "relative_amplitude_error": 2.1486792297631396e-05,
+            "second_harmonic_m": -7.181195099423439e-10,
+            "volume_relative_error": 4.6629367034256575e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 3.678930072551569e-05,
+            "reference_amplitude_m": 3.678794411714424e-05,
+            "relative_amplitude_error": 3.6876438844535286e-05,
+            "second_harmonic_m": -7.227319083153074e-10,
+            "volume_relative_error": 5.995204332975845e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500624e-16,
+          "mass_residual_scaled": 2.220446049250314e-16,
+          "uniform_density_residual_scaled": 3.605946792456008e-12,
+          "momentum_residual": 2.322711852159056e-14,
+          "weak_continuity_scaled_max": 8.397434782293634e-15,
+          "normalised_work_residual": 2.0531405393973804e-19,
+          "linear_residual": 7.078302100711639e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000368004986366,
+          1.0000360771643573,
+          1.0000339993861393,
+          1.0000305850303084,
+          1.0000260224001793,
+          1.0000204367215062,
+          1.000014083740873,
+          1.0000071769873777,
+          1.0000000007380418,
+          0.9999928243339975,
+          0.999985917307181,
+          0.99997956382104,
+          0.9999739776157638,
+          0.9999694144111114,
+          0.9999659995974901,
+          0.9999639214984296,
+          0.9999631980573174,
+          0.9999639214986253,
+          0.9999659995974641,
+          0.9999694144109543,
+          0.9999739776158052,
+          0.9999795638211872,
+          0.9999859173072048,
+          0.9999928243338821,
+          1.0000000007379457,
+          1.0000071769874148,
+          1.0000140837409655,
+          1.0000204367215682,
+          1.0000260224002373,
+          1.0000305850303342,
+          1.0000339993860936,
+          1.000036077164359,
+          1.0000368004987203
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 2.5490270000882447
+      },
+      "elapsed_seconds": 2.5608513999031857
+    },
+    {
+      "name": "B09/4x2/64/5e-05",
+      "status": "PASS",
+      "result": {
+        "nx": 4,
+        "nz": 2,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 5e-05,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 4.97024602232195e-05,
+            "reference_amplitude_m": 5e-05,
+            "relative_amplitude_error": 0.005950795535610065,
+            "second_harmonic_m": -8.017874912366298e-18,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 3.866872169056085e-05,
+            "reference_amplitude_m": 3.894003915357025e-05,
+            "relative_amplitude_error": 0.006967570369906029,
+            "second_harmonic_m": -1.0189866339913955e-10,
+            "volume_relative_error": 6.661338147750939e-16
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 3.0084599376330156e-05,
+            "reference_amplitude_m": 3.0326532985631674e-05,
+            "relative_amplitude_error": 0.007977621755053343,
+            "second_harmonic_m": -1.4890252334443704e-10,
+            "volume_relative_error": 8.881784197001252e-16
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 2.3406234597621947e-05,
+            "reference_amplitude_m": 2.3618327637050736e-05,
+            "relative_amplitude_error": 0.008980019359883573,
+            "second_harmonic_m": -1.6485143269373875e-10,
+            "volume_relative_error": 1.3322676295501878e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 1.821051650255384e-05,
+            "reference_amplitude_m": 1.839397205857212e-05,
+            "relative_amplitude_error": 0.009973678085086646,
+            "second_harmonic_m": -1.6382918035273908e-10,
+            "volume_relative_error": 1.7763568394002505e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 3.3306690738754696e-16,
+          "mass_residual_scaled": 2.220446049250313e-16,
+          "uniform_density_residual_scaled": 2.9677129083643885e-13,
+          "momentum_residual": 3.8566372317916375e-14,
+          "weak_continuity_scaled_max": 8.404431627503682e-14,
+          "normalised_work_residual": 7.241617296080836e-21,
+          "linear_residual": 3.8447320986684593e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000177308811895,
+          1.0000131980409899,
+          1.000000000205708,
+          0.9999868019553562,
+          0.999982268721944,
+          0.9999868019553194,
+          1.0000000002058294,
+          1.0000131980410387,
+          1.000017730881068
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 1234880,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 1350016,
+            "peak_reserved_bytes": 3169536,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 1234880,
+              "surface-fe-topology": 40960,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 74176,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 1234880,
+              "surface-fe-topology": 40960,
+              "surface-fe-admission": 1893696,
+              "surface-fe-metrics": 74176,
+              "surface-fe-solve": 1819520,
+              "surface-mesh-laplacian": 1819520
+            }
+          }
+        },
+        "elapsed_seconds": 1.0268624000018463
+      },
+      "elapsed_seconds": 1.0356066999956965
+    },
+    {
+      "name": "B09/8x4/64/5e-05",
+      "status": "PASS",
+      "result": {
+        "nx": 8,
+        "nz": 4,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 5e-05,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 4.998049487725622e-05,
+            "reference_amplitude_m": 5e-05,
+            "relative_amplitude_error": 0.00039010245487569595,
+            "second_harmonic_m": 5.180904484277265e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 3.8925864481670355e-05,
+            "reference_amplitude_m": 3.894003915357025e-05,
+            "relative_amplitude_error": 0.0003640127798534287,
+            "second_harmonic_m": -1.0661713429528963e-10,
+            "volume_relative_error": 8.881784197001252e-16
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 3.031628475677654e-05,
+            "reference_amplitude_m": 3.0326532985631674e-05,
+            "relative_amplitude_error": 0.0003379294580091452,
+            "second_harmonic_m": -1.5798786484310503e-10,
+            "volume_relative_error": 1.7763568394002505e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 2.3610962165702756e-05,
+            "reference_amplitude_m": 2.3618327637050736e-05,
+            "relative_amplitude_error": 0.0003118540593206598,
+            "second_harmonic_m": -1.7746468920238771e-10,
+            "volume_relative_error": 2.4424906541753444e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 1.8388715271714376e-05,
+            "reference_amplitude_m": 1.839397205857212e-05,
+            "relative_amplitude_error": 0.00028578856382965867,
+            "second_harmonic_m": -1.7902503121248583e-10,
+            "volume_relative_error": 3.1086244689504383e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500624e-16,
+          "mass_residual_scaled": 2.2204460492503136e-16,
+          "uniform_density_residual_scaled": 3.117409919783907e-13,
+          "momentum_residual": 4.9580377412326946e-14,
+          "weak_continuity_scaled_max": 3.083417982896386e-15,
+          "normalised_work_residual": 2.075220381015379e-20,
+          "linear_residual": 5.596324002262283e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000183515501022,
+          1.0000170167887572,
+          1.000012976638502,
+          1.0000070487596715,
+          1.0000000001922165,
+          0.9999929514837924,
+          0.9999870233753805,
+          0.9999829829539189,
+          0.9999816480932027,
+          0.9999829829538991,
+          0.9999870233753865,
+          0.9999929514837965,
+          1.000000000192212,
+          1.000007048759676,
+          1.0000129766384829,
+          1.0000170167887643,
+          1.0000183515501628
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 1754048,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 2102272,
+            "peak_reserved_bytes": 6013440,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 1754048,
+              "surface-fe-topology": 65536,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 282688,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 1754048,
+              "surface-fe-topology": 65536,
+              "surface-fe-admission": 4193856,
+              "surface-fe-metrics": 282688,
+              "surface-fe-solve": 3911168,
+              "surface-mesh-laplacian": 3911168
+            }
+          }
+        },
+        "elapsed_seconds": 1.3992447999771684
+      },
+      "elapsed_seconds": 1.409786400035955
+    },
+    {
+      "name": "B09/16x8/16/5e-05",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 16,
+        "initial_amplitude_m": 5e-05,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 4.999876629639441e-05,
+            "reference_amplitude_m": 5e-05,
+            "relative_amplitude_error": 2.4674072111818823e-05,
+            "second_harmonic_m": 4.7356738578261076e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 3.8945919112131754e-05,
+            "reference_amplitude_m": 3.894003915357025e-05,
+            "relative_amplitude_error": 0.00015100032484083314,
+            "second_harmonic_m": -1.0822174629203428e-10,
+            "volume_relative_error": 1.3322676295501878e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 3.0336440862280126e-05,
+            "reference_amplitude_m": 3.0326532985631674e-05,
+            "relative_amplitude_error": 0.0003267065395555768,
+            "second_harmonic_m": -1.6001179826776127e-10,
+            "volume_relative_error": 2.4424906541753444e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 2.3630194548071994e-05,
+            "reference_amplitude_m": 2.3618327637050736e-05,
+            "relative_amplitude_error": 0.0005024450165829197,
+            "second_harmonic_m": -1.7933548515479855e-10,
+            "volume_relative_error": 3.3306690738754696e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 1.8406447148381208e-05,
+            "reference_amplitude_m": 1.839397205857212e-05,
+            "relative_amplitude_error": 0.000678216198728876,
+            "second_harmonic_m": -1.8050818508300748e-10,
+            "volume_relative_error": 3.9968028886505635e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500626e-16,
+          "mass_residual_scaled": 1.110223024625157e-16,
+          "uniform_density_residual_scaled": 3.731651834539597e-12,
+          "momentum_residual": 1.8143621701281905e-14,
+          "weak_continuity_scaled_max": 8.773793921290345e-15,
+          "normalised_work_residual": 8.759379417325919e-20,
+          "linear_residual": 5.846508235949036e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000184122245999,
+          1.0000180503208846,
+          1.0000170107171278,
+          1.0000153023949547,
+          1.000013019538378,
+          1.000010224847756,
+          1.0000070462530302,
+          1.0000035906300786,
+          1.000000000184392,
+          0.9999964096999481,
+          0.9999929540086148,
+          0.9999897752876994,
+          0.9999869804656191,
+          0.9999846974655114,
+          0.99998298902904,
+          0.9999819493451085,
+          0.9999815874147073,
+          0.999981949345255,
+          0.999982989028995,
+          0.9999846974653936,
+          0.9999869804656787,
+          0.9999897752878204,
+          0.9999929540086289,
+          0.9999964096998922,
+          1.0000000001843499,
+          1.000003590630122,
+          1.000007046253116,
+          1.0000102248478195,
+          1.0000130195384649,
+          1.0000153023950116,
+          1.0000170107170812,
+          1.0000180503208982,
+          1.000018412224724
+        ],
+        "statistics": {
+          "mechanical_solves": 33,
+          "latest_result_hits": 3,
+          "accepted_steps": 16,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 0.9519130999688059
+      },
+      "elapsed_seconds": 0.9607515999814495
+    },
+    {
+      "name": "B09/16x8/32/5e-05",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 32,
+        "initial_amplitude_m": 5e-05,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 4.999876629639441e-05,
+            "reference_amplitude_m": 5e-05,
+            "relative_amplitude_error": 2.4674072111818823e-05,
+            "second_harmonic_m": 4.7356738578261076e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 3.894089866180697e-05,
+            "reference_amplitude_m": 3.894003915357025e-05,
+            "relative_amplitude_error": 2.2072608435896868e-05,
+            "second_harmonic_m": -1.0834010067259802e-10,
+            "volume_relative_error": 1.3322676295501878e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 3.0328620131723118e-05,
+            "reference_amplitude_m": 3.0326532985631674e-05,
+            "relative_amplitude_error": 6.882244312045316e-05,
+            "second_harmonic_m": -1.6016788381595492e-10,
+            "volume_relative_error": 2.220446049250313e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 2.36210573453255e-05,
+            "reference_amplitude_m": 2.3618327637050736e-05,
+            "relative_amplitude_error": 0.00011557584926036313,
+            "second_harmonic_m": -1.7949152898159028e-10,
+            "volume_relative_error": 3.552713678800501e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 1.8396958012407544e-05,
+            "reference_amplitude_m": 1.839397205857212e-05,
+            "relative_amplitude_error": 0.00016233328102899236,
+            "second_harmonic_m": -1.8064859479053289e-10,
+            "volume_relative_error": 4.440892098500626e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500624e-16,
+          "mass_residual_scaled": 2.220446049250314e-16,
+          "uniform_density_residual_scaled": 3.701454011287288e-12,
+          "momentum_residual": 1.815896480314891e-14,
+          "weak_continuity_scaled_max": 8.771000874859763e-15,
+          "normalised_work_residual": 8.864060658652282e-20,
+          "linear_residual": 5.840957692336241e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000184027369436,
+          1.0000180410128006,
+          1.0000170019517078,
+          1.0000152945039984,
+          1.0000130128296911,
+          1.0000102195752776,
+          1.0000070426224161,
+          1.0000035887787426,
+          1.0000000001845333,
+          0.9999964115515431,
+          0.9999929576394295,
+          0.9999897805602862,
+          0.9999869871743081,
+          0.9999847053563617,
+          0.9999829977942636,
+          0.9999819586529314,
+          0.9999815969020829,
+          0.9999819586530776,
+          0.9999829977942178,
+          0.9999847053562434,
+          0.9999869871743673,
+          0.9999897805604074,
+          0.9999929576394437,
+          0.9999964115514866,
+          1.0000000001844906,
+          1.0000035887787841,
+          1.0000070426225016,
+          1.0000102195753395,
+          1.0000130128297775,
+          1.0000152945040548,
+          1.0000170019516594,
+          1.0000180410128148,
+          1.0000184027370675
+        ],
+        "statistics": {
+          "mechanical_solves": 65,
+          "latest_result_hits": 3,
+          "accepted_steps": 32,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 1.5420259999809787
+      },
+      "elapsed_seconds": 1.5548642999492586
+    },
+    {
+      "name": "B09/16x8/64/5e-05",
+      "status": "PASS",
+      "result": {
+        "nx": 16,
+        "nz": 8,
+        "elements": "Q2 velocity/geometry; physical P1-discontinuous pressure",
+        "accepted_steps": 64,
+        "initial_amplitude_m": 5e-05,
+        "observations": [
+          {
+            "time_s": 0.0,
+            "scaled_time": 0.0,
+            "amplitude_m": 4.999876629639441e-05,
+            "reference_amplitude_m": 5e-05,
+            "relative_amplitude_error": 2.4674072111818823e-05,
+            "second_harmonic_m": 4.7356738578261076e-17,
+            "volume_relative_error": 0.0
+          },
+          {
+            "time_s": 1.7331513078968537,
+            "scaled_time": 0.25,
+            "amplitude_m": 3.8939677443393646e-05,
+            "reference_amplitude_m": 3.894003915357025e-05,
+            "relative_amplitude_error": 9.288901204662636e-06,
+            "second_harmonic_m": -1.0836891796478482e-10,
+            "volume_relative_error": 1.5543122344752192e-15
+          },
+          {
+            "time_s": 3.4663026157937074,
+            "scaled_time": 0.5,
+            "amplitude_m": 3.032671790129581e-05,
+            "reference_amplitude_m": 3.0326532985631674e-05,
+            "relative_amplitude_error": 6.097487774914256e-06,
+            "second_harmonic_m": -1.602056264618871e-10,
+            "volume_relative_error": 2.886579864025407e-15
+          },
+          {
+            "time_s": 5.1994539236905615,
+            "scaled_time": 0.75,
+            "amplitude_m": 2.3618835088647623e-05,
+            "reference_amplitude_m": 2.3618327637050736e-05,
+            "relative_amplitude_error": 2.1485500780737965e-05,
+            "second_harmonic_m": -1.7952949636921265e-10,
+            "volume_relative_error": 3.774758283725532e-15
+          },
+          {
+            "time_s": 6.932605231587415,
+            "scaled_time": 1.0,
+            "amplitude_m": 1.8394650347275504e-05,
+            "reference_amplitude_m": 1.839397205857212e-05,
+            "relative_amplitude_error": 3.687559713716482e-05,
+            "second_harmonic_m": -1.8068283233448177e-10,
+            "volume_relative_error": 4.6629367034256575e-15
+          }
+        ],
+        "maxima": {
+          "volume_residual_scaled": 4.440892098500622e-16,
+          "mass_residual_scaled": 2.2204460492503136e-16,
+          "uniform_density_residual_scaled": 3.4749703229678574e-12,
+          "momentum_residual": 1.8144794047820464e-14,
+          "weak_continuity_scaled_max": 8.777127330208423e-15,
+          "normalised_work_residual": 8.472115423340165e-20,
+          "linear_residual": 5.85505096294916e-13
+        },
+        "final_surface_elevation_m": [
+          1.0000184004296422,
+          1.0000180387491664,
+          1.0000169998200414,
+          1.0000152925849979,
+          1.0000130111982046,
+          1.0000102182930626,
+          1.0000070417394937,
+          1.000003588328525,
+          1.0000000001845661,
+          0.9999964120018234,
+          0.999992958522406,
+          0.9999897818425317,
+          0.9999869888058055,
+          0.9999847072753507,
+          0.9999829999258809,
+          0.9999819609164964,
+          0.999981599209314,
+          0.9999819609166442,
+          0.9999829999258341,
+          0.999984707275225,
+          0.9999869888058617,
+          0.9999897818426572,
+          0.9999929585224159,
+          0.999996412001759,
+          1.0000000001845188,
+          1.000003588328565,
+          1.0000070417395763,
+          1.000010218293123,
+          1.0000130111982881,
+          1.0000152925850492,
+          1.0000169998199926,
+          1.0000180387491788,
+          1.000018400429762
+        ],
+        "statistics": {
+          "mechanical_solves": 129,
+          "latest_result_hits": 3,
+          "accepted_steps": 64,
+          "public_workspace_allowance_bytes": 3795392,
+          "budget": {
+            "max_bytes": 134217728,
+            "reserved_bytes": 5074432,
+            "peak_reserved_bytes": 17155584,
+            "refusals": 0,
+            "categories": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 0,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 0,
+              "surface-mesh-laplacian": 0
+            },
+            "category_peaks": {
+              "surface-public-state": 3795392,
+              "surface-fe-topology": 163840,
+              "surface-fe-admission": 13196352,
+              "surface-fe-metrics": 1115200,
+              "surface-fe-solve": 12081152,
+              "surface-mesh-laplacian": 12081152
+            }
+          }
+        },
+        "elapsed_seconds": 2.6320338000077754
+      },
+      "elapsed_seconds": 2.641262699966319
+    },
+    {
+      "name": "B09/convergence",
+      "status": "PASS",
+      "result": {
+        "0.0001": {
+          "spatial_max_relative_amplitude_errors": [
+            0.009973675671327897,
+            0.00039010245544757183,
+            3.6876438844535286e-05
+          ],
+          "temporal_successive_surface_l2_over_initial_amplitude": [
+            0.000782470316370516,
+            0.00019028902629842183
+          ],
+          "temporal_difference_ratio": 4.112009670717441
+        },
+        "5e-05": {
+          "spatial_max_relative_amplitude_errors": [
+            0.009973678085086646,
+            0.00039010245487569595,
+            3.687559713716482e-05
+          ],
+          "temporal_successive_surface_l2_over_initial_amplitude": [
+            0.0007824696458759531,
+            0.0001902889639691264
+          ],
+          "temporal_difference_ratio": 4.112007494049448
+        },
+        "amplitude_linearity": {
+          "full_normalised": 0.36789300725515683,
+          "half_normalised": 0.3678930069455101,
+          "difference": 3.096467526830793e-10,
+          "full_second_harmonic_m": -7.227319083153074e-10,
+          "half_second_harmonic_m": -1.8068283233448177e-10
+        }
+      },
+      "elapsed_seconds": 0.009056599927134812
+    },
+    {
+      "name": "timing/identical-requests",
+      "status": "PASS",
+      "result": {
+        "raw_seconds": {
+          "fresh": [
+            0.9261922999285161,
+            0.9353656000457704,
+            0.8992832000367343
+          ],
+          "retained": [
+            0.41059670003596693,
+            0.40043499995954335,
+            0.3899793999735266
+          ]
+        },
+        "rotating_order": [
+          [
+            "fresh",
+            "retained"
+          ],
+          [
+            "retained",
+            "fresh"
+          ],
+          [
+            "fresh",
+            "retained"
+          ]
+        ],
+        "before_median_seconds": 0.9261922999285161,
+        "after_median_seconds": 0.40043499995954335,
+        "saved_seconds": 0.5257572999689728,
+        "saved_percent": 56.765457887044725,
+        "output_parity": "byte-identical all fields",
+        "scope": "three identical 16x8 mechanical outputs; setup, source verification, hashing and close included; not evolving geometry"
+      },
+      "elapsed_seconds": 3.970201199990697
+    }
+  ],
+  "limits": {
+    "accounted_bytes": 134217728,
+    "native_threads": 1,
+    "accepted_steps_per_trajectory": 256
+  },
+  "source_sha256": {
+    "src/atlas_tectonics/__init__.py": "787fffd4af3dd3563eee4ca2f9caeb0ad3383feec4f5bfebd077c054befbde1a",
+    "src/atlas_tectonics/_geometry_native.py": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a",
+    "src/atlas_tectonics/_materials_native.py": "059e34f03a5abbec997873fb4f8ae8c89f745fbe029c064de55f8f738f2872a9",
+    "src/atlas_tectonics/_mechanics_native.py": "fd1d76496ef1e264960a6df3046a1fddca10d9a6888a8fb0ed41274091f07d58",
+    "src/atlas_tectonics/_mesh_native.py": "2b12150ca17d28b8e9f219e89ccb5969b658ecff211359b6cb3fffeed1216764",
+    "src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "src/atlas_tectonics/_spherical_candidates.py": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c",
+    "src/atlas_tectonics/_thermochemical_native.py": "7dc7261147bdf1fbf86ccec454056743c2cfff2bce222950c2fcc2ced616e601",
+    "src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/_velocity_multigrid.py": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868",
+    "src/atlas_tectonics/adaptive_inner.py": "ce390df8900894c43990c68e7f1079d7d2fe73e8a06dd44ea216f751082c4832",
+    "src/atlas_tectonics/anderson.py": "e789cf39928f41a434304cf544796d517a86f7630cd5882230d5f63f3a4079cf",
+    "src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "src/atlas_tectonics/compaction.py": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2",
+    "src/atlas_tectonics/compaction_columns.py": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637",
+    "src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "src/atlas_tectonics/constitutive_execution.py": "43f26528dd911677ba3288a2b4d25b8080ec934948b1d51600a3fce7b957b8b0",
+    "src/atlas_tectonics/convection_benchmark.py": "c542616ff2a1e55cab2f77017f85bf8a8e8cb000edcea363380b2b93cef56903",
+    "src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "src/atlas_tectonics/damage_regularisation.py": "892647330307f6b7293f5f1ceeedacc480f53308d630e5ef57fe7a2ca5a3049a",
+    "src/atlas_tectonics/earth_material_data.py": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f",
+    "src/atlas_tectonics/execution.py": "b860388f8b2d1e8bc23073674adcd9a03032844dee44efb1129b535d1fc9ac42",
+    "src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "src/atlas_tectonics/extension_support.py": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8",
+    "src/atlas_tectonics/extension_workflow.py": "d1d56f58abc3bca547d6381f2bd35661f42937f5f149ae6aa1eecf201e81a4fa",
+    "src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "src/atlas_tectonics/free_surface.py": "c27bfe8b77cbb494493831f99dd278f04f4eb4db0cf5173e92f066a470575b9d",
+    "src/atlas_tectonics/geological_case.py": "954def0ef83e64f9a2846cc2822ac30cb092cb38284d66cb18aab1e0993f2173",
+    "src/atlas_tectonics/geological_domain.py": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d",
+    "src/atlas_tectonics/geological_records.py": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23",
+    "src/atlas_tectonics/geometry.py": "7e83585fd4a67db88564b562664368882ddb3123fb8fefb6e61af1c63ed7c0bb",
+    "src/atlas_tectonics/geometry_index.py": "b0d97d386673a941ae791c298423d68a451593b0225a1a744f2594953e2c72d1",
+    "src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "src/atlas_tectonics/margin_cooling.py": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab",
+    "src/atlas_tectonics/markers.py": "abbcb1d4a6f1e803f3d8579fbec2675b736781487d919aadc15ad3c0324bc970",
+    "src/atlas_tectonics/material_library.py": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59",
+    "src/atlas_tectonics/materials.py": "0368b01b780c8dd0fa8520938d715d126fa2b3968c64e5f3dae5e27f54480122",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "src/atlas_tectonics/planetary_generation.py": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d",
+    "src/atlas_tectonics/plate_cooling.py": "9754d10bec2711f4a6a2d6ab5b53ad36d5ab943dd7791487e872219e7e8652e0",
+    "src/atlas_tectonics/plate_integrals.py": "46a0cf85badcda7b3297d81e2527c425ce0ceecf9f48f460f58a19d713e33a1f",
+    "src/atlas_tectonics/plate_layout.py": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca",
+    "src/atlas_tectonics/plate_reference.py": "bad89431a04b04544fe83621dbf91a4ce7125eb6706df3e3e19cd97ccae87a1d",
+    "src/atlas_tectonics/plate_reference_acceptance.py": "9bd03946e5fd2724ab37860afbcd37fd0ca1307520efa9c995c5a64588bebd9e",
+    "src/atlas_tectonics/plate_reference_dataset.py": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e",
+    "src/atlas_tectonics/plate_reference_use.py": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449",
+    "src/atlas_tectonics/preconditioner_reuse.py": "ebe861de1a5e94ec5d6cdcf83c26c2061e3241b8f5ffed34e8c4d8d39b793acd",
+    "src/atlas_tectonics/precursor.py": "dc52a7935177b0ff6a064009b18a71e68114c29c93aad132650a3fe0ddc64075",
+    "src/atlas_tectonics/precursor_execution.py": "d8f7d671d41ac985df0ac1161242d2b72d5f6978d5e378b2d8e9c0c2a0963bb5",
+    "src/atlas_tectonics/precursor_sampling.py": "32e66b9db5f68e2c21e4ec380cfdcac7043f53b3185c2884645a45ac4390ef8e",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/regional_execution.py": "2de9ce91073d105986cb14a521f7ef5e90cc89ed336d17d78001592f7059b854",
+    "src/atlas_tectonics/regional_forcing.py": "b31de590220541ddc027c34e080cfd71031ce913f697ec88d8b27656730e1dad",
+    "src/atlas_tectonics/regional_rheology.py": "50f4341c26c6d5ad3e5900a69cba555e2344cca3e79c4f42db642966f4cbb652",
+    "src/atlas_tectonics/regional_stokes.py": "fa3bd6cde972cc20211ba3294c30dfc56c40071f15f610e7c5e9674971efd403",
+    "src/atlas_tectonics/regional_strength.py": "63bd3d2068c8e096158c94a2debecde7ae3609572e7c32354bc218eab1793732",
+    "src/atlas_tectonics/regional_surface_stokes.py": "5ba98c6d4a6f3f0405d984fb0289f2eb460157503e7edc91e9c6552e506ff8bf",
+    "src/atlas_tectonics/regional_thermomechanical.py": "c12df1dcc25889cb51ca3968ec837d803215d68b70d2844b2fc7307fae766c12",
+    "src/atlas_tectonics/regional_transport.py": "db72d22dd3b8cc62c788d2396627883b890bd876edab8040cf808e9653cf7a91",
+    "src/atlas_tectonics/regional_workflow.py": "213d65c32aa69c1990b4559c112c0b173f234f6e079cc9c1a71f8eef7a50740d",
+    "src/atlas_tectonics/regional_workflow_geometry.py": "afb69b7801a4454fa5ca2fb33b1e95ef4ff11e656c68927a2d7deacd8e498e7e",
+    "src/atlas_tectonics/remapping.py": "f30a2904f9975e67d3870609aa41640c96d15296c8cd628b0ab2b0bc694f0141",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/reuse.py": "8ba51d937f39a625af353cad85cbc6a53f327a4f50dc0737241155fc1a1d9d81",
+    "src/atlas_tectonics/spherical_atlas.py": "14b45147dde305654a0ed989d0e26371c7fd6e0036d7335f94745a35aed03c52",
+    "src/atlas_tectonics/spherical_geometry.py": "755111edf0479b94c7e1d8b01c01b1d37f6398b61feeba328d3c69c87f9a48c7",
+    "src/atlas_tectonics/spreading.py": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07",
+    "src/atlas_tectonics/spreading_checkpoint.py": "8e35ee6c7c8c26fb0278797b60b796c9c52e32455ad23aa941bb6ff491d2ecb8",
+    "src/atlas_tectonics/spreading_cooling.py": "8bc7116d68ae4543e856e9bdd9e789a36528c26353590ada7bf4b508e45ce74f",
+    "src/atlas_tectonics/spreading_history.py": "02ec9bc70acef2450f78367e7c61eb142ccf8f709e678683daa1f7dc3396e6e2",
+    "src/atlas_tectonics/spreading_history_cooling.py": "8aa2eaf5d3f24f3a69334fbc31f8f3fb331df4dadcf6116a373611c85bbdaaea",
+    "src/atlas_tectonics/spreading_integrals.py": "d73e7d1671c8e224b1fdb4fbabd3338ae0ada70766841b6b96bfc03b65612732",
+    "src/atlas_tectonics/stokes.py": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082",
+    "src/atlas_tectonics/stokes_execution.py": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4",
+    "src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "src/atlas_tectonics/surface_geometry.py": "1ce32b9f3f6aa7a204a1166625144b736e46b38ebaeeddebdc7eed1b79b5931e",
+    "src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "src/atlas_tectonics/thermal_support.py": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e",
+    "src/atlas_tectonics/thermochemical.py": "a2a1e70491915f21326f9d9f0ecc7b3dca4583270557245ab4350784c0ebc937",
+    "src/atlas_tectonics/thermochemical_execution.py": "7e7d8aaf32d5e78f75783a8051bd4dfdb319bb6eea95e2b7e8ee3253b8b5a700",
+    "src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "src/atlas_tectonics/variable_flexure.py": "174baa0a339d5c472fb1b6d3174c6be246eaa4034cf24e4b9743d4704e9eb634",
+    "src/atlas_tectonics/variable_stokes.py": "2af374412b9a90606bade8dcc56b8ba52fe8f351985eae1a5306f9bf1bdcbf34",
+    "src/atlas_tectonics/variable_stokes_execution.py": "9a80d01e2d44054879cc5b8221871e00d221dc1235a6338dcdd660ab7e4c1d0f",
+    "src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "src/atlas_tectonics/w04_workflow.py": "5a4ae192b9a0796a136195561ab125625b8ad060bbc28e0f5e6e8af350dc2606",
+    "src/atlas_tectonics/w06_workflow.py": "dcab0e241cc8fc9b33062fa90433cf8dd3bf03c4ed6fc156bcf0b40b1b00df92",
+    "tools/check_w07_surface.py": "c88e2901985ee68d105f0faa0bf998c52f5bbdac44eff068dae08149f158e7e8",
+    "tests/w07_surface_reference.py": "f125650daf4bb389b8a551e335b65d66e7d3c6046f7305a47e98d84af74fd3b1",
+    "tools/check_w07_mechanics.py": "fc06d95a9e172ea6ef9462b5a142ced417f8e1b4d6c666ed40c81f6605223c91",
+    "docs/W07_REGIONAL_MECHANICS.md": "1748c9e2bd43f71ad0ce65fb9d68343d3f1379570f1b2b74882b85fa2c644378",
+    "cases/w07_mechanics.json": "07954c94de0099bea8a7d188907a715ddcac2265e4d4a51ce7488505d89c32b9"
+  },
+  "status": "PASS",
+  "budget": {
+    "max_bytes": 134217728,
+    "reserved_bytes": 0,
+    "peak_reserved_bytes": 21349888,
+    "refusals": 0,
+    "categories": {
+      "surface-runner-caller": 0,
+      "surface-public-state": 0,
+      "surface-fe-topology": 0,
+      "surface-fe-admission": 0,
+      "surface-fe-metrics": 0,
+      "surface-fe-solve": 0,
+      "surface-mesh-laplacian": 0
+    },
+    "category_peaks": {
+      "surface-runner-caller": 4194304,
+      "surface-public-state": 3795392,
+      "surface-fe-topology": 163840,
+      "surface-fe-admission": 13196352,
+      "surface-fe-metrics": 1115200,
+      "surface-fe-solve": 12081152,
+      "surface-mesh-laplacian": 12081152
+    }
+  }
+}

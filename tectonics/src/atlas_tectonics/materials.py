@@ -22,7 +22,7 @@ from .mesh import ColumnGrid1D
 
 
 _SCHEMA = 'atlas.material-state.v1'
-_METHOD = 'cohort-partial-thickness-regional-v1'
+_METHOD = 'cohort-partial-thickness-regional-v2'
 # Same local roundoff budget as the regional predecessor, not a tolerance relaxation.
 _ROUNDOFF = 128*np.finfo(np.float64).eps
 
@@ -305,10 +305,11 @@ def _state_work_bytes(cohorts,cells):
 
 
 def material_work_bytes(cohorts, cells, *, scheme='muscl'):
-    """Outputs O(C*N), stage scratch O(N); includes validation/publication allowances."""
+    """Outputs/joint RK scratch O(C*N); includes reference and publication work."""
     if type(cohorts) is not int or cohorts<1 or type(cells) is not int or cells<1 or scheme not in ('muscl','upwind'):
         raise TectonicsError('invalid material workspace dimensions')
-    return 64*cohorts*cells+160*cells+8192*cohorts+16384
+    field_bytes = 128 if scheme == 'muscl' else 64
+    return field_bytes*cohorts*cells+160*cells+8192*cohorts+16384
 
 
 def _end_time(state,dt):
@@ -391,7 +392,8 @@ class MaterialTransportResult:
     def numerical_method(self):
         # The result container is shared, but ALE must not claim the fixed-grid law.
         operation = (self.state.transition_record or {}).get('operation')
-        method = 'ale-cohort-ssprk2-v1' if operation == 'ale-cohort-ssprk2-v1' else _METHOD
+        method = operation if operation in ('ale-cohort-ssprk2-v1',
+            'cohort-partial-thickness-regional-v1',_METHOD) else _METHOD
         return method+'-'+self.scheme+'-'+self.backend
 
     @property
@@ -402,12 +404,87 @@ class MaterialTransportResult:
         return self
 
 
+def _cohort_slopes_reference(h):
+    """Independent whole-field MC candidates, including positive endpoint traces."""
+    slopes=np.zeros_like(h)
+    n=h.shape[1]
+    if n>2:
+        dl=h[:,1:-1]-h[:,:-2];dr=h[:,2:]-h[:,1:-1]
+        size=np.minimum(np.minimum(2*np.abs(dl),2*np.abs(dr)),np.abs(.5*dl+.5*dr))
+        slopes[:,1:-1]=np.where((dl>0)&(dr>0),size,np.where((dl<0)&(dr<0),-size,0.))
+    if n>1:
+        for k,row in enumerate(h):
+            for i in (0,n-1):
+                if n==2:
+                    value=float(row[1]-row[0])
+                else:
+                    d1=float(row[1]-row[0] if i==0 else row[-1]-row[-2])
+                    d2=float(row[2]-row[1] if i==0 else row[-2]-row[-3])
+                    options=(2*d1,1.5*d1-.5*d2,2*d2)
+                    value=min(options) if min(options)>0 else max(options) if max(options)<0 else 0.
+                slopes[k,i]=math.copysign(min(abs(value),2*float(row[i])),value)
+    return slopes
+
+
+def _cohort_fluxes_reference(h,u,left,right):
+    """Scalar total MC trace, partitioned by jointly limited cohort slopes."""
+    c,n=h.shape
+    total=np.array([math.fsum(h[:,i]) for i in range(n)])
+    total_slope=_cohort_slopes_reference(total[None,:])[0]
+    slopes=_cohort_slopes_reference(h)
+    for i in range(n):
+        rate=total_slope[i]/total[i] if total[i] else 0.
+        candidate_rate=math.fsum(slopes[:,i])/total[i] if total[i] else 0.
+        base=h[:,i]*rate
+        delta=slopes[:,i]-h[:,i]*candidate_rate
+        theta=1.
+        for k in range(c):
+            if delta[k]>0:bound=h[k,i]*(2-rate)/delta[k]
+            elif delta[k]<0:bound=h[k,i]*(2+rate)/(-delta[k])
+            else:continue
+            # Inward reconstruction rounding; states/traces still reject negatives.
+            bound*=1.-8.*np.finfo(np.float64).eps
+            if bound<theta:theta=max(float(bound),0.)
+        slopes[:,i]=base+theta*delta
+    lower=h-.5*slopes;upper=h+.5*slopes
+    if np.any(lower<0) or np.any(upper<0):
+        raise TectonicsError('cohort reconstruction outside nonnegative range')
+    flux=np.empty((c,n+1))
+    flux[:,0]=u[0]*(left if u[0]>0 else lower[:,0])
+    flux[:,-1]=u[-1]*(right if u[-1]<0 else upper[:,-1])
+    flux[:,1:-1]=u[1:-1]*np.where(u[1:-1]>=0,upper[:,:-1],lower[:,1:])
+    if not np.isfinite(flux).all():raise TectonicsError('nonfinite cohort face flux')
+    return flux
+
+
+def _cohort_reference(h,u,ratio,left,right):
+    outgoing=np.maximum(u[1:],0)*ratio+np.maximum(-u[:-1],0)*ratio
+    if not np.isfinite(outgoing).all() or np.any(outgoing>.5):
+        raise TectonicsError('outgoing Courant sum exceeds scheme limit or numerical range')
+    flux=_cohort_fluxes_reference(h,u,left,right)
+    if ratio==0 or not np.any(u):
+        updated=h.copy()
+    else:
+        stage=h+ratio*flux[:,:-1]-ratio*flux[:,1:]
+        if np.any(stage<0) or not np.isfinite(stage).all():raise TectonicsError('invalid MUSCL stage')
+        second_flux=_cohort_fluxes_reference(stage,u,left,right)
+        second=stage+ratio*second_flux[:,:-1]-ratio*second_flux[:,1:]
+        if np.any(second<0) or not np.isfinite(second).all():raise TectonicsError('invalid MUSCL stage')
+        updated=h+.5*(second-h)
+        flux=flux+.5*(second_flux-flux)
+    totals=np.array([(math.fsum(h[k]),math.fsum(updated[k])) for k in range(h.shape[0])])
+    return updated,flux,totals,float(outgoing.max())
+
+
 def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: float, *,
                      left: MaterialBoundary, right: MaterialBoundary, scheme='muscl',
                      backend='numba', budget=None, cancel=None) -> MaterialTransportResult:
     """Advance every cohort with the same prescribed u, conserving its own inventory.
 
-    Accuracy-first default: MC-MUSCL/SSP-RK2. Faster upwind requires explicit choice;
+    Accuracy-first default: sum-consistent MC-MUSCL/SSP-RK2 (method v2).
+    Cohort traces are jointly nonnegative and sum to the scalar total trace at
+    both stages; varying-total cohort fields need not be individually TVD.
+    Upwind requires explicit choice;
     executor/cache/timestep admission NEVER changes numerical scheme. Formation
     metadata remains fixed; time advances only in the returned candidate state.
     Existing materials are not independently reclassified or renormalised.
@@ -425,6 +502,9 @@ def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: f
             if backend=='numba':
                 from ._materials_native import advance_cohorts
                 h,flux,totals,maximum=advance_cohorts(state.thickness_m,u,ratio,el,er,scheme=='muscl')
+            elif scheme=='muscl' and c>1:
+                with np.errstate(over='raise',invalid='raise',divide='raise'):
+                    h,flux,totals,maximum=_cohort_reference(state.thickness_m,u,ratio,el,er)
             else:
                 h=np.empty((c,n));flux=np.empty((c,n+1));totals=np.empty((c,2));maximum=0.
                 for k in range(c):
@@ -442,8 +522,8 @@ def advect_materials(state: MaterialState, face_velocity_m_s: Any, duration_s: f
             tid=hashlib.sha256(_json(receipt)).hexdigest()
             new=MaterialState(state.grid,state.cohorts,h,time_s=end,epoch_id=state.epoch_id,
                               parent_state_id=state.state_id,transition_id=tid,transition=receipt,budget=budget)
-            # Scalar and multi-field solvers deliberately stay separate APIs. A
-            # nonlinear limiter does not commute with summing different cohorts.
+            # Total thickness remains derived from conserved cohort inventories;
+            # sum consistency is established in reconstruction, never repaired here.
             result=MaterialTransportResult(new,scheme,backend,_immutable_bytes(flux),_immutable_bytes(accounts))
         except ImportError as exc:raise TectonicsError('Numba required for selected backend; no fallback') from exc
         except MemoryLimitError:raise
@@ -626,7 +706,8 @@ def load_material_state(store, state_id, *, budget=None):
 def material_native_build_info():
     from . import _materials_native as native
     import numba,llvmlite
-    assembly='\n'.join(f.inspect_asm(s) for f in (native.advance_cohorts,native.column_totals) for s in f.signatures)
+    assembly='\n'.join(f.inspect_asm(s) for f in
+        (native.advance_cohorts,native.cohort_fluxes,native.column_totals) for s in f.signatures)
     return {'method':_METHOD,'default_scheme':'muscl','default_backend':'numba',
             'numba':numba.__version__,'llvmlite':llvmlite.__version__,'fastmath':False,
             'disk_jit_cache':False,'assembly_sha256':hashlib.sha256(assembly.encode()).hexdigest()}

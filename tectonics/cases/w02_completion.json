@@ -32,6 +32,7 @@
     "Regridding preserves time, frame and full domain extent; no implicit crop/fill.",
     "MUSCL outgoing Courant bound 0.5 is checked at initial and final geometry.",
     "Crossed or numerically unresolved cells and known events inside an interval are refused.",
+    "Execution and restoration require represented face displacement and cell-width evolution to agree with prescribed motion within the existing 1e-12 relative verification tolerance, scaled by adjacent initial/final cell widths, not absolute coordinates; inventory accounts retain their separate 128eps bound.",
     "Mean SSP-stage fluxes reconcile whole-domain and neighbouring block accounts."
   ],
   "state_contract": [
@@ -41,6 +42,7 @@
     "Events require current model parent and unused event ID; candidate failure never mutates accepted state.",
     "Instantaneous ownership reclassification is not material displacement.",
     "Markers locate material under an explicit material map; they are not mass-carrying parcels.",
+    "Marker clocks use the same represented-interval check as material transport; a requested duration is never silently relabelled by a rounded endpoint.",
     "Snapshots are self-contained for restoration; prior receipts remain independent history records to retain when required.",
     "Coarsening can lose spatial information despite conservation; inverse remapping is not promised."
   ],

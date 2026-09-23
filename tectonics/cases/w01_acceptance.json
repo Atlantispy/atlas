@@ -1,0 +1,25 @@
+{
+  "schema": "atlas.w01.combined-acceptance-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "Stage 8 combined acceptance assessment of supported W01 representation and the described-geology-to-regional-W02 workflow; not whole-W01 scientific acceptance",
+  "command": "python -I -B tectonics/verify.py --w01",
+  "selection_authority": "verify.py W01_GATES contains the exact bounded test selection; no default full-suite fallback",
+  "gates": [
+    "Original rigid-map, orientation, frame/unit/time, pole/seam, sided-trace and initial thermal-boundary limits",
+    "S5 mixed inventories, grain/bulk/reference-property meaning, explicit unknowns and whole-fragment temperature validity",
+    "S6 continuous-section and S7 whole-footprint compatibility; complete initial history and explicit exterior accounting",
+    "Planar and axial-motion spherical reductions, including nonzero seam-crossing evolution and restoration",
+    "Unchanged MUSCL defaults, independent analytic controls and native/reference agreement",
+    "Source/input/interval/metric/boundary invalidation, bounded resources, interrupted-work recovery and cold continuation"
+  ],
+  "tolerances": "Retain original case-specific tolerances in w01_coordinates.json, w01_geometry.json, material_transport.json and the verified tests; no new relaxed universal epsilon",
+  "finite_scope": {"maximum_workflow_steps": 256, "maximum_workflow_cells": 4096, "long_simulation": false},
+  "whole_W01_status": "INCOMPLETE",
+  "unclosed_scientific_gates": [
+    "S3C generated plate realism remains REOPENED; bounded scale-matched shape comparisons do not establish full morphology/dynamics validation",
+    "PB2002 source checking covered all 5819 motion rows already; prescribed-motion consistency does not validate independently generated dynamics",
+    "R4.4 mature convection evidence remains held/incomplete; it is not needed to initialise and transport a supplied, supported geological description"
+  ],
+  "future_formation_scope": "R5-R9 include unimplemented process and spherical-generation capabilities, not merely missing validation runs of existing described-state initialisation. Do not count them as failures of the supported S5-S7 route.",
+  "claim_rule": "A successful command accepts only the named technical scope on the reported runtime. It cannot establish whole-W01 completion, unrestricted spherical dynamics, evolved W03 physics, real terrain or a whole-world performance forecast."
+}

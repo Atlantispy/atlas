@@ -15,12 +15,14 @@ def slope_at(h,x,i):
     n=h.size
     if n==1:return 0.0
     wi=x[i+1]-x[i]
+    # Form local widths before adding: mixing a width with an absolute edge
+    # loses low bits at large origins (notably across binary exponent changes).
     if i==0:
-        s=(h[1]-h[0])/(0.5*(wi+x[2]-x[1]))
+        s=(h[1]-h[0])/(0.5*wi+0.5*(x[2]-x[1]))
     elif i==n-1:
-        s=(h[i]-h[i-1])/(0.5*(wi+x[i]-x[i-1]))
+        s=(h[i]-h[i-1])/(0.5*wi+0.5*(x[i]-x[i-1]))
     else:
-        dl=0.5*(wi+x[i]-x[i-1]);dr=0.5*(wi+x[i+2]-x[i+1])
+        dl=0.5*wi+0.5*(x[i]-x[i-1]);dr=0.5*wi+0.5*(x[i+2]-x[i+1])
         a=(h[i]-h[i-1])/dl;b=(h[i+1]-h[i])/dr
         if not ((a>0 and b>0) or (a<0 and b<0)):return 0.0
         # Weighted centred derivative on unequal cells, then MC limiting.

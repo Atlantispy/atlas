@@ -428,6 +428,12 @@ class PreparedStokes2D:
                                    maxiter=self.policy.max_iterations,callback=callback,check=True)
                 if info!=0:
                     raise TectonicsError('Stokes MINRES did not converge within its registered iteration limit')
+                # Force-relative Krylov accuracy alone is insufficient near rest:
+                # transport needs divergence small relative to the velocity it
+                # actually receives. Enforce the compatible solenoidal subspace,
+                # not an arbitrary small-speed clamp or a looser transport gate.
+                # Keep the explicit sparse direct route an independent reference.
+                self._inverse.project_velocity(vector)
             _cancel(cancel)
             if not np.all(np.isfinite(vector)):
                 raise TectonicsError('non-finite Stokes solution')
@@ -467,6 +473,8 @@ class PreparedStokes2D:
                       'force_normalisation':amplitude,'iterations':iterations,
                       'force_amplitude_n_m3':force_amplitude,
                       'publication_contract':'atlas.stokes-published-si-gates.v1',
+                      'velocity_reconstruction':('mac-solenoidal-modes.v1' if self.policy.method=='minres'
+                                                 else 'independent-sparse-direct'),
                       'diagnostic_basis':'returned SI velocity and pressure, re-expressed against original force',
                       'diagnostics':diagnostics,
                       'diagnostic_units':'force-normalised nondimensional equations; not SI heat sources',

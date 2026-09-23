@@ -36,6 +36,30 @@ class ThermalParameters:
 
 
 @dataclass(frozen=True, slots=True)
+class PlateCoolingParameters:
+    """Constant-property conductive plate, not an empirical Earth calibration.
+
+    thermal.mantle_temperature_k is the prescribed temperature AT the plate base,
+    not mantle potential temperature. Conductivity/diffusivity fixes volumetric
+    heat capacity consistently; no separate, possibly contradictory rho or Cp.
+    """
+    thermal: ThermalParameters
+    thickness_m: float
+    conductivity_w_m_k: float
+
+    def __post_init__(self):
+        if type(self.thermal) is not ThermalParameters:
+            raise TectonicsError('explicit ThermalParameters required')
+        for key in ('thickness_m', 'conductivity_w_m_k'):
+            object.__setattr__(self, key, scalar(getattr(self, key), key, positive=True))
+        scalar(self.volumetric_heat_capacity_j_m3_k, 'volumetric heat capacity', positive=True)
+
+    @property
+    def volumetric_heat_capacity_j_m3_k(self):
+        return self.conductivity_w_m_k / self.thermal.diffusivity_m2_s
+
+
+@dataclass(frozen=True, slots=True)
 class FlexureParameters:
     profile_id: str
     provenance: str

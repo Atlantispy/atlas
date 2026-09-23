@@ -38,6 +38,69 @@ def dense_response(p, T, Q, dt):
     return (expm(block*dt) @ np.r_[T.ravel(), 1.])[:-1].reshape(T.shape)
 
 
+class ExtremeThermalRange(unittest.TestCase):
+    def test_huge_source_tiny_step_has_finite_field_and_heat(self):
+        for pattern in (np.ones((2,2)),np.array([[1.,.5],[.25,.75]])):
+            for backend in ('numba','reference'):
+                with self.subTest(pattern=pattern.tolist(),backend=backend):
+                    p=passive(problem(2,fixed=False,contrast=0.),300.)
+                    s=initial(p,T=300.,C=.5);budget=WorkBudget(32<<20)
+                    with PreparedThermochemical2D(p,backend=backend,budget=budget) as plan:
+                        r=plan.advance(s,1e-308,source='finite scaled source',velocity=rest(p),
+                            extra_heating_w_m3=pattern*1e308)
+                    assert_allclose(r.state.array('temperature_k'),300.+pattern,rtol=0,atol=2e-13)
+                    b=r.descriptor()['record']['balances']
+                    self.assertAlmostEqual(b['source_heat_j'],float(pattern.mean()),14)
+                    self.assertLess(abs(b['heat_residual_j']),2e-13)
+                    self.assertEqual(budget.reserved_bytes,0)
+                    assert_array_equal(s.array('temperature_k'),np.full((2,2),300.))
+
+    def test_huge_conductivity_equilibrium_has_zero_wall_heat(self):
+        p=problem(2,k=1.,contrast=0.)
+        p=replace(p,material=replace(p.material,density_kg_m3=1e308,conductivity_w_m_k=1e308,
+            expansion_per_k=0.,reference_temperature_k=1.,temperature_range_k=(.5,2.)),
+            boundary=ThermalBoundary2D('fixed-top-bottom',1.,1.))
+        for backend in ('numba','reference'):
+            with self.subTest(backend=backend),PreparedThermochemical2D(p,backend=backend) as plan:
+                r=plan.advance(initial(p,T=1.,C=.5),.01,source='finite zero-gradient heat',velocity=rest(p))
+            assert_array_equal(r.state.array('temperature_k'),np.ones((2,2)))
+            b=r.descriptor()['record']['balances']
+            self.assertEqual(b['bottom_outward_heat_j'],0.)
+            self.assertEqual(b['top_outward_heat_j'],0.)
+            self.assertEqual(b['heat_before_j'],1e308)
+            self.assertEqual(b['heat_after_j'],1e308)
+
+    def test_scaled_accounts_avoid_sum_and_coefficient_overflow(self):
+        self.assertAlmostEqual(tc._scaled_thermal_sum(np.full(4,1e308),(.25,1e-308)),1.,14)
+        signed=np.array([1e308,1e308,-1e308,-1e308,1e300])
+        assert_allclose(tc._scaled_thermal_sum(signed,(1e-308,)),1e-8,rtol=2e-15,atol=0)
+        # Finite wall coefficient with an overflowing raw gradient sum.
+        self.assertAlmostEqual(tc._wall_heat(np.full(4,1e308),1.,1.,1.,1e-308),8.,13)
+        self.assertEqual(tc._wall_heat(np.zeros(2),1e308,1.,1.,.01),0.)
+        self.assertEqual(tc._wall_heat(np.ones(2),1e308,1.,1.,0.),0.)
+
+    def test_source_normalisation_refuses_subnormal_rounding_loss(self):
+        # The small value survives downscaling but loses precision: checking
+        # merely whether it became zero would miss this case.
+        values=np.array([1e308,1e-15])
+        self.assertGreater(float(np.ldexp(values,-math.frexp(1e308)[1])[1]),0.)
+        with self.assertRaisesRegex(TectonicsError,'normalisation loses'):
+            tc._normalise_extreme(values)
+        p=problem(2);d=_Diffusion2D(p);source=np.array([[1.,2.],[3.,4.]])
+        modes,exponent=d.prepare_source(source)
+        self.assertEqual(exponent,0)
+        assert_array_equal(modes,d.transform(source))
+
+    def test_restored_source_exponent_combines_before_rounding(self):
+        modes=np.array([[.5,-.25]]);weight=np.array([[.75,.5]])
+        dt=1e-308;exponent=1024
+        with localcontext() as context:
+            context.prec=100
+            expected=np.array([[float(Decimal.from_float(float(m))*Decimal.from_float(float(w))*
+                Decimal.from_float(dt)*(Decimal(2)**exponent)) for m,w in zip(modes[0],weight[0])]])
+        assert_allclose(_weighted_source(modes,weight,dt,source_exponent=exponent),expected,rtol=5e-16,atol=0)
+
+
 class DiffusionConditioning(unittest.TestCase):
     def test_insulated_reference_temperature_is_not_a_boundary(self):
         T=np.array([[300.,302.],[304.,306.]])

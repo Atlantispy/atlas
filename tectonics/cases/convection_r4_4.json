@@ -3,7 +3,13 @@
   "benchmark_accepted": false,
   "cases": {
     "case5b_applicable": true,
-    "case5b_numerical_targets": null,
+    "case5b_numerical_targets": {
+      "path": "tosi_case5b_reference.json",
+      "schema": "atlas.tosi-case5b-reference.v1",
+      "sha256": "af24ea6d458f6c1898e7c747568741ff9b5dae30cf1c5fe5321e015e470ae010",
+      "source_pdf_sha256": "817c1ebe44a5f9be45aa716416137e1f9a9d39c5840cac60e5540dba6ac09842",
+      "selection": "finest-published-column-no-fallback.v1"
+    },
     "case5b_requirement": "Published regime/transition; for periodic solutions, both minimum and maximum surface Nu averaged over 10 cycles; for steady solutions, surface Nu. Include grid sensitivity and obtain applicable reference data before acceptance (Tosi et al. 2015, section 5.4, supplementary Tables S14-S23).",
     "case5b_yields": [
       3.0,
@@ -42,12 +48,41 @@
     "Nusselt": "Instantaneous finite-volume half-cell wall flux; different from interval heat ledger",
     "Phi": "raw integral tau:e, plus separate Phi/Ra",
     "RMS": "MAC dual-cell quadrature; surface nearest-row free-slip reconstruction",
-    "case5a_Phi": "Printed Table 2 extrema lack /Ra although their magnitude suggests scaled dissipation. Both numerical channels are retained, but this label is unresolved and cannot silently pass.",
-    "forcing": "Existing R3 warm-upward convention retained. No author-confirmed correction of the printed momentum-sign ambiguity is claimed.",
+    "case5a_Phi": "Printed Table 2 extrema lack /Ra. Reference policy v2 explicitly adopts Phi/Ra as a derived project interpretation, not an author-confirmed erratum. Original labels/numbers and both simulation channels are retained; compare the already-scaled channel without dividing it again. This comparison alone never establishes benchmark acceptance.",
+    "forcing": "Warm-upward convention: -div(tau)+grad(p)=Ra*T*e_y, consistent with positive viscous dissipation and ASPECT 3.0.0. The opposite sign printed in Tosi Eq2 conflicts with its upward axis and work identity; no author-confirmed erratum is claimed.",
     "rayleigh": 100,
     "temperature": "theta=T_K-1; exact Eq11 cell averages",
     "viscosity_extrema": "All stress supports plus explicit boundary samples; no claim of exact continuum extrema",
     "work": "integral theta*w; no Ra factor"
+  },
+  "reference_review_2026_09_22": {
+    "scope": "Primary-reference review and short numerical checks; no mature convection acceptance",
+    "case5a_scaling_status": "ADOPTED_DERIVED_INTERPRETATION",
+    "case5b_documented_same_equation_codes": ["YACC", "Plaatjes", "CHIC", "GAIA", "StreamV", "StagYY", "FEniCS", "Fluidity", "ASPECT"],
+    "case5b_contributor_status": "Nine same-equation codes are documented in section 5.4 and Tables S14-S22. Exact source rows, printed precision, grids, font-reported regimes and absent values are now integrated from the user-supplied supplement. ELEFANT is absent; Table S23 MC3D is retained for provenance but excluded from comparison because its constitutive approximation differs. This is not permission to use nine codes for Table 2, or to invent absent case 5b results.",
+    "sources": [
+      "https://d-nb.info/1153363070/34 (equations 2, 4, 19-21; Table 2; section 5.4; Figures 7-8)",
+      "https://aspect-documentation.readthedocs.io/en/v3.0.0/user/methods/basic-equations/index.html (equation 1)",
+      "https://raw.githubusercontent.com/geodynamics/aspect/v3.0.0/benchmarks/tosi_et_al_2015_gcubed/tosi.cc (TosiPostprocessor::execute: raw dissipation and work integrals, explicit Phi/100 work comparison)"
+    ]
+  },
+  "reference_policy": {
+    "schema": "atlas.tosi-reference-policy.v2",
+    "revision_date": "2026-09-22",
+    "basis": "Explicit source-interpretation correction before any new mature trajectory, not an adjustment to fit Atlas output. Supersedes the universal ten-code rule and unresolved 5a label gate; all physical tolerances, 0.5% envelope margin, maturity and adequacy gates are unchanged.",
+    "case5a_dissipation": {
+      "status": "ADOPTED_DERIVED_INTERPRETATION",
+      "author_confirmed": false,
+      "rayleigh": 100,
+      "diagnostics": {
+        "printed_Phi_min": "dissipation_over_Ra_min",
+        "printed_Phi_max": "dissipation_over_Ra_max"
+      },
+      "derivation": "For impermeable free-slip incompressible flow, Phi/Ra=W. Multiplying the heat equation by y gives W=Nu_top-1+d(integral yT)/dt. Thus on a periodic orbit mean(Phi/Ra)=mean(Nu_top)-1. In every one of Table 2's ten columns, Nu_top_min-1 exceeds printed_Phi_max/100, disproving the raw-Phi reading. The normalised reading matches the steady Table 2 convention and ASPECT 3.0.0's explicit Phi/100 work comparison. This identifies a defensible project interpretation, not documentary proof of the authors' extrema labelling."
+    },
+    "case5b_codes": ["YACC", "Plaatjes", "CHIC", "GAIA", "StreamV", "StagYY", "FEniCS", "Fluidity", "ASPECT"],
+    "case5b_source": "User-supplied original Supporting Information S1, introduction page 4, Tables S14-S23 pages 21-30; source and extracted bytes pinned in cases.case5b_numerical_targets",
+    "case5b_matching_requirement": "Retain every source code, yield stress, mesh, reported regime and printed decimal string. Select each code's final/highest-resolution published column before inspecting Atlas output; no coarse-column fallback for a printed dash or absent yield. Partition those rows by the font-reported steady/periodic regime, retaining all dissenting rows and explicit source absences. This is a finest-published envelope, not an exact-grid error bound: source methods/meshes differ, and Atlas mesh/time/nonlinear adequacy remains independently required. No pooling unlike regimes, graph digitisation, 5a substitution, fabricated ELEFANT rows or MC3D acceptance. Periodic Nu_top minima and maxima are each averaged over ten complete mature cycles. Cross-axis study representatives must share one regime."
   },
   "implementation": "Original R3 constitutive laws, R4.3 symmetric-stress equations and R4.2 transport are unchanged. The matrix-free stress stencil avoids padded temporaries and weighted sparse assembly row-scales fixed derivatives algebraically, with only floating-operation-order round-off permitted. The R4.4 runner explicitly selects max_picard_iterations=400 and ILU fill factor 17 by default; R4.3's general default remains 12. All convergence/accuracy gates are retained. No automatic timestep shrink or direct-solver fallback.",
   "included_codes": [
@@ -94,7 +129,7 @@
       "period_relative_range": 0.01,
       "samples_per_period": 100
     },
-    "status": "policy frozen before new long trajectories; not a claim of achieved accuracy",
+    "status": "Numerical tolerances frozen before new long trajectories; explicit reference-interpretation v2 correction on 2026-09-22; not a claim of achieved accuracy",
     "steady": {
       "absolute_range": 1e-08,
       "field_window_relative_linf": 0.0001,
@@ -104,7 +139,7 @@
       "thermal_flux_relative_imbalance": 0.001,
       "window": 0.05
     },
-    "table_comparison": "Every unambiguous diagnostic within min/max of the ten same-equation reported values, expanded by 0.5% of maximum absolute endpoint for rounding/discretisation. This envelope is only one gate, not a statistical confidence interval.",
+    "table_comparison": "Every required diagnostic within min/max of the applicable source-bound same-equation reference values, expanded by 0.5% of maximum absolute endpoint for rounding/discretisation. Table 2 cases 1-5a retain ten named contributors and the explicit v2 dissipation interpretation. Case 5b selects the finest published column without fallback for each same-equation contributor at the exact yield, partitions by printed regime and records missing and dissenting rows; independent Atlas mesh/time/nonlinear adequacy is required. This envelope is only one gate, not a statistical confidence interval or exact-grid error bound.",
     "table_relative_margin": 0.005
   },
   "publication": {

@@ -25,7 +25,7 @@ from .stokes import face_force_from_density, StokesSolvePolicy
 from .stokes_execution import PreparedStokes2D, _native_lease, _factored_scale, _hex
 from .thermochemical import (ThermochemicalProblem, ThermochemicalPolicy, _Diffusion2D,
                             _METHOD, _BOUND_TOL, _TIME_RTOL, _PUBLICATION_CONTRACT,
-                            _check_fields, _reference_transfers, _digest)
+                            _check_fields, _reference_transfers, _digest, _scaled_thermal_sum)
 
 
 def _endpoint_time(start,dt,policy):
@@ -653,8 +653,8 @@ class PreparedThermochemical2D:
             if not np.isfinite(heating).all(): raise TectonicsError('nonfinite heating')
             Q=heating/self.problem.heat_capacity_j_m3_k
             if np.any((Q==0)&(heating!=0)): raise TectonicsError('heat-source rate underflows')
-            source_modes=self._diffusion.transform(Q)
-            td,bound0=self._diffusion.advance(T,source_modes,dt*.5,cancel)
+            source_modes,source_exponent=self._diffusion.prepare_source(Q)
+            td,bound0=self._diffusion.advance(T,source_modes,dt*.5,cancel,source_exponent=source_exponent)
             q0=np.stack((td,C));_check_fields(self.problem,*q0)
             q1=np.empty_like(q0);q2=np.empty_like(q0)
             fx=np.empty((2,b.nz,b.nx+1));fz=np.empty((2,b.nz+1,b.nx))
@@ -701,12 +701,20 @@ class PreparedThermochemical2D:
             _check_fields(self.problem,*q2)
             q2[:]=q0+.5*(q2-q0)
             meanx+=.5*fx;meanz+=.5*fz
-            tf,bound1=self._diffusion.advance(q2[0],source_modes,dt*.5,cancel)
+            tf,bound1=self._diffusion.advance(q2[0],source_modes,dt*.5,cancel,source_exponent=source_exponent)
             cf=q2[1];_,excursion=_check_fields(self.problem,tf,cf)
             area=(b.width_m/b.nx)*(b.height_m/b.nz);capacity=self.problem.heat_capacity_j_m3_k
             before_heat=self._sum(T)*area*capacity;after_heat=self._sum(tf)*area*capacity
             heat_change=self._sum(tf-T)*area*capacity
-            source_heat=self._sum(heating)*area*dt
+            # Preserve ordinary reduction/order; scale before summing only when
+            # the raw positive sum or its area product can lose numeric range.
+            if float(np.max(heating))<=np.finfo(float).max/heating.size:
+                total_heating=self._sum(heating);area_heating=total_heating*area
+                source_heat=area_heating*dt
+                safe=(math.isfinite(area_heating) and math.isfinite(source_heat) and
+                      (total_heating==0 or area_heating>=np.finfo(float).tiny))
+            else:safe=False
+            if not safe:source_heat=_scaled_thermal_sum(heating,(area,dt))
             bottom_heat=math.fsum((bound0[0],bound1[0]));top_heat=math.fsum((bound0[1],bound1[1]))
             heat_residual=math.fsum((heat_change,-source_heat,bottom_heat,top_heat))
             cbefore=self._sum(C)*area;cafter=self._sum(cf)*area

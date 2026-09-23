@@ -1,0 +1,138 @@
+{
+  "schema": "atlas.w06-spreading-measurement.v1",
+  "status": "PASS_W06_STEP_2_BOUNDED_MEASUREMENT",
+  "case_id": "w06-newborn-ocean-20260922",
+  "cells": 4000,
+  "outputs_years": [
+    0.0,
+    5000000.0,
+    10000000.0,
+    20000000.0
+  ],
+  "repeats": 3,
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMBA_NUM_THREADS": "1"
+  },
+  "accuracy": [
+    {
+      "elapsed_years": 0.0,
+      "occupied_side_cells": 0,
+      "maximum_width_error_m": 0.0,
+      "maximum_age_error_s": 0.0
+    },
+    {
+      "elapsed_years": 5000000.0,
+      "occupied_side_cells": 800,
+      "maximum_width_error_m": 9.919176591210999e-12,
+      "maximum_age_error_s": 0.015625
+    },
+    {
+      "elapsed_years": 10000000.0,
+      "occupied_side_cells": 1600,
+      "maximum_width_error_m": 1.9809931472991593e-11,
+      "maximum_age_error_s": 0.03125
+    },
+    {
+      "elapsed_years": 20000000.0,
+      "occupied_side_cells": 3200,
+      "maximum_width_error_m": 3.9619862945983186e-11,
+      "maximum_age_error_s": 0.0625
+    }
+  ],
+  "final_phase_accounts_kg": [
+    [
+      16240000000000.0,
+      3760000000000.0,
+      16240000000000.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      245520000000000.0,
+      54480000000000.0,
+      245520000000000.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "matched_four_output_geometry_comparison": {
+    "reference_seconds": [
+      0.017974399961531162,
+      0.01747540000360459,
+      0.017391499946825206
+    ],
+    "production_seconds": [
+      0.000507500022649765,
+      0.0003792999777942896,
+      0.0004841000773012638
+    ],
+    "reference_median_seconds": 0.01747540000360459,
+    "production_median_seconds": 0.0004841000773012638,
+    "saved_seconds": 0.016991299926303327,
+    "saved_percent": 97.2298197626297,
+    "speedup": 36.098734172953556
+  },
+  "setup_inclusive_prepared_sequence": {
+    "seconds": [
+      0.45693369989749044,
+      0.45998100005090237,
+      0.470592699944973
+    ],
+    "median_seconds": 0.45998100005090237
+  },
+  "same_state_request_validation": {
+    "seconds": [
+      0.021219199988991022,
+      0.021317100035957992,
+      0.021144800004549325
+    ],
+    "median_seconds": 0.021219199988991022
+  },
+  "budget": {
+    "max_bytes": 134217728,
+    "reserved_bytes": 0,
+    "peak_reserved_bytes": 8680576,
+    "refusals": 0,
+    "categories": {
+      "column-geometry": 0,
+      "w06-benchmark-caller": 0,
+      "spreading-geometry": 0,
+      "spreading-prepared": 0,
+      "spreading-state": 0,
+      "spreading-projection": 0
+    },
+    "category_peaks": {
+      "column-geometry": 196144,
+      "w06-benchmark-caller": 6721664,
+      "spreading-geometry": 1032192,
+      "spreading-prepared": 276480,
+      "spreading-state": 650240,
+      "spreading-projection": 520192
+    }
+  },
+  "caller_allowance_bytes": 6721664,
+  "execution_identity": "0e1266e3b989be790e34471931010ada9843049367e9eaa0ebe4993173d6a233",
+  "source_sha256": {
+    "cases/w06_spreading.json": "fc9833585e6ebf26a92e3a7db5c56cec1773fe0401db74dfa12de871c5ef1611",
+    "docs/W06_SPREADING.md": "fc52728845d62bfd575a3d22e6a46796d3d36120b8ab1f65668379b38e0be285",
+    "tools/benchmark_w06_spreading.py": "08081444a8a8db998689d0d3bf21f22a067f93f0702e6c3d5ca40d17326794fc",
+    "tests/w06_spreading_reference.py": "069ca4d3a44c08ae019022d5824ad1785f12d86975f9ff00ccde6673cd293339",
+    "src/atlas_tectonics/__init__.py": "7e18841cdf7faf275b8cd6a6cfbe4666979d0a68c9d1830395f2656c9674535c",
+    "src/atlas_tectonics/spreading.py": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "src/atlas_tectonics/materials.py": "0368b01b780c8dd0fa8520938d715d126fa2b3968c64e5f3dae5e27f54480122",
+    "src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "src/atlas_tectonics/reuse.py": "bc44b5511ad5b90b5fc9645d6055afaa7412160ed54280514d3972474ae64abd",
+    "src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c"
+  },
+  "scope": "WORKING NON-CANON. Constant prescribed planar birth only, 4000 cells, two finite phases, four outputs. Matched scalar/vector fields are occupied width and youngest/oldest age; scalar reference independently integrates birth-time preimages. Prepared sequence includes new plan/context setup, four source-validated output requests, thickness projections and closure. Repeated output returns the identical immutable state after source validation; it is not a persistent-cache saving. No cooling, support, varying histories, workflow restart, empirical or whole-generator acceptance. Budget is accounted bytes, not measured process RSS."
+}

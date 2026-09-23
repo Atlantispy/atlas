@@ -1,0 +1,29 @@
+{
+  "schema": "atlas.w06-margin-reuse-measurement.v1",
+  "status": "PASS_BOUNDED_PREPARED_REUSE",
+  "date": "2026-09-22",
+  "scope": "WORKING NON-CANON; three outputs from a small inherited column. Includes fresh execution contexts, source checks, preparation, evaluation and closure. Excludes imports, W01 fixture creation and equality checks. Not whole-generator timing.",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "platform": "Windows",
+  "repeats": 3,
+  "fresh_seconds": [0.6438855000, 0.6191567000, 0.7766061000],
+  "prepared_seconds": [0.3106226000, 0.3106270001, 0.4320297999],
+  "fresh_median_seconds": 0.6438855000,
+  "prepared_median_seconds": 0.3106270001,
+  "saved_seconds": 0.3332584999,
+  "saved_percent": 51.7574,
+  "record_precision": "Elapsed values transcribed from worker return to 10 decimal places; percentage rounded to four decimal places.",
+  "output_times_s": [1e12, 2e14, 1e15],
+  "depth_edges_m": [0, 7000, 20000, 53000, 100000],
+  "parity": "Identical state IDs, means and cumulative heat for all nine compared outputs.",
+  "thread_control": "Both loaded OpenBLAS runtimes reported one thread; process-local thread environment set to one.",
+  "source_sha256": {
+    "src/atlas_tectonics/margin_cooling.py": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab",
+    "tests/test_w06_margin_cooling.py": "b15e0020d0ab0f4446f616fd3372ef678115d8958cb78fdd3673bd62de1e9eee",
+    "tools/benchmark_w06_margin.py": "a4282078e9b6ce0b37b3a133d55f006631676e4cad5b8d5c780b5a2c4aa26636"
+  },
+  "package_binding": "Unchanged production package also recorded in w06-cooling-timing.json; margin module was settled before both measurements.",
+  "measurement_location": "Original task workspace w06_margin_timing.py, copied byte-for-byte to tools/benchmark_w06_margin.py. No duplicate timing run needed."
+}

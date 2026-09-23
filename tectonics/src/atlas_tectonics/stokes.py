@@ -246,7 +246,7 @@ class _MACOperator:
 
 
 class _SeparableVelocityInverse:
-    """Exact discrete free-slip velocity inverse, used only as preconditioning.
+    """Exact free-slip inverse and compatible solenoidal reconstruction.
 
     The remaining Schur block is identity on mean-zero cosine pressure modes;
     the constant pressure mode is paired with the explicit gauge multiplier.
@@ -283,6 +283,42 @@ class _SeparableVelocityInverse:
         b /= dw
         b = idst(idct(b,type=2,axis=1,norm='ortho',workers=1),type=1,axis=0,norm='ortho',workers=1)
         return np.concatenate((a.ravel(),b.ravel(),p.ravel(),[gauge]))
+
+    def project_velocity(self, vector):
+        """Remove compressible Krylov error without a speed cutoff, in place.
+
+        In orthonormal MAC modes Dv=kx*u+kz*w and Gp=(-kx*p,-kz*p).
+        Reconstruct the cross modes from their single solenoidal amplitude;
+        axis-only velocity modes cannot be divergence free at closed walls.
+        Since A=-Laplacian and A G=G(-D G), p_new=p_old-Dv preserves
+        A v+G p. Final published-SI equation/work gates remain authoritative.
+        This is not a general variable-viscosity projection.
+        """
+        op=self.op
+        u,w,p,_=op.split(vector)
+        divergence=op.divergence(u,w)
+        # Avoid extra FFT rounding/work on an already compatible velocity. This
+        # is a velocity-relative residual trigger, never a small-speed cutoff
+        # or an acceptance gate; the original SI and transport gates still run.
+        # Its roundoff scale is well below the transport divergence tolerance.
+        velocity_scale=max(float(np.max(np.abs(u)))/op.hx,
+                           float(np.max(np.abs(w)))/op.hz)
+        if float(np.max(np.abs(divergence)))<=4*np.finfo(float).eps*velocity_scale:
+            return
+        a=dct(dst(u,type=1,axis=1,norm='ortho',workers=1),type=2,axis=0,norm='ortho',workers=1)
+        b=dct(dst(w,type=1,axis=0,norm='ortho',workers=1),type=2,axis=1,norm='ortho',workers=1)
+        kx=2*np.sin(np.arange(1,op.nx)*np.pi/(2*op.nx))/op.hx
+        kz=2*np.sin(np.arange(1,op.nz)*np.pi/(2*op.nz))/op.hz
+        # Scale before squaring; no overflowing norm or avoidable sqrt round
+        # trip. Equal wavenumbers give exact weights 1 and denominator 2.
+        norm=np.maximum(kz[:,None],kx[None,:])
+        qx=kx[None,:]/norm; qz=kz[:,None]/norm
+        transverse=(qz*a[1:,:]-qx*b[:,1:])/(qx*qx+qz*qz)
+        a[0,:]=0.; a[1:,:]=qz*transverse
+        b[:,0]=0.; b[:,1:]=-qx*transverse
+        u[:]=idst(idct(a,type=2,axis=0,norm='ortho',workers=1),type=1,axis=1,norm='ortho',workers=1)
+        w[:]=idst(idct(b,type=2,axis=1,norm='ortho',workers=1),type=1,axis=0,norm='ortho',workers=1)
+        p-=divergence
 
 
 def face_force_from_density(box, density_anomaly_kg_m3, gravity_m_s2, *, budget=None):

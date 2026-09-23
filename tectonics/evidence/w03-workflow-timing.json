@@ -1,0 +1,28 @@
+{
+  "status": "PASS_BIT_IDENTICAL_STATE",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "columns": 256,
+  "parcels_per_column": 128,
+  "sequential_steps": 6,
+  "parcel_updates": 196608,
+  "repetitions": 3,
+  "timings_seconds": {
+    "separate_setup_per_step": [3.2610350999748334, 3.432832899969071, 3.255612100008875],
+    "prepared_sequence": [2.210588700021617, 2.1700514999683946, 2.1811349999625236]
+  },
+  "median_separate_seconds": 3.2610350999748334,
+  "median_prepared_seconds": 2.1811349999625236,
+  "saved_seconds": 1.0799001000123098,
+  "saved_percent": 33.11525533781111,
+  "speedup": 1.4951092435960474,
+  "final_state_id": "e989d13fcdca0950f0770d69701d4f56cf321db0fd421300712ca05e3ca2a1ab",
+  "scope": "Complete stationary W03 sequence, including both-backend setup/closure in each route; shared W01 initialisation outside timing. All loads, physical calculations and existing source checks retained. No disk caching or workers. Not a whole-generator speedup.",
+  "source_sha256": {
+    "src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "src/atlas_tectonics/reuse.py": "b6fd3d10d4a74d5d87e1d30762eb2ab6e9a90b9894f1cce9e04fe35a931c1d9e",
+    "tests/test_w03_workflow.py": "66c93cbc632d467d51854c68aae6a2c0a6dc30ec8aac75b9fced51e291224bd5",
+    "tools/benchmark_w03_workflow.py": "10cc55728618211c2865d58c68e53b2ff433b62add057c2f03b0c4ad7058c788"
+  }
+}

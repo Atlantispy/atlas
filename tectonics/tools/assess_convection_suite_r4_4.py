@@ -70,6 +70,10 @@ def visual_gate(entry, base, case, representatives):
     metadata=json.loads(metadata_path.read_bytes())
     allowed_states={r['latest_diagnostics_state_id'] for r in representatives}
     errors=[]
+    if metadata.get('output_kind')!='RAW_DATA_AND_PLOTS':errors.append('raw-only export is not visual evidence')
+    required_files={'raw_fields_and_history.npz','01_temperature.png','02_viscosity.png','03_pressure.png',
+                    '04_velocity.png','05_heat_flux_history.png','06_temperature_history.png'}
+    if not required_files<=set(metadata.get('files',{})):errors.append('complete plotted outputs missing')
     if metadata['state_id'] not in allowed_states:errors.append('visual state is not a finest accepted run endpoint')
     if metadata['source']!=source_record():errors.append('visual source identity differs')
     if case_key(metadata['configuration']['case'])!=case_key(case):errors.append('visual case differs')
@@ -88,11 +92,20 @@ def visual_gate(entry, base, case, representatives):
 
 def unresolved_references(spec):
     result=[]
-    if spec['cases'].get('case5b_numerical_targets') is None:
-        result.append('Case 5b numerical reference targets not verified')
-    if any(k.startswith('printed_Phi') for k in spec['reported_values'].get('tosi-5a',{})):
-        result.append('Case 5a printed dissipation normalisation unresolved')
+    try:audit.case5b_reference.load_reference(spec)
+    except (ValueError,KeyError,TypeError,OSError) as exc:
+        result.append('Case 5b numerical reference targets not verified: '+str(exc))
+    if not audit.case5a_mapping_verified(spec):
+        result.append('Case 5a explicit derived dissipation mapping missing or changed')
+    for case in ('tosi-5a','tosi-5b'):
+        try:audit.reference_contributors(case,spec)
+        except ValueError as exc:result.append(str(exc))
     return result
+
+
+def matched_representative_regimes(representatives):
+    regimes=[r.get('regime','steady' if r['case']['name'] in ('tosi-1','tosi-2','tosi-3','tosi-4') else 'unresolved') for r in representatives]
+    return dict(passed=len(regimes)==3 and len(set(regimes))==1 and regimes[0] in ('steady','periodic'),regimes=regimes)
 
 
 def preflight(manifest_path):
@@ -193,9 +206,10 @@ def assess(manifest_path):
                 conservation=r.get('every_accepted_step',{}).get('conservation_passed',False),
                 table_comparison=r.get('table_comparison',{})))
         visual=visual_gate(entry.get('visual_qa'),base,case,representatives)
+        regime_gate=matched_representative_regimes(representatives)
         passed=bool(all(s['passed'] for s in studies.values()) and len(per_run)==3 and
-            all(r['passed'] for r in per_run) and visual['passed'])
-        case_reports.append(dict(case=case,passed=passed,studies=studies,finest_run_gates=per_run,visual_qa=visual))
+            all(r['passed'] for r in per_run) and visual['passed'] and regime_gate['passed'])
+        case_reports.append(dict(case=case,passed=passed,studies=studies,finest_run_gates=per_run,visual_qa=visual,matched_regime_gate=regime_gate))
     verification=manifest.get('combined_verification')
     combined=verification_gate(None if verification is None else resolve(base,verification))
     # Reference blocks are explicit even if no expensive run has been supplied.

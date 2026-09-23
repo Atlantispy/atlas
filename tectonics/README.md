@@ -1,5 +1,196 @@
 # Current scoped package: 0.1.0.dev42
 
+## Local W07 regional mechanics
+
+[Step 1 model and benchmark specification](docs/W07_REGIONAL_MECHANICS.md) remains
+frozen. [Step 2 implementation and evidence](docs/W07_REGIONAL_SOLVER.md) now supply
+a boundary-aware full-stress MAC solver, public SI/source-bound execution,
+physical pressure and reactions, and an independent Q2/P1-discontinuous comparator.
+The small continuum comparison retains MAC for the next step; it does not claim
+one method is universally superior. Prepared reuse saves **44.84%** and verified
+identical-result reuse **53.53%** on the measured three-output 32×32 workload,
+including setup, at byte-identical output. The [ten benchmark families](cases/w07_mechanics.json)
+separate these basic boundaries from subsequent material/thermal, yielding and
+true-ALE surface work. [Step 3](docs/W07_HETEROGENEOUS_THERMAL.md) now supplies
+heterogeneous stress-site viscosity, sharp-interface references, retained nonlinear
+laws and open/translated-grid heat/material coupling. Finest B07 thermal error
+is 0.42053%; million-to-one interface viscosity cases pass. New identical-request
+reuse saves 0.94827 s / 47.95% on its three-output workload; changed-coefficient
+reuse shows no gain (4.66% slower median).
+[Step 4](docs/W07_SURFACE_STRENGTH.md) now adds dry pressure-sensitive strength
+and genuine body-fitted surface evolution, using Q2/physical-P1 mechanics on the
+deformed branch. Finest surface-relaxation error is 0.003688%; mesh/time refinement
+and conservation pass. Finest 64-step runs took 2.55–2.63 s. Verified identical
+surface-state reuse saves 0.4548072 s / 54.64% on three complete outputs.
+Next: Step 5 source-bound geological assembly, recovery and combined acceptance.
+
+## Local W06 conservative oceanic birth and spreading
+
+[Step 1](docs/W06_SPREADING.md) fixes the model and numerical gates.
+[Step 2](docs/W06_BIRTH.md) supplies conservative birth/age histories and finite
+material feeds. [Step 3](docs/W06_COOLING.md) now connects phase-resolved cooling,
+single-owner wet subsidence, finite heat/water accounts and boundary-exit exports.
+Inherited margins evolve their actual temperature fields without resetting age.
+Thirty new focused checks have passing evidence, plus nine shared identity checks.
+Matched 256-cell thermal output saves 73.29% against independent scalar integration
+(0.3553722 to 0.0949111 s); prepared margin reuse saves 51.76% including setup.
+The separate 4000-cell/four-output protected ocean sequence takes 0.5856 s including
+setup. See [evidence and limits](evidence/w06-cooling.md). These are bounded Windows
+measurements, not whole-generator speedups or empirical terrain acceptance.
+[Step 4 changing histories](docs/W06_HISTORIES.md) now supports asymmetric rate
+switches, continuous ridge migration, stopping/restarting and explicit plate
+reassignment without resetting material age or first-exit accounts. Twenty new
+focused checks and nine shared identity checks have passing evidence. Matched
+256-cell output takes 0.101052 s versus 0.646369 s for the scalar reference
+(84.37% less time); preparation reuse across four 4000-cell outputs takes
+0.658347 s versus 1.273474 s (48.30% less, including setup). See
+[Step 4 evidence](evidence/w06-history.md) for the separate comparison scopes.
+[Step 5 recoverable workflow](docs/W06_WORKFLOW.md) now gives all three routes
+atomic requested-output checkpoints, exact fresh-process continuation and verified
+reuse without repeating completed thermal work. Selected combined acceptance
+passes 20 checks; five separate ocean codec checks also have passing evidence.
+See [Step 5 evidence](evidence/w06-workflow.md) for recovery timings and first-save
+overheads. Next: W07's selected regional mechanical backend.
+
+## Local W05 combined regional-extension acceptance
+
+[Step 1](docs/W05_REGIONAL_EXTENSION.md) defines the first prescribed dry
+listric-extension mechanism, separate conservative hanging-wall/footwall
+accounts, one reference-based flexural response, synthetic case, independent
+references and efficiency decisions. [Step 2 motion](evidence/w05-motion.md) is
+now implemented and checked: exact characteristic cell means, cohort histories,
+stationary footwall and finite exports. The kernel is 99.04% faster than the
+independent quadrature implementation at matched accuracy (not a whole-generator
+claim). [Step 3 load/support integration](evidence/w05-support.md) now adds
+continuous flexure, true mean surface/base/fault outputs and bounded exterior
+effects. The three-output load/support sequence is 24.84% quicker with reuse,
+including preparation, at identical output quality. [Step 4 recoverable workflow](evidence/w05-workflow.md)
+now saves complete requested outputs atomically and resumes with exact output
+equality. Setup-inclusive warm reopening saves 52.41% on the bounded case; first
+durable execution costs 11.76% extra. [Step 5 combined acceptance](docs/W05_COMBINED_ACCEPTANCE.md)
+now passes: 37 focused checks in 31.807 s, all crop centres/faces on three grids,
+independent cell-mean extrema, accounts, recovery and domain/time sensitivity.
+Fine-grid support error is 1.0164 mm against the declared smooth reference, not
+real-world terrain error. See [acceptance evidence](evidence/w05-acceptance.md).
+Reproduce with `python -I -B tectonics/verify.py --w05`. The scoped numerical
+workflow is accepted; a separate empirical challenge remains pending source data.
+
+## Local unreleased W04 combined acceptance
+
+[Step 5](docs/W04_COMBINED_ACCEPTANCE.md) passes the selected stationary planar
+1D load-to-support gate: 62 focused tests, including the evolved W03 sequence
+through uniform/variable and periodic/continuing/physical support, reference
+shifts, restart/cache and local strain guards. Reproduce with
+`python -I -B tectonics/verify.py --w04`; this is not a full terrain or R4.4 run.
+See [bounded evidence](evidence/w04-acceptance.md). W05 acceptance is recorded above;
+general terrain, moving/2D/spherical support and field calibration are not accepted.
+
+## Local unreleased W04 step 4
+
+[Fixed spatially variable rigidity](docs/W04_VARIABLE_RIGIDITY.md) now connects
+source-linked E/Te/nu profiles to the stationary W01-W03 projection. Conservative
+Hermite support, sharp material interfaces, explicit mesh-change gates and reused
+banded factors work with periodic, physical and continuing boundaries. Continuing
+variable-D support requires exact declared exterior loads. Evolving rigidity is
+unsupported; the separate combined acceptance is recorded above. See [checks and measured savings](evidence/w04-variable-rigidity.md).
+
+## Local unreleased W04 step 3
+
+[Finite 1D regions](docs/W04_FINITE_REGIONS.md) now distinguish continuing plates
+from explicitly physical free/clamped ends. Source-bound surrounding loads,
+omitted-load error bounds, exact cell integration, shared FFT preparation,
+verified reuse and analytical controls are connected to W03. This increment is
+uniform-rigidity; step 4 above adds its separate variable-D route. See
+[checks and timing](evidence/w04-finite-regions.md).
+
+## Local unreleased W04 step 2
+
+[Source-bound support integration](docs/W04_WORKFLOW.md) now projects actual
+stationary W01/W02/W03 snapshots through explicit finite-reservoir placement and
+single-owner thermal loading into the existing periodic flexure solver. Results
+are total-reference displacement and surface changes, not accumulated movement
+or a feedback update to the W03 mesh. Shared preparation, existing cache/recovery
+and focused controls are included; see [evidence](evidence/w04-workflow.md).
+
+## Local unreleased W04 step 1
+
+[Finite-reference physical loads](docs/W04_COLUMN_LOADS.md) now account separately
+for rock/sediment/water inventories, replacement material and fixed-coverage
+thermal buoyancy. Batched compensated evaluation and source-aware optional reuse
+are included. This is load construction only: actual W01-W03 support coupling,
+non-periodic boundaries and variable rigidity remain separate steps. See
+[focused checks and timing](evidence/w04-loads.md).
+
+## Local unreleased W03 increment 4
+
+[Bounded assembled columns](docs/W03_WORKFLOW.md) connect W01/W02 source sediment
+inventories to cooling, compaction history and an actually booked finite water
+reservoir. Initial thermal reconciliation, complete per-step receipts, shared
+execution preparation and source-backed restart are included. This completes the
+selected stationary fixed-area assembly, not general moving-stratigraphy or
+fully coupled terrain acceptance. See [checks and timings](evidence/w03-workflow.md).
+
+## Local unreleased W03 increment 3
+
+[Drained compaction and partial rebound](docs/W03_COMPACTION.md) now preserve grain
+inventories under changing column area, retain maximum loading, and explicitly
+balance pore-fluid exchange against a finite shared reservoir. Source-bound W01
+sediment import, grouped/batched evaluation, verified reuse and state recovery are
+included. See [focused checks and timings](evidence/w03-compaction.md). This is a
+saturated already-drained approximation, not transient consolidation or complete
+W03 assembly/terrain acceptance.
+
+## Local unreleased W03 increment 2
+
+[Thermal density and single-owner support](docs/W03_THERMAL_SUPPORT.md) connect
+the existing Boussinesq law to named reference-column loads and total local
+displacement. The finite-plate route integrates directly without a depth grid;
+source-linked histories, grouped evaluation and verified auto-cache reuse are
+included. [Research, focused checks and timings](evidence/w03-thermal-support.md)
+are retained. This is homogeneous, first-order local compensation, not full
+W03, a free surface, compaction or empirically calibrated terrain.
+
+## Local unreleased W03 increment 1
+
+[Finite-plate cooling and thermal-age columns](docs/W03_THERMAL_COLUMNS.md) now
+provide stable direct-age temperatures, true cell means and cumulative boundary
+heat. Known cooling histories retain their source/epoch and are not confused with
+rock formation dates. Batched model reuse and verified auto-cache integration are
+included. See [bounded validation and timings](evidence/w03-thermal-columns.md).
+This is the constant-property thermal-column increment, not complete W03,
+compaction or empirically calibrated terrain. Density/support is supplied by the
+separate increment 2 above.
+
+## Local unreleased physical-validation corrections
+
+The constant-viscosity MINRES route now removes compressible solver roundoff
+before coupled transport, without a small-speed clamp or looser acceptance gates.
+The explicit sparse direct route remains an independent mechanical reference.
+W02 fixed-grid material transport now reconstructs cohorts jointly at both RK
+stages, so their summed thickness follows the scalar total law without artificial
+bumps. This is method v2; old v1 histories keep their original identity.
+See [bounded checks and limitations](evidence/w01-bounded-validation.md#physical-validation-corrections--22-september-2026).
+These corrections do not establish whole-world realism or resume R4.4.
+
+## Local unreleased W01 Stage 8 assessment
+
+Run `python -I -B tectonics/verify.py --w01` for the focused combined W01 profile:
+original representation gates, assembled workflow, resources, caching and recovery.
+See [scope and acceptance decisions](docs/W01_COMBINED_ACCEPTANCE.md).
+A technical pass does not close reopened S3C scientific acceptance or the held
+R4.4 work; the emitted record explicitly keeps whole W01 INCOMPLETE.
+
+## Local unreleased W01 Stage 7
+
+The [regional workflow](docs/W01_REGIONAL_WORKFLOW.md) now connects described
+geology and supported plate motion to conservative W02 cohort transport without
+manually assembled inventory arrays. It retains initial thermal provenance,
+explicit pore-fluid histories, whole-cell geometry checks, bounded steps,
+source-bound reuse and linked save/restore. Run the small authored example with
+`python -I -B tectonics/tools/run_w01_workflow.py` from the repository root.
+This is a restricted planar/hemispheric-wedge workflow, not unrestricted planetary
+dynamics. Stage 8 is assessed above; scientific acceptance remains and R4.4 is not resumed.
+
 ## Local unreleased W01 Stage 6
 
 Prescribed plate motion now feeds checked regional face velocities for explicit
@@ -8,7 +199,7 @@ internal interfaces are refused, including boundaries hidden between grid faces.
 Stage-5 changes are preserved. Local review: 200 focused checks passed; vectorised
 queries used 27.1267% less time than the same adapter's scalar control in the
 bounded benchmark. See [scope, checks and timings](docs/W01_MOTION_FORCING.md).
-Stage 7 remains outstanding; R4.4 remains held. This is not a released version or
+Stage 7 is supplied by the local update above; R4.4 remains held. This is not a released version or
 whole-generator scientific acceptance.
 
 ## Current dev42 — seeded diagnostics and cheaper fixed multigrid cycles

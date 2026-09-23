@@ -1,0 +1,26 @@
+{
+  "status": "PASS_BIT_IDENTICAL",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "parcels_per_column": 64,
+  "columns": 1024,
+  "parcel_updates": 65536,
+  "repetitions": 3,
+  "timings_seconds": {
+    "separate_column_calls": [0.0834925000090152, 0.08186049992218614, 0.08164850005414337],
+    "bounded_batch": [0.0023930000606924295, 0.0023058000952005386, 0.00234369991812855]
+  },
+  "median_reference_seconds": 0.08186049992218614,
+  "median_batch_seconds": 0.00234369991812855,
+  "saved_seconds": 0.07951680000405759,
+  "saved_percent": 97.13695870370155,
+  "speedup": 34.927892981944524,
+  "scope": "Same guarded law, vectorised within each baseline column. Measures batching independent columns, not an older production stage or external software. No disk cache, JIT or worker pool in timed routes.",
+  "source_sha256": {
+    "src/atlas_tectonics/compaction.py": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2",
+    "src/atlas_tectonics/compaction_columns.py": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637",
+    "src/atlas_tectonics/reuse.py": "9f16617462efda8a87bd3da6639e6de2497b21c6f1996303b5c7d1a0070c95d5",
+    "tools/benchmark_w03_compaction.py": "c664cb97abec429bef195b30c30fe59dff707b8b21d3840ee362fe5baffe032f"
+  }
+}

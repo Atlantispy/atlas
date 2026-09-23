@@ -1,0 +1,44 @@
+{
+  "status": "PASS_BIT_IDENTICAL_RESULTS_AND_PROVENANCE",
+  "columns": 128,
+  "projections": 4,
+  "length_m": 100000.0,
+  "width_m": 1000.0,
+  "repetitions": 3,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "input_preparation_seconds": 4.137581199989654,
+  "timings_seconds": {
+    "separate_preparation": [
+      3.500367100001313,
+      3.1231389000313357,
+      3.1130068000638857
+    ],
+    "shared_preparation": [
+      1.6816240000771359,
+      1.5976172999944538,
+      1.7176142999669537
+    ]
+  },
+  "median_separate_seconds": 3.1231389000313357,
+  "median_prepared_seconds": 1.6816240000771359,
+  "saved_seconds": 1.4415148999541998,
+  "saved_percent": 46.155965075384145,
+  "speedup": 1.857215941190229,
+  "result_ids": [
+    "69bf1bebd911b0d62fd7c2c13189c022c74622d244a68a71c5ea3dfd70f6ce24",
+    "83c013f9316a426f507ed3611aca9cd148594ad63a56a9736d4766eb18342815",
+    "58775e976b4bb5b11fdcd9c5927d6b9842658ef6c296beeea1b2fd8ad788c81f",
+    "c97c9bb419d3672b485b792231bec7aad51b1faaf7b324d93138353b72c324ce"
+  ],
+  "scope": "Complete W04 projection including source checks, input mapping, material/thermal/external load, FFT support and bounds. Both routes include setup/closure; same W01/W03 and surface input construction outside timing. No cache hits/workers/full terrain. Not an old-version or whole-generator speed claim.",
+  "source_sha256": {
+    "src/atlas_tectonics/w04_workflow.py": "cfd808700d6e2fb2f4e3fa1966135763082d9574cf0265e1b4d43114bd62f3d8",
+    "src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "src/atlas_tectonics/reuse.py": "03526b4067953206e2852e6588b44f5ee19cedf82425f64c6ec6819229090bdf",
+    "tests/test_w03_workflow.py": "382f32a2fd97f8e74a421e9fd1b5ea8860a88807f2b353b5713b2d0926bfc70b",
+    "tools/benchmark_w04_workflow.py": "f7f9e89cf491a38af936e10788ad1a6c1cb806d159a69ffce18e900f721ce953"
+  }
+}

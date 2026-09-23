@@ -24,32 +24,106 @@ from atlas_tectonics.resources import WorkBudget
 from atlas_tectonics.storage import ArrayStore,StoreLimits
 from atlas_tectonics.convection_benchmark import _METRICS
 from run_convection_r4_4 import encode,digest,safe_path,source_record,read_receipts,atomic_new
+import tosi_case5b_reference as case5b_reference
 
 
-def compare_table(case, diagnostics, specification):
+_TABLE2_CODES=('YACC','Plaatjes','CHIC','GAIA','StreamV','StagYY','FEniCS','Fluidity','ELEFANT','ASPECT')
+_REFERENCE_POLICY='atlas.tosi-reference-policy.v2'
+_PHI_MAPPING={'printed_Phi_min':'dissipation_over_Ra_min','printed_Phi_max':'dissipation_over_Ra_max'}
+
+
+def reference_contributors(case, specification):
+    """Case-specific published participants, not a best-fitting subset of results."""
+    policy=specification.get('reference_policy',{})
+    if policy.get('schema')!=_REFERENCE_POLICY:
+        raise ValueError('Unrecognised reference contributor policy')
+    table2=specification.get('included_codes',[])
+    if len(table2)!=len(_TABLE2_CODES) or set(table2)!=set(_TABLE2_CODES):
+        raise ValueError('Table 2 requires its ten distinct named same-equation contributors')
+    if case=='tosi-5b':
+        expected=tuple(c for c in _TABLE2_CODES if c!='ELEFANT')
+        actual=policy.get('case5b_codes',[])
+        if len(actual)!=len(expected) or set(actual)!=set(expected):
+            raise ValueError('Case 5b requires its nine distinct named same-equation contributors')
+        return expected
+    if case not in ('tosi-1','tosi-2','tosi-3','tosi-4','tosi-5a'):
+        raise ValueError('No reviewed contributor policy for this case')
+    return _TABLE2_CODES
+
+
+def case5a_mapping_verified(specification):
+    """Verify the explicit project interpretation; NOT an author-confirmed erratum."""
+    policy=specification.get('reference_policy',{})
+    mapping=policy.get('case5a_dissipation',{})
+    return (policy.get('schema')==_REFERENCE_POLICY and
+            mapping.get('status')=='ADOPTED_DERIVED_INTERPRETATION' and
+            mapping.get('author_confirmed') is False and
+            mapping.get('rayleigh')==100 and specification['conventions']['rayleigh']==100 and
+            mapping.get('diagnostics')==_PHI_MAPPING)
+
+
+def compare_table(case, diagnostics, specification, *, yield_stress=None, regime=None, cells=None):
     """Published multi-code envelope is NOT a statistical confidence interval."""
+    if case=='tosi-5b':
+        if yield_stress is None or regime is None or cells is None:
+            return {'status':'UNRESOLVED','reason':'Explicit case 5b yield, diagnosed regime and run mesh required',
+                    'comparisons':{},'all_available_metrics_within_envelope':False}
+        reference_contributors(case,specification)
+        return case5b_reference.compare(diagnostics,specification,yield_stress=yield_stress,regime=regime,cells=cells)
     reference=specification['reported_values'].get(case)
-    if reference is None:
+    if not reference:
         return {'status':'UNRESOLVED','reason':'No verified numerical reference table for this case',
                 'comparisons':{},'all_available_metrics_within_envelope':False}
     margin=specification['predeclared_acceptance']['table_relative_margin']
+    try:codes=reference_contributors(case,specification)
+    except ValueError as exc:
+        return {'status':'UNRESOLVED','reason':str(exc),
+                'comparisons':{},'all_available_metrics_within_envelope':False}
+    expected_metrics=(set(_METRICS) if case!='tosi-5a' else
+        {'period',*(_PHI_MAPPING),*(k+s for k in ('temperature_mean','Nu_top','velocity_rms') for s in ('_min','_max'))})
+    if set(reference)!=expected_metrics:
+        return {'status':'UNRESOLVED','reason':'Incomplete or changed published diagnostic inventory',
+                'comparisons':{},'all_available_metrics_within_envelope':False}
     comparisons={}
     for key, values in reference.items():
-        if key.startswith('printed_Phi'):
-            comparisons[key]={'status':'UNRESOLVED','reason':'Printed dissipation normalisation remains ambiguous'}
+        if set(values)!=set(codes):
+            comparisons[key]={'status':'UNRESOLVED',
+                'reason':'Reference contributors differ from the case-specific published set',
+                'missing_codes':sorted(set(codes)-set(values)),
+                'unexpected_codes':sorted(set(values)-set(codes))}
             continue
-        if key not in diagnostics:
+        if any(type(v) not in (int,float) or not math.isfinite(v) for v in values.values()):
+            raise ValueError('nonfinite or nonnumeric published reference value')
+        diagnostic=key;interpretation={}
+        if key.startswith('printed_Phi'):
+            if not case5a_mapping_verified(specification):
+                comparisons[key]={'status':'UNRESOLVED','reason':'Explicit derived dissipation mapping missing or changed'}
+                continue
+            diagnostic=_PHI_MAPPING[key]
+            interpretation=dict(diagnostic=diagnostic,reference_policy=_REFERENCE_POLICY,
+                interpretation='ADOPTED_DERIVED_INTERPRETATION',author_confirmed=False)
+        if diagnostic not in diagnostics:
             comparisons[key]={'status':'MISSING'};continue
-        value=float(diagnostics[key])
+        value=float(diagnostics[diagnostic])
         if not math.isfinite(value):raise ValueError('nonfinite comparison input')
         lo=min(values.values());hi=max(values.values());allowance=margin*max(abs(lo),abs(hi))
-        comparisons[key]=dict(value=value,published_min=lo,published_max=hi,
+        comparisons[key]=dict(value=value,published_min=lo,published_max=hi,**interpretation,
             comparison_low=lo-allowance,comparison_high=hi+allowance,
             status='WITHIN_ENVELOPE' if lo-allowance<=value<=hi+allowance else 'OUTSIDE_ENVELOPE')
     ok=all(c['status']=='WITHIN_ENVELOPE' for c in comparisons.values())
     return dict(status='ALL_WITHIN_ENVELOPE' if ok else 'NOT_ALL_WITHIN_ENVELOPE',
         comparisons=comparisons,all_available_metrics_within_envelope=ok,
         meaning='One necessary comparison gate only; no benchmark acceptance from a snapshot')
+
+
+def case5a_periodic_metrics(periodic):
+    """Keep raw and scaled dissipation separate; the latter is already divided by Ra."""
+    result={}
+    if periodic['Nu_top'].get('periodic_samples'):result['period']=periodic['Nu_top']['period']
+    for key in ('temperature_mean','Nu_top','velocity_rms','dissipation','dissipation_over_Ra'):
+        if periodic[key].get('periodic_samples'):
+            result[key+'_min']=periodic[key]['minimum'];result[key+'_max']=periodic[key]['maximum']
+    return result
 
 
 def cycle_extrema(times, values, cycles=10):
@@ -346,11 +420,8 @@ def analyse_run(path,*,phase_fields=None):
         report['table_comparison']=compare_table(case,latest,spec)
         report['mature_regime_gate']=bool(steady['steady_samples'] and field_ok and report['steady_heat_flux_gate']['passed'])
     elif case=='tosi-5a':
-        periodic_metrics={}
-        if periodic['Nu_top'].get('periodic_samples'):periodic_metrics['period']=periodic['Nu_top']['period']
-        for k in ('temperature_mean','Nu_top','velocity_rms'):
-            if periodic[k].get('periodic_samples'):
-                periodic_metrics[k+'_min']=periodic[k]['minimum'];periodic_metrics[k+'_max']=periodic[k]['maximum']
+        periodic_metrics=case5a_periodic_metrics(periodic)
+        report['periodic_metrics']=periodic_metrics
         report['table_comparison']=compare_table(case,periodic_metrics,spec)
         ext=cycle_extrema(t,[q['diagnostics']['Nu_top'] for q in samples])
         field=phase_field_gate(states,ext.get('peak_times',[]),cycles=policy['periodic']['cycles'],
@@ -360,7 +431,6 @@ def analyse_run(path,*,phase_fields=None):
         report['mature_regime_gate']=bool(field['passed'] and all(periodic[k].get('periodic_samples') for k in ('temperature_mean','Nu_top','velocity_rms','dissipation')))
         report['regime']='periodic' if report['mature_regime_gate'] else 'unresolved'
     else:
-        report['table_comparison']=compare_table(case,{},spec)
         ext=cycle_extrema(t,[q['diagnostics']['Nu_top'] for q in samples])
         field=phase_field_gate(states,ext.get('peak_times',[]),cycles=policy['periodic']['cycles'],
             samples_per_period=policy['periodic']['samples_per_period'],
@@ -370,6 +440,8 @@ def analyse_run(path,*,phase_fields=None):
         cyclic=bool(periodic['Nu_top'].get('periodic_samples') and field['passed'])
         report['mature_regime_gate']=stable or cyclic
         report['regime']='steady' if stable else ('periodic' if cyclic else 'unresolved')
+        report['table_comparison']=compare_table(case,latest if stable else ext,spec,
+            yield_stress=config['case']['yield_stress'],regime=report['regime'],cells=config['cells'])
     report['mature_regime_gate']=bool(report['mature_regime_gate'] and endpoint_sample)
     if phase_fields is not None and report.get('regime')=='periodic':
         phase_fields.update(final_cycle_fields(report,states,ext.get('peak_times',[]),
@@ -440,6 +512,11 @@ def study(reports,axis,*,phase_fields=None):
                 signal=r['periodic_sampling'][k]
                 if not signal.get('periodic_samples'):raise ValueError('periodic study missing resolved signal')
                 for name in ('period','minimum','maximum'):metrics[k+'_'+name]=signal[name]
+            if case['name']=='tosi-5b':
+                extrema=r.get('case5b_cycle_extrema',{})
+                if extrema.get('resolved') is not True or extrema.get('complete_cycles')!=10:
+                    raise ValueError('case 5b adequacy requires ten-cycle mean extrema')
+                for name in ('mean_cycle_minimum','mean_cycle_maximum'):metrics['Nu_top_'+name]=extrema[name]
             metric_sets.append(metrics)
     else:metric_sets=[{k:r['latest_diagnostics'][k] for k in _METRICS} for r in reports]
     differences=atlas.refinement_differences(*metric_sets)

@@ -1,5 +1,32 @@
 # Atlas tectonics simulation plan
 
+## Local implementation update: W01 Stage 8 (22 September 2026)
+
+The [combined acceptance profile](W01_COMBINED_ACCEPTANCE.md) assesses original
+W01 representation gates together with the supported S5/S6/S7 workflow, resources,
+cache invalidation and cold continuation. It runs via `tectonics/verify.py --w01`.
+Technical acceptance and whole-package scientific acceptance are separate recorded
+results. Earth-like S3C acceptance remains REOPENED and R4.4 remains held/incomplete;
+passing this profile cannot close either gate or establish whole-W01 completion.
+
+Subsequent [bounded validation](../evidence/w01-bounded-validation.md) compares
+fixed generated plate shapes with pinned reference outlines at declared scales.
+The described-state S5-S7 route is accepted within its tested limits and does not
+depend on completing R4.4. R5-R9 also contain future implementation, not merely
+unrun checks of that route. Full PB2002 motion consistency was checked previously;
+independently generated geological dynamics remain a different open claim.
+
+## Local implementation update: W01 Stage 7 (22 September 2026)
+
+The [W01-to-W02 regional workflow](W01_REGIONAL_WORKFLOW.md) connects supported
+S5 intersection inventories and S6 prescribed motion to W02 cohort transport,
+retaining thermal/history provenance and bounded source-bound restoration/reuse.
+This local unreleased addition does not change the package version or retrospectively
+alter the dated milestones below. Supported reductions are explicit planar strips
+and axial-motion hemispheric wedges; unrestricted spherical dynamics are not claimed.
+Stage 8 combined W01 acceptance and reopened S3C scientific acceptance remain;
+R4.4 is not resumed. See the linked scope and focused evidence before scaling.
+
 ## Current: dev40 thermal boundary accuracy and assessment completeness
 
 **Package `0.1.0.dev40`, maintained plan revision 44, 21 September 2026.
@@ -533,8 +560,8 @@ viscoplastic thermal convection in a 2-D square box**, DOI
 `10.1002/2015GC005807`, equations 1–21 and Tables 1–2. Case definitions include
 1–4, periodic case 5a and **all 21 separately identified case-5b yield values
 3.0 through 5.0 at spacing 0.1**. These are 26 configurations, not 26 completed
-runs. Case 5b is not excluded because its supplemental numerical targets have
-not yet been obtained. The reference file contains 490 numerical entries for ten codes solving the
+runs. Case 5b remains applicable, and its exact supplementary data was supplied
+and integrated on 22 September 2026 (details below). The main reference file contains 490 numerical entries for ten codes solving the
 full two-dimensional viscosity problem: 470 individually transcribed Table 2
 cells, plus 20 case-1 viscosity-limit entries obtained by applying the two exact
 boundary values in its footnote to each code.
@@ -542,17 +569,46 @@ MC3D is explicitly excluded from this particular comparison envelope because
 its viscosity is laterally averaged, a different equation system discussed in
 the paper; the exclusion is not based on Atlas output.
 
-There are two unresolved source requirements. The publisher's supporting-file
-retrievals failed, and the actual case-5b numerical tables have not been
-transcribed. The main paper's case-5a Table 2 labels its dissipation extrema
-`Phi`, whereas the preceding cases explicitly label `Phi/Ra`. The numerical
-magnitude suggests a scaling issue but is not an author-confirmed correction.
-Both raw and Rayleigh-scaled Atlas dissipation are retained, the printed values
-are retained under explicitly ambiguous keys, and that comparison cannot pass
-until the convention is resolved from adequate primary evidence. Supplement
-retrieval failures do not establish universal unavailability. The comparison
-contains scientific facts and source attribution, not copied article prose or
-figures; the article's separate rights notice is not replaced by the code licence.
+Reference policy **v2 (22 September 2026)** explicitly adopts `Phi/Ra` for the
+case-5a extrema, while preserving Table 2's printed `Phi` labels and numbers.
+This is a derived project interpretation, **not an author-confirmed erratum**:
+the periodic heat/work identity rules out a raw-Phi reading in all ten columns,
+and ASPECT 3.0.0 explicitly compares raw dissipation divided by 100 with work.
+The analyser now feeds both raw and already-scaled extrema through its periodic
+report and compares the scaled channel without dividing it a second time.
+No tolerances or maturity gates changed; the derivation and source links are in
+the case contract and [bounded evidence](../evidence/w01-bounded-validation.md).
+
+The case-5b source-data blocker is now resolved. The owner supplied Supporting
+Information S1; the source-bound `cases/tosi_case5b_reference.json` retains all
+626 reported numerical pairs in Tables S14-S23, their printed decimal precision,
+code, yield, mesh, source page, upright/italic steady/periodic classification and
+explicit dashes. Two independent text extractors agreed on every pair and dash;
+the introduction and all ten table pages were also visually checked. No source
+figures or article prose are redistributed. The original separate rights remain.
+
+Comparison selects each same-equation code's finest published column at the exact
+yield **before examining Atlas output**, with no coarser-column fallback for a
+dash or unreported yield. All selected rows are retained and partitioned by their
+printed regime; unlike regimes are never pooled. The diagnosed Atlas regime must
+have published support, and any disagreement remains explicit in the report.
+At yield 3.8, for example, GAIA's finest entry is steady while eight others are
+periodic. This is a **finest-published envelope, not an exact-grid error bound**:
+source methods and meshes differ. Independent Atlas mesh/time/nonlinear adequacy
+is still mandatory, and all three studies' finest representatives must agree on
+the physical regime. Both ten-cycle mean Nu extrema enter periodic comparison
+and adequacy; global extrema alone cannot substitute for those means.
+
+Tables S14-S22 supply nine same-equation contributors, not necessarily a result
+at every mesh/yield. ELEFANT is absent. MC3D's different-law S23 is retained for
+provenance but excluded from comparison. Cases 1-5a still require all ten named
+Table 2 contributors. Neither absent values nor source deletion can silently
+shrink the requirements: genuine source absences remain visible, and changed
+reference bytes fail the pinned identity check. Runner identities bind both the
+reference data and comparator; old trajectories are not automatically repinned.
+Runtime analysis reads the small JSON, not the PDF, and has no PDF-library
+dependency. No tolerance was widened and no mature R4.4 trajectory was completed
+by this source integration. The held campaign remains incomplete.
 
 The unit square is embedded in positive SI-valued controls with dimensionless
 `theta = T_K - 1`, unit diffusivity, and `Ra=100`. This is a numerical embedding,
@@ -590,8 +646,10 @@ they do not find unobserved subcell extrema or prove shear-band resolution.
 ### Predeclared gates, not fitted tolerances
 
 The JSON contract was saved before the new long trajectories. Its multi-code
-reference envelope is the minimum/maximum of the ten applicable reported values,
-expanded by 0.5% for rounding/discretisation. This is not a statistical confidence
+reference envelope for Table 2 is the minimum/maximum of all ten applicable
+reported values, expanded by 0.5% for rounding/discretisation. The explicit v2
+case-specific contributor and normalisation correction above does not change
+that margin. This is not a statistical confidence
 interval and is only one necessary gate. The published paper does not supply all
 of the following universal stopping tolerances; they are Atlas's explicit
 numerical acceptance choices, not quotations from the paper.
@@ -664,7 +722,7 @@ verification record counts as the new pass. Exact obtained counts and run endpoi
 are recorded in the delivery's verification/report, not inferred from this plan.
 
 **Still open:** mature published-case reproduction at adequate resolution;
-mesh/time/nonlinear adequacy; the two source-convention/data requirements above;
+mesh/time/nonlinear adequacy; the case-5b source-data requirement above;
 the complete case-5b regime/reference comparison; and all campaign-level gates
 that depend on those results. No passing unit test, finite run completion, attractive
 plot or historical R4.3 result closes R4.4 by itself.
@@ -2192,7 +2250,8 @@ pore fluids, scalar reference values and still-needed constitutive laws.
 are implemented for regional and global initial configurations. Stage 5 now
 samples those descriptions through `InitialConditionState` and the shared
 prepared sampler; see [scope and checks](W01_INITIAL_SAMPLING.md). W03
-thermal/compaction evolution and Stage-7 W02 initialisation remain separate.
+thermal/compaction evolution remains separate; Stage 7 now connects supported
+inventories to regional W02 evolution.
 
 
 
@@ -2201,8 +2260,9 @@ partition construction/validation is implemented. Stage 4 above now supplies the
 initial geological description. Stage 5 supplies supported point, cell-average
 and inventory sampling. Stage 6 has a reviewed, locally integrated kinematic
 adapter with continuous-section interface checks and measured vectorisation;
-see [motion reduction](W01_MOTION_FORCING.md). Stages 7
-(W01–W02 integration) and 8 (combined acceptance) remain outstanding.
+see [motion reduction](W01_MOTION_FORCING.md). Stage 7 now supplies the supported
+[W01–W02 workflow](W01_REGIONAL_WORKFLOW.md), and Stage 8 has the explicit
+[combined assessment](W01_COMBINED_ACCEPTANCE.md). Scientific gates remain open.
 
 
 **Stages 1–3 delivered within the declared regional/hemisphere-patch scope:** see `cases/w01_coordinates.json`, `cases/w01_geometry.json` and
@@ -2215,12 +2275,12 @@ This is stage-level completion only. The agreed remaining sequence is:
 | 2 — Plate and feature geometry | Implemented for planar polygons/traces and conditioned minor-arc spherical patches, with metrics/overlays, spatial indexes, gap/overlap diagnostics and checked persistence. No arbitrary whole-sphere Boolean engine is claimed. |
 | 3 — Shared boundaries and sidedness | Implemented: complete static domain coverage, single shared segments, verified sides/orientation, same-plate seams, cyclic junction sectors, point contacts, metric frames and prescribed velocity diagnostics. Spherical networks require a coherent common domain chart; arbitrary full-sphere stitching remains unsupported. |
 | 3B — Shared whole-sphere geometry | Delivered with canonical shared vertices, matching seams and global ownership; not dynamics. |
-| 3C — Generated initial partition | Geometry fixture complete. Earth-like scientific acceptance REOPENED: calibrated connected candidate plus independent limited challenges delivered; full outline/motion validation outstanding. |
+| 3C — Generated initial partition | Geometry fixture complete. Earth-like scientific acceptance REOPENED: calibrated candidate and bounded scale-matched shape measurements supplied; full PB2002 prescribed-motion consistency checked, but full morphology and independently generated dynamics are not validated. |
 | 4 — Initial geological description | Delivered: typed crust/material/cohort/ordered-layer/thermal/fault/weak-zone descriptions, explicit provenance and precedence, regional/planetary attachment, and self-contained verified storage. Point/cell sampling remains stage 5. |
 | 5 — Initial-condition sampler | Implemented for the declared Stage-4 representation: topology-aware fixed features, point/average/inventory sampling, material-temperature checks, missing-data rules and verified restoration. See `W01_INITIAL_SAMPLING.md` for explicit supported geometry/field limits; not scientific acceptance or W02 evolution. |
 | 6 — Motion to regional forcing | Reviewed and locally integrated for supported planar/axial-Euler reductions: moving-frame components, explicit frozen interval, sided ownership and checked N+1 velocities. Continuous-section checks refuse unsupported interfaces even between grid faces. 200 focused checks; vectorised adapter used 27.1267% less query time than its scalar reference in the measured workload. See `W01_MOTION_FORCING.md`; no force inference or Stage-7 evolution. |
-| 7 — W01-to-W02 workflow | Outstanding: initialise and evolve a known case without ad hoc intermediate arrays; preserve W03 input descriptions. |
-| 8 — Combined W01 acceptance | Outstanding: original geometric/scientific gates plus resource/cache/restoration checks; then assess whole-package completion. |
+| 7 — W01-to-W02 workflow | Implemented for explicit planar strips and axial-motion hemispheric wedges: actual S5 volumes become W02 cohorts without ad hoc intermediate arrays; initial thermal/history descriptions, source-bound reuse and continuation are retained. See `W01_REGIONAL_WORKFLOW.md`; not unrestricted spherical dynamics or evolved W03 physics. |
+| 8 — Combined W01 acceptance | Executable focused assessment supplied through `verify.py --w01`; original representation and assembled resource/cache/restoration gates are assessed separately from unclosed science. See `W01_COMBINED_ACCEPTANCE.md` and obtained evidence. Whole-W01 acceptance remains INCOMPLETE because S3C/physical-formation scientific gates are not closed. |
 
 
 **Dependencies:** W00. **References:** P01/P03, E01/E02/E04, F01/F03.
@@ -2271,6 +2331,28 @@ Use shared boundaries with explicit side ownership and junctions. Supported ridg
 
 ### W03 — Thermal evolution, lithosphere age and compaction
 
+**Local increment 1, 22 September 2026:** [finite-plate cooling and source-bound
+thermal-age columns](W03_THERMAL_COLUMNS.md) implemented and optimised. The
+constant-property conduction/heat accounts and young/old limits have bounded
+independent checks.
+
+**Local increment 2, 22 September 2026:** [thermal density and single-owner
+support](W03_THERMAL_SUPPORT.md) implemented and optimised: existing Boussinesq
+law, explicit reference-column/fill/compensation choices, source-linked total
+displacement and direct plate integration without depth sampling. This is
+homogeneous first-order local compensation, not deformable geometry or empirical
+terrain calibration.
+
+**Local increment 3, 22 September 2026:** [drained compaction and partial
+rebound](W03_COMPACTION.md) implemented and optimised. Fixed-solid parcels retain
+maximum effective loading, grain/cohort provenance and changing-area conservation;
+finite pooled reservoir accounts, source-bound authored-sediment import, verified
+reuse and self-contained state recovery are included. The explicit shifted-log
+loading/rebound law requires explicit parameter calibration; it is not transient Darcy
+consolidation or Athy reconstruction used as forward unloading. Ordered history
+remapping, thermal-field reconciliation and external fluid/support integration
+remain part of assembled W03 acceptance; whole W03 remains incomplete.
+
 **Dependencies:** W01–W02. **References:** P03/P07, E04/E07/E14/E15; F03/F09.
 
 Begin with one-dimensional conduction and half-space cooling as a limiting check. Compare a finite plate with prescribed deep and surface temperatures where the half-space approximation is no longer appropriate. Handle zero thermal age explicitly: a ridge initial condition is not obtained by numerically dividing by zero or introducing an undocumented minimum age.
@@ -2280,6 +2362,28 @@ Derive or select the thermal-density/support relationship consistently. A reduce
 **Deliverables:** thermal/age/compaction specification and references; named density and support ownership. **Gate:** thermal boundary limits, conserved solid thickness, heat accounting for the selected equation, time/grid refinement and independent bathymetry/heat-flow or column comparisons once suitable data are selected. No duplication of thermal subsidence and density-driven buoyancy.
 
 ### W04 — Vertical support from a physically defined load
+
+Local 22 September increment: **step 1 load construction implemented**, with
+finite reference/replacement accounts, separate fixed-coverage Boussinesq thermal
+loads, compensated batching and existing verified reuse. See
+[contract](W04_COLUMN_LOADS.md) and [bounded evidence](../evidence/w04-loads.md).
+Local step 2 now adds [source-bound W01-W03 support integration](W04_WORKFLOW.md):
+actual stationary columns, finite spatial reservoir allocations, separate external
+traction and single-owner thermal load feed the periodic uniform solver. Its
+outputs are total-reference projections, not feedback into material/thermal
+geometry. [Step 3 finite 1D regions](W04_FINITE_REGIONS.md) now distinguish
+continuous-plate cuts from physical free/clamped ends, with explicit surrounding
+loads and conditional exterior-error bounds. Analytical cell integration and
+linear FFT reuse are verified; see [step-3 evidence](../evidence/w04-finite-regions.md).
+[Step 4 variable rigidity](W04_VARIABLE_RIGIDITY.md) now adds fixed source-linked
+material profiles, conservative C1 Hermite support, explicit mesh-change gates
+and reused banded factors. It connects to all three boundary modes; continuing
+variable-D support requires exact declared exterior loads. Evolving rigidity
+and broad physical extensions are not implied. [Step 5 combined acceptance](W04_COMBINED_ACCEPTANCE.md)
+now passes the selected stationary planar 1D workflow: 62 focused tests include
+evolved columns across six support alternatives, reference shifts, exact restart,
+cache and local strain guards. This closes the stated W04 support-response gate
+within that scope, not field calibration or general terrain acceptance. W05 is next.
 
 **Dependencies:** W01, with W02/W03 when material or thermal loads are used. **References:** P06/P15, E12/E13/E28, N03; F08/F09.
 
@@ -2291,6 +2395,35 @@ Record whether a result is total deflection from the reference state or an incre
 
 ### W05 — First coupled mechanism: regional extension
 
+Local 22 September increment: [step 1 mechanism specification](W05_REGIONAL_EXTENSION.md)
+is complete. It selects dry, isothermal prescribed listric motion over continuous
+uniform elastic support, with separate footwall/hanging-wall accounts, a fixed
+reference load, exact translation/dilution controls, cell-mean output semantics
+and a bounded synthetic acceptance case. Support is evaluated only at requested
+outputs while that one-way kinematic closure holds. [Step 2 motion and independent
+reference](../evidence/w05-motion.md) are implemented and verified. Exact
+characteristic cell integration avoids the measured MUSCL moving-edge smoothing
+failure without relaxing the 10 m gate. Three grids, finite cohort exports,
+64/128 output partitions and a larger domain pass. Kernel integration is 99.04%
+faster than independent quadrature, with setup-inclusive tradeoffs recorded.
+[Step 3 support integration](../evidence/w05-support.md) is now implemented and
+component-verified: finite-column loads, one continuous uniform flexural response,
+analytical mean output weights, explicit tail uncertainty and continuous physical
+validity guards. At 125 m, sampled smooth-reference w error is about 1 mm; the
+three-output sequence is 24.84% quicker with preparation included.
+[Step 4 recoverable workflow](../evidence/w05-workflow.md) now provides atomic
+requested-output snapshots, source-bound continuation and compact lossless reuse.
+Warm reopening saves 52.41% including preparation on the frozen case; the first
+durable run costs 11.76% extra. [Step 5 combined acceptance](W05_COMBINED_ACCEPTANCE.md)
+now passes the scoped prescribed dry 1D mechanism: 37 focused checks in 31.807 s,
+full-crop three-grid/each-output independent references, equivalently averaged
+extrema, original physical bounds, exact recovery and partition/domain sensitivity.
+Fine-grid support error including reference uncertainty is 1.0164 mm. The
+[evidence](../evidence/w05-acceptance.md) reuses the unchanged Step 4 timing rather
+than rerunning it. The separate analogue/observational challenge plan is complete;
+execution still requires independently bound analogue and support data, so this
+numerical acceptance does not claim empirical terrain validation.
+
 **Dependencies:** W02 and W04; W03 when thermal/compaction effects are in scope. **References:** P08/P15, E16/E17/E28 and N01; F11/F08.
 
 Recommended initial case: a prescribed detachment geometry and displacement with no Diadem shape targets. Begin with constant horizontal velocity and a translated thickness profile. Where the velocity field has nonzero divergence, use the appropriate conservative thickness law and sources, not the constant-translation check.
@@ -2301,6 +2434,40 @@ Connect the physical column/load change to a single vertical-response treatment.
 
 ### W06 — Spreading, passive margins and changing plate histories
 
+Local 22 September increment: [Step 1 model/case design](W06_SPREADING.md) is
+complete. The first prescribed planar case uses exact birth-strip trajectories,
+finite crust/mantle feedstocks, distinct formation/cooling histories and one
+water-loaded thermal-subsidence owner. It reuses W03 kernels, not the stationary
+W03/W04 assembled adapters; their guards remain. Layered thermal/energy/water
+accounts, history changes, independent reference tolerances and bounded timing
+criteria are specified. [Step 2 conservative birth/spreading](W06_BIRTH.md) is
+implemented for constant prescribed velocities: full continuous birth histories,
+finite phase feeds, exact cell intersections and direct boundary exports. Eleven
+focused W06 checks pass; [bounded timing](../evidence/w06-birth.md) records 97.23%
+kernel time saving against an independent scalar reference, with source safeguards
+retained. [Step 3 cooling/inherited margins](W06_COOLING.md) now connects true
+phase/age thermal means, boundary-exit energy/water, finite allowances and single-owner
+wet support; margins preserve actual inherited profiles and reference geometry.
+Thirty focused checks and nine shared identity checks have passing evidence.
+[Timing](../evidence/w06-cooling.md) records 73.29% matched thermal-reference saving
+and 51.76% prepared margin reuse saving; these are bounded, not generator-wide gains.
+[Step 4 changing histories](W06_HISTORIES.md) now supplies exact piecewise motion,
+asymmetric spreading/ridge migration, stopping/restarting and explicit same-side
+plate reassignment. Full birth-age intervals and first-exit owner/heat/water are
+preserved. Twenty new focused checks and nine shared identity checks have passing
+evidence. [Timing](../evidence/w06-history.md) records 84.37% less time than the
+256-cell scalar reference and 48.30% less time for setup-inclusive preparation
+reuse across four 4000-cell outputs. These are distinct comparison scopes.
+[Step 5 recoverable workflow](W06_WORKFLOW.md) now adds atomic scheduled outputs,
+exact fresh-process continuation and verified reuse for constant ocean, changing
+history ocean and inherited-margin routes. The selected combined profile passes
+20 checks in 44.148 s; five separate ocean codec checks have passing evidence.
+Unchanged numerical component evidence is retained by source binding, rather than
+repeating its grid/partition sweeps. [Workflow evidence](../evidence/w06-workflow.md)
+reports first-publication overhead as well as recovery savings. This completes
+the scoped W06 implementation sequence; independent observational acceptance
+remains separate. Next: W07's selected regional mechanical backend.
+
 **Dependencies:** W02–W05. **References:** P01–P03/P07, E01–E04/E15 and N02; F01/F02/F03/F09.
 
 Extend the kinematic regime to selected breakup and ocean-birth events. Compute creation at moving ridges, track material age and cool it. Test asymmetric spreading, ridge migration and explicit plate-boundary transitions; distance to today’s ridge is not a general formation-age estimator.
@@ -2310,6 +2477,33 @@ Keep continental thinning and new oceanic material distinct. A passive margin in
 **Deliverables/gate:** coherent birth/age/cooling history with finite material sources, independently verified motion and boundary coverage. Expansion to spherical surfaces requires spherical area/normal tests, not a planar result relabelled global. Thermal depth and mantle/lithosphere accounts must remain consistent.
 
 ### W07 — A selected regional mechanical backend
+
+Local 22 September increment: [Step 1 model and benchmark specification](W07_REGIONAL_MECHANICS.md)
+remains frozen. [Step 2 solver and evidence](W07_REGIONAL_SOLVER.md) now implement
+2D incompressible plane-strain constant-Newtonian mechanics with imposed motion,
+no-slip/traction boundaries, explicit pressure datum, full stress/work and
+reactions. Retain the boundary-aware MAC backend after the independent small
+Q2/P1-discontinuous continuum comparison; retain FE as a numerical reference,
+not a newly adopted external framework. The public SI/source/resource interface
+reuses preparation and the latest verified result. Measured three-output savings
+are 44.8399%/53.5336% respectively, including setup and with exact output parity.
+The [ten-case register](../cases/w07_mechanics.json) still separates the passed
+basic boundary/nullspace scope from subsequent heterogeneous, thermal, yielding
+and true-ALE surface work. Local 23 September increment:
+[Step 3](W07_HETEROGENEOUS_THERMAL.md) now supplies explicit heterogeneous
+stress-site properties, both source-explicit SolCx variants, retained nonlinear
+laws and open/translated-grid thermal/material coupling with endpoint mechanics.
+Current-law fields, SI forces, conservation and source/resource controls pass
+their selected tests. Identical-request savings are 0.94827 s / 47.95%; changed
+viscosity shows no measured gain in the small benchmark.
+[Step 4](W07_SURFACE_STRENGTH.md) now supplies dry pressure-sensitive strength
+and real material-surface evolution. The deformed branch explicitly adopts the
+assessed Q2/physical-P1-discontinuous alternative with mapped stresses and
+conservative Laplacian ALE motion; the flat MAC branch is unchanged.
+Finest relaxation error is 0.003688%, with decreasing mesh/time errors and volume
+closure. Identical-state reuse saves 0.4548072 s / 54.64%. Next: Step 5 source-bound
+geological assembly/recovery and combined acceptance. A physical localisation
+length remains separately required; do not add support/gravity forces twice.
 
 **Dependencies:** W00–W03; W04 supplies checks of loading, not automatically an added response. **References:** P04/P05/P15, E05–E11/E28; F04–F07.
 
@@ -2463,7 +2657,7 @@ This scale analysis provides an early feasibility/validity filter without a simu
 | W11 | Measure enabling work when needed; then compare accepted behaviour at matched error and broaden the workload envelope. No speculative whole-world speed multiplier. |
 | W12 | Carry only supported backends, compatible fixtures and tested cache/recovery behaviour into production. |
 
-The next substantive work is W04 physical load/buoyancy construction from the delivered regional material state, with W03 thermal/compaction where needed. Reuse W02 transport, cohorts, remapping and events rather than rebuilding them. Apply the existing optimised execution and resource tests during that physical increment.
+Local 22 September update: W04 load construction, stationary W01-W03 support integration, finite uniform 1D regions and fixed variable rigidity have passed their selected combined stationary planar 1D acceptance. W05's prescribed dry regional-extension mechanism now also passes its selected combined numerical acceptance; its separate empirical challenge still needs independently bound source data. W06 Steps 1–5 now provide the frozen design, conservative oceanic birth/spreading, age-resolved cooling/heat/water/support, source-preserving inherited-margin conduction, explicit piecewise changing motion/ownership histories, and recoverable requested-output execution with selected combined acceptance. Continue to reuse compatible W02 transport, cohorts, remapping and events; continuous birth strips retain their own explicit history, and the stationary W04 projection does not supply moving thermal/material coupling. W07's selected regional mechanical backend is next, not a whole-world run.
 
 <a id="verification-physical-validation-and-decision-rules"></a>
 
