@@ -99,20 +99,69 @@ _IDENTITY_MODULES = ("regional_thermomechanical", "regional_rheology", "regional
 
 _IDENTITY_MODULES += ("regional_strength", "regional_surface_stokes", "surface_geometry", "free_surface")
 _IDENTITY_MODULES += ("regional_geology", "regional_checkpoint", "w07_workflow")
+_IDENTITY_MODULES += ("shortening", "shortening_support")
+_IDENTITY_MODULES += ("transform", "deformation_network", "planar_projection", "planar_exchange", "fault_slip")
+_IDENTITY_MODULES += ("subduction", "subduction_mesh", "subduction_materials", "subduction_linear", "subduction_transport")
+
+
+_SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
+_SOURCE_CONTEXT_BYTES = 2*1024**2
+_SOURCE_FILES = 128
+_SOURCE_BLOCK_BYTES = 64*1024
 
 
 def _source_bytes():
+    """Read every current source byte, retaining bounded digest records.
+
+    The unchanged 128-file/2 MiB limits cap file membership and the canonical
+    JSON inventory (schema, relative names, byte counts and SHA-256), not the raw
+    package text. A 64 KiB buffer streams each complete file on EVERY call; no
+    metadata result is cached. Values remain bytes for retained-context accounting.
+    Source text may exceed 2 MiB, with proportional I/O but no retained text copy.
+    Concurrent detected mutation refuses; this is not an atomic filesystem snapshot.
+    """
     root = Path(__file__).parent
+    paths = []
+    for p in root.rglob("*.py"):
+        if len(paths) >= _SOURCE_FILES:
+            raise TectonicsError("execution source inventory exceeds context budget")
+        paths.append(p)
     out = {}
-    for p in sorted(root.rglob("*.py")):
+    encoded_bytes = len(_json({'schema': _SOURCE_INVENTORY_SCHEMA, 'files': {}}))
+    buffer = memoryview(bytearray(_SOURCE_BLOCK_BYTES))
+    for p in sorted(paths):
         if p.is_symlink() or not p.is_file():
             raise TectonicsError("runtime/source file unavailable or linked")
-        remaining = 2*1024**2 - sum(map(len,out.values()))
-        with p.open("rb") as stream:
-            raw = stream.read(remaining+1)
-        if len(out) >= 128 or len(raw) > remaining:
+        name = p.relative_to(root).as_posix()
+        digest, size = hashlib.sha256(), 0
+        try:
+            with p.open("rb") as stream:
+                before = os.fstat(stream.fileno())
+                while True:
+                    # One excess byte detects growth without an unbounded read
+                    # from a file continuously appended by another process.
+                    count = stream.readinto(buffer[:min(_SOURCE_BLOCK_BYTES, before.st_size-size+1)])
+                    if not count:
+                        break
+                    size += count
+                    if size > before.st_size:
+                        raise TectonicsError("source changed during inventory capture")
+                    digest.update(buffer[:count])
+                after = os.fstat(stream.fileno())
+            current = p.stat()
+        except OSError as exc:
+            raise TectonicsError("runtime/source file unavailable during capture") from exc
+        stamp = lambda stat: (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
+        if (size != before.st_size or stamp(before) != stamp(after)
+                or stamp(before) != stamp(current) or p.is_symlink()):
+            raise TectonicsError("source changed during inventory capture")
+        record = _json({'bytes': size, 'sha256': digest.hexdigest()})
+        encoded_bytes += len(_json(name)) + 1 + len(record) + bool(out)
+        if encoded_bytes > _SOURCE_CONTEXT_BYTES:
             raise TectonicsError("execution source inventory exceeds context budget")
-        out[p.relative_to(root).as_posix()] = raw
+        out[name] = record
+    if encoded_bytes > _SOURCE_CONTEXT_BYTES:
+        raise TectonicsError("execution source inventory exceeds context budget")
     return out
 
 
@@ -270,6 +319,14 @@ def _runtime_record(backend):
         versions["scipy"] = scipy.__version__
         binaries["scipy_special"] = _loaded_binary(sf.__file__)
         binaries["scipy_lapack"] = _loaded_binary(lapack.__file__)
+        # W08 finite affine flow uses this selected matrix-exponential backend.
+        import scipy.linalg._matfuncs_expm as matrix_exponential
+        binaries["scipy_expm"] = _loaded_binary(matrix_exponential.__file__)
+        import scipy.spatial._qhull as qhull
+        binaries["scipy_qhull"] = _loaded_binary(qhull.__file__)
+        # W08 sparse-factor graph ordering participates in reproducible solves.
+        import scipy.sparse.csgraph._reordering as reordering
+        binaries["scipy_reordering"] = _loaded_binary(reordering.__file__)
         # R4.1 native sparse LU and separable FFT preconditioner. These identities
         # are explicit dependencies, not a claim to seal every linked system lib.
         import scipy.sparse.linalg._dsolve._superlu as superlu
@@ -323,8 +380,9 @@ def _runtime_record(backend):
 class ExecutionContext:
     """Reusable identity preparation, not a promise that live files cannot change.
 
-    Every use compares the complete current source bytes and callable/default
-    inventory with the captured state. Identity preparation avoids repeated
+    Every use hashes the complete current source bytes, comparing the bounded
+    digest inventory and callable/default inventory with the captured state.
+    Identity preparation avoids repeated
     code SHA/marshal work; verification streams current bindings against captured
     tokens without rebuilding discarded signature inventories. Mutable defaults,
     constants and native options are normalised on every check. Timestamps are
@@ -351,7 +409,8 @@ class ExecutionContext:
         loaded = {k: {"code": _digest(marshal.dumps(_normal_code(code), 2)),
                       "defaults": _digest(_json(defaults))}
                   for k, (code, defaults) in signatures.items()}
-        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v3", "code_marshal_format": 2,
+        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v4", "code_marshal_format": 2,
+            "source_inventory_schema": _SOURCE_INVENTORY_SCHEMA,
             "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()},
             "loaded_code": loaded, "constants": _digest(self._constants),
             "runtime": self._runtime}))
@@ -366,7 +425,7 @@ class ExecutionContext:
     def verify(self):
         if self._closed:
             raise TectonicsError("execution context is closed")
-        # Exact equality, including inventory membership. No cached mtime check.
+        # Exact digest-record equality, including membership. All bytes reread.
         if _source_bytes() != self._sources:
             raise TectonicsError("source changed; create a new execution context")
         if self._expected is not None:

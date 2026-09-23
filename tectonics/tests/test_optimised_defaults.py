@@ -59,7 +59,8 @@ class OptimisedDefaultTests(unittest.TestCase):
     def test_dependencies_support_normal_default_calls(self):
         metadata = tomllib.loads((ROOT / 'pyproject.toml').read_text())
         self.assertIn('numba==0.65.1', metadata['project']['dependencies'])
-        self.assertIn('scipy>=1.15,<2', metadata['project']['dependencies'])
+        self.assertIn('scipy>=1.15,<1.18', metadata['project']['dependencies'])
+        self.assertEqual(metadata['project']['optional-dependencies']['fast'], ['scipy>=1.15,<1.18'])
 
     def _missing_dependency(self, dependency: str):
         code = r'''
@@ -87,6 +88,29 @@ except TectonicsError as exc:
     assert 'unavailable' in str(exc), str(exc)
 else:
     raise AssertionError('default silently fell back')
+if BLOCK == 'scipy':
+    from atlas_tectonics import (RegionalGrid1D, RigidityProfile1D, FlexureParameters,
+        VariableFlexureAccuracy, VariableRigidityFlexure)
+    grid = RegionalGrid1D(8, 4.)
+    profile = RigidityProfile1D(grid, np.full(8, 12.), np.ones(8), np.zeros(8),
+        source_id='synthetic', frame_id='frame', datum_id='datum', epoch_id='epoch')
+    parameters = FlexureParameters('synthetic', 'missing-dependency test', 12., 1., 0., 4., 1.)
+    accuracy = VariableFlexureAccuracy('synthetic', 1e-3, 1e-9, 1e-9, 1e-9)
+    with VariableRigidityFlexure(profile, parameters, 'periodic', accuracy) as solver:
+        try:
+            solver.solve(np.r_[np.ones(8), 0., 0.])
+        except TectonicsError as exc:
+            assert 'scipy backend unavailable' in str(exc), str(exc)
+        else:
+            raise AssertionError('variable-rigidity solver silently fell back')
+        assert solver.setup_bytes == 0
+    from atlas_tectonics.surface_geometry import SurfaceProjection
+    try:
+        SurfaceProjection(np.linspace(0., 1., 5))
+    except TectonicsError as exc:
+        assert 'scipy backend unavailable' in str(exc), str(exc)
+    else:
+        raise AssertionError('surface projection silently fell back')
 '''
         code = 'BLOCK = ' + repr(dependency) + '\n' + code
         env = dict(os.environ, PYTHONPATH=str(ROOT / 'src'), PYTHONDONTWRITEBYTECODE='1')

@@ -330,15 +330,21 @@ class VerificationLifecycleTests(unittest.TestCase):
             with mock.patch.object(reuse, '__file__', str(Path(temp)/'reuse.py')):
                 with reuse.ExecutionContext() as context:
                     for mode in ('add', 'remove', 'symlink'):
-                        try:
-                            if mode=='add': extra.write_bytes(b'')
-                            elif mode=='remove': path.unlink()
-                            else: extra.symlink_to(path)
-                            for fn in (legacy_verify, lambda c:c.verify()):
-                                with self.assertRaises(TectonicsError): fn(context)
-                        finally:
-                            extra.unlink(missing_ok=True)
-                            if not path.exists(): path.write_bytes(b'x = 1\n')
+                        with self.subTest(mode=mode):
+                            try:
+                                if mode=='add': extra.write_bytes(b'')
+                                elif mode=='remove': path.unlink()
+                                else:
+                                    try: extra.symlink_to(path)
+                                    except OSError as exc:
+                                        if getattr(exc, 'winerror', None) == 1314:
+                                            self.skipTest('Windows account lacks symbolic-link privilege')
+                                        raise
+                                for fn in (legacy_verify, lambda c:c.verify()):
+                                    with self.assertRaises(TectonicsError): fn(context)
+                            finally:
+                                extra.unlink(missing_ok=True)
+                                if not path.exists(): path.write_bytes(b'x = 1\n')
                     context.verify()
 
     def test_closed_context_rejects_and_close_is_idempotent(self):
@@ -359,7 +365,8 @@ class VerificationLifecycleTests(unittest.TestCase):
             loaded = {key: {"code": reuse._digest(marshal.dumps(reuse._normal_code(code), 2)),
                             "defaults": reuse._digest(reuse._json(defaults))}
                       for key, (code, defaults) in signatures.items()}
-            identity = reuse._digest(reuse._json({"schema": "atlas.kernel-execution.v3",
+            identity = reuse._digest(reuse._json({"schema": "atlas.kernel-execution.v4",
+                "source_inventory_schema": "atlas.package-source-digests.v1",
                 "code_marshal_format": 2, "backend": 'numba',
                 "sources": {k:reuse._digest(v) for k,v in reuse._source_bytes().items()},
                 "loaded_code": loaded, "constants": reuse._digest(constants),

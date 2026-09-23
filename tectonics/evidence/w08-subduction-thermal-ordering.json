@@ -1,0 +1,77 @@
+{
+  "scope": "fine corner-r5 case1a thermal matrix; ordering/conversion/exact LU only; not end-to-end",
+  "mesh_spacing_km": 1.5,
+  "matrix_sha256": "aebf8b1b9f2a1d1f56848c18bf740d17f332ad1a64716c6f5212f1a0bca64197",
+  "shape": [
+    26692,
+    26692
+  ],
+  "nnz": 304398,
+  "sources": {
+    "subduction.py": "71adb371e74850684266f3483d0e7d2639153bf9627c2f318ddeeec69aab7626",
+    "subduction_mesh.py": "4159ef426d7bd7d0ffab9da32f0e9dbf80431f323d1e7829b34f45b73c5772ab",
+    "subduction_transport.py": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4"
+  },
+  "rows": [
+    {
+      "mode": "old",
+      "repeat": 0,
+      "setup_and_factor_s": 0.9074338999998872,
+      "factor_nnz": 1890881,
+      "accounted_bytes": 72475992,
+      "residual": 9.395906269529698e-16,
+      "solution_error_inf": 2.942091015256665e-14
+    },
+    {
+      "mode": "new",
+      "repeat": 0,
+      "setup_and_factor_s": 0.045722000002569985,
+      "factor_nnz": 1771368,
+      "accounted_bytes": 68387060,
+      "residual": 8.519754172687174e-16,
+      "solution_error_inf": 1.1213252548714081e-14
+    },
+    {
+      "mode": "new",
+      "repeat": 1,
+      "setup_and_factor_s": 0.04546960000152467,
+      "factor_nnz": 1771368,
+      "accounted_bytes": 68387060,
+      "residual": 8.519754172687174e-16,
+      "solution_error_inf": 1.1213252548714081e-14
+    },
+    {
+      "mode": "old",
+      "repeat": 1,
+      "setup_and_factor_s": 0.9100625999999465,
+      "factor_nnz": 1890881,
+      "accounted_bytes": 72475992,
+      "residual": 9.395906269529698e-16,
+      "solution_error_inf": 2.942091015256665e-14
+    },
+    {
+      "mode": "old",
+      "repeat": 2,
+      "setup_and_factor_s": 0.9198766000044998,
+      "factor_nnz": 1890881,
+      "accounted_bytes": 72475992,
+      "residual": 9.395906269529698e-16,
+      "solution_error_inf": 2.942091015256665e-14
+    },
+    {
+      "mode": "new",
+      "repeat": 2,
+      "setup_and_factor_s": 0.04661280000436818,
+      "factor_nnz": 1771368,
+      "accounted_bytes": 68387060,
+      "residual": 8.519754172687174e-16,
+      "solution_error_inf": 1.1213252548714081e-14
+    }
+  ],
+  "old_median_s": 0.9100625999999465,
+  "new_median_s": 0.045722000002569985,
+  "saved_s": 0.8643405999973766,
+  "saved_percent": 94.97595000579382,
+  "total_budget_bytes": 134217728,
+  "note": "Original factor failed the former internal64MiB envelope; this diagnostic keeps total128MiB and compares factor work, not successful complete baseline runs."
+}

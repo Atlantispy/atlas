@@ -14,13 +14,20 @@ import json
 import math
 import threading
 import numpy as np
-from scipy.linalg import cholesky_banded, cho_solve_banded
 
 from ._validation import TectonicsError, input_shape, snapshot, read_array, frozen, scalar, text
 from .finite_flexure import FlexureBoundary1D
 from .parameters import FlexureParameters
 from .regional import RegionalGrid1D
 from .resources import select_budget, reserve_budgets
+
+
+def _banded_solvers():
+    try:
+        from scipy.linalg import cholesky_banded, cho_solve_banded
+    except ImportError as exc:
+        raise TectonicsError('scipy backend unavailable for variable-rigidity support') from exc
+    return cholesky_banded, cho_solve_banded
 
 
 def _json(value):
@@ -202,6 +209,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         return sum(f.bytes for f in self._levels.values())
 
     def _factor(self,subdivisions,budget=None):
+        cholesky_banded, _ = _banded_solvers()
         with self._lock:
             if self._closed: raise TectonicsError('variable support is closed')
             if subdivisions in self._levels: return self._levels[subdivisions]
@@ -279,6 +287,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         return 512*self.grid.cells+8192
 
     def _linear_solve(self,f,rhs):
+        _, cho_solve_banded = _banded_solvers()
         scale=np.frombuffer(f.scale_bytes);band=np.frombuffer(f.band_bytes).reshape(f.bandwidth+1,f.ndof)
         chol=np.frombuffer(f.cholesky_bytes).reshape(band.shape)
         rhs=rhs.copy();rhs[list(f.constrained)]=0.

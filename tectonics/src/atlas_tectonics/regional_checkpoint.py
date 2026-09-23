@@ -1,15 +1,5 @@
-"""Lossless, bounded W07 snapshot bundles for the checked ArrayStore.
-
+"""Lossless W07 codec; contract: docs/W07_WORKFLOW.md#snapshot-codec-contract.
 SPDX-License-Identifier: AGPL-3.0-only
-
-This codec preserves existing snapshot identities; it never repins sources or
-evaluates mechanics/thermal/surface physics. The caller must authenticate the
-workflow, execution, policy, expected snapshot set, parents and physical state.
-Hashes detect corruption, not an attacker replacing both records and hashes.
-Returned data are detached and immutable. Reservations cover codec working and
-output buffers until return; callers must account for retained input/output data
-and ArrayStore work separately. ``resources`` describes these byte allowances,
-not measured RSS. No history or process-global payload cache is retained.
 """
 from __future__ import annotations
 
@@ -75,7 +65,7 @@ def _shape(value):
 
 
 def _json(value):
-    # Bound arbitrary caller metadata before json.dumps allocates its result.
+    # Bound before serialization.
     nodes, characters = 0, 0
     def visit(item, depth):
         nonlocal nodes, characters
@@ -149,7 +139,6 @@ def _array_name(shape, digest):
 
 
 def _resources(logical, stored, metadata, fields, snapshots):
-    # JSON object/string/record allowances, including identity serialisation.
     work = 32*metadata + 8192*fields + 4096*snapshots + 65536
     return dict(logical_array_bytes=logical, stored_array_bytes=stored,
         snapshot_metadata_bytes=metadata, field_count=fields, snapshot_count=snapshots,
@@ -158,7 +147,6 @@ def _resources(logical, stored, metadata, fields, snapshots):
 
 
 def _resource(budget):
-    # A caller can narrow the established envelope, never widen this codec cap.
     return WorkBudget(_MAX_WORK_BYTES, parent=select_budget(budget))
 
 
@@ -197,12 +185,7 @@ def _source_rows(snapshots):
 
 
 def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
-    """Pack an exact named snapshot set, deduplicating before payload copies.
-
-    The catalogue identity includes shape, native float64 dtype and raw C-order
-    bytes. Scalars, zero-length arrays, signed zero and small fields are retained.
-    No fields are inferred from physics or silently dropped as reconstructible.
-    """
+    """Pack exact named snapshots; deduplicate before copying payloads."""
     _cancel(cancel)
     rows, logical, metadata_bytes, count = _source_rows(snapshots)
     resource = _resource(budget)
@@ -219,7 +202,7 @@ def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
                 identity[key] = {'shape': shape, 'sha256': digest}
                 refs.append({'name': key, 'array': array_name})
                 if array_name not in unique:
-                    # Retain only an existing immutable source reference here.
+                    # Borrow existing immutable bytes.
                     unique[array_name] = raw
                     catalogue[array_name] = dict(name=array_name, dtype=_DTYPE.str,
                         shape=list(shape), nbytes=len(raw), sha256=digest)
@@ -238,7 +221,6 @@ def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
             arrays = {}
             for key in sorted(unique):
                 _cancel(cancel)
-                # Copy only unique arrays. bytes-backed buffers cannot be thawed.
                 raw = memoryview(unique[key]).tobytes()
                 value = np.frombuffer(raw, dtype=_DTYPE).reshape(catalogue[key]['shape'])
                 if not np.isfinite(value).all():
@@ -249,14 +231,7 @@ def pack_regional_snapshots(snapshots, *, budget=None, cancel=None):
 
 
 def restore_regional_snapshots(arrays, metadata, *, budget=None, cancel=None):
-    """Validate the complete catalogue and restore detached original identities.
-
-    ArrayStore owns stored-chunk authentication; this function checks schema,
-    bindings, hashes, finite values, bounded names/shapes/dtypes and exact coverage.
-    Mutable input arrays/metadata must remain unchanged until this call returns.
-    Caller validation of expected workflow/source/parent/physical meaning remains
-    mandatory even when a bundle is internally self-consistent.
-    """
+    """Restore detached identities; caller must validate workflow and physics."""
     _cancel(cancel)
     _keys(metadata, _META_KEYS, 'bundle')
     if metadata['schema'] != _SCHEMA or type(metadata['version']) is not int or metadata['version'] != 1:

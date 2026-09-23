@@ -1,0 +1,37 @@
+{
+  "schema": "atlas.w08-transform-challenge.v1",
+  "case_id": "W08-transform-challenge-1",
+  "source_status": "WORKING NON-CANON",
+  "definition_status": "FROZEN_BEFORE_CANDIDATE_EXECUTION",
+  "parent_design_sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de",
+  "analytic_controls": "w08_regimes.json A02 and A03; 8/16/32 parcels and 1/2/4 equal history partitions",
+  "distributed_bend_challenge": {
+    "closure": "supplied smooth material displacement field, sampled into compatible linear nodal trajectories; not a mechanically inferred fault",
+    "domain_m": [100000, 100000],
+    "duration_s": 1,
+    "reference_thickness_m": [10000, 20000],
+    "reference_density_kg_m3": [2700, 2850],
+    "velocity_x_m_s": "0.2*y + 0.08*L*sin(pi*x/L)*sin(pi*y/L)",
+    "velocity_y_m_s": "-0.04*x + 0.06*L*sin(2*pi*x/L)*sin(pi*y/L)",
+    "spatial_subdivisions_per_axis": [4, 8, 16],
+    "reference": "analytic derivative of x_end=x_reference+velocity(reference)*duration, evaluated at each reference triangle centroid",
+    "jacobian_rms_absolute_error_max_finest": 0.02,
+    "jacobian_rms_must_decrease_at_each_refinement": true,
+    "required": ["positive orientation throughout each interval", "both thickening and thinning", "shared junction positions", "affine far-field boundary", "complete volume mass and signed enthalpy accounts"]
+  },
+  "precision": {
+    "analytic_normalised_max": 1e-10,
+    "extensive_account": "128*binary64_epsilon*sum_absolute_stocks_and_booked_transfers",
+    "threshold_status": "numerical engineering targets, not empirical geological uncertainty"
+  },
+  "timing": {
+    "sequence": "three matched full-vector motion and conservative target-view outputs",
+    "compare": ["fresh preparation for each output", "one prepared producer and material owner reused", "latest identical result reuse"],
+    "rotated_repeats": 3,
+    "native_threads": 1,
+    "includes": ["preparation", "live source verification", "motion", "material projection", "result materialisation", "close"],
+    "excludes": ["interpreter startup", "imports"]
+  },
+  "resource_contract": {"accounted_work_bytes": 134217728, "history_intervals_max": 256, "polygon_count_max": 4096},
+  "no_full_world_run_or_plots": true
+}

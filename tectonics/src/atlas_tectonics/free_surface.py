@@ -1,9 +1,5 @@
-"""Source-bound isothermal homogeneous material/free-surface evolution.
-
+"""Homogeneous ALE; contract: docs/W07_SURFACE_STRENGTH.md.
 SPDX-License-Identifier: AGPL-3.0-only
-Body-fitted Q2 geometry, physical P1-discontinuous pressure, Laplacian vertical
-mesh motion, and explicit SSP-RK2. No elastic/flexural displacement, water load,
-thermal remap, surface tension, stabilising traction or weakening is inferred.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -32,12 +28,7 @@ class FreeSurfaceAdvance:
 
 
 class PreparedFreeSurface2D:
-    """One driving thread, fixed topology, current-metric mechanics and one cache.
-
-    Positive homogeneous density is explicitly used for both physical inventory
-    and gravity in this isothermal route. Evolving heterogeneous phases and heat
-    need a compatible deformed-mesh producer, never Step 3 rectangular remapping.
-    """
+    """One driving thread; homogeneous inventory, gravity and current metrics."""
     def __init__(self,nx,nz,width_m,bottom_m,reference_height_m,*,viscosity_pa_s,
                  density_kg_m3,gravity_m_s2,external_pressure_pa,strike_width_m,
                  scales,frame_id,vertical_datum,material_source,load_source,

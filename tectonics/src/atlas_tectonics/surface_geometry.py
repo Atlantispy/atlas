@@ -1,14 +1,17 @@
-"""Conservative Q2 graph-surface geometry and ALE face accounts.
-
+"""Conservative Q2 graph ALE; contract: docs/W07_SURFACE_STRENGTH.md.
 SPDX-License-Identifier: AGPL-3.0-only
-Only fixed, straight x columns are supported. Vertical sides permit tangential
-mesh sliding; the bottom is fixed. Top motion is a continuous Q2 weak projection
-of w-u*h_x, not a second physical material velocity or a volume correction.
 """
 import numpy as np
-from scipy.linalg import cholesky_banded, cho_solve_banded
 
 from ._validation import TectonicsError, scalar, input_shape, read_array, frozen
+
+
+def _banded_solvers():
+    try:
+        from scipy.linalg import cholesky_banded, cho_solve_banded
+    except ImportError as exc:
+        raise TectonicsError('scipy backend unavailable for surface projection') from exc
+    return cholesky_banded, cho_solve_banded
 
 
 def q2(q):
@@ -48,12 +51,7 @@ def elements(mesh):
 
 
 def cell_volume_and_flux(mesh,velocity=None,*,order=5):
-    """Physical area and outward face flux, exact for the supported Q2 maps.
-
-    Integrate the oriented boundary using Green's theorem, independently of the
-    mechanical stiffness/continuity assembly. Face order left,right,bottom,top.
-    With fixed x columns, cell area is linear in the vertical mesh coordinates.
-    """
+    """Green area/flux, independent of mechanics; faces left,right,bottom,top."""
     if type(order) is not int or not 3<=order<=6:raise TectonicsError('bounded face quadrature required')
     cell,ids=elements(mesh)
     q,w=np.polynomial.legendre.leggauss(order);N,dN=q2(q),dq2(q)
@@ -80,6 +78,7 @@ def cell_volume_and_flux(mesh,velocity=None,*,order=5):
 class SurfaceProjection:
     """One fixed-x Q2 surface mass factor; O(nx) solve, geometry-independent."""
     def __init__(self,x_m,*,order=5):
+        cholesky_banded, _ = _banded_solvers()
         shape=input_shape(x_m)
         if len(shape)!=1 or shape[0]<5 or shape[0]>129 or shape[0]%2!=1:
             raise TectonicsError('odd bounded surface node count required')
@@ -100,6 +99,7 @@ class SurfaceProjection:
         self.factor=cholesky_banded(bands,lower=True,check_finite=True)
 
     def rate(self,height,velocity):
+        _, cho_solve_banded = _banded_solvers()
         if input_shape(height)!=self.x.shape or input_shape(velocity)!=(len(self.x),2):
             raise TectonicsError('surface state/velocity support mismatch')
         h=read_array(height,'surface heights');v=read_array(velocity,'surface velocity')

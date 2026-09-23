@@ -1,5 +1,29 @@
 # Current scoped package: 0.1.0.dev42
 
+## Local W08 regimes and shortening
+
+[Step 1](docs/W08_REGIMES.md) and the [case register](cases/w08_regimes.json)
+specify shortening, transform/oblique motion, subduction and finite-source
+magmatism. Exact finite maps, boundary-relative fluxes, material/enthalpy accounts
+and required W04/W07 bridges are explicit. [Step 2](docs/W08_SHORTENING.md) now
+implements exact distributed finite shortening, conservative material/enthalpy
+projection and compatible dry load/support. Twenty-one focused checks pass;
+prepared three-output reuse saves 0.4944981 s / 46.96% including setup and source
+verification, with identical outputs. The source-capture prerequisite now uses
+bounded complete digest inventories and v4 execution identity; old checkpoint
+identities refuse. See [final evidence](evidence/w08-shortening-r2.json).
+[Step 3 transform/oblique motion](docs/W08_TRANSFORM.md) now joins full-vector
+finite histories, compatible distributed bends/stepovers and discontinuous named
+straight-fault slip to conserved material/heat and explicit region exchanges.
+Sixty-six new focused checks have passing evidence. Prepared changing outputs
+save 51.59% (1.5057947 to 0.7288984 s); identical-result reuse saves 64.26%, including
+setup and source checks. [Evidence](evidence/w08-transform.json) records unchanged
+output identities and the three-level bend reference. [Step 4 subduction](docs/W08_SUBDUCTION.md)
+now has prescribed-slab/computed-wedge mechanics, steady heat, separate conservative
+thermal velocity transfer and finite material retirement. Step4 acceptance remains
+IN_PROGRESS; its original-source and numerical comparison gates are recorded in
+the linked implementation record. Plotting stays deferred.
+
 ## Local W07 regional mechanics
 
 [Step 1 model and benchmark specification](docs/W07_REGIONAL_MECHANICS.md) remains
@@ -22,7 +46,13 @@ and genuine body-fitted surface evolution, using Q2/physical-P1 mechanics on the
 deformed branch. Finest surface-relaxation error is 0.003688%; mesh/time refinement
 and conservation pass. Finest 64-step runs took 2.55–2.63 s. Verified identical
 surface-state reuse saves 0.4548072 s / 54.64% on three complete outputs.
-Next: Step 5 source-bound geological assembly, recovery and combined acceptance.
+[Step 5](docs/W07_WORKFLOW.md) now connects actual W01/W02 geological inputs,
+single-owner physical contributions, atomic snapshots and exact recovery.
+Five assembled/reference/timing checks pass; finest joined heat-reference error
+is 0.003964% of the declared 100 K scale. Reopening the same requested final state
+takes 2.608 s instead of 6.148 s (**57.58% saved**); first-save overhead is 9.05%.
+The three supported routes and retained integration boundaries are explicit in
+the record. W08's next-stage design is linked above.
 
 ## Local W06 conservative oceanic birth and spreading
 

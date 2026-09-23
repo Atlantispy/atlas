@@ -1,0 +1,184 @@
+{
+  "schema": "atlas.w08-regimes-design.v1",
+  "case_id": "W08-regimes-design-1",
+  "source_status": "WORKING NON-CANON",
+  "status": "DESIGN_COMPLETE_IMPLEMENTATION_PENDING",
+  "step": 1,
+  "frozen_design": {
+    "path": "docs/W08_REGIMES.md",
+    "sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de"
+  },
+  "acceptance": {
+    "design_complete": true,
+    "regime_implementation_complete": false,
+    "benchmarks_executed": false,
+    "physical_validation": false,
+    "timings_measured": false,
+    "W08_complete": false,
+    "R4_4_status": "HELD_INCOMPLETE"
+  },
+  "increments": [
+    "model_contract_and_reference_design",
+    "finite_shortening_and_compatible_support",
+    "transform_and_oblique_histories",
+    "prescribed_subduction_and_computed_wedge",
+    "finite_source_magmatism",
+    "joined_acceptance_recovery_and_matched_timing"
+  ],
+  "closures": {
+    "C03": "separate finite crust and mantle birth and retirement accounts",
+    "C04": "source_defined polarity, geometry, relative boundary motion, partitions and dated transitions",
+    "C06": "prescribed finite transfer rates with component mass and isobaric enthalpy; explicit emplacement and host space",
+    "missing_source_policy": "REFUSE_DEPENDENT_OPERATION",
+    "exhaustion_policy": "END_AT_FIRST_EXACT_EXHAUSTION_AND_REFUSE_UNSPECIFIED_CONTINUATION",
+    "calibration_status": "SCENARIO_INPUTS_REQUIRED_NOT_INVENTED"
+  },
+  "resource_plan": {
+    "work_budget_bytes": 134217728,
+    "native_numerical_threads": 1,
+    "max_accepted_intervals": 256,
+    "existing_mesh_bounds_unchanged": true,
+    "analytic_spatial_levels": [8, 16, 32],
+    "analytic_interval_partitions": [1, 2, 4],
+    "source_capture_cap_bytes": 2097152,
+    "production_growth_prerequisite": "reviewed bounded source-inventory representation preserving full identity",
+    "large_run_authorised": false,
+    "wall_time_or_RSS_guarantee": false
+  },
+  "gates": {
+    "dtype": "binary64",
+    "exact_map_normalised_error_max": 1e-10,
+    "extensive_residual_max": "128 * binary64_epsilon * sum_absolute_initial_final_stocks_and_booked_fluxes",
+    "zero_account_scale_requires_exact_zero": true,
+    "existing_stricter_consumer_gates_apply": true,
+    "published_reference_gates": "see frozen design; numerical targets are not empirical geological uncertainty",
+    "changed_reference_or_threshold_requires_new_identity_before_candidate_run": true
+  },
+  "analytic_cases": [
+    {
+      "id": "A01",
+      "name": "finite_plane_strain_shortening",
+      "step": 2,
+      "input": {"area_m2": 1000000, "thickness_m": 30000, "density_kg_m3": 2800},
+      "variants": [
+        {"lambda": 0.8, "expected_area_m2": 800000, "expected_thickness_m": 37500},
+        {"lambda": 0.5, "expected_area_m2": 500000, "expected_thickness_m": 60000}
+      ],
+      "expected_mass_kg": 84000000000000,
+      "required_controls": ["ordered_interval_composition", "conservative_crop_export", "single_owner_support", "material_source_identity"]
+    },
+    {
+      "id": "A02",
+      "name": "shear_objectivity_and_oblique_order",
+      "step": 3,
+      "pure_shear_F": [[2, 0], [0, 0.5]],
+      "simple_shear_F": [[1, 2], [0, 1]],
+      "rigid_rotation_Q": [[0, -1], [1, 0]],
+      "rigid_translation_m": [3, -2],
+      "expected_J_for_each": 1,
+      "shortening_F": [[0.8, 0], [0, 1]],
+      "expected_shorten_then_shear_F": [[0.8, 2], [0, 1]],
+      "expected_shear_then_shorten_F": [[0.8, 1.6], [0, 1]],
+      "required_controls": ["C_objective_under_superposed_Q", "zero_rigid_strain", "unchanged_shear_thickness", "full_vector_frame_transform", "junction_and_interface_flux"]
+    },
+    {
+      "id": "A03",
+      "name": "moving_boundary_flux",
+      "step": 2,
+      "input": {"boundary_length_m": 2, "thickness_m": 3, "density_kg_m3": 4, "material_normal_speed_m_s": 0.5, "boundary_normal_speed_m_s": 0.25},
+      "expected_outward_rate_kg_s": 6,
+      "required_controls": ["common_frame_translation", "pure_tangential_zero_flux", "separate_crust_mantle", "explicit_per_strike_units"]
+    },
+    {
+      "id": "A04",
+      "name": "finite_stock_throughflow_and_competition",
+      "step": 5,
+      "throughflow": {
+        "source_initial_kg": 10, "reservoir_initial_kg": 2,
+        "source_to_reservoir_kg_s": 2,
+        "outlet_rates_kg_s": {"intrusion": 0.5, "eruption": 1, "export": 0.5},
+        "duration_s": 3,
+        "expected_final_kg": {"source": 4, "reservoir": 2, "intrusion": 1.5, "eruption": 3, "export": 1.5}
+      },
+      "competition": {
+        "source_initial_kg": 10, "outlet_rates_kg_s": [2, 3],
+        "expected_exhaustion_s": 2, "expected_receivers_kg": [4, 6]
+      },
+      "required_controls": ["outlet_order_invariance", "event_split_invariance", "component_exhaustion", "empty_pass_through_refusal_without_rule"]
+    },
+    {
+      "id": "A05",
+      "name": "reservoir_mixing_and_latent_heat",
+      "step": 5,
+      "continuous_mixing": {
+        "reservoir_mass_kg": 2, "inflow_and_outflow_kg_s": 1,
+        "initial_specific_enthalpy_J_kg": 0, "inflow_specific_enthalpy_J_kg": 10,
+        "duration_s": 3,
+        "oracle_h_J_kg": "10 * (1 - exp(-t/2))",
+        "oracle_cumulative_exported_enthalpy_J": "10*t - 2*h(t)"
+      },
+      "unequal_heat_capacities": {
+        "mass_kg": [2, 3], "temperature_K": [400, 300], "cp_J_kg_K": [10, 20],
+        "reference_temperature_K": 300, "expected_final_temperature_K": 325,
+        "expected_excess_enthalpy_J": 2000
+      },
+      "phase_change": {
+        "mass_kg": 2, "initial_liquid_temperature_K": 400, "final_solid_temperature_K": 300,
+        "cp_J_kg_K": 10, "latent_heat_J_kg": 100, "melting_temperature_K": 350,
+        "expected_heat_to_surroundings_J": 2200
+      },
+      "required_controls": ["supplied_phase_rule", "no_double_latent_heat", "coupled_component_transport", "nonfinite_or_negative_input_refusal"]
+    },
+    {
+      "id": "A06",
+      "name": "density_placement_and_host_space",
+      "step": 5,
+      "mass_kg": 12, "source_density_kg_m3": 4, "receiving_density_kg_m3": 3,
+      "receiving_area_m2": 2,
+      "expected_source_volume_m3": 3, "expected_receiving_volume_m3": 4,
+      "expected_uniform_thickness_m": 2,
+      "required_controls": ["nonnegative_unit_sum_mass_weights", "explicit_host_displacement_or_replacement", "single_heat_and_load_owner", "density_change_identity"]
+    },
+    {
+      "id": "A07",
+      "name": "dated_cessation_and_cross_regime_restart",
+      "step": 6,
+      "incoming_rate_kg_s": 4, "cessation_time_s": 1.5,
+      "request_end_time_s": 3, "expected_total_transferred_kg": 6,
+      "required_controls": ["source_melt_and_reservoir_retained_at_cessation", "exact_event_restart", "no_replayed_flux", "material_component_enthalpy_closure", "source_drift_refusal", "corrupt_or_partial_checkpoint_refusal", "unsupported_continental_transition_refusal"]
+    }
+  ],
+  "published_subduction": {
+    "step": 4,
+    "reference_doi": "10.1016/j.pepi.2008.04.015",
+    "definition": "W08_REGIMES.md published subduction section",
+    "sequence": ["analytic_corner_flow", "computed_isoviscous_wedge", "temperature_dependent_rheology"],
+    "stationary_reference_preferred": true,
+    "ASPECT_illustration_is_not_reference_acceptance": true,
+    "source_adapter_status": "BLOCKED_SOURCE_ADAPTER",
+    "unresolved_before_execution": ["source_exact_thermal_outflow_operator", "45_degree_Batchelor_boundary_formula_and_trace"],
+    "original_temperature_arrays_acquired": false,
+    "source_coordinates": "x_right_y_down",
+    "width_m": 660000, "depth_m": 600000, "lid_thickness_m": 50000,
+    "slab_dip_degrees": 45, "slab_speed_cm_year": 5, "slab_age_Myr": 50,
+    "implementation_seconds_per_year": 31557600,
+    "seconds_per_year_stated_in_paper": false,
+    "density_kg_m3": 3300, "cp_J_kg_K": 1250, "conductivity_W_m_K": 3,
+    "surface_temperature_K": 273, "mantle_temperature_K": 1573,
+    "eta0_Pa_s": 1e21, "eta_max_Pa_s": 1e26,
+    "reference_rows": {
+      "identity": "PGC rows, van Keken et al 2008 Tables 2-3",
+      "units": "paper_nominal_Celsius_theta_equals_T_K_minus_273_before_RMS",
+      "columns": ["point", "slab_RMS", "wedge_RMS"],
+      "1a": [388.21, 503.69, 854.34],
+      "1b": [388.21, 503.69, 854.34],
+      "1c": [387.78, 503.10, 852.97],
+      "2a": [580.52, 606.94, 1002.85],
+      "2b": [582.65, 604.51, 998.71]
+    },
+    "diagnostic_absolute_error_max_Celsius": 2,
+    "finest_refinement_change_max_Celsius": 1,
+    "threshold_provenance": "Atlas numerical engineering targets, not paper tolerances or empirical uncertainty",
+    "execution_status": "NOT_RUN"
+  }
+}

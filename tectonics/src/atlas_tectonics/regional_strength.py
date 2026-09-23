@@ -1,10 +1,5 @@
-"""W07 C01 dry, isochoric pressure-sensitive viscous strength snapshots.
-
+"""Dry C01; contract: docs/W07_SURFACE_STRENGTH.md.
 SPDX-License-Identifier: AGPL-3.0-only
-
-tau_y=C*cos(phi)+(P-P_pore)*sin(phi); eta=min(eta_creep,tau_y/(2*eII)).
-This is the frozen 2-D perfect yield cap, not Tosi's harmonic law, an elastic
-return mapping, damage evolution, a crack model or a localisation prescription.
 """
 from dataclasses import asdict, dataclass
 import json
@@ -67,14 +62,7 @@ class DryStrengthProfile:
 
 def evaluate_dry_strength(profile, physical_pressure_pa, strain_xx_s_1,
         strain_zz_s_1, strain_xz_s_1, *, divergence_tolerance_s_1=0., budget=None, cancel=None):
-    """Evaluate bounded broadcast SI arrays and return immutable named arrays.
-
-    Plane strain has Dyy=0, eII=sqrt((Dxx^2+Dzz^2+2*Dxz^2)/2). Standalone
-    inputs are exactly isochoric by default; a caller may explicitly admit a
-    numerical divergence tolerance in s^-1. No strain projection or rate floor
-    is performed. The largest effective principal stress includes yy=-P_eff.
-    Viscosity validity and tensile limits refuse; neither changes the law.
-    """
+    """Immutable broadcast SI C01 response; explicit divergence tolerance, no clipping."""
     if type(profile) is not DryStrengthProfile:
         raise TectonicsError('typed dry C01 profile required')
     tolerance = scalar(divergence_tolerance_s_1, 'divergence tolerance', nonnegative=True)
@@ -177,13 +165,7 @@ class RegionalStrengthResult:
 def solve_regional_strength(plan, profile, force_u_n_m3, force_w_n_m3, boundary_values, *,
         frame_id, epoch_id, time_s, material_source, force_source, boundary_source,
         cancel=None, max_iterations=40):
-    """Couple dry C01 to physical-pressure regional mechanics with fixed gates.
-
-    Initial viscosity is the declared creep branch. Each solved candidate uses
-    its physical pressure and collocated tensor to evaluate a new law, then the
-    same velocity/pressure is independently checked under that new operator.
-    Accepted fields contain the current law, not stale prior coefficients.
-    """
+    """Creep-start C01 Picard; accept physical-pressure/current-law fields under fixed gates."""
     start = perf_counter()
     if type(plan) is not PreparedRegionalStokes2D or type(profile) is not DryStrengthProfile:
         raise TectonicsError('typed regional plan and dry C01 profile required')

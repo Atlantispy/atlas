@@ -134,7 +134,7 @@ class PreflightTests(unittest.TestCase):
             self.assertFalse(r['run_arrays_read']);self.assertFalse(r['full_benchmark_accepted'])
             self.assertEqual(r['distinct_planned_runs'],3);self.assertEqual(r['planned_run_references'],6)
             self.assertEqual(len(r['planned_run_reuse']),3)
-            self.assertEqual(len(r['unresolved_reference_requirements']),2)
+            self.assertEqual(r['unresolved_reference_requirements'],[])
             self.assertTrue(r['study_configuration_issues'])
             self.assertTrue(all(run['schedule']['known_blockers'] for run in r['runs']))
             analyse.assert_not_called();arrays.assert_not_called()

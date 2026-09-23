@@ -12,11 +12,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Event
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
-from atlas_tectonics.regional_execution import RegionalMechanicsScales
+from atlas_tectonics.regional_execution import RegionalMechanicalSnapshot, RegionalMechanicsScales
 from atlas_tectonics.regional_geology import bind_regional_geology
 from atlas_tectonics.regional_strength import DryStrengthProfile
 from atlas_tectonics.regional_transport import HeatBoundary
@@ -204,13 +205,20 @@ class W07WorkflowTests(unittest.TestCase):
 
     def test_supplied_dry_strength_simple_shear_preserves_physical_pressure(self):
         law = DryStrengthProfile('synthetic W07 yield', 'source-declared dry law', .1, 0., 1., (1e-10, 10.), 0., 0.)
-        with make_workflow_fixture('steady', boundary_kind='simple-shear', shear_rate_s_1=1., strength_profile=law) as workflow:
-            result = workflow.run()
-            np.testing.assert_allclose(result.mechanics.array('viscosity_center_pa_s'), .1, rtol=1e-8, atol=1e-10)
-            np.testing.assert_allclose(result.mechanics.array('stress_xz_pa'), .1, rtol=1e-8, atol=1e-10)
-            self.assertGreater(float(result.mechanics.array('physical_pressure_pa').min()), 8.)
-            self.assertEqual(workflow.descriptor()['strength']['profile_id'], law.descriptor()['profile_id'])
-            self.assertIn('strength_vertex_yield_stress_pa', result.mechanics.array_names)
+        owner = WorkBudget(128*1024**2)
+        parameters = dict(boundary_kind='simple-shear', shear_rate_s_1=1., strength_profile=law, budget=owner)
+        with TemporaryDirectory() as tmp, open_store(Path(tmp)/'strength.db', owner) as store:
+            with make_workflow_fixture('steady', store=store, **parameters) as workflow:
+                result = workflow.run()
+                np.testing.assert_allclose(result.mechanics.array('viscosity_center_pa_s'), .1, rtol=1e-8, atol=1e-10)
+                np.testing.assert_allclose(result.mechanics.array('stress_xz_pa'), .1, rtol=1e-8, atol=1e-10)
+                self.assertGreater(float(result.mechanics.array('physical_pressure_pa').min()), 8.)
+                self.assertEqual(workflow.descriptor()['strength']['profile_id'], law.descriptor()['profile_id'])
+                self.assertIn('strength_vertex_yield_stress_pa', result.mechanics.array_names)
+            with make_workflow_fixture('steady', store=store, **parameters) as workflow:
+                self.equal(workflow.run(), result)
+                self.assertEqual(workflow.statistics()['computed_outputs'], 0)
+        self.assertEqual(owner.reserved_bytes, 0)
 
     def test_schedule_and_cumulative_256_step_ceiling_refuse(self):
         with make_workflow_fixture('steady') as source:
@@ -323,6 +331,75 @@ class W07WorkflowTests(unittest.TestCase):
         with self.assertRaises(MemoryLimitError):
             with make_workflow_fixture('steady', budget=WorkBudget(1024)):
                 pass
+
+    def test_conservative_velocity_transfer_preserves_closed_flux_and_refuses_excess(self):
+        with make_workflow_fixture('thermal') as workflow:
+            initial = workflow.run(through=0).mechanics
+            grid = workflow._heat.grid
+            x, z = np.meshgrid(np.linspace(0., np.pi, grid.nx+1), np.linspace(0., np.pi, grid.nz+1))
+            psi = np.sin(x)*np.sin(z); psi[[0, -1], :] = 0.; psi[:, [0, -1]] = 0.
+            u, w = np.diff(psi, axis=0)/grid.dz, -np.diff(psi, axis=1)/grid.dx
+            original = u.copy(); u[1, 2] += 1e-12
+            mechanics = RegionalMechanicalSnapshot(initial.descriptor(), dict(u_m_s=u, w_m_s=w))
+            (actual_u, actual_w), receipt = workflow._transport_velocity(mechanics)
+            np.testing.assert_allclose(actual_u, original, atol=1e-14, rtol=0.)
+            np.testing.assert_allclose(actual_w, w, atol=1e-14, rtol=0.)
+            self.assertLess(np.abs(np.diff(actual_u, axis=1)/grid.dx+np.diff(actual_w, axis=0)/grid.dz).max(), 1e-14)
+            self.assertEqual(receipt['mechanical_input_id'], mechanics.result_id)
+            u[1, 2] += 1e-3
+            with self.assertRaises(TectonicsError):
+                workflow._transport_velocity(RegionalMechanicalSnapshot(initial.descriptor(), dict(u_m_s=u, w_m_s=w)))
+
+    def test_initial_state_forces_and_resealed_surface_history_corruption_refuse(self):
+        with make_workflow_fixture('thermal') as workflow:
+            output = workflow.run(through=0)
+            state = RegionalMechanicalSnapshot(output.state.descriptor(), dict(
+                temperature_k=output.state.array('temperature_k')+1., reference_mass_kg=output.state.array('reference_mass_kg')))
+            with self.assertRaisesRegex(TectonicsError, 'initial temperature'):
+                workflow._validate_output(replace(output, state=state), None)
+            arrays = {k: output.mechanics.array(k) for k in output.mechanics.array_names}
+            arrays['force_w_n_m3'] = arrays['force_w_n_m3']+1.
+            mechanics = RegionalMechanicalSnapshot(output.mechanics.descriptor(), arrays)
+            with self.assertRaisesRegex(TectonicsError, 'stored mechanical forces'):
+                workflow._validate_output(replace(output, mechanics=mechanics), None)
+        owner = WorkBudget(128*1024**2)
+        with TemporaryDirectory() as tmp, open_store(Path(tmp)/'surface-corrupt.db', owner) as store:
+            with make_workflow_fixture('surface', surface_amplitude_m=1e-4, store=store, budget=owner) as workflow:
+                initial = workflow.run(through=0)
+                state = workflow._mechanical.initial_state(1.+2e-4*np.cos(np.pi*np.linspace(0., 1., 9)), epoch_id=workflow.geology.epoch_id)
+                arrays = {k: initial.mechanics.array(k) for k in initial.mechanics.array_names}
+                arrays['mesh_nodes_m'] = state.array('mesh_nodes_m')
+                mechanics = RegionalMechanicalSnapshot(dict(initial.mechanics.descriptor(), state_id=state.result_id), arrays)
+                with self.assertRaisesRegex(TectonicsError, 'initial surface'):
+                    workflow._validate_output(replace(initial, state=state, mechanics=mechanics), None)
+                workflow.run(through=1)
+                key = workflow.checkpoint_id(1)
+                for mutation in (lambda m: m['receipt']['surface'].update(initial_state_id='0'*64),
+                        lambda m: m['receipt']['surface'].update(final_state_id='0'*64),
+                        lambda m: m['receipt']['surface'].update(heat_or_heterogeneous_remap=True),
+                        lambda m: m['receipt']['surface']['intervals'][0].update(mass_residual_scaled=1.)):
+                    original = rehash_manifest(store, key, mutation, rebind_output=True)
+                    try:
+                        with self.assertRaises(TectonicsError):
+                            workflow.load(1)
+                    finally:
+                        store._db.execute('UPDATE snapshots SET body=?,digest=? WHERE id=?', (*original, key))
+        self.assertEqual(owner.reserved_bytes, 0)
+
+    def test_recovery_reuses_completed_mechanics_without_solving_again(self):
+        owner = WorkBudget(128*1024**2)
+        for route in ('thermal', 'surface'):
+            with self.subTest(route=route), TemporaryDirectory() as tmp:
+                path = Path(tmp)/'reuse.db'
+                with open_store(path, owner) as store, make_workflow_fixture(route, store=store, budget=owner) as workflow:
+                    accepted = workflow.run(through=1)
+                with open_store(path, owner) as store, make_workflow_fixture(route, store=store, budget=owner) as workflow:
+                    with patch.object(workflow._mechanical._core, 'solve', wraps=workflow._mechanical._core.solve) as solve:
+                        self.equal(workflow.run(through=1), accepted)
+                        self.assertEqual(solve.call_count, 0)
+                        workflow.run()
+                        self.assertEqual(solve.call_count, 2 if route == 'surface' else 1)
+        self.assertEqual(owner.reserved_bytes, 0)
 
 
 if __name__ == '__main__':

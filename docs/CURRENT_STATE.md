@@ -116,9 +116,41 @@ pressure-sensitive strength and body-fitted Q2/physical-P1 free-surface evolutio
 Ten bounded relaxation trajectories pass; finest amplitude error 0.003688%, with
 mesh/time convergence and conserved volume. Finest runs take 2.55–2.63 s;
 identical-state reuse saves 54.64% (0.4548072 s) on three complete outputs.
-Next: Step 5 geological assembly, recovery and combined acceptance.
-The [case register](../tectonics/cases/w07_mechanics.json), whole-W07 acceptance
-and held R4.4 are not silently reclassified.
+[Step 5](../tectonics/docs/W07_WORKFLOW.md) now supplies geological assembly,
+single-owner force/heat/motion, atomic complete snapshots and verified recovery.
+All five assembled checks pass, alongside the codec/geology/workflow tests;
+finest joined heat-reference RMS error is 0.003964% of the declared 100 K scale.
+Reopening the same final state takes 2.608 s versus 6.148 s fresh (57.58% saved);
+first-save overhead is 0.556 s / 9.05%. Selected W07 Steps 1–5 are complete for
+their documented routes. The [case register](../tectonics/cases/w07_mechanics.json),
+unsupported geological bridges and held R4.4 are not silently reclassified.
+Local W08 supplement, 23 September 2026: [Step 1 regime design](../tectonics/docs/W08_REGIMES.md)
+and its [frozen case register](../tectonics/cases/w08_regimes.json) now specify
+finite shortening, full-vector transform/oblique motion, prescribed-slab/computed-
+wedge subduction and finite-source magmatism. They separate physical owners,
+material/enthalpy accounts, required bridges and analytic/published acceptance.
+[Step 2 implementation](../tectonics/docs/W08_SHORTENING.md) now supplies exact
+distributed finite shortening, conservative cohort/enthalpy projection and dry
+fixed-base load/support, with 21 focused checks passing. Three matched complete
+outputs take 1.0531178 s with repeated preparation versus 0.5586197 s with reuse:
+46.96% less time, including setup and verification. The bounded full-source digest
+inventory replaces retained source text; execution identity v4 refuses old
+checkpoints. [Final evidence](../tectonics/evidence/w08-shortening-r2.json) records
+the source-bound numerical reference and timing. Supplied underthrust scenarios
+retain their separate structural closure requirement.
+[Step 3](../tectonics/docs/W08_TRANSFORM.md) now connects exact full-vector affine
+motion, compatible distributed bend/stepover networks and named straight-fault
+slip to conserved material/enthalpy and explicit region/exterior exchange. All 66
+new focused checks have passing evidence; nine shared identity checks also pass.
+The bounded smooth-bend reference meets its frozen finest-grid 0.02 Jacobian RMS
+gate (0.01804426). Matched three-output preparation reuse saves 0.7768963 s / 51.59%;
+identical-result reuse saves 0.9936889 s / 64.26%, with setup and source checks
+included. See [source-bound evidence](../tectonics/evidence/w08-transform.json).
+[Step 4](../tectonics/docs/W08_SUBDUCTION.md) now implements prescribed-slab/computed-
+wedge mechanics, direct steady heat, conservative thermal velocity transfer and
+finite material retirement. Its original-source and numerical comparison gates
+remain explicit: Step4 is IN_PROGRESS, not retrospectively accepted by its unit
+checks. Plotting remains deferred.
 
 ## Product and scale definition (revision 2 review draft)
 

@@ -1,9 +1,5 @@
-"""W07: actual W01 geometry/temperature and W02 inventory -> mechanical inputs.
-
+"""W01/W02 -> W07; contract: docs/W07_WORKFLOW.md.
 SPDX-License-Identifier: AGPL-3.0-only
-The bounded bridge accepts initial planar, horizontally uniform, pure layers.
-It never reconstructs ordering from mixed/evolved W02 amounts. Series compliance
-is specific to vertical shear support; it is not a general phase-mixture law.
 """
 from dataclasses import asdict, dataclass
 import hashlib
@@ -24,12 +20,7 @@ from .reuse import ExecutionContext
 
 @dataclass(frozen=True, slots=True)
 class GeologicalMaterialLaw:
-    """Explicit constant Newtonian viscosity and a selected reference-density law.
-
-    Reference-constant freezes the W01 reference density, not an equation of state.
-    The linear Boussinesq option uses W01 rho0, alpha and T0 only for buoyancy;
-    reference cohort masses always retain rho0. Both need declared validity.
-    """
+    """Explicit constant viscosity and bounded reference/buoyancy density law."""
     material_id: str
     viscosity_pa_s: float
     source: GeologySource
@@ -46,12 +37,7 @@ class GeologicalMaterialLaw:
 
 @dataclass(frozen=True, slots=True)
 class RegionalPhysicsOwnership:
-    """One declared owner of each contribution; unsupported additions refuse.
-
-    W07-boundary is an explicit replacement of S6 prescribed motion for this new
-    mechanical scenario. It retains S6 provenance but does not add displacement.
-    Initial thermal provenance is W01; a compatible W07 producer owns later heat.
-    """
+    """Single contribution owners; no duplicate or unsupported additions."""
     gravity_source: GeologySource
     thermal_source: GeologySource
     motion_source: GeologySource
@@ -147,12 +133,7 @@ def _profile_physics(profile):
 
 
 def _layers(workflow, laws):
-    """Certify the full sampled footprint has one ordered physical layer sequence.
-
-    Fragment volumes come from W01's exact geometry intersection, not centre
-    labels. Every cell must contain the complete width of every accepted layer.
-    Multiple equivalent authored columns retain their separate unit/source IDs.
-    """
+    """Certify complete pure layers from exact W01 intersection volumes."""
     samples = workflow.initial_samples
     state = samples.state
     case = state.case
@@ -212,12 +193,7 @@ def _layers(workflow, laws):
 def bind_regional_geology(workflow, *, nz, material_laws, ownership,
                           gravity_m_s2, vertical_datum, external_pressure_pa=0.,
                           w03=None, w06_state_id=None, budget=None, cancel=None):
-    """Capture a bounded source-bound snapshot; no thermal/material evolution.
-
-    x is section offset minus grid.origin; z=bottom_depth-depth. Scalars keep
-    their sign; inward vertical vector components reverse and x-depth tensor
-    cross-components reverse. No W01 stress/forcing/damage field is dropped.
-    """
+    """Bind initial ordered geology, preserving depth/vector conventions."""
     _cancel(cancel)
     if type(workflow) is not RegionalWorkflowState:
         raise TectonicsError('typed current RegionalWorkflowState required')

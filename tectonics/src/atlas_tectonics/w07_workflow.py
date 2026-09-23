@@ -284,6 +284,21 @@ class PreparedW07Workflow:
         return solve_regional_strength(self._mechanical,self._strength,fx,fz,self._boundary,
             material_source=g.binding_id,**arguments).mechanics
 
+    def _transport_velocity(self,mechanics):
+        # Closed MAC fluxes are the discrete curl of a zero-boundary streamfunction.
+        g=self._heat.grid;u,w=(mechanics.array(k) for k in ('u_m_s','w_m_s'))
+        psi=np.zeros((g.nz+1,g.nx+1))
+        psi[1:-1,1:-1]=-g.dx*np.cumsum(w[1:-1,:-1],axis=1)
+        transported=(np.diff(psi,axis=0)/g.dz,-np.diff(psi,axis=1)/g.dx)
+        d=mechanics.descriptor();s=d['definition']['scales']
+        limit=1e-10*d['diagnostics']['divergence_normalisation']*s['velocity_m_s']/s['length_m']
+        correction=max(float(np.max(np.abs(a-b))) for a,b in zip(transported,(u,w)))
+        if correction>limit*(g.width_m+g.height_m):
+            raise TectonicsError('conservative heat velocity exceeds admitted mechanical divergence')
+        return transported,dict(method='closed MAC discrete curl; admitted divergence correction',
+            mechanical_input_id=mechanics.result_id,maximum_correction_m_s=correction,
+            velocity_sha256=[_array_hash(a) for a in transported])
+
     def _compute(self,index,previous,cancel):
         g=self.geology;time=self.times[index];start=g.time_s if previous is None else self.times[index-1]
         parent=None if previous is None else previous.output_id
@@ -304,12 +319,14 @@ class PreparedW07Workflow:
             if time==start:
                 mechanics=self._solve(time,T,cancel);account=None
             else:
-                initial=self._solve(start,T,cancel)
-                evolved=self._heat.evolve(T,initial.array('u_m_s'),initial.array('w_m_s'),time-start,
+                initial=self._solve(start,T,cancel) if previous is None else previous.mechanics
+                velocity,coupling=self._transport_velocity(initial)
+                evolved=self._heat.evolve(T,*velocity,time-start,
                     steps=self.steps[index],boundaries=self._heat_boundaries,time_s=start,
                     source_w_m3=self._homogeneous['heat_production_w_m3'],cancel=cancel)
                 T=self._temperature(evolved['temperature_k'])
                 account={k:v for k,v in evolved.items() if k!='temperature_k'}
+                account['coupling']=coupling
                 if 'timestep_limit_s' in account and math.isinf(account['timestep_limit_s']):account['timestep_limit_s']=None
                 mechanics=self._solve(time,T,cancel)
             state=self._state(T,time,sum(self.steps[:index+1]),parent);receipt['heat']=account
@@ -360,6 +377,14 @@ class PreparedW07Workflow:
                     meta['receipt']['heat']['heat_after_j'] if meta['receipt']['heat'] is not None else
                     self._heat_energy(self.geology.array('temperature_k')))
                 self._heat_receipt(i,candidate['receipt'],before=prior)
+                if meta is not None and self.steps[i] and candidate['receipt']['heat']['coupling']['mechanical_input_id']!=next(
+                        s['result_id'] for s in meta['payload']['snapshots'] if s['name']=='mechanics'):
+                    raise TectonicsError('heat coupling belongs to another parent mechanics')
+            elif self.route=='surface':
+                snapshots={s['name']:s for s in candidate['payload']['snapshots']}
+                prior=self._initial_surface.result_id if meta is None else next(
+                    s['result_id'] for s in meta['payload']['snapshots'] if s['name']=='state')
+                self._surface_receipt(i,candidate['receipt'],prior,snapshots['state']['result_id'])
             latest,meta,parent=i,candidate,candidate['output_id']
         return latest,meta
 
@@ -386,6 +411,12 @@ class PreparedW07Workflow:
             if account is not None:raise TectonicsError('initial temperature has an unexpected evolved heat account')
             return
         if type(account) is not dict:raise TectonicsError('missing physical heat account')
+        coupling=account.get('coupling',{})
+        if (coupling.get('method')!='closed MAC discrete curl; admitted divergence correction' or
+            type(coupling.get('mechanical_input_id')) is not str or len(coupling['mechanical_input_id'])!=64 or
+            scalar(coupling.get('maximum_correction_m_s'),'heat velocity correction',nonnegative=True)<0. or
+            type(coupling.get('velocity_sha256')) is not list or len(coupling['velocity_sha256'])!=2):
+            raise TectonicsError('invalid heat velocity binding')
         g=self.geology;duration=self.times[index]-(g.time_s if index==0 else self.times[index-1])
         volume=g.width_m*g.height_m*g.strike_width_m
         expected_source=self._homogeneous['heat_production_w_m3']*volume*duration
@@ -415,10 +446,30 @@ class PreparedW07Workflow:
             not 0.<=values['balance_relative']<=1e-9 or not 0.<=values['maximum_step_balance_relative']<=1e-9):
             raise TectonicsError('restored heat storage/flux closure failed')
 
+    def _surface_receipt(self,index,receipt,parent,final):
+        a=receipt['surface'];n=self.steps[index]
+        if not n:
+            if a is not None or final!=parent:raise TectonicsError('initial surface binding mismatch')
+            return
+        if (type(a) is not dict or a.get('schema')!='atlas.free-surface-advance.v1' or
+            a.get('source_status')!='WORKING NON-CANON' or a.get('initial_state_id')!=parent or
+            a.get('final_state_id')!=final or a.get('accepted_steps')!=n or
+            a.get('heat_or_heterogeneous_remap') is not False or len(a.get('intervals',[]))!=n):
+            raise TectonicsError('surface history/ownership mismatch')
+        start=receipt['start_time_s'];duration=receipt['end_time_s']-start
+        for j,d in enumerate(a['intervals']):
+            if (d.get('start_time_s')!=start+duration*j/n or d.get('end_time_s')!=start+duration*(j+1)/n or
+                any(not 0.<=scalar(d.get(k),'surface residual')<=1e-9 for k in
+                    ('volume_residual_scaled','mass_residual_scaled','uniform_density_residual_scaled'))):
+                raise TectonicsError('surface interval acceptance mismatch')
+
     def _validate_output(self,result,cancel):
         d=result.mechanics.descriptor()
         diagnostics=d.get('diagnostics',{})
-        gates={'momentum_residual':1e-9,'normalised_work_residual':1e-9,'linear_residual':1e-12}
+        gates={'momentum_residual':1e-9,'normalised_work_residual':1e-9}
+        linear=diagnostics if self._strength is None else d.get('linear_solve_origin',{})
+        if not 0.<=scalar(linear.get('linear_residual'),'linear residual')<=1e-12:
+            raise TectonicsError('unaccepted linear solve origin')
         gates.update({'weak_continuity_scaled_max':1e-10,'global_volume_flux_relative':1e-10,
             'flux_divergence_identity_relative':1e-10} if self.route=='surface' else
             {'divergence_residual':1e-10,'pressure_gauge_residual':1e-12})
@@ -440,6 +491,8 @@ class PreparedW07Workflow:
             initial_mass=float(self._initial_surface.array('cell_mass_kg').sum())
             if abs(float(result.state.array('cell_mass_kg').sum())-initial_mass)>1e-9*initial_mass:
                 raise TectonicsError('restored surface lost its original total material inventory')
+            if not sum(self.steps[:result.output_index+1]) and result.state.result_id!=self._initial_surface.result_id:
+                raise TectonicsError('restored initial surface differs from its source')
         else:
             request=d.get('request',{});definition=d.get('definition',{});T=None
             if request.get('time_s')!=self.times[result.output_index] or request.get('epoch_id')!=self.geology.epoch_id:
@@ -454,6 +507,8 @@ class PreparedW07Workflow:
                     not np.array_equal(result.state.array('reference_mass_kg'),self.geology.array('reference_mass_kg'))):
                     raise TectonicsError('restored thermal/material state mismatch')
                 self._heat_receipt(result.output_index,result.descriptor(),after=self._heat_energy(T))
+                if not sum(self.steps[:result.output_index+1]) and not np.array_equal(T,self.geology.array('temperature_k')):
+                    raise TectonicsError('restored initial temperature differs from its source')
             elif result.state.result_id!=self.geology.binding_id:raise TectonicsError('restored geological state mismatch')
             fx,fz=self._force(T)
             if (request.get('force_source')!=self._force_source(T) or
@@ -462,6 +517,9 @@ class PreparedW07Workflow:
                 d.get('request_id')!=_hash(request) or
                 request.get('plan_id')!=_hash(dict(definition=definition,context=self.execution_id))):
                 raise TectonicsError('restored mechanical force/plan binding mismatch')
+            if any(not np.array_equal(result.mechanics.array(k),a) for k,a in
+                    (('force_u_n_m3',fx),('force_w_n_m3',fz))):
+                raise TectonicsError('stored mechanical forces differ from their source')
             expected=self._mechanical.descriptor()
             for key in expected:
                 if self._strength is not None and key in ('material_source','stress_site_viscosity'):
@@ -469,7 +527,7 @@ class PreparedW07Workflow:
                 if definition.get(key)!=expected[key]:raise TectonicsError('restored mechanical material/geometry policy mismatch: '+key)
             if self._strength is not None:
                 binding=d.get('strength_binding',{})
-                if (binding.get('profile')!=self._strength.descriptor() or binding.get('material_source')!=self.geology.binding_id or
+                if (_json(binding.get('profile'))!=_json(self._strength.descriptor()) or binding.get('material_source')!=self.geology.binding_id or
                     definition.get('material_source')!='regional-C01='+_hash(binding)):
                     raise TectonicsError('restored strength law/source mismatch')
             support=definition.get('stress_site_viscosity',{})
@@ -486,6 +544,8 @@ class PreparedW07Workflow:
         guard=self._resource.reserve(result.state.nbytes+result.mechanics.nbytes+len(result._receipt)+65536,category='w07-latest-output')
         guard.__enter__();old=self._current_guard
         self._current,self._current_guard=result,guard
+        if self.route=='surface':
+            self._mechanical._latest_key,self._mechanical._latest=result.state.result_id,result.mechanics
         if old is not None:old.__exit__(None,None,None)
 
     def load(self,index,*,cancel=None):

@@ -2501,8 +2501,13 @@ and real material-surface evolution. The deformed branch explicitly adopts the
 assessed Q2/physical-P1-discontinuous alternative with mapped stresses and
 conservative Laplacian ALE motion; the flat MAC branch is unchanged.
 Finest relaxation error is 0.003688%, with decreasing mesh/time errors and volume
-closure. Identical-state reuse saves 0.4548072 s / 54.64%. Next: Step 5 source-bound
-geological assembly/recovery and combined acceptance. A physical localisation
+closure. Identical-state reuse saves 0.4548072 s / 54.64%.
+[Step 5](W07_WORKFLOW.md) now connects source-bound geological inputs, explicit
+physical ownership, atomic complete snapshots and verified recovery. Five new
+assembled/reference/timing checks pass. Reopening the same final state takes
+2.608 s versus 6.148 s fresh (57.58% saved); first-save overhead is 9.05%.
+The three supported geological routes and remaining bridges are named in the
+record; selected W07 Steps 1–5 are complete. Next: W08 process/design. A physical localisation
 length remains separately required; do not add support/gravity forces twice.
 
 **Dependencies:** W00–W03; W04 supplies checks of loading, not automatically an added response. **References:** P04/P05/P15, E05–E11/E28; F04–F07.
@@ -2514,6 +2519,31 @@ C01 and C02 must close before strain localisation or surface mechanics is claime
 **Deliverables:** one selected formulation, boundary/constitutive specification, verified reference solver and public benchmark definition. **Gate:** force/divergence/thermal residuals, independently calculated fields, sharp material contrasts, convergence and mesh-independent quantities of interest. A low nonlinear residual cannot excuse a numerically defined shear-zone width. If a reduced K-mode answers the question sufficiently, M is not mandatory for that particular case.
 
 ### W08 — Shortening, transform/oblique motion, subduction and magmatism
+
+**Local Step 1, 23 September 2026:** [selected regime design](W08_REGIMES.md)
+and [frozen cases](../cases/w08_regimes.json) define the six-increment sequence,
+finite-strain/transfer closures, required bridges and acceptance references.
+[Step 2 implementation and evidence](W08_SHORTENING.md) now supply the selected
+distributed finite-shortening route, conservative fixed-grid material/enthalpy
+projection and compatible dry load/support. Twenty-one focused checks pass;
+setup-inclusive prepared three-output reuse saves 0.4944981 s / 46.96% with exact
+output identity. The source-inventory prerequisite now retains bounded complete
+digest records, not raw source text, and advances execution identity to v4 with
+old checkpoint refusal. Frozen design/case bindings remain unchanged.
+[Step 3 transform/oblique implementation](W08_TRANSFORM.md) is also now complete
+for exact full-vector affine motion, compatible prescribed nodal bends/stepovers
+and discontinuous straight-fault slip. Conservative planar projections and actual
+region/exterior exchanges preserve full material/enthalpy accounts. Sixty-six
+focused checks and nine shared identity checks have passing evidence; the frozen
+bend challenge converges through three spatial levels and meets its 0.02 RMS gate.
+Three changing outputs save 0.7768963 s / 51.59% using preparation reuse; identical
+results save 64.26%, with setup and source checks included. [Step 4 implementation](W08_SUBDUCTION.md)
+now adds prescribed subduction/computed-wedge mechanics, direct steady heat,
+conservative thermal velocity transfer and finite material retirement. Acceptance
+remains IN_PROGRESS with the named source-adapter/numerical gates; this does not
+advance the plan past Step4.
+Supplied underthrust scenarios still need their explicit structural and host-space
+closure; uniform thickening does not replace it.
 
 **Dependencies:** W02/W04/W06, and W07 where mechanical response is claimed. These are separate cases, not one universal tuned recipe.
 

@@ -4,6 +4,78 @@ WORKING NON-CANON. Changes prepared against dev39
 `7aacee7661a96ce35f78dfe61ec5228801ba44dc` with OpenAI Codex assistance.
 Code checks, scientific acceptance and publication remain separate.
 
+## 23 September review of 5ae74dc — reported failures resolved locally
+
+Michael authorised fixing the errors in the external review of the mid-W07-Step-5
+push. The completed Step 5 changes are preserved; no physics, tolerance, solver,
+dependency version or resource ceiling was changed by this correction.
+
+- `variable_flexure.py` and `surface_geometry.py` now load their SciPy banded
+  solvers only when needed, keeping NumPy-only reference imports available.
+  Calling either SciPy-dependent operation without SciPy raises `TectonicsError`;
+  no silent fallback or partial factor cache is created. The second eager import
+  was masked by the first in the external review and appeared in the first local
+  rerun. Both use the same unchanged factorisation and solve arguments.
+- The dependency test now expects the existing authenticated `scipy>=1.15,<1.18`
+  range, including its `fast` extra. No requirement was widened.
+- The preflight test now expects no missing Tosi reference requirements, matching
+  the integrated pinned source data and existing suite-acceptance tests. It still
+  checks that no arrays, analysis or solve occur, and that an incomplete study
+  is not accepted as a completed benchmark.
+- The four W07 failures had already been fixed during Step 5 completion. All four
+  were rerun successfully against this final package, including exact thermal
+  restart, cancellation, corrupt-record refusal and dry-strength recovery.
+
+All **nine externally reported failing methods now have passing local evidence**.
+There are **22 distinct focused tests passed**, including the additional numerical,
+resource/reuse and shared source-identity checks. The checks use the existing
+Windows scientific environment; this is not a new Linux or full-suite pass.
+
+| Selection | Result | Test elapsed |
+|---|---|---:|
+| Initial four import/metadata and two W04 controls | 3 pass, 3 fail at the previously masked surface import | 1.425 s |
+| Three corrected reference imports plus two surface geometry controls | 5 pass | 1.492 s |
+| Corrected preflight method | 1 pass | 0.013 s |
+| Four reported W07 workflow methods plus nine shared identity methods | 13 pass | 35.543 s |
+
+The initial passing metadata and W04 controls were reused, not rerun. The
+missing-SciPy subprocess test additionally exercises explicit refusal by both
+newly lazy operations. Static safety also passes 13 selected maps/41 required
+paths, with 30 tests passing and one Windows symlink skip in 0.105 s.
+Exact focused selections, run with `python -B -m unittest`
+and this checkout's `tectonics/src` and `tectonics/tests` on `PYTHONPATH`:
+
+```text
+test_constitutive_execution_r3.PreparedTests.test_missing_scipy_preserves_raw_laws_and_refuses_length_solver
+test_optimised_defaults.OptimisedDefaultTests.test_missing_scipy_refuses_default_not_reference
+test_optimised_defaults.OptimisedDefaultTests.test_dependencies_support_normal_default_calls
+test_stokes_execution_r4_1.PreparedExecutionTests.test_numpy_only_reference_import_still_works
+test_w04_variable_flexure.VariableRigidityFlexureTests.test_two_piece_clamped_plate_matches_independent_exponential_oracle
+test_w04_variable_flexure.VariableRigidityFlexureTests.test_immutable_snapshots_lazy_factor_reuse_close_and_per_call_budget
+test_w07_surface_geometry
+test_convection_assessment_r4_4.PreflightTests.test_preflight_cli_reads_no_run_arrays_or_analysis_and_reports_reuse
+test_w07_workflow.W07WorkflowTests.test_thermal_source_temperature_radiogenic_heat_reference_mass_and_partial_restart
+test_w07_workflow.W07WorkflowTests.test_atomic_cancellation_preserves_prefix_and_budget_refusal
+test_w07_workflow.W07WorkflowTests.test_storage_and_resealed_physical_receipt_corruption_refuse
+test_w07_workflow.W07WorkflowTests.test_supplied_dry_strength_simple_shear_preserves_physical_pressure
+test_execution_reuse.IdentityTests
+```
+
+Code/method sources checked: the retained `thermal.py` lazy optional-backend
+pattern, actual banded-solver calls, declared package metadata and pinned Tosi
+reference-loader contract. No new constitutive law or external paper review was
+needed; no third-party implementation was copied. Test times are not speedup claims.
+
+These source changes produce new execution identities. Earlier W04/W07 acceptance
+and timing reports remain evidence for their original bytes, not silently rebound
+to this correction. The package inventory is 2,097,129 bytes: only 23 bytes remain
+below the unchanged 2 MiB limit. Address the bounded inventory representation
+before further source growth; do not increase its cap merely to pass.
+
+No full regression suite, benchmark campaign, CI setup, visual-tool work, commit
+or push was performed for this correction. The reported errors are resolved;
+a complete release/integration regression remains a separate check.
+
 ## Subsequent adaptive-inner return review
 
 The dev39-based adaptive-inner return was independently reviewed and reconciled

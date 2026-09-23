@@ -1,0 +1,30 @@
+{
+  "schema": "atlas.w08-subduction-adapter.v1",
+  "source_status": "WORKING NON-CANON",
+  "adapter_id": "W08-subduction-xfieldstone-natural-outflow-1",
+  "parent_design_sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de",
+  "original_2008_operator_binding": "BLOCKED_SOURCE_ADAPTER",
+  "original_2008_acceptance_permitted": false,
+  "thermal_outflow_operator": "natural-zero-diffusive-flux",
+  "thermal_operator_source": "https://github.com/irisvanzelst/xFieldstone/blob/master/main_solver_Stokes_T_grid.py",
+  "interpretation": "Explicit later reproduction weak operator; no equivalence asserted to original zero-curvature wording. Advective export retained.",
+  "corner_flow": "45-degree biharmonic solution at (50,50) km: f(0)=fprime(0)=f(alpha)=0, fprime(alpha)=1; no unique apex point trace",
+  "case_1b_far_field": "both prescribed analytic velocity components; conservative normal-trace interpolation; zero-mean pressure",
+  "other_computed_cases_far_field": "zero total normal and tangential traction; no extra pressure gauge",
+  "finite_physical_coupling_ramp": false,
+  "thermal_method": "continuous P2, conservative weak advection and consistent SUPG residual; degree-6 volume quadrature",
+  "mechanical_method": "P2-P1 Taylor-Hood on wedge-only aligned triangles",
+  "refinement_spacing_km": [6, 3, 1.5],
+  "diagnostic_comparison_error_max_C": 2,
+  "finest_comparison_change_max_C": 1,
+  "reference_rows": {
+    "1a": [388.21, 503.69, 854.34],
+    "1b": [388.21, 503.69, 854.34],
+    "1c": [387.78, 503.10, 852.97],
+    "2a": [580.52, 606.94, 1002.85],
+    "2b": [582.65, 604.51, 998.71]
+  },
+  "comparison_gates_do_not_clear_source_gate": true,
+  "resource_limits": {"accounted_bytes": 134217728, "native_threads": 1, "nonlinear_iterations": 200, "accepted_history_intervals": 256},
+  "timing": "Three rotated repeats; matched full outputs; cold includes preparation, verification and materialisation; no interpreter/import startup"
+}
