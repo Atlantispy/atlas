@@ -1,4 +1,4 @@
-"""Bounded, explicitly labelled later-reproduction comparison; never R4.4."""
+"""Bounded source-labelled subduction comparison; never R4.4 or historical replay."""
 import argparse
 import hashlib
 import json
@@ -13,20 +13,39 @@ from atlas_tectonics.subduction import PreparedSubduction
 
 def main():
     parser=argparse.ArgumentParser()
+    parser.add_argument('--adapter',choices=['r2','r3'],default='r3',
+        help='r3 independently derives natural outflow; r2 preserves the historical unresolved binding')
     parser.add_argument('--cases',nargs='+',choices=['1a','1b','1c','2a','2b'],default=['1a','1b','1c','2a','2b'])
-    parser.add_argument('--spacing',nargs='+',type=float,default=[6,3,1.5])
+    parser.add_argument('--spacing',nargs='+',type=float,default=[6.,3.,1.5])
     parser.add_argument('--mesh-grading',choices=['interface-r3','corner-r4','corner-r5'],default='interface-r3')
     parser.add_argument('--coupling-trace',choices=['nodal-p2-v1','mesh-linear-first-edge-v1'],default='nodal-p2-v1')
+    parser.add_argument('--transport-lifetime',choices=['retained','phase-local'],default='retained',
+        help='phase-local rebuilds projection operators to free memory during mechanics/heat')
+    parser.add_argument('--refinement-json',type=Path,
+        help='Explicit source-bound interior points_by_spacing_km; never changes frozen comparison levels')
     parser.add_argument('--timing',action='store_true')
     parser.add_argument('--report',type=Path,required=True)
     args=parser.parse_args()
     root=Path(__file__).resolve().parents[1]
-    fixture_path=root/'cases/w08_subduction_r2.json'
+    fixture_path=root/f'cases/w08_subduction_{args.adapter}.json'
     fixture=json.loads(fixture_path.read_text())
     digest=hashlib.sha256(fixture_path.read_bytes()).hexdigest()
     kwargs=dict(source_id=fixture['adapter_id']+':'+digest,
         outflow_operator=fixture['thermal_outflow_operator'],mesh_grading=args.mesh_grading,
-        coupling_trace=args.coupling_trace)
+        coupling_trace=args.coupling_trace,transport_lifetime=args.transport_lifetime)
+    refinement_input = None; refinement_digest = None
+    if args.refinement_json is not None:
+        if args.timing:
+            parser.error('--timing uses a separate 12km fixture; omit it for explicit refinement')
+        with args.refinement_json.open('rb') as stream:
+            encoded=stream.read(1024**2+1)
+        if len(encoded) > 1024**2:
+            raise ValueError('refinement input exceeds bounded 1MiB envelope')
+        refinement_digest=hashlib.sha256(encoded).hexdigest()
+        kwargs['source_id']+=':refine:'+refinement_digest
+        refinement_input=json.loads(encoded)
+        if set(refinement_input['points_by_spacing_km']) != {str(h) for h in args.spacing}:
+            raise ValueError('refinement input must cover exactly the requested spacings')
     start=time.perf_counter(); rows=[]
     sources={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((root/'src/atlas_tectonics').glob('*.py'))}
     def write_report(*, finished=False, refinement=None, timings=None):
@@ -34,18 +53,24 @@ def main():
         # RUNNING is not a completed campaign or a passed acceptance assessment.
         result=dict(schema='atlas.w08-subduction-comparison.v1',source_status='WORKING NON-CANON',
             run_status='FINISHED' if finished else 'RUNNING',
-            original2008_acceptance='BLOCKED_SOURCE_ADAPTER',fixture_sha256=digest,
+            original2008_acceptance=('NOT_CLAIMED_HISTORICAL_IMPLEMENTATION' if args.adapter=='r3'
+                else 'BLOCKED_SOURCE_ADAPTER'),
+            operator_binding=fixture['original_2008_operator_binding'],
+            published_problem_comparison_permitted=fixture.get('published_problem_comparison_permitted',False),
+            fixture_sha256=digest,
             driver_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             sources=sources,requested_cases=args.cases,requested_spacing_km=args.spacing,
             requested_mesh_grading=args.mesh_grading,
             requested_coupling_trace=args.coupling_trace,
+            refinement_input_sha256=refinement_digest,
             environment=dict(python=platform.python_version(),system=platform.system(),numpy=np.__version__),
             rows=rows,refinement=refinement or {},timings=timings,elapsed_s=time.perf_counter()-start)
         args.report.write_text(json.dumps(result,indent=2,allow_nan=False)+'\n',encoding='utf-8')
         return result
     write_report()
     for h in args.spacing:
-        with PreparedSubduction(h,**kwargs) as plan:
+        extra={} if refinement_input is None else dict(refinement_points_km=refinement_input['points_by_spacing_km'][str(h)])
+        with PreparedSubduction(h,**kwargs,**extra) as plan:
             for case in args.cases:
                 t=time.perf_counter()
                 try:
@@ -92,6 +117,8 @@ def main():
             refinement[case]=dict(finest_change_C=change,comparison_change_gate=max(map(abs,change))<=fixture['finest_comparison_change_max_C'])
     current={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((root/'src/atlas_tectonics').glob('*.py'))}
     if current!=sources: raise RuntimeError('source changed during comparison; partial evidence retained, no completion claim')
+    if args.refinement_json is not None and hashlib.sha256(args.refinement_json.read_bytes()).hexdigest()!=refinement_digest:
+        raise RuntimeError('refinement input changed during comparison; no completion claim')
     result=write_report(finished=True,refinement=refinement,timings=timings)
     print(json.dumps(dict(report=str(args.report),elapsed_s=result['elapsed_s'],timings=timings)),flush=True)
 

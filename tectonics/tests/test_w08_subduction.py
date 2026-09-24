@@ -14,6 +14,76 @@ from atlas_tectonics.subduction_mesh import build_mesh
 
 
 class SubductionTests(unittest.TestCase):
+    def test_phase_local_transport_parity_reuse_and_phase_release(self):
+        results={}
+        fields=('points_xz_m','cells','regions','wedge_global_nodes','wedge_global_elements',
+                'temperature_k','wedge_velocity_m_s','transport_wedge_velocity_m_s','wedge_pressure_pa')
+        for lifetime in ('retained','phase-local'):
+            owner=WorkBudget(128*1024**2)
+            with PreparedSubduction(24,source_id='lifetime-parity',transport_lifetime=lifetime,
+                    outflow_operator='natural-zero-diffusive-flux',budget=owner) as plan:
+                original=plan.flow.solve
+                def flow(*args,**kwargs):
+                    if lifetime=='phase-local':
+                        self.assertIsNone(plan.transport)
+                        self.assertEqual(owner.statistics()['categories'].get('subduction-transport-retained',0),0)
+                    return original(*args,**kwargs)
+                with patch.object(plan.flow,'solve',side_effect=flow):
+                    for case in ('1a','1c'):
+                        r=plan.solve(case)
+                        self.assertIs(r,plan.solve(case))
+                        if lifetime=='phase-local': self.assertIsNone(plan.transport)
+                        results[lifetime,case]=([getattr(r,f).copy() for f in fields],r.diagnostics_c,r.identity)
+                        del r
+                self.assertGreater(plan._transport_allowance_bytes,0)
+                self.assertEqual(plan._transport_builds,1 if lifetime=='retained' else 2)
+            self.assertEqual(owner.reserved_bytes,0)
+        for case in ('1a','1c'):
+            a,b=results['retained',case],results['phase-local',case]
+            for x,y in zip(a[0],b[0]): np.testing.assert_array_equal(x,y)
+            self.assertEqual(a[1:],b[1:])
+
+    def test_phase_local_transport_cancel_failure_and_retry_cleanup(self):
+        with self.assertRaisesRegex(TectonicsError,'transport lifetime'):
+            PreparedSubduction(24,source_id='bad',outflow_operator='natural-zero-diffusive-flux',
+                transport_lifetime='unbounded')
+        owner=WorkBudget(128*1024**2); cancelled=threading.Event()
+        with PreparedSubduction(24,source_id='lifetime-failure',transport_lifetime='phase-local',
+                outflow_operator='natural-zero-diffusive-flux',budget=owner) as plan:
+            baseline=owner.reserved_bytes
+            prepare=plan._prepare_transport
+            def cancel_after_prepare(cancel):
+                prepare(cancel); cancelled.set()
+            with patch.object(plan,'_prepare_transport',side_effect=cancel_after_prepare):
+                with self.assertRaises(CancelledError): plan.solve('1a',cancel=cancelled)
+            self.assertIsNone(plan.transport)
+            self.assertEqual(owner.reserved_bytes,baseline)
+            cancelled.clear()
+            with owner.reserve(owner.available_bytes,category='test-filled-owner'):
+                with self.assertRaises(MemoryLimitError): plan.solve('1a')
+            self.assertIsNone(plan.transport)
+            self.assertEqual(owner.reserved_bytes,baseline)
+            result=plan.solve('1a')
+        self.assertGreater(owner.reserved_bytes,0)
+        del result
+        self.assertEqual(owner.reserved_bytes,0)
+
+    def test_refinement_geometry_changes_plan_and_result_identity(self):
+        kwargs=dict(source_id='synthetic-explicit-refinement',mesh_grading='corner-r5',
+                    outflow_operator='natural-zero-diffusive-flux')
+        identities=[]
+        for refined in (False,True,True):
+            extra={} if not refined else dict(refinement_points_km=[[82.123,63.456]])
+            with PreparedSubduction(24,**kwargs,**extra) as plan:
+                result=plan.solve('1a')
+                self.assertEqual(result.statistics['mesh_geometry_id'],plan.mesh.geometry_id)
+                self.assertIs(result,plan.solve('1a'))
+                identities.append((plan.plan_id,result.identity,plan.mesh.geometry_id))
+                del result
+            self.assertEqual(plan.budget.reserved_bytes,0)
+        self.assertNotEqual(identities[0],identities[1])
+        self.assertEqual(identities[1],identities[2])
+
     def test_heat_factor_unpermutes_and_releases_phase_geometry(self):
         from scipy import sparse
         from atlas_tectonics import subduction as sub

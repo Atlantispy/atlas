@@ -359,12 +359,12 @@ class KernelExecutor:
             if not isinstance(raw,(tuple,list)) or len(raw)!=2:raise TectonicsError('physical/mesh velocity pair required')
             values=tuple(raw);shapes=tuple(input_shape(a) for a in values)
             if shapes!=((n+1,),(n+1,)):raise TectonicsError('N+1 face velocities required')
-            return values,shapes,c*n,256*c*n+1024*n+32768*c+32768
+            return values,shapes,c*n,416*c*n+1088*n+32768*c+32768
         if kind == 'remap':
             state,scheme=parameters;shape=input_shape(raw);ns=state.grid.cells;c=len(state.cohorts)
             if len(shape)!=1 or shape[0]<2:raise TectonicsError('target edges required')
             nt=shape[0]-1
-            return (raw,),(shape,),c*nt,128*c*(ns+nt)+512*(ns+nt)+16384*c+32768
+            return (raw,),(shape,),c*nt,160*c*(ns+nt)+576*(ns+nt)+16384*c+32768
         if kind == "materials":
             state,dt,left,right,scheme=parameters
             n=state.grid.cells;c=len(state.cohorts)
@@ -563,7 +563,7 @@ class KernelExecutor:
                                 raise TectonicsError('ALE worker changed parent/time/method/ownership')
                             receipt=result.state.transition_record
                             if (receipt.get('physical_velocity')!=checks[1] or receipt.get('mesh_velocity')!=checks[2]
-                                    or receipt.get('operation')!='ale-cohort-ssprk2-v1' or receipt.get('scheme')!=scheme
+                                    or receipt.get('operation')!='ale-cohort-ssprk2-v2' or receipt.get('scheme')!=scheme
                                     or receipt.get('backend')!=backend):raise TectonicsError('ALE worker input identity mismatch')
                             if not np.isfinite(result.face_flux_m2_s).all():raise TectonicsError('nonfinite ALE worker flux')
                             if np.any(result.accounts[:,5]<0) or np.any(result.accounts[:,5]>(.5 if scheme=='muscl' else 1.)):
@@ -584,7 +584,8 @@ class KernelExecutor:
                                 raise TectonicsError('remap worker changed material history')
                             if result.grid!=state.grid:
                                 receipt=result.transition_record
-                                if (result.parent_state_id!=state.state_id or receipt.get('scheme')!=scheme or receipt.get('backend')!=backend):
+                                if (result.parent_state_id!=state.state_id or receipt.get('operation')!='conservative-remap-v2'
+                                        or receipt.get('scheme')!=scheme or receipt.get('backend')!=backend):
                                     raise TectonicsError('remap worker changed lineage/method')
                             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(result.thickness_m,result.grid,backend)
                             for b,a in zip(before,after):_account(b,a,0.,0.,0.)

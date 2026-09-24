@@ -5,6 +5,7 @@ worker tests use spawn rather than assuming POSIX fork. Explicit tiny budgets
 exercise deterministic refusal without attempting enormous allocations.
 """
 from concurrent.futures import CancelledError, ThreadPoolExecutor
+from contextlib import closing
 from dataclasses import replace
 import hashlib
 import multiprocessing
@@ -150,7 +151,8 @@ class CombinedResourcesTests(unittest.TestCase):
 
     def test_unrelated_database_constructor_releases_capacity(self):
         p=self.root/'other.db'
-        with sqlite3.connect(p) as db:db.execute('create table other(x)')
+        with closing(sqlite3.connect(p)) as db, db:
+            db.execute('create table other(x)')
         with self.assertRaises(StoreError):ArrayStore(p,limits(),budget=self.budget)
         self.assertEqual(self.budget.reserved_bytes,0)
 
@@ -307,7 +309,7 @@ class CombinedResourcesTests(unittest.TestCase):
             b=cached_temperature(np.arange(512.),2.,THERMAL,store=s,budget=self.budget,cache_policy=CachePolicy(mode='always'))
             self.assertFalse(np.array_equal(a,b))
             self.assertEqual(s.statistics()['snapshots'],2)
-            with sqlite3.connect(s.path) as db:
+            with closing(sqlite3.connect(s.path)) as db, db:
                 db.execute('UPDATE chunks SET payload=? WHERE id=(SELECT id FROM chunks LIMIT 1)',(b'broken',))
             with self.assertRaises(StoreError):
                 for row in s._db.execute('SELECT id FROM snapshots').fetchall():s.get(row[0])

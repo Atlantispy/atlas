@@ -20,6 +20,8 @@ from .materials import (MaterialState, MaterialBoundary, MaterialTransportResult
 # Existing local-field verification tolerance in cases/w02_completion.json.
 # This geometry admission bound does not replace the tighter inventory accounts.
 _GEOMETRY_RTOL = 1e-12
+_REMAP_METHOD = 'conservative-remap-v2'
+_ALE_METHOD = 'ale-cohort-ssprk2-v2'
 
 
 def _ale_geometry(grid,w,dt,*,budget=None):
@@ -180,12 +182,48 @@ def _slopes_reference(h,x,linear):
     return out
 
 
+def _joint_slopes_reference(h,x,linear):
+    """Nonnegative cohort traces sum to the existing scalar total trace.
+
+    Limit dimensionless cell-width slope increments, avoiding a 1/width rate
+    that can overflow for small cells. No inventory or final total is repaired.
+    """
+    if not linear:return np.broadcast_to(0.,h.shape)
+    slopes=np.vstack([_slopes_reference(row,x,True) for row in h])
+    if h.shape[0]==1:return slopes
+    widths=np.diff(x)
+    total=np.array([math.fsum(h[:,i]) for i in range(h.shape[1])])
+    total_slopes=_slopes_reference(total,x,True)
+    for i,width in enumerate(widths):
+        if total[i]==0:
+            slopes[:,i]=0.
+            continue
+        candidates=slopes[:,i]*width
+        rate=(total_slopes[i]*width)/total[i]
+        candidate_rate=math.fsum(candidates)/total[i]
+        base=h[:,i]*rate
+        delta=candidates-h[:,i]*candidate_rate
+        theta=1.
+        for k in range(h.shape[0]):
+            if delta[k]>0:bound=h[k,i]*(2-rate)/delta[k]
+            elif delta[k]<0:bound=h[k,i]*(2+rate)/(-delta[k])
+            else:continue
+            bound*=1.-8.*np.finfo(np.float64).eps
+            theta=min(theta,max(float(bound),0.))
+        slopes[:,i]=(base+theta*delta)/width
+    lower=h-.5*widths*slopes;upper=h+.5*widths*slopes
+    if not np.isfinite(slopes).all() or np.any(lower<0) or np.any(upper<0):
+        raise TectonicsError('joint mesh reconstruction outside nonnegative range')
+    return slopes
+
+
 def _remap_reference(h,x,y,linear):
     # Direct interval intersections, not the compiled sparse-plan arrays.
     # This intentionally transparent reference is used for small verification cases.
     c,n=h.shape;out=np.empty((c,len(y)-1))
+    all_slopes=_joint_slopes_reference(h,x,linear)
     for k in range(c):
-        slopes=_slopes_reference(h[k],x,linear)
+        slopes=all_slopes[k]
         for j in range(len(y)-1):
             pieces=[]
             start=max(0,int(np.searchsorted(x,y[j],side='right'))-1)
@@ -212,7 +250,8 @@ def remap_materials(state, target, *, plan=None, scheme='linear', backend='numba
     if plan is not None and (type(plan) is not RemapPlan or plan.source!=state.grid or plan.target!=target):
         raise TectonicsError('stale remap plan; both mesh identities must match')
     c=len(state.cohorts);ns=state.grid.cells;nt=target.cells
-    with select_budget(budget).reserve(48*c*(ns+nt)+224*(ns+nt)+8192*c+16384,category='material-remap'):
+    # Joint reconstruction retains C*Ns slopes plus bounded total/trace scratch.
+    with select_budget(budget).reserve(80*c*(ns+nt)+288*(ns+nt)+8192*c+16384,category='material-remap'):
         op=RemapPlan(state.grid,target,backend=backend,budget=budget) if plan is None else plan
         if state.grid==target:return state
         try:
@@ -223,7 +262,7 @@ def remap_materials(state, target, *, plan=None, scheme='linear', backend='numba
             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(h,target,backend)
             accounts=[_account(float(b),float(a),0.,0.,0.) for b,a in zip(before,after)]
             _cancelled(cancel)
-            return _publish(state,target,h,state.time_s,{'operation':'conservative-remap-v1',
+            return _publish(state,target,h,state.time_s,{'operation':_REMAP_METHOD,
                 'plan':op.plan_id,'scheme':scheme,'backend':backend,'cohort_accounts':accounts},budget=budget)
         except (ValueError,OverflowError,FloatingPointError) as exc:
             if isinstance(exc,MemoryLimitError):raise
@@ -236,20 +275,27 @@ def _ale_reference(h,x,y,a,dt,el,er,linear):
     outgoing=dt*(np.maximum(a[1:],0)+np.maximum(-a[:-1],0))
     maximum=float(max(np.max(outgoing/w0),np.max(outgoing/w1) if linear else 0.))
     if not math.isfinite(maximum) or maximum>cap:raise TectonicsError('moving-grid outgoing Courant limit exceeded')
-    def flux(row,edges,left,right):
-        slopes=_slopes_reference(row,edges,linear);widths=np.diff(edges)
-        lo=row-.5*widths*slopes;hi=row+.5*widths*slopes
-        donor_l=np.r_[left,hi];donor_r=np.r_[lo,right]
+    if not linear:
+        # Retain row-local upwind scratch; joint reconstruction applies to MUSCL.
+        for k in range(c):
+            f0=a*np.where(a>=0,np.r_[el[k],h[k]],np.r_[h[k],er[k]])
+            out[k]=(h[k]*w0+dt*(f0[:-1]-f0[1:]))/w1
+            if np.any(out[k]<0):raise TectonicsError('negative ALE stage')
+            mean[k]=f0
+        return out,mean,maximum
+    def flux(fields,edges):
+        slopes=_joint_slopes_reference(fields,edges,linear);widths=np.diff(edges)
+        lo=fields-.5*widths*slopes;hi=fields+.5*widths*slopes
+        donor_l=np.column_stack((el,hi));donor_r=np.column_stack((lo,er))
         return a*np.where(a>=0,donor_l,donor_r)
-    for k in range(c):
-        f0=flux(h[k],x,el[k],er[k]);q0=h[k]*w0
-        q1=q0+dt*(f0[:-1]-f0[1:]);stage=q1/w1
-        if np.any(stage<0):raise TectonicsError('negative ALE stage')
-        if linear and dt!=0:
-            f1=flux(stage,y,el[k],er[k]);q2=q1+dt*(f1[:-1]-f1[1:])
-            if np.any(q2<0):raise TectonicsError('negative second ALE stage')
-            out[k]=(.5*q0+.5*q2)/w1;mean[k]=.5*f0+.5*f1
-        else:out[k]=stage;mean[k]=f0
+    f0=flux(h,x);q0=h*w0
+    q1=q0+dt*(f0[:,:-1]-f0[:,1:]);stage=q1/w1
+    if np.any(stage<0):raise TectonicsError('negative ALE stage')
+    if linear and dt!=0:
+        f1=flux(stage,y);q2=q1+dt*(f1[:,:-1]-f1[:,1:])
+        if np.any(q2<0):raise TectonicsError('negative second ALE stage')
+        out=(.5*q0+.5*q2)/w1;mean=.5*f0+.5*f1
+    else:out=stage;mean=f0
     return out,mean,maximum
 
 
@@ -280,7 +326,9 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
     n=state.grid.cells;c=len(state.cohorts)
     if input_shape(face_velocity_m_s)!=(n+1,) or input_shape(mesh_velocity_m_s)!=(n+1,):
         raise TectonicsError('N+1 physical and mesh face velocities required')
-    with select_budget(budget).reserve(96*c*n+256*n+16384*c+16384,category='ale-materials'):
+    # Both RK stages need all cohorts before reconstructing their shared total;
+    # includes reference extensive-state, flux, slope and trace temporaries.
+    with select_budget(budget).reserve(256*c*n+320*n+16384*c+16384,category='ale-materials'):
         u=snapshot(face_velocity_m_s,'physical face velocity');w=snapshot(mesh_velocity_m_s,'mesh velocity')
         try:
             with np.errstate(over='raise',invalid='raise'):
@@ -297,7 +345,7 @@ def advect_ale(state, face_velocity_m_s, mesh_velocity_m_s, duration_s, *,left,r
             before=_inventories(state.thickness_m,state.grid,backend);after=_inventories(h,target,backend)
             accounts=np.array([_account(float(before[k]),float(after[k]),dt*float(flux[k,0]),
                             -dt*float(flux[k,-1]),maximum) for k in range(c)])
-            record={'operation':'ale-cohort-ssprk2-v1','physical_velocity':_hash_array(u),
+            record={'operation':_ALE_METHOD,'physical_velocity':_hash_array(u),
                     'mesh_velocity':_hash_array(w),'duration_s':dt,'target_grid':target.grid_id,
                     'left':asdict(left),'right':asdict(right),'scheme':scheme,'backend':backend,
                     'cohort_accounts':accounts.tolist()}
@@ -355,7 +403,7 @@ def restore_remap_result(parent,target,h,*,plan,scheme,backend,budget=None):
         return parent
     before=_inventories(parent.thickness_m,parent.grid,backend);after=_inventories(values,target,backend)
     accounts=[_account(float(b),float(a),0.,0.,0.) for b,a in zip(before,after)]
-    return _publish(parent,target,values,parent.time_s,{'operation':'conservative-remap-v1',
+    return _publish(parent,target,values,parent.time_s,{'operation':_REMAP_METHOD,
         'plan':plan.plan_id,'scheme':scheme,'backend':backend,'cohort_accounts':accounts},budget=budget)
 
 
@@ -379,7 +427,7 @@ def restore_ale_result(parent,u,w,dt,left,right,scheme,backend,packed,*,budget=N
     if not math.isclose(maximum,expected_max,rel_tol=8*np.finfo(float).eps,abs_tol=0):raise TectonicsError('ALE admission receipt mismatch')
     accounts=np.array([_account(float(before[k]),float(after[k]),dt*float(flux[k,0]),-dt*float(flux[k,-1]),maximum) for k in range(c)])
     if not np.array_equal(stored,accounts):raise TectonicsError('ALE restored accounts disagree with fields/parent')
-    record={'operation':'ale-cohort-ssprk2-v1','physical_velocity':_hash_array(u),
+    record={'operation':_ALE_METHOD,'physical_velocity':_hash_array(u),
             'mesh_velocity':_hash_array(w),'duration_s':dt,'target_grid':target.grid_id,
             'left':asdict(left),'right':asdict(right),'scheme':scheme,'backend':backend,'cohort_accounts':accounts.tolist()}
     state=_publish(parent,target,h,_end_time(parent,dt),record,budget=budget)

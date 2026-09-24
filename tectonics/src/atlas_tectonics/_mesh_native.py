@@ -8,6 +8,7 @@ import math
 import numpy as np
 from numba import njit
 from ._transport_native import positive_sum, _add_bits, _rounded_sum
+from ._materials_native import column_totals
 
 
 @njit(inline='always',fastmath=False,cache=False)
@@ -39,6 +40,50 @@ def slope_at(h,x,i):
     return s
 
 
+@njit(fastmath=False,cache=False)
+def joint_slopes(h,x,linear):
+    """All cohort slopes share the scalar total slope and a positivity limiter."""
+    c,n=h.shape
+    slopes=np.zeros((c,n))
+    if not linear:return slopes
+    for k in range(c):
+        for i in range(n):slopes[k,i]=slope_at(h[k],x,i)
+    if c==1:return slopes
+    total=column_totals(h)
+    candidates=np.empty(c)
+    for i in range(n):
+        width=x[i+1]-x[i]
+        if total[i]==0.:
+            slopes[:,i]=0.
+            continue
+        rate=(slope_at(total,x,i)*width)/total[i]
+        candidate_sum,correction=0.,0.
+        for k in range(c):
+            candidates[k]=slopes[k,i]*width
+            value=candidate_sum+candidates[k]
+            if abs(candidate_sum)>=abs(candidates[k]):
+                correction+=(candidate_sum-value)+candidates[k]
+            else:
+                correction+=(candidates[k]-value)+candidate_sum
+            candidate_sum=value
+        candidate_rate=(candidate_sum+correction)/total[i]
+        theta=1.
+        for k in range(c):
+            delta=candidates[k]-h[k,i]*candidate_rate
+            if delta>0.:bound=h[k,i]*(2.-rate)/delta
+            elif delta<0.:bound=h[k,i]*(2.+rate)/(-delta)
+            else:continue
+            bound*=1.-8.*np.finfo(np.float64).eps
+            theta=min(theta,max(bound,0.))
+        for k in range(c):
+            slope=(h[k,i]*rate+theta*(candidates[k]-h[k,i]*candidate_rate))/width
+            lower=h[k,i]-0.5*width*slope;upper=h[k,i]+0.5*width*slope
+            if not math.isfinite(slope) or lower<0. or upper<0.:
+                raise ValueError('joint mesh reconstruction outside nonnegative range')
+            slopes[k,i]=slope
+    return slopes
+
+
 @njit(nogil=True,fastmath=False,cache=False)
 def overlap_geometry(source,target):
     """Sorted-mesh sweep: at most Ns+Nt-1 overlaps, never a dense remap matrix."""
@@ -67,15 +112,16 @@ def overlap_geometry(source,target):
 @njit(nogil=True,fastmath=False,cache=False)
 def remap_rows(h,x,y,ptr,donors,lengths,offsets,linear):
     c,ns=h.shape;nt=y.size-1
-    result=np.empty((c,nt));s=np.empty(ns);bits=np.empty(1,dtype=np.float64)
+    result=np.empty((c,nt))
+    slopes=joint_slopes(h,x,True) if linear else np.empty((0,0))
+    bits=np.empty(1,dtype=np.float64)
     limbs=np.zeros(34,np.uint64)
     for k in range(c):
-        for i in range(ns):s[i]=slope_at(h[k],x,i) if linear else 0.0
         for j in range(nt):
             limbs[:]=0
             for q in range(ptr[j],ptr[j+1]):
                 i=donors[q]
-                part=lengths[q]*(h[k,i]+s[i]*offsets[q])
+                part=lengths[q]*(h[k,i]+(slopes[k,i]*offsets[q] if linear else 0.))
                 if not math.isfinite(part) or part<0:raise ValueError('invalid reconstructed overlap inventory')
                 bits[0]=part;_add_bits(limbs,bits.view(np.uint64)[0])
             value=_rounded_sum(limbs)/(y[j+1]-y[j])
@@ -113,6 +159,29 @@ def _flux(h,x,relative,external_l,external_r,linear,flux):
         flux[j]=value
 
 
+@njit(fastmath=False,cache=False)
+def _cohort_flux(h,x,relative,el,er,linear,flux):
+    c,n=h.shape
+    if not linear or c==1:
+        for k in range(c):_flux(h[k],x,relative,el[k],er[k],linear,flux[k])
+        return
+    slopes=joint_slopes(h,x,True)
+    for k in range(c):
+        for j in range(n+1):
+            a=relative[j]
+            if j==0 and a>0.:donor=el[k]
+            elif j==n and a<0.:donor=er[k]
+            else:
+                i=max(0,j-1) if a>=0. else min(j,n-1)
+                # At an exterior face with zero velocity the trace is immaterial.
+                sign=-1. if j==0 else 1. if j==n else (1. if a>=0. else -1.)
+                donor=h[k,i]+0.5*(x[i+1]-x[i])*sign*slopes[k,i]
+            value=a*donor
+            if not math.isfinite(value) or donor<0.:
+                raise ValueError('invalid ALE reconstructed flux')
+            flux[k,j]=value
+
+
 @njit(nogil=True,fastmath=False,cache=False)
 def advance_ale(h,x,y,relative,dt,el,er,linear):
     """SSP-RK2 in cell inventories, with geometric widths advanced consistently.
@@ -129,25 +198,28 @@ def advance_ale(h,x,y,relative,dt,el,er,linear):
             f=(dt/width)*leaving
             if not math.isfinite(f) or f>cap:raise ValueError('moving-grid outgoing Courant limit exceeded')
             maximum=max(maximum,f)
-    out=np.empty((c,n));mean=np.empty((c,n+1));stage=np.empty(n)
-    f1=np.empty(n+1)
+    out=np.empty((c,n));mean=np.empty((c,n+1))
+    stage=np.empty((c,n)) if linear else out
+    f1=np.empty((c,n+1)) if linear else np.empty((0,0))
+    _cohort_flux(h,x,relative,el,er,linear,mean)
     for k in range(c):
-        _flux(h[k],x,relative,el[k],er[k],linear,mean[k])
         for i in range(n):
             q=h[k,i]*(x[i+1]-x[i])+dt*(mean[k,i]-mean[k,i+1])
-            stage[i]=q/(y[i+1]-y[i])
-            if not math.isfinite(stage[i]) or stage[i]<0:raise ValueError('negative/out-of-range ALE stage; no clipping')
-        if linear and dt!=0:
-            _flux(stage,y,relative,el[k],er[k],linear,f1)
+            stage[k,i]=q/(y[i+1]-y[i])
+            if not math.isfinite(stage[k,i]) or stage[k,i]<0:raise ValueError('negative/out-of-range ALE stage; no clipping')
+    if linear and dt!=0:
+        _cohort_flux(stage,y,relative,el,er,linear,f1)
+        for k in range(c):
             for i in range(n):
-                q0=h[k,i]*(x[i+1]-x[i]);q1=stage[i]*(y[i+1]-y[i])
-                q2=q1+dt*(f1[i]-f1[i+1])
+                q0=h[k,i]*(x[i+1]-x[i]);q1=stage[k,i]*(y[i+1]-y[i])
+                q2=q1+dt*(f1[k,i]-f1[k,i+1])
                 if not math.isfinite(q2) or q2<0:raise ValueError('negative/out-of-range ALE Euler stage')
                 # Convex combination of extensive states, not densities on different cells.
                 out[k,i]=(0.5*q0+0.5*q2)/(y[i+1]-y[i])
-            for j in range(n+1):mean[k,j]=0.5*mean[k,j]+0.5*f1[j]
-        else:
-            out[k,:]=stage
+            for j in range(n+1):mean[k,j]=0.5*mean[k,j]+0.5*f1[k,j]
+    else:
+        out[:,:]=stage
+    for k in range(c):
         for i in range(n):
             if not math.isfinite(out[k,i]) or out[k,i]<0:raise ValueError('invalid ALE candidate')
     return out,mean,maximum

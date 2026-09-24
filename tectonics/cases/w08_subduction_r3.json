@@ -1,0 +1,112 @@
+{
+  "schema": "atlas.w08-subduction-adapter.v3",
+  "source_status": "WORKING NON-CANON",
+  "adapter_id": "W08-subduction-independent-natural-outflow-3",
+  "predecessor_fixture": "w08_subduction_r2.json",
+  "predecessor_sha256": "e55b29d602b31c29ba76a9739d1a55963c8eecb79dc8254ae4c5fd7d0383a8b3",
+  "parent_design_sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de",
+  "correction": "Original paper uses one-based array indices. T_ij lies at (6*(i-1),6*(j-1)) km. Earlier Atlas frozen design incorrectly used (6*i,6*j). This changes sampling, not physics, PGC rows or tolerance.",
+  "sampling_source": "van Keken et al2008 section4 equations17-18 and Table4: (12,10)->(66,54)km; (100,60)->(594,354)km",
+  "point_km": [
+    60,
+    60
+  ],
+  "slab_samples": "36 points (6*k,6*k) km, k=0..35: 0..210 km",
+  "wedge_samples": "78 points (6*I,6*J) km, I=9..20,J=9..I: 54..120 km",
+  "temperature_before_RMS": "theta_C=T_K-273",
+  "original_2008_operator_binding": "RESOLVED_INDEPENDENT_WEAK_FORM",
+  "original_2008_acceptance_permitted": false,
+  "thermal_outflow_operator": "natural-zero-diffusive-flux",
+  "thermal_operator_source": "https://homepage.tudelft.nl/d2b4e/burgers/intro.pdf#page=31",
+  "interpretation": "Source-supported independent derivation of the homogeneous natural boundary of van Keken et al2008 Eq5. k*grad(T).n=0; advective export retained. Not an assertion that zero curvature literally means Neumann, or that original contributor inputs were recovered. original_2008_acceptance_permitted remains false for historical contributor-code equivalence; the published-problem comparison is permitted under the frozen design's independent-derivation alternative.",
+  "corner_flow": "45-degree biharmonic solution at (50,50)km, no unique apex point trace",
+  "case_1b_far_field": "both analytic velocity components; conservative P2 normal-trace interpolation; zero-mean pressure",
+  "other_computed_cases_far_field": "zero total traction; no extra pressure gauge",
+  "finite_physical_coupling_ramp": false,
+  "thermal_method": "continuous P2, conservative weak advection, consistent SUPG with diffusive Laplacian; degree6 volume quadrature",
+  "mechanical_method": "P2-P1 Taylor-Hood wedge-only aligned triangles",
+  "refinement_spacing_km": [
+    6,
+    3,
+    1.5
+  ],
+  "diagnostic_comparison_error_max_C": 2,
+  "finest_comparison_change_max_C": 1,
+  "reference_rows": {
+    "1a": [
+      388.21,
+      503.69,
+      854.34
+    ],
+    "1b": [
+      388.21,
+      503.69,
+      854.34
+    ],
+    "1c": [
+      387.78,
+      503.1,
+      852.97
+    ],
+    "2a": [
+      580.52,
+      606.94,
+      1002.85
+    ],
+    "2b": [
+      582.65,
+      604.51,
+      998.71
+    ]
+  },
+  "comparison_gates_do_not_clear_source_gate": true,
+  "resource_limits": {
+    "accounted_bytes": 134217728,
+    "native_threads": 1,
+    "nonlinear_iterations": 200,
+    "accepted_history_intervals": 256
+  },
+  "timing": "3 rotated repeats; matched full outputs; cold includes preparation, verification and materialisation; no interpreter/import startup",
+  "published_problem_comparison_permitted": true,
+  "historical_contributor_code_equivalence": "NOT_VERIFIED",
+  "source_resolution": {
+    "status": "RESOLVED_INDEPENDENT_WEAK_FORM",
+    "decision_date": "2026-09-23",
+    "contract_route": "W08_REGIMES.md: independently establish intended weak/strong condition; no change to frozen design",
+    "mathematical_argument": "Testing rho*cp*v.grad(T)-div(k*grad(T))=0 with w gives volume advection plus k*grad(w).grad(T), minus the boundary load integral(w*k*grad(T).n). Homogeneous natural diffusion removes that load. For div(v)=0, conservative advection retains integral_boundary(rho*cp*w*T*v.n); it is not zero total heat flux.",
+    "rejected_interpretations": [
+      "d2T/dn2=0",
+      "Laplacian(T)=0",
+      "zero total advective plus diffusive heat flux"
+    ],
+    "scientific_operator_changed": false,
+    "numerical_gates_changed": false,
+    "evidence": [
+      {
+        "url": "https://sites.ualberta.ca/~ccurrie1/papers/vanKekenEtAl_PEPI_2008.pdf",
+        "locator": "pp188-189 Fig1c, Eq5 and section2.2",
+        "supports": "The original equation and explicitly natural thermal outflow; parenthetical wording remains imprecise."
+      },
+      {
+        "url": "https://homepage.tudelft.nl/d2b4e/burgers/intro.pdf#page=31",
+        "locator": "SEPRAN Introduction January2015, sections2.2 and2.4.3, printed page2.4.4",
+        "supports": "Homogeneous Neumann outflow for convection-diffusion needs no essential condition or added boundary input; normal diffusion flux is k*grad(T).n."
+      },
+      {
+        "url": "https://homepage.tudelft.nl/d2b4e/burgers/um.pdf#page=613",
+        "locator": "SEPRAN User Manual section6.6.1, printed page6.6.1.2, dated November2008",
+        "supports": "Standard convection-diffusion element800 homogeneous natural conditions require no extra input. A software-library convention, not recovered benchmark inputs."
+      },
+      {
+        "url": "https://link.springer.com/article/10.1186/s40645-023-00588-6",
+        "locator": "section2.3.3 and steady weak equation117",
+        "supports": "Original lead author explicitly defines homogeneous natural/Neumann outflow; independent corroboration, not substitution of2023 geometry or reference rows."
+      },
+      {
+        "url": "https://github.com/irisvanzelst/xFieldstone/blob/master/main_solver_Stokes_T_grid.py",
+        "locator": "thermal boundary and heat assembly, lines706-834 inspected2026-09-23",
+        "supports": "Later published2008 reproduction uses volume advection/diffusion with no outflow diffusive load."
+      }
+    ]
+  }
+}

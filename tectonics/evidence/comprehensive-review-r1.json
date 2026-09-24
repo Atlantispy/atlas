@@ -1,0 +1,187 @@
+{
+  "schema": "atlas.comprehensive-review.v1",
+  "date": "2026-09-24",
+  "source_status": "WORKING NON-CANON",
+  "status": "COMPREHENSIVE_REVIEW_COMPLETE_WITH_EXPLICIT_LIMITATIONS",
+  "remap_correction": "INTEGRATED_AND_VERIFIED",
+  "full_suite_post_fix_rerun": false,
+  "production_source_manifest": "remap-v2-integration-r1.json#/source_before",
+  "baseline": {
+    "tests_run": 3565,
+    "failures": 2,
+    "error_records": 6,
+    "skips": 11,
+    "test_seconds": 1729.674112599998,
+    "source_unchanged": true,
+    "status": "FAIL_OR_INCOMPLETE_RETAINED"
+  },
+  "targeted_integration": {
+    "tests_run": 137,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "elapsed_seconds": 124.359246299995,
+    "source_unchanged": true
+  },
+  "reference_policy_repair": {
+    "tests_run": 45,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "test_seconds": 7.135,
+    "source_test_policy_report_inventory_unchanged": true,
+    "inventory_sha256": "a61bb3dde8c9d5e56d789bcbb4566f36268543858050128b67b8bebf56b6d06d",
+    "historical_report_sha256": "c02cee385b9e438cdb2bcfeb8a2eeac9d40c751ec155e0a9d3639b3db9ce69cd",
+    "changes": "Same-execution exact report preservation; retained historical >1 MS diagnostic checked separately. No source data, production policy, thresholds or historic bytes changed."
+  },
+  "windows_fixture_repairs": {
+    "modules": [
+      "test_combined_resources",
+      "test_memory_storage",
+      "test_plate_reference_r1",
+      "test_stokes_delivery_r4_1"
+    ],
+    "tests_run": 174,
+    "failures": 0,
+    "errors": 0,
+    "skips": 2,
+    "test_seconds": 10.31,
+    "changes": "Close three fixture SQLite connections; separate unsupported symlink assertions; use explicit UTF-8. Production storage unchanged.",
+    "log_sha256": "4ddbd5c80aa2c1a4952f3aa1ba77c01bda9b43b41e7ccae57b8a9833bc697038"
+  },
+  "prior_coarse_coupling": {
+    "status": "FAIL",
+    "elapsed_seconds": 82.2121754999971,
+    "gates": [
+      {
+        "name": "coupling-order/temperature_k",
+        "passed": true,
+        "coarse_difference_rms": 0.00042340238149244774,
+        "fine_difference_rms": 0.00021031690593533762,
+        "ratio": 2.013163799692944,
+        "roundoff_floor": 1e-10
+      },
+      {
+        "name": "heat-error-separation/temperature_k",
+        "passed": false,
+        "heat_effect_rms": 0.0003511138847300634,
+        "coupling_difference_rms": 0.00021031690593533762,
+        "max_fraction": 0.2
+      },
+      {
+        "name": "coupling-order/velocity_m_s",
+        "passed": true,
+        "coarse_difference_rms": 9.981372024619676e-10,
+        "fine_difference_rms": 5.016006736877e-10,
+        "ratio": 1.989904030877388,
+        "roundoff_floor": 1e-12
+      },
+      {
+        "name": "heat-error-separation/velocity_m_s",
+        "passed": false,
+        "heat_effect_rms": 5.005122112069745e-10,
+        "coupling_difference_rms": 5.016006736877e-10,
+        "max_fraction": 0.2
+      },
+      {
+        "name": "coupling-order/viscosity_pa_s",
+        "passed": true,
+        "coarse_difference_rms": 2.2467201616681948e-7,
+        "fine_difference_rms": 1.115798392580888e-7,
+        "ratio": 2.0135538611697026,
+        "roundoff_floor": 1e-12
+      },
+      {
+        "name": "heat-error-separation/viscosity_pa_s",
+        "passed": false,
+        "heat_effect_rms": 1.8411307282150853e-7,
+        "coupling_difference_rms": 1.115798392580888e-7,
+        "max_fraction": 0.2
+      },
+      {
+        "name": "active-advection",
+        "passed": true,
+        "initial_tendency_rms_k_s": 0.29701730253524955
+      },
+      {
+        "name": "advection-affects-temperature",
+        "passed": true,
+        "temperature_difference_rms_k": 0.15140812781519433
+      },
+      {
+        "name": "temperature-changes-viscosity",
+        "passed": true,
+        "relative_change": 0.1094773561338871
+      },
+      {
+        "name": "unchanged-source",
+        "passed": true
+      }
+    ]
+  },
+  "current_coupling": {
+    "status": "PASS",
+    "gates_passed": 10,
+    "elapsed_seconds": 71.36350949999178,
+    "scope": "16x16 same-grid synthetic coupling refinement, not spatial or field acceptance",
+    "all_accounted_work_released": true
+  },
+  "resource_drill": {
+    "status": "PASS_BOUNDED_CURRENT_PLATFORM",
+    "cases": 3,
+    "warm_cycles_each": 5,
+    "all_outputs_bit_equal": true,
+    "psutil": "7.2.2",
+    "sum_monitored_case_seconds": 20.391
+  },
+  "safety": {
+    "maps": 13,
+    "required_paths": 41,
+    "tests_run": 31,
+    "passed": 30,
+    "skips": 1,
+    "test_seconds": 0.124,
+    "skip": "Windows account cannot create the symbolic-link fixture"
+  },
+  "platform": {
+    "executed": "Windows",
+    "linux": "NOT_RUN_WSL_NOT_INSTALLED",
+    "symlink_coverage": "UNAVAILABLE_WITH_CURRENT_ACCOUNT_PRIVILEGES; skips remain explicit and no zero-skip gate was relaxed"
+  },
+  "visuals": {
+    "geometry_images_inspected": 8,
+    "heatflow_predictions_below_observed_median": 50,
+    "heatflow_bins": 50,
+    "mean_bias_mw_m2": -8.782888169287306,
+    "coupling_fields_figure": "Saved R2 archive is byte-identical to final R3 archive; plotting did not rerun simulation."
+  },
+  "remaining": {
+    "whole_tectonics_field_validated": false,
+    "production_ready": false,
+    "R44": "HELD_INCOMPLETE",
+    "W12": "SUPPORTED_WHOLE_MODULE_ASSEMBLY_NOT_YET_DELIVERED",
+    "physical_evidence": "Field/analogue constraints unresolved for extension, underthrust, rheology, strength and elastic rigidity; mature-ocean heat flow is only a biased dispersion screen.",
+    "numerical_coverage": "Uniform finite flexure validity checks are sampled; near-limit use needs extrema bounds or demonstrated refinement margin. Active coupling diagnostic is same-grid temporal evidence."
+  },
+  "historical_evidence_policy": "Old W10/W11 source-bound records remain historical after source changes. No report is silently repinned; old source-bound profiles may refuse until their dependent evidence is explicitly regenerated.",
+  "retained_local_failure_logs": {
+    "baseline_stdout_sha256": "d57ebcff6d35561670b2a2e4233de068e8e7ba89c4478469be6ba49858b8e738",
+    "baseline_stderr_sha256": "1f194df3701e397ff1654eba6543672430dc32fa8165280079245d7150e49f49",
+    "location": "Originating engineering task work/tectonics-comprehensive-full-r2; complete byte logs retained, not rerun."
+  },
+  "evidence_and_repaired_test_sha256": {
+    "tectonics/evidence/comprehensive-baseline-r1.json": "fef7c744f7a663e7982371202387587e3f4451121019e9191bb28b706a60bbaa",
+    "tectonics/evidence/remap-v2-integration-r1.json": "108c7929c8916ca2250888379995cc9188f0db27b81f2be1b900c29a0735254b",
+    "tectonics/evidence/remap-v2-timing-r1.json": "9280ce84003e347009d872d227605c157027305f71c15bc5a98fb11cb66c4374",
+    "tectonics/evidence/w07-active-coupling-r3.json": "92786e29e0665257563ed95ee633f4c3174468b8cc895ddc2514311dfe5680f6",
+    "tectonics/evidence/w07-active-coupling-r3.npz": "cf46738dee3538e509d2317137b574ae8d33cc06c5354b0603db2968a04c0eca",
+    "tectonics/evidence/comprehensive-resource-r1.json": "eaee34fe782456604ce2e85ad9f0b8b688510eaaffc8ac230719aeb500f6cf08",
+    "tectonics/evidence/comprehensive-heatflow.png": "d5b32967c222a0a4688b9e3e234d70b17be0055af42971f56759135ba131621f",
+    "tectonics/evidence/comprehensive-coupling-fields.png": "98db3c125b165c28a9d6ea26c0c2e327cdae84a8849c0ccfc3e9679c2420bf67",
+    "tectonics/tests/test_combined_resources.py": "84f62d9bfb56fc9f93ebad7e0a35ba45c8ed0379375f71cbbb63d6db8493d0d3",
+    "tectonics/tests/test_memory_storage.py": "fec807b00f2000ed1e26b92897207bf00df7cb43c3bd9e1eb144c5487d4a2876",
+    "tectonics/tests/test_plate_reference_r1.py": "87d22a7a0e0cee8d55824d02e6f1b668d024b750d2d133b2c84981f953f57024",
+    "tectonics/tests/test_stokes_delivery_r4_1.py": "e6727996422bcba64f3b153e6904445f8812331ded3aedb613e5ece298235cd8",
+    "tectonics/tests/test_plate_reference_use_policy.py": "c3a8b0fd01cceddfdced5c7867ba9f8cd8ed56b9e9983a01903b1887235576f5"
+  }
+}

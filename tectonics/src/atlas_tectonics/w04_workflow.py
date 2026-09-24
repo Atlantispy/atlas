@@ -385,7 +385,8 @@ class PreparedW04Support:
             source_id=_id(dict(w03=state.state_id,surface=surface.input_id)),
             epoch_id=_id(dict(epoch=state.material.epoch_id,time_s=state.time_s)),budget=self._budget,cancel=cancel)
 
-    def solve(self,current,surface,*,exterior=None,store=None,cache_policy=None,cancel=None):
+    def _check_current(self,current,surface,exterior,store,cancel):
+        """Shared fixed-support source validation for W04 response adapters."""
         self._live(cancel)
         if type(current) is not W03ColumnState:
             raise TectonicsError('typed current W03 state required')
@@ -409,24 +410,39 @@ class PreparedW04Support:
             raise TectonicsError('current W03 source/history/geometry is incompatible with fixed reference')
         if store is not None and not isinstance(store,ArrayStore):
             raise TectonicsError('ArrayStore required')
+
+    def _load_change(self,current,surface,store,cache_policy,cancel):
+        """The existing physical accounts, after _check_current and admission."""
+        n = current.material.grid.cells
+        now = self._load_snapshot(current,surface,cancel)
+        g = self.policy.elastic.gravity_m_s2
+        kwargs = dict(store=store,budget=self._budget,controller=self._controller,cache_policy=cache_policy,cancel=cancel)
+        loads = cached_column_load_change(self._reference_load,now,g,context=self._context.reference,**kwargs)
+        b = current.binding
+        ref = self.reference
+        ages = [scalar(b.reference_age_s+(s.time_s-b.reference_time_s),'cooling age',nonnegative=True) for s in (ref,current)]
+        if current.time_s != ref.time_s and ages[0] == ages[1]:
+            raise TectonicsError('distinct W03 times collapse to one cooling age')
+        mean = plate_cooling_deficit_change(ages[1],ages[0],b.cooling_model,budget=self._budget,cancel=cancel)
+        m = b.buoyancy_material
+        thermal = (0. if m.expansion_per_k == 0 else float(_factored_scale(mean,
+            (m.density_kg_m3,m.expansion_per_k,b.cooling_model.thickness_m,g),(),'W04 thermal pressure')))
+        external = surface.external_downward_pressure_pa-self.reference_surface.external_downward_pressure_pa
+        total = loads[:,3].copy(); correction = np.zeros(n)
+        _add(total,correction,np.full(n,thermal)); _add(total,correction,external)
+        total += correction
+        return loads,thermal,external,total
+
+    def solve(self,current,surface,*,exterior=None,store=None,cache_policy=None,cancel=None):
+        self._check_current(current,surface,exterior,store,cancel)
+        ref = self.reference
+        old_exterior = self.reference_exterior
         n = current.material.grid.cells
         with self._budget.reserve(256*n+32*n*(len(self.phases)+1)+32768,category='w04-projection'):
-            now = self._load_snapshot(current,surface,cancel)
+            loads,thermal,external,total = self._load_change(current,surface,store,cache_policy,cancel)
             g = self.policy.elastic.gravity_m_s2
             kwargs = dict(store=store,budget=self._budget,controller=self._controller,cache_policy=cache_policy,cancel=cancel)
-            loads = cached_column_load_change(self._reference_load,now,g,context=self._context.reference,**kwargs)
             b = current.binding
-            ages = [scalar(b.reference_age_s+(s.time_s-b.reference_time_s),'cooling age',nonnegative=True) for s in (ref,current)]
-            if current.time_s != ref.time_s and ages[0] == ages[1]:
-                raise TectonicsError('distinct W03 times collapse to one cooling age')
-            mean = plate_cooling_deficit_change(ages[1],ages[0],b.cooling_model,budget=self._budget,cancel=cancel)
-            m = b.buoyancy_material
-            thermal = (0. if m.expansion_per_k == 0 else float(_factored_scale(mean,
-                (m.density_kg_m3,m.expansion_per_k,b.cooling_model.thickness_m,g),(),'W04 thermal pressure')))
-            external = surface.external_downward_pressure_pa-self.reference_surface.external_downward_pressure_pa
-            total = loads[:,3].copy(); correction = np.zeros(n)
-            _add(total,correction,np.full(n,thermal)); _add(total,correction,external)
-            total += correction
             region = None
             if self.rigidity is not None:
                 w,maxima,region=self._variable_response(total,exterior,kwargs)

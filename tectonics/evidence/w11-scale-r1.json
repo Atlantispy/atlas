@@ -1,0 +1,71 @@
+{
+  "schema": "atlas.w11-scale-evidence-write-failure.v1",
+  "status": "FAIL_EVIDENCE_WRITE",
+  "source_status": "WORKING NON-CANON",
+  "failure": {
+    "type": "PermissionError",
+    "message": "Shell sandbox denied exclusive final write of tectonics/evidence/w11-scale-r1.json after all three numerical cases completed.",
+    "exit_code": 1,
+    "process_session_id": 42107,
+    "stdout_chunks": ["3206ac", "2527da"],
+    "lost_detail": "Full in-memory source inventory, per-trial mechanics diagnostics, process RSS observations and whole-run wall time were not delivered. They must not be reconstructed as authenticated successful-run evidence."
+  },
+  "protocol": {
+    "grid_sizes": [8, 16, 24],
+    "pairs_per_size": 5,
+    "outputs_per_trial": 3,
+    "trial_order": [["cold", "prepared"], ["prepared", "cold"], ["cold", "prepared"], ["prepared", "cold"], ["cold", "prepared"]],
+    "shared_accounting_limit_bytes": 134217728,
+    "native_threads": 1,
+    "cooperative_deadline_s": 120,
+    "hardware": {
+      "platform": "Windows-11-10.0.26200-SP0",
+      "processor": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+      "logical_cpus": 16,
+      "physical_memory_bytes": 33346146304,
+      "python": "3.12.14"
+    }
+  },
+  "completed_stdout_summaries": [
+    {
+      "grid": [8, 8],
+      "status": "PASS",
+      "complete_output_hash_parity": true,
+      "final_reserved_bytes": 0,
+      "peak_accounted_bytes": 23484108,
+      "cold_raw_s": [1.1211790999950608, 0.8751615000073798, 0.8746529999916675, 1.029993000003742, 1.0761634000082267],
+      "prepared_raw_s": [0.6217699999979232, 0.6330105000088224, 0.6197461999981897, 0.6356762999930652, 0.7803546000068309],
+      "cold_median_s": 1.029993000003742,
+      "prepared_median_s": 0.6330105000088224,
+      "percent_saved": 38.542252228265376,
+      "ranges_overlap": false
+    },
+    {
+      "grid": [16, 16],
+      "status": "PASS",
+      "complete_output_hash_parity": true,
+      "final_reserved_bytes": 0,
+      "peak_accounted_bytes": 28944372,
+      "cold_raw_s": [1.020037800000864, 0.9258568999939598, 0.8792147999920417, 0.8969191999931354, 0.8784248000010848],
+      "prepared_raw_s": [0.6457927000010386, 0.6572540999914054, 0.6230716999998549, 0.6295960999996169, 0.6292609000083758],
+      "cold_median_s": 0.8969191999931354,
+      "prepared_median_s": 0.6295960999996169,
+      "percent_saved": 29.804591093106772,
+      "ranges_overlap": false
+    },
+    {
+      "grid": [24, 24],
+      "status": "PASS",
+      "complete_output_hash_parity": true,
+      "final_reserved_bytes": 0,
+      "peak_accounted_bytes": 37693684,
+      "cold_raw_s": [1.0359409999946365, 0.8803429999970831, 0.8599894000071799, 0.8773921999963932, 0.893383000002359],
+      "prepared_raw_s": [0.8183079000009457, 0.811284200011869, 0.6235334999946645, 0.609477899997728, 0.6229703999997582],
+      "cold_median_s": 0.8803429999970831,
+      "prepared_median_s": 0.6235334999946645,
+      "percent_saved": 29.17152746182676,
+      "ranges_overlap": false
+    }
+  ],
+  "next_action": "One justified rerun is required solely to obtain the missing complete receipt under corrected filesystem write permission, using a new r2 path. Preserve this failure; do not label these partial stdout observations a complete W11 pass."
+}

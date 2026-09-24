@@ -595,9 +595,13 @@ class PreparedSubduction:
     do not themselves certify original published benchmark acceptance.
     ``mesh-linear-first-edge-v1`` is an optional shrinking numerical trace,
     not the published UM finite physical ramp or the PGC removed-tip geometry.
+    ``phase-local`` transport trades repeated operator construction for more
+    memory headroom during mechanics/heat; ``retained`` remains the time-first
+    default. Neither policy changes the mesh, physical laws or factor ceilings.
     """
     def __init__(self, spacing_km, *, source_id, outflow_operator,
                  stabilisation='supg', mesh_grading='interface-r3', coupling_trace='nodal-p2-v1',
+                 refinement_points_km=None, transport_lifetime='retained',
                  context=None, budget=None, cancel=None):
         if outflow_operator != 'natural-zero-diffusive-flux':
             raise TectonicsError('only explicitly named natural diffusive outflow adapter implemented')
@@ -605,6 +609,8 @@ class PreparedSubduction:
             raise TectonicsError('bounded nonempty source ID required')
         if stabilisation not in ('supg', 'galerkin'): raise TectonicsError('explicit thermal method required')
         if coupling_trace not in COUPLING_TRACES: raise TectonicsError('explicit supported coupling trace required')
+        if transport_lifetime not in ('retained','phase-local'):
+            raise TectonicsError('explicit supported transport lifetime required')
         from .reuse import ExecutionContext
         self.budget = WorkBudget(WORK_BYTES, parent=select_budget(budget))
         self.context = context; self.own_context = context is None
@@ -613,12 +619,16 @@ class PreparedSubduction:
         self.mesh = self.wedge = self.flow = self.heat = self.transport = None
         self._work_guard = None; self._latest = None; self._closed = False
         self._owner = threading.get_ident(); self._active = False
+        self._transport_lifetime = transport_lifetime
+        self._transport_builds = 0
+        self._transport_payload_bytes = self._transport_allowance_bytes = 0
         try:
             if self.context is None: self.context = ExecutionContext('scipy')
             if self.context.backend != 'scipy': raise TectonicsError('subduction requires scipy context')
             self.execution_id = self.context.identity
             with _native_lease():
-                self.mesh = build_mesh(spacing_km, grading=mesh_grading, budget=self.budget, cancel=cancel)
+                self.mesh = build_mesh(spacing_km, grading=mesh_grading,
+                    refinement_points_km=refinement_points_km, budget=self.budget, cancel=cancel)
                 self.wedge = self.mesh.wedge()
                 # Retained basis/gradients and driving fields. Assembly scratch,
                 # retained sparse matrices, factors and detached results have
@@ -629,12 +639,13 @@ class PreparedSubduction:
                 self._work_guard.__enter__()
                 self.flow = _Wedge(self.wedge, self.budget, coupling_trace=coupling_trace)
                 self.heat = _Heat(self.mesh, self.budget)
-                self.transport = PreparedSubductionTransport(self.wedge,budget=self.budget,cancel=cancel)
+                if self._transport_lifetime == 'retained': self._prepare_transport(cancel)
             self.stabilisation, self.source_id, self.outflow = stabilisation, source_id, outflow_operator
             self.coupling_trace = coupling_trace
             self.slab_first_edge_length_m = self.flow.slab_first_edge_length_m
             record = dict(schema='atlas.subduction.v1', source_id=source_id, spacing_km=spacing_km,
                 mesh_grading=self.mesh.grading_id, tip_target_m=self.mesh.tip_target_m,
+                mesh_geometry_id=self.mesh.geometry_id,
                 coupling_trace=coupling_trace, slab_first_edge_length_m=self.slab_first_edge_length_m,
                 outflow_operator=outflow_operator, stabilisation=stabilisation, execution_id=self.execution_id,
                 coordinates='x-right-y-down-km; outputs SI; positive-y velocity is downward')
@@ -652,6 +663,31 @@ class PreparedSubduction:
             with _native_lease(): yield
             _cancel(cancel); self.context.verify()
         finally: self._active = False
+
+    @property
+    def transport_lifetime(self): return self._transport_lifetime
+
+    def _prepare_transport(self, cancel):
+        if self.transport is None:
+            self.transport = PreparedSubductionTransport(self.wedge,budget=self.budget,cancel=cancel)
+            self._transport_builds += 1
+            self._transport_payload_bytes = self.transport.retained_payload_bytes
+            self._transport_allowance_bytes = self.transport.retained_allowance_bytes
+
+    def _project_velocity(self, velocity, case, cancel):
+        # solve() already owns the native-thread lease; no additional outer
+        # controller is introduced here. The transport kernel keeps its usual
+        # native lease and returns detached bytes that survive operator close.
+        self._prepare_transport(cancel)
+        try:
+            return self.transport.evaluate(velocity[self.wedge.cells],
+                boundary_streamfunction=corner_streamfunction if case=='1a' else None,cancel=cancel)
+        finally:
+            if self._transport_lifetime == 'phase-local':
+                self.transport.close()
+                self.transport = None
+            else:
+                self.transport.release_factor()
 
     def solve(self, case, *, cancel=None):
         if case not in CASES: raise TectonicsError('unknown published subduction case')
@@ -685,9 +721,7 @@ class PreparedSubduction:
                     mechanics = dict(analytic_velocity=True)
                     not_apex=np.any(wedge.points!=50.,axis=1)
                     velocity[not_apex]=corner_flow(wedge.points[not_apex])
-                projected=self.transport.evaluate(velocity[wedge.cells],
-                    boundary_streamfunction=corner_streamfunction if case=='1a' else None,cancel=cancel)
-                self.transport.release_factor()
+                projected=self._project_velocity(velocity,case,cancel)
                 vq = _element_velocity(mesh, wedge, projected.element_node_velocity, b)
                 new_t, thermal = self.heat.solve(vq, stabilisation=self.stabilisation, case=case, cancel=cancel)
                 if not nonlinear:
@@ -733,7 +767,12 @@ class PreparedSubduction:
             h = hashlib.sha256((self.plan_id+case).encode())
             for a in fields: h.update(a.tobytes())
             statistics = dict(elapsed_s=perf_counter()-start, mechanics=mechanics, thermal=thermal,transport=projected.diagnostics(),
+                transport_lifetime=self._transport_lifetime,
+                transport_operator_builds=self._transport_builds,
+                transport_operator_payload_bytes=self._transport_payload_bytes,
+                transport_operator_allowance_bytes=self._transport_allowance_bytes,
                 mesh_grading=mesh.grading_id, base_spacing_km=mesh.spacing_km,
+                mesh_geometry_id=mesh.geometry_id,
                 tip_target_m=mesh.tip_target_m,
                 coupling_trace=self.coupling_trace,
                 coupling_trace_applied=case != '1a' and self.coupling_trace == 'mesh-linear-first-edge-v1',
@@ -773,3 +812,49 @@ class PreparedSubduction:
 
     def __enter__(self): return self
     def __exit__(self, *_): self.close()
+
+
+def solve_refined_diffusion_creep(spacing_km, *, source_id, outflow_operator,
+                                 transport_lifetime='retained', context=None, budget=None, cancel=None):
+    """One fixed whole-wedge indicator pass, then solve on its refined mesh.
+
+    Returns ``(SubductionResult, metadata)``. This explicit case2a/corner-r5 route
+    does not silently change PreparedSubduction defaults or any physical law.
+    The pilot is closed before preparing the final solve, sharing one128MiB
+    envelope. Callers may retain the immutable final result for verified reuse;
+    this function has no unbounded global result cache. Zero indicators reuse
+    the pilot directly. The result owns its field-storage lease after return.
+    """
+    from .subduction_refinement import select_refinement_points
+    owner = WorkBudget(WORK_BYTES, parent=select_budget(budget))
+    start = perf_counter()
+    kwargs = dict(source_id=source_id, outflow_operator=outflow_operator,
+                  mesh_grading='corner-r5', transport_lifetime=transport_lifetime,
+                  context=context, budget=owner, cancel=cancel)
+    # Bounded4096x2 detached coordinates and summary survive pilot close.
+    with owner.reserve(256*1024, category='subduction-refinement-handoff'):
+        with PreparedSubduction(spacing_km, **kwargs) as pilot:
+            baseline = pilot.solve('2a', cancel=cancel)
+            baseline_identity = baseline.identity
+            baseline_diagnostics = baseline.diagnostics_c
+            baseline_statistics = baseline.statistics
+            pilot.heat.close(); pilot.flow.close()
+            if pilot.transport is not None: pilot.transport.release_factor()
+            with pilot._operation(cancel):
+                points, selection = select_refinement_points(pilot.mesh, pilot.wedge,
+                    baseline.temperature_k,
+                    baseline.wedge_velocity_m_s/np.array([SPEED_M_S,-SPEED_M_S]),
+                    budget=owner, cancel=cancel)
+            if not len(points):
+                return baseline, dict(selection=selection, pilot_identity=baseline_identity,
+                    pilot_reused=True, elapsed_s=perf_counter()-start,
+                    accounted_peak_bytes=owner.peak_reserved_bytes)
+            del baseline
+        # No pilot fields, sparse matrices or locators remain live at final LU.
+        with PreparedSubduction(spacing_km, refinement_points_km=points, **kwargs) as refined:
+            result = refined.solve('2a', cancel=cancel)
+        metadata = dict(selection=selection, pilot_identity=baseline_identity,
+            pilot_diagnostics_c=baseline_diagnostics, pilot_statistics=baseline_statistics,
+            pilot_reused=False, elapsed_s=perf_counter()-start,
+            accounted_peak_bytes=owner.peak_reserved_bytes)
+        return result, metadata

@@ -4,6 +4,7 @@ Temporary directories only. No geological simulation, repository writes, automat
 installation, performance threshold or historical checkpoint acceptance.
 """
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from dataclasses import replace
 from decimal import Decimal, localcontext
 import copy
@@ -301,11 +302,19 @@ class StorageTests(unittest.TestCase):
         self.store.close();self.path.unlink()
         with ArrayStore(target,self.limits) as s:assert_array_equal(s.get(key('b'))['a'],a)
 
-    def test_unrelated_db_and_links_refused(self):
+    def test_unrelated_db_refused(self):
         path=Path(self.tmp.name)/'unrelated.db'
-        with sqlite3.connect(path) as conn:conn.execute('CREATE TABLE unrelated(x)')
+        with closing(sqlite3.connect(path)) as conn, conn:
+            conn.execute('CREATE TABLE unrelated(x)')
         with self.assertRaises(StoreError):ArrayStore(path,self.limits)
-        link=Path(self.tmp.name)/'link.db';link.symlink_to(self.path)
+
+    def test_links_refused(self):
+        link=Path(self.tmp.name)/'link.db'
+        try:link.symlink_to(self.path)
+        except OSError as exc:
+            if getattr(exc,'winerror',None)==1314:
+                self.skipTest('Windows account lacks symbolic-link privilege')
+            raise
         with self.assertRaises(StoreError):ArrayStore(link,self.limits)
 
     def test_metadata_identity_and_closed_store(self):

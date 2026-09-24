@@ -12,6 +12,32 @@ from atlas_tectonics.subduction_mesh import build_mesh, basis, quadrature, _tria
 
 
 class SubductionMeshTests(unittest.TestCase):
+    def test_explicit_interior_refinement_retains_vertices_areas_and_geometry_identity(self):
+        owner = WorkBudget(128*1024**2)
+        with build_mesh(24., grading='corner-r5', budget=owner) as base:
+            vertices = base.points[:base.vertex_count].copy()
+            take = np.flatnonzero(base.regions == 2)[::30]
+            additions = base.points[base.cells[take,:3]].mean(axis=1)
+            base_id = base.geometry_id
+            count = len(base.cells)
+        for points in (additions, additions[::-1]):
+            with build_mesh(24., grading='corner-r5', refinement_points_km=points, budget=owner) as mesh:
+                self.assertNotEqual(mesh.geometry_id, base_id)
+                self.assertEqual(len(mesh.cells), count+2*len(additions))
+                actual = set(map(tuple,mesh.points[:mesh.vertex_count]))
+                self.assertTrue(set(map(tuple,vertices)).issubset(actual))
+                self.assertTrue(set(map(tuple,additions)).issubset(actual))
+                for region, area in enumerate((180000.,31750.,184250.)):
+                    self.assertAlmostEqual(mesh.area[mesh.regions==region].sum(),area,delta=1e-8)
+                if points is additions: expected_id=mesh.geometry_id
+                else: self.assertEqual(mesh.geometry_id,expected_id)
+        self.assertEqual(owner.reserved_bytes,0)
+        for bad in ([], [[51,50]], [[60,60]], [[660,100]], [[70,80]],
+                    [[80,np.nan]], [[80,60],[80,60]], np.zeros((4097,2))):
+            with self.assertRaises(TectonicsError):
+                build_mesh(24., refinement_points_km=bad, budget=owner)
+            self.assertEqual(owner.reserved_bytes,0)
+
     def test_grading_policy_is_explicit_and_preserved_by_wedge(self):
         for grading, divisor in (('interface-r3', 1.), ('corner-r4', 6000.), ('corner-r5', 60.)):
             with self.subTest(grading=grading), build_mesh(24., grading=grading) as mesh:

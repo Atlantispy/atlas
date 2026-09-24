@@ -1,0 +1,3032 @@
+{
+  "schema": "atlas.w07.active-coupling.v1",
+  "status": "PASS",
+  "execution_complete": true,
+  "source_status": "WORKING NON-CANON",
+  "criteria": {
+    "grid": [
+      16,
+      16
+    ],
+    "width_m": 1,
+    "height_m": 1,
+    "total_time_s": 1,
+    "mechanical_intervals": [
+      8,
+      16,
+      32
+    ],
+    "heat_steps_per_interval": [
+      64,
+      32,
+      16
+    ],
+    "common_heat_dt_s": 0.001953125,
+    "heat_check_steps_per_interval": 32,
+    "first_order_difference_ratio_min": 1.5,
+    "first_order_difference_ratio_max": 2.8,
+    "thermal_substep_effect_max_fraction": 0.2,
+    "initial_advection_rms_min_k_s": 1e-8,
+    "active_minus_zero_velocity_final_temperature_rms_min_k": 0.000008,
+    "relative_viscosity_change_min": 0.0001,
+    "temperature_difference_roundoff_floor_k": 1e-10,
+    "velocity_difference_roundoff_floor_m_s": 1e-12,
+    "viscosity_difference_roundoff_floor_pa_s": 1e-12,
+    "accounted_budget_bytes": 134217728,
+    "native_threads": 1,
+    "no_retuning_or_gate_relaxation": true,
+    "scope": "same-grid time-splitting diagnostic; not a continuum or field oracle",
+    "heat_refinement": 16,
+    "base_heat_dt_s": 0.03125,
+    "refinement_status": "refined heat resolution; identical physical inputs and scientific criteria",
+    "interval_limit_scope": "<=256 heat substeps per public interval; not PreparedW07Workflow cumulative stepping"
+  },
+  "script_sha256": "6de4bc61eb629f7eda53733e794a033205cedf1308d8d53299de9e2a99988587",
+  "python_executable_sha256": "946012d7762f6a16d16e0a79af48aec2916cfe134aa9fedc09efef4998bec805",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "sources_before": {
+    "tectonics/src/atlas_tectonics/__init__.py": "e742cd04443cb9a7b3b2fd210a80dee2aa1efe9500f13e816f2fa8f38b9cdc68",
+    "tectonics/src/atlas_tectonics/_geometry_native.py": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a",
+    "tectonics/src/atlas_tectonics/_materials_native.py": "059e34f03a5abbec997873fb4f8ae8c89f745fbe029c064de55f8f738f2872a9",
+    "tectonics/src/atlas_tectonics/_mechanics_native.py": "fd1d76496ef1e264960a6df3046a1fddca10d9a6888a8fb0ed41274091f07d58",
+    "tectonics/src/atlas_tectonics/_mesh_native.py": "9163632c873e00ef53f0b29b2709ef85178d6136da8545a48d9acb206c816cf9",
+    "tectonics/src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "tectonics/src/atlas_tectonics/_spherical_candidates.py": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c",
+    "tectonics/src/atlas_tectonics/_thermochemical_native.py": "7dc7261147bdf1fbf86ccec454056743c2cfff2bce222950c2fcc2ced616e601",
+    "tectonics/src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "tectonics/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/src/atlas_tectonics/_velocity_multigrid.py": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868",
+    "tectonics/src/atlas_tectonics/adaptive_inner.py": "ce390df8900894c43990c68e7f1079d7d2fe73e8a06dd44ea216f751082c4832",
+    "tectonics/src/atlas_tectonics/anderson.py": "e789cf39928f41a434304cf544796d517a86f7630cd5882230d5f63f3a4079cf",
+    "tectonics/src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "tectonics/src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "tectonics/src/atlas_tectonics/compaction.py": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2",
+    "tectonics/src/atlas_tectonics/compaction_columns.py": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637",
+    "tectonics/src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "tectonics/src/atlas_tectonics/constitutive_execution.py": "43f26528dd911677ba3288a2b4d25b8080ec934948b1d51600a3fce7b957b8b0",
+    "tectonics/src/atlas_tectonics/convection_benchmark.py": "c542616ff2a1e55cab2f77017f85bf8a8e8cb000edcea363380b2b93cef56903",
+    "tectonics/src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "tectonics/src/atlas_tectonics/damage_regularisation.py": "892647330307f6b7293f5f1ceeedacc480f53308d630e5ef57fe7a2ca5a3049a",
+    "tectonics/src/atlas_tectonics/deformation_network.py": "50e11fe2a7ce70a7e11f3b96114bdaf12135497e0b17968f2794e5e8e48a73d0",
+    "tectonics/src/atlas_tectonics/earth_material_data.py": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f",
+    "tectonics/src/atlas_tectonics/evolving_flexure.py": "74a15b6505b9bd480fdfa4e8adade61816026a57a0f52d86d113a12807767cdc",
+    "tectonics/src/atlas_tectonics/evolving_mechanics.py": "c17b4354fbacd530742718255711f73e064539f2172d68ec041758c4543e46fc",
+    "tectonics/src/atlas_tectonics/execution.py": "ffb1a84d0ead93a932c061fa69bf8ac21501dff2148af6ef3e2f3398f677f32b",
+    "tectonics/src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "tectonics/src/atlas_tectonics/extension_support.py": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8",
+    "tectonics/src/atlas_tectonics/extension_workflow.py": "d1d56f58abc3bca547d6381f2bd35661f42937f5f149ae6aa1eecf201e81a4fa",
+    "tectonics/src/atlas_tectonics/fault_slip.py": "8e6c9b2e4a1e2da5e9a6a5e1eeb9efac85f1e94aaf74daf5b3e251a00396b8ef",
+    "tectonics/src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "tectonics/src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "tectonics/src/atlas_tectonics/free_surface.py": "65c860d07f8ef3f6276c67170e2309d9a5a1a733c2a218a47a2f0554577a913e",
+    "tectonics/src/atlas_tectonics/geological_case.py": "954def0ef83e64f9a2846cc2822ac30cb092cb38284d66cb18aab1e0993f2173",
+    "tectonics/src/atlas_tectonics/geological_domain.py": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d",
+    "tectonics/src/atlas_tectonics/geological_records.py": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23",
+    "tectonics/src/atlas_tectonics/geometry.py": "7e83585fd4a67db88564b562664368882ddb3123fb8fefb6e61af1c63ed7c0bb",
+    "tectonics/src/atlas_tectonics/geometry_index.py": "b0d97d386673a941ae791c298423d68a451593b0225a1a744f2594953e2c72d1",
+    "tectonics/src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "tectonics/src/atlas_tectonics/magmatic_emplacement.py": "422c649aa53977df0dd9beb2604db541327ad9d5e7d7c2868051af1388c8cc6c",
+    "tectonics/src/atlas_tectonics/magmatic_thermodynamics.py": "fad35e338832fec7df4b9f441bbb5ea3293625720f3c42a99b77eac70795763c",
+    "tectonics/src/atlas_tectonics/magmatic_transfer.py": "9e98b4923ab9113336b2afb0211928c03a7d9079a76e935d2c959e32319ac641",
+    "tectonics/src/atlas_tectonics/margin_cooling.py": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab",
+    "tectonics/src/atlas_tectonics/markers.py": "abbcb1d4a6f1e803f3d8579fbec2675b736781487d919aadc15ad3c0324bc970",
+    "tectonics/src/atlas_tectonics/material_library.py": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59",
+    "tectonics/src/atlas_tectonics/materials.py": "c4105322391d0c7b7e25e9ed659f36dd049288c2b9bbb319e9d61e248a8c886b",
+    "tectonics/src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "tectonics/src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "tectonics/src/atlas_tectonics/planar_exchange.py": "fccf331332639c662c08ab957c634bd7b244cc5e110095e7c0422d4450f6ced9",
+    "tectonics/src/atlas_tectonics/planar_projection.py": "18ce4d036f5aa254b83721a3986a20f4a6607331f51825fe9cd3d60a05ad46f2",
+    "tectonics/src/atlas_tectonics/planetary_generation.py": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d",
+    "tectonics/src/atlas_tectonics/plate_cooling.py": "9754d10bec2711f4a6a2d6ab5b53ad36d5ab943dd7791487e872219e7e8652e0",
+    "tectonics/src/atlas_tectonics/plate_integrals.py": "46a0cf85badcda7b3297d81e2527c425ce0ceecf9f48f460f58a19d713e33a1f",
+    "tectonics/src/atlas_tectonics/plate_layout.py": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca",
+    "tectonics/src/atlas_tectonics/plate_reference.py": "bad89431a04b04544fe83621dbf91a4ce7125eb6706df3e3e19cd97ccae87a1d",
+    "tectonics/src/atlas_tectonics/plate_reference_acceptance.py": "9bd03946e5fd2724ab37860afbcd37fd0ca1307520efa9c995c5a64588bebd9e",
+    "tectonics/src/atlas_tectonics/plate_reference_dataset.py": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e",
+    "tectonics/src/atlas_tectonics/plate_reference_use.py": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449",
+    "tectonics/src/atlas_tectonics/preconditioner_reuse.py": "ebe861de1a5e94ec5d6cdcf83c26c2061e3241b8f5ffed34e8c4d8d39b793acd",
+    "tectonics/src/atlas_tectonics/precursor.py": "dc52a7935177b0ff6a064009b18a71e68114c29c93aad132650a3fe0ddc64075",
+    "tectonics/src/atlas_tectonics/precursor_execution.py": "d8f7d671d41ac985df0ac1161242d2b72d5f6978d5e378b2d8e9c0c2a0963bb5",
+    "tectonics/src/atlas_tectonics/precursor_sampling.py": "32e66b9db5f68e2c21e4ec380cfdcac7043f53b3185c2884645a45ac4390ef8e",
+    "tectonics/src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "tectonics/src/atlas_tectonics/regional_checkpoint.py": "9f407881c067895062142f4fb67e3f7fce07863e164daa226167f32062e1778e",
+    "tectonics/src/atlas_tectonics/regional_execution.py": "2de9ce91073d105986cb14a521f7ef5e90cc89ed336d17d78001592f7059b854",
+    "tectonics/src/atlas_tectonics/regional_forcing.py": "b31de590220541ddc027c34e080cfd71031ce913f697ec88d8b27656730e1dad",
+    "tectonics/src/atlas_tectonics/regional_geology.py": "6bd512538e08db7eacc0694d1797cad99e7158eebdd389d91b0dc7a91a4d4076",
+    "tectonics/src/atlas_tectonics/regional_rheology.py": "50f4341c26c6d5ad3e5900a69cba555e2344cca3e79c4f42db642966f4cbb652",
+    "tectonics/src/atlas_tectonics/regional_stokes.py": "fa3bd6cde972cc20211ba3294c30dfc56c40071f15f610e7c5e9674971efd403",
+    "tectonics/src/atlas_tectonics/regional_strength.py": "fd3c03e969abe61c3b715a44e1e3efc0c3017ef820f2e8be12196975baab2a93",
+    "tectonics/src/atlas_tectonics/regional_surface_stokes.py": "5ba98c6d4a6f3f0405d984fb0289f2eb460157503e7edc91e9c6552e506ff8bf",
+    "tectonics/src/atlas_tectonics/regional_thermomechanical.py": "c12df1dcc25889cb51ca3968ec837d803215d68b70d2844b2fc7307fae766c12",
+    "tectonics/src/atlas_tectonics/regional_transport.py": "db72d22dd3b8cc62c788d2396627883b890bd876edab8040cf808e9653cf7a91",
+    "tectonics/src/atlas_tectonics/regional_workflow.py": "213d65c32aa69c1990b4559c112c0b173f234f6e079cc9c1a71f8eef7a50740d",
+    "tectonics/src/atlas_tectonics/regional_workflow_geometry.py": "afb69b7801a4454fa5ca2fb33b1e95ef4ff11e656c68927a2d7deacd8e498e7e",
+    "tectonics/src/atlas_tectonics/remapping.py": "ae31c71c68f714ec893bae4c93fb0f43de762e15fe38cb5e3a0f99349ce5a528",
+    "tectonics/src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "tectonics/src/atlas_tectonics/reuse.py": "6c2afc89946c7f9f23c9a571329d8968ad729aabf3cda1c8e60f15ba2251a297",
+    "tectonics/src/atlas_tectonics/shortening.py": "1b17e44f584d3ab8f0fbc6880a459dd7e39bff909be29cfc85943f6355d75851",
+    "tectonics/src/atlas_tectonics/shortening_support.py": "c1d801df5cc8a152b4468e75ee1c1fe9ba284d2aab5f6127b1c5c096723727e3",
+    "tectonics/src/atlas_tectonics/spherical_atlas.py": "14b45147dde305654a0ed989d0e26371c7fd6e0036d7335f94745a35aed03c52",
+    "tectonics/src/atlas_tectonics/spherical_geometry.py": "755111edf0479b94c7e1d8b01c01b1d37f6398b61feeba328d3c69c87f9a48c7",
+    "tectonics/src/atlas_tectonics/spreading.py": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07",
+    "tectonics/src/atlas_tectonics/spreading_checkpoint.py": "8e35ee6c7c8c26fb0278797b60b796c9c52e32455ad23aa941bb6ff491d2ecb8",
+    "tectonics/src/atlas_tectonics/spreading_cooling.py": "8bc7116d68ae4543e856e9bdd9e789a36528c26353590ada7bf4b508e45ce74f",
+    "tectonics/src/atlas_tectonics/spreading_history.py": "02ec9bc70acef2450f78367e7c61eb142ccf8f709e678683daa1f7dc3396e6e2",
+    "tectonics/src/atlas_tectonics/spreading_history_cooling.py": "8aa2eaf5d3f24f3a69334fbc31f8f3fb331df4dadcf6116a373611c85bbdaaea",
+    "tectonics/src/atlas_tectonics/spreading_integrals.py": "d73e7d1671c8e224b1fdb4fbabd3338ae0ada70766841b6b96bfc03b65612732",
+    "tectonics/src/atlas_tectonics/stokes.py": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082",
+    "tectonics/src/atlas_tectonics/stokes_execution.py": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4",
+    "tectonics/src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "tectonics/src/atlas_tectonics/subduction.py": "e3df2afb7f07c863fd03dbea482421ae0e1d6a400bb27ddb701945269496e5e4",
+    "tectonics/src/atlas_tectonics/subduction_linear.py": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+    "tectonics/src/atlas_tectonics/subduction_materials.py": "fbea5fc627c358e6091a14642512c88b4c6edc1f5a4508987a3757929b64a6f9",
+    "tectonics/src/atlas_tectonics/subduction_mesh.py": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4",
+    "tectonics/src/atlas_tectonics/subduction_refinement.py": "96ceb9d47bad3572e407ca60938ec92e84515be3a04d90022ff7f9771c637024",
+    "tectonics/src/atlas_tectonics/subduction_transport.py": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4",
+    "tectonics/src/atlas_tectonics/surface_geometry.py": "40823ed760e90fa175ffe2112bc67cd459635ef7cffa5b08f2f63cfa93fd640b",
+    "tectonics/src/atlas_tectonics/tectonic_history.py": "6eea829fe7f7bc2f068329e09dbc7e27af42da905fe0f7aa614a3a35bf652288",
+    "tectonics/src/atlas_tectonics/tectonic_history_codec.py": "3f1417d8a6c669e5f6cc4caae01dff47340855e3968bbaf69b6be138de485a51",
+    "tectonics/src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "tectonics/src/atlas_tectonics/thermal_support.py": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e",
+    "tectonics/src/atlas_tectonics/thermochemical.py": "a2a1e70491915f21326f9d9f0ecc7b3dca4583270557245ab4350784c0ebc937",
+    "tectonics/src/atlas_tectonics/thermochemical_execution.py": "7e7d8aaf32d5e78f75783a8051bd4dfdb319bb6eea95e2b7e8ee3253b8b5a700",
+    "tectonics/src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "tectonics/src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "tectonics/src/atlas_tectonics/transform.py": "2010bc31b6e3135f79187ad0aa90502c030d0284f9d21b1545cdd9555b498757",
+    "tectonics/src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tectonics/src/atlas_tectonics/underthrust.py": "291a751c329e9c4ac05018e3da5d1d50d74463630b713d644096a6ce153ecab4",
+    "tectonics/src/atlas_tectonics/variable_flexure.py": "cfb1866ef356acd0e711de091b2aa1dc31054190d404f75f0240292b21d0749b",
+    "tectonics/src/atlas_tectonics/variable_stokes.py": "2af374412b9a90606bade8dcc56b8ba52fe8f351985eae1a5306f9bf1bdcbf34",
+    "tectonics/src/atlas_tectonics/variable_stokes_execution.py": "9a80d01e2d44054879cc5b8221871e00d221dc1235a6338dcdd660ab7e4c1d0f",
+    "tectonics/src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "tectonics/src/atlas_tectonics/w04_workflow.py": "440839712685278d19fd7701cc1014577bbda04ce6ef08e4be52cc57a75f1bdb",
+    "tectonics/src/atlas_tectonics/w06_workflow.py": "dcab0e241cc8fc9b33062fa90433cf8dd3bf03c4ed6fc156bcf0b40b1b00df92",
+    "tectonics/src/atlas_tectonics/w07_workflow.py": "d75d074a66e358d7570e9d8e2b0b43e5e16af13301a176f43ec73553802414d0",
+    "tectonics/src/atlas_tectonics/w08_inventory.py": "4cf59bdfb804c2bc6cc12b0bb42e0591685436dbe19ae7f55284108b09a1de2c",
+    "tectonics/src/atlas_tectonics/w08_region.py": "81cece4045885bc3f8471c05cf58849a505c3bf8ada9801342fc47f345c45d9d",
+    "tectonics/src/atlas_tectonics/w08_workflow.py": "dd51a6499f2dce7a59cf1e55ed5226b41e1f55ebcd5acdc55fd4bf25532aca59",
+    "tectonics/src/atlas_tectonics/w09_drainage.py": "f3f0cd8039aef050df7f7fe662bf57b54694892091ff7db518193296b0687051",
+    "tectonics/src/atlas_tectonics/w09_erosion.py": "105fb2e52a01fb37cefee4e1987d4be61fd818ca1174f867876dd705e05f63af",
+    "tectonics/src/atlas_tectonics/w09_hillslope.py": "44575a69e3dadbc2a7bf3779b9d5cdfb5210049560ab63070538e2d93b171ec6",
+    "tectonics/src/atlas_tectonics/w09_water.py": "00a2faf3eb453a96a260cee8fe8df6db5c50521fe33c93b01e7aef57f14176f6",
+    "tectonics/tests/test_w07_thermomechanical.py": "ce02b1a7c0412626386837a27ff578dfd8aad57066123bea9148df1f5bc24dcc",
+    "tectonics/tests/test_w07_regional_rheology.py": "3b660ba38396fc5fc7b0d304b07480b69e427cb606f9c2544e75cf46722b9a86"
+  },
+  "runs": [
+    {
+      "label": "n8",
+      "intervals": 8,
+      "heat_steps_per_interval": 64,
+      "accepted_heat_steps": 512,
+      "status": "COMPLETE",
+      "completed_intervals": 8,
+      "initial_advection_tendency_rms_k_s": 0.29701730253524955,
+      "initial_mechanics_id": "c720ff44a41a7c2af94c258b87e5071fdcd9564756a8f124c655787db3fb8cd9",
+      "final_mechanics_id": "984c34e609ce0b02932041ae1101e427b84e549b94f73851410da073a7aaea21",
+      "maximum_heat_balance_relative": 1.4122588536846715e-16,
+      "minimum_heat_dt_limit_s": 0.08731254352764344,
+      "relative_viscosity_change": 0.10947859703968953,
+      "final_diagnostics": {
+        "body_work": 0.000017054187175522833,
+        "boundary_velocity_residual": 0,
+        "corner_trace_residual": 0,
+        "dissipation": 0.000017054187175523202,
+        "divergence_normalisation": 1,
+        "divergence_residual": 1.2698175844150228e-15,
+        "gates_passed": true,
+        "max_divergence": 1.2698175844150228e-15,
+        "max_free_force_residual": 3.686287386450715e-18,
+        "momentum_normalisation": 0.00390625,
+        "momentum_residual": 9.43689570931383e-16,
+        "net_boundary_flux": -3.282252670610414e-21,
+        "net_force": [
+          5.963111948670274e-19,
+          -1.734723475976807e-18
+        ],
+        "net_torque": -2.1311348952918197e-18,
+        "normalised_work_residual": 3.6401182201234636e-18,
+        "prescribed_traction_work": 0,
+        "pressure_gauge_residual": 1.3315357930837601e-18,
+        "pressure_normalisation": 1,
+        "reaction_work": 0,
+        "rigid_constraint_residual": 0,
+        "total_boundary_work": 0,
+        "work_normalisation": 0.1014544975383654,
+        "work_residual": 3.6930636500287495e-19
+      },
+      "seconds": 6.583803700006683,
+      "budget": {
+        "max_bytes": 134217728,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 25108736,
+        "refusals": 0,
+        "categories": {
+          "w07-heat-admission": 0,
+          "regional-mechanics-prepared": 0,
+          "regional-thermal-coupling": 0,
+          "regional-rheology-state": 0,
+          "constitutive-evaluate": 0,
+          "regional-viscosity-refill": 0,
+          "regional-mechanics-solve": 0,
+          "regional-current-law": 0,
+          "w07-open-heat": 0
+        },
+        "category_peaks": {
+          "w07-heat-admission": 196608,
+          "regional-mechanics-prepared": 12124160,
+          "regional-thermal-coupling": 458752,
+          "regional-rheology-state": 401664,
+          "constitutive-evaluate": 201968,
+          "regional-viscosity-refill": 12124160,
+          "regional-mechanics-solve": 1196032,
+          "regional-current-law": 1196032,
+          "w07-open-heat": 196608
+        }
+      },
+      "accounted_reservations_released": true
+    },
+    {
+      "label": "n16",
+      "intervals": 16,
+      "heat_steps_per_interval": 32,
+      "accepted_heat_steps": 512,
+      "status": "COMPLETE",
+      "completed_intervals": 16,
+      "initial_advection_tendency_rms_k_s": 0.29701730253524955,
+      "initial_mechanics_id": "de3c01556ac131c79feb124b2e598986c6bda0704e36d16315d3ef553107bf1f",
+      "final_mechanics_id": "3663678c17cf66ff993fd6fb1c74dfd4bbd22c1bd1db399b2ee2ab1a8d21b3da",
+      "maximum_heat_balance_relative": 1.4100693050743074e-16,
+      "minimum_heat_dt_limit_s": 0.08731041850863402,
+      "relative_viscosity_change": 0.10947861018847702,
+      "final_diagnostics": {
+        "body_work": 0.000017054187144425766,
+        "boundary_velocity_residual": 0,
+        "corner_trace_residual": 0,
+        "dissipation": 0.000017054187144426163,
+        "divergence_normalisation": 1,
+        "divergence_residual": 1.285430095698814e-15,
+        "gates_passed": true,
+        "max_divergence": 1.285430095698814e-15,
+        "max_free_force_residual": 3.686287386450715e-18,
+        "momentum_normalisation": 0.00390625,
+        "momentum_residual": 9.43689570931383e-16,
+        "net_boundary_flux": 6.88214269644119e-21,
+        "net_force": [
+          -3.3068166260807885e-18,
+          4.336808689942018e-18
+        ],
+        "net_torque": 4.45539330255762e-19,
+        "normalised_work_residual": 3.907279908293048e-18,
+        "prescribed_traction_work": 0,
+        "pressure_gauge_residual": 9.859463506040056e-19,
+        "pressure_normalisation": 1,
+        "reaction_work": 0,
+        "rigid_constraint_residual": 0,
+        "total_boundary_work": 0,
+        "work_normalisation": 0.10145457418436926,
+        "work_residual": 3.9641141931501256e-19
+      },
+      "seconds": 11.669162500009406,
+      "budget": {
+        "max_bytes": 134217728,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 25108736,
+        "refusals": 0,
+        "categories": {
+          "w07-heat-admission": 0,
+          "regional-mechanics-prepared": 0,
+          "regional-thermal-coupling": 0,
+          "regional-rheology-state": 0,
+          "constitutive-evaluate": 0,
+          "regional-viscosity-refill": 0,
+          "regional-mechanics-solve": 0,
+          "regional-current-law": 0,
+          "w07-open-heat": 0
+        },
+        "category_peaks": {
+          "w07-heat-admission": 196608,
+          "regional-mechanics-prepared": 12124160,
+          "regional-thermal-coupling": 458752,
+          "regional-rheology-state": 401664,
+          "constitutive-evaluate": 201968,
+          "regional-viscosity-refill": 12124160,
+          "regional-mechanics-solve": 1196032,
+          "regional-current-law": 1196032,
+          "w07-open-heat": 196608
+        }
+      },
+      "accounted_reservations_released": true
+    },
+    {
+      "label": "n32",
+      "intervals": 32,
+      "heat_steps_per_interval": 16,
+      "accepted_heat_steps": 512,
+      "status": "COMPLETE",
+      "completed_intervals": 32,
+      "initial_advection_tendency_rms_k_s": 0.29701730253524955,
+      "initial_mechanics_id": "0ae99e29faf32792340d73f908f60c883a235533cdb35a1b6705f7a8f2f2cb9b",
+      "final_mechanics_id": "8b073a0f335f047e635f5d8449df543ca744027cf20184cf344a3c97ec384a01",
+      "maximum_heat_balance_relative": 1.401378585166299e-16,
+      "minimum_heat_dt_limit_s": 0.08730934614935415,
+      "relative_viscosity_change": 0.10947861738086118,
+      "final_diagnostics": {
+        "body_work": 0.000017054187132280222,
+        "boundary_velocity_residual": 0,
+        "corner_trace_residual": 0,
+        "dissipation": 0.000017054187132280605,
+        "divergence_normalisation": 1,
+        "divergence_residual": 1.2802259252708836e-15,
+        "gates_passed": true,
+        "max_divergence": 1.2802259252708836e-15,
+        "max_free_force_residual": 3.577867169202165e-18,
+        "momentum_normalisation": 0.00390625,
+        "momentum_residual": 9.159339953157541e-16,
+        "net_boundary_flux": -6.3527471044072525e-21,
+        "net_force": [
+          6.505213034913027e-19,
+          -1.734723475976807e-18
+        ],
+        "net_torque": -4.616329562535937e-19,
+        "normalised_work_residual": 3.773696199755295e-18,
+        "prescribed_traction_work": 0,
+        "pressure_gauge_residual": 7.115076756936123e-20,
+        "pressure_normalisation": 1,
+        "reaction_work": 0,
+        "rigid_constraint_residual": 0,
+        "total_boundary_work": 0,
+        "work_normalisation": 0.10145461422776168,
+        "work_residual": 3.8285889215894375e-19
+      },
+      "seconds": 22.252903600005084,
+      "budget": {
+        "max_bytes": 134217728,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 25108736,
+        "refusals": 0,
+        "categories": {
+          "w07-heat-admission": 0,
+          "regional-mechanics-prepared": 0,
+          "regional-thermal-coupling": 0,
+          "regional-rheology-state": 0,
+          "constitutive-evaluate": 0,
+          "regional-viscosity-refill": 0,
+          "regional-mechanics-solve": 0,
+          "regional-current-law": 0,
+          "w07-open-heat": 0
+        },
+        "category_peaks": {
+          "w07-heat-admission": 196608,
+          "regional-mechanics-prepared": 12124160,
+          "regional-thermal-coupling": 458752,
+          "regional-rheology-state": 401664,
+          "constitutive-evaluate": 201968,
+          "regional-viscosity-refill": 12124160,
+          "regional-mechanics-solve": 1196032,
+          "regional-current-law": 1196032,
+          "w07-open-heat": 196608
+        }
+      },
+      "accounted_reservations_released": true
+    },
+    {
+      "label": "n32_half_heat_dt",
+      "intervals": 32,
+      "heat_steps_per_interval": 32,
+      "accepted_heat_steps": 1024,
+      "status": "COMPLETE",
+      "completed_intervals": 32,
+      "initial_advection_tendency_rms_k_s": 0.29701730253524955,
+      "initial_mechanics_id": "f1a0c8faf4782d78c23e11125639bc1dfeaf16f37de065a111a2ed839b8e0bc2",
+      "final_mechanics_id": "8a0da47938a8f5672955e1d558735ba4b72eaac5e5ea7cb550eab16819bc6a2a",
+      "maximum_heat_balance_relative": 1.4177625904488362e-16,
+      "minimum_heat_dt_limit_s": 0.08730934615059693,
+      "relative_viscosity_change": 0.10947862105156107,
+      "final_diagnostics": {
+        "body_work": 0.000017054187140391104,
+        "boundary_velocity_residual": 0,
+        "corner_trace_residual": 0,
+        "dissipation": 0.0000170541871403915,
+        "divergence_normalisation": 1,
+        "divergence_residual": 1.2923689896027213e-15,
+        "gates_passed": true,
+        "max_divergence": 1.2923689896027213e-15,
+        "max_free_force_residual": 4.065758146820642e-18,
+        "momentum_normalisation": 0.00390625,
+        "momentum_residual": 1.0408340855860843e-15,
+        "net_boundary_flux": -5.929230630780102e-21,
+        "net_force": [
+          -2.6020852139652106e-18,
+          -1.734723475976807e-18
+        ],
+        "net_torque": -1.9820570965750628e-19,
+        "normalised_work_residual": 3.907278321839224e-18,
+        "prescribed_traction_work": 0,
+        "pressure_gauge_residual": 6.2002811739014785e-19,
+        "pressure_normalisation": 1,
+        "reaction_work": 0,
+        "rigid_constraint_residual": 0,
+        "total_boundary_work": 0,
+        "work_normalisation": 0.10145461537749244,
+        "work_residual": 3.9641141931501256e-19
+      },
+      "seconds": 26.905910900008166,
+      "budget": {
+        "max_bytes": 134217728,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 25108736,
+        "refusals": 0,
+        "categories": {
+          "w07-heat-admission": 0,
+          "regional-mechanics-prepared": 0,
+          "regional-thermal-coupling": 0,
+          "regional-rheology-state": 0,
+          "constitutive-evaluate": 0,
+          "regional-viscosity-refill": 0,
+          "regional-mechanics-solve": 0,
+          "regional-current-law": 0,
+          "w07-open-heat": 0
+        },
+        "category_peaks": {
+          "w07-heat-admission": 196608,
+          "regional-mechanics-prepared": 12124160,
+          "regional-thermal-coupling": 458752,
+          "regional-rheology-state": 401664,
+          "constitutive-evaluate": 201968,
+          "regional-viscosity-refill": 12124160,
+          "regional-mechanics-solve": 1196032,
+          "regional-current-law": 1196032,
+          "w07-open-heat": 196608
+        }
+      },
+      "accounted_reservations_released": true
+    }
+  ],
+  "gates": [
+    {
+      "name": "coupling-order/temperature_k",
+      "passed": true,
+      "coarse_difference_rms": 0.00042348356494990044,
+      "fine_difference_rms": 0.00021035621807392565,
+      "ratio": 2.0131735055299163,
+      "roundoff_floor": 1e-10
+    },
+    {
+      "name": "heat-error-separation/temperature_k",
+      "passed": true,
+      "heat_effect_rms": 0.0000013543551154060608,
+      "coupling_difference_rms": 0.00021035621807392565,
+      "max_fraction": 0.2
+    },
+    {
+      "name": "coupling-order/velocity_m_s",
+      "passed": true,
+      "coarse_difference_rms": 9.981785265884011e-10,
+      "fine_difference_rms": 5.016247826203049e-10,
+      "ratio": 1.9898907732873177,
+      "roundoff_floor": 1e-12
+    },
+    {
+      "name": "heat-error-separation/velocity_m_s",
+      "passed": true,
+      "heat_effect_rms": 1.932252235581635e-12,
+      "coupling_difference_rms": 5.016247826203049e-10,
+      "max_fraction": 0.2
+    },
+    {
+      "name": "coupling-order/viscosity_pa_s",
+      "passed": true,
+      "coarse_difference_rms": 2.2471523218571627e-7,
+      "fine_difference_rms": 1.1160062227081842e-7,
+      "ratio": 2.0135661218842085,
+      "roundoff_floor": 1e-12
+    },
+    {
+      "name": "heat-error-separation/viscosity_pa_s",
+      "passed": true,
+      "heat_effect_rms": 7.102849835904771e-10,
+      "coupling_difference_rms": 1.1160062227081842e-7,
+      "max_fraction": 0.2
+    },
+    {
+      "name": "active-advection",
+      "passed": true,
+      "initial_tendency_rms_k_s": 0.29701730253524955
+    },
+    {
+      "name": "advection-affects-temperature",
+      "passed": true,
+      "temperature_difference_rms_k": 0.15143558682228517
+    },
+    {
+      "name": "temperature-changes-viscosity",
+      "passed": true,
+      "relative_change": 0.10947861738086118
+    },
+    {
+      "name": "unchanged-source",
+      "passed": true
+    }
+  ],
+  "no_production_edits": true,
+  "r44_run": false,
+  "resource_scope": "shared accounted work cap; caller-retained diagnostic arrays and process RSS are separate",
+  "runtime": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.7.0"
+  },
+  "native_pools": [
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "prefix": "libscipy_openblas",
+      "filepath": "libscipy_openblas64_-63c857e738469261263c764a36be9436.dll",
+      "version": "0.3.31.188.0",
+      "threading_layer": "pthreads",
+      "architecture": "SkylakeX"
+    },
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "prefix": "libscipy_openblas",
+      "filepath": "libscipy_openblas-64eda39e79589aedb16f58e5547eb599.dll",
+      "version": "0.3.30",
+      "threading_layer": "pthreads",
+      "architecture": "SkylakeX"
+    }
+  ],
+  "passive_control_complete": true,
+  "passive_control_budget": {
+    "max_bytes": 134217728,
+    "reserved_bytes": 0,
+    "peak_reserved_bytes": 196608,
+    "refusals": 0,
+    "categories": {
+      "w07-heat-admission": 0,
+      "w07-open-heat": 0
+    },
+    "category_peaks": {
+      "w07-heat-admission": 196608,
+      "w07-open-heat": 196608
+    }
+  },
+  "sources_after": {
+    "tectonics/src/atlas_tectonics/__init__.py": "e742cd04443cb9a7b3b2fd210a80dee2aa1efe9500f13e816f2fa8f38b9cdc68",
+    "tectonics/src/atlas_tectonics/_geometry_native.py": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a",
+    "tectonics/src/atlas_tectonics/_materials_native.py": "059e34f03a5abbec997873fb4f8ae8c89f745fbe029c064de55f8f738f2872a9",
+    "tectonics/src/atlas_tectonics/_mechanics_native.py": "fd1d76496ef1e264960a6df3046a1fddca10d9a6888a8fb0ed41274091f07d58",
+    "tectonics/src/atlas_tectonics/_mesh_native.py": "9163632c873e00ef53f0b29b2709ef85178d6136da8545a48d9acb206c816cf9",
+    "tectonics/src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "tectonics/src/atlas_tectonics/_spherical_candidates.py": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c",
+    "tectonics/src/atlas_tectonics/_thermochemical_native.py": "7dc7261147bdf1fbf86ccec454056743c2cfff2bce222950c2fcc2ced616e601",
+    "tectonics/src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "tectonics/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/src/atlas_tectonics/_velocity_multigrid.py": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868",
+    "tectonics/src/atlas_tectonics/adaptive_inner.py": "ce390df8900894c43990c68e7f1079d7d2fe73e8a06dd44ea216f751082c4832",
+    "tectonics/src/atlas_tectonics/anderson.py": "e789cf39928f41a434304cf544796d517a86f7630cd5882230d5f63f3a4079cf",
+    "tectonics/src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "tectonics/src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "tectonics/src/atlas_tectonics/compaction.py": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2",
+    "tectonics/src/atlas_tectonics/compaction_columns.py": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637",
+    "tectonics/src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "tectonics/src/atlas_tectonics/constitutive_execution.py": "43f26528dd911677ba3288a2b4d25b8080ec934948b1d51600a3fce7b957b8b0",
+    "tectonics/src/atlas_tectonics/convection_benchmark.py": "c542616ff2a1e55cab2f77017f85bf8a8e8cb000edcea363380b2b93cef56903",
+    "tectonics/src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "tectonics/src/atlas_tectonics/damage_regularisation.py": "892647330307f6b7293f5f1ceeedacc480f53308d630e5ef57fe7a2ca5a3049a",
+    "tectonics/src/atlas_tectonics/deformation_network.py": "50e11fe2a7ce70a7e11f3b96114bdaf12135497e0b17968f2794e5e8e48a73d0",
+    "tectonics/src/atlas_tectonics/earth_material_data.py": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f",
+    "tectonics/src/atlas_tectonics/evolving_flexure.py": "74a15b6505b9bd480fdfa4e8adade61816026a57a0f52d86d113a12807767cdc",
+    "tectonics/src/atlas_tectonics/evolving_mechanics.py": "c17b4354fbacd530742718255711f73e064539f2172d68ec041758c4543e46fc",
+    "tectonics/src/atlas_tectonics/execution.py": "ffb1a84d0ead93a932c061fa69bf8ac21501dff2148af6ef3e2f3398f677f32b",
+    "tectonics/src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "tectonics/src/atlas_tectonics/extension_support.py": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8",
+    "tectonics/src/atlas_tectonics/extension_workflow.py": "d1d56f58abc3bca547d6381f2bd35661f42937f5f149ae6aa1eecf201e81a4fa",
+    "tectonics/src/atlas_tectonics/fault_slip.py": "8e6c9b2e4a1e2da5e9a6a5e1eeb9efac85f1e94aaf74daf5b3e251a00396b8ef",
+    "tectonics/src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "tectonics/src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "tectonics/src/atlas_tectonics/free_surface.py": "65c860d07f8ef3f6276c67170e2309d9a5a1a733c2a218a47a2f0554577a913e",
+    "tectonics/src/atlas_tectonics/geological_case.py": "954def0ef83e64f9a2846cc2822ac30cb092cb38284d66cb18aab1e0993f2173",
+    "tectonics/src/atlas_tectonics/geological_domain.py": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d",
+    "tectonics/src/atlas_tectonics/geological_records.py": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23",
+    "tectonics/src/atlas_tectonics/geometry.py": "7e83585fd4a67db88564b562664368882ddb3123fb8fefb6e61af1c63ed7c0bb",
+    "tectonics/src/atlas_tectonics/geometry_index.py": "b0d97d386673a941ae791c298423d68a451593b0225a1a744f2594953e2c72d1",
+    "tectonics/src/atlas_tectonics/kinematics.py": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586",
+    "tectonics/src/atlas_tectonics/magmatic_emplacement.py": "422c649aa53977df0dd9beb2604db541327ad9d5e7d7c2868051af1388c8cc6c",
+    "tectonics/src/atlas_tectonics/magmatic_thermodynamics.py": "fad35e338832fec7df4b9f441bbb5ea3293625720f3c42a99b77eac70795763c",
+    "tectonics/src/atlas_tectonics/magmatic_transfer.py": "9e98b4923ab9113336b2afb0211928c03a7d9079a76e935d2c959e32319ac641",
+    "tectonics/src/atlas_tectonics/margin_cooling.py": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab",
+    "tectonics/src/atlas_tectonics/markers.py": "abbcb1d4a6f1e803f3d8579fbec2675b736781487d919aadc15ad3c0324bc970",
+    "tectonics/src/atlas_tectonics/material_library.py": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59",
+    "tectonics/src/atlas_tectonics/materials.py": "c4105322391d0c7b7e25e9ed659f36dd049288c2b9bbb319e9d61e248a8c886b",
+    "tectonics/src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "tectonics/src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "tectonics/src/atlas_tectonics/planar_exchange.py": "fccf331332639c662c08ab957c634bd7b244cc5e110095e7c0422d4450f6ced9",
+    "tectonics/src/atlas_tectonics/planar_projection.py": "18ce4d036f5aa254b83721a3986a20f4a6607331f51825fe9cd3d60a05ad46f2",
+    "tectonics/src/atlas_tectonics/planetary_generation.py": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d",
+    "tectonics/src/atlas_tectonics/plate_cooling.py": "9754d10bec2711f4a6a2d6ab5b53ad36d5ab943dd7791487e872219e7e8652e0",
+    "tectonics/src/atlas_tectonics/plate_integrals.py": "46a0cf85badcda7b3297d81e2527c425ce0ceecf9f48f460f58a19d713e33a1f",
+    "tectonics/src/atlas_tectonics/plate_layout.py": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca",
+    "tectonics/src/atlas_tectonics/plate_reference.py": "bad89431a04b04544fe83621dbf91a4ce7125eb6706df3e3e19cd97ccae87a1d",
+    "tectonics/src/atlas_tectonics/plate_reference_acceptance.py": "9bd03946e5fd2724ab37860afbcd37fd0ca1307520efa9c995c5a64588bebd9e",
+    "tectonics/src/atlas_tectonics/plate_reference_dataset.py": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e",
+    "tectonics/src/atlas_tectonics/plate_reference_use.py": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449",
+    "tectonics/src/atlas_tectonics/preconditioner_reuse.py": "ebe861de1a5e94ec5d6cdcf83c26c2061e3241b8f5ffed34e8c4d8d39b793acd",
+    "tectonics/src/atlas_tectonics/precursor.py": "dc52a7935177b0ff6a064009b18a71e68114c29c93aad132650a3fe0ddc64075",
+    "tectonics/src/atlas_tectonics/precursor_execution.py": "d8f7d671d41ac985df0ac1161242d2b72d5f6978d5e378b2d8e9c0c2a0963bb5",
+    "tectonics/src/atlas_tectonics/precursor_sampling.py": "32e66b9db5f68e2c21e4ec380cfdcac7043f53b3185c2884645a45ac4390ef8e",
+    "tectonics/src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "tectonics/src/atlas_tectonics/regional_checkpoint.py": "9f407881c067895062142f4fb67e3f7fce07863e164daa226167f32062e1778e",
+    "tectonics/src/atlas_tectonics/regional_execution.py": "2de9ce91073d105986cb14a521f7ef5e90cc89ed336d17d78001592f7059b854",
+    "tectonics/src/atlas_tectonics/regional_forcing.py": "b31de590220541ddc027c34e080cfd71031ce913f697ec88d8b27656730e1dad",
+    "tectonics/src/atlas_tectonics/regional_geology.py": "6bd512538e08db7eacc0694d1797cad99e7158eebdd389d91b0dc7a91a4d4076",
+    "tectonics/src/atlas_tectonics/regional_rheology.py": "50f4341c26c6d5ad3e5900a69cba555e2344cca3e79c4f42db642966f4cbb652",
+    "tectonics/src/atlas_tectonics/regional_stokes.py": "fa3bd6cde972cc20211ba3294c30dfc56c40071f15f610e7c5e9674971efd403",
+    "tectonics/src/atlas_tectonics/regional_strength.py": "fd3c03e969abe61c3b715a44e1e3efc0c3017ef820f2e8be12196975baab2a93",
+    "tectonics/src/atlas_tectonics/regional_surface_stokes.py": "5ba98c6d4a6f3f0405d984fb0289f2eb460157503e7edc91e9c6552e506ff8bf",
+    "tectonics/src/atlas_tectonics/regional_thermomechanical.py": "c12df1dcc25889cb51ca3968ec837d803215d68b70d2844b2fc7307fae766c12",
+    "tectonics/src/atlas_tectonics/regional_transport.py": "db72d22dd3b8cc62c788d2396627883b890bd876edab8040cf808e9653cf7a91",
+    "tectonics/src/atlas_tectonics/regional_workflow.py": "213d65c32aa69c1990b4559c112c0b173f234f6e079cc9c1a71f8eef7a50740d",
+    "tectonics/src/atlas_tectonics/regional_workflow_geometry.py": "afb69b7801a4454fa5ca2fb33b1e95ef4ff11e656c68927a2d7deacd8e498e7e",
+    "tectonics/src/atlas_tectonics/remapping.py": "ae31c71c68f714ec893bae4c93fb0f43de762e15fe38cb5e3a0f99349ce5a528",
+    "tectonics/src/atlas_tectonics/resources.py": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676",
+    "tectonics/src/atlas_tectonics/reuse.py": "6c2afc89946c7f9f23c9a571329d8968ad729aabf3cda1c8e60f15ba2251a297",
+    "tectonics/src/atlas_tectonics/shortening.py": "1b17e44f584d3ab8f0fbc6880a459dd7e39bff909be29cfc85943f6355d75851",
+    "tectonics/src/atlas_tectonics/shortening_support.py": "c1d801df5cc8a152b4468e75ee1c1fe9ba284d2aab5f6127b1c5c096723727e3",
+    "tectonics/src/atlas_tectonics/spherical_atlas.py": "14b45147dde305654a0ed989d0e26371c7fd6e0036d7335f94745a35aed03c52",
+    "tectonics/src/atlas_tectonics/spherical_geometry.py": "755111edf0479b94c7e1d8b01c01b1d37f6398b61feeba328d3c69c87f9a48c7",
+    "tectonics/src/atlas_tectonics/spreading.py": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07",
+    "tectonics/src/atlas_tectonics/spreading_checkpoint.py": "8e35ee6c7c8c26fb0278797b60b796c9c52e32455ad23aa941bb6ff491d2ecb8",
+    "tectonics/src/atlas_tectonics/spreading_cooling.py": "8bc7116d68ae4543e856e9bdd9e789a36528c26353590ada7bf4b508e45ce74f",
+    "tectonics/src/atlas_tectonics/spreading_history.py": "02ec9bc70acef2450f78367e7c61eb142ccf8f709e678683daa1f7dc3396e6e2",
+    "tectonics/src/atlas_tectonics/spreading_history_cooling.py": "8aa2eaf5d3f24f3a69334fbc31f8f3fb331df4dadcf6116a373611c85bbdaaea",
+    "tectonics/src/atlas_tectonics/spreading_integrals.py": "d73e7d1671c8e224b1fdb4fbabd3338ae0ada70766841b6b96bfc03b65612732",
+    "tectonics/src/atlas_tectonics/stokes.py": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082",
+    "tectonics/src/atlas_tectonics/stokes_execution.py": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4",
+    "tectonics/src/atlas_tectonics/storage.py": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+    "tectonics/src/atlas_tectonics/subduction.py": "e3df2afb7f07c863fd03dbea482421ae0e1d6a400bb27ddb701945269496e5e4",
+    "tectonics/src/atlas_tectonics/subduction_linear.py": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+    "tectonics/src/atlas_tectonics/subduction_materials.py": "fbea5fc627c358e6091a14642512c88b4c6edc1f5a4508987a3757929b64a6f9",
+    "tectonics/src/atlas_tectonics/subduction_mesh.py": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4",
+    "tectonics/src/atlas_tectonics/subduction_refinement.py": "96ceb9d47bad3572e407ca60938ec92e84515be3a04d90022ff7f9771c637024",
+    "tectonics/src/atlas_tectonics/subduction_transport.py": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4",
+    "tectonics/src/atlas_tectonics/surface_geometry.py": "40823ed760e90fa175ffe2112bc67cd459635ef7cffa5b08f2f63cfa93fd640b",
+    "tectonics/src/atlas_tectonics/tectonic_history.py": "6eea829fe7f7bc2f068329e09dbc7e27af42da905fe0f7aa614a3a35bf652288",
+    "tectonics/src/atlas_tectonics/tectonic_history_codec.py": "3f1417d8a6c669e5f6cc4caae01dff47340855e3968bbaf69b6be138de485a51",
+    "tectonics/src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "tectonics/src/atlas_tectonics/thermal_support.py": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e",
+    "tectonics/src/atlas_tectonics/thermochemical.py": "a2a1e70491915f21326f9d9f0ecc7b3dca4583270557245ab4350784c0ebc937",
+    "tectonics/src/atlas_tectonics/thermochemical_execution.py": "7e7d8aaf32d5e78f75783a8051bd4dfdb319bb6eea95e2b7e8ee3253b8b5a700",
+    "tectonics/src/atlas_tectonics/timebase.py": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83",
+    "tectonics/src/atlas_tectonics/topology.py": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95",
+    "tectonics/src/atlas_tectonics/transform.py": "2010bc31b6e3135f79187ad0aa90502c030d0284f9d21b1545cdd9555b498757",
+    "tectonics/src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tectonics/src/atlas_tectonics/underthrust.py": "291a751c329e9c4ac05018e3da5d1d50d74463630b713d644096a6ce153ecab4",
+    "tectonics/src/atlas_tectonics/variable_flexure.py": "cfb1866ef356acd0e711de091b2aa1dc31054190d404f75f0240292b21d0749b",
+    "tectonics/src/atlas_tectonics/variable_stokes.py": "2af374412b9a90606bade8dcc56b8ba52fe8f351985eae1a5306f9bf1bdcbf34",
+    "tectonics/src/atlas_tectonics/variable_stokes_execution.py": "9a80d01e2d44054879cc5b8221871e00d221dc1235a6338dcdd660ab7e4c1d0f",
+    "tectonics/src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "tectonics/src/atlas_tectonics/w04_workflow.py": "440839712685278d19fd7701cc1014577bbda04ce6ef08e4be52cc57a75f1bdb",
+    "tectonics/src/atlas_tectonics/w06_workflow.py": "dcab0e241cc8fc9b33062fa90433cf8dd3bf03c4ed6fc156bcf0b40b1b00df92",
+    "tectonics/src/atlas_tectonics/w07_workflow.py": "d75d074a66e358d7570e9d8e2b0b43e5e16af13301a176f43ec73553802414d0",
+    "tectonics/src/atlas_tectonics/w08_inventory.py": "4cf59bdfb804c2bc6cc12b0bb42e0591685436dbe19ae7f55284108b09a1de2c",
+    "tectonics/src/atlas_tectonics/w08_region.py": "81cece4045885bc3f8471c05cf58849a505c3bf8ada9801342fc47f345c45d9d",
+    "tectonics/src/atlas_tectonics/w08_workflow.py": "dd51a6499f2dce7a59cf1e55ed5226b41e1f55ebcd5acdc55fd4bf25532aca59",
+    "tectonics/src/atlas_tectonics/w09_drainage.py": "f3f0cd8039aef050df7f7fe662bf57b54694892091ff7db518193296b0687051",
+    "tectonics/src/atlas_tectonics/w09_erosion.py": "105fb2e52a01fb37cefee4e1987d4be61fd818ca1174f867876dd705e05f63af",
+    "tectonics/src/atlas_tectonics/w09_hillslope.py": "44575a69e3dadbc2a7bf3779b9d5cdfb5210049560ab63070538e2d93b171ec6",
+    "tectonics/src/atlas_tectonics/w09_water.py": "00a2faf3eb453a96a260cee8fe8df6db5c50521fe33c93b01e7aef57f14176f6",
+    "tectonics/tests/test_w07_thermomechanical.py": "ce02b1a7c0412626386837a27ff578dfd8aad57066123bea9148df1f5bc24dcc",
+    "tectonics/tests/test_w07_regional_rheology.py": "3b660ba38396fc5fc7b0d304b07480b69e427cb606f9c2544e75cf46722b9a86"
+  },
+  "script_sha256_after": "6de4bc61eb629f7eda53733e794a033205cedf1308d8d53299de9e2a99988587",
+  "loaded_runtime_module_hashes": {
+    "_hashlib": {
+      "file": "_hashlib.pyd",
+      "sha256": "0a65dd5dbfcdf87ffbdb8cfe3e954186a862627e270ef0edbab7cbbc35648b7b"
+    },
+    "_wmi": {
+      "file": "_wmi.pyd",
+      "sha256": "441330d461d79a57d9760bf519c96f41dbcbed24f7a30e90489e508b3a068469"
+    },
+    "_bz2": {
+      "file": "_bz2.pyd",
+      "sha256": "235e917ec6f0df096b06c271d6d7e95b18aca8ab1fec95382eed047de1d9bb62"
+    },
+    "_lzma": {
+      "file": "_lzma.pyd",
+      "sha256": "7d11bf6cfebb59c70c22cc9241b29682e779b21cebc7c45dde8a26580a4e5f9a"
+    },
+    "_socket": {
+      "file": "_socket.pyd",
+      "sha256": "e48c2933adb4c6f3d7c111f3a60c4a5ce725b34f178c6a26bd92a738d83103ec"
+    },
+    "select": {
+      "file": "select.pyd",
+      "sha256": "24ab4c17010d067233ae8562f3759c882b6e3a044e73a71a6108a9975f89db80"
+    },
+    "numpy.version": {
+      "file": "version.py",
+      "sha256": "79cbe06301c3b27ab1817bac6d831b9029f613cb8fa6d18f2bbc3eda52571b53"
+    },
+    "numpy._expired_attrs_2_0": {
+      "file": "_expired_attrs_2_0.py",
+      "sha256": "423c736e781efd600ae673b6825c9b2b606ff6036e966c46a1f8db1b02cb930f"
+    },
+    "numpy._utils._convertions": {
+      "file": "_convertions.py",
+      "sha256": "bdeb5916a0b5a81f99f63bdced12ae53fe444ce6926e385b29afac570615f135"
+    },
+    "numpy._utils": {
+      "file": "__init__.py",
+      "sha256": "ab7bccaf178179e53da6f0af2ce928743833652e55d63788d7f51977805bcc35"
+    },
+    "numpy._globals": {
+      "file": "_globals.py",
+      "sha256": "402e352cfba2e71205d2f6d7ac1b6b065c4957c24abf166c09cdddf723d398b6"
+    },
+    "numpy._distributor_init": {
+      "file": "_distributor_init.py",
+      "sha256": "879fc2abb22d0ebb75259a00874e1a3b9e195ec5d1464c86a0d1451fd4fed3c5"
+    },
+    "numpy.exceptions": {
+      "file": "exceptions.py",
+      "sha256": "1e04ff12b64b8937dc782bf4cb6758a1eb2d0e92add8847ae8c1eef8b015a4d2"
+    },
+    "numpy._core._exceptions": {
+      "file": "_exceptions.py",
+      "sha256": "ba6c5687d4cb8435f2f4b996efbc2420731e80593f2857c10799ddc6c25de45e"
+    },
+    "numpy._core.printoptions": {
+      "file": "printoptions.py",
+      "sha256": "6577a406be9f235f1d571b0ce9bc401a2f340a232568c3787696cf1c342204e2"
+    },
+    "numpy.dtypes": {
+      "file": "dtypes.py",
+      "sha256": "70f912e812d1be97ec53385ded59352fbfd571e9d66f59ee1ee0b173d7d80b82"
+    },
+    "numpy._core._multiarray_umath": {
+      "file": "_multiarray_umath.cp312-win_amd64.pyd",
+      "sha256": "80e7dc34f51cf6cef24da060e1e8620936b2cf188bae0ea367dc8619b2316204"
+    },
+    "numpy._utils._inspect": {
+      "file": "_inspect.py",
+      "sha256": "7e91db2f51b1edf970e071e39cd1cd37ebfc34ac755a01415a09d7f13e619626"
+    },
+    "numpy._core.overrides": {
+      "file": "overrides.py",
+      "sha256": "ef14176ca34d4c3a83151ddc2fabdc05b81ccdaacc55d3a22a359f1cce734b80"
+    },
+    "numpy._core.multiarray": {
+      "file": "multiarray.py",
+      "sha256": "7e25a653ea4bd1639e4bb4d3fdf941b9ea8a9b3d3c8226ddac1142a1a9d24a81"
+    },
+    "numpy._core.umath": {
+      "file": "umath.py",
+      "sha256": "3569afa325905c5b82382422deb39760094d7087e14a22a6e16373c420a7f5f7"
+    },
+    "numpy._core._dtype": {
+      "file": "_dtype.py",
+      "sha256": "4c48cf6571e6a70e7e1e17c67ca4be3df413f40f6c93c727684ea27005d56f7e"
+    },
+    "numpy._core._string_helpers": {
+      "file": "_string_helpers.py",
+      "sha256": "697d4de54b0d794172e78a39b6e4c2e97e8df4026e785376ffa408c88503d978"
+    },
+    "numpy._core._type_aliases": {
+      "file": "_type_aliases.py",
+      "sha256": "539d5e9b5754eea96e158202a66af28121cb7e4fb2e14a2a0f424933ea6c0a31"
+    },
+    "numpy._core.numerictypes": {
+      "file": "numerictypes.py",
+      "sha256": "b018a2e0de0f5fae8315927f4250dea5fba05c74e857832a55397d0eb9130a4a"
+    },
+    "numpy._core._methods": {
+      "file": "_methods.py",
+      "sha256": "5dd70c059e7359916950988bfa29b6482b6cbf2627fcd0e2ad25880a4cedd9fc"
+    },
+    "numpy._core.fromnumeric": {
+      "file": "fromnumeric.py",
+      "sha256": "e53fabedfc641db76f26205f5950fa9b023b6db8b613de45d33f5715e06af822"
+    },
+    "numpy._core.shape_base": {
+      "file": "shape_base.py",
+      "sha256": "a32e3688fa2368b8d08ec432d5cdf95e5ef6c3456d2d909bb62a5995bf171a8a"
+    },
+    "numpy._core._ufunc_config": {
+      "file": "_ufunc_config.py",
+      "sha256": "c5e272dcaeca3d5e4fa496e45bd9dc598fd49e72c794cf4ceab5f80bd78db369"
+    },
+    "numpy._core._asarray": {
+      "file": "_asarray.py",
+      "sha256": "314d672bbea64388036425996dd57ece692666984054090dc2085b9384e0aa54"
+    },
+    "numpy._core.arrayprint": {
+      "file": "arrayprint.py",
+      "sha256": "969c438168c200b7094e152d74a55454e88ce15adde179fba9a1e7aae734b73c"
+    },
+    "numpy._core.numeric": {
+      "file": "numeric.py",
+      "sha256": "7f7e98dd78ad7c7da06bbcc7d8467881cb48d53cb0bd3628272aad15ea57a4d0"
+    },
+    "numpy._core.einsumfunc": {
+      "file": "einsumfunc.py",
+      "sha256": "558522c9f30d2cf2ad040c243d32f6d4d4094a394fc1e747a235363259bd98a5"
+    },
+    "numpy._core.function_base": {
+      "file": "function_base.py",
+      "sha256": "cc1bed2146685157bfb0648f7670e639773d18c5f6df622ac7916d90ca797bc7"
+    },
+    "numpy._core.getlimits": {
+      "file": "getlimits.py",
+      "sha256": "b57ede0d6558df5d771c5073b6de493adb544c8df54b8fab0b46d55d82511b83"
+    },
+    "numpy._core.memmap": {
+      "file": "memmap.py",
+      "sha256": "ec75901a32b96d2dd2cc03f1e300251f01fa605ad7d77b01a5ae84e76cf16ad7"
+    },
+    "numpy._core.records": {
+      "file": "records.py",
+      "sha256": "00e8b45136d8a877bc539027b4abdcf7aecef219ad570f294aa89a85f261b48f"
+    },
+    "numpy._core._add_newdocs": {
+      "file": "_add_newdocs.py",
+      "sha256": "02a0b5ce6834a631b356a80d846b0a7e189ee72fde8c90d710252a43a93991ff"
+    },
+    "numpy._core._add_newdocs_scalars": {
+      "file": "_add_newdocs_scalars.py",
+      "sha256": "562316500225b142a8b1dd661292e8f74edc65e692ed583f19eaf30832005144"
+    },
+    "numpy._core._dtype_ctypes": {
+      "file": "_dtype_ctypes.py",
+      "sha256": "7bc1207daa97889f3e5188bc14ce6c9bd5bc7a1aaf706feb4e90d139a2b04ca8"
+    },
+    "_ctypes": {
+      "file": "_ctypes.pyd",
+      "sha256": "42a43980f9100c5bb4df728a0f5265fa552e675fe8f7dbfddc04c20e14de59fc"
+    },
+    "numpy._core._internal": {
+      "file": "_internal.py",
+      "sha256": "2c306e9887e30cc20ef1c3527e8d35e007189e0b1d9179ace9314b35eb59bb16"
+    },
+    "numpy._pytesttester": {
+      "file": "_pytesttester.py",
+      "sha256": "5123a1dfb6d685703340b7860f553add7a439db91ab5fafe6a242efa01e47410"
+    },
+    "numpy._core": {
+      "file": "__init__.py",
+      "sha256": "73c57a7f3a54e33399ddb9b142eb27ed3aae2bf4be2f4c159396788e16b620e5"
+    },
+    "numpy.__config__": {
+      "file": "__config__.py",
+      "sha256": "b9c2ad023bd26886303cc4b05cd1652b4b566a02a58526b4835565e95ad021ad"
+    },
+    "numpy._typing._nbit_base": {
+      "file": "_nbit_base.py",
+      "sha256": "3e742dfd56c1297fd48f5ee0ff4c9fa14ab08746e73772c4c851e047a1b335ac"
+    },
+    "numpy._typing._nested_sequence": {
+      "file": "_nested_sequence.py",
+      "sha256": "d1995b054ea4e7c0ec47fcb94fc59a0c7b2dd163694f79696dfcee9cdddf6300"
+    },
+    "numpy._typing._shape": {
+      "file": "_shape.py",
+      "sha256": "e5cb1d07eca3dfdd2d851ad63e7c14ecb7157eafb062777c42f5f2b86763017e"
+    },
+    "numpy._typing._array_like": {
+      "file": "_array_like.py",
+      "sha256": "37e7b8a75ed135f7bb1f78e7a5c5f47145eeaf80087238938bde5b696fb41196"
+    },
+    "numpy._typing._char_codes": {
+      "file": "_char_codes.py",
+      "sha256": "559be3ce9446d4485fd9fae776244b2db3d16b9f40e85a1c7701b08c710ea2b3"
+    },
+    "numpy._typing._dtype_like": {
+      "file": "_dtype_like.py",
+      "sha256": "9e6c7417e38d56fb0412d05d2cc53cbe4ec56c371fc126be52945962a994be05"
+    },
+    "numpy._typing._nbit": {
+      "file": "_nbit.py",
+      "sha256": "a633a9cf4b08761a61b1730ad1d090790597b2b0e9c42559ad8275c2600b7f4e"
+    },
+    "numpy._typing._scalars": {
+      "file": "_scalars.py",
+      "sha256": "ad38a5fdd49aa011a69860fd41067436a10fd81799b643842bd65ac83301fa5d"
+    },
+    "numpy._typing._ufunc": {
+      "file": "_ufunc.py",
+      "sha256": "968939421439689040469c95a1f7eb6deb8426c279bc0e83689e1a1d3794866b"
+    },
+    "numpy._typing": {
+      "file": "__init__.py",
+      "sha256": "280099b3ff25f1c346e13a25bd992abf960a2c0ec4c86ea89bd72de1fb17a698"
+    },
+    "numpy.lib._stride_tricks_impl": {
+      "file": "_stride_tricks_impl.py",
+      "sha256": "bae18089959c68af8df5d424a216c0b5196b608b686a7cb8280b7884842ce8df"
+    },
+    "numpy.lib._twodim_base_impl": {
+      "file": "_twodim_base_impl.py",
+      "sha256": "6cac836fd6f8c2f4000e182c52e8ceb49722d33b6ebc5a3fe7342db011cf9612"
+    },
+    "numpy.lib._array_utils_impl": {
+      "file": "_array_utils_impl.py",
+      "sha256": "25013d525e75e5e9b7e7455c45741a3b80661341f02113dd06914d5eee079f0b"
+    },
+    "numpy.lib.array_utils": {
+      "file": "array_utils.py",
+      "sha256": "ce6ad421595e5845b397d5e31295250d4407b7da9b6eccadcaefe32e3f8e8271"
+    },
+    "numpy.linalg._umath_linalg": {
+      "file": "_umath_linalg.cp312-win_amd64.pyd",
+      "sha256": "b465dda08f9238ae83b05a0acbfbddec969d0b5fc5de366bbbe312a4600d6e31"
+    },
+    "numpy.linalg._linalg": {
+      "file": "_linalg.py",
+      "sha256": "bdae22bd533cf10a9827741de04a5d79b5457eb53ceab9beb9a890966ecfd32c"
+    },
+    "numpy.linalg": {
+      "file": "__init__.py",
+      "sha256": "3782aa04e50465446b8ffd34ab70dfff22f03eb99130a1dd9ba511d6c89bbb66"
+    },
+    "numpy.matrixlib.defmatrix": {
+      "file": "defmatrix.py",
+      "sha256": "1da158b471088668b828a6f0cd4270fb9ba4f976a1f094bd751562d9b647db4c"
+    },
+    "numpy.matrixlib": {
+      "file": "__init__.py",
+      "sha256": "68f5db68de0e603a7d4c503c906cedda04c11dbde8f0d6a7c3eb8cff75e80c5e"
+    },
+    "numpy.lib._histograms_impl": {
+      "file": "_histograms_impl.py",
+      "sha256": "d9d71e62bec13954e4ca9493e02560b242738c8fa46bf16b2f9a31056eeb1c44"
+    },
+    "numpy.lib._function_base_impl": {
+      "file": "_function_base_impl.py",
+      "sha256": "4fc535d1583b477c697fd079cefad6b4b66619279bd0e65f0902c8cad9f27949"
+    },
+    "numpy.lib._index_tricks_impl": {
+      "file": "_index_tricks_impl.py",
+      "sha256": "67346d15da5b62d0c4628c77faecc3b7310e20b319d0b757ebb56458d2320696"
+    },
+    "numpy.lib._arraypad_impl": {
+      "file": "_arraypad_impl.py",
+      "sha256": "ac7fce53a5efa26de5e29d836eb840ad020f8ec8ccf4438dc6d4aa28dcf177a8"
+    },
+    "numpy.lib._arraysetops_impl": {
+      "file": "_arraysetops_impl.py",
+      "sha256": "1154611100aa471ce1794ebcbb9906812f29925b3fb1448cf565daf59f58de1a"
+    },
+    "numpy.lib._arrayterator_impl": {
+      "file": "_arrayterator_impl.py",
+      "sha256": "1d4b422c15dc1bb982e405f72ae25c0e31c3f4510f85e09c1f2a53e8fb52b306"
+    },
+    "numpy.lib._nanfunctions_impl": {
+      "file": "_nanfunctions_impl.py",
+      "sha256": "aa69b1e47eeaf9ab60a1840059c0c01d6390f965970ab5f251ec30cd1ca08ecb"
+    },
+    "numpy.lib._utils_impl": {
+      "file": "_utils_impl.py",
+      "sha256": "41d9c2c88931799691db0c27e105f15c10a8931b978be446f89fc61c6e1e2feb"
+    },
+    "numpy.lib._format_impl": {
+      "file": "_format_impl.py",
+      "sha256": "fd316042dae09dd9105b13d28dd3bde6577f7028044a98ec274e012ea64f18d9"
+    },
+    "numpy.lib.format": {
+      "file": "format.py",
+      "sha256": "8a2f0c45098f6759c06aa9cca9e62d2a074d44fe76899b073e8e6b383976d143"
+    },
+    "numpy.lib._datasource": {
+      "file": "_datasource.py",
+      "sha256": "72c15f3952f4d15efa28cfbecfdc113802261c33c1e65e5bfbc875009962e777"
+    },
+    "numpy.lib._iotools": {
+      "file": "_iotools.py",
+      "sha256": "621ef122ee4e9d23678f6697fb25bcbe224d1cd0b7de78420d9b5a7a9f13b331"
+    },
+    "numpy.lib._npyio_impl": {
+      "file": "_npyio_impl.py",
+      "sha256": "f66964e8201c9039c121a396d4ac7278f9cd35482e442136728de59365deb63c"
+    },
+    "numpy.lib._ufunclike_impl": {
+      "file": "_ufunclike_impl.py",
+      "sha256": "0cb6db8180d149bcaa997dd7cc94e3381443e683a351412fa425626a1c89aa80"
+    },
+    "numpy.lib._type_check_impl": {
+      "file": "_type_check_impl.py",
+      "sha256": "38da8cde685edc84e89d26496484a9389fdf936580e0fadd79c5be1d416f4473"
+    },
+    "numpy.lib._polynomial_impl": {
+      "file": "_polynomial_impl.py",
+      "sha256": "52ac9032954025147acfd1e3f51abb30ae74f5c23c3a771390cd972ec62c9af5"
+    },
+    "numpy.lib._shape_base_impl": {
+      "file": "_shape_base_impl.py",
+      "sha256": "05b0c679cff48c62be624006d21637e9e084f3a6b4b64b0c085ea8a0b8189954"
+    },
+    "numpy.lib._version": {
+      "file": "_version.py",
+      "sha256": "275a6aba3384e11fe41fb475cb1b629b06d6551c43367043f365c867d972d726"
+    },
+    "numpy.lib.introspect": {
+      "file": "introspect.py",
+      "sha256": "1c1c92ad97cae677a27a58e9f6adbdb7b04f6a0f1c15fa80b83f278e02436778"
+    },
+    "numpy.lib.mixins": {
+      "file": "mixins.py",
+      "sha256": "b98fb87429b3be218fd64a5f92cc522e7fff100fe84f098bab2af80e5fca034e"
+    },
+    "numpy.lib.npyio": {
+      "file": "npyio.py",
+      "sha256": "118e7fb6a1a9951a3e077709b6abdff470b7e2740aaf924d832ca41d68f9abf1"
+    },
+    "numpy.lib._scimath_impl": {
+      "file": "_scimath_impl.py",
+      "sha256": "563cac448db898c77819a684cb97b59e90110dcd3f4ca810aaae9346888d7406"
+    },
+    "numpy.lib.scimath": {
+      "file": "scimath.py",
+      "sha256": "de7b18a85746a28d1d6a76879c62bc42bcf4000037d531d45f4aa742ca797aef"
+    },
+    "numpy.lib.stride_tricks": {
+      "file": "stride_tricks.py",
+      "sha256": "a976a7f7f5295c50280cb040689d7061bd01f3a0e03f8f28829e6c52edecd4bc"
+    },
+    "numpy.lib": {
+      "file": "__init__.py",
+      "sha256": "b192ff0453161d346630051695b049fa780c09d93a509f45754de7d12d123048"
+    },
+    "numpy._array_api_info": {
+      "file": "_array_api_info.py",
+      "sha256": "01e1ae4413c1709d0f78e4a2d80077ae43871539166b537bb58abf1a3f6b8b7a"
+    },
+    "numpy": {
+      "file": "__init__.py",
+      "sha256": "65d5e777b6d662ba19cb80800bef3eb999eda7aee51eea62c308feabf679dba4"
+    },
+    "scipy.__config__": {
+      "file": "__config__.py",
+      "sha256": "b08b1c78140f8d161e31dd7306cf92807401e97abe0c37d01ea7b48a27207975"
+    },
+    "scipy.version": {
+      "file": "version.py",
+      "sha256": "85e53d54e0704283be6442ff05737bfc817acb17d256c8375339941d069032c6"
+    },
+    "scipy._distributor_init": {
+      "file": "_distributor_init.py",
+      "sha256": "0a6a098851752b233432f9cfa2fea40533bad03e37015958b1f61299a4aea196"
+    },
+    "scipy._lib._testutils": {
+      "file": "_testutils.py",
+      "sha256": "a78a7805fbf294e98a423c38f8154abc7433877417ed59fd059f42212daad1b3"
+    },
+    "scipy._lib": {
+      "file": "__init__.py",
+      "sha256": "95c1dbc5ef4892ea146635c0f155faf926180911012ead5caa83e8da647a575c"
+    },
+    "scipy._lib._pep440": {
+      "file": "_pep440.py",
+      "sha256": "c52ba9247483fd7f4438e5256b588a70d67d970c56eaaada13771b1c72ee9c16"
+    },
+    "_cyutility": {
+      "file": "_cyutility.cp312-win_amd64.pyd",
+      "sha256": "1990a1fbef9f2f75556db35b81d7180c903fc54db3f8fd08c14ac2cbc805c61b"
+    },
+    "scipy._cyutility": {
+      "file": "_cyutility.cp312-win_amd64.pyd",
+      "sha256": "1990a1fbef9f2f75556db35b81d7180c903fc54db3f8fd08c14ac2cbc805c61b"
+    },
+    "scipy._lib._ccallback_c": {
+      "file": "_ccallback_c.cp312-win_amd64.pyd",
+      "sha256": "509d2e681897f4253263c063ad8a2aa0c2459b85ce3d86754b401d42ab26dc9a"
+    },
+    "scipy._lib._ccallback": {
+      "file": "_ccallback.py",
+      "sha256": "443cf959463f8e03ed525120b66f951b172e6fd9ef17895aa88b321312bc3739"
+    },
+    "scipy": {
+      "file": "__init__.py",
+      "sha256": "4c3ab17c56609249056db732aa2e196b3f21c923f8d4967a46cb63aa9f739b28"
+    },
+    "threadpoolctl": {
+      "file": "threadpoolctl.py",
+      "sha256": "e5f119e394193e206655bec4b993ef0bb40b0fbb2f22c92bd5b2d70a622bb518"
+    },
+    "numpy._typing._add_docstring": {
+      "file": "_add_docstring.py",
+      "sha256": "3a37b8eb68ef40cb39743c51156ac388a74ad3cfb9b14f9be962a8491020d81e"
+    },
+    "numpy.typing": {
+      "file": "__init__.py",
+      "sha256": "ecc1334dbb016479999b0b9a12dd95b184193c08ccd841a96b5d0c767df971e5"
+    },
+    "scipy._lib.array_api_compat.common._typing": {
+      "file": "_typing.py",
+      "sha256": "38a09e90c484c2f569a9e305e9370068ac3de2c47656852cf4aa627a2a070171"
+    },
+    "scipy._lib.array_api_compat.common._helpers": {
+      "file": "_helpers.py",
+      "sha256": "8351cefbd618531db61f3fdad5fabd39b874d0b4afbb54bd1879a6d840894b45"
+    },
+    "scipy._lib.array_api_compat.common": {
+      "file": "__init__.py",
+      "sha256": "0b254bf55364b83b6ea8a8217fd1040862a0153b3a37f31fd6160cc385192fd1"
+    },
+    "scipy._lib.array_api_compat": {
+      "file": "__init__.py",
+      "sha256": "940a3812e67e9b0e1071361a60f95e90a46cae5242ceacf89c3d441e655d35e1"
+    },
+    "scipy._lib.array_api_compat._internal": {
+      "file": "_internal.py",
+      "sha256": "c918c5a2c56da335206e98055dbcab678a3ed736b6c4577bd6af3158cd68f4d9"
+    },
+    "numpy.core._utils": {
+      "file": "_utils.py",
+      "sha256": "740699b5755684e1058b0995b33f0c9fbec7b329cc0ca859ec792b8c3d50def7"
+    },
+    "numpy.core": {
+      "file": "__init__.py",
+      "sha256": "9820d31b55275b7f297111b4b2291fee8136a0fe0ca4ef3a9dd1e3aae84bf395"
+    },
+    "numpy.ctypeslib._ctypeslib": {
+      "file": "_ctypeslib.py",
+      "sha256": "af2d89595baa3a1f088c4fe6fd42324283a95a46280ee7b6c5901adcccfccdd7"
+    },
+    "numpy.ctypeslib": {
+      "file": "__init__.py",
+      "sha256": "a3da0c33afaf3b04b83d56a0785c97b21eb1db7850b5cb1e9a8015551de4b87c"
+    },
+    "numpy._core.strings": {
+      "file": "strings.py",
+      "sha256": "089e91d3e2d871e15fc6e68e2e164bd6d6705af61d95aa1a4f77f4a8b5e98f5a"
+    },
+    "numpy.strings": {
+      "file": "__init__.py",
+      "sha256": "2732942185631b8c11cec29501583d5d6aeadaf8e3762ebbf4265cfd3c5f9f8c"
+    },
+    "numpy._core.defchararray": {
+      "file": "defchararray.py",
+      "sha256": "e12f1f535608daf186506631452af4e77e892533be4be63d68c61ee819d08a96"
+    },
+    "numpy.char": {
+      "file": "__init__.py",
+      "sha256": "2802a091edf0c23984c317e2c241177a17b5ec3a0dd4e47fbe42c103d585686b"
+    },
+    "numpy.f2py.diagnose": {
+      "file": "diagnose.py",
+      "sha256": "f942b6970aae7dbb93a927b1df0d87e3e42577b67535ebad46594336de930e80"
+    },
+    "numpy.f2py._backends": {
+      "file": "__init__.py",
+      "sha256": "c48547885faf7a59010cf2b0152db43d283e5e4156e642c0563e424aa34b75d3"
+    },
+    "numpy.f2py.__version__": {
+      "file": "__version__.py",
+      "sha256": "bb7c84644859cd6f50c0b06acc510efb3643aac102887b378b174e9519eff49a"
+    },
+    "numpy.f2py.cfuncs": {
+      "file": "cfuncs.py",
+      "sha256": "57d199d84decd3faeb6a0a6147035a0b1ab967732f6f0f940c147bc1d0296e71"
+    },
+    "numpy.f2py.auxfuncs": {
+      "file": "auxfuncs.py",
+      "sha256": "9e9d2cd75f1c4ec3f65c825577215bc83311abedca17f21bb8a41a1375edfab4"
+    },
+    "numpy.f2py.cb_rules": {
+      "file": "cb_rules.py",
+      "sha256": "01dfad9011997708ec3f20b8bfcce687b739bf998838ac9b3ba93d94dae57fd8"
+    },
+    "numpy.f2py._isocbind": {
+      "file": "_isocbind.py",
+      "sha256": "415a11fe90ff6d8f488136921c7530ffc1018349a469fdc965fc212df1dbcf54"
+    },
+    "numpy.f2py.symbolic": {
+      "file": "symbolic.py",
+      "sha256": "60529779e2dbe69abd7010c72dc251ab57840a94e58f4c5002c37c20a6cc5a05"
+    },
+    "numpy.f2py.crackfortran": {
+      "file": "crackfortran.py",
+      "sha256": "98da1316d077a10b56653244c6e237b6dfc1d783f409b8a787910e506079607d"
+    },
+    "numpy.f2py.capi_maps": {
+      "file": "capi_maps.py",
+      "sha256": "8ae5fd482bd7038a84c64ed96817230d1309776f8ef65df85d90d3ced50b407e"
+    },
+    "numpy.f2py.func2subr": {
+      "file": "func2subr.py",
+      "sha256": "a75e6b616f1cda43beb687acd90f41f5c8f0f68f499feee9a611eec65d09c2cd"
+    },
+    "numpy.f2py.f90mod_rules": {
+      "file": "f90mod_rules.py",
+      "sha256": "1a3be56e839d8dcfa52e60b44e4c5af2aff8ddf91f9a8f5d6d6c2fef4c4dff32"
+    },
+    "numpy.f2py.common_rules": {
+      "file": "common_rules.py",
+      "sha256": "1c9db542b75c961b061e3f3cdc06f7dfbf9b4a53d9a293c02f35c830d7e44fa7"
+    },
+    "numpy.f2py.use_rules": {
+      "file": "use_rules.py",
+      "sha256": "317dd2fbd4a44b39d74f0596c1a71c301861c84fd9ca81b73022cb9ec5d71c41"
+    },
+    "numpy.f2py.rules": {
+      "file": "rules.py",
+      "sha256": "536bbd27422e0bc8532723433bf8d57617c5ac0c63b265b8d32e5e74a0d83174"
+    },
+    "numpy.f2py.f2py2e": {
+      "file": "f2py2e.py",
+      "sha256": "189fa9f4c0244f2864c90e7cf72c26bf95e208f6641b2f256ab304457c948bc7"
+    },
+    "numpy.f2py": {
+      "file": "__init__.py",
+      "sha256": "d6c1ee4af0fec053cb2babc3fe98d8e76ed7e0a3fc265cf76ec6ea63622601a2"
+    },
+    "numpy.random._common": {
+      "file": "_common.cp312-win_amd64.pyd",
+      "sha256": "7bad497891be587c15d9c5f1c10d7dafaa29c3811b6da656c0d279ec550a64de"
+    },
+    "numpy.random.bit_generator": {
+      "file": "bit_generator.cp312-win_amd64.pyd",
+      "sha256": "472d4d7369bdc1c9444f7504f6d574090b3deda72536ac286139780659438b02"
+    },
+    "numpy.random._bounded_integers": {
+      "file": "_bounded_integers.cp312-win_amd64.pyd",
+      "sha256": "32b8584df91938ed48412b8033337623aedda14754b5f16da7ecd6240cd37651"
+    },
+    "numpy.random._pcg64": {
+      "file": "_pcg64.cp312-win_amd64.pyd",
+      "sha256": "aaf391493c2a70781e2c6f757cd8e18839718d79a145a6250b36d267088bb5bc"
+    },
+    "numpy.random._generator": {
+      "file": "_generator.cp312-win_amd64.pyd",
+      "sha256": "0037c60072091c1f79f4f72426da3ce75ae59152549ebd601a5750fc38ab552c"
+    },
+    "numpy.random._mt19937": {
+      "file": "_mt19937.cp312-win_amd64.pyd",
+      "sha256": "5bca9225bb4688c0c010c53e60acf15e7fe9de0732e200ccdac509b48628e86a"
+    },
+    "numpy.random._philox": {
+      "file": "_philox.cp312-win_amd64.pyd",
+      "sha256": "86329e7846f674b53fcd09f4cff3abac76f825a764e21b587f14df1e258c114a"
+    },
+    "numpy.random._sfc64": {
+      "file": "_sfc64.cp312-win_amd64.pyd",
+      "sha256": "c582965a7338b791b98d6397ebd58755002bbc06239d44535377fa53639d29ef"
+    },
+    "numpy.random.mtrand": {
+      "file": "mtrand.cp312-win_amd64.pyd",
+      "sha256": "be0ae4e7991e5e72ad6e07edcf034f93a31ab163da499b716354acd9da177367"
+    },
+    "numpy.random._pickle": {
+      "file": "_pickle.py",
+      "sha256": "f1f994720cc786afc5fdec9eb0d51d163574ec1af5cb32c12ec7def865b242b1"
+    },
+    "numpy.random": {
+      "file": "__init__.py",
+      "sha256": "f21e391916d7a4bd74c49ceac3f9fa5e09e6e9263f254602a87e92a5e0a7a946"
+    },
+    "numpy.testing._private": {
+      "file": "__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "numpy.testing.overrides": {
+      "file": "overrides.py",
+      "sha256": "ae57664505dce5cf6312ce218210d7bc7038b090fb1ee31ca5f18c9b348c2fd2"
+    },
+    "numpy.testing._private.extbuild": {
+      "file": "extbuild.py",
+      "sha256": "6aeb182437f678eabd8d80b7c7fb453bfbc1acc863aa3aee56a1f18078e56bcc"
+    },
+    "numpy.testing._private.utils": {
+      "file": "utils.py",
+      "sha256": "af3c1c00a75691421db13efd1f7fce81ba241576c2465b3b825c0408d0a98fd9"
+    },
+    "numpy.testing": {
+      "file": "__init__.py",
+      "sha256": "d10933d084df3ca1c37bd90e6ca4c4c777dd0c601bf6d7cc8a4a5d3ee89aa720"
+    },
+    "numpy.fft._helper": {
+      "file": "_helper.py",
+      "sha256": "5691a6a98e0eef36569b4be0ef6986bb702c67e6dc6bf9951bea25c682589a62"
+    },
+    "numpy.fft._pocketfft_umath": {
+      "file": "_pocketfft_umath.cp312-win_amd64.pyd",
+      "sha256": "9bdebd71ec1d4b301d0874a0d906d9d4b1cc1ea8331a6d98cd02b9ca2b99e9d4"
+    },
+    "numpy.fft._pocketfft": {
+      "file": "_pocketfft.py",
+      "sha256": "5155c3c4fa24f643c70a3a87d97aab493437ddf482308166c7fe3a5a3e95d135"
+    },
+    "numpy.fft": {
+      "file": "__init__.py",
+      "sha256": "1bb36beaba498203757b73e01a0804c45e848bf5adf27e7b7902177f9bedccb3"
+    },
+    "numpy.polynomial.polyutils": {
+      "file": "polyutils.py",
+      "sha256": "55b62b4ecf935b63cc106a8d203902420db4cabb46bcd91e50ea0b9e127b07d5"
+    },
+    "numpy.polynomial._polybase": {
+      "file": "_polybase.py",
+      "sha256": "f18813712540e27472213bd67ebbee14691701d441f02734d51ddc30269adb02"
+    },
+    "numpy.polynomial.chebyshev": {
+      "file": "chebyshev.py",
+      "sha256": "6279bdf4f683a23952a1c7f0a3134fabd52d2b98fc39761ec1671fe0e984198d"
+    },
+    "numpy.polynomial.hermite": {
+      "file": "hermite.py",
+      "sha256": "376ee120d0f3177d3121062da1b6b9c234d041fc5ac182531714d6b35ad469df"
+    },
+    "numpy.polynomial.hermite_e": {
+      "file": "hermite_e.py",
+      "sha256": "e79f8fdebeeb28b87ea30f0690b2a7191901182ce70da022e44b0caad4ccfef2"
+    },
+    "numpy.polynomial.laguerre": {
+      "file": "laguerre.py",
+      "sha256": "29adeb74c73eaf839183923ce81d03e9df0e8d98bfa85f3542f672726388bcdd"
+    },
+    "numpy.polynomial.legendre": {
+      "file": "legendre.py",
+      "sha256": "c5a0f7808b8126810e0f5526a58c4a7e9c46ec8636d3351dc79fe6c60991d8c9"
+    },
+    "numpy.polynomial.polynomial": {
+      "file": "polynomial.py",
+      "sha256": "d06ab7b63e37d6cbfdea22edcd9ffa696a3f42d97596d3d381d0de3125414e9d"
+    },
+    "numpy.polynomial": {
+      "file": "__init__.py",
+      "sha256": "ca738713531cf5e05930d96ba1a13d99e216ef0664be8edba468c58ed0c1fc05"
+    },
+    "numpy.ma.core": {
+      "file": "core.py",
+      "sha256": "195802dedcde00b95b0b710a5e17c23be57c300afbee40961a55e8d4d4314375"
+    },
+    "numpy.ma.extras": {
+      "file": "extras.py",
+      "sha256": "00974f1fbc3bd5378641881eb06da2524c8b641cc6ae967397ac8b753e142a67"
+    },
+    "numpy.ma": {
+      "file": "__init__.py",
+      "sha256": "661d878a5e2c74d3647fed1a250ae738f991911c11e2b380ce137e9f7447b1b5"
+    },
+    "numpy.rec": {
+      "file": "__init__.py",
+      "sha256": "72069962aeb0e2a368f3535918ef84e2f9128fd7923b84a034c3aa88b825a789"
+    },
+    "scipy._lib.array_api_compat.common._aliases": {
+      "file": "_aliases.py",
+      "sha256": "84723875859420a34e69f9ee5af4aa3155bfa2531d6d773c21eff7c3d57cfeb1"
+    },
+    "scipy._lib.array_api_compat.numpy._typing": {
+      "file": "_typing.py",
+      "sha256": "11e01ce414b4f95e1aafdb95a8b17385f110d8ffeda2ca7b592178ec59e613f1"
+    },
+    "scipy._lib.array_api_compat.numpy._aliases": {
+      "file": "_aliases.py",
+      "sha256": "1ce464cb295c9d04987fdc18004e58123ef4294353eb44a15baa89380b63012d"
+    },
+    "scipy._lib.array_api_compat.numpy._info": {
+      "file": "_info.py",
+      "sha256": "cacd405707ebbb20a007368b36877f78b52431bd20c32b26a8d17aafc765a4dd"
+    },
+    "scipy._lib.array_api_compat.common._linalg": {
+      "file": "_linalg.py",
+      "sha256": "90adcff888f14e76c04934d48a480d6940234124b37c7d16462ec5a7a8f9111c"
+    },
+    "scipy._lib.array_api_compat.numpy.linalg": {
+      "file": "linalg.py",
+      "sha256": "99cc618e9461f24cfe0845a13b66394e44831a54ae36fae98236c4be320af5e9"
+    },
+    "scipy._lib.array_api_compat.common._fft": {
+      "file": "_fft.py",
+      "sha256": "b111bf49b00943657f8beac05a625a19f191bbfd846607b74de9983134e52fc3"
+    },
+    "scipy._lib.array_api_compat.numpy.fft": {
+      "file": "fft.py",
+      "sha256": "6984361e9cdea9fe28b4d1f3a5a9631e7096284de7485b9bc9f055e9020a2502"
+    },
+    "scipy._lib.array_api_compat.numpy": {
+      "file": "__init__.py",
+      "sha256": "5f68a23aa947aabea8b45e8d525c8b520d02323e30a3b80966144b105f18b419"
+    },
+    "scipy._lib.array_api_extra._lib": {
+      "file": "__init__.py",
+      "sha256": "e7836693c12ce771c0b75fab5ec7a8a44fc7a2c72b1b8db67ce261f4be86a156"
+    },
+    "scipy._lib.array_api_extra._lib._utils": {
+      "file": "__init__.py",
+      "sha256": "5f83f8fc12fd4880fa22ed904cdf084cad1ed8999465c076ce0739214a47c1b9"
+    },
+    "scipy._lib._sparse": {
+      "file": "_sparse.py",
+      "sha256": "7866ded976d6302467278c6575fb359cfeb421c0bd8a31b92c08cd6fe1acd37d"
+    },
+    "scipy._lib._array_api_override": {
+      "file": "_array_api_override.py",
+      "sha256": "fc1fff65fc38a034edbff44dc1c953cca707f57b78e1916209d1046e679349d7"
+    },
+    "scipy._lib._array_api_compat_vendor": {
+      "file": "_array_api_compat_vendor.py",
+      "sha256": "2d4fd3a05d9a1a0b7b7b7dacdc69ba8825a5ddb9d5829c2f29796a3fce22fd1f"
+    },
+    "scipy._lib.array_api_extra._lib._utils._compat": {
+      "file": "_compat.py",
+      "sha256": "602504a9719bc9b264b684841951af0d6c317448cb33899795ac7eb74fb9b7d4"
+    },
+    "scipy._lib.array_api_extra._lib._utils._typing": {
+      "file": "_typing.py",
+      "sha256": "f8e020962a757637801807df0e1be201f78379fe79580bbcafaabc16e4a1cfb3"
+    },
+    "scipy._lib.array_api_extra._lib._utils._helpers": {
+      "file": "_helpers.py",
+      "sha256": "bdbca39a739d38bd35fb6d72f2d3f21658410e9196824169a7b12526658ee05d"
+    },
+    "scipy._lib.array_api_extra._lib._at": {
+      "file": "_at.py",
+      "sha256": "05a30719a344d80aac616984b1f488afa8f66868b0095c85d898370e27a46a5f"
+    },
+    "scipy._lib.array_api_extra._lib._funcs": {
+      "file": "_funcs.py",
+      "sha256": "2863fff6a34f4d0dadee0d5cb0e474feaf4acc38613cd7176c2f528f9b292d86"
+    },
+    "scipy._lib.array_api_extra._delegation": {
+      "file": "_delegation.py",
+      "sha256": "c63662f0caa0fe5bb97243989e03a3ccabfc1a259666dbd6ff71e4a39ae475dd"
+    },
+    "scipy._lib.array_api_extra._lib._lazy": {
+      "file": "_lazy.py",
+      "sha256": "3c5b803c86301c5168ffc74f4885c33ea85dc5e69e589f0e0c99bda6f253d27c"
+    },
+    "scipy._lib.array_api_extra": {
+      "file": "__init__.py",
+      "sha256": "ea4620e119afc7ada29e3d2bd67dbc69a6f0447c626b2c0ac7c627731d9da789"
+    },
+    "scipy._lib.array_api_extra.testing": {
+      "file": "testing.py",
+      "sha256": "c8fd3ee2f64dfd30c57f6a94878b2dc250386f2f04da15c2d0cad0b81316ddec"
+    },
+    "scipy._lib._docscrape": {
+      "file": "_docscrape.py",
+      "sha256": "08d27e082b339c80363845598e3a93bcf72fa7c6f7ba5520581a1a42604bcac1"
+    },
+    "scipy._lib._array_api": {
+      "file": "_array_api.py",
+      "sha256": "a9701c3c3251e75ce244e4ccd15da936df66fc3b17ec0889de38f5d21ea82fea"
+    },
+    "scipy._lib._util": {
+      "file": "_util.py",
+      "sha256": "3a3837ae4094263e936394bae513b3a91387b12fa9cb7bae91f43117b5bc3293"
+    },
+    "scipy.sparse._sputils": {
+      "file": "_sputils.py",
+      "sha256": "e1d998dad77b2567e25d6d4ae8e59e9827f73aeb2c6c0a700c5d35da9ce93a77"
+    },
+    "scipy.sparse._matrix": {
+      "file": "_matrix.py",
+      "sha256": "b8a83b0f417f6ceef3057659e3bba0a1eac59fd8c7d58d751b9058d40b1c89a0"
+    },
+    "scipy.sparse._base": {
+      "file": "_base.py",
+      "sha256": "156eee5229431ee2316223abd0538efe2d0b1cfd016b33335fc50f4ac8135d7f"
+    },
+    "scipy.sparse._sparsetools": {
+      "file": "_sparsetools.cp312-win_amd64.pyd",
+      "sha256": "1d507be93679e2a8dc12c2b64a3a59a074c140460ab5ba8d40a7b5bdf36202fb"
+    },
+    "scipy.sparse._data": {
+      "file": "_data.py",
+      "sha256": "f2a66c679f699f02f2505540daf4a85d5f6f877f3673d6de4e9ffa3003ca2cd8"
+    },
+    "scipy.sparse._index": {
+      "file": "_index.py",
+      "sha256": "02a4ef8ffbe1df33d251711f5685ebcf6f2b969ebf6cfe9c0feac55c545d92f4"
+    },
+    "scipy.sparse._compressed": {
+      "file": "_compressed.py",
+      "sha256": "3f75556deaf6ee2949ac25798cdd562978b0c5ff8a21f3d0abf891b19b24695e"
+    },
+    "scipy.sparse._csr": {
+      "file": "_csr.py",
+      "sha256": "ca80d33f8fb3b245e659c3aa6373cbcf940ce3e835694f9d63c68b35b28388d8"
+    },
+    "scipy.sparse._csc": {
+      "file": "_csc.py",
+      "sha256": "7c595cb94e5a162582ea3e05ac2470473ed13b9bfc239d68e4b993ab12302753"
+    },
+    "_csparsetools": {
+      "file": "_csparsetools.cp312-win_amd64.pyd",
+      "sha256": "356e21967b04d9d9c97fdd602be3e6b94f208511d6b86fe2caf5464ea87bddd8"
+    },
+    "scipy.sparse._csparsetools": {
+      "file": "_csparsetools.cp312-win_amd64.pyd",
+      "sha256": "356e21967b04d9d9c97fdd602be3e6b94f208511d6b86fe2caf5464ea87bddd8"
+    },
+    "scipy.sparse._lil": {
+      "file": "_lil.py",
+      "sha256": "3ffd6a6a0d821dbcc49cf30a123c043823976bbce9721e1e8a6fd9b4baf4af15"
+    },
+    "scipy.sparse._dok": {
+      "file": "_dok.py",
+      "sha256": "dc396b55f7c087fab07a4eb2722b0d56731d75ce16e130a3ae22ed858c34b7c8"
+    },
+    "scipy.sparse._coo": {
+      "file": "_coo.py",
+      "sha256": "840ac885a9845ade6d401eeb98c15f32dead32b6e61accde25902bce6c29b5b9"
+    },
+    "scipy.sparse._dia": {
+      "file": "_dia.py",
+      "sha256": "91b261bfab7b170a0689d6c480701d9778a522a993c4c03681bdfdf52d1a04b8"
+    },
+    "scipy.sparse._bsr": {
+      "file": "_bsr.py",
+      "sha256": "d0c79100c1212a0d15f4772b28f51dd79376b4fe912f14a7257dd1dfa39d7974"
+    },
+    "scipy._lib.deprecation": {
+      "file": "deprecation.py",
+      "sha256": "3600ae6abc68a94b25d4be639089759ee4f5d92b1d6ab7a4807e14a7f1488fab"
+    },
+    "scipy.sparse._construct": {
+      "file": "_construct.py",
+      "sha256": "2796e8568ceaef7d64d40031d55ad56bc0cfe98bb98980cd8e57088debf1148a"
+    },
+    "scipy.sparse._extract": {
+      "file": "_extract.py",
+      "sha256": "f7f1db9fbcad28bfd29fc653d449565357e0bcb35fd63c5ad812462bfdec5434"
+    },
+    "scipy.sparse._matrix_io": {
+      "file": "_matrix_io.py",
+      "sha256": "5bb10b1340acd23e040b339af0f97c9c4f128c78c618b054640e40f83b9ac9bd"
+    },
+    "scipy.sparse.base": {
+      "file": "base.py",
+      "sha256": "8fd6c4b2f3ffb701bf2cca5a54d3141ceefd5299d34579c491b9a89f61786394"
+    },
+    "scipy.sparse.bsr": {
+      "file": "bsr.py",
+      "sha256": "8dbbf43c2844c05713376e60f063dd8ee165c4b7dfa28478146891d5781afaf2"
+    },
+    "scipy.sparse.compressed": {
+      "file": "compressed.py",
+      "sha256": "8da7f6ecaafbd9843c9020ea6b880b740f155298cce4e5214812d1216dd5b0b6"
+    },
+    "scipy.sparse.construct": {
+      "file": "construct.py",
+      "sha256": "3e918c819471834907c0ce9e8cf05226440b7e0ac951d22cd2435c3cc93816a0"
+    },
+    "scipy.sparse.coo": {
+      "file": "coo.py",
+      "sha256": "7857e3f59e4f27946609007cb75d7fff65b464473679da03b34b001b52d2eddb"
+    },
+    "scipy.sparse.csc": {
+      "file": "csc.py",
+      "sha256": "38e2124ac68db0aa7858577322e3a0fabe28d84258028b6c8bc6005dc8aa0a2a"
+    },
+    "scipy.sparse.csr": {
+      "file": "csr.py",
+      "sha256": "296dd81efcda55c090b160c85ce2b53c33d67129d6beec7233eee5094e81d337"
+    },
+    "scipy.sparse.data": {
+      "file": "data.py",
+      "sha256": "385db655aa126895ea82ded81f3a61769f313c47ddec75d5aa108cd8f4fbe0a1"
+    },
+    "scipy.sparse.dia": {
+      "file": "dia.py",
+      "sha256": "138f76524eb05b07594b9219d8620cfacf60b696011b37033f1b2001fd649129"
+    },
+    "scipy.sparse.dok": {
+      "file": "dok.py",
+      "sha256": "e8a60101836cbbd778989d5bf127622c707ac7a155607197d866b17f6ddc0807"
+    },
+    "scipy.sparse.extract": {
+      "file": "extract.py",
+      "sha256": "b5cc1791fddfbf12a0e0fa2d5ccaefae378ccc282abd44016c3073aca74b109a"
+    },
+    "scipy.sparse.lil": {
+      "file": "lil.py",
+      "sha256": "9ae7401473774e4d9e412d5c5934110100171ae3e78a43ad616356611bf042ab"
+    },
+    "scipy.sparse.sparsetools": {
+      "file": "sparsetools.py",
+      "sha256": "b0a57a76235a1f8af8075055f85fb502fb86007c36229cab6922650685d9f586"
+    },
+    "scipy.sparse.sputils": {
+      "file": "sputils.py",
+      "sha256": "724b947a3e23474f4caefca725367d73afd008a4c79feed951e05c05fe8c533b"
+    },
+    "scipy.sparse": {
+      "file": "__init__.py",
+      "sha256": "d77a999c32e8fee54b56edbcf254a52e22df21e8693fe521cc12c2bc7f43e6d7"
+    },
+    "scipy.sparse.linalg._interface": {
+      "file": "_interface.py",
+      "sha256": "c522ccb35e868edb7c25426ba9b1d85cf0f3af582f9cf9612eff15fe80abe652"
+    },
+    "scipy.sparse.linalg._isolve.utils": {
+      "file": "utils.py",
+      "sha256": "0451769c06a092dad01150c108ff043c8de1c5201709f3cb734f8865385a8dd1"
+    },
+    "scipy.linalg._fblas": {
+      "file": "_fblas.cp312-win_amd64.pyd",
+      "sha256": "3c6e3904bdfb3849a94db9e21863b5ce98516d7df41764afb8c27bde7c387e34"
+    },
+    "scipy.linalg.blas": {
+      "file": "blas.py",
+      "sha256": "f967721121d5c44937cac2b7a502d7fc8450c5df9626a2a748c42f539d5950fe"
+    },
+    "scipy.linalg._flapack": {
+      "file": "_flapack.cp312-win_amd64.pyd",
+      "sha256": "0de0eb87b20daaeb54f26abf23d54a02215cbdc19c8245aadb3fa86e96804328"
+    },
+    "scipy.linalg.lapack": {
+      "file": "lapack.py",
+      "sha256": "07b0c01aad4b6f920865d2baacb37250fa18fa034bf695197728f9a11fb15335"
+    },
+    "scipy.linalg._misc": {
+      "file": "_misc.py",
+      "sha256": "4d0f1dcbd4b0c1c50d977f4d8b0a2b360bd613a528a96da61b6b0e616f5c79f1"
+    },
+    "scipy.linalg.cython_lapack": {
+      "file": "cython_lapack.cp312-win_amd64.pyd",
+      "sha256": "84cc424fa42d3a2c1abaaf20107930c327f585599ca47fa4540d4f9a9f5d53a4"
+    },
+    "scipy.linalg._cythonized_array_utils": {
+      "file": "_cythonized_array_utils.cp312-win_amd64.pyd",
+      "sha256": "5a88e80730755f2577ac1826ccc567b4a524fe2b30052f99c87311f755c8f74e"
+    },
+    "scipy.linalg._decomp": {
+      "file": "_decomp.py",
+      "sha256": "b2c876ad8037ed26224afedbdee22e7b54f35f6d80388a95472b570887d9fb9e"
+    },
+    "scipy.linalg._decomp_svd": {
+      "file": "_decomp_svd.py",
+      "sha256": "0c8316b1fe3b9b4fa0d6144e82c7804864c22fbc91b5187b3d62e391486d823f"
+    },
+    "scipy.linalg._solve_toeplitz": {
+      "file": "_solve_toeplitz.cp312-win_amd64.pyd",
+      "sha256": "ab6049fe4ae0ae781e6562d78fee3e9c1715cf3dd4686428fedbaaf99c4dab4f"
+    },
+    "scipy.linalg._batched_linalg": {
+      "file": "_batched_linalg.cp312-win_amd64.pyd",
+      "sha256": "c6df23588eba47a89edeed4474974d6ea816060d7749a2821a564a857d79a255"
+    },
+    "scipy.linalg._basic": {
+      "file": "_basic.py",
+      "sha256": "6352b6af50425f83bf8a55c17546c1676ccb656228ca364dda8644b271d3ad80"
+    },
+    "scipy.linalg._decomp_lu_cython": {
+      "file": "_decomp_lu_cython.cp312-win_amd64.pyd",
+      "sha256": "3005373a7d19051fc61d451f140bf961e0caaf2f95ea0fb442908c57345bc1a0"
+    },
+    "scipy.linalg._decomp_lu": {
+      "file": "_decomp_lu.py",
+      "sha256": "37d24f62000259863ecab6c488023a216ff8e46e6214bbf8fd6eae6631ed5cca"
+    },
+    "scipy.linalg._decomp_ldl": {
+      "file": "_decomp_ldl.py",
+      "sha256": "de8ac6b6a4226fa39c63e45919399a10a8368ee7b64051c44467dc71583e8787"
+    },
+    "scipy.linalg._decomp_cholesky": {
+      "file": "_decomp_cholesky.py",
+      "sha256": "8761f6bcfb5c44554f8729d53eb3e88a9a00ccaa513e8b9a9d983cfd7ea09937"
+    },
+    "scipy.linalg._decomp_qr": {
+      "file": "_decomp_qr.py",
+      "sha256": "6e554d8ed146a4bef8c331c39252c3dfc636ffc061f1ef1b8719b45d0037881c"
+    },
+    "scipy.linalg._decomp_qz": {
+      "file": "_decomp_qz.py",
+      "sha256": "a422317dade4f9f05ba2feedac83eb1a8fa38d216d1ac7396975d3dc212be76c"
+    },
+    "scipy.linalg._decomp_schur": {
+      "file": "_decomp_schur.py",
+      "sha256": "237b2c0c16a7f7696b30d39b56a8c0eed0bbf48f06b7c0a9759b94a77b545667"
+    },
+    "scipy.linalg._decomp_polar": {
+      "file": "_decomp_polar.py",
+      "sha256": "893067af75be87473bd36074d6c76762e8fb823eace6a93c112ddec6c848be58"
+    },
+    "scipy.linalg._expm_frechet": {
+      "file": "_expm_frechet.py",
+      "sha256": "24343bbd90dedffe421ae0cf50d12ce3d05736d51bd44b6a8387fed48666ea08"
+    },
+    "scipy.linalg._matfuncs_schur_sqrtm": {
+      "file": "_matfuncs_schur_sqrtm.cp312-win_amd64.pyd",
+      "sha256": "a30c2700d337cee784c08d4ea7fff536ab3b881b3f535c0b0b68babde2e5c4f0"
+    },
+    "scipy.linalg._matfuncs_expm": {
+      "file": "_matfuncs_expm.cp312-win_amd64.pyd",
+      "sha256": "65e2c40301818e461f81d35b4cd7a282c9502d9beb0599d4b6a330826a3309bd"
+    },
+    "scipy.linalg._linalg_pythran": {
+      "file": "_linalg_pythran.cp312-win_amd64.pyd",
+      "sha256": "cdf6e618ef2ad73ae92e843600a70d4c87078561ebb4375f26402958b8f714e1"
+    },
+    "scipy.linalg._matfuncs": {
+      "file": "_matfuncs.py",
+      "sha256": "393f0c3381de60f82b5d9dfdefc115a2e6f17786e605be8a34aa6175525bd7bc"
+    },
+    "scipy.linalg._special_matrices": {
+      "file": "_special_matrices.py",
+      "sha256": "9c028a6316d19a6855ed8be9f8268245c06be5f94221858a970ca6db5051d3ac"
+    },
+    "scipy.linalg._solvers": {
+      "file": "_solvers.py",
+      "sha256": "f082e2ef2795a61306f98e8e244ab7c028e01ac33035a963628a5264af64236b"
+    },
+    "scipy.linalg._procrustes": {
+      "file": "_procrustes.py",
+      "sha256": "de69265bf5acce6c917376d03e5036336887df730deae7feb484ff54de44cc4d"
+    },
+    "scipy.linalg.cython_blas": {
+      "file": "cython_blas.cp312-win_amd64.pyd",
+      "sha256": "7cb7d97da1cdcdbce9af4adb83638ee5185a857918c5e0b7e1696e527c3c0d81"
+    },
+    "scipy.linalg._decomp_update": {
+      "file": "_decomp_update.cp312-win_amd64.pyd",
+      "sha256": "10b7ee93b4a18bef35182b844eb54457ceaad866ef9aa76d6fc1e4b9fc71b59d"
+    },
+    "scipy.linalg._sketches": {
+      "file": "_sketches.py",
+      "sha256": "0c10363a88f7e22deba1b668df6b02dcbd34bb97ea1c3e792e708511cf5977e1"
+    },
+    "scipy.linalg._decomp_cossin": {
+      "file": "_decomp_cossin.py",
+      "sha256": "c3b8a5af709ec50e71c997766b9f734a828937dd191aded5a4c1454dfcee496e"
+    },
+    "scipy.linalg.decomp": {
+      "file": "decomp.py",
+      "sha256": "9478e247b82238b00b1554549da2e0519b7390996c3af75b81dc4949ecd6cc92"
+    },
+    "scipy.linalg.decomp_cholesky": {
+      "file": "decomp_cholesky.py",
+      "sha256": "6964165694a65eec4e96689b7f8c1ea2401b72e9b3b770786d61cd71a49e2935"
+    },
+    "scipy.linalg.decomp_lu": {
+      "file": "decomp_lu.py",
+      "sha256": "3a9021921f4bb86cde177c6c36b57b2e72cd1f5afd04a2118c4ca43eae89eccc"
+    },
+    "scipy.linalg.decomp_qr": {
+      "file": "decomp_qr.py",
+      "sha256": "763f48a7f34bf7f0e16d332f3aedd47fbdca171cc05b0f199390245bfc7c220e"
+    },
+    "scipy.linalg.decomp_svd": {
+      "file": "decomp_svd.py",
+      "sha256": "eaf4c0ba32623430aed7e51390f70f996913f6cd815d28bd1fd77fa3e4590a8c"
+    },
+    "scipy.linalg.decomp_schur": {
+      "file": "decomp_schur.py",
+      "sha256": "053488eb0a543197b03c6b1a63fb7f8895561f4d183b5ba79f727c3397040341"
+    },
+    "scipy.linalg.basic": {
+      "file": "basic.py",
+      "sha256": "718d50ec65a339bc6f74e1e007c110593dd38906e65f359fc8b3803a9bc018de"
+    },
+    "scipy.linalg.misc": {
+      "file": "misc.py",
+      "sha256": "498deba2796fd392911148b4be1c53debb923d483a319991a195a05c987eed94"
+    },
+    "scipy.linalg.special_matrices": {
+      "file": "special_matrices.py",
+      "sha256": "f247a3d7253af5b75354836ea821fb06d7a871506b1a8f1062473e9e809d86bb"
+    },
+    "scipy.linalg.matfuncs": {
+      "file": "matfuncs.py",
+      "sha256": "bd2d8bd0d2034c4e10f0549e137ba58cb554aa686c4d763f2546d32ef6d8b2e0"
+    },
+    "scipy.linalg": {
+      "file": "__init__.py",
+      "sha256": "91604d8726c12c89bda30609d2662e1aa7cf7f8b37a6393c8761110b21b502d7"
+    },
+    "scipy.sparse.linalg._isolve.iterative": {
+      "file": "iterative.py",
+      "sha256": "18973fa166d23cc4cc94cc503499ff22e709d41281f7dd2d5a5f3d9f674647ec"
+    },
+    "scipy.sparse.linalg._isolve.minres": {
+      "file": "minres.py",
+      "sha256": "24d319230a0e51a49f3e4b54972d81c62cf14cf5702109e8de96ec08e1c9665e"
+    },
+    "scipy.sparse.linalg._isolve._gcrotmk": {
+      "file": "_gcrotmk.py",
+      "sha256": "4243f65f79599081b58680b2cff0e4741a0bf02022d03b1c56aa45e0c34d288e"
+    },
+    "scipy.sparse.linalg._isolve.lgmres": {
+      "file": "lgmres.py",
+      "sha256": "aed674d813a914e5f438600d9e0d9d5ded1dbd596ce5dca6dfe13daba9e63e97"
+    },
+    "scipy.sparse.linalg._isolve.lsqr": {
+      "file": "lsqr.py",
+      "sha256": "533c52ab32998bbeeb7daf1ae4f1af8ddd2c972b212db45a110435fba810e8d1"
+    },
+    "scipy.sparse.linalg._isolve.lsmr": {
+      "file": "lsmr.py",
+      "sha256": "f1e60be3f5216f602bf33535acc72474aa80fbe0149d5929145d0432bc29e0ce"
+    },
+    "scipy.sparse.linalg._isolve.tfqmr": {
+      "file": "tfqmr.py",
+      "sha256": "c1073d8fb9b430bb2bfdde58d9e2dff927b03e7ac32bedffd4eee59a4100f6dc"
+    },
+    "scipy.sparse.linalg._isolve": {
+      "file": "__init__.py",
+      "sha256": "ac572831833bd136ed8e5737c615a182374d1d43b07384d2575b0e159c0be86c"
+    },
+    "scipy.sparse.linalg._dsolve._superlu": {
+      "file": "_superlu.cp312-win_amd64.pyd",
+      "sha256": "075d7ab28c49252f4ee5980ce9ae5ca804c6859649f650405813ff8649368e17"
+    },
+    "scipy.sparse.linalg._dsolve.linsolve": {
+      "file": "linsolve.py",
+      "sha256": "f09588a08029731753e08171d40c36ae85e6024f4a6bd69094c04aed920fc0cf"
+    },
+    "scipy.sparse.linalg._dsolve._add_newdocs": {
+      "file": "_add_newdocs.py",
+      "sha256": "dabcc0b0ddba161a55e20c52c8278dd585dbde67959bf731e5bc78f17361d69e"
+    },
+    "scipy.sparse.linalg._dsolve": {
+      "file": "__init__.py",
+      "sha256": "05bdb3fa011132e8b95d945b4fab4e8d425b4cb935bff97684b15647bcb22583"
+    },
+    "scipy.sparse.linalg._eigen.arpack._arpacklib": {
+      "file": "_arpacklib.cp312-win_amd64.pyd",
+      "sha256": "f532cab33e8ee89eef19e8a3e2bd31485487c4b172beaf52446f2bd2af3b110c"
+    },
+    "scipy.sparse.linalg._eigen.arpack.arpack": {
+      "file": "arpack.py",
+      "sha256": "98a16698bb85668d9c8d408d0d683da400a6fe4619d71b292819cde0e408fe40"
+    },
+    "scipy.sparse.linalg._eigen.arpack": {
+      "file": "__init__.py",
+      "sha256": "114d2f5ee4e567331c5f10884d44d5c5467f374120703174e90dab333cb4437a"
+    },
+    "scipy.sparse.linalg._eigen.lobpcg.lobpcg": {
+      "file": "lobpcg.py",
+      "sha256": "db55ebeb1ba07e01dbf100fba0307aa957ce4e49b2354a70517752d8cc942d4b"
+    },
+    "scipy.sparse.linalg._eigen.lobpcg": {
+      "file": "__init__.py",
+      "sha256": "f1ac3ae78da03c736b88544110d4d9e6b6f533772a24a4e81befa969aaa96b13"
+    },
+    "scipy.sparse.linalg._propack": {
+      "file": "_propack.cp312-win_amd64.pyd",
+      "sha256": "7f8f73cc897677ef5825214f3a26d56f266c55efa45fdeceb0c733a1956db096"
+    },
+    "scipy.sparse.linalg._svdp": {
+      "file": "_svdp.py",
+      "sha256": "55c46a488bcf48dec6f4cdc23e3612656adf49f3865331398e021eb62bad13fa"
+    },
+    "scipy.sparse.linalg._eigen._svds": {
+      "file": "_svds.py",
+      "sha256": "f79ff00ea406af8356d2aa9f1c49aaba7a5607956ec9a025f4d80d5fcca6954f"
+    },
+    "scipy.sparse.linalg._eigen": {
+      "file": "__init__.py",
+      "sha256": "d35dc5deeea931ed09d302a3305abf6b58d2b8efa9c12fe1fd7ce6248df17cc3"
+    },
+    "scipy.sparse.linalg._onenormest": {
+      "file": "_onenormest.py",
+      "sha256": "2ebcd799230642df6ce3445a03191cf90ba583a02f09210baad27443230c2040"
+    },
+    "scipy.sparse.linalg._expm_multiply": {
+      "file": "_expm_multiply.py",
+      "sha256": "6fc7882acf4f1e548dd23c5db6c8e884f2f88de44854cec1ff173e2667602a4f"
+    },
+    "scipy.sparse.linalg._matfuncs": {
+      "file": "_matfuncs.py",
+      "sha256": "3d48218375ab86d30e361e6753658fb994c2bb0dc392e0569fb70b6d27b076a2"
+    },
+    "scipy.sparse.linalg._norm": {
+      "file": "_norm.py",
+      "sha256": "146ed4be9fbae7624ea6f97a02808d467ffe941634c0463ce3f626e951de922b"
+    },
+    "scipy.sparse.linalg._funm_multiply_krylov": {
+      "file": "_funm_multiply_krylov.py",
+      "sha256": "5dd13de0595b1f268e0a4b188623b1946173cb5886b2d9a18c2c64738bc6700f"
+    },
+    "scipy.sparse.linalg._special_sparse_arrays": {
+      "file": "_special_sparse_arrays.py",
+      "sha256": "9773b3614108d6590003543d2381723e5849365b0ae255a5914c46c97bbb8078"
+    },
+    "scipy.sparse.linalg.isolve": {
+      "file": "isolve.py",
+      "sha256": "adaf602213b9a9f14f30ab16f0e81049fe107a9772919a5350c6975cb6a410e6"
+    },
+    "scipy.sparse.linalg.dsolve": {
+      "file": "dsolve.py",
+      "sha256": "16a081a2348c58a7d728bf14d8ab7eba14d08f2d9b1512b88dd9bed2ebe670b4"
+    },
+    "scipy.sparse.linalg.interface": {
+      "file": "interface.py",
+      "sha256": "a54437f7a1a8f34a03e4d867c35391034ba0de294e109d34b5aafa733438255c"
+    },
+    "scipy.sparse.linalg.eigen": {
+      "file": "eigen.py",
+      "sha256": "45d0fceefa26c1a9997d688a55cc575fb960234a27efd3362bf8f353dc26afb9"
+    },
+    "scipy.sparse.linalg.matfuncs": {
+      "file": "matfuncs.py",
+      "sha256": "e35e22708ae241b036330ae8d9323530c912b55e85d5f462f4786cf66ae9b019"
+    },
+    "scipy.sparse.linalg": {
+      "file": "__init__.py",
+      "sha256": "1c0450dce2ff5c8805a14203e6e20d7ab6aeb60a80f290d45356ab254aab29b8"
+    },
+    "_sqlite3": {
+      "file": "_sqlite3.pyd",
+      "sha256": "466f5b40db4e53902258be203dfd22959f8af02b67d2dd44bfdd8de69100cadd"
+    },
+    "_queue": {
+      "file": "_queue.pyd",
+      "sha256": "34ffae13990ce94ed089c2405d7a74fec5a3635d416d62f98b5e599fa64e9000"
+    },
+    "_multiprocessing": {
+      "file": "_multiprocessing.pyd",
+      "sha256": "a4248726dbbb574855f696b30c43046d35724aab64106cd75aeea26fe38b61b9"
+    },
+    "scipy._lib._uarray._uarray": {
+      "file": "_uarray.cp312-win_amd64.pyd",
+      "sha256": "2fa9cd0fca336b35fca629e2ceedde50fdeed9d6d6ea3575a2bc4889222bc2d6"
+    },
+    "scipy._lib._uarray._backend": {
+      "file": "_backend.py",
+      "sha256": "bbda6526b9eff3220c6f4cd9c8279c9893e9fd922f502c10ed8dc7f9a8c65e1b"
+    },
+    "scipy._lib._uarray": {
+      "file": "__init__.py",
+      "sha256": "a5ec7bdc6818ed85160115601f3630fcacb67dd007eccf4172e0cc89ffe19b7f"
+    },
+    "scipy._lib.uarray": {
+      "file": "uarray.py",
+      "sha256": "a97bef525b898902702f26f2a39659b461966bfa364f4992be88debbcb7f2244"
+    },
+    "scipy.fft._basic": {
+      "file": "_basic.py",
+      "sha256": "414d6032084a67978bee8b7ad3fa7e876a4ef1ae44dee52b7c562ef6aef64e4d"
+    },
+    "scipy.fft._realtransforms": {
+      "file": "_realtransforms.py",
+      "sha256": "b39ecf01740feefc4e5fd834fd61a6dfa477136c43be311f5a6fae6bce09f48d"
+    },
+    "scipy.special._sf_error": {
+      "file": "_sf_error.py",
+      "sha256": "8436f29a3d5e4a23e397cdbc3d1f8a89d91c77c462543a49101f9f180f65b473"
+    },
+    "scipy.special._ufuncs_cxx": {
+      "file": "_ufuncs_cxx.cp312-win_amd64.pyd",
+      "sha256": "f89da2936994df638b028977e664f50aad6a48a999d18ae5f7bf519d5b5a2479"
+    },
+    "scipy.special._ellip_harm_2": {
+      "file": "_ellip_harm_2.cp312-win_amd64.pyd",
+      "sha256": "d543824c8e47d5c0ab9097d590425845099b6cbae5e293630375d36ce8e286e0"
+    },
+    "scipy.special._special_ufuncs": {
+      "file": "_special_ufuncs.cp312-win_amd64.pyd",
+      "sha256": "b8ab31cc0efdc8edb2b54051344d36eeddbf45b326a462f20666e33369e626a5"
+    },
+    "scipy.special._gufuncs": {
+      "file": "_gufuncs.cp312-win_amd64.pyd",
+      "sha256": "2ba405a2ecd205798bedc38cde6245eceff1555939d3405c71a5c773a4a76caa"
+    },
+    "scipy.special._ufuncs": {
+      "file": "_ufuncs.cp312-win_amd64.pyd",
+      "sha256": "6eca0912fdbc826e8779e604c08f19cdffbb6d6b60f1b198ad31cdc99e58d339"
+    },
+    "scipy.special._input_validation": {
+      "file": "_input_validation.py",
+      "sha256": "4415f4a76dce8b383a7726c348a089186742a275c334ac9fe34bd53febf4bda8"
+    },
+    "scipy.special._specfun": {
+      "file": "_specfun.cp312-win_amd64.pyd",
+      "sha256": "92f64cc95773ea0b05c570004ab74d85415e513949536f874a4d7b214ad40794"
+    },
+    "scipy.special._comb": {
+      "file": "_comb.cp312-win_amd64.pyd",
+      "sha256": "82ada506eca2932774300cc9012eadf31875da5ba1ad8cd6e096621ac881d16a"
+    },
+    "scipy.special._basic": {
+      "file": "_basic.py",
+      "sha256": "a1e1f8d7169d8ebb010db434b79fb383a144793f6088db164948d83289ea1192"
+    },
+    "scipy.special._spfun_stats": {
+      "file": "_spfun_stats.py",
+      "sha256": "97cfddee073e5019d3ffc4712a3acae89a780cc174df95d7c88cc7854beaa237"
+    },
+    "scipy.special._support_alternative_backends": {
+      "file": "_support_alternative_backends.py",
+      "sha256": "9ad2f163f6761f1bbf28458248646e414e8bf09eb761005ccfc20ef8be3ee971"
+    },
+    "scipy.special._logsumexp": {
+      "file": "_logsumexp.py",
+      "sha256": "adb6a02f9fc2b0091296169f2600f96692ea4cb229a9c148f6239ea707207902"
+    },
+    "scipy.special._multiufuncs": {
+      "file": "_multiufuncs.py",
+      "sha256": "1774362b8d855e9775e59b81afa211e89e8831e62e613b445fec85a338ee0624"
+    },
+    "scipy.special._orthogonal": {
+      "file": "_orthogonal.py",
+      "sha256": "eb2895b92ff8e9237ffefe358b98ca9e8f27e54ba7a3ef6d20ea9badf502b475"
+    },
+    "scipy.special._ellip_harm": {
+      "file": "_ellip_harm.py",
+      "sha256": "1fce5f92d657f06ef131107a5a3526cc8cc06966a5473afee47c983c0d3e87ce"
+    },
+    "scipy.special._lambertw": {
+      "file": "_lambertw.py",
+      "sha256": "2189b2d189a393e97b4fce2e1ebf3f3800e0a6c50fcb52b8175ed0191c165ee1"
+    },
+    "scipy.special._spherical_bessel": {
+      "file": "_spherical_bessel.py",
+      "sha256": "3529cfea1bf470abbd1f7352d1a447d327842a1ce7190c60a45f12ac477c932c"
+    },
+    "scipy.special.add_newdocs": {
+      "file": "add_newdocs.py",
+      "sha256": "e62e2fca1f54ae709467acd37159b2d1886c6cfeb3d4c75dc5beeaad4756c0a1"
+    },
+    "scipy.special.basic": {
+      "file": "basic.py",
+      "sha256": "1289993a8aea3377e78792b3dcd76db8a7e972f4edf855cad9f01a44cd6c25d8"
+    },
+    "scipy.special.orthogonal": {
+      "file": "orthogonal.py",
+      "sha256": "62598872ab71efd217e14a142bb1602aec8e2df1422170987851c0bd2cf81e23"
+    },
+    "scipy.special.specfun": {
+      "file": "specfun.py",
+      "sha256": "3bf3f044d1403ec053cf3ea2aef627f74ff8f9a9aaffdb15c02fbd132e0aff76"
+    },
+    "scipy.special.sf_error": {
+      "file": "sf_error.py",
+      "sha256": "3a1116822539924e106e564885301f01cd1e53e99428afe74c0dc7f8c1e527af"
+    },
+    "scipy.special.spfun_stats": {
+      "file": "spfun_stats.py",
+      "sha256": "98b41060c1dfe90a30a464a194bcb80832fe66b8b5cf0c846b0a71d54fdfe75b"
+    },
+    "scipy.special": {
+      "file": "__init__.py",
+      "sha256": "f25d25a4e4f79183bef98a30fdf568d8c3befa25028abd63bc4b073a33fca46e"
+    },
+    "scipy.fft._fftlog_backend": {
+      "file": "_fftlog_backend.py",
+      "sha256": "0f5a8788f3646d5115bc94b00d436c67b0db9060914cf74844950dfa5bcfeb93"
+    },
+    "scipy.fft._fftlog": {
+      "file": "_fftlog.py",
+      "sha256": "2a96a02a790fe1c726ccf0f239df0c0e5e1f717a39f0e8f8ee6cf42026874af1"
+    },
+    "scipy.fft._pocketfft.pypocketfft": {
+      "file": "pypocketfft.cp312-win_amd64.pyd",
+      "sha256": "dd089b853dd1382b4ce73a138076efa8dda9391efa6090ee31fe607e2bdee313"
+    },
+    "scipy.fft._pocketfft.helper": {
+      "file": "helper.py",
+      "sha256": "bef0c761eee7376ebe6a7b56d777cce05537c0cb4889fd68878b44c1d2469e3a"
+    },
+    "scipy.fft._pocketfft.basic": {
+      "file": "basic.py",
+      "sha256": "7524fc3c1161a22391d4a8f58f709c8cc0b4a7b285c5303da83af5a0dd98ac5c"
+    },
+    "scipy.fft._pocketfft.realtransforms": {
+      "file": "realtransforms.py",
+      "sha256": "9e4d5edf595ac5af7ddb401e0606606f5bd9497229a082f05aa488d36f070b24"
+    },
+    "scipy.fft._pocketfft": {
+      "file": "__init__.py",
+      "sha256": "58a5dbe7dc31f432bdcd7abd0f029c869fb38354ae248ca74d0fcf390ac55f1a"
+    },
+    "scipy.fft._helper": {
+      "file": "_helper.py",
+      "sha256": "d6ccc18e6da3b670b08caf93790962419addc6fb77ef8c3f6141110e98479a4d"
+    },
+    "scipy.fft._basic_backend": {
+      "file": "_basic_backend.py",
+      "sha256": "4d9627cc6ef5bba8bce8f4ad2f0c59bbf943dd40e82a609811ba1249497eb351"
+    },
+    "scipy.fft._realtransforms_backend": {
+      "file": "_realtransforms_backend.py",
+      "sha256": "849dcb9053af82089b545fc4dfa7ccf51dd9a802471e2718ac651c787f01f358"
+    },
+    "scipy.fft._backend": {
+      "file": "_backend.py",
+      "sha256": "9cad35b45bbb9a62cbeaad3935f0e0132efedff3de0d8f8d60c16d15d5f39c5d"
+    },
+    "scipy.fft": {
+      "file": "__init__.py",
+      "sha256": "4a7d6aa9eb97e8c90c894ede47214c104dde92479c4794a1b7e58af9d59a3ef9"
+    },
+    "shapely.lib": {
+      "file": "lib.cp312-win_amd64.pyd",
+      "sha256": "662dab5d5a3c93b8a457118f0d96765c6a7b51538133754d7e2a540ef9ab65e3"
+    },
+    "shapely._geos": {
+      "file": "_geos.cp312-win_amd64.pyd",
+      "sha256": "fa81c1de078db6956bb4327b7a2aeabecfef6e42827518ec10eec1f4b991c1ce"
+    },
+    "shapely._geometry_helpers": {
+      "file": "_geometry_helpers.cp312-win_amd64.pyd",
+      "sha256": "8e65aeb9230fdcad1ec63ae9bcaa781a084a3fc94c4744e886a35328c8f4cc73"
+    },
+    "_decimal": {
+      "file": "_decimal.pyd",
+      "sha256": "c70da588b02718eb2f3458b28af6c62f3ed98306774b5110359e78c488702386"
+    },
+    "scipy.spatial._ckdtree": {
+      "file": "_ckdtree.cp312-win_amd64.pyd",
+      "sha256": "8894f6d534e6d514926a8272eb3a1088c02502a921e1cd890390865097ed4813"
+    },
+    "scipy.spatial._kdtree": {
+      "file": "_kdtree.py",
+      "sha256": "29e94341a67b1932d4fe2ebdc347e30e93e37e1ceb6501617a372793309faa49"
+    },
+    "scipy._lib.messagestream": {
+      "file": "messagestream.cp312-win_amd64.pyd",
+      "sha256": "b4679bc7cc58c3dd7cb29689ae96ab295fff3412b1724baa7d2b7c6cf86f6c15"
+    },
+    "scipy.spatial._qhull": {
+      "file": "_qhull.cp312-win_amd64.pyd",
+      "sha256": "28f1c8b17398c7066e30ea40c6b035e47ef65039c503eb635307d0337144e333"
+    },
+    "scipy.spatial._voronoi": {
+      "file": "_voronoi.cp312-win_amd64.pyd",
+      "sha256": "5609f28d114b61cf12e1613da4c9072ed5ebbe400d65d38f17c79d8d9b835c1a"
+    },
+    "scipy.spatial._spherical_voronoi": {
+      "file": "_spherical_voronoi.py",
+      "sha256": "c7db15c19cbccda90a9772c25f3cc65d12865de8fe540ea7035ba067682aadfb"
+    },
+    "scipy.spatial._plotutils": {
+      "file": "_plotutils.py",
+      "sha256": "e47f5e2f941597b03a2a7da68aea5025684fa71023d1f2a76663931e1c99dd48"
+    },
+    "scipy.spatial._procrustes": {
+      "file": "_procrustes.py",
+      "sha256": "ec2f6fde8fc09f2d4bed2342a44ef588b25a57c9d75197e9bf2102eccbb88bbf"
+    },
+    "scipy.spatial._hausdorff": {
+      "file": "_hausdorff.cp312-win_amd64.pyd",
+      "sha256": "f2cd4ab4bdd825a5672a83df4f0b71fd80cf19954373c692a1e4916622bb14a9"
+    },
+    "scipy.spatial._distance_pybind": {
+      "file": "_distance_pybind.cp312-win_amd64.pyd",
+      "sha256": "d42a4996f4aa38699d8f148571a5360704801f3c0525fae4489f6d040a283b51"
+    },
+    "scipy.spatial._distance_wrap": {
+      "file": "_distance_wrap.cp312-win_amd64.pyd",
+      "sha256": "4f46b39f8da613b30e99174ce294069e8f14f86df38e6bb2a0c0d5481d92dfbe"
+    },
+    "scipy.spatial.distance": {
+      "file": "distance.py",
+      "sha256": "d4ab7ea8da43b6759620ad798bdd5700d61132607b3007405cac4c2df115822e"
+    },
+    "scipy.spatial._geometric_slerp": {
+      "file": "_geometric_slerp.py",
+      "sha256": "73003b4e208f5dbe072b6d26f8097b726fecb15446bd438018823360bb213e14"
+    },
+    "scipy.spatial.ckdtree": {
+      "file": "ckdtree.py",
+      "sha256": "3a9b32cfa5a962257edbb5b918975f3964139104e85a776b784c781a7c13daa3"
+    },
+    "scipy.spatial.kdtree": {
+      "file": "kdtree.py",
+      "sha256": "cdce0a83e6bb12f37685726ae87b8274f97a71c11b8391b20d5ebb5eae67b220"
+    },
+    "scipy.spatial.qhull": {
+      "file": "qhull.py",
+      "sha256": "d749f5783705f6aad4986a6aac46fcb0b8f0fdc5df492813fd6534fb3e2e714e"
+    },
+    "scipy.spatial.transform._rotation_cy": {
+      "file": "_rotation_cy.cp312-win_amd64.pyd",
+      "sha256": "4f68115dad53da6a532a54d81e334931f14455e523a3fe78caf1523f1fead01e"
+    },
+    "scipy.spatial.transform._rotation_xp": {
+      "file": "_rotation_xp.py",
+      "sha256": "095b8a6a7e5e1000a2a8a46a8113fd9060dd4a7d19d6e63e25c6654506a76f6b"
+    },
+    "scipy.constants._codata": {
+      "file": "_codata.py",
+      "sha256": "b54b49cdb77d2c239fbe5359c34e983cbb3fb64169c920313cc2fa99750cbe87"
+    },
+    "scipy.constants._constants": {
+      "file": "_constants.py",
+      "sha256": "20066dfaf262f27f6598eaeb4b4a0b886f539b7fceaa9e3ba3b70ed2dc438901"
+    },
+    "scipy.constants.codata": {
+      "file": "codata.py",
+      "sha256": "15acb3f8792936a93c68e69d073ec07c5a4a8a74b825c6212819bf254c1e63ea"
+    },
+    "scipy.constants.constants": {
+      "file": "constants.py",
+      "sha256": "bdd0bf8c34d0656425ae4619634523ecd28ed80b41c07e66736f09872ed4afdb"
+    },
+    "scipy.constants": {
+      "file": "__init__.py",
+      "sha256": "74bfa0259753abfd7dd48d662eb97a4a84af8bf130937f607091b294e1b77d5a"
+    },
+    "scipy.spatial.transform._rotation_groups": {
+      "file": "_rotation_groups.py",
+      "sha256": "5c111acd3b0c83bd5578369ec62be4f556265438073e43638bd16b951ca98f27"
+    },
+    "scipy.spatial.transform._rotation": {
+      "file": "_rotation.py",
+      "sha256": "307bb7c9dfff61d28383536a1c8e3ad7396221ca33b0fe71fccb7aac5bd861d6"
+    },
+    "scipy.spatial.transform._rigid_transform_cy": {
+      "file": "_rigid_transform_cy.cp312-win_amd64.pyd",
+      "sha256": "8de630dfc038d90734a7f027bceb530bcd4cd41f713ca1a06ecade83511041ad"
+    },
+    "scipy.spatial.transform._rigid_transform_xp": {
+      "file": "_rigid_transform_xp.py",
+      "sha256": "d3e9c4c3ba76fd18f6e726cef0008a9e6ce5978169ef26f94f6a0852b5d1bdc2"
+    },
+    "scipy.spatial.transform._rigid_transform": {
+      "file": "_rigid_transform.py",
+      "sha256": "3fe1dc1d35d7893cbcbcdaa9f987289268de3307a696d8d5e1dacafca8e68df2"
+    },
+    "scipy.spatial.transform._rotation_spline": {
+      "file": "_rotation_spline.py",
+      "sha256": "95a8cd26c5e4f43f38e6102f0a678c0f702cdb342589782cb4cee78672b9e80b"
+    },
+    "scipy.spatial.transform.rotation": {
+      "file": "rotation.py",
+      "sha256": "669069f4e82122f03363ad3565bffd4dac30cf14604bdc9d451e5a35c6e87a48"
+    },
+    "scipy.spatial.transform": {
+      "file": "__init__.py",
+      "sha256": "305c5baab68b3b9d4bbf03685e1e928b36d5764503107d4c9465939d0b59f6d2"
+    },
+    "scipy.spatial": {
+      "file": "__init__.py",
+      "sha256": "570ae40ae76d4c663182ad73d421b242913f2112c56430dd9e24cc83980cf996"
+    },
+    "scipy.sparse.csgraph._laplacian": {
+      "file": "_laplacian.py",
+      "sha256": "faa8249aea9f3ac41f3231769af8e95c96784853a5ef5fcc95effa926e9199a8"
+    },
+    "scipy.sparse.csgraph._tools": {
+      "file": "_tools.cp312-win_amd64.pyd",
+      "sha256": "bbe80ea9f718dc39cc4b18654371c6e924fafaf74c8cba588ba2723ce30ae9cd"
+    },
+    "scipy.sparse.csgraph._validation": {
+      "file": "_validation.py",
+      "sha256": "4eea6f11fa840d8cfded23313ff10eeb9f25581247df51b75ba5623fb7d92092"
+    },
+    "scipy.sparse.csgraph._shortest_path": {
+      "file": "_shortest_path.cp312-win_amd64.pyd",
+      "sha256": "d2d2817f778f160420ab56ff9f727321795bb8dcce2276fe9af43dcd51cceda2"
+    },
+    "scipy.sparse.csgraph._traversal": {
+      "file": "_traversal.cp312-win_amd64.pyd",
+      "sha256": "1817674c68d6db6f67b7b0343cae803fb789b9410d13db53b3d6b64a1ced6715"
+    },
+    "scipy.sparse.csgraph._min_spanning_tree": {
+      "file": "_min_spanning_tree.cp312-win_amd64.pyd",
+      "sha256": "5e116133bf8cebf1de481cb2dcad3e1c4eaa1483b2c09e8ebf061cd30e988fe9"
+    },
+    "scipy.sparse.csgraph._flow": {
+      "file": "_flow.cp312-win_amd64.pyd",
+      "sha256": "e512929f71f152921590077ea3f6cb2598fbe68a0d5cea0f328da738d1cac7ce"
+    },
+    "scipy.sparse.csgraph._matching": {
+      "file": "_matching.cp312-win_amd64.pyd",
+      "sha256": "d6c4fd5d1c7c31efaea8fdf5f72e887de90beb8f6b33b2f1afec79abe60436ef"
+    },
+    "scipy.sparse.csgraph._reordering": {
+      "file": "_reordering.cp312-win_amd64.pyd",
+      "sha256": "4e3333df00b90c717c37b1a3ebe14d8c99bce8826b2b8b3c98f53b2dd8240b79"
+    },
+    "scipy.sparse.csgraph": {
+      "file": "__init__.py",
+      "sha256": "12bb57daca660adbc9762558b47d7da22de6c3c4d22b8947b271384657823835"
+    },
+    "scipy.integrate._quadrature": {
+      "file": "_quadrature.py",
+      "sha256": "1e145d8f304740645ed797bd47b278436e20d6b1dd3283aa3d6675d4f0bf8a82"
+    },
+    "scipy.integrate._odepack": {
+      "file": "_odepack.cp312-win_amd64.pyd",
+      "sha256": "b87d527753a64e761ea8de0ea98da5f9fb37d4749905e07841c75e7f355c8c96"
+    },
+    "scipy.integrate._odepack_py": {
+      "file": "_odepack_py.py",
+      "sha256": "f8069eb8358936189159fe8e97517bfdea57eabe301909f0e8f91b646c2fbf4b"
+    },
+    "scipy.integrate._quadpack": {
+      "file": "_quadpack.cp312-win_amd64.pyd",
+      "sha256": "cb28ae63f88e3ecf211bf8f5f27323a9295f30aaa0ff1bfbeb7d62bf434329c2"
+    },
+    "scipy.integrate._quadpack_py": {
+      "file": "_quadpack_py.py",
+      "sha256": "f1c2f0bcec6aea6141984dd57451d20bf398396c202d79e2177a67fdf8d8823f"
+    },
+    "scipy.integrate._vode": {
+      "file": "_vode.cp312-win_amd64.pyd",
+      "sha256": "9455a7ae1a8e85a8008a4fcd6e4460b583bea0cd0860253f6309e2806a020814"
+    },
+    "scipy.integrate._dop": {
+      "file": "_dop.cp312-win_amd64.pyd",
+      "sha256": "cf340c300760f60abf1f734e30869a4caf5e975d5355d177a009bfefc55fb156"
+    },
+    "scipy.integrate._ode": {
+      "file": "_ode.py",
+      "sha256": "3cd84573ab3f06e18cf1b219fde543621148aa4f5d8a25c057a755fa8dfb2122"
+    },
+    "scipy.optimize._dcsrch": {
+      "file": "_dcsrch.py",
+      "sha256": "9a413b3f462fb5312501c7894efb2fa591066069663d3918f57c9d2e045d576e"
+    },
+    "scipy.optimize._linesearch": {
+      "file": "_linesearch.py",
+      "sha256": "eecfa002fd720cb4da869e2d3682ef3b8cbcc907fd33a12e3d4de57634b256a1"
+    },
+    "scipy.optimize._group_columns": {
+      "file": "_group_columns.cp312-win_amd64.pyd",
+      "sha256": "a3ee6c6801009f84b3aa8a980c83a0b1983d33fcf944144cda3cda691ecca43b"
+    },
+    "scipy.optimize._numdiff": {
+      "file": "_numdiff.py",
+      "sha256": "cbf49f6035be0bac9b535bf9a298a0982e0599ad8de90fb13e1bfb2b0b427856"
+    },
+    "scipy.optimize._hessian_update_strategy": {
+      "file": "_hessian_update_strategy.py",
+      "sha256": "891551c990c13796cd2712804beba98f2aaf1a7b1909fabfa01fa7a0eb39ec41"
+    },
+    "scipy.optimize._differentiable_functions": {
+      "file": "_differentiable_functions.py",
+      "sha256": "95c938b12eca897081bca87bd2d213b0d56ab659443f0f2f293f54e8db85fe4a"
+    },
+    "scipy.optimize._optimize": {
+      "file": "_optimize.py",
+      "sha256": "75964b58a0f8986eea123a5022d98de1176e34d687e95ead6aa970317d1f91ca"
+    },
+    "scipy.optimize._trustregion": {
+      "file": "_trustregion.py",
+      "sha256": "31a55643f8757d9e34003186edec3d391826bf1e6e4e0c83515d57245435cdb9"
+    },
+    "scipy.optimize._trustregion_dogleg": {
+      "file": "_trustregion_dogleg.py",
+      "sha256": "5d3bcd42d79b6533f397ac46b731c12c37050f6a9ee6c48e14e4db9ad0d6b30a"
+    },
+    "scipy.optimize._trustregion_ncg": {
+      "file": "_trustregion_ncg.py",
+      "sha256": "3b6ffca7dda5fdf6941cb236e861cadb0574453740475b1c962d178574d3b12a"
+    },
+    "scipy.optimize._trlib._trlib": {
+      "file": "_trlib.cp312-win_amd64.pyd",
+      "sha256": "ec5edbbfa97f3dc4a1f2e155bcf350ca6b25ad238e486ba72da2fef46ea42ff1"
+    },
+    "scipy.optimize._trlib": {
+      "file": "__init__.py",
+      "sha256": "e536d5f14252484c16fea38d833a33a070e0be186e833ab2909cf26c30ab363d"
+    },
+    "scipy.optimize._trustregion_krylov": {
+      "file": "_trustregion_krylov.py",
+      "sha256": "384e8004dd7fa1e4545015d6181036405973c4ee0625506c7a834e301d9be12c"
+    },
+    "scipy.optimize._trustregion_exact": {
+      "file": "_trustregion_exact.py",
+      "sha256": "c12ff06ad8a140b8ea2d4ff509a802b2c04bda8d3b294e6dbb0d46b5793616ed"
+    },
+    "scipy.optimize._constraints": {
+      "file": "_constraints.py",
+      "sha256": "1e002bb1a4697bc98faffb2428139a20dc57157a0c57465d9d27c93f8d93509d"
+    },
+    "scipy.optimize._trustregion_constr.projections": {
+      "file": "projections.py",
+      "sha256": "5d5e29680fa780c4eab144e88b0841c4552cf9fef6d3dbeca499e5fd77684f60"
+    },
+    "scipy.optimize._trustregion_constr.qp_subproblem": {
+      "file": "qp_subproblem.py",
+      "sha256": "2916f7b8938dfee2bec9ddc5a1cbd464bcfc1772d946e84dea4f91d4ba7c03c6"
+    },
+    "scipy.optimize._trustregion_constr.equality_constrained_sqp": {
+      "file": "equality_constrained_sqp.py",
+      "sha256": "e6c51c6572d3d4a6371ecfe373e5d0ad7c9c1616603ee315bb59dee817e7967b"
+    },
+    "scipy.optimize._trustregion_constr.canonical_constraint": {
+      "file": "canonical_constraint.py",
+      "sha256": "2e2617c7ede17d5ada87d965f90cd57dddcd6b4e003aaef77ab477dda93b205f"
+    },
+    "scipy.optimize._trustregion_constr.tr_interior_point": {
+      "file": "tr_interior_point.py",
+      "sha256": "9082adb7c763c0db273e474022f89acde7f700447597a10c25bd64ef6edf87e0"
+    },
+    "scipy.optimize._trustregion_constr.report": {
+      "file": "report.py",
+      "sha256": "628c9d1d5453c4ee69f2367d259522657e279cb930a3ebac22c92c144cf407a6"
+    },
+    "scipy.optimize._trustregion_constr.minimize_trustregion_constr": {
+      "file": "minimize_trustregion_constr.py",
+      "sha256": "2da6dfa6e654e63b3735d37ac3d3b3509f0b8eaa744a313305ab0450cfc7f7ad"
+    },
+    "scipy.optimize._trustregion_constr": {
+      "file": "__init__.py",
+      "sha256": "63638b9f61c1439af1a407c8f948d665ce23fec0ea8ce0469a0752db3002ff6e"
+    },
+    "scipy.optimize._lbfgsb": {
+      "file": "_lbfgsb.cp312-win_amd64.pyd",
+      "sha256": "9d087101aadc47b4ac09332433edcc3be64de36a135acc7c728f079c3af9ebea"
+    },
+    "scipy.optimize._lbfgsb_py": {
+      "file": "_lbfgsb_py.py",
+      "sha256": "c4d668646f483fc043e7f158a5e5b4db729da9fa2f198e4a865e09edc676ae00"
+    },
+    "_moduleTNC": {
+      "file": "_moduleTNC.cp312-win_amd64.pyd",
+      "sha256": "0e57c01521068abf89c818e42693ffb20612ff9319d6942d490c4fd6a48873e2"
+    },
+    "scipy.optimize._moduleTNC": {
+      "file": "_moduleTNC.cp312-win_amd64.pyd",
+      "sha256": "0e57c01521068abf89c818e42693ffb20612ff9319d6942d490c4fd6a48873e2"
+    },
+    "scipy.optimize._tnc": {
+      "file": "_tnc.py",
+      "sha256": "7ef7ad6f3b4275716b04dc25b06f932c3ef75cdb93fc8769f35442573239af21"
+    },
+    "scipy.optimize._cobyla_py": {
+      "file": "_cobyla_py.py",
+      "sha256": "b6410a30a29d433ef5e5dbbc28029f43ab2e5704e7d54c60ab2a01e3291069fe"
+    },
+    "scipy.optimize._cobyqa_py": {
+      "file": "_cobyqa_py.py",
+      "sha256": "11ee94349d54ebc4d938313859ad95b13e3cb50a352223bff38076244e5159b6"
+    },
+    "scipy.optimize._slsqplib": {
+      "file": "_slsqplib.cp312-win_amd64.pyd",
+      "sha256": "0174a3e1849cb4312b17fa6d6fe55de618a02c94ec9f7d9b12199270c6faac75"
+    },
+    "scipy.optimize._slsqp_py": {
+      "file": "_slsqp_py.py",
+      "sha256": "f3f2fac15abbf6ca53ea09fdbf20d4725d20f4a7862f441f56f9e654dc6a64c9"
+    },
+    "scipy.optimize._minimize": {
+      "file": "_minimize.py",
+      "sha256": "f3b379cb4d5332188204c45bcebbd53d8595379fad7e8f0aa32b5fc9b79af7ee"
+    },
+    "scipy.optimize._minpack": {
+      "file": "_minpack.cp312-win_amd64.pyd",
+      "sha256": "95b27adf583cb4c0d660141adba5d179b9df4a42474b2ff230d598673794fab4"
+    },
+    "scipy.optimize._lsq.common": {
+      "file": "common.py",
+      "sha256": "6bdec514d2b0e8172cd438421218ae3977f144ad89867346157ea885408f489e"
+    },
+    "scipy.optimize._lsq.trf": {
+      "file": "trf.py",
+      "sha256": "a174a6e79b67067823804666c9e97413dd0d432c7ac7cd148c0c9ee5cfa9732b"
+    },
+    "scipy.optimize._lsq.dogbox": {
+      "file": "dogbox.py",
+      "sha256": "05fdcf0b75a5250eed2ebbe5e11dd613811a1aae0c262dbc5609c0f7c2a736de"
+    },
+    "scipy.optimize._lsq.least_squares": {
+      "file": "least_squares.py",
+      "sha256": "b6becbe3b248ea5edcbc40434f101f5d46e5304b66d3c97331bced459dc38765"
+    },
+    "scipy.optimize._lsq.givens_elimination": {
+      "file": "givens_elimination.cp312-win_amd64.pyd",
+      "sha256": "22553b97f9e3c32f5fbbc1b8b9c5c4a4e0251f441366472844a824f01ae63021"
+    },
+    "scipy.optimize._lsq.trf_linear": {
+      "file": "trf_linear.py",
+      "sha256": "184306c8ca96c1a54b51aeec0a8f62c0399492e4fbe3aa1c8b588ae8a8e72500"
+    },
+    "scipy.optimize._lsq.bvls": {
+      "file": "bvls.py",
+      "sha256": "87d6d88776acb4846f32d306821b441a91b97c3b21ef848c45b9a01771cdf183"
+    },
+    "scipy.optimize._lsq.lsq_linear": {
+      "file": "lsq_linear.py",
+      "sha256": "3c7c4fede296e01e5a05bcac1f532485b8bbe991530edfbb821b0db6d4a78b56"
+    },
+    "scipy.optimize._lsq": {
+      "file": "__init__.py",
+      "sha256": "73857eb673328b675734d5e48c543c49dbc600db606eba9710cf8ea5d05d6694"
+    },
+    "scipy.optimize._minpack_py": {
+      "file": "_minpack_py.py",
+      "sha256": "f98010d38f6235dc529febb106e7a5c91056a4276a0d6450987ce641bc5f10b5"
+    },
+    "scipy.optimize._spectral": {
+      "file": "_spectral.py",
+      "sha256": "53c467d3b73d4289591a96d58d43e74ec286c66c1a0ea6c0860cb5b6edd37ef7"
+    },
+    "scipy.optimize._nonlin": {
+      "file": "_nonlin.py",
+      "sha256": "64e3edd8d637c9d8a55a17ab3dc766daa1899b3ac59630f8a83ce3f84614c17a"
+    },
+    "scipy.optimize._root": {
+      "file": "_root.py",
+      "sha256": "0ebb8dfc6b49c86b9aa9e5f073d90db002a653f8a6fd7de2aa29559cf7c8bf42"
+    },
+    "scipy.optimize._zeros": {
+      "file": "_zeros.cp312-win_amd64.pyd",
+      "sha256": "001213b4192a7427197626c5a7ac86d9e2c1fd7512be56a495cb192a66bbd4ed"
+    },
+    "scipy.optimize._zeros_py": {
+      "file": "_zeros_py.py",
+      "sha256": "b800a9e4b1a1546146222c71499aabfc63e6c54856f0282c9696be30907516e7"
+    },
+    "scipy.optimize._root_scalar": {
+      "file": "_root_scalar.py",
+      "sha256": "a230f82a9ebbad7d0fe4f98a56d0e63b58c4ccffda18024412906613b75d8334"
+    },
+    "scipy.optimize._nnls": {
+      "file": "_nnls.py",
+      "sha256": "eb26e994b39f06d6ea6f2ef9b12093167bb1f6f2737ae3e1899afddfd2aa1873"
+    },
+    "scipy.optimize._basinhopping": {
+      "file": "_basinhopping.py",
+      "sha256": "4bbe126e2ee5dc9352e27f29ef46f4f54a11ccb837846399b91ebf82bfeb184d"
+    },
+    "scipy.optimize._highspy": {
+      "file": "__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "scipy.optimize._highspy._core.simplex_constants": {
+      "file": "_core.cp312-win_amd64.pyd",
+      "sha256": "99d5c437bca5ee91c8785721fe69b235b6b348cff9c27a7436501f4cc419baad"
+    },
+    "scipy.optimize._highspy._core.cb": {
+      "file": "_core.cp312-win_amd64.pyd",
+      "sha256": "99d5c437bca5ee91c8785721fe69b235b6b348cff9c27a7436501f4cc419baad"
+    },
+    "scipy.optimize._highspy._core": {
+      "file": "_core.cp312-win_amd64.pyd",
+      "sha256": "99d5c437bca5ee91c8785721fe69b235b6b348cff9c27a7436501f4cc419baad"
+    },
+    "scipy.optimize._highspy._highs_options": {
+      "file": "_highs_options.cp312-win_amd64.pyd",
+      "sha256": "98acb3f762673688fc402e893d3313d267733135f0e1c07ef508cbcdb4b2ad8f"
+    },
+    "scipy.optimize._highspy._highs_wrapper": {
+      "file": "_highs_wrapper.py",
+      "sha256": "1f2a701c25725dc78b53f0185ac802e74f74d484695c6c2127d51d907302994d"
+    },
+    "scipy.optimize._linprog_highs": {
+      "file": "_linprog_highs.py",
+      "sha256": "c7f71ee2c03dfc3a34283483708d7a940f8f3865ba0a4d1384b1c1748f3050a9"
+    },
+    "scipy.linalg._decomp_interpolative": {
+      "file": "_decomp_interpolative.cp312-win_amd64.pyd",
+      "sha256": "3600e8ec1622c6977125638fee701558609dc2d372dbc118a66becbee20c1db1"
+    },
+    "scipy.linalg.interpolative": {
+      "file": "interpolative.py",
+      "sha256": "07b65dca7f9fa03dfb2a6394297837e532b202e05bf6c4e579dabe50dd5d000e"
+    },
+    "scipy.optimize._remove_redundancy": {
+      "file": "_remove_redundancy.py",
+      "sha256": "ebb4910f5d61e41fe7cfdeb09daea52f0c22726cbeee0ddb7cc027f9b6924e4e"
+    },
+    "scipy.optimize._linprog_util": {
+      "file": "_linprog_util.py",
+      "sha256": "4a3ae627f33df0980a46901f5e2aa1d35a7e28ce8dbc807a727137f2422cdbb0"
+    },
+    "scipy.optimize._linprog_ip": {
+      "file": "_linprog_ip.py",
+      "sha256": "78c11ac578a2018b0b4f91cc1de14332bbde2c6f129bd6f83cc56a6391003bda"
+    },
+    "scipy.optimize._linprog_simplex": {
+      "file": "_linprog_simplex.py",
+      "sha256": "f2859720062d354d1eb6ff0f10977d123570038787ac2ab2c8c03420be532d5e"
+    },
+    "scipy.optimize._bglu_dense": {
+      "file": "_bglu_dense.cp312-win_amd64.pyd",
+      "sha256": "3168df9f9c5a3ba0ef428c1c5ca13a6fced1a164b4d31cc4d71aca1baf58f50f"
+    },
+    "scipy.optimize._linprog_rs": {
+      "file": "_linprog_rs.py",
+      "sha256": "047575127581a8d50c0767ec4fab3a0397647b8c3619ab83b81a2f151beb07f7"
+    },
+    "scipy.optimize._linprog_doc": {
+      "file": "_linprog_doc.py",
+      "sha256": "81c04d7187b52c486c44a95f97f531740bd0c3044422d2744322863370bac479"
+    },
+    "scipy.optimize._linprog": {
+      "file": "_linprog.py",
+      "sha256": "ecca09ba6dd109aff5ffa52beb4433dd63dfe1b7dea047e5fbe3abee728ae85b"
+    },
+    "scipy.optimize._lsap": {
+      "file": "_lsap.cp312-win_amd64.pyd",
+      "sha256": "f8ff7561bd1ea3027c809fc804c8b1316376e589d12aef3a1ebcb2a6d2c3d18d"
+    },
+    "scipy.optimize._differentialevolution": {
+      "file": "_differentialevolution.py",
+      "sha256": "96860b9958e5d391ba6db438ea4290e0984c89536ff3914ce4c555a014a168f4"
+    },
+    "scipy.optimize._pava_pybind": {
+      "file": "_pava_pybind.cp312-win_amd64.pyd",
+      "sha256": "03cfa01ef5ed5829057e629497cc052e83eb9729a95a244e6fdbea66eb8dadd0"
+    },
+    "scipy.optimize._isotonic": {
+      "file": "_isotonic.py",
+      "sha256": "e1b3790ef7d79fe213500f16d310e5e31a074a73638b20075fe279b8cad5be56"
+    },
+    "scipy.optimize._shgo_lib": {
+      "file": "__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "scipy.optimize._shgo_lib._vertex": {
+      "file": "_vertex.py",
+      "sha256": "cfd6be517a4c543f0d5daff2d5e3e9f956b76fb075b5c0103e645c932d56d880"
+    },
+    "scipy.optimize._shgo_lib._complex": {
+      "file": "_complex.py",
+      "sha256": "584690178654220402d3b6fef8b2536207770b4118fc5a0279ad113a70d8b182"
+    },
+    "scipy.optimize._shgo": {
+      "file": "_shgo.py",
+      "sha256": "3de651599c8579665420032cd7f7a500db65d840b285f5d14af9d6c7311ad1bb"
+    },
+    "scipy.optimize._dual_annealing": {
+      "file": "_dual_annealing.py",
+      "sha256": "2e9ea411980eacd721baed6b3a010f57cd2ea19b70c6dc200b5a9bf01b82eae8"
+    },
+    "scipy.optimize._qap": {
+      "file": "_qap.py",
+      "sha256": "a1124cee9831e4a0cd46e27e02d047dc3b9f072848161a9fb3ed99e627105883"
+    },
+    "scipy.optimize._direct": {
+      "file": "_direct.cp312-win_amd64.pyd",
+      "sha256": "6ea9f33c61aa3009eb557db94bc80c74b8b25947553a9950bf4ef1e4c4cc372e"
+    },
+    "scipy.optimize._direct_py": {
+      "file": "_direct_py.py",
+      "sha256": "b22b67ca91f0cf4e473f180feba1c9811f47cc1d4652e223c99f6fef4290af37"
+    },
+    "scipy.optimize._milp": {
+      "file": "_milp.py",
+      "sha256": "9d447fd838f51fde6d248c64ae38cab6d44cd998812d678c1cb37eca4ef6f08c"
+    },
+    "scipy.optimize.cobyla": {
+      "file": "cobyla.py",
+      "sha256": "08739e6bf6223a908d2796e5448e98aa8622782a2153de8c35857e6225800c67"
+    },
+    "scipy.optimize.lbfgsb": {
+      "file": "lbfgsb.py",
+      "sha256": "c115d09d471cf3e78f40e326a953350f487e821ba10ffab25bf777e67afa61e0"
+    },
+    "scipy.optimize.linesearch": {
+      "file": "linesearch.py",
+      "sha256": "2a2a2bc57636d2a97e995903414754a694e583f281112de909f24734bf176700"
+    },
+    "scipy.optimize.minpack": {
+      "file": "minpack.py",
+      "sha256": "bb1027086ed2bbd1b18b9bbc3fe0426c07bea8ac2434ab4cbc8911a0f76b4519"
+    },
+    "scipy.optimize.minpack2": {
+      "file": "minpack2.py",
+      "sha256": "353af19f4b6f37fbc14c7c0fbb9997355ef830a8fd312115b7cc501f3a4eb96a"
+    },
+    "scipy.optimize.moduleTNC": {
+      "file": "moduleTNC.py",
+      "sha256": "d0166d8f8d4d11ad673365d837d0dffa4986ed6d50246e0f59c638d19a2eafeb"
+    },
+    "scipy.optimize.nonlin": {
+      "file": "nonlin.py",
+      "sha256": "9ad8f89807d98548d317fd763f7770cb7656832b5eba0caa1bca0904ac24867d"
+    },
+    "scipy.optimize.optimize": {
+      "file": "optimize.py",
+      "sha256": "209770172fed61fb54f655c879c41a0695965cdb1b7964d8b992743f92a460d2"
+    },
+    "scipy.optimize.slsqp": {
+      "file": "slsqp.py",
+      "sha256": "45ee650c8f2f76ecaec34c77cad82d0d0e712cfc912921f81d59107b16c4f982"
+    },
+    "scipy.optimize.tnc": {
+      "file": "tnc.py",
+      "sha256": "ce78631f8215d7b895ea085dc701346a3eb5ee2a1d1fa38f3cbfc07eb8fcf0b5"
+    },
+    "scipy.optimize.zeros": {
+      "file": "zeros.py",
+      "sha256": "c9983fbedeeb47ff33e4dda2f8e6a6deb6cc88f75ab3c97dc6089bfec0004e19"
+    },
+    "scipy.optimize": {
+      "file": "__init__.py",
+      "sha256": "386c0ca12008b1da344df26284cb7806d5b92f12c98bde043e464b65faa99f6c"
+    },
+    "scipy.integrate._bvp": {
+      "file": "_bvp.py",
+      "sha256": "864892c61396e0732fc77734e1a9ec02a1e046f284756a7389bc63912dc2d78d"
+    },
+    "scipy.integrate._ivp.common": {
+      "file": "common.py",
+      "sha256": "69df61f2d01fd9fce8c6ab6f498137bb891775a7f7f35b25d21eef273b45bea7"
+    },
+    "scipy.integrate._ivp.base": {
+      "file": "base.py",
+      "sha256": "dcb2b89d30a4f20be65cc64e072eb6373e9b4ffdcbc6653e357477c1f4155d97"
+    },
+    "scipy.integrate._ivp.bdf": {
+      "file": "bdf.py",
+      "sha256": "237baf4508642c3dda0c25ca6f541a97b1a117555efd1afabf7e99ab76205be2"
+    },
+    "scipy.integrate._ivp.radau": {
+      "file": "radau.py",
+      "sha256": "568c52565214de8b3292443f617bf70525dc436e21317f3e4622a0b5f1dc0341"
+    },
+    "scipy.integrate._ivp.dop853_coefficients": {
+      "file": "dop853_coefficients.py",
+      "sha256": "e283219a0f1e5f2cc37924ab961d9d24932f69a6d69fe68ee384b7c31f08839a"
+    },
+    "scipy.integrate._ivp.rk": {
+      "file": "rk.py",
+      "sha256": "17c8ee8629a0aacab9cbafbd9294ff05c16a18e86ff0f683fff2d97154a89ebf"
+    },
+    "scipy.integrate._ivp.lsoda": {
+      "file": "lsoda.py",
+      "sha256": "05ab333062261821955cd9f962ed1bef261fd8e2f92d9f6e107d836c4288e5cb"
+    },
+    "scipy.integrate._ivp.ivp": {
+      "file": "ivp.py",
+      "sha256": "62a148c97efea6b956c4eff68c681a16ea84ff22a8cc3915bf813af7d3c1bed6"
+    },
+    "scipy.integrate._ivp": {
+      "file": "__init__.py",
+      "sha256": "5d5a319e3fb5ab55e6e12b568a3ba422822ba9ce8dcb50f18badb91aeac89d6b"
+    },
+    "scipy.integrate._quad_vec": {
+      "file": "_quad_vec.py",
+      "sha256": "3e56d80a068405550769180cfa7f27848890761b6b644f5cd5b9940e50ad3fe0"
+    },
+    "scipy._lib._elementwise_iterative_method": {
+      "file": "_elementwise_iterative_method.py",
+      "sha256": "1d5dca88e038a455636c5d7bab25cfab316985640d0e22ec1bcc1567a1974d3b"
+    },
+    "scipy.integrate._tanhsinh": {
+      "file": "_tanhsinh.py",
+      "sha256": "432520efbdc1995a22a47acb6919ceed42b5662c0000fd3368cc39874c47726f"
+    },
+    "scipy.integrate._rules._base": {
+      "file": "_base.py",
+      "sha256": "080007c95211701c82b1be4ff8b92f382bab1eaecc7279b0ba72e2ab2de64589"
+    },
+    "scipy.integrate._rules._genz_malik": {
+      "file": "_genz_malik.py",
+      "sha256": "76a7bd0cb8f40e136db519f8093b69d1fe35b196fc6f5b8135233b09e057ac9a"
+    },
+    "scipy.integrate._rules._gauss_legendre": {
+      "file": "_gauss_legendre.py",
+      "sha256": "27798aa13b5996fc547479c5630d9d3d2b160337555e8bd5ddfed44274f9053d"
+    },
+    "scipy.integrate._rules._gauss_kronrod": {
+      "file": "_gauss_kronrod.py",
+      "sha256": "b49e61d7169811d889ff9c0242c282bc4697074ca3025f65b88efcae0f6f5f13"
+    },
+    "scipy.integrate._rules": {
+      "file": "__init__.py",
+      "sha256": "1c51d80d8b3950e4258ed78a7835c691215bf93f5e848dcdde015613c40aeaf4"
+    },
+    "scipy.integrate._cubature": {
+      "file": "_cubature.py",
+      "sha256": "ff43757889a046fb9058ba8fc943ed42cb12ffff24d784bb3d96250c02cca6de"
+    },
+    "scipy.integrate._lebedev": {
+      "file": "_lebedev.py",
+      "sha256": "38d9daac755a695ec6dedcfa7184f68ddc1773c2ee681b9ebb5ee87ed6b33487"
+    },
+    "scipy.integrate.dop": {
+      "file": "dop.py",
+      "sha256": "5c50a404bc9485d36211bdf50c661d8a2c18be6912ec53b0502e074b6440fe0d"
+    },
+    "scipy.integrate.lsoda": {
+      "file": "lsoda.py",
+      "sha256": "23b8813c9a78eb3a6cccff09cb9992d8d3f4c7f223ee88266335de6eb68bcbcc"
+    },
+    "scipy.integrate.vode": {
+      "file": "vode.py",
+      "sha256": "1a4c749cadff51b3b39d2bdd8218c2b54431e2aa52699cc1eab825b4a8cfe945"
+    },
+    "scipy.integrate.odepack": {
+      "file": "odepack.py",
+      "sha256": "4f1b1789d0f6e5ab4d30ae642970fe1723422d79f3af009d541d613f868b490f"
+    },
+    "scipy.integrate.quadpack": {
+      "file": "quadpack.py",
+      "sha256": "d031db337f73072c50901475d710a892ec2e254e35613f5b23be214b5a48ad72"
+    },
+    "scipy.integrate": {
+      "file": "__init__.py",
+      "sha256": "448108eec91685bb784956cc955e019cfe0410e018f00572fa22762bea2fa78e"
+    }
+  },
+  "elapsed_seconds": 71.36350949999178,
+  "accounted_reservations_released": true,
+  "output_arrays": {
+    "initial_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "7246f38ac5fff5ba24168e689290363201e74133361e33981929d70549bea9c2"
+    },
+    "x_centres_m": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "c3eb6e9b3b380812b7d84efd181cf53fbfcf2f401f5899a01792d11b44fa6bcd"
+    },
+    "z_centres_m": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "7533a8925ab1006de5f9d066e337fb7eaa637d6bc653725640ab4ac0142ff0a8"
+    },
+    "n8_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "2e7c524b23a30a4489416f3485064cc5db4aabda5d1b3bf99184baa30e80aebb"
+    },
+    "n8_velocity_m_s": {
+      "shape": [
+        544
+      ],
+      "dtype": "<f8",
+      "sha256": "3921f918d9716a03eb7f45b311e924705eb767537e8c35468e4551795e3059be"
+    },
+    "n8_viscosity_pa_s": {
+      "shape": [
+        545
+      ],
+      "dtype": "<f8",
+      "sha256": "34d388cbc6ecd9d60bf3a2bf36d6d1e095938df043d3a1e8eb0941574d35f4b5"
+    },
+    "n8_u_m_s": {
+      "shape": [
+        16,
+        17
+      ],
+      "dtype": "<f8",
+      "sha256": "bc2d734b775779d6a5004825ea009543b1f0b50669ec58ce8c3e449b32982135"
+    },
+    "n8_w_m_s": {
+      "shape": [
+        17,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "ff32e3229f90d15f7c21f68b7af84ef19b78e9f9c5f25b46e2fa4f6ddf02bf37"
+    },
+    "n16_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "d0c9c9de796786c18d28a6a6119db4ec0d98e919baa74537b9848a9b59328e36"
+    },
+    "n16_velocity_m_s": {
+      "shape": [
+        544
+      ],
+      "dtype": "<f8",
+      "sha256": "87a5fb8fa5cc07b0164b197bc3a75595d98fa0a4a52a9c32211d847edc74819b"
+    },
+    "n16_viscosity_pa_s": {
+      "shape": [
+        545
+      ],
+      "dtype": "<f8",
+      "sha256": "26909a421bb16d7603168787da15dee14dd5b29de13587f137884d7ee03667a8"
+    },
+    "n16_u_m_s": {
+      "shape": [
+        16,
+        17
+      ],
+      "dtype": "<f8",
+      "sha256": "d6d0254b4d08fd27a5ec8b61eb78b25981a304d208213966e32d8a5cfe87a34a"
+    },
+    "n16_w_m_s": {
+      "shape": [
+        17,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "34b98e5e0e2f5c8aa35afd3e24a2aee6b8cacfe6f630a4ceb4e065cdb9f82158"
+    },
+    "n32_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "8a86cd54d00f390c099778f734e4aac27cc8e08e1c3eccd4817346478290f8bd"
+    },
+    "n32_velocity_m_s": {
+      "shape": [
+        544
+      ],
+      "dtype": "<f8",
+      "sha256": "4da283e1ab3adfb739c8a2509c953f249116e55afbe3806c941b87a99341b3e4"
+    },
+    "n32_viscosity_pa_s": {
+      "shape": [
+        545
+      ],
+      "dtype": "<f8",
+      "sha256": "a873afea7130e41392b31a5cd031ae009addd760be5be3c8b7363368950b8f2c"
+    },
+    "n32_u_m_s": {
+      "shape": [
+        16,
+        17
+      ],
+      "dtype": "<f8",
+      "sha256": "3a35794def7b6706628fa4e55160108396d962559d2cbc10a6d96bbeb4675106"
+    },
+    "n32_w_m_s": {
+      "shape": [
+        17,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "d627438e5cbd1a7d83b8a26372f5665e5d2b66ca817051502b72a7ac8b336eec"
+    },
+    "n32_half_heat_dt_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "99a6888a1ed71713ba4ed048e87002e37aac1ae1b2ffb08cd55f96db24195942"
+    },
+    "n32_half_heat_dt_velocity_m_s": {
+      "shape": [
+        544
+      ],
+      "dtype": "<f8",
+      "sha256": "bf0d9282ce588718425a685c879ab63d528dca5a12cc223bc462948d1d588c7d"
+    },
+    "n32_half_heat_dt_viscosity_pa_s": {
+      "shape": [
+        545
+      ],
+      "dtype": "<f8",
+      "sha256": "9cd2e82d3687e93fca3c0eaac457c5e347fc8e3f4b2b57bbfa43692b7a7c7a8c"
+    },
+    "n32_half_heat_dt_u_m_s": {
+      "shape": [
+        16,
+        17
+      ],
+      "dtype": "<f8",
+      "sha256": "fcc2e2698b6ce375eaf5b883ade3079d90cd5d8a33da518f01c52a83c38dbad1"
+    },
+    "n32_half_heat_dt_w_m_s": {
+      "shape": [
+        17,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "1df53e7591cd31d7a2a758f8780f77f3e22f2853b10a4b8680807ebb675c6b95"
+    },
+    "zero_velocity_temperature_k": {
+      "shape": [
+        16,
+        16
+      ],
+      "dtype": "<f8",
+      "sha256": "71c6e9b6fea2d3e89e8fef298be386404f609f06612c3f74d18e622fb9874fec"
+    }
+  },
+  "fields_sha256": "cf46738dee3538e509d2317137b574ae8d33cc06c5354b0603db2968a04c0eca",
+  "field_keys": [
+    "initial_temperature_k",
+    "n16_temperature_k",
+    "n16_u_m_s",
+    "n16_velocity_m_s",
+    "n16_viscosity_pa_s",
+    "n16_w_m_s",
+    "n32_half_heat_dt_temperature_k",
+    "n32_half_heat_dt_u_m_s",
+    "n32_half_heat_dt_velocity_m_s",
+    "n32_half_heat_dt_viscosity_pa_s",
+    "n32_half_heat_dt_w_m_s",
+    "n32_temperature_k",
+    "n32_u_m_s",
+    "n32_velocity_m_s",
+    "n32_viscosity_pa_s",
+    "n32_w_m_s",
+    "n8_temperature_k",
+    "n8_u_m_s",
+    "n8_velocity_m_s",
+    "n8_viscosity_pa_s",
+    "n8_w_m_s",
+    "x_centres_m",
+    "z_centres_m",
+    "zero_velocity_temperature_k"
+  ],
+  "fields_file": "w07-active-coupling-r3.npz"
+}

@@ -1,0 +1,320 @@
+{
+  "evidence_by_spacing_km": {
+    "1.5": {
+      "achieved_squared_fraction": 0.2518413550547707,
+      "affine_indicator_check_max": 5.640087279237993e-14,
+      "algorithm": {
+        "bulk_squared_fraction": 0.25,
+        "combination": "maximum",
+        "diameter": "longest triangle edge in km",
+        "face_quadrature": "three-point Gauss; exact for squared P2 gradient jumps",
+        "id": "aspect-style-mechanical-dorfler025-max-v1",
+        "normalisation": "each indicator divided by own whole-wedge maximum; zero maps to zero",
+        "selection_scope": "whole wedge; no benchmark sample-box selection",
+        "sources": [
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/velocity.cc",
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/viscosity.cc",
+          "https://aspect-documentation.readthedocs.io/en/latest/parameters/Mesh_20refinement.html"
+        ],
+        "tie_break": "baseline element index",
+        "velocity": "sqrt(h_K*sum_interior_faces integral ||jump(grad(v).n)||^2 ds)",
+        "velocity_units": "slab-speed units",
+        "viscosity": "h_K^2*sqrt(mean_cell ||grad(log(eta(T)))||^2)",
+        "viscosity_gradient": "analytic capped diffusion-creep derivative at12-point degree6 rule"
+      },
+      "baseline_original_source_sha256": {
+        "atlas_tectonics.reuse": "dd5cf3c2700a89344c35edc76c238c33944371a8091af9774fae1c828a387c85",
+        "atlas_tectonics.subduction": "b75cc1d5b96e45ceb76e2f799351028cfe47629152b42922a39f9bc2594aae33",
+        "atlas_tectonics.subduction_linear": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+        "atlas_tectonics.subduction_mesh": "4159ef426d7bd7d0ffab9da32f0e9dbf80431f323d1e7829b34f45b73c5772ab",
+        "atlas_tectonics.subduction_transport": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4"
+      },
+      "baseline_source_provenance": "recorded prior frozen-map diagnostic; not the newly extended refinement API",
+      "diagnostic_source_sha256": {
+        "atlas_tectonics.subduction": "787e3f5a6fdeb0c577e957c25842d6acac1707558ce03be8698183d3d2982855",
+        "atlas_tectonics.subduction_mesh": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4"
+      },
+      "marker_npz": "w08-mechanical-markers-h1.5.npz",
+      "marker_sha256": "7f31c2f7ff0da005efcc5e50174449b4f5bdfeafecc70bbc95829c223f99eae0",
+      "preceding_squared_fraction": 0.24349061868390026,
+      "script_sha256": "16da629b1b5be06f9bc753ad801d790fde4a925c7453b1580a9b28ead994c8d3",
+      "selected_count": 19,
+      "snapshot_sha256": "110e3d075f92b735b058a6cfea7269a1a59afea06b6f48978a5b8d18e40b2bb2",
+      "spacing_km": 1.5,
+      "velocity_normalisation_max": 7.99974934058013,
+      "viscosity_normalisation_max": 331.54230011870135,
+      "wedge_elements": 5699
+    },
+    "3.0": {
+      "achieved_squared_fraction": 0.26446578955747024,
+      "affine_indicator_check_max": 6.807148408294393e-14,
+      "algorithm": {
+        "bulk_squared_fraction": 0.25,
+        "combination": "maximum",
+        "diameter": "longest triangle edge in km",
+        "face_quadrature": "three-point Gauss; exact for squared P2 gradient jumps",
+        "id": "aspect-style-mechanical-dorfler025-max-v1",
+        "normalisation": "each indicator divided by own whole-wedge maximum; zero maps to zero",
+        "selection_scope": "whole wedge; no benchmark sample-box selection",
+        "sources": [
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/velocity.cc",
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/viscosity.cc",
+          "https://aspect-documentation.readthedocs.io/en/latest/parameters/Mesh_20refinement.html"
+        ],
+        "tie_break": "baseline element index",
+        "velocity": "sqrt(h_K*sum_interior_faces integral ||jump(grad(v).n)||^2 ds)",
+        "velocity_units": "slab-speed units",
+        "viscosity": "h_K^2*sqrt(mean_cell ||grad(log(eta(T)))||^2)",
+        "viscosity_gradient": "analytic capped diffusion-creep derivative at12-point degree6 rule"
+      },
+      "baseline_original_source_sha256": {
+        "atlas_tectonics.reuse": "dd5cf3c2700a89344c35edc76c238c33944371a8091af9774fae1c828a387c85",
+        "atlas_tectonics.subduction": "b75cc1d5b96e45ceb76e2f799351028cfe47629152b42922a39f9bc2594aae33",
+        "atlas_tectonics.subduction_linear": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+        "atlas_tectonics.subduction_mesh": "4159ef426d7bd7d0ffab9da32f0e9dbf80431f323d1e7829b34f45b73c5772ab",
+        "atlas_tectonics.subduction_transport": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4"
+      },
+      "baseline_source_provenance": "recorded prior frozen-map diagnostic; not the newly extended refinement API",
+      "diagnostic_source_sha256": {
+        "atlas_tectonics.subduction": "787e3f5a6fdeb0c577e957c25842d6acac1707558ce03be8698183d3d2982855",
+        "atlas_tectonics.subduction_mesh": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4"
+      },
+      "marker_npz": "w08-mechanical-markers-h3.npz",
+      "marker_sha256": "16be0b92f66f0d616a2af9548ccc8e8bdb47e3d458d14123873ef734ee776f5d",
+      "preceding_squared_fraction": 0.24942455306712155,
+      "script_sha256": "16da629b1b5be06f9bc753ad801d790fde4a925c7453b1580a9b28ead994c8d3",
+      "selected_count": 11,
+      "snapshot_sha256": "1d5c4ec4d4409c149f68deec979471db0e7d8b8dae31b06189cc9f9d51bfc297",
+      "spacing_km": 3.0,
+      "velocity_normalisation_max": 4.929638580983472,
+      "viscosity_normalisation_max": 805.778138136983,
+      "wedge_elements": 2267
+    },
+    "6.0": {
+      "achieved_squared_fraction": 0.25274877570544513,
+      "affine_indicator_check_max": 8.110373591420729e-14,
+      "algorithm": {
+        "bulk_squared_fraction": 0.25,
+        "combination": "maximum",
+        "diameter": "longest triangle edge in km",
+        "face_quadrature": "three-point Gauss; exact for squared P2 gradient jumps",
+        "id": "aspect-style-mechanical-dorfler025-max-v1",
+        "normalisation": "each indicator divided by own whole-wedge maximum; zero maps to zero",
+        "selection_scope": "whole wedge; no benchmark sample-box selection",
+        "sources": [
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/velocity.cc",
+          "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/viscosity.cc",
+          "https://aspect-documentation.readthedocs.io/en/latest/parameters/Mesh_20refinement.html"
+        ],
+        "tie_break": "baseline element index",
+        "velocity": "sqrt(h_K*sum_interior_faces integral ||jump(grad(v).n)||^2 ds)",
+        "velocity_units": "slab-speed units",
+        "viscosity": "h_K^2*sqrt(mean_cell ||grad(log(eta(T)))||^2)",
+        "viscosity_gradient": "analytic capped diffusion-creep derivative at12-point degree6 rule"
+      },
+      "baseline_original_source_sha256": {
+        "atlas_tectonics.reuse": "dd5cf3c2700a89344c35edc76c238c33944371a8091af9774fae1c828a387c85",
+        "atlas_tectonics.subduction": "787e3f5a6fdeb0c577e957c25842d6acac1707558ce03be8698183d3d2982855",
+        "atlas_tectonics.subduction_linear": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+        "atlas_tectonics.subduction_mesh": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4",
+        "atlas_tectonics.subduction_transport": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4"
+      },
+      "baseline_source_provenance": "saved pilot ./w08-pilot-h6.json SHA256=f0fa29148e086410b2ebbaaee309afa95a938d5740a478a2284d7ded89b00339 result=27ed94eff933e2f667cae096c8f5a9804f6891310a91ce12427b2bf8f7596184",
+      "diagnostic_source_sha256": {
+        "atlas_tectonics.subduction": "787e3f5a6fdeb0c577e957c25842d6acac1707558ce03be8698183d3d2982855",
+        "atlas_tectonics.subduction_mesh": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4"
+      },
+      "marker_npz": "w08-mechanical-markers-h6.npz",
+      "marker_sha256": "41b0783c0e7a1cda750ef875b04c4435ba86d26f0da5635445b1a6f0427b4b74",
+      "preceding_squared_fraction": 0.22829932483041981,
+      "script_sha256": "672e686bf0028524018012c2c7ed2d676cab5d338eb957edefd745a40ed6c47c",
+      "selected_count": 8,
+      "snapshot_sha256": "2b133d7cc030b916bd75890e6350502fb3d776b143dabdb1fe4f43e202e3d7d3",
+      "spacing_km": 6.0,
+      "velocity_normalisation_max": 7.208592517754245,
+      "viscosity_normalisation_max": 1344.946080997206,
+      "wedge_elements": 914
+    }
+  },
+  "method": {
+    "bulk_squared_fraction": 0.25,
+    "combination": "maximum",
+    "diameter": "longest triangle edge in km",
+    "face_quadrature": "three-point Gauss; exact for squared P2 gradient jumps",
+    "id": "aspect-style-mechanical-dorfler025-max-v1",
+    "normalisation": "each indicator divided by own whole-wedge maximum; zero maps to zero",
+    "selection_scope": "whole wedge; no benchmark sample-box selection",
+    "sources": [
+      "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/velocity.cc",
+      "https://raw.githubusercontent.com/geodynamics/aspect/main/source/mesh_refinement/viscosity.cc",
+      "https://aspect-documentation.readthedocs.io/en/latest/parameters/Mesh_20refinement.html"
+    ],
+    "tie_break": "baseline element index",
+    "velocity": "sqrt(h_K*sum_interior_faces integral ||jump(grad(v).n)||^2 ds)",
+    "velocity_units": "slab-speed units",
+    "viscosity": "h_K^2*sqrt(mean_cell ||grad(log(eta(T)))||^2)",
+    "viscosity_gradient": "analytic capped diffusion-creep derivative at12-point degree6 rule"
+  },
+  "points_by_spacing_km": {
+    "1.5": [
+      [
+        646.25,
+        71.875
+      ],
+      [
+        50.011800130208336,
+        50.005594889322914
+      ],
+      [
+        622.1875,
+        84.375
+      ],
+      [
+        50.019022623697914,
+        50.01068115234375
+      ],
+      [
+        617.03125,
+        67.1875
+      ],
+      [
+        577.5,
+        537.5
+      ],
+      [
+        580.9375,
+        115.625
+      ],
+      [
+        639.375,
+        84.375
+      ],
+      [
+        532.8125,
+        134.375
+      ],
+      [
+        574.0625,
+        128.125
+      ],
+      [
+        601.5625,
+        103.125
+      ],
+      [
+        579.21875,
+        92.1875
+      ],
+      [
+        539.6875,
+        146.875
+      ],
+      [
+        615.3125,
+        103.125
+      ],
+      [
+        560.3125,
+        121.875
+      ],
+      [
+        592.96875,
+        85.9375
+      ],
+      [
+        465.78125,
+        129.6875
+      ],
+      [
+        477.8125,
+        140.625
+      ],
+      [
+        419.375,
+        137.5
+      ]
+    ],
+    "3.0": [
+      [
+        608.4375,
+        90.625
+      ],
+      [
+        50.0274658203125,
+        50.013224283854164
+      ],
+      [
+        50.015055338541664,
+        50.013224283854164
+      ],
+      [
+        50.016276041666664,
+        50.002034505208336
+      ],
+      [
+        629.0625,
+        96.875
+      ],
+      [
+        601.5625,
+        565.625
+      ],
+      [
+        335.15625,
+        135.9375
+      ],
+      [
+        415.9375,
+        134.375
+      ],
+      [
+        457.1875,
+        134.375
+      ],
+      [
+        498.4375,
+        134.375
+      ],
+      [
+        367.8125,
+        146.875
+      ]
+    ],
+    "6.0": [
+      [
+        632.5,
+        65.625
+      ],
+      [
+        83.7890625,
+        64.453125
+      ],
+      [
+        618.75,
+        90.625
+      ],
+      [
+        50.098063151041664,
+        50.042724609375
+      ],
+      [
+        93.671875,
+        71.09375
+      ],
+      [
+        79.0625,
+        63.28125
+      ],
+      [
+        567.1875,
+        109.375
+      ],
+      [
+        87.2265625,
+        59.765625
+      ]
+    ]
+  },
+  "status": "DIAGNOSTIC_MARKING_ONLY_NOT_ACCEPTANCE",
+  "warning": "Whole-wedge energy-style indicators need not optimise the wedge-RMS point-sample diagnostic."
+}

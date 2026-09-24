@@ -1,0 +1,49 @@
+{
+  "schema": "atlas.w08-joined-acceptance.v1",
+  "source_status": "WORKING NON-CANON",
+  "reference_policy": "Frozen before candidate execution; synthetic SI controls, not geological calibration",
+  "design": "w08_regimes.json A07 and W08_REGIMES.md Step 6",
+  "A07": {
+    "initial_time_s": 0,
+    "retirement_rates_kg_s": [3, 1],
+    "cessation_time_s": 1.5,
+    "end_time_s": 3,
+    "initial_crust_mantle_kg": [10, 20],
+    "destination_fractions": [0.25, 0.5, 0.25],
+    "expected_retired_kg": 6,
+    "expected_destinations_kg": [1.5, 3, 1.5],
+    "initial_melt_reservoir_solid_kg": [10, 2, 5],
+    "expected_melt_reservoir_solid_kg": [10, 2, 5]
+  },
+  "joined": {
+    "regimes": ["shortening", "transform", "subduction", "magmatism", "cessation"],
+    "end_times_s": [1, 2, 3.5, 4.5, 5.5],
+    "initial_area_m2": 100,
+    "shortening_stretch": 0.8,
+    "shear": 0.5,
+    "expected_F": [[0.8, 0.5], [0, 1]],
+    "expected_area_m2": 80,
+    "expected_crust_mantle_kg": [5.5, 18.5],
+    "magma_feed_kg_s": 2,
+    "magma_intrusion_extrusion_kg_s": [1, 1],
+    "expected_melt_reservoir_intrusion_extrusion_kg": [8, 2, 1, 1]
+  },
+  "gates": {
+    "normalised_map_error_max": 1e-10,
+    "extensive_roundoff_multiplier": 128,
+    "interval_partitions": [1, 2, 4],
+    "parcel_counts": [8, 16, 32],
+    "restart": "exact complete endpoint; byte-identical final arrays and scientific identity; no completed transfer recomputation",
+    "refusals": ["stale explicit checkpoint", "corrupt payload", "partial/gapped history", "mid-event checkpoint", "unsupported continental transition", "source drift", "owner mismatch", "uncaptured exhaustion", "duplicate event"],
+    "work_budget_bytes": 134217728,
+    "max_intervals": 256,
+    "native_threads": 1
+  },
+  "timing": {
+    "repeats": 3,
+    "order": "rotated",
+    "routes": ["cold_prepare_execute_materialise", "prepared_latest_reuse", "first_checkpoint_write", "verified_restore", "interrupted_continuation"],
+    "report_slower_routes": true
+  },
+  "physical_reference_policy": "Reuse source-labelled Step 2-5 physical evidence unchanged; new joined numerical controls do not replace those references"
+}

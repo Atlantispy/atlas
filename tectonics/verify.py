@@ -278,8 +278,12 @@ def source_inventory(root: Path) -> dict[str, str]:
 
 
 def main() -> int:
+    if sys.argv[1:] == ['--w10']:
+        sys.path.insert(0,str(ROOT/'tools'))
+        from check_w10 import main as w10_main
+        return w10_main([])
     if sys.argv[1:] not in ([], ['--core'], ['--native'], ['--acceptance'], ['--w01'], ['--w04'], ['--w05'], ['--w06']):
-        print('Usage: python -I -B tectonics/verify.py [--core | --native | --acceptance | --w01 | --w04 | --w05 | --w06]', file=sys.stderr)
+        print('Usage: python -I -B tectonics/verify.py [--core | --native | --acceptance | --w01 | --w04 | --w05 | --w06 | --w10]', file=sys.stderr)
         return 2
     w01 = sys.argv[1:] == ['--w01']
     w04 = sys.argv[1:] == ['--w04']

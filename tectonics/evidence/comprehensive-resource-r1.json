@@ -1,0 +1,681 @@
+{
+  "schema": "atlas.combined-resource-acceptance.v1",
+  "status": "PASS_BOUNDED_CURRENT_PLATFORM",
+  "platform": "Windows",
+  "machine": "AMD64",
+  "windows_accepted": true,
+  "measurement_dependency_psutil": "7.2.2",
+  "cross_combination_outputs_bit_equal": true,
+  "cases": [
+    {
+      "case": "serial-raw",
+      "status": "PASS_BOUNDED_COMBINATION",
+      "samples_per_field": 262144,
+      "first_cycle_s": 1.2601405999885174,
+      "warm_cycles_s": [
+        0.926541000008001,
+        0.9434837000007974,
+        0.9474943999957759,
+        0.9033176000084495,
+        0.8806695000093896
+      ],
+      "warm_median_s": 0.926541000008001,
+      "initialisation_s": 1.2572379000048386,
+      "native_first_call_s": 1.2438927000039257,
+      "process_rss_before_case_bytes": 113520640,
+      "output_sha256": {
+        "cool-0": "685f7d7345c677f101ba361e51587d3d86e51d453e215f79ca0bb28a460943e1",
+        "cool-1": "150bdeb8ad1458e6646959dd84d56f8ffcd152c8c4e1445cfb9a171d1441d8a7",
+        "flexure": "cfb289af794669fa43b7865f5675bf8f7707d4d024920dbd6ef7166e428786d6",
+        "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+      },
+      "invariants": {
+        "native_transport_bit_equal": true,
+        "no_remaining_inflight": true,
+        "decoded_cache_within_limit": true,
+        "verified_entries_within_limit": true,
+        "independent_backup_after_source_removal": true,
+        "shared_budget_fully_released": true,
+        "shared_budget_within_limit": true,
+        "default_budget_fully_released": true
+      },
+      "shared_budget": {
+        "max_bytes": 100663296,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 71860288,
+        "refusals": 0,
+        "categories": {
+          "caller-retained": 0,
+          "work": 0,
+          "store-retained": 0,
+          "executor-inflight": 0,
+          "consumer-output": 0,
+          "store-stage": 0,
+          "store-read": 0,
+          "store-output": 0,
+          "caller-load": 0,
+          "pending-result": 0
+        },
+        "category_peaks": {
+          "caller-retained": 16777216,
+          "work": 17178664,
+          "store-retained": 6832128,
+          "executor-inflight": 46153792,
+          "consumer-output": 4194304,
+          "store-stage": 9319008,
+          "store-read": 9043968,
+          "store-output": 4194304,
+          "caller-load": 2097152,
+          "pending-result": 2097152
+        }
+      },
+      "executor": {
+        "serial_jobs": 30,
+        "parallel_jobs": 0,
+        "completed_jobs": 30,
+        "peak_inflight": 1,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 46153792,
+        "mode": "serial",
+        "max_workers": 2,
+        "inner_threads": 1,
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 23609344,
+          "peak_reserved_bytes": 71860288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 46153792,
+            "consumer-output": 4194304,
+            "store-stage": 9319008,
+            "store-read": 9043968,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "process_allowance_bytes": 0
+      },
+      "storage": {
+        "unique_chunks": 385,
+        "encoded_payload_bytes": 6307840,
+        "snapshots": 37,
+        "database_bytes": 6901760,
+        "decoded_cache_bytes": 4194304,
+        "verified_cache_entries": 385,
+        "operations": {
+          "payload_reads": 3584,
+          "decoded_hits": 4491,
+          "verified_hits": 5881,
+          "encodes": 385,
+          "staged_bytes": 0,
+          "prepare_seconds": 3.5179162000422366,
+          "writer_seconds": 0.22087789999204688,
+          "insert_batches": 193,
+          "peak_prepared_bytes": 2121216
+        },
+        "resource_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 11573248,
+          "read_workspace_allowance": 9043968,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 32653312,
+          "peak_reserved_bytes": 71860288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 9043968,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 46153792,
+            "consumer-output": 4194304,
+            "store-stage": 9319008,
+            "store-read": 9043968,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        }
+      },
+      "storage_allowances": {
+        "retained_ram_allowance": 6832128,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 11573248,
+        "read_workspace_allowance": 9043968,
+        "database_capacity": 67108864,
+        "rollback_journal_capacity": 67108864,
+        "staging_capacity_per_writer": 33554432,
+        "backup_capacity_per_copy": 67108864,
+        "process_rss_cap": false
+      },
+      "declared_disk_capacity_bytes": 234881024,
+      "stored_bytes_after_backup": 6901760,
+      "runtime": {
+        "python": "3.12.14",
+        "numpy": "2.4.6",
+        "scipy": "1.17.1",
+        "numba": "0.65.1",
+        "blosc2": "4.13.1",
+        "threadpoolctl": "3.7.0",
+        "sqlite": "3.53.1",
+        "native_libraries": [
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.31.188.0",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          },
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.30",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          }
+        ]
+      },
+      "process_tree_memory": {
+        "rss_sum_bytes": 224096256,
+        "uss_sum_bytes": 160788480,
+        "pss_sum_bytes": null,
+        "processes": 2,
+        "threads": 26,
+        "largest_child_rss_bytes": 219111424,
+        "samples": 306,
+        "missing_full_info_samples": 306,
+        "visible_storage_peak_bytes": 13803521,
+        "sampling_interval_target_s": 0.01,
+        "elapsed_monitored_s": 9.077999999994063,
+        "sampled_rss_ceiling_bytes": 1073741824,
+        "errors": null,
+        "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+      }
+    },
+    {
+      "case": "auto-balanced",
+      "status": "PASS_BOUNDED_COMBINATION",
+      "samples_per_field": 262144,
+      "first_cycle_s": 0.7194463999912841,
+      "warm_cycles_s": [
+        0.4335089000087464,
+        0.4401397000037832,
+        0.42877419998694677,
+        0.4597622000001138,
+        0.4497488999913912
+      ],
+      "warm_median_s": 0.4401397000037832,
+      "initialisation_s": 1.146049499991932,
+      "native_first_call_s": 1.1333072999987053,
+      "process_rss_before_case_bytes": 113651712,
+      "output_sha256": {
+        "cool-0": "685f7d7345c677f101ba361e51587d3d86e51d453e215f79ca0bb28a460943e1",
+        "cool-1": "150bdeb8ad1458e6646959dd84d56f8ffcd152c8c4e1445cfb9a171d1441d8a7",
+        "flexure": "cfb289af794669fa43b7865f5675bf8f7707d4d024920dbd6ef7166e428786d6",
+        "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+      },
+      "invariants": {
+        "native_transport_bit_equal": true,
+        "no_remaining_inflight": true,
+        "decoded_cache_within_limit": true,
+        "verified_entries_within_limit": true,
+        "independent_backup_after_source_removal": true,
+        "shared_budget_fully_released": true,
+        "shared_budget_within_limit": true,
+        "default_budget_fully_released": true
+      },
+      "shared_budget": {
+        "max_bytes": 100663296,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 74760288,
+        "refusals": 0,
+        "categories": {
+          "caller-retained": 0,
+          "work": 0,
+          "store-retained": 0,
+          "executor-inflight": 0,
+          "consumer-output": 0,
+          "store-stage": 0,
+          "store-read": 0,
+          "store-output": 0,
+          "caller-load": 0,
+          "pending-result": 0
+        },
+        "category_peaks": {
+          "caller-retained": 16777216,
+          "work": 17178664,
+          "store-retained": 6832128,
+          "executor-inflight": 51150944,
+          "consumer-output": 4194304,
+          "store-stage": 10719840,
+          "store-read": 9437184,
+          "store-output": 4194304,
+          "caller-load": 2097152,
+          "pending-result": 2097152
+        }
+      },
+      "executor": {
+        "serial_jobs": 6,
+        "parallel_jobs": 24,
+        "completed_jobs": 30,
+        "peak_inflight": 2,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 51150944,
+        "mode": "auto",
+        "max_workers": 2,
+        "inner_threads": 1,
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 23609344,
+          "peak_reserved_bytes": 74760288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "consumer-output": 4194304,
+            "store-stage": 10719840,
+            "store-read": 9437184,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "process_allowance_bytes": 0
+      },
+      "storage": {
+        "unique_chunks": 97,
+        "encoded_payload_bytes": 3368313,
+        "snapshots": 37,
+        "database_bytes": 3649536,
+        "decoded_cache_bytes": 4194304,
+        "verified_cache_entries": 97,
+        "operations": {
+          "payload_reads": 896,
+          "decoded_hits": 1131,
+          "verified_hits": 1465,
+          "encodes": 97,
+          "staged_bytes": 0,
+          "prepare_seconds": 0.9465609999897424,
+          "writer_seconds": 0.1544279999943683,
+          "insert_batches": 94,
+          "peak_prepared_bytes": 1307010
+        },
+        "resource_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 13146112,
+          "read_workspace_allowance": 9437184,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "shared_budget": {
+          "max_bytes": 100663296,
+          "reserved_bytes": 33046528,
+          "peak_reserved_bytes": 74760288,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 9437184,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "consumer-output": 4194304,
+            "store-stage": 10719840,
+            "store-read": 9437184,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        }
+      },
+      "storage_allowances": {
+        "retained_ram_allowance": 6832128,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 13146112,
+        "read_workspace_allowance": 9437184,
+        "database_capacity": 67108864,
+        "rollback_journal_capacity": 67108864,
+        "staging_capacity_per_writer": 33554432,
+        "backup_capacity_per_copy": 67108864,
+        "process_rss_cap": false
+      },
+      "declared_disk_capacity_bytes": 234881024,
+      "stored_bytes_after_backup": 3649536,
+      "runtime": {
+        "python": "3.12.14",
+        "numpy": "2.4.6",
+        "scipy": "1.17.1",
+        "numba": "0.65.1",
+        "blosc2": "4.13.1",
+        "threadpoolctl": "3.7.0",
+        "sqlite": "3.53.1",
+        "native_libraries": [
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.31.188.0",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          },
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.30",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          }
+        ]
+      },
+      "process_tree_memory": {
+        "rss_sum_bytes": 226697216,
+        "uss_sum_bytes": 159621120,
+        "pss_sum_bytes": null,
+        "processes": 2,
+        "threads": 28,
+        "largest_child_rss_bytes": 221708288,
+        "samples": 179,
+        "missing_full_info_samples": 179,
+        "visible_storage_peak_bytes": 3655638,
+        "sampling_interval_target_s": 0.01,
+        "elapsed_monitored_s": 5.407000000006519,
+        "sampled_rss_ceiling_bytes": 1073741824,
+        "errors": null,
+        "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+      }
+    },
+    {
+      "case": "spawn-compact",
+      "status": "PASS_BOUNDED_COMBINATION",
+      "samples_per_field": 262144,
+      "first_cycle_s": 1.7197370000067167,
+      "warm_cycles_s": [
+        0.3566540000028908,
+        0.3579848000081256,
+        0.36125620000530034,
+        0.35207479998643976,
+        0.3735346000030404
+      ],
+      "warm_median_s": 0.3579848000081256,
+      "initialisation_s": 1.0937094999972032,
+      "native_first_call_s": 1.0828104999964125,
+      "process_rss_before_case_bytes": 115400704,
+      "output_sha256": {
+        "cool-0": "685f7d7345c677f101ba361e51587d3d86e51d453e215f79ca0bb28a460943e1",
+        "cool-1": "150bdeb8ad1458e6646959dd84d56f8ffcd152c8c4e1445cfb9a171d1441d8a7",
+        "flexure": "cfb289af794669fa43b7865f5675bf8f7707d4d024920dbd6ef7166e428786d6",
+        "rotation": "08a0e335bf80a7cae8763f2e191b1dca48dd1d8b71ac1a96dfaf243e5bc759d3"
+      },
+      "invariants": {
+        "native_transport_bit_equal": true,
+        "no_remaining_inflight": true,
+        "decoded_cache_within_limit": true,
+        "verified_entries_within_limit": true,
+        "independent_backup_after_source_removal": true,
+        "shared_budget_fully_released": true,
+        "shared_budget_within_limit": true,
+        "default_budget_fully_released": true
+      },
+      "shared_budget": {
+        "max_bytes": 402653184,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 282679360,
+        "refusals": 0,
+        "categories": {
+          "caller-retained": 0,
+          "work": 0,
+          "store-retained": 0,
+          "executor-inflight": 0,
+          "process-baseline": 0,
+          "consumer-output": 0,
+          "store-stage": 0,
+          "store-read": 0,
+          "store-output": 0,
+          "caller-load": 0,
+          "pending-result": 0
+        },
+        "category_peaks": {
+          "caller-retained": 16777216,
+          "work": 17178664,
+          "store-retained": 6832128,
+          "executor-inflight": 51150944,
+          "process-baseline": 201326592,
+          "consumer-output": 4194304,
+          "store-stage": 16968288,
+          "store-read": 11010048,
+          "store-output": 4194304,
+          "caller-load": 2097152,
+          "pending-result": 2097152
+        }
+      },
+      "executor": {
+        "serial_jobs": 0,
+        "parallel_jobs": 30,
+        "completed_jobs": 30,
+        "peak_inflight": 2,
+        "reserved_bytes": 0,
+        "peak_reserved_bytes": 51150944,
+        "mode": "processes",
+        "max_workers": 2,
+        "inner_threads": 1,
+        "shared_budget": {
+          "max_bytes": 402653184,
+          "reserved_bytes": 224935936,
+          "peak_reserved_bytes": 282679360,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "process-baseline": 201326592,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 0,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "process-baseline": 201326592,
+            "consumer-output": 4194304,
+            "store-stage": 16968288,
+            "store-read": 11010048,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        },
+        "process_allowance_bytes": 201326592
+      },
+      "storage": {
+        "unique_chunks": 25,
+        "encoded_payload_bytes": 3363675,
+        "snapshots": 37,
+        "database_bytes": 3461120,
+        "decoded_cache_bytes": 4194304,
+        "verified_cache_entries": 25,
+        "operations": {
+          "payload_reads": 224,
+          "decoded_hits": 291,
+          "verified_hits": 361,
+          "encodes": 25,
+          "staged_bytes": 0,
+          "prepare_seconds": 0.39079800005129073,
+          "writer_seconds": 0.173573399981251,
+          "insert_batches": 25,
+          "peak_prepared_bytes": 1255808
+        },
+        "resource_allowances": {
+          "retained_ram_allowance": 6832128,
+          "codec_workspace_allowance": 8388608,
+          "write_workspace_allowance": 19437568,
+          "read_workspace_allowance": 11010048,
+          "database_capacity": 67108864,
+          "rollback_journal_capacity": 67108864,
+          "staging_capacity_per_writer": 33554432,
+          "backup_capacity_per_copy": 67108864,
+          "process_rss_cap": false
+        },
+        "shared_budget": {
+          "max_bytes": 402653184,
+          "reserved_bytes": 34619392,
+          "peak_reserved_bytes": 282679360,
+          "refusals": 0,
+          "categories": {
+            "caller-retained": 16777216,
+            "work": 0,
+            "store-retained": 6832128,
+            "executor-inflight": 0,
+            "process-baseline": 0,
+            "consumer-output": 0,
+            "store-stage": 0,
+            "store-read": 11010048,
+            "store-output": 0,
+            "caller-load": 0,
+            "pending-result": 0
+          },
+          "category_peaks": {
+            "caller-retained": 16777216,
+            "work": 17178664,
+            "store-retained": 6832128,
+            "executor-inflight": 51150944,
+            "process-baseline": 201326592,
+            "consumer-output": 4194304,
+            "store-stage": 16968288,
+            "store-read": 11010048,
+            "store-output": 4194304,
+            "caller-load": 2097152,
+            "pending-result": 2097152
+          }
+        }
+      },
+      "storage_allowances": {
+        "retained_ram_allowance": 6832128,
+        "codec_workspace_allowance": 8388608,
+        "write_workspace_allowance": 19437568,
+        "read_workspace_allowance": 11010048,
+        "database_capacity": 67108864,
+        "rollback_journal_capacity": 67108864,
+        "staging_capacity_per_writer": 33554432,
+        "backup_capacity_per_copy": 67108864,
+        "process_rss_cap": false
+      },
+      "declared_disk_capacity_bytes": 234881024,
+      "stored_bytes_after_backup": 3461120,
+      "runtime": {
+        "python": "3.12.14",
+        "numpy": "2.4.6",
+        "scipy": "1.17.1",
+        "numba": "0.65.1",
+        "blosc2": "4.13.1",
+        "threadpoolctl": "3.7.0",
+        "sqlite": "3.53.1",
+        "native_libraries": [
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.31.188.0",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          },
+          {
+            "internal_api": "openblas",
+            "prefix": "libscipy_openblas",
+            "version": "0.3.30",
+            "num_threads": 1,
+            "threading_layer": "pthreads"
+          }
+        ]
+      },
+      "process_tree_memory": {
+        "rss_sum_bytes": 390520832,
+        "uss_sum_bytes": 272674816,
+        "pss_sum_bytes": null,
+        "processes": 4,
+        "threads": 44,
+        "largest_child_rss_bytes": 222785536,
+        "samples": 195,
+        "missing_full_info_samples": 195,
+        "visible_storage_peak_bytes": 3467465,
+        "sampling_interval_target_s": 0.01,
+        "elapsed_monitored_s": 5.9060000000026776,
+        "sampled_rss_ceiling_bytes": 1073741824,
+        "errors": null,
+        "notes": "RSS sums can double-count shared mappings; sample peaks may miss brief peaks. USS/PSS availability is recorded. Visible-file storage excludes unnamed temporary spools; peak_prepared_bytes separately records staged logical bytes."
+      }
+    }
+  ],
+  "scope": "Three synthetic integrated combinations, five warm repeats each; not item-1 broad tuning or world simulation.",
+  "limitations": [
+    "Other platforms are not accepted by this run.",
+    "Configured allowances are not a total process RSS cap.",
+    "Sampled RSS can count shared pages more than once; see separate USS/PSS observations.",
+    "No power-loss durability, GPU, distributed mechanics or geological validation."
+  ]
+}

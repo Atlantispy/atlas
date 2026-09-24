@@ -392,7 +392,7 @@ class MaterialTransportResult:
     def numerical_method(self):
         # The result container is shared, but ALE must not claim the fixed-grid law.
         operation = (self.state.transition_record or {}).get('operation')
-        method = operation if operation in ('ale-cohort-ssprk2-v1',
+        method = operation if operation in ('ale-cohort-ssprk2-v1','ale-cohort-ssprk2-v2',
             'cohort-partial-thickness-regional-v1',_METHOD) else _METHOD
         return method+'-'+self.scheme+'-'+self.backend
 

@@ -1,5 +1,59 @@
 # Current scoped package: 0.1.0.dev42
 
+For a plain-English explanation of the implemented methods, outputs and checks,
+read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). The
+[validation record](docs/W10_VALIDATION.md) distinguishes implementation,
+numerical resolution, physical observations and supported assembly.
+Its comprehensive successor includes the approved mixed-material remap/ALE fix,
+137 passing integration checks, active coupling and Windows resource evidence.
+The failed pre-fix full baseline and unavailable platform checks remain explicit;
+earlier source-bound W10/W11 receipts are historical, not silently refreshed.
+
+## Scientific ownership and next work
+
+The historical package contains reusable work for several scientific modules.
+Its directory name is not an instruction to expand all of them inside tectonics.
+Per the [23 September ownership decision](docs/TECTONICS_PLAN.md#current-module-boundaries-and-continuation-23-september-2026),
+keep existing code/imports and source-bound checkpoints unchanged. Further water
+work belongs to hydrology; erosion/deposition to erosion and sediment transport;
+geological, compaction and magmatic development to their respective owners.
+Receiving modules implement the effects of tectonic outputs on their own state.
+
+The supplied ramp-flat [collision/underthrusting route](docs/UNDERTHRUST.md) is now
+implemented: side-preserving material motion, continuous-path stationary-host
+checks, named receiving/exterior accounts and separate supplied work/gravity.
+Twenty-eight focused checks pass. Three changed outputs save 0.4323981 s / 48.90%
+through prepared reuse (0.8841770 to 0.4517789 s), with complete-output hash parity.
+
+[Step 3 evolving mechanical inputs](docs/EVOLVING_MECHANICS.md) is implemented:
+changing elastic rigidity uses separate absolute reference/current equilibria;
+regional material, force and boundary inputs must match time/frame/support and
+name single owners. Twenty-six new focused tests pass. Three changed outputs save
+28.09% for regional mechanics and 47.15% for elastic support with complete-output
+hash parity. Source, budget and numerical gates are retained.
+
+[Step 4 supported histories](docs/TECTONIC_HISTORIES.md) now adds atomic dated
+recovery for underthrust, evolving elastic support and regional mechanics. It
+preserves each route's physical ownership and restores the latest complete output
+without replaying accepted work. Existing W05-W08 workflows remain in use.
+
+[W10's bounded validation assessment](docs/W10_VALIDATION.md) is now implemented:
+26 selected checks pass, free-surface convergence is freshly verified, and the
+unchanged cooling model passes a 50-bin observational heat-flow dispersion screen.
+The record retains its negative bias, sensitivities and unresolved field claims;
+historical subduction evidence is not relabelled as a current campaign.
+
+[W11's bounded performance/scale assessment](docs/OPTIMISATION_REFERENCE.md#w11-bounded-matched-output-scale-assessment--24-september-2026)
+now measures existing preparation reuse at 8x8/16x16/24x24 regional grids:
+30.38%/21.05%/28.59% less time for three changed outputs, with complete parity,
+independent affine error checks and five paired repetitions per size. Fourteen
+selected execution safeguards pass; no new numerical shortcut or planetary
+extrapolation. Evidence destinations are now claimed before expensive work.
+Tectonics continues with W12 generator integration within these supported bounds.
+W09 Steps 4-5 are retained downstream work, not the
+next tectonics implementation. Existing shared thermal/load/accounting components
+remain available; mechanical response is not removed from tectonics.
+
 ## Local W08 regimes and shortening
 
 [Step 1](docs/W08_REGIMES.md) and the [case register](cases/w08_regimes.json)
@@ -1807,15 +1861,13 @@ Windows/macOS, Python 3.12, other dependency builds, power-loss behaviour on oth
 filesystems, large-world memory and geological realism were not verified here.
 The [first delivery record](evidence/DELIVERY.md) remains historical and unchanged.
 
-## Next development gate
+## Historical W01 development gate
 
-Continue with **W01 stage 7: connect initialisation and supported evolution**
-without manually assembling intermediate arrays. Stages 5 and 6 now supply
-declared sampling and checked prescribed motion; stages 7–8 remain before W01
-completion. Preserve geological, thermal, inventory-metric and source provenance.
-W03 stays paused until the required initialisation and supported
-W01-to-W02 link are complete. Reuse the existing W02 regional implementation,
-accuracy-first defaults, storage and resource controls; no broad rewrite is needed.
+The earlier instruction to implement W01 stages 7–8 and pause W03 has been
+superseded by the delivered supported workflow and subsequent W03–W11 work.
+See [Scientific ownership and next work](#scientific-ownership-and-next-work)
+above for the current continuation. This does not close the separately held
+generated-dynamics/R4.4 acceptance.
 
 
 ## Optimisations 4 and 5 — cooling and geometric batches

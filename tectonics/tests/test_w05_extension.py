@@ -199,7 +199,7 @@ class W05ExtensionTests(unittest.TestCase):
             current = plan.advance(plan.initial, time_s=.5, steps=4)
             self.assertEqual(current.intervals, 4)
             self.assertLessEqual(current.max_courant, .5)
-            self.assertEqual(current.material.transition_record['operation'], 'ale-cohort-ssprk2-v1')
+            self.assertEqual(current.material.transition_record['operation'], 'ale-cohort-ssprk2-v2')
             assert_array_equal(current.exchange_m2[:, 0], 0.)
             change = (current.material.thickness_m-plan.initial.material.thickness_m)@np.diff(EDGES)
             assert_allclose(change, current.exchange_m2[:, 1], rtol=0, atol=3e-14)

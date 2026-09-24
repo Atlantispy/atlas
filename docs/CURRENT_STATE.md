@@ -2,6 +2,98 @@
 
 Source date: 15 September 2026. WORKING NON-CANON. This page is a public technical handover, not an accepted scientific model or a world dataset.
 
+Comprehensive tectonics review and correction, 24 September 2026:
+[all-level findings and evidence](../tectonics/docs/W10_VALIDATION.md#comprehensive-review-24-september-2026)
+now accompany [How Atlas tectonics is made](../tectonics/docs/HOW_TECTONICS_IS_MADE.md).
+The once-only 3,565-test baseline exposed a remap/ALE coverage gap plus Windows
+fixture and stale reference-test assumptions. Joint reconstruction now prevents
+mixed cohorts from creating artificial total-thickness changes during remap or
+moving-grid updates; inventories, positivity, worker accounting and source/cache
+identities are preserved together. Final integration: 137 checks pass; reference
+repair: 45 pass; Windows fixture repair: 172 pass and 2 explicit privilege skips.
+Active coupling passes 10 gates; three process-memory/storage configurations pass
+with identical outputs. The full failed baseline and all unexercised symlink
+coverage stay visible; no full post-fix rerun or Linux pass is claimed.
+The review covers V1–V4 separately, including retained downstream regression
+coverage, and records physical and assembly gaps. The old source-bound W10/W11
+receipts remain historical after this correction, not silently repinned.
+Next remains supported W12 assembly; held R4.4 and field-evidence limits are unchanged.
+
+Local tectonics W11 assessment, 24 September 2026:
+[matched-output regional scaling](../tectonics/docs/OPTIMISATION_REFERENCE.md#w11-bounded-matched-output-scale-assessment--24-september-2026)
+confirms existing prepared execution saves 0.2813070/0.1871539/0.2850695 seconds
+(30.38%/21.05%/28.59%) for three changed outputs at 8x8/16x16/24x24 grids.
+Five alternating pairs per size; all 90 outputs satisfy exact within-case parity,
+independent affine solution checks and unchanged mechanical gates. Peak accounted
+37,693,684 bytes; process-lifetime RSS peak 123,183,104 bytes, separately reported.
+Fourteen selected execution safeguards pass in 9.596 s, plus seven new harness
+guards. An initial report permission failure is retained, and both new runners now
+claim their output destination before expensive work. One justified repeat provides
+the full scale receipt; no production numerical changes or extra speed multiplier.
+Current PF/PT decisions defer unsupported GPU/MPI/adaptive/distributed claims.
+Next: W12 supported assembly; W10's unresolved field envelopes and R4.4 hold remain.
+
+Local tectonics W10 assessment, 24 September 2026:
+[independent challenge and uncertainty](../tectonics/docs/W10_VALIDATION.md) now has
+a reproducible bounded profile. All 26 selected checks pass in 11.764664 s; the
+complete assessment takes 12.119292 s. Fresh B09 free-surface convergence passes
+in a separate 16.393214 s run. Exact-bound three-route recovery evidence is reused
+without replay; retained subduction records remain explicitly historical.
+The unchanged synthetic cooling case passes a 50-bin external oceanic heat-flow
+dispersion screen (scaled RMS 0.714587, mean bias -8.782888 mW/m2); fixed sensitivity
+results and unresolved field claims remain visible. No fitting or physical gate
+relaxation. W11 performance/scale is next; W12 assembly cannot promote unresolved
+field evidence to acceptance. No production physics changes, held campaign,
+downstream expansion, world dataset or publication.
+
+Local tectonics continuation Step 4, 23 September 2026:
+[supported dated histories](../tectonics/docs/TECTONIC_HISTORIES.md) now publish and
+restore underthrust, evolving W04 support and regional mechanical outputs through
+the shared atomic store. Actual material/source/force bindings and fixed-reference
+response ownership survive recovery; completed physical work is not replayed.
+Existing W05-W08 histories remain in use, with no implicit representation conversion.
+Focused workflow/codec checks pass. [Measured saved-work recovery](../tectonics/evidence/tectonic-history-r1.json),
+three outputs per route: underthrust 0.5423182 -> 0.2709879 s (50.03%), elastic
+1.6308931 -> 0.5895647 s (63.85%), regional 0.8954609 -> 0.2924879 s (67.34%).
+Full result bytes/IDs agree; these are recovery savings, not faster new simulations.
+Next: W10 tectonics validation, then W11 performance/scale and W12 assembly.
+No held campaign, downstream scientific expansion, historical repin or publication.
+
+Local tectonics continuation Step 3, 23 September 2026:
+[compatible evolving mechanical inputs](../tectonics/docs/EVOLVING_MECHANICS.md)
+now connect actual W03 physical-load changes and state-bound elastic properties to
+separate absolute-load equilibria, and co-timed regional material/force/boundary
+blocks to the existing W07 solver. Duplicate gravity/load/displacement ownership
+and mismatched time/frame/support refuse. Twenty-six new focused checks, three
+retained W04 checks and nine shared identity checks have passing evidence.
+[Measured preparation reuse](../tectonics/evidence/evolving-inputs-r1.json):
+regional 0.8189610 -> 0.5888821 s (0.2300789 s / 28.09% saved), elastic
+2.7921546 -> 1.4756385 s (1.3165161 s / 47.15% saved), three changed outputs with
+complete hash parity. Subsequent Step 4 is recorded above; W10/W11/W12 remain.
+No downstream scientific expansion, full-world run or change to R4.4's hold.
+
+Local tectonics continuation Step 2, 23 September 2026:
+[prescribed ramp-flat collision/underthrusting](../tectonics/docs/UNDERTHRUST.md)
+now conserves labelled material across moving interface sides, rejects stationary
+host overlap over entire motion intervals and retains explicit receiving/exterior
+stock. Supplied boundary work and centroid-based gravitational change are separate.
+Nineteen new tests plus nine existing identity checks pass; independent analytic
+controls and complete-output parity pass in the
+[source-bound benchmark](../tectonics/evidence/underthrust-r1.json).
+Three changed outputs take 0.8841770 s cold or 0.4517789 s prepared:
+0.4323981 s / 48.90% saved, including setup/source verification. Existing code stays
+in place. Subsequent Step 3 is recorded above; remaining work is joined histories and
+W10/W11/W12 tectonics validation/performance/assembly. No R4.4 or world campaign.
+
+Local ownership decision, 23 September 2026: retain the mixed `atlas_tectonics`
+package layout and existing implementations, avoiding a source/import/checkpoint
+migration solely for tidiness. Non-tectonic expansion is deferred to the relevant
+individual modules; consumers own the effects of tectonic outputs on their state.
+The [current responsibility split and continuation](../tectonics/docs/TECTONICS_PLAN.md#current-module-boundaries-and-continuation-23-september-2026)
+keeps W10 validation, W11 performance/scale and W12 generator assembly within the
+tectonics completion programme. W09 Steps 4-5 remain unfinished downstream work,
+not the next tectonics expansion. No code, scientific evidence or hold changed.
+
 Local code supplement, 22 September 2026: [W01 Stage 7](../tectonics/docs/W01_REGIONAL_WORKFLOW.md)
 now supplies the supported described-geology-to-regional-material workflow, with
 retained initial thermal provenance, verified reuse and restoration.
@@ -148,9 +240,78 @@ identical-result reuse saves 0.9936889 s / 64.26%, with setup and source checks
 included. See [source-bound evidence](../tectonics/evidence/w08-transform.json).
 [Step 4](../tectonics/docs/W08_SUBDUCTION.md) now implements prescribed-slab/computed-
 wedge mechanics, direct steady heat, conservative thermal velocity transfer and
-finite material retirement. Its original-source and numerical comparison gates
-remain explicit: Step4 is IN_PROGRESS, not retrospectively accepted by its unit
-checks. Plotting remains deferred.
+finite material retirement. Step4 is COMPLETE on its recorded explicit routes:
+the [r3 source adapter](../tectonics/cases/w08_subduction_r3.json) resolves natural
+thermal outflow by the frozen design's independent weak-form derivation route,
+supported by SEPRAN primary manuals and the author-written2023 weak form.
+Historical contributor-code equivalence remains unclaimed, not fabricated.
+The last numerical refinement miss was corrected by explicit one-pass
+whole-wedge error-guided refinement: case2a finest change1.029971→0.621535C against
+the unchanged1C gate, with0.263670C maximum reference error. Nineteen inserted
+points suffice at the finest level under the same128MiB accounting cap. All five
+cases have passing numerical comparisons in their recorded routes. The
+[closure record](../tectonics/evidence/w08-subduction-acceptance.json) binds those
+reports and the source resolution without rewriting old receipts, changing
+physics/tolerances or repeating the coupled campaign. Plotting remains deferred.
+An optional [phase-local projection policy](../tectonics/docs/W08_SUBDUCTION.md#projection-operator-lifetime-option-23-september-2026)
+now frees 6.74 MB of operator payload between phases on the 1.5 km mesh. A matched
+6 km nonlinear comparison is bit-identical but 13.33% slower (7.015 to 7.950 s),
+so retained operators remain the time-first default. No mesh or memory limit
+changed; this is extra phase headroom, not a measured overall peak reduction.
+[Step 5](../tectonics/docs/W08_MAGMATISM.md) is now COMPLETE for prescribed
+finite-source magmatism: heat-paid melting, coupled component/enthalpy transfer,
+evolving reservoir mixing, exact homogeneous-source exhaustion and explicitly
+accounted intrusion/extrusion or finite host replacement. The independent basalt
+calorimetric/density control passes;52 new focused methods and9 shared identity
+methods have passing evidence. Three matched complete outputs improve from
+0.8076002s to0.3577272s (55.7049% saved) with preparation reuse; identical-output
+reuse saves59.8427%, including source checks and materialisation. See the
+[raw timing evidence](../tectonics/evidence/w08-magmatism-timing.json).
+[Step 6](../tectonics/docs/W08_JOINED.md) now supplies the joined prescribed
+affine-footprint/finite-stock workflow, dated regime changes, exact exhaustion
+stops, single-owner regional material/heat/load views and atomic source-bound
+restart. The frozen cessation control transfers 6 kg and retains existing magma
+stocks. Restart reproduces final bytes without repeating paid transfers; corrupt,
+partial, stale-source and wrong-owner states refuse. Twenty-seven new focused
+methods and nine shared identity checks have passing Windows evidence.
+Three identical complete requests take 2.9310746 s cold versus 1.0546066 s with
+reuse, including preparation and output handling: 1.8764680 s / 64.0198% saved.
+Fresh-setup restore saves46.3099%; continuation after three of five intervals
+saves11.5642%. [Joined evidence](../tectonics/evidence/w08-joined.json) records the
+five separate timing scopes, exact output matching and historical component
+references. No existing physics/mesh/tolerances changed and no expensive coupled
+subduction campaign was repeated. Standalone non-affine, finite-host and thermal
+operations retain their documented contracts; arbitrary transient coupling is
+not inferred from a regime label.
+
+Local W09 Step 1 supplement, 23 September 2026:
+[surface-process design](../tectonics/docs/W09_SURFACE_PROCESSES.md) and its
+[frozen register](../tectonics/cases/w09_surface_processes_r1.json) now select
+physical lake storage/overflow, SPACE-family finite-material river erosion,
+tagged sediment settling/deposition and nonlinear mobile-soil hillslope transport.
+Twelve independent synthetic controls specify water, sediment, geometry and load
+accounts before implementation. The design includes prepared graph reuse,
+ordered implicit work and the explicit W03/W04/W08 consumer adapters still needed.
+Step 1 is design-complete. [Step 2](../tectonics/docs/W09_WATER.md) now implements
+drainage, finite lake storage/spill/merge/split/drying, simultaneous loss accounts,
+conservative same-cell bed changes and source-bound checkpoint continuation.
+Twenty-two new focused tests and nine existing identity tests have passing
+Windows evidence; all four frozen water controls pass. Setup-inclusive prepared
+reuse saves 39.9365% on three changed drainage requests (1.0249139 to0.6155989s)
+and31.1503% on three changed lake requests (1.0894821 to0.7501048s), with identical
+complete outputs. [Raw evidence](../tectonics/evidence/w09-water.json) includes
+all trials. [Step 3](../tectonics/docs/W09_EROSION.md) now implements coupled
+implicit rock/alluvium incision, finite ordered rock-layer events and tagged
+releases, plus nonlinear finite-soil transport on the initial 1D strip support.
+Twenty-seven focused methods and nine existing identity checks have passing
+Windows evidence; all five applicable frozen controls pass. Three changed river
+requests improve from 1.2238466 to 0.8772547 s (28.3199% saved); hillslope requests
+from 0.9545340 to 0.5839676 s (38.8217%), including setup and complete outputs, with
+bit-identical results and no full-result hits. [Evidence](../tectonics/evidence/w09-erosion.json)
+records all trials and refinement. The remaining Step 4 work is source-to-sink
+deposition, stratigraphy and the material/water/thermal/load consumer bridges;
+continue it under the relevant individual modules, not as tectonics expansion.
+Existing budgets, historical evidence and the held R4.4 status are unchanged.
 
 ## Product and scale definition (revision 2 review draft)
 

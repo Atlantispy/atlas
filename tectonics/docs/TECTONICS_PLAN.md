@@ -1,5 +1,70 @@
 # Atlas tectonics simulation plan
 
+## Current module boundaries and continuation (23 September 2026)
+
+Owner decision: retain the existing mixed package layout to avoid unnecessary
+import, cache and checkpoint migration. File placement does not assign scientific
+ownership. Preserve and use the implemented components; defer their non-tectonic
+expansion to the relevant individual module. This section governs continuation
+where older W-package ordering would otherwise imply expanding all of W09 here.
+
+| Responsibility already present here | Owner of further scientific development |
+| --- | --- |
+| Plate/block motion, fault deformation, extension, spreading, shortening, subduction and the associated mechanical response | Tectonics |
+| Geological descriptions, material properties, magmatic melting/transfer/emplacement and resulting rock history | Geology; tectonics consumes the required properties and accounts |
+| Sediment layers, compaction and pore-fluid effects | Geology / erosion and sediment transport; soil-specific extensions belong to soils and ground conditions |
+| Drainage, runoff, lake storage and water exchange | Hydrology |
+| River incision, hillslope transport, sediment routing and deposition | Erosion and sediment transport; topography/topology owns the resulting terrain representation |
+| General heat/material accounting, load construction, caching, storage and resource control | Shared services or explicit cross-module interfaces; no second implementation merely to change ownership |
+
+Tectonics retains the thermal/mechanical response needed by its own calculations,
+including cooling-related response and applicable isostasy/flexure. A receiving
+module owns how tectonic outputs affect its own state. Conversely, tectonics owns
+its response to supplied loads, properties and forcing. Each physical contribution
+must still be applied once. Existing W03/W04/W08 adapters remain usable in place;
+this boundary decision does not remove their dependencies or implemented results.
+
+The supplied ramp-flat [collision/underthrust structural closure](UNDERTHRUST.md)
+is now implemented and checked (continuation Step 2).
+[Step 3 evolving-input mechanics](EVOLVING_MECHANICS.md) also now connects
+state-bound rigidity and physical load changes to elastic support, and coincident
+material/force/boundary snapshots to regional mechanics.
+[Step 4 supported histories](TECTONIC_HISTORIES.md) now supplies dated, atomic
+recovery for these newly supported routes, preserving the existing W05-W08 history
+owners and refusing implicit transfers between incompatible representations.
+W09 Steps 4-5 remain
+unfinished cross-module surface-process work, to
+continue with their individual owners, not the next tectonics expansion.
+
+[W10's bounded assessment](W10_VALIDATION.md) is implemented: selected numerical
+checks, current free-surface convergence, exact-bound recovery reuse, authenticated
+historical subduction evidence and an unfitted 50-bin observational heat-flow
+screen. The report distinguishes a completed assessment from unresolved physical
+claims; it does not close all V3/V4 evidence.
+[W11's bounded study](OPTIMISATION_REFERENCE.md#w11-bounded-matched-output-scale-assessment--24-september-2026)
+now confirms complete-output preparation reuse at three regional grid sizes,
+with explicit PF decisions and selected PT safeguards. Adaptive/distributed and
+general physical scale transfer remain outside that evidence. Continue through
+**W12 generator assembly/release acceptance** within the supported envelopes.
+Reuse shared machinery and test the
+tectonics integration boundary; do not implement downstream science under those
+headings. Generated-plate R5-R9 remains a separate future route, and R4.4 remains
+held/incomplete. No benchmark, acceptance criterion or hold is changed.
+
+The ownership decision itself is documentation-only. Source locations, public imports,
+package version, numerical laws, frozen designs/registers, execution identities,
+historical evidence and saved checkpoints are unchanged. Physical package
+separation can accompany a later module change if it is then worthwhile.
+
+The subsequent Step 2 implementation adds `underthrust.py` and its loaded-code
+identity coverage, without moving existing code or changing frozen contracts.
+Its [implementation/evidence record](UNDERTHRUST.md) governs the supplied geometry,
+host-space, material, work and reuse claims. Step 3 adds explicit absolute reference
+loads and state-bound elastic profiles, plus compatible regional input contracts;
+its numerical laws remain the existing W04/W07 solvers. Step 4 adds the missing
+history/recovery layer. W10's assessment now follows as documented above;
+W11's bounded assessment is recorded above; W12 supported assembly is next.
+
 ## Local implementation update: W01 Stage 8 (22 September 2026)
 
 The [combined acceptance profile](W01_COMBINED_ACCEPTANCE.md) assesses original
@@ -2560,6 +2625,26 @@ Close C03/C04 before geological histories: slab polarity/geometry/time, oceanic 
 **Deliverables/gate:** separate regime evidence records with clear prescribed/predicted distinctions, geological observables and cross-regime transition tests. An unsupported case stays unsupported rather than receiving generic mountain uplift. Full 1.0 claims require all core regime gates, not just the successful extension case.
 
 ### W09 — Necessary surface response and source-to-sink accounting
+
+**Local Step 1, 23 September 2026:** [selected model and bridge design](W09_SURFACE_PROCESSES.md)
+and [frozen synthetic controls](../cases/w09_surface_processes_r1.json) close
+the initial C05 selection. Design complete; solver/bridge implementation pending.
+Next is physical drainage and lake storage, not a full landscape campaign.
+
+**Local Step 2, 23 September 2026:** [drainage and finite-water implementation](W09_WATER.md)
+is complete for the selected ideal-sill model, with frozen water controls,
+conservative bed-change transfer, bounded prepared reuse and exact checkpoint
+continuation. Next is material-aware erosion/hillslope transport; the broader
+sediment/thermal/support bridges remain later W09 work.
+
+**Local Step 3, 23 September 2026:** [finite-material erosion and hillslope transport](W09_EROSION.md)
+is complete for the explicit fixed-receiver river and initial 1D strip hillslope
+operators. Coupled implicit cover/slope solves, ordered finite rock layers,
+conservative tagged releases and sparse nonlinear soil transport pass E1-E3/H1-H2.
+Prepared three-request reuse saves 28.3199% for covered river erosion and 38.8217%
+for hillslope transport with identical full outputs. [Measured evidence](../evidence/w09-erosion.json)
+preserves all samples. Full planar hillslope gradients are not inferred from face
+slopes. Next is Step 4's tagged transport/deposition and explicit physical bridges.
 
 **Dependencies:** an accepted tectonic mechanism from W05/W06/W08; W03/W04 for feedback. **References:** P09–P11/P15, E18–E23/E28; F10–F13.
 

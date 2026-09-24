@@ -100,7 +100,12 @@ class SourceContracts(unittest.TestCase):
         self.assertEqual(b.reserved_bytes,0)
     def test_linked_source_directory_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            a=Path(d)/'real';a.mkdir();b=Path(d)/'link';b.symlink_to(a,target_is_directory=True)
+            a=Path(d)/'real';a.mkdir();b=Path(d)/'link'
+            try:b.symlink_to(a,target_is_directory=True)
+            except OSError as exc:
+                if getattr(exc,'winerror',None)==1314:
+                    self.skipTest('Windows account lacks symbolic-link privilege')
+                raise
             with self.assertRaises(ReferenceDataError):load_pb2002(b)
 
 

@@ -101,7 +101,13 @@ _IDENTITY_MODULES += ("regional_strength", "regional_surface_stokes", "surface_g
 _IDENTITY_MODULES += ("regional_geology", "regional_checkpoint", "w07_workflow")
 _IDENTITY_MODULES += ("shortening", "shortening_support")
 _IDENTITY_MODULES += ("transform", "deformation_network", "planar_projection", "planar_exchange", "fault_slip")
-_IDENTITY_MODULES += ("subduction", "subduction_mesh", "subduction_materials", "subduction_linear", "subduction_transport")
+_IDENTITY_MODULES += ("subduction", "subduction_mesh", "subduction_materials", "subduction_linear", "subduction_transport", "subduction_refinement")
+_IDENTITY_MODULES += ("magmatic_thermodynamics", "magmatic_emplacement", "magmatic_transfer")
+_IDENTITY_MODULES += ("w08_inventory", "w08_region", "w08_workflow")
+_IDENTITY_MODULES += ("w09_drainage", "w09_water", "w09_erosion", "w09_hillslope")
+_IDENTITY_MODULES += ("underthrust",)
+_IDENTITY_MODULES += ("evolving_mechanics", "evolving_flexure")
+_IDENTITY_MODULES += ("tectonic_history_codec", "tectonic_history")
 
 
 _SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
@@ -1275,7 +1281,7 @@ def cached_material_remap(state,target,*,plan=None,scheme='linear',backend='numb
         if type(op) is not RemapPlan or op.source!=state.grid or op.target!=target:raise TectonicsError('stale remap plan')
         ctx=control.context(backend) if context is None else context
         if not isinstance(ctx,ExecutionContext) or ctx.backend!=backend:raise TectonicsError('context/backend mismatch')
-        record=_invocation_record('material-remap-v1',{}, {'state_id':state.state_id,'state':state.descriptor(),
+        record=_invocation_record('material-remap-v2',{}, {'state_id':state.state_id,'state':state.descriptor(),
                        'target':target.descriptor(),'plan_id':op.plan_id,'scheme':scheme},backend,context=ctx)
         record=json.loads(_json(record))
         packed=_evaluate(store,record,lambda:remap_materials(state,target,plan=op,scheme=scheme,backend=backend,
@@ -1311,7 +1317,7 @@ def cached_ale_transport(state,face_velocity_m_s,mesh_velocity_m_s,duration_s,*,
         _boundary_values(state,u-w,left,True);_boundary_values(state,u-w,right,False)
         ctx=control.context(backend) if context is None else context
         if not isinstance(ctx,ExecutionContext) or ctx.backend!=backend:raise TectonicsError('context/backend mismatch')
-        record=_invocation_record('ale-packed-v1',{'u':u,'w':w},{'state_id':state.state_id,
+        record=_invocation_record('ale-packed-v2',{'u':u,'w':w},{'state_id':state.state_id,
              'state':state.descriptor(),'duration_s':dt,'left':asdict(left),'right':asdict(right),'scheme':scheme},
              backend,context=ctx,digests={'u':ud,'w':wd})
         record=json.loads(_json(record))

@@ -1,0 +1,47 @@
+{
+  "schema": "atlas.w08-magmatism-acceptance.v1",
+  "case_id": "W08-C06-magmatism-1",
+  "source_status": "WORKING NON-CANON",
+  "frozen_before_candidate_run": true,
+  "design_sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de",
+  "controls": ["W08-A04", "W08-A05", "W08-A06"],
+  "normalised_error_limit": 1e-10,
+  "extensive_roundoff_multiplier": 128,
+  "space_cells": [8, 16, 32],
+  "event_partitions": [1, 2, 4],
+  "max_work_bytes": 134217728,
+  "native_threads": 1,
+  "max_accepted_intervals": 256,
+  "physical_control": {
+    "source": "https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018JB016773",
+    "locator": "Calogero, Hetland and Lange (2020), Table 1 and section 3",
+    "basalt_cp_j_kg_k": 1480,
+    "basalt_latent_heat_j_kg": 400000,
+    "melt_density_kg_m3": 2830,
+    "solid_density_kg_m3": 3100,
+    "initial_temperature_k": 1423.15,
+    "host_density_kg_m3": 2650,
+    "host_cp_j_kg_k": 1370,
+    "scenario_not_paper_parameters": {
+      "initial_melt_volume_m3": 1,
+      "final_temperature_k": 473.15,
+      "common_melting_temperature_k": 1200,
+      "reference_temperature_k": 300,
+      "total_receiving_area_m2": 2
+    },
+    "expected_mass_kg": 2830,
+    "expected_released_heat_j": 5110980000,
+    "expected_solid_receiving_volume_m3": 0.9129032258064516,
+    "scope": "Independent calorimetric/density control, not reproduction of the paper's transient sill or approximate 10 percent compaction law"
+  },
+  "variable_mass_oracle": {
+    "initial_reservoir_mass_kg": 2,
+    "recharge_kg_s": 1,
+    "outflow_kg_s": 0.5,
+    "initial_specific_enthalpy_j_kg": 0,
+    "feed_specific_enthalpy_j_kg": 10,
+    "duration_s": 3,
+    "formula": "h=hin+(h0-hin)*(M0/(M0+(qin-qout)*t))**(qin/(qin-qout))"
+  },
+  "timing": {"rotated_repeats": 3, "same_requested_products": true, "include_setup_verification_and_materialisation": true}
+}

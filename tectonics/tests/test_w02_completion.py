@@ -540,10 +540,135 @@ class IntegratedW02Tests(unittest.TestCase):
             save_material_state(out.state,store);restored=load_material_state(store,out.state.state_id)
             self.assertEqual(out.state.state_id,restored.state_id)
 
+class JointMeshReconstructionTests(unittest.TestCase):
+    """Composition changes must not fabricate a change in the total field."""
+    def source(self, values=None, edges=(0.,1.,2.,3.)):
+        cohorts=COHORTS+(MaterialCohort('c','granite','origin-c',0.),)
+        h=np.array([[.2,.4,.4],[.4,.3,.4],[.4,.3,.2]]) if values is None else np.asarray(values)
+        return MaterialState(ColumnGrid1D(edges,frame_id='test-frame'),cohorts,h,time_s=0.,epoch_id='e')
+
+    def aggregate(self,s):
+        total=np.array([math.fsum(s.thickness_m[:,i]) for i in range(s.grid.cells)])
+        return MaterialState(s.grid,(COHORTS[0],),total[None,:],time_s=s.time_s,epoch_id=s.epoch_id)
+
+    def test_three_cohort_refinement_preserves_constant_total(self):
+        s=self.source();target=ColumnGrid1D([0.,1.,1.5,2.,3.],frame_id='test-frame')
+        for backend in ('reference','numba'):
+            r=remap_materials(s,target,backend=backend)
+            # Independent exact total; old separate slopes gave 1.025 and .975.
+            assert_allclose(np.sum(r.thickness_m,axis=0),1.,rtol=0,atol=2e-15)
+            close(inv(r),inv(s));self.assertGreaterEqual(float(r.thickness_m.min()),0.)
+            self.assertEqual(r.transition_record['operation'],'conservative-remap-v2')
+
+    def test_nonuniform_variable_total_matches_scalar_remap(self):
+        s=self.source([[.1,.9,.4,.05],[.7,.01,.6,.3],[.2,.4,.01,.8]],edges=[0.,.25,.75,1.5,3.])
+        target=ColumnGrid1D([0.,.1,.4,.9,1.2,2.,3.],frame_id='test-frame')
+        results=[]
+        for backend in ('reference','numba'):
+            result=remap_materials(s,target,backend=backend)
+            scalar=remap_materials(self.aggregate(s),target,backend=backend)
+            close(np.sum(result.thickness_m,axis=0),scalar.thickness_m[0])
+            close(inv(result),inv(s));results.append(result.thickness_m)
+            self.assertGreaterEqual(float(result.thickness_m.min()),0.)
+        close(*results)
+
+    def test_joint_traces_follow_scalar_for_each_geometry_and_stage(self):
+        from atlas_tectonics.remapping import _joint_slopes_reference,_slopes_reference,_ale_reference
+        from atlas_tectonics._mesh_native import joint_slopes
+        h=self.source().thickness_m;x=np.array([0.,1.,2.,3.]);y=np.array([0.,1.05,1.98,3.])
+        # Independent first-stage finite-volume balance from reconstructed traces.
+        slopes=_joint_slopes_reference(h,x,True);a=np.array([0.,-.5,.2,0.]);dt=.1
+        lower=h-.5*np.diff(x)*slopes;upper=h+.5*np.diff(x)*slopes
+        flux=np.zeros((3,4));flux[:,1:-1]=a[1:-1]*np.where(a[1:-1]>=0,upper[:,:-1],lower[:,1:])
+        stage=(h*np.diff(x)+dt*(flux[:,:-1]-flux[:,1:]))/np.diff(y)
+        for fields,edges in ((h,x),(stage,y)):
+            total=np.array([math.fsum(fields[:,i]) for i in range(3)])
+            expected=_slopes_reference(total,edges,True)
+            for actual in (_joint_slopes_reference(fields,edges,True),joint_slopes(fields,edges,True)):
+                close(np.sum(actual,axis=0),expected)
+                self.assertTrue(np.all(fields-.5*np.diff(edges)*actual>=0))
+                self.assertTrue(np.all(fields+.5*np.diff(edges)*actual>=0))
+
+    def test_stationary_and_deforming_mesh_preserve_constant_total(self):
+        s=self.source();open_left=MaterialBoundary('open',{'a':.2,'b':.4,'c':.4},'outside')
+        cases=((np.ones(4),np.zeros(4),open_left,MaterialBoundary('open',None,'outside')),
+               (np.zeros(4),np.array([0.,.1,-.05,0.]),CLOSED,CLOSED))
+        for u,w,left,right in cases:
+            for backend in ('reference','numba'):
+                result=advect_ale(s,u,w,.125,left=left,right=right,backend=backend)
+                assert_allclose(np.sum(result.state.thickness_m,axis=0),1.,rtol=0,atol=3e-15)
+                close(inv(result.state)-inv(s),result.accounts[:,6]+result.accounts[:,7])
+                self.assertEqual(result.numerical_method,'ale-cohort-ssprk2-v2-muscl-'+backend)
+
+    def test_variable_total_ale_matches_scalar_and_each_cohort_account(self):
+        s=self.source([[.1,.9,.4,.05],[.7,.01,.6,.3],[.2,.4,.01,.8]],edges=[0.,.25,.75,1.5,3.])
+        u=np.array([.2,.12,-.08,.15,.2]);w=np.array([0.,.02,-.01,.03,0.])
+        incoming=MaterialBoundary('open',{'a':.3,'b':.2,'c':.5},'outside')
+        total_in=MaterialBoundary('open',{'a':1.},'outside');outgoing=MaterialBoundary('open',None,'outside')
+        results=[]
+        for backend in ('reference','numba'):
+            result=advect_ale(s,u,w,.125,left=incoming,right=outgoing,backend=backend)
+            scalar=advect_ale(self.aggregate(s),u,w,.125,left=total_in,right=outgoing,backend=backend)
+            close(np.sum(result.state.thickness_m,axis=0),scalar.state.thickness_m[0])
+            close(np.sum(result.face_flux_m2_s,axis=0),scalar.face_flux_m2_s[0])
+            close(inv(result.state)-inv(s),result.accounts[:,6]+result.accounts[:,7])
+            self.assertGreaterEqual(float(result.state.thickness_m.min()),0.)
+            results.append(result.state.thickness_m)
+        close(*results)
+
+    def test_joint_smooth_remap_second_order(self):
+        def means(x):
+            dx=np.diff(x)
+            sine=(np.cos(2*np.pi*x[:-1])-np.cos(2*np.pi*x[1:]))/(2*np.pi*dx)
+            cosine=(np.sin(2*np.pi*x[1:])-np.sin(2*np.pi*x[:-1]))/(2*np.pi*dx)
+            a=.2+.1*sine;b=.3+.1*cosine
+            return np.vstack((a,b,1.-a-b))
+        for backend in ('reference','numba'):
+            errors=[]
+            for n in (32,64,128):
+                x=np.linspace(0.,1.,n+1);y=np.linspace(0.,1.,2*n+1)**1.2
+                s=self.source(means(x),x)
+                result=remap_materials(s,ColumnGrid1D(y,frame_id='test-frame'),backend=backend)
+                errors.append(float(np.sum(abs(result.thickness_m-means(y))*np.diff(y))))
+                close(np.sum(result.thickness_m,axis=0),np.ones(2*n));close(inv(result),inv(s))
+            self.assertGreater(errors[0]/errors[1],3.)
+            self.assertGreater(errors[1]/errors[2],3.)
+
+    def test_explicit_first_order_routes_retain_rational_result(self):
+        s=self.source();target=ColumnGrid1D([0.,.5,1.,2.,3.],frame_id='test-frame')
+        for backend in ('reference','numba'):
+            mapped=remap_materials(s,target,scheme='constant',backend=backend)
+            assert_array_equal(mapped.thickness_m,s.thickness_m[:,[0,0,1,2]])
+            left=MaterialBoundary('open',{'a':.2,'b':.4,'c':.4},'outside')
+            result=advect_ale(s,np.ones(4),np.zeros(4),.25,left=left,
+                              right=MaterialBoundary('open',None,'outside'),scheme='upwind',backend=backend)
+            expected=np.array([[.2,.35,.4],[.4,.325,.375],[.4,.325,.225]])
+            close(result.state.thickness_m,expected);close(inv(result.state)-inv(s),result.accounts[:,6]+result.accounts[:,7])
+
+    def test_added_joint_work_is_admitted_and_code_constants_are_bound(self):
+        from atlas_tectonics import remapping as module
+        from atlas_tectonics import _mesh_native as native
+        s=self.source();target=ColumnGrid1D([0.,1.,1.5,2.,3.],frame_id='test-frame')
+        c,n=3,3;nt=4
+        for backend in ('reference','numba'):
+            old_remap=48*c*(n+nt)+224*(n+nt)+8192*c+16384
+            old_ale=96*c*n+256*n+16384*c+16384
+            for budget,call in ((WorkBudget(old_remap),lambda b:remap_materials(s,target,backend=backend,budget=b)),
+                    (WorkBudget(old_ale),lambda b:advect_ale(s,np.zeros(4),np.zeros(4),.125,
+                        left=CLOSED,right=CLOSED,backend=backend,budget=b))):
+                with self.assertRaises(MemoryLimitError):call(budget)
+                self.assertEqual(budget.reserved_bytes,0)
+        for obj,name in ((module,'_joint_slopes_reference'),(module,'_ALE_METHOD'),
+                         (native,'joint_slopes'),(native,'_cohort_flux')):
+            with ExecutionContext('numba') as context:
+                with mock.patch.object(obj,name,object()):
+                    with self.assertRaises(TectonicsError):context.verify()
+
+
 class AdditionalContractTests(unittest.TestCase):
     def test_result_names_ale_not_fixed_grid(self):
         s=state();a=advect_ale(s,np.zeros(17),np.zeros(17),0,left=CLOSED,right=CLOSED)
-        self.assertEqual(a.numerical_method,'ale-cohort-ssprk2-v1-muscl-numba')
+        self.assertEqual(a.numerical_method,'ale-cohort-ssprk2-v2-muscl-numba')
     def test_overflow_motion_and_advice_refuse(self):
         s=state();u=np.full(17,1e308);w=-u
         for call in (lambda:advect_ale(s,u,w,1,left=ext(),right=ext()),

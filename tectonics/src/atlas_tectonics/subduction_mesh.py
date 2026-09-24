@@ -24,6 +24,7 @@ They do not reproduce the reference PGC's 1 m notch or claim physical acceptance
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from itertools import permutations
+import hashlib
 import math
 import threading
 
@@ -222,7 +223,7 @@ def _edge_counts(cells):
 
 class P2Mesh:
     """Leased immutable geometry. Keep this owner open while using borrowed arrays."""
-    __slots__ = ('_closed', '_owner', '_budget', '_vertex_count', '_spacing', '_grading', '_lease', '_arrays', '_locators')
+    __slots__ = ('_closed', '_owner', '_budget', '_vertex_count', '_spacing', '_grading', '_lease', '_arrays', '_locators', '_geometry_id')
     coordinate_system = 'paper x-right y-down; km'
     def __init__(self, arrays, vertex_count, locators, spacing, budget, grading='interface-r3'):
         import sys
@@ -261,6 +262,12 @@ class P2Mesh:
         try:
             self._arrays = {k: _frozen(v) for k, v in arrays.items()}
             self._locators = locators
+            digest = hashlib.sha256(b'atlas.subduction-p2-geometry.v1')
+            for key in ('points', 'cells', 'regions'):
+                a = self._arrays[key]
+                digest.update(str((key, a.shape, a.dtype.str)).encode())
+                digest.update(a.tobytes())
+            self._geometry_id = digest.hexdigest()
         except BaseException:
             self._lease.__exit__(None, None, None); raise
 
@@ -283,6 +290,7 @@ class P2Mesh:
     vertex_count = property(lambda self: self._vertex_count)
     spacing_km = property(lambda self: self._spacing)
     grading_id = property(lambda self: GRADINGS[self._grading])
+    geometry_id = property(lambda self: self._geometry_id)
     tip_target_m = property(lambda self: _target(50., 50., self._spacing, self._grading)*1000.)
 
     def wedge(self, *, cancel=None):
@@ -366,7 +374,7 @@ class P2Mesh:
         self.close()
 
 
-def build_mesh(spacing_km, *, grading='interface-r3', budget=None, cancel=None):
+def build_mesh(spacing_km, *, grading='interface-r3', refinement_points_km=None, budget=None, cancel=None):
     """Grade near slab/lid interfaces, merge exact shared vertices, add P2 edge nodes."""
     spacing = scalar(spacing_km, 'base mesh spacing km', positive=True)
     if not .05 <= spacing <= 200.:
@@ -376,8 +384,24 @@ def build_mesh(spacing_km, *, grading='interface-r3', budget=None, cancel=None):
     owner = WorkBudget(_CAP, parent=select_budget(budget))
     with owner.reserve(64*1024**2, category='subduction-mesh-build'):
         _cancel(cancel)
+        refinement = None
+        if refinement_points_km is not None:
+            shape = input_shape(refinement_points_km)
+            if len(shape) != 2 or shape[1] != 2 or not 1 <= shape[0] <= 4096:
+                raise TectonicsError('refinement needs 1..4096 interior wedge points in km')
+            refinement = read_array(refinement_points_km, 'refinement points km')
+            x,y = refinement.T
+            if np.any((y <= 50.) | (y >= x) | (x >= 660.) | (y >= 600.)):
+                raise TectonicsError('refinement points must lie strictly inside the wedge')
+            if len(np.unique(refinement, axis=0)) != len(refinement):
+                raise TectonicsError('duplicate refinement points')
         segments = [_segment_points(a, b, spacing, cancel, grading) for a, b in _SEGMENTS]
         clouds = _interior_cloud(spacing, cancel, grading)
+        if refinement is not None:
+            # The caller supplies source-bound error-selected interior points.
+            # Re-triangulation preserves the exact shared boundary partition;
+            # all original vertices remain and all existing geometry gates apply.
+            clouds[2].extend(map(tuple, refinement))
         vertices, vertex_map, triangles, regions, locators = [], {}, [], [], []
         region_hulls = []
         for region in range(3):

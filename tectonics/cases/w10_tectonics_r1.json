@@ -1,0 +1,85 @@
+{
+  "schema": "atlas.w10-tectonics-profile.v1",
+  "source_status": "WORKING NON-CANON",
+  "scope": "Selected tectonics verification, independent numerical references, mature-ocean observational screen and explicit unresolved physical envelopes",
+  "held_campaign": "R4.4 HELD_INCOMPLETE",
+  "max_selected_methods": 26,
+  "gates": {
+    "T01_rigid_rotation": [
+      "test_foundations.RotationTests.test_inverse_restores_batch",
+      "test_foundations.RotationTests.test_composition_order_is_not_commutative",
+      "test_foundations.RotationTests.test_distances_orthogonality_and_orientation"
+    ],
+    "T02_frame_and_trace": [
+      "test_foundations.BoundaryTests.test_side_and_trace_reversal",
+      "test_foundations.BoundaryTests.test_common_frame_translation"
+    ],
+    "T03_translation_and_extension": [
+      "test_foundations.TransportTests.test_unit_courant_shift_both_directions",
+      "test_w05_extension.W05ExtensionTests.test_separate_existing_ale_uniform_dilation"
+    ],
+    "T04_birth_migration_retirement": [
+      "test_w06_history_geometry.HistoryGeometryTests.test_switch_all_intersections_centres_accounts_and_first_exit",
+      "test_w08_subduction_materials.SubductionMaterialTests.test_exact_mass_component_and_signed_heat_accounts_by_cohort"
+    ],
+    "T05_conduction_and_heat": [
+      "test_w03_plate_cooling.PlateCoolingTests.test_independent_finite_volume_conduction_grid_refinement",
+      "test_w03_plate_cooling.PlateCoolingTests.test_heat_accounts_and_refinement"
+    ],
+    "T06_compaction_accounts": [
+      "test_w03_compaction_columns.CompactionColumnsTests.test_conservation_area_cycle_and_fluid_mass_account",
+      "test_w03_compaction_columns.CompactionColumnsTests.test_zero_compaction_and_multiple_column_area_account"
+    ],
+    "T07_elastic_support": [
+      "test_foundations.FlexureTests.test_continuous_sinusoid_second_order",
+      "test_foundations.FlexureTests.test_superposition"
+    ],
+    "T08_regional_mechanics": [
+      "test_regional_stokes_core.RegionalStokesCoreTests.test_b02_independent_polynomial_vortex_convergence",
+      "test_regional_stokes_core.RegionalStokesCoreTests.test_b05_rigid_rotation_traction_null_modes_and_checkerboard"
+    ],
+    "T09_strength_and_surface": [
+      "test_w07_regional_strength.RegionalStrengthTests.test_b08_homogeneous_shear_regional_current_law_and_datum_change",
+      "test_w07_free_surface.FreeSurfaceTests.test_curved_one_advance_conserves_mass_volume_and_uniform_density"
+    ],
+    "T10_shortening_shear_underthrust": [
+      "test_w08_shortening.ShorteningTests.test_frozen_A01_twenty_and_fifty_percent_shortening",
+      "test_w08_transform.TransformTests.test_A02_pure_simple_shear_rotation_translation",
+      "test_underthrust.UnderthrustTests.test_exact_ramp_flat_mapping_area_and_analytic_centroid"
+    ],
+    "T11_retained_subduction_reference": [
+      "test_w08_subduction_acceptance.SubductionAcceptanceTests.test_source_resolution_preserves_physics_and_historical_limits",
+      "test_w08_subduction_acceptance.SubductionAcceptanceTests.test_retained_five_case_evidence_is_bound_and_passes_unchanged_gates"
+    ],
+    "T14_joined_accounts": [
+      "test_w08_workflow.W08WorkflowTests.test_joined_five_regimes_and_physical_views"
+    ],
+    "T15_source_refusal": [
+      "test_w08_workflow.W08WorkflowTests.test_source_drift_and_immutable_history"
+    ]
+  },
+  "retained_history_report": "evidence/tectonic-history-r1.json",
+  "current_surface_report": "evidence/w10-free-surface-r1.json",
+  "subduction_acceptance": "evidence/w08-subduction-acceptance.json",
+  "observational_fixture": "cases/w10_ocean_heatflow_r1.json",
+  "downstream_owned": {
+    "T12": "Incision and hillslope diffusion: erosion/sediment transport and topography",
+    "T13": "Sediment/lake routing: erosion/sediment transport and hydrology"
+  },
+  "physical_envelopes": {
+    "oceanic_cooling": "A fixed-parameter mature-ocean heat-flow screen only; not fitted, calibrated uncertainty or independent age-depth acceptance",
+    "extension_and_underthrust": "Independent analogue/field deformation and forcing data unresolved; supplied fault geometry is not predicted fault initiation",
+    "regional_strength_and_flexure": "Manufactured/analytic adequacy is not a field calibration of viscosity, yield or effective elastic thickness",
+    "subduction": "Retained published numerical comparison, not observational validation or equivalence to historical contributor implementations",
+    "generated_plates": "R4.4 remains held; described plate geometry and prescribed motion do not validate independently generated dynamics"
+  },
+  "status_policy": {
+    "assessment_completion_is_physical_acceptance": false,
+    "numerical_failure_or_skip_can_pass": false,
+    "missing_or_stale_required_evidence_can_pass": false,
+    "ensemble_spread_is_calibrated_uncertainty": false,
+    "downstream_science_implemented_here": false,
+    "whole_tectonics_field_validated": false,
+    "production_ready": false
+  }
+}

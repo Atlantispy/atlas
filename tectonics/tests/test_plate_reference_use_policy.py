@@ -23,7 +23,7 @@ import numpy as np
 from atlas_tectonics.plate_reference import AREA_ROWS
 from atlas_tectonics.plate_reference_acceptance import (
     OBSERVATION_SCALES_M, WITHHELD_MORPHOLOGY_PLATES,
-    read_report_snapshot, reference_protocol,
+    read_report_snapshot, reference_dataset_report, reference_protocol,
 )
 from atlas_tectonics.plate_reference_dataset import (
     ReferenceDataError, PB2002_FILES, verify_source_bytes,
@@ -41,7 +41,19 @@ DATA = ROOT/'reference_data/pb2002'
 class ReviewedReferenceUses(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.plan = prepare_reference_use(DATA)
+        cls.historical_report_bytes = (
+            ROOT/'evidence/3cr1-complete-reference-checks.json').read_bytes()
+
+        def capture_unqualified_report(*args, **kwargs):
+            report = reference_dataset_report(*args, **kwargs)
+            # Snapshot before qualification, not a second numerical evaluation
+            # or an old runtime's floating-point output.
+            cls.unqualified_report = json.loads(json.dumps(report))
+            return report
+
+        with mock.patch('atlas_tectonics.plate_reference_use.reference_dataset_report',
+                        side_effect=capture_unqualified_report):
+            cls.plan = prepare_reference_use(DATA)
         cls.policy = reference_use_policy()
 
     def observations(self, **changes):
@@ -85,10 +97,12 @@ class ReviewedReferenceUses(unittest.TestCase):
         self.assertEqual(c['withheld_morphology_eligible'], 10)
 
     def test_original_report_is_not_rewritten_by_qualification(self):
-        old = json.loads((ROOT/'evidence/3cr1-complete-reference-checks.json').read_text())
-        self.assertEqual(self.plan.strict_report(), old)
-        self.assertEqual(len(old['connectivity']['incidence_discrepancies']), 5)
-        self.assertEqual(len(old['numerical_issues']), 1)
+        self.assertEqual(self.plan.strict_report(), self.unqualified_report)
+        path = ROOT/'evidence/3cr1-complete-reference-checks.json'
+        self.assertEqual(path.read_bytes(), self.historical_report_bytes)
+        for report in (self.unqualified_report, json.loads(self.historical_report_bytes)):
+            self.assertEqual(len(report['connectivity']['incidence_discrepancies']), 5)
+            self.assertEqual(len(report['numerical_issues']), 1)
 
     def test_on_table_transcription_matches_reviewed_publication(self):
         self.assertEqual(dict(AREA_ROWS)['ON'], 0.00802)
@@ -121,9 +135,25 @@ class ReviewedReferenceUses(unittest.TestCase):
         with self.assertRaises(ReferenceDataError):
             self.plan.require_use('ordinary_surface_morphology', plate_id='MS')
         row = next(p for p in self.plan.strict_report()['plates'] if p['plate_id']=='MS')
-        value = row['multiscale']['scales'][0]['phases'][0]['sampled_compactness']
-        self.assertGreater(value, 1.)  # Do not clip the raw evidence to hide the failure.
+        raw = next(p for p in self.unqualified_report['plates'] if p['plate_id']=='MS')
+        self.assertEqual(row, raw)
         self.assertEqual(self.plan.raw_curve('plate', 43).name, 'MS')
+
+    def test_historical_nonphysical_ms_diagnostic_is_retained_without_clipping(self):
+        historical = json.loads(self.historical_report_bytes)
+        row = next(p for p in historical['plates'] if p['plate_id']=='MS')
+        value = row['multiscale']['scales'][0]['phases'][0]['sampled_compactness']
+        self.assertGreater(value, 1.)
+        # MS's retraced branch is not a simple surface ring. Its near-pi
+        # sampled turns can choose different signs across numerical runtimes;
+        # do not require today's phase 0 to reproduce this historical value.
+        # Qualify the actual retained report to test that even >1 is not clipped.
+        with mock.patch('atlas_tectonics.plate_reference_use.reference_dataset_report',
+                        return_value=json.loads(self.historical_report_bytes)):
+            historical_plan = prepare_reference_use(DATA)
+        self.assertEqual(historical_plan.strict_report(), historical)
+        with self.assertRaises(ReferenceDataError):
+            historical_plan.require_use('ordinary_surface_morphology', plate_id='MS')
 
     def test_ms_exclusion_applies_to_every_scale_phase_and_shape_metric(self):
         for metric in ('compactness', 'reflex_turning_radians', 'boundary_length_radians'):

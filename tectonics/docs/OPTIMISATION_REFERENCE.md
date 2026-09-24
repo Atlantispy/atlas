@@ -1,5 +1,121 @@
 # Atlas optimisation reference
 
+## W11 bounded matched-output scale assessment — 24 September 2026
+
+WORKING NON-CANON. This is the current scoped decision for the supported regional
+mechanical route, not a replacement for the historical PF/PT planning definitions
+below. No production equation, backend, tolerance, timestep or checkpoint identity
+changes. W10's bounded evidence is retained; its unresolved physical claims remain.
+
+Result: [bounded W11 assessment](../evidence/w11-assessment-r1.json)
+`PASS_BOUNDED_W11`. Fourteen selected execution safeguards pass in 9.596 s,
+with zero skips; the receipt including source/evidence checks takes 10.666212 s.
+The [recorded scale study](../evidence/w11-scale-r2.json) retains all 90 computed
+outputs' checks and exact within-case parity across five pairs at each size.
+
+| Regional grid | Fresh-owner median, three outputs | Prepared median, three outputs | Saved seconds | Saved time |
+| --- | ---: | ---: | ---: | ---: |
+| 8x8 | 0.9259151 | 0.6446081 | 0.2813070 | 30.3815% |
+| 16x16 | 0.8890599 | 0.7019060 | 0.1871539 | 21.0508% |
+| 24x24 | 0.9969288 | 0.7118593 | 0.2850695 | 28.5948% |
+
+All observed cold/prepared ranges are disjoint. The prepared execution path is
+retained. These quantify **existing** reuse at the selected sizes, not a new
+additional speed multiplier. Small-case costs include substantial fixed overhead;
+the non-monotonic cold medians are not fitted into a planetary scaling law.
+Whole study time is 25.417801 s before writing and 25.430221 s including writing
+(the latter is the retained command completion output). Scientific imports take
+0.711901 s. Peak numerical accounting is 37,693,684 bytes; observed Windows
+process-lifetime peak RSS is 123,183,104 bytes. Final reservations are zero.
+The detailed scale receipt is 433,500 bytes; no scratch/history store is created.
+Four scale-harness tests pass in 0.104 s, three assessment-guard tests in 0.845 s.
+Required static checks pass (13 maps/41 paths; 31 safety tests, one existing
+environmental skip, 0.114 s). No new Linux run or whole-world claim is made.
+
+`tools/check_w11_scale.py` measures existing preparation reuse at 8x8, 16x16 and
+24x24 grids. Each trial computes three genuinely changed viscosity/boundary
+requests, not three cached answers. Five alternating cold/prepared pairs per size
+compare complete wrapper/mechanics IDs, descriptors, diagnostics and every field.
+All numerical gates remain active. An independent affine-shear solution checks
+velocity and stress at every size. This provides scale transfer for this exact
+steady synthetic problem, not arbitrary heterogeneous geological histories.
+
+The execution card is embedded in the scale receipt. It declares one native thread,
+128 MiB shared numerical accounting, a 120-second cooperative deadline, bounded
+evidence storage, no scratch/checkpoint stores and no processes/device work.
+Whole-process RSS is measured separately: Python and native libraries are not
+magically included in the 128 MiB numerical reservation. Cold means fresh owner
+per output in the same process; it does not mean cold OS disk/library caches.
+Construction, deferred setup, live verification, solves, oracle checks, complete
+hashes and close are in the timed trials. Imports, fixture construction, inventory
+checks and report writing are reported separately. Medians and raw ranges are
+retained; these ratios must not be multiplied into older claimed savings.
+
+The first study completed its solves but failed to save its detailed receipt due
+to the shell's destination permissions. `evidence/w11-scale-r1.json` preserves the
+failure and surviving stdout summaries; it is NOT full passing evidence. The
+runner now claims its exclusive output writer before scientific work. Existing
+reports refuse, incomplete output remains visibly incomplete, and one justified
+repeat supplies `evidence/w11-scale-r2.json`. No numerical retry/tolerance change.
+
+`tools/check_w11.py --report evidence/w11-assessment-NEW.json` authenticates that
+scale receipt, reuses W10's unchanged recorded files and exact production
+membership, and runs 14 explicitly selected execution/storage safeguards. Added
+W11-only source files receive a separate current inventory; old evidence is never
+repinned. Run both tools from the repository root with the `tectonics/` prefix
+on tool and evidence paths. No automatic benchmark replay or whole suite occurs.
+
+### Current PF decisions for this case
+
+| PF family | Decision and reason |
+| --- | --- |
+| PF01, PF03 | Retain bounded verified preparation/result reuse; changed outputs are measured separately from identical hits. |
+| PF02 | Existing indexing retained; no new pruning without a measured bottleneck and exhaustive reference. |
+| PF04, PF19 | Measure existing prepared structures and valid factor reuse; changed coefficients still receive current solves/residual gates. Held R4.4 algorithms excluded. |
+| PF05, PF17, PF18 | Existing lossless, deduplicated recovery retained; applicable Step 4 evidence reused, not a new storage-speed claim. |
+| PF06, PF07 | Existing array layout and immutable ownership retained; no speculative fusion or copy removal. |
+| PF08 | Existing compiled/library kernels retained; no new hot-loop implementation justified by this study. |
+| PF09-PF11 | Existing bounded independent-work machinery retained; coupled regional solves are not independent spatial tiles. No new parallel speed claim. |
+| PF12, PF13 | GPU/MPI deferred: no device-transfer comparison or distributed flux/operator proof. |
+| PF14, PF15 | Overlap, affinity and NUMA tuning deferred: no identified idle/transfer/locality bottleneck. |
+| PF16 | Finite sparse-solver admission retained; out-of-core regional solving not established. |
+| PF20, PF21 | Existing numerical methods and interval semantics retained; no equation/timestep shortcut. |
+| PF22 | Fixed-grid scale experiment only; adaptive/coarse-fine transfer deferred pending its own conservative operator/accuracy case. |
+| PF23-PF25 | Mixed precision, surrogates and reduced physics deferred: no separate error/applicability case. |
+| PF26 | Parallel-in-time remains deferred; prescribed steady requests do not establish sequential-history parallelism. |
+
+These are evaluated scoped choices across all 26 families, not 26 new features
+or a claim that every possible optimisation has been exhausted.
+
+### Current PT coverage and retained boundaries
+
+The exact methods in `tools/check_w11.py` cover selected threaded kernel parity
+(PT01), source/parameter/backend invalidation (PT03/PT13), four-thread same-key
+coalescing (PT04), detached immutable inputs/outputs (PT05), queue/shared-memory
+pressure (PT06), changed-versus-fresh solves and valid factor retention (PT08),
+injected cancellation/write failures (PT09), corrupt/missing history and backup
+independence after removal of a temporary source database (PT10), and named
+lossless encoding/chunk profiles (PT11). The new scale experiment supplies PT14
+for its declared workload. No individual PT family is claimed universally closed.
+
+This selection does not cover every worker/order/random-stream permutation (PT02),
+distributed coupled-region flux exchange (PT07), or a new numerical/precision/mesh
+scheme (PT12). It also omits actual killed-worker/late-result races, the full
+compiler/library/start-method matrix, exhaustive cache-input mutations, lagged
+preconditioners, and all possible compression/write orders. Those are not silently
+accepted because a nearby test passed. No relevant new backend is enabled here.
+
+### Methods consulted
+
+[PETSc profiling documentation](https://petsc.org/release/manual/profiling/)
+informs the separate setup/solve stages and inclusion of application-level costs;
+verbose tracing is not enabled during the timed trials. PETSc is not installed.
+[SciPy's SuperLU interface](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html)
+documents the factor object and subsequent solve calls; actual operator ownership
+and invalidation are checked in Atlas. Documentation is methodological, not proof
+of compatibility with a different library version. The recorded run uses the
+existing pinned local environment, not the online documentation's latest release.
+
 ## Dev42 — diagnostic seed reuse and fixed V-cycle zero-start shortcut
 
 Use the existing explicit previous-stage1 profile to retain accepted seeds.

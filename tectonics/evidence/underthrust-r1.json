@@ -1,0 +1,2480 @@
+{
+  "controls": {
+    "analytic_small_ramp": {
+      "expected_area_m2": 2.0,
+      "expected_final_centroid_z_m": -6.0,
+      "expected_gravitational_change_j": -180.0,
+      "expected_vertices_xz_m": [
+        [
+          1.0,
+          -6.0
+        ],
+        [
+          2.0,
+          -7.0
+        ],
+        [
+          3.0,
+          -6.0
+        ],
+        [
+          3.0,
+          -5.0
+        ],
+        [
+          2.0,
+          -6.0
+        ],
+        [
+          1.0,
+          -5.0
+        ]
+      ],
+      "signature": {
+        "complete_output_sha256": "ef36ad0e16ca4463a0c8752e08549a3dcdcf98f8368f97ed843fa0b53c9d5b4b",
+        "plan_id": "d96c1e34113c7b6e3354fa43f9d5324faf79c9459dbe1ec11b547809a716a8d0",
+        "state_id": "1e876713a5cdec6d02cd3f85974cc37302ac1e638598ed7f9b3607f41db6a5ff",
+        "time_s": 1.0
+      },
+      "status": "PASS",
+      "symmetric_difference_m2": 0.0
+    },
+    "energy_relative_error_bound": 1e-10,
+    "extensive_relative_error_bound": 2.842170943040401e-14,
+    "geometry_normalised_error_bound": 1e-10,
+    "large_fixture": [
+      {
+        "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+        "block_enthalpy_j": [
+          -5.4e+16,
+          1.12e+17
+        ],
+        "block_mass_kg": [
+          54000000000000.0,
+          56000000000000.0
+        ],
+        "exterior_volume_m3": 0.0,
+        "footwall_gravitational_change_j": -3.724734375e+17,
+        "max_relative_area_error": 0.0,
+        "max_relative_mass_heat_error": 0.0,
+        "max_relative_volume_error": 0.0,
+        "relative_gravity_error": 0.0,
+        "status": "PASS",
+        "supplied_boundary_work_j": [
+          2500000000000000.0,
+          0.0
+        ],
+        "time_s": 2500000000000.0
+      },
+      {
+        "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+        "block_enthalpy_j": [
+          -5.4e+16,
+          1.12e+17
+        ],
+        "block_mass_kg": [
+          54000000000000.0,
+          56000000000000.0
+        ],
+        "exterior_volume_m3": 0.0,
+        "footwall_gravitational_change_j": -1.3657359375e+18,
+        "max_relative_area_error": 1.4901161193847656e-15,
+        "max_relative_mass_heat_error": 0.0,
+        "max_relative_volume_error": 0.0,
+        "relative_gravity_error": 1.87444727030184e-16,
+        "status": "PASS",
+        "supplied_boundary_work_j": [
+          7500000000000001.0,
+          0.0
+        ],
+        "time_s": 7500000000000.0
+      },
+      {
+        "analytic_footwall_gravitational_change_j": -1.986525e+18,
+        "block_enthalpy_j": [
+          -5.4e+16,
+          1.12e+17
+        ],
+        "block_mass_kg": [
+          54000000000000.0,
+          56000000000000.0
+        ],
+        "exterior_volume_m3": 0.0,
+        "footwall_gravitational_change_j": -1.986525e+18,
+        "max_relative_area_error": 0.0,
+        "max_relative_mass_heat_error": 0.0,
+        "max_relative_volume_error": 0.0,
+        "relative_gravity_error": 0.0,
+        "status": "PASS",
+        "supplied_boundary_work_j": [
+          1e+16,
+          0.0
+        ],
+        "time_s": 10000000000000.0
+      }
+    ],
+    "status": "PASS"
+  },
+  "execution_id": "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475",
+  "input_specification_sha256": "94f0c7fc975d94e62227a51e99fec83c649cd0d1a9bf1f0eb28d0f12cb8e7156",
+  "inputs": {
+    "histories": [
+      {
+        "end_time_s": 10000000000000.0,
+        "footwall_generalised_force_n": 1000000000000.0,
+        "footwall_velocity_m_s": 1e-09,
+        "hangingwall_generalised_force_n": 0.0,
+        "hangingwall_velocity_m_s": 0.0,
+        "source_id": "synthetic-horizontal-history",
+        "work_source_id": "supplied-generalised-forces"
+      }
+    ],
+    "interface": {
+      "axes": "x-downdip,z-up",
+      "datum_id": "synthetic-z-zero",
+      "detachment_depth_m": 10000.0,
+      "endpoint_extension": "supplied-horizontal-flats",
+      "frame_id": "underthrust-benchmark-x-z-up",
+      "interface_id": "synthetic-descending-ramp-flat",
+      "knots_xz_m": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          20000.0,
+          -10000.0
+        ],
+        [
+          40000.0,
+          -10000.0
+        ]
+      ],
+      "section_azimuth_deg": 90.0,
+      "source_id": "benchmark-supplied-interface"
+    },
+    "options": {
+      "epoch_id": "synthetic-seconds",
+      "exterior_id": "retained-exterior",
+      "gravity_m_s2": 9.81,
+      "host_space_source_id": "complete-finite-two-block-inventory",
+      "source_id": "bounded-underthrust-benchmark",
+      "time_s": 0.0,
+      "width_m": 1000.0
+    },
+    "output_times_s": [
+      2500000000000.0,
+      7500000000000.0,
+      10000000000000.0
+    ],
+    "parcels": [
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "d0165cf7be4e5515775c292c3ca7bcfd4445ddcadde71bad45723e0bf44ff063",
+        "parcel_id": "footwall-00",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088c3c000000000004ccdc000000000804fc2c000000000004ccdc000000000804fc2c0000000000058cbc0000000000088c3c0000000000058cbc0000000000088c3c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "72919d1fee122570f5689013e6707b8316f59e34cbff93346d2af3d82f8716dd",
+        "parcel_id": "footwall-01",
+        "polygon_wkb_hex": "0103000000010000000500000000000000804fc2c000000000004ccdc0000000000017c1c000000000004ccdc0000000000017c1c0000000000058cbc000000000804fc2c0000000000058cbc000000000804fc2c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "bc01660e581ba8679c98782ad3d2a980a8c0831c31953742d7b97a1dae710e08",
+        "parcel_id": "footwall-02",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017c1c000000000004ccdc00000000000bdbfc000000000004ccdc00000000000bdbfc0000000000058cbc0000000000017c1c0000000000058cbc0000000000017c1c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "efbe4ca0eb5e9ece7e90908ca9a38e08602265c9cc76b55d78f5ac8882197a3c",
+        "parcel_id": "footwall-03",
+        "polygon_wkb_hex": "010300000001000000050000000000000000bdbfc000000000004ccdc000000000004cbdc000000000004ccdc000000000004cbdc0000000000058cbc00000000000bdbfc0000000000058cbc00000000000bdbfc000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "36d24ba1f20972806c6b992cfbf1379620a8daf102d2e273f0699f3b0c71a971",
+        "parcel_id": "footwall-04",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cbdc000000000004ccdc00000000000dbbac000000000004ccdc00000000000dbbac0000000000058cbc000000000004cbdc0000000000058cbc000000000004cbdc000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "4505a6553499f1aa5987dc0346b86200af84cce1f94a32c0e541b3448bcee330",
+        "parcel_id": "footwall-05",
+        "polygon_wkb_hex": "010300000001000000050000000000000000dbbac000000000004ccdc000000000006ab8c000000000004ccdc000000000006ab8c0000000000058cbc00000000000dbbac0000000000058cbc00000000000dbbac000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "594263b0745171385b3a939d2677f16801f14ca32ac3e5b61bf4be2b26ac106e",
+        "parcel_id": "footwall-06",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006ab8c000000000004ccdc00000000000f9b5c000000000004ccdc00000000000f9b5c0000000000058cbc000000000006ab8c0000000000058cbc000000000006ab8c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "f2b7540c97b6b72ffd27f64285b5fb8b31351e1d974dea146dd5abd713a247e7",
+        "parcel_id": "footwall-07",
+        "polygon_wkb_hex": "010300000001000000050000000000000000f9b5c000000000004ccdc0000000000088b3c000000000004ccdc0000000000088b3c0000000000058cbc00000000000f9b5c0000000000058cbc00000000000f9b5c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "c74223fecc23d025ec094c6376a19ac6fb0c3317f9ea94eae61579228d8a4a22",
+        "parcel_id": "footwall-08",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088b3c000000000004ccdc0000000000017b1c000000000004ccdc0000000000017b1c0000000000058cbc0000000000088b3c0000000000058cbc0000000000088b3c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "7c5baf0a964ceb8a9e9cf8f802be121e0e6fed627c1167a19b7e7ccdf73ac3e5",
+        "parcel_id": "footwall-09",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017b1c000000000004ccdc000000000004cadc000000000004ccdc000000000004cadc0000000000058cbc0000000000017b1c0000000000058cbc0000000000017b1c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "7c219e116e83f639250185a04dec7a95a87e60959b497e27f8e26cf12671c125",
+        "parcel_id": "footwall-10",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cadc000000000004ccdc000000000006aa8c000000000004ccdc000000000006aa8c0000000000058cbc000000000004cadc0000000000058cbc000000000004cadc000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "181750fa19e190c890e53528cb497b83fc93583d8a45c843af52ce01948502a9",
+        "parcel_id": "footwall-11",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006aa8c000000000004ccdc0000000000088a3c000000000004ccdc0000000000088a3c0000000000058cbc000000000006aa8c0000000000058cbc000000000006aa8c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "690c5a77815cb14888133877606cb1d57d66223678c69ab9cd3b3ec04d61acbf",
+        "parcel_id": "footwall-12",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088a3c000000000004ccdc000000000004c9dc000000000004ccdc000000000004c9dc0000000000058cbc0000000000088a3c0000000000058cbc0000000000088a3c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "24c9ea5afe80497c433ecede6cc6cb49c017abe88dfdb532d1375773ee773011",
+        "parcel_id": "footwall-13",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004c9dc000000000004ccdc000000000008893c000000000004ccdc000000000008893c0000000000058cbc000000000004c9dc0000000000058cbc000000000004c9dc000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "cc36eb9fef33b6c71d03d97ffc4b745d45c451d88ce29875329c6472be3650e3",
+        "parcel_id": "footwall-14",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008893c000000000004ccdc000000000008883c000000000004ccdc000000000008883c0000000000058cbc000000000008893c0000000000058cbc000000000008893c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "678d3cddb0714818db8afe607dc952e67e741193d5a3d5e8dcc6913eede98279",
+        "parcel_id": "footwall-15",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008883c000000000004ccdc0000000000000000000000000004ccdc00000000000000000000000000058cbc000000000008883c0000000000058cbc000000000008883c000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "ba4bf9221c8ec088e16dcaaa13a6661a7a12535ec42c307db710a7fa3e4f09e7",
+        "parcel_id": "footwall-16",
+        "polygon_wkb_hex": "01030000000100000005000000000000000000000000000000004ccdc0000000000088834000000000004ccdc00000000000888340000000000058cbc00000000000000000000000000058cbc0000000000000000000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "7cf2db42bd1f0b4ecd3ea7510bada4a7567fc0d4f55887db3ecb3fc537b77ddd",
+        "parcel_id": "footwall-17",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088834000000000004ccdc0000000000088934000000000004ccdc00000000000889340000000000058cbc00000000000888340000000000058cbc0000000000088834000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "d7b702cfe3effd850206453f09f08c6af6862c4544ca316803322a0ee65e7fa5",
+        "parcel_id": "footwall-18",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088934000000000004ccdc000000000004c9d4000000000004ccdc000000000004c9d40000000000058cbc00000000000889340000000000058cbc0000000000088934000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "cfb112dbaa8a94c42ed014dc3ae67e164eb5106f5bbbb97e99c1f8d626b2d172",
+        "parcel_id": "footwall-19",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004c9d4000000000004ccdc0000000000088a34000000000004ccdc0000000000088a340000000000058cbc000000000004c9d40000000000058cbc000000000004c9d4000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "90f1afabf87c93a4ff4b1fdf3e79372c69846665319de0504cfeb6a1dd4ba014",
+        "parcel_id": "footwall-20",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088a34000000000004ccdc000000000006aa84000000000004ccdc000000000006aa840000000000058cbc0000000000088a340000000000058cbc0000000000088a34000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "17326c1b8ed3e07dfd745e04b57daaf47f56ef70ea9ca82b80b50a66477adcfe",
+        "parcel_id": "footwall-21",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006aa84000000000004ccdc000000000004cad4000000000004ccdc000000000004cad40000000000058cbc000000000006aa840000000000058cbc000000000006aa84000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "9daa0e27a68fd4d31a7190fba35679483013b5430915f83499eb0d85ba0930ec",
+        "parcel_id": "footwall-22",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cad4000000000004ccdc0000000000017b14000000000004ccdc0000000000017b140000000000058cbc000000000004cad40000000000058cbc000000000004cad4000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "a79effdb5f4548ab40b3ddf76dd94c46c88b78aae6e0e40e3dd255b03ded4f37",
+        "parcel_id": "footwall-23",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017b14000000000004ccdc0000000000088b34000000000004ccdc0000000000088b340000000000058cbc0000000000017b140000000000058cbc0000000000017b14000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "4baab7136b7617cf0402025bd92850e4414b8afa14d3b914f7f8cd19acc602c7",
+        "parcel_id": "footwall-24",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088b34000000000004ccdc00000000000f9b54000000000004ccdc00000000000f9b540000000000058cbc0000000000088b340000000000058cbc0000000000088b34000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "d727c971bc3d6fe059660c0c4314d9a037283bf54d4709184088ec709ec427e1",
+        "parcel_id": "footwall-25",
+        "polygon_wkb_hex": "010300000001000000050000000000000000f9b54000000000004ccdc000000000006ab84000000000004ccdc000000000006ab840000000000058cbc00000000000f9b540000000000058cbc00000000000f9b54000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "928f8cb6a5de69620529f1349ff15ec11089b941eebeefe125515ace5c2e6646",
+        "parcel_id": "footwall-26",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006ab84000000000004ccdc00000000000dbba4000000000004ccdc00000000000dbba40000000000058cbc000000000006ab840000000000058cbc000000000006ab84000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "6df0aeb107f59d02dfcc7a5d9d3e8cbd2962eedbb0a27f8e552d26f6bfb47f20",
+        "parcel_id": "footwall-27",
+        "polygon_wkb_hex": "010300000001000000050000000000000000dbba4000000000004ccdc000000000004cbd4000000000004ccdc000000000004cbd40000000000058cbc00000000000dbba40000000000058cbc00000000000dbba4000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "dd9bd04497e74e688dae759c2b031c7426c5f5470b6699d4975463b1427302c6",
+        "parcel_id": "footwall-28",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cbd4000000000004ccdc00000000000bdbf4000000000004ccdc00000000000bdbf40000000000058cbc000000000004cbd40000000000058cbc000000000004cbd4000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "6d343b5c9393d47fc847033e7cae6a74ec3a98bc62b7212fa57db6363576ca91",
+        "parcel_id": "footwall-29",
+        "polygon_wkb_hex": "010300000001000000050000000000000000bdbf4000000000004ccdc0000000000017c14000000000004ccdc0000000000017c140000000000058cbc00000000000bdbf40000000000058cbc00000000000bdbf4000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "2a29867d8b637aa219dbd8e43e4144e5a66b55e5354349fb4b61ddfa168e4ec3",
+        "parcel_id": "footwall-30",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017c14000000000004ccdc000000000804fc24000000000004ccdc000000000804fc240000000000058cbc0000000000017c140000000000058cbc0000000000017c14000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "footwall-block",
+        "cohort": {
+          "cohort_id": "incoming-lower",
+          "formation_time_s": -1.0,
+          "material_id": "lower-crust",
+          "origin_id": "finite-incoming"
+        },
+        "density_kg_m3": 2700.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "e11cad45c599532120c5c8f68fdd64162a59789ee906edebf8f06ee51c3f7b61",
+        "parcel_id": "footwall-31",
+        "polygon_wkb_hex": "0103000000010000000500000000000000804fc24000000000004ccdc0000000000088c34000000000004ccdc0000000000088c340000000000058cbc000000000804fc240000000000058cbc000000000804fc24000000000004ccdc0",
+        "role": "footwall",
+        "specific_enthalpy_j_kg": -1000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "cacfefed81f60fde784c77f70f2f08409419df4fb00693098dd0a16388e75af5",
+        "parcel_id": "hangingwall-00",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088c3c00000000000409f4000000000804fc2c00000000000409f4000000000804fc2c0000000000070a740000000000088c3c0000000000070a740000000000088c3c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "2b8e41eaa2fc7f4bd26390cfcf8eaa02de91b79eae9a43d70520ba0f1a3bfd12",
+        "parcel_id": "hangingwall-01",
+        "polygon_wkb_hex": "0103000000010000000500000000000000804fc2c00000000000409f40000000000017c1c00000000000409f40000000000017c1c0000000000070a74000000000804fc2c0000000000070a74000000000804fc2c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "c41c9726061f8e09cee599a7cb1632402b28dc1557c5f90e8f616b5bc5496856",
+        "parcel_id": "hangingwall-02",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017c1c00000000000409f400000000000bdbfc00000000000409f400000000000bdbfc0000000000070a740000000000017c1c0000000000070a740000000000017c1c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "ddf601f90d3e751a39f9907d8c5d2c9e4990c3352dd7332fd3d97bb6f2a24fd0",
+        "parcel_id": "hangingwall-03",
+        "polygon_wkb_hex": "010300000001000000050000000000000000bdbfc00000000000409f4000000000004cbdc00000000000409f4000000000004cbdc0000000000070a7400000000000bdbfc0000000000070a7400000000000bdbfc00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "b1e420d66eb1ad19247b9686326423c1f8b1bd4354206a77787fe802efe7560f",
+        "parcel_id": "hangingwall-04",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cbdc00000000000409f400000000000dbbac00000000000409f400000000000dbbac0000000000070a74000000000004cbdc0000000000070a74000000000004cbdc00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "f97ce9f7549b95d903f9d71650e1a4c1e30efc2aa2d63d77da6560d9adca5c80",
+        "parcel_id": "hangingwall-05",
+        "polygon_wkb_hex": "010300000001000000050000000000000000dbbac00000000000409f4000000000006ab8c00000000000409f4000000000006ab8c0000000000070a7400000000000dbbac0000000000070a7400000000000dbbac00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "e08d002dce317baa1c54d8bf3b5b8a64fbef718ea7e2d259421bf6927193c32f",
+        "parcel_id": "hangingwall-06",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006ab8c00000000000409f400000000000f9b5c00000000000409f400000000000f9b5c0000000000070a74000000000006ab8c0000000000070a74000000000006ab8c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "4e29fbc0f680d4b97ebb1c7afcb9d87914a21bc775dbda3a2b7f94fa49c6879d",
+        "parcel_id": "hangingwall-07",
+        "polygon_wkb_hex": "010300000001000000050000000000000000f9b5c00000000000409f40000000000088b3c00000000000409f40000000000088b3c0000000000070a7400000000000f9b5c0000000000070a7400000000000f9b5c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "5ed3476deee971f9602475183f0932c92f3e5b4792c846b517c2f956ad2ba040",
+        "parcel_id": "hangingwall-08",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088b3c00000000000409f40000000000017b1c00000000000409f40000000000017b1c0000000000070a740000000000088b3c0000000000070a740000000000088b3c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "cfe40d8cda7645eac04f7227b2cf228fed06384e2b7afeea4f3efea2b86a3a95",
+        "parcel_id": "hangingwall-09",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017b1c00000000000409f4000000000004cadc00000000000409f4000000000004cadc0000000000070a740000000000017b1c0000000000070a740000000000017b1c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "6d55751c183e1c7219adb13527605b181e06d0af80aecbf54642d1ecff5c08db",
+        "parcel_id": "hangingwall-10",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cadc00000000000409f4000000000006aa8c00000000000409f4000000000006aa8c0000000000070a74000000000004cadc0000000000070a74000000000004cadc00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "7ac7578833c63d43b68970ed8dad236c7f1ae4092eaeca5e94787d2b7bbe99c8",
+        "parcel_id": "hangingwall-11",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006aa8c00000000000409f40000000000088a3c00000000000409f40000000000088a3c0000000000070a74000000000006aa8c0000000000070a74000000000006aa8c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "2600e30d825c4b078d0632519af78c628f12ededee6316d0500e82fabae315a6",
+        "parcel_id": "hangingwall-12",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088a3c00000000000409f4000000000004c9dc00000000000409f4000000000004c9dc0000000000070a740000000000088a3c0000000000070a740000000000088a3c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "17ce5b19285143dad7cd96111e4d8c7462f6c10a3c3700b7a4ea99eea7ea2ed8",
+        "parcel_id": "hangingwall-13",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004c9dc00000000000409f4000000000008893c00000000000409f4000000000008893c0000000000070a74000000000004c9dc0000000000070a74000000000004c9dc00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "602d647d6d82b63bae4e99f87fdab545e61fa8c503c45f539af052df26fc9e77",
+        "parcel_id": "hangingwall-14",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008893c00000000000409f4000000000008883c00000000000409f4000000000008883c0000000000070a74000000000008893c0000000000070a74000000000008893c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "4ee14c8c8097c5ce5b4ec4fa1288e035ba9c0a1e545f5dbae62b851dd06debfd",
+        "parcel_id": "hangingwall-15",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008883c00000000000409f4000000000000000000000000000409f400000000000000000000000000070a74000000000008883c0000000000070a74000000000008883c00000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "6cc1b4374d1bbf956e83e6121f7ef87cfc824cb8dd61761947cd7d3f1154d2b5",
+        "parcel_id": "hangingwall-16",
+        "polygon_wkb_hex": "0103000000010000000500000000000000000000000000000000409f4000000000008883400000000000409f400000000000888340000000000070a7400000000000000000000000000070a74000000000000000000000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "380dae57f729570eba5234bdd31c97a23caf6d44cac77b8d571d3d370caa4a75",
+        "parcel_id": "hangingwall-17",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008883400000000000409f4000000000008893400000000000409f400000000000889340000000000070a7400000000000888340000000000070a74000000000008883400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "2a85a6865d4680b7cd4fbdfa323383c2667bb8b1cdc3f7376db4b5f821478cb4",
+        "parcel_id": "hangingwall-18",
+        "polygon_wkb_hex": "0103000000010000000500000000000000008893400000000000409f4000000000004c9d400000000000409f4000000000004c9d40000000000070a7400000000000889340000000000070a74000000000008893400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "ef47222bafed72b8e39d0ea02a092aa107a18436fd90f1455bce39ee30d3b071",
+        "parcel_id": "hangingwall-19",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004c9d400000000000409f40000000000088a3400000000000409f40000000000088a340000000000070a74000000000004c9d40000000000070a74000000000004c9d400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "ab74f4b97336429fb43381cf24114673eb23d569bc616c04cc08ecef2233dcd0",
+        "parcel_id": "hangingwall-20",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088a3400000000000409f4000000000006aa8400000000000409f4000000000006aa840000000000070a740000000000088a340000000000070a740000000000088a3400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "5770567ac17624781bda46f47bb1ab143cb000d71162730df444900eb1036dd5",
+        "parcel_id": "hangingwall-21",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006aa8400000000000409f4000000000004cad400000000000409f4000000000004cad40000000000070a74000000000006aa840000000000070a74000000000006aa8400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "7fe8d23c1e5cf0429e1d2c8966c652d6329d31ae14d7cc761774caa395e8063b",
+        "parcel_id": "hangingwall-22",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cad400000000000409f40000000000017b1400000000000409f40000000000017b140000000000070a74000000000004cad40000000000070a74000000000004cad400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "4ce7b766bc3c353641c5c35db6babf2ea0d52142c4ca12df46091aee073a6474",
+        "parcel_id": "hangingwall-23",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017b1400000000000409f40000000000088b3400000000000409f40000000000088b340000000000070a740000000000017b140000000000070a740000000000017b1400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "82ac373a55944d241ca06891041743d1fae065ea9bfa07bc84dc14e52c4957da",
+        "parcel_id": "hangingwall-24",
+        "polygon_wkb_hex": "01030000000100000005000000000000000088b3400000000000409f400000000000f9b5400000000000409f400000000000f9b540000000000070a740000000000088b340000000000070a740000000000088b3400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "e43d4981aaf742fd34f1ac183c0eab6c6444aee730e4ea9f264a91b0c1120f22",
+        "parcel_id": "hangingwall-25",
+        "polygon_wkb_hex": "010300000001000000050000000000000000f9b5400000000000409f4000000000006ab8400000000000409f4000000000006ab840000000000070a7400000000000f9b540000000000070a7400000000000f9b5400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "785cb70161341aca979304712128a0bf59f3308146e47e25e0a50f4d45bcd7d0",
+        "parcel_id": "hangingwall-26",
+        "polygon_wkb_hex": "0103000000010000000500000000000000006ab8400000000000409f400000000000dbba400000000000409f400000000000dbba40000000000070a74000000000006ab840000000000070a74000000000006ab8400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "55447ef767b09bd61e15e6e068d1555156e7194e97f99f1b6441f2866f4a8039",
+        "parcel_id": "hangingwall-27",
+        "polygon_wkb_hex": "010300000001000000050000000000000000dbba400000000000409f4000000000004cbd400000000000409f4000000000004cbd40000000000070a7400000000000dbba40000000000070a7400000000000dbba400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "fe8bd2b0cb23e1f123f500735e5618da884560aa9846ac333d49090f9b6b7190",
+        "parcel_id": "hangingwall-28",
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cbd400000000000409f400000000000bdbf400000000000409f400000000000bdbf40000000000070a74000000000004cbd40000000000070a74000000000004cbd400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "c9c88166614a1aec304e88a630bf690bf6e2b7757b7688581bc9c25f2c6d4503",
+        "parcel_id": "hangingwall-29",
+        "polygon_wkb_hex": "010300000001000000050000000000000000bdbf400000000000409f40000000000017c1400000000000409f40000000000017c140000000000070a7400000000000bdbf40000000000070a7400000000000bdbf400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "617967bdf6dcce7dc737b1d74827a6b6ba7efbe41eaccb4c441cf350cf44bd05",
+        "parcel_id": "hangingwall-30",
+        "polygon_wkb_hex": "01030000000100000005000000000000000017c1400000000000409f4000000000804fc2400000000000409f4000000000804fc240000000000070a740000000000017c140000000000070a740000000000017c1400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      },
+      {
+        "block_id": "hangingwall-block",
+        "cohort": {
+          "cohort_id": "overriding-upper",
+          "formation_time_s": null,
+          "material_id": "upper-crust",
+          "origin_id": "finite-overriding"
+        },
+        "density_kg_m3": 2800.0,
+        "enthalpy_source_id": "synthetic-relative-specific-enthalpy",
+        "geometry_id": "a9b5ea01fcca185fd7101ebec11684be480ac7f4aba589d54402a24bf67cc490",
+        "parcel_id": "hangingwall-31",
+        "polygon_wkb_hex": "0103000000010000000500000000000000804fc2400000000000409f40000000000088c3400000000000409f40000000000088c340000000000070a74000000000804fc240000000000070a74000000000804fc2400000000000409f40",
+        "role": "hangingwall",
+        "specific_enthalpy_j_kg": 2000.0
+      }
+    ],
+    "receivers": [
+      {
+        "destination_id": "receiver-00",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "ee478c0af667cc909afcad1b17ffffa000c9613cefb8a9dbfcfe52037350c645",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "0103000000010000000500000000000000004cddc000000000004cedc00000000000dbcac000000000004cedc00000000000dbcac000000000004ccd4000000000004cddc000000000004ccd4000000000004cddc000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-01",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "52c4874782bf1e12ce2b0fa01e9564f4ceac86373c76553d39370fe562000527",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "010300000001000000050000000000000000dbcac000000000004cedc0000000000088a34000000000004cedc0000000000088a34000000000004ccd400000000000dbcac000000000004ccd400000000000dbcac000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-02",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "4b8e5c47d4483e5369ad028c407adbdb845aaec64e86fb025ec6a19a59f25303",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "01030000000100000005000000000000000088a34000000000004cedc000000000804fd24000000000004cedc000000000804fd24000000000004ccd40000000000088a34000000000004ccd40000000000088a34000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-03",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "94a4d5c3e4c9192a30ed540777283a7720415890e3c936e28e0706b80424410d",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "0103000000010000000500000000000000804fd24000000000004cedc0000000000017e14000000000004cedc0000000000017e14000000000004ccd4000000000804fd24000000000004ccd4000000000804fd24000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-04",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "5ac9d0ed4c9f5f26467b32f527f1059efcbb53b1c9a3e63304ddaef03977f5d2",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "01030000000100000005000000000000000017e14000000000004cedc0000000004006e94000000000004cedc0000000004006e94000000000004ccd40000000000017e14000000000004ccd40000000000017e14000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-05",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "e3142f6ab5881dd1fecbf1ebb3e6c2fc25dba1d02164fef20b3cba8b88ad2810",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "01030000000100000005000000000000004006e94000000000004cedc000000000c07af04000000000004cedc000000000c07af04000000000004ccd40000000004006e94000000000004ccd40000000004006e94000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-06",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "ed9424a46f9f019b8bd1ea90e6eb553ff0f474d43e5b7c153e3fd53baefa5b99",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "0103000000010000000500000000000000c07af04000000000004cedc0000000006072f44000000000004cedc0000000006072f44000000000004ccd4000000000c07af04000000000004ccd4000000000c07af04000000000004cedc0"
+      },
+      {
+        "destination_id": "receiver-07",
+        "geometry": {
+          "frame_id": "underthrust-benchmark-x-z-up",
+          "geometry_id": "db90da53494adb45eef6a3d6ffc9f9746dfffcecb440f243ab9bb59b41493e9b",
+          "kind": "Polygon",
+          "schema": "atlas.feature-geometry.v1",
+          "space": "planar-metres"
+        },
+        "polygon_wkb_hex": "01030000000100000005000000000000006072f44000000000004cedc000000000006af84000000000004cedc000000000006af84000000000004ccd40000000006072f44000000000004ccd40000000006072f44000000000004cedc0"
+      }
+    ]
+  },
+  "limitations": "cold-versus-prepared reuse only; synthetic prescribed kinematics; not physical validation, world-generation performance or an algorithm-versus-PDE comparison",
+  "measurement_wall_s": 4.566713300002448,
+  "resources": {
+    "final_reserved_bytes": 0,
+    "fixed_caller_input_and_record_allowance_bytes": 2097152,
+    "measurement": "accounted allocations, not process RSS",
+    "peak_accounted_bytes": 11097388,
+    "shared_budget_bytes": 134217728
+  },
+  "runtime": {
+    "geometry": {
+      "geos": "3.13.1",
+      "overlay_precision": "binary64, grid_size=0, no repair/snap",
+      "shapely": "2.1.2",
+      "spherical_model": "minor great-circle arcs in an explicit open-hemisphere chart"
+    },
+    "implementation": "CPython",
+    "native_limit_owner": "stokes_execution._native_lease",
+    "native_threads": 1,
+    "numpy": "2.4.6",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14",
+    "scipy": "1.17.1",
+    "shapely": "2.1.2",
+    "threadpoolctl": "3.7.0"
+  },
+  "schema": "atlas.underthrust-check.v1",
+  "source_binding": {
+    "module_source_manifest": {
+      "__init__.py": {
+        "bytes": 19468,
+        "sha256": "e742cd04443cb9a7b3b2fd210a80dee2aa1efe9500f13e816f2fa8f38b9cdc68"
+      },
+      "_geometry_native.py": {
+        "bytes": 2958,
+        "sha256": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a"
+      },
+      "_materials_native.py": {
+        "bytes": 5644,
+        "sha256": "059e34f03a5abbec997873fb4f8ae8c89f745fbe029c064de55f8f738f2872a9"
+      },
+      "_mechanics_native.py": {
+        "bytes": 6018,
+        "sha256": "fd1d76496ef1e264960a6df3046a1fddca10d9a6888a8fb0ed41274091f07d58"
+      },
+      "_mesh_native.py": {
+        "bytes": 7936,
+        "sha256": "2b12150ca17d28b8e9f219e89ccb5969b658ecff211359b6cb3fffeed1216764"
+      },
+      "_regional_native.py": {
+        "bytes": 6962,
+        "sha256": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36"
+      },
+      "_spherical_candidates.py": {
+        "bytes": 8370,
+        "sha256": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c"
+      },
+      "_thermochemical_native.py": {
+        "bytes": 4045,
+        "sha256": "7dc7261147bdf1fbf86ccec454056743c2cfff2bce222950c2fcc2ced616e601"
+      },
+      "_transport_native.py": {
+        "bytes": 6293,
+        "sha256": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09"
+      },
+      "_validation.py": {
+        "bytes": 7042,
+        "sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c"
+      },
+      "_velocity_multigrid.py": {
+        "bytes": 4785,
+        "sha256": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868"
+      },
+      "adaptive_inner.py": {
+        "bytes": 10793,
+        "sha256": "ce390df8900894c43990c68e7f1079d7d2fe73e8a06dd44ea216f751082c4832"
+      },
+      "anderson.py": {
+        "bytes": 8654,
+        "sha256": "e789cf39928f41a434304cf544796d517a86f7630cd5882230d5f63f3a4079cf"
+      },
+      "boundaries.py": {
+        "bytes": 40685,
+        "sha256": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458"
+      },
+      "column_loads.py": {
+        "bytes": 14977,
+        "sha256": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067"
+      },
+      "compaction.py": {
+        "bytes": 8730,
+        "sha256": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2"
+      },
+      "compaction_columns.py": {
+        "bytes": 25137,
+        "sha256": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637"
+      },
+      "constitutive.py": {
+        "bytes": 28165,
+        "sha256": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98"
+      },
+      "constitutive_execution.py": {
+        "bytes": 17935,
+        "sha256": "43f26528dd911677ba3288a2b4d25b8080ec934948b1d51600a3fce7b957b8b0"
+      },
+      "convection_benchmark.py": {
+        "bytes": 18678,
+        "sha256": "c542616ff2a1e55cab2f77017f85bf8a8e8cb000edcea363380b2b93cef56903"
+      },
+      "coordinates.py": {
+        "bytes": 19377,
+        "sha256": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579"
+      },
+      "damage_regularisation.py": {
+        "bytes": 5913,
+        "sha256": "892647330307f6b7293f5f1ceeedacc480f53308d630e5ef57fe7a2ca5a3049a"
+      },
+      "deformation_network.py": {
+        "bytes": 21510,
+        "sha256": "50e11fe2a7ce70a7e11f3b96114bdaf12135497e0b17968f2794e5e8e48a73d0"
+      },
+      "earth_material_data.py": {
+        "bytes": 65926,
+        "sha256": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f"
+      },
+      "execution.py": {
+        "bytes": 33653,
+        "sha256": "b860388f8b2d1e8bc23073674adcd9a03032844dee44efb1129b535d1fc9ac42"
+      },
+      "extension.py": {
+        "bytes": 22538,
+        "sha256": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4"
+      },
+      "extension_support.py": {
+        "bytes": 17713,
+        "sha256": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8"
+      },
+      "extension_workflow.py": {
+        "bytes": 16223,
+        "sha256": "d1d56f58abc3bca547d6381f2bd35661f42937f5f149ae6aa1eecf201e81a4fa"
+      },
+      "fault_slip.py": {
+        "bytes": 20181,
+        "sha256": "8e6c9b2e4a1e2da5e9a6a5e1eeb9efac85f1e94aaf74daf5b3e251a00396b8ef"
+      },
+      "finite_flexure.py": {
+        "bytes": 12376,
+        "sha256": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66"
+      },
+      "flexure.py": {
+        "bytes": 7508,
+        "sha256": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba"
+      },
+      "free_surface.py": {
+        "bytes": 16378,
+        "sha256": "65c860d07f8ef3f6276c67170e2309d9a5a1a733c2a218a47a2f0554577a913e"
+      },
+      "geological_case.py": {
+        "bytes": 36723,
+        "sha256": "954def0ef83e64f9a2846cc2822ac30cb092cb38284d66cb18aab1e0993f2173"
+      },
+      "geological_domain.py": {
+        "bytes": 4502,
+        "sha256": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d"
+      },
+      "geological_records.py": {
+        "bytes": 19648,
+        "sha256": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23"
+      },
+      "geometry.py": {
+        "bytes": 21245,
+        "sha256": "7e83585fd4a67db88564b562664368882ddb3123fb8fefb6e61af1c63ed7c0bb"
+      },
+      "geometry_index.py": {
+        "bytes": 16467,
+        "sha256": "b0d97d386673a941ae791c298423d68a451593b0225a1a744f2594953e2c72d1"
+      },
+      "kinematics.py": {
+        "bytes": 8654,
+        "sha256": "b73a2b8149c5a1f89ffc891bdaea4fa68a12fbb3d86fa68ee206fb658d351586"
+      },
+      "magmatic_emplacement.py": {
+        "bytes": 24603,
+        "sha256": "422c649aa53977df0dd9beb2604db541327ad9d5e7d7c2868051af1388c8cc6c"
+      },
+      "magmatic_thermodynamics.py": {
+        "bytes": 16668,
+        "sha256": "fad35e338832fec7df4b9f441bbb5ea3293625720f3c42a99b77eac70795763c"
+      },
+      "magmatic_transfer.py": {
+        "bytes": 22076,
+        "sha256": "9e98b4923ab9113336b2afb0211928c03a7d9079a76e935d2c959e32319ac641"
+      },
+      "margin_cooling.py": {
+        "bytes": 27561,
+        "sha256": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab"
+      },
+      "markers.py": {
+        "bytes": 5705,
+        "sha256": "abbcb1d4a6f1e803f3d8579fbec2675b736781487d919aadc15ad3c0324bc970"
+      },
+      "material_library.py": {
+        "bytes": 47238,
+        "sha256": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59"
+      },
+      "materials.py": {
+        "bytes": 41776,
+        "sha256": "0368b01b780c8dd0fa8520938d715d126fa2b3968c64e5f3dae5e27f54480122"
+      },
+      "mesh.py": {
+        "bytes": 3225,
+        "sha256": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552"
+      },
+      "parameters.py": {
+        "bytes": 4521,
+        "sha256": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334"
+      },
+      "planar_exchange.py": {
+        "bytes": 20864,
+        "sha256": "fccf331332639c662c08ab957c634bd7b244cc5e110095e7c0422d4450f6ced9"
+      },
+      "planar_projection.py": {
+        "bytes": 15569,
+        "sha256": "18ce4d036f5aa254b83721a3986a20f4a6607331f51825fe9cd3d60a05ad46f2"
+      },
+      "planetary_generation.py": {
+        "bytes": 24591,
+        "sha256": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d"
+      },
+      "plate_cooling.py": {
+        "bytes": 18528,
+        "sha256": "9754d10bec2711f4a6a2d6ab5b53ad36d5ab943dd7791487e872219e7e8652e0"
+      },
+      "plate_integrals.py": {
+        "bytes": 7195,
+        "sha256": "46a0cf85badcda7b3297d81e2527c425ce0ceecf9f48f460f58a19d713e33a1f"
+      },
+      "plate_layout.py": {
+        "bytes": 20284,
+        "sha256": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca"
+      },
+      "plate_reference.py": {
+        "bytes": 15642,
+        "sha256": "bad89431a04b04544fe83621dbf91a4ce7125eb6706df3e3e19cd97ccae87a1d"
+      },
+      "plate_reference_acceptance.py": {
+        "bytes": 27056,
+        "sha256": "9bd03946e5fd2724ab37860afbcd37fd0ca1307520efa9c995c5a64588bebd9e"
+      },
+      "plate_reference_dataset.py": {
+        "bytes": 32134,
+        "sha256": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e"
+      },
+      "plate_reference_use.py": {
+        "bytes": 26779,
+        "sha256": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449"
+      },
+      "preconditioner_reuse.py": {
+        "bytes": 11041,
+        "sha256": "ebe861de1a5e94ec5d6cdcf83c26c2061e3241b8f5ffed34e8c4d8d39b793acd"
+      },
+      "precursor.py": {
+        "bytes": 37299,
+        "sha256": "dc52a7935177b0ff6a064009b18a71e68114c29c93aad132650a3fe0ddc64075"
+      },
+      "precursor_execution.py": {
+        "bytes": 17594,
+        "sha256": "d8f7d671d41ac985df0ac1161242d2b72d5f6978d5e378b2d8e9c0c2a0963bb5"
+      },
+      "precursor_sampling.py": {
+        "bytes": 75090,
+        "sha256": "32e66b9db5f68e2c21e4ec380cfdcac7043f53b3185c2884645a45ac4390ef8e"
+      },
+      "regional.py": {
+        "bytes": 16936,
+        "sha256": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b"
+      },
+      "regional_checkpoint.py": {
+        "bytes": 14201,
+        "sha256": "9f407881c067895062142f4fb67e3f7fce07863e164daa226167f32062e1778e"
+      },
+      "regional_execution.py": {
+        "bytes": 28761,
+        "sha256": "2de9ce91073d105986cb14a521f7ef5e90cc89ed336d17d78001592f7059b854"
+      },
+      "regional_forcing.py": {
+        "bytes": 51181,
+        "sha256": "b31de590220541ddc027c34e080cfd71031ce913f697ec88d8b27656730e1dad"
+      },
+      "regional_geology.py": {
+        "bytes": 23061,
+        "sha256": "6bd512538e08db7eacc0694d1797cad99e7158eebdd389d91b0dc7a91a4d4076"
+      },
+      "regional_rheology.py": {
+        "bytes": 17210,
+        "sha256": "50f4341c26c6d5ad3e5900a69cba555e2344cca3e79c4f42db642966f4cbb652"
+      },
+      "regional_stokes.py": {
+        "bytes": 37030,
+        "sha256": "fa3bd6cde972cc20211ba3294c30dfc56c40071f15f610e7c5e9674971efd403"
+      },
+      "regional_strength.py": {
+        "bytes": 14469,
+        "sha256": "fd3c03e969abe61c3b715a44e1e3efc0c3017ef820f2e8be12196975baab2a93"
+      },
+      "regional_surface_stokes.py": {
+        "bytes": 35445,
+        "sha256": "5ba98c6d4a6f3f0405d984fb0289f2eb460157503e7edc91e9c6552e506ff8bf"
+      },
+      "regional_thermomechanical.py": {
+        "bytes": 14632,
+        "sha256": "c12df1dcc25889cb51ca3968ec837d803215d68b70d2844b2fc7307fae766c12"
+      },
+      "regional_transport.py": {
+        "bytes": 30058,
+        "sha256": "db72d22dd3b8cc62c788d2396627883b890bd876edab8040cf808e9653cf7a91"
+      },
+      "regional_workflow.py": {
+        "bytes": 28936,
+        "sha256": "213d65c32aa69c1990b4559c112c0b173f234f6e079cc9c1a71f8eef7a50740d"
+      },
+      "regional_workflow_geometry.py": {
+        "bytes": 10387,
+        "sha256": "afb69b7801a4454fa5ca2fb33b1e95ef4ff11e656c68927a2d7deacd8e498e7e"
+      },
+      "remapping.py": {
+        "bytes": 23899,
+        "sha256": "f30a2904f9975e67d3870609aa41640c96d15296c8cd628b0ab2b0bc694f0141"
+      },
+      "resources.py": {
+        "bytes": 5669,
+        "sha256": "e083487b2b845d423501f916053b601f9c040453b714042ae8650fa404338676"
+      },
+      "reuse.py": {
+        "bytes": 73543,
+        "sha256": "d913213633162834770021c02ebeb39e8cecc65ecb56e943d6fb01fb5ac56c5c"
+      },
+      "shortening.py": {
+        "bytes": 19707,
+        "sha256": "1b17e44f584d3ab8f0fbc6880a459dd7e39bff909be29cfc85943f6355d75851"
+      },
+      "shortening_support.py": {
+        "bytes": 16798,
+        "sha256": "c1d801df5cc8a152b4468e75ee1c1fe9ba284d2aab5f6127b1c5c096723727e3"
+      },
+      "spherical_atlas.py": {
+        "bytes": 50260,
+        "sha256": "14b45147dde305654a0ed989d0e26371c7fd6e0036d7335f94745a35aed03c52"
+      },
+      "spherical_geometry.py": {
+        "bytes": 20351,
+        "sha256": "755111edf0479b94c7e1d8b01c01b1d37f6398b61feeba328d3c69c87f9a48c7"
+      },
+      "spreading.py": {
+        "bytes": 20425,
+        "sha256": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07"
+      },
+      "spreading_checkpoint.py": {
+        "bytes": 17600,
+        "sha256": "8e35ee6c7c8c26fb0278797b60b796c9c52e32455ad23aa941bb6ff491d2ecb8"
+      },
+      "spreading_cooling.py": {
+        "bytes": 20496,
+        "sha256": "8bc7116d68ae4543e856e9bdd9e789a36528c26353590ada7bf4b508e45ce74f"
+      },
+      "spreading_history.py": {
+        "bytes": 28758,
+        "sha256": "02ec9bc70acef2450f78367e7c61eb142ccf8f709e678683daa1f7dc3396e6e2"
+      },
+      "spreading_history_cooling.py": {
+        "bytes": 13183,
+        "sha256": "8aa2eaf5d3f24f3a69334fbc31f8f3fb331df4dadcf6116a373611c85bbdaaea"
+      },
+      "spreading_integrals.py": {
+        "bytes": 11313,
+        "sha256": "d73e7d1671c8e224b1fdb4fbabd3338ae0ada70766841b6b96bfc03b65612732"
+      },
+      "stokes.py": {
+        "bytes": 19222,
+        "sha256": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082"
+      },
+      "stokes_execution.py": {
+        "bytes": 27468,
+        "sha256": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4"
+      },
+      "storage.py": {
+        "bytes": 52355,
+        "sha256": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02"
+      },
+      "subduction.py": {
+        "bytes": 47299,
+        "sha256": "e3df2afb7f07c863fd03dbea482421ae0e1d6a400bb27ddb701945269496e5e4"
+      },
+      "subduction_linear.py": {
+        "bytes": 20858,
+        "sha256": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b"
+      },
+      "subduction_materials.py": {
+        "bytes": 22113,
+        "sha256": "fbea5fc627c358e6091a14642512c88b4c6edc1f5a4508987a3757929b64a6f9"
+      },
+      "subduction_mesh.py": {
+        "bytes": 26088,
+        "sha256": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4"
+      },
+      "subduction_refinement.py": {
+        "bytes": 11412,
+        "sha256": "96ceb9d47bad3572e407ca60938ec92e84515be3a04d90022ff7f9771c637024"
+      },
+      "subduction_transport.py": {
+        "bytes": 26901,
+        "sha256": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4"
+      },
+      "surface_geometry.py": {
+        "bytes": 6345,
+        "sha256": "40823ed760e90fa175ffe2112bc67cd459635ef7cffa5b08f2f63cfa93fd640b"
+      },
+      "thermal.py": {
+        "bytes": 5310,
+        "sha256": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411"
+      },
+      "thermal_support.py": {
+        "bytes": 16724,
+        "sha256": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e"
+      },
+      "thermochemical.py": {
+        "bytes": 22013,
+        "sha256": "a2a1e70491915f21326f9d9f0ecc7b3dca4583270557245ab4350784c0ebc937"
+      },
+      "thermochemical_execution.py": {
+        "bytes": 55312,
+        "sha256": "7e7d8aaf32d5e78f75783a8051bd4dfdb319bb6eea95e2b7e8ee3253b8b5a700"
+      },
+      "timebase.py": {
+        "bytes": 9344,
+        "sha256": "cc762f82a7cf8171eb9c44464a82d6692937b34558e23da82421684c83547e83"
+      },
+      "topology.py": {
+        "bytes": 26389,
+        "sha256": "92ce990e800a388175c942f5522d3ca54b722da8bb495985927edd957bc70e95"
+      },
+      "transform.py": {
+        "bytes": 27338,
+        "sha256": "2010bc31b6e3135f79187ad0aa90502c030d0284f9d21b1545cdd9555b498757"
+      },
+      "transport.py": {
+        "bytes": 7277,
+        "sha256": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7"
+      },
+      "underthrust.py": {
+        "bytes": 31277,
+        "sha256": "291a751c329e9c4ac05018e3da5d1d50d74463630b713d644096a6ce153ecab4"
+      },
+      "variable_flexure.py": {
+        "bytes": 21605,
+        "sha256": "cfb1866ef356acd0e711de091b2aa1dc31054190d404f75f0240292b21d0749b"
+      },
+      "variable_stokes.py": {
+        "bytes": 16314,
+        "sha256": "2af374412b9a90606bade8dcc56b8ba52fe8f351985eae1a5306f9bf1bdcbf34"
+      },
+      "variable_stokes_execution.py": {
+        "bytes": 58785,
+        "sha256": "9a80d01e2d44054879cc5b8221871e00d221dc1235a6338dcdd660ab7e4c1d0f"
+      },
+      "w03_workflow.py": {
+        "bytes": 32182,
+        "sha256": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86"
+      },
+      "w04_workflow.py": {
+        "bytes": 33182,
+        "sha256": "5a4ae192b9a0796a136195561ab125625b8ad060bbc28e0f5e6e8af350dc2606"
+      },
+      "w06_workflow.py": {
+        "bytes": 20367,
+        "sha256": "dcab0e241cc8fc9b33062fa90433cf8dd3bf03c4ed6fc156bcf0b40b1b00df92"
+      },
+      "w07_workflow.py": {
+        "bytes": 41428,
+        "sha256": "d75d074a66e358d7570e9d8e2b0b43e5e16af13301a176f43ec73553802414d0"
+      },
+      "w08_inventory.py": {
+        "bytes": 17383,
+        "sha256": "4cf59bdfb804c2bc6cc12b0bb42e0591685436dbe19ae7f55284108b09a1de2c"
+      },
+      "w08_region.py": {
+        "bytes": 16253,
+        "sha256": "81cece4045885bc3f8471c05cf58849a505c3bf8ada9801342fc47f345c45d9d"
+      },
+      "w08_workflow.py": {
+        "bytes": 34637,
+        "sha256": "dd51a6499f2dce7a59cf1e55ed5226b41e1f55ebcd5acdc55fd4bf25532aca59"
+      },
+      "w09_drainage.py": {
+        "bytes": 13384,
+        "sha256": "f3f0cd8039aef050df7f7fe662bf57b54694892091ff7db518193296b0687051"
+      },
+      "w09_erosion.py": {
+        "bytes": 28004,
+        "sha256": "105fb2e52a01fb37cefee4e1987d4be61fd818ca1174f867876dd705e05f63af"
+      },
+      "w09_hillslope.py": {
+        "bytes": 25557,
+        "sha256": "44575a69e3dadbc2a7bf3779b9d5cdfb5210049560ab63070538e2d93b171ec6"
+      },
+      "w09_water.py": {
+        "bytes": 28795,
+        "sha256": "00a2faf3eb453a96a260cee8fe8df6db5c50521fe33c93b01e7aef57f14176f6"
+      }
+    },
+    "module_source_manifest_sha256": "063814b09d322998fd788ebacab7c46911bc6214fd7f88f15c582a19057363d6",
+    "supporting_files": {
+      "cases/w08_regimes.json": {
+        "bytes": 8599,
+        "sha256": "74daafac092fbffce636240ef5b2abce328ca02e9cbea3a3b7fcebd7fabecea6"
+      },
+      "docs/W08_REGIMES.md": {
+        "bytes": 25303,
+        "sha256": "3a5b025a9e313e89a4e2eb6d8050a9e34b156d15d1d8c652bc13b66cd4eb51de"
+      },
+      "tools/check_underthrust.py": {
+        "bytes": 18521,
+        "sha256": "40b7535393a057bba59d0a574733a4f1b192adc0caf16189684a489401008027"
+      }
+    }
+  },
+  "source_status": "WORKING NON-CANON",
+  "status": "PASS",
+  "timing": {
+    "complete_output_hash_parity": true,
+    "complete_result_hits": 0,
+    "excluded": "interpreter startup, imports, immutable input construction, report source snapshots and JSON writing",
+    "included": "preparation, live execution checks, evaluation, all output materialisation/hashing, cheap conservation controls, statistics and close",
+    "medians_s": {
+      "cold_three_preparations": 0.8841769999999087,
+      "prepared_three_changed_outputs": 0.4517788999946788
+    },
+    "order": [
+      [
+        "cold",
+        "prepared"
+      ],
+      [
+        "prepared",
+        "cold"
+      ],
+      [
+        "cold",
+        "prepared"
+      ]
+    ],
+    "percent_saved": 48.90402034946335,
+    "repeats_s": {
+      "cold_three_preparations": [
+        0.8841769999999087,
+        0.8889954999976908,
+        0.8799930999957724
+      ],
+      "prepared_three_changed_outputs": [
+        0.4517788999946788,
+        0.4509036999952514,
+        0.4610179000010248
+      ]
+    },
+    "runs": [
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.8841769999999087,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 8227503,
+        "preparations": 3,
+        "repeat": 1,
+        "route": "cold_three_preparations",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      },
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.4517788999946788,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 9000236,
+        "preparations": 1,
+        "repeat": 1,
+        "route": "prepared_three_changed_outputs",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      },
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.4509036999952514,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 9000236,
+        "preparations": 1,
+        "repeat": 2,
+        "route": "prepared_three_changed_outputs",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      },
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.8889954999976908,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 8227503,
+        "preparations": 3,
+        "repeat": 2,
+        "route": "cold_three_preparations",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      },
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.8799930999957724,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 8227503,
+        "preparations": 3,
+        "repeat": 3,
+        "route": "cold_three_preparations",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      },
+      {
+        "computed_outputs": 3,
+        "controls": [
+          {
+            "analytic_footwall_gravitational_change_j": -3.724734375e+17,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -3.724734375e+17,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              2500000000000000.0,
+              0.0
+            ],
+            "time_s": 2500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.3657359375000003e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.3657359375e+18,
+            "max_relative_area_error": 1.4901161193847656e-15,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 1.87444727030184e-16,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              7500000000000001.0,
+              0.0
+            ],
+            "time_s": 7500000000000.0
+          },
+          {
+            "analytic_footwall_gravitational_change_j": -1.986525e+18,
+            "block_enthalpy_j": [
+              -5.4e+16,
+              1.12e+17
+            ],
+            "block_mass_kg": [
+              54000000000000.0,
+              56000000000000.0
+            ],
+            "exterior_volume_m3": 0.0,
+            "footwall_gravitational_change_j": -1.986525e+18,
+            "max_relative_area_error": 0.0,
+            "max_relative_mass_heat_error": 0.0,
+            "max_relative_volume_error": 0.0,
+            "relative_gravity_error": 0.0,
+            "status": "PASS",
+            "supplied_boundary_work_j": [
+              1e+16,
+              0.0
+            ],
+            "time_s": 10000000000000.0
+          }
+        ],
+        "elapsed_s": 0.4610179000010248,
+        "execution_ids": [
+          "b5d393a1c0010f79cbdb58db34269e415cc99f49c5b1f59b098c61e80aaa1475"
+        ],
+        "final_reserved_bytes": 0,
+        "latest_hits": 0,
+        "peak_accounted_bytes": 9000236,
+        "preparations": 1,
+        "repeat": 3,
+        "route": "prepared_three_changed_outputs",
+        "signatures": [
+          {
+            "complete_output_sha256": "6cbc5ee0e17fc3effeb0f53af44d8edca989d486a1a92380d0378b824712cadb",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "77ee1e6d8996a81d0064d93075e142e6cc337f4f6c3b577000747ab3eeed1969",
+            "time_s": 2500000000000.0
+          },
+          {
+            "complete_output_sha256": "25161d7d7e5b0f8ac50d6fa84fdabbbeb557f2538a14a67035b15417440c4a31",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "9072fc13b94e6b8d5826deb0fce0a3b726e7e23f16845b70b8a212a72a865d91",
+            "time_s": 7500000000000.0
+          },
+          {
+            "complete_output_sha256": "dbdef08d8961e06cfe2aae62146741d21a9cb29ddd37cae2b1a459c04f3f2636",
+            "plan_id": "cd888d999fbd0498abf2d98465c1a86e39ef2a7bd8102c7668e06163490584ae",
+            "state_id": "6d604076b0a7c28c075b8abb44c6487b5201b1b0590d7c430c3d69b1a8a257ee",
+            "time_s": 10000000000000.0
+          }
+        ]
+      }
+    ],
+    "scope": "three complete outputs of the same 64-parcel, eight-receiver supplied section",
+    "seconds_saved": 0.43239810000522994
+  }
+}
