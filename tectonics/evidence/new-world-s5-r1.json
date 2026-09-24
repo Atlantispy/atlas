@@ -1,0 +1,137 @@
+{
+  "schema": "atlas.new-world-evolution-evidence.v1",
+  "status": "WORKING NON-CANON",
+  "date": "2026-09-24",
+  "implementation": "bounded generated regional affine crust and dry local Airy change",
+  "platform": "Windows; CPython 3.12.14; declared native environment",
+  "sources": {
+    "adapters": {
+      "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+      "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+      "new_world_project.py": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+      "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+      "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+    },
+    "evolution": {
+      "adapters": {
+        "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+        "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+        "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "new_world_motion": "5c34f558a30e886df7f1ea65f7b97f24d50d53505a8d97e115cb85b92147c1cc",
+        "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+        "new_world_project": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+        "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+        "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+      },
+      "native_execution_id": "2609755f3d0bd7481efaebacb52ed50940e5d7f4743284eaa21f08801ff33052"
+    }
+  },
+  "input_sha256": "2e9e035be2aade316fa1109dcd29743f22e8c1b767a70d192133b7510f3ce8b9",
+  "source_case": "Retained S1-S4 generated seed41, six plates, 192 patches, continental fraction0.3; native fixture retained privately, no world dataset published",
+  "physical_result": {
+    "accounted_workspace_peak_bytes": 2428894,
+    "approximation": {
+      "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+      "affine_trajectory_radius_bound_m": 30390.275675179757,
+      "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+      "frozen_velocity_path_error_bound_m": 31.11160198805078,
+      "gnomonic_max_area_scale": 1.00003413090458,
+      "gnomonic_max_length_scale": 1.0000227538069533,
+      "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+      "per_plate_projected_velocity_variation_bound_m_s": 9.858671758324708e-12,
+      "relative_projected_velocity_variation_bound_m_s": 1.9717343516649416e-11,
+      "rigid_euler_swept_cap_radius_rad": 0.004533480834256892,
+      "swept_cap_radius_rad": 0.004770058888741361
+    },
+    "area_reduction_percent": 12.259331714783128,
+    "column_id": "province-0",
+    "elapsed_years": 100000,
+    "exact_inventory_parity": true,
+    "final_area_m2": 701925346.281735,
+    "initial_area_m2": 800000000,
+    "initial_condition_id": "416f97bc52bacfc9a48271eab280e8312afd23aa186483639752cda069359860",
+    "native_edge_index": 101,
+    "surface_change_range_m": [
+      688.2533271437811,
+      688.2584140501085
+    ],
+    "thickness_change_range_m": [
+      5273.371608378831,
+      5273.4105840674965
+    ]
+  },
+  "output_ids": [
+    "47a8421894f9998de3e2914c8168ea3d8dcf5281d59eae1a3db8092f5a6c3e23",
+    "8be2b8cc8ab926420da1da1cde8b6f548e09d39797a92b224e0665003eb0d56a",
+    "eb764edd70b21d58ca5d790da72b3d591fc0e163057d89124460680cbe8cdfa3"
+  ],
+  "verification": {
+    "sampling_methods": 6,
+    "evolution_methods": 8,
+    "job_methods": 13,
+    "all_focused_methods_passed": true,
+    "fresh_process_restart_complete_scientific_field_parity": true,
+    "resume_restored_outputs": 1,
+    "resume_computed_outputs": 2,
+    "resume_prepare_seconds": 0,
+    "actual_cli_selected_saved_time": true,
+    "static_safety": {
+      "maps": 13,
+      "paths": 41,
+      "test_methods": 31,
+      "passed": 30,
+      "skipped": 1,
+      "skip": "Windows symlink privilege; no new Linux run"
+    },
+    "not_run": [
+      "full test suite",
+      "global evolution",
+      "held R4.4",
+      "new UI browser verification"
+    ]
+  },
+  "performance": {
+    "fresh_full_call_s": 4.937889699998777,
+    "verified_completed_reuse_call_s": 0.7888702000054764,
+    "reuse_saved_s": 4.149019499993301,
+    "reuse_saved_percent": 84.0241429449979,
+    "preparation_reuse": {
+      "baseline_mean_s": 1.8365543999971123,
+      "exact_output_id_parity": true,
+      "prepared_mean_s": 0.6953754999994999,
+      "reused_bound_evidence": {
+        "reason": "only job presentation changed; complete model source/runtime binding and all output IDs match",
+        "report_name": "s5-full-r1.json",
+        "sha256": "a7d7d9f2c2937202030adbb951a9b986172b9a9390ce1e1db5091c47ed60b6f4"
+      },
+      "saved_percent": 62.13695058525937,
+      "saved_s": 1.1411788999976125,
+      "scope": "three same outputs, repeated preparation versus one prepared native owner; all source checks included",
+      "trials": [
+        {
+          "prepared_s": 0.6790621999971336,
+          "repeated_s": 1.8287837999960175
+        },
+        {
+          "prepared_s": 0.7047705000004498,
+          "repeated_s": 1.8367418999987422
+        },
+        {
+          "prepared_s": 0.7022938000009162,
+          "repeated_s": 1.8441374999965774
+        }
+      ]
+    },
+    "fresh_process_partial_resume_call_s": 2.5016573000029894,
+    "retained_job_bytes": 402993,
+    "interpretation": "Bounded selected scenario only. Reuse is not an independent faster physics solver. Memory metric is accounted native preparation, not peak process RSS."
+  },
+  "scope_notes": [
+    "Original input archive and native source package unchanged.",
+    "r1 receipts retained. Added selected-time CLI and requested schedule after first measurement; r2 binds current job source. Native timing reused only after exact complete model source/runtime and all output identities matched.",
+    "Two initial runner setup errors (missing jobs root and invalid human-readable job ID) were corrected before any run; no simulation or scientific output lost.",
+    "One interim lifecycle test assertion-placement error was corrected; thirteen final job methods pass.",
+    "Derived support and initial thermal provenance remain separate; no absolute DEM or evolved temperature invented."
+  ]
+}

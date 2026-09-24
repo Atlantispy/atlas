@@ -1,0 +1,1413 @@
+{
+  "scope": "bounded synthetic storage and independent kernel scheduling only",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "blosc2": "4.13.1"
+  },
+  "source_sha256": "82969927b475afdf7d7585ff2ebae172fe2e4066e169c59f0ef12c4795409d02",
+  "candidate_source_sha256": "7726443d058250dcf5f4410c2986dd645daf6e5beb5452014d5dbbbd92212107",
+  "candidate_old": "                    for start in range(0, a.size, width):\n                        # Only one flat chunk copied, including strided caller data.\n                        ids.append(capture(a.flat[start:start+width]))",
+  "candidate_new": "                    # C-order views avoid a temporary chunk copy before capture's\n                    # detached bytes. Strided arrays keep bounded flat slicing.\n                    flat = np.asarray(a).reshape(-1) if a.flags.c_contiguous else a.flat\n                    for start in range(0, a.size, width):\n                        ids.append(capture(flat[start:start+width]))",
+  "storage": [
+    {
+      "layout": "contiguous",
+      "codec": "raw",
+      "input_bytes": 10485760,
+      "times": {
+        "baseline": {
+          "median_s": 0.0427691000077175,
+          "samples_s": [
+            0.04466359999787528,
+            0.0427691000077175,
+            0.04360040000756271,
+            0.039514199990662746,
+            0.04188819999399129
+          ]
+        },
+        "candidate": {
+          "median_s": 0.03593410000030417,
+          "samples_s": [
+            0.03720890000113286,
+            0.035739799990551546,
+            0.03527320000284817,
+            0.03593410000030417,
+            0.039000799995847046
+          ]
+        }
+      },
+      "saved_percent": 15.981163985634446,
+      "identical_chunk_rows": true,
+      "exact_round_trip": true,
+      "statistics": {
+        "baseline": {
+          "unique_chunks": 98,
+          "encoded_payload_bytes": 4399736,
+          "snapshots": 1,
+          "database_bytes": 4489216,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 98,
+          "operations": {
+            "payload_reads": 98,
+            "decoded_hits": 62,
+            "verified_hits": 0,
+            "encodes": 98,
+            "staged_bytes": 4418416,
+            "prepare_seconds": 0.02654869999969378,
+            "writer_seconds": 0.0139575000066543,
+            "insert_batches": 18,
+            "peak_prepared_bytes": 4418416
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        },
+        "candidate": {
+          "unique_chunks": 98,
+          "encoded_payload_bytes": 4399736,
+          "snapshots": 1,
+          "database_bytes": 4489216,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 98,
+          "operations": {
+            "payload_reads": 98,
+            "decoded_hits": 62,
+            "verified_hits": 0,
+            "encodes": 98,
+            "staged_bytes": 4418416,
+            "prepare_seconds": 0.026073200002429076,
+            "writer_seconds": 0.011747600001399405,
+            "insert_batches": 18,
+            "peak_prepared_bytes": 4418416
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        }
+      }
+    },
+    {
+      "layout": "contiguous",
+      "codec": "zstd",
+      "input_bytes": 10485760,
+      "times": {
+        "baseline": {
+          "median_s": 0.0436900000058813,
+          "samples_s": [
+            0.0436900000058813,
+            0.046339599997736514,
+            0.050028400000883266,
+            0.04354400000011083,
+            0.04149009998945985
+          ]
+        },
+        "candidate": {
+          "median_s": 0.040014600002905354,
+          "samples_s": [
+            0.03942920001281891,
+            0.039428500007488765,
+            0.040014600002905354,
+            0.04152530001010746,
+            0.04113269998924807
+          ]
+        }
+      },
+      "saved_percent": 8.412451367546776,
+      "identical_chunk_rows": true,
+      "exact_round_trip": true,
+      "statistics": {
+        "baseline": {
+          "unique_chunks": 98,
+          "encoded_payload_bytes": 3416120,
+          "snapshots": 1,
+          "database_bytes": 3518464,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 98,
+          "operations": {
+            "payload_reads": 98,
+            "decoded_hits": 62,
+            "verified_hits": 0,
+            "encodes": 98,
+            "staged_bytes": 3437920,
+            "prepare_seconds": 0.03115899999102112,
+            "writer_seconds": 0.009352599998237565,
+            "insert_batches": 15,
+            "peak_prepared_bytes": 3437920
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        },
+        "candidate": {
+          "unique_chunks": 98,
+          "encoded_payload_bytes": 3416120,
+          "snapshots": 1,
+          "database_bytes": 3518464,
+          "decoded_cache_bytes": 4194304,
+          "verified_cache_entries": 98,
+          "operations": {
+            "payload_reads": 98,
+            "decoded_hits": 62,
+            "verified_hits": 0,
+            "encodes": 98,
+            "staged_bytes": 3437920,
+            "prepare_seconds": 0.029879599998821504,
+            "writer_seconds": 0.010235499998088926,
+            "insert_batches": 15,
+            "peak_prepared_bytes": 3437920
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        }
+      }
+    },
+    {
+      "layout": "strided",
+      "codec": "raw",
+      "input_bytes": 5242880,
+      "times": {
+        "baseline": {
+          "median_s": 0.021387400003732182,
+          "samples_s": [
+            0.021445099991979077,
+            0.021387400003732182,
+            0.021025900001404807,
+            0.022041499993065372,
+            0.020523300001514144
+          ]
+        },
+        "candidate": {
+          "median_s": 0.021263799993903376,
+          "samples_s": [
+            0.021263799993903376,
+            0.020653500003390945,
+            0.02410809999855701,
+            0.022223800013307482,
+            0.020776799996383488
+          ]
+        }
+      },
+      "saved_percent": 0.5779104042905507,
+      "identical_chunk_rows": true,
+      "exact_round_trip": true,
+      "statistics": {
+        "baseline": {
+          "unique_chunks": 50,
+          "encoded_payload_bytes": 2171208,
+          "snapshots": 1,
+          "database_bytes": 2224128,
+          "decoded_cache_bytes": 3276800,
+          "verified_cache_entries": 50,
+          "operations": {
+            "payload_reads": 50,
+            "decoded_hits": 30,
+            "verified_hits": 0,
+            "encodes": 50,
+            "staged_bytes": 2180744,
+            "prepare_seconds": 0.012745599990012124,
+            "writer_seconds": 0.006845099997008219,
+            "insert_batches": 9,
+            "peak_prepared_bytes": 2180744
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        },
+        "candidate": {
+          "unique_chunks": 50,
+          "encoded_payload_bytes": 2171208,
+          "snapshots": 1,
+          "database_bytes": 2224128,
+          "decoded_cache_bytes": 3276800,
+          "verified_cache_entries": 50,
+          "operations": {
+            "payload_reads": 50,
+            "decoded_hits": 30,
+            "verified_hits": 0,
+            "encodes": 50,
+            "staged_bytes": 2180744,
+            "prepare_seconds": 0.012637899999390356,
+            "writer_seconds": 0.00714719999814406,
+            "insert_batches": 9,
+            "peak_prepared_bytes": 2180744
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        }
+      }
+    },
+    {
+      "layout": "strided",
+      "codec": "zstd",
+      "input_bytes": 5242880,
+      "times": {
+        "baseline": {
+          "median_s": 0.02876539999851957,
+          "samples_s": [
+            0.02483629999915138,
+            0.032001699990360066,
+            0.02876539999851957,
+            0.028272800002014264,
+            0.02935820000129752
+          ]
+        },
+        "candidate": {
+          "median_s": 0.026775499994982965,
+          "samples_s": [
+            0.023915899990242906,
+            0.02626149999559857,
+            0.032598899997537956,
+            0.026780899992445484,
+            0.026775499994982965
+          ]
+        }
+      },
+      "saved_percent": 6.917685843544731,
+      "identical_chunk_rows": true,
+      "exact_round_trip": true,
+      "statistics": {
+        "baseline": {
+          "unique_chunks": 50,
+          "encoded_payload_bytes": 1744833,
+          "snapshots": 1,
+          "database_bytes": 1818624,
+          "decoded_cache_bytes": 3276800,
+          "verified_cache_entries": 50,
+          "operations": {
+            "payload_reads": 50,
+            "decoded_hits": 30,
+            "verified_hits": 0,
+            "encodes": 50,
+            "staged_bytes": 1755905,
+            "prepare_seconds": 0.01993600001151208,
+            "writer_seconds": 0.007939400005852804,
+            "insert_batches": 8,
+            "peak_prepared_bytes": 1755905
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        },
+        "candidate": {
+          "unique_chunks": 50,
+          "encoded_payload_bytes": 1744833,
+          "snapshots": 1,
+          "database_bytes": 1818624,
+          "decoded_cache_bytes": 3276800,
+          "verified_cache_entries": 50,
+          "operations": {
+            "payload_reads": 50,
+            "decoded_hits": 30,
+            "verified_hits": 0,
+            "encodes": 50,
+            "staged_bytes": 1755905,
+            "prepare_seconds": 0.019088700006250292,
+            "writer_seconds": 0.006573400009074248,
+            "insert_batches": 8,
+            "peak_prepared_bytes": 1755905
+          },
+          "resource_allowances": {
+            "retained_ram_allowance": 8404992,
+            "codec_workspace_allowance": 8388608,
+            "write_workspace_allowance": 31766272,
+            "read_workspace_allowance": 13107200,
+            "database_capacity": 67108864,
+            "rollback_journal_capacity": 67108864,
+            "staging_capacity_per_writer": 268435456,
+            "backup_capacity_per_copy": 67108864,
+            "process_rss_cap": false
+          },
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 21512192,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 8404992,
+              "store-stage": 0,
+              "store-read": 13107200,
+              "store-output": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520
+            }
+          }
+        }
+      }
+    }
+  ],
+  "execution": [
+    {
+      "kind": "cooling",
+      "n": 65536,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.011973400003626011,
+        "auto": 0.010151399997994304,
+        "threads": 0.01126970000041183
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.010474800001247786,
+          "samples_s": [
+            0.010474800001247786,
+            0.014187299995683134,
+            0.01006890001008287,
+            0.011373100001947023,
+            0.010203199999523349
+          ]
+        },
+        "auto": {
+          "median_s": 0.011643399993772618,
+          "samples_s": [
+            0.010545999990426935,
+            0.011643399993772618,
+            0.014560799987521023,
+            0.012212599991471507,
+            0.010265600009006448
+          ]
+        },
+        "threads": {
+          "median_s": 0.010075300000607967,
+          "samples_s": [
+            0.010088299997732975,
+            0.009761599998455495,
+            0.010323499998776242,
+            0.010075300000607967,
+            0.009863599989330396
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 6701104,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 26804416
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 6701104,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 26804416
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 26804416,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 42483712,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 26804416
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    },
+    {
+      "kind": "rotation",
+      "n": 65536,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.005712399986805394,
+        "auto": 0.00755550000758376,
+        "threads": 0.015461899994988926
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.005682600007276051,
+          "samples_s": [
+            0.006047300004865974,
+            0.005396299995481968,
+            0.006422099992050789,
+            0.005628200000501238,
+            0.005682600007276051
+          ]
+        },
+        "auto": {
+          "median_s": 0.006347799993818626,
+          "samples_s": [
+            0.006710799993015826,
+            0.006276400003116578,
+            0.0069370999990496784,
+            0.00586860001203604,
+            0.006347799993818626
+          ]
+        },
+        "threads": {
+          "median_s": 0.015350300003774464,
+          "samples_s": [
+            0.01568369999586139,
+            0.015350300003774464,
+            0.015217000007396564,
+            0.014893700004904531,
+            0.015617900004144758
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 17318464,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 17318464,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 69273856,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    },
+    {
+      "kind": "flexure",
+      "n": 65536,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.007870000001275912,
+        "auto": 0.007467400006134994,
+        "threads": 0.006357199992635287
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.0060908000014023855,
+          "samples_s": [
+            0.0060908000014023855,
+            0.006084499997086823,
+            0.006236999994143844,
+            0.005733500001952052,
+            0.007301499994355254
+          ]
+        },
+        "auto": {
+          "median_s": 0.006456200004322454,
+          "samples_s": [
+            0.007374499997240491,
+            0.0068029999965801835,
+            0.006456200004322454,
+            0.005794099997729063,
+            0.00596120000409428
+          ]
+        },
+        "threads": {
+          "median_s": 0.005387700002756901,
+          "samples_s": [
+            0.005494800003361888,
+            0.005524899999727495,
+            0.0052909000078216195,
+            0.005387700002756901,
+            0.005051800006185658
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 11550784,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 11550784,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 46203136,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 69273856,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 3145824,
+              "executor-inflight": 69273856
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    },
+    {
+      "kind": "cooling",
+      "n": 262144,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.03952690000005532,
+        "auto": 0.02968249999685213,
+        "threads": 0.03382289998990018
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.044534100001328625,
+          "samples_s": [
+            0.043249700000160374,
+            0.04474929999560118,
+            0.04846879999968223,
+            0.04246399999829009,
+            0.044534100001328625
+          ]
+        },
+        "auto": {
+          "median_s": 0.03549159999238327,
+          "samples_s": [
+            0.0346302999969339,
+            0.03549159999238327,
+            0.03638290001254063,
+            0.03582839999580756,
+            0.03351749999274034
+          ]
+        },
+        "threads": {
+          "median_s": 0.033481200007372536,
+          "samples_s": [
+            0.03415760000643786,
+            0.033481200007372536,
+            0.03609980001056101,
+            0.033298299997113645,
+            0.032112300003063865
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 25575472,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 102301888,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 102301888
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 102301888,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 102301888,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 102301888
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 102301888,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 102301888,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 102301888
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    },
+    {
+      "kind": "rotation",
+      "n": 262144,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.022343699994962662,
+        "auto": 0.021998500000336207,
+        "threads": 0.029159899990190752
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.02355800000077579,
+          "samples_s": [
+            0.02355800000077579,
+            0.0228105999995023,
+            0.02209210000000894,
+            0.02611010000691749,
+            0.027076700003817677
+          ]
+        },
+        "auto": {
+          "median_s": 0.023372700001345947,
+          "samples_s": [
+            0.024131099999067374,
+            0.024149200005922467,
+            0.021982399994158186,
+            0.023372700001345947,
+            0.02227050000510644
+          ]
+        },
+        "threads": {
+          "median_s": 0.027439900004537776,
+          "samples_s": [
+            0.026292199996532872,
+            0.02761760000430513,
+            0.026032800000393763,
+            0.02751440000429284,
+            0.027439900004537776
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 64504384,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 64504384,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 258017536,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    },
+    {
+      "kind": "flexure",
+      "n": 262144,
+      "jobs": 8,
+      "first_s": {
+        "serial": 0.0410903000010876,
+        "auto": 0.024420800007646903,
+        "threads": 0.028479399989009835
+      },
+      "times": {
+        "serial": {
+          "median_s": 0.03478809999069199,
+          "samples_s": [
+            0.04028520001156721,
+            0.034512600002926774,
+            0.03478809999069199,
+            0.03479989999323152,
+            0.03458019999379758
+          ]
+        },
+        "auto": {
+          "median_s": 0.02501749999646563,
+          "samples_s": [
+            0.024914100009482354,
+            0.02501749999646563,
+            0.027511299995239824,
+            0.027147999993758276,
+            0.024410599988186732
+          ]
+        },
+        "threads": {
+          "median_s": 0.024720900008105673,
+          "samples_s": [
+            0.027535499990335666,
+            0.02430669999739621,
+            0.024720900008105673,
+            0.02368929999647662,
+            0.02570719999494031
+          ]
+        }
+      },
+      "exact_output_bytes": true,
+      "statistics": {
+        "serial": {
+          "serial_jobs": 48,
+          "parallel_jobs": 0,
+          "completed_jobs": 48,
+          "peak_inflight": 1,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 46153792,
+          "mode": "serial",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "auto": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 184615168,
+          "mode": "auto",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        },
+        "threads": {
+          "serial_jobs": 0,
+          "parallel_jobs": 48,
+          "completed_jobs": 48,
+          "peak_inflight": 4,
+          "reserved_bytes": 0,
+          "peak_reserved_bytes": 184615168,
+          "mode": "threads",
+          "max_workers": 2,
+          "inner_threads": 1,
+          "shared_budget": {
+            "max_bytes": 268435456,
+            "reserved_bytes": 0,
+            "peak_reserved_bytes": 258017536,
+            "refusals": 0,
+            "categories": {
+              "store-retained": 0,
+              "store-stage": 0,
+              "store-read": 0,
+              "store-output": 0,
+              "work": 0,
+              "executor-inflight": 0
+            },
+            "category_peaks": {
+              "store-retained": 8404992,
+              "store-stage": 12025872,
+              "store-read": 13107200,
+              "store-output": 20971520,
+              "work": 12583008,
+              "executor-inflight": 258017536
+            }
+          },
+          "process_allowance_bytes": 0
+        }
+      }
+    }
+  ],
+  "wall_s": 4.82514159999846
+}

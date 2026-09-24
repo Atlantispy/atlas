@@ -1,5 +1,161 @@
 # Atlas optimisation reference
 
+## W11 module-wide linked-workflow pass — 24 September 2026
+
+WORKING NON-CANON. This supersedes the **scope** of the earlier small regional
+study below: the pass assesses every existing tectonics family and its implemented
+connections, including retained cross-module producers/consumers. It changes four
+production files, not physical equations, meshes, numerical tolerances or the
+256-step ceiling. The pre-change source copy matched commit
+`8f6ba86724d775d5c840b79e47f4d68620b4e3ea` and all 124 package-source file hashes.
+Old W10/W11 receipts remain historical after the earlier remap correction; none
+was repinned or treated as a current passing campaign.
+
+### Implemented improvements
+
+1. **Cheaper exact source verification, throughout the package.** Every source
+   byte and current file membership is still read on every check. Two fresh
+   non-following file-stat calls replace four overlapping metadata queries;
+   relative names use already-parsed path components. Opened-file identity is
+   now also compared with the pre-open entry. Same-size/same-mtime mutations,
+   growth, replacement and links still refuse. No cached timestamp acceptance.
+2. **Reuse at the actual W01/W02 → geology → W07 connection.** Steady, thermal
+   and surface workflows retain a correctly backend-matched geological execution
+   context instead of rebuilding it at every boundary. They still verify the
+   complete geological payload and live source/callable identities on every use.
+   The separate reference-backend context has an explicit 4 MiB reservation;
+   closure and constructor failure release resources. Standalone calls retain
+   fresh verification. There is no reuse of a different backend's identity.
+3. **Remove a checkpoint-write copy.** Contiguous arrays use a flat view before
+   the existing bounded chunk capture; noncontiguous arrays keep their prior
+   bounded path. Detached immutable bytes, endianness, compression, chunk IDs,
+   corruption checks and transaction publication are unchanged.
+
+The pass also fixed a **measurement reporter bug**: unittest can report a skipped
+subtest without starting a separate test. That previously turned the Windows
+symlink-permission skip into a KeyError. Skips now remain explicit, parent rows
+disclose skipped subtests, and class-fixture errors/subtest errors are recorded
+correctly. This does not relax the zero-skip acceptance rules in W10 or old W11.
+
+### Coverage and decisions
+
+| Existing family/link assessed | Decision/evidence in this pass |
+| --- | --- |
+| Coordinates, rotations, clocks, topology, spherical boundaries and spatial indices | Retain existing immutable/indexed/batched algorithms; foundation guards and actual construction dependencies covered. |
+| W01 described geology, point/cell/spherical sampling and material inventories | Inspect existing batched lookups, bounded thermal reuse and shared footprints; source verification is the measured common bottleneck. No geometry shortcut. |
+| W01 motion → regional forcing → W02 initial material | Time the real linked construction and compare complete outputs, including face/owner/velocity fields. |
+| W02 transport, nonuniform remap, moving grid, markers, topology and restoration | Time nonzero two-step continuation; check combined regrid/motion/birth/split/merge/restore and cache invalidation. Retain the corrected joint reconstruction and conservative native methods. |
+| W03 cooling → density/load → compaction/rebound | Time initialisation and three changed steps; compare all state, material and compaction arrays/accounts. Retain grouped thermal work and prepared backends. |
+| W03 → W04 periodic/finite/exterior/variable-rigidity support | Time changed/identical projections; check cache/source/halo/factor ownership. Retain FFT, analytic finite response and banded factors. |
+| W05 listric motion → load → support → history | Time complete three-output 3,200-cell sequence; material, exchange and support fields agree. |
+| W06 birth/history/inherited margins → cooling → water/support accounts | Time all three routes, four outputs, including 4,000-cell ocean cases; scientific fields and declared export/thermal metadata agree. |
+| W07 mechanics, heterogeneous/nonlinear material laws, thermal/material intervals, dry strength and free surface | Review solver/factor/current-law/coupling contracts; implement and test geological verifier ownership. Three assembled routes and recovery pass. No new solver or constitutive approximation. |
+| W08 shortening, transform/oblique, bends/stepovers and straight-fault slip | Retain exact/ordered motion and finite projection algorithms. Exercise the supported joined affine route; do not pretend it includes the separate non-affine/fault-slip routes. |
+| W08 prescribed slab/wedge, thermal projection and material retirement | Review factor/projection lifetime and accepted refinement choices; retain the time-first operator policy. Material retirement exercised in the joined workflow; expensive coupled campaign not repeated. |
+| W08 finite melting/transfer/emplacement → joined regimes and cessation | Inspect the three component contracts; measure the five-interval joined workflow, including inventories, regional fields, footprints and deformation. |
+| Underthrust → host/receivers; evolving W03/W04 and regional inputs | Measure all three supported adapters; keep complete interfaces, explicit force/load owners and analytic mechanical controls. |
+| Dated histories, all supported save/restore links | Shared storage optimisation applies without schema changes; recovery validates the accepted prefix without replaying completed physics. Relevant W01/W03/W07 recovery and corruption checks covered. |
+| Retained W09 drainage/water/erosion/hillslope boundary | Inspect existing contracts; two changed-bed/finite-stock guards pass. Missing deposition and full consumer bridges remain with their individual modules, not invented here. |
+| Shared caching, immutable ownership, compression, scheduling and resource control | Retain exact invalidation, same-request coordination and lossless deduplication; measure contiguous writes and current automatic parallel choices. |
+
+This extends PF01–PF26 consideration across the implemented workflows: PF01/03
+benefit from verification/preparation reuse, PF06/07/17 from the storage change,
+and PF09–11 retain measured independent-work policies. Existing indexing, factors,
+compiled kernels, history deduplication and bounded queues remain appropriate.
+No measured case justified a new GPU/MPI backend, asynchronous write queue,
+out-of-core solver, altered timestep, mixed precision, surrogate, reduced physics
+or parallel-in-time path. Existing nonuniform/remap support is retained; new
+adaptive/spherical stress meshes and distributed flux operators still require
+their own numerical development, not an execution-only optimisation label.
+
+### Matched measurements
+
+Windows 11, Python 3.12.14, NumPy 2.4.6, SciPy 1.17.1; same existing environment,
+no installation. Three alternating baseline/candidate pairs per workflow, five
+for storage. Timed regions include the stated setup, checks, complete result
+construction and owner closure; imports/untimed fixture work are excluded.
+These are separate workloads, **not additive or multiplicative savings**.
+
+| Complete timed workload | Before s | After s | Saved s | Saved time |
+| --- | ---: | ---: | ---: | ---: |
+| W01 → W02 initialisation | 1.237829 | 0.928682 | 0.309147 | 24.97% |
+| W02 moving setup + continuation | 1.155571 | 0.900521 | 0.255051 | 22.07% |
+| W03 initialisation | 0.741306 | 0.528854 | 0.212451 | 28.66% |
+| W03 three changes, fresh preparation | 3.450840 | 2.737592 | 0.713248 | 20.67% |
+| W03 three changes, shared preparation | 1.661145 | 1.091263 | 0.569881 | 34.31% |
+| W04 three changes, fresh preparation | 2.678668 | 1.941961 | 0.736707 | 27.50% |
+| W04 three changes, shared preparation | 1.539129 | 1.072666 | 0.466463 | 30.31% |
+| W04 three identical requests, shared preparation | 1.467902 | 0.997590 | 0.470311 | 32.04% |
+| W05 three complete outputs | 1.307060 | 0.970070 | 0.336989 | 25.78% |
+| W06 constant spreading | 1.149944 | 0.850411 | 0.299533 | 26.05% |
+| W06 changing history | 1.089366 | 0.769171 | 0.320195 | 29.39% |
+| W06 inherited margin | 1.170287 | 0.776990 | 0.393298 | 33.61% |
+| W08 five joined intervals | 0.970932 | 0.705046 | 0.265885 | 27.38% |
+| Underthrust three outputs | 0.501860 | 0.401237 | 0.100624 | 20.05% |
+| Evolving regional mechanics | 0.722093 | 0.500733 | 0.221360 | 30.66% |
+| Evolving elastic support | 3.299592 | 2.387790 | 0.911802 | 27.63% |
+| W07 steady: additional caller-context optimisation | 2.841434 | 1.901576 | 0.939858 | 33.08% |
+| W07 thermal: additional caller-context optimisation | 3.615335 | 2.270506 | 1.344829 | 37.20% |
+| W07 surface: additional caller-context optimisation | 3.327096 | 2.157326 | 1.169770 | 35.16% |
+| 10 MiB contiguous checkpoint, raw profile | 0.042769 | 0.035934 | 0.006835 | 15.98% |
+| 10 MiB contiguous checkpoint, default Zstd | 0.043690 | 0.040015 | 0.003675 | 8.41% |
+
+[Early evidence](../evidence/w11-module-wide-early.json): 2,154 saved arrays,
+complete scientific metadata and within-version result identities agree. Across
+source revisions, only explicitly identified execution-derived IDs are mapped;
+physical/material/owner IDs are retained. An omitted intermediate W02 parent ID
+was corrected in the comparator against saved outputs, without repeating timings.
+[Later summary](../evidence/w11-module-wide-late.json): all 48 timed sequences
+agree on declared complete scientific arrays and explicit physical metadata;
+this is not a full metadata/execution-ID equality claim. Large raw signatures
+remain in the hash-bound local receipt. [W07 evidence](../evidence/w11-module-wide-w07.json)
+instead compares the exact archived previous caller with the new caller, both
+using the same current scientific dependencies: **all IDs, descriptors and array
+bytes agree without filtering**. Thus its percentages isolate the caller-context
+change, not the combined source-reader gain. The extra retained context is 4 MiB
+of explicit accounting, not measured RSS; all owners close without reservations.
+
+[Storage/execution evidence](../evidence/w11-module-wide-storage.json): every
+paired SQLite chunk row and restored byte agrees. Encoded size is unchanged.
+Strided controls use the unchanged path and show no attributable saving. Existing
+automatic execution, not a new improvement, still saves 20.30% for cooling and
+28.09% for flexure at 262,144 elements; rotations remain faster serial. Keep the
+existing threshold rather than retuning it from small/noisy cases on one host.
+
+### Focused checks and reproduction
+
+278 distinct checks pass after the reporting repair; three environmental skips
+remain explicit (source-link privilege, storage-link privilege and the existing
+root tooling skip). Groups: shared guards **142 pass/1 skip**, storage/execution
+**76 pass/1 skip**, W07/geology/retained W09 **30 pass**, static safety **30 pass/1
+skip**, plus 13 source maps/41 paths. The shared first run had 139 passes and the
+reporter error in 67.442 s; only that affected method and three new reporter tests
+were rerun (3 pass/1 privilege skip, 0.311 s). The initial reporter regression
+also caught the missing parent-subtest status and was corrected. Both failed
+receipts remain local evidence; successful physics was not replayed. No full
+3,565-test suite, Linux pass or multi-hour campaign is claimed by this pass.
+
+Reproducible runners live in `tectonics/tools/`: `check_w11_guards.py`,
+`benchmark_w11_early.py`, `benchmark_w11_late.py` with `w11_late_profile.py`,
+`benchmark_w11_w07.py`, and `benchmark_w11_storage.py`. Use `--help`, the same
+declared environment, new output destinations and a separate baseline source
+checkout. `--baseline`/`--current`/`--baseline-source` name the directory containing
+`atlas_tectonics`; the storage runner instead takes the baseline `storage.py`.
+The W07 runner requires its recorded old caller and current compatible fixture.
+Portable path/report guards were packaged after measurement, not called a new
+simulation. The older `check_w11.py` deliberately still refuses stale W10/source
+bindings; it is not silently redirected to claim a new physical acceptance.
+
+Methods/software consulted: [PETSc profiling](https://petsc.org/release/manual/profiling/)
+for application/setup costs, [Python 3.12 file status](https://docs.python.org/3.12/library/os.html#os.lstat)
+and [regular-file mode checks](https://docs.python.org/3.12/library/stat.html#stat.S_ISREG),
+plus [NumPy reshape](https://numpy.org/doc/stable/reference/generated/numpy.reshape.html)
+and [flat iteration](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flat.html).
+No new physical method or new physical-paper claim was introduced. Next remains
+supported **W12 assembly**, with the existing scientific ownership and held R4.4
+boundaries unchanged. This closes this implemented-workflow optimisation pass,
+not every conceivable future optimisation or a planetary-scale forecast.
+
 ## W11 bounded matched-output scale assessment — 24 September 2026
 
 WORKING NON-CANON. This is the current scoped decision for the supported regional
@@ -3635,6 +3791,31 @@ No default fast-math, unsafe reassociation or reduced precision is selected. Rec
 ## 3. Candidate decisions, evidence and one execution card
 
 <a id="candidate-register"></a>
+
+### Potential follow-up improvements — deferred, 24 September 2026
+
+**User instruction: record these only; do not implement or benchmark them now.**
+Status: **CANDIDATE — NOT EXPERIMENTALLY ASSESSED IN THE MODULE-WIDE W11 PASS**.
+Resume only on an explicit follow-up request. The completed pass covered the
+implemented workflows; it was not an exhaustive comparison of every possible
+algorithm. Most families below already appear in PF01–PF26. These are more
+specific follow-up experiments, not newly discovered omissions or claimed novel
+research, and none has an Atlas speedup estimate or demonstrated benefit yet.
+
+| Potential experiment | What to investigate later | Existing work and conditions to preserve |
+| --- | --- | --- |
+| **Cross-stage execution fusion and shared intermediates** (PF01/07) | Plan compatible producer/consumer chains together so common geometry, thermal or material intermediates are computed once and unnecessary materialisation/copying is avoided. Start with a real linked route, not isolated kernel timings. | Prepared contexts and local copy elimination already exist. This would assess a broader cross-stage plan. Preserve immutable ownership, required diagnostics, provenance, cancellation and checkpoint boundaries; fusion may reduce useful parallelism. [Dask graph optimisation](https://docs.dask.org/en/latest/optimize.html) supplies the execution-pattern reference, not a requirement to adopt Dask. |
+| **Field-/region-aware incremental recomputation** (PF01/02) | Track which physical fields and spatial supports actually changed and recompute only proven affected consumers, rather than invalidating an entire compatible workflow result. | This goes beyond existing result/geometry caches and incremental storage. Nonlocal stress, flexure, connectivity and threshold changes must propagate globally where required; dirty flags alone are not evidence of unchanged data. First compare with full recomputation. |
+| **Persistent recycled Krylov subspaces** (PF19) | Carry a bounded useful search subspace between compatible changing linear systems, rather than retaining only an initial guess or factor. Assess GCRO-DR-style recycling against current warm starts and preconditioners. | Krylov reuse was already a candidate family, not a newly assessed W11 implementation. Check current-operator residuals, pressure null spaces, topology/coefficient changes, memory and restart/reset rules. [PETSc/HPDDM](https://petsc.org/main/manualpages/KSP/KSPHPDDM/) documents GCRO-DR and its research references. |
+| **Outer coupled-workflow acceleration** (PF19 extension) | Where a genuine iterative thermal/mechanical/material coupling exists, assess interface quasi-Newton history to reduce whole coupling iterations, including transfer and verification costs. | Atlas already has Type-II velocity Anderson acceleration and log-viscosity Anderson; do not propose those again as missing. The candidate is a distinct outer interface, only if profiling and the actual coupling equations justify it. Preserve physical bounds and current convergence checks; do not invent a feedback loop for speed. [preCICE acceleration](https://precice.org/configuration-acceleration) describes IQN-ILS/Anderson and IQN-IMVJ. |
+| **Multirate, event-aligned integration** (PF21) | Evolve demonstrably slow and fast processes at different appropriate internal rates while synchronising exchanges and geological events. | Already listed/deferred, not a tested W11 gain. This is numerical-method development, not simply skipping stages. Preserve coupled heat/material/force accounting, event timing and temporal error; no raised step ceiling or relaxed tolerance. [SUNDIALS ARKODE](https://sundials.readthedocs.io/en/latest/arkode/Mathematics_link.html) supplies the multirate-method reference. |
+| **Partial assembly for currently assembled regional operators** (PF16/19/20 extension) | Compare retained element/quadrature data and on-demand operator action against assembling/storing the full regional operator, including the cost of an effective preconditioner. | Atlas already has matrix-free Stokes/Schur actions; this is not a proposal to add matrix-free solving everywhere. Applicability depends on element type/order and the actual regional route. Lower RAM is not a win if elapsed time worsens. [MFEM partial assembly](https://mfem.org/performance/) explains the representation and preconditioning trade-off; its tensor-product approach is not a drop-in fit for every Atlas mesh. |
+
+When requested, assess the first two against linked-workflow profiles before
+commissioning new solver work. Acceptance is lower elapsed time at unchanged
+required output quality, with explicit accounting for preparation, transfer,
+verification and recovery. No new dependency, backend or production policy is
+authorised by this list.
 
 ### 3.1 PF01–PF26: choose, do not enable indiscriminately
 

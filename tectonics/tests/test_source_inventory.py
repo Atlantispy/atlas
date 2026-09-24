@@ -3,6 +3,7 @@ import hashlib
 import json
 import marshal
 import os
+import stat
 from pathlib import Path
 import tempfile
 import unittest
@@ -142,6 +143,53 @@ class SourceInventoryTests(unittest.TestCase):
             result.stream = opener(current, *args, **kwargs)
             return result
         with mock.patch.object(Path, 'open', opened):
+            with self.assertRaisesRegex(TectonicsError, 'source changed during'):
+                reuse._source_bytes()
+
+    def test_replacement_between_path_check_and_open_refuses(self):
+        path = self.put('unit.py', b'x = 1\n')
+        replacement = self.put('replacement.txt', b'x = 1\n')
+        stamp = path.stat()
+        os.utime(replacement, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+        opener = Path.open
+        def opened(current, *args, **kwargs):
+            if current == path:
+                os.replace(replacement, path)
+            return opener(current, *args, **kwargs)
+        with mock.patch.object(Path, 'open', opened):
+            with self.assertRaisesRegex(TectonicsError, 'source changed during'):
+                reuse._source_bytes()
+
+    def test_nonregular_source_refuses_before_open(self):
+        path = self.put('unit.py', b'anything')
+        original = Path.lstat
+        def linked(current, *args, **kwargs):
+            result = original(current, *args, **kwargs)
+            if current == path:
+                values = list(result)
+                values[0] = stat.S_IFLNK | 0o777
+                return os.stat_result(values)
+            return result
+        with mock.patch.object(Path, 'lstat', linked), mock.patch.object(
+                Path, 'open', side_effect=AssertionError('must refuse before opening')):
+            with self.assertRaisesRegex(TectonicsError, 'unavailable or linked'):
+                reuse._source_bytes()
+
+    def test_link_replacement_after_read_refuses(self):
+        path = self.put('unit.py', b'anything')
+        original = Path.lstat
+        calls = 0
+        def switched(current, *args, **kwargs):
+            nonlocal calls
+            result = original(current, *args, **kwargs)
+            if current == path:
+                calls += 1
+                if calls == 2:
+                    values = list(result)
+                    values[0] = stat.S_IFLNK | 0o777
+                    return os.stat_result(values)
+            return result
+        with mock.patch.object(Path, 'lstat', switched):
             with self.assertRaisesRegex(TectonicsError, 'source changed during'):
                 reuse._source_bytes()
 

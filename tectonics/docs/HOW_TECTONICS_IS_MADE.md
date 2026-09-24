@@ -33,6 +33,21 @@ their location inside this package does not make all downstream science tectonic
 
 ## What “we checked it” means
 
+The new [W12 runnable assembly](W12_ASSEMBLY.md) checks the fourth question below:
+can the instruments actually be used together? Its public example starts with
+described geology, samples material columns, evolves their cooling/compaction,
+and calculates the elastic response. It then saves the real fields through the
+Atlas graph and lets a separate read-only operation inspect them. Other native
+tectonics workflows can export their identified fields through the same storage
+boundary without inventing a physical connection between incompatible models.
+
+We compare this assembled answer with calling the existing calculations directly,
+and compare an uninterrupted run with stopping, closing the store and resuming.
+All fields and identities must agree. Cache restoration must still detect missing
+physical data; “the cache says done” is not enough. This checks the wiring and
+recovery, while the methods' existing mathematical and physical checks still
+answer whether each instrument models the right thing.
+
 There are four different questions, and a good answer to one cannot substitute
 for an answer to another:
 
@@ -93,6 +108,14 @@ surface must be accounted for. Tests include seams and poles. The PB2002 referen
 is a separate Earth dataset, not Atlas output. See `test_w01_geometry.py`,
 `test_w01_boundaries.py`, `test_w01_spherical_atlas.py` and
 [the bounded W01 assessment](../evidence/w01-bounded-validation.md).
+
+**Random new worlds:** [the candidate-layout route](NEW_WORLD_LAYOUT.md) now
+varies plate sizes as well as geometry. A seed chooses explicit perturbations
+of the exposed reference sizes, then connected cuts group a shared spherical
+mosaic. Different sorted areas demonstrate changes that cannot be explained by
+rotating or renaming the same map. The variation width is a disclosed engineering
+assumption; crust and motion must subsequently be made physically compatible.
+Insufficient resolution produces a recorded refusal, not erased small plates.
 
 ## 3. Put described geology onto a computational grid
 
@@ -371,6 +394,13 @@ Exact result reuse requires the same relevant request. Saved arrays are compress
 losslessly and published atomically: a half-written result must not masquerade as
 a completed state. Changing source or physical inputs invalidates the applicable
 reuse rather than silently accepting an old result.
+
+The latest performance pass reduces the cost of these safeguards without skipping
+them: each source file is still read, but repeated filesystem queries are combined;
+the geological connection keeps one suitable verifier rather than rebuilding it;
+and checkpoint writing avoids an unnecessary temporary array copy. The measured
+workflow savings and exact comparison scope are in the
+[W11 record](OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026).
 
 **Outputs:** dated snapshots, complete result arrays, provenance, resource/timing
 records and restartable supported histories.

@@ -113,6 +113,23 @@ class StorageProfileTests(unittest.TestCase):
         self.store.put(key('types'),arrays)
         for name,a in arrays.items():self.assert_bytes(a,self.store.get(key('types'))[name])
 
+    def test_multichunk_layouts_preserve_c_order_bytes_and_detach_input(self):
+        base=np.arange(2054.,dtype='f8').reshape(13,158)
+        arrays={'contiguous':base.copy(), 'fortran':np.asfortranarray(base),
+                'reversed':base[::-1,::-1], 'strided':base[:,::2],
+                'big_endian':base.astype('>f8'),
+                'signed_zeros':np.resize(np.array([0.,-0.]),base.shape)}
+        expected={k:a.astype(a.dtype.newbyteorder('<')).tobytes(order='C')
+                  for k,a in arrays.items()}
+        shapes={k:a.shape for k,a in arrays.items()}
+        self.store.put(key('layouts'),arrays)
+        for a in arrays.values():a[...] = 99
+        restored=self.store.get(key('layouts'))
+        for name,a in restored.items():
+            self.assertEqual(a.shape,shapes[name])
+            self.assertEqual(a.tobytes(),expected[name])
+            with self.assertRaises(ValueError):a.setflags(write=True)
+
     def test_dictionary_frames_are_self_contained(self):
         a=np.sin(np.linspace(0,10,32768))
         compression=Compression(use_dict=True)

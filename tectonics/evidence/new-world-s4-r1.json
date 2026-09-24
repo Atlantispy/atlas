@@ -1,0 +1,241 @@
+{
+  "schema": "atlas.new-world-s4-measurement.v1",
+  "platform": "win32",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "measurement": "perf_counter wall seconds; same Windows process; three pairs; first includes lazy initialisation",
+  "small_samples": [
+    {
+      "support_patches": 192,
+      "plates": 6,
+      "structure_seconds": 0.4017836000130046,
+      "layout_seconds": 0.6915070999966701,
+      "motion_seconds": 0.9316680999909295,
+      "save_seconds": 0.46827360001043417,
+      "view_seconds": 0.004963699990184978,
+      "generate_save_view_seconds": 2.4981961000012234,
+      "restore_view_seconds": 0.35644880001200363,
+      "archive_bytes": 327172,
+      "archive_sha256": "2e9e035be2aade316fa1109dcd29743f22e8c1b767a70d192133b7510f3ce8b9",
+      "view_bytes": 160059,
+      "motion_id": "7804f9ecf0bb3a75bdd035723da712c92eb4cbba423b76f431c1a6b33b822c42",
+      "project_id": "ccbf571dad9a48d7a4608661169396218395b2141556140c55ec6ae414ecc3a5",
+      "motion_record_bytes": 94330,
+      "segments": 138,
+      "junctions": 8,
+      "diagnostics": {
+        "accounted_workspace_peak_bytes": 13227264,
+        "achieved_boundary_rms_cm_year": 4.984454283515243,
+        "constraint_rank": 8,
+        "continental_affinity": 4,
+        "continental_boundary_rms_m_s": 1.2585369212256695e-9,
+        "max_junction_residual_m_s": 8.271806125530277e-25,
+        "own_area_rate_sr_s": {
+          "plate-000000": 0,
+          "plate-000001": 1.460547028919289e-31,
+          "plate-000002": -1.1892617406591181e-32,
+          "plate-000003": -1.71407765050464e-32,
+          "plate-000004": -3.7844523407209185e-32,
+          "plate-000005": 2.3881531310401725e-32
+        },
+        "relative_degrees_of_freedom": 7,
+        "relative_prior_adjustment": 0.8080452358829903,
+        "target_boundary_rms_cm_year": 4.984454283515243
+      }
+    },
+    {
+      "support_patches": 192,
+      "plates": 6,
+      "structure_seconds": 0.1834311999991769,
+      "layout_seconds": 0.7912498999939999,
+      "motion_seconds": 0.4871205999952508,
+      "save_seconds": 0.3961435000092024,
+      "view_seconds": 0.005134099992574193,
+      "generate_save_view_seconds": 1.8630792999902042,
+      "restore_view_seconds": 0.33760410000104457,
+      "archive_bytes": 327172,
+      "archive_sha256": "318868f92bfef2cfdbeece9a31ce0932e748068b85328da770858527d483e169",
+      "view_bytes": 160059,
+      "motion_id": "7804f9ecf0bb3a75bdd035723da712c92eb4cbba423b76f431c1a6b33b822c42",
+      "project_id": "c2a4cc0e822d3bc52e0af4fc87c13ebeed8277ff5e9c830e7532753e3d780be1",
+      "motion_record_bytes": 94330,
+      "segments": 138,
+      "junctions": 8,
+      "diagnostics": {
+        "accounted_workspace_peak_bytes": 13227264,
+        "achieved_boundary_rms_cm_year": 4.984454283515243,
+        "constraint_rank": 8,
+        "continental_affinity": 4,
+        "continental_boundary_rms_m_s": 1.2585369212256695e-9,
+        "max_junction_residual_m_s": 8.271806125530277e-25,
+        "own_area_rate_sr_s": {
+          "plate-000000": 0,
+          "plate-000001": 1.460547028919289e-31,
+          "plate-000002": -1.1892617406591181e-32,
+          "plate-000003": -1.71407765050464e-32,
+          "plate-000004": -3.7844523407209185e-32,
+          "plate-000005": 2.3881531310401725e-32
+        },
+        "relative_degrees_of_freedom": 7,
+        "relative_prior_adjustment": 0.8080452358829903,
+        "target_boundary_rms_cm_year": 4.984454283515243
+      }
+    },
+    {
+      "support_patches": 192,
+      "plates": 6,
+      "structure_seconds": 0.18758289999095723,
+      "layout_seconds": 0.7463110000098823,
+      "motion_seconds": 0.4710297999990871,
+      "save_seconds": 0.3824076999881072,
+      "view_seconds": 0.004888100011157803,
+      "generate_save_view_seconds": 1.7922194999991916,
+      "restore_view_seconds": 0.3472194999922067,
+      "archive_bytes": 327172,
+      "archive_sha256": "c80a9952261e11f95d66cdfb49edf76fd324300c37198654ab53c0e4ab2b42cd",
+      "view_bytes": 160059,
+      "motion_id": "7804f9ecf0bb3a75bdd035723da712c92eb4cbba423b76f431c1a6b33b822c42",
+      "project_id": "dde0cd887f7fcaf67a6c0007dc60e96854977c645418d507c003d567ec85a0f8",
+      "motion_record_bytes": 94330,
+      "segments": 138,
+      "junctions": 8,
+      "diagnostics": {
+        "accounted_workspace_peak_bytes": 13227264,
+        "achieved_boundary_rms_cm_year": 4.984454283515243,
+        "constraint_rank": 8,
+        "continental_affinity": 4,
+        "continental_boundary_rms_m_s": 1.2585369212256695e-9,
+        "max_junction_residual_m_s": 8.271806125530277e-25,
+        "own_area_rate_sr_s": {
+          "plate-000000": 0,
+          "plate-000001": 1.460547028919289e-31,
+          "plate-000002": -1.1892617406591181e-32,
+          "plate-000003": -1.71407765050464e-32,
+          "plate-000004": -3.7844523407209185e-32,
+          "plate-000005": 2.3881531310401725e-32
+        },
+        "relative_degrees_of_freedom": 7,
+        "relative_prior_adjustment": 0.8080452358829903,
+        "target_boundary_rms_cm_year": 4.984454283515243
+      }
+    }
+  ],
+  "larger_single_sample": {
+    "support_patches": 1024,
+    "plates": 12,
+    "structure_seconds": 0.18477229999552947,
+    "layout_seconds": 3.295323800004553,
+    "motion_seconds": 0.7296913999889512,
+    "save_seconds": 0.4639026000077138,
+    "view_seconds": 0.016506899992236868,
+    "generate_save_view_seconds": 4.690196999988984,
+    "restore_view_seconds": 1.7164746000053128,
+    "archive_bytes": 1359367,
+    "archive_sha256": "4d02b2fb47f3ede7dce7777398f4289c8a5eefe41071fcc045510a74de2ffafa",
+    "view_bytes": 490949,
+    "motion_id": "bdd457126897e554eb40a18fb191eb9d434b16484b04a312deec690ec166a2c3",
+    "project_id": "3be95c40cc5aab7af95a1dedae4cc18969981f61b6f4782ee3fa242ee544a4da",
+    "motion_record_bytes": 270394,
+    "segments": 431,
+    "junctions": 20,
+    "diagnostics": {
+      "accounted_workspace_peak_bytes": 30122496,
+      "achieved_boundary_rms_cm_year": 4.9844542835152446,
+      "constraint_rank": 20,
+      "continental_affinity": 4,
+      "continental_boundary_rms_m_s": 1.1293475906500844e-9,
+      "max_junction_residual_m_s": 1.6543612251060553e-24,
+      "own_area_rate_sr_s": {
+        "plate-000000": 0,
+        "plate-000001": 2.489715842951218e-32,
+        "plate-000002": 5.0194549175592334e-33,
+        "plate-000003": 6.943475859120734e-32,
+        "plate-000004": 1.9500040686920763e-32,
+        "plate-000005": -4.274661696878232e-33,
+        "plate-000006": -8.244183868192611e-32,
+        "plate-000007": 3.881952544155522e-33,
+        "plate-000008": -7.665201178661199e-32,
+        "plate-000009": -1.6948183510607676e-32,
+        "plate-000010": -4.4296388720906425e-33,
+        "plate-000011": 6.848185585065676e-32
+      },
+      "relative_degrees_of_freedom": 13,
+      "relative_prior_adjustment": 0.8198261539309496,
+      "target_boundary_rms_cm_year": 4.984454283515243
+    }
+  },
+  "mean_generate_save_view_seconds": 2.05116496666354,
+  "mean_restore_view_seconds": 0.34709080000175163,
+  "mean_saved_seconds": 1.7040741666617882,
+  "reuse_saving_percent": 83.0783576336946,
+  "scientific_scope": "initial configuration only; no time evolution; no comparison to an old motion implementation",
+  "source_sha256": {
+    "new_world_motion.py": "5c34f558a30e886df7f1ea65f7b97f24d50d53505a8d97e115cb85b92147c1cc",
+    "new_world_arcs.py": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+    "new_world_project.py": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+    "new_world_session.py": "5d383b4ce0516f78853d2a2c6e5448e75830947cba4b4962dbdf5de4e957caee",
+    "new_world_structure.py": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0"
+  },
+  "fixture": "task-owner/work/projects/Kinematic world.atlas",
+  "status": "BACKEND_COMPLETE_UI_IN_PROGRESS",
+  "seed_hex": "00000000000000000000000000000029",
+  "settings": {
+    "radius_m": 6371000,
+    "gravity_m_s2": 9.81,
+    "continental_fraction": 0.3,
+    "max_work_bytes": 134217728,
+    "max_wall_seconds": 30
+  },
+  "verification": {
+    "motion": {
+      "passed": 11,
+      "seconds": 3.194
+    },
+    "arcs": {
+      "passed": 6,
+      "seconds": 0.619
+    },
+    "project_initial": {
+      "passed": 15,
+      "seconds": 8.807
+    },
+    "session_initial": {
+      "passed": 14,
+      "seconds": 6.12
+    },
+    "changed_integration_checks": {
+      "passed": 8,
+      "includes": "v3 exact restore, old inline compatibility, receipt caps/integrity/materialised pairing, deadline cancellation without save, native edge-index mapping, genuine 1024-patch save/restore",
+      "large_archive_test_seconds": 7.13
+    },
+    "static_source_maps": 13,
+    "static_required_paths": 41,
+    "static_suite_reused": {
+      "passed": 30,
+      "skipped": 1,
+      "reason": "Windows symlink privilege; static inventory/test sources unchanged"
+    },
+    "scope": "Focused owner/integration checks only; test groups overlap; no full-suite or evolution campaign"
+  },
+  "discovered_and_corrected": [
+    "Pure sliding misclassified by floating dot-product signs: now roundoff-normal unresolved.",
+    "Tiny-interval speed integral cancellation: positive midpoint decomposition and nonnegative scalar sums.",
+    "Achieved RMS copied target: now independently measured after scaling.",
+    "Native cancellation could map to INTERNAL_ERROR: now TIME_LIMIT without save.",
+    "Motion native edge indices absent from view mapping: now exported explicitly.",
+    "1024-patch layout report exceeded64KiB project manifest: full report now content-addressed native receipt.",
+    "1024-patch native atlas metadata exceeded default1MiB: explicit adapter2MiB cap, same totalstore and projectmanifest bounds."
+  ],
+  "large_storage_evidence": {
+    "native_atlas_metadata_bytes": 1140785,
+    "layout_report_bytes": 83573,
+    "project_manifest_bytes": 3370,
+    "native_metadata_cap_bytes": 2097152,
+    "project_manifest_cap_bytes": 65536
+  },
+  "notes": [
+    "Timing percentages compare restoring identical output with rebuilding, not an algorithmic solver speedup.",
+    "Small-case first sample includes lazy initialisation; only three pairs.",
+    "Large case is one representative sample, not a scalability campaign.",
+    "Archive IDs differ across regenerations because timing receipts differ; motion ID is identical in all three small runs."
+  ]
+}

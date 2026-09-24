@@ -101,8 +101,13 @@ class RegionalGeologicalInputs(RegionalMechanicalSnapshot):
     @property
     def homogeneous_material(self): return self.descriptor()['homogeneous_material']
 
-    def verify(self, cancel=None):
-        """Fresh source/runtime comparison, without retaining an open context."""
+    def verify(self, cancel=None, *, context=None):
+        """Verify all content and live source/runtime bindings.
+
+        A prepared caller may lend its open same-backend execution context.
+        Identity access still rereads sources and verifies loaded implementations;
+        only repeated identity construction is avoided. The caller owns closure.
+        """
         _cancel(cancel)
         d = self.descriptor()
         identity = _hash({'metadata': d, 'arrays': {
@@ -110,7 +115,13 @@ class RegionalGeologicalInputs(RegionalMechanicalSnapshot):
             for key, shape, raw in self._fields}})
         if identity != self.binding_id:
             raise TectonicsError('geological input identity mismatch')
-        with ExecutionContext(d['execution_backend']) as context:
+        if context is None:
+            with ExecutionContext(d['execution_backend']) as fresh:
+                if fresh.identity != d['execution_id']:
+                    raise TectonicsError('geological source/runtime changed; no automatic rebind')
+        else:
+            if type(context) is not ExecutionContext or context.backend != d['execution_backend']:
+                raise TectonicsError('geological verification requires a same-backend execution context')
             if context.identity != d['execution_id']:
                 raise TectonicsError('geological source/runtime changed; no automatic rebind')
         _cancel(cancel)

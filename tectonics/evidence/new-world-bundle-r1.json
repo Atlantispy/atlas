@@ -1,0 +1,86 @@
+{
+  "schema": "atlas.world-bundle-evidence.v1",
+  "date": "2026-09-24",
+  "status": "PASS",
+  "scope": "Backend portable initial world and selected stable prepared regional job prefixes; UI integration handed to its owner.",
+  "platform": "Windows; CPython 3.12.14; existing declared native environment",
+  "current_wrapper_sha256": "4dda587a12cfc123912305e98160ab6a02f82bc00486973e2e5f6cebf0e8c79a",
+  "test_sha256": "84264fd85d1847e1cb6418b4bf58df95160821924c2e1e4504b09f787b6fb639",
+  "measured_wrapper_sha256": "7304f0508d4e47c25d552c31d535146bfc47a1d7418866e2249cd46ab0a18fa2",
+  "code_change_after_native_measurement": "Rollback-only ancestor identity checks added. All success-path scientific/job/storage sources unchanged. Final wrapper reads the retained partial bundle successfully; twelve focused guards include rollback. Native campaign not replayed.",
+  "sources": {
+    "adapters": {
+      "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+      "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2",
+      "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+      "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+      "new_world_project.py": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0"
+    },
+    "evolution": {
+      "adapters": {
+        "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+        "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+        "new_world_project": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+        "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+        "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec",
+        "new_world_motion": "5c34f558a30e886df7f1ea65f7b97f24d50d53505a8d97e115cb85b92147c1cc",
+        "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1"
+      },
+      "native_execution_id": "2609755f3d0bd7481efaebacb52ed50940e5d7f4743284eaa21f08801ff33052"
+    }
+  },
+  "raw_evidence": {
+    "save_sha256": "38e5d75de02ce07689057981c567d58b3b9437506a66b5e1f34fedb2d61ad4c1",
+    "resume_sha256": "8635101af9e5f386b1d062ac111a68e6bf80c5f42ea1343e190ff3d46281c9ff"
+  },
+  "original_world_sha256": "f6eeeae6c347c91586412b211fc62185dd3b01463407885fabfa047efbb88fcc",
+  "complete_archive": {
+    "sha256": "2ec70e766d41891a181a1d6b6eafb13f66ec367a4e86a260d6c3fa5494e73dd1",
+    "bytes": 411515,
+    "bundle_id": "9332c466ed37b762fda8b64b6e24ca51f37af68932cc424d12ef47bd002ab965",
+    "save_s": 1.8454335000133142,
+    "load_s": 0.916798899997957
+  },
+  "partial_archive": {
+    "sha256": "5fdf81e17d1775e7848c657c38268047a7070b5be4e60f01e63c030404e28a94",
+    "bytes": 399059,
+    "bundle_id": "adaba3c98295bd965f9c830eb5a7843b8d21acc025628ff8972933960b89c682",
+    "save_s": 0.9083721000060905,
+    "load_s": 0.9785128999792505
+  },
+  "recovery": {
+    "fresh_process_resume_s": 2.4633297999971546,
+    "restored_outputs": 1,
+    "computed_outputs": 2,
+    "resampling_s": 0,
+    "complete_scientific_field_parity": true,
+    "immutable_inputs_and_prefix_preserved": true
+  },
+  "checks": {
+    "synthetic_methods": 12,
+    "passed": 12,
+    "elapsed_s": 0.645,
+    "actual_native_completed_result_exact": true,
+    "original_job_unchanged": true,
+    "save_and_load_forbid_prepare_and_evolution": true,
+    "current_wrapper_partial_native_cli_inspection": "PASS",
+    "legacy_initial_native_cli_inspection": "PASS",
+    "static_safety": {"maps":13,"paths":41,"passed":30,"skipped":1,"elapsed_s":0.117,"skip_reason":"Existing Windows symlink privilege limitation"}
+  },
+  "storage": {
+    "separate_world_plus_job_excluding_locks_bytes": 739792,
+    "bundle_bytes": 411515,
+    "saved_bytes": 328277,
+    "saved_percent": 44.37422951316046,
+    "interpretation": "Lossless removal of one duplicate frozen world, minus container/manifest overhead. Imported native jobs regain isolated frozen input copies. No solver speedup claimed."
+  },
+  "limitations": [
+    "Source/runtime-compatible data portability; no bundled runtime, source migration or repin.",
+    "Busy or stale-active/incoherent checkpoints must settle/recover before export.",
+    "No Linux run or full scientific suite; no generation of a new planet.",
+    "Existing initial-only and regional job modules remain byte-unchanged.",
+    "UI integration is pending; backend delivery is not an integrated Save/Load UI claim."
+  ]
+}

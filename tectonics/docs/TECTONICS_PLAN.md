@@ -41,14 +41,17 @@ checks, current free-surface convergence, exact-bound recovery reuse, authentica
 historical subduction evidence and an unfitted 50-bin observational heat-flow
 screen. The report distinguishes a completed assessment from unresolved physical
 claims; it does not close all V3/V4 evidence.
-[W11's bounded study](OPTIMISATION_REFERENCE.md#w11-bounded-matched-output-scale-assessment--24-september-2026)
-now confirms complete-output preparation reuse at three regional grid sizes,
-with explicit PF decisions and selected PT safeguards. Adaptive/distributed and
-general physical scale transfer remain outside that evidence. Continue through
-**W12 generator assembly/release acceptance** within the supported envelopes.
-Reuse shared machinery and test the
-tectonics integration boundary; do not implement downstream science under those
-headings. Generated-plate R5-R9 remains a separate future route, and R4.4 remains
+[W11's module-wide pass](OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026)
+now assesses all existing families and implemented workflow links, with measured
+source-check, geological-verifier and storage improvements, matched scientific
+outputs, explicit PF decisions and focused PT safeguards. The earlier three-grid
+study remains historical evidence, not a new current-source pass. Adaptive/distributed and
+general physical scale transfer remain outside that evidence.
+[W12 supported assembly/release acceptance](W12_ASSEMBLY.md) is now implemented:
+the public W01-W04 column route uses the retained Atlas graph/cache and native
+recovery, while typed exports cover the other supported native workflow forms.
+It reuses shared machinery and checks the tectonics integration boundary without
+implementing downstream science. Generated-plate R5-R9 remains a separate future route, and R4.4 remains
 held/incomplete. No benchmark, acceptance criterion or hold is changed.
 
 The ownership decision itself is documentation-only. Source locations, public imports,
@@ -63,7 +66,7 @@ host-space, material, work and reuse claims. Step 3 adds explicit absolute refer
 loads and state-bound elastic profiles, plus compatible regional input contracts;
 its numerical laws remain the existing W04/W07 solvers. Step 4 adds the missing
 history/recovery layer. W10's assessment now follows as documented above;
-W11's bounded assessment is recorded above; W12 supported assembly is next.
+W11's bounded assessment and W12's supported assembly are recorded above.
 
 ## Local implementation update: W01 Stage 8 (22 September 2026)
 
@@ -2675,6 +2678,14 @@ Then test adaptive support, conservative remapping, nonuniform layers, spherical
 **Deliverables/gate:** evaluated PF decisions, per-calculation execution cards, applicable PT01–PT14 results and, after relevant physical acceptance, a feasible measured workload envelope with independently checked scale transfer. No universal grid or machine is selected now. One-metre outputs remain eligible; output density and process resolution remain separate. GPUs, MPI and large symbolic frameworks are conditional choices, not mandatory next tasks.
 
 ### W12 — Production integration and release acceptance
+
+**24 September implementation:** [W12_ASSEMBLY.md](W12_ASSEMBLY.md) records the
+supported regime/export matrix, public source-checkout driver, explicit current
+R11/R24/R12 producer/consumer wiring, native restart closure, focused verification
+and finite resource envelope. W12 is complete at that stated technical integration
+scope, not an unrestricted world/field acceptance. Existing scientific holds and
+historical source-bound receipts remain unchanged. The six advanced W11 candidates
+remain deferred, not prerequisites silently started by this implementation.
 
 **Dependencies:** relevant W10 physical gates and W11 resource/scale gates. Only now select production adapters into Atlas’s wider graph and retained spatial outputs. Reuse existing execution, source identity and recovery systems where suitable; do not build another chain of copied module globals merely to attach the new work.
 

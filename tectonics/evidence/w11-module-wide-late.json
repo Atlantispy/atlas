@@ -1,0 +1,202 @@
+{
+  "schema": "atlas.w11-late-public-summary.v1",
+  "status": "PASS",
+  "repeats": 3,
+  "scope": "Setup-inclusive supported later workflow sequences; complete declared scientific array bytes and explicit physical metadata. Baseline/current source-derived IDs differ and are not claimed equal. W05 material transition accounts/support physical metadata; W06 complete scientific fields, export histories and margin physical/thermal metadata; W08 complete inventory, regional fields, footprint WKB and deformation; underthrust all arrays, polygons and non-source-derived descriptor; evolving mechanics all published arrays. This is not a complete metadata or execution-ID parity claim.",
+  "raw_receipt_sha256": "3791b7aa0a84f489fb7d4b004f8985baf14eeb724117ea9237c31b056d3216a1",
+  "presentation": "Timing fields reproduced from the measured receipt. Large scientific signatures remain in its hash-bound local raw record; this is not a new benchmark.",
+  "routes": [
+    {
+      "route": "w05",
+      "seconds": {
+        "baseline": [
+          1.299431099992944,
+          1.3297976000030758,
+          1.307059600003413
+        ],
+        "current": [
+          0.9548952000041027,
+          0.9700703999988036,
+          0.9902962000051048
+        ]
+      },
+      "baseline_median_s": 1.307059600003413,
+      "current_median_s": 0.9700703999988036,
+      "saved_s": 0.3369892000046093,
+      "saved_percent": 25.78223670930762,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 34322688,
+        "current": 34322688
+      }
+    },
+    {
+      "route": "w06-constant",
+      "seconds": {
+        "baseline": [
+          1.1182570999953896,
+          1.1573422999936156,
+          1.149944399992819
+        ],
+        "current": [
+          0.825490200004424,
+          0.9079136999935145,
+          0.8504109999921639
+        ]
+      },
+      "baseline_median_s": 1.149944399992819,
+      "current_median_s": 0.8504109999921639,
+      "saved_s": 0.2995334000006551,
+      "saved_percent": 26.047641955778523,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 35993440,
+        "current": 35993440
+      }
+    },
+    {
+      "route": "w06-history",
+      "seconds": {
+        "baseline": [
+          1.0634277000062866,
+          1.0893654999963474,
+          1.1403663999954006
+        ],
+        "current": [
+          0.7640006000001449,
+          0.7935181000066223,
+          0.7691707999911159
+        ]
+      },
+      "baseline_median_s": 1.0893654999963474,
+      "current_median_s": 0.7691707999911159,
+      "saved_s": 0.3201947000052314,
+      "saved_percent": 29.39277037929924,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 37611520,
+        "current": 37611520
+      }
+    },
+    {
+      "route": "w06-margin",
+      "seconds": {
+        "baseline": [
+          1.1372384000133025,
+          1.170287199987797,
+          1.2309206999925664
+        ],
+        "current": [
+          0.7769896000099834,
+          0.7808562999998685,
+          0.7667720000026748
+        ]
+      },
+      "baseline_median_s": 1.170287199987797,
+      "current_median_s": 0.7769896000099834,
+      "saved_s": 0.39329759997781366,
+      "saved_percent": 33.606929989656784,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 17096919,
+        "current": 17096919
+      }
+    },
+    {
+      "route": "w08-joined",
+      "seconds": {
+        "baseline": [
+          0.9450157999963267,
+          0.9709317999950144,
+          1.0339373999886448
+        ],
+        "current": [
+          0.6776637000002665,
+          0.7050464000058128,
+          0.7518271000008099
+        ]
+      },
+      "baseline_median_s": 0.9709317999950144,
+      "current_median_s": 0.7050464000058128,
+      "saved_s": 0.2658853999892017,
+      "saved_percent": 27.3845598620384,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 6874133,
+        "current": 6874133
+      }
+    },
+    {
+      "route": "underthrust",
+      "seconds": {
+        "baseline": [
+          0.49467499999445863,
+          0.5091836999927182,
+          0.5018603000062285
+        ],
+        "current": [
+          0.40123649999441113,
+          0.3833212000026833,
+          0.4049118999973871
+        ]
+      },
+      "baseline_median_s": 0.5018603000062285,
+      "current_median_s": 0.40123649999441113,
+      "saved_s": 0.10062380001181737,
+      "saved_percent": 20.050161371714108,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 9000236,
+        "current": 9000236
+      }
+    },
+    {
+      "route": "evolving-regional",
+      "seconds": {
+        "baseline": [
+          0.7038863999914611,
+          0.7309439000091515,
+          0.7220928000024287
+        ],
+        "current": [
+          0.49359959999856073,
+          0.5007330999942496,
+          0.5316204999980982
+        ]
+      },
+      "baseline_median_s": 0.7220928000024287,
+      "current_median_s": 0.5007330999942496,
+      "saved_s": 0.22135970000817906,
+      "saved_percent": 30.655298045823823,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 21608740,
+        "current": 21608740
+      }
+    },
+    {
+      "route": "evolving-flexure",
+      "seconds": {
+        "baseline": [
+          3.2897421999950893,
+          3.2995922999980394,
+          3.5954129000019748
+        ],
+        "current": [
+          2.2887208000029204,
+          2.387790099994163,
+          2.522895799993421
+        ]
+      },
+      "baseline_median_s": 3.2995922999980394,
+      "current_median_s": 2.387790099994163,
+      "saved_s": 0.9118022000038764,
+      "saved_percent": 27.633783725474753,
+      "exact_scientific_field_parity": true,
+      "peak_accounted_bytes": {
+        "baseline": 907648,
+        "current": 907648
+      }
+    }
+  ]
+}

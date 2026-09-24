@@ -2,6 +2,85 @@
 
 Source date: 15 September 2026. WORKING NON-CANON. This page is a public technical handover, not an accepted scientific model or a world dataset.
 
+Portable world backend, 24 September 2026:
+[one combined file](../tectonics/docs/NEW_WORLD_BUNDLE.md) now stores the exact
+initial world once plus selected regional checkpoints/results. Complete and
+partial native save/load pass; imported partial continuation restores one output
+and calculates only two missing outputs with exact scientific parity and no
+resampling. The measured complete file is 411,515 bytes, saving 328,277 bytes /
+44.3742% versus separate world-plus-job files. Twelve focused guards pass; legacy
+initial files still load. Existing source-bound producers remain unchanged.
+UI integration is delegated to its owner and remains pending, not claimed here.
+
+New-world Step 7 combined acceptance, 24 September 2026:
+[three predeclared cases](../tectonics/docs/NEW_WORLD_ACCEPTANCE.md) pass actual
+create/save/reopen/regional-evolve/fresh-process-resume, exact scientific parity,
+physical invariants and non-cosmetic seed diversity. Reused bound S2-S5 and UI
+evidence rather than replaying their suites. Creation takes 3.350658-4.358053 s;
+identical-view reopening saves 2.248330-2.986534 s (63.3069-73.3484%). Completed
+regional reuse takes 0.750637-0.778608 s. All production/native sources remain
+unchanged. This is Windows acceptance; Linux is unavailable locally. Next is
+portable packaging of initial world plus evolved results, currently stored
+separately. Geological morphology and global-evolution claims remain unchanged.
+
+New-world Step 5 backend and UI connection, 24 September 2026:
+[generated regional evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md) now
+connects actual S2/S3/S4 state through native S5 sampling and full-vector W08
+material deformation to explicit dry local isostatic surface change. The saved
+planet is an initial condition, not a finished randomly decorated landscape.
+Twenty-seven focused methods pass; fresh-process prefix recovery matches every
+scientific field without resampling. Three times in the bounded actual generated
+case take 4.937890 s fresh or 0.788870 s verified reuse (84.0241% less); native prepared
+reuse saves 62.1370% in its separate three-output comparison. Original archives,
+native sources, unknowns and W12 remain unchanged. UI integration is closed using
+132 focused checks, an actual native/browser run and matching scientific output
+identities; regional controls and saved-time/field/location/recovery views work.
+This is a regional continuation, not global plate-network evolution.
+
+New-world Step 4 backend, 24 September 2026:
+[initial motion](../tectonics/docs/NEW_WORLD_MOTION.md) now reconciles seeded Euler
+rotations with actual continental boundary intersections and instantaneous
+junction compatibility. Exact arc signs/ranges, stable speed integrals, numerical
+ambiguity, inherited unknowns and original ages are retained. Native project v3
+restores complete motion without regeneration; report receipts avoid overflowing
+the unchanged manifest limit at 1024 patches. UI v3 integration is with its owner.
+Step 4 motion UI is now integrated against the owner's 110 focused checks and actual
+native/browser/load/save evidence. Step 5 backend is recorded above.
+
+New-world Step 3, 24 September 2026: [initial lithosphere](../tectonics/docs/NEW_WORLD_STRUCTURE.md)
+now joins seeded, grid-independent spherical crust provinces, material columns,
+formation/cooling ages, inherited traces and compatible initial thermal profiles.
+Native conservative sampling, W03 cooling and the material/Zstd store are reused.
+Project v2 persists the actual precursor; legacy layout-only files still restore
+without regeneration or fabricated geology. Thirty-six focused methods pass.
+Loaded small-case create/save versus restore is 1.163 vs 0.324 s (72.11% less);
+this is recovery reuse, not a faster dynamics solver. Step 3 UI integration is
+closed using the owner's 73 focused checks and actual native/browser evidence.
+
+W12 supported tectonics assembly, 24 September 2026:
+[implementation, runnable example and release scope](../tectonics/docs/W12_ASSEMBLY.md)
+now connect the real W01-W04 column route to the retained R11/R24/R12 graph and
+cache, with a read-only consumer of actual fields. Seventeen supported native
+output forms have typed, source-bound exports and lossless reopened-store checks.
+The assembly preserves full native restart dependencies and computes only missing
+outputs; it does not retarget the historical R31 tectonics recipe. Current-code
+Windows evidence covers the public process-restart example; physical evidence and
+unimplemented scientific joins retain their native bounds. The six further W11
+optimisation candidates are listed but remain deferred. Changes are local source
+delivery, not a Git push, release publication, whole-world run or canon decision.
+
+Module-wide tectonics W11 pass, 24 September 2026:
+[linked-workflow optimisation and coverage](../tectonics/docs/OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026)
+now supersedes the earlier narrow performance-study scope. Four production files
+reduce exact-source metadata overhead, retain the correct geological verifier
+inside W07 and remove a contiguous checkpoint copy. Measured linked routes save
+20–37%; default Zstd writes save 8.41% in the 10 MiB case. Complete scientific
+fields remain matched; exact identity/metadata comparisons and their scope are
+recorded separately. 278 focused checks pass after repairing skipped-subtest
+reporting; three environment-dependent skips remain explicit. No physics,
+tolerance, full-suite replay, held campaign or automatic historical rebind changed.
+Supported W12 assembly is now recorded above.
+
 Comprehensive tectonics review and correction, 24 September 2026:
 [all-level findings and evidence](../tectonics/docs/W10_VALIDATION.md#comprehensive-review-24-september-2026)
 now accompany [How Atlas tectonics is made](../tectonics/docs/HOW_TECTONICS_IS_MADE.md).

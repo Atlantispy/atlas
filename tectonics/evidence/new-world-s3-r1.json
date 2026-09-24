@@ -1,0 +1,37 @@
+{
+  "schema": "atlas.new-world-s3-measurement.v1",
+  "status": "PASS",
+  "scope": "Fixed seed 41; six plates; 192 support cells; continental fraction 0.3; Earth radius; no evolution. Creation/save versus verified native restore, not faster physics.",
+  "runtime": {"python": "3.12.14", "system": "Windows", "max_work_bytes": 134217728, "max_wall_seconds": 30.0},
+  "source_binding": {
+    "new_world_structure.py": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+    "new_world_thermal.py": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec",
+    "new_world_project.py": "7526f62b80bb3f96113adc1979e0e500773f23307d69b65aa1a4b2cd38340478",
+    "new_world_session.py": "31921136a6fa6aa00bf4c3155a50454349e8e656853fc313da3f5a0256d6ecfb"
+  },
+  "execution_id": "baf0221244ec6374219152e303b7a757caf609e55091b712102531f0e1e5745f",
+  "project_id": "3b0a9ce827cc59da32b5fb9fc0ef8ed74c3fa18ac64c4aa1c4b185cd83e84a6a",
+  "structure_id": "9582b423fbd525ed517c4967997839cb12e0b34c9178708b556f2e006ca89517",
+  "native_state_id": "696ed885e8768bb08e0878c4c1b689f5bf11754a3e747d05ae6fbde91edb17f6",
+  "atlas_id": "1473289ae4c94b4556e94b528fabe8c14a064194bbe1992b3ddbb32a28211ac5",
+  "archive_sha256": "35629d880ba6b7e20d45487edd697c09e41ad45edcc31881d41b0c2f60b44a55",
+  "samples": [
+    {"structure_s": 1.0547261000028811, "layout_s": 0.6959454999887384, "save_s": 0.30652630000258796, "generate_and_save_s": 2.0571978999942075, "reopen_s": 0.28937450000375975, "archive_bytes": 313649, "view_bytes": 65824},
+    {"structure_s": 0.18448879999050405, "layout_s": 0.7183451000018977, "save_s": 0.23672179999994114, "generate_and_save_s": 1.1395556999923429, "reopen_s": 0.3213776000047801, "archive_bytes": 313649, "view_bytes": 65824},
+    {"structure_s": 0.19166310000582598, "layout_s": 0.7794053999969037, "save_s": 0.214876700003515, "generate_and_save_s": 1.1859452000062447, "reopen_s": 0.32714919999125414, "archive_bytes": 313649, "view_bytes": 65824}
+  ],
+  "interpretation": "First structure evaluation includes lazy scientific imports. All pairs exclude interpreter startup. Loaded-process comparison uses pairs 2 and 3 only; three-pair figures include the first-import cost once.",
+  "loaded_process": {"mean_structure_s": 0.18807594999816502, "mean_generate_and_save_s": 1.1627504499992938, "mean_reopen_s": 0.3242633999980171, "saved_s": 0.8384870500012767, "saved_percent": 72.11238232604305},
+  "three_pair_mean": {"structure_s": 0.4769593333330704, "generate_and_save_s": 1.4608995999975984, "reopen_s": 0.312633766666598, "saved_s": 1.1482658333310005, "saved_percent": 78.59991428109694},
+  "profile_nodes": {"background-thermal": 172, "province-0-thermal": 49, "province-1-thermal": 43, "province-2-thermal": 51},
+  "max_interpolation_error_bound_k": 0.039771736068015213,
+  "parity": "Complete structure receipt/view, native state and atlas IDs and project manifest matched.",
+  "checks": {
+    "thermal": {"passed": 6, "seconds": 0.007, "additional_changed_guard_checks_passed": 2},
+    "structure": {"passed": 6, "seconds": 4.502, "strengthened_per_cohort_conservation_recheck_seconds": 0.625},
+    "project": {"passed": 12, "seconds": 3.718},
+    "session": {"passed": 12, "seconds": 3.324},
+    "static_source_map": "PASS: 13 maps, 41 paths",
+    "coding_safety": {"passed": 30, "skipped": 1, "seconds": 0.109, "skip_reason": "Windows test environment cannot create a symlink"}
+  }
+}

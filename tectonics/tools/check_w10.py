@@ -80,18 +80,31 @@ class Measurements(unittest.TextTestResult):
         self.rows[test.id()]={'status':'INCOMPLETE'}
         super().startTest(test)
     def stopTest(self,test):
-        self.rows[test.id()]['seconds']=time.perf_counter()-self._starts.pop(test.id())
+        row=self.rows[test.id()]
+        if row['status']=='INCOMPLETE' and row.get('skipped_subtests'):
+            row['status']='PASS_WITH_SKIPPED_SUBTESTS'
+        row['seconds']=time.perf_counter()-self._starts.pop(test.id())
         super().stopTest(test)
     def addSuccess(self,test):
-        self.rows[test.id()]['status']='PASS';super().addSuccess(test)
+        row=self.rows[test.id()]
+        row['status']='PASS_WITH_SKIPPED_SUBTESTS' if row.get('skipped_subtests') else 'PASS'
+        super().addSuccess(test)
     def addFailure(self,test,err):
-        self.rows[test.id()]['status']='FAIL';super().addFailure(test,err)
+        self.rows.setdefault(test.id(),{})['status']='FAIL';super().addFailure(test,err)
     def addError(self,test,err):
-        self.rows[test.id()]['status']='ERROR';super().addError(test,err)
+        self.rows.setdefault(test.id(),{})['status']='ERROR';super().addError(test,err)
     def addSkip(self,test,reason):
-        self.rows[test.id()]['status']='SKIPPED';super().addSkip(test,reason)
+        self.rows.setdefault(test.id(),{}).update(status='SKIPPED',reason=reason)
+        # unittest sends a skipped subtest without startTest(subtest). Keep its
+        # separate record and disclose the gap on the enclosing successful test.
+        parent=getattr(test,'test_case',None)
+        if parent is not None and parent.id() in self.rows:
+            self.rows[parent.id()].setdefault('skipped_subtests',[]).append(test.id())
+        super().addSkip(test,reason)
     def addSubTest(self,test,subtest,err):
-        if err is not None: self.rows[test.id()]['status']='FAIL'
+        if err is not None:
+            status='FAIL' if issubclass(err[0],test.failureException) else 'ERROR'
+            if self.rows[test.id()]['status']!='ERROR':self.rows[test.id()]['status']=status
         super().addSubTest(test,subtest,err)
 
 

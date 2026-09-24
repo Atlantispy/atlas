@@ -1,5 +1,58 @@
 # Current scoped package: 0.1.0.dev42
 
+The [new-world step 1 contract](docs/NEW_WORLD_CONTRACT.md) provides reproducible
+128-bit seeds, Fixed/Auto settings, strict plan identities and safe save/load via
+`tools/new_world.py`. This prepares a configuration only; it does not generate a
+planet or send new-world settings to the fixed W12 column demonstration. Different
+physical inputs invalidate their configured scientific identity; independent
+random streams do not imply independent crust/plate physics.
+
+[New-world step 2](docs/NEW_WORLD_LAYOUT.md) adds variable plate-size targets and
+real connected spherical candidates, with explicit refusals and scale-aware
+morphology assessment. It reuses native sparse cuts without changing historical
+recipes or W12 source bindings.
+
+[Step 3](docs/NEW_WORLD_STRUCTURE.md) adds grid-independent crust, material and
+thermal initial conditions. [Step 4](docs/NEW_WORLD_MOTION.md) adds seeded,
+crust-conditioned plate rotations, whole-edge motion and first-order junction
+compatibility, persisted in native projects without regenerating on load.
+These are declared initial scenarios. [Step 5](docs/NEW_WORLD_EVOLUTION.md) now
+connects a real saved world to conservative native regional deformation and
+calculated crustal thickness/uplift, with immutable outputs and resumable jobs.
+It remains distinct from whole-planet evolution and the fixed W12 fixture.
+[Step 7 combined acceptance](docs/NEW_WORLD_ACCEPTANCE.md) now closes three fixed
+cross-seed/settings save/reopen/evolve/resume cases with exact scientific parity,
+genuine physical diversity and measured time/storage. Prior checks are reused;
+the new evidence is Windows-only.
+[Combined portable projects](docs/NEW_WORLD_BUNDLE.md) now have a tested backend
+for initial worlds plus saved/resumable regional results; UI integration is pending.
+
+[W12 supported assembly](docs/W12_ASSEMBLY.md) now provides a public runnable
+W01-W04 example, native interruption/recovery and a real Atlas graph/cache
+connection. Seventeen supported native output forms can be exported with their
+fields, units, masks and original identities. Start from the repository root:
+
+```text
+python -B tectonics/tools/run_tectonics.py --directory w12-demo
+python -B tectonics/tools/run_tectonics.py --directory w12-demo --resume
+```
+
+Use the declared compatible Python environment; the first directory must be new.
+The linked record explains the supported regime matrix, actual tests and recovery
+dependencies. The six advanced optimisation candidates remain deferred.
+
+To inspect one saved column result without running a simulation, the new
+[read-only UI bridge](docs/W12_ASSEMBLY.md#read-only-ui-connection) returns verified
+JSON fields, units, masks and native support through `tools/read_tectonics.py`.
+This backend reader does not itself provide a browser UI or simulation controls.
+
+The [module-wide W11 optimisation pass](docs/OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026)
+now covers existing tectonics families and their implemented connections. Cheaper
+exact source checks, W07 producer-context reuse and a checkpoint-copy removal
+improve the measured linked workflows by 20–37%, with matched scientific outputs.
+Default Zstd checkpoint writes improve 8.41% on the 10 MiB case. Physics and
+numerical gates are unchanged; timings and current focused checks are in the record.
+
 For a plain-English explanation of the implemented methods, outputs and checks,
 read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). The
 [validation record](docs/W10_VALIDATION.md) distinguishes implementation,
@@ -49,7 +102,8 @@ now measures existing preparation reuse at 8x8/16x16/24x24 regional grids:
 independent affine error checks and five paired repetitions per size. Fourteen
 selected execution safeguards pass; no new numerical shortcut or planetary
 extrapolation. Evidence destinations are now claimed before expensive work.
-Tectonics continues with W12 generator integration within these supported bounds.
+Tectonics W12 generator integration is implemented within these supported bounds;
+see the current assembly record above for the public route and export coverage.
 W09 Steps 4-5 are retained downstream work, not the
 next tectonics implementation. Existing shared thermal/load/accounting components
 remain available; mechanical response is not removed from tectonics.

@@ -826,9 +826,11 @@ class ArrayStore:
                     if projected > min(self.limits.max_chunks, self.limits.max_manifest_bytes // 68):
                         raise StoreError('too many chunks for the manifest budget')
                     ids = []
+                    # C-order views avoid a temporary chunk copy before capture's
+                    # detached bytes. Strided arrays keep bounded flat slicing.
+                    flat = np.asarray(a).reshape(-1) if a.flags.c_contiguous else a.flat
                     for start in range(0, a.size, width):
-                        # Only one flat chunk copied, including strided caller data.
-                        ids.append(capture(a.flat[start:start+width]))
+                        ids.append(capture(flat[start:start+width]))
                 descriptions[name] = {'dtype': dt.str, 'shape': list(shape), 'chunks': ids}
                 if len(meta_bytes) + projected * 68 + len(descriptions) * 256 > self.limits.max_manifest_bytes:
                     raise StoreError('projected manifest exceeds limit')

@@ -1,0 +1,133 @@
+{
+  "schema": "atlas.w12-assembly-acceptance.v1",
+  "date": "2026-09-24",
+  "status": "PASS_SUPPORTED_TECHNICAL_INTEGRATION",
+  "source_status": "WORKING NON-CANON",
+  "scope": "Public stationary W01-W04 column assembly through the retained graph, plus typed exports for 17 supported native output forms",
+  "physical_acceptance_added": false,
+  "whole_world_generation": false,
+  "publication_performed": false,
+  "base_commit": "8f6ba86724d775d5c840b79e47f4d68620b4e3ea",
+  "working_tree_changes_included": true,
+  "execution_identity": "baf0221244ec6374219152e303b7a757caf609e55091b712102531f0e1e5745f",
+  "column_execution_identity": "f4c60275ed5694b59145b377e32a88d8b837ebe616fe6044cbcdc107abd74f5d",
+  "new_source_sha256": {
+    "tectonics/src/atlas_tectonics/assembly.py": "99bb3dbd44dda1713857d3c5c8712b2889d024be88d1e9650f0066e9a17188c6",
+    "tectonics/src/atlas_tectonics/workflow_ports.py": "32a7bc22dd975de4f481006f0c791b0077234a7c1ee1a1320b1ba47176f6156c",
+    "tectonics/tools/run_tectonics.py": "38d9a61da76bed1fa40f042f3d8595fbf7e1bcd769f9e030b1b951ae3db6c26f",
+    "tectonics/tools/w12_graph.py": "8e7caeb63046e1e71f3c4c6d20e7c34ea714d8fe54a99cbc1aaab1dea2227403",
+    "tectonics/examples/w12_column_case.py": "9e263f37d63e1e9d4435b7b5c661f646b94e166a0704fa6c0df5899dd01277e0"
+  },
+  "graph": {
+    "adapter": "captured R11 contract / R24 executor / R12 authenticated store",
+    "binding_identity": "b71423faf3221ee47a98859813a3a53b88f756b6f5890678256eb973be9a41b9",
+    "plan_id": "d76e68bdd76fce98072c59af0ffe4e0850954a38844f53e709452e688e6ae566",
+    "legacy_registry_retargeted": false,
+    "historical_rebind": false,
+    "sources": {
+      "engineering/work/generator_runtime_r12/__init__.py": "9f603aa7fd8c0d8d631c4499173e565af1653dac93e657bc85cdaac5111c41ff",
+      "engineering/work/generator_upgrade_r24/__init__.py": "8fdc8abfd83c53eb97944a4d9c1be1f2ca3ea68be3ff9d7c3b8d7c7b75cf4394",
+      "engineering/work/generator_upgrade_r24/executor.py": "c31c85c4acd5ed21a432cbf28990eaf5172a62df716ec67c7394672312f44567",
+      "engineering/work/generator_runtime_r12/store.py": "b6dd119ddac8d8c142dc20bb0207772620ee20a99fc15a462f5dd7c25d5ee34a",
+      "engineering/work/generator_upgrade_r11/snapshot.py": "9177895ed0f8c614dbccffa0714d4ac9b7679e120be5ac7360dbdbc7f12b9ba0"
+    }
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "numba": "0.65.1",
+    "blosc2": "4.13.1",
+    "shapely": "2.1.2",
+    "linux_executed_in_this_pass": false
+  },
+  "focused_tests": {
+    "unique_w12_methods_passed": 29,
+    "graph_guards": {"selector": "test_w12_graph.W12GraphTests", "passed": 7, "seconds": 0.551},
+    "typed_descriptions": {
+      "selector": "test_w12_ports.WorkflowPortTests",
+      "passed": 8,
+      "scope": "Seven passing cases retained from initial 15.095 s run; repaired dry-water fixture passed separately in 1.882 s. W05 fixture alias replayed below."
+    },
+    "assembly": {
+      "selector": "test_w12_assembly.W12AssemblyTests",
+      "passed": 4,
+      "seconds": 54.076,
+      "scope": "Direct calculations, clean/incremental recovery, real graph cache, tamper/context/cancellation/dependency/budget/lifetime guards. Initial four-cell fixture rejected by W04 minimum; changed fixture to eight without weakening guards."
+    },
+    "publishing": {
+      "selector": "test_w12_publishing.W12PublishingTests",
+      "passed": 10,
+      "seconds": 37.396,
+      "route_count": 17,
+      "scope": "Final publisher helpers: every native descriptor, dependency, field spec and canonical stored byte survives reopening; W06 owner and explicit frame/runtime refusal cases."
+    },
+    "final_affected_seams": {
+      "passed": 5,
+      "seconds": 11.392,
+      "additional_unique_methods": 0,
+      "scope": "Three assembly refusal/resource cases after publisher changes, and the two W05 fixture users after test-discovery alias repair."
+    },
+    "test_collection": "29 methods discovered from test_w12_*.py; imported predecessor TestCases are not collected",
+    "coding_safety": {"selected_source_maps": 13, "required_paths": 41, "passed": 30, "skipped": 1, "seconds": 0.111, "scope": "Static source-only checks, not physics"},
+    "full_regression_suite_replayed": false,
+    "held_simulation_executed": false
+  },
+  "published_routes": [
+    "w01-w02-regional.v1", "w03-columns.v1", "w04-support.v1", "w05-extension.v1",
+    "w06-constant.v1", "w06-history.v1", "w06-margin.v1",
+    "w07-steady.v1", "w07-thermal.v1", "w07-surface.v1", "w08-joined.v1",
+    "tectonic-history-underthrust.v1", "tectonic-history-evolving-w04.v1", "tectonic-history-evolving-regional.v1",
+    "tectonic-underthrust.v1", "tectonic-evolving-w04.v1", "tectonic-evolving-regional.v1"
+  ],
+  "cli_campaign": {
+    "driver": "python -B tectonics/tools/run_tectonics.py",
+    "commands": [
+      "--directory PREFIX_DIR --stop-after 1",
+      "--directory PREFIX_DIR --resume",
+      "--directory CLEAN_DIR",
+      "--directory CLEAN_DIR --resume"
+    ],
+    "cells": 8,
+    "declared_outputs": 3,
+    "reported_seconds": [10.67569150000054, 20.0818689000007, 17.920495200000005, 6.072994300004211],
+    "computed_outputs": [2, 1, 3, 0],
+    "restored_native_outputs": [0, 2, 0, 0],
+    "warm_graph_reused_stage_ids": ["tectonics", "inspect"],
+    "warm_graph_computed_stage_ids": [],
+    "final_product_id": "4c98a4759460feefb01848432084f02b457983ff5bb53902bac1e56bee3a60b4",
+    "final_field_count": 6,
+    "final_array_bytes": 2056,
+    "full_product_clean_equals_resumed": true,
+    "full_product_clean_equals_warm": true,
+    "full_inspection_clean_equals_resumed": true,
+    "full_inspection_clean_equals_warm": true,
+    "comparison_method": "Parsed JSON structural equality; all field hashes/shapes/dtypes and nested native receipts included. Text-order comparison initially flagged the sorted warm-cache keys; semantic comparison passes without changing any simulation or acceptance rule.",
+    "timing_scope": "Case construction, native/graph execution, verification and store close; excludes interpreter/import startup and report serialisation",
+    "warm_saved_seconds": 11.847500899995794,
+    "warm_saved_percent": 66.11145935295242,
+    "timing_interpretation": "One illustrative fresh/warm pair, not a repeated controlled benchmark or new-simulation solver speedup. Initial construction and dependency verification still run. Prefix/restart figures are recovery evidence, not an incremental speedup claim."
+  },
+  "resources": {
+    "accounted_budget_bytes": 134217728,
+    "native_store_limit_bytes": 33554432,
+    "peak_accounted_fresh_bytes": 35238104,
+    "peak_accounted_warm_bytes": 25490448,
+    "all_runs_owned_reservations_released": true,
+    "closed_native_database_bytes": 180224,
+    "encoded_unique_chunk_payload_bytes": 8185,
+    "unique_chunks": 58,
+    "native_snapshots": 22,
+    "process_rss_measured": false,
+    "disk_note": "Native database limit is not a total-directory quota. Store statistics separately expose bounded journal/staging/backup allowances; graph cache and reports are separate."
+  },
+  "remaining_bounds": [
+    "W10 physical/field evidence and native supported-regime limits unchanged",
+    "No arbitrary heterogeneous W06-to-W07 or footprint-to-parcel scientific join",
+    "No W09 downstream surface-process completion or generated-plate R4.4 run",
+    "Generic exports are not self-sufficient native restarts",
+    "Explicit native frame identity checked where available; no inferred datum/calendar/support mapping",
+    "Six advanced optimisation candidates remain deferred"
+  ]
+}

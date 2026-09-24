@@ -76,4 +76,43 @@ class W10ProfileTests(unittest.TestCase):
                 with self.assertRaises(ValueError): w10.check_surface(path)
 
 
+class MeasurementReportingTests(unittest.TestCase):
+    def run_example(self, cls):
+        import io
+        return unittest.TextTestRunner(stream=io.StringIO(), resultclass=w10.Measurements).run(
+            unittest.defaultTestLoader.loadTestsFromTestCase(cls))
+
+    def test_skipped_subtest_is_not_an_error_or_an_unqualified_pass(self):
+        class Example(unittest.TestCase):
+            def test_case(self):
+                with self.subTest(part='unavailable'):
+                    self.skipTest('explicit platform gap')
+                with self.subTest(part='available'):
+                    self.assertEqual(1,1)
+        result=self.run_example(Example)
+        self.assertEqual((result.testsRun,len(result.errors),len(result.failures),len(result.skipped)),(1,0,0,1))
+        row=result.rows[Example('test_case').id()]
+        self.assertEqual(row['status'],'PASS_WITH_SKIPPED_SUBTESTS')
+        self.assertEqual(result.rows[row['skipped_subtests'][0]]['status'],'SKIPPED')
+        self.assertGreaterEqual(row['seconds'],0.)
+
+    def test_class_fixture_error_has_a_record_without_start_test(self):
+        class Example(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls): raise RuntimeError('fixture unavailable')
+            def test_case(self): pass
+        result=self.run_example(Example)
+        self.assertEqual((result.testsRun,len(result.errors)),(0,1))
+        self.assertEqual(next(iter(result.rows.values()))['status'],'ERROR')
+
+    def test_subtest_error_is_not_reported_as_assertion_failure(self):
+        class Example(unittest.TestCase):
+            def test_case(self):
+                with self.subTest(part='error'): raise RuntimeError('broken fixture')
+                with self.subTest(part='failure'): self.fail('mismatch')
+        result=self.run_example(Example)
+        self.assertEqual((len(result.errors),len(result.failures)),(1,1))
+        self.assertEqual(result.rows[Example('test_case').id()]['status'],'ERROR')
+
+
 if __name__=='__main__': unittest.main()

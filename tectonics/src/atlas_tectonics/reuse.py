@@ -19,6 +19,7 @@ import sys
 import types
 import importlib
 import os
+import stat
 import errno
 import time
 import threading
@@ -135,12 +136,18 @@ def _source_bytes():
     out = {}
     encoded_bytes = len(_json({'schema': _SOURCE_INVENTORY_SCHEMA, 'files': {}}))
     buffer = memoryview(bytearray(_SOURCE_BLOCK_BYTES))
+    root_parts = len(root.parts)
     for p in sorted(paths):
-        if p.is_symlink() or not p.is_file():
-            raise TectonicsError("runtime/source file unavailable or linked")
-        name = p.relative_to(root).as_posix()
+        # rglob yields descendants of this root. Reuse their parsed components
+        # rather than repeatedly walking all absolute-path ancestors.
+        name = '/'.join(p.parts[root_parts:])
         digest, size = hashlib.sha256(), 0
         try:
+            # One non-following stat answers both regular-file and link checks.
+            # These are fresh per capture, never an mtime-based digest cache.
+            entry = p.lstat()
+            if not stat.S_ISREG(entry.st_mode):
+                raise TectonicsError("runtime/source file unavailable or linked")
             with p.open("rb") as stream:
                 before = os.fstat(stream.fileno())
                 while True:
@@ -154,12 +161,13 @@ def _source_bytes():
                         raise TectonicsError("source changed during inventory capture")
                     digest.update(buffer[:count])
                 after = os.fstat(stream.fileno())
-            current = p.stat()
+            current = p.lstat()
         except OSError as exc:
             raise TectonicsError("runtime/source file unavailable during capture") from exc
         stamp = lambda stat: (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
-        if (size != before.st_size or stamp(before) != stamp(after)
-                or stamp(before) != stamp(current) or p.is_symlink()):
+        if (not stat.S_ISREG(current.st_mode) or size != before.st_size
+                or stamp(entry) != stamp(before) or stamp(before) != stamp(after)
+                or stamp(before) != stamp(current)):
             raise TectonicsError("source changed during inventory capture")
         record = _json({'bytes': size, 'sha256': digest.hexdigest()})
         encoded_bytes += len(_json(name)) + 1 + len(record) + bool(out)

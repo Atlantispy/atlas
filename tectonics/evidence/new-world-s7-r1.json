@@ -1,0 +1,361 @@
+{
+  "schema": "atlas.new-world-step7-evidence.v1",
+  "date": "2026-09-24",
+  "status": "PASS",
+  "acceptance": "Bounded technical acceptance of initial worlds and generated regional continuation; not geological morphology or unrestricted global evolution acceptance.",
+  "platform": "Windows",
+  "python": "3.12.14",
+  "matrix_sha256": "88e59113e7a8ea1b3dfa25f2421767715c1eb8767a4455accf9a03a13dcedef6",
+  "tool_sha256": "b4ca5ff6f3e3ce3c839f018df3be7293a909e2398484aeb20727563ea0a35678",
+  "test_sha256": "984a24e1a423e7fb9d7de09dc56e106233eb124279a0ef8d8a4c05532f08ded8",
+  "full_measurement_sha256": "0efcf9038cbcc3fc45a5ceeebae65595d81a6f7cf48f4d57bf0df32747a62223",
+  "full_measurement_local_basename": "s7-r1/acceptance.json",
+  "sources": {
+    "adapters": {
+      "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+      "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+      "new_world_project.py": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+      "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+      "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+    },
+    "evolution": {
+      "adapters": {
+        "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+        "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+        "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "new_world_motion": "5c34f558a30e886df7f1ea65f7b97f24d50d53505a8d97e115cb85b92147c1cc",
+        "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+        "new_world_project": "dccb8cb47b3d54ae06b774d9f7b9e11c4ffbb4f4ecd6675a4079750a6998a9a0",
+        "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+        "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+      },
+      "native_execution_id": "2609755f3d0bd7481efaebacb52ed50940e5d7f4743284eaa21f08801ff33052"
+    },
+    "session_sha256": "5d383b4ce0516f78853d2a2c6e5448e75830947cba4b4962dbdf5de4e957caee"
+  },
+  "cases": [
+    {
+      "name": "seed42",
+      "plates": 6,
+      "seed": 42,
+      "support": 192,
+      "status": "PASS",
+      "world": {
+        "boundary_rms_cm_year": 4.961610045045367,
+        "motion_id": "6e20cb4fd72acddac8b0ac96b41b3afe6e41ca696ff1f3938330f170e2beb8b9",
+        "plate_count": 6,
+        "project_id": "4233ee693398d71522cf81cfdc25cdcc78a3e25df51db43bed84304cef69f151",
+        "ranked_plate_area_fractions": [
+          0.10531240766013095,
+          0.12729670961658252,
+          0.1425928239764658,
+          0.17339310441154798,
+          0.2020504249273396,
+          0.24935452940793318
+        ],
+        "sorted_crust_thickness_m": [
+          6342.100428251843,
+          33415.04734066765,
+          34042.07046500397,
+          44455.405143705575
+        ],
+        "structure_id": "8ae27d5fe3569461040dc90bba55a7f2b1ff95658bed1b9bfad98a39dff1c15e"
+      },
+      "archive_sha256": "f6eeeae6c347c91586412b211fc62185dd3b01463407885fabfa047efbb88fcc",
+      "timings_s": {
+        "create_save_view": 4.071710400021402,
+        "reopen_view": 1.0851769000000786,
+        "partial_first_output": 3.6218256000138354,
+        "resume_remaining_two": 2.532901700004004,
+        "verified_completed_reuse": 0.7506367000169121,
+        "create_vs_reopen_saved": 2.9865335000213236,
+        "create_vs_reopen_saved_percent": 73.34837713422903,
+        "fresh_process_phase_wall": {
+          "create": 4.8553990999935195,
+          "evolve": 5.144834100006847,
+          "resume": 5.872029299993301
+        }
+      },
+      "storage_bytes": {
+        "initial_archive": 331263,
+        "job_including_frozen_archive": 408530
+      },
+      "process_peak_working_set_bytes": 199073792,
+      "physics": {
+        "accounted_evolution_workspace_peak_bytes": 2428894,
+        "exact_mass_and_volume": true,
+        "final_area_ratio": 0.9993442797531247,
+        "finite_area_and_thickness": true,
+        "max_weight_residual_kg_m2": 7.275957614183426e-12,
+        "mean_surface_change_m": 2.7681547962951303,
+        "surface_change_range_m": [
+          2.76814456656322,
+          2.7681650260265966
+        ],
+        "unknowns_and_context_preserved": true
+      },
+      "approximation": {
+        "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+        "affine_trajectory_radius_bound_m": 26257.012551348183,
+        "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+        "frozen_velocity_path_error_bound_m": 31.974322229676886,
+        "gnomonic_max_area_scale": 1.0000317491581758,
+        "gnomonic_max_length_scale": 1.000021165993451,
+        "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+        "per_plate_projected_velocity_variation_bound_m_s": 1.0132051306080592e-11,
+        "relative_projected_velocity_variation_bound_m_s": 2.0264102612161183e-11,
+        "rigid_euler_swept_cap_radius_rad": 0.004600618957239477,
+        "swept_cap_radius_rad": 0.004600618957239477
+      },
+      "exact_reopened_view": true,
+      "exact_fresh_process_scientific_parity": true,
+      "unchanged_committed_prefix": true,
+      "resumed_outputs_computed": 2,
+      "resumed_outputs_restored": 1,
+      "resumed_preparation_seconds": 0,
+      "output_ids": [
+        "7e096c5ce668e7fd8fa54d15a26707c5ef3c1aaf22c59b28c99dd9ee0b8dea45",
+        "805f6d2add0813bcf62eec638e5878327844e6b3fc2e6c532e08de77be8acea1",
+        "ee338e43a129ed21dad7c9a9a1780969b22b49dda6538d532e2fe289a7b4cde9"
+      ]
+    },
+    {
+      "name": "seed43",
+      "plates": 6,
+      "seed": 43,
+      "support": 192,
+      "status": "PASS",
+      "world": {
+        "boundary_rms_cm_year": 2.9989532618455272,
+        "motion_id": "ac4b67cc09b5377e82806e707acc377f34d7d5d48881aed15d2ffaf695f919da",
+        "plate_count": 6,
+        "project_id": "72f0f4455d07dd7c1d20f061a5faf5134bda854bd7afc6fea501040e242bc163",
+        "ranked_plate_area_fractions": [
+          0.1092423818467479,
+          0.1213046031886476,
+          0.13922053783962438,
+          0.1599202937403632,
+          0.16360342919438123,
+          0.30670875419023574
+        ],
+        "sorted_crust_thickness_m": [
+          6809.59316739823,
+          39789.20564823548,
+          42082.95481723637,
+          43325.06117859358
+        ],
+        "structure_id": "cc5c50d414422de14c876eab7371115f26492a164bf8b104fba9887b52f5436d"
+      },
+      "archive_sha256": "747a6288fcc35fb4783698b4fa8dfcab5377ce4cabfb2fcb0d3201bd2db55531",
+      "timings_s": {
+        "create_save_view": 3.35065810001106,
+        "reopen_view": 1.102328299981309,
+        "partial_first_output": 3.6031551999913063,
+        "resume_remaining_two": 2.4782841999840457,
+        "verified_completed_reuse": 0.7786080999940168,
+        "create_vs_reopen_saved": 2.248329800029751,
+        "create_vs_reopen_saved_percent": 67.10114051989756,
+        "fresh_process_phase_wall": {
+          "create": 4.122680500004208,
+          "evolve": 5.139525599981425,
+          "resume": 5.892729400016833
+        }
+      },
+      "storage_bytes": {
+        "initial_archive": 331263,
+        "job_including_frozen_archive": 406461
+      },
+      "process_peak_working_set_bytes": 200323072,
+      "physics": {
+        "accounted_evolution_workspace_peak_bytes": 2428894,
+        "exact_mass_and_volume": true,
+        "final_area_ratio": 0.9751638292140088,
+        "finite_area_and_thickness": true,
+        "max_weight_residual_kg_m2": 4.656612873077393e-10,
+        "mean_surface_change_m": 120.32981408293948,
+        "surface_change_range_m": [
+          120.32936940347764,
+          120.33025876239701
+        ],
+        "unknowns_and_context_preserved": true
+      },
+      "approximation": {
+        "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+        "affine_trajectory_radius_bound_m": 27377.815539027717,
+        "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+        "frozen_velocity_path_error_bound_m": 35.63985530001433,
+        "gnomonic_max_area_scale": 1.0000331352825513,
+        "gnomonic_max_length_scale": 1.0000220900663752,
+        "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+        "per_plate_projected_velocity_variation_bound_m_s": 1.1293588644261393e-11,
+        "relative_projected_velocity_variation_bound_m_s": 2.2587177288522787e-11,
+        "rigid_euler_swept_cap_radius_rad": 0.004699972453829651,
+        "swept_cap_radius_rad": 0.004699972453829651
+      },
+      "exact_reopened_view": true,
+      "exact_fresh_process_scientific_parity": true,
+      "unchanged_committed_prefix": true,
+      "resumed_outputs_computed": 2,
+      "resumed_outputs_restored": 1,
+      "resumed_preparation_seconds": 0,
+      "output_ids": [
+        "611da174ec181572c1092f0aaef8b178f1b0dbea92346ea5903190accfafbd43",
+        "37e3efe675685ba20a8e8de6fa93644f2304dfd68e233dee478d4453482aa7cc",
+        "1e7ecfc1e41b23c2cf1cbb9554df55220e33c6cacd6165a22c9a3afc488f075b"
+      ]
+    },
+    {
+      "name": "seed42-finer",
+      "plates": 12,
+      "seed": 42,
+      "support": 512,
+      "status": "PASS",
+      "world": {
+        "boundary_rms_cm_year": 4.961610045045364,
+        "motion_id": "66c6097e10eab06ebf89e75b2678aed4d9847b90b007c3b059bb12501e134e16",
+        "plate_count": 12,
+        "project_id": "0e795bf0bb218debca32bb1a2752356705f18c26b1188da75c9895e5f215b703",
+        "ranked_plate_area_fractions": [
+          0.013323346861176004,
+          0.018714769464799934,
+          0.021590331847929925,
+          0.026103255911383315,
+          0.040967522360662506,
+          0.07984342919053251,
+          0.0992902087789457,
+          0.11161823229083392,
+          0.11218448388703897,
+          0.13219841856183395,
+          0.15481795508847643,
+          0.18934804575638683
+        ],
+        "sorted_crust_thickness_m": [
+          6342.100428251843,
+          33415.04734066765,
+          34042.07046500397,
+          44455.405143705575
+        ],
+        "structure_id": "8ae27d5fe3569461040dc90bba55a7f2b1ff95658bed1b9bfad98a39dff1c15e"
+      },
+      "archive_sha256": "4b56786db599b49bbf15f940bebf7001d46a49f739131f00e72d04ac102362eb",
+      "timings_s": {
+        "create_save_view": 4.358052600000519,
+        "reopen_view": 1.5991033999889623,
+        "partial_first_output": 4.047952699998859,
+        "resume_remaining_two": 2.481085699982941,
+        "verified_completed_reuse": 0.7533379000087734,
+        "create_vs_reopen_saved": 2.758949200011557,
+        "create_vs_reopen_saved_percent": 63.30692750269302,
+        "fresh_process_phase_wall": {
+          "create": 5.64957839998533,
+          "evolve": 6.113439499982633,
+          "resume": 5.8616278000117745
+        }
+      },
+      "storage_bytes": {
+        "initial_archive": 736775,
+        "job_including_frozen_archive": 814255
+      },
+      "process_peak_working_set_bytes": 203538432,
+      "physics": {
+        "accounted_evolution_workspace_peak_bytes": 2428894,
+        "exact_mass_and_volume": true,
+        "final_area_ratio": 0.9936760885056258,
+        "finite_area_and_thickness": true,
+        "max_weight_residual_kg_m2": 1.1641532182693481e-10,
+        "mean_surface_change_m": 26.848983841667057,
+        "surface_change_range_m": [
+          26.84888462110596,
+          26.849083062228082
+        ],
+        "unknowns_and_context_preserved": true
+      },
+      "approximation": {
+        "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+        "affine_trajectory_radius_bound_m": 28375.467066741825,
+        "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+        "frozen_velocity_path_error_bound_m": 44.74961467992619,
+        "gnomonic_max_area_scale": 1.000036509492304,
+        "gnomonic_max_length_scale": 1.0000243395134336,
+        "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+        "per_plate_projected_velocity_variation_bound_m_s": 1.4180297196214602e-11,
+        "relative_projected_velocity_variation_bound_m_s": 2.8360594392429204e-11,
+        "rigid_euler_swept_cap_radius_rad": 0.004933469215450271,
+        "swept_cap_radius_rad": 0.004933469215450271
+      },
+      "exact_reopened_view": true,
+      "exact_fresh_process_scientific_parity": true,
+      "unchanged_committed_prefix": true,
+      "resumed_outputs_computed": 2,
+      "resumed_outputs_restored": 1,
+      "resumed_preparation_seconds": 0,
+      "output_ids": [
+        "5ac803bf0d1b4cb13cf4612091b4355e32c9639f19c0152cf6cf7f1c315cd473",
+        "0697836b76e63ad66bab6e66be44a8792b3cfcde475ce16a6763a14edaef5ad2",
+        "ee5e1dae8a6136740c468a0b2973ec2566a0cef1bff68fec5cd7f82f517b4c47"
+      ]
+    }
+  ],
+  "diversity": {
+    "boundary_rms_gap_cm_year": 1.9626567831998396,
+    "changed_dependent_motion": true,
+    "identical_geology_across_plate_and_support_change": true,
+    "interpretation": "Finite non-noise diversity, not a calibrated planet population distribution",
+    "max_crust_thickness_gap_m": 8040.884352232402,
+    "mean_surface_change_gap_m": 117.56165928664434,
+    "rotation_invariant_area_l1": 0.12256839793783901
+  },
+  "measurement_scope": [
+    "One predeclared attempt per case; no retries or discarded cases. Native original inputs and all job outputs retained locally.",
+    "API call times exclude interpreter startup and acceptance-only checks. Fresh-process phase wall times include imports, OS startup, verification and reporting and are not user-action latency.",
+    "Creation and reopen comparisons preserve identical full views. This measures avoided generation through reuse, not a faster dynamics solver.",
+    "Regional partial plus resumed work includes two execution attempts; do not compare it as an uninterrupted-cold-run speedup against completed reuse.",
+    "Windows OS peak working set includes scientific imports, allocator and verification overhead. The 128 MiB declared work budget is native accounting, not a hard process RSS ceiling."
+  ],
+  "reused_evidence": [
+    {
+      "file": "new-world-s2-r1.json",
+      "sha256": "6568c6aac7cab08539730b66107aa9e72004640afe8213cd1c6c99c95d18585b",
+      "coverage": "Numerical geometry, rotation, ranked-area diversity, retained stress refusal and descriptive morphology/reference cases.",
+      "qualification": "Scientific producers unchanged. Original runner subsequently received a documented report-guard correction, checked against this unchanged receipt. Morphology is not geologically accepted."
+    },
+    {
+      "file": "new-world-s3-r1.json",
+      "sha256": "6dcc3cbfaef0fd6dbbec18e1484be75a34fb51a8ba536c8c418fd2f97de03510",
+      "coverage": "Unchanged structure/thermal methods, analytical thermal and per-cohort sampling conservation.",
+      "qualification": "Old project/session hashes superseded by S4; old persistence timing not relabelled current."
+    },
+    {
+      "file": "new-world-s4-r1.json",
+      "sha256": "02ba19d2643446880307015a0c59a92af0d0fe0ce32e7e060e67f8bf7e9a39c6",
+      "coverage": "Current initial-motion/arc methods, current project/session guards and 1024-support archive.",
+      "qualification": "Adapter hashes match. Historical UI_IN_PROGRESS is superseded by the documented owner closure, not rewritten."
+    },
+    {
+      "file": "new-world-s5-r1.json",
+      "sha256": "49f7d4d9bf14140346444d6debe00dfd11687736570ec1f5620cf2251d8990ae",
+      "coverage": "27 focused sampling/evolution/lifecycle checks, single-seed physical resume, cooperative fake-backend cancellation, source/input/request invalidation, corrupted-prefix refusal, cache checks and measured reuse.",
+      "qualification": "All recorded adapters AND live native execution identity match current matrix. UI's separate 132-check closure remains as recorded; no repeated browser campaign."
+    }
+  ],
+  "new_focused_checks": {
+    "acceptance_report_guard_methods": 4,
+    "passed": 4,
+    "seconds": 0.231,
+    "static_safety": {
+      "maps": 13,
+      "paths": 41,
+      "passed": 30,
+      "skipped": 1,
+      "seconds": 0.112,
+      "skip_reason": "Existing Windows symlink privilege limitation"
+    }
+  },
+  "linux": {
+    "status": "NOT_RUN",
+    "reason": "wsl --list --quiet reports Windows Subsystem for Linux is not installed; no new-world Linux evidence or installation claimed."
+  },
+  "source_change_scope": "Only a source-only acceptance tool, its four report guards and documentation/evidence; production scientific/job/session/native source bytes unchanged.",
+  "next": "Portable combined initial-world and evolved-results project file remains separate and unimplemented."
+}

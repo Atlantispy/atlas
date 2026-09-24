@@ -221,4 +221,7 @@ Proposed improvements and pull requests are welcome. No automatic merging, backg
 
 ## Licence
 
-No project-wide licence has been selected by the owner. Existing third-party notices retain their own terms; public visibility is not a new project-wide licence grant.
+Atlas-owned source code is licensed under **AGPL-3.0-only**. See
+[LICENSING.md](LICENSING.md) for the scope and [LICENSE](LICENSE) for the terms.
+Third-party material retains its own notices; the code licence does not implicitly
+cover fictional-world text, artwork or other non-code creative content.

@@ -1,0 +1,472 @@
+{
+  "schema": "atlas.motion-frame-correction-evidence.v1",
+  "status": "WORKING NON-CANON",
+  "completion": "Backend integrated; UI diagnostic admission and service refresh requested separately",
+  "correction": "Eliminate a common Euler residual before anchoring; same continental affinity and junction law",
+  "calibration": "Kinematic correction and descriptive diagnostics, not empirical directional realism acceptance",
+  "source_bindings": {
+    "tools/assess_new_world_motion.py": "117b247c24f18e9e48d5926258f509886f83a918515b6bf941416fcebe71bc4a",
+    "tests/test_assess_new_world_motion.py": "3ae812650b9f6ac72e4d1ae1abeb2c453464b2277c8226c65a0e68e7b9bff880",
+    "tools/new_world_motion.py": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+    "tests/test_new_world_motion_frame.py": "fbc132992ee3c4296850274b57e03dfad8c88087b3f689c24cbfc04e173f6ffd"
+  },
+  "tests": {
+    "existing_motion_and_new_frame": {
+      "passed": 16,
+      "seconds": 4.918
+    },
+    "static_map": {
+      "passed": 13,
+      "required_paths": 41
+    },
+    "affected_integration": {
+      "passed": 4,
+      "seconds": 8.216
+    },
+    "analytical_assessment": {
+      "passed": 9,
+      "seconds": 0.067
+    },
+    "static_safety": {
+      "skip": "Windows symlink privilege unavailable",
+      "passed": 30,
+      "seconds": 0.11,
+      "skipped": 1
+    }
+  },
+  "original_files_unchanged": true,
+  "no_evolution": true,
+  "fit_comparison": {
+    "status": "WORKING NON-CANON",
+    "scope": "Retained geometry/geology; initial motion only; no evolution",
+    "corrected_measurement_invocation": "Initial attempt supplied the v3 manifest report reference instead of its resolved report and refused INVALID_PROJECT. The corrected runner retains the report after normal loader validation; no validation bypass.",
+    "source_original_sha256": "5c34f558a30e886df7f1ea65f7b97f24d50d53505a8d97e115cb85b92147c1cc",
+    "source_corrected_sha256": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+    "timing_scope": "Warm _reconcile only, matched alternating pairs; not end-to-end generation",
+    "cases": [
+      {
+        "case": "seed42",
+        "world_sha256": "f6eeeae6c347c91586412b211fc62185dd3b01463407885fabfa047efbb88fcc",
+        "unchanged": true,
+        "plates": 6,
+        "boundaries": 136,
+        "original_anchor_change_relative_rms": 0.7227176435578831,
+        "corrected_max_anchor_change_relative_rms": 1.0841235015458127E-15,
+        "corrected_vs_original_relative_rms": 0.3659252919334158,
+        "original_diagnostics": {
+          "constraint_rank": 8,
+          "relative_degrees_of_freedom": 7,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 4.961610045045368,
+          "achieved_boundary_rms_cm_year": 4.961610045045367,
+          "relative_prior_adjustment": 0.6240237538697851,
+          "max_junction_residual_m_s": 1.2407709188295415E-24
+        },
+        "corrected_diagnostics": {
+          "constraint_rank": 8,
+          "relative_degrees_of_freedom": 7,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 4.961610045045368,
+          "achieved_boundary_rms_cm_year": 4.961610045045366,
+          "prior_fit": "area-weighted-common-rotation-eliminated.v1",
+          "relative_prior_adjustment": 0.8053858013647991,
+          "relative_prior_adjustment_metric": "area-weighted-centred-euler-residual",
+          "max_junction_residual_m_s": 1.2407709188295415E-24
+        },
+        "fit_timings": {
+          "old_s": [
+            0.011739900015527382,
+            0.012053199985530227,
+            0.012377200007904321
+          ],
+          "corrected_s": [
+            0.011860400001751259,
+            0.011914800008526072,
+            0.011974699998972937
+          ]
+        },
+        "old_fit_mean_s": 0.012056766669653976,
+        "corrected_fit_mean_s": 0.011916633336416757,
+        "fit_change_s": -0.0001401333332372197,
+        "fit_change_percent": -1.1622795487112203,
+        "corrected_generate_motion_s": 0.6883522000280209
+      },
+      {
+        "case": "seed43",
+        "world_sha256": "747a6288fcc35fb4783698b4fa8dfcab5377ce4cabfb2fcb0d3201bd2db55531",
+        "unchanged": true,
+        "plates": 6,
+        "boundaries": 132,
+        "original_anchor_change_relative_rms": 1.0460565175823258,
+        "corrected_max_anchor_change_relative_rms": 1.6925689107940285E-15,
+        "corrected_vs_original_relative_rms": 0.5767796194776493,
+        "original_diagnostics": {
+          "constraint_rank": 8,
+          "relative_degrees_of_freedom": 7,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 2.9989532618455264,
+          "achieved_boundary_rms_cm_year": 2.9989532618455272,
+          "relative_prior_adjustment": 0.8063016227231733,
+          "max_junction_residual_m_s": 3.618915179919496E-25
+        },
+        "corrected_diagnostics": {
+          "constraint_rank": 8,
+          "relative_degrees_of_freedom": 7,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 2.9989532618455264,
+          "achieved_boundary_rms_cm_year": 2.9989532618455264,
+          "prior_fit": "area-weighted-common-rotation-eliminated.v1",
+          "relative_prior_adjustment": 0.8995117528874671,
+          "relative_prior_adjustment_metric": "area-weighted-centred-euler-residual",
+          "max_junction_residual_m_s": 1.0339757656912846E-24
+        },
+        "fit_timings": {
+          "old_s": [
+            0.011023900005966425,
+            0.010912500001722947,
+            0.010929199983365834
+          ],
+          "corrected_s": [
+            0.01116080000065267,
+            0.011274499993305653,
+            0.011321800004225224
+          ]
+        },
+        "old_fit_mean_s": 0.010955199997018402,
+        "corrected_fit_mean_s": 0.011252366666061183,
+        "fit_change_s": 0.000297166669042781,
+        "fit_change_percent": 2.7125627019466414,
+        "corrected_generate_motion_s": 0.4743455999996513
+      },
+      {
+        "case": "seed42-finer",
+        "world_sha256": "4b56786db599b49bbf15f940bebf7001d46a49f739131f00e72d04ac102362eb",
+        "unchanged": true,
+        "plates": 12,
+        "boundaries": 302,
+        "original_anchor_change_relative_rms": 0.42683063927862824,
+        "corrected_max_anchor_change_relative_rms": 2.857850084176521E-15,
+        "corrected_vs_original_relative_rms": 0.285319622291113,
+        "original_diagnostics": {
+          "constraint_rank": 20,
+          "relative_degrees_of_freedom": 13,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 4.961610045045368,
+          "achieved_boundary_rms_cm_year": 4.961610045045364,
+          "relative_prior_adjustment": 0.6043282946837906,
+          "max_junction_residual_m_s": 1.4475660719677984E-24
+        },
+        "corrected_diagnostics": {
+          "constraint_rank": 20,
+          "relative_degrees_of_freedom": 13,
+          "continental_affinity": 4.0,
+          "target_boundary_rms_cm_year": 4.961610045045368,
+          "achieved_boundary_rms_cm_year": 4.961610045045368,
+          "prior_fit": "area-weighted-common-rotation-eliminated.v1",
+          "relative_prior_adjustment": 0.7364730141061111,
+          "relative_prior_adjustment_metric": "area-weighted-centred-euler-residual",
+          "max_junction_residual_m_s": 1.2407709188295415E-24
+        },
+        "fit_timings": {
+          "old_s": [
+            0.02630299999145791,
+            0.02641690001473762,
+            0.026523300010012463
+          ],
+          "corrected_s": [
+            0.02624639999703504,
+            0.02604189998237416,
+            0.027460599987534806
+          ]
+        },
+        "old_fit_mean_s": 0.026414400005402665,
+        "corrected_fit_mean_s": 0.026582966655648004,
+        "fit_change_s": 0.00016856665024533868,
+        "fit_change_percent": 0.638161950340943,
+        "corrected_generate_motion_s": 0.6284033000119962
+      }
+    ]
+  },
+  "assessments": {
+    "status": "WORKING NON-CANON",
+    "source_sha256": "117b247c24f18e9e48d5926258f509886f83a918515b6bf941416fcebe71bc4a",
+    "scope": "Read-only diagnostics of retained and separately calculated candidate initial motions; no evolution",
+    "cases": [
+      {
+        "case": "seed42",
+        "original_world_sha256": "f6eeeae6c347c91586412b211fc62185dd3b01463407885fabfa047efbb88fcc",
+        "unchanged": true,
+        "original": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "6e20cb4fd72acddac8b0ac96b41b3afe6e41ca696ff1f3938330f170e2beb8b9",
+          "atlas_id": "b046a02205210ed7b4e4745bbe726ecaf8677e41870caf57fd75689c7d1298c9",
+          "geometry_id": "ffa8a72a8919e35bebeec652afc96449a0f3c9bed6f00ea2de5edfc77ab7f41e",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 136,
+          "segment_count": 157,
+          "boundary_length_m": 129786753.42638287,
+          "boundary_length_fractions": {
+            "extension": 0.5155685652575007,
+            "shortening": 0.48443143474249933,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 3.860029813319512,
+            "shear": 3.1173296391911482,
+            "relative": 4.961610045045366
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 41.062034674583856,
+            "sample_count": 157,
+            "included_length_m": 129786753.42638287,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "corrected": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "1593491c81b2c78f34835d455eb96a98518b621c226e6ce48dfe5f1133e732a4",
+          "atlas_id": "b046a02205210ed7b4e4745bbe726ecaf8677e41870caf57fd75689c7d1298c9",
+          "geometry_id": "ffa8a72a8919e35bebeec652afc96449a0f3c9bed6f00ea2de5edfc77ab7f41e",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 136,
+          "segment_count": 157,
+          "boundary_length_m": 129786753.42638287,
+          "boundary_length_fractions": {
+            "extension": 0.4925223199377008,
+            "shortening": 0.5074776800622991,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 3.7954225058089364,
+            "shear": 3.1956755532272183,
+            "relative": 4.961610045045365
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 41.42134266659519,
+            "sample_count": 157,
+            "included_length_m": 129786753.42638287,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "assessment_pair_s": 0.050523299985798076
+      },
+      {
+        "case": "seed43",
+        "original_world_sha256": "747a6288fcc35fb4783698b4fa8dfcab5377ce4cabfb2fcb0d3201bd2db55531",
+        "unchanged": true,
+        "original": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "ac4b67cc09b5377e82806e707acc377f34d7d5d48881aed15d2ffaf695f919da",
+          "atlas_id": "68e0c6e6969217cbd5211f7315dc69f5ceca644cfcd70c4961352ba17ec5f74d",
+          "geometry_id": "5a05d1b878b5f44f14dbcfff8a50f73a891fd45253cd71bf57fbc96ac6445c18",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 132,
+          "segment_count": 150,
+          "boundary_length_m": 121321236.91017222,
+          "boundary_length_fractions": {
+            "extension": 0.5437772301571308,
+            "shortening": 0.45622276984286936,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 2.0701768329249886,
+            "shear": 2.1698130212427498,
+            "relative": 2.9989532618455272
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 44.028725770434654,
+            "sample_count": 150,
+            "included_length_m": 121321236.91017222,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "corrected": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "03cefaff49f7e290e16f26aef7efd5561477a0eef12c4130e819293a3bac481b",
+          "atlas_id": "68e0c6e6969217cbd5211f7315dc69f5ceca644cfcd70c4961352ba17ec5f74d",
+          "geometry_id": "5a05d1b878b5f44f14dbcfff8a50f73a891fd45253cd71bf57fbc96ac6445c18",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 132,
+          "segment_count": 148,
+          "boundary_length_m": 121321236.91017222,
+          "boundary_length_fractions": {
+            "extension": 0.46083494860525154,
+            "shortening": 0.5391650513947485,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 2.2064878790234452,
+            "shear": 2.0310420740242043,
+            "relative": 2.9989532618455264
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 43.44181573253599,
+            "sample_count": 148,
+            "included_length_m": 121321236.91017222,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "assessment_pair_s": 0.04736999998567626
+      },
+      {
+        "case": "seed42-finer",
+        "original_world_sha256": "4b56786db599b49bbf15f940bebf7001d46a49f739131f00e72d04ac102362eb",
+        "unchanged": true,
+        "original": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "66c6097e10eab06ebf89e75b2678aed4d9847b90b007c3b059bb12501e134e16",
+          "atlas_id": "5f0b147aceb1a561a5d554716d292947bdfc9d65eda94a19c9148674f14cad4a",
+          "geometry_id": "bb92f6db6ca6871139187766a549ac79bcf7e6eedf8721cb0dcd3d63de18a6eb",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 302,
+          "segment_count": 337,
+          "boundary_length_m": 184673330.3765657,
+          "boundary_length_fractions": {
+            "extension": 0.4511219313945645,
+            "shortening": 0.5488780686054355,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 3.5502135769761445,
+            "shear": 3.466057962145082,
+            "relative": 4.961610045045365
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 44.48550649097643,
+            "sample_count": 337,
+            "included_length_m": 184673330.3765657,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "corrected": {
+          "schema": "atlas.initial-motion-assessment.v1",
+          "status": "WORKING NON-CANON",
+          "scientific_status": "DIAGNOSTICS_NOT_REALISM_ACCEPTANCE",
+          "motion_id": "364fca2fe823eba497526b4f0bbd112769b1146c6fc7f47e34385a4937504aae",
+          "atlas_id": "5f0b147aceb1a561a5d554716d292947bdfc9d65eda94a19c9148674f14cad4a",
+          "geometry_id": "bb92f6db6ca6871139187766a549ac79bcf7e6eedf8721cb0dcd3d63de18a6eb",
+          "validation": "saved-motion-and-dependencies",
+          "interplate_edge_count": 302,
+          "segment_count": 341,
+          "boundary_length_m": 184673330.3765657,
+          "boundary_length_fractions": {
+            "extension": 0.49743293842485176,
+            "shortening": 0.5025670615751482,
+            "unresolved": 0.0
+          },
+          "fractions_method": "Exact Euler-derived normal zero crossings weighted by spherical arc length; unresolved includes stationary.",
+          "unresolved_method": "Normal amplitude within the relative-rotation round-off envelope; not a physical transform threshold.",
+          "boundary_rms_cm_year": {
+            "normal": 3.539498216328828,
+            "shear": 3.47699965713259,
+            "relative": 4.961610045045368
+          },
+          "rms_method": "Analytic great-circle integrals of squared relative normal, shear and full speed; all boundary length.",
+          "obliquity": {
+            "method": "MIDPOINT_APPROXIMATION_LENGTH_WEIGHTED",
+            "convention": "0 degrees is normal motion; 90 degrees is shear; sign is discarded.",
+            "mean_degrees": 45.608184885300915,
+            "sample_count": 341,
+            "included_length_m": 184673330.3765657,
+            "excluded_stationary_segment_count": 0,
+            "excluded_stationary_length_m": 0.0,
+            "excluded_zero_speed_midpoint_count": 0,
+            "excluded_zero_speed_midpoint_length_m": 0.0
+          },
+          "limitations": [
+            "Midpoint obliquity can change with segmentation; exact RMS is subdivision invariant.",
+            "Saved regime and opening labels are not used; numerical unresolved classification uses relative rotation only.",
+            "Only relative motion is compared; a common reference-frame rotation cancels.",
+            "Descriptive initial kinematics do not establish geological realism or finite-time stability."
+          ]
+        },
+        "assessment_pair_s": 0.10756840000976808
+      }
+    ]
+  },
+  "sources": [
+    "https://www.gplates.org/docs/pygplates/sample-code/pygplates_calculate_velocities_by_plate_id",
+    "https://www.gplates.org/docs/pygplates/generated/pygplates.NetRotationModel",
+    "https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf"
+  ]
+}

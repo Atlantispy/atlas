@@ -114,15 +114,26 @@ class PreparedW07Workflow:
         self.times,self.steps=times,steps
         self._current=self._current_guard=None
         self._mechanical=self._heat=self._context=None
+        self._geology_context=self._geology_context_guard=None
         self._stats=dict(computed_outputs=0,restored_outputs=0,latest_hits=0,physics_seconds=0.,storage_seconds=0.)
         self._work_bytes=2*1024**2+4096*geology.nx*geology.nz+3*geology.nbytes
         self._guard=self._resource.reserve(2*1024**2+1024*geology.nx*geology.nz+4096*len(times)+3*geology.nbytes,
             category='w07-workflow-prepared')
         self._guard.__enter__()
         try:
-            _cancel(cancel);geology.verify(cancel=cancel)
+            _cancel(cancel)
             self._context=ExecutionContext('scipy');self.execution_id=self._context.identity
             d=geology.descriptor();self._geology_descriptor=d
+            if d['execution_backend']==self._context.backend:
+                self._geology_context=self._context
+            else:
+                # One retained verifier replaces a fresh context at every output
+                # boundary. It preserves the producer's exact backend identity.
+                self._geology_context_guard=self._resource.reserve(4*1024**2,
+                    category='w07-geology-verifier')
+                self._geology_context_guard.__enter__()
+                self._geology_context=ExecutionContext(d['execution_backend'])
+            geology.verify(cancel=cancel,context=self._geology_context)
             self._source_snapshot=RegionalMechanicalSnapshot(d,{k:geology.array(k) for k in geology.array_names})
             self._homogeneous=geology.homogeneous_material
             self._strength=strength_profile
@@ -223,7 +234,7 @@ class PreparedW07Workflow:
 
     def _check(self,cancel=None):
         if self._closed or threading.get_ident()!=self._owner:raise TectonicsError('closed or wrong-thread W07 workflow')
-        _cancel(cancel);self._context.verify();self.geology.verify(cancel=cancel)
+        _cancel(cancel);self._context.verify();self.geology.verify(cancel=cancel,context=self._geology_context)
         if _hash(self._definition)!=self.plan_id:raise TectonicsError('W07 source/policy changed; prepare a new workflow')
 
     @contextmanager
@@ -586,10 +597,19 @@ class PreparedW07Workflow:
         if self._closed:return
         if self._active or threading.get_ident()!=self._owner:raise TectonicsError('close W07 on its idle driving thread')
         self._closed=True
-        if self._mechanical is not None:self._mechanical.close()
-        if self._context is not None:self._context.close()
-        if self._current_guard is not None:self._current_guard.__exit__(None,None,None)
-        self._current=None;self._guard.__exit__(None,None,None)
+        try:
+            if self._mechanical is not None:self._mechanical.close()
+        finally:
+            try:
+                if self._geology_context is not None and self._geology_context is not self._context:
+                    self._geology_context.close()
+            finally:
+                try:
+                    if self._context is not None:self._context.close()
+                finally:
+                    if self._geology_context_guard is not None:self._geology_context_guard.__exit__(None,None,None)
+                    if self._current_guard is not None:self._current_guard.__exit__(None,None,None)
+                    self._current=None;self._guard.__exit__(None,None,None)
 
     def __enter__(self):self._check();return self
     def __exit__(self,*_):self.close()
