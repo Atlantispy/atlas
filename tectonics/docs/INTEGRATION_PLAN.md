@@ -8,8 +8,11 @@ B2 implementation order. [W12_ASSEMBLY.md](W12_ASSEMBLY.md) remains the record o
 what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains the
 single progress summary; do not maintain another competing status ledger here.
 
-The present request authorises planning and documentation only. It does not start
-implementation, install software, reopen R4.4, run a world, commit or push.
+This plan was originally delivered as planning/documentation only. The owner has
+since authorised I01 research, specifications and bounded feasibility controls;
+see [its physical contract](I01_PHYSICAL_CONTRACT.md) and the single current-state
+record. That continuation does not authorise I02–I12 production work, installation,
+reopening R4.4, a full-world run, commit or push.
 
 ## 1. The outcome we must deliver
 
@@ -215,6 +218,12 @@ Each increment includes its focused checks, affected documentation and early
 performance measurement. Do not postpone all testing or optimisation until I11.
 
 ### I01 — Freeze the end-to-end contract and physical closure choices
+
+Delivered design/control slice: [I01 physical contract](I01_PHYSICAL_CONTRACT.md),
+[versioned case record](../cases/i01_closures_v1.json) and
+[bounded control evidence](../evidence/i01-controls-r1.json). The 1D localisation
+result is not 2D boundary/rupture acceptance. D2/D6 physical closure remains open;
+consult current state for the next discriminating work, not an assumed I02 start.
 
 **Depends on:** this plan. **Work:** turn D1–D6 into versioned, testable model
 specifications; define generated versus prescribed modes and required/unsupported
@@ -578,10 +587,11 @@ Integration is complete only at **I12**, when the section-1 outcome and required
 matrix are met. A new shared-state class, connected graph, green unit suite,
 regional demo, export table or visually attractive world is not a substitute.
 
-Next implementation request should begin with **I01**, using the inventory and
-decisions already recorded here. Resolve the physical closure specification and
-its smallest discriminating controls before building another purported complete
-assembly. I02 can then establish the first reusable state/transaction slice.
+Continue **I01** from its physical-contract/control checkpoint, resolving the
+remaining generated-boundary/rupture decisions before building another purported
+complete assembly. I02 can then establish the first reusable state/transaction
+slice. Do not repeat completed reading or bounded controls without changed inputs,
+a failure or missing required coverage.
 
 Plan-only verification: local source/interface inspection, documentation links,
 mandatory repository safety/path checks. No physical run, performance gain,

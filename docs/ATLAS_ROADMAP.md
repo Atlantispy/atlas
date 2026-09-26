@@ -293,6 +293,15 @@ Keep the map primary, with progressively available scientific detail. Backend pr
 
 Maintain a separate frontend/backend integration boundary. Supply a versioned data contract and real small example to the UI owner; do not rewrite the frontend as part of a backend repair or claim integration until it is exercised. If the frontend is unavailable in the checkout, finish the backend contract and explicitly identify that dependency.
 
+**Requested Windows delivery, after I01:** package the existing Atlas interface
+and backend as a double-clickable `.exe`, without requiring terminal commands.
+Coordinate frontend changes with the UI owner. Include the required runtime and
+assets (or a clearly documented installer), use writable per-user locations for
+projects/cache, preserve New/Save/Load and read-only inspection, and shut down
+owned backend processes cleanly. Verify launch on Windows without the development
+environment, one small real project save/reopen, and cancellation/close behaviour.
+This is a usable development build, not completion of I02–I12 or the later modules.
+
 New/Save/Load must preserve the seed, settings, generated geometry, scientific outputs and supported continuation state. Show cached, stale, missing, failed and unsupported layers honestly. Previously saved results remain inspectable without silently launching generation or repinning their source history.
 
 Each module needs a concise **How this is made** section explaining:

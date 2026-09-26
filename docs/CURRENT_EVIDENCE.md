@@ -37,6 +37,11 @@ results remain observations of the original run. Nothing is re-executed.
 
 ## Coverage today
 
+- **Current I01 design controls:** [four bounded controls](../tectonics/evidence/i01-controls-r1.json)
+  bind their tool, declared case policy and physical-contract document. The four
+  controls pass, but do not establish 2D fault generation, physical rupture,
+  global evolution or regional water/flexure coupling. Runtime versions are
+  observations, not sealed library binaries. No native package is imported.
 - **Current:** the Step 7 r2 predeclared matrix and the
   [B1 matched boundary diagnostics](../tectonics/evidence/boundary-kinematics-r1.json).
   B1 checks its tool and two portable input bindings, not a native simulation or

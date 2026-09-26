@@ -20,7 +20,7 @@ evidence, then correct tectonics realism before expanding the other modules.
 | A6: status and change granularity | One current summary replaces the accumulated status log; no separate archive copy. Scoped delivery and evidence-impact guidance recorded. | [Change procedure](CODING_SAFETY.md#5-source-only-check-and-change-procedure) |
 | B1: matched boundary diagnostics | Tool integrated; one retained original/prototype comparison at 100/250/500 km against PB2002 development. Portable inputs, signed components and declared exclusions retained. Prototype motion is not refitted; this is not realism acceptance. | [Method and measured checkpoint](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1) |
 | B2: causal-generation diagnosis | Code trace and a bounded two-candidate experiment completed. New World saves initial conditions; crust does not affect its plate layout. No producer fix implemented. | [Causes and research](../tectonics/docs/NEW_WORLD_LAYOUT.md#causal-generation-diagnosis-and-replacement-design) |
-| Complete tectonics integration | Full I01–I12 plan now covers missing physics, conservative transfers, feedback, global generation, W12/New World/UI/consumer lifecycle, resources and acceptance. Planning only; all integration increments remain open. | [Integration plan](../tectonics/docs/INTEGRATION_PLAN.md) |
+| Complete tectonics integration | I01 physical/ownership contracts and four bounded feasibility controls delivered. I01 remains open for 2D fault/localisation and generated rupture/migration/initiation decisions; I02–I12 are not started. | [Integration plan](../tectonics/docs/INTEGRATION_PLAN.md), [I01 contract](../tectonics/docs/I01_PHYSICAL_CONTRACT.md) |
 
 Claude's A5 follow-up is now integrated. It installed into a separate ignored
 environment without modifying the scientific environment. The retained receipt
@@ -28,21 +28,37 @@ establishes a Windows installation and library smoke check, not native restart
 compatibility or scientific acceptance. Linux was unavailable and none was installed.
 The owner rejected post-generation fairing as the realism fix, even
 when applied to native geometry. Its integration was stopped before source edits.
-The owner requested the complete integration plan before implementation. Next
-implementation scope is **I01: end-to-end contracts and physical closure choices**;
-I02 then supplies the common state/transaction layer. The prior narrow B2 ordering
-is superseded. Starting crust, ocean history, thermal/mechanical feedback and
-vertical response must share the evolved world. W12's limited column assembly
-and exports do not establish completion. No tectonics implementation, simulation,
-commit or push was started by the plan or installation-evidence review.
+The owner authorised continuation of **I01: end-to-end contracts and physical
+closure choices**. The [four bounded controls](../tectonics/evidence/i01-controls-r1.json)
+pass in 0.507892 s after imports; 15 focused tests pass in 0.035 s. These are
+prototype/analytical checks outside the native package, not a world run. The final
+1D refinement changes stress by 0.2640% and width by 0.07073%; halving the timestep
+changes them by 0.01550% and 0.06905%. A first trial exposed round-off-induced
+nonuniformity in homogeneous softening; a mathematically equivalent constant-
+preserving filter solve fixed it without changing tolerances. The failed local
+trial remains retained; native source and old evidence were not rewritten.
+
+Next I01 work is the 2D orientation/refinement control and a physically specified
+rupture/boundary-migration and subduction-initiation closure. A thin-continent
+cutoff is not ocean birth, nor is a prescribed event a generated transition.
+I02's shared-state implementation follows the settled contracts; do not call the
+coupled generated mode ready while D2/D6 remain open. The narrow B2 order is
+superseded. No full-world run, native source edit, installation, commit or push
+was performed for this continuation.
+
+Queued immediately after I01: a normal Windows `.exe` that starts the backend and
+opens Atlas without terminal commands, coordinated with the existing UI owner.
+See the [Windows delivery scope](ATLAS_ROADMAP.md#8-ui-and-explainability).
+Packaging has not started and does not stand in for later scientific integration.
 
 ## Evidence: what the results establish
 
 The [registered evidence](../tectonics/evidence/current-evidence.json) currently
-classifies **13 records: three current, nine historical and one superseded**.
+classifies **14 records: four current, nine historical and one superseded**.
 Current items are the Step 7 r2 *case matrix* and the B1 diagnostic tool/input
-bindings, plus the Windows installation receipt bound to its package-version record;
-none establishes physical simulation acceptance. W01-W12 records outside that
+bindings, the Windows installation receipt bound to its package-version record,
+and I01's design controls bound to their source/specification. None establishes
+generated-world physical acceptance. W01-W12 records outside that
 bounded register remain unclassified,
 not implicitly accepted. The checker verifies declared bindings, not physics or
 every transitive dependency.

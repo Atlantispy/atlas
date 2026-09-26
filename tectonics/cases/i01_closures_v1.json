@@ -1,0 +1,33 @@
+{
+  "schema": "atlas.i01-design-contract.v1",
+  "status": "WORKING_NON_CANON",
+  "kind": "design_and_bounded_controls_not_production_configuration",
+  "contract_document": "docs/I01_PHYSICAL_CONTRACT.md",
+  "units": {"length": "m", "time": "s_forward_from_epoch", "mass": "kg", "temperature": "K", "energy": "J", "force": "N", "torque": "N m", "angular_velocity": "rad/s"},
+  "modes": ["prescribed_history_v1", "coupled_generated_candidate_v1"],
+  "initial_controls": ["seed", "planet_radius", "initial_plate_count", "initial_continental_fraction", "history_start_epoch", "requested_endpoint"],
+  "forbidden_substitutions": ["random_speed_normalisation", "mean_age_for_cohort_history", "area_renormalisation", "thin_continent_becomes_basalt", "thermal_thickness_becomes_elastic_thickness", "total_flexure_added_each_step", "unknown_formation_age_becomes_zero"],
+  "decisions": {
+    "D1": {"method": "atlas.plate-torque-resistance.v1", "selection": "reduced_force_model_candidate", "required": ["shared_geometry", "mantle_frame_velocity", "positive_basal_drag", "GPE_or_owned_boundary_force", "actual_slab_inventory_or_explicit_initial_slab", "regional_reaction_ownership"], "control": "D1"},
+    "D2": {"method": "atlas.nonlocal-weakening-candidate.v1", "selection": "candidate_not_global_fault_acceptance", "required": ["absolute_effective_pressure", "temperature", "creep_law", "plastic_viscosity", "initial_strength", "residual_strength", "critical_plastic_strain", "physical_length", "initial_raw_history", "declared_healing_law"], "control": "D2", "open": ["2D_orientation_and_refinement", "physical_parameter_validation", "through_lithosphere_rupture_law"]},
+    "D3": {"method": "atlas.spherical-cohort-transactions.v1", "selection": "contract_for_new_spherical_bridge", "required": ["ridge_velocity_law", "cohort_birth_time", "formation_vs_cooling_history", "finite_phase_and_heat_stocks", "trench_polarity_and_destination"], "control": "D3"},
+    "D4": {"method": "atlas.cohort-enthalpy-coupling.v1", "selection": "constant_per_material_caloric_law_then_properties", "required": ["enthalpy_reference", "thermal_initial_conditions", "conductivity", "heat_capacity", "interface_conditions", "advection_and_deformation_support", "owned_sources_and_work"], "control": "existing_component_controls_plus_future_changed_seams"},
+    "D5": {"method": "atlas.fixed-datum-support-water.v1", "selection": "local_Airy_base_with_owned_regional_replacement", "required": ["compensation_pressure_datum", "density_reference", "dry_tectonic_surface", "connected_water_reservoir", "water_mass_or_volume", "regional_boundary_conditions", "rigidity_law_or_prescribed_rigidity"], "control": "D5"},
+    "D6": {"method": "atlas.regime-transactions.v1", "selection": "typed_event_contract_physical_generation_partly_open", "required": ["event_bracket", "parent_state", "resolved_or_calibrated_trigger", "shared_topology_proposal", "conservative_transfers", "source_reservations", "simultaneous_event_policy"], "open": ["generated_breakup", "unprescribed_subduction_initiation", "boundary_migration_closure"]}
+  },
+  "control_policy": {
+    "algebra_relative": 1e-11,
+    "d2_mesh_relative": 0.03,
+    "d2_time_relative": 0.03,
+    "d2_operator_error_ratio": [3.8, 4.2],
+    "d5_volume_relative": 1e-11,
+    "scope": "analytical torque, 1D shear, spherical-lune accounts, local Airy water"
+  },
+  "control_parameters": {
+    "D1": {"radius_m": 6371000.0, "hemispheres": 2, "area_quadrature_points_per_hemisphere": 4, "equatorial_points": 8, "basal_drag_Pa_s_per_m": 625000000000000.0, "interface_drag_Pa_s": 1e21, "driving_torque_N_m": [1e25, -2e25, 3e25], "provenance": "authored analytical control, not Earth calibration"},
+    "D2": {"domain_m": 100000.0, "physical_length_m": 5000.0, "cells": [80, 160, 320], "steps": 256, "coarser_steps": 128, "duration_years": 1000000.0, "velocity_m_per_year": 0.01, "creep_viscosity_Pa_s": 1e23, "plastic_viscosity_Pa_s": 1e20, "background_strength_Pa": 30000000.0, "inherited_strength_deficit_fraction": 0.2, "seed_gaussian_scale_m": 7500.0, "critical_engineering_plastic_shear": 0.3, "residual_strength_fraction": 0.1, "healing_per_s": 0.0, "provenance": "authored 1D feasibility constants, not selected planetary defaults"},
+    "D3": {"stages_Myr": [2.0, 3.0], "plate_deg_per_Myr": [2.0, 1.0], "ridge_deg_per_Myr": [0.5, -0.25], "prescribed_sink_deg_per_Myr": [1.5, 1.25], "inherited_age_Myr": 100.0, "density_kg_m3": 2900.0, "thickness_m": 7000.0, "fixed_continental_area": true, "equal_sink_is_prescribed_fixture": true},
+    "D5": {"dry_elevation_m": [-1000.0, 0.0, 2000.0], "areas_m2": [2e12, 1e12, 3e12], "volume_m3": 4e15, "mantle_density_kg_m3": 3300.0, "water_density_kg_m3": 1000.0, "datum_shift_m": 777.0}
+  },
+  "acceptance_claim": "Passing these controls demonstrates only their stated mathematical/numerical slices; I01 generated boundary/transition decisions remain open until their named controls close."
+}

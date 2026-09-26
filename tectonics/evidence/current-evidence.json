@@ -1,7 +1,20 @@
 {
   "schema": "atlas.current-evidence-register.v1",
-  "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current binding claims cover the Step 7 matrix, B1 diagnostic tool plus two neutral inputs, and the Windows installation's package-version record; no physical simulation is classified current. Checks cover declared bytes only, not native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
+  "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
+    {
+      "id": "i01-controls-r1",
+      "path": "tectonics/evidence/i01-controls-r1.json",
+      "sha256": "0a8166560cac314f577468dbd40cff0ff4852f7ec3f1c8d273c97c82348713c4",
+      "status": "current",
+      "note": "Four bounded design controls: exact torque moments/work, candidate 1D softening/localisation, staged spherical-lune ocean accounts and local Airy finite-water level. PASS_BOUNDED_CONTROLS_ONLY; no native package import, full world or scientific acceptance.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "The control tool, case policy and physical-contract document are byte-bound. Runtime versions are recorded, not native binary execution identities. The test file and external papers/software are not sealed by this receipt.",
+        "Only the stated analytical and 1D/accounting slices are checked. Two-dimensional fault orientation, generated breakup/subduction initiation, global remapping and coupled regional water/flexure remain open. Timings exclude library imports and are not world-runtime or speedup measurements."
+      ]
+    },
     {
       "id": "environment-install",
       "path": "tectonics/evidence/environment-install.json",
