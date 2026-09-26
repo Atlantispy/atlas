@@ -60,6 +60,7 @@ class AcceptanceGuards(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp)/'receipt.json'
             check.write_new(path, {'first':True})
+            self.assertNotIn(b'\r', path.read_bytes())
             with self.assertRaises(FileExistsError):
                 check.write_new(path, {'second':True})
             self.assertEqual(check.read(path),{'first':True})

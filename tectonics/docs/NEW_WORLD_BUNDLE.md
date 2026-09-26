@@ -4,8 +4,8 @@
 
 `tools/new_world_bundle.py` saves an initial world and selected regional results
 in one `.atlas` file. Loading restores the original world, saved times and the
-prepared inputs needed to continue a partial run. Neither saving nor loading
-generates a world, samples geology or runs the physics. Resume is a separate,
+prepared inputs needed to continue a compatible partial run. Neither saving nor
+loading generates a world, samples geology or runs the physics. Resume is a separate,
 explicit action using the existing native job manager.
 
 ## What the file contains
@@ -46,9 +46,13 @@ storage contract.
   exist. The original attempt ceiling is preserved.
 - The native request, every prefix record, original input identity, initial
   identity, scientific output digest, context/time and world pairing are checked.
-  Saved dependencies must match the current code/runtime for regional import and
-  export. No automatic installation, compatibility migration or silent repin is
-  performed. Portability is of data, not a bundled operating system/environment.
+  Regional export requires the current code/runtime. Import and inspection also
+  admit integrity-verified jobs from a different code/runtime, retaining every
+  original binding and reporting `continuation_compatible: false` with
+  `continuation_refusal: SOURCE_MISMATCH`. Their saved results remain available
+  through the bundle `result` interface. Native resume still refuses mismatched
+  bindings; no automatic installation, compatibility migration or silent repin is
+  performed. Only supported saved schemas are admitted.
 - Strict member allowlists, record/total limits, duplicate/linked/encrypted/
   compressed-member refusal, bounded central-directory parsing and manual member
   copying prevent archive-path extraction and unbounded decompression. No
@@ -59,9 +63,22 @@ storage contract.
   only after the successful response; failure retains the previously open world.
   Rollback removes only unchanged files created by that call and its empty owned
   directories, never an existing project or arbitrary recursive tree.
+- The trusted system temporary-directory root is resolved before staging, so a
+  system alias such as `/var` does not invalidate a save or load. User-supplied
+  source and destination paths still reject symlinks/reparse points. Unavailable
+  safe staging or missing native dependencies return `ENVIRONMENT_ERROR`, not a
+  claim that the saved world is damaged.
 
-Existing source-bound project/session/job/native modules remain byte-unchanged;
-old saved jobs remain compatible. The new wrapper is outside the native package.
+Native world restoration remains mandatory and unchanged: its codecs and geometry
+identity checks must succeed before a world is returned. A different job execution
+binding does not by itself prevent world restoration. This is not a promise that
+every older schema, native library or platform can decode every world. A native
+reader refusal remains a refusal; the adapter neither repins a world nor claims
+metadata-only inspection as a successfully loaded world.
+
+The project/session staging adapters have changed; source-bound jobs created with
+their prior bytes may therefore be inspectable but noncontinuable under these
+updated adapters. Existing job and native execution guards remain unchanged.
 
 ## Stable backend and UI interface
 
@@ -70,6 +87,7 @@ Use the declared scientific Python and trusted server-owned paths:
 ```text
 python -B tectonics/tools/new_world_bundle.py save --file NEW.atlas --world ORIGINAL.atlas --root JOBS_ROOT
 python -B tectonics/tools/new_world_bundle.py inspect --file SAVED.atlas
+python -B tectonics/tools/new_world_bundle.py result --file SAVED.atlas --job ORIGINAL_JOB_ID --index 0
 python -B tectonics/tools/new_world_bundle.py load --file SAVED.atlas --directory NEW_DIRECTORY
 ```
 
@@ -88,15 +106,19 @@ All commands return a path-free envelope:
 `save` additionally reports `archive_bytes`, `stored_world_copies: 1` and
 `avoided_frozen_world_copies`. Each job summary contains `job_id`, `producer_id`,
 `state`, `attempt`, `completed_outputs`, `total_outputs`, `requested_elapsed_s`,
-`output_ids`, `continuation_compatible`, `attempts_remaining` and its safe `error`
-or null. Compatibility is not permission to reset an exhausted attempt count.
+`output_ids`, `continuation_compatible`, `continuation_refusal`, `attempts_remaining`
+and its safe `error` or null. Compatibility is not permission to reset an exhausted attempt count.
 Failures return `status: error`, safe `error.code/message` and exit 2, never
 private filesystem paths or raw exceptions.
 
 After successful load, `NEW_DIRECTORY/world.atlas` works with the existing
 `new_world_session.py read`. `NEW_DIRECTORY/jobs/<ORIGINAL_JOB_ID>/` works with
-the existing `new_world_job.py status/result/resume/cancel` interface. UI owns
-registration/routing to that imported jobs root and collision handling; it must
+the existing `new_world_job.py status/result/resume/cancel` interface when its
+source/runtime guards permit the operation. For historical saved results, use
+bundle `result`: it verifies the archive and committed scientific identities,
+returns `job`, `index`, `result` and `generated_on_open: false`, and never creates
+an execution owner. Omit `--index` or use `-1` for the last committed result.
+UI owns registration/routing to that imported jobs root and collision handling; it must
 not rename IDs, merge into an existing conflicting job, or call submit instead
 of resume. It should select committed saved times without initiating physics.
 The `.atlas` upload must not be treated as the old smaller initial-only format
@@ -104,9 +126,22 @@ before its type and bounds are checked by this adapter.
 
 Python API: `save_bundle(path, world_path, *, jobs_root=None, job_ids=())`,
 `inspect_bundle(path)`, `load_bundle(path, new_directory)`. Each returns the
-envelope's `data` value; `response(argv, stdin)` also supplies the exit code.
+envelope's `data` value; `read_bundle_output(path, job_id, index=-1)` returns a
+verified saved result with its job compatibility summary. `response(argv, stdin)`
+also supplies the exit code. Historical inspection is read-only access to saved
+data, not scientific revalidation or execution compatibility.
 
 ## Measured native checkpoint
+
+The measurements below are historical r1 observations, not current-source timing
+claims. The [26 September native check](../evidence/new-world-bundle-r2.json)
+also predates A3's native-source change and is historical integration evidence,
+as recorded in the [evidence register](../../docs/CURRENT_EVIDENCE.md). It
+passed save/inspect/load and saved-output access on the repaired adapters, including
+a simulated foreign execution identity. It restores identical world bytes and
+exact results while refusing resume under the mismatch, without generation.
+That complete bounded check takes 3.875754 s; its archive is 411,598 bytes.
+It is not a matched performance comparison or a real second-platform run.
 
 One unchanged Step 7 seed42 world and its 0/50,000/100,000-year results were used,
 not a new generated planet. Complete save/load took **1.845434 / 0.916799 s**;

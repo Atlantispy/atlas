@@ -3,6 +3,8 @@
 *.md text eol=lf
 *.json text eol=lf
 *.toml text eol=lf
+# Retained test logs are already stored with LF and bound by recorded digests.
+*.log text eol=lf
 
 # Preserve pinned reference bytes; Git must not normalise their line endings.
 reference_data/** -text

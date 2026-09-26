@@ -4,7 +4,9 @@ from dataclasses import replace
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -385,6 +387,50 @@ class NewWorldProjectTests(unittest.TestCase):
         self.assertFalse(restored.configuration_compatible)
         self.assertEqual(restored.manifest['plan'], self.plan)
         self.assert_same_atlas(restored.atlas)
+
+    def test_system_temp_alias_is_resolved_without_admitting_caller_aliases(self):
+        actual = self.root/'actual-temp'
+        actual.mkdir()
+        alias = self.root/'temp-link'
+        try:
+            if os.name == 'nt':
+                subprocess.run(['cmd', '/c', 'mklink', '/J', str(alias), str(actual)],
+                               capture_output=True, check=True)
+            else:
+                alias.symlink_to(actual, target_is_directory=True)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            self.skipTest(f'OS cannot create a directory alias: {exc}')
+        target = self.root/'temp-roundtrip.atlas'
+        with mock.patch.object(project.tempfile, 'gettempdir', return_value=str(alias)):
+            manifest = project.save_project(target, self.plan, self.candidate,
+                                            structure=self.structure, motion=self.motion)
+            restored = project.load_project(target)
+        self.assertEqual(restored.manifest, manifest)
+        self.assert_same_atlas(restored.atlas)
+        self.assertEqual(list(actual.iterdir()), [])
+        (actual/'world.atlas').write_bytes(self.saved_bytes)
+        for operation in (lambda: project.load_project(alias/'world.atlas'),
+                          lambda: project.save_project(alias/'new.atlas', self.plan, self.candidate)):
+            with self.assertRaises(contract.ContractError) as caught:
+                operation()
+            self.assertEqual(caught.exception.code, 'UNSAFE_PATH')
+
+    def test_staging_and_missing_codec_are_environment_errors_not_corruption(self):
+        with mock.patch.object(project.tempfile, 'gettempdir', return_value=str(self.root/'missing')):
+            with self.assertRaises(contract.ContractError) as caught:
+                project.load_project(self.path)
+        self.assertEqual(caught.exception.code, 'ENVIRONMENT_ERROR')
+        Store, limits, save, load = project._native()
+        def unavailable(*args):
+            try:
+                raise ImportError('private codec location')
+            except ImportError as exc:
+                raise ValueError('native codec unavailable') from exc
+        with mock.patch.object(project, '_native', return_value=(unavailable, limits, save, load)):
+            with self.assertRaises(contract.ContractError) as caught:
+                project.load_project(self.path)
+        self.assertEqual(caught.exception.code, 'ENVIRONMENT_ERROR')
+        self.assertEqual(self.path.read_bytes(), self.saved_bytes)
 
     def test_failed_publication_leaves_no_partial_project(self):
         target = self.root / 'unpublished.atlas'

@@ -1,0 +1,245 @@
+{
+  "schema": "atlas.current-evidence-register.v1",
+  "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current binding claims cover the Step 7 matrix, B1 diagnostic tool plus two neutral inputs, and the Windows installation's package-version record; no physical simulation is classified current. Checks cover declared bytes only, not native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
+  "records": [
+    {
+      "id": "environment-install",
+      "path": "tectonics/evidence/environment-install.json",
+      "sha256": "28617b845f72a3739627c528883d564a2ab156d315783505ea2910170c16380a",
+      "status": "current",
+      "note": "Reviewed clean Windows CPython 3.12.14 installation of 39 pinned packages, dependency/metadata checks, ten environment tests and tiny compiled-library/render smoke calls. No Atlas simulation, visual workflow, Linux check or native restart.",
+      "bindings": [
+        {
+          "pointer": "/record/sha256",
+          "file": "tectonics/requirements/windows-amd64-cp312.json"
+        }
+      ],
+      "not_checked": [
+        {
+          "pointer": "/interpreter/base_executable_sha256",
+          "kind": "runtime",
+          "reason": "Observed local interpreter binary, not a repository file or ongoing execution-identity check."
+        },
+        {
+          "pointer": "/wheels/*/sha256",
+          "kind": "artefact",
+          "reason": "Wheel archive digests reported by pip during the installation; archives are not stored in this repository."
+        },
+        {
+          "pointer": "/checks/smoke/script_sha256",
+          "kind": "artefact",
+          "reason": "Retained ignored local smoke script; its digest was checked during integration, not by this repository checker."
+        }
+      ],
+      "limits": [
+        "Current means this installation receipt and its package-version JSON record retain their declared bytes. Requirement-file consistency is checked separately by the environment checker; that checker, tests, local logs, smoke script and installed runtime are not sealed here.",
+        "One Windows installation and import/render smoke observation, not Atlas behaviour, geological acceptance, Linux support, native restart compatibility or future PyPI availability. The package comparison used pip RECORD hashes, not a fresh installed-file byte audit."
+      ]
+    },
+    {
+      "id": "boundary-kinematics-r1",
+      "path": "tectonics/evidence/boundary-kinematics-r1.json",
+      "sha256": "bd91ae4cd4960d02ea6a723cd7d38c57eb3b5f44d06c1d1e7441a8322f035309",
+      "status": "current",
+      "note": "B1 matched diagnostics of retained seed 42 and a paused geometry prototype with original rotations, against PB2002 development at 100/250/500 km. No new world, refit, withheld evaluation or realism acceptance.",
+      "bindings": [
+        {
+          "pointer": "/tool_sha256",
+          "file": "tectonics/tools/assess_boundary_kinematics.py"
+        },
+        {
+          "pointer": "/sources/0/identity/input_sha256",
+          "file": "tectonics/evidence/boundary-input-original-r1.json"
+        },
+        {
+          "pointer": "/sources/1/identity/input_sha256",
+          "file": "tectonics/evidence/boundary-input-prototype-r1.json"
+        }
+      ],
+      "not_checked": [
+        {
+          "pointer": "/campaign/atlas_id",
+          "kind": "artefact",
+          "reason": "Retained native atlas identity; neutral inputs are bound separately."
+        },
+        {
+          "pointer": "/campaign/geometry_id",
+          "kind": "artefact",
+          "reason": "Retained native geometry identity, not a source hash."
+        },
+        {
+          "pointer": "/campaign/motion_id",
+          "kind": "artefact",
+          "reason": "Retained original motion, not a newly fitted motion."
+        },
+        {
+          "pointer": "/campaign/project_id",
+          "kind": "artefact",
+          "reason": "External read-only saved project; portable inputs are bound separately."
+        },
+        {
+          "pointer": "/campaign/preparation_script_sha256",
+          "kind": "artefact",
+          "reason": "Local export harness outside the repository; replay uses the checked-in neutral inputs."
+        },
+        {
+          "pointer": "/campaign/source_files_sha256/*",
+          "kind": "artefact",
+          "reason": "External retained world and prototype; before/after hashes matched during export."
+        },
+        {
+          "pointer": "/protocol/protocol_id",
+          "kind": "artefact",
+          "reason": "Canonical measurement protocol identity, not a file hash."
+        },
+        {
+          "pointer": "/comparisons/*/audit/candidate_id",
+          "kind": "artefact",
+          "reason": "Evaluation identity; explicit input_sha256 bindings are checked separately."
+        },
+        {
+          "pointer": "/comparisons/*/audit/dataset_id",
+          "kind": "artefact",
+          "reason": "Logical PB2002 dataset identity verified during measurement."
+        },
+        {
+          "pointer": "/comparisons/*/audit/evaluation_id",
+          "kind": "artefact",
+          "reason": "Canonical evaluation identity, not a source hash."
+        },
+        {
+          "pointer": "/comparisons/*/audit/protocol_id",
+          "kind": "artefact",
+          "reason": "Logical reference-use protocol identity."
+        },
+        {
+          "pointer": "/reference/audit/candidate_id",
+          "kind": "artefact",
+          "reason": "PB2002 source-only evaluation uses its dataset identity."
+        },
+        {
+          "pointer": "/reference/audit/dataset_id",
+          "kind": "artefact",
+          "reason": "Dataset identity verified during measurement, not re-executed here."
+        },
+        {
+          "pointer": "/reference/audit/evaluation_id",
+          "kind": "artefact",
+          "reason": "Canonical evaluation identity."
+        },
+        {
+          "pointer": "/reference/audit/protocol_id",
+          "kind": "artefact",
+          "reason": "Logical reference-use protocol identity."
+        },
+        {
+          "pointer": "/reference/identity/dataset_id",
+          "kind": "artefact",
+          "reason": "PB2002 source inventory verified by the measurement loader."
+        },
+        {
+          "pointer": "/reference/identity/policy_id",
+          "kind": "artefact",
+          "reason": "Reference-use policy identity; not a source-file binding in this checker."
+        },
+        {
+          "pointer": "/reference/identity/reference_protocol_id",
+          "kind": "artefact",
+          "reason": "Logical reference protocol identity."
+        }
+      ],
+      "limits": [
+        "Current means the tool and two neutral input byte bindings match. Native project, export harness, reference-loader dependencies and Python/NumPy binaries are not sealed here; known drift requires review or historical classification.",
+        "One development seed and PB2002 development only. Prototype motion was not refitted or junction compatibility re-established. No generated-world realism or physical simulation acceptance."
+      ]
+    },
+    {
+      "id": "new-world-s7-r2",
+      "path": "tectonics/evidence/new-world-s7-r2.json",
+      "sha256": "0c433c7fd5b6d6ba54bfea9133288bb8728b2bea0a23ed77b418c081cd0eaab7",
+      "status": "historical",
+      "note": "Historical first-repair-batch Step 7 rerun, 26 September 2026. A3 subsequently changed tectonics/src/atlas_tectonics/reuse.py and therefore its native execution identity. Adapter file hashes still match, but the whole run is not exact-current-source acceptance. Original receipt and runtime bindings remain unchanged; no rerun or repin."
+    },
+    {
+      "id": "new-world-s7-r2-matrix",
+      "path": "tectonics/evidence/new-world-s7-r2-matrix.json",
+      "sha256": "3345e9502e0fd286df14ea9d92f423d7cf72542f99e6aa459d27b03471c7e7c1",
+      "status": "current",
+      "note": "Predeclared three-case matrix written before the Step 7 r2 run and bound by new-world-s7-r2 /matrix_sha256.",
+      "bindings": [
+        {
+          "pointer": "/tool_sha256",
+          "file": "tectonics/tools/check_new_world_acceptance.py"
+        }
+      ],
+      "not_checked": [],
+      "limits": [
+        "Declares the cases, times and one-attempt policy only; outcomes are recorded in new-world-s7-r2."
+      ]
+    },
+    {
+      "id": "new-world-bundle-r2",
+      "path": "tectonics/evidence/new-world-bundle-r2.json",
+      "sha256": "0fd49191ef1eb1e3043baee298b5483696d69eefbc83a8646de96d72f07bad00",
+      "status": "historical",
+      "note": "Historical first-repair-batch native save/inspect/load and result check, 26 September 2026. The later A3 reuse.py change alters native execution identity; this receipt binds four adapters but neither native sources nor runtime. It remains evidence for its original integration snapshot, not a current native functional check."
+    },
+    {
+      "id": "new-world-motion-frame-r2",
+      "path": "tectonics/evidence/new-world-motion-frame-r2.json",
+      "sha256": "f77900e4a4cea7b7106efe3f42644765fbdb39d3b76efc97f8845464439ea2ed",
+      "status": "historical",
+      "note": "Historical whole receipt for the 24 September frame-neutral motion correction. Its four correction/diagnostic source bindings remain useful, but embedded project/session restoration, affected-integration and full-generation observations use changed or unbound dependencies. Conservatively classify the whole record as historical rather than treating matching subset hashes as current integration acceptance. The implemented motion correction is not reverted."
+    },
+    {
+      "id": "new-world-s2-r1",
+      "path": "tectonics/evidence/new-world-s2-r1.json",
+      "sha256": "397cebaa17ba7f27b6c21061b26012ed09077606416e4da87b5f8e3edb0be531",
+      "status": "historical",
+      "note": "Step 2 layout and morphology measurement, 24 September 2026. Its runner binding (check_new_world_layout.py) has since changed; its native execution, qhull and generator runtime identities belong to that run. Descriptive morphology, not geological acceptance (tectonics/docs/NEW_WORLD_LAYOUT.md)."
+    },
+    {
+      "id": "new-world-s3-r1",
+      "path": "tectonics/evidence/new-world-s3-r1.json",
+      "sha256": "6dcc3cbfaef0fd6dbbec18e1484be75a34fb51a8ba536c8c418fd2f97de03510",
+      "status": "historical",
+      "note": "Step 3 lithosphere measurement, 24 September 2026. Binds earlier new_world_project.py and new_world_session.py bytes and a native execution_id of that run (tectonics/docs/NEW_WORLD_STRUCTURE.md)."
+    },
+    {
+      "id": "new-world-s4-r1",
+      "path": "tectonics/evidence/new-world-s4-r1.json",
+      "sha256": "02ba19d2643446880307015a0c59a92af0d0fe0ce32e7e060e67f8bf7e9a39c6",
+      "status": "historical",
+      "note": "Step 4 initial-motion measurement, 24 September 2026. Binds the pre-correction new_world_motion.py and earlier project/session adapters; historical per tectonics/docs/NEW_WORLD_MOTION.md."
+    },
+    {
+      "id": "new-world-s5-r1",
+      "path": "tectonics/evidence/new-world-s5-r1.json",
+      "sha256": "49f7d4d9bf14140346444d6debe00dfd11687736570ec1f5620cf2251d8990ae",
+      "status": "historical",
+      "note": "Step 5 regional evolution evidence, 24 September 2026. Binds the pre-correction motion and earlier project adapters with that run's native_execution_id; historical per tectonics/docs/NEW_WORLD_EVOLUTION.md."
+    },
+    {
+      "id": "new-world-s7-r1",
+      "path": "tectonics/evidence/new-world-s7-r1.json",
+      "sha256": "03502affee3918bf50126e3fef584d5be82f14b358d42f995e334a6989f19ba7",
+      "status": "superseded",
+      "superseded_by": "new-world-s7-r2",
+      "note": "Step 7 r1, 24 September 2026, on the pre-correction motion and earlier project/session/tool sources. Its regional mean surface changes (2.768, 120.330 and 26.849 m) must not be quoted as current. /reused_evidence/0/sha256 holds the corrected LF digest recorded in line-ending-digest-correction-r1."
+    },
+    {
+      "id": "new-world-bundle-r1",
+      "path": "tectonics/evidence/new-world-bundle-r1.json",
+      "sha256": "c651336799dc45058ccc5450138762e1fe500eb28669fb068fc4d87af641de67",
+      "status": "historical",
+      "note": "Portable bundle delivery, 24 September 2026: save/load timings and the 44.37% storage saving were measured on earlier wrapper, project and motion sources. new-world-bundle-r2 is a later historical functional check and does not re-measure them (tectonics/docs/NEW_WORLD_BUNDLE.md)."
+    },
+    {
+      "id": "line-ending-digest-correction-r1",
+      "path": "tectonics/evidence/line-ending-digest-correction-r1.json",
+      "sha256": "6f736262953175eeb1128dda3073b04637c4dadb6235239ad2e9827fa74fa4e8",
+      "status": "historical",
+      "note": "Audit trail of the 31 recorded SHA-256 values corrected from CRLF to LF digests on 26 September 2026. Its old_sha256 values are deliberately stale: they are a trail, not bindings, and this file is not parsed as a receipt."
+    }
+  ]
+}

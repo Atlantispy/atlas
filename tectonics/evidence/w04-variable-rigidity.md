@@ -133,7 +133,7 @@ validation. The detailed physical/numerical rationale is in the linked contract.
 - `tests/test_w04_variable_workflow.py`:
   `b5e67e48d1cb35f4d5b699ae499cdddaa36cacc9c5ed4b51cf49ad61a51c5caf`
 - `evidence/w04-variable-timing.json`:
-  `4c25d1e89bb36e61e5a7d71bf89cb9c1bab424e79f20df5e1b95f23ea1876ee3`
+  `5ef644f7a75fd51c573891f8e6aa54e94c187547992d3d9575210137d9b05179`
 
 The new module participates in execution/source identity; old bindings are not
 silently repinned. Passing these controls establishes this bounded implementation,

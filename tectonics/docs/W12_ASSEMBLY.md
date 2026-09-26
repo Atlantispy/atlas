@@ -3,6 +3,18 @@
 24 September 2026. WORKING NON-CANON. This is the implementation record for
 the existing plan's W12, not a new scientific model or a competing roadmap.
 
+26 September correction: signed-zero bytes, initial-surface policy consistency
+and owner-thread closure are repaired. All 33 publishing/assembly/ports/graph
+checks pass on the corrected source; details are in the
+[repair record](REVIEW_REPAIRS_2026-09-26.md). Earlier execution receipts remain
+historical after the native source change; no checkpoint was silently repinned.
+
+**Integration completion correction, 26 September:** the delivery below is a
+bounded assembly and export layer, not the complete tectonics generator. The
+[complete integration plan](INTEGRATION_PLAN.md) now defines the missing physical
+joins, evolving-world producer, lifecycle and end-to-end acceptance. Existing
+technical results remain useful; they do not close that larger scope.
+
 ## What is usable
 
 The source checkout now has a runnable, recoverable **W01 -> W02 -> W03 -> W04**
@@ -42,7 +54,10 @@ Independent physical and field-evidence limits in W10 remain unchanged.
 
 Use the repository root and a compatible environment containing the declared
 [package dependencies](../pyproject.toml). Python 3.12 or 3.13 is required;
-the measured environment is recorded with the evidence. No private files,
+the measured environment is recorded with the evidence. The
+[Windows environment guide](../../docs/TECTONICS_ENVIRONMENT.md) supplies exact
+package pins and a metadata-only check; matching versions alone does not establish
+native continuation compatibility. No private files,
 download, test fixture import or saved Diadem state is needed.
 
 ```text
@@ -344,6 +359,8 @@ and metadata, and records the owner identity. It never calls `run` to manufactur
 missing work. A missing, different or closed required owner refuses.
 
 Every field has a dtype, shape, content hash, units and support/owner information.
+Exports use little-endian, C-order array bytes while preserving every native
+value bit, including negative zero; storage does not normalise signed zero.
 Packed mixed-unit matrices have ordered column descriptions. Dry water surfaces,
 partial ocean occupancy and unknown underthrust enthalpy keep their masks;
 placeholder zero values are not promoted to known physical zeroes. Unknown output
@@ -366,6 +383,12 @@ thermal/compaction history, W04 policy, output schedule, source/runtime identity
 and explicit fixed reservoir-allocation/extra-pressure policies. Every interval
 uses the current finite reservoir. Elastic displacement is the **total response
 from the initial reference**, never repeatedly added to an earlier deflection.
+Preparation rejects an initial surface whose pressure or reservoir allocation
+contradicts these policies. Reservoir allocation admits only floating-point
+roundoff (32 binary64 epsilons relative, no absolute allowance); the fixed
+reference and output zero then use the exact policy allocation, calculated once.
+The supplied surface identity remains in the definition alongside the effective
+surface identity, with its original source and ordered cell IDs preserved.
 
 The native W03 checkpoint closure is saved first, the consumer arrays second,
 and a completed-output marker last. Resume authenticates the completed prefix

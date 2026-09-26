@@ -1,0 +1,41 @@
+# Atlas tectonics core route: exact versions observed read-only on 26 September 2026
+# in the existing Windows scientific environment (CPython 3.12.14, win_amd64).
+# WORKING NON-CANON. Setup input only: equal versions do not prove identical native
+# binaries, CPU features or checkpoint-continuation compatibility. Not verified on
+# Linux or any other interpreter. Tested/installed status and evidence per package:
+# windows-amd64-cp312.json and docs/TECTONICS_ENVIRONMENT.md.
+# Every observed package came from a wheel; refuse source builds.
+--only-binary=:all:
+
+# Declared in tectonics/pyproject.toml; recorded by Windows receipts at these versions.
+blosc2==4.13.1
+numba==0.65.1
+numpy==2.4.6
+scipy==1.17.1
+shapely==2.1.2
+threadpoolctl==3.7.0
+
+# Resolved transitive requirements. llvmlite is recorded by receipts; the others
+# are installed only (pulled in by blosc2), not independently tested by Atlas.
+annotated-types==0.8.0
+anyio==4.15.1
+certifi==2026.7.22
+h11==0.16.0
+h2==4.4.1
+hpack==4.2.0
+httpcore==1.0.9
+httpx==0.28.1
+hyperframe==6.1.0
+idna==3.20
+llvmlite==0.47.0
+markdown-it-py==4.2.0
+mdurl==0.1.2
+msgpack==1.2.2
+ndindex==1.10.1
+numexpr==2.14.2
+pydantic==2.13.5
+pydantic-core==2.46.5
+pygments==2.21.0
+rich==15.0.0
+typing-extensions==4.16.0
+typing-inspection==0.4.4

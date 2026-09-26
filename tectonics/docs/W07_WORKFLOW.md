@@ -1,5 +1,12 @@
 # W07 Step 5 — geological assembly and recoverable execution
 
+Publication note, 26 September 2026: the linked W07 reports are now
+explicitly redacted historical public copies. Only personal path components,
+publication metadata and affected report-file digests changed; measurements
+and original scientific source/runtime identities did not. The digests below
+identify those public copies, not the original run artefacts. See the
+[before/after trail](../evidence/public-path-redaction-r1.json).
+
 23 September 2026. WORKING NON-CANON. Step 5 complete for the routes below;
 assembled acceptance and matched recovery measurement PASS. The [Step 1 design](W07_REGIONAL_MECHANICS.md) and
 [case register](../cases/w07_mechanics.json) are unchanged.
@@ -126,7 +133,7 @@ validation, calculation, cap or output format changed.
 The [current-source report](../evidence/w07-workflow.json) passes all **five**
 assembled/reference/timing checks in **63.733 s**, on Windows 11, Python 3.12.14,
 NumPy 2.4.6 and SciPy 1.17.1, with one native thread. Report SHA-256:
-`11fd885f40da4765805a653f55d927bb344dc2964c204c38002669dcca45ceb3`.
+`b21b9b38b18a33f74bd8732a436d54baf449e93c3ac97c9a05e19c69255f460f`.
 Tests use declared synthetic controls passed through the real W01/W02 producer,
 not Diadem terrain or calibration data. Eight codec, nine geological-binding and
 all twelve workflow methods have passing evidence. Unchanged passing checks were

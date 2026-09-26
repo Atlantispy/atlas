@@ -1,0 +1,98 @@
+{
+  "schema": "atlas.tectonics-environment.v1",
+  "status": "WORKING NON-CANON",
+  "observed": "2026-09-26",
+  "declared_by": "tectonics/pyproject.toml",
+  "provenance": "Read-only importlib.metadata inspection of the existing Windows scientific virtual environment (system site-packages excluded). The declared dependencies were followed through each installed package's Requires-Dist, including extras requested by a parent (blosc2 requests httpx[http2]). No package was imported, installed, upgraded, rebuilt or downloaded. 40 distributions were installed: the 39 pinned here and the pip installer. Every pinned package was installed by pip from a wheel.",
+  "scope": {
+    "implementation": "cpython",
+    "python": "3.12.14",
+    "sys_platform": "win32",
+    "machine": "AMD64",
+    "pointer_bits": 64
+  },
+  "observation": {
+    "system": "Windows",
+    "release": "11",
+    "os_version": "10.0.26200",
+    "compiler": "MSC v.1944 64 bit (AMD64)",
+    "build": "main Aug 25 2026 14:01:42"
+  },
+  "routes": {
+    "core": {
+      "requirements": "tectonics/requirements/windows-amd64-cp312-core.txt",
+      "declared": "[project] dependencies",
+      "includes": [],
+      "note": "Scientific kernels, storage and geometry. Seven packages are recorded by Windows CPython 3.12.14 receipts; the rest are resolved requirements pulled in by blosc2 and numba.",
+      "packages": {
+        "annotated-types": {"version": "0.8.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["pydantic"]},
+        "anyio": {"version": "4.15.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpx"]},
+        "blosc2": {"version": "4.13.1", "wheel": "cp311-abi3-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/w11-module-wide-storage.json"]},
+        "certifi": {"version": "2026.7.22", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpcore", "httpx"]},
+        "h11": {"version": "0.16.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpcore"]},
+        "h2": {"version": "4.4.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpx"]},
+        "hpack": {"version": "4.2.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["h2"]},
+        "httpcore": {"version": "1.0.9", "wheel": "py3-none-any", "status": "installed", "required_by": ["httpx"]},
+        "httpx": {"version": "0.28.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["blosc2"]},
+        "hyperframe": {"version": "6.1.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["h2"]},
+        "idna": {"version": "3.20", "wheel": "py3-none-any", "status": "installed", "required_by": ["anyio", "httpx"]},
+        "llvmlite": {"version": "0.47.0", "wheel": "cp312-cp312-win_amd64", "status": "tested", "required_by": ["numba"], "evidence": ["tectonics/evidence/comprehensive-baseline-r1.json"]},
+        "markdown-it-py": {"version": "4.2.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["rich"]},
+        "mdurl": {"version": "0.1.2", "wheel": "py3-none-any", "status": "installed", "required_by": ["markdown-it-py"]},
+        "msgpack": {"version": "1.2.2", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["blosc2"]},
+        "ndindex": {"version": "1.10.1", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["blosc2"]},
+        "numba": {"version": "0.65.1", "wheel": "cp312-cp312-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/comprehensive-baseline-r1.json"]},
+        "numexpr": {"version": "2.14.2", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["blosc2"]},
+        "numpy": {"version": "2.4.6", "wheel": "cp312-cp312-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/comprehensive-baseline-r1.json"]},
+        "pydantic": {"version": "2.13.5", "wheel": "py3-none-any", "status": "installed", "required_by": ["blosc2"]},
+        "pydantic-core": {"version": "2.46.5", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["pydantic"]},
+        "pygments": {"version": "2.21.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["rich"]},
+        "rich": {"version": "15.0.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["blosc2"]},
+        "scipy": {"version": "1.17.1", "wheel": "cp312-cp312-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/w11-scale-r2.json"]},
+        "shapely": {"version": "2.1.2", "wheel": "cp312-cp312-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w12-assembly-r1.json", "tectonics/evidence/comprehensive-baseline-r1.json"]},
+        "threadpoolctl": {"version": "3.7.0", "wheel": "py3-none-any", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/w11-scale-r2.json", "tectonics/evidence/comprehensive-resource-r1.json"]},
+        "typing-extensions": {"version": "4.16.0", "wheel": "py3-none-any", "status": "installed", "required_by": ["anyio", "pydantic", "pydantic-core", "typing-inspection"]},
+        "typing-inspection": {"version": "0.4.4", "wheel": "py3-none-any", "status": "installed", "required_by": ["pydantic"]}
+      }
+    },
+    "acceptance": {
+      "requirements": "tectonics/requirements/windows-amd64-cp312-acceptance.txt",
+      "declared": "[project.optional-dependencies] acceptance",
+      "includes": ["core"],
+      "note": "Process telemetry for the combined resource/platform acceptance drills.",
+      "packages": {
+        "psutil": {"version": "7.2.2", "wheel": "cp37-abi3-win_amd64", "status": "tested", "direct": true, "evidence": ["tectonics/evidence/comprehensive-review-r1.json"]}
+      }
+    },
+    "visual": {
+      "requirements": "tectonics/requirements/windows-amd64-cp312-visual.txt",
+      "declared": "[project.optional-dependencies] visual",
+      "includes": ["core"],
+      "note": "Installed but untested at these versions: no Windows receipt records a visual run with matplotlib 3.11.2. The only recorded matplotlib, 3.10.8, came from a Linux CPython 3.13.5 environment.",
+      "packages": {
+        "contourpy": {"version": "1.4.0", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["matplotlib"]},
+        "cycler": {"version": "0.12.1", "wheel": "py3-none-any", "status": "installed", "required_by": ["matplotlib"]},
+        "fonttools": {"version": "4.65.0", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["matplotlib"]},
+        "kiwisolver": {"version": "1.5.1", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["matplotlib"]},
+        "matplotlib": {"version": "3.11.2", "wheel": "cp312-cp312-win_amd64", "status": "installed", "direct": true},
+        "packaging": {"version": "26.3", "wheel": "py3-none-any", "status": "installed", "required_by": ["matplotlib"]},
+        "pillow": {"version": "12.3.0", "wheel": "cp312-cp312-win_amd64", "status": "installed", "required_by": ["matplotlib"]},
+        "pyparsing": {"version": "3.3.3", "wheel": "py3-none-any", "status": "installed", "required_by": ["matplotlib"]},
+        "python-dateutil": {"version": "2.9.0.post0", "wheel": "py2.py3-none-any", "status": "installed", "required_by": ["matplotlib"]},
+        "six": {"version": "1.17.0", "wheel": "py2.py3-none-any", "status": "installed", "required_by": ["python-dateutil"]}
+      }
+    }
+  },
+  "not_pinned": {
+    "pip": "Installer tooling present in the inspected environment; not an Atlas runtime dependency."
+  },
+  "unpinned_tools": {
+    "tectonics/tools/import_tosi_case5b.py": "Imports pdfplumber and pypdf, which are neither declared in tectonics/pyproject.toml nor installed in the inspected environment. This reference-data import route is not covered by these pins."
+  },
+  "limits": [
+    "Setup inputs for Windows AMD64 CPython 3.12.14 only. Linux, macOS and other Python versions are not verified by this record.",
+    "Equal version strings do not prove identical native binaries, CPU features or interpreter builds. The native execution identity hashes the interpreter and selected native libraries, so checkpoint continuation still depends on that identity, not on these pins.",
+    "'tested' means a Windows CPython 3.12.14 receipt records that exact version from runs of earlier source revisions. It does not claim that current code passes in this environment today.",
+    "No wheel or file hashes are recorded; the wheel tags are observed provenance only."
+  ]
+}

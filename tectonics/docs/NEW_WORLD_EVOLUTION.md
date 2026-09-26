@@ -1,5 +1,10 @@
 # New-world Step 5: generated regional tectonic evolution
 
+Evidence status, 26 September: old r1 timings and outputs below bind earlier
+motion/adapters and remain historical. Use the fresh
+[r2 combined workflow receipt](NEW_WORLD_ACCEPTANCE.md#current-rerun-26-september-2026)
+for current-code regional outputs; historical numerical results were not repinned.
+
 WORKING NON-CANON. This producer connects a saved S2/S3/S4 world to actual
 conserved-crust deformation and calculated surface change. It does not send new
 seeds to the fixed W12 demonstration or claim global geological evolution.

@@ -9,10 +9,10 @@
   "adapter": "w08_subduction_r3.json",
   "adapter_sha256": "34aedc1c381f969a03c17f16f50b0d6d7e5429573454d0579d1632b730835572",
   "report_sha256": {
-    "w08-subduction-r14-refined.json": "58e68bf3a0deb5ed73c4f7199b5a63d9c327edfc4bca1f52aabed5666a5ee2b1",
-    "w08-subduction-r15-fine.json": "e4bdbea6a5860f5a944eea6ef2f5dcd2ec0e89eff8e8dbdeaf9abfcf7eb7ae01",
-    "w08-subduction-r16-creep.json": "fcdadef1e20aa1b7bc92758d1f732e2c8d0bf768fc3ce4462f985c05f6fc7916",
-    "w08-subduction-r18-adaptive.json": "9b8f3e6717537d1a17273de68c2b401a174ca017d4963f5b823b5b1c0342409c"
+    "w08-subduction-r14-refined.json": "37f59d3c541ec7471d08f235162bafa5b4a67089ede94050caa88f1d9d9680f4",
+    "w08-subduction-r15-fine.json": "a36e9074ee8aa4a452345e62a5604c38faa4111b2763334361b3ba7f1dad2406",
+    "w08-subduction-r16-creep.json": "950fc47faa24fd4a6d6bb50aef8f987524fead18f6d740a7fb48fd1ff62bc7ea",
+    "w08-subduction-r18-adaptive.json": "7f99304d100888b69f190b80f17abd6427350290073c56744f847dff92bf6526"
   },
   "accepted_cases": {
     "1a": {
@@ -347,7 +347,7 @@
     "_velocity_multigrid.py": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868",
     "__init__.py": "e742cd04443cb9a7b3b2fd210a80dee2aa1efe9500f13e816f2fa8f38b9cdc68"
   },
-  "integration_evidence_sha256": "6a1e7fbf1b305f856c5a4fe30331296ad5952b0b3a2ea6e3dde53418e3145e6c",
+  "integration_evidence_sha256": "2ac1c982600a249b77a7dba01e2bd6f660180cb084e3d8704dba5003d2411304",
   "scientific_operator_changed": false,
   "numerical_gates_changed": false,
   "new_coupled_campaign": false,

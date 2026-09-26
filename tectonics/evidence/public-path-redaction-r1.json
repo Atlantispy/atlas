@@ -1,0 +1,44 @@
+{
+  "schema": "atlas.public-path-redaction.v1",
+  "date": "2026-09-26",
+  "source_status": "WORKING NON-CANON",
+  "status": "REDACTED_PUBLIC_COPIES_NOT_A_RERUN",
+  "scope": "Three W07 historical JSON reports and their two referring documents. Replace personal Windows username components with LOCAL_USER, add publication metadata, and update only affected report-file references.",
+  "preserved": "Original numerical values, errors, timings, scientific source/runtime identities and the earlier line-ending correction trail. Original bytes are retained outside the public repository; Git history is not rewritten.",
+  "prior_correction_record": "line-ending-digest-correction-r1.json",
+  "files": [
+    {
+      "path": "tectonics/evidence/w07-regional-mechanics-check.json",
+      "sha256_before": "10ab64f61dce99df44aa9c9c0d01c905e5a11910d9dcb760a181eccf7b95903b",
+      "sha256_after": "3e366d93bceea4c4f40fdf07e64475c8fdb9d3d518cc07ba05a47a95d50adef7",
+      "username_substitutions": 10,
+      "original_scientific_values_preserved": true
+    },
+    {
+      "path": "tectonics/evidence/w07-regional-mechanics-controls.json",
+      "sha256_before": "5fb74b85b0fbcfb929e25c5346a8c5b61dc4057b63f98cb444f0f4c9401bd06f",
+      "sha256_after": "60a786aa224d1996220f58e1c1b7c6fe555ca18b1e32ebb9b8e43e6e1ad962ed",
+      "username_substitutions": 1,
+      "original_scientific_values_preserved": true
+    },
+    {
+      "path": "tectonics/evidence/w07-workflow.json",
+      "sha256_before": "1055acd8e5cd1432dc2df90b0324689c2cca6f3a9afb32903c96cbb2fc3c8969",
+      "sha256_after": "b21b9b38b18a33f74bd8732a436d54baf449e93c3ac97c9a05e19c69255f460f",
+      "username_substitutions": 2,
+      "original_scientific_values_preserved": true
+    },
+    {
+      "path": "tectonics/docs/W07_REGIONAL_SOLVER.md",
+      "sha256_before": "f601a7f0f67550837368fe6a8dced8a22d0fbf61c8b419cf6ec70e2f59b103f3",
+      "sha256_after": "7804dba7ae15b51f30c81dd6af12656d5132f37cf9a35cccf29493c1b98a27d7",
+      "updated_publication_digests": 2
+    },
+    {
+      "path": "tectonics/docs/W07_WORKFLOW.md",
+      "sha256_before": "63d259783b0cc2ae471fb2b2cb1ed1966c0b3e2cf6120fade74282d89b73598a",
+      "sha256_after": "a79049ab02162ec0dbe94cab96fc4b6fd3aa9dd865b319b1623ca28061336179",
+      "updated_publication_digests": 1
+    }
+  ]
+}

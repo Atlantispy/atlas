@@ -7,7 +7,9 @@ import copy
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -40,8 +42,9 @@ class NewWorldBundleTests(unittest.TestCase):
             atlas_id='2' * 64, structure_id='3' * 64, motion_id='4' * 64,
             plan={'plan_id': '5' * 64}, title='Synthetic portable fixture'))
         self.sources = {'adapters': {'synthetic': '6' * 64},
-                        'evolution': {'synthetic_runtime': '7' * 64}}
-        self.backend = SimpleNamespace(OUTPUT_SCHEMA='synthetic-evolution-output.v1',
+                        'evolution': {'adapters': {'synthetic': '6' * 64},
+                                      'native_execution_id': '7' * 64}}
+        self.backend = SimpleNamespace(SCHEMA='synthetic-initial.v1', OUTPUT_SCHEMA='synthetic-evolution-output.v1',
             METHOD='synthetic-no-physics', _digest=digest,
             check_initial=mock.Mock(side_effect=self.check_initial),
             prepare=mock.Mock(side_effect=AssertionError('must not sample or generate')),
@@ -84,12 +87,13 @@ class NewWorldBundleTests(unittest.TestCase):
             sources=copy.deepcopy(self.sources))
         request_body = job._encoded(request)
         (directory / 'request.json').write_bytes(request_body)
-        initial = dict(schema='synthetic-initial.v1', max_elapsed_s=2.,
+        initial = dict(schema=self.backend.SCHEMA, method=self.backend.METHOD, max_elapsed_s=2.,
             source_binding=copy.deepcopy(self.sources['evolution']),
             **{k: self.world.manifest[k] for k in ('project_id', 'atlas_id', 'structure_id', 'motion_id')},
             plan_id=self.world.manifest['plan']['plan_id'],
-            native_input=dict(epoch_time_s=10., frame_id='synthetic-frame',
-                              epoch_id='synthetic-epoch', datum_id='synthetic-datum'))
+            native_input=dict(epoch_time_s=10., max_elapsed_s=2., frame_id='synthetic-frame',
+                              epoch_id='synthetic-epoch', datum_id='synthetic-datum'),
+            support=dict(method='dry-local-Airy-change-v1', elastic_rigidity_nm=0., fill_density_kg_m3=0.))
         initial['initial_id'] = digest(initial)
         initial_body = job._encoded(initial)
         (directory / 'initial.json').write_bytes(initial_body)
@@ -256,6 +260,9 @@ class NewWorldBundleTests(unittest.TestCase):
 
     def test_archive_integrity_and_scientific_output_identity_are_both_checked(self):
         self.save()
+        self.assert_saved_output_integrity_checks()
+
+    def assert_saved_output_integrity_checks(self):
         name = f'jobs/{self.ident}/output-0000.json'
         def corrupt(entries):
             output = json.loads(entries[name])
@@ -282,7 +289,7 @@ class NewWorldBundleTests(unittest.TestCase):
         self.assertEqual((self.directory / 'status.json').read_bytes(), before)
         self.assertEqual(list(self.directory.glob('cancel-*.json')), [])
 
-    def test_wrong_world_current_source_and_archive_source_drift_refuse(self):
+    def test_wrong_world_and_current_export_source_drift_refuse(self):
         self.save()
         original = self.archive.read_bytes()
         refused_path = self.root / 'refused.atlas'
@@ -292,10 +299,77 @@ class NewWorldBundleTests(unittest.TestCase):
         frozen.write_bytes(self.world_bytes)
         self.sources['adapters']['synthetic'] = 'f' * 64
         self.assert_refused('SOURCE_MISMATCH', self.save, refused_path)
-        destination = self.root / 'incompatible'
-        self.assert_refused('SOURCE_MISMATCH', bundle.load_bundle, self.archive, destination)
-        self.assertFalse(destination.exists())
+        self.assertFalse(refused_path.exists())
         self.assertEqual(self.archive.read_bytes(), original)
+
+    def test_historical_jobs_are_viewable_and_loadable_but_native_resume_still_refuses(self):
+        self.save()
+        original = self.archive.read_bytes()
+        self.sources['evolution']['native_execution_id'] = 'f' * 64
+        self.backend.check_initial.reset_mock()
+        destination = self.root / 'incompatible'
+        inspected = bundle.inspect_bundle(self.archive)
+        loaded = bundle.load_bundle(self.archive, destination)
+        self.assertEqual(inspected, loaded)
+        saved_job = loaded['jobs'][0]
+        self.assertFalse(saved_job['continuation_compatible'])
+        self.assertEqual(saved_job['continuation_refusal'], 'SOURCE_MISMATCH')
+        self.assertEqual((destination / 'world.atlas').read_bytes(), self.world_bytes)
+        result = bundle.read_bundle_output(self.archive, self.ident)
+        self.assertEqual(result['result'], json.loads((self.directory/'output-0000.json').read_bytes())['result'])
+        self.assertFalse(result['generated_on_open'])
+        answer, code = bundle.response(['result', '--file', str(self.archive), '--job', self.ident], io.BytesIO())
+        self.assertEqual((answer['data'], code), (result, 0))
+        for name in bundle.FIXED:
+            self.assertEqual((destination/'jobs'/self.ident/name).read_bytes(), (self.directory/name).read_bytes())
+        self.assert_refused('SOURCE_MISMATCH', job.resume, destination/'jobs', self.ident)
+        self.backend.check_initial.assert_not_called()
+        self.backend.prepare.assert_not_called()
+        self.backend.PreparedEvolution.assert_not_called()
+        self.assertEqual(self.archive.read_bytes(), original)
+
+    def test_historical_inspection_keeps_initial_and_output_integrity_checks(self):
+        self.save()
+        self.sources['evolution']['native_execution_id'] = 'f' * 64
+        initial_name = f'jobs/{self.ident}/initial.json'
+        prefix_name = f'jobs/{self.ident}/prefix.json'
+        output_name = f'jobs/{self.ident}/output-0000.json'
+        def initial_change(entries):
+            initial = json.loads(entries[initial_name])
+            initial['support']['fill_density_kg_m3'] = 1.
+            entries[initial_name] = job._encoded(initial)
+            prefix = json.loads(entries[prefix_name])
+            prefix['initial_sha256'] = hashlib.sha256(entries[initial_name]).hexdigest()
+            output = json.loads(entries[output_name])
+            output['initial_sha256'] = prefix['initial_sha256']
+            entries[output_name] = job._encoded(output)
+            prefix['outputs'][0].update(size_bytes=len(entries[output_name]), sha256=hashlib.sha256(entries[output_name]).hexdigest())
+            entries[prefix_name] = job._encoded(prefix) + b'\n'
+        forged = self.rewrite('historical-forgery.atlas', initial_change, recalculate=True)
+        self.assert_refused('INVALID_BUNDLE', bundle.inspect_bundle, forged)
+        # The same archive/scientific-result checks also run on the foreign-runtime path.
+        self.assert_saved_output_integrity_checks()
+
+    def test_symlinked_system_temp_root_works_but_caller_links_still_refuse(self):
+        actual = self.root/'actual-temp'
+        actual.mkdir()
+        alias = self.root/'temp-link'
+        try:
+            if os.name == 'nt':
+                subprocess.run(['cmd', '/c', 'mklink', '/J', str(alias), str(actual)],
+                               capture_output=True, check=True)
+            else:
+                alias.symlink_to(actual, target_is_directory=True)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            self.skipTest(f'OS cannot create a directory alias: {exc}')
+        with mock.patch.object(bundle.projects.tempfile, 'gettempdir', return_value=str(alias)):
+            self.save()
+            inspected = bundle.inspect_bundle(self.archive)
+            self.assertEqual(inspected, bundle.load_bundle(self.archive, self.root/'restored'))
+        linked_archive = alias/'linked.atlas'
+        (actual/'linked.atlas').write_bytes(self.archive.read_bytes())
+        self.assert_refused('UNSAFE_PATH', bundle.inspect_bundle, linked_archive)
+        self.assert_refused('UNSAFE_PATH', bundle.load_bundle, self.archive, alias/'restored')
 
     def test_stale_active_inconsistent_counts_and_incomplete_preparation_refuse(self):
         status_path = self.directory / 'status.json'

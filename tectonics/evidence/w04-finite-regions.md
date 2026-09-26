@@ -119,7 +119,7 @@ terrain realism or general assembled W04 acceptance.
 - `src/atlas_tectonics/reuse.py`:
   `2714c234c9ed8c349412a08fae11def4840fd68efe829257f9c0f6fd0b8f69cc`
 - `evidence/w04-finite-timing.json`:
-  `c6c3840ea05a9f03a87552a848577dc59f6f4d65f005d8f60f44f972333acc64`
+  `14be829f8a75831e256f708ba4543e65d22150eed3dafb0acb149f458f0b80c9`
 
 The new module participates in loaded-source identity. Old states/receipts are
 not repinned. Next: step 4 variable rigidity, then general assembled acceptance.

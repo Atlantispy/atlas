@@ -1,6 +1,12 @@
 # New-world Step 4: initial plate motion
 
 Status: backend implementation, WORKING NON-CANON, 24 September 2026.
+
+Evidence status, 26 September: the r1 receipt below predates the committed
+frame-neutral motion correction and is historical, not a current-source pass.
+The corrected motion now has a fresh [three-case workflow check](NEW_WORLD_ACCEPTANCE.md#current-rerun-26-september-2026);
+this does not replace independent motion/morphology acceptance.
+
 This extends the actual Step 2 atlas and Step 3 lithosphere; it is not the fixed
 W12 demonstration. UI rendering belongs to the separate Generator UI owner.
 
@@ -249,13 +255,161 @@ with the remainder extending. Normal RMS is 2.21–3.80 cm/year and shear RMS is
 describe genuine oblique relative motion, not a calibrated realism threshold.
 All retained original files remain byte-identical.
 
-Verification: 11 existing motion methods plus 5 new fit/frame methods pass in
+Evidence status, 26 September review: the whole motion-frame r2 receipt is
+historical in the [register](../../docs/CURRENT_EVIDENCE.md). Its correction and
+diagnostic file bindings remain useful, but its project/session restoration,
+affected-integration and full-generation observations rely on changed or unbound
+dependencies. The implemented correction remains in place; this is not a rerun.
+
+Recorded verification: 11 existing motion methods plus 5 new fit/frame methods pass in
 4.918 s; 9 analytical assessment methods pass in 0.067 s; 4 affected regional-input,
 source/cancellation and project/session restoration methods pass in 8.216 s.
 The same tested source bytes were integrated. A separate corrected fixture saves
 and reopens with exactly preserved motion; historical inputs are not overwritten.
 Static route checks pass; 30 safety methods pass with the existing explicit
 Windows symlink-privilege skip. No long simulation or Linux coverage is claimed.
+
+## Matched boundary diagnostics (roadmap B1)
+
+`tools/assess_boundary_kinematics.py` measures a saved world, a neutral boundary
+input or the admitted PB2002 source with the **same** geometry and velocity
+calculations. It does not generate or evolve a world, change its motion fit or
+decide whether the world is realistic. The neutral input retains unit-vector
+boundary points, left/right plate ownership, sphere radius and Euler rotations;
+it also makes prototype measurements reproducible without a private project file.
+
+### How the comparison works
+
+Imagine laying equally spaced measuring marks along each boundary, then joining
+successive marks with short great-circle chords. The bend at each mark measures
+how sharply the boundary changes direction. Evaluating the two plates' velocities
+at the same chord midpoint gives their relative opening and sideways motion.
+Comparing two distant display arrows would not give this local measurement.
+
+The declared scales are **100, 250 and 500 km**, retaining the existing registered
+PB2002 scale series. The roadmap's 400 km suggestion is not silently substituted
+for 500 km. Changing a scale or classification changes the measurement protocol
+identity. Intervals are equal along the original path, not necessarily along the
+shortcut chords. Short lines that cannot support the requested sampling are
+reported as unresolved with their excluded length, not filled with invented data.
+
+Physical boundaries are counted once. Pieces join only where exactly two ends
+of the same plate pair meet; junction endpoints are excluded from bend counts.
+Closed loops include their closing turn and closing sign transition. The current
+boundary protocol uses one source-anchored loop phase; it does not assess phase
+sensitivity. It measures unsigned bend magnitude, **not** plate-outline reflex
+turning. Keep the separate two-phase outline/reflex measurements from
+`assess_plate_layout_morphology.py`; the two definitions are not interchangeable.
+
+Reports give mean, median, quantiles and fixed-bin distributions, both raw
+normal-sign changes and opening/shortening-dominated transitions per 1,000 km,
+and shear-dominated length. Signed normal/along-boundary components remain
+available, including small values hidden by classification. Obliquity is the
+absolute angle from the boundary normal: 0 degrees is head-on and 90 is sideways.
+The predeclared shear threshold is 70 degrees, not a claim that every such stretch
+is a geological transform. Sign-noise suppression is an explicit floating-point
+guard, not a geological uncertainty estimate or a proved error bound.
+
+Class fractions weight the source-path length represented by each chord;
+bend/obliquity distributions give each vertex/chord equal weight. Both conventions
+are declared. Native-resolution values remain separate: the generated support
+grid and PB2002 digitisation have very different vertex spacing. The report flags
+sampling finer than the median native edge, where extra samples mostly subdivide
+an existing straight segment rather than reveal finer geology.
+
+PB2002 is used only through its existing source-use policy. Development and
+withheld boundary selections remain separate; this checkpoint uses development
+only. The source's known incidence, overlap and coverage qualifications are not
+silently repaired. Distribution differences are descriptive, with no statistical
+independence assumption, p-value or universal realism score.
+
+### First matched checkpoint: retained seed 42
+
+[The recorded comparison](../evidence/boundary-kinematics-r1.json) measures the
+existing 13-plate, 1,024-support-cell development world and the paused prototype
+against PB2002 development. Both use the **original saved rotations**. Only
+prototype vertex positions were transferred by matching native vertex IDs; no
+motion fit, native candidate validation or generation was performed.
+
+| At 500 km sampling | Original | Paused prototype | PB2002 development |
+| --- | ---: | ---: | ---: |
+| Mean bend (degrees) | 37.2422 | 20.1582 | 25.5295 |
+| Median bend (degrees) | 34.8917 | 16.8335 | 20.2369 |
+| Normal-sign changes per 1,000 km | 0.3230 | 0.1283 | 0.1665 |
+| Opening/shortening-dominated changes per 1,000 km | 0.1230 | 0.0795 | 0.0570 |
+| Shear-dominated length | 16.82% | 13.12% | 21.19% |
+
+The prototype reduces mean bend by 45.87% and raw sign-change density by 60.26%
+against this same world's original geometry. These are **geometric diagnostics,
+not speedups or percentages of improved realism**. It is smoother than this Earth
+reference, and its shear share moves further away: minimising bending alone would
+not be a sound acceptance criterion. Motions must be refitted on the actual
+successor geometry in B2 before assessing a generated result.
+
+All 33 generated/prototype chains resolve at these scales. PB2002 development has
+113 chains; at 500 km, 1,273.88 km (0.5552%) is unresolved and excluded explicitly.
+At 100 km the original median bend is almost zero because most inserted marks
+fall inside its much longer straight support edges. That does not establish
+smooth real boundaries. The JSON retains all three scales and complete signed
+component samples, not just the favourable 500 km comparison.
+
+One Windows CPython 3.12.14 / NumPy 2.4.6 wall-time observation: restore/export
+2.2127 s, matched assessment including PB2002 source checks 1.6951 s, combined
+3.9078 s before the final report write. This is not a before/after timing trial.
+Two portable inputs total 67,112 bytes; the compact report is 1,024,947 bytes.
+Original world and prototype hashes were unchanged after measurement.
+
+Replay from the repository root with the scientific environment, choosing a
+**new** output path (the tool refuses overwrite):
+
+```text
+python -B tectonics/tools/assess_boundary_kinematics.py --input tectonics/evidence/boundary-input-original-r1.json --input tectonics/evidence/boundary-input-prototype-r1.json --reference development --run-id B1-retained-input-replay --report NEW-REPORT.json
+```
+
+The input hashes, tool hash, protocol and reference identities are recorded.
+The [evidence register](../../docs/CURRENT_EVIDENCE.md) checks tool/input bindings;
+runtime versions are metadata, not a native-binary or transitive-source seal.
+The supplied 25 September Claude baseline used a different world identity and is
+not treated as the numerical baseline for this same-seed comparison. No withheld
+seed/reference campaign or seed selection took place. Broader seed and loop-phase
+coverage belongs to successor acceptance; existing geometry/conservation and
+outline/reflex gates remain in force.
+
+### Checks and sources
+
+The focused tests cover analytic straight/right-angle/closed boundaries,
+orientation reversal, junctions, tiny genuine sign changes, pure sliding,
+stationarity, unresolved scales and safe input refusal. Euler components are
+checked against all 5,819 PB2002 source steps and saved native motion segments.
+Checking source arithmetic is not a withheld aggregate comparison. The initial
+30-test suite passed in 7.881 seconds; seven new/affected checks for the
+component-retention addition passed in 4.804 seconds (overlapping tests, not 37
+unique tests). No full simulation or existing acceptance campaign is
+rerun for this measurement tool.
+
+Integration checks: `tools/check_current_evidence.py` passes (two current,
+nine historical, one superseded); its checked-in-register test passes in 0.083 s.
+Required `tools/check_coding_safety.py` passes (13 maps/41 paths); its suite has
+30 passes and one existing Windows privilege skip in 0.123 s. The public-path
+scan passes and its 14 tests pass in 0.756 s. These are source/publication checks,
+not additional physical validation. No native solver, generator, dependency pin
+or existing result was changed; no commit or push was made.
+
+Sources actually consulted for this implementation:
+
+- Bird (2003), *An updated digital model of plate boundaries*,
+  [DOI](https://doi.org/10.1029/2001GC000252), through the pinned
+  [PB2002 original format and interpretation notes](../reference_data/pb2002/original/README.md).
+  Those notes specify great-circle segments, left/right ownership and the
+  20-degree-from-strike classification. The publisher fetch was blocked; this is
+  not a claim of a new full-paper reading. Dataset attribution: Peter Bird;
+  distributed by Hugo Ahlenius/Nordpil/fraxen, ODC Attribution 1.0, with exact
+  provenance in the [source manifest](../reference_data/pb2002/SOURCE_MANIFEST.json).
+- Official [pyGPlates velocity documentation](https://www.gplates.org/docs/pygplates/generated/pygplates.calculate_velocities)
+  and [PlateBoundaryStatistic](https://www.gplates.org/docs/pygplates/generated/pygplates.PlateBoundaryStatistic.html):
+  local relative velocity, boundary normals, parallel components and explicit
+  units. Atlas reports opening-positive, whereas the reference API's normal
+  convergence component uses the opposite sign. No GPlates dependency was added.
 
 ## Historical measured checkpoint
 

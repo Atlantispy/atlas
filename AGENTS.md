@@ -1,6 +1,6 @@
 # Atlas: coding instructions
 
-Atlas is vibe-coded: OpenAI ChatGPT/Codex writes the code under the owner's
+Atlas is vibe-coded: OpenAI ChatGPT/Codex and Anthropic Claude Code write code under the owner's
 requirements, decisions and review. Status is **WORKING NON-CANON**. Passing tests,
 code review and scientific acceptance are separate outcomes.
 

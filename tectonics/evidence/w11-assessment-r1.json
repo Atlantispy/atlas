@@ -2,7 +2,7 @@
   "R4_4_status": "HELD_INCOMPLETE",
   "errors": 0,
   "evidence_sha256": {
-    "w10-assessment-r1.json": "f3b79a1bae7fda81b3453dabb5681f6a67c1acd0cf4a3f655d80054a90e30e74",
+    "w10-assessment-r1.json": "ca95f9c3c4dbd318937d1d626efd7d048e7543d52c72e13b0fa1f34f11047061",
     "w11-scale-r2.json": "85cc405ef0bfdf953e19802f4fa851509d82048bf9caa168548d812baf24df6e"
   },
   "failure_details": [],
@@ -705,7 +705,7 @@
       "whole_tectonics_field_validated": false
     },
     "scope": "Added W11 tools/tests separately checked; W10 is not whole-field validation",
-    "sha256": "f3b79a1bae7fda81b3453dabb5681f6a67c1acd0cf4a3f655d80054a90e30e74",
+    "sha256": "ca95f9c3c4dbd318937d1d626efd7d048e7543d52c72e13b0fa1f34f11047061",
     "status": "REUSED_RECORDED_FILES_AND_EXACT_PRODUCTION_MEMBERSHIP"
   },
   "wall_s": 10.666212199997972

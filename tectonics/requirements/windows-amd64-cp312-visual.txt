@@ -1,0 +1,17 @@
+# Atlas tectonics optional visual route (pyproject extra "visual"): the core route
+# plus the matplotlib closure observed on 26 September 2026 in the Windows CPython
+# 3.12.14 scientific environment. INSTALLED BUT UNTESTED at these versions: no Windows
+# receipt records a visual run with matplotlib 3.11.2. WORKING NON-CANON setup input,
+# not binary identity; see docs/TECTONICS_ENVIRONMENT.md.
+-r windows-amd64-cp312-core.txt
+
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.65.0
+kiwisolver==1.5.1
+matplotlib==3.11.2
+packaging==26.3
+pillow==12.3.0
+pyparsing==3.3.3
+python-dateutil==2.9.0.post0
+six==1.17.0

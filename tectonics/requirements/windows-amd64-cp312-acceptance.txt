@@ -1,0 +1,7 @@
+# Atlas tectonics optional acceptance route (pyproject extra "acceptance"): the core
+# route plus the exact psutil version observed on 26 September 2026 in the Windows
+# CPython 3.12.14 scientific environment and recorded by a Windows receipt.
+# WORKING NON-CANON setup input, not binary identity; see docs/TECTONICS_ENVIRONMENT.md.
+-r windows-amd64-cp312-core.txt
+
+psutil==7.2.2

@@ -43,10 +43,9 @@ def _canonical(a):
     a = np.asarray(a)
     if a.dtype.kind not in 'biuf' or not np.isfinite(a).all():
         raise TectonicsError('finite real typed product fields required; use an explicit known mask')
-    out = np.array(a, dtype=a.dtype.newbyteorder('<'), order='C', copy=True)
-    if out.dtype.kind == 'f':
-        out[out == 0] = 0.  # ArrayStore's existing signed-zero normalisation.
-    return out
+    # ArrayStore uses little-endian C-order fields without rewriting values,
+    # including the sign bit of floating-point zero.
+    return np.array(a, dtype=a.dtype.newbyteorder('<'), order='C', copy=True)
 
 
 def _field_record(a, specification):
@@ -261,9 +260,22 @@ class PreparedColumnAssembly:
         if (weights.shape != (n,) or pressure.shape != (n,) or np.any(weights < 0)
                 or not np.isclose(np.sum(weights), 1., rtol=0., atol=32*np.finfo(float).eps)):
             raise TectonicsError('one normalised nonnegative reservoir weight and pressure per actual cell required')
+        policy_surface = W04SurfaceInputs(initial, initial_surface.cell_ids,
+            weights*initial.reservoir_fluid_m3, pressure,
+            source_id=initial_surface.source_id, budget=self._budget, cancel=cancel)
+        if not np.array_equal(initial_surface.external_downward_pressure_pa,
+                              policy_surface.external_downward_pressure_pa):
+            raise TectonicsError('initial surface external pressure differs from assembly policy')
+        # Division to author a volume and multiplication by an authored weight
+        # can round differently. Admit roundoff only, then use the policy's exact
+        # values in both the fixed reference and output zero to avoid a load step.
+        if not np.allclose(initial_surface.reservoir_volume_m3,
+                           policy_surface.reservoir_volume_m3,
+                           rtol=32*np.finfo(float).eps, atol=0.):
+            raise TectonicsError('initial surface reservoir allocation differs from assembly policy')
         weights.setflags(write=False); pressure.setflags(write=False)
         self._weights, self._pressure = weights, pressure
-        self.initial, self.initial_surface, self.support_policy, self.store = initial, initial_surface, support_policy, store
+        self.initial, self.initial_surface, self.support_policy, self.store = initial, policy_surface, support_policy, store
         self._schedule = _json(steps)
         self._closed, self._active, self._owner = False, False, threading.get_ident()
         self._verifier = self._support = self._lease = None
@@ -275,9 +287,10 @@ class PreparedColumnAssembly:
             self._verifier = W03ExecutionContext()
             if self._verifier.identity != initial.execution_id:
                 raise TectonicsError('initial columns belong to a different execution')
-            self._support = PreparedW04Support(initial, initial_surface, support_policy, budget=self._budget, cancel=cancel)
+            self._support = PreparedW04Support(initial, policy_surface, support_policy, budget=self._budget, cancel=cancel)
             self._definition = _json(dict(schema='atlas.w12-column-assembly.v1', source_id=source_id,
-                context=context, initial_state_id=initial.state_id, initial_surface_id=initial_surface.input_id,
+                context=context, initial_state_id=initial.state_id, initial_surface_id=policy_surface.input_id,
+                supplied_initial_surface_id=initial_surface.input_id,
                 support_plan_id=self._support.plan_id, support_policy=asdict(support_policy), schedule=steps,
                 reservoir_weights=weights.tolist(), external_pressure_pa=pressure.tolist(),
                 allocation='prescribed fixed fractions of current finite reservoir',
@@ -424,6 +437,8 @@ class PreparedColumnAssembly:
         return dict(self._stats)
 
     def close(self):
+        if threading.get_ident() != self._owner:
+            raise TectonicsError('assembly used outside its owning thread')
         if getattr(self, '_closed', False):
             return
         if getattr(self, '_active', False):

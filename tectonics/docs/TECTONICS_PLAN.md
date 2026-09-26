@@ -1,5 +1,27 @@
 # Atlas tectonics simulation plan
 
+## Reading this plan now
+
+Use [the current Atlas summary](../../docs/CURRENT_STATE.md) for the active
+checkpoint and [the roadmap](../../docs/ATLAS_ROADMAP.md) for the next authorised
+development sequence. This plan retains dated designs, implementation accounts
+and evidence; headings saying "Current" describe their recorded date, not a
+fresh validation of today's checkout. Keep applicable method specifications and
+ownership rules here, removing superseded status as the affected sections are
+revised. Do not add another competing current-status section or archive copy.
+
+For the remaining end-to-end tectonics work, follow the
+[complete integration plan](INTEGRATION_PLAN.md). It supersedes the narrow W12
+completion interpretation, while retaining the applicable method and ownership
+contracts below. Its I01–I12 are integration increments, not new W-packages.
+
+The module-ownership decision below still governs where future scientific
+expansion belongs. Delivery claims elsewhere in this plan keep their original
+source/runtime scope; [the bounded evidence register](../../docs/CURRENT_EVIDENCE.md)
+does not yet classify all W01-W12 records. Consult the affected method and
+original receipt when needed, without treating every historical "next" as an
+instruction to resume work.
+
 ## Current module boundaries and continuation (23 September 2026)
 
 Owner decision: retain the existing mixed package layout to avoid unnecessary
@@ -2686,6 +2708,11 @@ and finite resource envelope. W12 is complete at that stated technical integrati
 scope, not an unrestricted world/field acceptance. Existing scientific holds and
 historical source-bound receipts remain unchanged. The six advanced W11 candidates
 remain deferred, not prerequisites silently started by this implementation.
+
+**26 September scope correction:** that limited technical delivery did not finish
+the intended tectonics generator. Remaining physical integration and generated-world
+acceptance are explicitly open under [INTEGRATION_PLAN.md](INTEGRATION_PLAN.md).
+Do not interpret the dated implementation statement as end-to-end completion.
 
 **Dependencies:** relevant W10 physical gates and W11 resource/scale gates. Only now select production adapters into Atlas’s wider graph and retained spatial outputs. Reuse existing execution, source identity and recovery systems where suitable; do not build another chain of copied module globals merely to attach the new work.
 

@@ -4,7 +4,7 @@
 
 Atlas is intended to become a **world-agnostic generator**, developed primarily for the fictional world of the **Diadem**. The Diadem is its first major use case, not a required setting or a maximum extent: eventual scope may include **whole planets**. Its aim is to connect physical landscapes with their ecological and human systems, at resolutions selected for coverage, purpose and available resources. Current code still contains Diadem-specific dependencies; generalised or planetary generation is not claimed as implemented.
 
-**OpenAI's ChatGPT/Codex does the coding under the project owner's direction.** The owner supplies the worldbuilding requirements, decisions and feedback; AI assistants write the code and carry out much of the technical testing. Vibe-coding describes the development process, not a substitute for source review, reproducible tests or independent scientific validation.
+**OpenAI's ChatGPT/Codex and Anthropic's Claude Code do the coding under the project owner's direction.** The owner supplies the worldbuilding requirements, decisions and feedback; AI assistants write the code and carry out much of the technical testing. Vibe-coding describes the development process, not a substitute for source review, reproducible tests or independent scientific validation.
 
 **Current status: experimental, WORKING NON-CANON.** Atlas has implementations across 18 modelling categories, connected execution infrastructure and a runnable public component-development package. It is not yet a complete, independently validated world generator. Mountain and wider terrain realism remain unaccepted.
 
@@ -92,6 +92,12 @@ The following list follows the exact category order in the [snapshot contract](e
 | 18 | **Natural hazards** (`natural_hazards`) | [Bounded shallow-soil stability calculations](engineering/work/generator_upgrade_r26/physical.py) using supplied slope, material, pore-pressure and root-reinforcement cases. The category is not a general earthquake, volcano or disaster simulator. |
 
 ## How Atlas works
+
+For the detailed stage-by-stage scientific explanation, start with
+[How Atlas tectonics is made](tectonics/docs/HOW_TECTONICS_IS_MADE.md). It breaks
+W01–W12 into individual methods, including research/software references, code,
+checks and their limits, plus seeded-world creation and the separate experimental
+force-driven route. This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing
 
@@ -189,6 +195,7 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 | [`engineering/work/`](engineering/work/) | Geological, tectonic, terrain, environmental, biological and human-system implementations and their tests. |
 | [`shared_generator/engine/`](shared_generator/engine/) | Retained shared generator builders, contracts, validators and export tools. |
 | [`development/`](development/) | Public development package, environment/profile declarations and small fixtures. |
+| [`tectonics/requirements/`](tectonics/requirements/) | [Windows tectonics environment pins and metadata checks](docs/TECTONICS_ENVIRONMENT.md), distinct from the offline public-component environment and exact native restart identity. |
 | [`tools/`](tools/) and [`tests/`](tests/) | Development entry point, source-wiring checks, R5 recovery tools and focused tooling tests. |
 | [`docs/`](docs/) | [Current state](docs/CURRENT_STATE.md), [coding/dependency map](docs/CODING_SAFETY.md), [recovery runbook](docs/R5_OPERATIONS.md) and [development workflow](docs/INDEPENDENT_DEVELOPMENT.md), with evidence records. |
 

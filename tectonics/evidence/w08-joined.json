@@ -144,7 +144,7 @@
     {
       "stage": "step2",
       "path": "tectonics/evidence/w08-shortening-r2.json",
-      "sha256": "420ec5c2e4ea03b1f9aa079a9b9d927d855eb9f1208c62b5847fa68755d724e7",
+      "sha256": "aef0e8c2c6f9be83bdaaf0bc3a3830b6539d900c4983d81f6fdbbfc8211717f7",
       "recorded_schema": "atlas.w08-shortening-check.v1",
       "recorded_status": "PASS",
       "treatment": "Historical evidence for its own recorded source bindings; not rerun or authenticated as acceptance of the current whole package"
@@ -152,7 +152,7 @@
     {
       "stage": "step3",
       "path": "tectonics/evidence/w08-transform.json",
-      "sha256": "23d5f581460802f3322489b76e5f7cac0d0c3c6678d28b6bae176c267c9f3c7e",
+      "sha256": "e0d8b993fcf02a1cd9bef8d05986fc9522aa13378e1d7a6bd8f3c76a65fd5911",
       "recorded_schema": "atlas.w08-transform-check.v1",
       "recorded_status": "PASS",
       "treatment": "Historical evidence for its own recorded source bindings; not rerun or authenticated as acceptance of the current whole package"
@@ -160,7 +160,7 @@
     {
       "stage": "step4",
       "path": "tectonics/evidence/w08-subduction-acceptance.json",
-      "sha256": "30e297f384c72e8f38fd28c8a31ffc61bd1ee38758947ecf213b482f1c7fca18",
+      "sha256": "a59b4fc8bb4fa6c57c83f0e634d61162b7e59f69ece3d9c59a830a270788b569",
       "recorded_schema": "atlas.w08-subduction-acceptance.v1",
       "recorded_status": "COMPLETE",
       "treatment": "Historical evidence for its own recorded source bindings; not rerun or authenticated as acceptance of the current whole package"

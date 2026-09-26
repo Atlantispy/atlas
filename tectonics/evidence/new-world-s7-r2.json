@@ -1,0 +1,690 @@
+{
+  "cases": [
+    {
+      "case": {
+        "name": "seed42",
+        "plates": 6,
+        "seed": 42,
+        "support": 192
+      },
+      "create": {
+        "archive_bytes": 331263,
+        "archive_sha256": "00f175e35c86c48e0a30fda573603609d825da5dd7614bb1aa2e4c5d039875c9",
+        "create_save_view_call_s": 3.1623137000133283,
+        "fresh_process_wall_s": 3.918108699959703,
+        "phase": "create",
+        "process_peak_bytes": 192917504,
+        "process_peak_scope": "Windows peak working set including imports",
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "world": {
+          "boundary_rms_cm_year": 4.961610045045366,
+          "motion_id": "1720a29ddb92f9b6b2af83aff0eeff04aab32cc1c9bae16ef25ca6f0df5d60ff",
+          "plate_count": 6,
+          "project_id": "c7baf31155cf4e12d1757032b8543a752d4d56b536fc173b76527f3d4b149b8b",
+          "ranked_plate_area_fractions": [
+            0.10531240766013095,
+            0.12729670961658252,
+            0.1425928239764658,
+            0.17339310441154798,
+            0.2020504249273396,
+            0.24935452940793318
+          ],
+          "sorted_crust_thickness_m": [
+            6342.100428251843,
+            33415.04734066765,
+            34042.07046500397,
+            44455.405143705575
+          ],
+          "structure_id": "2c184754722960db557739350e64c331613eeb7dc7731fc07b8b26fff022da55"
+        }
+      },
+      "evolve": {
+        "exact_saved_view": true,
+        "fresh_process_wall_s": 4.951399700017646,
+        "initial_sha256": "77f5dd2b737bf836049b4fa2491fd602f6afb43fde77c859daf8ab5bb784396a",
+        "job": {
+          "attempt": 1,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 1,
+          "computed_outputs": 1,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 0,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "partial",
+          "timings": {
+            "elapsed_s": 3.0317352000274695,
+            "physics_s": 0.04081109998514876,
+            "prepare_s": 1.6840498000383377,
+            "restore_s": 0.7144364999840036,
+            "store_s": 0.008645900001283735
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "partial_evolution_call_s": 3.4738020000513643,
+        "phase": "evolve",
+        "prefix_sha256": "1a93bc52f07dfed169f2606fbd81e9e11b01efd2b9ba41373f21410c7fffaeae",
+        "process_peak_bytes": 196247552,
+        "process_peak_scope": "Windows peak working set including imports",
+        "reopen_view_call_s": 1.0610748999752104,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS"
+      },
+      "resume": {
+        "approximation": {
+          "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+          "affine_trajectory_radius_bound_m": 26127.421994737204,
+          "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+          "frozen_velocity_path_error_bound_m": 16.14186616653352,
+          "gnomonic_max_area_scale": 1.0000255126285245,
+          "gnomonic_max_length_scale": 1.0000170083466955,
+          "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+          "per_plate_projected_velocity_variation_bound_m_s": 5.115048725674171e-12,
+          "relative_projected_velocity_variation_bound_m_s": 1.0230097451348343e-11,
+          "rigid_euler_swept_cap_radius_rad": 0.004124094305670126,
+          "swept_cap_radius_rad": 0.004124094305670126
+        },
+        "exact_fresh_process_scientific_parity": true,
+        "fresh_process_wall_s": 5.728755599993747,
+        "job": {
+          "attempt": 2,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 3,
+          "computed_outputs": 2,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 1,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "completed",
+          "timings": {
+            "elapsed_s": 1.333973300002981,
+            "physics_s": 0.07789090002188459,
+            "prepare_s": 0.0,
+            "restore_s": 0.6909690000466071,
+            "store_s": 0.008698299992829561
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "output_ids": [
+          "0d5b64e0528b7ae8570d18c18691b635d9d507c0641395fcc6b162b48179d0ee",
+          "84c85327fdf11c5dad6074afbccdc624af0357f9e5f79e43f06e27492bb0c05d",
+          "6487a994cb4042a39c9f2e6b667ec2f7349a8aef08c5718b1aa5c9ddc427f5a5"
+        ],
+        "phase": "resume",
+        "physics": {
+          "accounted_evolution_workspace_peak_bytes": 2428894,
+          "exact_mass_and_volume": true,
+          "final_area_ratio": 0.9588061192570213,
+          "finite_area_and_thickness": true,
+          "max_weight_residual_kg_m2": 4.656612873077393e-10,
+          "mean_surface_change_m": 181.25450928141868,
+          "surface_change_range_m": [
+            181.25383945443787,
+            181.2551791083977
+          ],
+          "unknowns_and_context_preserved": true
+        },
+        "process_peak_bytes": 175194112,
+        "process_peak_scope": "Windows peak working set including imports",
+        "resume_call_s": 2.3657777999760583,
+        "retained_job_bytes": 408613,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "unchanged_committed_prefix": true,
+        "verified_reuse_call_s": 0.786621599982027
+      },
+      "status": "PASS"
+    },
+    {
+      "case": {
+        "name": "seed43",
+        "plates": 6,
+        "seed": 43,
+        "support": 192
+      },
+      "create": {
+        "archive_bytes": 331263,
+        "archive_sha256": "d2549bbe86d250a62c701be2edbed531cc1066f8e744ae14a6133992a0fdaf4d",
+        "create_save_view_call_s": 3.1360504000331275,
+        "fresh_process_wall_s": 3.8700032000197098,
+        "phase": "create",
+        "process_peak_bytes": 194105344,
+        "process_peak_scope": "Windows peak working set including imports",
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "world": {
+          "boundary_rms_cm_year": 2.9989532618455264,
+          "motion_id": "a465cc4d66fad91d854b6b238ec4295df6e790c20347e771cf4342031009bf0e",
+          "plate_count": 6,
+          "project_id": "6718900d74a6669e80b0095979f1253f42e47666028a044fbe134ac33803e8d7",
+          "ranked_plate_area_fractions": [
+            0.1092423818467479,
+            0.1213046031886476,
+            0.13922053783962438,
+            0.1599202937403632,
+            0.16360342919438123,
+            0.30670875419023574
+          ],
+          "sorted_crust_thickness_m": [
+            6809.59316739823,
+            39789.20564823548,
+            42082.95481723637,
+            43325.06117859358
+          ],
+          "structure_id": "51fc69167e5afe4e3159d58145ab6230883547dbfa46100ccbdbf3b329a8a6a3"
+        }
+      },
+      "evolve": {
+        "exact_saved_view": true,
+        "fresh_process_wall_s": 5.161832800018601,
+        "initial_sha256": "fc75246c648099f24220d40754f30fb96d9e0f56cf0f5306fba7d74eb340230c",
+        "job": {
+          "attempt": 1,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 1,
+          "computed_outputs": 1,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 0,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "partial",
+          "timings": {
+            "elapsed_s": 3.1885509000276215,
+            "physics_s": 0.04231619997881353,
+            "prepare_s": 1.76289790001465,
+            "restore_s": 0.7726024000439793,
+            "store_s": 0.00875189999351278
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "partial_evolution_call_s": 3.6814485999639146,
+        "phase": "evolve",
+        "prefix_sha256": "b42c86e328c7594ed37dece7672492c3c8673c8ef3fe49e3611ec3389f9c32fd",
+        "process_peak_bytes": 195731456,
+        "process_peak_scope": "Windows peak working set including imports",
+        "reopen_view_call_s": 1.0574523999821395,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS"
+      },
+      "resume": {
+        "approximation": {
+          "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+          "affine_trajectory_radius_bound_m": 30302.559038487914,
+          "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+          "frozen_velocity_path_error_bound_m": 38.62861702019309,
+          "gnomonic_max_area_scale": 1.000034252771062,
+          "gnomonic_max_length_scale": 1.0000228350503486,
+          "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+          "per_plate_projected_velocity_variation_bound_m_s": 1.224067008270372e-11,
+          "relative_projected_velocity_variation_bound_m_s": 2.448134016540744e-11,
+          "rigid_euler_swept_cap_radius_rad": 0.0047785670162025645,
+          "swept_cap_radius_rad": 0.0047785670162025645
+        },
+        "exact_fresh_process_scientific_parity": true,
+        "fresh_process_wall_s": 5.723683300020639,
+        "job": {
+          "attempt": 2,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 3,
+          "computed_outputs": 2,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 1,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "completed",
+          "timings": {
+            "elapsed_s": 1.3439071000320837,
+            "physics_s": 0.07794360001571476,
+            "prepare_s": 0.0,
+            "restore_s": 0.6936776000075042,
+            "store_s": 0.008750800043344498
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "output_ids": [
+          "142dc4fc3ed47b08d01c103f397af9f232e0fcec26efa084b75e5a7c3708e780",
+          "9c0ee1ed61626a4d4c2bc2203e96d3e0fa46bf44886dd03347dffe10e35d0275",
+          "e1866a4f3f444d241d05e5eb1e3e2ede6637711c8de8cc172b1ee842cc98a37d"
+        ],
+        "phase": "resume",
+        "physics": {
+          "accounted_evolution_workspace_peak_bytes": 2428894,
+          "exact_mass_and_volume": true,
+          "final_area_ratio": 0.975242455985944,
+          "finite_area_and_thickness": true,
+          "max_weight_residual_kg_m2": 4.656612873077393e-10,
+          "mean_surface_change_m": 119.9392012974887,
+          "surface_change_range_m": [
+            119.93875806153956,
+            119.9396445334365
+          ],
+          "unknowns_and_context_preserved": true
+        },
+        "process_peak_bytes": 175702016,
+        "process_peak_scope": "Windows peak working set including imports",
+        "resume_call_s": 2.3826982000027783,
+        "retained_job_bytes": 406450,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "unchanged_committed_prefix": true,
+        "verified_reuse_call_s": 0.7739367000176571
+      },
+      "status": "PASS"
+    },
+    {
+      "case": {
+        "name": "seed42-finer",
+        "plates": 12,
+        "seed": 42,
+        "support": 512
+      },
+      "create": {
+        "archive_bytes": 736775,
+        "archive_sha256": "679a585d1cc67269a2092c888f1343d2c64de26c8ef70704dadba867b18bdfd6",
+        "create_save_view_call_s": 4.316352299996652,
+        "fresh_process_wall_s": 5.56673530000262,
+        "phase": "create",
+        "process_peak_bytes": 194818048,
+        "process_peak_scope": "Windows peak working set including imports",
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "world": {
+          "boundary_rms_cm_year": 4.961610045045368,
+          "motion_id": "ee4942101eb159c5c97e5f323a87b68e1518b9b0c4d31e7114e192f2d323fc05",
+          "plate_count": 12,
+          "project_id": "42e9135b51a4c83fc91a60359b848636f25e9b540a6619dc67f116f66213c18b",
+          "ranked_plate_area_fractions": [
+            0.013323346861176004,
+            0.018714769464799934,
+            0.021590331847929925,
+            0.026103255911383315,
+            0.040967522360662506,
+            0.07984342919053251,
+            0.0992902087789457,
+            0.11161823229083392,
+            0.11218448388703897,
+            0.13219841856183395,
+            0.15481795508847643,
+            0.18934804575638683
+          ],
+          "sorted_crust_thickness_m": [
+            6342.100428251843,
+            33415.04734066765,
+            34042.07046500397,
+            44455.405143705575
+          ],
+          "structure_id": "2c184754722960db557739350e64c331613eeb7dc7731fc07b8b26fff022da55"
+        }
+      },
+      "evolve": {
+        "exact_saved_view": true,
+        "fresh_process_wall_s": 6.094775200006552,
+        "initial_sha256": "0b790f9dd28598367ad4ad1cef832e0c4414de20114322d5fbe29e2a32f1660a",
+        "job": {
+          "attempt": 1,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 1,
+          "computed_outputs": 1,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 0,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "partial",
+          "timings": {
+            "elapsed_s": 3.717368700017687,
+            "physics_s": 0.03959400003077462,
+            "prepare_s": 2.3580557000241242,
+            "restore_s": 0.6868861999828368,
+            "store_s": 0.0091283000074327
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "partial_evolution_call_s": 4.1566297999816015,
+        "phase": "evolve",
+        "prefix_sha256": "b885ea665cb25d589674a3688812562a6dfb1bada73c980779f4acd06bef0cf1",
+        "process_peak_bytes": 199057408,
+        "process_peak_scope": "Windows peak working set including imports",
+        "reopen_view_call_s": 1.5220872000209056,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS"
+      },
+      "resume": {
+        "approximation": {
+          "affine_bound": "exp(norm(G)*T)*(initial radius + norm(common velocity)*T), all t in [0,T]",
+          "affine_trajectory_radius_bound_m": 25795.39110507985,
+          "bound_scope": "all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error",
+          "frozen_velocity_path_error_bound_m": 34.972570272580754,
+          "gnomonic_max_area_scale": 1.0000328842698982,
+          "gnomonic_max_length_scale": 1.0000219227264477,
+          "model": "midpoint Euler velocities distributed affinely across a named finite planar width",
+          "per_plate_projected_velocity_variation_bound_m_s": 1.1082138778798373e-11,
+          "relative_projected_velocity_variation_bound_m_s": 2.2164277557596746e-11,
+          "rigid_euler_swept_cap_radius_rad": 0.004682136910540298,
+          "swept_cap_radius_rad": 0.004682136910540298
+        },
+        "exact_fresh_process_scientific_parity": true,
+        "fresh_process_wall_s": 5.7524040000280365,
+        "job": {
+          "attempt": 2,
+          "cancellation": "Cooperative native checkpoints; preparation and verification may finish first.",
+          "completed_outputs": 3,
+          "computed_outputs": 2,
+          "error": null,
+          "job_id": "77777777777777777777777777777777",
+          "producer_id": "atlas-generated-material-map-evolution-v1",
+          "requested_elapsed_s": [
+            0.0,
+            1577880000000.0,
+            3155760000000.0
+          ],
+          "restored_outputs": 1,
+          "resume_semantics": "saved initial material-map owner; not generic joined-workflow restart",
+          "schema": "atlas.new-world-evolution-job.v1",
+          "state": "completed",
+          "timings": {
+            "elapsed_s": 1.3489420000114478,
+            "physics_s": 0.07836290000705048,
+            "prepare_s": 0.0,
+            "restore_s": 0.692689000046812,
+            "store_s": 0.009283499966841191
+          },
+          "total_outputs": 3,
+          "worker_active": false
+        },
+        "output_ids": [
+          "f72e7047dd4e7eb7e6fafd54a1fca7df516be533fe60af8f40b6085e742912f7",
+          "7fa54d4f8745c153867cb5366a7111d6230e2298d3ac0034c26efe0138f5da18",
+          "5d1adc804a04f067cd99eaa7560d68308220be2b0e6a375f343a6ba2760d6888"
+        ],
+        "phase": "resume",
+        "physics": {
+          "accounted_evolution_workspace_peak_bytes": 2428894,
+          "exact_mass_and_volume": true,
+          "final_area_ratio": 0.9996104201260403,
+          "finite_area_and_thickness": true,
+          "max_weight_residual_kg_m2": 7.275957614183426e-12,
+          "mean_surface_change_m": 1.6441924426064563,
+          "surface_change_range_m": [
+            1.6441863664823873,
+            1.6441985187295676
+          ],
+          "unknowns_and_context_preserved": true
+        },
+        "process_peak_bytes": 174940160,
+        "process_peak_scope": "Windows peak working set including imports",
+        "resume_call_s": 2.4062748000142165,
+        "retained_job_bytes": 814265,
+        "sources": {
+          "adapters": {
+            "new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+            "new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d",
+            "new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+            "read_tectonics.py": "88d2dc7ee2228b4d94c879c2f4b6ec7cc37f763cc991128143858ebb159ce464",
+            "tectonics_job.py": "fd167fb7662bf465ae4d69e815d73617f0ffdfc6ddb6833215aa0a4cfec9dec2"
+          },
+          "evolution": {
+            "adapters": {
+              "new_world_arcs": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+              "new_world_contract": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+              "new_world_evolution": "b21be1ee1fab7a143bb621288842082e336c2cc5073af6c9b174b128d38254c1",
+              "new_world_layout": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+              "new_world_motion": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+              "new_world_native": "d2a0e24d32d26dfb8c4869184937eb552e8d77a8f3e69bbfefd1666bb3e2d46b",
+              "new_world_project": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+              "new_world_structure": "2d135b2dbe76639a0a3cb1d64e575359fc26833194f86a34445a06f45821d9a0",
+              "new_world_thermal": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec"
+            },
+            "native_execution_id": "026e989ac160cc5bf49643d6281fe20b043b315a86c3dcde1448ab183f2bc719"
+          },
+          "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d"
+        },
+        "status": "PASS",
+        "unchanged_committed_prefix": true,
+        "verified_reuse_call_s": 0.7679467999842018
+      },
+      "status": "PASS"
+    }
+  ],
+  "diversity": {
+    "boundary_rms_gap_cm_year": 1.9626567831998396,
+    "changed_dependent_motion": true,
+    "identical_geology_across_plate_and_support_change": true,
+    "interpretation": "Finite non-noise diversity, not a calibrated planet population distribution",
+    "max_crust_thickness_gap_m": 8040.884352232402,
+    "mean_surface_change_gap_m": 61.31530798392998,
+    "rotation_invariant_area_l1": 0.12256839793783901
+  },
+  "matrix_sha256": "3345e9502e0fd286df14ea9d92f423d7cf72542f99e6aa459d27b03471c7e7c1",
+  "platform": "Windows",
+  "python": "3.12.14",
+  "schema": "atlas.new-world-combined-acceptance.v1",
+  "scope": "initial worlds and bounded generated regional continuation",
+  "session_sha256": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d",
+  "status": "PASS",
+  "tool_sha256": "3252bee5ead2ed650f8cf3556bf9847739aadd2434ef2e77612c69de02ae266a"
+}

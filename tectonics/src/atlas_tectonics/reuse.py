@@ -113,14 +113,14 @@ _IDENTITY_MODULES += ("tectonic_history_codec", "tectonic_history")
 
 _SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
 _SOURCE_CONTEXT_BYTES = 2*1024**2
-_SOURCE_FILES = 128
+_SOURCE_FILES = 512
 _SOURCE_BLOCK_BYTES = 64*1024
 
 
 def _source_bytes():
     """Read every current source byte, retaining bounded digest records.
 
-    The unchanged 128-file/2 MiB limits cap file membership and the canonical
+    The 512-file/2 MiB limits cap file membership and the canonical
     JSON inventory (schema, relative names, byte counts and SHA-256), not the raw
     package text. A 64 KiB buffer streams each complete file on EVERY call; no
     metadata result is cached. Values remain bytes for retained-context accounting.

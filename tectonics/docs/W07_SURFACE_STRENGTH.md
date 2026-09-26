@@ -155,8 +155,8 @@ skip. Passed tests were not duplicated merely because another worker ran them.
 One report-open permission refusal occurred before the authorised acceptance
 execution; no simulation had started in that failed invocation.
 
-Report SHA-256: `dd64cd16bde01bfbef42bf4f75773f63bd199e5fbacac4518957619b021cc055`.
-Isolated timing SHA-256: `043c35a5972dca04605efb149bc19c7a0750d6a62e33a926408eb9646c03fe67`.
+Report SHA-256: `931d8e9ffecc32e8841e71ed37267c75e4dac8d1ccf19e066a2945bfb99ba792`.
+Isolated timing SHA-256: `635ddacb3434c3bdac831050a08e4bb48d8f9e22b51f8719437927ac3f3f3e13`.
 
 ## Papers and software actually checked
 

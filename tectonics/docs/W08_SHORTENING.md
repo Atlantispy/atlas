@@ -56,7 +56,9 @@ execution identity advances from v3 to `atlas.kernel-execution.v4`. Old checkpoi
 identities refuse rather than being repinned. Loaded callable/default/constant
 and runtime checks remain, including the two new shortening modules.
 
-The 128-file membership limit stays fixed. The 2 MiB bound now applies to the
+At this W08 checkpoint the 128-file membership limit stayed fixed; the later
+[A3 repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raises it to 512 without changing the 2 MiB bound. That bound applies to the
 complete encoded inventory, not raw source text; this is a representation change,
 not a claim that the former raw-text limit still applies. A single 64 KiB buffer
 is reused. Each invocation rereads every byte, detects source changes during

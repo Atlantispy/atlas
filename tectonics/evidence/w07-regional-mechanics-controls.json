@@ -1,4 +1,5 @@
 {
+  "_publication": {"status": "REDACTED_HISTORICAL_EVIDENCE", "original_sha256": "5fb74b85b0fbcfb929e25c5346a8c5b61dc4057b63f98cb444f0f4c9401bd06f", "redaction_record": "public-path-redaction-r1.json", "note": "Public path redaction only; original scientific source/runtime bindings and numerical results are unchanged. This is not a rerun.", "original_parent_report_sha256": "10ab64f61dce99df44aa9c9c0d01c905e5a11910d9dcb760a181eccf7b95903b"},
   "schema": "atlas.w07-basic-mechanics-acceptance.v1",
   "source_status": "WORKING NON-CANON",
   "status": "PASS_FE_CONTROLS_ONLY",
@@ -317,8 +318,8 @@
     "docs/W07_REGIONAL_MECHANICS.md": "1748c9e2bd43f71ad0ce65fb9d68343d3f1379570f1b2b74882b85fa2c644378"
   },
   "supplement_binding": {
-    "parent_report": "C:\\Users\\freck\\OneDrive\\Documents\\GitHub\\atlas\\tectonics\\evidence\\w07-regional-mechanics-check.json",
-    "parent_report_sha256": "cf7530f46e44c4e9df3d6f67ff25b885e13e023165d9a42e8cf0e0d66248a00c",
+    "parent_report": "C:\\Users\\LOCAL_USER\\OneDrive\\Documents\\GitHub\\atlas\\tectonics\\evidence\\w07-regional-mechanics-check.json",
+    "parent_report_sha256": "3e366d93bceea4c4f40fdf07e64475c8fdb9d3d518cc07ba05a47a95d50adef7",
     "prior_runner_sha256": "6637b2e6985c6a3a49f86be9cb658e414420dd45704d5bc461345669f57067aa",
     "new_runner_sha256": "fc06d95a9e172ea6ef9462b5a142ced417f8e1b4d6c666ed40c81f6605223c91",
     "unchanged_nonrunner_source_sha256": {

@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 
 from atlas_tectonics.assembly import (publish_workflow_output, read_product, _verify_native_bindings,
-                                     _native_frame_binding)
+                                     _native_frame_binding, _canonical)
 from atlas_tectonics._validation import TectonicsError
 from atlas_tectonics.resources import WorkBudget
 from atlas_tectonics.reuse import ExecutionContext
@@ -78,11 +78,8 @@ class W12PublishingTests(unittest.TestCase):
                                  context['spatial_frame_id'] != 'native-frame-unexposed')
                 for name,native in expected['fields'].items():
                     stored = actual[name]
-                    # ArrayStore's established normal form preserves numerical
-                    # values but canonicalises byte order and floating signed zero.
+                    # Only byte order changes; compare native value bits directly.
                     canonical = np.array(native,dtype=native.dtype.newbyteorder('<'),order='C',copy=True)
-                    if canonical.dtype.kind == 'f':
-                        canonical[canonical == 0] = 0.
                     self.assertEqual(stored.dtype,canonical.dtype,name)
                     self.assertEqual(stored.shape,canonical.shape,name)
                     self.assertEqual(stored.tobytes(),canonical.tobytes(),name)
@@ -91,6 +88,21 @@ class W12PublishingTests(unittest.TestCase):
                         dtype=canonical.dtype.str,shape=list(canonical.shape),
                         sha256=hashlib.sha256(canonical.tobytes()).hexdigest()),name)
         self.assertEqual(budget.reserved_bytes,baseline)
+
+    def test_field_capture_preserves_signed_zero_bits_and_byte_order(self):
+        # Independent IEEE-754 bytes: negative zero, positive zero and minus one.
+        for dtype, raw in (('<f4', bytes.fromhex('00000080 00000000 000080bf')),
+                           ('<f8', bytes.fromhex('0000000000000080 0000000000000000 000000000000f0bf'))):
+            native = np.frombuffer(raw, dtype=dtype)
+            strided = np.repeat(native, 2)[::2]
+            for label, field in (('native', native), ('big-endian', native.astype('>'+dtype[1:])),
+                                 ('strided', strided)):
+                with self.subTest(dtype=dtype, layout=label):
+                    captured = _canonical(field)
+                    self.assertEqual(captured.dtype.str, dtype)
+                    self.assertEqual(captured.tobytes(), raw)
+                    self.assertTrue(np.signbit(captured[0]))
+                    self.assertFalse(np.signbit(captured[1]))
 
     def test_w01_w02_and_w03_native_bindings_and_fields(self):
         state = workflow_fixture(cells=2,length_m=2.)
@@ -111,7 +123,10 @@ class W12PublishingTests(unittest.TestCase):
             helper.context = context
             with helper.motion(budget) as motion:
                 with PreparedExtensionWorkflow(motion,w05_fixture.POLICY,(0.,1.),budget=budget) as plan:
-                    self.roundtrip(plan.run(through=0),'w05-extension.v1',budget=budget)
+                    output = plan.run(through=0)
+                    native = describe_workflow_output(output)['fields']['support.cell_means']
+                    self.assertTrue(np.any((native == 0) & np.signbit(native)))
+                    self.roundtrip(output,'w05-extension.v1',budget=budget)
 
     def test_w06_constant_history_and_inherited_margin(self):
         for route in ('constant','history','margin'):

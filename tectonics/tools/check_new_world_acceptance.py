@@ -35,7 +35,7 @@ def digest(path):
 
 
 def write_new(path, value):
-    with path.open('x', encoding='utf-8') as stream:
+    with path.open('x', encoding='utf-8', newline='\n') as stream:
         json.dump(value, stream, sort_keys=True, indent=2, allow_nan=False)
         stream.write('\n')
 

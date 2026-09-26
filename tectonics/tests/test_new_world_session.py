@@ -398,6 +398,13 @@ class WorldSessionTests(unittest.TestCase):
             self.assert_error(self.call('read', '--file', str(self.saved_path)), private=self.saved_path)
         self.assertEqual(self.saved_path.read_bytes(), self.saved_bytes)
 
+    def test_staging_and_runtime_refusals_are_distinct_from_a_damaged_world(self):
+        for code in ('ENVIRONMENT_ERROR', 'SOURCE_MISMATCH'):
+            with self.subTest(code=code), mock.patch.object(session, 'load_project',
+                    side_effect=contract.ContractError(code, 'private path: ' + str(self.saved_path))):
+                self.assert_error(self.call('read', '--file', str(self.saved_path)), code, self.saved_path)
+        self.assertEqual(self.saved_path.read_bytes(), self.saved_bytes)
+
 
 if __name__ == '__main__':
     unittest.main()

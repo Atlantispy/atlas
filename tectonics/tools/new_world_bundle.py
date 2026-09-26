@@ -15,7 +15,6 @@ from pathlib import Path
 import secrets
 import stat
 import sys
-import tempfile
 import zipfile
 
 import new_world as paths
@@ -45,6 +44,7 @@ MESSAGES = {
     'INVALID_PATH': 'Use an existing safe local parent and a new destination.',
     'UNSAFE_PATH': 'Linked or changed paths are not supported.',
     'INPUT_CHANGED': 'An input changed during the operation; it was not accepted.',
+    'ENVIRONMENT_ERROR': 'Safe local staging or a required native dependency is unavailable; keep the current world.',
     'BUNDLE_FAILED': 'The local combined project operation failed; keep the current world.',
 }
 
@@ -134,13 +134,25 @@ def _json(raw):
     return value
 
 
-def _validate_job(directory, world, world_entry, sources):
+def _validate_job(directory, world, world_entry, sources, *, require_current=True):
     """Lock-free validator for an owned snapshot; never prepare or evaluate."""
     request, request_sha = job._request(directory)
     if request['input'] != {k: world_entry[k] for k in ('size_bytes', 'sha256')}:
         _fail('BUNDLE_WORLD_MISMATCH')
-    if request['sources'] != sources:
+    compatible = request['sources'] == sources
+    if require_current and not compatible:
         _fail('SOURCE_MISMATCH')
+    saved_sources = request['sources']
+    if (set(saved_sources) != {'adapters', 'evolution'}
+            or type(saved_sources['evolution']) is not dict
+            or set(saved_sources['evolution']) != {'adapters', 'native_execution_id'}
+            or not job._hex(saved_sources['evolution']['native_execution_id'])):
+        _fail()
+    for bindings in (saved_sources['adapters'], saved_sources['evolution']['adapters']):
+        if (type(bindings) is not dict or not bindings
+                or any(type(name) is not str or not name or not job._hex(value)
+                       for name, value in bindings.items())):
+            _fail()
     initial, initial_bytes = job._json(directory / 'initial.json', job.MAX_RECORD)
     prefix, _ = job._prefix(directory, request, request_sha)
     if (hashlib.sha256(initial_bytes).hexdigest() != prefix['initial_sha256']
@@ -152,7 +164,23 @@ def _validate_job(directory, world, world_entry, sources):
     if initial.get('plan_id') != world.manifest['plan']['plan_id']:
         _fail('BUNDLE_WORLD_MISMATCH')
     backend = job._backend()
-    backend.check_initial(initial)
+    # Historical inspection checks the stored definition, never lends a foreign
+    # binding to the execution validator or constructs a physics owner. Keep the
+    # original bindings unchanged so native resume/result still refuse drift.
+    horizon = initial.get('max_elapsed_s')
+    if (initial.get('schema') != backend.SCHEMA or initial.get('method') != backend.METHOD
+            or initial.get('initial_id') != backend._digest({k:v for k,v in initial.items() if k != 'initial_id'})
+            or initial.get('source_binding') != request['sources'].get('evolution')
+            or type(horizon) not in (int, float) or not math.isfinite(horizon) or horizon <= 0
+            or type(initial.get('native_input')) is not dict
+            or initial['native_input'].get('max_elapsed_s') != horizon
+            or type(initial.get('support')) is not dict
+            or initial['support'].get('method') != 'dry-local-Airy-change-v1'
+            or initial['support'].get('elastic_rigidity_nm') != 0.
+            or initial['support'].get('fill_density_kg_m3') != 0.):
+        _fail()
+    if compatible:
+        backend.check_initial(initial)
     n = initial['native_input']
     for entry in prefix['outputs']:
         output, _ = job._json(directory / entry['file'], job.MAX_RECORD)
@@ -191,7 +219,8 @@ def _validate_job(directory, world, world_entry, sources):
     return dict(job_id=directory.name, producer_id=job.PRODUCER, state=state['state'],
         attempt=state['attempt'], completed_outputs=len(prefix['outputs']), total_outputs=len(request['schedule_s']),
         requested_elapsed_s=request['schedule_s'], output_ids=[e['output_id'] for e in prefix['outputs']],
-        continuation_compatible=True, attempts_remaining=job.MAX_ATTEMPTS-state['attempt'], error=error)
+        continuation_compatible=compatible, continuation_refusal=None if compatible else 'SOURCE_MISMATCH',
+        attempts_remaining=job.MAX_ATTEMPTS-state['attempt'], error=error)
 
 
 def _summary(manifest, world, states):
@@ -238,8 +267,7 @@ def save_bundle(raw_path, world_path, *, jobs_root=None, job_ids=()):
     ids = _job_ids(job_ids)
     if ids and jobs_root is None:
         _fail('INVALID_REQUEST')
-    with tempfile.TemporaryDirectory(prefix='atlas-bundle-') as tmp:
-        staged = Path(tmp)
+    with projects._temporary_directory('atlas-bundle-') as staged:
         world_entry = dict(file='world.atlas', **_copy(world_path, staged/'world.atlas', projects.MAX_PROJECT))
         world = projects.load_project(staged/'world.atlas')
         sources = job._sources(job._backend()) if ids else None
@@ -371,7 +399,7 @@ def _read_into(raw_path, staged):
         sources = job._sources(job._backend())
         for item in manifest['jobs']:
             directory = staged/'jobs'/item['job_id']
-            states.append(_validate_job(directory, world, world_entry, sources))
+            states.append(_validate_job(directory, world, world_entry, sources, require_current=False))
             prefix = job._control_json(directory/'prefix.json')
             if len(item['files']) != 4 + len(prefix['outputs']):
                 _fail()
@@ -382,9 +410,27 @@ def _read_into(raw_path, staged):
 
 
 def inspect_bundle(raw_path):
-    with tempfile.TemporaryDirectory(prefix='atlas-bundle-read-') as tmp:
-        manifest, world, states = _read_into(raw_path, Path(tmp))
+    with projects._temporary_directory('atlas-bundle-read-') as staged:
+        manifest, world, states = _read_into(raw_path, staged)
         return _summary(manifest, world, states)
+
+
+def read_bundle_output(raw_path, job_id, index=-1):
+    """Return an integrity-checked saved result, including historical runtimes.
+
+    This is inspection only. No native execution/read-output guard is relaxed.
+    """
+    _job_ids([job_id])
+    if type(index) is not int or index < -1:
+        _fail('INVALID_REQUEST')
+    with projects._temporary_directory('atlas-bundle-read-') as staged:
+        _, _, states = _read_into(raw_path, staged)
+        state = next((s for s in states if s['job_id'] == job_id), None)
+        if state is None or not state['completed_outputs'] or index >= state['completed_outputs']:
+            _fail('INVALID_REQUEST')
+        selected = state['completed_outputs'] - 1 if index == -1 else index
+        output, _ = job._json(staged/'jobs'/job_id/f'output-{selected:04d}.json', job.MAX_RECORD)
+        return dict(job=state, index=selected, result=output['result'], generated_on_open=False)
 
 
 def load_bundle(raw_path, new_directory):
@@ -397,8 +443,7 @@ def load_bundle(raw_path, new_directory):
     target, parents = paths._checked_path(os.fspath(new_directory))
     if target.exists() or target.is_symlink():
         _fail('FILE_EXISTS')
-    with tempfile.TemporaryDirectory(prefix='atlas-bundle-read-') as tmp:
-        staged = Path(tmp)
+    with projects._temporary_directory('atlas-bundle-read-') as staged:
         manifest, world, states = _read_into(raw_path, staged)
         answer = _summary(manifest, world, states)
         owned_files, owned_dirs = [], []
@@ -471,6 +516,12 @@ def response(argv, stdin):
             result = load_bundle(values['--file'], values['--directory'])
         elif action == 'inspect' and set(values) == {'--file'}:
             result = inspect_bundle(values['--file'])
+        elif action == 'result' and set(values) in ({'--file', '--job'}, {'--file', '--job', '--index'}):
+            try:
+                index = int(values.get('--index', '-1'))
+            except ValueError:
+                _fail('INVALID_REQUEST')
+            result = read_bundle_output(values['--file'], values['--job'], index)
         else:
             _fail('INVALID_REQUEST')
         return dict(schema=RESPONSE_SCHEMA, status='ok', data=result), 0

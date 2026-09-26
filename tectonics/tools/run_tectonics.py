@@ -51,7 +51,7 @@ def main():
         if type(config['cells']) is not int or not 5 <= config['cells'] <= 64:
             raise ValueError('cells must be between 5 and 64')
         directory.mkdir(parents=False, exist_ok=False)
-        with config_path.open('x', encoding='utf-8') as stream:
+        with config_path.open('x', encoding='utf-8', newline='\n') as stream:
             json.dump(config, stream, indent=2, allow_nan=False)
             stream.write('\n')
     budget = WorkBudget(128 << 20)
@@ -95,7 +95,7 @@ def main():
     for number in range(1, 10001):
         destination = directory/('run-%05d.json' % number)
         try:
-            with destination.open('x', encoding='utf-8') as stream:
+            with destination.open('x', encoding='utf-8', newline='\n') as stream:
                 json.dump(report, stream, indent=2, allow_nan=False)
                 stream.write('\n')
             break

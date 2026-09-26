@@ -163,6 +163,8 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(result['restored_outputs'], 3)
         self.assertEqual(result['report'], 'run-00004.json')
         reports = self.reports()
+        for path in [self.directory/'case.json', *self.directory.glob('run-*.json')]:
+            self.assertNotIn(b'\r', path.read_bytes(), path.name)
         self.assertEqual([r['product']['output_index'] for r in reports], [0, 1, 2, 2])
         self.assertEqual([r['status'] for r in reports], ['PASS_SUPPORTED_NATIVE_PREFIX']*3+
                          ['PASS_SUPPORTED_SYNTHETIC_ASSEMBLY'])

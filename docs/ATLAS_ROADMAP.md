@@ -52,6 +52,35 @@ The recent external review also reports stale evidence bindings, signed-zero/dig
 
 ## 4. Phase A — make the repository and its evidence dependable
 
+26 September checkpoint: **A1's first repair batch and A2-A4 are implemented and checked**;
+see [repairs and exact verification scope](../tectonics/docs/REVIEW_REPAIRS_2026-09-26.md).
+W12 export/surface-policy defects, digest consistency and bundle inspection/staging
+are corrected. Fresh Step 7 evidence replaces the stale current-code claim;
+old physical measurements remain historical. [A2's checker and bounded register](CURRENT_EVIDENCE.md)
+are integrated, including classification of the native-source change and older
+integration observations. **A5's Windows environment record and metadata checker
+are integrated; A6's documentation consolidation is implemented.** The
+[environment guide](TECTONICS_ENVIRONMENT.md) records 39 exact versions with
+tested/installed status. Claude's clean Windows installation is reviewed and
+integrated: all 39 pins install, dependency/metadata checks and ten environment
+tests pass, and compiled-library/basic rendering smoke checks succeed. An Atlas
+visual workflow, Linux and Python 3.13 remain unverified by this record. The single
+[current summary](CURRENT_STATE.md) replaces the accumulated status log and records
+the next action, without another dated archive copy. A5 and A6 do not change
+scientific code or renew scientific acceptance. This does not complete all Phase A or the tectonics realism
+programme.
+
+A3 raises the source-file ceiling from 128 to 512 with complete capture and the
+existing 2 MiB inventory bound retained; 22 focused checks pass. This changes the
+native source identity, so the first-batch Step 7 r2/bundle r2 receipts now describe
+that prior snapshot, not exact-current-source acceptance. Keep their original
+bindings; do not rerun physical campaigns solely for this capacity policy.
+
+A4 redacts 13 personal path components in three W07 historical reports, retains
+original/public digest provenance, updates only affected publication references,
+and adds a read-only regression guard. Original scientific bindings and all
+numerical results remain unchanged; Git history is not rewritten.
+
 Resolve blocking correctness and evidence issues before producing new acceptance claims. Keep this bounded; it is not a new global infrastructure project.
 
 | Priority | Work | Completion condition |
@@ -71,6 +100,14 @@ Order: establish comparable measurements; finish boundary correction; improve st
 
 ### B1. Establish one comparable realism assessment
 
+**Implemented checkpoint, 26 September 2026:** the supplied tool is reviewed and
+integrated, with focused controls and one original/prototype/development-reference
+comparison. See [method and results](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1).
+It retains the registered 100/250/500 km series; no 400 km result is implied.
+The prototype uses the saved original rotations, not a successor motion fit.
+Multi-seed successor checks, applicable outline/reflex gates and loop-phase
+sensitivity remain acceptance work after B2, not completed by this baseline.
+
 Use the same method for the original generator, the candidate and the shipped PB2002 reference. Review the offered measurement-tool patch before writing another tool.
 
 - Predeclare physical sampling lengths. Suggested comparison scales are 100, 250 and 400 km; retain any existing 500 km baseline as a separately identified series. Never compare different scales as though they were equivalent.
@@ -85,15 +122,46 @@ Matching an explicitly imposed speed scale is a scaling check, not independent r
 
 ### B2. Finish the actual boundary correction
 
-Continue the existing prototype unless focused evidence shows a better approach is needed. Its purpose is to remove sampling-grid artefacts from **native geometry**, not merely smooth lines in the renderer.
+**Owner clarification, 26 September 2026:** fix why initial generation produces
+unrealistic boundaries; post-generation fairing is not an acceptable realism fix,
+even if downstream physics uses the adjusted geometry. The planned integration
+below is paused before implementation. The retained prototype and B1 measurements
+are diagnostic evidence only, not the chosen production method.
 
-1. Review and clean the combined helper. Check budget/cancellation handling, source-drift guards, degenerate cases and analytical area derivatives.
-2. Coalesce same-plate support cells without changing physical boundaries; retain multiple patches when large or complex plates cannot safely be represented by one chart. Verify equivalence with the slower validated construction where available.
-3. Smooth shared spherical boundaries with declared length/displacement controls, fixed junctions, area constraints and final native geometry validation. Keep genuine ridge/transform structure distinguishable from random zig-zags; minimum bend angle is not the objective by itself.
-4. Integrate with [new_world_layout.py](../tectonics/tools/new_world_layout.py), binding the helper and successor method to request/result identities. Recompute final plate areas and errors from the final geometry. Preserve the existing area gates and original support-resolution meaning.
-5. Correct the morphology assessment's assumption that final patches are still original support cells. Preserve a truthful original-support assignment/rotation check instead of dropping it or manufacturing a pass.
-6. **Recalculate the motion fit on the corrected boundaries.** Save and display the same geometry used in physics; downstream contacts, edge indices, caches and result identities must agree.
-7. Check create/save/load and the affected regional/UI boundary once, alongside matched numerical and actual visual comparisons. Preserve original saved worlds; generate explicit successors.
+Next establish a scientifically justified generative formulation in which declared
+geological and motion assumptions influence boundary creation itself. Compare
+applicable research and existing software; distinguish causal mechanisms from
+initial-condition priors and numerical mesh maintenance. Do not choose shapes to
+match Earth statistics. Reference measurements test outcomes, not provide an
+appearance objective. Declare computational costs before any large simulation.
+
+**Diagnosis completed, producer repair still open:** the New World route saves
+initial conditions rather than an evolved global tectonic state. Crust is not an
+input to the plate-layout producer. A two-candidate control changed continental
+coverage from 30% to 40% with exactly zero change to boundary coordinates or
+ownership. The [causal-generation design](../tectonics/docs/NEW_WORLD_LAYOUT.md#causal-generation-diagnosis-and-replacement-design)
+traces all three defects to their generating code and records research scope.
+
+Replace the former fairing integration with this order:
+
+1. Versioned evolving-world state, separating physical interfaces, material and birth histories from numerical sampling.
+2. Bounded history producer with exact-motion controls and explicit opening, birth, consumption/export and inventory accounts. This supplies infrastructure, not physically emergent boundaries.
+3. Scientifically specified causal boundary formation/evolution from forcing, material state and inherited weakness. A kinematic-only mode must not silently replace this requirement.
+4. Coupled boundary, motion, crust, age and thermal evolution; unsupported topology changes refuse rather than receive cosmetic repairs.
+5. New World integration, explicit successors and focused geometry/physics/save-load/matched-scale acceptance on the same generated state.
+
+**Full integration scope now governs the sequence:**
+[INTEGRATION_PLAN.md](../tectonics/docs/INTEGRATION_PLAN.md) maps W01–W12 and New
+World into I01–I12, including missing physics, all required representation transfers,
+feedback, lifecycle and end-to-end acceptance. Start with I01 model/contract closure,
+then I02 state/transactions; the five points above are only a B2 summary, not a
+complete integration plan. B3 and B4 share this evolution dependency with B2;
+do not close them by painting independent shapes or ages.
+Retain native validity, budget/cancellation and source-drift checks. Exact seam
+removal can remain representation work, never evidence of physical generation.
+Any changed geometry still requires new contacts/motion, correctly scoped
+morphology tests, cache invalidation and saved/UI agreement. No full-world or
+long convection run is authorised by this design.
 
 Prototype timings and bend reductions are exploratory evidence, not accepted whole-generator speedups or completed realism validation. Weighted spherical partitions and smooth warps remain alternatives, not automatically more physical replacements.
 

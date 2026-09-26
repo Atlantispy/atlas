@@ -131,7 +131,7 @@ store; a complete restorable prefix is used in both recovery routes.
 The entire timing/control run took 34.8141 s. Maximum shared admitted work was
 36,341,666 bytes (34.6581 MiB), including store work and untimed seed preparation,
 against the unchanged 128 MiB cap. This is not RSS. Evidence SHA256:
-`d3dcd38bbe98d4d3d4c8faf15afdede5850c8b3fda2993e76cd179537870a8af`.
+`c7d16d581cafe2deca3d7fb0ca5c33bc0c36d58cd5a38eaf19c1e0b577aa5721`.
 
 The Step 2 shortening/foreland, Step 3 distributed-strain, Step 4 five-case
 subduction and Step 5 basalt thermal/density references remain their existing

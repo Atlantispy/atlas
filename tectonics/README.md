@@ -53,8 +53,12 @@ improve the measured linked workflows by 20–37%, with matched scientific outpu
 Default Zstd checkpoint writes improve 8.41% on the 10 MiB case. Physics and
 numerical gates are unchanged; timings and current focused checks are in the record.
 
-For a plain-English explanation of the implemented methods, outputs and checks,
-read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). The
+For a plain-English explanation broken down by W01–W12 and individual methods,
+read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). Its five linked
+chapters cover scientific inputs/outputs, research and software, actual code,
+checks and their limits, seeded-world creation and the separate force-driven
+experiment. Use [current status](../docs/CURRENT_STATE.md) for delivery status
+rather than the dated implementation entries below. The
 [validation record](docs/W10_VALIDATION.md) distinguishes implementation,
 numerical resolution, physical observations and supported assembly.
 Its comprehensive successor includes the approved mixed-material remap/ALE fix,

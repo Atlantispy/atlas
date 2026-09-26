@@ -167,7 +167,7 @@ completed before the final bridge-only input snapshot and adapter shape-guard
 changes. Those changes do not alter the benchmarked core/public mechanics,
 sampling, solver or cache path; numerical evidence is reused, not silently rebound
 to a byte-identical final package. No accepted timing samples were repeated.
-Report SHA256: `12746ac9d5ccfada9f6bb2ec36d9cedbe12faef2f32f26c4628ab25e120ef72e`.
+Report SHA256: `05a345db8cc2dc8cac61c313e96dd855230bc2744abd6dcf01e6e27fbff97334`.
 The first restricted report-open attempt failed before computation; one reviewed
 escalated invocation completed. No historical report was overwritten.
 

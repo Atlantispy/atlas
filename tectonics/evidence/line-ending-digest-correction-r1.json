@@ -1,0 +1,320 @@
+{
+  "schema": "atlas.line-ending-digest-correction.v1",
+  "source_status": "WORKING NON-CANON",
+  "status": "CORRECTED_RECORDED_VALUES_ONLY",
+  "scope": "Recorded SHA-256 values that had been computed from Windows working copies with CRLF line endings. Git stores these files with LF (tectonics/.gitattributes: text eol=lf), so the values matched no checkout on any platform. Only the 64-character values listed here changed. No described evidence file, source, case, tolerance, numerical result or scientific status changed, and nothing was rerun.",
+  "base_commit": "6285d4af18b4264e191aae3da79b210b361709a1",
+  "detected_by": "Full tectonics regression on Linux (test_w08_subduction_acceptance: retained report digest mismatch), then a scan of every 64-hex value in the repository against the committed LF bytes and the CRLF rendering of every tracked file.",
+  "proof": "For every entry, old_sha256 equals SHA-256 of the target bytes at base_commit with each LF replaced by CRLF, and those bytes contain no CR. The old value is therefore a digest of the same content in CRLF form.",
+  "rule": "direct: the target is unchanged and new_sha256 is SHA-256 of its committed LF bytes. cascaded: the target is itself a corrected holder and new_sha256 is SHA-256 of its corrected bytes; holders were corrected after every holder they bind. Values that match neither form (older file versions) were left unchanged.",
+  "holders": {
+    "tectonics/docs/W07_HETEROGENEOUS_THERMAL.md": {
+      "sha256_before": "6a1959cbe88c75462b5d67c5a6d85a04af98a93be9ee0eb6a00be0819e9595fd",
+      "sha256_after": "eeec75a084ec7f4012749af70be14828b206c7ae4d1d180ea98f7124041b44a0"
+    },
+    "tectonics/docs/W07_SURFACE_STRENGTH.md": {
+      "sha256_before": "9159edc36cbb3c58b785424897c0b0dea019b8d119f819c773ab179d7b2452c7",
+      "sha256_after": "fb2cfa8342a01959d3a704403e79f374a696333659089e44f2d4e4174371b3fe"
+    },
+    "tectonics/docs/W07_WORKFLOW.md": {
+      "sha256_before": "8d68a767c8d0e256792e14e5492baf334aa77df5568942b6f3b7f6237fe4ada1",
+      "sha256_after": "63d259783b0cc2ae471fb2b2cb1ed1966c0b3e2cf6120fade74282d89b73598a"
+    },
+    "tectonics/evidence/new-world-s7-r1.json": {
+      "sha256_before": "16486c90c1cf951e67697d7155bf5fa099f765b2bca55b12c1aa2b6274bc21a8",
+      "sha256_after": "03502affee3918bf50126e3fef584d5be82f14b358d42f995e334a6989f19ba7"
+    },
+    "tectonics/evidence/w04-acceptance.md": {
+      "sha256_before": "2cd2a22e14eef5e98a438ae676b71c39d275fdb22c950510a919c3f99f1d2073",
+      "sha256_after": "5f2dac416607142497b30084c316802cd51299e06dea0aec942fdad4d590c9db"
+    },
+    "tectonics/evidence/w04-finite-regions.md": {
+      "sha256_before": "e2545acbaab2986b816c79c508aa806a838a937657138b5dbe7fa9be4c2c5752",
+      "sha256_after": "d15fab9d07d51a0ad24c1b98b70321298b6644b46138a665542ad5da91fce520"
+    },
+    "tectonics/evidence/w04-variable-rigidity.md": {
+      "sha256_before": "d21f1288c134e3d193228ae5c9e7b3443f0f3395a74bd5d8a1882f04c26ea586",
+      "sha256_after": "fe2bc25817b1719fbf1154f5a3c982311dae28da868fdd7b1a85dd284f4768a3"
+    },
+    "tectonics/evidence/w07-regional-mechanics-controls.json": {
+      "sha256_before": "ac29368419ba8400e3d71a0642aa98e075339da757213c1c9cec19db5d4b9dfe",
+      "sha256_after": "5fb74b85b0fbcfb929e25c5346a8c5b61dc4057b63f98cb444f0f4c9401bd06f"
+    },
+    "tectonics/evidence/w08-subduction-acceptance.json": {
+      "sha256_before": "4f32368c6d191e465a963ca7b45d859b186cb693eeaf7031c345fb9b85f76cc1",
+      "sha256_after": "a59b4fc8bb4fa6c57c83f0e634d61162b7e59f69ece3d9c59a830a270788b569"
+    },
+    "tectonics/docs/W07_REGIONAL_SOLVER.md": {
+      "sha256_before": "f90127450aa9889630f3269e12b3373a0302770a60c9ab7cff20793ffac269a6",
+      "sha256_after": "f601a7f0f67550837368fe6a8dced8a22d0fbf61c8b419cf6ec70e2f59b103f3"
+    },
+    "tectonics/evidence/w08-joined.json": {
+      "sha256_before": "1180c4339967e519b52e7c80aa61e04894719c53b3578418e732d52437a9c129",
+      "sha256_after": "c7d16d581cafe2deca3d7fb0ca5c33bc0c36d58cd5a38eaf19c1e0b577aa5721"
+    },
+    "tectonics/evidence/w10-assessment-r1.json": {
+      "sha256_before": "2062209ec97c4eae862c7c2cbf977e3efdb4cf42a3f0d0990558600c3d5e347f",
+      "sha256_after": "ca95f9c3c4dbd318937d1d626efd7d048e7543d52c72e13b0fa1f34f11047061"
+    },
+    "tectonics/docs/W08_JOINED.md": {
+      "sha256_before": "7898b5386bcae3cb889428a3f4a55ab614e4f1ee10bf177607e26f53800128d8",
+      "sha256_after": "5aa81d6b8c08caf4195f3506faabba4e3c8ddc41375e586be6ab31ffd199aad9"
+    },
+    "tectonics/evidence/w11-assessment-r1.json": {
+      "sha256_before": "bb22e39367a82ac62691dc2611418d486abefb1c7d6a0555b032c7b768de6d65",
+      "sha256_after": "1481c4194ea7016914de57d96e07f7947a8d85c6e47bd449e7d4a37afc15c758"
+    }
+  },
+  "entries": [
+    {
+      "holder": "tectonics/docs/W07_HETEROGENEOUS_THERMAL.md",
+      "location": "line 170",
+      "target": "tectonics/evidence/w07-material-timing.json",
+      "kind": "direct",
+      "old_sha256": "12746ac9d5ccfada9f6bb2ec36d9cedbe12faef2f32f26c4628ab25e120ef72e",
+      "new_sha256": "05a345db8cc2dc8cac61c313e96dd855230bc2744abd6dcf01e6e27fbff97334"
+    },
+    {
+      "holder": "tectonics/docs/W07_SURFACE_STRENGTH.md",
+      "location": "line 158",
+      "target": "tectonics/evidence/w07-surface.json",
+      "kind": "direct",
+      "old_sha256": "dd64cd16bde01bfbef42bf4f75773f63bd199e5fbacac4518957619b021cc055",
+      "new_sha256": "931d8e9ffecc32e8841e71ed37267c75e4dac8d1ccf19e066a2945bfb99ba792"
+    },
+    {
+      "holder": "tectonics/docs/W07_SURFACE_STRENGTH.md",
+      "location": "line 159",
+      "target": "tectonics/evidence/w07-surface-timing.json",
+      "kind": "direct",
+      "old_sha256": "043c35a5972dca04605efb149bc19c7a0750d6a62e33a926408eb9646c03fe67",
+      "new_sha256": "635ddacb3434c3bdac831050a08e4bb48d8f9e22b51f8719437927ac3f3f3e13"
+    },
+    {
+      "holder": "tectonics/docs/W07_WORKFLOW.md",
+      "location": "line 129",
+      "target": "tectonics/evidence/w07-workflow.json",
+      "kind": "direct",
+      "old_sha256": "11fd885f40da4765805a653f55d927bb344dc2964c204c38002669dcca45ceb3",
+      "new_sha256": "1055acd8e5cd1432dc2df90b0324689c2cca6f3a9afb32903c96cbb2fc3c8969"
+    },
+    {
+      "holder": "tectonics/evidence/new-world-s7-r1.json",
+      "location": "/reused_evidence/0/sha256",
+      "target": "tectonics/evidence/new-world-s2-r1.json",
+      "kind": "direct",
+      "old_sha256": "6568c6aac7cab08539730b66107aa9e72004640afe8213cd1c6c99c95d18585b",
+      "new_sha256": "397cebaa17ba7f27b6c21061b26012ed09077606416e4da87b5f8e3edb0be531"
+    },
+    {
+      "holder": "tectonics/evidence/w04-acceptance.md",
+      "location": "line 87",
+      "target": "tectonics/evidence/w04-acceptance.json",
+      "kind": "direct",
+      "old_sha256": "a6be21a624721be5a40b3bee547f3f9d558b3be1aba99bf0b14d0225a3e151b2",
+      "new_sha256": "131cf3f0b33b33e0fa93bd1a605965e5611816eea6920338615c473e4dadbc51"
+    },
+    {
+      "holder": "tectonics/evidence/w04-finite-regions.md",
+      "location": "line 122",
+      "target": "tectonics/evidence/w04-finite-timing.json",
+      "kind": "direct",
+      "old_sha256": "c6c3840ea05a9f03a87552a848577dc59f6f4d65f005d8f60f44f972333acc64",
+      "new_sha256": "14be829f8a75831e256f708ba4543e65d22150eed3dafb0acb149f458f0b80c9"
+    },
+    {
+      "holder": "tectonics/evidence/w04-variable-rigidity.md",
+      "location": "line 136",
+      "target": "tectonics/evidence/w04-variable-timing.json",
+      "kind": "direct",
+      "old_sha256": "4c25d1e89bb36e61e5a7d71bf89cb9c1bab424e79f20df5e1b95f23ea1876ee3",
+      "new_sha256": "5ef644f7a75fd51c573891f8e6aa54e94c187547992d3d9575210137d9b05179"
+    },
+    {
+      "holder": "tectonics/evidence/w07-regional-mechanics-controls.json",
+      "location": "/supplement_binding/parent_report_sha256",
+      "target": "tectonics/evidence/w07-regional-mechanics-check.json",
+      "kind": "direct",
+      "old_sha256": "cf7530f46e44c4e9df3d6f67ff25b885e13e023165d9a42e8cf0e0d66248a00c",
+      "new_sha256": "10ab64f61dce99df44aa9c9c0d01c905e5a11910d9dcb760a181eccf7b95903b"
+    },
+    {
+      "holder": "tectonics/evidence/w08-subduction-acceptance.json",
+      "location": "/report_sha256/w08-subduction-r14-refined.json",
+      "target": "tectonics/evidence/w08-subduction-r14-refined.json",
+      "kind": "direct",
+      "old_sha256": "58e68bf3a0deb5ed73c4f7199b5a63d9c327edfc4bca1f52aabed5666a5ee2b1",
+      "new_sha256": "37f59d3c541ec7471d08f235162bafa5b4a67089ede94050caa88f1d9d9680f4"
+    },
+    {
+      "holder": "tectonics/evidence/w08-subduction-acceptance.json",
+      "location": "/report_sha256/w08-subduction-r15-fine.json",
+      "target": "tectonics/evidence/w08-subduction-r15-fine.json",
+      "kind": "direct",
+      "old_sha256": "e4bdbea6a5860f5a944eea6ef2f5dcd2ec0e89eff8e8dbdeaf9abfcf7eb7ae01",
+      "new_sha256": "a36e9074ee8aa4a452345e62a5604c38faa4111b2763334361b3ba7f1dad2406"
+    },
+    {
+      "holder": "tectonics/evidence/w08-subduction-acceptance.json",
+      "location": "/report_sha256/w08-subduction-r16-creep.json",
+      "target": "tectonics/evidence/w08-subduction-r16-creep.json",
+      "kind": "direct",
+      "old_sha256": "fcdadef1e20aa1b7bc92758d1f732e2c8d0bf768fc3ce4462f985c05f6fc7916",
+      "new_sha256": "950fc47faa24fd4a6d6bb50aef8f987524fead18f6d740a7fb48fd1ff62bc7ea"
+    },
+    {
+      "holder": "tectonics/evidence/w08-subduction-acceptance.json",
+      "location": "/report_sha256/w08-subduction-r18-adaptive.json",
+      "target": "tectonics/evidence/w08-subduction-r18-adaptive.json",
+      "kind": "direct",
+      "old_sha256": "9b8f3e6717537d1a17273de68c2b401a174ca017d4963f5b823b5b1c0342409c",
+      "new_sha256": "7f99304d100888b69f190b80f17abd6427350290073c56744f847dff92bf6526"
+    },
+    {
+      "holder": "tectonics/evidence/w08-subduction-acceptance.json",
+      "location": "/integration_evidence_sha256",
+      "target": "tectonics/evidence/w08-auto-refinement-check.json",
+      "kind": "direct",
+      "old_sha256": "6a1e7fbf1b305f856c5a4fe30331296ad5952b0b3a2ea6e3dde53418e3145e6c",
+      "new_sha256": "2ac1c982600a249b77a7dba01e2bd6f660180cb084e3d8704dba5003d2411304"
+    },
+    {
+      "holder": "tectonics/docs/W07_REGIONAL_SOLVER.md",
+      "location": "line 229",
+      "target": "tectonics/evidence/w07-regional-mechanics-check.json",
+      "kind": "direct",
+      "old_sha256": "cf7530f46e44c4e9df3d6f67ff25b885e13e023165d9a42e8cf0e0d66248a00c",
+      "new_sha256": "10ab64f61dce99df44aa9c9c0d01c905e5a11910d9dcb760a181eccf7b95903b"
+    },
+    {
+      "holder": "tectonics/docs/W07_REGIONAL_SOLVER.md",
+      "location": "line 230",
+      "target": "tectonics/evidence/w07-regional-mechanics-controls.json",
+      "kind": "cascaded",
+      "old_sha256": "c06858c723dd4c0386ab8f8e88cd3d0d8885e0a4f2d5ce71038a313329268787",
+      "new_sha256": "5fb74b85b0fbcfb929e25c5346a8c5b61dc4057b63f98cb444f0f4c9401bd06f"
+    },
+    {
+      "holder": "tectonics/evidence/w08-joined.json",
+      "location": "/historical_stage_evidence/0/sha256",
+      "target": "tectonics/evidence/w08-shortening-r2.json",
+      "kind": "direct",
+      "old_sha256": "420ec5c2e4ea03b1f9aa079a9b9d927d855eb9f1208c62b5847fa68755d724e7",
+      "new_sha256": "aef0e8c2c6f9be83bdaaf0bc3a3830b6539d900c4983d81f6fdbbfc8211717f7"
+    },
+    {
+      "holder": "tectonics/evidence/w08-joined.json",
+      "location": "/historical_stage_evidence/1/sha256",
+      "target": "tectonics/evidence/w08-transform.json",
+      "kind": "direct",
+      "old_sha256": "23d5f581460802f3322489b76e5f7cac0d0c3c6678d28b6bae176c267c9f3c7e",
+      "new_sha256": "e0d8b993fcf02a1cd9bef8d05986fc9522aa13378e1d7a6bd8f3c76a65fd5911"
+    },
+    {
+      "holder": "tectonics/evidence/w08-joined.json",
+      "location": "/historical_stage_evidence/2/sha256",
+      "target": "tectonics/evidence/w08-subduction-acceptance.json",
+      "kind": "cascaded",
+      "old_sha256": "30e297f384c72e8f38fd28c8a31ffc61bd1ee38758947ecf213b482f1c7fca18",
+      "new_sha256": "a59b4fc8bb4fa6c57c83f0e634d61162b7e59f69ece3d9c59a830a270788b569"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/free_surface/sha256",
+      "target": "tectonics/evidence/w10-free-surface-r1.json",
+      "kind": "direct",
+      "old_sha256": "3244c4b0bb09ac77e93446b58788a176f65c50bb79c12668afda26d2408dee1b",
+      "new_sha256": "c4679edad34aff86b201a09fb440e7e09400c407a527d1bb1e66e7c6476caf40"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/recovery/sha256",
+      "target": "tectonics/evidence/tectonic-history-r1.json",
+      "kind": "direct",
+      "old_sha256": "9c1b058d1262d44abb38ff2b5e3c5878592df62c7bc4b3df0c4fb72a65ff072b",
+      "new_sha256": "9541f904a33d0a5ce2e2c8187a81e205ca390a288c76cb842cf9725ce487a386"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/subduction_reference/reports/w08-subduction-r14-refined.json/sha256",
+      "target": "tectonics/evidence/w08-subduction-r14-refined.json",
+      "kind": "direct",
+      "old_sha256": "58e68bf3a0deb5ed73c4f7199b5a63d9c327edfc4bca1f52aabed5666a5ee2b1",
+      "new_sha256": "37f59d3c541ec7471d08f235162bafa5b4a67089ede94050caa88f1d9d9680f4"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/subduction_reference/reports/w08-subduction-r15-fine.json/sha256",
+      "target": "tectonics/evidence/w08-subduction-r15-fine.json",
+      "kind": "direct",
+      "old_sha256": "e4bdbea6a5860f5a944eea6ef2f5dcd2ec0e89eff8e8dbdeaf9abfcf7eb7ae01",
+      "new_sha256": "a36e9074ee8aa4a452345e62a5604c38faa4111b2763334361b3ba7f1dad2406"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/subduction_reference/reports/w08-subduction-r16-creep.json/sha256",
+      "target": "tectonics/evidence/w08-subduction-r16-creep.json",
+      "kind": "direct",
+      "old_sha256": "fcdadef1e20aa1b7bc92758d1f732e2c8d0bf768fc3ce4462f985c05f6fc7916",
+      "new_sha256": "950fc47faa24fd4a6d6bb50aef8f987524fead18f6d740a7fb48fd1ff62bc7ea"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence/subduction_reference/reports/w08-subduction-r18-adaptive.json/sha256",
+      "target": "tectonics/evidence/w08-subduction-r18-adaptive.json",
+      "kind": "direct",
+      "old_sha256": "9b8f3e6717537d1a17273de68c2b401a174ca017d4963f5b823b5b1c0342409c",
+      "new_sha256": "7f99304d100888b69f190b80f17abd6427350290073c56744f847dff92bf6526"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence_sha256/evidence~1tectonic-history-r1.json",
+      "target": "tectonics/evidence/tectonic-history-r1.json",
+      "kind": "direct",
+      "old_sha256": "9c1b058d1262d44abb38ff2b5e3c5878592df62c7bc4b3df0c4fb72a65ff072b",
+      "new_sha256": "9541f904a33d0a5ce2e2c8187a81e205ca390a288c76cb842cf9725ce487a386"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence_sha256/evidence~1w08-subduction-acceptance.json",
+      "target": "tectonics/evidence/w08-subduction-acceptance.json",
+      "kind": "cascaded",
+      "old_sha256": "30e297f384c72e8f38fd28c8a31ffc61bd1ee38758947ecf213b482f1c7fca18",
+      "new_sha256": "a59b4fc8bb4fa6c57c83f0e634d61162b7e59f69ece3d9c59a830a270788b569"
+    },
+    {
+      "holder": "tectonics/evidence/w10-assessment-r1.json",
+      "location": "/evidence_sha256/evidence~1w10-free-surface-r1.json",
+      "target": "tectonics/evidence/w10-free-surface-r1.json",
+      "kind": "direct",
+      "old_sha256": "3244c4b0bb09ac77e93446b58788a176f65c50bb79c12668afda26d2408dee1b",
+      "new_sha256": "c4679edad34aff86b201a09fb440e7e09400c407a527d1bb1e66e7c6476caf40"
+    },
+    {
+      "holder": "tectonics/docs/W08_JOINED.md",
+      "location": "line 134",
+      "target": "tectonics/evidence/w08-joined.json",
+      "kind": "cascaded",
+      "old_sha256": "d3dcd38bbe98d4d3d4c8faf15afdede5850c8b3fda2993e76cd179537870a8af",
+      "new_sha256": "c7d16d581cafe2deca3d7fb0ca5c33bc0c36d58cd5a38eaf19c1e0b577aa5721"
+    },
+    {
+      "holder": "tectonics/evidence/w11-assessment-r1.json",
+      "location": "/evidence_sha256/w10-assessment-r1.json",
+      "target": "tectonics/evidence/w10-assessment-r1.json",
+      "kind": "cascaded",
+      "old_sha256": "f3b79a1bae7fda81b3453dabb5681f6a67c1acd0cf4a3f655d80054a90e30e74",
+      "new_sha256": "ca95f9c3c4dbd318937d1d626efd7d048e7543d52c72e13b0fa1f34f11047061"
+    },
+    {
+      "holder": "tectonics/evidence/w11-assessment-r1.json",
+      "location": "/w10/sha256",
+      "target": "tectonics/evidence/w10-assessment-r1.json",
+      "kind": "cascaded",
+      "old_sha256": "f3b79a1bae7fda81b3453dabb5681f6a67c1acd0cf4a3f655d80054a90e30e74",
+      "new_sha256": "ca95f9c3c4dbd318937d1d626efd7d048e7543d52c72e13b0fa1f34f11047061"
+    }
+  ],
+  "regression_guard": "tectonics/tests/test_digest_line_endings.py",
+  "windows_working_copy": "A working copy that still holds CRLF copies of these targets must rewrite them from Git before local digest checks agree; their repository bytes are unchanged. A plain checkout leaves a stat-clean CRLF copy in place, so with no uncommitted tectonics changes run: git rm -r -q --cached -- tectonics, then git checkout HEAD -- tectonics."
+}

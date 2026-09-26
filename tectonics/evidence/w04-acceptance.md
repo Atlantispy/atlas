@@ -84,7 +84,7 @@ projection. Next is the separately scoped W05 regional-extension mechanism.
 ## Binding identities
 
 - `evidence/w04-acceptance.json`:
-  `a6be21a624721be5a40b3bee547f3f9d558b3be1aba99bf0b14d0225a3e151b2`
+  `131cf3f0b33b33e0fa93bd1a605965e5611816eea6920338615c473e4dadbc51`
 - `verify.py`:
   `37e764bfcfe8724919df12980b34e2849c4db4d6208be458e0316f68e42148ea`
 - `tests/test_w04_acceptance.py`:

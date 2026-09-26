@@ -1,0 +1,30 @@
+{
+  "cases": [
+    {
+      "name": "seed42",
+      "plates": 6,
+      "seed": 42,
+      "support": 192
+    },
+    {
+      "name": "seed43",
+      "plates": 6,
+      "seed": 43,
+      "support": 192
+    },
+    {
+      "name": "seed42-finer",
+      "plates": 12,
+      "seed": 42,
+      "support": 512
+    }
+  ],
+  "options": {},
+  "policy": "one attempt per case; all failures retained; no adaptation",
+  "times_s": [
+    0.0,
+    1577880000000.0,
+    3155760000000.0
+  ],
+  "tool_sha256": "3252bee5ead2ed650f8cf3556bf9847739aadd2434ef2e77612c69de02ae266a"
+}

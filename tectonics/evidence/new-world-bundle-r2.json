@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "scope": "Native saved-world and result inspection under simulated runtime mismatch; no regenerated world",
+  "elapsed_s": 3.8757538000354543,
+  "archive_bytes": 411598,
+  "archive_sha256": "e13926477dde162b4c687e4d597c5f837980d5931ab0d7df462bbe2fb9fc1068",
+  "restored_world_byte_identical": true,
+  "result_exact": true,
+  "mismatch_resume_refused": true,
+  "current_runtime_inspection": true,
+  "historical_runtime_inspection": true,
+  "source_sha256": {
+    "tectonics/tools/new_world_bundle.py": "2742500db62f1f54e1f083dd97525501ac91e0779844e6fb206d59328a340eb8",
+    "tectonics/tools/new_world_project.py": "7e522b7157660ab18001a10055c5236ed94526e714a75185525500f38e6e1624",
+    "tectonics/tools/new_world_session.py": "9acfcf71b00fdcf6df95229b52c328f9d74e1c2427bd87f972d6452804425d7d",
+    "tectonics/tools/new_world_job.py": "a16936232544b29d5dc71e40bdb0f132d2b53eb75e0972c1cbb61779432ace8d"
+  }
+}

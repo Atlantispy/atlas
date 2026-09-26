@@ -15,6 +15,7 @@ archive/store format; no scientific report fields are truncated.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import hashlib
 import json
@@ -64,13 +65,46 @@ def _file_digest(path):
         return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
+@contextmanager
+def _temporary_directory(prefix):
+    """Resolve only the trusted system staging root, never caller paths."""
+    try:
+        root = Path(tempfile.gettempdir()).resolve(strict=True)
+        _, parents = _checked_path(os.fspath(root / 'atlas-staging'))
+        temporary = tempfile.TemporaryDirectory(prefix=prefix, dir=root)
+    except (OSError, ContractError) as exc:
+        raise ContractError('ENVIRONMENT_ERROR', 'A safe local staging directory is unavailable.') from exc
+    with temporary as name:
+        try:
+            _check_parents(parents)
+            _checked_path(os.fspath(Path(name) / 'atlas-staging'))
+        except (OSError, ContractError) as exc:
+            raise ContractError('ENVIRONMENT_ERROR', 'The local staging directory changed.') from exc
+        yield Path(name)
+
+
+@contextmanager
+def _native_store(Store, database, limits):
+    try:
+        store = Store(database, limits)
+    except Exception as exc:
+        if isinstance(exc, (OSError, ImportError)) or isinstance(exc.__cause__, ImportError):
+            raise ContractError('ENVIRONMENT_ERROR', 'The local native store is unavailable.') from exc
+        raise
+    with store:
+        yield store
+
+
 def _native():
     # The existing configuration CLI remains stdlib-only.
     source = str(Path(__file__).resolve().parents[1] / 'src')
     if source not in sys.path:
         sys.path.insert(0, source)
-    from atlas_tectonics import save_spherical_atlas, load_spherical_atlas
-    from atlas_tectonics.storage import ArrayStore, StoreLimits
+    try:
+        from atlas_tectonics import save_spherical_atlas, load_spherical_atlas
+        from atlas_tectonics.storage import ArrayStore, StoreLimits
+    except ImportError as exc:
+        raise ContractError('ENVIRONMENT_ERROR', 'The native world reader is unavailable.') from exc
     # Native topology descriptors have a separate bounded metadata envelope;
     # this does not enlarge project.json or the total retained store.
     limits = StoreLimits(65536, 16 << 20, MAX_STORE, max_manifest_bytes=MAX_NATIVE_METADATA)
@@ -211,9 +245,9 @@ def save_project(raw_path, plan, candidate, *, title='Untitled world', structure
         else:
             raise ContractError('FILE_EXISTS', 'The destination already exists; nothing was replaced.')
         Store, limits, save, _ = _native()
-        with tempfile.TemporaryDirectory(prefix='atlas-project-') as temporary:
-            database = Path(temporary) / 'arrays.sqlite'
-            with Store(database, limits) as store:
+        with _temporary_directory('atlas-project-') as temporary:
+            database = temporary / 'arrays.sqlite'
+            with _native_store(Store, database, limits) as store:
                 save(candidate.atlas, store)
                 structure_id = None if structure is None else save_structure(structure, store)
                 motion_id = None if motion is None else save_motion(motion, store)
@@ -327,14 +361,14 @@ def load_project(raw_path):
         flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0)
         flags |= getattr(os, 'O_NONBLOCK', 0)
         fd = directory.open(path.name, flags)
-        with os.fdopen(fd, 'rb') as handle, tempfile.TemporaryDirectory(prefix='atlas-project-open-') as tmp:
+        with os.fdopen(fd, 'rb') as handle, _temporary_directory('atlas-project-open-') as tmp:
             opened = os.fstat(handle.fileno())
             if _unsafe(opened) or not stat.S_ISREG(opened.st_mode) or _identity(opened) != _identity(info):
                 _fail('Project file changed while opening.')
-            database = Path(tmp) / 'arrays.sqlite'
+            database = tmp / 'arrays.sqlite'
             manifest, compatible = _read_archive(handle, database)
             Store, limits, _, load = _native()
-            with Store(database, limits) as store:
+            with _native_store(Store, database, limits) as store:
                 atlas = load(store, manifest['atlas_id'])
                 report = manifest['report']
                 if (manifest['schema'] == MOTION_SCHEMA and type(report) is dict

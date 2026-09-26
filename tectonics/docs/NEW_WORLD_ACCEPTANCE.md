@@ -1,5 +1,50 @@
 # New-world Step 7: combined acceptance
 
+## Current rerun: 26 September 2026
+
+**Source-status update:** this rerun predates the same-day
+[A3 source-inventory capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity).
+Its bindings and measurements remain unchanged evidence for the first repair
+batch, not exact-current-source acceptance after A3. The heading is retained for
+existing links; references to current code/r2 below mean that tested snapshot.
+
+**PASS for the same three fixed cases on repaired code.** The complete
+[r2 receipt](../evidence/new-world-s7-r2.json) and
+[declared matrix](../evidence/new-world-s7-r2-matrix.json) supersede the old
+measurements for current-code claims. All nine fresh-process phases passed,
+taking 46.768 s in total. Source/runtime bindings match across all phases;
+continuation preserves the committed prefix and avoids resampling.
+
+The old r1 motion binding predates the already committed frame-neutral motion
+correction. Its physical outputs must not be quoted as current results:
+
+| Case | Historical r1 mean surface change | Current r2 mean surface change |
+| --- | ---: | ---: |
+| seed42 | 2.768 m | 181.254509 m |
+| seed43 | 120.330 m | 119.939201 m |
+| seed42-finer | 26.849 m | 1.644192 m |
+
+These are the selected 100,000-year regional scenarios, not global elevations.
+The change is not a line-ending or platform effect: it follows corrected motion
+and its regional forcing. Independent finite-area, thickness and column-weight
+checks pass alongside exact mass/volume, restored-result parity and seed diversity.
+No morphology acceptance or empirical forcing calibration is inferred.
+
+| Case | Create/save/view | Reopen same view | Saved by reopening | Completed reuse |
+| --- | ---: | ---: | ---: | ---: |
+| seed42 | 3.162314 s | 1.061075 s | 2.101239 s / 66.45% | 0.786622 s |
+| seed43 | 3.136050 s | 1.057452 s | 2.078598 s / 66.28% | 0.773937 s |
+| seed42-finer | 4.316352 s | 1.522087 s | 2.794265 s / 64.74% | 0.767947 s |
+
+One Windows/CPython 3.12.14 observation per case, one native thread. These compare
+creation with restoration, not old code with faster new code. The r2 receipt does
+not revalidate the historical S2-S5/UI suites; their bindings remain historical.
+See [the repair record](REVIEW_REPAIRS_2026-09-26.md) for the focused checks.
+
+## Historical record: 24 September 2026
+
+Everything below describes r1 and its original sources, not the current checkout.
+
 24 September 2026 — **PASS for the bounded initial-world and regional workflow**.
 WORKING NON-CANON. This closes the planned technical acceptance increment; it
 does not promote the candidate plate morphology to geological acceptance.

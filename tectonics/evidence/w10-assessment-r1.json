@@ -79,7 +79,7 @@
       "field_validation": false,
       "path": "evidence/w10-free-surface-r1.json",
       "physical_replays": 0,
-      "sha256": "3244c4b0bb09ac77e93446b58788a176f65c50bb79c12668afda26d2408dee1b",
+      "sha256": "c4679edad34aff86b201a09fb440e7e09400c407a527d1bb1e66e7c6476caf40",
       "status": "CURRENT_B09_PASS",
       "trajectories": 10
     },
@@ -92,7 +92,7 @@
         "w04",
         "regional"
       ],
-      "sha256": "9c1b058d1262d44abb38ff2b5e3c5878592df62c7bc4b3df0c4fb72a65ff072b",
+      "sha256": "9541f904a33d0a5ce2e2c8187a81e205ca390a288c76cb842cf9725ce487a386",
       "status": "REUSED_CURRENT_EXACT_BINDING"
     },
     "subduction_reference": {
@@ -108,7 +108,7 @@
             "w04_workflow.py"
           ],
           "full_runtime_binding_reused": false,
-          "sha256": "58e68bf3a0deb5ed73c4f7199b5a63d9c327edfc4bca1f52aabed5666a5ee2b1"
+          "sha256": "37f59d3c541ec7471d08f235162bafa5b4a67089ede94050caa88f1d9d9680f4"
         },
         "w08-subduction-r15-fine.json": {
           "changed_recorded_sources": [
@@ -119,7 +119,7 @@
             "w04_workflow.py"
           ],
           "full_runtime_binding_reused": false,
-          "sha256": "e4bdbea6a5860f5a944eea6ef2f5dcd2ec0e89eff8e8dbdeaf9abfcf7eb7ae01"
+          "sha256": "a36e9074ee8aa4a452345e62a5604c38faa4111b2763334361b3ba7f1dad2406"
         },
         "w08-subduction-r16-creep.json": {
           "changed_recorded_sources": [
@@ -129,7 +129,7 @@
             "w04_workflow.py"
           ],
           "full_runtime_binding_reused": false,
-          "sha256": "fcdadef1e20aa1b7bc92758d1f732e2c8d0bf768fc3ce4462f985c05f6fc7916"
+          "sha256": "950fc47faa24fd4a6d6bb50aef8f987524fead18f6d740a7fb48fd1ff62bc7ea"
         },
         "w08-subduction-r18-adaptive.json": {
           "changed_recorded_sources": [
@@ -138,7 +138,7 @@
             "w04_workflow.py"
           ],
           "full_runtime_binding_reused": false,
-          "sha256": "9b8f3e6717537d1a17273de68c2b401a174ca017d4963f5b823b5b1c0342409c"
+          "sha256": "7f99304d100888b69f190b80f17abd6427350290073c56744f847dff92bf6526"
         }
       },
       "status": "AUTHENTICATED_HISTORICAL_NUMERICAL_REFERENCE"
@@ -147,9 +147,9 @@
   "evidence_changes": {},
   "evidence_errors": [],
   "evidence_sha256": {
-    "evidence/tectonic-history-r1.json": "9c1b058d1262d44abb38ff2b5e3c5878592df62c7bc4b3df0c4fb72a65ff072b",
-    "evidence/w08-subduction-acceptance.json": "30e297f384c72e8f38fd28c8a31ffc61bd1ee38758947ecf213b482f1c7fca18",
-    "evidence/w10-free-surface-r1.json": "3244c4b0bb09ac77e93446b58788a176f65c50bb79c12668afda26d2408dee1b"
+    "evidence/tectonic-history-r1.json": "9541f904a33d0a5ce2e2c8187a81e205ca390a288c76cb842cf9725ce487a386",
+    "evidence/w08-subduction-acceptance.json": "a59b4fc8bb4fa6c57c83f0e634d61162b7e59f69ece3d9c59a830a270788b569",
+    "evidence/w10-free-surface-r1.json": "c4679edad34aff86b201a09fb440e7e09400c407a527d1bb1e66e7c6476caf40"
   },
   "failure_details": [],
   "failures": 0,

@@ -58,7 +58,7 @@ def main():
     def source():
         return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     # Claim before scientific work; no overwrite or retry into a conflicting file.
-    with args.output.open('x', encoding='utf-8') as output:
+    with args.output.open('x', encoding='utf-8', newline='\n') as output:
         before = source()
         result = dict(schema='atlas.new-world.step2-evidence.v1', source_sha256=before,
                       runtime=dict(python=platform.python_version(), platform=platform.system()),

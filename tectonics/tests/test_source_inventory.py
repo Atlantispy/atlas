@@ -95,16 +95,32 @@ class SourceInventoryTests(unittest.TestCase):
         (self.root/'renamed.py').unlink()
         self.assertNotEqual(original, reuse._source_bytes())
 
-    def test_file_limit_is_unchanged_and_never_truncates(self):
-        self.assertEqual(reuse._SOURCE_FILES, 128)
+    def test_expanded_file_limit_is_bounded_and_never_truncates(self):
+        self.assertEqual(reuse._SOURCE_FILES, 512)
         self.assertEqual(reuse._SOURCE_CONTEXT_BYTES, 2*1024**2)
-        for index in range(128):
+        for index in range(512):
             self.put(f'{index:03}.py', b'')
-        self.assertEqual(len(reuse._source_bytes()), 128)
+        self.assertEqual(len(reuse._source_bytes()), 512)
         self.put('overflow.py', b'')
         with mock.patch.object(Path, 'open', side_effect=AssertionError('inventory should refuse before reading')):
             with self.assertRaisesRegex(TectonicsError, 'context budget'):
                 reuse._source_bytes()
+
+    def test_execution_context_tracks_sources_beyond_legacy_ceiling(self):
+        for index in range(129):
+            self.put(f'{index:03}.py', b'x = 1\n')
+        path = self.root/'128.py'
+        with reuse.ExecutionContext() as context:
+            self.assertEqual(len(context._sources), 129)
+            self.assertEqual(json.loads(context._sources[path.name]), {
+                'bytes': 6, 'sha256': hashlib.sha256(b'x = 1\n').hexdigest()})
+            context.verify()
+            try:
+                path.write_bytes(b'x = 2\n')
+                with self.assertRaisesRegex(TectonicsError, 'source changed'):
+                    context.verify()
+            finally:
+                path.write_bytes(b'x = 1\n')
 
     def test_encoded_limit_includes_schema_names_counts_digests_and_punctuation(self):
         self.put('nested/\u00e9.py', b'a')

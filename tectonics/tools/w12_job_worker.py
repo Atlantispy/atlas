@@ -88,7 +88,7 @@ def _configuration(directory, cells, resume):
             raise ValueError('case/source binding differs; do not edit or repin the saved run')
         return saved
     directory.mkdir(parents=False, exist_ok=False)
-    with path.open('x', encoding='utf-8') as stream:
+    with path.open('x', encoding='utf-8', newline='\n') as stream:
         json.dump(expected, stream, indent=2, allow_nan=False)
         stream.write('\n')
     return expected
@@ -102,7 +102,7 @@ def _write_report(directory, report):
     for number in range(1, 10001):
         destination = directory/('run-%05d.json' % number)
         try:
-            with destination.open('x', encoding='utf-8') as stream:
+            with destination.open('x', encoding='utf-8', newline='\n') as stream:
                 stream.write(encoded)
                 stream.flush()
                 os.fsync(stream.fileno())

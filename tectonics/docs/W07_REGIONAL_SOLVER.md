@@ -1,5 +1,12 @@
 # W07 Step 2 — regional steady mechanical solver
 
+Publication note, 26 September 2026: the linked W07 reports are now
+explicitly redacted historical public copies. Only personal path components,
+publication metadata and affected report-file digests changed; measurements
+and original scientific source/runtime identities did not. The digests below
+identify those public copies, not the original run artefacts. See the
+[before/after trail](../evidence/public-path-redaction-r1.json).
+
 WORKING NON-CANON. Implementation and acceptance record, 22 September 2026.
 Completion status: **STEP 2 COMPLETE; bounded numerical acceptance and reuse measured.**
 
@@ -226,8 +233,8 @@ The combined process took 9.473 s; the corrective process took 1.193 s. An earli
 report-open permission refusal happened before numerical work and created no
 report; it was corrected through the reviewed execution permission mechanism.
 
-- Initial report SHA-256: `cf7530f46e44c4e9df3d6f67ff25b885e13e023165d9a42e8cf0e0d66248a00c`.
-- Corrective report SHA-256: `c06858c723dd4c0386ab8f8e88cd3d0d8885e0a4f2d5ce71038a313329268787`.
+- Initial report SHA-256: `3e366d93bceea4c4f40fdf07e64475c8fdb9d3d518cc07ba05a47a95d50adef7`.
+- Corrective report SHA-256: `60a786aa224d1996220f58e1c1b7c6fe555ca18b1e32ebb9b8e43e6e1ad962ed`.
 - Final runner SHA-256: `fc06d95a9e172ea6ef9462b5a142ced417f8e1b4d6c666ed40c81f6605223c91`.
 - Production core SHA-256: `a9bfae5ff6f03da1d2f2e22d1cddf05665da330dbd0891ffd77a5b7054ae64b9`.
 - Public wrapper SHA-256: `f3400f9434790a6a4c951fb7d8b5a4ae51d911b381dc649642d94b3a9a5ddf75`.

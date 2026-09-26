@@ -119,7 +119,33 @@ python -B tools/check_coding_safety.py
 python -B -m unittest discover -s tests -p test_coding_safety.py -v
 ```
 
-These commands parse selected source with `ast`; they never import Atlas, load
+For public tectonics evidence/documentation or evidence-writer changes, also run
+the read-only personal-home-path guard and its focused tests:
+
+```text
+python -B tools/check_public_paths.py
+python -B -m unittest discover -s tests -p test_public_paths.py -v
+```
+
+Use the explicit `LOCAL_USER` placeholder for published home paths. Redacting a
+historical report requires an old/new publication digest trail; it must not alter
+scientific measurements, repin source/runtime identities or claim a rerun.
+
+For edits to registered evidence or files supporting its current claims, run
+`python -B tools/check_current_evidence.py`. The [bounded register](CURRENT_EVIDENCE.md)
+checks declared byte bindings only; known native/runtime drift still requires
+honest reclassification. Do not rerun numerical campaigns just to obtain a label.
+
+For changes to the [tectonics environment record](TECTONICS_ENVIRONMENT.md), pip
+inputs or their checker, run `python -B -m unittest discover -s tests -p
+test_tectonics_environment.py -v`. With the actual interpreter being checked,
+`python -I -B tools/check_tectonics_environment.py --all` compares installed metadata
+with the selected pins without importing numerical libraries or installing anything.
+Run that environment check only when the environment or relevant record/checker
+has changed or its verification is missing. A metadata pass is not native restart
+compatibility or scientific acceptance.
+
+The coding-safety commands parse selected source with `ast`; they never import Atlas, load
 libraries/checkpoints or start simulation. The checker also verifies named test
 and dependency files exist. It neither modifies files nor regenerates its map.
 It exits non-zero for missing files, changed direct imports, changed recognised
@@ -142,3 +168,21 @@ A completion report should contain the changed files, source/runtime-binding
 impact, exact checks actually run and their outcome, and untested dependencies.
 Keep the report bounded to the request. No repeated broad audit or coordination
 acknowledgement loop is needed.
+
+### Keep changes and current status small
+
+Use [CURRENT_STATE.md](CURRENT_STATE.md) as the single current checkpoint; update
+its affected status and next action rather than prepend dated progress. Do not
+keep separate historical document versions; use Git history for committed
+versions. Retain necessary method/evidence detail in its existing owner document
+and link it. Superseded tectonics-plan status sections are not competing current
+instructions; remove stale status as the affected sections are revised. Do not
+delete imported predecessors or relied-on evidence as redundant documentation.
+
+When committing is authorised, group one coherent change with a descriptive
+message, its focused regression (where relevant), and its evidence-status update.
+Do not sweep unrelated dirty files into a large catch-all commit. State whether
+source/runtime identities or publication bytes changed, which current claims are
+affected, and which evidence remains historical. Reuse unaffected valid results;
+rerun only for changed relevant inputs, an unresolved failure, missing necessary
+coverage or a mandatory check. Never rewrite an old receipt to make it current.
