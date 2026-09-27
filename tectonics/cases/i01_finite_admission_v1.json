@@ -1,0 +1,38 @@
+{
+  "schema": "atlas.i01-finite-admission-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "exact conservative motion-error admission for a declared future window of the accepted material-following finite-strain strip under a positive constant extension force: width, thickness and overburden change, raw plastic history only grows above a prepared floor and temperatures may evolve anywhere inside the accepted window; represented Gauss-point model only; not the continuous depth model, the fully coupled thermal trajectory, rupture, separation, an automatic solver switch, I02 transactions or world assembly",
+  "provenance": {
+    "physics": "the accepted cases/i01_finite_strain_v1.json, unchanged: its layered strip and its homogeneous wet-quartzite fixture, weakening law, drive 2e13 N/m, generalised drag 5e22 Pa s, reference width 1e5 m, stretch window [0.6, 1.4], temperature window [273, 1613] K, zero pore pressure and 1e14 s duration from the reference geometry",
+    "gate": "the retained exact exponent-1 window gate of check_i01_decoupling through the retained column-admission helpers; the envelope is new, the gate is not",
+    "tolerances": "0.01 is the retained column-admission allowance and is always evaluated; 0.1 is an authored coarse allowance declared before execution so that one certified weak-belt window exists; neither is fitted, and the layered strip is expected to stay uncertified at both",
+    "analytic": "the envelope formula for the retained column-admission analytical rate-linear layer and the accepted homogeneous layer, both at Gauss order 2 whose widths are exactly h/2, evaluated at an authored stretch and history floor (formula inputs, not states); the exact threshold is admitted from the rate-linear layer's own issued reference state over the authored duration",
+    "authored": "committed sampling steps, displacement limit, numerical allowance, benchmark counts and the analytic stretch, history and duration are authored control inputs frozen before any run; the numerical allowance equals the retained column-admission inequality allowance"
+  },
+  "inputs": {
+    "finite_strain_case": "cases/i01_finite_strain_v1.json",
+    "column_admission_case": "cases/i01_column_admission_v1.json"
+  },
+  "contract": {
+    "stretch_window": [0.6, 1.4],
+    "temperature_window_k": [273.0, 1613.0],
+    "horizon_s": 1e14,
+    "pore_pressure_pa": 0.0
+  },
+  "campaign": {
+    "layered_order": 64,
+    "homogeneous_order": 8,
+    "steps_per_horizon": 128,
+    "committed_steps": [32, 96, 128],
+    "relative_tolerances": [0.01, 0.1],
+    "displacement_limit_m": 10000.0,
+    "analytic": {"order": 2, "stretch": 1.25, "duration_s": 2.5e13, "weakened_history": 2.0}
+  },
+  "policy": {
+    "maximum_seconds": 60.0,
+    "numerical_allowance_relative": 1e-9,
+    "oracle_relative": 1e-8,
+    "repetitions": 10,
+    "batches": 3
+  }
+}

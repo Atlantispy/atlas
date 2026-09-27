@@ -1,0 +1,125 @@
+{
+  "schema": "atlas.i01-gpe.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_gpe.py": "78021da5f97c8b44c83df20bf356dbf3b0b508849937bd1705b1164605aa9fc0",
+    "tests/test_i01_gpe.py": "f9500db3ff4d418c2ba61769ead16efa817fc7295950619003f4b761d298eead",
+    "cases/i01_gpe_v1.json": "5712b77079bb6e16e696315d355ce60c922a2fa586c54262f4d8d6f0126e4ee8",
+    "docs/I01_GPE.md": "118c7b9953852e3162e5938f5b9fe62e3ac6dafcb2f63286980a1f0f47febb41",
+    "tools/check_i01_closures.py": "09acb83aafe3d3479d675d5940905995dc55f6789c7b09e9b6efee59ae93ecbd"
+  },
+  "passed": true,
+  "controls": [
+    {
+      "order": 4,
+      "quadrature_points": 128,
+      "column_samples": 512,
+      "angular_step_rad": 0.09817477042468103,
+      "relative_rotation_error": 0.0016056069643825065,
+      "expected_central_difference_error": 0.0016056069643816118,
+      "global_torque_cancellation_relative": 1.865659202739232e-15,
+      "work_relative": 3.516492833068252e-16,
+      "pressure_residual_relative": 0.0,
+      "angular_velocities_rad_s": [
+        [
+          5.22424508821189e-32,
+          2.5592342252798933e-17,
+          2.4030207341285857e-32
+        ],
+        [
+          -5.22424508821189e-32,
+          -2.5592342252798933e-17,
+          2.4030207341285857e-32
+        ]
+      ],
+      "seconds": 0.0010661000269465148
+    },
+    {
+      "order": 8,
+      "quadrature_points": 512,
+      "column_samples": 2048,
+      "angular_step_rad": 0.04908738521234052,
+      "relative_rotation_error": 0.0004015468503241527,
+      "expected_central_difference_error": 0.00040154685032089965,
+      "global_torque_cancellation_relative": 1.7100251748077976e-15,
+      "work_relative": 7.016052791990042e-16,
+      "pressure_residual_relative": 0.0,
+      "angular_velocities_rad_s": [
+        [
+          2.3470585823084528e-32,
+          2.5623206527224827e-17,
+          -2.1697759437320184e-32
+        ],
+        [
+          -2.3470585823084528e-32,
+          -2.5623206527224827e-17,
+          -2.1697759437320184e-32
+        ]
+      ],
+      "seconds": 0.0007773999823257327
+    },
+    {
+      "order": 16,
+      "quadrature_points": 2048,
+      "column_samples": 8192,
+      "angular_step_rad": 0.02454369260617026,
+      "relative_rotation_error": 0.00010039578385705926,
+      "expected_central_difference_error": 0.00010039578385823145,
+      "global_torque_cancellation_relative": 6.7780369545332276e-15,
+      "work_relative": 1.4023654441125224e-15,
+      "pressure_residual_relative": 0.0,
+      "angular_velocities_rad_s": [
+        [
+          2.2224194279467496e-32,
+          2.56309260829601e-17,
+          8.645743487713992e-32
+        ],
+        [
+          -2.2224194279467496e-32,
+          -2.56309260829601e-17,
+          8.645743487713992e-32
+        ]
+      ],
+      "seconds": 0.00120900000911206
+    }
+  ],
+  "refinement_error_ratios": [
+    3.99855449765417,
+    3.999638579403533
+  ],
+  "benchmark": {
+    "columns": 4096,
+    "layers": 3,
+    "samples_seconds": {
+      "scalar": [
+        0.007523599953856319,
+        0.007445600000210106,
+        0.0074467999511398375,
+        0.00754140003118664,
+        0.007663799973670393
+      ],
+      "vectorised": [
+        0.00022039999021217227,
+        0.00014140002895146608,
+        0.00013290002243593335,
+        0.00012699997751042247,
+        0.00014489999739453197
+      ]
+    },
+    "scalar_median_seconds": 0.007523599953856319,
+    "vectorised_median_seconds": 0.00014140002895146608,
+    "saved_seconds": 0.007382199924904853,
+    "saved_percent": 98.12058017679436,
+    "maximum_relative_difference": 2.384493239866285e-16,
+    "scope": "prevalidated exact column moment kernel only; not whole-world runtime"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.042828099976759404
+}

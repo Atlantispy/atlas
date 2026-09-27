@@ -30,6 +30,7 @@ This document was requested so another implementer, including Claude, can contin
 
 1. Read [AGENTS.md](../AGENTS.md), [CURRENT_STATE.md](CURRENT_STATE.md), and the affected route in [CODING_SAFETY.md](CODING_SAFETY.md). Check the actual checkout and its changes. A pushed snapshot and another agent's local work are not necessarily identical.
 2. Choose the next bounded checkpoint below. Inspect its implementation, actual imports and existing evidence before writing replacements. Review any supplied patch against the current branch; a patch described as ready is not automatically applied or accepted.
+   For a future module, use its [connected completion scope](MODULE_SCOPES.md) as part of the brief: identify initial-input producers, state ownership, consumers and feedbacks before choosing an isolated solver task. Resolve that slice's scientific decisions in the owning method document before building dependent code.
 3. Use published research and relevant existing software when selecting scientific methods. Explain what was adopted, adapted or rejected, why it fits, and its licence/dependency implications. Do not build an inferior substitute merely to keep everything home-grown.
 4. Correct the model and its integration, optimise useful stable work, then run proportionate checks. Reuse valid evidence; do not repeat an expensive campaign for reassurance or because another agent produced it.
 5. Make a small coherent change with a descriptive commit when committing is authorised. Preserve unrelated work and historical results. Keep failures visible and deliver code, focused checks, measured timings and the next unresolved point.
@@ -224,6 +225,8 @@ These are starting points already raised in the design discussion, not a stateme
 
 ## 6. Phase C — complete all other modelling categories
 
+The detailed [future-module scopes](MODULE_SCOPES.md) cover **all 17 non-tectonics categories**, their input/bootstrap producers, implementation slices, shared ownership, feedbacks, scientific decisions and connected acceptance cases. They are part of this roadmap, not an optional later integration pass. The common scope includes usable API/UI outputs, saved projects, recovery, appropriate optimisation and measured performance. It is planning, not a claim that the listed implementations have passed those requirements.
+
 The table uses the repository's existing category numbering. It is a **target list**, not a fresh audit claiming the current implementations are absent or complete. For each row, first identify what already works and what is missing, disconnected, scientifically unsuitable or only supported on a bounded fixture. Repair or extend that route rather than duplicating it.
 
 | # | Category | Required connected capability | Key evidence before completion |
@@ -260,6 +263,8 @@ Work one coherent increment at a time, in the following dependency groups. This 
 
 Use bounded iteration for terrain–water–soil–vegetation and settlement–land-use–network feedbacks. Declare exchange periods, convergence/stopping conditions and who owns each update. A failed convergence test must be reported, not hidden by accepting the last iteration.
 
+Use the [bootstrap and ownership contracts](MODULE_SCOPES.md#bootstrap-feedback-and-implementation-order) to break circular prerequisites explicitly. Develop the common small mountain-to-coast case as the groups connect; do not wait until every standalone module is written before trying them together. Temporary forcing/candidate drivers must name their replacement producer and cannot silently become a claim of complete generation. Geological construction and seasonal updates use their appropriate clocks; a selected-epoch world does not require every process to rerun monthly.
+
 The older six completion priorities remain covered here: coupled soil physics; changing-ground feedback; missing/disconnected regional geology, coastal, district and cultivation routes; numerical species inputs; compatible physical-to-population/transport joins; then a complete Diadem seasonal-year verification on the replacement terrain.
 
 ## 7. Shared engineering requirements across all 18 categories
@@ -293,7 +298,7 @@ Keep the map primary, with progressively available scientific detail. Backend pr
 
 Maintain a separate frontend/backend integration boundary. Supply a versioned data contract and real small example to the UI owner; do not rewrite the frontend as part of a backend repair or claim integration until it is exercised. If the frontend is unavailable in the checkout, finish the backend contract and explicitly identify that dependency.
 
-**Requested Windows delivery, after I01:** package the existing Atlas interface
+**Requested Windows delivery, brought forward before I01 completion:** package the existing Atlas interface
 and backend as a double-clickable `.exe`, without requiring terminal commands.
 Coordinate frontend changes with the UI owner. Include the required runtime and
 assets (or a clearly documented installer), use writable per-user locations for
@@ -330,6 +335,8 @@ Full-year verification means the chosen coupled seasonal workflow, not forcing e
 
 A checkpoint is complete when its requested capability is implemented in the real route, its affected inputs/outputs are connected, the necessary scientific and technical checks pass, useful performance work is measured, and documentation/evidence describe those actual bytes. A helper file, passing unit tests, a rendered picture or a handoff alone is not integration.
 
+A finished increment is not automatically a finished module. Future-module completion also requires the common responsibilities and category-specific connections in [MODULE_SCOPES.md](MODULE_SCOPES.md), including the producers for required inputs. Mark unresolved or unsupported coverage explicitly; do not move missing essential connections into a new completion programme after declaring the module done.
+
 The completion summary should be short:
 
 1. What changed and why.
@@ -340,4 +347,4 @@ The completion summary should be short:
 
 Do not perform repeated broad audits, coordinator acknowledgements or reviewer-of-reviewer passes. Preserve a concise handoff and stop when the authorised checkpoint and necessary continuations are genuinely complete.
 
-**Default starting point for a later coding request:** reconcile Phase A's existing patches and blocking evidence/reliability findings, then B1 and B2. Continue from the saved boundary work; do not begin another W-package or an expensive world run to avoid closing these issues.
+**Starting point for a later coding request:** follow [CURRENT_STATE.md](CURRENT_STATE.md) and the active [tectonics integration plan](../tectonics/docs/INTEGRATION_PLAN.md). Earlier Phase A/B findings remain context, not an instruction to restart completed repairs. Once future-module implementation is authorised, take the next connected increment above using its detailed scope; the roadmap's existence does not resume held simulations or start another module.

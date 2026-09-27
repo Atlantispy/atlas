@@ -1,0 +1,7 @@
+{
+  "schema": "atlas.i01-magma-receiver-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "Same-law and same-pressure finite liquid additions with no external heat or non-PV work; analytical ideal mixture, not calibrated mantle or native emplacement.",
+  "policy": {"max_parcels":64,"maximum_seconds":30.0,"benchmark_calls":20,"benchmark_batches":3,"benchmark_parcels":8},
+  "controls": ["pure latent plateau from independently calculated enthalpy", "binary extraction, finite receipt and repeated transfer", "same-state batched versus sequential receipt"]
+}

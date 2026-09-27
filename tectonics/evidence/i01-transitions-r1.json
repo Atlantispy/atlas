@@ -1,0 +1,434 @@
+{
+  "schema": "atlas.i01-transition-controls.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "policy": {
+    "algebra_relative": 1e-11,
+    "ode_relative": 1e-09,
+    "quadrature_relative": 1e-08,
+    "bracket_time_tolerance": 1e-10,
+    "unstable_junction_min_relative": 0.001,
+    "melt_fraction_guard": 0.3,
+    "scope": "event bracketing and simultaneity, rift decoupling, 1D melt supply, velocity-space junctions and oblique vectors, slab-inventory forces"
+  },
+  "cases": {
+    "bracketing": {
+      "status": "PASS",
+      "seconds": 0.026714399980846792,
+      "passed": true,
+      "criteria": {
+        "naive_single_step_misses_double_crossing": true,
+        "safeguard_finds_first_of_two": true,
+        "monotone_root": true,
+        "tangency_refused": true,
+        "exact_start_zero_is_previous_interval": true,
+        "no_invented_event": true
+      },
+      "results": {
+        "two_roots": {
+          "status": "EVENT",
+          "time": 0.2999999999634173,
+          "samples": 43
+        },
+        "monotone": {
+          "status": "EVENT",
+          "time": 0.6931471805120656,
+          "samples": 34
+        },
+        "tangent": {
+          "status": "UNRESOLVED_BUDGET",
+          "time": 0.49999000122809323,
+          "samples": 100000,
+          "trigger": 9.99754396436487e-11
+        },
+        "at_start": {
+          "status": "DUE_AT_START",
+          "time": 0.25,
+          "samples": 1
+        },
+        "no_event": {
+          "status": "NO_EVENT",
+          "time": null,
+          "samples": 2
+        }
+      },
+      "limitation": "declared-Lipschitz scalar triggers only; production triggers re-integrate from the parent"
+    },
+    "simultaneity": {
+      "status": "PASS",
+      "seconds": 8.480000542476773e-05,
+      "passed": true,
+      "criteria": {
+        "disjoint_orders_identical": true,
+        "sequential_conflict_is_order_dependent": true,
+        "conflict_refused_atomically": true,
+        "feasible_joint_order_free": true,
+        "cascade_reevaluates_after_commit": true
+      },
+      "sequential_outcomes": {
+        "r1_then_r2": [
+          "r2"
+        ],
+        "r2_then_r1": [
+          "r1"
+        ]
+      },
+      "joint_refusal_reason": "finite account melt exhausted",
+      "cascade_events": [
+        "blocking"
+      ],
+      "batch_from_parent_events": [
+        "attached_limit",
+        "blocking"
+      ],
+      "limitation": "exact binary accounts and permutation checks; production needs footprint graphs"
+    },
+    "separation": {
+      "status": "PASS",
+      "seconds": 0.0036989999935030937,
+      "passed": true,
+      "criteria": {
+        "integrator_matches_closed_form": true,
+        "power_balance": true,
+        "thickness_cutoff_times_diverge": true,
+        "kinematic_mode_has_no_event_time": true,
+        "zero_drag_idealisation_converges": true,
+        "handoff_error_bounded": true,
+        "handoff_choice_error_bounded": true
+      },
+      "relative_errors": {
+        "event_time": 2.856406831874591e-13,
+        "event_thickness": 2.021099337273174e-15,
+        "displacement": 8.445216702049757e-13,
+        "exported_material": 1.5905755674562842e-16,
+        "material_closure": 1.5894571940104166e-16
+      },
+      "power_relative_residuals": [
+        0.0,
+        2.581638606595031e-16,
+        0.0
+      ],
+      "ode_seconds": 0.0036165000055916607,
+      "decoupling_thickness_m": 70.3125,
+      "decoupling_time_Myr": 9.568306389206928,
+      "crossover_thickness_m": 7031.25,
+      "drag_limited_speed_m_per_yr": 0.03366144,
+      "at_handoff": {
+        "active_material_m2_per_m": 2109375.0,
+        "exported_each_side_m2_per_m": 1498945312.5,
+        "continental_map_width_m": 247799.27617714467,
+        "ocean_area_created_m2_per_m": 0.0
+      },
+      "cutoffs_m": [
+        1000.0,
+        100.0,
+        10.0,
+        1.0
+      ],
+      "cutoff_event_times_Myr": [
+        8.326368473535933,
+        9.409470574780284,
+        10.44123797376591,
+        11.467871902525664
+      ],
+      "kinematic_cutoff_times_Myr": [
+        2.0521270863582,
+        3.0781906295373,
+        4.1042541727164,
+        5.1303177158955
+      ],
+      "zero_drag_cutoff_times_Myr": [
+        6.2742413871777325,
+        6.331279945242985,
+        6.336983801049509,
+        6.337554186630162
+      ],
+      "zero_drag_rupture_Myr": 6.33761756280579,
+      "handoff": {
+        "follow_on_Myr": 5.0,
+        "resolved_displacement_m": 168157.20202974556,
+        "switched_displacement_m": 168307.2,
+        "difference_m": 149.9979702544515,
+        "bound_m": 1666.4079207920793,
+        "later_handoff_difference_m": 135.0
+      },
+      "refused": {
+        "kinematic_generated_separation": "REFUSED: prescribed velocity supplies no force balance",
+        "thickness_cutoff_trigger": "REFUSED: event time depends on the cutoff without a limit"
+      },
+      "limitation": "uniform Newtonian active belt at fixed width; no temperature, strain softening or rupture law"
+    },
+    "supply": {
+      "status": "PASS",
+      "seconds": 0.10399889998370782,
+      "passed": true,
+      "criteria": {
+        "lid_below_solidus_exhumes_mantle": true,
+        "thicker_lid_less_melt": true,
+        "hotter_mantle_more_melt": true,
+        "latent_heat_reduces_melt": true,
+        "quadrature_agreement": true,
+        "enthalpy_identity": true,
+        "single_branch_guard": true,
+        "no_fixed_crust_thickness": true
+      },
+      "columns": [
+        {
+          "potential_C": 1300.0,
+          "lid_m": 6000.0,
+          "solidus_depth_m": 53344.94155605754,
+          "H_m": 3822.60209470851,
+          "H_quad_m": 3822.602094708687,
+          "H_raw_m": 7103.6489636364895,
+          "latent_J_m2": 5784735954329.367,
+          "sensible_J_m2": 5784735954329.377,
+          "max_fraction": 0.180104897354301,
+          "crust_m": 4349.857556047615,
+          "new_surface": "magmatic_crust",
+          "accounts_kg_m2": {
+            "processed_mantle": 156238307.1349899,
+            "melt": 12614586.912538083,
+            "residue": 143623720.2224518
+          }
+        },
+        {
+          "potential_C": 1300.0,
+          "lid_m": 20000.0,
+          "solidus_depth_m": 53344.94155605754,
+          "H_m": 1742.448836934207,
+          "H_quad_m": 1742.4488369342848,
+          "H_raw_m": 3102.517260199297,
+          "latent_J_m2": 2662983057935.54,
+          "sensible_J_m2": 2662983057935.5527,
+          "max_fraction": 0.1176574544038145,
+          "crust_m": 1982.7866075458217,
+          "new_surface": "magmatic_crust",
+          "accounts_kg_m2": {
+            "processed_mantle": 110038307.13498989,
+            "melt": 5750081.161882883,
+            "residue": 104288225.97310701
+          }
+        },
+        {
+          "potential_C": 1300.0,
+          "lid_m": 60000.0,
+          "solidus_depth_m": 53344.94155605754,
+          "H_m": 0.0,
+          "H_quad_m": 0.0,
+          "H_raw_m": 0.0,
+          "latent_J_m2": 0.0,
+          "sensible_J_m2": 0.0,
+          "max_fraction": 0.0,
+          "crust_m": 0.0,
+          "new_surface": "exhumed_mantle",
+          "accounts_kg_m2": {
+            "processed_mantle": 0.0,
+            "melt": 0.0,
+            "residue": 0.0
+          }
+        },
+        {
+          "potential_C": 1350.0,
+          "lid_m": 6000.0,
+          "solidus_depth_m": 67009.52510836656,
+          "H_m": 6641.99381666102,
+          "H_quad_m": 6641.99381666137,
+          "H_raw_m": 13280.65895863403,
+          "latent_J_m2": 10273031759854.764,
+          "sensible_J_m2": 10273031759854.766,
+          "max_fraction": 0.24052479117770487,
+          "crust_m": 7558.13089482116,
+          "new_surface": "magmatic_crust",
+          "accounts_kg_m2": {
+            "processed_mantle": 201331432.85760966,
+            "melt": 21918579.594981365,
+            "residue": 179412853.2626283
+          }
+        },
+        {
+          "potential_C": 1350.0,
+          "lid_m": 20000.0,
+          "solidus_depth_m": 67009.52510836656,
+          "H_m": 3727.1304086713853,
+          "H_quad_m": 3727.1304086715686,
+          "H_raw_m": 7260.07460789104,
+          "latent_J_m2": 5822898930705.057,
+          "sensible_J_m2": 5822898930705.064,
+          "max_fraction": 0.1762901794285221,
+          "crust_m": 4241.217361591576,
+          "new_surface": "magmatic_crust",
+          "accounts_kg_m2": {
+            "processed_mantle": 155131432.85760966,
+            "melt": 12299530.348615572,
+            "residue": 142831902.5089941
+          }
+        }
+      ],
+      "reference": "Katz et al. 2003 anhydrous solidus/liquidus and X exponent 3/2 as quoted in Brune et al. 2014 Methods",
+      "limitation": "1D passive triangular-flow column; lid depth is a D4 input; no hydrous, cpx-out or melt-transport terms"
+    },
+    "migration": {
+      "status": "PASS",
+      "seconds": 0.0008720000041648746,
+      "passed": true,
+      "criteria": {
+        "rrr_closes_at_circumcentre": true,
+        "common_rotation_translates_junction": true,
+        "constructed_rtf_closes": true,
+        "rotated_trench_refused": true,
+        "generic_ttt_refused": true,
+        "full_vector_preserved": true,
+        "opening_continuous": true,
+        "pure_transform_creates_no_area": true,
+        "threshold_classifier_would_discard_opening": true,
+        "side_convention_invariant": true
+      },
+      "residuals": {
+        "rrr": 5.626668146403994e-16,
+        "frame_shifted": 3.569756019881286e-16,
+        "rtf": 6.103893317052239e-17,
+        "rotated_trench": 0.08411914775495001,
+        "ttt": 0.4726891341163988
+      },
+      "junction_velocity_m_per_yr": {
+        "rrr": [
+          0.057755771794343734,
+          -0.02512365944668169
+        ],
+        "rtf": [
+          -0.005907824515128501,
+          0.01924503195850495
+        ]
+      },
+      "threshold_discarded_opening_fraction": 0.4848096202463371,
+      "rules": {
+        "ridge": "normal speed = mean of flanks (declared symmetric accretion)",
+        "trench": "moves with the overriding plate edge; rollback needs a resolved back-arc",
+        "transform": "normal speed equals both plates; requires zero normal relative motion"
+      },
+      "limitation": "instantaneous local closure only; junction evolution/reorganisation law not supplied"
+    },
+    "slab": {
+      "status": "PASS",
+      "seconds": 0.0250940999831073,
+      "passed": true,
+      "criteria": {
+        "halfspace_limit": true,
+        "young_ocean_is_buoyant": true,
+        "no_universal_initiation_length": true,
+        "short_forcing_stalls_and_retains": true,
+        "long_forcing_self_sustains": true,
+        "convergence_alone_no_slab": true,
+        "work_owned": true,
+        "collision_integrator": true,
+        "collision_accounts": true,
+        "continental_entry_depends_on_inventory": true
+      },
+      "neutral_buoyancy_age_Myr": 10.832793346644907,
+      "halfspace_relative": 5.88270387481231e-15,
+      "self_sustaining_attached_length_m": {
+        "5.0": null,
+        "30.0": 250049.83890659508,
+        "80.0": 109611.53834921535,
+        "150.0": 87909.97652117774
+      },
+      "initiation": {
+        "short": {
+          "age_Myr": 80.0,
+          "forcing_Myr": 0.7745839301995953,
+          "convergence_m": 49269.26217854209,
+          "state": "stalled_incipient_underthrust",
+          "speed_after_forcing_m_per_yr": 0.0,
+          "critical_attached_length_m": 109611.53834921535,
+          "work_relative_residual": 1.0824869497753761e-16,
+          "retained_underthrust_m": 49269.26217854209
+        },
+        "long": {
+          "age_Myr": 80.0,
+          "forcing_Myr": 3.098335720798381,
+          "convergence_m": 274028.84587263875,
+          "state": "self_sustaining",
+          "speed_after_forcing_m_per_yr": 0.04303309090898631,
+          "critical_attached_length_m": 109611.53834921535,
+          "work_relative_residual": 7.258797860005182e-13,
+          "retained_underthrust_m": 274028.84587263875
+        },
+        "young": {
+          "age_Myr": 5.0,
+          "forcing_Myr": 14.570950830635864,
+          "convergence_m": 572760.6616648638,
+          "state": "stalled_incipient_underthrust",
+          "speed_after_forcing_m_per_yr": 0.0,
+          "critical_attached_length_m": null,
+          "work_relative_residual": 1.2663811987802742e-15,
+          "retained_underthrust_m": 572760.6616648638
+        }
+      },
+      "collision": [
+        {
+          "age_Myr": 30.0,
+          "ocean_excess_kg_m2": 1630663.7049677703,
+          "continent_excess_kg_m2": -8415700.399999999,
+          "event_times_Myr": {
+            "attached_limit": 8.765926624983228,
+            "continental_arrival": 9.61636769862249,
+            "collision_handoff": 16.13139848633768
+          },
+          "arrival_speed_m_per_yr": 0.047034416892436204,
+          "asymptotic_continental_entry_m": 66540.57543167759,
+          "remaining_after_handoff_m": 665.4057543167759,
+          "accounts": {
+            "ocean_from_incoming_m": 300000.0,
+            "initial_slab_m": 400000.0,
+            "attached_ocean_m": 594124.8303226392,
+            "detached_ocean_m": 105875.1696773608,
+            "subducted_continent_m": 65875.1696773608
+          },
+          "account_closure": 0.0,
+          "integrator_relative": 4.919858768059945e-11
+        },
+        {
+          "age_Myr": 80.0,
+          "ocean_excess_kg_m2": 3719929.515439934,
+          "continent_excess_kg_m2": -8415700.399999999,
+          "event_times_Myr": {
+            "attached_limit": 2.4429853635626446,
+            "continental_arrival": 2.720659648117615,
+            "collision_handoff": 8.114065009399107
+          },
+          "arrival_speed_m_per_yr": 0.14405367088316487,
+          "asymptotic_continental_entry_m": 168710.34282674175,
+          "remaining_after_handoff_m": 1687.1034282674175,
+          "accounts": {
+            "ocean_from_incoming_m": 300000.0,
+            "initial_slab_m": 400000.0,
+            "attached_ocean_m": 492976.76060152566,
+            "detached_ocean_m": 207023.23939847434,
+            "subducted_continent_m": 167023.23939847434
+          },
+          "account_closure": 0.0,
+          "integrator_relative": 9.069270716173691e-12
+        }
+      ],
+      "refused": {
+        "convergence_label_without_weakness": "REFUSED: initiation needs polarity, geometry and weakness",
+        "generated_initiation": "BLOCKED: resisting-force closure needs resolved D2 elasto-plastic bending"
+      },
+      "limitation": "reduced terminal-velocity balance with declared resistance; no bending, phase change or slab dynamics"
+    }
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "source_sha256": {
+    "tools/check_i01_transitions.py": "1df635dab01ce828a1d797c90a8cd853654e5c12b70e9d97e02483d9ae02ec98",
+    "cases/i01_transitions_v1.json": "49e16f7dd5a0a9866226322e0dc4eb1fdde26da324a92e3e7eca043851f6cd7b",
+    "docs/I01_TRANSITIONS.md": "611bc4b630e3f4a99876293f6304c90a9fa8b4555029726d5633700ec7a3062e"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.16148579999571666
+}

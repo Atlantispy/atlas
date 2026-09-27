@@ -1,0 +1,12 @@
+{
+  "schema": "atlas.i01-delivery-cases.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"relative_tolerance": 1e-12, "max_components": 64, "max_cells": 64, "work_bytes": 131072},
+  "cases": [
+    {"name": "dry", "components": ["a"], "mass_kg": [1000], "cp_j_kg_k": [1000], "latent_j_kg": [400000], "tm_k": 1500, "tref_k": 300, "temperature_k": 1400, "liquid_fraction": 0, "extract_fraction": 1},
+    {"name": "partial", "components": ["a"], "mass_kg": [1000], "cp_j_kg_k": [1000], "latent_j_kg": [400000], "tm_k": 1500, "tref_k": 300, "temperature_k": 1500, "liquid_fraction": 0.2, "extract_fraction": 0.5},
+    {"name": "all_available", "components": ["a", "b"], "mass_kg": [6000, 4000], "cp_j_kg_k": [1000, 1500], "latent_j_kg": [400000, 600000], "tm_k": 1500, "tref_k": 300, "temperature_k": 1500, "liquid_fraction": 0.2, "extract_fraction": 1},
+    {"name": "hot_liquid_exhaustion", "components": ["a"], "mass_kg": [1000], "cp_j_kg_k": [1000], "latent_j_kg": [400000], "tm_k": 1500, "tref_k": 300, "temperature_k": 1600, "liquid_fraction": 1, "extract_fraction": 1},
+    {"name": "signed_datum", "components": ["a"], "mass_kg": [1000], "cp_j_kg_k": [1000], "latent_j_kg": [400000], "tm_k": 1500, "tref_k": 2000, "temperature_k": 1500, "liquid_fraction": 0.2, "extract_fraction": 0.5}
+  ]
+}

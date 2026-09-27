@@ -1,0 +1,9 @@
+{
+  "schema": "atlas.i01-water-flexure-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"max_axis": 128, "max_iterations": 64, "rms_error_m": 1e-6, "volume_relative_tolerance": 1e-11, "force_relative_tolerance": 1e-7, "refinement_relative_tolerance": 0.005, "benchmark_repetitions": 5},
+  "plate": {"length_x_m": 600000, "length_y_m": 400000, "elastic_thickness_m": 15000},
+  "mean_depth_m": 200,
+  "grids": [32, 64, 128],
+  "source": "Authored smooth periodic 2D bed 500 cos(x)+300 cos(y)+80 sin(x+y) m, where angular coordinates span 0..2pi. Constant elastic plate law follows Wickert2016/gFlex. Fixed finite water volume, dry restoring force, small-deflection and one communicating-reservoir assumptions are explicit. No observed region or geological calibration."
+}

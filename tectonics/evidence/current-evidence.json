@@ -3,6 +3,335 @@
   "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
+      "id": "i01-finite-admission-r1",
+      "path": "tectonics/evidence/i01-finite-admission-r1.json",
+      "sha256": "f5b7f194191a46737b75fa03946dcdb2c53273eedaec02db5b3bf41cef74c4e5",
+      "status": "current",
+      "note": "Reviewed finite-strain motion admission. Nineteen focused tests and five bounded controls pass after closing edited-clock provenance and external mutable eigensystem injection. Retained solvers, physics, cases and tolerances unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted. No rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance. Layered control is honestly uncertified; the homogeneous control passes at 10%, not 1%.",
+        "Process-local issued states preserve absolute reference, elapsed time and history. Evolutions rerun from their reference; persisted identity and efficient restart remain I02/I05 work. Numerical observations cover window endpoints and aggregate accounts; the derivation, not those samples, supports intermediate-stage bounds.",
+        "Nineteen tests: 0.416 s; five controls: 1.9174636 s. Three interleaved 40-call medians: rebuild 0.1439293 s, reuse 0.0027452 s, saving 0.1411841 s / 98.09% with identical answers. Admission-only timing, excluding evolution; Windows CPython 3.12.14, runtime versions not binary seals."
+      ]
+    },
+    {
+      "id": "i01-magma-receiver-r1",
+      "path": "tectonics/evidence/i01-magma-receiver-r1.json",
+      "sha256": "bd2202e4beb4da7e594ee241859b84e5753347bb282c8b3116f8597e1f0f950d",
+      "status": "current",
+      "note": "Compatible same-law and same-pressure finite receiver with component/enthalpy addition, equilibrium crystallisation or melting, entropy production and combined-material PV work. Thirteen focused tests and analytical/connected/batch controls pass. Existing scientific providers unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Analytical ideal-mixture material, not calibrated mantle. Prescribed finite liquid quantities and constant pressure; no pressure transport, kinetic/gravitational energy, flow rate, compaction, native emplacement, persisted transaction or whole-world acceptance.",
+        "Pure control gives 1500 K and 333.333333 kg liquid from 2000 kg total; binary control gives 1100 K and entirely solid 9000 kg. Internal-energy/work residual 5.97e-8 J; repeated donor/receiver energy residual 1.91e-6 J.",
+        "Three interleaved 20-call batches of eight parcels: batch median 0.0126724 s versus sequential 0.0470029 s, saving 0.0343305 s / 73.04%; temperature parity 2.28e-13 K. Co-addition has no intervening exchanges; this is kernel timing, not world performance. Windows CPython 3.12.14 observed; external software inspected, not run."
+      ]
+    },
+    {
+      "id": "i01-phase-energy-r2",
+      "path": "tectonics/evidence/i01-phase-energy-r2.json",
+      "sha256": "f77a0e3b2046e0214714a8b7e9f6c1e0e538506619b3245ae97323b4ffb838ec",
+      "status": "current",
+      "note": "Independent ideal-mixture caloric closure, isobaric enthalpy inversion and finite liquid extraction. Twelve focused tests pass; analytical extraction/cooling and matched solver campaign pass. Retained partition, Katz and W08 sources remain unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Ideal mixing with equal effective molar masses, common heat capacity and constant phase-specific volumes. Analytical properties, not calibrated mantle petrology. No native payload, moving-pressure integration, extraction-rate law, compaction or global embedding.",
+        "The 10000 kg binary has 5.8 GJ; extracting 1000 kg transfers 0.9 GJ and leaves 4.9 GJ. Recovered residual temperature error 1.69e-10 K; full source/solid/surroundings energy residual 1.20e-7 J. Pure and congruent latent plateaux are tested separately.",
+        "Three interleaved 40-call batches: median Newton 0.0192148 s versus bisection 0.1134367 s, saving 0.0942219 s / 83.06%, temperature parity 2.32e-8 K, 5 versus 34 iterations. Kernel timing only, Windows CPython 3.12.14, not a world speedup or sealed runtime. Research/software inspected, not externally executed."
+      ]
+    },
+    {
+      "id": "i01-phase-energy-r1",
+      "path": "tectonics/evidence/i01-phase-energy-r1.json",
+      "sha256": "bb06ae244c29e276d60e57b392c47a654f4e7fbc7cdd4c4c17d294e1560c8505",
+      "status": "historical",
+      "note": "Initial passing analytical control retained unchanged. The Newton safeguard subsequently replaced a fixed bracket-edge margin with a residual-progress safeguard, reducing 28 to 5 iterations without changing physics, case or tolerances. Current evidence is r2."
+    },
+    {
+      "id": "i01-phase-partition-r1",
+      "path": "tectonics/evidence/i01-phase-partition-r1.json",
+      "sha256": "4fcd6354ab98e4de688659ee81925ca2649eb5a90b50698103643eabb9767c25",
+      "status": "current",
+      "note": "Independent fixed-P/T composition-aware phase and extraction prerequisite. Nine focused tests and the analytical depletion/control campaign pass. New code only; existing melting/delivery/finite-strain sources unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Supplied partition coefficients and analytical compositions, not calibrated mantle petrology. No enthalpy, reaction rate, transport, native payload or generated crust supply is authorised.",
+        "The residual retains 1000 kg of liquid after extracting 1000 kg from the 10000 kg binary source. Re-equilibration agrees within 1.03e-12 kg per component; mass residual 2.28e-13 kg.",
+        "Three interleaved 200-call batches: median Newton 0.0020979 s versus bisection 0.0163525 s, saving 0.0142546 s / 87.17%; maximum mass difference 2.37e-9 kg. Kernel-only timing, not a world speedup. Windows CPython 3.12.14 observations, not sealed runtime or independent execution of R_DMC."
+      ]
+    },
+    {
+      "id": "i01-finite-strain-r2",
+      "path": "tectonics/evidence/i01-finite-strain-r2.json",
+      "sha256": "e356000b7d467bc3d43bb4dd0637cdc89d06c32f0bac5e335697d5a8d7e97b34",
+      "status": "current",
+      "note": "Reviewed material-following finite-strain column. Twenty-three focused tests and all seven bounded controls pass after correcting the compression comparison, final-operation deadline checks and prescribed-control temperature-window guards. Physics, forcing, case and acceptance tolerances unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds sixteen new/retained source, case, method, test and accepted-receipt files before/after. Runtime versions are observations, not binary seals. Windows only; ASPECT references checked, not an independently executed comparison solver.",
+        "Closed laterally uniform incompressible affine strip, authored force/drag, fixed per-material properties and material-base temperature. Current geometry/pressure, transported temperature/history, force balance and whole-strip heat/work accounts are connected. No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance.",
+        "Twenty-three tests pass in 1.146 s; seven controls in 13.6352926 s. One matched warm/eigensystem-reuse run takes 1.0343286 versus 4.2503381 s, saving 3.2160095 s / 75.66%, relative parity 2.00e-11. This is a bounded control, not a world-runtime forecast."
+      ]
+    },
+    {
+      "id": "i01-finite-strain-r1",
+      "path": "tectonics/evidence/i01-finite-strain-r1.json",
+      "sha256": "d1abb2409ef9ebe39c5117aaee533a69a1e1658089ecf8eb8d2ff34aad90de00",
+      "status": "historical",
+      "note": "Original failed campaign retained unchanged: six groups passed, states failed because its compression endpoint was compared with positive extension forcing. Review also closed endpoint-deadline and prescribed-control temperature-window guards. Current corrected evidence is r2; no old receipt was rewritten."
+    },
+    {
+      "id": "i01-column-admission-r1",
+      "path": "tectonics/evidence/i01-column-admission-r1.json",
+      "sha256": "abe11697a0ea3b3feb4089dc77231bda90780e2ff504ee0de4a45687d77d0520",
+      "status": "current",
+      "note": "Exact rational sufficient resistance bound from the retained mixed-creep column into the existing motion-admission gate. Ten focused tests and eight connected control checks pass; no actual rheology is fitted or replaced and no physical rupture is authorised.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds twelve source, case, test, method and reviewed-receipt files before/after; runtime versions are observations, not binary seals. Windows only. Reference software and paper sections consulted, not independently executed.",
+        "Sufficient bound for the represented Gauss-point fixed column, constant drive/drag/width/temperature/pore state, positive extension and nondecreasing history. Every point needs plastic regularisation; total used plus future strain remains at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim.",
+        "Ten tests pass in 0.011 s; all eight controls pass in 0.1361079 s. Three interleaved batches of ten actual admission calls: rebuilt median 0.0187222 s, reused 0.0011830 s, saving 0.0175392 s / 93.68% with identical outputs. Mechanical preparation excluded equally; not a simulation/world speedup. The inherited column remains uncertified at the 1% allowance, not falsely admitted."
+      ]
+    },
+    {
+      "id": "i01-thermomechanical-motion-r1",
+      "path": "tectonics/evidence/i01-thermomechanical-motion-r1.json",
+      "sha256": "c9eb3b75cbd4f27aa36fa19809b8595b25769a4a58d829c19d3866cd9212ecc1",
+      "status": "current",
+      "note": "Reviewed force-balanced motion with column conduction and thermal/plastic weakening at every stage. Twelve focused tests and six bounded controls pass; retained physics, fixtures and tolerances were not retuned. Drag remains outside column heat and refused trials preserve accepted accounts.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds thirteen new/retained source, case, method, test and accepted-receipt files before and after execution. Runtime versions are observations, not binary seals; Windows execution only. ASPECT heating and SciPy integration documentation were consulted, not external comparison solvers executed.",
+        "Fixed geometry/width, constant thermal layer properties and authored constant external force/drag, below 0.05 axial strain. No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance.",
+        "Twelve tests pass in 0.367 s; six controls in 3.6730768 s. Thermal feedback increases endpoint speed by 1.8111% at order 64, versus 0.0106924% finest depth change. One matched warm/prepared comparison takes 0.1979926 versus 1.1310399 s: 0.9330473 s / 82.49% saved, parity 1.43e-12 relative. Not a whole-generator saving."
+      ]
+    },
+    {
+      "id": "i01-column-heat-r2",
+      "path": "tectonics/evidence/i01-column-heat-r2.json",
+      "sha256": "325f55b13ba18186e0262e3990ad4aa2f2d1236e5d83b4e864e3d9cb8e13dfd4",
+      "status": "current",
+      "note": "Reviewed layered conduction and mechanical-heat/weakening coupling. Nineteen focused tests and seven bounded controls pass after correcting volume-weighted mean reporting and actual geometry/capacity support validation. Physical equations, fixture and physical tolerances are unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds twelve new/retained source, case, method, test and reviewed-receipt files. Runtime versions are observations, not binary seals. ASPECT and NumPy sources were consulted, not installed or run as comparison software.",
+        "Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance. Arbitrary replacement of derived prepared arrays is outside this bounded support-pairing correction.",
+        "Nineteen tests pass in 0.144 s; campaign 1.4607544 s. One bitwise-matched reuse comparison takes 0.0846096 versus 0.3576032 s: 0.2729936 s / 76.34% saved, not whole-generator savings."
+      ]
+    },
+    {
+      "id": "i01-column-heat-r1",
+      "path": "tectonics/evidence/i01-column-heat-r1.json",
+      "sha256": "d85946fc0d7e5569c7e61821fd1ae0298c1700cc6a491507f03e7fc2912e91a4",
+      "status": "historical",
+      "note": "Original heat-control receipt retained unchanged. Valid-case physical measurements remain useful, but its layer means were unweighted point means and support pairing allowed incorrect volume/capacity. Reviewed current evidence is i01-column-heat-r2; no silent rebind."
+    },
+    {
+      "id": "i01-motion-coupling-r1",
+      "path": "tectonics/evidence/i01-motion-coupling-r1.json",
+      "sha256": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c",
+      "status": "current",
+      "note": "External drive and disjoint generalised drag coupled to actual evolving layered resistance; motion solved at each accepted Heun stage. Eight focused tests and bounded time/depth, both-sign root, work and warm/cold controls pass.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds eight new/retained tool, case, test, method and reviewed receipt files. Runtime versions are observations, not binary seals. Retained weakening/column helpers and Claude's independent heat files were not changed.",
+        "Fixed-temperature, fixed-width small-strain column and constant authored external force/generalised drag. No full spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate.",
+        "Eight tests pass in 0.157 s; campaign 1.209959 s after imports. Finest time/depth velocity differences 8.20e-9 and 1.36e-4 relative. One matched cold/warm observation: 0.4459559/0.0926285 s, saving 0.3533274 s / 79.23%, relative outcome difference 7.99e-13. Not a world speedup."
+      ]
+    },
+    {
+      "id": "i01-weakening-r2",
+      "path": "tectonics/evidence/i01-weakening-r2.json",
+      "sha256": "14fa0e8606ebd38ba6dfb0e6f8019191b28260aaea0dc5fa4bae38ce6939ac7f",
+      "status": "current",
+      "note": "Reviewed layered strength-to-evolving-plastic-history adapter. Pressure-consistent extension/compression, force/rate control, work and history envelopes pass. Seventeen focused tests and all seven bounded controls pass after immutable-preparation, changed-provider and direct-entry/window guard fixes; physical equations and case tolerances are unchanged.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds its tool, case, method, tests and the unchanged column helper/case/receipt before and after execution. Runtime versions are observations, not binary seals. External ASPECT sources were consulted, not executed or vendored.",
+        "Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration. Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates.",
+        "17 tests in 0.137 s; seven controls in 0.948857 s after imports. Evolving inherited weakening lowers the case resistance by 1.9688%; constant-force rate rises by 23.0%. One matched reuse comparison: 0.0347743 versus 0.2257254 s, saving 0.1909511 s / 84.59%, with bitwise parity. Not a whole-generator speedup."
+      ]
+    },
+    {
+      "id": "i01-weakening-r1",
+      "path": "tectonics/evidence/i01-weakening-r1.json",
+      "sha256": "e8c74da719e418a8b2e23db134dd18174c78a34e95ba6e4bb482aa79608381d4",
+      "status": "historical",
+      "note": "Claude's original seven-control delivery, retained byte-identical. Its valid case passed; review found reversible array write flags, unchecked changed providers and incomplete direct-entry/window guards. Corrected source-bound evidence is i01-weakening-r2. Physics, case and numerical tolerances were not retuned."
+    },
+    {
+      "id": "i01-gpe-r1",
+      "path": "tectonics/evidence/i01-gpe-r1.json",
+      "sha256": "bfd5ddbaa6a204ca156b9d94b981269fb9ce0956bb5ec37d1fd111b6c248e4fd",
+      "status": "current",
+      "note": "Dry compensated material/thermal columns supply GPE traction to the retained D1 torque solver. Ten focused tests and three spherical refinement controls pass; no separate double-counted ridge push.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds four new tool/case/test/method files and the unchanged retained I01 closure helper before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
+        "Prescribed dry locally compensated columns, linear layer temperatures, smooth great-circle samples and two manufactured hemispheres. Reference material mass is distinct from effective buoyancy load; diagnostic mantle fill is not a conserved transported inventory. No water-loaded/world/deforming-state acceptance or calibrated planet defaults.",
+        "Ten tests in 0.007 s; campaign 0.0428281 s after imports. Finest analytical rotation error 0.0100396%, decreasing by approximately four per refinement. Five interleaved medians for exact 4096-column/three-layer moments: scalar 0.0075236 s, vectorised 0.0001414 s, saving 0.0073822 s / 98.12%; relative parity 2.38e-16. Kernel microbenchmark only, not a previous generator release or world-runtime forecast."
+      ]
+    },
+    {
+      "id": "i01-water-flexure-r1",
+      "path": "tectonics/evidence/i01-water-flexure-r1.json",
+      "sha256": "6e22ad6d509520eaefb30f2ddcba1eea2957770ce3c4f33e78aabe712b6c3932",
+      "status": "current",
+      "note": "Coupled 2D periodic constant-rigidity flexure and finite communicating-water equilibrium. Ten focused tests and the 32/64/128-grid campaign pass. Dry restoring coefficient avoids double water feedback; total equilibrium uses an unloaded reference.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
+        "Periodic flat constant-D plate with declared common water connectivity; no finite-edge/exterior, variable-D, spherical/geoid, mantle-volume, isolated-basin or dynamic relaxation acceptance. Iteration/residual estimates are mathematical bounds evaluated in floating point, not certified geological or interval-arithmetic bounds.",
+        "Ten tests in 0.062 s; campaign 0.113740 s after imports. Finest-pair displacement change 0.00272251% of prescribed mean water depth. Five interleaved median solves: resort 0.0072849 s, verified reuse 0.0050188 s, saving 0.0022661 s / 31.11%; parity 6.26e-13 m. Microbenchmark, not whole-generator savings."
+      ]
+    },
+    {
+      "id": "i01-melting-r1",
+      "path": "tectonics/evidence/i01-melting-r1.json",
+      "sha256": "6781354026b9a650f4ef924bffb7be8e8f9ad04c903ec468dad8ccdba6e1660d",
+      "status": "current",
+      "note": "Dry Katz batch melt production coupled to approximate isentropic decompression. Exact solid adiabat, equal-expansion endpoint root, two tighter-reference paths and nine focused tests pass. Independent of the parallel weakening task.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. Research/software sources were consulted, not executed or vendored.",
+        "Dry fixed-composition retained-melt parcels, 0-3.5 GPa and at most 40% melt. Thermal/path differential accounts are not absolute entropy or full enthalpy conservation. No extraction, transport, common-Tm delivery join, crust production, native or whole-world acceptance.",
+        "Campaign 0.024851 s after imports; two parcel controls 0.001126 and 0.0013724 s. Reference differences below 0.000962 K and 1.30e-6 mass fraction. Five-run median analytic versus numerical derivatives: 0.0009269 versus 0.0015835 s, saving 0.0006566 s / 41.47%, parity 5.86e-8 K. Microbenchmark only, not generator-wide savings."
+      ]
+    },
+    {
+      "id": "i01-thermal-r2",
+      "path": "tectonics/evidence/i01-thermal-r2.json",
+      "sha256": "7087eb15fa9a2e0035ca8e051ca6344e4dc138de416491514992275e6567a7bf",
+      "status": "current",
+      "note": "Reviewed evolving thermal/plastic-history prototype. Direct evolution validates the declared representation and unsupported laws before solving; all five bounded controls and 13 focused tests pass. Physical equations, case values and numerical tolerances are unchanged from Claude's r1.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds nine thermal and retained-helper source/case/method/test files before and after execution. Imported strength/fault helper bytes match their earlier receipts. Runtime versions are observations, not binary seals; papers are not bound.",
+        "Small-strain material/reference periodic cell with a displacement-gradient refusal bound. Uniform translation is a separate transport-only control. No finite-strain coupled advection, lithosphere column, calibrated rupture or native/global integration acceptance.",
+        "13 focused tests in 0.274 s; five controls in 6.396674 s after imports. One warm/cold comparison: 0.552737 versus 1.606948 s, saving 1.054211 s / 65.60%, with matched outcomes. Not a repeated benchmark or whole-generator forecast."
+      ]
+    },
+    {
+      "id": "i01-thermal-r1",
+      "path": "tectonics/evidence/i01-thermal-r1.json",
+      "sha256": "0525831ed5df467f3b4ee3fba9c98732d6c4f582449781052f0efc641304cf0f",
+      "status": "historical",
+      "note": "Claude's original five-control thermal/history delivery, retained byte-identical. Its valid fixture passed, but review found missing direct-entry validation and ignored coordinate/affine-use/nested-mechanics declarations. Corrected source-bound evidence is i01-thermal-r2; no physical method or tolerance was changed."
+    },
+    {
+      "id": "i01-column-r1",
+      "path": "tectonics/evidence/i01-column-r1.json",
+      "sha256": "48f5b2317d4201baf36c343a0b2f405f48a108cf0faca929c1422f3127afcd5f",
+      "status": "current",
+      "note": "Nonlinear common-stress creep plus regularised friction, laboratory/invariant unit conversion, and supplied-profile plane-strain force/work integration. Eleven focused tests pass; the layered snapshot/refinement and matched solver comparison pass. No rupture or momentum evolution.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds only its new tool/case/tests/method document. No native or Claude thermal imports/edits. Runtime versions and external research are not sealed.",
+        "Prescribed mean-pressure/temperature/pore-pressure profiles and uniform plane-strain rate. This is not resolved vertical momentum, evolved weakening, source calibration, fault formation or a replacement for the current 2D solver.",
+        "Eleven focused tests in 0.006 s; campaign in 0.0549932 s after imports. 64-to-128-point force change 0.0365945%. One ten-solve prepared-law comparison: bisection 0.0003556 s versus safeguarded Newton 0.0000464 s, saving 0.0003092 s / 86.95%; not a world-runtime forecast."
+      ]
+    },
+    {
+      "id": "i01-delivery-r1",
+      "path": "tectonics/evidence/i01-delivery-r1.json",
+      "sha256": "373c855a99a0b70593cabcfac018376644324825bd3a2812714d306e3dd1f900",
+      "status": "current",
+      "note": "Phase-selective separation of existing liquid connects to unchanged W08 finite emplacement and explicitly booked cooling. Five analytical cases and one connected material/heat/thickness account pass; 12 focused tests pass. Not an extraction-rate or mantle-melting law.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds its own tool/case/method/tests and the whole unchanged native Python source tree before and after execution. Installed runtime binaries and external publications are not sealed. Source match is not broad native validation.",
+        "Existing W08 common-Tm congruent thermodynamics only. Extraction amount/timing/accommodation are prescribed; source compaction, peridotite chemistry, permeability, focusing, actual production and global evolution are not solved. Persistent replay prevention remains caller-owned.",
+        "Control run 0.0243872 s after imports; 12 focused tests in 0.006 s. Five individual phase splits took 0.0001074 to 0.0001367 s. These are observations, not speedup or whole-world estimates."
+      ]
+    },
+    {
+      "id": "i01-decoupling-r1",
+      "path": "tectonics/evidence/i01-decoupling-r1.json",
+      "sha256": "af0a679fc808e0ae3952966b63e13caf55266ffca24e26a3e620536e015ca8e6",
+      "status": "current",
+      "note": "Conditional nonlinear scalar motion-admission certificate: exact rational inequality replaces derivative-only release and iterative root finding for integer stress exponents 1 through 8. Analytical controls, whole-window refusals and matched decision benchmark pass; not a physical separation law.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds its own tool/case/method/tests only. No native imports or dependency on the parallel thermal prototype. Runtime version is recorded, not a binary seal.",
+        "Fixed positive drive and drag, scalar quasi-static direction and integer exponent only. A caller must establish whole-window resistance envelopes on the coupled trajectory. No rupture, geometry/material transfer, general energy or nonlinear D2 integration acceptance.",
+        "One prepared-law comparison of 100 decisions: 0.0235752 s exact bisection versus 0.0005243 s direct, 0.0230509 s / 97.78% saved. Not a whole-generator or statistically established speedup."
+      ]
+    },
+    {
+      "id": "i01-transitions-r2",
+      "path": "tectonics/evidence/i01-transitions-r2.json",
+      "sha256": "5850a6b80e27a798f8c49ffc5d5efc2581198ccdb6749aa22ecc99eddcceb5c7",
+      "status": "current",
+      "note": "Reviewed D6 delivery: six bounded transition controls pass after crossing, atomic-account and observer-frame corrections. Separation, melt-inventory and transmitted-work claims are restricted to the actual reduced models. No generated breakup, subduction initiation or I01 completion claim.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds the tool, case, method document and focused tests before/after the run. Runtime versions are observations, not binary seals; external papers and software are not bound.",
+        "Authored scalar/1D/accounting/instantaneous-junction controls only. The linear separation bound does not certify nonlinear D2 handoff. Melt-column inventory assumes complete extraction for its crust equivalent, not actual evolving supply. Slab work is the reduced transmitted-force balance.",
+        "Thirty-two focused tests pass in 0.087 s; six controls pass in 0.1847716 s after imports. This is not a whole-world run or speedup measurement. Original r1 and I01/D2 source-bound evidence remain unchanged."
+      ]
+    },
+    {
+      "id": "i01-transitions-r1",
+      "path": "tectonics/evidence/i01-transitions-r1.json",
+      "sha256": "a5f28c8993fb1b99e26816a26aa03f1d609983276078df1ecb5a2b50acfb6f29",
+      "status": "historical",
+      "note": "Claude's original six-control delivery, retained byte-identical. Its authored fixtures passed, but integration review found untested crossing, individual-transfer and junction-frame gaps and overly broad physical interpretations. Corrected source-bound evidence is i01-transitions-r2; this receipt is not repinned or current acceptance."
+    },
+    {
+      "id": "i01-strength-r1",
+      "path": "tectonics/evidence/i01-strength-r1.json",
+      "sha256": "d9f8fe199716efc57d0545d6dd237640977f80bb9c9128b51bb307ac7f5d8d85",
+      "status": "current",
+      "note": "Bounded D2 mechanical snapshots couple temperature-dependent creep to total effective-pressure friction. Analytical pressure/temperature oracle, full returned-state momentum/work checks, 17/33/65-grid comparison and nearby-state warm/cold parity pass. Not a thermal evolution, calibrated fault or generated-world acceptance.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds the new tool/case/method/tests and retained 2D numerical helper. Recorded runtime versions are not native binary seals; external papers/software are not bound.",
+        "Temperature and nonlocal material history are supplied snapshots, with uniform prescribed reference/pore pressure and authored parameters. No heat/history transport, dislocation creep, elastic memory, calibration, rupture or global generation.",
+        "Warm reuse saves 0.0107423 s (27.23%) in one small same-process observation. This is not a statistically established or whole-generator speedup. The earlier I01 receipts and native sources remain unchanged."
+      ]
+    },
+    {
+      "id": "i01-fault2d-r1",
+      "path": "tectonics/evidence/i01-fault2d-r1.json",
+      "sha256": "2bc45baa382f384ce8a7b000ef5dcd12b35265ed26f861a1582cb918fe369b7a",
+      "status": "current",
+      "note": "Bounded periodic 2D plane-strain numerical probe: spatial/time refinement, oblique analytical laminates, right-angle covariance, homogeneous history and work balance. PASS_BOUNDED_2D_CONTROLS_ONLY, not generated lithosphere acceptance.",
+      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "not_checked": [],
+      "limits": [
+        "Binds the control tool, authored case and method document. Runtime versions/thread policy are recorded, not sealed binaries. Unit-test source and external references are not bound by this receipt.",
+        "Fixed material coordinates, temperature and effective strength; no pressure-sensitive friction, arbitrary-angle nucleation, calibration, finite deformation or rupture. A periodic square has only discrete rotational symmetry; oblique laminate oracles are not 2D fault emergence.",
+        "The default-thread baseline is historical. One wall-time comparison under background load is not a repeated benchmark or whole-generator speedup. Native Atlas source and I01 r1 controls were not edited."
+      ]
+    },
+    {
+      "id": "i01-fault2d-threaded-r1",
+      "path": "tectonics/evidence/i01-fault2d-threaded-r1.json",
+      "sha256": "15e799cfcfaa3be57b2a3a40cdc3f1a9e11e1614cc37a8248bd398be44aac69e",
+      "status": "historical",
+      "note": "First identical 2D control campaign before adding a scoped single-thread BLAS limit and recording that policy. Actual 66.1528 s result retained unchanged; its original tool binding is deliberately not repinned. Compare i01-fault2d-r1 (55.3882 s) only as one execution observation."
+    },
+    {
       "id": "i01-controls-r1",
       "path": "tectonics/evidence/i01-controls-r1.json",
       "sha256": "0a8166560cac314f577468dbd40cff0ff4852f7ec3f1c8d273c97c82348713c4",

@@ -1,0 +1,11 @@
+{
+  "schema": "atlas.i01-phase-partition-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"max_components":64,"max_iterations":96,"fraction_tolerance":1e-12,"coefficient_min":1e-12,"coefficient_max":1e12,"benchmark_calls":200,"benchmark_repetitions":3},
+  "partition": {"component_ids":["fusible","refractory"],"coefficients":[0.5,2.0],"pressure_pa":1000000000.0,"temperature_k":1600.0,"source_id":"analytical-binary-partition-not-mantle-calibration"},
+  "component_mass_kg": [4000.0,6000.0],
+  "expected_fraction":0.2,
+  "extraction_fraction":0.5,
+  "expected_extracted_kg":1000.0,
+  "benchmark_mass_kg":[4100.0,5900.0]
+}

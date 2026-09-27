@@ -1,0 +1,49 @@
+{
+  "schema": "atlas.i01-phase-partition-evidence.v1",
+  "status": "PASS_BOUNDED_PHASE_PARTITION_ONLY",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows"
+  },
+  "source_sha256": {
+    "tectonics/tools/check_i01_phase_partition.py": "8c51311103c9aff20c887dd0334f65e8625198ac5f0b6ba4b41f72cc6ff53a39",
+    "tectonics/tests/test_i01_phase_partition.py": "78e3a0e9a8361db016072c312c3c491a5cbf4fd5fceceb4a830dfbfe3dc592eb",
+    "tectonics/docs/I01_PHASE_PARTITION.md": "f44d8d1cbfe76f7e2faaff98bdcf59c3bd9b17da861aa48ff65f5f44bf4296d0",
+    "tectonics/cases/i01_phase_partition_v1.json": "15614c7e069b01685062482dc68bf60290f4e06694863a1ce49717a0522917cf"
+  },
+  "passed": true,
+  "initial_liquid_fraction": 0.2,
+  "extracted_kg": 1000.0,
+  "remaining_kg": 9000.0,
+  "remaining_liquid_kg": 1000.0,
+  "repeated_equilibrium_liquid_kg": 1000.0000000000015,
+  "maximum_component_mass_residual_kg": 2.2737367544323206e-13,
+  "restart_difference_kg": 1.0231815394945443e-12,
+  "benchmark": {
+    "samples_seconds": {
+      "newton": [
+        0.002202000003308058,
+        0.00209789996733889,
+        0.002089699963107705
+      ],
+      "bisection": [
+        0.01635250000981614,
+        0.016393600031733513,
+        0.016298500006087124
+      ]
+    },
+    "calls": 200,
+    "newton_seconds": 0.00209789996733889,
+    "bisection_seconds": 0.01635250000981614,
+    "saved_seconds": 0.01425460004247725,
+    "saved_percent": 87.17076920299921,
+    "parity_kg": 2.366050466662273e-09,
+    "iterations": {
+      "newton": 2,
+      "bisection": 38
+    }
+  },
+  "energy_delivery_authorised": false,
+  "source_unchanged": true,
+  "elapsed_seconds": 0.05630990001372993
+}

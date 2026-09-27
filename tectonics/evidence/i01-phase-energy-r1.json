@@ -1,0 +1,57 @@
+{
+  "schema": "atlas.i01-phase-energy-evidence.v1",
+  "status": "PASS_BOUNDED_PHASE_ENERGY_ONLY",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows"
+  },
+  "source_sha256": {
+    "tectonics/tools/check_i01_phase_energy.py": "943a4281a51a20e84ae1e5839e085133896e60134c0c15eb7c1b5434d8a8f957",
+    "tectonics/tests/test_i01_phase_energy.py": "0f064b60c7df401f3ff9ec5c8210369dba2be8d6b2a6979147e3fce78d60e9ae",
+    "tectonics/docs/I01_PHASE_ENERGY.md": "987f3b41967ce76d9bead1ee1930ef4a37599fade1c1c6e1e9fb3f9a458f1df6",
+    "tectonics/cases/i01_phase_energy_v1.json": "a5ed19877d68d31d276474e4fc7bc42c782bcafebec103ec26d8fc4f09c47949",
+    "tectonics/tools/check_i01_phase_partition.py": "8c51311103c9aff20c887dd0334f65e8625198ac5f0b6ba4b41f72cc6ff53a39"
+  },
+  "passed": true,
+  "accounts": {
+    "initial_h_j": 5799999999.999996,
+    "removed_h_j": 899999999.9999961,
+    "residual_h_j": 4900000000.0,
+    "removed_mass_kg": 999.9999999999958,
+    "residual_liquid_kg": 1000.0000000013265,
+    "recovered_temperature_k": 1500.000000000047,
+    "cooled_temperature_k": 1000.0,
+    "cooled_liquid_kg": 0.0,
+    "heat_to_surroundings_j": 899999999.9999961,
+    "component_residual_kg": 5.684341886080801e-13,
+    "total_energy_residual_j": 1.1920928955078125e-07
+  },
+  "benchmark": {
+    "samples_seconds": {
+      "newton": [
+        0.08616070001153275,
+        0.08484450000105426,
+        0.08504019997781143
+      ],
+      "bisection": [
+        0.11474119999911636,
+        0.11314800003310665,
+        0.11377009999705479
+      ]
+    },
+    "calls": 40,
+    "newton_seconds": 0.08504019997781143,
+    "bisection_seconds": 0.11377009999705479,
+    "saved_seconds": 0.02872990001924336,
+    "saved_percent": 25.252592746237458,
+    "temperature_parity_k": 2.3012489691609517e-08,
+    "iterations": {
+      "newton": 28,
+      "bisection": 34
+    }
+  },
+  "native_delivery_authorised": false,
+  "calibrated_mantle_model": false,
+  "source_unchanged": true,
+  "elapsed_seconds": 0.6016772000002675
+}

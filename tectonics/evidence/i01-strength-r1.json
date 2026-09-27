@@ -1,0 +1,159 @@
+{
+  "schema": "atlas.i01-strength-evidence.v1",
+  "status": "PASS_BOUNDED_PRESSURE_TEMPERATURE_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "blas_threads": 1
+  },
+  "source_sha256": {
+    "tools/check_i01_strength.py": "9133d6164f3cab7381d6de00ad1b2a1863479f85f9af5b9118b94eb1b84e96bb",
+    "tools/check_i01_fault2d.py": "735bdba8bc88340bc53917523e2544cbe68f37e51b8c8dda0e6562252d4e7f71",
+    "cases/i01_strength_v1.json": "97a96fa6d32d79d77af1ab933b9ef76c092b2c249a827e5f5c2069e5186ae34a",
+    "docs/I01_STRENGTH.md": "592e733b68f43d54bed37f2d2b6138b9f9b0e4e54dbf3ce87490ffe0ca6476d4",
+    "tests/test_i01_strength.py": "4bb8cafa6c6196be26a07afcc1c105918f8f1a83774a737d923214c7afe6da0d"
+  },
+  "spec": {
+    "schema": "atlas.i01-strength-case.v1",
+    "scope": "pressure-coupled mechanical snapshots with supplied temperature and nonlocal history; not a thermal evolution or rupture model",
+    "provenance": "authored numerical fixtures, not calibrated rock or planetary defaults",
+    "parameters": {
+      "domain_m": 100000.0,
+      "physical_length_m": 5000.0,
+      "stress_scale_Pa": 30000000.0,
+      "rate_scale_per_s": 1e-14,
+      "reference_temperature_K": 1000.0,
+      "activation_energy_J_per_mol": 120000.0,
+      "reference_viscosity_scaled": 10.0,
+      "plastic_viscosity_scaled": 1.0,
+      "cohesion_scaled": 1.0,
+      "reference_pressure_scaled": 3.0,
+      "pore_pressure_scaled": 1.0,
+      "friction_degrees": 30.0,
+      "critical_plastic_shear": 0.15,
+      "residual_cohesion_fraction": 0.1,
+      "temperature_amplitude_K": 80.0,
+      "history_amplitude": 0.06,
+      "warm_temperature_change_K": 5.0
+    },
+    "campaign": {
+      "cells": [
+        17,
+        33,
+        65
+      ]
+    },
+    "policy": {
+      "max_newton_iterations": 30,
+      "max_cg_iterations": 500,
+      "max_line_search_halvings": 24,
+      "max_pressure_iterations": 100,
+      "pressure_relaxation": 0.75,
+      "equilibrium_relative": 1e-10,
+      "pressure_relative": 1e-09,
+      "momentum_relative": 1e-07,
+      "work_relative": 1e-08,
+      "analytic_relative": 1e-07,
+      "mesh_relative": 0.03,
+      "warm_parity_relative": 1e-07,
+      "maximum_seconds": 120.0
+    }
+  },
+  "meshes": [
+    {
+      "cells": 17,
+      "stress_work_Pa": 72954174.60860845,
+      "dynamic_pressure_rms_Pa": 1322303.5399931779,
+      "plastic_rate_rms_per_s": 7.252665590606742e-15,
+      "seconds": 0.029705900000408292,
+      "pressure_iterations": 29,
+      "newton_iterations": 34,
+      "cg_iterations": 317,
+      "work_residual": 1.826170519641494e-16,
+      "pressure_residual": 8.114648414404738e-10,
+      "momentum_residual": 4.3146402398442964e-10,
+      "projected_residual": 6.887714779403184e-16
+    },
+    {
+      "cells": 33,
+      "stress_work_Pa": 72954174.60860844,
+      "dynamic_pressure_rms_Pa": 1322303.5399936002,
+      "plastic_rate_rms_per_s": 7.252665590606743e-15,
+      "seconds": 0.04014289996121079,
+      "pressure_iterations": 29,
+      "newton_iterations": 34,
+      "cg_iterations": 320,
+      "work_residual": 0.0,
+      "pressure_residual": 8.114648262560403e-10,
+      "momentum_residual": 4.314640103375137e-10,
+      "projected_residual": 7.481955182516445e-16
+    },
+    {
+      "cells": 65,
+      "stress_work_Pa": 72954174.60860845,
+      "dynamic_pressure_rms_Pa": 1322303.5399936067,
+      "plastic_rate_rms_per_s": 7.252665590606743e-15,
+      "seconds": 0.10916049999650568,
+      "pressure_iterations": 29,
+      "newton_iterations": 34,
+      "cg_iterations": 320,
+      "work_residual": 0.0,
+      "pressure_residual": 8.114648281448017e-10,
+      "momentum_residual": 4.314640106591824e-10,
+      "projected_residual": 7.502523314284392e-16
+    }
+  ],
+  "manufactured": {
+    "relative_error": 1.3265160581315889e-08,
+    "passed": true,
+    "seconds": 0.010222400014754385
+  },
+  "nearby_temperature_reuse": {
+    "warm": {
+      "cells": 33,
+      "stress_work_Pa": 72422470.37622836,
+      "dynamic_pressure_rms_Pa": 1362791.3332230947,
+      "plastic_rate_rms_per_s": 7.076811984619452e-15,
+      "seconds": 0.028710799990221858,
+      "pressure_iterations": 23,
+      "newton_iterations": 24,
+      "cg_iterations": 224,
+      "work_residual": 0.0,
+      "pressure_residual": 6.435546289515378e-10,
+      "momentum_residual": 3.569314981076481e-10,
+      "projected_residual": 8.049725976270123e-16
+    },
+    "cold": {
+      "cells": 33,
+      "stress_work_Pa": 72422470.37576126,
+      "dynamic_pressure_rms_Pa": 1362791.2343372055,
+      "plastic_rate_rms_per_s": 7.076811984520949e-15,
+      "seconds": 0.039453100005630404,
+      "pressure_iterations": 29,
+      "newton_iterations": 34,
+      "cg_iterations": 321,
+      "work_residual": 1.8395777203370273e-16,
+      "pressure_residual": 8.403270027705878e-10,
+      "momentum_residual": 4.554766481493694e-10,
+      "projected_residual": 9.544202792271378e-16
+    },
+    "field_relative": 9.211791883096251e-08,
+    "saved_seconds": 0.010742300015408546,
+    "saved_percent": 27.22802520936377
+  },
+  "mesh_changes": {
+    "stress_work_Pa": 2.0425371507238392e-16,
+    "dynamic_pressure_rms_Pa": 4.9302280642309024e-15,
+    "plastic_rate_rms_per_s": 0.0
+  },
+  "checks": {
+    "mesh": true,
+    "manufactured": true,
+    "reuse": true
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.2598672000458464
+}

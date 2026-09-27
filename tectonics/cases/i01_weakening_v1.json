@@ -1,0 +1,75 @@
+{
+  "schema": "atlas.i01-weakening-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "laterally uniform, small-strain, coaxial plane-strain column with prescribed temperature, lithostatic vertical stress and evolving raw plastic history; returns transmitted resistance for a supplied state; not localisation, rupture, necking, breakup, finite strain or calibration",
+  "provenance": {
+    "rheology": "ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, retrieved 2026-09-27): dislocation-creep prefactors, stress exponents, activation energies and volumes already in ASPECT's invariant SI convention; densities 2700/2900/3300 kg/m3; cohesion 20 MPa; internal friction angle 30 degrees; gravity 9.81 m/s2",
+    "weakening": "same file: 'plastic weakening with plastic strain only', interval 0.5 to 1.5 of ASPECT's accumulated deviatoric second-invariant strain at yielding points, cohesion and friction-angle factors 0.25; converted here to raw engineering plastic shear [1.0, 3.0]",
+    "inherited_history": "authored laterally uniform replacement of the cookbook's random initial plastic strain '0.5 + rand_seed(1)' in the central 100 km of its upper 50 km (mean 1.0, engineering 2.0); zero below 50 km depth",
+    "temperature": "authored piecewise-linear profile retained from i01_column_v1 (273/633/893/1613 K at 0/20/40/100 km depth); the 1013 K breakpoint at 50 km lies on the same line",
+    "authored": "axial rate, plastic viscosity (explicit physical regularisation), grain size, zero pore pressure, the homogeneous/closed-form/refusal fixtures and all tolerances are authored control inputs, not calibrated defaults",
+    "diagnostic_only": "heat capacity 750 J/kg/K and conductivity 2.5 W/m/K from the same ASPECT file are used only for a reported heating/conduction estimate; they never feed back"
+  },
+  "representation": {
+    "geometry": "laterally uniform column; coaxial plane-strain pure shear; material depth coordinates; small strain",
+    "vertical_stress": "lithostatic from supplied layer densities below a free, unloaded surface",
+    "temperature": "prescribed and fixed at material points; no conduction, heating or advection feedback",
+    "pore_pressure": "supplied and fixed at material points",
+    "history": "raw engineering plastic shear per material point; local weakening input; never overwritten",
+    "pressure_closure": "lithostatic_vertical",
+    "gravity_m_s2": 9.81,
+    "max_axial_strain": 0.05,
+    "nonlocal_depth_length_m": 0.0,
+    "healing_per_s": 0.0
+  },
+  "weakening": {"interval_engineering": [1.0, 3.0], "cohesion_factor": 0.25, "friction_factor": 0.25},
+  "diagnostic_thermal": {"heat_capacity_J_kg_K": 750.0, "conductivity_W_m_K": 2.5},
+  "layers": [
+    {"name": "upper-crust-wet-quartzite", "thickness_m": 20000.0, "temperature_k": [273.0, 633.0], "density_kg_m3": 2700.0, "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 8.57e-28, "n": 4.0, "energy_j_mol": 223000.0}]},
+    {"name": "lower-crust-wet-anorthite", "thickness_m": 20000.0, "temperature_k": [633.0, 893.0], "density_kg_m3": 2900.0, "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 7.13e-18, "n": 3.0, "energy_j_mol": 345000.0}]},
+    {"name": "mantle-lid-dry-olivine", "thickness_m": 10000.0, "temperature_k": [893.0, 1013.0], "density_kg_m3": 3300.0, "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 6.51e-16, "n": 3.5, "energy_j_mol": 530000.0, "volume_m3_mol": 1.8e-05}]},
+    {"name": "mantle-lithosphere-dry-olivine", "thickness_m": 50000.0, "temperature_k": [1013.0, 1613.0], "density_kg_m3": 3300.0, "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 6.51e-16, "n": 3.5, "energy_j_mol": 530000.0, "volume_m3_mol": 1.8e-05}]}
+  ],
+  "campaign": {
+    "rate_s": 1e-15,
+    "total_strain": 0.04,
+    "initial_history_by_layer": [2.0, 2.0, 2.0, 0.0],
+    "reference_order": 64,
+    "reference_steps": 64,
+    "time_steps": [32, 64, 128],
+    "orders": [32, 64, 128],
+    "warm_offset_k": 100.0,
+    "homogeneous": {
+      "layer": {"name": "uniform-wet-quartzite", "thickness_m": 10000.0, "temperature_k": [600.0, 600.0], "mean_pressure_pa": [150000000.0, 150000000.0], "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 8.57e-28, "n": 4.0, "energy_j_mol": 223000.0}]},
+      "order": 8,
+      "initial_history": 2.0,
+      "total_strain": 0.04,
+      "steps": [16, 32, 64]
+    },
+    "plastic": {"deep_thickness_m": 20000.0, "shallow_thickness_m": 400.0, "density_kg_m3": 2700.0,
+                "negligible_creep": {"a": 1e-60, "n": 1.0, "energy_j_mol": 0.0}, "weakened_history": 2.0},
+    "force": {"steps": 64},
+    "refusal": {"total_strain": 0.06, "steps": 16, "compressive_volume_m3_mol": 0.001}
+  },
+  "policy": {
+    "max_steps": 256,
+    "maximum_seconds": 120.0,
+    "force_iterations": 96,
+    "kernel_parity_relative": 1e-10,
+    "closed_form_relative": 1e-10,
+    "fixed_point_relative": 1e-9,
+    "work_relative": 1e-10,
+    "history_bound_relative": 1e-10,
+    "monotone_relative": 1e-10,
+    "oracle_relative": 1e-5,
+    "order_range": [1.8, 2.2],
+    "uniform_relative": 1e-13,
+    "time_relative": 1e-4,
+    "depth_relative": 0.003,
+    "feedback_depth_relative": 0.03,
+    "coupling_resolution_factor": 10.0,
+    "force_relative": 1e-10,
+    "inverse_rate_relative": 1e-8,
+    "force_work_relative": 1e-9
+  }
+}

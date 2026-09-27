@@ -54,10 +54,14 @@ Default Zstd checkpoint writes improve 8.41% on the 10 MiB case. Physics and
 numerical gates are unchanged; timings and current focused checks are in the record.
 
 For a plain-English explanation broken down by W01–W12 and individual methods,
-read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). Its five linked
+read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). Its six linked
 chapters cover scientific inputs/outputs, research and software, actual code,
 checks and their limits, seeded-world creation and the separate force-driven
-experiment. Use [current status](../docs/CURRENT_STATE.md) for delivery status
+experiment. The [I01 physical integration chapter](docs/how-it-works/06-physical-integration.md)
+explains how strength, motion, heat, material history and changing geometry interact,
+alongside gravitational driving, water loading, melt and transition controls.
+These bounded connections do not yet form the complete evolved-world route.
+Use [current status](../docs/CURRENT_STATE.md) for delivery status
 rather than the dated implementation entries below. The
 [validation record](docs/W10_VALIDATION.md) distinguishes implementation,
 numerical resolution, physical observations and supported assembly.

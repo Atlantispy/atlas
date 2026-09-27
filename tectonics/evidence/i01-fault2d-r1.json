@@ -1,0 +1,227 @@
+{
+  "schema": "atlas.i01-fault2d-evidence.v1",
+  "status": "PASS_BOUNDED_2D_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "blas_threads": 1
+  },
+  "source_sha256": {
+    "tools/check_i01_fault2d.py": "735bdba8bc88340bc53917523e2544cbe68f37e51b8c8dda0e6562252d4e7f71",
+    "cases/i01_fault2d_v1.json": "bd732804748b371a8a3f5422cb1b86ac8f1a46a9ecf461f9a5c75c92ebb04542",
+    "docs/I01_FAULT2D.md": "bf2976a30cc1093ba8bc1d706e4b08602a454f00f87abbc164c41d2e4d035ae2"
+  },
+  "spec": {
+    "schema": "atlas.i01-fault2d-case.v1",
+    "scope": "isothermal small-strain periodic plane-strain control, not a lithosphere or rupture model",
+    "provenance": "authored discriminating numerical fixture; not calibrated planetary defaults",
+    "parameters": {
+      "domain_m": 100000.0,
+      "physical_length_m": 5000.0,
+      "strength_scale_Pa": 30000000.0,
+      "rate_scale_per_s": 1e-14,
+      "creep_viscosity_scaled": 10.0,
+      "plastic_viscosity_scaled": 0.1,
+      "critical_plastic_shear": 0.15,
+      "residual_strength_fraction": 0.1,
+      "total_imposed_engineering_strain": 0.1,
+      "seed_scale_m": 7500.0,
+      "strength_deficit_fraction": 0.2,
+      "seed_centres_fraction": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.15
+        ]
+      ],
+      "seed_relative_amplitudes": [
+        1.0,
+        0.5
+      ]
+    },
+    "campaign": {
+      "cells": [
+        33,
+        65,
+        129
+      ],
+      "steps": 128,
+      "fine_steps": 256
+    },
+    "policy": {
+      "max_newton_iterations": 30,
+      "max_cg_iterations": 500,
+      "max_line_search_halvings": 24,
+      "equilibrium_relative": 1e-09,
+      "projected_force_relative": 1e-07,
+      "work_relative": 1e-08,
+      "mesh_relative": 0.03,
+      "time_relative": 0.03,
+      "right_angle_rotation_relative": 1e-07,
+      "laminate_relative": 1e-07,
+      "maximum_seconds": 180.0
+    }
+  },
+  "laminate": {
+    "passed": true,
+    "cases": [
+      {
+        "wave": [
+          5,
+          0
+        ],
+        "stress_relative": 3.663735981263017e-16,
+        "strain_relative": 8.881784197001252e-16
+      },
+      {
+        "wave": [
+          4,
+          3
+        ],
+        "stress_relative": 6.106226635438361e-16,
+        "strain_relative": 8.881784197001252e-16
+      },
+      {
+        "wave": [
+          3,
+          4
+        ],
+        "stress_relative": 6.716849298982197e-16,
+        "strain_relative": 7.771561172376096e-16
+      },
+      {
+        "wave": [
+          0,
+          5
+        ],
+        "stress_relative": 9.769962616701378e-16,
+        "strain_relative": 1.5543122344752192e-15
+      }
+    ]
+  },
+  "campaign": {
+    "passed": true,
+    "checks": {
+      "mesh": true,
+      "time": true,
+      "right_angle": true,
+      "uniform": true,
+      "localisation": true
+    },
+    "meshes": [
+      {
+        "cells": 33,
+        "steps": 128,
+        "seconds": 1.43467770004645,
+        "effective_stress_Pa": 12719747.023323582,
+        "participation_area_m2": 6141630349.055806,
+        "peak_to_mean": 3.1361472856360915,
+        "peak_history": 0.28917964590872436,
+        "min_history": 0.022642753284960754,
+        "mean_history": 0.09220856661713554,
+        "newton_iterations": 406,
+        "cg_iterations": 17711,
+        "max_residual": 9.598870723290743e-10,
+        "max_force_residual": 3.3952214334102334e-09,
+        "max_work_residual": 7.481756363561924e-10
+      },
+      {
+        "cells": 65,
+        "steps": 128,
+        "seconds": 4.980428499984555,
+        "effective_stress_Pa": 12723830.333599865,
+        "participation_area_m2": 6140116480.798695,
+        "peak_to_mean": 3.1430728288590393,
+        "peak_history": 0.2898191710856047,
+        "min_history": 0.022647973490383715,
+        "mean_history": 0.09220886274875513,
+        "newton_iterations": 463,
+        "cg_iterations": 20616,
+        "max_residual": 9.653917611512568e-10,
+        "max_force_residual": 7.051600518158135e-09,
+        "max_work_residual": 1.1187250560360044e-10
+      },
+      {
+        "cells": 129,
+        "steps": 128,
+        "seconds": 34.806439900014084,
+        "effective_stress_Pa": 12725808.917535463,
+        "participation_area_m2": 6139991499.550451,
+        "peak_to_mean": 3.1476886243943913,
+        "peak_history": 0.2902449665778018,
+        "min_history": 0.022643375557896195,
+        "mean_history": 0.0922089193729079,
+        "newton_iterations": 519,
+        "cg_iterations": 23340,
+        "max_residual": 9.443907124698742e-10,
+        "max_force_residual": 1.4991027937266507e-08,
+        "max_work_residual": 7.183102915438329e-11
+      }
+    ],
+    "fine_time": {
+      "cells": 65,
+      "steps": 256,
+      "seconds": 9.125122400000691,
+      "effective_stress_Pa": 12696716.305597538,
+      "participation_area_m2": 6089433881.329988,
+      "peak_to_mean": 3.1530112010227063,
+      "peak_history": 0.2908052944557373,
+      "min_history": 0.02227284327211393,
+      "mean_history": 0.09223097411179892,
+      "newton_iterations": 834,
+      "cg_iterations": 36750,
+      "max_residual": 7.775787089483608e-10,
+      "max_force_residual": 5.439362442915752e-09,
+      "max_work_residual": 2.508706713424716e-10
+    },
+    "rotated": {
+      "cells": 65,
+      "steps": 128,
+      "seconds": 5.0096731999656186,
+      "effective_stress_Pa": 12723830.333599867,
+      "participation_area_m2": 6140116480.798694,
+      "peak_to_mean": 3.1430728288590393,
+      "peak_history": 0.2898191710856046,
+      "min_history": 0.022647973490383715,
+      "mean_history": 0.09220886274875512,
+      "newton_iterations": 463,
+      "cg_iterations": 20616,
+      "max_residual": 9.65391758988249e-10,
+      "max_force_residual": 7.051600571243333e-09,
+      "max_work_residual": 1.118732623511017e-10
+    },
+    "uniform": {
+      "cells": 33,
+      "steps": 128,
+      "seconds": 0.022805800021160394,
+      "effective_stress_Pa": 16315192.926786222,
+      "participation_area_m2": 10000000000.0,
+      "peak_to_mean": 1.0000000000000002,
+      "peak_history": 0.09178697302192178,
+      "min_history": 0.09178697302192178,
+      "mean_history": 0.09178697302192176,
+      "newton_iterations": 0,
+      "cg_iterations": 0,
+      "max_residual": 7.776129040582442e-34,
+      "max_force_residual": 2.042107825989886e-33,
+      "max_work_residual": 0.0
+    },
+    "mesh_changes": {
+      "effective_stress_Pa": 0.00015547804846193563,
+      "participation_area_m2": 2.0355280337518808e-05
+    },
+    "time_changes": {
+      "effective_stress_Pa": 0.002135514990625858,
+      "participation_area_m2": 0.008323039621810878
+    },
+    "right_angle_history_relative": 4.100999155544695e-16
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 55.388238099985756
+}

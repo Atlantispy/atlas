@@ -72,7 +72,7 @@ The following list follows the exact category order in the [snapshot contract](e
 
 | # | Category | What the current implementation covers |
 | --- | --- | --- |
-| 1 | **Plate tectonics** (`plate_tectonics`) | [Structural and motion snapshots](engineering/work/diadem_tectonics_r2/snapshot.py) from supplied fault, block, event and lineage records. Declared block velocities are not a simulation of rigid plates or inferred geological history. |
+| 1 | **Plate tectonics** (`plate_tectonics`) | The wider R31 route retains [structural and motion snapshots](engineering/work/diadem_tectonics_r2/snapshot.py) from supplied records. The separate [tectonics package](tectonics/README.md) adds W01–W12 physical methods, seeded initial worlds and [I01 coupled-process controls](tectonics/docs/how-it-works/06-physical-integration.md). These additions are not automatically wired into R31 or a completed evolving planet. |
 | 2 | **Geology** (`geology`) | [Regional geological interpretation, layered ground columns and material properties](engineering/work/generator_upgrade_r26/physical.py) that can feed terrain calculations. Results depend on selected source fields and explicit geological assumptions. |
 | 3 | **Topography and topology** (`topography_topology`) | [Terrain construction, advancement and derived views](engineering/work/generator_upgrade_r31/topography.py), including the relationships used to route water and sediment. The native route remains bounded; realistic mountain formation is not accepted. |
 | 4 | **Hydrology** (`hydrology`) | [Surface-water routing and terrain/water interactions](engineering/work/generator_upgrade_r26/physical.py) using declared runoff, connectors, durations and ground states. Conservation checks do not establish a complete calibrated watershed model. |
@@ -97,7 +97,13 @@ For the detailed stage-by-stage scientific explanation, start with
 [How Atlas tectonics is made](tectonics/docs/HOW_TECTONICS_IS_MADE.md). It breaks
 W01–W12 into individual methods, including research/software references, code,
 checks and their limits, plus seeded-world creation and the separate experimental
-force-driven route. This is a methods guide, not another progress log.
+force-driven route. Its [physical integration chapter](tectonics/docs/how-it-works/06-physical-integration.md)
+explains the newer I01 connections: rock strength and motion; heating and weakening;
+changing column geometry; gravitational driving and water loading; melt and
+transition accounts. Each explanation links the scientific basis to the actual
+method and its checks. W01–W12 name the component work packages; I01–I12 name the
+integration programme. I01 remains in progress, not a finished whole-world engine.
+This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing
 

@@ -1,0 +1,774 @@
+{
+  "schema": "atlas.i01-thermal-evidence.v1",
+  "status": "PASS_BOUNDED_THERMAL_HISTORY_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "translation": {
+      "status": "PASS",
+      "seconds": 0.0007945000543259084,
+      "passed": true,
+      "checks": {
+        "material_fields_unchanged": true,
+        "band_limited_shift_exact": true,
+        "mean_preserved": true,
+        "shift_round_trip": true,
+        "integer_shift_is_roll": true,
+        "affine_eulerian_advection_refused": true,
+        "uniform_translation_allowed": true
+      },
+      "errors": {
+        "band_limited": 1.2992781453898974e-13,
+        "round_trip": 6.938893903907228e-16,
+        "integer": 4.163336342344337e-16
+      },
+      "scope": "transport-only: uniform translation; affine mean flow refused"
+    },
+    "manufactured": {
+      "status": "PASS",
+      "seconds": 0.010128699999768287,
+      "passed": true,
+      "checks": {
+        "second_order": true,
+        "finest_error": true,
+        "pure_diffusion_exact": true,
+        "stiff_modes_present": true
+      },
+      "steps": [
+        16,
+        32,
+        64
+      ],
+      "errors": [
+        0.002512331946013546,
+        0.000638395820783444,
+        0.00016024202368498665
+      ],
+      "orders": [
+        1.9765039830969822,
+        1.9941986610121227
+      ],
+      "diffusion_error": 5.002220859751106e-13,
+      "max_diffusion_stiffness": 3.789928090018314,
+      "scope": "thermal-only: exponential conduction and source quadrature"
+    },
+    "homogeneous": {
+      "status": "PASS",
+      "seconds": 0.07257970003411174,
+      "passed": true,
+      "checks": {
+        "second_order": true,
+        "oracle": true,
+        "uniform": true,
+        "power_split": true,
+        "energy": true,
+        "heat_quadrature": true,
+        "history_quadrature": true,
+        "partial_heating_owned": true,
+        "subyield_keeps_history": true,
+        "subyield_viscous_heating": true
+      },
+      "oracle": {
+        "temperature_rise_K": 0.367800692095102,
+        "history_increment": 0.015132125265107724
+      },
+      "runs": [
+        {
+          "status": "COMPLETE",
+          "cells": 9,
+          "steps": 8,
+          "accepted_steps": 8,
+          "dt_s": 250000000000.0,
+          "seconds": 0.006284900009632111,
+          "solves": 17,
+          "pressure_iterations": 17,
+          "newton_iterations": 0,
+          "cg_iterations": 0,
+          "max_power_split_relative": 5.508833071947794e-16,
+          "diffusion_stiffness": 0.03158273408348595,
+          "max_temperature_step_K": 0.046576501735785314,
+          "max_displacement_gradient": 0.01,
+          "stress_Pa": 71733813.19831409,
+          "mean_temperature_rise_K": 0.3678009150929711,
+          "temperature_change_rms_K": 0.3678009150929711,
+          "mean_history_increment": 0.015132122156879726,
+          "history_increment_rms": 0.015132122156879714,
+          "accounts": {
+            "macro_work_J_m3": 1456491.6237692821,
+            "heat_J_m3": 1456491.6237692824,
+            "stored_J_m3": 0.0,
+            "history": 0.015132122156879714
+          },
+          "thermal_energy_J_m3": 1456491.6237681655,
+          "heat_quadrature_relative": 7.668348924089212e-13,
+          "energy_balance_relative": 7.66675035228932e-13,
+          "history_quadrature_relative": 8.024693566405615e-16,
+          "uniformity": 0.0,
+          "oracle_relative": 6.06300841330844e-07
+        },
+        {
+          "status": "COMPLETE",
+          "cells": 9,
+          "steps": 16,
+          "accepted_steps": 16,
+          "dt_s": 125000000000.0,
+          "seconds": 0.011826400004792958,
+          "solves": 33,
+          "pressure_iterations": 33,
+          "newton_iterations": 0,
+          "cg_iterations": 0,
+          "max_power_split_relative": 3.693384030787486e-16,
+          "diffusion_stiffness": 0.015791367041742974,
+          "max_temperature_step_K": 0.023309675927635,
+          "max_displacement_gradient": 0.01,
+          "stress_Pa": 71733812.88407126,
+          "mean_temperature_rise_K": 0.3678007478794143,
+          "temperature_change_rms_K": 0.36780074787952793,
+          "mean_history_increment": 0.01513212448697172,
+          "history_increment_rms": 0.015132124486971718,
+          "accounts": {
+            "macro_work_J_m3": 1456490.9616084446,
+            "heat_J_m3": 1456490.9616084443,
+            "stored_J_m3": 0.0,
+            "history": 0.015132124486971718
+          },
+          "thermal_energy_J_m3": 1456490.9616024806,
+          "heat_quadrature_relative": 4.0945836697567325e-12,
+          "energy_balance_relative": 4.0947435270093966e-12,
+          "history_quadrature_relative": 1.1463846186768746e-16,
+          "uniformity": 0.0,
+          "oracle_relative": 1.5166994918587408e-07
+        },
+        {
+          "status": "COMPLETE",
+          "cells": 9,
+          "steps": 32,
+          "accepted_steps": 32,
+          "dt_s": 62500000000.0,
+          "seconds": 0.022829099965747446,
+          "solves": 65,
+          "pressure_iterations": 65,
+          "newton_iterations": 0,
+          "cg_iterations": 0,
+          "max_power_split_relative": 3.7144755898799987e-16,
+          "diffusion_stiffness": 0.007895683520871487,
+          "max_temperature_step_K": 0.011660194455316741,
+          "max_displacement_gradient": 0.010000000000000004,
+          "stress_Pa": 71733812.80537975,
+          "mean_temperature_rise_K": 0.3678007060455002,
+          "temperature_change_rms_K": 0.36780070604538645,
+          "mean_history_increment": 0.015132125070438738,
+          "history_increment_rms": 0.015132125070438741,
+          "accounts": {
+            "macro_work_J_m3": 1456490.7959424192,
+            "heat_J_m3": 1456490.795942419,
+            "stored_J_m3": 0.0,
+            "history": 0.015132125070438733
+          },
+          "thermal_energy_J_m3": 1456490.7959401808,
+          "heat_quadrature_relative": 1.5367079446570935e-12,
+          "energy_balance_relative": 1.5368678019279407e-12,
+          "history_quadrature_relative": 3.439153723423153e-16,
+          "uniformity": 0.0,
+          "oracle_relative": 3.792923305966655e-08
+        }
+      ],
+      "orders": [
+        1.9990985559123073,
+        1.9995531631592467
+      ],
+      "partial_heating": {
+        "status": "COMPLETE",
+        "cells": 9,
+        "steps": 32,
+        "accepted_steps": 32,
+        "dt_s": 62500000000.0,
+        "seconds": 0.023226400022394955,
+        "solves": 65,
+        "pressure_iterations": 65,
+        "newton_iterations": 0,
+        "cg_iterations": 0,
+        "max_power_split_relative": 3.706807422143826e-16,
+        "diffusion_stiffness": 0.007895683520871487,
+        "max_temperature_step_K": 0.0072659368900076515,
+        "max_displacement_gradient": 0.010000000000000004,
+        "stress_Pa": 71746324.45058186,
+        "mean_temperature_rise_K": 0.22864279368900498,
+        "temperature_change_rms_K": 0.22864279368889132,
+        "mean_history_increment": 0.015136575370334766,
+        "history_increment_rms": 0.015136575370334769,
+        "accounts": {
+          "macro_work_J_m3": 1456619.6593455698,
+          "heat_J_m3": 905425.4630125104,
+          "stored_J_m3": 551194.1963330595,
+          "history": 0.015136575370334747
+        },
+        "thermal_energy_J_m3": 905425.4630084597,
+        "heat_quadrature_relative": 4.473905035553493e-12,
+        "energy_balance_relative": 2.7807909097328834e-12,
+        "history_quadrature_relative": 1.2606522789258163e-15,
+        "oracle_relative": 7.428039902227286e-08
+      },
+      "subyield": {
+        "status": "COMPLETE",
+        "cells": 9,
+        "steps": 8,
+        "accepted_steps": 8,
+        "dt_s": 1250000000000.0,
+        "seconds": 0.0061580000328831375,
+        "solves": 17,
+        "pressure_iterations": 17,
+        "newton_iterations": 0,
+        "cg_iterations": 0,
+        "max_power_split_relative": 1.3889167615154633e-16,
+        "diffusion_stiffness": 0.15791367041742974,
+        "max_temperature_step_K": 0.00946904989336872,
+        "max_displacement_gradient": 0.005,
+        "stress_Pa": 29967236.752673414,
+        "mean_temperature_rise_K": 0.07571619180794187,
+        "temperature_change_rms_K": 0.07571619180794187,
+        "mean_history_increment": 0.0,
+        "history_increment_rms": 0.0,
+        "accounts": {
+          "macro_work_J_m3": 299836.1195598632,
+          "heat_J_m3": 299836.1195598632,
+          "stored_J_m3": 0.0,
+          "history": 0.0
+        },
+        "thermal_energy_J_m3": 299836.1195594498,
+        "heat_quadrature_relative": 1.3787225115315396e-12,
+        "energy_balance_relative": 1.3787225115315396e-12,
+        "history_quadrature_relative": 0.0
+      },
+      "scope": "coupled uniform state versus independent scalar integration"
+    },
+    "coupled": {
+      "status": "PASS",
+      "seconds": 5.905586400011089,
+      "passed": true,
+      "checks": {
+        "completed": true,
+        "mesh": true,
+        "time": true,
+        "energy": true,
+        "heat_quadrature": true,
+        "history_quadrature": true,
+        "power_split": true,
+        "small_strain": true,
+        "heating_feedback_resolved": true,
+        "history_feedback_resolved": true,
+        "heating_off_is_transport_only": true,
+        "warm_start_parity": true
+      },
+      "meshes": {
+        "17": {
+          "status": "COMPLETE",
+          "cells": 17,
+          "steps": 16,
+          "accepted_steps": 16,
+          "dt_s": 125000000000.0,
+          "seconds": 0.4498922000057064,
+          "solves": 33,
+          "pressure_iterations": 445,
+          "newton_iterations": 438,
+          "cg_iterations": 4403,
+          "max_power_split_relative": 7.916622937277407e-16,
+          "diffusion_stiffness": 0.0631654681669719,
+          "max_temperature_step_K": 0.19608339081582926,
+          "max_displacement_gradient": 0.015131734666123707,
+          "stress_Pa": 74739629.90281197,
+          "mean_temperature_rise_K": 0.3824665960435141,
+          "temperature_change_rms_K": 0.727266127877402,
+          "mean_history_increment": 0.014067032888883299,
+          "history_increment_rms": 0.014094862362285202,
+          "accounts": {
+            "macro_work_J_m3": 1514567.7203346202,
+            "heat_J_m3": 1514567.7203325336,
+            "stored_J_m3": 0.0,
+            "history": 0.0140670328888833
+          },
+          "thermal_energy_J_m3": 1514567.7203323157,
+          "heat_quadrature_relative": 1.4388889947566958e-13,
+          "energy_balance_relative": 1.5215943664617687e-12,
+          "history_quadrature_relative": 1.2331836355822417e-16
+        },
+        "33": {
+          "status": "COMPLETE",
+          "cells": 33,
+          "steps": 16,
+          "accepted_steps": 16,
+          "dt_s": 125000000000.0,
+          "seconds": 0.5718476999900304,
+          "solves": 33,
+          "pressure_iterations": 445,
+          "newton_iterations": 438,
+          "cg_iterations": 4438,
+          "max_power_split_relative": 9.134382341755903e-16,
+          "diffusion_stiffness": 0.2526618726678876,
+          "max_temperature_step_K": 0.19635512000832023,
+          "max_displacement_gradient": 0.015151274186305094,
+          "stress_Pa": 74739629.51441295,
+          "mean_temperature_rise_K": 0.38246659283856843,
+          "temperature_change_rms_K": 0.7272516253929477,
+          "mean_history_increment": 0.014067032170410346,
+          "history_increment_rms": 0.01409486180379408,
+          "accounts": {
+            "macro_work_J_m3": 1514567.7076435776,
+            "heat_J_m3": 1514567.7076414917,
+            "stored_J_m3": 0.0,
+            "history": 0.014067032170410347
+          },
+          "thermal_energy_J_m3": 1514567.707640731,
+          "heat_quadrature_relative": 5.022276052628245e-13,
+          "energy_balance_relative": 1.8794719014186824e-12,
+          "history_quadrature_relative": 1.2331836985670332e-16
+        },
+        "65": {
+          "status": "COMPLETE",
+          "cells": 65,
+          "steps": 16,
+          "accepted_steps": 16,
+          "dt_s": 125000000000.0,
+          "seconds": 1.4672329000313766,
+          "solves": 33,
+          "pressure_iterations": 445,
+          "newton_iterations": 438,
+          "cg_iterations": 4438,
+          "max_power_split_relative": 9.191059697812617e-16,
+          "diffusion_stiffness": 1.0106474906715504,
+          "max_temperature_step_K": 0.19635511836258956,
+          "max_displacement_gradient": 0.015151467347569553,
+          "stress_Pa": 74739629.51441288,
+          "mean_temperature_rise_K": 0.38246659283936424,
+          "temperature_change_rms_K": 0.7272516253933013,
+          "mean_history_increment": 0.014067032170410346,
+          "history_increment_rms": 0.014094861803794044,
+          "accounts": {
+            "macro_work_J_m3": 1514567.7076435776,
+            "heat_J_m3": 1514567.7076414914,
+            "stored_J_m3": 0.0,
+            "history": 0.014067032170410347
+          },
+          "thermal_energy_J_m3": 1514567.7076438824,
+          "heat_quadrature_relative": 1.578627266129154e-12,
+          "energy_balance_relative": 2.0122924251243707e-13,
+          "history_quadrature_relative": 1.2331836985670332e-16
+        }
+      },
+      "fine_time": {
+        "status": "COMPLETE",
+        "cells": 33,
+        "steps": 32,
+        "accepted_steps": 32,
+        "dt_s": 62500000000.0,
+        "seconds": 0.9061729000532068,
+        "solves": 65,
+        "pressure_iterations": 727,
+        "newton_iterations": 704,
+        "cg_iterations": 7090,
+        "max_power_split_relative": 9.143573832538976e-16,
+        "diffusion_stiffness": 0.1263309363339438,
+        "max_temperature_step_K": 0.09837418688175603,
+        "max_displacement_gradient": 0.015151269605368644,
+        "stress_Pa": 74739629.34547515,
+        "mean_temperature_rise_K": 0.38246654622639653,
+        "temperature_change_rms_K": 0.7272516391686642,
+        "mean_history_increment": 0.014067033453805021,
+        "history_increment_rms": 0.014094863034383898,
+        "accounts": {
+          "macro_work_J_m3": 1514567.5230447894,
+          "heat_J_m3": 1514567.5230544938,
+          "stored_J_m3": 0.0,
+          "history": 0.014067033453805023
+        },
+        "thermal_energy_J_m3": 1514567.5230565302,
+        "heat_quadrature_relative": 1.3445005114661214e-12,
+        "energy_balance_relative": 7.751861741553287e-12,
+        "history_quadrature_relative": 1.2331835860584933e-16
+      },
+      "heating_off": {
+        "status": "COMPLETE",
+        "cells": 33,
+        "steps": 16,
+        "accepted_steps": 16,
+        "dt_s": 125000000000.0,
+        "seconds": 0.5628019999712706,
+        "solves": 33,
+        "pressure_iterations": 445,
+        "newton_iterations": 438,
+        "cg_iterations": 4431,
+        "max_power_split_relative": 8.918567017428752e-16,
+        "diffusion_stiffness": 0.2526618726678876,
+        "max_temperature_step_K": 0.22813515972279674,
+        "max_displacement_gradient": 0.015138612830643744,
+        "stress_Pa": 74782211.91295557,
+        "mean_temperature_rise_K": -2.2737367544323206e-13,
+        "temperature_change_rms_K": 0.6800429419929401,
+        "mean_history_increment": 0.01408219399937849,
+        "history_increment_rms": 0.014109883598460085,
+        "accounts": {
+          "macro_work_J_m3": 1515006.8402449882,
+          "heat_J_m3": 0.0,
+          "stored_J_m3": 1515006.8402438385,
+          "history": 0.014082193999378488
+        },
+        "thermal_energy_J_m3": -9.00399754755199e-07,
+        "heat_quadrature_relative": 9.00399754755199e-07,
+        "energy_balance_relative": 1.3531779282533202e-12,
+        "history_quadrature_relative": 1.2318559707765483e-16
+      },
+      "weakening_off": {
+        "status": "COMPLETE",
+        "cells": 33,
+        "steps": 16,
+        "accepted_steps": 16,
+        "dt_s": 125000000000.0,
+        "seconds": 0.4294302000198513,
+        "solves": 33,
+        "pressure_iterations": 317,
+        "newton_iterations": 342,
+        "cg_iterations": 3473,
+        "max_power_split_relative": 8.918567017428752e-16,
+        "diffusion_stiffness": 0.2526618726678876,
+        "max_temperature_step_K": 0.19632845176511182,
+        "max_displacement_gradient": 0.015181643690074055,
+        "stress_Pa": 76702701.28473042,
+        "mean_temperature_rise_K": 0.3874160648875886,
+        "temperature_change_rms_K": 0.72877021651764,
+        "mean_history_increment": 0.013990701776934875,
+        "history_increment_rms": 0.014018909079663595,
+        "accounts": {
+          "macro_work_J_m3": 1534167.616957102,
+          "heat_J_m3": 1534167.616957102,
+          "stored_J_m3": 0.0,
+          "history": 0.013990701776934874
+        },
+        "thermal_energy_J_m3": 1534167.616954851,
+        "heat_quadrature_relative": 1.4672494960559147e-12,
+        "energy_balance_relative": 1.4672494960559147e-12,
+        "history_quadrature_relative": 1.239911695378054e-16
+      },
+      "cold_start": {
+        "status": "COMPLETE",
+        "cells": 33,
+        "steps": 16,
+        "accepted_steps": 16,
+        "dt_s": 125000000000.0,
+        "seconds": 1.5152307999669574,
+        "solves": 33,
+        "pressure_iterations": 957,
+        "newton_iterations": 1254,
+        "cg_iterations": 12947,
+        "max_power_split_relative": 9.171246219928247e-16,
+        "diffusion_stiffness": 0.2526618726678876,
+        "max_temperature_step_K": 0.19635511983597098,
+        "max_displacement_gradient": 0.015151274209525572,
+        "stress_Pa": 74739629.5144943,
+        "mean_temperature_rise_K": 0.3824665928240165,
+        "temperature_change_rms_K": 0.7272516250996214,
+        "mean_history_increment": 0.014067032168639124,
+        "history_increment_rms": 0.014094861802702493,
+        "accounts": {
+          "macro_work_J_m3": 1514567.707585668,
+          "heat_J_m3": 1514567.707585668,
+          "stored_J_m3": 0.0,
+          "history": 0.014067032168639124
+        },
+        "thermal_energy_J_m3": 1514567.7075831054,
+        "heat_quadrature_relative": 1.6919244027322863e-12,
+        "energy_balance_relative": 1.6919244027322863e-12,
+        "history_quadrature_relative": 0.0
+      },
+      "mesh_changes": {
+        "stress_Pa": 9.96871491781619e-16,
+        "mean_temperature_rise_K": 2.080725163846012e-12,
+        "temperature_change_rms_K": 4.862224036307659e-13,
+        "mean_history_increment": 0.0,
+        "history_increment_rms": 2.5845725557739747e-15,
+        "temperature_change_field": 5.023159917983218e-09,
+        "history_increment_field": 2.8398946455625426e-08
+      },
+      "coarse_mesh_field_changes": {
+        "temperature_change_field": 0.00269992291238231,
+        "history_increment_field": 6.248552141045311e-05
+      },
+      "time_changes": {
+        "stress_Pa": 2.2603510854176593e-09,
+        "mean_temperature_rise_K": 1.2187254639640995e-07,
+        "temperature_change_rms_K": 1.8942159377173315e-08,
+        "mean_history_increment": 9.123420936404778e-08,
+        "history_increment_rms": 8.730768185152911e-08,
+        "temperature_change_field": 9.56760348043181e-08,
+        "history_increment_field": 1.5226612919679314e-07
+      },
+      "thermal_feedback_relative": 0.000569743238216094,
+      "history_feedback_relative": 0.026265473659310846,
+      "resolution_relative": 2.2603510854176593e-09,
+      "heating_temperature_K": {
+        "mean": 0.3824665928388694,
+        "minimum": 0.2541552145364676,
+        "maximum": 0.5185447922115145
+      },
+      "warm_cold_parity": 4.033354522106393e-10,
+      "reuse": {
+        "warm_seconds": 0.5718476999900304,
+        "cold_seconds": 1.5152307999669574,
+        "saved_seconds": 0.943383099976927,
+        "saved_percent": 62.26002665716004,
+        "warm_cg": 4438,
+        "cold_cg": 12947
+      },
+      "scope": "genuinely coupled: temperature and filtered history both feed the D2 solve"
+    },
+    "refusal": {
+      "status": "PASS",
+      "seconds": 0.27206059999298304,
+      "passed": true,
+      "checks": {
+        "small_strain_refused": true,
+        "temperature_step_refused": true,
+        "refused_step_not_booked": true,
+        "unadmitted_laws_refused": true,
+        "step_ceiling": true
+      },
+      "refused_run": {
+        "status": "REFUSED_SMALL_STRAIN",
+        "cells": 17,
+        "steps": 16,
+        "accepted_steps": 3,
+        "dt_s": 1875000000000.0,
+        "seconds": 0.19994690001476556,
+        "solves": 8,
+        "pressure_iterations": 177,
+        "newton_iterations": 197,
+        "cg_iterations": 1940,
+        "max_power_split_relative": 7.031881794231012e-16,
+        "diffusion_stiffness": 0.9474820225045785,
+        "max_temperature_step_K": 2.78981628331303,
+        "max_displacement_gradient": 0.042128866018359815,
+        "stress_Pa": 71111545.1681932,
+        "mean_temperature_rise_K": 1.0501194610228595,
+        "temperature_change_rms_K": 2.0068239347212904,
+        "mean_history_increment": 0.039937839785031626,
+        "history_increment_rms": 0.040010493805398215,
+        "accounts": {
+          "macro_work_J_m3": 4158473.065650615,
+          "heat_J_m3": 4158473.065650615,
+          "stored_J_m3": 0.0,
+          "history": 0.03993783978503162
+        },
+        "thermal_energy_J_m3": 4158473.0656505236,
+        "heat_quadrature_relative": 2.1947866649952026e-14,
+        "energy_balance_relative": 2.1947866649952026e-14,
+        "history_quadrature_relative": 1.73742344134193e-16
+      },
+      "temperature_refused_run": {
+        "status": "REFUSED_TEMPERATURE_STEP",
+        "cells": 17,
+        "steps": 2,
+        "accepted_steps": 0,
+        "dt_s": 15000000000000.0,
+        "seconds": 0.07145330001367256,
+        "solves": 2,
+        "pressure_iterations": 58,
+        "newton_iterations": 73,
+        "cg_iterations": 685,
+        "max_power_split_relative": 8.238755239620138e-16,
+        "diffusion_stiffness": 7.579856180036628,
+        "max_temperature_step_K": 0.0,
+        "max_displacement_gradient": 0.0,
+        "stress_Pa": 76713895.98107913,
+        "mean_temperature_rise_K": 0.0,
+        "temperature_change_rms_K": 0.0,
+        "mean_history_increment": 0.0,
+        "history_increment_rms": 0.0,
+        "accounts": {
+          "macro_work_J_m3": 0.0,
+          "heat_J_m3": 0.0,
+          "stored_J_m3": 0.0,
+          "history": 0.0
+        },
+        "thermal_energy_J_m3": 0.0,
+        "heat_quadrature_relative": 0.0,
+        "energy_balance_relative": 0.0,
+        "history_quadrature_relative": 0.0
+      }
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_thermal.py": "484f1209f50e487599e38bfe3689b6662be6cf4f76b56c2dc865bdbb49cae732",
+    "cases/i01_thermal_v1.json": "b79e90fa13385ecbd9b9b0f6f02ebd3b2c1b156254ca3fdfac17d4b2e96c9494",
+    "docs/I01_THERMAL.md": "8bb888924acc73ee6ca94e6367fbbe952a7197839f50604f7451d46674714355",
+    "tests/test_i01_thermal.py": "46db257a5a28cd642f09f97c5f38bcd1493a216cc702793f7f78961d4ab0cac5",
+    "tools/check_i01_strength.py": "9133d6164f3cab7381d6de00ad1b2a1863479f85f9af5b9118b94eb1b84e96bb",
+    "tools/check_i01_fault2d.py": "735bdba8bc88340bc53917523e2544cbe68f37e51b8c8dda0e6562252d4e7f71",
+    "cases/i01_strength_v1.json": "97a96fa6d32d79d77af1ab933b9ef76c092b2c249a827e5f5c2069e5186ae34a",
+    "tests/test_i01_strength.py": "4bb8cafa6c6196be26a07afcc1c105918f8f1a83774a737d923214c7afe6da0d",
+    "tests/test_i01_fault2d.py": "bf422afbccfe41a8d167216da9f39042a1da6808d417b39226f88318f0edf745"
+  },
+  "helper_bytes_match_reviewed_receipts": {
+    "evidence/i01-strength-r1.json:tools/check_i01_strength.py": true,
+    "evidence/i01-strength-r1.json:tools/check_i01_fault2d.py": true,
+    "evidence/i01-fault2d-r1.json:tools/check_i01_fault2d.py": true
+  },
+  "spec": {
+    "schema": "atlas.i01-thermal-case.v1",
+    "scope": "bounded small-strain periodic-cell evolution of temperature and raw plastic history coupled to the reviewed D2 pressure/temperature mechanical response; not finite strain, rupture, a lithosphere column or a calibrated planetary model",
+    "provenance": "mechanics copies the authored D2 strength fixture values; density 3300 kg/m3 and diffusivity 1e-6 m2/s from Clennett et al. 2023 Table S1; heat capacity 1200 J/kg/K from Brune et al. 2014 Methods; every other value is an authored numerical control input, not a calibrated default",
+    "representation": {
+      "coordinates": "material (reference) coordinates of the periodic square; geometrically linear; fields attached to material points",
+      "affine_mean_velocity": "imposed mean strain-rate input only; never used to advect any field",
+      "mean_spin_per_s": 0.0,
+      "max_displacement_gradient": 0.05
+    },
+    "mechanics": {
+      "domain_m": 100000.0,
+      "physical_length_m": 5000.0,
+      "stress_scale_Pa": 30000000.0,
+      "rate_scale_per_s": 1e-14,
+      "reference_temperature_K": 1000.0,
+      "activation_energy_J_per_mol": 120000.0,
+      "reference_viscosity_scaled": 10.0,
+      "plastic_viscosity_scaled": 1.0,
+      "cohesion_scaled": 1.0,
+      "reference_pressure_scaled": 3.0,
+      "pore_pressure_scaled": 1.0,
+      "friction_degrees": 30.0,
+      "critical_plastic_shear": 0.15,
+      "residual_cohesion_fraction": 0.1,
+      "imposed_engineering_rate_scaled": [
+        1.0,
+        0.0
+      ]
+    },
+    "thermal": {
+      "density_kg_m3": 3300.0,
+      "heat_capacity_J_kg_K": 1200.0,
+      "diffusivity_m2_s": 1e-06,
+      "viscous_heat_fraction": 1.0,
+      "plastic_heat_fraction": 1.0
+    },
+    "history": {
+      "healing_per_s": 0.0
+    },
+    "initial": {
+      "temperature_amplitude_K": 80.0,
+      "warm_spot_K": 30.0,
+      "warm_spot_scale_m": 10000.0,
+      "history_amplitude": 0.06,
+      "seed_centres_fraction": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.15
+        ]
+      ],
+      "seed_relative_amplitudes": [
+        1.0,
+        0.5
+      ],
+      "seed_scale_m": 7500.0
+    },
+    "campaign": {
+      "translation": {
+        "cells": 33,
+        "displacement_cells": [
+          7.37,
+          -4.81
+        ]
+      },
+      "manufactured": {
+        "cells": 33,
+        "duration_s": 30000000000000.0,
+        "modes": [
+          [
+            2,
+            1
+          ],
+          [
+            12,
+            5
+          ]
+        ],
+        "amplitudes_K": [
+          5.0,
+          1.0
+        ],
+        "mean_heating_K_per_s": 1e-14,
+        "steps": [
+          16,
+          32,
+          64
+        ]
+      },
+      "homogeneous": {
+        "cells": 9,
+        "temperature_K": 1000.0,
+        "history": 0.03,
+        "total_engineering_strain": 0.02,
+        "steps": [
+          8,
+          16,
+          32
+        ],
+        "subyield_rate_scaled": 0.1,
+        "subyield_strain": 0.01
+      },
+      "coupled": {
+        "cells": [
+          17,
+          33,
+          65
+        ],
+        "steps": 16,
+        "fine_steps": 32,
+        "total_engineering_strain": 0.02
+      },
+      "refusal": {
+        "cells": 17,
+        "strain_steps": 16,
+        "temperature_steps": 2,
+        "total_engineering_strain": 0.3
+      }
+    },
+    "policy": {
+      "max_newton_iterations": 30,
+      "max_cg_iterations": 500,
+      "max_line_search_halvings": 24,
+      "max_pressure_iterations": 100,
+      "pressure_relaxation": 0.75,
+      "equilibrium_relative": 1e-10,
+      "pressure_relative": 1e-09,
+      "momentum_relative": 1e-07,
+      "work_relative": 1e-08,
+      "algebra_relative": 1e-12,
+      "quadrature_relative": 1e-10,
+      "translation_relative": 1e-12,
+      "energy_relative": 1e-08,
+      "order_range": [
+        1.8,
+        2.2
+      ],
+      "manufactured_relative": 0.001,
+      "oracle_relative": 1e-06,
+      "mesh_relative": 0.03,
+      "time_relative": 0.03,
+      "coupling_resolution_factor": 10.0,
+      "warm_parity_relative": 1e-06,
+      "max_temperature_step_K": 5.0,
+      "maximum_seconds": 150.0
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 6.263609499961603
+}

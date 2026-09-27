@@ -1,0 +1,12 @@
+{
+  "schema": "atlas.i01-column-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"rate_relative_tolerance": 2e-11, "iterations": 96, "max_layers": 64, "max_mechanisms": 4, "max_order": 128, "column_refinement_tolerance": 0.003, "benchmark_repetitions": 10},
+  "axial_rate_s": 1e-15,
+  "source": "ASPECT continental_extension.prm, retrieved 2026-09-27: invariant/SI dislocation coefficients, activation energies/volumes and rock ordering. Temperature, mean-pressure profiles and imposed rate below are authored sensitivity fixtures, not a reproduced ASPECT run or a planetary calibration. Plastic viscosity is a physical regularisation parameter, not numerical clipping.",
+  "layers": [
+    {"name": "wet-quartzite-law", "thickness_m": 20000, "temperature_k": [273, 633], "mean_pressure_pa": [0, 540000000], "pore_pressure_pa": [0, 0], "grain_m": 0.001, "cohesion_pa": 20000000, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 8.57e-28, "n": 4, "energy_j_mol": 223000}]},
+    {"name": "wet-anorthite-law", "thickness_m": 20000, "temperature_k": [633, 893], "mean_pressure_pa": [540000000, 1120000000], "pore_pressure_pa": [0, 0], "grain_m": 0.001, "cohesion_pa": 20000000, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 7.13e-18, "n": 3, "energy_j_mol": 345000}]},
+    {"name": "dry-olivine-law", "thickness_m": 60000, "temperature_k": [893, 1613], "mean_pressure_pa": [1120000000, 3100000000], "pore_pressure_pa": [0, 0], "grain_m": 0.001, "cohesion_pa": 20000000, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 6.51e-16, "n": 3.5, "energy_j_mol": 530000, "volume_m3_mol": 18e-6}]}
+  ]
+}

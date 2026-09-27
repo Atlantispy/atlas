@@ -1,0 +1,1487 @@
+{
+  "schema": "atlas.i01-finite-strain-evidence.v1",
+  "status": "PASS_BOUNDED_FINITE_STRAIN_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.7.0",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "kinematics": {
+      "status": "PASS",
+      "seconds": 0.15927569998893887,
+      "passed": true,
+      "checks": {
+        "complete": true,
+        "genuine_finite_stretch": true,
+        "exact_affine_geometry": true,
+        "conserved_volume_mass_capacity": true,
+        "labels_follow_material": true,
+        "history_follows_material": true,
+        "nonuniform_temperature_carried_bitwise": true,
+        "no_heat_exchanged": true,
+        "uniform_temperature_preserved": true,
+        "uniform_no_heat": true
+      },
+      "conduction_off_layered": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 32,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 111509359629143.62,
+        "stretch": 1.1209554319035617,
+        "log_strain": 0.11418138585414543,
+        "log_strain_quadrature": 0.11418238093477177,
+        "log_path": 0.11418238093477177,
+        "width_m": 112095.54319035617,
+        "thickness_m": 89209.6127588088,
+        "displacement_m": 12095.543190356257,
+        "velocity_start_m_s": 9.231352885371495e-11,
+        "velocity_end_m_s": 1.52895922408783e-10,
+        "column_force_start_n_m": 15384323557314.246,
+        "column_force_end_n_m": 12355203879565.48,
+        "mean_history_gain": 0.07349425610655747,
+        "max_step_energy_relative": 0.0,
+        "max_temperature_step_k": 0.0,
+        "max_force_relative": 6.226286153321325e-11,
+        "max_power_relative": 6.276688589056059e-11,
+        "min_source_w_m2": 0.0,
+        "min_dissipation_w_m": 426.0893804712831,
+        "restress_mismatches": 0,
+        "stages": 65,
+        "evaluations": 229,
+        "iterations": 2475,
+        "yield_switching_points": 1,
+        "accounts": {
+          "drive_work_j_m": 2.4191086380712515e+17,
+          "drag_work_j_m": 7.469246030863742e+16,
+          "creep_work_j_m": 7.365153026555773e+16,
+          "plastic_work_j_m": 9.35668732331943e+16,
+          "column_work_j_m": 1.672184034987509e+17,
+          "heat_j_m": 0.0,
+          "stored_j_m": 1.6721840349875203e+17,
+          "radiogenic_j_m": 0.0,
+          "reference_outflow_j_m": 0.0,
+          "departure_surface_loss_j_m": 0.0,
+          "departure_basal_gain_j_m": 0.0,
+          "reference_surface_loss_j_m": 0.0,
+          "reference_basal_gain_j_m": 0.0,
+          "thermal_change_j_m": 0.0,
+          "surface_loss_j_m": 0.0,
+          "basal_gain_j_m": 0.0,
+          "motion_work_relative": 1.09250157616202e-12,
+          "drive_displacement_relative": 1.322801278801332e-16,
+          "partition_relative": 6.697827371664664e-15,
+          "column_energy_relative": 6.697827371664664e-15,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 1.09250157616202e-12,
+          "energy_relative": 0.0,
+          "absolute_energy_relative": 0.0
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": 0.0,
+          "capacity_relative": 1.7204301075268821e-16
+        },
+        "max_temperature_departure_k": 1336.8202804974953,
+        "material_depth_of_max_km": 99.73502337479125,
+        "current_depth_of_max_km": 88.97322813755872,
+        "min_temperature_departure_k": 2.3317943018370215,
+        "warming_by_layer_k": [
+          {
+            "maximum": 358.516130898837,
+            "volume_weighted_mean": 193.41390565017994
+          },
+          {
+            "maximum": 618.7281121990114,
+            "volume_weighted_mean": 493.3534764125538
+          },
+          {
+            "maximum": 739.3640560995094,
+            "volume_weighted_mean": 680.000000000012
+          },
+          {
+            "maximum": 1336.8202804974953,
+            "volume_weighted_mean": 1040.0000000000045
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.2283647618695448,
+          0.22836464357843989,
+          0.22784793805198644,
+          0.0
+        ],
+        "yielding_points_final": 31
+      },
+      "uniform_conducting": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 32,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 142834114280920.47,
+        "stretch": 1.3822363705916936,
+        "log_strain": 0.3237027458810477,
+        "log_strain_quadrature": 0.32372526235485266,
+        "log_path": 0.32372526235485266,
+        "width_m": 138223.63705916936,
+        "thickness_m": 7234.652634497892,
+        "displacement_m": 38223.63705916935,
+        "velocity_start_m_s": 3.752827912355424e-10,
+        "velocity_end_m_s": 3.8786203589616976e-10,
+        "column_force_start_n_m": 1235860438222.9197,
+        "column_force_end_n_m": 606898205241.19,
+        "mean_history_gain": 0.34031038420418724,
+        "max_step_energy_relative": 14.388490399142029,
+        "max_temperature_step_k": 3.552713678800501e-14,
+        "max_force_relative": 2.4837909506914002e-12,
+        "max_power_relative": 2.4188406779150958e-12,
+        "min_source_w_m2": 0.0,
+        "min_dissipation_w_m": 51.33292691124445,
+        "restress_mismatches": 0,
+        "stages": 65,
+        "evaluations": 198,
+        "iterations": 700,
+        "yield_switching_points": 0,
+        "accounts": {
+          "drive_work_j_m": 7.644727411833871e+17,
+          "drag_work_j_m": 7.305889761951734e+17,
+          "creep_work_j_m": 1.6677390507007196e+16,
+          "plastic_work_j_m": 1.7206374481836352e+16,
+          "column_work_j_m": 3.388376498886754e+16,
+          "heat_j_m": 0.0,
+          "stored_j_m": 3.388376498884356e+16,
+          "radiogenic_j_m": 0.0,
+          "reference_outflow_j_m": 0.0,
+          "departure_surface_loss_j_m": 0.0,
+          "departure_basal_gain_j_m": 0.0,
+          "reference_surface_loss_j_m": 0.0,
+          "reference_basal_gain_j_m": 0.0,
+          "thermal_change_j_m": -419.0893753832213,
+          "surface_loss_j_m": 0.0,
+          "basal_gain_j_m": 0.0,
+          "motion_work_relative": 8.238200868027052e-13,
+          "drive_displacement_relative": 1.674356626527439e-16,
+          "partition_relative": 7.080677134870501e-13,
+          "column_energy_relative": 7.077135615796707e-13,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 8.238357838960789e-13,
+          "energy_relative": 419.0893753832213,
+          "absolute_energy_relative": 419.0893753832213
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": null,
+          "capacity_relative": 0.0
+        },
+        "max_temperature_departure_k": 24.999999999999854,
+        "material_depth_of_max_km": 8.983332387068135,
+        "current_depth_of_max_km": 6.499128932067271,
+        "min_temperature_departure_k": 24.999999999999748,
+        "warming_by_layer_k": [
+          {
+            "maximum": 24.999999999999854,
+            "volume_weighted_mean": 24.999999999999794
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.34031038420418724
+        ],
+        "yielding_points_final": 8
+      },
+      "uniform_relative_spread": 4.263256414560626e-15,
+      "uniform_relative_drift": 1.0089706847793422e-14,
+      "current_layer_faces_km": [
+        0.0,
+        17.84192255176176,
+        35.68384510352352,
+        44.6048063794044,
+        89.2096127588088
+      ],
+      "never_yielded_points": 33,
+      "finite_strain_threshold": 0.05
+    },
+    "clock": {
+      "status": "PASS",
+      "seconds": 0.12080189998960122,
+      "passed": true,
+      "checks": {
+        "complete": true,
+        "clock_second_order": true,
+        "clock_finest": true,
+        "continuous_mode": true,
+        "energy": true,
+        "lam2_operator_identity": true,
+        "conduction_factors_bitwise": true,
+        "conduction_bitwise": true,
+        "preparation_bitwise": true,
+        "stage_bitwise": true,
+        "rest_bitwise": true
+      },
+      "eigenvalue_per_s": 3.813711488174345e-15,
+      "histories": {
+        "1.375": {
+          "duration_s": 184412666106889.3,
+          "exact_clock_s": 262211759620733.25,
+          "scheme_clock_s": 262211429865343.94,
+          "clock_relative": 1.2575919165084846e-06,
+          "steps": [
+            64,
+            128,
+            256
+          ],
+          "relative_errors": [
+            2.0119509590728e-05,
+            5.029875558871952e-06,
+            1.2574761392800373e-06
+          ],
+          "orders": [
+            2.0000005274169554,
+            1.9999916825957653
+          ],
+          "analytic_max_error_k": 0.005233613692155359,
+          "max_step_energy_relative": 3.4917240887204924e-13,
+          "complete": true
+        },
+        "0.625": {
+          "duration_s": 390268665482021.56,
+          "exact_clock_s": 262211759620733.25,
+          "scheme_clock_s": 262211061766696.75,
+          "clock_relative": 2.661413956068888e-06,
+          "steps": [
+            64,
+            128,
+            256
+          ],
+          "relative_errors": [
+            4.257858076022753e-05,
+            1.0644614639476154e-05,
+            2.6611591064177597e-06
+          ],
+          "orders": [
+            2.000004140601568,
+            1.9999970472577713
+          ],
+          "analytic_max_error_k": 0.005275966530167153,
+          "max_step_energy_relative": 3.212805033982673e-13,
+          "complete": true
+        }
+      },
+      "operator_identity": [
+        {
+          "stretch": 0.6,
+          "capacity_relative": 2.1725340526868717e-16,
+          "conductance_relative": 4.187634660254201e-13,
+          "boundary_relative": 5.023168399082181e-13,
+          "reset_heat_j_m2": 22423592616363.03,
+          "reset_max_k": 166.75845580069063,
+          "support": "layered"
+        },
+        {
+          "stretch": 0.8,
+          "capacity_relative": 2.2680189937302243e-16,
+          "conductance_relative": 1.9626927968150652e-13,
+          "boundary_relative": 5.024775812969887e-13,
+          "reset_heat_j_m2": 7094964851276.095,
+          "reset_max_k": 52.76341765569259,
+          "support": "layered"
+        },
+        {
+          "stretch": 1.2,
+          "capacity_relative": 2.1725340526868717e-16,
+          "conductance_relative": 4.187634660254201e-13,
+          "boundary_relative": 5.023168399082181e-13,
+          "reset_heat_j_m2": -3854054980846.07,
+          "reset_max_k": 28.661609590254898,
+          "support": "layered"
+        },
+        {
+          "stretch": 1.4,
+          "capacity_relative": 2.458317231988758e-16,
+          "conductance_relative": 3.277976579923461e-13,
+          "boundary_relative": 3.352146847533791e-13,
+          "reset_heat_j_m2": -6177928577849.268,
+          "reset_max_k": 45.94365618930442,
+          "support": "layered"
+        },
+        {
+          "stretch": 0.6,
+          "capacity_relative": 1.8418714032827033e-16,
+          "conductance_relative": 1.0800615764975065e-13,
+          "boundary_relative": 2.7908723625292803e-13,
+          "reset_heat_j_m2": 0.576854900574295,
+          "reset_max_k": 8.29913915367797e-12,
+          "support": "two-layer slab"
+        },
+        {
+          "stretch": 0.8,
+          "capacity_relative": 2.1863097203160182e-16,
+          "conductance_relative": 6.745713306498267e-14,
+          "boundary_relative": 1.928896665248174e-16,
+          "reset_heat_j_m2": -0.7990614439724572,
+          "reset_max_k": 7.901235221652314e-12,
+          "support": "two-layer slab"
+        },
+        {
+          "stretch": 1.2,
+          "capacity_relative": 1.8418714032827033e-16,
+          "conductance_relative": 1.0800615764975065e-13,
+          "boundary_relative": 2.7908723625292803e-13,
+          "reset_heat_j_m2": 0.576854900574295,
+          "reset_max_k": 8.29913915367797e-12,
+          "support": "two-layer slab"
+        },
+        {
+          "stretch": 1.4,
+          "capacity_relative": 1.6885851080251815e-16,
+          "conductance_relative": 4.893506299336754e-14,
+          "boundary_relative": 1.3950056239732907e-13,
+          "reset_heat_j_m2": -4.2271930979451415,
+          "reset_max_k": 5.155698090675287e-11,
+          "support": "two-layer slab"
+        }
+      ],
+      "operator_identity_worst_relative": 5.024775812969887e-13,
+      "reference_width_m": 100000.0,
+      "recovery": {
+        "recovery_steps": 4,
+        "step_s": 390625000000.0,
+        "rest_departure_end_k": 1.9960922052648962,
+        "rest_accounts": {
+          "drive_work_j_m": 0.0,
+          "drag_work_j_m": 0.0,
+          "creep_work_j_m": 0.0,
+          "plastic_work_j_m": 0.0,
+          "column_work_j_m": 0.0,
+          "heat_j_m": 0.0,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 3906250000000000.0,
+          "reference_outflow_j_m": 3906250000000000.0,
+          "departure_surface_loss_j_m": 24510604489100.375,
+          "departure_basal_gain_j_m": -24504350464423.207,
+          "reference_surface_loss_j_m": 8593750000000102.0,
+          "reference_basal_gain_j_m": 4687499999999968.0,
+          "thermal_change_j_m": -49014954953497.67,
+          "surface_loss_j_m": 8618260604489202.0,
+          "basal_gain_j_m": 4662995649535545.0,
+          "motion_work_relative": 0.0,
+          "drive_displacement_relative": 0.0,
+          "partition_relative": 0.0,
+          "column_energy_relative": 0.0,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 0.0,
+          "energy_relative": 5.285376682395106e-13,
+          "absolute_energy_relative": 9.269996626921407e-15
+        }
+      }
+    },
+    "homogeneous": {
+      "status": "PASS",
+      "seconds": 0.5077992999576963,
+      "passed": true,
+      "checks": {
+        "complete": true,
+        "always_yielding": true,
+        "genuine_finite_stretch": true,
+        "uniform": true,
+        "temperature_order": true,
+        "history_order": true,
+        "finest": true,
+        "independent_roots": true,
+        "thins_and_accelerates": true,
+        "insulated_no_boundary_heat": true,
+        "accounts_close": true
+      },
+      "oracle": {
+        "temperature_rise": 16.187389941374818,
+        "history_gain": 0.5676408350941387,
+        "stretch": 1.382821012200512,
+        "log_stretch": 0.32412562435089015,
+        "velocity_start_m_s": 3.735006326616268e-10,
+        "velocity_end_m_s": 3.894333370638238e-10,
+        "evaluations": 194,
+        "always_yielding": true
+      },
+      "steps": [
+        64,
+        128,
+        256
+      ],
+      "temperature_errors": [
+        5.130531250231956e-05,
+        1.2832546961612768e-05,
+        3.208906912787145e-06
+      ],
+      "history_errors": [
+        8.952912680793461e-06,
+        2.2666087977242768e-06,
+        5.701850322916636e-07
+      ],
+      "log_stretch_errors": [
+        2.1397930198255526e-06,
+        5.351882926329253e-07,
+        1.33825606006267e-07
+      ],
+      "velocity_errors": [
+        1.1735423431684074e-07,
+        2.9658416187006048e-08,
+        7.454372231869798e-09
+      ],
+      "temperature_orders": [
+        1.9993006798583397,
+        1.9996536960181839
+      ],
+      "history_orders": [
+        1.9818217029400877,
+        1.991033339315392
+      ],
+      "log_stretch_orders": [
+        1.999352790684227,
+        1.9996923713741452
+      ],
+      "velocity_orders": [
+        1.9843564349605534,
+        1.992282790800833
+      ],
+      "root_relative": {
+        "initial": 9.689180856617331e-16,
+        "final_state": 1.606322015528522e-14
+      },
+      "uniform_relative_spread": 5.2673627430382575e-15,
+      "finest": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 256,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 142859520778352.53,
+        "stretch": 1.382820952218843,
+        "log_strain": 0.32412558097458205,
+        "log_strain_quadrature": 0.3241259342525263,
+        "log_path": 0.3241259342525263,
+        "width_m": 138282.09522188432,
+        "thickness_m": 7231.5942161233725,
+        "displacement_m": 38282.09522188451,
+        "velocity_start_m_s": 3.735006326616264e-10,
+        "velocity_end_m_s": 3.8943333416084273e-10,
+        "column_force_start_n_m": 1324968366918.7083,
+        "column_force_end_n_m": 528333291958.26874,
+        "mean_history_gain": 0.5676405114338308,
+        "max_step_energy_relative": 1.6165621336699686e-13,
+        "max_temperature_step_k": 0.09529185353901472,
+        "max_force_relative": 2.313704783318826e-13,
+        "max_power_relative": 2.1743036243228488e-13,
+        "min_source_w_m2": 7.530918523860417e-05,
+        "min_dissipation_w_m": 13.923030169294798,
+        "restress_mismatches": 0,
+        "stages": 513,
+        "evaluations": 1286,
+        "iterations": 3896,
+        "yield_switching_points": 0,
+        "accounts": {
+          "drive_work_j_m": 7.6564190443769e+17,
+          "drag_work_j_m": 7.328623346202397e+17,
+          "creep_work_j_m": 4247723935636305.0,
+          "plastic_work_j_m": 2.853184588189916e+16,
+          "column_work_j_m": 3.277956981753836e+16,
+          "heat_j_m": 3.277956981753548e+16,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 0.0,
+          "reference_outflow_j_m": 0.0,
+          "departure_surface_loss_j_m": 0.0,
+          "departure_basal_gain_j_m": 0.0,
+          "reference_surface_loss_j_m": 0.0,
+          "reference_basal_gain_j_m": 0.0,
+          "thermal_change_j_m": 3.277956981753471e+16,
+          "surface_loss_j_m": 0.0,
+          "basal_gain_j_m": 0.0,
+          "motion_work_relative": 1.113105219372639e-13,
+          "drive_displacement_relative": 3.3435996451632826e-16,
+          "partition_relative": 8.834771219146769e-14,
+          "column_energy_relative": 8.785960328433251e-14,
+          "work_to_heat_relative": 4.881089071352237e-16,
+          "drag_excluded_relative": 1.1133141943504617e-13,
+          "energy_relative": 2.342922754249073e-14,
+          "absolute_energy_relative": 2.342922754249073e-14
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": null,
+          "capacity_relative": 1.2345679012345678e-16
+        },
+        "max_temperature_departure_k": 16.187441885202386,
+        "material_depth_of_max_km": 8.983332387068135,
+        "current_depth_of_max_km": 6.496381453183568,
+        "min_temperature_departure_k": 16.1874418852023,
+        "warming_by_layer_k": [
+          {
+            "maximum": 16.187441885202386,
+            "volume_weighted_mean": 16.187441885202336
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.5676405114338308
+        ],
+        "yielding_points_final": 8
+      },
+      "drag_share": 0.9571868132772533
+    },
+    "connection": {
+      "status": "PASS",
+      "seconds": 6.886528300005011,
+      "passed": true,
+      "checks": {
+        "all_complete": true,
+        "genuine_finite_stretch": true,
+        "time_stretch": true,
+        "time_velocity": true,
+        "time_temperature": true,
+        "time_history": true,
+        "time_work_heat": true,
+        "depth_stretch": true,
+        "depth_velocity": true,
+        "depth_energy": true,
+        "depth_history": true,
+        "depth_work": true,
+        "thinning_speeds_extension": true,
+        "feedback_resolved": true,
+        "feedback_depth": true,
+        "rate_follows_current_width": true,
+        "accounts_close": true,
+        "nonnegative_dissipation": true,
+        "reference_balanced": true,
+        "heats_the_column": true
+      },
+      "finite_strain": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 256,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 112187386345122.7,
+        "stretch": 1.1303764796756188,
+        "log_strain": 0.12255074509069372,
+        "log_strain_quadrature": 0.12255076492426034,
+        "log_path": 0.12255076492426034,
+        "width_m": 113037.64796756188,
+        "thickness_m": 88466.1011601168,
+        "displacement_m": 13037.647967561903,
+        "velocity_start_m_s": 9.236889212108228e-11,
+        "velocity_end_m_s": 1.717481566165843e-10,
+        "column_force_start_n_m": 15381555393945.887,
+        "column_force_end_n_m": 11412592169169.22,
+        "mean_history_gain": 0.07589455391213658,
+        "max_step_energy_relative": 2.9465531159455095e-13,
+        "max_temperature_step_k": 0.09209557175051612,
+        "max_force_relative": 7.716938199564538e-12,
+        "max_power_relative": 6.969301835768145e-12,
+        "min_source_w_m2": 2.343418118740521e-08,
+        "min_dissipation_w_m": 426.6006115838067,
+        "restress_mismatches": 0,
+        "stages": 513,
+        "evaluations": 1286,
+        "iterations": 18877,
+        "yield_switching_points": 2,
+        "accounts": {
+          "drive_work_j_m": 2.607529593512381e+17,
+          "drag_work_j_m": 8.766418225006453e+16,
+          "creep_work_j_m": 7.988143522559173e+16,
+          "plastic_work_j_m": 9.320734187545136e+16,
+          "column_work_j_m": 1.730887771013093e+17,
+          "heat_j_m": 1.7308877710104304e+17,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 2.5e+17,
+          "reference_outflow_j_m": 2.8046846586280646e+17,
+          "departure_surface_loss_j_m": 2784269856157707.5,
+          "departure_basal_gain_j_m": -143661284397036.12,
+          "reference_surface_loss_j_m": 6.170306248979251e+17,
+          "reference_basal_gain_j_m": 3.365621590350981e+17,
+          "thermal_change_j_m": 1.3969238009764632e+17,
+          "surface_loss_j_m": 6.198148947540828e+17,
+          "basal_gain_j_m": 3.3641849775070106e+17,
+          "motion_work_relative": 5.004583661281479e-13,
+          "drive_displacement_relative": 2.454430437116959e-16,
+          "partition_relative": 1.5381702064032092e-12,
+          "column_energy_relative": 1.5383550826299403e-12,
+          "work_to_heat_relative": 1.8487622673143932e-16,
+          "drag_excluded_relative": 5.005810876500038e-13,
+          "energy_relative": 1.7194454833860499e-13,
+          "absolute_energy_relative": 1.0869106819536082e-14
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": 1.2600806451612904e-16,
+          "capacity_relative": 0.0
+        },
+        "max_temperature_departure_k": 15.469908196651971,
+        "material_depth_of_max_km": 43.21389920831166,
+        "current_depth_of_max_km": 38.229651788855904,
+        "min_temperature_departure_k": 4.6805184599891386e-05,
+        "warming_by_layer_k": [
+          {
+            "maximum": 8.569248441331691,
+            "volume_weighted_mean": 3.2761940075738156
+          },
+          {
+            "maximum": 14.796315729847914,
+            "volume_weighted_mean": 12.695544808361296
+          },
+          {
+            "maximum": 15.469908196651971,
+            "volume_weighted_mean": 14.714563366751158
+          },
+          {
+            "maximum": 12.563421799708506,
+            "volume_weighted_mean": 2.810475161041735
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.24510152984824662,
+          0.24510136956412554,
+          0.24421387902721658,
+          0.0
+        ],
+        "yielding_points_final": 117
+      },
+      "geometry_feedback_off": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 256,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 110500414804944.55,
+        "stretch": 1.1061260156472248,
+        "log_strain": 0.10086383480789365,
+        "log_strain_quadrature": 0.10612601564722512,
+        "log_path": 0.10612601564722512,
+        "width_m": 110612.60156472248,
+        "thickness_m": 90405.61254812115,
+        "displacement_m": 10612.601564722509,
+        "velocity_start_m_s": 9.236889212108228e-11,
+        "velocity_end_m_s": 1.2010210057467737e-10,
+        "column_force_start_n_m": 15381555393945.887,
+        "column_force_end_n_m": 13994894971272.943,
+        "mean_history_gain": 0.06422179632473882,
+        "max_step_energy_relative": 3.1424451749603646e-13,
+        "max_temperature_step_k": 0.09204939352527468,
+        "max_force_relative": 5.488942633746774e-13,
+        "max_power_relative": 1.1223802042897997e-12,
+        "min_source_w_m2": 2.343418118740521e-08,
+        "min_dissipation_w_m": 426.6006115838067,
+        "restress_mismatches": 0,
+        "stages": 513,
+        "evaluations": 1286,
+        "iterations": 14555,
+        "yield_switching_points": 5,
+        "accounts": {
+          "drive_work_j_m": 2.122520312944502e+17,
+          "drag_work_j_m": 5.663605249679758e+16,
+          "creep_work_j_m": 7.288955396560904e+16,
+          "plastic_work_j_m": 8.272642483210245e+16,
+          "column_work_j_m": 1.556159787977178e+17,
+          "heat_j_m": 1.5561597879771165e+17,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 2.5e+17,
+          "reference_outflow_j_m": 2.7625103701236147e+17,
+          "departure_surface_loss_j_m": 2839369881866631.0,
+          "departure_basal_gain_j_m": -127709425562973.3,
+          "reference_surface_loss_j_m": 6.077522814269501e+17,
+          "reference_basal_gain_j_m": 3.315012444145674e+17,
+          "thermal_change_j_m": 1.2639786247788782e+17,
+          "surface_loss_j_m": 6.105916513088168e+17,
+          "basal_gain_j_m": 3.313735349890045e+17,
+          "motion_work_relative": 2.7740606127965735e-13,
+          "drive_displacement_relative": 1.507641637389442e-16,
+          "partition_relative": 4.050997878691139e-14,
+          "column_energy_relative": 3.9481806736482165e-14,
+          "work_to_heat_relative": 1.0281720504292647e-15,
+          "drag_excluded_relative": 2.7815988209835205e-13,
+          "energy_relative": 1.7719674489265036e-13,
+          "absolute_energy_relative": 8.536777077308333e-15
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": 1.2600806451612904e-16,
+          "capacity_relative": 0.0
+        },
+        "max_temperature_departure_k": 13.967874791388637,
+        "material_depth_of_max_km": 43.21389920831166,
+        "current_depth_of_max_km": 39.06779028520184,
+        "min_temperature_departure_k": 0.0001988234580571598,
+        "warming_by_layer_k": [
+          {
+            "maximum": 7.888415314201867,
+            "volume_weighted_mean": 3.112333515610885
+          },
+          {
+            "maximum": 13.340218683548194,
+            "volume_weighted_mean": 11.491781371580412
+          },
+          {
+            "maximum": 13.967874791388637,
+            "volume_weighted_mean": 13.243286509232886
+          },
+          {
+            "maximum": 11.238482951946322,
+            "volume_weighted_mean": 2.5071942353888934
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.21225203129444203,
+          0.212251846533261,
+          0.21131197929153878,
+          0.0
+        ],
+        "yielding_points_final": 112
+      },
+      "physics": {
+        "finite_strain": {
+          "stretch": 1.1303764796756188,
+          "width_km": 113.03764796756188,
+          "thickness_km": 88.46610116011679,
+          "layer_thickness_km": [
+            17.69322023202336,
+            17.69322023202336,
+            8.84661011601168,
+            44.233050580058396
+          ],
+          "surface_heat_flow_w_m2": {
+            "initial": 0.054999999999977796,
+            "final": 0.062189738992616136
+          },
+          "whole_strip_surface_outflow_w_m": {
+            "initial": 5499.99999999778,
+            "final": 7029.781823441899
+          },
+          "column_force_n_m": {
+            "start": 15381555393945.887,
+            "end": 11412592169169.22
+          },
+          "velocity_m_s": {
+            "start": 9.236889212108228e-11,
+            "end": 1.717481566165843e-10
+          },
+          "mean_history_gain": 0.07589455391213658
+        },
+        "geometry_off": {
+          "stretch": 1.1061260156472248,
+          "width_km": 110.61260156472248,
+          "thickness_km": 90.40561254812116,
+          "layer_thickness_km": [
+            18.08112250962423,
+            18.08112250962423,
+            9.040561254812115,
+            45.20280627406058
+          ],
+          "surface_heat_flow_w_m2": {
+            "initial": 0.054999999999977796,
+            "final": 0.06095603975591739
+          },
+          "whole_strip_surface_outflow_w_m": {
+            "initial": 5499.99999999778,
+            "final": 6742.506138484674
+          },
+          "column_force_n_m": {
+            "start": 15381555393945.887,
+            "end": 13994894971272.943
+          },
+          "velocity_m_s": {
+            "start": 9.236889212108228e-11,
+            "end": 1.2010210057467737e-10
+          },
+          "mean_history_gain": 0.06422179632473882
+        }
+      },
+      "velocity_feedback_by_order": {
+        "32": 0.4267970590933968,
+        "64": 0.4300179247056076,
+        "128": 0.42997065375319443
+      },
+      "feedback_depth_change": 0.00010993995055375525,
+      "refinement_resolution": 7.992764138638273e-05,
+      "time_steps": [
+        64,
+        128,
+        256
+      ],
+      "time_changes": {
+        "stretch": [
+          2.072485213242224e-05,
+          5.207507272629669e-06
+        ],
+        "velocity": [
+          7.958631034369185e-06,
+          1.997569193311229e-06
+        ],
+        "temperature_k": [
+          0.00018991419317959668,
+          4.750271528486394e-05
+        ],
+        "history": [
+          6.183263967355225e-05,
+          1.5477874433565905e-05
+        ],
+        "work_heat": [
+          2.2020672148075827e-05,
+          5.5331133351877315e-06
+        ]
+      },
+      "time_orders": {
+        "stretch": [
+          1.9926969542245552
+        ],
+        "temperature": [
+          1.9992658426301415
+        ],
+        "history": [
+          1.9981612357416456
+        ],
+        "velocity": [
+          1.9942748166824513
+        ]
+      },
+      "yield_switching_points": {
+        "64": 2,
+        "128": 2,
+        "256": 2
+      },
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "depth_changes": {
+        "stretch": [
+          0.0014527777105786187,
+          0.00020558752029588474
+        ],
+        "velocity": [
+          0.0014326142137201818,
+          7.992764138638273e-05
+        ],
+        "thermal_energy": [
+          0.0005695658045774006,
+          8.497512912259665e-05
+        ],
+        "heat": [
+          0.0007521610097401484,
+          0.00011309836583318718
+        ],
+        "drive_work": [
+          0.0015434775816455446,
+          0.00021844226852055706
+        ],
+        "mean_history": [
+          0.00378492322513225,
+          0.0005736192204367282
+        ]
+      },
+      "log_strain_quadrature_relative": 2.5787062432859514e-06,
+      "note": "geometry feedback off is a comparator only: its mechanics stays at the reference geometry while its kinematics and conduction follow lam; orders are reported, not gated, because yield states switch"
+    },
+    "states": {
+      "status": "PASS",
+      "seconds": 0.155022100021597,
+      "passed": true,
+      "checks": {
+        "rest_no_motion": true,
+        "rest_no_mechanical_heat_or_history": true,
+        "rest_departure_conducts": true,
+        "rest_energy": true,
+        "rest_without_departure_bitwise": true,
+        "extension": true,
+        "compression": true,
+        "signed_work": true,
+        "both_heat_the_column": true,
+        "nonnegative_dissipation": true,
+        "fresh_geometry_pressure_coefficients": true,
+        "fresh_stage_and_heat_source": true,
+        "immutable_inputs": true
+      },
+      "rest": {
+        "accounts": {
+          "drive_work_j_m": 0.0,
+          "drag_work_j_m": 0.0,
+          "creep_work_j_m": 0.0,
+          "plastic_work_j_m": 0.0,
+          "column_work_j_m": 0.0,
+          "heat_j_m": 0.0,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 2.5e+17,
+          "reference_outflow_j_m": 2.5e+17,
+          "departure_surface_loss_j_m": 1479757207712454.5,
+          "departure_basal_gain_j_m": -1493137876006077.2,
+          "reference_surface_loss_j_m": 5.50000000000002e+17,
+          "reference_basal_gain_j_m": 2.999999999999766e+17,
+          "thermal_change_j_m": -2972895083718692.5,
+          "surface_loss_j_m": 5.514797572077144e+17,
+          "basal_gain_j_m": 2.985068621239705e+17,
+          "motion_work_relative": 0.0,
+          "drive_displacement_relative": 0.0,
+          "partition_relative": 0.0,
+          "column_energy_relative": 0.0,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 0.0,
+          "energy_relative": 5.3987778068254165e-14,
+          "absolute_energy_relative": 2.294891551984251e-14
+        },
+        "max_departure_start_k": 1.9999972281178262,
+        "max_departure_end_k": 1.8062427194761392
+      },
+      "extension": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 16,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 112159994693440.94,
+        "stretch": 1.1302660631785661,
+        "log_strain": 0.12245305914959745,
+        "log_strain_quadrature": 0.12245802305141582,
+        "log_path": 0.12245802305141582,
+        "width_m": 113026.60631785661,
+        "thickness_m": 88474.74347657328,
+        "displacement_m": 13026.606317856604,
+        "velocity_start_m_s": 9.231352885371495e-11,
+        "velocity_end_m_s": 1.7169860276653904e-10,
+        "column_force_start_n_m": 15384323557314.246,
+        "column_force_end_n_m": 11415069861677.062,
+        "mean_history_gain": 0.07584895440545086,
+        "max_step_energy_relative": 3.56586487655184e-15,
+        "max_temperature_step_k": 1.3303755997866238,
+        "max_force_relative": 4.669598041573408e-13,
+        "max_power_relative": 4.584274801891629e-13,
+        "min_source_w_m2": 3.6370768389795533e-07,
+        "min_dissipation_w_m": 426.0893804712831,
+        "restress_mismatches": 0,
+        "stages": 33,
+        "evaluations": 118,
+        "iterations": 1658,
+        "yield_switching_points": 0,
+        "accounts": {
+          "drive_work_j_m": 2.6053212635713206e+17,
+          "drag_work_j_m": 8.75377453221904e+16,
+          "creep_work_j_m": 7.950250629706435e+16,
+          "plastic_work_j_m": 9.34918747379082e+16,
+          "column_work_j_m": 1.7299438103497443e+17,
+          "heat_j_m": 1.7299438103497254e+17,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 2.5e+17,
+          "reference_outflow_j_m": 2.8039998673360234e+17,
+          "departure_surface_loss_j_m": 2817691713925052.5,
+          "departure_basal_gain_j_m": -147766306697052.06,
+          "reference_surface_loss_j_m": 6.168799708139273e+17,
+          "reference_basal_gain_j_m": 3.364799840802967e+17,
+          "thermal_change_j_m": 1.396289362807484e+17,
+          "surface_loss_j_m": 6.196976625278523e+17,
+          "basal_gain_j_m": 3.363322177735997e+17,
+          "motion_work_relative": 1.1852664940703064e-13,
+          "drive_displacement_relative": 0.0,
+          "partition_relative": 1.0913649268286358e-14,
+          "column_energy_relative": 1.0913649268286358e-14,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 1.1852664940703064e-13,
+          "energy_relative": 1.4731549556091672e-15,
+          "absolute_energy_relative": 2.0640681094627944e-14
+        },
+        "conservation": {
+          "volume_relative": 0.0,
+          "mass_relative": 1.2600806451612904e-16,
+          "capacity_relative": 0.0
+        },
+        "max_temperature_departure_k": 15.464266060646855,
+        "material_depth_of_max_km": 43.591982246103704,
+        "current_depth_of_max_km": 38.567894468593614,
+        "min_temperature_departure_k": 0.0009834956107941037,
+        "warming_by_layer_k": [
+          {
+            "maximum": 8.504680690223946,
+            "volume_weighted_mean": 3.2841784930178415
+          },
+          {
+            "maximum": 14.742933671722927,
+            "volume_weighted_mean": 12.692685778453123
+          },
+          {
+            "maximum": 15.464266060646855,
+            "volume_weighted_mean": 14.711234437578986
+          },
+          {
+            "maximum": 12.380787548068614,
+            "volume_weighted_mean": 2.8044060617977427
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.2449160461028308,
+          0.24491585776305014,
+          0.24398186607674344,
+          0.0
+        ],
+        "yielding_points_final": 30
+      },
+      "compression": {
+        "status": "COMPLETE",
+        "reason": null,
+        "accepted_steps": 16,
+        "elapsed_s": 100000000000000.0,
+        "clock_s": 98729582580342.22,
+        "stretch": 0.9871738771398075,
+        "log_strain": -0.012909087749393434,
+        "log_strain_quadrature": -0.012909093330712313,
+        "log_path": 0.012909093330712313,
+        "width_m": 98717.38771398076,
+        "thickness_m": 101299.27697209273,
+        "displacement_m": -1282.612286019236,
+        "velocity_start_m_s": -1.257172629373985e-11,
+        "velocity_end_m_s": -1.3003795512801944e-11,
+        "column_force_start_n_m": -19371413685676.29,
+        "column_force_end_n_m": -19349810224999.992,
+        "mean_history_gain": 0.005721403206693738,
+        "max_step_energy_relative": 2.6479503986542186e-15,
+        "max_temperature_step_k": 0.277801639667108,
+        "max_force_relative": 3.7659431129100085e-11,
+        "max_power_relative": 3.6079930436350664e-11,
+        "min_source_w_m2": 2.8026335418151552e-08,
+        "min_dissipation_w_m": 7.902415100235494,
+        "restress_mismatches": 0,
+        "stages": 33,
+        "evaluations": 88,
+        "iterations": 1209,
+        "yield_switching_points": 0,
+        "accounts": {
+          "drive_work_j_m": 2.565224572038472e+16,
+          "drag_work_j_m": 822617348389911.4,
+          "creep_work_j_m": 1.25866052086375e+16,
+          "plastic_work_j_m": 1.2243023163758768e+16,
+          "column_work_j_m": 2.4829628372441764e+16,
+          "heat_j_m": 2.4829628372396268e+16,
+          "stored_j_m": 0.0,
+          "radiogenic_j_m": 2.5e+17,
+          "reference_outflow_j_m": 2.4682395645085552e+17,
+          "departure_surface_loss_j_m": 2744139566524633.5,
+          "departure_basal_gain_j_m": -7694490018579.326,
+          "reference_surface_loss_j_m": 5.430127041918842e+17,
+          "reference_basal_gain_j_m": 2.961887477410036e+17,
+          "thermal_change_j_m": 2.525383786499754e+16,
+          "surface_loss_j_m": 5.457568437584088e+17,
+          "basal_gain_j_m": 2.96181053250985e+17,
+          "motion_work_relative": 1.5650091784399884e-11,
+          "drive_displacement_relative": 0.0,
+          "partition_relative": 1.832327061749168e-12,
+          "column_energy_relative": 1.832327061749168e-12,
+          "work_to_heat_relative": 0.0,
+          "drag_excluded_relative": 1.5650091784399884e-11,
+          "energy_relative": 1.3004955612624024e-16,
+          "absolute_energy_relative": 2.246841838584246e-14
+        },
+        "conservation": {
+          "volume_relative": 1.9073486328125e-16,
+          "mass_relative": 0.0,
+          "capacity_relative": 1.7204301075268821e-16
+        },
+        "max_temperature_departure_k": 2.59362624576163,
+        "material_depth_of_max_km": 25.419832223427726,
+        "current_depth_of_max_km": 25.750106249851328,
+        "min_temperature_departure_k": 0.00020119091557605287,
+        "warming_by_layer_k": [
+          {
+            "maximum": 2.354464967889231,
+            "volume_weighted_mean": 1.4786768911055017
+          },
+          {
+            "maximum": 2.59362624576163,
+            "volume_weighted_mean": 2.407078461287508
+          },
+          {
+            "maximum": 2.437363099473419,
+            "volume_weighted_mean": 2.142189401655223
+          },
+          {
+            "maximum": 1.5240764759414547,
+            "volume_weighted_mean": 0.2822211216422567
+          }
+        ],
+        "max_history_gain_by_layer": [
+          0.025818186661394904,
+          0.025816945292140403,
+          0.02480440920263316,
+          0.0
+        ],
+        "yielding_points_final": 23
+      },
+      "freshness": [
+        {
+          "geometry_relative": 1.777243077776201e-16,
+          "stage_relative": 1.9537041548726657e-12,
+          "stretch": 1.1302660631785661
+        },
+        {
+          "geometry_relative": 1.5522433140868698e-16,
+          "stage_relative": 2.1957487848697434e-10,
+          "stretch": 0.9871738771398075
+        }
+      ],
+      "compression_to_extension_speed": 0.07573617550332302
+    },
+    "refusal": {
+      "status": "PASS",
+      "seconds": 0.5115390999708325,
+      "passed": true,
+      "checks": {
+        "refuse_eulerian_geometry": true,
+        "refuse_asthenospheric_inflow": true,
+        "refuse_accumulated_strain_as_geometry": true,
+        "refuse_prescribed_main_motion": true,
+        "refuse_stationary_thermal_reference": true,
+        "refuse_drag_heats_column": true,
+        "refuse_latent_heat": true,
+        "refuse_frozen_propagator": true,
+        "refuse_widened_stretch": true,
+        "refuse_window_not_guaranteed": true,
+        "refuse_widened_temperature": true,
+        "refuse_temperature_guard": true,
+        "refuse_duration_beyond_bound": true,
+        "refuse_bound_mismatch": true,
+        "refuse_tuned_force": true,
+        "refuse_other_input": true,
+        "refuse_step_ceiling": true,
+        "refuse_relaxed_force_residual": true,
+        "refuse_relaxed_energy": true,
+        "refuse_relaxed_stretch_gate": true,
+        "refuse_relaxed_resolution": true,
+        "refuse_oversized_time_series": true,
+        "refuse_missing_policy_key": true,
+        "refuse_steps_0": true,
+        "refuse_steps_257": true,
+        "refuse_steps_2.0": true,
+        "refuse_window_wide_stretch": true,
+        "refuse_window_wide_temperature": true,
+        "refuse_window_without_reference": true,
+        "refuse_window_malformed": true,
+        "refuse_guard_above_ceiling": true,
+        "refuse_untyped_drive": true,
+        "refuse_amplified_heat": true,
+        "refuse_theta_shape": true,
+        "refuse_nonpositive_temperature": true,
+        "refuse_initial_outside_window": true,
+        "refuse_negative_history": true,
+        "refuse_warm_start_flag": true,
+        "refuse_geometry_flag": true,
+        "refuse_conduction_flag": true,
+        "refuse_thermal_for_other_column": true,
+        "refuse_temperature_prepared_base": true,
+        "refuse_stretched_preparation_as_base": true,
+        "refuse_stale_preparation": true,
+        "refuse_support_same_size_foreign": true,
+        "refuse_support_replaced_copy": true,
+        "refuse_modes_of_other_support": true,
+        "refuse_modes_without_conduction": true,
+        "refuse_conduction_off_with_fixed_temperatures": true,
+        "refuse_rebuild_with_modes": true,
+        "refuse_rebuild_not_reproducing_support": true,
+        "refuse_transported_pore_pressure": true,
+        "refuse_history_not_from_reference": true,
+        "refuse_history_leaves_window": true,
+        "refuse_compressive_nonmonotone_creep": true,
+        "stretch_predictor_atomic": true,
+        "stretch_final_endpoint_atomic": true,
+        "temperature_step_atomic": true,
+        "temperature_window_atomic": true,
+        "deadline_atomic": true,
+        "deadline_final_endpoint_atomic": true,
+        "expired_budget_before_first_balance_raises": true,
+        "nothing_lost_or_duplicated": true
+      },
+      "refused_cases": [
+        "accumulated_strain_as_geometry",
+        "amplified_heat",
+        "asthenospheric_inflow",
+        "bound_mismatch",
+        "compressive_nonmonotone_creep",
+        "conduction_flag",
+        "conduction_off_with_fixed_temperatures",
+        "drag_heats_column",
+        "duration_beyond_bound",
+        "eulerian_geometry",
+        "frozen_propagator",
+        "geometry_flag",
+        "guard_above_ceiling",
+        "history_leaves_window",
+        "history_not_from_reference",
+        "initial_outside_window",
+        "latent_heat",
+        "missing_policy_key",
+        "modes_of_other_support",
+        "modes_without_conduction",
+        "negative_history",
+        "nonpositive_temperature",
+        "other_input",
+        "oversized_time_series",
+        "prescribed_main_motion",
+        "rebuild_not_reproducing_support",
+        "rebuild_with_modes",
+        "relaxed_energy",
+        "relaxed_force_residual",
+        "relaxed_resolution",
+        "relaxed_stretch_gate",
+        "stale_preparation",
+        "stationary_thermal_reference",
+        "step_ceiling",
+        "steps_0",
+        "steps_2.0",
+        "steps_257",
+        "stretched_preparation_as_base",
+        "support_replaced_copy",
+        "support_same_size_foreign",
+        "temperature_guard",
+        "temperature_prepared_base",
+        "thermal_for_other_column",
+        "theta_shape",
+        "transported_pore_pressure",
+        "tuned_force",
+        "untyped_drive",
+        "warm_start_flag",
+        "widened_stretch",
+        "widened_temperature",
+        "window_malformed",
+        "window_not_guaranteed",
+        "window_wide_stretch",
+        "window_wide_temperature",
+        "window_without_reference"
+      ],
+      "stretch_window_fixture": {
+        "last_but_one": 1.1187398927641174,
+        "euler_last": 1.1290749435968719,
+        "final": 1.1292399511693216,
+        "third": 1.0183053889625175,
+        "euler_fourth": 1.0248213586842203
+      },
+      "accepted_before_refusal": {
+        "stretch_predictor": 3,
+        "stretch_endpoint": 15,
+        "temperature_window": 3,
+        "deadline": 7,
+        "deadline_final_endpoint": 15
+      },
+      "deadline_checks_probe": 183
+    },
+    "reuse": {
+      "status": "PASS",
+      "seconds": 5.288090199988801,
+      "passed": true,
+      "checks": {
+        "parity": true,
+        "same_gates": true
+      },
+      "warm_prepared_seconds": 1.034328599984292,
+      "cold_rebuilt_seconds": 4.250338100013323,
+      "saved_seconds": 3.216009500029031,
+      "saved_percent": 75.66479240837218,
+      "parity_relative": 1.9969246035984807e-11,
+      "warm_evaluations": 1286,
+      "cold_evaluations": 2676,
+      "warm_iterations": 18877,
+      "cold_iterations": 66907,
+      "scope": "one matched reference evolution after the other controls; warm root/stress guesses and one reference eigensystem with per-step clock factors versus cold roots and the retained support re-assembled at the step's effective geometry and eigendecomposed every accepted step; creep terms rebuilt at every stage in both; not a generator or world forecast"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_finite_strain.py": "8ae64cd9c34f2719b99960efbe64c10dde64a0345e11044956cfc11c7488d03b",
+    "cases/i01_finite_strain_v1.json": "e527d581df1ef7494bd244dc1e04734923535f964b836b6355a53526c5625acc",
+    "docs/I01_FINITE_STRAIN.md": "f5765c23c22db6523709761c39cf18c50ab7818b46dc058474ee19475c618d3d",
+    "tests/test_i01_finite_strain.py": "6e010bfb653230bb904c77611b96024e0f45287c63f4f5be60973679f2e6e78f",
+    "tools/check_i01_thermomechanical_motion.py": "f561ee0284ce0c0b240a741fa4356b6a5755418e778596ef21fcfc951243099d",
+    "tools/check_i01_column_heat.py": "9f9f9497a9ecfcc4b681b5820662964c676a5432c74b0cdad688ac193ec17ad8",
+    "tools/check_i01_motion_coupling.py": "7bae1652ed2c942c182fa96f0f416500c1034f4a3732eca101a6bb995f39b590",
+    "tools/check_i01_weakening.py": "93f76391cc2b9f6efe6d6e817bb9090e2854c27088c38402bc74cf24427fedb9",
+    "tools/check_i01_column.py": "7e4c4982718bdd28b0f6b88ef47677bea255ca4275d00dd3885c129b7114d8d9",
+    "cases/i01_thermomechanical_motion_v1.json": "d2edffe347a468b0aa6a10811b57077c022d63abb4d795a3b3846adb9224fe29",
+    "cases/i01_column_heat_v1.json": "5a5c7cef6a397d40217b2c06f918bed83b6f962e1eff329ea5daa8cd7fc977a0",
+    "cases/i01_motion_coupling_v1.json": "53dc1b0f4bd9986bcede076ba403f01634fba3cd90901c33628af717b4dbfbf0",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "evidence/i01-thermomechanical-motion-r1.json": "c9eb3b75cbd4f27aa36fa19809b8595b25769a4a58d829c19d3866cd9212ecc1",
+    "evidence/i01-column-heat-r2.json": "325f55b13ba18186e0262e3990ad4aa2f2d1236e5d83b4e864e3d9cb8e13dfd4",
+    "evidence/i01-motion-coupling-r1.json": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c"
+  },
+  "evidence_match": {
+    "receipts": {
+      "evidence/i01-thermomechanical-motion-r1.json": true,
+      "evidence/i01-column-heat-r2.json": true,
+      "evidence/i01-motion-coupling-r1.json": true
+    },
+    "recorded_sources": {
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_column_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_weakening_v1.json": true,
+      "docs/I01_COLUMN_HEAT.md": true,
+      "docs/I01_MOTION_COUPLING.md": true,
+      "docs/I01_THERMOMECHANICAL_MOTION.md": true,
+      "docs/I01_WEAKENING.md": true,
+      "evidence/i01-column-heat-r2.json": true,
+      "evidence/i01-column-r1.json": true,
+      "evidence/i01-motion-coupling-r1.json": true,
+      "evidence/i01-weakening-r2.json": true,
+      "tests/test_i01_column_heat.py": true,
+      "tests/test_i01_motion_coupling.py": true,
+      "tests/test_i01_thermomechanical_motion.py": true,
+      "tests/test_i01_weakening.py": true,
+      "tools/check_i01_column.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_weakening.py": true
+    },
+    "retained": {
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_weakening_v1.json": true
+    },
+    "imported": {
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true
+    }
+  },
+  "case": {
+    "schema": "atlas.i01-finite-strain-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "closed, laterally uniform, incompressible plane-strain material strip of unit strike under affine pure shear, driven by a constant external force against disjoint generalised drag and the layered column resistance at the current geometry, overburden and temperature, with material-coordinate conduction of the column's own creep/plastic dissipation and radiogenic heat; not asthenospheric inflow, extraction, lateral localisation, rupture, breakup, melting, Eulerian/I05 transport, spherical/world assembly, native integration or calibration",
+    "provenance": {
+      "physics": "reviewed cases/i01_thermomechanical_motion_v1.json and, through it, cases/i01_column_heat_v1.json, cases/i01_weakening_v1.json and cases/i01_motion_coupling_v1.json: layered material, densities, rheology, weakening law, gravity, inherited history, thermal layer properties, boundary temperatures and heat fractions (1, 1), all unchanged",
+      "drive": "the reviewed motion-case drive 2e13 N/m of strike, generalised drag 5e22 Pa s and belt width 1e5 m, used unchanged as the reference width w0 at lam = 1; authored controls, not calibrated Earth values",
+      "duration": "1e14 s: the column force always opposes motion, so |v| <= |F|/D = 4e-10 m/s and |lam - 1| <= |F| t/(D w0) = 0.4 for any column state and either sign of the drive; the window [0.6, 1.4] is therefore guaranteed before running. Chosen from that bound, not from an expected speed",
+      "windows": "stretch [0.6, 1.4] is exactly the drag-only reachable range at 1e14 s and no wider; temperatures [273, 1613] K are the reviewed surface and strip-base boundary temperatures",
+      "boundaries": "the reviewed fixed temperatures act at the material surface (273 K) and at the material base of the closed strip (1613 K), which moves to depth h0/lam; the region below is not modelled and contributes only this declared boundary conduction",
+      "oracles": "clock oracle: the column-heat case's two-layer eigenmode fixture under prescribed linear stretch histories ending at 1.375 and 0.625; homogeneous oracle: the column-heat case's insulated uniform wet-quartzite layer, whose supplied mean pressure is treated as the material point's reference overburden and scales as 1/lam",
+      "authored": "step counts, quadrature orders, prescribed oracle histories, departure amplitudes, refusal fixtures and the two new stretch refinement gates are authored control inputs frozen before any run"
+    },
+    "representation": {
+      "geometry": "closed laterally uniform incompressible plane-strain strip of unit strike; affine pure shear about the surface: w = w0 lam, z = z0/lam, h = h0/lam; no inflow, extraction, births or mixing",
+      "finite_strain": "log stretch ln(lam) with lam_dot = v/w0 = a lam; raw engineering plastic history is constitutive memory, never geometry",
+      "control": "constant external driving force balanced by disjoint generalised drag and the layered column resistance at the current geometry, overburden and temperature at every stage",
+      "thermal": "material-coordinate conduction C0 dT/dt = -lam^2 (K0 T - b0) + radiogenic + mechanical heat; constant per-material properties, perfect layer contact, fixed-temperature surface and strip base; fixed enthalpy reference",
+      "heating": "column creep plus plastic dissipation deposited once per material control volume; external drag dissipation is not column heat; no latent or adiabatic heat",
+      "time_integration": "one reference eigensystem; ETD2 along the thermal clock dtau = 2 dt/(lam_n^-2 + lam_a^-2); the same stage weights integrate history, stretch and every account; accepted endpoint re-solved before commit",
+      "stretch_window": [
+        0.6,
+        1.4
+      ],
+      "temperature_window_k": [
+        273.0,
+        1613.0
+      ],
+      "max_temperature_step_k": 5.0
+    },
+    "inputs": {
+      "thermomechanical_case": "cases/i01_thermomechanical_motion_v1.json"
+    },
+    "drive": {
+      "source": "reviewed motion-case drive, drag and reference width through the thermomechanical case, unchanged",
+      "duration_s": 100000000000000.0,
+      "drag_only_stretch_bound": 0.4
+    },
+    "campaign": {
+      "reference_order": 64,
+      "reference_steps": 256,
+      "time_steps": [
+        64,
+        128,
+        256
+      ],
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "kinematics": {
+        "order": 16,
+        "steps": 32,
+        "uniform_departure_k": 25.0
+      },
+      "clock": {
+        "order": 64,
+        "steps": [
+          64,
+          128,
+          256
+        ],
+        "final_stretch": [
+          1.375,
+          0.625
+        ],
+        "scaling_stretch": [
+          0.6,
+          0.8,
+          1.2,
+          1.4
+        ],
+        "recovery_steps": 4
+      },
+      "homogeneous": {
+        "order": 8,
+        "steps": [
+          64,
+          128,
+          256
+        ]
+      },
+      "states": {
+        "order": 16,
+        "steps": 16,
+        "rest_amplitude_k": 2.0
+      },
+      "refusal": {
+        "order": 8,
+        "steps": 16,
+        "window_steps": 8,
+        "temperature_margin_k": 10.0,
+        "temperature_guard_k": 0.001,
+        "compressive_volume_m3_mol": 0.001
+      }
+    },
+    "policy": {
+      "max_steps": 256,
+      "maximum_seconds": 120.0,
+      "force_relative": 1e-10,
+      "power_relative": 2e-10,
+      "work_relative": 2e-10,
+      "energy_relative": 1e-10,
+      "work_heat_relative": 1e-10,
+      "flow_relative": 1e-09,
+      "oracle_order_range": [
+        1.8,
+        2.2
+      ],
+      "oracle_relative": 1e-05,
+      "root_parity_relative": 1e-08,
+      "uniform_relative": 1e-13,
+      "time_velocity_relative": 0.0001,
+      "time_temperature_k": 0.01,
+      "time_history_relative": 0.0001,
+      "time_work_relative": 0.0001,
+      "time_stretch_relative": 0.0001,
+      "depth_velocity_relative": 0.003,
+      "depth_energy_relative": 0.01,
+      "depth_history_relative": 0.01,
+      "depth_work_relative": 0.003,
+      "depth_stretch_relative": 0.003,
+      "feedback_depth_relative": 0.03,
+      "coupling_resolution_factor": 10.0,
+      "parity_relative": 1e-08,
+      "eigen_finest_k": 0.01,
+      "kernel_parity_relative": 1e-10
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 13.635292599967215
+}

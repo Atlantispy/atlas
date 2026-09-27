@@ -11,7 +11,29 @@ For the remaining implementation sequence and its definition of completion, see
 the [complete tectonics integration plan](INTEGRATION_PLAN.md). The existing W12
 column assembly and exports are not the full evolved-world generator.
 
-## Read by process, not by development history
+## Follow a world through the generator
+
+Read down this table in execution order. It follows the existing New World and
+regional-continuation route, with the new force-driven connections identified
+where they belong. Not every supported regional case uses every physical process.
+
+| Order | What happens | Continue reading |
+| --- | --- | --- |
+| 1. Define the request | Choose the seed, world settings, extent and explicit assumptions. The seed makes the starting request reproducible; it is not geological history. | [Request and settings](how-it-works/04-new-worlds.md#1-make-a-reproducible-request) |
+| 2. Build the starting geometry | Construct connected plate regions and shared boundaries in a declared spatial frame. | [Plate layout](how-it-works/04-new-worlds.md#2-choose-plate-sizes-and-construct-connected-regions), [frames and geometry](how-it-works/01-foundations.md#w01-describe-space-geology-and-prescribed-motion) |
+| 3. Populate the starting material | Supply crust, layers, inherited structure and initial temperatures, keeping their origin and unknown history visible. | [Crust and materials](how-it-works/04-new-worlds.md#3-supply-crust-materials-and-inherited-structure), [initial temperature](how-it-works/04-new-worlds.md#4-assign-initial-temperature-without-inventing-thermal-history) |
+| 4. Establish motion and interpret boundaries | The existing route fits starting motion to the supplied crust and junction constraints. The I01 force-driven controls instead calculate motion from driving forces and resistance; they are not yet a replacement wired into New World. | [Initial motion](how-it-works/04-new-worlds.md#5-fit-initial-plate-motions-to-the-crust-and-junctions), [boundary interpretation](how-it-works/04-new-worlds.md#6-interpret-complete-boundaries-not-just-two-plate-arrows), [force-driven connections](how-it-works/06-physical-integration.md) |
+| 5. Prepare a compatible regional case | Sample the actual starting material into the chosen cells/columns and retain complete normal and sideways motion, units and inventories. | [Regional admission](how-it-works/04-new-worlds.md#7-admit-a-regional-experiment-from-the-saved-world), [sampling](how-it-works/01-foundations.md#sampling-points-and-finite-cells) |
+| 6. Advance the selected physical processes | Calculate supported deformation, material movement and thermal response. Where coupled, strength changes motion, motion changes heat/history/geometry, and those changes feed back into strength during subsequent integration stages. | [Existing regional evolution](how-it-works/04-new-worlds.md#8-calculate-deformation-and-its-vertical-response), [physical methods](how-it-works/02-tectonic-processes.md), [I01 feedbacks](how-it-works/06-physical-integration.md) |
+| 7. Calculate support and accept the new state | Translate compatible material/thermal changes into loads and vertical response. Check force, material and heat accounts and supported transition conditions before accepting an interval. Return to the calculation with the updated state; this is a loop, not a one-off stack of maps. | [Heat and support methods](how-it-works/01-foundations.md), [coupled loads and transition controls](how-it-works/06-physical-integration.md) |
+| 8. Save, inspect and hand off | Save accepted outputs and their identities, resume only compatible work, inspect maps/numerical fields and provide typed products to downstream modules. | [Save and resume](how-it-works/04-new-worlds.md#9-save-the-world-and-resume-only-compatible-work), [inspect a generated world](how-it-works/04-new-worlds.md#10-assess-an-actual-generated-world), [workflow and delivery](how-it-works/03-coupling-and-reliability.md) |
+
+Validation and safe reuse accompany the relevant step; they are not postponed
+until the final map. Support can also feed back within a coupled solve, rather
+than being calculated only after motion. The links distinguish existing runnable
+connections from I01's bounded controls and the remaining integration work.
+
+## Detailed chapters in that reading order
 
 The W-numbers identify work packages. They are useful references, but they are
 not twelve commands that every world must run in order. Each package contains
@@ -21,15 +43,22 @@ records, papers and relevant existing software.
 
 | Chapter | What it explains |
 | --- | --- |
-| [1. Foundations: W01–W04](how-it-works/01-foundations.md) | Frames and time; plate geometry and boundaries; geological descriptions and sampling; full-vector forcing; material transport, remapping and moving grids; cooling, compaction, physical loads and elastic support. |
-| [2. Physical processes: W05–W08](how-it-works/02-tectonic-processes.md) | Extension; crust birth and spreading histories; regional flow and material laws; surface/thermal feedback; shortening, sliding and underthrusting; subduction; finite magma and supported regime joins. |
-| [3. Coupling and reliability: W09–W12](how-it-works/03-coupling-and-reliability.md) | Retained water/erosion interfaces; validation at different levels; measured optimisation, caching, storage and parallelism; actual workflow assembly, exports, jobs and recovery. |
-| [4. From a seed to a saved world](how-it-works/04-new-worlds.md) | Reproducible settings; candidate plates, initial crust and temperatures; crust-conditioned motion and junctions; regional evolution; project/bundle save/load; numerical and visual realism assessment. |
-| [5. The separate force-driven experiment](how-it-works/05-experimental-dynamics.md) | Local material laws and strain memory; physical-length regularisation; buoyancy-driven flow; coupled heat/composition; the unfinished mature-convection challenge. |
+| [1. Start-to-finish overview: from a seed to a saved world](how-it-works/04-new-worlds.md) | Reproducible settings; candidate plates, initial crust and temperatures; crust-conditioned motion and junctions; regional evolution; project/bundle save/load; numerical and visual realism assessment. |
+| [2. Foundations: W01–W04](how-it-works/01-foundations.md) | Frames and time; plate geometry and boundaries; geological descriptions and sampling; full-vector forcing; material transport, remapping and moving grids; cooling, compaction, physical loads and elastic support. |
+| [3. Physical processes: W05–W08](how-it-works/02-tectonic-processes.md) | Extension; crust birth and spreading histories; regional flow and material laws; surface/thermal feedback; shortening, sliding and underthrusting; subduction; finite magma and supported regime joins. |
+| [4. Connecting the physical processes: I01](how-it-works/06-physical-integration.md) | Strength, localisation and evolving history; solved motion with heat feedback and finite deformation; shared-column gravitational driving; finite-water loading; melt composition/delivery and transition safeguards. |
+| [5. Coupling, delivery and reliability: W09–W12](how-it-works/03-coupling-and-reliability.md) | Retained water/erosion interfaces; validation at different levels; measured optimisation, caching, storage and parallelism; actual workflow assembly, exports, jobs and recovery. |
+| [Appendix: the separate force-driven experiment](how-it-works/05-experimental-dynamics.md) | Local material laws and strain memory; physical-length regularisation; buoyancy-driven flow; coupled heat/composition; the unfinished mature-convection challenge. This is a separate route, not another mandatory stage. |
 
 Each chapter is a current explanation, not a separate historical version. The
 specialist method documents remain the place for full equations, exact contracts
 and detailed recorded experiments.
+
+The I-numbers belong to the later integration programme, not a renaming of the
+W-packages. The I01 chapter explains the bounded connections built to test its physical
+choices. It distinguishes those implemented controls from the remaining work to
+assemble an evolving world; it does not replace the separate experimental appendix.
+File names are stable link identifiers, not instructions about execution order.
 
 ## The complete W-package map
 
@@ -160,6 +189,13 @@ newly executed cross-code benchmark. Where the connection is an Atlas scenario
 choice, the guide says so rather than borrowing a paper's authority.
 
 When a method changes, update its explanation, code/evidence links and affected
-connection here. Do not create dated copies or paste a running development log.
+connection in the relevant chapter as part of the same delivery. Update this index
+and the READMEs when coverage changes. Keep explanations in generation/dependency
+order, showing feedback loops and optional branches rather than development dates
+or W/I numbering. Explain the process, its inputs and outputs,
+the role of papers/software actually consulted, and what the checks establish.
+Use existing evidence where valid; documentation maintenance alone does not need
+a numerical rerun or a rewritten source-bound receipt. Do not create dated copies
+or paste a running development log.
 Use [the roadmap](../../docs/ATLAS_ROADMAP.md) for planned work and
 [the tectonics README](../README.md) for execution entry points.

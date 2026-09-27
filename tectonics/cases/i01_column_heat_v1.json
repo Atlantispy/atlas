@@ -1,0 +1,93 @@
+{
+  "schema": "atlas.i01-column-heat-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "fixed-geometry, small-strain, laterally uniform layered column at a supplied axial rate: conservative conduction and once-only creep/plastic dissipation feeding temperature back into the reviewed weakening law; not advection, finite strain, rupture, breakup, global coupling or calibration",
+  "provenance": {
+    "mechanics": "reviewed cases/i01_weakening_v1.json (bound by the weakening r2 receipt): layers, densities, rheology, weakening law, gravity, inherited history, axial rate 1e-15/s and total strain 0.04",
+    "thermal": "ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, retrieved 2026-09-27): conductivity 2.5 W/m/K, heat capacity 750 J/kg/K, compositional heating 1.0e-6 / 0.25e-6 / 0 W/m3 for upper crust / lower crust / mantle lithosphere, box boundary temperatures 273 K top and 1613 K bottom, and the initial-temperature function constants reproduced under cookbook_constants",
+    "initial_state": "discrete steady conduction of this operator with those sources and boundaries; it approximates the cookbook's analytic piecewise-quadratic geotherm (checked in the conduction control)",
+    "heat_partition": "all creep and plastic dissipation becomes heat (fractions 1, 1): an explicit D4 choice, not a calibrated rock-specific partition; the cookbook itself does not enable shear heating",
+    "authored": "the homogeneous, two-layer eigenmode, uniform-source and refusal fixtures, step counts, the 5 K step guard and every tolerance are authored control inputs, not Earth values"
+  },
+  "representation": {
+    "geometry": "fixed laterally uniform column; material depth coordinates; small strain; no advection",
+    "thermal_support": "one control volume per mechanical Gauss point; widths equal its quadrature weight; interfaces exact",
+    "conduction": "conservative one-dimensional finite volume; series interface resistance; constant per-layer properties",
+    "time_integration": "exact modal conduction with second-order source quadrature; Heun history; atomic accepted steps",
+    "heating": "creep plus plastic dissipation of the reviewed law deposited once; radiogenic heat only in the steady reference",
+    "control": "supplied axial rate",
+    "max_axial_strain": 0.05,
+    "max_temperature_step_k": 5.0
+  },
+  "mechanics": {
+    "weakening_case": "cases/i01_weakening_v1.json",
+    "use": "layers, densities, weakening law, gravity, inherited history, supplied axial rate and total strain; its linear temperature profiles are only the preparation template and are replaced by the thermal state"
+  },
+  "thermal_layers": [
+    {"name": "upper-crust-wet-quartzite", "conductivity_w_m_k": 2.5, "heat_capacity_j_kg_k": 750.0, "radiogenic_w_m3": 1.0e-6},
+    {"name": "lower-crust-wet-anorthite", "conductivity_w_m_k": 2.5, "heat_capacity_j_kg_k": 750.0, "radiogenic_w_m3": 2.5e-7},
+    {"name": "mantle-lid-dry-olivine", "conductivity_w_m_k": 2.5, "heat_capacity_j_kg_k": 750.0, "radiogenic_w_m3": 0.0},
+    {"name": "mantle-lithosphere-dry-olivine", "conductivity_w_m_k": 2.5, "heat_capacity_j_kg_k": 750.0, "radiogenic_w_m3": 0.0}
+  ],
+  "boundaries": {"top": {"type": "temperature", "value_k": 273.0}, "bottom": {"type": "temperature", "value_k": 1613.0}},
+  "heat_fractions": [1.0, 1.0],
+  "cookbook_constants": {
+    "surface_heat_flow_w_m2": 0.055,
+    "interface_heat_flow_w_m2": [0.035, 0.030],
+    "interface_temperature_k": [633.0, 893.0],
+    "source": "Function constants ts1-3, qs1-3, A1-3, k1-3 of the cookbook's initial temperature; a check that the layered analytic reference reproduces them"
+  },
+  "campaign": {
+    "reference_order": 64,
+    "reference_steps": 64,
+    "time_steps": [32, 64, 128],
+    "orders": [32, 64, 128],
+    "steady_orders": [16, 32, 64, 128],
+    "homogeneous": {
+      "layer": {"name": "uniform-wet-quartzite", "thickness_m": 10000.0, "temperature_k": [600.0, 600.0], "mean_pressure_pa": [150000000.0, 150000000.0], "pore_pressure_pa": [0.0, 0.0], "grain_m": 0.001, "cohesion_pa": 20000000.0, "friction_rad": 0.5235987755982988, "plastic_viscosity_pa_s": 1e21, "creep": [{"a": 8.57e-28, "n": 4.0, "energy_j_mol": 223000.0}]},
+      "thermal": {"density_kg_m3": 2700.0, "heat_capacity_j_kg_k": 750.0, "conductivity_w_m_k": 2.5},
+      "order": 8,
+      "rate_s": 1e-15,
+      "initial_history": 2.0,
+      "total_strain": 0.04,
+      "steps": [16, 32, 64]
+    },
+    "eigenmode": {
+      "thickness_m": [20000.0, 30000.0],
+      "conductivity_w_m_k": [2.5, 4.0],
+      "density_kg_m3": [2700.0, 3300.0],
+      "heat_capacity_j_kg_k": [750.0, 1200.0],
+      "boundary_k": 273.0,
+      "amplitude_k": 100.0,
+      "efolds": 1.0,
+      "steps": 4,
+      "orders": [16, 32, 64]
+    },
+    "uniform_source": {"thickness_m": 10000.0, "order": 16, "conductivity_w_m_k": 2.5, "density_kg_m3": 2700.0,
+                       "heat_capacity_j_kg_k": 750.0, "temperature_k": 600.0, "source_w_m3": 1e-6,
+                       "duration_s": 1e13, "steps": 8},
+    "refusal": {"fast_rate_s": 1e-13, "strain": 0.04, "steps": 1, "strain_steps": 16, "excess_strain": 0.06}
+  },
+  "policy": {
+    "max_steps": 256,
+    "maximum_seconds": 120.0,
+    "steady_order_range": [1.8, 2.2],
+    "steady_finest_k": 0.01,
+    "flow_relative": 1e-9,
+    "cookbook_temperature_k": 1e-9,
+    "uniform_source_relative": 1e-12,
+    "eigen_order_range": [1.8, 2.2],
+    "eigen_finest_k": 0.01,
+    "energy_relative": 1e-10,
+    "work_heat_relative": 1e-10,
+    "oracle_order_range": [1.8, 2.2],
+    "oracle_relative": 1e-5,
+    "uniform_relative": 1e-13,
+    "time_force_relative": 1e-4,
+    "time_temperature_k": 0.01,
+    "depth_force_relative": 0.003,
+    "depth_energy_relative": 0.01,
+    "feedback_depth_relative": 0.03,
+    "coupling_resolution_factor": 10.0
+  }
+}

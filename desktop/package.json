@@ -1,0 +1,9 @@
+{
+  "name": "atlas-desktop",
+  "productName": "Atlas",
+  "version": "0.1.0",
+  "description": "Atlas tectonics development desktop",
+  "main": "main.cjs",
+  "license": "AGPL-3.0-only",
+  "private": true
+}

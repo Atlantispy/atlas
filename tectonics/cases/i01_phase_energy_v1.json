@@ -1,0 +1,27 @@
+{
+  "schema": "atlas.i01-phase-energy-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"max_components":64,"max_iterations":64,"temperature_tolerance_k":1e-7,"account_relative_tolerance":2e-11,"benchmark_calls":40,"benchmark_repetitions":3},
+  "model": {
+    "component_ids": ["fusible","refractory"],
+    "latent_j_kg": [300000.0,600000.0],
+    "melting_k": [1113.9383772468966,1814.4139844167523],
+    "solid_volume_m3_kg": [0.00030303030303030303,0.00028571428571428574],
+    "liquid_volume_m3_kg": [0.0003448275862068965,0.0003225806451612903],
+    "energy_offset_j_kg": [0.0,0.0],
+    "cp_j_kg_k": 1000.0,
+    "mixing_r_j_kg_k": 100.0,
+    "reference_temperature_k": 1000.0,
+    "reference_pressure_pa": 1000000000.0,
+    "temperature_bounds_k": [600.0,2600.0],
+    "pressure_bounds_pa": [0.0,3500000000.0],
+    "source_id": "analytical-ideal-mixture-not-mantle-calibration"
+  },
+  "pressure_pa": 1000000000.0,
+  "temperature_k": 1500.0,
+  "component_mass_kg": [4000.0,6000.0],
+  "extraction_fraction": 0.5,
+  "cooled_enthalpy_j": 0.0,
+  "expected": {"initial_h_j":5800000000.0,"removed_h_j":900000000.0,"residual_h_j":4900000000.0,"removed_mass_kg":1000.0,"residual_liquid_kg":1000.0,"recovered_temperature_k":1500.0,"cooled_temperature_k":1000.0,"cooled_liquid_kg":0.0,"heat_to_surroundings_j":900000000.0,"component_residual_kg":0.0,"total_energy_residual_j":0.0},
+  "absolute_tolerance": {"initial_h_j":0.01,"removed_h_j":0.01,"residual_h_j":0.01,"removed_mass_kg":1e-7,"residual_liquid_kg":1e-5,"recovered_temperature_k":1e-7,"cooled_temperature_k":1e-7,"cooled_liquid_kg":0.0,"heat_to_surroundings_j":0.1,"component_residual_kg":1e-8,"total_energy_residual_j":0.01}
+}

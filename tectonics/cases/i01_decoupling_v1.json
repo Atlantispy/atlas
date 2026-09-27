@@ -1,0 +1,19 @@
+{
+  "schema": "atlas.i01-decoupling-cases.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "Conditional scalar motion-admission controls, not a material calibration or rupture criterion",
+  "policy": {"max_stress_exponent": 8, "oracle_bracket_bits": 44, "benchmark_repetitions": 100, "oracle_relative_tolerance": 1e-12},
+  "controls": [
+    {"name": "linear", "law": {"force": 1, "drag": 1, "yield_force": 0, "coefficient": 1, "exponent": 1}, "exact_ratio": "1/2", "tolerance": 0.5, "expected_admission": true},
+    {"name": "yield_plateau", "law": {"force": 1, "drag": 1, "yield_force": 0.875, "coefficient": 0, "exponent": 1}, "exact_ratio": "1/8", "tolerance": 0.01, "expected_admission": false},
+    {"name": "yield_and_rate", "law": {"force": 1, "drag": 1, "yield_force": 0.25, "coefficient": 0.5, "exponent": 1}, "exact_ratio": "1/2", "tolerance": 0.49, "expected_admission": false},
+    {"name": "square_root", "law": {"force": 1, "drag": 1, "yield_force": 0, "coefficient": 1, "exponent": 2}, "tolerance": 0.62, "expected_admission": true},
+    {"name": "sticking", "law": {"force": 1, "drag": 1, "yield_force": 1, "coefficient": 0.5, "exponent": 3}, "exact_ratio": "0", "tolerance": 0.99, "expected_admission": false},
+    {"name": "free", "law": {"force": 1, "drag": 1, "yield_force": 0, "coefficient": 0, "exponent": 8}, "exact_ratio": "1", "tolerance": 0, "expected_admission": true}
+  ],
+  "units": {"force": "N/m", "drag": "Pa s", "yield_force": "N/m", "coefficient": "(N/m)/(m/s)^(1/n)", "exponent": "dimensionless integer n"},
+  "provenance": "Authored analytical fixtures. No geological constants or production accuracy tolerance selected.",
+  "window_policy": "Fixed force, drag, exponent and direction; the coefficient envelope must cover all times and fully coupled histories, not merely endpoint samples.",
+  "refusals": ["missing envelope", "envelope excluding current state", "changing drive/drag/exponent", "nonfinite or negative inputs", "unrepresentable display bounds", "unsupported noninteger stress exponent", "motion or displacement error over limit"],
+  "limitations": ["No fracture, polarity, geometry or material-transfer acceptance", "No general non-associated/elastic or rate-weakening solver", "No envelope inferred from snapshots", "Native production and Claude thermal work remain separate"]
+}

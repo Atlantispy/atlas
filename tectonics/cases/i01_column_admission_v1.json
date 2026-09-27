@@ -1,0 +1,14 @@
+{
+  "schema": "atlas.i01-column-admission-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "Sufficient exact bound on represented fixed-column motion omission, not a generated rupture criterion or continuum enclosure",
+  "provenance": "Unchanged layered material/weakening inputs and external drive from reviewed I01 controls. Analytical linear and mixed-mechanism controls are authored, not calibrated geological defaults. Tolerances freeze acceptance before execution.",
+  "drive": {"force_n_m": 20000000000000.0, "drag_pa_s": 5e22, "width_m": 100000.0},
+  "duration_s": 1000000000000.0,
+  "orders": [16, 32, 64],
+  "relative_tolerance": 0.01,
+  "analytical_tolerance": 0.00001,
+  "displacement_limit_m": 100.0,
+  "policy": {"maximum_seconds": 30.0, "repetitions": 10, "batches": 3, "oracle_relative": 1e-8, "inequality_relative": 1e-9},
+  "limitations": ["fixed geometry/temperature/pore/drive", "positive extension", "nondecreasing raw history", "positive plastic regularisation at every point", "0.05 total small-strain ceiling including earlier accepted strain", "failed bound means not certified, not proof of excessive actual error"]
+}

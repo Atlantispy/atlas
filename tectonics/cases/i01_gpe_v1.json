@@ -1,0 +1,15 @@
+{
+  "schema": "atlas.i01-gpe-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"max_columns": 32768, "max_layers": 32, "max_stencil_points": 8192, "max_density_anomaly": 0.1, "algebra_relative": 1e-11, "finest_torque_relative": 0.001, "benchmark_repetitions": 5},
+  "datum": {"pressure_pa": 6474600000, "compensation_elevation_m": -200000, "mantle_density_kg_m3": 3300, "gravity_m_s2": 9.81, "reference_temperature_k": 293.15},
+  "radius_m": 6371000,
+  "reduction": 1,
+  "drag_pa_s_m": 600000000000000,
+  "mean_crust_m": 35000,
+  "thickness_squared_amplitude_m2": 400000000,
+  "crust_density_kg_m3": 2800,
+  "orders": [4, 8, 16],
+  "benchmark_columns": 4096,
+  "source": "Authored dry spherical two-hemisphere control: h(n)^2=h0^2+A*n_x, giving an exactly degree-one GPE anomaly. Constant crust/mantle densities and basal drag; no extra ridge-push, slab or interface force. Parameters are control assumptions, not calibrated planet defaults. Central great-circle gradient steps halve with quadrature order."
+}

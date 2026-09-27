@@ -221,9 +221,97 @@ performance measurement. Do not postpone all testing or optimisation until I11.
 
 Delivered design/control slice: [I01 physical contract](I01_PHYSICAL_CONTRACT.md),
 [versioned case record](../cases/i01_closures_v1.json) and
-[bounded control evidence](../evidence/i01-controls-r1.json). The 1D localisation
-result is not 2D boundary/rupture acceptance. D2/D6 physical closure remains open;
-consult current state for the next discriminating work, not an assumed I02 start.
+[bounded control evidence](../evidence/i01-controls-r1.json), followed by a bounded
+[2D localisation probe](I01_FAULT2D.md), [pressure/temperature mechanical snapshots](I01_STRENGTH.md)
+and [reviewed D6 transition specification and controls](I01_TRANSITIONS.md).
+The [nonlinear motion-admission certificate](I01_DECOUPLING.md) supplies a bounded
+scalar prerequisite, not a physical rupture trigger. The reviewed
+actual-column extension in [I01_COLUMN_ADMISSION.md](I01_COLUMN_ADMISSION.md)
+now derives a sufficient exact upper bound from the represented mixed-creep
+column for fixed-geometry, fixed-temperature extension windows. Its ten tests
+and eight controls pass without fitting the rheology; non-admission is not
+misreported as excessive actual error. It remains separate from physical
+separation and finite-strain transport. The reviewed
+[thermal/history prototype](I01_THERMAL.md) now evolves temperature and accumulated
+plastic history with the retained mechanical response in a bounded small-strain
+material/reference cell. Analytical, grid/time, energy/history and refusal
+controls pass; finite-strain transport and global embedding remain open.
+The independent [phase-aware melt-delivery connection](I01_DELIVERY.md) now joins
+finite liquid separation to unchanged W08 placement/cooling with conserved
+component and enthalpy accounts. It requires a prescribed extraction amount.
+The independent [dry decompression control](I01_MELTING.md) now produces retained
+melt while coupling phase equilibrium and thermal cooling along a supplied
+pressure path. Its exact and tighter-reference controls pass. Compatible phase
+thermodynamics between this batch law and the common-Tm delivery law, extraction,
+transport and source compaction remain physical closures; the two prototypes are
+not silently joined by passing a fraction between incompatible models.
+The independent [composition-aware phase partition](I01_PHASE_PARTITION.md)
+now provides a fixed-P/T component-balance prerequisite: extraction changes
+bulk composition and re-equilibration preserves the depleted liquid inventory.
+Nine tests and an analytical binary control pass. It does not supply missing
+phase enthalpies or connect the incompatible thermal laws; a shared provider
+must own `F,c_s,c_l,h_s,h_l`, a common datum and pressure-work convention before
+the existing W08 emplacement can receive its energy-bearing payload. I01 owns
+that model choice; I05 owns moving thermal/material implementation and I06 its
+ocean-birth use. No reset of original Katz composition after extraction.
+The [nonlinear column-resistance control](I01_COLUMN.md) adds published-convention
+creep coefficients, regularised friction and depth-integrated force/work for
+explicit supplied profiles. It is a constitutive diagnostic, not a resolved
+rupture reaction or an automatic replacement for the existing D2 solver.
+The reviewed [evolving column-weakening adapter](I01_WEAKENING.md) now evolves
+raw per-point plastic history and transmitted resistance with the compatible
+vertical/mean-pressure closure, fixed-rate/force controls and bounded history
+envelopes. Immutable preparation and direct-entry guards were corrected during
+review. Temperature remains prescribed; it is not laterally resolved rifting,
+thermal feedback, finite-strain evolution or a separation criterion. The column's
+mixed creep exponents also do not directly fit the scalar decoupling family.
+The new [resistance-to-motion connection](I01_MOTION_COUPLING.md) balances
+external driving force against disjoint generalised drag and that evolving
+column resistance. It solves rate at each history stage, with signed nonlinear
+root checks, consistent work, time/depth refinement and measured warm-start reuse.
+This is a fixed-temperature regional feasibility connection, not spherical
+assembly or a rigorous separation certificate. The reviewed
+[column-heat connection](I01_COLUMN_HEAT.md) now evolves conduction, mechanical
+heat and thermal weakening on identical depth support. Nineteen focused tests
+and all seven corrected r2 controls pass; geometry/capacity pairing and physical
+layer-mean reporting were repaired without changing the valid-case physics.
+The reviewed [force-driven thermal/motion connection](I01_THERMOMECHANICAL_MOTION.md)
+now joins force-balanced motion to that thermal/history evolution, keeping
+external drag dissipation out of the column heat account. Twelve focused tests
+and all six bounded controls pass, including second-order homogeneous oracles,
+coupled time/depth refinement and atomic refusals. It does not replace
+finite-strain transport or a physical separation criterion.
+The reviewed [finite-strain column](I01_FINITE_STRAIN.md) now connects changing
+width/thickness and pressure with material-following temperature/history and
+force-balanced motion in a closed affine strip. Twenty-three tests and all seven
+corrected r2 controls pass; mass, capacity, work and heat are accounted together.
+This removes the fixed-geometry limit for that bounded representation, not for
+lateral/localised flow or rupture. Its measured eigensystem/warm-start reuse
+saves 75.66% on one matched control; no world-runtime claim.
+The [finite-water/flexure control](I01_WATER_FLEXURE.md) now couples a 2D periodic,
+constant-rigidity plate to a changing wet mask and conserved water volume.
+Dry restoring force, shared endpoint, exact controls and grid refinement are
+checked; no double water feedback or repeated addition of total deflection.
+This is D5 closure feasibility, not I08 finite-regional/global embedding.
+The [dry columns-to-GPE connection](I01_GPE.md) now uses the same material and
+thermal columns for support and driving traction, with a common compensated
+datum and no extra ridge push. Exact layer moments, spherical gradients and
+the retained D1 torque solver are checked together against analytical hemisphere
+rotations and work. This is D1/D5 feasibility, not I04 evolving-world sampling;
+water-loaded or mechanically resolved columns need their own compatible join.
+The reviewed [finite-strain admission](I01_FINITE_ADMISSION.md) connects a
+conditional conservative motion bound to issued states of the evolving strip,
+preserving absolute reference, elapsed time and history. Its nineteen tests and
+five bounded controls pass; no rupture or automatic switch is authorised.
+Efficient persisted continuation belongs to I02/I05, not another I01 adapter.
+The [common ideal-mixture energy law](I01_PHASE_ENERGY.md) and
+[compatible finite receiver](I01_MAGMA_RECEIVER.md) also close bounded
+composition/enthalpy feasibility; they do not calibrate mantle material or select
+pressure transport and extraction rates. Their current receipts and remaining
+boundaries are recorded in the current-state page.
+These controls are not generated boundary/rupture acceptance. D2/D6 physical
+closure remains open; consult current state for the remaining dependencies,
+not an assumed I02 start. Original I01 source-bound files and receipts are unchanged.
 
 **Depends on:** this plan. **Work:** turn D1–D6 into versioned, testable model
 specifications; define generated versus prescribed modes and required/unsupported

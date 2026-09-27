@@ -1,0 +1,17 @@
+{
+  "schema": "atlas.i01-motion-coupling-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "fixed-temperature small-strain column plus disjoint generalised drag; constant external drive, no global coupling or separation certificate",
+  "provenance": "Authored force, width, integrated drag, duration and gates; layer physics and inherited engineering plastic history from reviewed i01_weakening_v1.json. No fit to an Earth speed.",
+  "drive_n_m": 20000000000000.0,
+  "drag_pa_s": 5e22,
+  "width_m": 100000.0,
+  "duration_s": 30000000000000.0,
+  "strain_bound": 0.05,
+  "orders": [32, 64, 128],
+  "steps": [16, 32, 64],
+  "time_relative": 0.0001,
+  "depth_relative": 0.003,
+  "parity_relative": 1e-8,
+  "maximum_seconds": 120.0
+}

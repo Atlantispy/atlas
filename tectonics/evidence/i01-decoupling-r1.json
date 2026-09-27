@@ -1,0 +1,122 @@
+{
+  "schema": "atlas.i01-decoupling-control.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "source_sha256": {
+    "tools/check_i01_decoupling.py": "95b52a1a11f36a3275ace151f222ed528c16d8d9f7dbff4ab4a23f8235032a9a",
+    "tests/test_i01_decoupling.py": "d2ac995ce4e064cd906fa348150bfbaf5edadf4921ebdca075e4abe0807c95fb",
+    "cases/i01_decoupling_v1.json": "16991de3bcb4146b426ad32f4cf30027e54177f6863ca81d9c2a96bef74fcdec",
+    "docs/I01_DECOUPLING.md": "2ccf454880feadd1a158fb8203452769c80589f14fb4a43b885f24dc3e05573d"
+  },
+  "passed": true,
+  "cases": [
+    {
+      "name": "linear",
+      "admitted": true,
+      "speed_ratio_bracket": [
+        0.5,
+        0.5000000000000568
+      ],
+      "passed": true
+    },
+    {
+      "name": "yield_plateau",
+      "admitted": false,
+      "speed_ratio_bracket": [
+        0.125,
+        0.12500000000005684
+      ],
+      "passed": true
+    },
+    {
+      "name": "yield_and_rate",
+      "admitted": false,
+      "speed_ratio_bracket": [
+        0.5,
+        0.5000000000000568
+      ],
+      "passed": true
+    },
+    {
+      "name": "square_root",
+      "admitted": true,
+      "speed_ratio_bracket": [
+        0.38196601125008556,
+        0.3819660112501424
+      ],
+      "passed": true
+    },
+    {
+      "name": "sticking",
+      "admitted": false,
+      "speed_ratio_bracket": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "name": "free",
+      "admitted": true,
+      "speed_ratio_bracket": [
+        1.0,
+        1.0
+      ],
+      "passed": true
+    }
+  ],
+  "window": {
+    "missing": {
+      "snapshot_passed": true,
+      "numerical_admissible": false,
+      "generated_separation_authorised": false,
+      "status": "REFUSED_MISSING_WINDOW_ENVELOPE"
+    },
+    "pulse": {
+      "snapshot_passed": true,
+      "numerical_admissible": false,
+      "generated_separation_authorised": false,
+      "status": "REFUSED_MOTION_ERROR",
+      "reference_speed_m_s": 1.0,
+      "relative_error_limit": 0.01,
+      "duration_s": 10.0
+    },
+    "weak": {
+      "snapshot_passed": true,
+      "numerical_admissible": true,
+      "generated_separation_authorised": false,
+      "status": "PASS_CONDITIONAL_WINDOW",
+      "reference_speed_m_s": 1.0,
+      "relative_error_limit": 0.01,
+      "duration_s": 10.0,
+      "speed_error_bound_m_s": 0.01,
+      "displacement_error_bound_m": 0.1,
+      "driving_work_error_bound_J_m": 0.1
+    },
+    "tight": {
+      "snapshot_passed": true,
+      "numerical_admissible": false,
+      "generated_separation_authorised": false,
+      "status": "REFUSED_MOTION_ERROR",
+      "reference_speed_m_s": 1.0,
+      "relative_error_limit": 0.0001,
+      "duration_s": 10.0
+    }
+  },
+  "benchmark": {
+    "count": 100,
+    "bisection_seconds": 0.02357520000077784,
+    "direct_seconds": 0.0005242999759502709,
+    "saved_seconds": 0.02305090002482757,
+    "saved_percent": 97.77605290333499,
+    "decisions_equal": true,
+    "scope": "one small prepared-state comparison, not whole-generator speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.0658255000016652
+}

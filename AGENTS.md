@@ -14,6 +14,20 @@ code review and scientific acceptance are separate outcomes.
 3. Inspect only the affected code, retained imports and named tests. Batch
    independent reads. Reuse verified evidence unless the source changed.
 
+## Keep the scientific explanation current
+
+As part of each completed method or integration change, update the affected
+reader chapter under `tectonics/docs/how-it-works/` and its specialist method
+document where needed. Explain what happens, inputs/outputs, the papers/software
+actually consulted and what the checks establish. Update the guide index and
+README links when coverage changes; keep delivery status in `docs/CURRENT_STATE.md`.
+Arrange the reader guide in generation/dependency order, with explicit feedback
+loops and optional routes, not implementation dates or W/I package numbering.
+Do not duplicate a progress log or imply a cited source was newly read or benchmarked.
+Finish source-bound method documentation before capturing new evidence; never
+rewrite an old receipt for a documentation update. Documentation-only edits get
+focused content/link and required static checks, not scientific reruns.
+
 ## Change boundaries
 
 - Make one scoped change using the owner's requested delivery route. Direct-to-main

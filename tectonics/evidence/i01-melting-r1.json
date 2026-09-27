@@ -1,0 +1,166 @@
+{
+  "schema": "atlas.i01-melting.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_melting.py": "009ba9b87dfa67973b486c188f4b1bffa4f8a488b5145f250bcf848171ae1196",
+    "tests/test_i01_melting.py": "a96246cc811a221c8c631e1b76faa03e4b1f25ecf541b28976083b9cab750a0e",
+    "cases/i01_melting_v1.json": "5e36fe7a850753817eb513c780b667493d0824a8bc762392ba1e8c59f7b65bcd",
+    "docs/I01_MELTING.md": "5d73f18aeae5fced645d6defbf684d52f8b1fda7ef27cc554ac82c983e14aff5"
+  },
+  "passed": true,
+  "controls": [
+    {
+      "name": "melting-onset",
+      "result": {
+        "temperature_k": 1514.124679734665,
+        "initial_fraction": 0.0,
+        "final_fraction": 0.22493143238225127,
+        "net_produced_fraction": 0.22493143238225127,
+        "final_branch": "cpx_present",
+        "evaluated_branches": [
+          "cpx_present",
+          "solid"
+        ],
+        "accepted_steps": 22,
+        "evaluations": 200,
+        "path_residual_j_kg_k": -0.000783140833867435,
+        "thermal_adiabatic_j_kg": -71438.3388710735,
+        "latent_term_j_kg": 107436.98139426156,
+        "thermal_equation_residual_j_kg": 1.1641532182693481e-10,
+        "retained_melt_mass_kg": 2249.3143238225125,
+        "solid_mass_kg": 7750.685676177487,
+        "net_produced_melt_kg": 2249.3143238225125
+      },
+      "seconds": 0.0011260000173933804,
+      "tighter_reference": {
+        "temperature_k": 1514.125226484736,
+        "initial_fraction": 0.0,
+        "final_fraction": 0.22493273115515675,
+        "net_produced_fraction": 0.22493273115515675,
+        "final_branch": "cpx_present",
+        "evaluated_branches": [
+          "cpx_present",
+          "solid"
+        ],
+        "accepted_steps": 33,
+        "evaluations": 530,
+        "path_residual_j_kg_k": 3.0619173116974707e-06,
+        "thermal_adiabatic_j_kg": -71438.41707562846,
+        "latent_term_j_kg": 107436.35643963564,
+        "thermal_equation_residual_j_kg": 8.731149137020111e-11
+      },
+      "temperature_difference_k": 0.0005467500709528395,
+      "fraction_difference": 1.2987729054725339e-06,
+      "passed": true
+    },
+    {
+      "name": "cpx-exhaustion",
+      "result": {
+        "temperature_k": 1561.9412388341252,
+        "initial_fraction": 0.02315364474830557,
+        "final_fraction": 0.3004899839136771,
+        "net_produced_fraction": 0.27733633916537154,
+        "final_branch": "cpx_exhausted",
+        "evaluated_branches": [
+          "cpx_exhausted",
+          "cpx_present"
+        ],
+        "accepted_steps": 32,
+        "evaluations": 296,
+        "path_residual_j_kg_k": 0.0007324892167375197,
+        "thermal_adiabatic_j_kg": -79073.41579319502,
+        "latent_term_j_kg": 138985.34537267912,
+        "thermal_equation_residual_j_kg": -6.402842700481415e-10,
+        "retained_melt_mass_kg": 3004.899839136771,
+        "solid_mass_kg": 6995.100160863229,
+        "net_produced_melt_kg": 2773.3633916537156
+      },
+      "seconds": 0.0013723999727517366,
+      "tighter_reference": {
+        "temperature_k": 1561.9402771210143,
+        "initial_fraction": 0.02315364474830557,
+        "final_fraction": 0.30048959944775216,
+        "net_produced_fraction": 0.2773359546994466,
+        "final_branch": "cpx_exhausted",
+        "evaluated_branches": [
+          "cpx_exhausted",
+          "cpx_present"
+        ],
+        "accepted_steps": 46,
+        "evaluations": 842,
+        "path_residual_j_kg_k": -2.890191623805549e-07,
+        "thermal_adiabatic_j_kg": -79073.40551033044,
+        "latent_term_j_kg": 138986.31736865456,
+        "thermal_equation_residual_j_kg": -6.693881005048752e-10
+      },
+      "temperature_difference_k": 0.0009617131108825561,
+      "fraction_difference": 3.844659249296889e-07,
+      "passed": true
+    }
+  ],
+  "exact_solid_adiabat_error_k": 0.0,
+  "constant_expansion_error_k": 0.0005917018957006803,
+  "benchmark": {
+    "finite_difference": {
+      "median_seconds": 0.0015835000085644424,
+      "samples_seconds": [
+        0.0015928000211715698,
+        0.0016410999814979732,
+        0.0015835000085644424,
+        0.0015672000008635223,
+        0.0015585999935865402
+      ],
+      "final_temperature_k": [
+        1514.1246796761297,
+        1514.1246796761297,
+        1514.1246796761297,
+        1514.1246796761297,
+        1514.1246796761297
+      ],
+      "evaluations": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "analytic": {
+      "median_seconds": 0.0009268999565392733,
+      "samples_seconds": [
+        0.0009633000008761883,
+        0.000977399991825223,
+        0.0009268999565392733,
+        0.0009051000233739614,
+        0.0008954000077210367
+      ],
+      "final_temperature_k": [
+        1514.124679734665,
+        1514.124679734665,
+        1514.124679734665,
+        1514.124679734665,
+        1514.124679734665
+      ],
+      "evaluations": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "saved_seconds": 0.0006566000520251691,
+    "saved_percent": 41.46511199708958,
+    "max_temperature_difference_k": 5.8535306379781105e-08,
+    "scope": "five bounded parcel solves per method; no generator-wide speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.02485099999466911
+}

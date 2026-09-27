@@ -1,0 +1,67 @@
+{
+  "schema": "atlas.i01-thermomechanical-motion-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "fixed-geometry, small-strain, laterally uniform layered column under a constant external driving force: disjoint generalised drag plus layered column resistance solved at every stage, with conduction of the column's own creep/plastic dissipation feeding temperature back into the reviewed weakening law; not advection, finite strain, melting, rupture, breakup, spherical/world assembly, native integration or calibration",
+  "provenance": {
+    "mechanics_and_heat": "reviewed cases/i01_column_heat_v1.json (bound by the column-heat r2 receipt) and, through it, cases/i01_weakening_v1.json: layers, densities, rheology, weakening law, gravity, inherited history, thermal layer properties, boundary temperatures, heat fractions (1, 1) and the homogeneous oracle layer, all unchanged",
+    "drive": "reviewed cases/i01_motion_coupling_v1.json (bound by the motion-coupling r1 receipt): drive 2e13 N/m of strike, generalised drag 5e22 Pa s, belt width 1e5 m, used unchanged; authored controls, not calibrated Earth values",
+    "duration": "1e13 s, the longest window for which the drag-only bound |a| <= |F|/(D w) = 4e-15/s guarantees |strain| <= 0.04 < 0.05 whatever the column does; chosen from that bound, not from a target speed. The motion case's own 3e13 s window is not reused because it has no such a priori small-strain guarantee",
+    "initial_state": "zero temperature departure from the column-heat discrete steady reference (heat.steady_k); the weakening case's linear template temperatures are only the preparation template; inherited plastic history from the weakening case",
+    "homogeneous_oracle": "the column-heat case's insulated uniform wet-quartzite layer (10 km, 600 K, supplied 150 MPa mean pressure, initial engineering history 2.0) unchanged; it is driven by the same motion-case force, drag and width for the same 1e13 s instead of the column-heat oracle's supplied 1e-15/s rate",
+    "authored": "step counts, quadrature orders, the rest departure amplitude, the refusal fixtures and the four new refinement gates are authored control inputs frozen before any run"
+  },
+  "representation": {
+    "geometry": "fixed laterally uniform column and belt width; material depth coordinates; small strain; no advection",
+    "control": "constant external driving force balanced by disjoint generalised drag and the layered column resistance at every stage",
+    "thermal": "reviewed column-heat conduction on the mechanical Gauss control volumes with constant declared layer properties; initial state is its discrete steady reference",
+    "heating": "column creep plus plastic dissipation deposited once per control volume; external drag dissipation is not column heat",
+    "time_integration": "retained ETD2 conduction with Heun history, strain, displacement and work; accepted endpoint re-solved before commit",
+    "max_axial_strain": 0.05,
+    "max_temperature_step_k": 5.0
+  },
+  "inputs": {
+    "column_heat_case": "cases/i01_column_heat_v1.json",
+    "motion_case": "cases/i01_motion_coupling_v1.json"
+  },
+  "drive": {
+    "source": "motion case drive_n_m, drag_pa_s and width_m, unchanged",
+    "duration_s": 1e13,
+    "drag_only_rate_bound_s": 4e-15
+  },
+  "campaign": {
+    "reference_order": 64,
+    "reference_steps": 64,
+    "time_steps": [16, 32, 64],
+    "orders": [32, 64, 128],
+    "homogeneous": {"order": 8, "steps": [16, 32, 64]},
+    "states": {"order": 16, "steps": 8, "rest_amplitude_k": 2.0},
+    "refusal": {"order": 8, "strain_steps": 4, "strain_step_duration_s": 1e13, "strain_bound_factor": 1.1,
+                "temperature_steps": 2, "temperature_guard_k": 0.001, "deadline_steps": 8,
+                "compressive_volume_m3_mol": 0.001}
+  },
+  "policy": {
+    "max_steps": 256,
+    "maximum_seconds": 120.0,
+    "force_relative": 1e-10,
+    "power_relative": 2e-10,
+    "work_relative": 2e-10,
+    "energy_relative": 1e-10,
+    "work_heat_relative": 1e-10,
+    "flow_relative": 1e-9,
+    "oracle_order_range": [1.8, 2.2],
+    "oracle_relative": 1e-5,
+    "root_parity_relative": 1e-8,
+    "uniform_relative": 1e-13,
+    "time_velocity_relative": 1e-4,
+    "time_temperature_k": 0.01,
+    "time_history_relative": 1e-4,
+    "time_work_relative": 1e-4,
+    "depth_velocity_relative": 0.003,
+    "depth_energy_relative": 0.01,
+    "depth_history_relative": 0.01,
+    "depth_work_relative": 0.003,
+    "feedback_depth_relative": 0.03,
+    "coupling_resolution_factor": 10.0,
+    "parity_relative": 1e-8
+  }
+}

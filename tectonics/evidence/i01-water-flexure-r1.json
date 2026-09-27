@@ -1,0 +1,115 @@
+{
+  "schema": "atlas.i01-water-flexure.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_water_flexure.py": "4eb7e7ac2e00d17e6cbadc1498e773d61ef70740e69f3cb443ca2cd9bce513b3",
+    "tests/test_i01_water_flexure.py": "36666a8098dd7aba5945d76d3ae781425c6f55b3d44ed93a700e812636bb77b6",
+    "cases/i01_water_flexure_v1.json": "384fadb1f5f762c06bc65e79df5bc5a9c4d1c766fdfac9fe07f91c003b1d92e0",
+    "docs/I01_WATER_FLEXURE.md": "6cef62afb6a3f0d734f1527362a596afb7b77e794df16bcb83bb004e7fa31706"
+  },
+  "passed": true,
+  "grids": [
+    {
+      "cells": 1024,
+      "seconds": 0.0010469999979250133,
+      "result": {
+        "sea_level_m": -73.51387066128882,
+        "iterations": 14,
+        "wet_set_reuses": 10,
+        "water_fills": 15,
+        "rms_iteration_error_estimate_m": 5.16765143007428e-07,
+        "rms_residual_error_estimate_m": 5.108765141116043e-07,
+        "mean_subsidence_relative_residual": 0.0,
+        "volume_relative_residual": 2.842170943040401e-16,
+        "force_relative_residual": 3.2939134550483934e-09,
+        "plate_stored_energy_j": 4.399764153089437e+19,
+        "load_displacement_product_j": 8.799528317985708e+19,
+        "virtual_work_relative_residual": 1.3417576785186925e-09,
+        "max_depth_m": 1051.822099298377,
+        "max_downward_displacement_m": 310.09307104787416,
+        "min_downward_displacement_m": -8.582940426471778,
+        "wet_fraction": 0.462890625
+      }
+    },
+    {
+      "cells": 4096,
+      "seconds": 0.0013772000093013048,
+      "result": {
+        "sea_level_m": -73.51111922987468,
+        "iterations": 14,
+        "wet_set_reuses": 10,
+        "water_fills": 15,
+        "rms_iteration_error_estimate_m": 5.089381734231314e-07,
+        "rms_residual_error_estimate_m": 5.029556256050555e-07,
+        "mean_subsidence_relative_residual": 2.3447910280083307e-16,
+        "volume_relative_residual": 2.842170943040401e-16,
+        "force_relative_residual": 3.2428274245191103e-09,
+        "plate_stored_energy_j": 4.399790881417942e+19,
+        "load_displacement_product_j": 8.799581774481662e+19,
+        "virtual_work_relative_residual": 1.3234467987299308e-09,
+        "max_depth_m": 1052.2417572753607,
+        "max_downward_displacement_m": 310.6402165244184,
+        "min_downward_displacement_m": -8.829478529225614,
+        "wet_fraction": 0.464111328125
+      }
+    },
+    {
+      "cells": 16384,
+      "seconds": 0.005292600020766258,
+      "result": {
+        "sea_level_m": -73.5019919164323,
+        "iterations": 14,
+        "wet_set_reuses": 9,
+        "water_fills": 15,
+        "rms_iteration_error_estimate_m": 5.076807927189161e-07,
+        "rms_residual_error_estimate_m": 5.018319497630468e-07,
+        "mean_subsidence_relative_residual": 0.0,
+        "volume_relative_residual": 2.842170943040401e-16,
+        "force_relative_residual": 3.2355181204132895e-09,
+        "plate_stored_energy_j": 4.399956490849735e+19,
+        "load_displacement_product_j": 8.799912993307573e+19,
+        "virtual_work_relative_residual": 1.3191156924424238e-09,
+        "max_depth_m": 1053.4228982759128,
+        "max_downward_displacement_m": 310.71800117715156,
+        "min_downward_displacement_m": -8.830263299089228,
+        "wet_fraction": 0.4637451171875
+      }
+    }
+  ],
+  "displacement_rms_refinement_relative": [
+    0.00012695221328170903,
+    2.7225100103787457e-05
+  ],
+  "benchmark": {
+    "samples_seconds": {
+      "resort": [
+        0.007284899998921901,
+        0.007135600026231259,
+        0.007071500003803521,
+        0.007665199984330684,
+        0.007778699975460768
+      ],
+      "verified_reuse": [
+        0.0050187999731861055,
+        0.0048611999955028296,
+        0.005120999994687736,
+        0.004988799977581948,
+        0.005091099999845028
+      ]
+    },
+    "resort_median_seconds": 0.007284899998921901,
+    "reuse_median_seconds": 0.0050187999731861055,
+    "saved_seconds": 0.0022661000257357955,
+    "saved_percent": 31.10681033468075,
+    "max_displacement_difference_m": 6.252776074688882e-13,
+    "scope": "five interleaved small coupled solves per method, not generator-wide speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.11373979999916628
+}
