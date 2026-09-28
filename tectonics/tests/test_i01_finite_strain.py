@@ -1,4 +1,7 @@
-"""Focused guards for the I01 material-following finite-strain column; no native import.
+"""Focused guards for the I01 material-following finite-strain column.
+
+Since I02.2a the solver is package-owned (atlas_tectonics.integration_evolution); the tool re-exports those same
+objects, so these guards exercise the package implementation through the retained entry point.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 import dataclasses
@@ -12,6 +15,8 @@ from unittest import mock
 import numpy as np
 from scipy.linalg import expm
 from threadpoolctl import threadpool_limits
+
+from atlas_tectonics import integration_evolution as E
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"tools"))
 import check_i01_finite_strain as f
@@ -277,7 +282,7 @@ class RefusalTests(Base):
         dt = DURATION/16
         prefix = self.call(1, duration_s=dt)
         deadline = f.CountdownDeadline(10**9)
-        original, calls = f.stage, 0
+        original, calls = E.stage, 0
 
         def finish_then_expire(*args, **kwargs):
             nonlocal calls
@@ -286,8 +291,10 @@ class RefusalTests(Base):
             if calls == 5:                          # initial + two predictor/endpoint pairs
                 deadline.remaining = 0
             return result
-        with mock.patch.object(f, "stage", side_effect=finish_then_expire):
+        # evolve resolves stage in the package module that owns it; the tool name is only an alias of that object.
+        with mock.patch.object(E, "stage", side_effect=finish_then_expire):
             out = self.call(2, duration_s=2*dt, deadline=deadline)
+        self.assertEqual(calls, 5)                  # the patch reached the implementation actually executed
         self.assert_same_prefix(out, prefix, "REFUSED_DEADLINE")
 
     def test_prescribed_control_checks_deadline_and_temperature_before_commit(self):

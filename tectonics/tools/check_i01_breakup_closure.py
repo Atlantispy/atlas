@@ -58,7 +58,7 @@ CONSISTENT = "PREMISE_CONSISTENT_WITH_REDUCED_PINCH"
 RESOLVED_NECK = "REFUSED_REQUIRES_RESOLVED_NECK"
 EPS = float(np.finfo(float).eps)
 TINY = float(np.finfo(float).tiny)
-RECEIPT = "evidence/i01-finite-strain-r2.json"
+RECEIPT = "evidence/i01-finite-strain-r3.json"
 FAULT_CASE = "cases/i01_fault2d_v1.json"
 NEW_FILES = ("tools/check_i01_breakup_closure.py", "cases/i01_breakup_closure_v1.json",
              "docs/I01_BREAKUP_CLOSURE.md", "tests/test_i01_breakup_closure.py")
@@ -66,10 +66,13 @@ RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_thermomechanica
             "tools/check_i01_column_heat.py", "tools/check_i01_motion_coupling.py", "tools/check_i01_weakening.py",
             "tools/check_i01_column.py", "cases/i01_finite_strain_v1.json", "cases/i01_thermomechanical_motion_v1.json",
             "cases/i01_column_heat_v1.json", "cases/i01_motion_coupling_v1.json", "cases/i01_weakening_v1.json")
-ACCEPTED_RECEIPTS = {RECEIPT: "e356000b7d467bc3d43bb4dd0637cdc89d06c32f0bac5e335697d5a8d7e97b34"}
+_PACKAGE_IMPORTS = {name: module for name, module in fs.IMPORTED.items() if name.startswith("src/")}
+RETAINED += tuple(_PACKAGE_IMPORTS)
+ACCEPTED_RECEIPTS = {RECEIPT: "90898b22f36f829cc8b3cc9082c7f85dfddff287511a689386fe45efb26c301f"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
             "tools/check_i01_weakening.py": weakening, "tools/check_i01_column.py": column}
+IMPORTED.update(_PACKAGE_IMPORTS)
 CASE_FIELDS = {"schema", "status", "task", "kind", "contract_document", "refines", "decision", "distinctions",
                "rejected_routes", "ports", "units", "control_policy", "control_parameters", "parameter_provenance",
                "acceptance_claim"}

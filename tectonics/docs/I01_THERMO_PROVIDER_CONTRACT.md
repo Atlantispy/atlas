@@ -1,9 +1,9 @@
 # I01 common thermodynamic provider: connection contract
 
-**WORKING NON-CANON — selected interface requirements, not an implemented adapter
-or calibrated material.** MC-03 remains open. This separates the stable connection
-requirements from the pending calibration/component/model choice. It changes no
-retained solver, evidence, W08 law or release scope.
+**WORKING NON-CANON — common-provider contract and experimental Gibbs connection.**
+MC-03 remains open. Sections 1–7 specify the connection; section 8 records the
+implemented bounded route and its acceptance limits. No retained solver,
+historical evidence, W08 law or release default changes.
 
 ## 1. What crosses the connection
 
@@ -128,6 +128,9 @@ table/surrogate must represent composition and phase boundaries and preserve
 thermodynamic consistency; independently interpolating F/H/S/V is not assumed safe.
 No speedup or installed external-software compatibility is claimed here.
 
+The experimental implementation described in section 8 now provides a separate
+route. It does not make the analytical coefficients interchangeable with G25.
+
 ## 6. Bounded implementation acceptance, when the provider is chosen
 
 | Check | Required distinction |
@@ -141,9 +144,9 @@ No speedup or installed external-software compatibility is claimed here.
 | Physical calibration | Withheld composition/P/T/phase/depletion observations separate from fitted data and software comparisons. |
 | Connected delivery | The same material and energy references reach an actual receiver; conserved analytical fixtures alone do not establish geological realism. |
 
-This is a design specification, so no new numerical campaign or evidence receipt
-is implied. These checks will be mapped to the chosen implementation, reusing
-adequate existing analytical controls rather than rerunning them for this document.
+This acceptance table is a design specification. Section 8 describes the bounded
+implementation and its explicit checks; neither renews the older analytical
+receipts or implies that every item in the table is complete.
 
 ## 7. Sources and provenance
 
@@ -163,3 +166,168 @@ adequate existing analytical controls rather than rerunning them for this docume
   review and are reused here, not reread or adopted as a calibration. Concrete
   target datasets, model/component choice, extraction, focusing and the thermal
   lid remain separate MC-03 work.
+
+## 8. Implemented common-Gibbs connection
+
+The source-only [provider](../tools/i01_gibbs_provider.py) accepts a closed-system
+equilibrium calculation: component amounts, stable phases and their common
+chemical potentials. Its [MAGEMin process adapter](../tools/magemin_g25.py) and
+[Julia worker](../tools/magemin_g25.jl) select the corrected Green et al. (2025)
+igneous model (`ig`, `tc_ds636`), MAGEMin_C 2.3.7 at commit
+`99d71b51171d85a1e37d41430d5f8c99a7bd0917`, and native MAGEMin 2.0.4.
+The isolated test environment is not an Atlas release dependency or installer.
+
+### Why not copy the software's heat fields?
+
+The pinned backend's solution entropy sums endmember derivatives, whereas its
+full Gibbs objective also includes configurational mixing and interaction terms.
+Its phase/property exports also use different formula, oxide-mole and mass bases.
+In particular `V_cm3` is numerically cm3/kg, not a parcel's total cm3. The adapter
+therefore does **not** import raw phase/system H, S or V and guess a scale factor.
+This is a source-level interface finding, not a claim that its phase diagrams are
+invalid or a quantified assessment of every property error.
+
+The live native check also identified a separate inventory defect: after
+calculating its convergence residual, `phase_merge_function` adds phase amounts
+but takes an **unweighted midpoint** of their nonlinear internal coordinates.
+The resulting reported components no longer reconstruct the solved bulk. The
+worker disables that operation with `merge_value=0`, retains every solved slot,
+and uses solver 1 with the stricter native mass-residual tolerance `1e-10`.
+It sums component amounts for accounting only; it never recalculates composition
+from averaged internal coordinates. Nearby support vertices are grouped by model
+only when the maximum spread of composition/internal coordinates is at most
+`1e-3`; their full coordinate envelopes remain in the branch checks. Widely
+separated same-model states are refused, not collapsed into one physical phase.
+The matched native test reduced maximum component-mole mismatch from `5.31e-5`
+to `1.39e-14` without changing Atlas's `1e-7` numerical admission tolerance.
+
+### The common-potential calculation
+
+At equilibrium each phase satisfies `G_phase = sum(n_i * mu_i)`. Differentiating
+this expression and applying Gibbs–Duhem cancels the changes in phase amount and
+composition. Using the **centre state's** component moles therefore gives
+
+```text
+S_phase = -sum(n_i * d(mu_i)/dT)       [J/K, constant pressure]
+V_phase =  sum(n_i * d(mu_i)/dP)       [m3, constant temperature]
+H_phase =  sum(n_i * mu_i) + T*S_phase [J]
+```
+
+Both perturbed solves retain the same complete bulk inventory. Importantly,
+differencing a phase's changing molar Gibbs value directly would include its
+changing composition and give the wrong entropy. This implementation avoids that
+term; the independent binary-mixture test demonstrates the difference.
+
+The worker converts kJ/oxide-mol chemical potentials to J/oxide-mol, kbar to Pa
+and Celsius to Kelvin. Oxide mole fractions do not replace inventory: Atlas keeps
+the original kg and exact backend molar masses. The 11 ordered components are
+SiO2, Al2O3, CaO, MgO, FeO, K2O, Na2O, TiO2, **additional atomic O**, Cr2O3 and H2O.
+O is not O2 and does not duplicate the oxygen already in an oxide. Missing water
+or oxidation measurements are not filled with invented values. A wrapper request
+that would raise small core components or delete a small optional component is
+refused instead of changing the rock.
+
+One centre plus four temperature and four pressure samples supplies nested
+central differences. The default widths are 1 K and 1 MPa, and their halves.
+Stable phase identities, multiplicity, compositions and internal coordinates must
+stay on a supported continuous branch. Per-phase specific derivative discrepancies
+must meet declared numerical controls; checking only the large bulk would hide a
+bad tiny phase. Width agreement is an **estimated discrepancy**, not a certified
+error bound. A narrow unsampled discontinuity is not mathematically excluded.
+Sampled phase appearances/disappearances, unresolved solvus branches, latent
+plateaux, nonconvergence and negative/unrepresentable inventories refuse the
+calculation. Local derivative agreement is not a whole-interval branch
+certificate. No unsupported branch is smoothed or clipped to obtain a result.
+
+### Extraction, pressure changes and receiving material
+
+`extract` proposes a finite fraction of the calculated liquid inventory and its
+own enthalpy. Subtracting it leaves changed component amounts and remaining H;
+latent heat is not charged again. The proposal does not persist a transaction.
+`flash` inverts H or S on an explicitly declared and bracketed continuous thermal branch.
+Thus a declared reversible pressure endpoint can retain S, while mixing at one
+pressure sums H and ingredients. `receive` uses that same provider and pressure,
+not a different W08 melting law. Full pressure-path work, extraction rates,
+permeability, focusing and the axial thermal lid are not supplied by equilibrium.
+
+Both `flash(..., branch=...)` and a nonempty `receive(..., branch=...)` now require
+an immutable `ThermalBranch` declaration made with
+`provider.declare_thermal_branch(mass, pressure, temperature_bounds,
+phase_keys=..., support=...)`. It binds the provider identity, numerical controls,
+component ordering and exact component masses, pressure, temperature interval,
+expected stable phase identities and the caller's support provenance. Receiving
+material needs a declaration for the **combined** inventory; a donor's or unmixed
+receiver's declaration does not cover the changed composition. Even a change in
+inventory scale needs a new declaration, while the existing equilibrium cache
+can still reuse identical normalised compositions.
+
+Declaring support performs no equilibrium calculations and grants no physical
+acceptance. The caller must supply a physical/model basis covering the whole
+interval; the API does not manufacture it from endpoint agreement. Before
+inversion, the requested inventory, pressure and bracket must fit that declaration.
+Both bracket endpoints and every bisection state must retain its exact phase
+identities, in addition to the existing local derivative, monotonicity and error
+checks. A mismatch refuses the inversion, including one encountered between
+matching endpoint assemblages. No endpoint can return before both endpoints have
+passed their phase checks. An empty-parcel receive is an unchanged-state no-op,
+not a thermal inversion.
+
+These checks close a specific former gap: a wide solid-only to liquid-only bracket
+could return a mixed-phase midpoint without ever sampling a local phase crossing.
+They do **not** mathematically exclude a narrow unsampled transition, certify a
+solvus path, or implement a moving freezing front. A production caller without
+whole-interval support must refuse rather than label a sampled interval certified.
+The native KLB1 comparison retains its short `T_reference +/- 2 K` branch as an
+explicit conditional software-control assumption, recorded in the new result;
+it is not promoted to a validated geological branch. Existing numerical tolerances
+and phase-front restrictions are unchanged. The `branch` keyword is a deliberate
+API requirement; callers of these common-Gibbs operations must now provide it.
+
+### Efficiency and checks
+
+One prepared worker retains the native database; it does not relaunch Julia for
+each sample. A bounded 256-point cache keeps only compact phase/potential results,
+keyed by exact pressure, temperature and complete normalised composition within
+one provider. Amount scaling reuses equilibrium; changed depletion does not.
+The identity includes the worker, locked environment, loaded native library,
+component basis and declared numerical domain. There is no timestep-history
+accumulation or hidden network/install on use. Cancellation/timeouts terminate
+the owned worker, and no failed response becomes a later request's result.
+
+[Focused tests](../tests/test_i01_gibbs_provider.py) independently calculate phase
+H/S/V for a binary mixture with unequal molar masses, variable equilibrium
+compositions and known latent heat. They also cover stoichiometric multiplier
+ambiguity, absent components, branch/noise refusal, finite extraction, depleted
+re-equilibration, same-provider receiving, H/S inversion, scaling, bounded reuse,
+identity changes, cancellation, required branch declarations and their exact
+bindings, the solid/liquid wide-bracket refusal, sampled interior phase changes
+despite matching endpoints, and supported same-branch inversion. These analytical checks validate the method,
+not geological calibration. Current installed-backend results and remaining work
+are recorded in [CURRENT_STATE](../../docs/CURRENT_STATE.md).
+
+The opt-in [native connection campaign](../tools/check_i01_gibbs_provider.py)
+uses the pinned software's KLB1 input, not an independent experiment. It checks a
+solid and partly molten state, finer differences, the same coexisting phases
+under changed bulk proportions, finite extraction/recombination, H/S recovery,
+phase-boundary refusal and matched cache timing. It accepts explicit installed
+Julia/project/depot paths and creates a new no-overwrite receipt; it installs
+nothing and does not enter the generator's default production route.
+
+### Sources actually consulted for this implementation
+
+- [Green et al. corrected/recalibrated igneous model](https://hpxeosandthermocalc.org/2025/01/06/correction-to-the-holland-et-al-2018-and-tomlinson-holland-2021-models/)
+  and [MAGEMin model/software documentation](https://computationalthermodynamics.github.io/MAGEMin_C.jl/dev/):
+  corrected model choice and explicitly limited calibration domain.
+- [Pinned Julia wrapper](https://github.com/ComputationalThermodynamics/MAGEMin_C.jl/blob/99d71b51171d85a1e37d41430d5f8c99a7bd0917/julia/MAGEMin_wrappers.jl)
+  and its installed source: component conversion, result structure, worker API
+  and the existing system-only Gibbs finite-difference option.
+- [Native property calculations](https://github.com/ComputationalThermodynamics/MAGEMin/blob/a09537602701e753f5f36cc508f90b0b403d9eeb/src/toolkit.c),
+  [output construction](https://github.com/ComputationalThermodynamics/MAGEMin/blob/a09537602701e753f5f36cc508f90b0b403d9eeb/src/dump_function.c),
+  [solution objectives](https://github.com/ComputationalThermodynamics/MAGEMin/blob/a09537602701e753f5f36cc508f90b0b403d9eeb/src/TC_database/objective_functions.c)
+  and ds636 reference definitions: amounts, energy basis and missing raw-property
+  terms. Atlas's derivative above follows Gibbs–Duhem; it is not claimed as a new
+  thermodynamic law or an independently validated MAGEMin feature.
+- [Native phase merging](https://github.com/ComputationalThermodynamics/MAGEMin/blob/a09537602701e753f5f36cc508f90b0b403d9eeb/src/phase_update_function.c)
+  and [solve/merge ordering](https://github.com/ComputationalThermodynamics/MAGEMin/blob/a09537602701e753f5f36cc508f90b0b403d9eeb/src/PGE_function.c):
+  inspected source, matched merge-enabled/disabled experiment and native/Julia
+  structure-layout check, not a modified upstream binary.

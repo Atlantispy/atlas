@@ -1,0 +1,103 @@
+{
+  "schema": "atlas.i01-melt-route-decision.v1",
+  "version": 1,
+  "status": "WORKING_NON_CANON",
+  "kind": "selected_method_and_acceptance_specification_not_runnable_case",
+  "method": "tectonics/docs/I01_MELT_ROUTE.md",
+  "decision": "coupled_porous_flow_compaction_and_shared_enthalpy_thermal_barrier",
+  "i01_choice_status": "SELECTED_WITH_EXPLICIT_RESTRICTED_NONREACTIVE_BRANCH",
+  "scientific_acceptance": false,
+  "spatial_focusing_implemented_by_this_change": false,
+  "generated_axial_lid_verified": false,
+  "new_native_campaign": false,
+  "provider": {
+    "route": "existing_corrected_G25_common_Gibbs_connection",
+    "model": "ig",
+    "dataset": "tc_ds636",
+    "wrapper_version": "2.3.7",
+    "native_version": "2.0.4",
+    "contract": "tectonics/docs/I01_THERMO_PROVIDER_CONTRACT.md",
+    "coefficient_refit": false,
+    "published_calibration_is_not_atlas_route_validation": true,
+    "phase_appearance_disappearance_support": "CURRENT_PROVIDER_REFUSES; I05/I06 integration required"
+  },
+  "nonreactive_branch": {
+    "meaning": "no chemical exchange with traversed host; finite source melting and named receiver crystallisation remain distinct operations",
+    "currently_bounded_use": "existing liquid on a supported continuous phase branch; no phase birth/death or implicit host mixing",
+    "must_preserve": ["provider and energy reference", "component mass", "finite availability", "carried enthalpy", "explicit pressure path", "source identity and birth history"],
+    "requires": ["supported dry closed-system material path", "explicit mechanical and thermal boundary conditions", "porous coherent-matrix regime", "declared pressure and Boussinesq volume-error allowances", "timescale support for neglected host reaction and assumed thermal equilibrium"],
+    "does_not_supply": ["reactive channelisation", "metasomatism", "dikes or fracture transport", "volatile or redox reservoirs", "phase-front evolution", "generated ridge geometry"]
+  },
+  "flow": {
+    "dimension": "2D only with declared along-axis invariance and finite strike width; general ridge and junction route is 3D",
+    "relative_volume_flux": "q=phi*(v_l-v_s)=-(k/mu_l)*(grad(p_l)-rho_l*g)",
+    "compaction_convention": "p_c=(1-phi)*(p_s-p_l)=-zeta*div(v_s)",
+    "momentum": "-div(2*eta*D_dev(v_s))+grad(p_l)+grad(p_c)=rho_bar*g",
+    "density_approximation": "positive fixed reference phase transport densities; G25 volumes retained separately and approximation errors assessed",
+    "phase_balance": "partial_t(alpha_a*rho_a)+div(alpha_a*rho_a*v_a)=Gamma_a; Gamma_s=-Gamma_l",
+    "component_balance": "paired Gamma_i and actual phase component fluxes; no inventory normalisation to fill geometry",
+    "permeability": "k=k_ref*(d/d_ref)^2*(phi/phi_ref)^n for phi>0; k(0)=0",
+    "compaction_viscosity": "zeta=zeta_ref*(eta/eta_ref)*(phi/phi_ref)^(-m) for phi>0; dry branch separate",
+    "parameters": "k_ref,d_ref,phi_ref,n,d,mu_l,eta,zeta_ref,eta_ref,m are declared supported case inputs, not universal defaults",
+    "compaction_length_m": "sqrt(k*(zeta+4*eta/3)/mu_l)",
+    "focusing_measure": "time-integrated physical receiver mass/component and enthalpy fluxes; incoming and outgoing accounts separate",
+    "zero_porosity": "dry branch with zero liquid flux; no mass-creating numerical floor"
+  },
+  "cooling_lid": {
+    "heat_flux": "q_T=-K_T*grad(T)",
+    "phase_energy": "same-provider phase enthalpy advection; u=h-P*v; fixed-composition dh=T*ds+v*dP",
+    "internal_dissipation": "2*eta*D_dev:D_dev+zeta*div(v_s)^2+(mu_l/k)*q.q on supported wet branch",
+    "energy_account": "internal plus gravitational storage; material flux, conductive heat, declared heating and exterior mechanical work, with explicit Boussinesq omissions",
+    "diagnostic": "boundary of supported connected liquid permeability from evolving thermal/phase state; disconnected or absent barrier retained explicitly",
+    "universal_depth_rate_function": false,
+    "double_latent_heat": "REFUSED",
+    "phase_front": "requires compatible provider phase-event support before generated front claim"
+  },
+  "owners": {
+    "I01": "selected method, assumptions, common-provider semantics and bounded feasibility boundaries",
+    "I05": "moving component/phase/enthalpy state, pressure/thermal consistency, property feedback and phase-front handling",
+    "I06": "shared ridge, finite extraction/outlets, receiver accommodation, melt-derived crust birth and ocean history",
+    "I07_I09": "regional mechanics and work-consistent motion",
+    "I02": "atomic finite inventories, reservations and replay prevention"
+  },
+  "i01_finish_boundary": {
+    "choice_and_bounded_feasibility_can_close_when": ["corrected-G25 selection bound to retained native and analytical checks", "separately owned real compatible segregation controls pass for their restricted branch", "focusing and thermal contract with explicit refusals integrated"],
+    "this_design_document_is_not_a_passed_control": true,
+    "physical_acceptance_clauses_waived": false,
+    "later_implementation": "I05/I06 moving phase fronts and complete source-to-crust integration",
+    "external_acceptance": "independent physical observations and supported route-specific coefficients",
+    "preexisting_liquid_transport_is_generated_ocean_crust": false
+  },
+  "minimal_physical_evidence": [
+    "original G25 calibration provenance and coverage for source, residue, liquid and receiver",
+    "independent phase assemblage, composition and melt-fraction observations with P/T/bulk/water/redox uncertainties; check fitting overlap before withheld claim",
+    "independent phase energy-difference and volume constraints wherever those accuracy claims are made",
+    "supported permeability, grain-size, rheology and thermal-boundary coefficients; independently constrained values preferred to new fitting",
+    "reaction/transit and thermal-equilibration timescale support for the restricted nonreactive branch",
+    "withheld thermal/geometry response and material-delivery/composition response; crust thickness alone cannot identify both cooling and permeability"
+  ],
+  "new_experimental_datasets_admitted": [],
+  "predeclared_acceptance_requirements": [
+    "dry, hydrostatic/zero-gradient, manufactured pressure and finite exhaustion controls",
+    "component mass and donor-route-receiver-surroundings energy closure with pressure/gravity/mechanical work",
+    "space, time, domain and boundary refinement of delivery, fields and barrier geometry",
+    "supported freezing/retention front and no-liquid controls; varied heat/history at fixed spreading rate",
+    "same-provider source-to-receiver path, finite cooling account, retained ages and withheld physical comparisons",
+    "failure leaves parent uncommitted; no substituted law, inventory or reset state"
+  ],
+  "runnable_case_requirements": {
+    "physical_inputs_and_coefficients": null,
+    "source_and_receiver_support": null,
+    "numeric_and_approximation_tolerances": null,
+    "time_space_domain_refinement": null,
+    "resource_bounds": null,
+    "null_meaning": "must be supplied in an admitted runnable case; never implicit defaults"
+  },
+  "sources_consulted": [
+    {"url": "https://aspect-documentation.readthedocs.io/en/latest/user/methods/melt-transport.html", "scope": "equations 29-32 and approximate-Darcy limitation; no software run"},
+    {"url": "https://www.sciencedirect.com/science/article/abs/pii/S003192011930202X", "scope": "Sim et al. 2020 publisher abstract; full manuscript retrieval blocked"},
+    {"url": "https://terraferma.github.io/", "scope": "author publication/index provenance; no software run"},
+    {"url": "https://hpxeosandthermocalc.org/2025/01/06/correction-to-the-holland-et-al-2018-and-tomlinson-holland-2021-models/", "scope": "corrected and recalibrated igneous model notice"},
+    {"url": "https://computationalthermodynamics.github.io/MAGEMin_C.jl/dev/", "scope": "equilibrium role and limited P/T/composition calibration support"}
+  ]
+}

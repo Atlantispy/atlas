@@ -134,14 +134,27 @@ Each Gauss–Legendre point of the mechanical column owns one thermal control vo
 - **Point inside its cell.** Preparation checks that every point lies strictly
   inside its cell; the preparation is refused otherwise.
 - **Paired with the mechanics by value.** The evolution requires the thermal layer
-  IDs, depths and widths to equal the mechanical preparation's bitwise. Matching
-  its fingerprint label and point count is not enough. A same-size support for
-  other thicknesses is refused, as is a `dataclasses.replace` copy of the thermal
-  or the mechanical preparation with altered support.
+  IDs, depths, widths and reference densities to equal the actual lithostatic
+  mechanical preparation's bitwise. The thermal preparation retains the density
+  used in its heat capacity; a caller-supplied mechanical fingerprint cannot
+  substitute for that comparison. Section 1 selects the mechanical layers'
+  density, and D4 uses the same reference material inventory for heat and
+  mechanics. A separately approximated thermal density is not this contract.
+  Supplied-pressure analytical columns have no mechanical density (their field
+  is explicitly unknown); they retain their independently declared thermal
+  density. Standalone conduction remains independent of a mechanical column.
 - **Fingerprint.** The thermal fingerprint hashes the properties, densities,
   boundaries, thicknesses and reference temperature, with the layer IDs, depths
   and widths. Validated depths already imply each point's layer; the IDs are
-  hashed anyway.
+  hashed anyway. A separate preparation digest binds all resulting arrays and
+  boundary values, including capacities, conductances and the steady reference.
+  Coupled admission and propagator preparation check that digest, so replacing
+  derived state while retaining its old labels is refused. A legitimate change
+  to thermal properties must be rebuilt with `prepare_thermal` and receives its
+  own input identity and propagator. These O(N) entry checks neither rebuild the
+  numerical operator nor change its arithmetic. They protect normal preparation
+  and copy paths, not deliberate forgery of internal identities or arbitrary
+  replacement of the mechanical solver's own derived arrays.
 - **Heat maps to work exactly.** The column integral of heat equals the column's
   mechanical work, and the temperature used by the mechanics is the temperature of
   that same material point. There is no interpolation between grids, no endpoint
@@ -366,7 +379,7 @@ new output path (r2), never a rewrite of r1.
 
 Review found the conservative flux assembly, the ETD2/φ3 heat accounting, the
 temperature-dependent preparation and the once-only creep/plastic work partition
-consistent; none of them changed. It found two defects around them:
+consistent; none of them changed. It found three defects around them:
 
 1. **Layer means.** The summary averaged clustered Gauss points without their
    volumes. It now reports each layer's maximum and volume-weighted mean
@@ -376,18 +389,26 @@ consistent; none of them changed. It found two defects around them:
    fingerprint label and point count. The support is now validated before assembly
    and paired with the mechanics by value (section 3). A point outside its cell is
    now a `ValueError`, like the other input refusals.
+3. **Unchecked material density and derived preparation.** A public
+   `prepare_thermal` call could supply density 1% above the actual mechanical
+   density while copying its real fingerprint. The one-step reproduction
+   completed with changed warming and a closed energy account, because the
+   account used the inconsistent capacity too. Admission now compares the actual
+   reference densities. The preparation digest also detects changed derived
+   thermal arrays, including a copied capacity, conductance or steady reference.
 
 Regression tests cover the weighted mean on a non-uniform profile, the reproduced
 1% volume mismatch, same-size foreign supports, replaced dataclass copies,
-malformed, missing, non-finite and nonpositive supports, and an unchanged valid
-layered run. The pairing check covers the support, not every derived array: a
-`dataclasses.replace` copy that keeps the support but alters capacity,
-conductances or the steady reference is not detected, nor are both preparations
-replaced with the same altered support.
+malformed, missing, non-finite and nonpositive supports, the public-constructor
+1% density mismatch, changed derived thermal arrays, and an unchanged valid
+layered run. They also retain the supplied-pressure homogeneous oracle and check
+that a freshly prepared different heat capacity remains admissible while its
+old propagator is refused.
 
 No physics, case input, physical tolerance, step or strain ceiling, campaign
-parameter or reviewed helper changed. The
-[r1 receipt](../evidence/i01-column-heat-r1.json) is retained unchanged as
-historical evidence. The corrected tool, tests and this document are bound by the
-[new r2 receipt](../evidence/i01-column-heat-r2.json), including the additional
-support-refusal controls. Nineteen focused tests cover the corrected implementation.
+parameter or reviewed constitutive helper changed. The
+[r1 receipt](../evidence/i01-column-heat-r1.json) and
+[r2 receipt](../evidence/i01-column-heat-r2.json) remain unchanged evidence for
+their original snapshots. The preparation correction changes this tool's source
+identity and therefore its downstream bindings. Fresh results belong in a new
+receipt and the current evidence register; no old binding is rewritten.

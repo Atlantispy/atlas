@@ -67,13 +67,17 @@ RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_column_admissio
             "cases/i01_finite_strain_v1.json", "cases/i01_column_admission_v1.json",
             "cases/i01_thermomechanical_motion_v1.json", "cases/i01_column_heat_v1.json",
             "cases/i01_motion_coupling_v1.json", "cases/i01_weakening_v1.json")
+# The compatibility tools execute these package owners; bind and check their actual imports too.
+_PACKAGE_IMPORTS = {name: module for name, module in fs.IMPORTED.items() if name.startswith("src/")}
+RETAINED += tuple(_PACKAGE_IMPORTS)
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-finite-strain-r2.json": "e356000b7d467bc3d43bb4dd0637cdc89d06c32f0bac5e335697d5a8d7e97b34",
+    "evidence/i01-finite-strain-r3.json": "90898b22f36f829cc8b3cc9082c7f85dfddff287511a689386fe45efb26c301f",
     "evidence/i01-column-admission-r1.json": "abe11697a0ea3b3feb4089dc77231bda90780e2ff504ee0de4a45687d77d0520"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_column_admission.py": ca,
             "tools/check_i01_decoupling.py": d, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
             "tools/check_i01_weakening.py": w, "tools/check_i01_column.py": w.column}
+IMPORTED.update(_PACKAGE_IMPORTS)
 INPUTS = {"finite_strain_case": "cases/i01_finite_strain_v1.json",
           "column_admission_case": "cases/i01_column_admission_v1.json"}
 CONTRACT_KEYS = {"stretch_window", "temperature_window_k", "horizon_s", "pore_pressure_pa"}

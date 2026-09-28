@@ -102,7 +102,13 @@ explains the newer I01 connections: rock strength and motion; heating and weaken
 changing column geometry; gravitational driving and water loading; melt and
 transition accounts. Each explanation links the scientific basis to the actual
 method and its checks. W01–W12 name the component work packages; I01–I12 name the
-integration programme. I01 remains in progress, not a finished whole-world engine.
+integration programme. I01's method choices, contracts and bounded feasibility
+are complete; a connected whole-world engine and physical-event acceptance remain
+later work. I02's eight-step implementation is authorised with review between
+steps. Its initial shared state and package-owned solver extraction are reviewed;
+in-memory continuation is implemented but has an outstanding prepared-runner
+ownership repair. See the current-state record for results and the next action.
+The authorised development loop stops before I03.
 This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing

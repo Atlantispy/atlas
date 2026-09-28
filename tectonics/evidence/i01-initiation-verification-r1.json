@@ -1,0 +1,48 @@
+{
+  "schema": "atlas.i01-initiation-verification-result.v1",
+  "scientific_acceptance": false,
+  "generated_initiation_enabled": false,
+  "source_sha256": {
+    "tools/check_i01_initiation_verification.py": "252423dac1f99e12b0e1ad4e9f7826d9dce6db9fd9085f0f77803bc7132ca92b",
+    "tests/test_i01_initiation_verification.py": "b00407d2ae3843dd6595bac27e271de41514ee0b262c99ba7e4ed7447704dc19",
+    "cases/i01_initiation_verification_v1.json": "4818a7ecd7a152242ab43b5b44d019f5f2ce02f8b95f3f77ffc68c05573702d2",
+    "docs/I01_INITIATION_VERIFICATION.md": "d9b7e4009ddd2919b9552ddde315fbfb450ce2f04fd1a61a1a3565822d6925d3",
+    "tools/check_i01_elastic_memory.py": "bd7b11f7183ebf392da3e603e67d0f87d4929d1c6abe923f3189b8afd5207307"
+  },
+  "python": "3.12.14",
+  "numpy": "2.4.6",
+  "passed": true,
+  "checks": {
+    "constant_nodal_8": true,
+    "balance_8": true,
+    "constant_nodal_16": true,
+    "balance_16": true,
+    "constant_nodal_32": true,
+    "balance_32": true,
+    "variable_refinement": true,
+    "variable_fine": true,
+    "power_fine": true,
+    "power_refinement": true,
+    "release_not_clamp": true,
+    "no_drive_no_motion": true,
+    "gravity_reversal": true,
+    "gravity_work_without_imposed_work": true,
+    "external_traction_not_gravity": true,
+    "stored_energy_is_not_gravity": true
+  },
+  "variable_velocity_relative_errors": [
+    0.002519459592063543,
+    0.000631467819621131,
+    0.00015796794081484694
+  ],
+  "power_relative_errors": [
+    0.0039062499999980016,
+    0.0009765624999986677,
+    0.00024414062498878675
+  ],
+  "wall_velocity_m_s": 3.468358761720038e-11,
+  "elapsed_seconds": 0.0009772999910637736,
+  "scope": "Analytical continuum and retained-memory controls only; no slab geometry, initiation or event admission",
+  "source_unchanged": true,
+  "status": "PASS_BOUNDED_VERIFICATION_ONLY"
+}

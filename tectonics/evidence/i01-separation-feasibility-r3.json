@@ -1,0 +1,573 @@
+{
+  "schema": "atlas.i01-separation-feasibility.v2",
+  "status": "WORKING_NON_CANON",
+  "result": "PASS_BOUNDED_RESOLVED_FEASIBILITY_ONLY",
+  "checks": {
+    "spatial_refinement": true,
+    "temporal_refinement": true,
+    "all_accounts": true,
+    "creep_keeps_bonds": true,
+    "intact_residual_keeps_bonds": true,
+    "negative_example_keeps_bonds": true
+  },
+  "scientific_acceptance": false,
+  "event_authorised": false,
+  "refinement": {
+    "space": {
+      "pass": true,
+      "brackets_overlap": true,
+      "time_relative": 0.0,
+      "shear_displacement_relative": 0.0,
+      "breakdown_relative": 0.0011532449383112422
+    },
+    "time": {
+      "pass": true,
+      "brackets_overlap": true,
+      "time_relative": 0.00020517029134162714,
+      "shear_displacement_relative": 0.00020517029134162714,
+      "breakdown_relative": 1.1581806728718056e-07
+    }
+  },
+  "runs": [
+    {
+      "cells": 32,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        6.09,
+        6.095
+      ],
+      "shear_displacement_bracket_m": [
+        6.09,
+        6.095
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 26,
+      "plastic_participation_width_m_at_loss": 3.0572096914482514,
+      "traction_pa": 2.607746250805834,
+      "raw_history_range": [
+        0.0,
+        5.063259727067879
+      ],
+      "work_j_m2": 85.00821482398959,
+      "elastic_change_j_m2": 0.7000851271479709,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 17.350268049779164,
+      "residual_friction_j_m2": 39.39225374919408,
+      "overstress_dissipation_j_m2": 27.565607897982368,
+      "account_relative_error": 1.3409571220130009e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        6.09,
+        6.095
+      ],
+      "shear_displacement_bracket_m": [
+        6.09,
+        6.095
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 54,
+      "plastic_participation_width_m_at_loss": 3.0688151564093635,
+      "traction_pa": 2.601217744434101,
+      "raw_history_range": [
+        0.0,
+        5.060979248572757
+      ],
+      "work_j_m2": 84.98841522024055,
+      "elastic_change_j_m2": 0.6915834384897082,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 17.370300260631684,
+      "residual_friction_j_m2": 39.39878225556571,
+      "overstress_dissipation_j_m2": 27.527749265661814,
+      "account_relative_error": 1.2749292266340913e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    {
+      "cells": 64,
+      "dt_s": 0.0025,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        6.09,
+        6.0925
+      ],
+      "shear_displacement_bracket_m": [
+        6.09,
+        6.0925
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 54,
+      "plastic_participation_width_m_at_loss": 3.069522740623761,
+      "traction_pa": 2.601217689628254,
+      "raw_history_range": [
+        0.0,
+        5.0609793015051645
+      ],
+      "work_j_m2": 84.98841503058024,
+      "elastic_change_j_m2": 0.6915833672087381,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 17.37030227242652,
+      "residual_friction_j_m2": 39.39878231037195,
+      "overstress_dissipation_j_m2": 27.52774708058023,
+      "account_relative_error": 8.473332070420234e-14,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    }
+  ],
+  "physical_sensitivities": {
+    "ell_2.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 2.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        7.21,
+        7.215
+      ],
+      "shear_displacement_bracket_m": [
+        7.21,
+        7.215
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 64,
+      "plastic_participation_width_m_at_loss": 3.710211521708031,
+      "traction_pa": 2.500000000000011,
+      "raw_history_range": [
+        1.0420685001101153,
+        4.094427644426753
+      ],
+      "work_j_m2": 85.28538900994585,
+      "elastic_change_j_m2": 0.5625000000000138,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 24.043511166929207,
+      "residual_friction_j_m2": 39.499999999999275,
+      "overstress_dissipation_j_m2": 21.179377843113784,
+      "account_relative_error": 1.1307313153722695e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "band_width_m_0.5": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 4.0,
+      "bond_loss_bracket_s": [
+        5.835,
+        5.84
+      ],
+      "shear_displacement_bracket_m": [
+        5.835,
+        5.84
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 64,
+      "plastic_participation_width_m_at_loss": 3.7695113530440345,
+      "traction_pa": 3.0000000000021116,
+      "raw_history_range": [
+        4.325710422427519,
+        5.428840854810915
+      ],
+      "work_j_m2": 85.91095795976662,
+      "elastic_change_j_m2": 1.2500000000031672,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 15.135169478830907,
+      "residual_friction_j_m2": 38.99999999999764,
+      "overstress_dissipation_j_m2": 30.525788481223994,
+      "account_relative_error": 3.364970797928792e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "band_width_m_2.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 16.0,
+      "bond_loss_bracket_s": [
+        6.3,
+        6.305
+      ],
+      "shear_displacement_bracket_m": [
+        6.3,
+        6.305
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 24,
+      "plastic_participation_width_m_at_loss": 3.3185259199138106,
+      "traction_pa": 2.6340243223803164,
+      "raw_history_range": [
+        0.0,
+        4.695067265678882
+      ],
+      "work_j_m2": 84.20016485962225,
+      "elastic_change_j_m2": 0.7345210327227711,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 19.51279203301277,
+      "residual_friction_j_m2": 39.365975677619545,
+      "overstress_dissipation_j_m2": 24.586876116435636,
+      "account_relative_error": 2.000865861045979e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "softening_history_0.5": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        4.865,
+        4.87
+      ],
+      "shear_displacement_bracket_m": [
+        4.865,
+        4.87
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 64,
+      "plastic_participation_width_m_at_loss": 3.769258651686406,
+      "traction_pa": 2.500000000000011,
+      "raw_history_range": [
+        1.1896620745908233,
+        3.5683849662521956
+      ],
+      "work_j_m2": 73.81277151128901,
+      "elastic_change_j_m2": 0.5625000000000138,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 9.622677924630217,
+      "residual_friction_j_m2": 39.49999999999874,
+      "overstress_dissipation_j_m2": 24.127593586740417,
+      "account_relative_error": 1.088925298744569e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "softening_history_2.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        9.040000000000001,
+        9.045
+      ],
+      "shear_displacement_bracket_m": [
+        9.040000000000001,
+        9.045
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 32,
+      "plastic_participation_width_m_at_loss": 2.4683504606717688,
+      "traction_pa": 2.9882766982347375,
+      "raw_history_range": [
+        0.0,
+        7.036751008672843
+      ],
+      "work_j_m2": 104.40507268700298,
+      "elastic_change_j_m2": 1.2324494063031763,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 32.09374862628427,
+      "residual_friction_j_m2": 39.01172330176521,
+      "overstress_dissipation_j_m2": 32.06715135269937,
+      "account_relative_error": 4.696568177466115e-13,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "plastic_viscosity_pa_s_0.5": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        5.345,
+        5.3500000000000005
+      ],
+      "shear_displacement_bracket_m": [
+        5.345,
+        5.3500000000000005
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 50,
+      "plastic_participation_width_m_at_loss": 2.4092297339124316,
+      "traction_pa": 2.3148769324971417,
+      "raw_history_range": [
+        0.0,
+        5.797135010648836
+      ],
+      "work_j_m2": 72.93679624904365,
+      "elastic_change_j_m2": 0.33966380315184397,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 14.79129850189185,
+      "residual_friction_j_m2": 39.685123067502765,
+      "overstress_dissipation_j_m2": 18.12071087697343,
+      "account_relative_error": 6.529554982475952e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "plastic_viscosity_pa_s_2.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        7.155,
+        7.16
+      ],
+      "shear_displacement_bracket_m": [
+        7.155,
+        7.16
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 64,
+      "plastic_participation_width_m_at_loss": 4.08409432252284,
+      "traction_pa": 3.0266280003656365,
+      "raw_history_range": [
+        0.0945642302887733,
+        4.186179963917856
+      ],
+      "work_j_m2": 103.02404667737196,
+      "elastic_change_j_m2": 1.290119263149323,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 21.68475225045884,
+      "residual_friction_j_m2": 38.973371999634175,
+      "overstress_dissipation_j_m2": 41.07580316416214,
+      "account_relative_error": 3.156694195635057e-13,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "unstable_eta_0.5": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        16.240000000000002,
+        16.245
+      ],
+      "shear_displacement_bracket_m": [
+        16.240000000000002,
+        16.245
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 58,
+      "plastic_participation_width_m_at_loss": 3.757639216882924,
+      "traction_pa": 2.310262260304017,
+      "raw_history_range": [
+        0.0,
+        4.629915660055324
+      ],
+      "work_j_m2": 111.55606474560538,
+      "elastic_change_j_m2": 1.3373117113850244,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 19.495308302544608,
+      "residual_friction_j_m2": 38.758950958785235,
+      "overstress_dissipation_j_m2": 51.96449377199179,
+      "account_relative_error": 8.056307663555935e-12,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "unstable_eta_1.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        17.265,
+        17.27
+      ],
+      "shear_displacement_bracket_m": [
+        17.265,
+        17.27
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 54,
+      "plastic_participation_width_m_at_loss": 4.258276371190197,
+      "traction_pa": 3.5190166053036824,
+      "raw_history_range": [
+        0.0019375928589055146,
+        3.889349423036868
+      ],
+      "work_j_m2": 123.20229120472165,
+      "elastic_change_j_m2": 8.383477868403054,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 21.777346548348238,
+      "residual_friction_j_m2": 33.92393357878659,
+      "overstress_dissipation_j_m2": 59.117533209093686,
+      "account_relative_error": 7.312340751628041e-13,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    },
+    "unstable_eta_2.0": {
+      "cells": 64,
+      "dt_s": 0.005,
+      "ell_m": 1.0,
+      "band_width_m": 8.0,
+      "bond_loss_bracket_s": [
+        18.78,
+        18.785
+      ],
+      "shear_displacement_bracket_m": [
+        18.78,
+        18.785
+      ],
+      "bonded_connectivity": "DISCONNECTED",
+      "point_set_connectivity": "CONNECTED",
+      "broken_cells": 36,
+      "plastic_participation_width_m_at_loss": 5.154451367163888,
+      "traction_pa": 7.37476816913074,
+      "raw_history_range": [
+        0.013305423824179048,
+        2.265903384894497
+      ],
+      "work_j_m2": 133.51811521509697,
+      "elastic_change_j_m2": 50.38720554842397,
+      "creep_dissipation_j_m2": 0.0,
+      "breakdown_dissipation_j_m2": 24.339397205029837,
+      "residual_friction_j_m2": 18.500927323478408,
+      "overstress_dissipation_j_m2": 40.29058513815338,
+      "account_relative_error": 8.520034289873601e-14,
+      "support": "INSIDE",
+      "event_authorised": false,
+      "scientific_acceptance": false
+    }
+  },
+  "creep_control": {
+    "cells": 64,
+    "dt_s": 0.0025,
+    "ell_m": 1.0,
+    "band_width_m": 8.0,
+    "bond_loss_bracket_s": null,
+    "shear_displacement_bracket_m": null,
+    "bonded_connectivity": "CONNECTED",
+    "point_set_connectivity": "CONNECTED",
+    "broken_cells": 0,
+    "plastic_participation_width_m_at_loss": null,
+    "traction_pa": 0.12500000000000033,
+    "raw_history_range": [
+      0.0,
+      0.0
+    ],
+    "work_j_m2": 2.617187500000192,
+    "elastic_change_j_m2": -0.99609375,
+    "creep_dissipation_j_m2": 3.6132812981385043,
+    "breakdown_dissipation_j_m2": 0.0,
+    "residual_friction_j_m2": 0.0,
+    "overstress_dissipation_j_m2": 0.0,
+    "account_relative_error": 1.0443565981197774e-08,
+    "support": "INSIDE",
+    "event_authorised": false,
+    "scientific_acceptance": false
+  },
+  "intact_control": {
+    "cells": 64,
+    "dt_s": 0.005,
+    "ell_m": 1.0,
+    "band_width_m": 8.0,
+    "bond_loss_bracket_s": null,
+    "shear_displacement_bracket_m": null,
+    "bonded_connectivity": "CONNECTED",
+    "point_set_connectivity": "CONNECTED",
+    "broken_cells": 0,
+    "plastic_participation_width_m_at_loss": null,
+    "traction_pa": 2.601217744434101,
+    "raw_history_range": [
+      0.0,
+      5.060979248572757
+    ],
+    "work_j_m2": 84.98841522024055,
+    "elastic_change_j_m2": 0.6915834384897082,
+    "creep_dissipation_j_m2": 0.0,
+    "breakdown_dissipation_j_m2": 17.370300260631684,
+    "residual_friction_j_m2": 39.39878225556571,
+    "overstress_dissipation_j_m2": 27.527749265661814,
+    "account_relative_error": 1.2749292266340913e-12,
+    "support": "INSIDE",
+    "event_authorised": false,
+    "scientific_acceptance": false
+  },
+  "negative_example": [
+    {
+      "opening": 0,
+      "thickness": 64.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 32,
+      "thickness": 32.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 48,
+      "thickness": 16.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 56,
+      "thickness": 8.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 60,
+      "thickness": 4.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 62,
+      "thickness": 2.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 63,
+      "thickness": 1.0,
+      "bond": "BONDED"
+    },
+    {
+      "opening": 64,
+      "thickness": 0.36787944117144233,
+      "bond": "BONDED"
+    }
+  ],
+  "elapsed_seconds_after_imports": 6.39100000000326,
+  "source_sha256": {
+    "tools/check_i01_separation_feasibility.py": "1e76845ffb150aa409aa0675cf16dd8ad634cb2d0ad47da0891e19e5b63bb39e",
+    "tests/test_i01_separation_feasibility.py": "4c8a7833c4c6bc3e53515191f4a05d3af930e86f55c573d3a5407c82a0e5f937",
+    "docs/I01_SEPARATION_FEASIBILITY.md": "080bca1076b9265f1ba4f2e7425584374a2135ab3a9666bd10a21a478fbab4c6",
+    "cases/i01_separation_feasibility_v1.json": "7b7c6b469e6186849e1655e1cdd424e0dd4cf2a1570f84d5a821e2e47bafb4f5",
+    "tools/check_i01_separation_law.py": "0de553b4c6b2539f9132f99f9621bda63998c90466d6ddf3aa15e941ca019b02"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1"
+  }
+}

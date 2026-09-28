@@ -7,6 +7,131 @@ committed or pushed. Check the actual checkout before continuing.
 
 ## Active checkpoint
 
+The I01 review's implementation defects are now corrected: actual thermal and
+mechanical reference density must match, replaced thermal preparations refuse,
+and common-Gibbs inversions require explicit supported-branch declarations with
+sampled phase checks. All **592 I01 tests pass in 8.508 s**. The five affected
+heat/motion/finite-strain/admission/breakup controls were rerun in dependency
+order; the native G25 connection and spatial separation controls also pass.
+[Current evidence](CURRENT_EVIDENCE.md) links the new source-bound receipts;
+previous receipts remain unchanged and superseded, not silently rebound.
+
+The separation filter now reuses its fixed Cholesky factor. Three alternating
+paired measurements of the same prepared 64-cell/4000-step run take median
+**0.4640272 to 0.3708135 s: 0.0932137 s / 20.0880% saved**. Event brackets are
+identical and other output differences are round-off (at most 7.11e-15 absolute).
+The diagnostic now says imposed **shear displacement**, not normal opening.
+[Measured samples](../tectonics/evidence/i01-separation-performance-r1.json).
+This is a bounded control speedup, not a complete-world workflow measurement.
+Earlier timing descriptions below retain their original snapshot measurements;
+the current evidence guide/register supersede affected receipt references.
+
+The remaining I01 pass now selects three additional methods with passing bounded
+controls: [irreversible bond history and resolved shear-band separation](../tectonics/docs/I01_SEPARATION_FEASIBILITY.md),
+[independent initiation verification](../tectonics/docs/I01_INITIATION_VERIFICATION.md),
+and [multidirectional junction mechanics](../tectonics/docs/I01_JUNCTION_FEASIBILITY.md).
+Separation: **18 tests, six controls**, 6.391 s corrected campaign; spatial breakdown-energy
+change **0.1153%**, time-refinement event-midpoint change **0.02052%**, overlapping
+brackets. The first run's creep timestep refusal is retained; only that numerical
+step was halved, with physical inputs and acceptance limits unchanged.
+Initiation: **eight tests, sixteen controls**, 0.0009773 s after imports; analytical
+gravity-flow, genuine release versus clamping, and gravity/elastic work are checked.
+Junctions: **three tests, eight actual plate-coupled 3D solves**, 2.5066567 s,
+including independent force/torque/power, rotation and material-direction checks.
+These timings are bounded Windows work, not a whole-world forecast or speedup.
+
+The [melt focusing/thermal-barrier route](../tectonics/docs/I01_MELT_ROUTE.md)
+is now selected: coupled porous flow, compaction and common-provider enthalpy,
+not a universal lid-depth/spreading-rate lookup. The reviewed
+[segregation control](../tectonics/docs/I01_MELT_SEGREGATION.md) passes **21 tests
+in 0.031 s and nine control groups in 0.1425885 s** after imports. Review corrected
+relative-versus-receiver liquid flux, extreme positive phase-fraction conversion,
+and pressure/production-rate interface descriptions without changing the core
+compaction equations. Frozen-operator reuse saves **1.9642 ms (47.36%)** at 256
+cells and **4.7928 ms (42.32%)** at 4096 cells for 16 changed loads, with
+bit-identical fields. This is instantaneous 1D feasibility, not evolving delivery.
+The receipt is retained as historical for three documentation-link corrections
+after capture; its scientific code, case and test hashes still match.
+
+**I01's model-choice, ownership and bounded-feasibility work is complete.** All
+seven choices are selected in the reviewed closure matrix. The current G25
+provider still refuses phase-boundary crossings; moving freezing fronts and
+source-to-crust integration remain explicit I05/I06 implementation obligations.
+
+I01's finish rule concerns equations, inputs/support, ownership and bounded
+feasibility. The matrix's original full-event conditions remain mandatory with
+their I02–I09 owners; they have not been weakened or silently passed. The
+incomplete Li-Gurnis archive is no longer the sole route to I01 method acceptance.
+Its missing data remain missing, while independently declared analytical cases
+verify the method's prerequisites. No full subduction, breakup or junction event
+is authorised by these controls. I02's common state and atomic exchanges are next.
+
+**I02 is authorised to resume, with review between its eight steps.** Michael
+requested Claude implement I02.1, then approved continuation as each step finishes.
+The earlier cancelled assignment remains cancelled, not accepted. Start with the
+reviewed shared-state implementation. I02.1 now passes **16 focused tests in
+0.083 s**, without skips. Review corrected exposed array-descriptor mutation
+without copying the payload and enforced the retained `1e14 s` duration ceiling.
+I02.2 follows in two bounded assignments: first extract one package-owned solver
+with legacy compatibility aliases, then make that same implementation continuable.
+The extraction (I02.2a) is now reviewed: the moved numerical bodies preserve the
+existing equations and retained heat-integrity repairs. Across eleven focused
+suites, 206 test methods pass; two source-freshness methods remain failing because
+their old campaign receipts bind the earlier tool layout. The 13 extraction
+checks pass in 1.388 s, including a package-only process, independent oracles and
+downstream source-binding coverage. Three downstream tools now also bind the
+package code they execute. No old receipt was repinned. Nine affected campaign
+records are historical; refreshing the dependency-ordered evidence after I02.2b
+stabilises is still required before claiming current campaign acceptance.
+The extraction is accepted as an ownership refactor, not a completed continuable
+workflow or a new performance result. I02.2b is implemented but needs a reviewed
+ownership correction before acceptance. Its 23 continuation tests pass in 2.503 s
+and 16 shared-state tests in 0.099 s; the affected finite-strain, admission and
+breakup numerical checks also pass, with the known stale-receipt check still
+failing. Review reproduced an exposed prepared-runner alias: changing the shape
+of a public weight array crashes advancement; changing a public eigenvalue shape
+causes a false constitutive refusal. Accepted input states remain unchanged, but
+the reusable solver is corrupted. Claude's next assignment is this targeted
+ownership repair and regression coverage, not I02.3. Campaign refresh remains due
+after the correction; no new performance or current campaign acceptance is claimed.
+Stop before I03; no broad simulation, installation, commit or push is authorised.
+I01 remains complete at the method-choice/contract/bounded-feasibility scope above.
+
+The new shared-state module changes whole-package source membership and execution
+identity. Three registered package-wide receipts (junction feasibility, connected
+3D evolution and melt delivery) are now historical; their numerical code and
+original results were not changed, rerun or silently rebound. This does not reopen
+I01 method selection or certify those old executions against the changed package.
+
+The [eight-step I02 plan](../tectonics/docs/INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller)
+now requires a real coupled thermal/mechanical workflow with shared state, atomic
+updates and save/reopen/continue parity, not just synthetic plumbing checks.
+Planning is complete; the former I02 hold is lifted for this reviewed sequence.
+
+The same [integration plan](../tectonics/docs/INTEGRATION_PLAN.md#6-implementation-order-and-acceptance-per-increment)
+now gives focused research questions, bounded coding assignments, reuse targets,
+checks and finish conditions for every I stage. It makes I04/I05's feedback and
+the I07 mechanics prerequisite for I06 breakup explicit. I01 stays closed unless
+a specific defect requires correction. The reviewed I02.1 carrier is the baseline;
+later-stage planning does not extend implementation authority beyond I02.
+
+### Retained components and their implementation boundaries
+
+The [same-time plate/regional connection](../tectonics/docs/REGIONAL_MECHANICS_3D.md#planet-centred-plate-motion-and-returned-torques)
+now maps native planet-centred Euler motions to full three-component regional
+boundary velocities and returns work-conjugate plate torques. It also solves
+all three angular components per plate from supplied torques and regional
+resistance, for up to four declared plates. Seven focused Windows tests pass
+in 4.675 s, without skips, including an independent nonzero-strain twisting
+solution and exact repeated-result reuse with one factorisation. Native scientific
+sources and old receipts are unchanged: this is a new source-bound tools adapter.
+The original mechanical receipt is classified historical because its bound method
+document now describes the added connection; it was not rebound or rerun.
+It uses an explicitly embedded stationary flat box, not a spherical mesh or
+world evolution. Automatic boundary ownership and multi-region assembly remain
+open; this connection alone did not close MC-05 or I01. The additional bounded
+junction controls above complete its I01 feasibility contribution.
+
 The [connected 3D regional advance](../tectonics/docs/REGIONAL_EVOLUTION_3D.md)
 now takes actual solved deformation through conservative component-mass,
 enthalpy and scalar-history transport, conduction, supported weakening/healing
@@ -24,8 +149,9 @@ adding three package modules changes execution identity, not old evidence bytes.
 
 The current branch is first-order, fixed-box Boussinesq evolution with scalar
 memory. Next connections are objective elastic/finite-strain tensor history,
-compatible moving surfaces, actual spherical plate mapping and physical
-separation/junction reorganisation. MC-05 and I01 remain open. Whole-planet
+compatible moving surfaces, curved/global plate assembly and physical
+separation/junction reorganisation. These remain physical implementation gates,
+not missing MC-05 method selection. Whole-planet
 evolution, interacting regional feedback and measured planetary resource use
 remain explicit I11 requirements, with ownership across I03/I04/I07/I09.
 
@@ -36,34 +162,64 @@ focused tests pass in 0.246 s; all [six controls](../tectonics/evidence/i01-elas
 pass in 0.184093 s. Review corrected oversized-number refusal and clarified the
 flat-reference approximation; no physical law or tolerance was retuned.
 At 16,384 cells, the added median cost is 0.0201 ms (1.57%), not a speedup.
-Four I01 choices remain open: separation, initiation resistance, the calibrated
-melt provider, and physical junction reorganisation (MC-01/02/03/05).
+The completed I01 choices and remaining implementation work are summarised above; the
+following retained component measurements do not extend their physical scope.
 The [separation-law candidate](../tectonics/docs/I01_SEPARATION_LAW.md) requires
-correction before admission. Its 24 initial tests pass in 0.329 s and nine local
-controls in 0.0438411 s, but targeted review found missed plastic evolution at
-exact yield, inconsistent residual-cohesion/event semantics and numeric-range
-failures. Proposed transport/healing wording also needs correction. These are
-pre-correction prototype results, not a physical separation or MC-01 pass.
+physical admission, but its requested code corrections are now complete. Exact
+yield preserves small positive drive; cohesive residuals cannot be called broken;
+softening completion and bond loss are distinct; unsupported history/healing
+claims are refused. Codex fixed the last energy-underflow case directly, checking
+the final halved energy so positive energy cannot silently become zero.
+**35 focused tests pass in 0.359 s**, and all nine
+[corrected local controls](../tectonics/evidence/i01-separation-law-r1.json) pass in
+**0.0452191 s**. No physical threshold or tolerance was retuned. This completes
+the assigned local corrections. The new resolved-strip receipt above separately
+supports the I01 MC-01 choice; full lithosphere separation remains I07 acceptance.
 MC-02 now has a [selected resolved-initiation method](../tectonics/docs/I01_INITIATION_DECISION.md)
 and [prospective comparison record](../tectonics/cases/i01_initiation_decision_v1.json).
 It keeps stress/plastic history, explicit pore pressure and physical weakening
 length, and separates a genuine force-release test from a prescribed-velocity
-reaction crossing. The [input/comparison tool](../tectonics/tools/check_i01_initiation_inputs.py)
+reaction crossing. **Li and Gurnis (2023) is now the preferred primary benchmark
+candidate, not an admitted case.** Its archived Underworld code, README and
+numeric force histories have been inspected and pinned in the comparison record.
+The archive contains 332 finite time/force pairs. A new
+[source reconstruction](../tectonics/cases/i01_li_gurnis_reconstruction_v1.json)
+retains the 4 cm/year row's 24 samples through 199.584348 km nominal convergence,
+explicit Myr-to-seconds conversion and compression-positive column force. It
+derives the archived creep exponent's effective 504 kJ/mol activation energy;
+this does not silently repair the 540/1400/1500 source inconsistency. Eight
+focused reconstruction checks pass in 0.066 s, and the fourteen existing
+input/comparison checks pass in 0.049 s. No skips in those focused suites.
+Exact reproduction remains blocked by missing `inputfile.txt`, the newly
+identified `morbphase.txt` density table, and complete row/rheology provenance.
+The initial code zero is explained by stored-stress sampling; panel mapping and
+physical boundary-work equivalence remain unverified. Its zero-velocity stop is
+not Atlas's force release. The separate Atlas analytical verification route above
+is now selected; exact published reproduction remains optional and blocked until
+its source information is recovered. Gurnis, Hall and
+Lavier (2004) stays supporting evidence, with its existing facts/readings intact.
+No Underworld simulation or installation was performed.
+The [input/comparison tool](../tectonics/tools/check_i01_initiation_inputs.py)
 now checks source/review coverage and prepares source-bound comparison plans.
 It compares signed force against convergence at both curves' knots and integrates
-work with explicit extraction uncertainty and predeclared allowances. Thirteen
-focused synthetic tests pass in 0.037 s, with no skips, including the recovered
-source-record guard. The original paper now supports explicit case-23 plate roles (40 Myr
+work with explicit extraction uncertainty and predeclared allowances, including
+recovered-source and replacement-candidate refusal guards. The original paper
+supports explicit case-23 plate roles (40 Myr
 right/subducting; 10 Myr left/overriding) and recorded material constants.
 Basal temperature remains conflicting, several complete input profiles remain
-missing. All 28 reported graphical readings have now been received, but their
-extraction omitted the script, coordinate calibration and exact vector selection.
-They remain outside the active reference curve pending a reproducible extraction.
+missing. The research owner has now delivered and executed a complete reproducible
+curve extractor, calibration, vector selectors and raw output; all 28 rounded
+bands match the earlier readings and its five synthetic tests pass. Local review
+checked the script/data, PDF hash and figure identities; the exact PDF parser is
+not installed here, so no local extraction rerun is claimed. The retained source
+and output are bound by the existing input test. The readings remain outside the
+active reference curve: axis/systematic uncertainty and benchmark inputs are unresolved.
 Missing definitions,
 reference data and allowances remain explicit; preparation refuses them. This is
 comparison machinery, not an initiation simulation or solver-input adapter.
-Complete benchmark inputs and comparison allowances remain outstanding, so MC-02
-is not closed. No physical calibration or numerical acceptance threshold was guessed.
+Complete published benchmark inputs and comparison allowances remain outstanding,
+but do not block the independently verified I01 method choice. Full I07 event
+acceptance remains outstanding. No physical calibration or tolerance was guessed.
 Actual core inputs remain declared; general support and boundary assembly belong
 to I04/I08. This does not mark I01 or generated-world acceptance complete.
 
@@ -73,7 +229,8 @@ paths, including a collision with no sign change in squared distance. Ten tests
 pass in 0.001 s and nine controls in 0.130276 s. Preparation reuse saves
 11.9981 ms (84.613%) for 1,000 identical queries, not a world-run speedup.
 This is separate from choosing a physically permitted replacement boundary:
-MC-05 stays open, with graph/state/spherical integration still assigned to I03/I09.
+MC-05's physical-event acceptance stays open, with graph/state/spherical
+integration still assigned to I03/I09.
 The next [outgoing ridge prerequisite](../tectonics/docs/I01_RIDGE_JUNCTION.md)
 now checks both proposed junction velocities and ownership-oriented forward
 growth. Nine tests pass in 0.002 s; nine controls in 0.169193 s. For 300 repeated
@@ -87,7 +244,8 @@ mechanisms, then jointly extract and commit its physically supported topology.
 The [case record](../tectonics/cases/i01_junction_reorganisation_v1.json) fixes
 3D conventions, ownership, timing/accounting obligations and nine prospective
 controls. The new 3D mechanical component above now supplies a tested solve;
-MC-05 remains open for evolving shared physics, topology and physical acceptance. Contact and
+MC-05's method selection is complete; evolving shared physics, topology and
+physical acceptance remain later implementation work. Contact and
 compatible movement are completed pieces, not completed reorganisation.
 
 Work follows [the completion roadmap](ATLAS_ROADMAP.md): repair reliability and
@@ -109,7 +267,7 @@ modules complete. Use these scopes when preparing subsequent implementation brie
 | A6: status and change granularity | One current summary replaces the accumulated status log; no separate archive copy. Scoped delivery and evidence-impact guidance recorded. | [Change procedure](CODING_SAFETY.md#5-source-only-check-and-change-procedure) |
 | B1: matched boundary diagnostics | Tool integrated; one retained original/prototype comparison at 100/250/500 km against PB2002 development. Portable inputs, signed components and declared exclusions retained. Prototype motion is not refitted; this is not realism acceptance. | [Method and measured checkpoint](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1) |
 | B2: causal-generation diagnosis | Code trace and a bounded two-candidate experiment completed. New World saves initial conditions; crust does not affect its plate layout. No producer fix implemented. | [Causes and research](../tectonics/docs/NEW_WORLD_LAYOUT.md#causal-generation-diagnosis-and-replacement-design) |
-| Complete tectonics integration | I01 contracts and bounded controls include 2D localisation, pressure/temperature response, evolving thermal/plastic history, finite-strain columns, column resistance, melt production/delivery and transition accounts. Spatial embedding, calibrated rupture and generated transitions remain open; I02–I12 are not started. | [Integration plan](../tectonics/docs/INTEGRATION_PLAN.md), [I01 contract](../tectonics/docs/I01_PHYSICAL_CONTRACT.md), [finite-strain method](../tectonics/docs/I01_FINITE_STRAIN.md), [thermal/history](../tectonics/docs/I01_THERMAL.md), [melt production](../tectonics/docs/I01_MELTING.md), [transition controls](../tectonics/docs/I01_TRANSITIONS.md) |
+| Complete tectonics integration | I01 method choices and bounded feasibility complete. I02.1 shared state reviewed and tested; I02.2 reusable/continuable solver is next. I03–I12 remain planned, not started. | [Integration plan](../tectonics/docs/INTEGRATION_PLAN.md), [shared-state contract](../tectonics/docs/I02_COMMON_STATE.md), [I01 contract](../tectonics/docs/I01_PHYSICAL_CONTRACT.md) |
 
 Claude's A5 follow-up is now integrated. It installed into a separate ignored
 environment without modifying the scientific environment. The retained receipt
@@ -276,12 +434,26 @@ A liquid-only receiver still refuses a solid-bearing parcel instead of dropping
 its solid mass.
 
 The [common-provider connection contract](../tectonics/docs/I01_THERMO_PROVIDER_CONTRACT.md)
-now defines shared identity, component basis, SI units, supported domains,
-P/T-H-S requests, extensive accounts and explicit failure semantics. It maps the
-retained analytical interfaces for reuse instead of duplicating them. This is a
-completed interface specification, not an implemented external adapter or a
-calibrated material; MC-03's model/data, extraction, focusing and thermal-lid
-choices remain open. Concrete calibration inputs are being researched separately.
+now has an experimental corrected-G25/MAGEMin implementation. Common chemical
+potential derivatives supply phase heat, entropy and volume on the same component
+basis, rather than reusing inconsistent raw heat fields. Native phase merging
+was disabled after a controlled comparison showed that its composition averaging
+spoiled component conservation; actual solved component amounts are retained.
+Finite extraction, depleted-material re-equilibration and compatible same-pressure
+receivers are implemented with bounded caching, cancellation and explicit refusal
+of unsupported phase changes. This remains opt-in, not the default world route.
+
+Twelve independent analytical tests pass in **0.008 s**. The
+[real Windows campaign](../tectonics/evidence/i01-gibbs-provider-r1.json) passes in
+**21.4821431 s**, including derivative refinement, changed-bulk phase consistency,
+extraction/recombination and H/S recovery. Julia 1.10.12, MAGEMin_C 2.3.7 and native
+MAGEMin 2.0.4 were installed in an isolated authorised environment; Atlas's Python
+environment was not changed. Median identical uncached/cached requests take
+**1.4764424 / 0.0003544 s**, saving **1.4760880 s (99.9760%)**. That is exact-input
+reuse, not a speedup for new states or a whole-world estimate. MC-03's compatible
+segregation control now passes as recorded above. The focusing/thermal route is
+selected; spatial implementation and independent physical observations remain
+later acceptance. The dry KLB1 software reference is not experimental acceptance.
 
 Current matched microbenchmarks retain the existing optimisations: partition
 Newton 0.0020329 s versus bisection 0.0164274 s per 200 calls (87.62% saved);
@@ -293,7 +465,8 @@ inventory arithmetic; **no speedup is claimed from this correctness repair**.
 
 The endpoint review checked the Chemicals 1.5.2 Rachford-Rice numerical notes;
 the retained methods document Keller-Katz, R_DMC, Cantera and pyMelt research.
-No external package was installed or run. This remains an analytical ideal
+For those retained analytical controls, no external package was installed or run.
+That earlier branch remains an analytical ideal
 mixture, not calibrated mantle petrology, single-phase thermal expansion,
 a physical extraction/flow-rate law, native emplacement or I02 persisted transfers.
 
@@ -470,7 +643,8 @@ integrated heat/work are checked; general shear is refused. Prepared coefficient
 save 3.189 ms (34.781%) over 2,000 identical local updates, with bit-identical
 results. This is a local setup-reuse measurement, not a generator speedup.
 I02/I05/I07 still implement persistent transport and the general coupled law;
-MC-01's separation mechanism remains open.
+MC-01's new bounded bond-history/strip choice is recorded above; its full
+mixed-lithosphere physical acceptance remains I07 work.
 
 The reviewed [water-to-GPE connection](../tectonics/docs/I01_WATER_GPE.md) carries
 the actual loaded-column stress into gravitational driving without a second
@@ -510,7 +684,7 @@ and does not complete I01 or later scientific integration.
 ## Evidence: what the results establish
 
 The [registered evidence](../tectonics/evidence/current-evidence.json) currently
-classifies **54 records: thirty-three current, twenty historical and one superseded**.
+classifies **71 records: forty current, twenty-three historical and eight superseded**.
 Current items are the Step 7 r2 *case matrix* and the B1 diagnostic tool/input
 bindings, the Windows installation receipt bound to its package-version record,
 and I01's initial, 2D, pressure/temperature, corrected transition, nonlinear

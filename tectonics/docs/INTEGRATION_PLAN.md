@@ -1,6 +1,6 @@
 # Complete tectonics integration plan
 
-26 September 2026. **WORKING NON-CANON — plan, not implemented capability.**
+28 September 2026. **WORKING NON-CANON — plan, not implemented capability.**
 
 This is the forward integration scope for finishing the tectonics generator.
 It replaces the narrower interpretation of W12 completion and the provisional
@@ -8,11 +8,15 @@ B2 implementation order. [W12_ASSEMBLY.md](W12_ASSEMBLY.md) remains the record o
 what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains the
 single progress summary; do not maintain another competing status ledger here.
 
-This plan was originally delivered as planning/documentation only. The owner has
-since authorised I01 research, specifications and bounded feasibility controls;
-see [its physical contract](I01_PHYSICAL_CONTRACT.md) and the single current-state
-record. That continuation does not authorise I02–I12 production work, installation,
-reopening R4.4, a full-world run, commit or push.
+This is the complete planning scope, not blanket execution authority. The latest
+owner instruction permits the reviewed Claude/Codex sequence through **I02 only**;
+stop before I03 unless separately resumed. Preparing the later briefs does not
+start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
+live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
+current-state record. No installations, reopening R4.4, broad/full-world runs,
+commits, pushes or paid overage are implied. The I01-only automatic timeout
+continuation permission has expired. Do not change an in-flight brief or its
+editable files when updating this plan; use the revised plan for its successor.
 
 ## 1. The outcome we must deliver
 
@@ -217,13 +221,81 @@ I-numbers below are integration increments, not replacements for W01–W12.
 Each increment includes its focused checks, affected documentation and early
 performance measurement. Do not postpone all testing or optimisation until I11.
 
+### How Codex and Claude use these briefs
+
+Each numbered assignment below is a bounded delivery, not an instruction to send
+an entire stage in one large prompt. Codex selects the next dependency-ready
+assignment and supplies exact editable paths and current input identities.
+Claude implements it and prepares focused tests; Codex reviews the actual patch,
+executes the required checks and sends corrections or the next authorised brief.
+The current shell-free Claude route cannot execute its tests: prepared tests and
+passing tests must remain distinct. The UI owner retains UI implementation.
+
+**Research must resolve a coding decision.** Start with the stage's named local
+method contract and existing evidence. Reopen only relevant primary equations or
+reference-software sections to answer the stated unresolved question. Record the
+selected equations, units/conventions, inputs, validity, algorithm, independent
+check and reason for the choice in the existing method document. Reading ends
+when those are sufficient to implement the bounded change; do not return another
+general literature survey. Sources listed here are targeted reading, not claims
+that their complete methods have been inspected, reproduced or newly validated.
+No new physical law is authorised merely by appearing in a bibliography.
+
+Where a benchmark's exact inputs cannot be recovered, identify what it would
+establish and use an independently justified analytical, manufactured or available
+reference case for that claim. Keep missing empirical calibration and full-event
+acceptance visible. Never tune thresholds to generated results or promote two
+implementations of the same equations into independent geological validation.
+
+Every dispatch is assembled from this compact contract, not a fresh standalone
+plan or the entire conversation:
+
+| Brief field | Required content |
+| --- | --- |
+| Outcome and scope | One numbered assignment, real user/process outcome, explicit exclusions and current authority |
+| Inputs and prerequisites | Accepted upstream state/contracts and exact source/evidence pointers; unknowns and genuine blockers |
+| Research decision | Named question, primary paper/software sections, retained choice and exact unresolved extension; omit new research when already settled |
+| Implementation | Actual APIs/files to reuse, exact editable paths, input/output and contribution ownership; preserve unrelated edits |
+| Acceptance and cost | Existing tolerances plus justified new criteria fixed before testing; smallest adequate seam/physical checks, resource limits and matched timing where relevant |
+| Return | Saved code/docs, tests prepared versus run, measured results, sources actually used, unsupported cases and next review action |
+
+Keep the returned evidence in existing files/registers. Reuse adequate unchanged
+checks; no automatic reviewer-of-reviewer, whole-suite rerun or research-only
+follow-up. A required independent comparison addresses a named risk. Failed
+checks are fixed at their generating cause, not hidden through smoother output.
+Package extraction/source changes require honest identity/evidence handling, not
+silent repinning. Each accepted scientific change updates the reader guide in
+generation order before new evidence capture. No token instrumentation.
+
+The stage gates below remain mandatory: a substep is complete only for its named
+output, not the entire stage. Stages with physical feedback have dependency-ready
+substeps; they need not wait for each other's full acceptance before work begins.
+The [dependency order](#dependencies-and-sensible-parallel-work) specifies these
+connections. Unsupported required physics is a blocker, not a reduced default.
+
 ### I01 — Freeze the end-to-end contract and physical closure choices
+
+**Focused brief: retain the completed baseline.** Reuse the
+[physical contract](I01_PHYSICAL_CONTRACT.md), [closure matrix](I01_CLOSURE_MATRIX.md)
+and their current evidence. No new I01 coding/research assignment is needed merely
+to start a later stage. If an implementation exposes a specific missing equation,
+input, ownership rule or invalid assumption, isolate that question, consult the
+primary source already cited by its method document, correct the affected contract
+and test only the changed claim. Return the resolved requirement to its named
+I02–I09 owner; do not restart the entire scientific review. The original full-event
+conditions remain assigned to those later stages.
 
 The reviewed [closure matrix](I01_CLOSURE_MATRIX.md) and its
 [machine-readable mirror](../cases/i01_closure_matrix_v1.json) map the promised
 routes to producers, evidence and remaining decisions in generation order.
 They distinguish missing I01 physics from later implementation; the matrix is
 not a completed generator or an accepted separation law.
+
+The I01 review repairs enforce actual thermal/mechanical density and prepared
+thermal content, require explicit supported branches for common-Gibbs inversions,
+and reuse the unchanged separation filter factor. All 592 I01 tests and the
+affected connected controls pass; the current evidence register points to fresh
+receipts rather than rewriting old ones. I02's current authority is stated above.
 
 MC-06 now has a [conditional lateral-conduction criterion](I01_LATERAL_HEAT.md)
 and a [bounded control](../evidence/i01-lateral-heat-r1.json). It selects the
@@ -233,12 +305,26 @@ coupled feedback remain I05/I06 implementation/admission work. MC-04 now has a
 [eight bounded controls](../evidence/i01-basal-closure-r1.json), including an
 independent exact mechanical-work solution. Actual transport, source-state to
 prescription binding and resolved-depth sensitivity remain I05/I07 work.
-Four physical-choice items remain open: MC-01, MC-02, MC-03 and MC-05.
+The remaining-choice pass distinguishes I01 selection/feasibility from the full
+physical-event acceptance already assigned to I05–I09. The latter gates are not
+waived or counted as completed by small controls. MC-01's
+[resolved-band control](I01_SEPARATION_FEASIBILITY.md) now passes fixed-length/time
+refinement and independent energy accounts with irreversible bond history.
+MC-03's compatible instantaneous segregation control now passes. Together with
+the retained G25 checks and selected focusing/thermal contract, this completes
+its I01 choice and bounded feasibility, not source-to-crust evolution or physical
+calibration. Exact receipts and review details belong in CURRENT_STATE.
 MC-02 now has a [resolved-initiation method and prospective test specification](I01_INITIATION_DECISION.md),
 including retained stress, prescribed pore pressure, physical-length weakening
-and a genuine force-release check. Benchmark inputs and comparison allowances
-still need completion before I07 implementation; the current authored-R control
-is not a generated-initiation result. MC-07's
+and a genuine force-release check. Its independent
+[analytical verification route](I01_INITIATION_VERIFICATION.md) now has
+[sixteen passing controls](../evidence/i01-initiation-verification-r1.json).
+This closes I01's choice and bounded prerequisite verification without requiring
+an unreconstructable published experiment. Li and Gurnis (2023) and Gurnis,
+Hall and Lavier (2004) remain external comparison sources; missing inputs are
+not invented. I07 must still lock the complete physical case and pass coupled
+refinement, boundary-sensitivity and true release tests before initiation
+acceptance. The current authored-R control is not a generated event. MC-07's
 [water-loaded columns-to-GPE connection](I01_WATER_GPE.md) now passes nineteen
 tests and [eight controls](../evidence/i01-water-gpe-r1.json), without a second
 isostatic correction or load. Structural dry/Airy/uniform cases need no further
@@ -261,8 +347,12 @@ retain both horizontal directions and vertical structure in the general regional
 solve; the declared 3D constitutive convention needs explicit parameter conversion.
 I09 owns work-conjugate feedback, I03 the shared geometry and I02 the joint commit.
 No graph score, contact-only flip or new standalone junction fracture law replaces
-that chain. Its implementation and physical controls remain open, not another
-request to rerun the completed contact/ridge helpers.
+that chain. The [multidirectional feasibility control](I01_JUNCTION_FEASIBILITY.md)
+now runs eight actual plate-coupled 3D solves with independent force, torque and
+power checks. Its [passing receipt](../evidence/i01-junction-feasibility-r1.json)
+supports I01 selection; evolving shared mechanisms and joint topology acceptance
+remain I03/I07/I09/I02 work. Do not rerun completed contact/ridge helpers merely
+to replace those missing physical connections.
 MC-01's elastic-memory subchoice is now **retain**, with the
 [logarithmic-objective direction and exact coaxial control](I01_ELASTIC_MEMORY.md)
 checked by twelve tests and [nine controls](../evidence/i01-elastic-memory-r1.json).
@@ -360,9 +450,12 @@ The [common ideal-mixture energy law](I01_PHASE_ENERGY.md) and
 composition/enthalpy feasibility; they do not calibrate mantle material or select
 pressure transport and extraction rates. Their current receipts and remaining
 boundaries are recorded in the current-state page.
-These controls are not generated boundary/rupture acceptance. D2/D6 physical
-closure remains open; consult current state for the remaining dependencies,
-not an assumed I02 start. Original I01 source-bound files and receipts are unchanged.
+These controls are not generated boundary/rupture acceptance. The new
+[bond-history/resolved-band specification](I01_SEPARATION_FEASIBILITY.md) and
+[porous-flow/cooling-barrier route](I01_MELT_ROUTE.md) complete the I01 choices.
+Their complete physical applications stay with the named later owners. Consult
+current state for executed feasibility and remaining dependencies. Original
+source-bound receipts are unchanged; documentation-only drift is labelled.
 
 **Depends on:** this plan. **Work:** turn D1–D6 into versioned, testable model
 specifications; define generated versus prescribed modes and required/unsupported
@@ -380,21 +473,251 @@ every physical decision has equations/input requirements/validity/tests, and the
 new mechanism feasibility is demonstrated by a bounded control or remains openly
 blocked. No complete-generator claim while D1/D2 are unresolved.
 
+**Acceptance boundary clarified, 28 September:** this finish rule is about model
+selection, complete equations/input/support/test contracts and bounded feasibility.
+It does not require I07's implementation to exist before I02 can begin. Retain
+the matrix's original full-event acceptance conditions with their implementation
+owners. Independent analytical verification is an allowed alternative for I01
+where exact published inputs cannot be recovered; it never becomes empirical
+validation or permission to generate an unsupported event.
+
 ### I02 — Common state, exchange transactions and accepted-time controller
 
-**Depends on:** I01 contracts; independent of the final complexity of a solver.
-**Reuse:** native stores, execution identity, [material histories](../src/atlas_tectonics/materials.py),
-[dated histories](../src/atlas_tectonics/tectonic_history.py) and W12 publication.
-Add the contract from section 4, an event calendar and candidate→validate→commit
-sequence. Keep speculative updates separate from accepted state. A failed or
-cancelled interval changes neither committed state nor source/sink totals.
+**Status: implementation authorised, review between steps.** On 28 September 2026
+the owner resumed I02.1 and then approved continuation through all eight I02
+steps. Claude implements one bounded assignment; Codex reviews the actual change
+and runs focused checks before dispatching its successor. Stop before I03.
+Preserve existing work; permission, usage and unresolved technical failures still
+stop dispatch. No blanket installation, broad simulation or publication approval.
 
-**Finish when:** a zero-motion synthetic state round-trips, one transfer is debited
-and credited once, incompatible time/frame/units refuse, a failed multi-component
-update rolls back, and resume matches uninterrupted execution. This is plumbing
-acceptance, not a realism milestone.
+**Depends on:** I01's equations, ownership, support and acceptance contracts.
+**Outcome:** one real, connected, restartable physical workflow using the existing
+coupled solver, alongside the shared machinery later stages will extend. Empty
+state containers and synthetic transfer tests alone do **not** finish I02.
+
+**Focused research:** I02.1–I02.2 reuse the exact reference/history and admission
+contracts in [finite strain](I01_FINITE_STRAIN.md) and
+[finite admission](I01_FINITE_ADMISSION.md), not a new physical law. I02.3–I02.5
+must answer where the native store atomically owns the accepted parent and all
+accounts; consult SQLite's [transactions](https://www.sqlite.org/lang_transaction.html),
+[atomic commit](https://www.sqlite.org/atomiccommit.html) and the documentation for
+the actual [journal mode](https://www.sqlite.org/wal.html) in use. Do not assume
+SQLite atomicity covers an unrelated file or a separately committed head pointer.
+I02.6–I02.8 reuse existing job/readers and evidence machinery. The eight assignments
+below already define the implementation order and acceptance; do not replace
+them with the earlier, cancelled combined state/transaction brief.
+
+The first physical route is the existing constant-drive, layered finite-strain
+column: temperature changes strength and motion; deformation changes geometry
+and heating; the next interval inherits those changes and their accounts. Use a
+supplied supported initial case, not a new random-world or whole-planet run.
+Retain its physical assumptions and acceptance bounds. The original mechanical
+and thermal reference state must survive continuation, rather than each call
+starting the calculation again or treating the deformed state as a new reference.
+
+#### I02.1 — Define the shared state around the actual calculation
+
+Implement section 4's common envelope with world/scenario, epoch and elapsed
+time, parent identity, geometry/frame/support, units, source/runtime identity,
+equations and numerical policy. Give each physical quantity and account exactly
+one producer/owner. Preserve identified native payloads rather than flattening
+material, thermal and mechanical history into untyped arrays.
+
+Reuse [material histories](../src/atlas_tectonics/materials.py),
+[dated histories](../src/atlas_tectonics/tectonic_history.py) and compatible finite
+[inventory accounts](../src/atlas_tectonics/w08_inventory.py). Declare reference
+mass versus current volume, thermal reference and signed enthalpy explicitly.
+The initial adapter must name its supported fields; absent elasticity, melt,
+global geometry or other state stays unsupported/unknown, never fabricated zero.
+Other adapters must declare the same compatibility and ownership information.
+
+**Done when:** the real initial column can be represented without losing its
+inputs/history; wrong time, units, support, reference or ownership is rejected.
+
+#### I02.2 — Turn the existing coupled solver into a continuable core
+
+Refactor [finite-strain evolution](../tools/check_i01_finite_strain.py) into
+initialisation, incremental advancement and result construction, retaining its
+existing `evolve` entry point as a compatibility wrapper over the same equations.
+Give the reusable kernel a package-owned implementation; do not make production
+code depend on a campaign script through `sys.path` changes. Move only the
+necessary helpers and update affected source identities explicitly.
+
+Carry stretch, temperature departure, weakening history, conduction clock,
+displacement/strain history, global step index, mechanical/thermal accounts and
+required diagnostic extrema/counters between calls. Reconstruct geometry from
+the original reference and current deformation. Speculative changes belong to
+an isolated candidate; callers cannot mutate the committed state through aliases.
+
+**Done when:** advancing the same case in two in-memory pieces agrees with the
+original uninterrupted calculation within its existing declared tolerances,
+including histories and accounts, not only the final displayed temperature.
+
+#### I02.3 — Commit physical state and exchanges together
+
+Reuse the native [ArrayStore](../src/atlas_tectonics/storage.py), its immutable
+chunks, references, incremental writes and transactional publication. Add only
+the missing accepted-state/transfer coordination. Each proposal names its parent,
+interval, producer, transfer identity, donor, receiver, quantities and basis.
+Check finite availability and compatible support; debit and credit once, including
+signed enthalpy. External exchange needs a named source/sink, not an unexplained
+balancing correction. Finite transfer support does not invent a transport law.
+
+Validate the expected parent and update the accepted-state pointer, all affected
+accounts and transfer records in the **same store transaction**. A preflight
+check outside the writer transaction is insufficient. Freeze/own submitted data;
+the store cannot protect mutable caller arrays on its own. Identical replay is
+idempotent; a changed replay or stale competing writer refuses. A rejected,
+cancelled or failed candidate leaves the previous accepted prefix untouched.
+
+**Done when:** a small two-reservoir transfer and multi-component failure tests
+prove conservation, exactly-once application, rollback and stale-parent refusal.
+
+#### I02.4 — Put advancement under one accepted clock
+
+Connect the real core to candidate → coupled checks → atomic commit. Every
+participant consumes the same accepted parent and interval; no component may
+quietly advance ahead and publish a mixed-time world. Reuse the existing coupled
+heat/motion/geometry calculation, not a new unverified one-pass split.
+
+For this first route, preserve the original global timestep schedule: continuation
+chunks contain whole original steps, not a newly calculated `duration / steps`
+at each restart. Keep the 256 accepted-step ceiling cumulative and retain existing
+temperature, physical-horizon and admission limits. Requested save points must
+respect that schedule. The event calendar records prescribed interval boundaries
+and supported events; it must stop at unsupported physics, not manufacture an
+event or silently step past it. Future adaptive/event-localising adapters need
+their own admitted policy; storage chunking must never choose the physical step.
+
+**Done when:** multiple requested advances retain one clock and the same numerical
+path; failures report the last accepted time and cannot reset cumulative limits.
+
+#### I02.5 — Save, reopen and continue the actual state
+
+Persist the accepted physical arrays, original references, histories, global
+schedule, cumulative accounts, limits and transfer identities using native
+references and lossless storage. A checkpoint is not just a map or final summary.
+Reopening validates schema, source/runtime, inputs, support and parent lineage;
+incompatibility refuses continuation without silently rebinding an old result.
+
+Rebuild disposable prepared operators/factors from pinned inputs rather than
+serialising opaque solver objects or replaying from time zero. Provide an
+engine-owned restoration path for [finite admission](../tools/check_i01_finite_admission.py)
+that validates restored state and issues its corresponding admission context;
+caller-supplied fingerprints alone must not authorise continuation. Scientific
+counters survive reopening; operational timing records remain separate from
+physical identity. Preserve cumulative workload limits instead of resetting them.
+
+**Done when:** a fresh process resumes the real partially completed case to the
+same physical/account result as uninterrupted execution, without repeating the
+accepted prefix. Injected interruption exposes either the old complete checkpoint
+or the new complete checkpoint, never a mixture.
+
+#### I02.6 — Expose one usable backend workflow
+
+Provide a small backend/CLI route to create a supported case, advance, inspect
+status/results, cancel, save and load/continue. Return actual saved physical
+fields with units, support, accepted time and identity, plus clear completed,
+partial, cancelled and refused outcomes. Inspecting a checkpoint must not restart
+physics or require loading every historical array.
+
+Reuse compatible lifecycle and publication seams from existing project/job
+tools and [W12 assembly](../src/atlas_tectonics/assembly.py); do not retarget an old
+scientific producer or pretend this case is a generated planet. Keep UI work
+with its owner. I10 still owns the full world-project/UI/downstream delivery path.
+
+**Done when:** one command-level create → advance → save → load → continue →
+inspect sequence executes the real coupled route without hand-assembling its
+intermediate arrays, with cancellation retaining usable accepted progress.
+
+#### I02.7 — Verify the joined route and measure its overhead
+
+Use small focused tests for contracts, once-only exchanges, signed enthalpy,
+rollback, competing writers, source/support mismatch and limit-reset attempts.
+Then use one existing nontrivial coupled case for direct-solver versus workflow,
+chunked versus uninterrupted, and fresh-process continuation comparisons. Include
+its nonzero thermal/weakening history and complete account checks. Reuse unchanged
+I01 evidence; rerun only controls affected by core extraction or changed coupling.
+No relaxed tolerances, expanded step ceilings or broad planet campaign.
+
+Measure elapsed time for bare physics, the wrapped workflow, checkpoint writes
+and reopening/remaining work on the same declared workload. Report raw times and
+percentage overhead or savings, distinguishing cold preparation and warm reuse.
+Measure checkpoint growth and unchanged-chunk reuse without duplicating history.
+Prefer lazy reads, bounded active state, lossless compression and exact operator
+reuse; parallelise only genuinely independent work when measurement supports it,
+not sequential feedback stages. Do not claim that framework integration itself
+makes the physical solve faster.
+
+Run targeted native Windows lifecycle checks; obtain a corresponding targeted
+Linux result where an authorised environment is available. If unavailable, record
+that platform coverage gap explicitly, not a cross-platform pass. No installation
+or broad regression campaign is implied by this plan.
+
+#### I02.8 — Close the integration and explain how to use it
+
+Update the existing how-it-works chapter in generation order: initial state →
+coupled physical step → checks/commit → checkpoint/continuation → inspected
+outputs. Explain what is calculated, the actual papers/software reused and what
+the checks establish. Complete source-bound method documentation before capturing
+new evidence; update the current evidence register and state without rewriting
+historical receipts or keeping competing status documents.
+
+**I02 is complete only when** the shared-state, finite-exchange and failure guards
+pass **and** the real coupled route works through the full backend lifecycle,
+including interruption/reopening with preserved history and measured overhead.
+Report outstanding platform coverage separately. This establishes a connected
+workflow for the declared supported case, not merely plumbing tests and not
+whole-planet tectonics acceptance.
+
+**Boundary with later stages:** I03–I09 still implement evolving spherical
+geometry, causal world/motion production, transport/melt, physical transitions,
+support and their coupled acceptance. I02 must carry their state and exchange
+contracts without pretending those producers are implemented. I10 connects the
+complete scientific route to the world-project/UI and downstream consumers;
+I11–I12 retain their wider end-to-end acceptance and release responsibilities. Whole-planet
+evolution remains the target, not a feature removed by using a bounded first case.
 
 ### I03 — Evolving sphere, conservative history and spatial bridges
+
+**Focused research decisions:** choose a conservative spherical intersection/remap
+method for the actual cell edges and physical measures; specify polar/seam
+handling, regional projection bounds and which quantities need integrals rather
+than interpolation. Compare [ESMF's conservative regridding conventions](https://earthsystemmodeling.org/regrid/)
+and [Kritsikis et al. (2017), general spherical meshes](https://gmd.copernicus.org/articles/10/425/2017/)
+with retained W02 transport. Use [pyGPlates](https://www.gplates.org/docs/pygplates/pygplates_reference)
+for topology/rotation/shared-segment semantics, not as a physical forward solver.
+Conservation must use Atlas's actual support areas, not a mismatched approximate
+grid measure or post-transfer normalisation. Reference software is not automatically
+a new dependency; decide reuse versus a bounded native implementation explicitly.
+
+**Ordered assignments:**
+
+1. **I03.1 — Define one shared spherical network.** Extend I02 with uniquely
+   owned faces, shared boundaries/junctions, orientations, finite rotations and
+   separate plate/material identities. Verify closed coverage and valid topology;
+   distinguish area, reference mass and phase-volume accounts.
+2. **I03.2 — Move geometry and transfer complete material.** Connect rotations,
+   shared-edge intersections and conservative transfers to the accepted state.
+   Carry history/enthalpy through the same transfers; handle rigid rotation,
+   stationary fields, seams/poles and mesh changes without resetting ages. Agree
+   the transport interface with I05, which owns its evolving constitutive content.
+3. **I03.3 — Build both spatial bridges.** Implement sphere-to-region extraction
+   and region-to-sphere replacement with width, depth, orientation, quadrature,
+   projection validity and coverage. Preserve full vectors, forces/work and
+   untouched exterior state. Verify exact/round-trip controls and refuse unresolved
+   overlaps or incompatible omitted dimensions.
+4. **I03.4 — Commit joint geometry changes.** Consume supplied supported event
+   proposals through I02; update shared junctions, material accounts and lineage
+   together with deterministic simultaneous-event handling and rollback. Include
+   a closed-sphere source/sink control. Event geometry controls do not establish
+   the physical generation of the events; I06/I07/I09 supply that evidence.
+
+**Efficiency/exclusions:** reuse geometry-indexed searches and sparse overlap maps
+only while geometry identities match; work on intersecting supports and shared
+immutable history. No copied full history per cell, cosmetic fault fairing,
+area/mass repair, invented event law or discarded sideways motion. The original
+finish gate below still applies to the joined geometry route.
 
 **Depends on:** I02. **Reuse:** [spherical atlas](../src/atlas_tectonics/spherical_atlas.py),
 rotation primitives, W01 sampling and W02 conservative principles. Add moving
@@ -413,6 +736,45 @@ and different sampling meshes represent the same physical case within the declar
 bound. Include a closed-sphere source/sink control, not only an open transect.
 
 ### I04 — Causal starting-world and motion/boundary producer
+
+**Focused research decisions:** map the selected D1/D2 forces, GPE gradients,
+boundary integrals and physical weakening length onto changing spherical geometry
+without mesh-direction bias. Identify which coefficients are supported material
+inputs versus scenario assumptions. Reopen [I01_GPE.md](I01_GPE.md),
+[I01_WATER_GPE.md](I01_WATER_GPE.md), the closure/weakening methods and
+[Clennett et al. (2023)](https://www.nature.com/articles/s41598-023-37117-w)
+for the force-consistency challenge; read its full relevant methods before adopting
+anything beyond the existing contract. A balanced torque or Earth-fitted coefficient
+does not independently validate a generated world's driving law.
+
+**Ordered assignments:**
+
+1. **I04.1 — Replace the initial template with a declared family.** Reuse New
+   World's seed, layout, structure and thermal input contracts. Define continuous
+   inherited geology/weaknesses independently of sampling, including declared
+   geotherms, initial slabs and unknown ocean history. Initial plate count and
+   continental fraction remain starting controls, not corrected final targets.
+2. **I04.2 — Put D1 onto the evolving sphere.** Connect the selected torque and
+   dry/water-loaded GPE laws to I03 geometry and compatible column properties.
+   Start with known forcing; verify signs, nullspace/frame, torque and power.
+   A boundary contribution receives either its admitted reduced resistance or
+   a regional replacement, never both.
+3. **I04.3 — Connect material-dependent boundary response.** Apply the selected
+   temperature/pressure/creep/physical-length weakening laws, retaining transported
+   raw history. Produce motion and supported event proposals with their admission
+   evidence; do not directly edit a network because a stress flag changed.
+4. **I04.4 — Close the first property/motion feedback.** Consume I05's current
+   properties at a common endpoint and expose the reaction ports needed by I07/I09.
+   Verify changed forcing, temperature and strength, frame invariance and fixed-
+   physical-length refinement. Test initial diversity separately from calculated
+   evolution. I09 owns the final multi-region coupling, not a prerequisite that
+   prevents these producer/control substeps from being implemented.
+
+**Efficiency/exclusions:** reuse geometry integrals and resistance preparations
+only under complete determining identities. No fitted attractive rotations,
+target-RMS speeds, final area/count correction, paused fairing prototype or claim
+of self-organising mantle convection. Develop I04 and I05 against one interface;
+complete their coupled checks together rather than repeatedly designing adapters.
 
 **Depends on:** I01–I03. Replace the fixed three-province template with a declared
 family of geological starting conditions independent of sampling resolution.
@@ -433,6 +795,51 @@ and calculated evolution are assessed separately. A finite prescribed-history
 demo cannot close this increment by itself.
 
 ### I05 — Moving material, thermal state and evolving properties
+
+**Focused research decisions:** define moving-grid/material energy fluxes and
+admitted contact geometry; decide when the selected lateral-conduction bound
+requires an explicit lateral solve, and how phase fronts preserve the provider's
+enthalpy convention. Reopen [lateral heat](I01_LATERAL_HEAT.md),
+[elastic memory](I01_ELASTIC_MEMORY.md), [basal closure](I01_BASAL_CLOSURE.md),
+[melt route](I01_MELT_ROUTE.md) and the pinned common-provider method. Use
+[NIST FiPy's discretisation](https://pages.nist.gov/fipy/en/stable/numerical/discret.html)
+as a finite-volume flux comparison, not automatic admission of a deformed mesh.
+The current G25 phase-crossing refusal must remain until an explicitly supported
+front/inversion treatment is implemented and checked.
+
+**Ordered assignments:**
+
+1. **I05.1 — Transport complete material records.** Join W01 sampling and W02
+   transport/remap to I03 overlaps and I02 accounts. Preserve layer order,
+   formation/cooling dates, original profiles, maximum compaction load, raw plastic
+   history, irreversible bonds and supported stress/stretch state. Shared cells
+   must not erase surviving bonded material or create averaged artificial bridges.
+2. **I05.2 — Evolve heterogeneous heat on moving support.** Pair material and
+   energy fluxes through the same intersections, with explicit mesh/material
+   velocities, heat-capacity references and thermal contact. Reuse W03/W06/W07
+   within their admission envelopes; give new supported geometry a new bridge,
+   not relaxed guards on an old stationary/homogeneous interface.
+3. **I05.3 — Derive compatible current properties and basal exchanges.** Connect
+   finite strain, heat, weakening and basal accounts, including actual inflow/
+   outflow material and per-column history clocks. Apply the lateral-heat rule.
+   Return density, strength and admitted rigidity inputs to I04/I08; thermal
+   thickness cannot manufacture an elastic core or pressure history.
+4. **I05.4 — Carry phase changes and finite energy-bearing supply.** Join the
+   selected provider/segregation/energy interfaces, handling supported melting/
+   freezing fronts and donor depletion without inventing latent heat or resetting
+   temperature/composition. Check conservative component/phase/enthalpy accounts;
+   an unsupported path refuses before changing the accepted parent.
+5. **I05.5 — Verify the production joins.** Use passive transport, deforming
+   columns, two-age occupied-ocean cooling, interface fluxes, basal exchange and
+   retained-memory cases with time/space refinement and resumed parity. Deliver
+   current properties to I04 and a tested energy-bearing supply contract for I06;
+   no requirement to finish I06 crust birth before implementing its inputs.
+
+**Efficiency/exclusions:** reuse correctly keyed thermal/filter operators and
+unchanged cohort projections, not accumulated historical factors. No cooling at
+mean age, zero-filling ocean masks, resetting formation on reheating, invented
+pore-pressure dynamics or automatic conversion of elastic work into heat. General
+noncoaxial mechanics remains I07; full geochemical evolution remains geology-owned.
 
 **Depends on:** I02–I03; supplies the state updates consumed iteratively by I04.
 Connect W01 sampling, W02 transport and appropriate W03/W07 thermal components
@@ -455,6 +862,51 @@ evolving bridge, not permission to relax `bind_regional_geology`'s current refus
 
 ### I06 — Extension, breakup, spreading and ocean history
 
+**Focused research decisions:** which selected separation route is admitted for
+the actual loading/material history, what determines ridge motion, and can the
+supported pressure/enthalpy path actually supply and accommodate liquid? Reopen
+[breakup closure](I01_BREAKUP_CLOSURE.md),
+[resolved separation](I01_SEPARATION_FEASIBILITY.md) and
+[melt delivery](I01_MELT_ROUTE.md). Target
+[Brune et al. (2014)](https://www.earthbyte.org/Resources/Pdf/Brune_etal_2014_Rift_migration.pdf)
+for resolved rift geometry/basal sensitivity and
+[ASPECT melt transport](https://aspect-documentation.readthedocs.io/en/latest/user/methods/melt-transport.html)
+for phase/compaction flux conventions. Use the tracer-history reference in
+section 9 for ocean ages; none of these is an automatic replacement closure.
+
+**Ordered assignments:**
+
+1. **I06.1 — Connect extension to an event-ready neck.** Join W05, I05 histories
+   and shared geometry. Keep mechanical decoupling, physical material separation,
+   exposed mantle and oceanic crust birth distinct. Use supplied-event controls
+   while the I07 neck prerequisite is being built; label them as such.
+2. **I06.2 — Admit separation and split conservatively.** Satisfy the chosen
+   closure's whole-window validity, spatial/thermal/coupling and event-account
+   requirements. Preserve irreversible bond history. Consume I07.1–I07.2's
+   full-neck/free-surface/mixed-material/basal/exterior evidence where required;
+   pointwise failure or a thickness cutoff is not a substitute. Split the actual
+   material positions without turning separated continental material into basalt.
+3. **I06.3 — Supply and form actual crust.** Join I05's compatible source/phase
+   state to retained segregation/delivery/receiver and W06 birth accounts. Test
+   finite supply, receiver accommodation, permitted outlets and heat removal.
+   Exposed mantle remains exposed mantle if magmatic supply is insufficient.
+4. **I06.4 — Evolve moving ridges and birth histories.** Adapt the retained
+   prepared spreading/history operators to I03 segments, left/right full motion
+   and finite birth-time intervals. Cover migration, asymmetric spreading,
+   cessation and only admitted jumps/reassignments. Birth age follows trajectories,
+   not distance to whichever ridge is nearest at the current time.
+5. **I06.5 — Accept the connected rift-to-spreading route.** Preserve margins,
+   thermal/material history and source/exterior accounts across the event and
+   save/reopen continuation. Include constant/staged controls, shear-only no-birth,
+   exhausted supply and an inactive ridge. Do not close I06 while its required
+   I05 phase-front or I07 separation evidence is absent.
+
+**Efficiency/exclusions:** batch changed segment intersections and share immutable
+birth histories without collapsing age distributions. No post-hoc ocean filling,
+assumed unlimited melt or relabelling a prescribed event as generated. Pull forward
+I07's shared mechanics prerequisites as described below; the numbering is not a
+requirement to finish all of I06 before those kernels can be built.
+
 **Depends on:** I03–I05. Connect W05 extension to an explicitly selected breakup
 criterion and W06 birth/spreading histories. Use the evolving shared ridge, left
 and right motion and source supply. Continental thinning is not ocean-crust birth.
@@ -467,6 +919,64 @@ constant and staged analytical controls, including asymmetric spreading and an
 inactive ridge. Do not fill unknown old oceans using nearest-present-ridge distance.
 
 ### I07 — Convergence, collision, transform and regional mechanics
+
+**Focused research decisions:** finish the selected general stress-history
+integration and its energy/frame tests; define complete supported neck/initiation/
+junction cases rather than another scalar proxy. Reopen
+[elastic memory](I01_ELASTIC_MEMORY.md),
+[Schrank et al. (2017)](https://doi.org/10.1093/gji/ggx297),
+[initiation](I01_INITIATION_DECISION.md),
+[separation](I01_SEPARATION_FEASIBILITY.md) and
+[junction reorganisation](I01_JUNCTION_REORGANISATION.md). Consult the pinned
+[ASPECT material conventions](https://aspect-documentation.readthedocs.io/en/v3.0.0/parameters/Material_20model.html)
+alongside its actual implementation where the existing method records a discrepancy.
+Use Gurnis, Hall and Lavier (2004), Li and Gurnis (2023) and the W08/FEniCS-SZ
+references for their stated comparisons, not missing case values. Exact archive
+reproduction is not mandatory when an independently justified test establishes
+the required claim; full coupled physical-event acceptance is still mandatory.
+
+**Ordered assignments:**
+
+1. **I07.1 — Implement the shared general material kernel.** Extend the selected
+   logarithmic-objective elastic formulation to noncoaxial deformation with
+   retained creep/plastic rates, pressure conventions, raw history and physical
+   weakening length. Define tensor/frame/energy ports once for necks, initiation
+   and junctions. Keep fixed material modulus unless a changing-modulus energy
+   law is separately admitted. Check rigid rotation, shear, unloading, frame
+   covariance and independent stored-energy/dissipation accounts.
+2. **I07.2 — Resolve evolving regions and the neck prerequisite.** Reuse compatible
+   heterogeneous solvers/context seams, adding actual moving-material/free-surface
+   transfers rather than treating stationary `evolving_mechanics.py` contexts as
+   that implementation. Join I05 heat/composition/history and basal conditions;
+   resolve the full mixed-material neck and required depth/exterior/along-strike
+   sensitivities. Return admitted separation/handoff evidence to I06. These two
+   kernel substeps need I02/I03/I05 interfaces, **not completed I06**.
+3. **I07.3 — Implement the resolved initiation experiment.** Lock coefficients,
+   geometry, thermal/history state, boundaries, observation window and numerical
+   criteria. Compare forced and genuinely released continuations of the same
+   accepted parent, replacing driving velocity with zero driving traction while
+   preserving physical support. Check convergence/sinking, gravitational and
+   elastic change, dissipation and external work, with required refinement/frame/
+   exterior controls. A force zero-crossing or prescribed weak band is not proof.
+4. **I07.4 — Join ocean entry, collision and full-vector deformation.** Consume
+   actual I06 cohorts through heterogeneous W06-to-W07 and W08 boundary joins.
+   Preserve age/heat/composition and all represented motion; integrate velocities
+   into displacement. Reserve incoming stock once across global consumption and
+   regional retirement. Check continental-arrival regime change, pure transform
+   no-birth/no-blanket-uplift and oblique motion; retain unsupported-event refusals.
+5. **I07.5 — Connect the multidirectional junction region.** Retain both horizontal
+   directions, vertical structure, parent history and explicit parameter
+   conversions. Use the shared separation/initiation/magma mechanisms; return
+   work-conjugate reactions to I09 and material-derived interface proposals to
+   I03, with I02 owning the joint commit. Check competing directions, symmetry,
+   finite-source competition and the declared event/handoff window.
+
+**Efficiency/exclusions:** reuse sparse structure, valid warm starts and prepared
+operators under actual geometry/material/boundary identities. Keep diagnostics
+bounded and measure a representative joined solve before increasing support.
+No second constitutive implementation, new fluid science, steady-slab substitute
+for evolving subduction, or unrestricted long campaign. I07.4's combined acceptance
+waits for I06; I09 later verifies the full returned-feedback route.
 
 **Depends on:** I03–I06 for the combined ocean-to-convergence chain. Close the
 heterogeneous W06→W07 transfer and connect W08 to actual global boundary segments.
@@ -510,6 +1020,44 @@ coupling control, not another unrestricted long subduction campaign.
 
 ### I08 — One supported tectonic surface and external feedback boundary
 
+**Focused research decisions:** identify the admitted core geometry/material
+basis, vertical datum, regional exterior conditions and replacement mapping.
+Decide whether the represented extent needs a spherical response or fits a
+justified regional approximation. Reopen [elastic core](I01_ELASTIC_CORE.md),
+[water/flexure](I01_WATER_FLEXURE.md), [water/GPE](I01_WATER_GPE.md) and
+[Wickert (2016), gFlex](https://gmd.copernicus.org/articles/9/997/2016/)
+for the actual variable-rigidity/boundary terms. Existing planar periodic checks
+do not establish spherical support; the current declared homogeneous core does
+not automatically define variable/multiple cores or yield an inferred elastic
+thickness from temperature.
+
+**Ordered assignments:**
+
+1. **I08.1 — Bind accepted columns to one surface datum.** Join inventory, heat,
+   density, compaction and loads to selected D5 support. Preserve the unloaded
+   reference and distinguish total equilibrium response from its change; changing
+   rigidity cannot reset the absolute reference.
+2. **I08.2 — Implement the required spatial response.** Reuse compatible flexure
+   machinery; implement the admitted variable-rigidity/map or spherical operator
+   with its real boundaries, Poisson terms and exterior loading. Give coarse
+   support and regional replacement disjoint contribution ownership. Admit the
+   actual core geometry before using it; no tiled-profile global solution.
+3. **I08.3 — Connect external feedback ports.** Exchange dated, spatially supported
+   terrain/geology/water/sediment fields with units, datum and I02 once-only
+   accounts. Make accepted removal/deposition/water loading affect the next
+   tectonic state. Return identified elevation/bathymetry components; do not
+   implement other modules' process laws or manufacture missing loads.
+4. **I08.4 — Verify the joined surface.** Test changed loads, unchanged load with
+   changed rigidity, datum shifts, water volume, coarse/regional replacement and
+   exterior sensitivity. Check energy/work where claimed and absence of repeated
+   thermal/compaction/flexure contributions. Use a small supplied external-feedback
+   control, then actual upstream results for stage acceptance.
+
+**Efficiency/exclusions:** cache prepared support operators only under matching
+geometry/rigidity/boundary identities, reuse independent right-hand sides where
+valid, and measure the complete coupled solve. No inferred sea level from land
+fraction, unowned yielding/core extension or claim of finished eroded terrain.
+
 **Depends on:** I05–I07. Connect physical inventory, temperature and loads to the
 selected D5 response. Preserve the absolute reference when rigidity changes.
 Where a world-scale plate response is required, implement its supported spatial
@@ -527,6 +1075,49 @@ external removal/deposition/water-load control affects the next tectonic state.
 The output is not advertised as eroded, hydrologically realistic finished terrain.
 
 ### I09 — Close global↔regional feedback and process scheduling
+
+**Focused research decisions:** choose conservative replacement/return operators,
+the coupling iteration and residual definitions, region activation/overlap rules
+and a bounded meaningful case. Start with I03/I04/I05/I07/I08 interfaces and the
+selected force/GPE/heat/account contracts. Use the section-9 force-consistency
+and conservative-transfer references for named questions, not another general
+mantle literature survey. Decide which feedback requires iteration and which
+split is justified by an error bound before implementing the controller.
+
+**Ordered assignments:**
+
+1. **I09.1 — Define planetary multiresolution ownership.** Join the coarse closed
+   sphere and detailed regions at one frame/time, with distinct process/exchange/
+   display supports. Implement conservative restriction/prolongation, activation/
+   retirement and coarse-contribution replacement. Merge or explicitly couple
+   interacting footprints; preserve exterior state and histories when refining.
+2. **I09.2 — Close force, torque, work and finite accounts.** Connect I04 driving,
+   I07 reactions and I08 loads/GPE. Transfer velocity/traction on the same oriented
+   support so internal work cancels. Remove replaced reduced resistance and
+   duplicate ridge/slab/bending forces. Centrally reserve shared sources; workers
+   return proposals, not independent debits to one reservoir.
+3. **I09.3 — Implement accepted-interval feedback.** Evaluate from an immutable
+   parent, exchange results, update geometry/forces/strength/loads, resolve events
+   and correct the endpoint. Apply predeclared residual/iteration/error limits;
+   refuse a nonconverged interval without ageing rock or spending accounts.
+   Individually successful component solves do not authorise a world commit.
+4. **I09.4 — Preserve continuation and bounded execution.** Use I02 transactions,
+   checkpoints and existing resource control. Preserve stress/contact/plastic
+   memory, event state and external exchanges across interruption and replay.
+   Parallelise independent regions under one budget; keep physical-time and
+   shared-state publication ordered. Verify changed dependencies invalidate reuse.
+5. **I09.5 — Climb the smallest useful validation ladder.** Check exact exchange/
+   work controls, one joined region, then a short coarse-sphere scenario with
+   supported detail and an actual regime transition. Compare direct components,
+   assembled execution and interrupted/resumed results, plus feedback and spatial/
+   time transfer error. Prepare the missing I11 H/K coverage and cost forecast;
+   do not silently launch their larger withheld/global acceptance campaigns.
+
+**Efficiency/exclusions:** forecast active supports, nonzeros, iteration counts,
+cohorts and checkpoint growth; use measured cost estimates before deciding on
+parallel execution. Reuse valid preparations, not stale physics. Keep the 256
+accepted-step ceiling and all support/error guards; no whole-planet runtime
+promise based on a tiny regional solve or silent scientific downgrade on timeout.
 
 **Depends on:** I04–I08. Run compatible process branches from the same parent time,
 exchange their results, correct coupled inputs, resolve events, then commit.
@@ -546,6 +1137,41 @@ within their predeclared numerical requirements. General untested events remain
 refusals; ordinary required scenarios must not succeed only by disabling them.
 
 ### I10 — Connect W12, New World, saved projects, UI and consumers
+
+**Focused research decisions:** what must a project retain to inspect an old
+result versus continue its native calculation, and which changed dependencies
+invalidate which descendants? Start with the existing W12 and New World
+project/job/bundle contracts, not a new application framework. Consult SQLite
+transaction/backup semantics only for unresolved persistence joins. The existing
+[desktop](../../desktop/README.md) uses Electron with a Python payload; retain
+that route and its isolation rather than assuming an unrelated packager is in use.
+
+**Ordered assignments:**
+
+1. **I10.1 — Register the evolved-world producer.** Bind I09's actual accepted
+   state to a new W12/graph producer and typed ports. Test physical-input and
+   source changes invalidate the correct descendants; unchanged requests reuse
+   results. Preserve legacy producer identities and reject fixture substitution.
+2. **I10.2 — Complete the project lifecycle.** Join create/advance/status/cancel
+   to existing jobs and portable projects. Save all required native continuation
+   dependencies; support inspection-only states explicitly when continuation is
+   incompatible. Check failure preserves the user's current project and last
+   accepted progress. No UI-side reconstruction of physical state.
+3. **I10.3 — Produce data-derived inspection and exports.** Return indexed sphere,
+   sections, quantities, masks, units, time and method/source identities from the
+   same saved result. Use lazy selected-field reads and display-only levels of
+   detail; test that export, map and section values agree without a new solve.
+4. **I10.4 — Hand a stable contract to the UI owner.** Supply real small saved
+   examples, valid/refused/partial responses and New/Save/Load/cancel semantics.
+   The UI owner implements controls and presentation separately; Codex checks
+   the shared native route, not just mock responses. Do not run two writers on
+   the UI or scientific files. A return must include actual UI/backend evidence.
+5. **I10.5 — Connect one actual downstream reader.** Feed an existing compatible
+   geology or terrain consumer the evolved fields through typed ports; prove
+   reference/time/support preservation and mismatch refusal. This is a tectonic
+   handoff, not a new geology/erosion generator. Execute the full user lifecycle
+   below and record read/reopen/invalidation costs without rerunning physics for
+   view changes. No whole-I10 completion before the real UI/consumer joins pass.
 
 **Depends on:** I02 interface contracts and I09 for full scientific delivery.
 Reuse [assembly.py](../src/atlas_tectonics/assembly.py),
@@ -573,6 +1199,44 @@ reuse work while changed physics invalidates the correct descendants. Validate
 the real native route; fake API tests alone do not establish this.
 
 ### I11 — End-to-end realism, portability and resource acceptance
+
+**Focused research decisions:** which independent observations/reference problems
+challenge each claimed process, what spatial/time supports make comparisons
+meaningful, and which numerical uncertainty can be separated from model error?
+Reuse [W10's method-level validation](W10_VALIDATION.md), B1's matched-sampling
+boundary diagnostics and the exact process references already selected. Compare
+applicable ocean-age/depth/heat-flow observations and published deformation
+controls, not visual attractiveness alone. Reopen original equations/benchmark
+definitions only for missing coverage. A fitted Earth distribution is not a
+universal constraint on generated planets.
+
+**Ordered assignments:**
+
+1. **I11.1 — Freeze the smallest complete acceptance set.** Map section 7 cases
+   A–K to current, source-compatible evidence and genuinely missing checks. Fix
+   development/withheld seeds, scenario, physical horizon, tolerances, outputs and
+   resource budget before execution. Independently justify new thresholds. Do
+   not fill a missing generated-event case with a prescribed-event demonstration.
+2. **I11.2 — Run causal and joined physical checks.** Reuse unchanged controls;
+   execute missing cross-stage cases and inspect conserved quantities, physical
+   sensitivity and mesh/time/coupling errors. Compare actual saved numeric fields
+   and data-derived views at matched physical scales. Diagnose jagged boundaries,
+   continental templates and inconsistent ocean ages at their generating causes;
+   keep all attempted seeds/refusals, including failed withheld cases.
+3. **I11.3 — Prove lifecycle and native platforms.** Exercise real Windows and
+   Linux create/save/reopen/continue, cancellation, source mismatch, privacy-safe
+   export, UI agreement and consumer use. Distinguish platform-specific runtime
+   continuation from portable inspection; metadata or synthetic path checks are
+   not native portability evidence. Reuse valid environment results and obtain
+   missing platform evidence without an unapproved installation.
+4. **I11.4 — Close the planetary resource claim.** Forecast case K using measured
+   supports/cohort/event growth, then request any still-needed run authority.
+   Compare cold, warm, incremental and resumed complete paths, including I/O and
+   meaningful evolving full-sphere/multiple-region work. Report seconds, peak
+   memory, persisted bytes and measured raw/percentage changes, including
+   regressions. Correct evidenced bottlenecks with matched quality; no automatic
+   realism downgrade, bigger ceilings or multi-hour R4.4 substitute. Finish only
+   when the required physical, lifecycle and practical gates below all pass.
 
 **Whole-planet requirement (owner reaffirmed 28 September 2026):** completion
 must include an evolving full sphere, not merely a global initial layout plus
@@ -607,6 +1271,38 @@ genuinely outside the scope in section 2. No nine-hour R4.4 run is implied.
 
 ### I12 — Release the integrated tectonics module
 
+**Focused research decisions:** what scientific/runtime data must ship for the
+five user routes, what can an older project safely inspect/continue, and what
+operating-system support has actually been demonstrated? Reuse the tested build,
+environment pins and existing notices. Consult official
+[Electron packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution)
+and [security](https://www.electronjs.org/docs/latest/tutorial/security) guidance
+for the existing desktop wrapper's final process/file-access boundary. These
+references support release engineering, not tectonics realism.
+
+**Ordered assignments:**
+
+1. **I12.1 — Freeze the supported release contract.** Reconcile capabilities,
+   mandatory evidence, known exclusions, input requirements, source/runtime and
+   downstream versions. Update the existing how-it-works guide and a short actual
+   user example in dependency order. Distinguish supplied history from generated
+   evolution and component support from whole-route acceptance. No new status ledger.
+2. **I12.2 — Assemble and test the native distribution.** Use
+   [desktop/build.py](../../desktop/build.py), its manifest and existing runtime
+   tests to package the reviewed sources and dependencies into a new destination.
+   Keep the Windows executable with its required resources; do not promise a
+   single-file executable. Exercise an isolated profile and the real user routes
+   without the development checkout, preserving projects, cancellation and
+   native identity checks. Include only authorised examples and required notices,
+   not private data, caches or coordination files. No installer/download implied.
+3. **I12.3 — Deliver the accepted module and handoff.** Confirm all five user
+   routes and the declared platform matrix against the release bytes, supply
+   the example, method/evidence links and typed consumer contract, and identify
+   exactly what other modules may rely on. Record package size/startup/read costs
+   without rerunning unchanged scientific campaigns. Git publication, signing,
+   distribution outside the approved destination and Diadem canon acceptance
+   remain separately authorised actions, not automatic effects of this checklist.
+
 **Depends on:** I11. Update capability/status documentation, the reader guide,
 source-bound examples, current evidence and downstream contract versions. Mark
 old initial-world and stationary-column demonstrations accurately, preserving
@@ -620,18 +1316,32 @@ Technical release, Git publication and Diadem canon remain separate actions.
 
 ### Dependencies and sensible parallel work
 
-```text
-I01 → I02 → I03 → {I04 driving/events ↔ I05 state/property updates}
-                         → I06 → I07 → I08 → I09 → I10 → I11 → I12
-```
+The execution order is not a strict I01, I02, ..., I12 loop. Use these dependency
+milestones to avoid circular waits and premature stage-complete claims:
 
-I04 and I05 must be developed against the same interface and iterated together;
-their dependency cycle is physical, not a build-system cycle. I08's ownership/
-datum contracts and I10's API/storage work can be prepared once I01–I02 contracts
-exist. Their scientific completion still depends on real upstream results.
-Independent method controls can run in parallel; the committed time history cannot.
-Do not delegate shared-file edits concurrently. Claude's currently assigned
-environment work stays separate unless the owner explicitly changes that scope.
+| Milestone | Dependency-ready work | What still cannot be claimed |
+| --- | --- | --- |
+| Shared foundation | Retain I01; complete I02's real lifecycle, then I03's shared geometry/maps | An evolving planet or physically generated event |
+| Driving/state pair | Agree I04/I05 ports; implement initial/driving producers alongside conservative material/thermal properties, then their first feedback control | Full regional feedback merely because both producers run |
+| Shared mechanics prerequisite | I07.1–I07.2 use available I02/I03/I05 contracts before complete I06; return the actual neck/separation evidence to I06.2 | I07 ocean-to-collision acceptance from a material kernel or neck alone |
+| Compatible supply and breakup | I05.4 supplies supported phase/energy transport; I06 joins that and the mechanical prerequisite to real separation/birth/history | Generated oceanic crust from prescribed splitting or missing phase-front support |
+| Joined regimes and support | I06 cohorts feed I07.4; shared mechanisms support I07.3/I07.5; I08 joins the resulting columns/loads | Full initiation/junction acceptance from contact or scalar feasibility tests |
+| Full feedback and delivery | I09 closes all returned reactions/accounts; I10 exposes the actual evolving world; I11 accepts it; I12 packages the accepted release | End-to-end acceptance from component, mock API or packaging checks |
+
+I04 and I05's feedback is physical, not a reason to require each completed stage
+before the other can start. Likewise, I07's reusable mechanical kernels are
+prerequisites for I06 breakup; the **combined** I07 acceptance subsequently needs
+I06 ocean cohorts. Keep these assignments in their owning stages and return their
+results; do not create a second constitutive model or call either stage complete
+early. I07.3's initiation case can be developed when its own kernel/state inputs
+are ready; it need not wait for unrelated mature-ocean output.
+
+I08 datum/port contracts and I10 API/storage preparation can proceed after the
+relevant I01/I02 interfaces stabilise. Their final acceptance still needs real
+upstream results. Independent method/reference work can be delegated concurrently;
+shared-file edits and accepted-time history cannot. Each assignment has one writer,
+an exact source scope and a named receiving review. No completed-step dependency
+alone grants authority beyond the currently approved I02 sequence.
 
 ## 7. Acceptance matrix — prove the complete promised route
 
@@ -737,6 +1447,19 @@ No external library was installed or adopted while writing this plan.
 | [Clennett et al. (2023)](https://gfzpublic.gfz.de/pubman/faces/ViewItemOverviewPage.jsp?itemId=item_5023127), institutional abstract and indexed publisher discussion inspected | Candidate force/torque consistency challenge. A residual can expose missing forces as well as bad kinematics; minimising it alone does not prove realistic motion. Full methods remain required before adopting a force law |
 | [Wickert (2016), gFlex](https://gmd.copernicus.org/articles/9/997/2016/), published method scope checked | Distinguish profile and map-view response, physical boundary conditions and load ownership. Does not make Atlas's existing 1D support a spherical solver |
 | [Existing method-by-method guide](HOW_TECTONICS_IS_MADE.md) and its linked primary research | Preserve the exact W01–W08 constitutive, thermal, transport and benchmark basis; reopen applicable equations before extending a model's validity |
+| [ESMF conservative regridding](https://earthsystemmodeling.org/regrid/) and [Kritsikis et al. (2017)](https://gmd.copernicus.org/articles/10/425/2017/), targeted I03 reading | Decide actual spherical overlap/measure/weight treatment; conservation of one field integral is not automatic preservation of constitutive histories or topology |
+| SQLite [transactions](https://www.sqlite.org/lang_transaction.html), [atomic commit](https://www.sqlite.org/atomiccommit.html) and [WAL](https://www.sqlite.org/wal.html), official persistence references | I02/I10 must bind physical state and accepted-head/accounts to the actual native transaction and journal mode; references do not prove Atlas's full restart path |
+| [Electron security](https://www.electronjs.org/docs/latest/tutorial/security) and [packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution), official desktop references | I10/I12 retain the actual local Electron/Python wrapper and review its process/file boundary; packaging and security are distinct from scientific acceptance |
+
+The focused 28 September briefs additionally point to the owning I01 documents
+for the selected logarithmic-objective stress law, Gurnis initiation comparisons,
+phase/provider transport and breakup/junction conditions, plus Brune's rift case,
+FiPy and ASPECT where their specific conventions need comparison. These are
+future targeted implementation readings unless an existing method record states
+what was actually consulted. This planning pass checked selected reference
+identity/scope and official documentation; it did not reproduce the papers,
+benchmark reference software or adopt a library. Full relevant methods must be
+read before implementing a new scientific extension.
 
 Procedural Tectonic Planets remains a separately labelled authoring/performance
 reference from the prior diagnosis (abstract-level review), not scientific
@@ -749,11 +1472,14 @@ Integration is complete only at **I12**, when the section-1 outcome and required
 matrix are met. A new shared-state class, connected graph, green unit suite,
 regional demo, export table or visually attractive world is not a substitute.
 
-Continue **I01** from its physical-contract/control checkpoint, resolving the
-remaining generated-boundary/rupture decisions before building another purported
-complete assembly. I02 can then establish the first reusable state/transaction
-slice. Do not repeat completed reading or bounded controls without changed inputs,
-a failure or missing required coverage.
+**I01 is complete as a model-choice, contract and bounded-feasibility stage.**
+Claude's active assignment is I02.1's shared initial-state contract; do not edit
+that in-flight brief or append another assignment to it. Codex reviews the return
+and continues the authorised eight-step I02 sequence using these bounded briefs.
+I03–I12 are planned, not newly started or authorised by this document. Preserve
+the physical-event gates assigned to their later implementation stages. Do not
+repeat completed reading or bounded controls without changed inputs, a failure
+or missing required coverage.
 
 Plan-only verification: local source/interface inspection, documentation links,
 mandatory repository safety/path checks. No physical run, performance gain,

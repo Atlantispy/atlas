@@ -85,11 +85,63 @@ inside the box. Reciprocal work, independent resisting modes and the final
 force residual are checked. Regional reactions are forces applied to the region;
 the equal-and-opposite force acts on the surrounding plates.
 
-This is not yet the spherical plate-to-region mapper. Mapping actual plate modes
-and forcing into many regions, returning their torques, and accepting one shared
-world state belong to I04/I07/I09. Transport, nonlinear constitutive iteration,
+The adapter below now maps actual Euler plate modes into one declared region
+and returns its torques. Assembling many regions and accepting one shared
+world state still belong to I04/I07/I09. Transport, nonlinear constitutive iteration,
 surface motion, thermal history and physical boundary birth remain separate
 connections, not implicitly supplied by a linear mechanical solve.
+
+### Planet-centred plate motion and returned torques
+
+[`PreparedPlateBoundary3D`](../tools/regional_plate_coupling.py) connects existing
+native `PrescribedPlateMotion` records to this solver. The caller supplies a
+stationary, right-handed orthonormal local frame Q, a planet-centred origin r0
+and one owner for each plate-controlled velocity node. With column-vector notation:
+
+```text
+r = r0 + Q x
+u_local = Q^T (omega_global cross r)
+torque_on_region = sum_owned_nodes r cross (Q reaction_local)
+torque_on_plate = -torque_on_region
+power_into_region = omega_global dot torque_on_region
+```
+
+All three components are retained, including the contribution from the actual
+planet-centred origin. Plate ownership requires three prescribed velocity
+components; partially constrained or interior nodes cannot masquerade as full
+plate control. Unowned fixed supports have separate, explicit velocities. Their
+reactions are not attributed to plates. Corner nodes have one owner, not one per
+face. Tractions remain separate native inputs, not a second copy of plate drag.
+
+Prescribed solves check plate order, global frame, epoch, time and native motion
+provenance. Force-driven solves use all three Cartesian angular components for
+each of one to four plates (the native twelve-mode limit), full supplied external
+torques and an explicit exterior resistance matrix. No axis is silently locked
+or discarded. The returned immutable exchange binds the mechanical snapshot,
+mapping/source identity, angular rates, both torque signs and each plate's power.
+The native conditioning, incompatible-flux and conservation refusals still apply;
+a geometrically small or insufficiently resisted rotation can be inadmissible.
+
+The torque is the transpose of the same discrete velocity map acting on the
+native nodal reactions. It therefore preserves virtual work without interpolating
+stress onto another boundary or multiplying integrated nodal forces by area again.
+Prepared displacement modes and the native factor/response are reused; no large
+mechanical result is duplicated by the exchange wrapper. An explicit adapter
+buffer allowance is separate from the native solver budget and is not an RSS cap.
+
+This is an explicit flat-box embedding of instantaneous Euler velocities, **not
+a curved spherical mesh, moving reference frame, automatic plate ownership,
+regional time step or planetary assembly**. Domain curvature and evolution must
+be handled by their owners before this becomes a world-scale calculation.
+
+Focused tests independently check the cross-product mapping, multiple owners,
+rotated axes and planet-scale offsets. An exactly representable twisting column
+has nonzero strain: on a 2 by 3 by 4 m box with viscosity 2 Pa s and angular speed
+0.5 rad/s, its plate torque is 1.625 N m and mechanical power 0.8125 W.
+Both prescribing that rotation and solving for it from torque recover the same
+analytical answer. Invalid ownership/frames/time, overflow, cancellation and source
+drift are refused. Repeated torque solves retain one factor and reuse the response.
+These are synthetic implementation controls, not geological calibration.
 
 ## What checks establish
 
@@ -131,6 +183,11 @@ and W10 receipts are not rebound or promoted by these new checks.
   its virtual-work principle informs the reaction calculation, not a rock law.
 - [SciPy sparse LU](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html):
   factor reuse and sparse storage for the explicitly bounded direct comparison.
+- [pyGPlates velocity calculation](https://www.gplates.org/docs/pygplates/generated/pygplates.calculate_velocities):
+  rotation-derived global velocities and explicit local-coordinate conversion
+  informed the adapter. Atlas consumes instantaneous SI Euler rates, not a finite
+  stage rotation or pyGPlates' geological-time unit convention. Bleyer's reaction
+  example above also informed the work-preserving torque return.
 
 The implementation is original Atlas code. These sources explain method choices;
 they are not claims that their software was installed or benchmarked locally.

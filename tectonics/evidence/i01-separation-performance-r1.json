@@ -1,0 +1,118 @@
+{
+  "method": "three alternating paired samples, identical prepared states and input checks",
+  "scope": "filter and one 64-cell/4000-step strip, not whole generator",
+  "script_sha256": "4fd82fc978b95fc7668cf8e39a7c7424f350484edd316c6900a4ed85fc51e5b4",
+  "source_sha256": {
+    "tools/check_i01_separation_feasibility.py": "1e76845ffb150aa409aa0675cf16dd8ad634cb2d0ad47da0891e19e5b63bb39e",
+    "tests/test_i01_separation_feasibility.py": "4c8a7833c4c6bc3e53515191f4a05d3af930e86f55c573d3a5407c82a0e5f937",
+    "docs/I01_SEPARATION_FEASIBILITY.md": "080bca1076b9265f1ba4f2e7425584374a2135ab3a9666bd10a21a478fbab4c6",
+    "cases/i01_separation_feasibility_v1.json": "7b7c6b469e6186849e1655e1cdd424e0dd4cf2a1570f84d5a821e2e47bafb4f5",
+    "tools/check_i01_separation_law.py": "0de553b4c6b2539f9132f99f9621bda63998c90466d6ddf3aa15e941ca019b02"
+  },
+  "filters": [
+    {
+      "samples_s": {
+        "before": [
+          0.11013939999975264,
+          0.11037429998395965,
+          0.11020890000509098
+        ],
+        "after": [
+          0.06637199997203425,
+          0.06864890002179891,
+          0.06668109999736771
+        ]
+      },
+      "calls": 10000,
+      "before_median_s": 0.11020890000509098,
+      "after_median_s": 0.06668109999736771,
+      "saved_seconds": 0.04352780000772327,
+      "saved_percent": 39.49572131262771,
+      "cells": 32,
+      "maximum_absolute_difference": 8.881784197001252e-16
+    },
+    {
+      "samples_s": {
+        "before": [
+          0.11521690001245588,
+          0.11409099999582395,
+          0.11440169997513294
+        ],
+        "after": [
+          0.07323729997733608,
+          0.07257900002878159,
+          0.0729307999718003
+        ]
+      },
+      "calls": 10000,
+      "before_median_s": 0.11440169997513294,
+      "after_median_s": 0.0729307999718003,
+      "saved_seconds": 0.041470900003332645,
+      "saved_percent": 36.25024804032372,
+      "cells": 64,
+      "maximum_absolute_difference": 1.2212453270876722e-15
+    },
+    {
+      "samples_s": {
+        "before": [
+          0.1385949000250548,
+          0.13791809999383986,
+          0.1379118000040762
+        ],
+        "after": [
+          0.09980770002584904,
+          0.09789979999186471,
+          0.09792059997562319
+        ]
+      },
+      "calls": 10000,
+      "before_median_s": 0.13791809999383986,
+      "after_median_s": 0.09792059997562319,
+      "saved_seconds": 0.03999750001821667,
+      "saved_percent": 29.00090707456321,
+      "cells": 256,
+      "maximum_absolute_difference": 1.7763568394002505e-14
+    }
+  ],
+  "resolved_run": {
+    "samples_s": {
+      "before": [
+        0.4486009000102058,
+        0.47488350002095103,
+        0.46402720001060516
+      ],
+      "after": [
+        0.3612289000302553,
+        0.3708135000197217,
+        0.3763012000126764
+      ]
+    },
+    "calls": 1,
+    "before_median_s": 0.46402720001060516,
+    "after_median_s": 0.3708135000197217,
+    "saved_seconds": 0.09321369999088347,
+    "saved_percent": 20.087981908981433
+  },
+  "maximum_absolute_output_differences": {
+    "dt_s": 0,
+    "ell_m": 0,
+    "band_width_m": 0,
+    "bond_loss_bracket_s": 0,
+    "shear_displacement_bracket_m": 0,
+    "plastic_participation_width_m_at_loss": 4.440892098500626e-16,
+    "traction_pa": 4.440892098500626e-16,
+    "raw_history_range": 0,
+    "work_j_m2": 0,
+    "elastic_change_j_m2": 4.440892098500626e-16,
+    "creep_dissipation_j_m2": 0,
+    "breakdown_dissipation_j_m2": 7.105427357601002e-15,
+    "residual_friction_j_m2": 7.105427357601002e-15,
+    "overstress_dissipation_j_m2": 3.552713678800501e-15,
+    "account_relative_error": 2.0901164409211923e-16
+  },
+  "parity_rtol": 1e-12,
+  "parity_atol": 1e-13,
+  "baseline_filter": "Previous implementation: validate finite RHS; scipy.linalg.solve_banded((1, 1), band.ab, raw, check_finite=False); validate finite result. Candidate reuses a prepared banded Cholesky factor. Both timed runs start with prepared geometry; preparation excluded.",
+  "result": "PASS_PARITY_WITH_MEASURED_SPEEDUP",
+  "scientific_acceptance": false
+}

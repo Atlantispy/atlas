@@ -1,0 +1,645 @@
+{
+  "schema": "atlas.i01-melt-segregation.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "mc03_closed": false,
+  "contract": "atlas.two-phase-compaction-1d.v1",
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "controls": {
+    "derivation": {
+      "status": "PASS",
+      "seconds": 0.004358300007879734,
+      "passed": true,
+      "checks": {
+        "all_pairs_match_closed_form": true,
+        "sealed_base_compacts": true,
+        "boundary_layer_departs_from_rigid_darcy": true,
+        "sealed_base_matches_closed_form": true,
+        "mixture_flux_uniform_without_reaction": true,
+        "stiff_matches_closed_form": true,
+        "stiffer_matrix_suppresses_segregation": true,
+        "melting_matches_closed_form": true,
+        "top_flux_is_not_production": true,
+        "flux_increment_is_not_production_increment": true
+      },
+      "cells": 128,
+      "compaction_length_m": 1000.0,
+      "rigid_matrix_darcy_flux_m_s": 4.85595e-10,
+      "pairs": {
+        "flux/rigid": {
+          "errors": {
+            "overpressure": 1.6804109464042333e-05,
+            "segregation_flux": 1.821054680742171e-05,
+            "matrix_velocity": 2.9631649491244076e-05
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 5.218797567837265e-10
+        },
+        "flux/flux": {
+          "errors": {
+            "overpressure": 1.2856974139463495e-05,
+            "segregation_flux": 2.2389639489103932e-05,
+            "matrix_velocity": 3.113383988386938e-05
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 2e-10
+        },
+        "rigid/rigid": {
+          "errors": {
+            "overpressure": 0.00016281299181802568,
+            "segregation_flux": 1.2417840299849907e-05,
+            "matrix_velocity": 0.00011912122261119689
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 5.37754316762697e-10
+        },
+        "rigid/flux": {
+          "errors": {
+            "overpressure": 1.9476988147623325e-05,
+            "segregation_flux": 1.090227103306266e-05,
+            "matrix_velocity": 2.106630944213961e-05
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 2e-10
+        },
+        "free_flux/rigid": {
+          "errors": {
+            "overpressure": 0.0001240722572265918,
+            "segregation_flux": 1.2251360278775314e-05,
+            "matrix_velocity": 4.071901204264972e-05
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 5.396646491013428e-10
+        },
+        "flux/free_flux": {
+          "errors": {
+            "overpressure": 1.748126568005064e-05,
+            "segregation_flux": 1.475368595718092e-05,
+            "matrix_velocity": 2.2801222977606855e-05
+          },
+          "allowance": 0.00048828125,
+          "within": true,
+          "top_segregation_flux_m_s": 4.85595e-10
+        }
+      },
+      "sealed_base": {
+        "errors": {
+          "overpressure": 1.4905040428531385e-05,
+          "segregation_flux": 1.5760358691802878e-05,
+          "matrix_velocity": 1.5760358669479525e-05
+        },
+        "allowance": 0.00048828125,
+        "probe_height_m": 500.0,
+        "probe_segregation_flux_m_s": 1.9089099009563031e-10,
+        "base_compaction_rate_per_s": -4.777410167917489e-13
+      },
+      "stiff": {
+        "errors": {
+          "overpressure": 3.6636764409096763e-07,
+          "segregation_flux": 7.627836894318102e-07,
+          "matrix_velocity": 7.627822669203646e-07
+        },
+        "allowance": 3.0517578125e-05,
+        "compaction_length_m": 10000.0,
+        "max_segregation_flux_m_s": 3.6415978614289145e-11
+      },
+      "production": {
+        "column_liquid_production_m_s": 1.4285714285714288e-09,
+        "top_segregation_flux_m_s": 5.218797567837265e-10,
+        "doubled_top_segregation_flux_m_s": 5.759494058850693e-10,
+        "errors": {
+          "overpressure": 1.6804109464042333e-05,
+          "segregation_flux": 1.821054680742171e-05,
+          "matrix_velocity": 2.9631649491244076e-05
+        },
+        "doubled_errors": {
+          "overpressure": 3.454563352712009e-05,
+          "segregation_flux": 2.7980139881809745e-05,
+          "matrix_velocity": 7.22545760682324e-05
+        }
+      }
+    },
+    "refinement": {
+      "status": "PASS",
+      "seconds": 0.002823099959641695,
+      "passed": true,
+      "checks": {
+        "constant_second_order": true,
+        "manufactured_second_order": true,
+        "constant_within_allowance": true,
+        "manufactured_finest_within_cap": true
+      },
+      "constant": [
+        {
+          "cells": 32,
+          "allowance": 0.0078125,
+          "overpressure": 0.0002828717276172369,
+          "segregation_flux": 0.00029077640274784047,
+          "matrix_velocity": 0.00047314254474734
+        },
+        {
+          "cells": 64,
+          "allowance": 0.001953125,
+          "overpressure": 6.839335158878767e-05,
+          "segregation_flux": 7.281250033653832e-05,
+          "matrix_velocity": 0.00011847829249744909
+        },
+        {
+          "cells": 128,
+          "allowance": 0.00048828125,
+          "overpressure": 1.6804109464042333e-05,
+          "segregation_flux": 1.821054680742171e-05,
+          "matrix_velocity": 2.9631649491244076e-05
+        }
+      ],
+      "manufactured": [
+        {
+          "cells": 32,
+          "overpressure": 0.002363621126526,
+          "segregation_flux": 0.0006788407611869353,
+          "matrix_velocity": 0.0004155113500806526
+        },
+        {
+          "cells": 64,
+          "overpressure": 0.000608315952172855,
+          "segregation_flux": 0.00016990190331024586,
+          "matrix_velocity": 0.00010396920666358548
+        },
+        {
+          "cells": 128,
+          "overpressure": 0.00015429510920062138,
+          "segregation_flux": 4.248749479157417e-05,
+          "matrix_velocity": 2.599096824415104e-05
+        }
+      ],
+      "constant_orders": {
+        "overpressure": [
+          2.048219994965866,
+          2.025042000927421
+        ],
+        "segregation_flux": [
+          1.997652139163615,
+          1.9994119086061224
+        ],
+        "matrix_velocity": [
+          1.9976521392696305,
+          1.999411910367939
+        ]
+      },
+      "manufactured_orders": {
+        "overpressure": [
+          1.9581060568530573,
+          1.9791285046927658
+        ],
+        "segregation_flux": [
+          1.998371180246796,
+          1.999591829245916
+        ],
+        "matrix_velocity": [
+          1.9987315882300425,
+          2.0000740130793293
+        ]
+      }
+    },
+    "reversal": {
+      "status": "PASS",
+      "seconds": 0.0008827000274322927,
+      "passed": true,
+      "checks": {
+        "light_liquid_rises": true,
+        "dense_liquid_sinks": true,
+        "exact_negation_one_factor": true,
+        "pushed_matches_closed_form": true,
+        "signs_follow_closed_form": true,
+        "downward_against_buoyancy": true,
+        "upward_with_buoyancy": true
+      },
+      "cells": 128,
+      "buoyancy_flux_m_s": 4.85595e-10,
+      "injected_top_flux_m_s": -9.7119e-10,
+      "errors": {
+        "overpressure": 1.3163240972856055e-05,
+        "segregation_flux": 2.4600342338325888e-05,
+        "matrix_velocity": 2.4600342331142832e-05
+      },
+      "allowance": 0.00048828125,
+      "faces_compared": 99,
+      "top_segregation_flux_light_m_s": 4.678101076823838e-10,
+      "top_segregation_flux_dense_m_s": -4.678101076823838e-10
+    },
+    "balances": {
+      "status": "PASS",
+      "seconds": 0.0004308999632485211,
+      "passed": true,
+      "checks": {
+        "melting_and_freezing_present": true,
+        "mixture_balance_per_cell": true,
+        "phase_balances_agree": true,
+        "column_balance": true,
+        "fluid_pressure_drives_darcy_flux": true,
+        "dry_sided_faces_carry_no_flux": true,
+        "matrix_translates_through_dry_cells": true,
+        "disconnected_segment_sealed": true,
+        "disconnected_dilation_equals_reaction": true,
+        "dry_cells_have_no_liquid_pressure": true,
+        "top_datum_honoured": true
+      },
+      "cells": 128,
+      "wet_cells": 96,
+      "balance_scale_m_s": 3.596927179291065e-09,
+      "max_mixture_residual_m_s": 5.8853819803791224e-24,
+      "max_phase_gap_m_s": 5.965636906839631e-24,
+      "column_total_m_s": 1.2202147813612924e-24,
+      "max_darcy_difference_m_s": 2.794028701096596e-22,
+      "disconnected_cells": [
+        16,
+        48
+      ],
+      "summary": {
+        "contract": "atlas.two-phase-compaction-1d.v1",
+        "cells": 128,
+        "wet_cells": 96,
+        "bottom_segregation_flux_m_s": 0.0,
+        "top_segregation_flux_m_s": 4.628278193487734e-10,
+        "top_relative_liquid_mass_flux_kg_m2_s": 1.2959178941765656e-06,
+        "bottom_matrix_velocity_m_s": 1.4622011095630474e-09,
+        "top_matrix_velocity_m_s": 1e-09,
+        "top_matrix_velocity_mismatch_m_s": null,
+        "column_melting_rate_kg_m2_s": 1.158159684019581e-08,
+        "column_liquid_production_m_s": 4.136284585784219e-12,
+        "column_reaction_volume_m_s": 6.267097857248827e-13,
+        "max_abs_mixture_residual_m_s": 5.8853819803791224e-24,
+        "balance_scale_m_s": 3.596927179291065e-09,
+        "min_compaction_length_m": 447.22073302485126,
+        "max_cell_over_compaction_length": 0.08508897311783953,
+        "assumptions": {
+          "geometry": "one vertical column of fixed cells; z upward; gravity is -g z",
+          "time": "instantaneous: liquid volume fraction, melting rate, thermochemistry and domain fixed; tendencies are reported, never integrated",
+          "phases": "individually incompressible; one declared constant density each; rho_s and rho_f may differ",
+          "reaction_volume": "retained: d(W + q)/dz = Gamma (1/rho_f - 1/rho_s); never R = 0 with unequal densities",
+          "momentum": "creeping flow with one liquid pressure: dP_f/dz = d/dz[(zeta + 4 eta/3) dW/dz] - rho_bar g",
+          "liquid": "Darcy flux relative to the matrix; isotropic K = K_r (phi/phi_K)^n with n > 0",
+          "matrix": "constant shear viscosity eta; bulk viscosity zeta = zeta_r (phi/phi_z)^-m with m >= 0",
+          "dry": "phi = 0 exactly: no liquid or liquid pressure, zero permeability, no compaction; no floor or threshold"
+        }
+      }
+    },
+    "dry_limits": {
+      "status": "PASS",
+      "seconds": 0.0026667999918572605,
+      "passed": true,
+      "checks": {
+        "neutral_no_overpressure": true,
+        "neutral_no_segregation": true,
+        "neutral_matrix_uniform": true,
+        "neutral_liquid_stored_in_place": true,
+        "all_dry_no_flux": true,
+        "all_dry_rigid_translation": true,
+        "all_dry_liquid_pressure_undefined": true,
+        "all_dry_total_pressure_defined": true,
+        "dry_base_zero_flux": true,
+        "dry_base_rigid_translation": true,
+        "dry_base_is_sealed_closed_form": true,
+        "disconnected_faces_zero": true,
+        "disconnected_segment_is_sealed_closed_form": true,
+        "upper_region_is_sealed_closed_form": true,
+        "equal_density_onset_admitted": true,
+        "dry_refusals": true
+      },
+      "cells": 128,
+      "dry_base_cells": 16,
+      "dry_base_errors": {
+        "overpressure": 1.6139179304469854e-05,
+        "segregation_flux": 2.11351655334454e-05,
+        "matrix_velocity": 3.320080661090166e-05
+      },
+      "segment_errors": {
+        "overpressure": 2.7544659314310388e-05,
+        "segregation_flux": 7.365778836870324e-05,
+        "matrix_velocity": 7.481157873414444e-05
+      },
+      "upper_errors": {
+        "overpressure": 1.5187672001579517e-05,
+        "segregation_flux": 4.111480420300621e-05,
+        "matrix_velocity": 5.592409671257188e-05
+      },
+      "disconnected_ranges": [
+        [
+          0,
+          16
+        ],
+        [
+          48,
+          64
+        ]
+      ],
+      "refusals": {
+        "melting_with_volume_change_in_dry_cell": {
+          "expected": "REFUSED_DRY_REACTION",
+          "code": "REFUSED_DRY_REACTION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "freezing_in_dry_cell": {
+          "expected": "REFUSED_DRY_REACTION",
+          "code": "REFUSED_DRY_REACTION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "rigid_condition_at_dry_top": {
+          "expected": "REFUSED_DRY_BOUNDARY_CONDITION",
+          "code": "REFUSED_DRY_BOUNDARY_CONDITION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "free_flux_at_dry_base": {
+          "expected": "REFUSED_DRY_BOUNDARY_CONDITION",
+          "code": "REFUSED_DRY_BOUNDARY_CONDITION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "flux_into_dry_base": {
+          "expected": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "code": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      }
+    },
+    "boundaries": {
+      "status": "PASS",
+      "seconds": 0.002220999973360449,
+      "passed": true,
+      "checks": {
+        "closed_box_without_reaction_admitted": true,
+        "closed_box_mixture_flux_vanishes": true,
+        "closed_box_still_segregates": true,
+        "equal_density_closed_box_admitted": true,
+        "open_compatible_admitted": true,
+        "refusals": true
+      },
+      "cells": 128,
+      "closed_box_top_mismatch_m_s": 1.2252612823441722e-23,
+      "open_top_mismatch_m_s": 2.212708138579349e-23,
+      "closed_box_max_segregation_flux_m_s": 3.5651264136106466e-10,
+      "refusals": {
+        "closed_rigid_box_with_melting": {
+          "expected": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "code": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "open_top_velocity_ignoring_reaction": {
+          "expected": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "code": "REFUSED_INCOMPATIBLE_BOUNDARY",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "no_matrix_velocity": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "two_velocities_with_rigid_end": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "flux_without_value": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "value_with_rigid": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "unknown_kind": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "nonfinite_flux": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "varying_flux": {
+          "expected": "REFUSED_UNSUPPORTED_INPUT",
+          "code": "REFUSED_UNSUPPORTED_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "unknown_field": {
+          "expected": "REFUSED_BOUNDARY_DECLARATION",
+          "code": "REFUSED_BOUNDARY_DECLARATION",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "blank_provenance": {
+          "expected": "REFUSED_PROVENANCE_ABSENT",
+          "code": "REFUSED_PROVENANCE_ABSENT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      }
+    },
+    "porosity_basis": {
+      "status": "PASS",
+      "seconds": 0.0001993000041693449,
+      "passed": true,
+      "checks": {
+        "volume_fraction_matches_exact": true,
+        "round_trip": true,
+        "lighter_liquid_occupies_more_volume": true,
+        "equal_densities_identity": true,
+        "phase_volumes": true,
+        "refusals": true
+      },
+      "liquid_mass_fraction": 0.1,
+      "liquid_volume_fraction": 0.11578947368421054,
+      "exact_liquid_volume_fraction": 0.11578947368421054,
+      "round_trip_mass_fraction": 0.1,
+      "phase_volume_fraction": 0.1,
+      "refusals": {
+        "mass_fraction_as_column_state": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "mass_fraction_above_one": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "empty_phase_volumes": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "negative_phase_volume": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      }
+    },
+    "reuse": {
+      "status": "PASS",
+      "seconds": 0.0032361000194214284,
+      "passed": true,
+      "checks": {
+        "reuse_bitwise_identical": true,
+        "loads_change_results": true,
+        "operator_unchanged_by_solving": true,
+        "operator_arrays_read_only": true,
+        "operator_mismatch_refused": true
+      },
+      "cells": 128,
+      "loads": 4,
+      "operator_bytes": 13088,
+      "top_segregation_fluxes_m_s": [
+        1.8175938326821726e-10,
+        1.5845885687386751e-10,
+        1.6276238144622743e-10,
+        3.662631957935542e-11
+      ],
+      "refusals": {
+        "fraction_one_ulp": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "face_one_ulp": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "permeability_one_ulp": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shear_viscosity": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "bulk_exponent": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "liquid_viscosity": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "top_kind": {
+          "expected": "REFUSED_OPERATOR_MISMATCH",
+          "code": "REFUSED_OPERATOR_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      }
+    },
+    "timing": {
+      "status": "PASS",
+      "seconds": 0.12448449997464195,
+      "passed": true,
+      "checks": {
+        "finite_nonnegative": true,
+        "bitwise_identical": true
+      },
+      "grids": [
+        {
+          "cells": 256,
+          "loads": 16,
+          "samples_seconds": {
+            "fresh_seconds": [
+              0.004147700034081936,
+              0.004143199999816716,
+              0.004201300034765154,
+              0.003990900004282594,
+              0.004186099977232516
+            ],
+            "reuse_seconds": [
+              0.0022338999551720917,
+              0.0021834999788552523,
+              0.0021243999944999814,
+              0.002707500010728836,
+              0.0021309000439941883
+            ]
+          },
+          "bitwise_identical": true,
+          "median_seconds": {
+            "fresh_seconds": 0.004147700034081936,
+            "reuse_seconds": 0.0021834999788552523
+          }
+        },
+        {
+          "cells": 4096,
+          "loads": 16,
+          "samples_seconds": {
+            "fresh_seconds": [
+              0.010920999979134649,
+              0.011252600001171231,
+              0.011564199987333268,
+              0.011420499999076128,
+              0.011326199979521334
+            ],
+            "reuse_seconds": [
+              0.006488299986813217,
+              0.006927100010216236,
+              0.006645400018896908,
+              0.006533400039188564,
+              0.006447000021580607
+            ]
+          },
+          "bitwise_identical": true,
+          "median_seconds": {
+            "fresh_seconds": 0.011326199979521334,
+            "reuse_seconds": 0.006533400039188564
+          }
+        }
+      ],
+      "scope": "raw interleaved wall-clock samples of identical validated solves: a fresh preparation for every load against one preparation reused for all loads; results compared bitwise; no saving or cost is claimed"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_melt_segregation.py": "0666fc00507d6df45c004fd61fedcf5501e1320cbffda457019dde21b0cc28f1",
+    "cases/i01_melt_segregation_v1.json": "256c5131c85dcdf861ba5ae2e4c34ec3cd5b3495b4df5fb25c30d78892c56fa0",
+    "docs/I01_MELT_SEGREGATION.md": "5558d222a3a2a3c04994a7ea7772279d33e86dafa07ed4ad3baa5338bfdc8752",
+    "tests/test_i01_melt_segregation.py": "26e4d1e1dca811ffc35b999b11abd4e5087744a14e99a8210d761499acfb5f20"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.14258849999168888
+}

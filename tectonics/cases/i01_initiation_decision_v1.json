@@ -6,10 +6,85 @@
   "kind": "design_test_specification_not_runnable_configuration_or_evidence",
   "method": "tectonics/docs/I01_INITIATION_DECISION.md",
   "decision": "resolved_time_dependent_regional_elasto_visco_plastic_initiation",
-  "mc02_status": "METHOD_SELECTED_BENCHMARK_INPUTS_INCOMPLETE",
+  "mc02_status": "METHOD_SELECTED_INDEPENDENT_BOUNDED_VERIFICATION",
   "implementation_owner": "I07",
   "scientific_acceptance": false,
   "generated_initiation_enabled": false,
+  "alternative_verification": {
+    "method": "tectonics/docs/I01_INITIATION_VERIFICATION.md",
+    "case": "tectonics/cases/i01_initiation_verification_v1.json",
+    "receipt": "i01-initiation-verification-r1",
+    "scope": "I01 equations and release/energy prerequisites; synthetic analytical cases, not a subduction event or published reproduction",
+    "published_reproduction_required_for_i01": false,
+    "physical_acceptance_owner": "I07",
+    "physical_acceptance_requires": "shared objective VEP/thermal/material history, locked material-specific inputs, spatial/time refinement, rotation and exterior sensitivity, reactions/work/localisation, genuine force-release window and inventories"
+  },
+  "benchmark_source_selection": {
+    "status": "PREFERRED_CANDIDATE_NOT_ADMITTED",
+    "primary_candidate": "https://doi.org/10.1093/gji/ggac332",
+    "supporting_source": "https://doi.org/10.1029/2003GC000681",
+    "reason": "Li and Gurnis 2023 supplies inspectable Underworld code and numerical histories; prefer reconstructing a documented case over further digitisation of the 2004 figures. The archived case inputs and curve identities are not yet complete.",
+    "published_comparisons_scope": "The existing published_comparisons record remains Gurnis, Hall and Lavier 2004; its constants and graphical readings must not be transferred to the 2023 case.",
+    "release_test_owner": "ATLAS_REGULARISED; neither source's imposed-motion reaction crossing substitutes for a force-release experiment"
+  },
+  "replacement_source_review": {
+    "status": "SOURCE_AND_DATA_INSPECTED_CASE_RECONCILIATION_REQUIRED",
+    "source": "https://doi.org/10.1093/gji/ggac332",
+    "archive": "https://data.caltech.edu/records/haw6e-eck15",
+    "archive_doi": "10.22002/D1.8958",
+    "software_declared_by_readme": "Underworld 2.7.1b",
+    "execution_performed": false,
+    "reference_curve_admitted": false,
+    "partial_case_reconstruction": "tectonics/cases/i01_li_gurnis_reconstruction_v1.json",
+    "files": {
+      "README.docx": {"bytes": 21185, "sha256": "d350bacfbf968668187481f04083afbb7c23e6ef73ddd45a67607d89944a3fbe"},
+      "sbdt_init_sp3D.py": {"bytes": 69078, "sha256": "6c83c43fe7a236aae26718fecd999b3a6e6a2e06aa06e965c1924959fc39d5ef"},
+      "sup_data.npz": {"bytes": 21048, "sha256": "3d7643775c5e0cf84519f97933bcccf7d9c790ea5ddbdd6dbc266d4a75693102"}
+    },
+    "force_history_inventory": {
+      "locator": "sup_data.npz inspected with allow_pickle=False; README final paragraphs",
+      "arrays": {"T1_rec": [16, 40], "F1_rec": [16, 40], "u": [16]},
+      "dtype": "float64",
+      "finite_paired_samples": 332,
+      "finite_samples_by_row": [24, 24, 24, 10, 24, 24, 24, 24, 0, 24, 24, 10, 24, 24, 24, 24],
+      "paired_nan_padding_only": true,
+      "nonempty_row_times_strictly_increasing": true,
+      "velocity_cm_per_year_using_source_365_day_year": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+      "readme_units": {"T1_rec": "Myr", "F1_rec": "N/m", "u": "m/s"},
+      "dimensional_conversion_if_units_confirmed": "convergence_m = T1_rec * 1000000 * 365 * 24 * 3600 * u[:, None]",
+      "force_conversion_status": "COLUMN_SIGN_RECONSTRUCTED_NOT_ADMITTED: negate the tensile-positive tau_xx-tau_zz integral for compression-positive column force; its relationship to boundary reaction/work remains unverified",
+      "initial_zero_status": "SOURCE_CODE_EXPLAINED_NPZ_LINEAGE_UNRESOLVED: the script samples initially zero previousStress before its first stress update. Keep the NPZ zero; do not infer its aggregation lineage or discard it."
+    },
+    "inputfile_columns_zero_based": {
+      "0": "not read by initial assignment; identity unknown",
+      "1": "velx, m/year (lines 495-497)",
+      "2": "vely, m/year (lines 495-497)",
+      "3": "left thermal age, Myr",
+      "4": "right thermal age, Myr",
+      "5": "left crust thickness, km",
+      "6": "second left crust thickness, km",
+      "7": "right crust thickness, km",
+      "8": "weak-zone angle, degrees; zero disables weak zone",
+      "9": "weak-zone width, km",
+      "10": "weak-zone seed strength blend",
+      "11": "stopstep, step count",
+      "12": "reference weakening strain",
+      "13": "is_Dirichlet; 1 selects prescribed velocity",
+      "14": "bc_stressratio, force multiplier"
+    },
+    "compatibility_findings": [
+      {"id": "CASE_MAPPING", "status": "UNRESOLVED", "locator": "source lines 27-49; archive file listing; README table and final paragraphs", "finding": "inputfile.txt is required but absent from the listed archive. Velocity alone does not identify each raw row's rheology or full case; 1 cm/year movie cases are not present in the u array. Preserve the empty 10 cm/year row as missing, not zero."},
+      {"id": "CURVE_CONVENTIONS", "status": "UNRESOLVED", "locator": "source lines 1201, 1221-1222, 1424-1426; README final paragraphs", "finding": "The stored diagnostic integrates tau_xx minus tau_zz over a plate-interior column. Establish its sign, integration support, time units, boundary-work relation, initial zero and row-to-panel mapping; the README shorthand T1_rec*u omits the time-unit conversion. Figure 7 names and panel labels also contain repetition."},
+      {"id": "THERMAL_SCALING", "status": "UNRESOLVED", "locator": "source lines 143, 629-647", "finding": "Source algebra resolves the effective activation energy as 540*1400/1500=504 kJ/mol. Whether this law produced the intended published case remains unresolved; do not silently correct it and call the result a reproduction."},
+      {"id": "PHASE_TABLE", "status": "UNRESOLVED", "locator": "source lines 294-305, 362-376; paper section 3", "finding": "Required morbphase.txt is absent from the archive listing. It supplies incoming basalt density. The cited Hacker, Abers and Peacock 2003 paper (10.1029/2001JB001127) does not establish the exact numerical table."},
+      {"id": "YIELD_CONVENTION", "status": "CONFLICT", "locator": "paper section 3 and Table 1; source lines 743-750, 781-817", "finding": "Paper uses friction coefficient mu=0.6 in mu*p+C; script uses angle phi=0.6 rad in C*cos(phi)+p*sin(phi), with different weakening. Initial source pressure coefficient is 0.5646424734 and cohesion contribution 36.314767 MPa before clipping. Do not equate or silently convert these laws."},
+      {"id": "ELASTIC_TIMESTEP", "status": "CONFLICT", "locator": "article-linked ggac332_supplemental_file.pdf S2 pages 2-3 and Figure S5 page 7; source lines 659-664", "finding": "S2 links Figure 4c to elastic timestep approximately numerical timestep; Figure S5 caption links it to the 1 Myr panel rather than the 1.5 kyr panel. Archived script implies approximately 1.057 Myr. Published-case convention remains unresolved."},
+      {"id": "PLASTIC_HISTORY", "status": "MODEL_DIFFERENCE", "locator": "source lines 641-642, 927-930; Atlas selected_assumptions.plastic_history_rate", "finding": "The source accumulates the total symmetric strain-rate second invariant while yielding. Atlas accumulates resolved plastic engineering shear. There is no general constant-factor conversion between these histories."},
+      {"id": "FORCE_RELEASE", "status": "SEPARATE_ATLAS_TEST_REQUIRED", "locator": "source lines 1431-1442; Atlas release_protocol", "finding": "The stopstep branch assigns zero horizontal velocity at the right boundary. This is not removal of driving traction. A reaction-force zero or a fixed-force case also does not establish Atlas's unforced continuation test."},
+      {"id": "NUMERICAL_ACCEPTANCE", "status": "UNRESOLVED", "locator": "archive histories and benchmark_protocol", "finding": "Numerical histories remove digitisation error, not mesh/time/solver error or model mismatch. Define compatible case profiles, sampling support, numerical uncertainty and force/work allowances before an Atlas candidate run."}
+    ],
+    "next_action": "Source/code reconstruction of the 4 cm/year row is retained, but exact published-case completion now needs missing inputfile.txt and morbphase.txt plus raw-row/rheology provenance and reconciliation of published/code conventions. Do not run or fit a case to infer these. A separately declared Atlas case would not be exact source reproduction."
+  },
   "selected_assumptions": {
     "geometry": "declared inherited weak interface, polarity and actual incoming material; no spontaneous fault or global split claim",
     "elasticity": "incompressible logarithmic-objective branch; fixed positive material G; general noncoaxial implementation remains required",
@@ -108,16 +183,17 @@
       "no_inheritance_default": "Lavier2000 model constants and Figure10 homogeneous-case residuals are not established Case23 inputs"
     },
     "reported_graphical_readings": {
-      "status": "NOT_ADMITTED_INCOMPLETE_EXTRACTION_PROVENANCE",
-      "basis": "Complete existing 28-sample JSON received inline; source hash matches. Extraction script, coordinate calibration and exact vector selection were not retained",
+      "status": "REPRODUCIBLE_RESEARCH_EXTRACTION_NOT_ADMITTED",
+      "basis": "New complete extraction received inline: retained script, calibration, exact path selectors, raw extrema and parser versions. Source SHA and figure identities visually checked locally. Research owner reports five synthetic tests passed and all 28 rounded bands unchanged; historical raw extrema were unavailable. No local extraction rerun because the exact parser is not installed.",
       "reported_method": "Original vector polyline intersections in a horizontal half-stroke-width band, widened vertically by half stroke width. Outward-rounded 0.01e12 force intervals. These are graphical reading bands, not numerical simulation uncertainty or scientific acceptance tolerances. Figure13a time mapped to nominal convergence using 20 km/Myr. No smoothing.",
-      "extraction_provenance_missing": [
-        "PDF panel rectangles, tick anchors, coordinate orientation and affine transforms",
-        "vector object/path identifiers, selection/colour/clipping rules and original vertices",
-        "PDF stroke widths and vertical force half-widths",
-        "endpoint, vertical-segment and multiple-intersection handling",
-        "executable script, command and parser/library versions",
-        "unrounded force extrema and centreline values"
+      "extraction_provenance_missing": [],
+      "extraction_files": {
+        "tools/extract_i01_initiation_curves.py": "8e0c568a202bc3622585149b43578a8e4a6a80552e2b2a364dcb65c32a24bb50",
+        "cases/i01_initiation_digitisation_v1.json": "4c03b3b6fb551fbb6f18186755e8976535ab70d3e3d7ed4952233cff8aca5ed3"
+      },
+      "comparison_admission_remaining": [
+        "axis/systematic extraction uncertainty is unquantified; tick residuals are diagnostics, not certified error bounds",
+        "complete benchmark inputs, force/work definitions and comparison allowances remain unresolved"
       ],
       "force_rounding_increment_N_per_m": 1e10,
       "ordinate_unit": "1e12 N/m",
@@ -125,7 +201,7 @@
       "uncertainty_kind": "graphical reading intervals only; not physical error, numerical convergence error or acceptance allowances",
       "figure8b_p17": {
         "convergence_km": [5, 10, 20, 30, 40, 50],
-        "reported_horizontal_halfwidth_km": 0.1774548014942117,
+        "reported_horizontal_halfwidth_km": 0.17745480153281828,
         "curve_ids": ["figure8b_case1", "figure8b_case5"],
         "reported_curve_colours": ["red", "black"],
         "case1_total_rate_cm_per_year": 1,
@@ -135,7 +211,7 @@
       },
       "figure13a_p22": {
         "convergence_km": [10, 20, 40, 60, 80, 100, 109, 120],
-        "reported_horizontal_halfwidth_km": 0.46882568520171836,
+        "reported_horizontal_halfwidth_km": 0.46882941639937536,
         "curve_ids": ["figure13a_case23_right40Myr", "figure13a_case23_left10Myr"],
         "reported_curve_colours": ["blue", "red"],
         "time_conversion": "time_Myr*20 km/Myr, derived from Table3 one-side2cm/year",

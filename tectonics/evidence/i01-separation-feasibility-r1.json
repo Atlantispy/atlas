@@ -1,0 +1,8 @@
+{
+  "schema": "atlas.i01-separation-feasibility.v1",
+  "result": "FAILED_CAMPAIGN",
+  "scientific_acceptance": false,
+  "event_authorised": false,
+  "error_type": "Refusal",
+  "error": "REFUSED_INVALID_INPUT: time step exceeds predeclared explicit stability bound"
+}

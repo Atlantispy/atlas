@@ -1,136 +1,35 @@
 """Bounded force/drag/column coupling; WORKING NON-CANON.
+
+I02.2a: Drive and the motion root are owned by atlas_tectonics._integration_motion.
+This tool re-exports those same objects and keeps its fixed-temperature evolution,
+case, campaign and CLI.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import hashlib
 import json
-import math
 from pathlib import Path
 import platform
 import time
 
 import numpy as np
 import scipy
-from scipy.optimize import brentq
 from threadpoolctl import threadpool_limits
+
+from atlas_tectonics import _integration_column, _integration_motion, _integration_weakening
+# The package-owned motion root, re-exported: these are the same objects, not copies.
+from atlas_tectonics._integration_motion import FORCE_TOL, MAX_ITERATIONS, Drive, solve
 
 import check_i01_weakening as w
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "cases/i01_motion_coupling_v1.json"
 RECEIPT = ROOT / "evidence/i01-weakening-r2.json"
-FORCE_TOL = 1e-10
-MAX_ITERATIONS = 96
-
-
-@dataclass(frozen=True)
-class Drive:
-    """Generalised external force, disjoint drag and physical belt width.
-
-    F [N/m], D [Pa s], v [m/s], width [m]. D is NOT basal eta/H [Pa s/m].
-    The scalar degree of freedom is signed edge separation in a declared frame.
-    """
-    force_n_m: float
-    drag_pa_s: float
-    width_m: float
-
-    def __post_init__(self):
-        for name in self.__dataclass_fields__:
-            value = w.number(getattr(self, name), name, positive=name != "force_n_m")
-            object.__setattr__(self, name, value)
-        if self.force_n_m:
-            w.positive(abs(self.force_n_m) / self.drag_pa_s / self.width_m,
-                       "representable drag-only axial rate")
-
-
-def solve(prep, law, kappa, drive, *, method="newton", warm=None, deadline=None):
-    """Solve F=Dv+Fcolumn(v/width,kappa) on the admitted monotone branch.
-
-    The analytic bracket is x=|v|/(|F|/D) in [0,1]. Zero is evaluated as the
-    continuous zero-stress/zero-dissipation limit, never by log(0).
-    warm is an initial guess ONLY, not a cached result; every state is resolved.
-    """
-    if type(prep) is not w.PreparedColumn or type(law) is not w.WeakeningLaw or type(drive) is not Drive:
-        raise ValueError("typed preparation, law and drive required")
-    if method not in ("newton", "brent"):
-        raise ValueError("unknown motion solver")
-    kappa = w.history_array(prep, kappa)
-    law.certify(prep)
-    w.check_deadline(deadline)
-    target = abs(drive.force_n_m)
-    if target == 0:
-        return dict(velocity_m_s=0., rate=0., force=0., force_relative=0.,
-                    drive_power_w_m=0., drag_power_w_m=0., creep_power_w_m=0.,
-                    plastic_power_w_m=0., power_relative=0., kdot=np.zeros(prep.size),
-                    x=None, evaluations=0, iterations=0)
-    sign = math.copysign(1., drive.force_n_m)
-    velocity_scale = target / drive.drag_pa_s
-    rate_scale = velocity_scale / drive.width_m
-    w.positive(velocity_scale, "representable velocity scale")
-    w.positive(rate_scale, "representable axial-rate scale")
-    guess = None if warm is None else warm["x"]
-    evaluations = iterations = 0
-
-    def evaluate(x):
-        nonlocal guess, evaluations, iterations
-        w.check_deadline(deadline)
-        if not 0 < x <= 1:
-            raise ValueError("positive scaled rate left the drag bracket")
-        r = w.respond(prep, law, kappa, sign * rate_scale * x, guess)
-        evaluations += 1
-        iterations += r["iterations"]
-        if warm is not None:
-            guess = r["x"]
-        residual = x + abs(r["force"]) / target - 1.
-        tangent = 1. + r["dforce"] * rate_scale / target
-        if not math.isfinite(tangent) or tangent <= 0:
-            raise ValueError("motion tangent outside monotone finite support")
-        return residual, tangent, r
-
-    if method == "brent":
-        def residual(x):
-            return -1. if x == 0 else evaluate(x)[0]
-        x = brentq(residual, 0., 1., xtol=1e-15, rtol=1e-12, maxiter=MAX_ITERATIONS)
-        residual_value, _, r = evaluate(x)
-    else:
-        lo, hi = 0., 1.
-        x = .5 if warm is None else min(max(abs(warm["rate"]) / rate_scale, 1e-12), 1.)
-        for _ in range(MAX_ITERATIONS):
-            residual_value, tangent, r = evaluate(x)
-            if abs(residual_value) <= FORCE_TOL:
-                break
-            if residual_value > 0:
-                hi = x
-            else:
-                lo = x
-            # Newton in log(x), limited to a factor two. A linear-x step can
-            # jump near zero where plastic stress increments lose resolution,
-            # even though the wanted root is comfortably representable.
-            log_step = max(-math.log(2), min(math.log(2), -residual_value / (x * tangent)))
-            trial = x * math.exp(log_step)
-            candidate = trial if lo < trial < hi else (lo + hi) / 2
-            if candidate == x:
-                raise ValueError("motion root lost resolution")
-            x = candidate
-        else:
-            raise ValueError("motion force balance did not converge")
-    if abs(residual_value) > FORCE_TOL:
-        raise ValueError("motion force balance exceeds fixed tolerance")
-    v = sign * velocity_scale * x
-    drive_power = drive.force_n_m * v
-    drag_power = drive.drag_pa_s * v * v
-    creep_power = drive.width_m * r["creep_work"]
-    plastic_power = drive.width_m * r["plastic_work"]
-    power_relative = abs(drive_power - drag_power - creep_power - plastic_power) / drive_power
-    if not math.isfinite(power_relative) or power_relative > 2e-10:
-        raise ValueError("motion power account failed")
-    return dict(r, velocity_m_s=v, force_relative=abs(residual_value),
-                drive_power_w_m=drive_power, drag_power_w_m=drag_power,
-                creep_power_w_m=creep_power, plastic_power_w_m=plastic_power,
-                power_relative=power_relative, evaluations=evaluations, iterations=iterations)
+# Retained helper sources, their package owners included, whose bytes the reviewed receipt must have recorded.
+REVIEWED_HELPERS = ("tools/check_i01_weakening.py", "tools/check_i01_column.py", "cases/i01_weakening_v1.json",
+                    "src/atlas_tectonics/_integration_weakening.py", "src/atlas_tectonics/_integration_column.py")
 
 
 def evolve(prep, law, kappa0, drive, *, duration_s, steps, strain_bound=.05,
@@ -263,10 +162,12 @@ def campaign(spec, deadline):
 
 
 def bindings():
+    # I02.2a: the executed package owners are bound where they were imported from, outside ROOT refusing.
     paths = [Path(__file__), CASE, ROOT / "docs/I01_MOTION_COUPLING.md",
              ROOT / "tests/test_i01_motion_coupling.py", Path(w.__file__), Path(w.column.__file__),
-             w.CASE, RECEIPT]
-    return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+             w.CASE, RECEIPT, Path(_integration_motion.__file__), Path(_integration_weakening.__file__),
+             Path(_integration_column.__file__)]
+    return {p.resolve().relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
 def main():
@@ -281,8 +182,7 @@ def main():
         try:
             before, spec = bindings(), load_case()
             reviewed = json.loads(RECEIPT.read_text(encoding="utf-8"))["source_sha256"]
-            match = {p: reviewed.get(p) == before[p] for p in
-                     ("tools/check_i01_weakening.py", "tools/check_i01_column.py", "cases/i01_weakening_v1.json")}
+            match = {p: reviewed.get(p) == before[p] for p in REVIEWED_HELPERS}
             if not all(match.values()):
                 raise ValueError("retained helper differs from reviewed evidence")
             result.update(source_sha256=before, reviewed_helper_match=match, case=spec,

@@ -259,6 +259,58 @@ class SupportTests(Base):
         with self.assertRaisesRegex(ValueError, "declared thickness"):
             self.prepare(b.layer, b.depth_m, last)
 
+    def test_public_preparation_with_one_percent_density_mismatch_refused(self):
+        """Valid public constructors used to pair 2727 kg/m3 heat capacity with 2700 kg/m3 mechanics."""
+        b = self.base
+        thermal = h.prepare_thermal(
+            b.layer, b.depth_m, b.weight, [l["thickness_m"] for l in self.layers], SPEC["thermal_layers"],
+            [l["density_kg_m3"]*1.01 for l in self.layers], SPEC["boundaries"], mechanical_fingerprint=b.fingerprint)
+        self.assertTrue(h.valid_thermal(thermal))                         # a valid standalone thermal model
+        self.assertEqual(thermal.mechanical_fingerprint, b.fingerprint)   # the real label cannot hide the mismatch
+        self.assertNotEqual(thermal.fingerprint, self.thermal.fingerprint)
+        self.assertFalse(h.same_support(thermal, b))
+        with self.assertRaisesRegex(ValueError, "reference density"):
+            h.coupled_run(SPEC, WEAK, b, thermal, steps=1, strain=1e-6)
+        np.testing.assert_array_equal(self.thermal.reference_density_kg_m3, b.density)
+
+    def test_replaced_derived_thermal_state_refused(self):
+        """A copied input fingerprint does not authenticate changed capacities, fluxes or reference state."""
+        th, frozen = self.thermal, h.weakening.frozen
+        changes = {
+            "capacity": frozen(th.capacity*1.01),
+            "conductance": frozen(th.conductance*1.01),
+            "radiogenic": frozen(th.radiogenic*1.01),
+            "steady_k": frozen(th.steady_k+1.),
+            "boundary_conductance": tuple(g*1.01 for g in th.boundary_conductance),
+            "lower_face_m": frozen(th.lower_face_m+1.),
+            "reference_density_kg_m3": frozen(th.reference_density_kg_m3*1.01),
+        }
+        for name, value in changes.items():
+            altered = dataclasses.replace(th, **{name: value})
+            with self.subTest(name=name):
+                self.assertFalse(h.same_support(altered, self.base))
+                with self.assertRaisesRegex(ValueError, "prepared identity"):
+                    h.prepare_propagator(altered, 1e10)
+                with self.assertRaisesRegex(ValueError, "mechanical quadrature"):
+                    self.run_heat(1, 1e-6, thermal=altered)
+
+    def test_fresh_thermal_property_preparation_remains_admissible(self):
+        """Different declared Cp is legitimate when rebuilt; only reference density must equal mechanics."""
+        b = self.base
+        props = copy.deepcopy(SPEC["thermal_layers"])
+        props[0]["heat_capacity_j_kg_k"] *= 1.01
+        thermal = h.prepare_thermal(
+            b.layer, b.depth_m, b.weight, [l["thickness_m"] for l in self.layers], props,
+            [l["density_kg_m3"] for l in self.layers], SPEC["boundaries"], mechanical_fingerprint=b.fingerprint)
+        self.assertTrue(h.same_support(thermal, b))
+        self.assertNotEqual(thermal.fingerprint, self.thermal.fingerprint)
+        out = self.run_heat(1, 1e-6, thermal=thermal)
+        self.assertEqual((out["status"], out["accepted_steps"]), ("COMPLETE", 1))
+        self.assertLess(out["accounts"]["energy_relative"], 1e-10)
+        with self.assertRaisesRegex(ValueError, "propagator"):
+            self.run_heat(1, 1e-6, thermal=thermal,
+                          propagator=h.prepare_propagator(self.thermal, 1e-6/RATE))
+
     def test_same_size_foreign_support_refused_by_evolution(self):
         b = self.base
         shifted = [25e3, 15e3, 10e3, 50e3]

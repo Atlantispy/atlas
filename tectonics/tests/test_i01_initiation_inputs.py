@@ -39,6 +39,35 @@ def candidate(plan, xs=None, ys=None):
 
 
 class InitiationInputTests(unittest.TestCase):
+    def test_replacement_source_review_does_not_admit_or_relabel_a_case(self):
+        spec = target.read_json(target.DEFAULT)
+        choice = spec['benchmark_source_selection']
+        review = spec['replacement_source_review']
+        self.assertEqual(choice['status'], 'PREFERRED_CANDIDATE_NOT_ADMITTED')
+        self.assertEqual(choice['primary_candidate'], review['source'])
+        self.assertEqual(choice['supporting_source'], spec['published_comparisons']['source'])
+        self.assertNotEqual(review['source'], spec['published_comparisons']['source'])
+        self.assertFalse(review['execution_performed'])
+        self.assertFalse(review['reference_curve_admitted'])
+        self.assertEqual(set(review['files']), {'README.docx', 'sbdt_init_sp3D.py', 'sup_data.npz'})
+        for item in review['files'].values():
+            self.assertGreater(item['bytes'], 0)
+            self.assertRegex(item['sha256'], r'^[0-9a-f]{64}$')
+        inventory = review['force_history_inventory']
+        self.assertEqual(sum(inventory['finite_samples_by_row']), inventory['finite_paired_samples'])
+        self.assertEqual(inventory['finite_samples_by_row'][8], 0)
+        self.assertEqual(inventory['velocity_cm_per_year_using_source_365_day_year'][8], 10)
+        self.assertEqual(set(review['inputfile_columns_zero_based']), {str(i) for i in range(15)})
+        findings = {row['id']: row for row in review['compatibility_findings']}
+        self.assertEqual(findings['PLASTIC_HISTORY']['status'], 'MODEL_DIFFERENCE')
+        self.assertEqual(findings['FORCE_RELEASE']['status'], 'SEPARATE_ATLAS_TEST_REQUIRED')
+        for key in ('CASE_MAPPING', 'CURVE_CONVENTIONS', 'THERMAL_SCALING', 'NUMERICAL_ACCEPTANCE'):
+            self.assertEqual(findings[key]['status'], 'UNRESOLVED')
+        # Documentary source selection cannot supply absent executable inputs.
+        self.assertEqual(len(target.inspect_inputs(spec)['missing']), 15)
+        with self.assertRaisesRegex(ValueError, 'incomplete'):
+            target.prepare(spec)
+
     def test_actual_record_stays_incomplete_and_cannot_enable_physics(self):
         spec = target.read_json(target.DEFAULT)
         before = deepcopy(spec)
@@ -80,8 +109,27 @@ class InitiationInputTests(unittest.TestCase):
         self.assertEqual(conflict["status"], "CONFLICT")
         self.assertIsNone(conflict["adopted_basal_temperature_C"])
         readings = published["reported_graphical_readings"]
-        self.assertEqual(readings["status"], "NOT_ADMITTED_INCOMPLETE_EXTRACTION_PROVENANCE")
-        self.assertTrue(readings["extraction_provenance_missing"])
+        self.assertEqual(readings["status"], "REPRODUCIBLE_RESEARCH_EXTRACTION_NOT_ADMITTED")
+        self.assertFalse(readings["extraction_provenance_missing"])
+        self.assertTrue(readings["comparison_admission_remaining"])
+        import ast
+        import hashlib
+        for relative, expected in readings["extraction_files"].items():
+            raw = (target.ROOT / relative).read_bytes()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), expected)
+            if relative.endswith('.py'):
+                ast.parse(raw)  # syntax check without installing/importing the PDF parser
+        extracted = target.read_json(target.ROOT / 'cases/i01_initiation_digitisation_v1.json')
+        self.assertEqual(extracted['source_sha256'], published['source_pdf_sha256'])
+        self.assertEqual(extracted['history_comparison']['identical_rounded_bands'], 28)
+        self.assertEqual(extracted['history_comparison']['changed_bands'], [])
+        pairs = [('figure8b_p17', 'figure8b_case1', 'case1_left_force_intervals'),
+                 ('figure8b_p17', 'figure8b_case5', 'case5_left_force_intervals'),
+                 ('figure13a_p22', 'figure13a_case23_right40Myr', 'right_subducting_force_intervals'),
+                 ('figure13a_p22', 'figure13a_case23_left10Myr', 'left_overriding_force_intervals')]
+        curves = {name: curve for panel in extracted['panels'] for name, curve in panel['curves'].items()}
+        for panel, curve, bands in pairs:
+            self.assertEqual([row[6:8] for row in curves[curve]['samples']], readings[panel][bands])
         count = 0
         for panel_name in ("figure8b_p17", "figure13a_p22"):
             panel = readings[panel_name]

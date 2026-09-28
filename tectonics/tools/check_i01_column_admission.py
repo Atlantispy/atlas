@@ -226,8 +226,10 @@ def bindings():
     paths = [Path(__file__), CASE, ROOT/"docs/I01_COLUMN_ADMISSION.md",
         ROOT/"tests/test_i01_column_admission.py", Path(d.__file__), Path(m.__file__),
         Path(w.__file__), Path(w.column.__file__), w.CASE, w.COLUMN_CASE, PRIOR,
-        ROOT/"evidence/i01-decoupling-r1.json"]
-    return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+        ROOT/"evidence/i01-decoupling-r1.json",
+        Path(m._integration_motion.__file__), Path(m._integration_weakening.__file__),
+        Path(m._integration_column.__file__)]
+    return {p.resolve().relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
 def main():

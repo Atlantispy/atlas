@@ -9,8 +9,9 @@ This record answers the next separation step named by the
 lithosphere separate, while keeping elastic memory and the actual material accounts.
 
 The [case](../cases/i01_separation_law_v1.json), [tool](../tools/check_i01_separation_law.py) and
-[focused tests](../tests/test_i01_separation_law.py) are new. **None of their checks has been executed**
-(section 11).
+[focused tests](../tests/test_i01_separation_law.py) are new. The first versions were measured once by Codex and
+then corrected after review. Codex has run the corrected focused tests; **the corrected bounded campaign has not been
+run** (section 11).
 
 The following are unchanged:
 
@@ -33,10 +34,13 @@ one bonded body. No material has been deleted, and no empty gap has opened.
 Atlas therefore selects **loss of bonded connectivity through admitted cohesion loss**
 (`atlas.cohesion-loss-separation.v1`) as MC-01's candidate mechanism for plastic-dominated or brittle lithosphere.
 
-- **When a point loses its bond.** All three conditions must hold:
+- **When a point loses its bond.** All four conditions must hold:
   - its strength-controlling plastic history has completed the declared D2 softening;
-  - the law's provenance says that the completed state is sliding on a broken (cohesionless) surface;
-  - its temperature and effective pressure lie inside the declared range of that evidence.
+  - the law's provenance says that the completed state is sliding on a broken (cohesionless) surface, so its
+    residual cohesion is zero;
+  - its temperature and effective pressure lie inside the declared range of that evidence;
+  - its whole plastic history is recorded as produced inside that range. The current state alone never
+    certifies an earlier history.
 
   Creep and elastic loading never remove cohesion, so flowing (ductile) mantle cannot "fracture" under this law.
 - **When a section separates.** No bonded path joins the two predeclared anchors. Crust, mantle lithosphere and the
@@ -92,10 +96,14 @@ Y(kappa) = Y0 - (Y0 - Yr) min(kappa/kappa_c, 1)                              [Pa
 
 `kappa` is the history that controls strength:
 
-- in a resolved field, D2's filtered history `kappa_bar`;
-- in a uniform band, the raw engineering plastic shear.
+- in a resolved field, D2's filtered history `kappa_bar`. Contract §4 transports the raw plastic history `kappa`
+  and reconstructs `kappa_bar` from it on the current geometry; `kappa_bar` is never transported or overwritten;
+- in a uniform band, the raw engineering plastic shear (there the filter is the identity).
 
-Linear saturation is the form of the retained 1D control. Peak strength must exceed residual strength everywhere in
+Linear saturation of `Y` is the form of the retained 1D control and of this uniform local control. It equals linear
+cohesion softening at constant friction. It is not assumed to stand for a resolved convention that softens `C` and
+`phi` separately (the retained ASPECT weakening divides both), or for a history with changing `P_eff`: such a
+convention must be declared with the resolved comparison. Peak strength must exceed residual strength everywhere in
 the declared support; otherwise the law is refused.
 
 ### 3.2 A band of physical width and its slip-weakening equivalent
@@ -124,19 +132,36 @@ their width of 2–4 grid cells.
 `G` is the area between the stress–slip curve and the residual line: the Palmer–Rice shear fracture energy, as
 restated by Fei & Choo (their Fig. 1, `G_II = J_p - tau_r delta_p`). Palmer & Rice (1973) itself was not
 accessible. Wherever friction softens, `G` depends on `P_eff`, so it is derived, never a universal constant (UR-07).
+`(Y0 - Yr) D_c / 2` is the linear-`Y` value. Another declared softening convention gives
+`G = w_s ∫_0^kappa_c (Y(kappa) - Yr) dkappa` at the local `P_eff`; the same area, not the same number.
 
 ### 3.3 The bond state
 
 ```text
 BONDED      kappa = 0                                   no plastic history: creep and elasticity keep cohesion
 UNRESOLVED  kappa > 0 and (T, P_eff) outside support    plastic history beyond the reach of the cohesion-loss evidence
-BROKEN      residual_state = broken_surface_sliding, kappa >= kappa_c, inside support
+UNRESOLVED  kappa > 0 and support record not INSIDE     history of unknown or violated support: no claim is made
+BROKEN      residual_state = broken_surface_sliding, kappa >= kappa_c, inside support, record INSIDE
 BONDED      otherwise                                   partly softened, or residual declared as weakened intact rock
 ```
 
-The state uses the *current* strength-controlling history. Healing `h(T)` that lowers this history therefore
-re-bonds the material; coupled healing belongs to I07. A residual declared as `weakened_intact`, for example a
-cohesion merely divided by a factor, never breaks.
+**Residual consistency.** `broken_surface_sliding` means the completed surface has lost its cohesion, so the law
+refuses it with a nonzero residual cohesion (`REFUSED_INCONSISTENT_RESIDUAL`). No cohesive fracture threshold or
+numeric floor is invented. A residual declared as `weakened_intact`, for example a cohesion merely divided by a
+factor, never breaks, whatever its residual cohesion.
+
+**History support record.** Every accumulated plastic history carries a declared record: `INSIDE` when every
+increment was produced inside the law's support, otherwise `UNKNOWN` (the default) or `VIOLATED`. The current
+`(T, P_eff)` alone never certifies an earlier history. A point whose history was accumulated elsewhere therefore stays
+`UNRESOLVED` after it returns inside the support; it is not silently recertified. The local kernel adds only history
+produced at its fixed, in-support loading: it marks an empty starting history `INSIDE` and never upgrades another
+record.
+
+**No healing or rejoining in this slice.** The local control fixes temperature and effective pressure and has no
+healing and no geometry evolution: the loading refuses a nonzero healing rate. Strength recovery is not by itself an
+admitted rewelding law. A lower filtered value, or a mesh or filter change, is not evidence that broken material has
+rejoined. A future transported bond or surface history needs its own admitted irreversible rule and reconnection
+rule; neither is selected or implemented here.
 
 ### 3.4 Section connectivity and interval records
 
@@ -158,18 +183,20 @@ must themselves be intact.
 **Point-set connectivity**, which uses every cell and contact, is reported beside the bonded result. It is the
 reading questioned in section 10, and it never decides an event.
 
-Across one interval:
+Between two supplied section diagnostics:
 
 | Union: before → after | Record |
 | --- | --- |
 | CONNECTED → DISCONNECTED | `BRACKETED_UNION_LOSS`, for this section only. A proposal that still needs the checks of section 9, along-strike coverage, the handoff comparison and I02's commit |
 | DISCONNECTED → DISCONNECTED | `INHERITED_DISCONNECTION`, not an event |
-| DISCONNECTED → CONNECTED | `RECONNECTED`, for example after healing |
+| DISCONNECTED → CONNECTED | `RECONNECTED` between the two supplied graphs. No reconnection law exists in this slice, so this is a graph comparison, never a simulated healing or rejoining result |
 | Either one UNRESOLVED | `UNRESOLVED` |
 | CONNECTED → CONNECTED | `NO_UNION_EVENT` |
 
 A crust change from CONNECTED to DISCONNECTED is reported separately, only as the crustal milestone. No record
-authorises a plate split.
+authorises a plate split. `classify_interval` compares graph summaries supplied by the caller: it does not know their
+times, footprint or physical history, so it is not a time- or footprint-bound regional event certificate. The case's
+`graph_reconnected` interval is labelled as such a comparison.
 
 ### 3.5 The surface form and objectivity
 
@@ -260,24 +287,32 @@ tied to the grid would therefore make brittleness itself depend on the mesh.
   quasi-static path, and the breakdown would be dynamic. The declared `eta_p` turns it into a transient of finite
   rate. Its timing and energy partition depend on `eta_p`, which must be reported as a sensitivity. Inertia and
   radiated energy are not modelled here.
-- **Material.** Nothing is deleted. The bond state is derived from transported history, so I05 carries `kappa_bar` and
-  one support-violation flag per cohort. If a sub-resolution surface replaces a band, the band's inventory (`w_s`
-  times length, per unit strike) goes to the declared sides by current material position, with its stress and
-  history. This follows the [transitions §3](I01_TRANSITIONS.md#3-continental-separation-atlasrift-decoupling-handoffv1)
-  split rule. The D6 transfers and MC-04's basal accounts are unchanged.
+- **Material.** Nothing is deleted. Contract §4 D2 governs the history: I05 would transport the raw plastic history
+  `kappa`, and `kappa_bar` is reconstructed from it on the current geometry, never transported. A resolved bond state
+  would also need each cohort's support record along the whole approach. This record proposes that requirement; it
+  builds no I05 transport. If a sub-resolution surface replaces a band, the band's inventory (`w_s` times length, per
+  unit strike) goes to the declared sides by current material position, with its stress and history. This follows
+  the [transitions §3](I01_TRANSITIONS.md#3-continental-separation-atlasrift-decoupling-handoffv1) split rule. The D6
+  transfers and MC-04's basal accounts are unchanged. Whether a broken surface can ever rejoin is not decided by the
+  transported strength history (section 3.3).
 
-## 6. The executable local slice (prepared, not run)
+## 6. The executable local slice (corrected after review)
 
 The tool is outside every source-bound package and imports no retained tool. It reads the retained separation-decision
 case only for the negative example, and it binds that case before and after execution.
 
-1. **`SofteningLaw`** validates its inputs and returns:
+1. **`SofteningLaw`** validates its inputs, including the residual consistency of section 3.3 and that `D_c`, `G` and
+   `k_soft` are representable across the support, and returns:
    - the peak and residual yields, `D_c`, `G` and `k_soft`;
    - the strength at a given history;
-   - the bond state of section 3.3.
-2. **`Loading`, `State` and `Prepared.advance`** integrate one band exactly. An elastic surroundings spring of stiffness
-   `k` [Pa/m] loads the band at the far-field rate `V` [m/s] and keeps the stored traction. Optional Newtonian band
-   creep `eta_v` and the viscoplastic plastic branch act in series:
+   - the bond state of section 3.3, for a history with a declared support record.
+   The energy guard checks the final halved value, not merely whether its product is finite: a positive
+   mathematical energy must not become an admitted floating-point zero. Representable positive subnormal energy
+   remains allowed; this is a numerical-range refusal, not a minimum physical fracture energy.
+2. **`Loading`, `State` and `Prepared.advance`** integrate one band exactly, at fixed temperature and effective
+   pressure, with no healing and no geometry evolution. An elastic surroundings spring of stiffness `k` [Pa/m] loads
+   the band at the far-field rate `V` [m/s] and keeps the stored traction. Optional Newtonian band creep `eta_v` and
+   the viscoplastic plastic branch act in series:
 
    ```text
    tau_dot   = k V - (k w_s/eta_v) tau - (k w_s/eta_p) max(tau - Y(kappa), 0)
@@ -294,27 +329,69 @@ case only for the negative example, and it binds that case before and after exec
    J1 = ∫ e^{ms} cosh(qs) ds,   J2 = ∫ e^{ms} sinh(qs)/q ds
    ```
 
-   Both integrals use a series without cancellation when `qt ≤ 0.5`, and `expm1` forms otherwise.
+   Both integrals use a series without cancellation when `qt ≤ 0.5`, and `expm1` forms otherwise. Each increment
+   `J1 v + J2 (B - mI) v` is formed before it is added to `x0`.
+
+   **Phase at the yield surface.** The right-hand side is continuous, so the solution is unique and the rule follows
+   it exactly:
+   - off the surface, the sign of `o = tau - Y(kappa)` decides. It is the difference of two doubles, so its sign is
+     exact;
+   - on the surface (`o = 0` in the represented values) both fields agree, and the net drive `N = k V - a tau`
+     decides, with `a = k w_s/eta_v`. Because `o' = N` there, any strictly positive `N` enters plastic flow, however
+     small. Zero or negative `N` stays sub-yield: `N = 0` is an equilibrium of both fields;
+   - `N` is formed exactly from the represented coefficients and rounded once, so rounding of the product near the
+     steady creep traction cannot flip its sign. No margin or minimum drive is applied. An unrepresentable `N` is
+     refused (`REFUSED_NUMERIC_RANGE`).
+
+   The first version treated a positive `N` below `1e-12 (k V + a tau)` as sub-yield. The review reproducer (the
+   case's `exact_yield`, `k = w_s = eta_v = eta_p = kappa_c = 1`, `Y0 = 2`, `Yr = 0`, `tau0 = Y0`,
+   `V = 2 + 1e-12`) then stayed BONDED with zero history, although the declared ODE gives
+   `kappa(t) = delta/2 (cosh(sqrt(2) t) - 1)` with `delta = V - 2` as represented, which reaches `kappa_c` at
+   `t_c = acosh(1 + 2/delta)/sqrt(2) ≈ 20.5183 s` with traction `sqrt(2(1 + delta))`. Its energy balance closed, so a
+   balance alone cannot detect such a loss.
+
+   **Overstress path.** Along a segment the overstress is a linear function of the state, so it has its own exact
+   path `o(t) = o0 + J1 o'(0) + J2 (o''(0) - m o'(0))`. Yield, unloading and the plastic dissipations use this path
+   rather than the difference of a traction and a strength of similar size, which would round a small overstress
+   away. In the sub-yield phase, yield is reachable only if the exact net drive at the frozen strength is positive.
 
    **Events and accounts.**
-   - Yield, cohesion loss and unloading are bracketed on monotone pieces, to a relative width of 1e-13. Each event
-     records its traction and the cumulative accounts at that instant.
+   - Yield, softening completion (`softening_complete`, the constitutive event `kappa = kappa_c`) and unloading are
+     bracketed on monotone pieces, to a relative width of 1e-13. Each event records its traction, the cumulative
+     accounts and the law's bond state at that instant. Softening completion is BROKEN only for a
+     `broken_surface_sliding` law with an `INSIDE` history; a `weakened_intact` law completes softening, enters its
+     residual phase and stays BONDED, with no cohesion loss recorded.
+   - The state carries its history support record (section 3.3), and the final bond state uses it.
    - Work and the creep, plastic and overstress dissipations are 16-point Gauss–Legendre integrals of the exact
      solution. The stored-energy change `(tau1^2 - tau0^2)/(2k)` and the breakdown and residual-friction parts are
      closed forms.
    - Two balances are checked to 1e-10: work against stored energy plus dissipation, and plastic dissipation against
-     its three parts. No dissipation is ever set as the residual of a balance.
+     its three parts. No dissipation is ever set as the residual of a balance. A non-finite account is refused before
+     the comparison, since a NaN would otherwise pass it.
 3. **`rate_independent_reference`** gives the `eta_p -> 0` limit without creep: the loading displacement at
-   completion, `G`, and the energy excess that an unstable path would release.
-4. **`surface_projection`** returns the objective scalars of section 3.5 and refuses opening.
+   completion, `G`, and the energy excess that an unstable path would release. Unrepresentable values are refused.
+4. **`surface_projection`** returns the objective scalars of section 3.5 and refuses opening. A traction or jump
+   component outside the double range is refused (`REFUSED_NUMERIC_RANGE`) before any decision, never returned as NaN
+   or infinity.
 5. **`connectivity`, `section_diagnostics` and `classify_interval`** implement section 3.4.
 6. **`negative_example_thickness`** is the exact field of
    [separation decision §5](I01_SEPARATION_DECISION.md#5-required-refusal-example-and-comparison-plan). No law or
-   connectivity function reads a thickness.
+   connectivity function reads a thickness. The knee excess `u - u_a` and the linear branch are exact rationals of
+   the represented inputs, rounded once, so a thin film cannot cancel to zero near the knee. A positive thickness
+   that is not a normal double, such as `exp(-937)` m at `u = 1000` m on the ladder, is refused rather than returned
+   as `0.0`: zero is never an admitted thickness.
 
-**Cost.** Each band keeps an O(1) state of traction, history and time, with no growing history. Each exact segment
-uses at most 150 quadrature sub-intervals, and one immutable preparation serves each pairing of law and loading.
-There is no dense matrix, iterative solver, worker process or cache.
+**Cost.** Each band keeps an O(1) state of traction, history, time and support record, with no growing history. Each
+exact segment uses at most 150 quadrature sub-intervals, and one immutable preparation serves each pairing of law and
+loading. Exact rational arithmetic is used only for the net drive, a few times per segment, and for the knee of the
+negative example. There is no dense matrix, iterative solver, worker process or cache.
+
+**Conditioning limit of a stored state.** Each advance follows the declared ODE exactly from the state it is given,
+but a stored traction resolves a small overstress only to about one ULP of the traction. Near exact yield with a tiny
+net drive in the unstable regime, the growing mode amplifies that rounding: in the reproducer, splitting the run at
+1 s, where the overstress is about 1.4e-12 Pa, moves the completion by an estimated 1.5e-4 s at most, while splits
+where the overstress is well resolved, such as 15 s, agree to 1e-11. Crossing times approached very slowly are
+limited in the same way. This is a limit of the double-precision state, not a kernel tolerance; no margin hides it.
 
 The campaign has a 60-second cooperative budget after imports. It writes its output exclusively and binds its sources
 before and after execution. Timing compares matched arms that reuse and rebuild the preparation, and reports raw
@@ -344,6 +421,10 @@ seconds only.
 
 No external software was installed or run.
 
+**Review correction.** The correction after review consulted no additional paper or software. The review itself
+(Codex) cross-checked the official PyLith fault documentation and the Fei & Choo (2020) and Aagaard et al. (2013)
+abstracts. None of these sources shows automatic rebonding or world-scale rupture, and none is used for either.
+
 **Repository sources read for this record:**
 
 - `AGENTS.md`, `CLAUDE.md` and `docs/CODING_SAFETY.md`;
@@ -357,11 +438,13 @@ No external software was installed or run.
 - column and 2D fault in full;
 - transitions §§3, 10 and 11;
 - as implementation patterns only: the elastic-memory and elastic-core tools, the retained column `LocalLaw` and the
-  1D shear control in `check_i01_closures.py`.
+  1D shear control in `check_i01_closures.py`;
+- for the review correction: contract §4 D2 again, as the authority for history transport, and the
+  negative-example formula of separation decision §5.
 
 ## 8. What each prepared check would establish
 
-These are expectations fixed before any run, not results.
+These expectations were fixed before execution; section 11 records what has run.
 
 - **Closed-form law values.** Strengths, breakdown slip and energy equal their equations. When friction softens,
   the energy grows with pressure, so it cannot be a universal constant.
@@ -374,7 +457,19 @@ These are expectations fixed before any run, not results.
 - **Energy.** Realised breakdown equals `G`, residual friction equals `Yr D_c`, and both balances close. No energy
   appears or disappears when cohesion is lost.
 - **Subdivision.** Splitting the interval changes neither the event time nor the accounts. This is the time
-  refinement of an exact kernel.
+  refinement of an exact kernel. Where a stored state cannot resolve a tiny overstress (section 6), each piece is
+  instead checked against the closed form from the state it is given.
+- **Exact yield (review reproducer).** From a state exactly on the yield surface, a positive net drive completes the
+  softening at `acosh(1 + 2/delta)/sqrt(2)` with traction `sqrt(2(1 + delta))` and then follows the residual closed
+  form; zero drive is stationary; negative drive relaxes by creep and stays BONDED. States and drives one ULP either
+  side of yield follow the same ODE: one ULP of overstress still completes in this unstable regime, one ULP below
+  yields at the exact crossing `log1p((2 - tau0)/delta)`, and the largest negative drive never yields.
+- **Bond loss is the law's, not the event's.** A `weakened_intact` law with a cohesive residual completes softening
+  at its closed-form time, enters the residual phase and stays BONDED; no cohesion loss is recorded.
+- **Unloading.** Creep unloads a residual band at its closed-form time and keeps its history and BROKEN state; a
+  softening band unloads as an independent Runge–Kutta integration says and stays BONDED.
+- **History support record.** UNKNOWN and VIOLATED histories stay UNRESOLVED inside the support, and an advance
+  never upgrades them; an empty starting history becomes INSIDE.
 - **Rate-independent limit.** As `eta_p` falls, completion approaches the rate-independent answer, with the
   regularisation lag `eta_p/(k w_s - s)`.
 - **Creep regime and width.**
@@ -386,10 +481,12 @@ These are expectations fixed before any run, not results.
 - **Connectivity.** Bonded and point-set connectivity disagree exactly where section 10 says the wording is ambiguous.
   Alternating, unresolved and inherited cases give their required records.
 - **Negative example.** The exact positive-thickness film stays connected at every ladder opening and at the false
-  limit. A supplied thickness field is refused.
-- **Refusals and reuse.** Grid-based widths, missing provenance, no softening, healing, reverse loading,
-  out-of-support states, broken anchors and opening are refused. A reused preparation gives results identical to a
-  rebuilt one.
+  limit. A supplied thickness field is refused, and a positive thickness below the double range is refused rather
+  than returned as zero.
+- **Refusals and reuse.** Grid-based widths, missing provenance, no softening, a cohesive `broken_surface_sliding`
+  residual, healing, reverse loading, out-of-support states, broken anchors and opening are refused. Unrepresentable
+  surface tractions or jumps, breakdown slips, stability ratios and reference quantities are refused with
+  `REFUSED_NUMERIC_RANGE`. A reused preparation gives results identical to a rebuilt one.
 
 **What these checks cannot show:** that any resolved neck, or the retained lithosphere, separates; that any parameter
 is realistic; or that the diagnostics converge in a resolved field.
@@ -402,8 +499,9 @@ The owner is I07, with I05 transport and I02 persistence. The same fields are fr
 **Configuration.** The retained lithosphere as one resolved plane-strain x–z neck, with:
 
 - retained composite creep, within its coefficient support;
-- the D2 elements of contract §4: plane-strain yield with absolute `P_eff`, linear softening of `Y` in `kappa_bar`
-  to a declared residual, `eta_p`, the Helmholtz length `ell`, transported raw `kappa` and `h(T)`;
+- the D2 elements of contract §4: plane-strain yield with absolute `P_eff`, the declared cohesion and friction
+  softening in `kappa_bar` to a declared residual, `eta_p`, the Helmholtz length `ell`, transported raw `kappa` with
+  `kappa_bar` reconstructed on the current geometry (never transported or overwritten), and `h(T)`;
 - a free surface and owned shear heating;
 - kept elastic stress, with the logarithmic-objective direction;
 - MC-04's basal closure;
@@ -412,6 +510,10 @@ The owner is I07, with I05 transport and I02 persistence. The same fields are fr
 **Inputs required before execution:**
 
 - the three IN-04 additions of section 4, with provenance;
+- a support record for every cohort's plastic history along the whole approach; unknown or violated histories stay
+  UNRESOLVED;
+- if `h(T)` is nonzero or the geometry is remeshed, an admitted irreversible bond or surface history with its
+  reconnection rule. A lower filtered history is not rejoining; none is selected, so reconnection is not represented;
 - material anchors and a candidate footprint, declared before any run;
 - the horizon, and the cost budget declared by I07.
 
@@ -506,8 +608,19 @@ python -B tools/check_public_paths.py
 python -B tools/check_coding_safety.py
 ```
 
-**Status.** Nothing has been executed: no test, campaign or static check. There is no receipt, and the evidence
-register is unchanged.
+**Status.**
+
+- **Pre-correction measurements.** Codex ran the first versions once: all 24 focused tests passed (no skips) and all
+  nine campaign groups passed. Those passes missed the four defects corrected here (lost exact-yield drive, a
+  cohesive residual labelled broken, unrepresentable outputs returned, and the transport and healing wording), so
+  they establish nothing about physical separation. That review record is private coordination material, not a
+  registered receipt.
+- **Intermediate correction measurements.** Codex then ran 34 focused tests and the nine corrected campaign
+  groups. A targeted review subsequently found one remaining positive-energy underflow that those checks missed.
+- **Final range correction.** Codex added the final-energy guard and a focused regression for product underflow,
+  halving underflow and representable small/ordinary energies. Current execution results and the reviewed receipt
+  are recorded in [CURRENT_STATE](../../docs/CURRENT_STATE.md) and the evidence register, not inferred from earlier
+  passes. Neither numerical checks nor a registered receipt admit physical separation.
 
 The campaign would write its output exclusively and bind the four new files and the retained separation-decision
 case and method before and after execution. It records `scientific_acceptance: false` and reports raw timings only.
@@ -524,8 +637,14 @@ Any reviewed receipt belongs in the [current evidence register](../../docs/CURRE
 4. I02 has not supplied `eps_v`.
 5. Along-strike and exterior coverage belong to I03/I07.
 6. The sensitivity to `eta_p` where `k < k_soft` must be reported.
-7. Coupled healing belongs to I07.
+7. No admitted irreversible bond or surface history, or reconnection rule, exists. Strength recovery by `h(T)` is not
+   one, so a resolved run with healing or remeshing cannot represent rejoining (section 3.3).
+8. A resolved bond state needs each cohort's history support record carried with the raw history (I05). This record
+   proposes that requirement; it does not build the transport.
 
-**Smallest next step.** Codex runs the focused tests and the bounded campaign. If they pass and review accepts the
-rule, the owner decides on the section 10 wording and the IN-04 additions. I07 then prepares the resolved case of
-section 9 with declared inputs. MC-01 remains open throughout.
+**Known numerical limit.** Split-step parity near exact yield with a tiny net drive is limited by the stored state
+(section 6). The kernel is exact from each state it is given; the limit is not hidden by a margin.
+
+**Smallest next step.** After the corrected local controls are reviewed, the owner decides on the section 10 wording
+and the IN-04 additions. Current verification status lives in CURRENT_STATE, rather than this source-bound method.
+I07 then prepares the resolved case of section 9 with declared inputs. MC-01 remains open throughout.

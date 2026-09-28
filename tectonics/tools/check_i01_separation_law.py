@@ -4,12 +4,14 @@ WORKING NON-CANON. The retained D2 plane-strain yield Y = C cos(phi) + P_eff sin
 strength-controlling plastic history kappa, from the peak Y0 to the residual Yr at kappa_c. In a band of declared
 physical width w_s this is linear slip weakening over D_c = kappa_c w_s with breakdown energy G = (Y0 - Yr) D_c / 2
 per unit area: derived locally and pressure dependent, never a universal fracture energy. Where the law's provenance
-declares its residual state to be sliding on a broken (cohesionless) surface and the state lies inside its declared
-support, material with kappa >= kappa_c is BROKEN: it still carries frictional traction but no bond. A section
-separates only when no BONDED path of tracked crust, mantle lithosphere or their union joins the declared anchors.
+declares its residual state to be sliding on a broken (cohesionless, so zero residual cohesion) surface, the state
+lies inside its declared support and the whole history is recorded as accumulated inside that support, material with
+kappa >= kappa_c is BROKEN: it still carries frictional traction but no bond. A section separates only when no BONDED
+path of tracked crust, mantle lithosphere or their union joins the declared anchors.
 
 The exact local control loads one band through an elastic surroundings spring that keeps the stored traction, with
-optional Newtonian band creep and the viscoplastic branch in series. Its three linear phases are integrated exactly.
+optional Newtonian band creep and the viscoplastic branch in series, at fixed temperature and effective pressure,
+with no healing and no geometry evolution. Its three linear phases are integrated exactly.
 Method: tectonics/docs/I01_SEPARATION_LAW.md. Nothing here authorises an event, a split or MC-01 closure.
 Run: python -B tectonics/tools/check_i01_separation_law.py --output NEW.json
 SPDX-License-Identifier: AGPL-3.0-only
@@ -18,12 +20,14 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from fractions import Fraction
 import hashlib
 import json
 import math
 from pathlib import Path
 import platform
 import statistics
+import sys
 import time
 
 import numpy as np
@@ -71,8 +75,12 @@ FIELD = "REFUSED_UNSUPPORTED_FIELD"
 SECTION = "REFUSED_INVALID_SECTION"
 RANGE = "REFUSED_NUMERIC_RANGE"
 BALANCE = "REFUSED_UNRESOLVED_BALANCE"
+INCONSISTENT = "REFUSED_INCONSISTENT_RESIDUAL"
 
 RESIDUAL_STATES = ("broken_surface_sliding", "weakened_intact")
+# Support record of an accumulated plastic history: only INSIDE (every increment produced inside the law's declared
+# support) is classified; the current temperature and pressure never certify an earlier history.
+HISTORY_SUPPORT = ("INSIDE", "UNKNOWN", "VIOLATED")
 BONDS = ("BONDED", "BROKEN", "UNRESOLVED")
 FACES = ("WELDED", "COHESIONLESS", "UNRESOLVED")
 MATERIALS = ("crust", "mantle_lithosphere", "exterior")
@@ -175,6 +183,16 @@ class SofteningLaw:
             peak, residual = self._yields(value)
             if not peak > residual >= 0:
                 raise Refusal(NO_SOFTENING, "the peak yield must exceed a nonnegative residual across the support")
+        if self.residual_state == "broken_surface_sliding" and self.residual_cohesion_pa != 0:
+            raise Refusal(INCONSISTENT, "a broken_surface_sliding residual has lost its cohesion, so its residual "
+                          "cohesion must be zero; a cohesive fracture state would need its own admitted law")
+        slip = self.softening_history*self.band_width_m
+        for value in pressure:          # G and k_soft are affine in P_eff and 1/D_c, so the two ends bound them
+            peak, residual = self._yields(value)
+            energy = (peak-residual)*slip/2
+            if not (math.isfinite(slip) and slip >= sys.float_info.min and 0 < energy < math.inf
+                    and 0 < (peak-residual)/slip < math.inf):
+                raise Refusal(RANGE, "breakdown slip, energy or softening stiffness not representable")
 
     def _yields(self, pressure):
         return (self.peak_cohesion_pa*math.cos(self.peak_friction_rad)+pressure*math.sin(self.peak_friction_rad),
@@ -213,15 +231,22 @@ class SofteningLaw:
             return residual
         return peak-(peak-residual)/self.softening_history*kappa
 
-    def bond_state(self, history, temperature_k, effective_pressure_pa):
-        """BONDED, BROKEN or UNRESOLVED from the current strength-controlling history (method section 3.3)."""
+    def bond_state(self, history, temperature_k, effective_pressure_pa, *, history_support):
+        """BONDED, BROKEN or UNRESOLVED for a history with a declared support record (method section 3.3).
+
+        Only a history recorded as accumulated wholly INSIDE the declared support is classified. The current
+        (T, P_eff) never certifies an earlier history, so an UNKNOWN or VIOLATED record stays UNRESOLVED even after
+        the point returns inside the support.
+        """
         kappa = _real(history, "history", nonnegative=True)
         temperature = _real(temperature_k, "temperature", positive=True)
         pressure = _real(effective_pressure_pa, "effective pressure", nonnegative=True)
+        if history_support not in HISTORY_SUPPORT:
+            raise Refusal(INVALID, "history_support must be one of "+", ".join(HISTORY_SUPPORT))
         if kappa == 0:
             return "BONDED"             # creep and elastic loading never remove cohesion
-        if not self.inside(temperature, pressure):
-            return "UNRESOLVED"         # plastic history beyond the reach of the cohesion-loss evidence
+        if not self.inside(temperature, pressure) or history_support != "INSIDE":
+            return "UNRESOLVED"         # plastic history beyond the reach, or the record, of the cohesion-loss evidence
         if self.residual_state == "broken_surface_sliding" and kappa >= self.softening_history:
             return "BROKEN"
         return "BONDED"
@@ -231,7 +256,9 @@ class SofteningLaw:
 class Loading:
     """Constant over one advance: surroundings stiffness k (Pa/m) storing the retained traction, far-field loading
     rate V (m/s, one shear sense), optional Newtonian band creep eta_v (Pa s; None = no creep branch), effective
-    pressure and temperature. Healing must be zero in this slice: re-bonding is I07's coupled evolution."""
+    pressure and temperature. The control fixes temperature and pressure and has no healing and no geometry
+    evolution, so the healing rate must be zero. Strength recovery would not by itself rejoin broken material: a
+    future reconnection needs its own admitted irreversible bond or surface history, which is not implemented here."""
     stiffness_pa_m: float
     loading_rate_m_s: float
     creep_viscosity_pa_s: float | None
@@ -252,21 +279,27 @@ class Loading:
                            _real(self.effective_pressure_pa, "effective pressure", nonnegative=True))
         object.__setattr__(self, "temperature_k", _real(self.temperature_k, "temperature", positive=True))
         if _real(self.healing_rate_s, "healing rate", nonnegative=True) != 0:
-            raise Refusal(HEALING, "healing h(T) re-bonds broken material; its coupled evolution is I07's")
+            raise Refusal(HEALING, "this control has no healing h(T): it fixes temperature and pressure, and strength "
+                          "recovery is not an admitted reconnection law")
         object.__setattr__(self, "healing_rate_s", 0.)
 
 
 @dataclass(frozen=True)
 class State:
-    """One band: the retained shear traction (never reset), its strength-controlling history and the clock."""
+    """One band: the retained shear traction (never reset), its strength-controlling history, the clock and the
+    support record of that history (HISTORY_SUPPORT; UNKNOWN unless the caller declares it). An advance adds only
+    history produced inside the support; it never upgrades an UNKNOWN or VIOLATED record."""
     traction_pa: float
     history: float
     time_s: float = 0.
+    history_support: str = "UNKNOWN"
 
     def __post_init__(self):
         object.__setattr__(self, "traction_pa", _real(self.traction_pa, "traction", nonnegative=True))
         object.__setattr__(self, "history", _real(self.history, "history", nonnegative=True))
         object.__setattr__(self, "time_s", _real(self.time_s, "time", nonnegative=True))
+        if self.history_support not in HISTORY_SUPPORT:
+            raise Refusal(INVALID, "history_support must be one of "+", ".join(HISTORY_SUPPORT))
 
 
 # ----------------------------------------------------------------------------- exact linear phases
@@ -367,8 +400,10 @@ class Prepared:
         s = (peak-residual)/law.softening_history          # strength lost per unit history, Pa
         drive = k*loading.loading_rate_m_s
         sigma = s/eta
+        ratio = k*law.breakdown_slip_m()/(peak-residual) if peak > residual else math.inf
         for name, value in (("creep rate", a), ("plastic rate", b), ("softening", s), ("drive", drive),
-                            ("softening rate", sigma), ("inverse plastic viscosity", 1/eta)):
+                            ("softening rate", sigma), ("inverse plastic viscosity", 1/eta),
+                            ("stability ratio", ratio)):
             if not math.isfinite(value):
                 raise Refusal(RANGE, name+" not representable")
         m = (sigma-a-b)/2
@@ -389,22 +424,41 @@ class Prepared:
         """k D_c/(Y0 - Yr); below 1 the rate-independent limit has no quasi-static breakdown path."""
         return self.loading.stiffness_pa_m*self.law.breakdown_slip_m()/(self.peak_pa-self.residual_pa)
 
+    def _net_drive(self, tau):
+        """k V - (k w_s/eta_v) tau, rounded once from its exact value in the represented coefficients.
+
+        On the yield surface its sign decides the phase; near the steady creep traction the rounding of the product
+        alone could flip that sign, while exact rational arithmetic cannot. An unrepresentable value is refused.
+        """
+        exact = Fraction(self.drive_pa_s)-Fraction(self.creep_rate_s)*Fraction(tau)
+        try:
+            value = float(exact)
+        except OverflowError:
+            value = math.inf
+        if not math.isfinite(value) or (value == 0 and exact != 0):
+            raise Refusal(RANGE, "net drive not representable")
+        return value
+
     def _phase_of(self, x):
+        """The phase whose field the declared ODE follows from x (method section 6).
+
+        tau - Y is a difference of two doubles, so its sign is exact. Off the yield surface that sign decides. On it
+        both fields agree and the net drive decides: any strictly positive drive enters plastic flow, because the
+        overstress then grows as its integral; zero or negative drive stays sub-yield. No margin is applied.
+        """
         tau, kappa = x
         overstress = tau-self.strength(kappa)
-        drive = self.drive_pa_s-self.creep_rate_s*tau
-        margin = POLICY["closed_form_relative"]*(self.drive_pa_s+self.creep_rate_s*abs(tau))
-        if overstress > 0 or (overstress == 0 and drive > margin):
+        if overstress > 0 or (overstress == 0 and self._net_drive(tau) > 0):
             return self.residual if kappa >= self.law.softening_history else self.softening
         return self.sub
 
     def _rate(self, phase, x):
         """The physical rate at x, equal to B x + c of the phase (tested) but formed without cancelling products."""
         tau, kappa = x
-        relax = self.drive_pa_s-self.creep_rate_s*tau
+        relax = self._net_drive(tau)
         if phase is self.sub:
             return relax, 0.
-        overstress = tau-(self.residual_pa if phase is self.residual else self.peak_pa-self.softening_pa*kappa)
+        overstress = self._overstress(phase, x)
         return relax-self.plastic_rate_s*overstress, overstress/self.law.plastic_viscosity_pa_s
 
     @staticmethod
@@ -414,26 +468,46 @@ class Prepared:
 
     @staticmethod
     def _at(phase, x0, rate, bent, t):
-        """x(t) = x0 + J1 v + J2 (B - mI) v with v the rate at x0: exact for the linear phase, singular B included."""
+        """x(t) = x0 + J1 v + J2 (B - mI) v with v the rate at x0: exact for the linear phase, singular B included.
+        Each increment is formed before it is added, so a change far smaller than x0 keeps its digits."""
         _, _, j1, j2 = _coefficients(phase.m, phase.q, t)
-        return x0[0]+j1*rate[0]+j2*bent[0], x0[1]+j1*rate[1]+j2*bent[1]
+        return x0[0]+(j1*rate[0]+j2*bent[0]), x0[1]+(j1*rate[1]+j2*bent[1])
 
     def _overstress(self, phase, x):
         return x[0]-(self.residual_pa if phase is self.residual else self.peak_pa-self.softening_pa*x[1])
 
+    def _overstress_path(self, phase, x0, rate, bent):
+        """(o0, slope, curvature) with o(t) = o0 + (J1 slope + J2 curvature) along the exact segment.
+
+        The overstress is a linear function of the state, so it has its own exact path. Forming it as the difference
+        of a traction and a strength of similar size would round a small overstress away near the yield surface.
+        """
+        grad = self.softening_pa if phase is self.softening else 0.
+        return x0[0]-self.strength(x0[1]), rate[0]+grad*rate[1], bent[0]+grad*bent[1]
+
     def _next_event(self, phase, x0, rate, bent, span):
-        """First event in (0, span]: ("yield" | "unload" | "cohesion_lost", lower, upper), or None."""
+        """First event in (0, span]: ("yield" | "unload" | "softening_complete", lower, upper), or None.
+
+        softening_complete is the constitutive event kappa = kappa_c. Whether it removes cohesion is the law's bond
+        state, recorded separately by advance; a weakened_intact residual completes softening and stays BONDED.
+        """
         at = lambda t: self._at(phase, x0, rate, bent, t)
+        start, slope, curvature = self._overstress_path(phase, x0, rate, bent)
+
+        def over(t):
+            _, _, j1, j2 = _coefficients(phase.m, phase.q, t)
+            return start+(j1*slope+j2*curvature)
+
         if phase is self.sub:
-            limit = self.strength(x0[1])
-            if rate[0] <= 0 or x0[0] >= limit or at(span)[0] < limit:   # traction is monotone in this phase
+            # The traction rises monotonically towards k V/a (without bound without creep), so yield is reachable
+            # only if the exact net drive at the frozen strength is positive.
+            if not self._net_drive(self.strength(x0[1])) > 0 or over(span) < 0:
                 return span, None
-            lower, upper = _bisect(lambda t: at(t)[0] >= limit, 0., span)
+            lower, upper = _bisect(lambda t: over(t) >= 0, 0., span)
             return upper, ("yield", lower, upper)
-        over = lambda t: self._overstress(phase, at(t))
         cuts = [0., span]
         if phase is self.softening:
-            turn = _turning_time(rate[0]+self.softening_pa*rate[1], bent[0]+self.softening_pa*bent[1], phase.q)
+            turn = _turning_time(slope, curvature, phase.q)
             if turn is not None and 0 < turn < span:
                 cuts = [0., turn, span]
         # In the residual phase the traction relaxes monotonically (decoupled scalar), so one piece suffices.
@@ -447,7 +521,7 @@ class Prepared:
             target = self.law.softening_history
             if at(limit)[1] >= target:          # history does not decrease while the overstress is nonnegative
                 lower, upper = _bisect(lambda t: at(t)[1] >= target, 0., limit)
-                return upper, ("cohesion_lost", lower, upper)
+                return upper, ("softening_complete", lower, upper)
         if unload is not None:
             return unload[1], ("unload",)+unload
         return span, None
@@ -461,15 +535,17 @@ class Prepared:
                      max(1, math.ceil((abs(phase.m)+phase.q)*t/POLICY["subinterval_exponent"])))
         step = t/pieces
         plastic = phase is not self.sub
+        start, slope, curvature = self._overstress_path(phase, x0, rate, bent)
         sum_tau = sum_tau2 = sum_tau_over = sum_over2 = 0.
         for j in range(pieces):
             for node, weight in GAUSS:
-                x = self._at(phase, x0, rate, bent, step*(j+(node+1)/2))
-                sum_tau += weight*x[0]
-                sum_tau2 += weight*x[0]*x[0]
+                _, _, j1, j2 = _coefficients(phase.m, phase.q, step*(j+(node+1)/2))
+                tau = x0[0]+(j1*rate[0]+j2*bent[0])          # the tau component of _at, sharing J1 and J2
+                sum_tau += weight*tau
+                sum_tau2 += weight*tau*tau
                 if plastic:
-                    over = self._overstress(phase, x)
-                    sum_tau_over += weight*x[0]*over
+                    over = start+(j1*slope+j2*curvature)
+                    sum_tau_over += weight*tau*over
                     sum_over2 += weight*over*over
         half = step/2
         load, width, eta = self.loading, self.law.band_width_m, self.law.plastic_viscosity_pa_s
@@ -489,6 +565,8 @@ class Prepared:
                       -part["plastic_dissipation_j_m2"])
         split = (part["plastic_dissipation_j_m2"], -part["overstress_dissipation_j_m2"],
                  -part["breakdown_dissipation_j_m2"], -part["residual_friction_dissipation_j_m2"])
+        if not all(math.isfinite(value) for value in part.values()):
+            raise Refusal(RANGE, "segment accounts not representable")      # a NaN would pass the comparisons below
         residual = 0.
         for terms in (mechanical, split):
             scale = math.fsum(abs(term) for term in terms)
@@ -502,9 +580,12 @@ class Prepared:
         return residual
 
     def advance(self, state, dt):
-        """Exact evolution over dt: events with brackets and cumulative accounts, totals and the final bond state.
+        """Exact evolution over dt: events with brackets, bond states and cumulative accounts, totals and the final
+        bond state.
 
-        The input state is not modified; stored traction is carried through every event and never reset.
+        The input state is not modified; stored traction is carried through every event and never reset. History
+        added here is produced inside the support (the loading was checked on preparation), so an empty history
+        becomes INSIDE, while a nonzero history keeps its declared record: an advance never recertifies it.
         """
         if type(state) is not State:
             raise Refusal(INVALID, "typed State required")
@@ -514,6 +595,8 @@ class Prepared:
             raise Refusal(RANGE, "interval not representable at this clock")
         x, elapsed, segments, worst = (state.traction_pa, state.history), 0., 0, 0.
         totals, events = dict.fromkeys(ACCOUNTS, 0.), []
+        support = "INSIDE" if state.history == 0 else state.history_support
+        temperature, pressure = self.loading.temperature_k, self.loading.effective_pressure_pa
         while elapsed < dt:
             segments += 1
             if segments > POLICY["maximum_segments"]:
@@ -528,13 +611,16 @@ class Prepared:
             x1 = self._at(phase, x, rate, bent, t)
             worst = max(worst, self._account(phase, x, rate, bent, t, x1, totals))
             if event is not None:
-                if event[0] == "cohesion_lost":
+                if event[0] == "softening_complete":
                     x1 = (x1[0], self.law.softening_history)
                 else:                                   # yield or unload: sit exactly on the yield surface
                     x1 = (self.strength(x1[1]), x1[1])
                 begin = state.time_s+elapsed
                 events.append(dict(event=event[0], time_s=begin+t, bracket_s=[begin+event[1], begin+event[2]],
-                                   traction_pa=x1[0], history=x1[1], phase=phase.name, accounts=dict(totals)))
+                                   traction_pa=x1[0], history=x1[1], phase=phase.name,
+                                   bond_state=self.law.bond_state(x1[1], temperature, pressure,
+                                                                  history_support=support),
+                                   accounts=dict(totals)))
             x = x1
             elapsed = dt if t >= remaining else elapsed+t
         tau = x[0]
@@ -542,10 +628,10 @@ class Prepared:
             if -tau > POLICY["closed_form_relative"]*max(state.traction_pa, self.peak_pa):
                 raise Refusal(RANGE, "negative traction: reverse shear is outside this slice")
             tau = 0.                                    # rounding of an exactly decaying traction, not a clip
-        final = State(tau, x[1], end_time)
+        final = State(tau, x[1], end_time, support)
         return dict(state=final, events=events, accounts=totals, balance_relative_residual=worst,
-                    bond_state=self.law.bond_state(final.history, self.loading.temperature_k,
-                                                   self.loading.effective_pressure_pa),
+                    bond_state=self.law.bond_state(final.history, temperature, pressure,
+                                                   history_support=final.history_support),
                     stability_ratio=self.stability_ratio(), elasticity_retained=True)
 
 
@@ -571,6 +657,8 @@ def rate_independent_reference(law, loading, traction_pa):
         # a dynamic or viscoplastic resolution must own it (method section 5).
         out.update(stable=False, completion_loading_after_yield_m=0.,
                    released_excess_j_m2=(peak-residual)/2*((peak-residual)/k-slip))
+    if not all(math.isfinite(value) for value in out.values() if type(value) is float):
+        raise Refusal(RANGE, "rate-independent reference quantities not representable")
     return out
 
 
@@ -580,7 +668,8 @@ def surface_projection(stress_pa, normal, jump_m, pore_pressure_pa=0.):
     """Frame-indifferent scalars of one closed surface element in plane strain (method section 3.5).
 
     t = sigma n; shear traction t.m and slip [u].m use m = n turned by +90 degrees. An opening (or interpenetrating)
-    jump is refused: a void, fluid or magma filling would need accounts that no owner supplies.
+    jump is refused: a void, fluid or magma filling would need accounts that no owner supplies. A traction or jump
+    component outside the double range is refused before any decision, never returned as NaN or infinity.
     """
     try:
         (sxx, sxy), (syx, syy) = stress_pa
@@ -599,6 +688,8 @@ def surface_projection(stress_pa, normal, jump_m, pore_pressure_pa=0.):
     tx, ty = sxx*nx+sxy*ny, syx*nx+syy*ny
     normal_traction, shear = tx*nx+ty*ny, tx*mx+ty*my
     opening, slip = ju*nx+jv*ny, ju*mx+jv*my
+    if not all(math.isfinite(value) for value in (tx, ty, normal_traction, shear, opening, slip)):
+        raise Refusal(RANGE, "surface traction or jump components not representable")
     if abs(opening) > POLICY["closed_form_relative"]*max(abs(slip), abs(opening)):
         raise Refusal(OPENING, "an admitted contact stays closed: opening needs a void, fluid or magma account "
                       "that is not owned here")
@@ -703,7 +794,12 @@ def section_diagnostics(cells, contacts, anchors):
 
 
 def classify_interval(before, after):
-    """Record for one interval from bonded diagnostics before and after (method section 3.4); never a split."""
+    """Compare two supplied bonded section diagnostics (method section 3.4); never a split.
+
+    The record labels a change between two graph summaries supplied by the caller. It knows nothing of their times,
+    footprint or physical history, so it is not a time- or footprint-bound regional event certificate, and
+    RECONNECTED between supplied graphs is not a simulated healing or rejoining result.
+    """
     for record in (before, after):
         if type(record) is not dict or any(record.get(key) not in CONNECTIVITY
                                            for key in ("crust", "mantle_lithosphere", "union")):
@@ -719,21 +815,35 @@ def classify_interval(before, after):
         event = "NO_UNION_EVENT"
     return dict(union_event=event,
                 crustal_milestone=before["crust"] == "CONNECTED" and after["crust"] == "DISCONNECTED",
-                section_only=True, plate_split_authorised=False,
+                section_only=True, graph_comparison_only=True, plate_split_authorised=False,
                 requires=list(REQUIREMENTS) if event == "BRACKETED_UNION_LOSS" else [])
 
 
 def negative_example_thickness(opening, *, h_c, a, c, w):
     """The exact positive-thickness field of I01_SEPARATION_DECISION section 5, positive at every finite opening.
 
-    Supplied only to show that no law or connectivity function here reads a thickness.
+    Supplied only to show that no law or connectivity function here reads a thickness. The knee excess u - u_a and
+    the linear branch are exact rationals of the represented inputs, rounded once, so a thin film cannot cancel to
+    zero near the knee. A positive thickness that is not a normal double is refused: underflow must never look like
+    a finite physical disconnection.
     """
     u, h_c, a, c, w = (_real(value, name) for value, name in
                        ((opening, "opening"), (h_c, "H_c"), (a, "a"), (c, "c"), (w, "w")))
-    if min(h_c, a, c, w) <= 0 or a*w >= h_c or u < 0:
+    film = Fraction(a)*Fraction(w)
+    if min(h_c, a, c, w) <= 0 or film >= h_c or u < 0:
         raise Refusal(INVALID, "the counterexample needs positive H_c, a, c, w with a w < H_c and a nonnegative opening")
-    knee = c*(h_c-a*w)
-    return h_c-u/c if u <= knee else a*w*math.exp(-(u-knee)/(c*a*w))
+    excess = Fraction(u)-Fraction(c)*(Fraction(h_c)-film)             # u - u_a
+    try:
+        if excess <= 0:
+            thickness = float(Fraction(h_c)-Fraction(u)/Fraction(c))   # exactly H_c - u/c >= a w, rounded once
+        else:
+            thickness = float(film)*math.exp(-float(excess/(Fraction(c)*film)))
+    except OverflowError:
+        thickness = math.inf
+    if not (math.isfinite(thickness) and thickness >= sys.float_info.min):
+        raise Refusal(RANGE, "the exact thickness is positive but not representable as a normal double; zero is "
+                      "never an admitted thickness")
+    return thickness
 
 
 # ----------------------------------------------------------------------------- predeclared controls
@@ -817,7 +927,7 @@ def law_control(spec, deadline):
     for row in rc["bond_states"]:
         _deadline(deadline)
         found = make_law(rc["law"], **row.get("law_changes", {})).bond_state(
-            row["history"], row["temperature_k"], row["effective_pressure_pa"])
+            row["history"], row["temperature_k"], row["effective_pressure_pa"], history_support=row["history_support"])
         bonds[row["id"]] = found
         checks["bond_"+row["id"]] = found == row["expected"]
     return _finish(checks, bond_states=bonds, friction_softening_energies_j_m2=energies)
@@ -834,7 +944,7 @@ def memory_control(spec, deadline):
     forgotten = op.advance(State(0., 0.), horizon["forgotten"])
     _deadline(deadline)
     names = [event["event"] for event in kept["events"]]
-    if names != ["yield", "cohesion_lost"]:
+    if names != ["yield", "softening_complete"]:
         return _finish(dict(event_sequence=False), events=names)
     k, v, width, eta = load.stiffness_pa_m, load.loading_rate_m_s, law.band_width_m, law.plastic_viscosity_pa_s
     s, residual = op.softening_pa, op.residual_pa
@@ -877,7 +987,9 @@ def memory_control(spec, deadline):
                                 expected["residual_friction_to_completion_j_m2"], tolerance),
         strength_work=_near(parts["breakdown_dissipation_j_m2"]+parts["residual_friction_dissipation_j_m2"],
                             expected["strength_work_to_completion_j_m2"], tolerance),
-        bond_before=law.bond_state(start.history, load.temperature_k, load.effective_pressure_pa) == "BONDED",
+        bond_before=law.bond_state(start.history, load.temperature_k, load.effective_pressure_pa,
+                                   history_support=start.history_support) == "BONDED",
+        bond_lost_at_completion=([event["bond_state"] for event in kept["events"]] == ["BONDED", "BROKEN"]),
         bond_after=kept["bond_state"] == "BROKEN",
         stability_ratio=_near(kept["stability_ratio"], expected["stability_ratio_stable"]),
         rate_independent_reference=(reference["stable"] is True
@@ -899,15 +1011,55 @@ def memory_control(spec, deadline):
         subdivision_events=([event["event"] for event in events] == names
                             and all(_near(first["time_s"], second["time_s"], tolerance)
                                     for first, second in zip(events, kept["events"]))))
-    return _finish(checks, events=[{key: event[key] for key in ("event", "time_s", "bracket_s", "traction_pa")}
+    return _finish(checks, events=[{key: event[key] for key in ("event", "time_s", "bracket_s", "traction_pa",
+                                                               "bond_state")}
                                    for event in kept["events"]],
                    completion_root=root, closed_completion_s=closed_completion,
                    accounts_at_completion=parts, final_accounts=totals,
                    balance_relative_residual=kept["balance_relative_residual"])
 
 
+def _exact_yield_checks(rc, deadline):
+    """The review reproducer: a state exactly on the yield surface under positive, zero and negative net drive.
+
+    With k = w_s = eta_v = eta_p = kappa_c = 1, Y0 = 2 and Yr = 0, the net drive is delta = V - 2 as represented and
+    the softening phase gives kappa(t) = delta/2 (cosh(sqrt(2) t) - 1) and o(t) = delta sinh(sqrt(2) t)/sqrt(2).
+    """
+    exact = rc["exact_yield"]
+    law, start, horizon = make_law(exact["law"]), State(**exact["state"]), exact["horizon_s"]
+    peak = law.yields(exact["loading"]["effective_pressure_pa"])[0]
+    runs = {}
+    for name, value in exact["loading_rates_m_s"].items():
+        _deadline(deadline)
+        runs[name] = Prepared(law, make_loading(exact["loading"], loading_rate_m_s=value)).advance(start, horizon)
+    rates = exact["loading_rates_m_s"]
+    delta = rates["positive"]-peak                              # exact: both lie within a factor of two
+    completion = math.acosh(1+2*law.softening_history/delta)/math.sqrt(2)
+    positive, zero, negative = runs["positive"], runs["zero"], runs["negative"]
+    tolerance = POLICY["event_relative"]
+    events = positive["events"]
+    relaxed = rates["negative"]+(peak-rates["negative"])*math.exp(-horizon)
+    checks = dict(
+        exact_positive_drive_completes=(
+            [event["event"] for event in events] == ["softening_complete"]
+            and events[0]["bond_state"] == "BROKEN" and positive["bond_state"] == "BROKEN"
+            and exact["completion_bracket_s"][0] < completion < exact["completion_bracket_s"][1]
+            and _near(events[0]["time_s"], completion, tolerance)
+            and _near(events[0]["traction_pa"], math.sqrt(2*(1+delta)), tolerance)),
+        exact_zero_drive_stationary=(zero["events"] == [] and zero["bond_state"] == "BONDED"
+                                     and (zero["state"].traction_pa, zero["state"].history) == (peak, 0.)),
+        exact_negative_drive_relaxes=(negative["events"] == [] and negative["state"].history == 0
+                                      and negative["bond_state"] == "BONDED"
+                                      and _near(negative["state"].traction_pa, relaxed)),
+        exact_balance=max(run["balance_relative_residual"] for run in runs.values()) <= POLICY["energy_relative"])
+    return checks, dict(exact_yield_completion_s=completion,
+                        exact_yield_events=[{key: event[key] for key in ("event", "time_s", "bracket_s", "traction_pa",
+                                                                         "bond_state")} for event in events])
+
+
 def unstable_control(spec, deadline):
-    """Softer surroundings than k_soft: the viscoplastic transient's exact completion and the unstable reference."""
+    """Softer surroundings than k_soft: the viscoplastic transient's exact completion and the unstable reference;
+    the exact-yield reproducer, also below k_soft, under positive, zero and negative net drive."""
     rc = spec["runnable_controls"]
     expected, block = rc["expected"], rc["expected"]["unstable_completion"]
     law = make_law(rc["law"])
@@ -916,8 +1068,9 @@ def unstable_control(spec, deadline):
     run = op.advance(start, rc["horizons_s"]["unstable"])
     _deadline(deadline)
     names = [event["event"] for event in run["events"]]
-    if names != ["yield", "cohesion_lost"]:
+    if names != ["yield", "softening_complete"]:
         return _finish(dict(event_sequence=False), events=names)
+    exact_checks, exact_data = _exact_yield_checks(rc, deadline)
     k, v, width, eta = load.stiffness_pa_m, load.loading_rate_m_s, law.band_width_m, law.plastic_viscosity_pa_s
     s = op.softening_pa
     rate = (s-k*width)/eta                                      # g > 0: the regularised softening instability
@@ -940,10 +1093,12 @@ def unstable_control(spec, deadline):
         breakdown_is_fracture_energy=_near(run["events"][1]["accounts"]["breakdown_dissipation_j_m2"],
                                            expected["fracture_energy_j_m2"], tolerance),
         balance=run["balance_relative_residual"] <= POLICY["energy_relative"],
-        bond_after=run["bond_state"] == "BROKEN")
-    return _finish(checks, completion_root=root, events=[{key: event[key] for key in ("event", "time_s", "bracket_s")}
-                                                         for event in run["events"]],
-                   final_accounts=run["accounts"])
+        bond_after=run["bond_state"] == "BROKEN" and run["events"][1]["bond_state"] == "BROKEN",
+        **exact_checks)
+    return _finish(checks, completion_root=root,
+                   events=[{key: event[key] for key in ("event", "time_s", "bracket_s", "bond_state")}
+                           for event in run["events"]],
+                   final_accounts=run["accounts"], **exact_data)
 
 
 def creep_control(spec, deadline):
@@ -980,12 +1135,13 @@ def creep_control(spec, deadline):
         narrow_steady=(_near(narrow_steady, expected["narrow_creep"]["steady_traction_pa"])
                        and _near(narrow_relax, expected["narrow_creep"]["relaxation_rate_s"])),
         narrow_yields=names(narrow)[:1] == ["yield"] and _near(narrow["events"][0]["time_s"], narrow_yield, tolerance),
-        narrow_breaks=("cohesion_lost" in names(narrow)
+        narrow_breaks=("softening_complete" in names(narrow)
                        and narrow["bond_state"] == expected["narrow_creep"]["final_bond"]),
         cold_steady=(_near(cold_steady, expected["cold_creep"]["steady_traction_pa"])
                      and _near(cold_relax, expected["cold_creep"]["relaxation_rate_s"])),
         cold_yields=names(cold)[:1] == ["yield"] and _near(cold["events"][0]["time_s"], cold_yield, tolerance),
-        cold_breaks="cohesion_lost" in names(cold) and cold["bond_state"] == expected["cold_creep"]["final_bond"],
+        cold_breaks=("softening_complete" in names(cold)
+                     and cold["bond_state"] == expected["cold_creep"]["final_bond"]),
         creep_dissipates=cold["accounts"]["creep_dissipation_j_m2"] > 0 and hot["accounts"]["plastic_dissipation_j_m2"] == 0,
         balance=max(result["balance_relative_residual"] for result in (hot, narrow, cold)) <= POLICY["energy_relative"])
     return _finish(checks, hot_final_traction_pa=hot["state"].traction_pa, narrow_events=names(narrow),
@@ -1069,6 +1225,12 @@ def negative_control(spec, deadline):
         refused = exc.code == FIELD
     else:
         refused = False
+    try:                        # positive mathematically, but below the double range: refused, never 0.0
+        negative_example_thickness(ours["unrepresentable_opening_m"], w=ours["w_m"], **shape)
+    except Refusal as exc:
+        underflow_refused = exc.code == RANGE
+    else:
+        underflow_refused = False
     _deadline(deadline)
     checks = dict(
         copied_from_decision_case=all(ladder[key] == ours[key] for key in copied),
@@ -1078,7 +1240,8 @@ def negative_control(spec, deadline):
         positive_with_halved_width=halved > 0 and _near(halved, ours["halved_w_m"]*math.exp(-1)),
         film_connected=found["union"] == ours["expected_union"],
         no_event=record["union_event"] == ours["expected_interval"] and record["plate_split_authorised"] is False,
-        thickness_field_refused=refused)
+        thickness_field_refused=refused,
+        unrepresentable_thickness_refused=underflow_refused)
     return _finish(checks, thickness_at_false_limit_m=at_limit, halved_width_thickness_m=halved)
 
 
@@ -1105,7 +1268,8 @@ def refusals_control(spec, deadline):
                 connectivity(section["cells"], section["contacts"], section["anchors"], "union")
             elif target == "surface":
                 surface = rc["surface"]
-                surface_projection(surface["stress_pa"], surface["normal"], row["jump_m"])
+                surface_projection(row.get("stress_pa", surface["stress_pa"]), row.get("normal", surface["normal"]),
+                                   row["jump_m"])
             else:
                 raise ValueError("unknown refusal target "+str(target))
             observed[row["id"]] = "ACCEPTED"

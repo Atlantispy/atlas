@@ -1,0 +1,22 @@
+{
+  "schema": "atlas.i01-junction-feasibility-case.v1",
+  "status": "WORKING_NON_CANON",
+  "purpose": "same-time multidirectional mechanical feasibility; no topology birth",
+  "cells": [2, 2, 2],
+  "lengths_m": [2.0, 2.0, 2.0],
+  "origin_m": [-1.0, -1.0, 4.0],
+  "reference_viscosity_pa_s": 4.0,
+  "corridor_width_m": 0.5,
+  "symmetric_reductions_pa_s": [1.5, 1.5],
+  "directional_reductions_pa_s": [2.5, 0.5],
+  "external_resistance_nm_s": 0.5,
+  "torque_magnitude_nm": 1.0,
+  "relative_tolerance": 2e-8,
+  "absolute_tolerance": 2e-10,
+  "minimum_material_response_difference": 1e-5,
+  "native_budget_bytes": 67108864,
+  "adapter_budget_bytes": 4194304,
+  "maximum_seconds": 60.0,
+  "method": "direct",
+  "generated_reorganisation_enabled": false
+}

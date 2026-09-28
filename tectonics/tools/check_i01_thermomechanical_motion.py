@@ -5,6 +5,9 @@ and the layered column resistance at that stage's own temperature and plastic hi
 plastic dissipation from the same solved state are conducted on the mechanical Gauss control volumes;
 external drag dissipation never heats the column. Fixed geometry and width, small strain; no advection,
 finite strain, melting, rupture, world assembly or native-code integration.
+I02.2a: one force-balanced stage and its diagnostics are owned by
+atlas_tectonics._integration_thermomechanical. This tool re-exports those same objects and
+keeps its fixed-geometry evolution, oracles, deterministic test deadline, case, campaign and CLI.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
@@ -26,6 +29,12 @@ from scipy.optimize import brentq
 import threadpoolctl
 from threadpoolctl import threadpool_limits
 
+from atlas_tectonics import (_integration_column, _integration_heat, _integration_motion,
+                             _integration_thermomechanical, _integration_weakening)
+# The package-owned stage, re-exported: these are the same objects, not copies.
+from atlas_tectonics._integration_thermomechanical import (
+    REST, expired, ratio, departure, stage, note, reference_throughput)
+
 import check_i01_column_heat as heat
 import check_i01_motion_coupling as motion
 
@@ -41,16 +50,26 @@ PASS = "PASS_BOUNDED_THERMOMECHANICAL_MOTION_ONLY"
 TINY = weakening.TINY
 number, positive = weakening.number, weakening.positive
 relative_change, verdict, check_deadline = weakening.relative_change, weakening.verdict, weakening.check_deadline
+# I02.2a: this tool's stage is package-owned, so its own sources include that package file; the retained helpers'
+# package owners must likewise have been recorded by the accepted upstream receipts before they can vouch for them.
 NEW_FILES = ("tools/check_i01_thermomechanical_motion.py", "cases/i01_thermomechanical_motion_v1.json",
-             "docs/I01_THERMOMECHANICAL_MOTION.md", "tests/test_i01_thermomechanical_motion.py")
+             "docs/I01_THERMOMECHANICAL_MOTION.md", "tests/test_i01_thermomechanical_motion.py",
+             "src/atlas_tectonics/_integration_thermomechanical.py")
 RETAINED = ("tools/check_i01_column_heat.py", "tools/check_i01_motion_coupling.py", "tools/check_i01_weakening.py",
             "tools/check_i01_column.py", "cases/i01_column_heat_v1.json", "cases/i01_motion_coupling_v1.json",
-            "cases/i01_weakening_v1.json")
+            "cases/i01_weakening_v1.json", "src/atlas_tectonics/_integration_heat.py",
+            "src/atlas_tectonics/_integration_motion.py", "src/atlas_tectonics/_integration_weakening.py",
+            "src/atlas_tectonics/_integration_column.py")
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-column-heat-r2.json": "325f55b13ba18186e0262e3990ad4aa2f2d1236e5d83b4e864e3d9cb8e13dfd4",
+    "evidence/i01-column-heat-r3.json": "e78ba8537d9301cfac4f27265b00eab6a5746a4f698f316d58c799f11fdb26bf",
     "evidence/i01-motion-coupling-r1.json": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c"}
 IMPORTED = {"tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
-            "tools/check_i01_weakening.py": weakening, "tools/check_i01_column.py": column}
+            "tools/check_i01_weakening.py": weakening, "tools/check_i01_column.py": column,
+            "src/atlas_tectonics/_integration_thermomechanical.py": _integration_thermomechanical,
+            "src/atlas_tectonics/_integration_heat.py": _integration_heat,
+            "src/atlas_tectonics/_integration_motion.py": _integration_motion,
+            "src/atlas_tectonics/_integration_weakening.py": _integration_weakening,
+            "src/atlas_tectonics/_integration_column.py": _integration_column}
 INPUTS = {"column_heat_case": "cases/i01_column_heat_v1.json", "motion_case": "cases/i01_motion_coupling_v1.json"}
 REPRESENTATION = {
     "geometry": "fixed laterally uniform column and belt width; material depth coordinates; small strain; no advection",
@@ -77,9 +96,6 @@ STAGE_ACCOUNTS = (("drive_work_j_m", "drive_power_w_m"), ("drag_work_j_m", "drag
                   ("column_work_j_m2", "work"), ("creep_work_j_m2", "creep_work"),
                   ("plastic_work_j_m2", "plastic_work"), ("heat_j_m2", "heat"), ("stored_j_m2", "stored"))
 THERMAL_ACCOUNTS = ("surface_loss_j_m2", "base_gain_j_m2", "thermal_change_j_m2")
-REST = dict(rate=0., velocity_m_s=0., x=None, force=0., drive_power_w_m=0., drag_power_w_m=0., creep_power_w_m=0.,
-            plastic_power_w_m=0., work=0., creep_work=0., plastic_work=0., heat=0., stored=0., force_relative=0.,
-            power_relative=0., same_stress=True, evaluations=0, iterations=0)
 
 
 class CountdownDeadline(float):
@@ -97,75 +113,6 @@ class CountdownDeadline(float):
     def __lt__(self, now):
         self.remaining -= 1
         return self.remaining < 0
-
-
-def expired(deadline):
-    return deadline is not None and time.perf_counter() > deadline
-
-
-def ratio(residual, scale):
-    """|residual|/|scale|. A zero account (rest) reports its absolute residual, which must then be zero."""
-    return abs(residual)/abs(scale) if scale else abs(residual)
-
-
-def departure(theta0, size):
-    theta = np.asarray(theta0)
-    if theta.dtype.kind not in "fiu" or theta.shape != (size,) or not np.all(np.isfinite(theta)):
-        raise ValueError("initial temperature departure must be finite and real, one value per material point")
-    return theta.astype(float)
-
-
-# ----------------------------------------------------------------------------- one force-balanced stage
-
-def stage(prep, law, kappa, drive, fractions, *, warm=None, deadline=None):
-    """Solve F = D v + F_column(v/width, kappa) at this preparation, then take heat from that same state.
-
-    The retained motion.solve finds the rate. The retained heat.mechanics re-evaluates the same
-    preparation, history and rate, starting from the root's log-stresses, and returns the pointwise
-    source in W/m^2 per control volume (quadrature width already included). Zero drive is exact rest:
-    no mechanics call, zero source and zero history rate. ``warm`` is an initial guess only.
-    """
-    root = motion.solve(prep, law, kappa, drive, warm=warm, deadline=deadline)
-    if root["rate"] == 0:
-        zero = weakening.frozen(np.zeros(prep.size))
-        return dict(REST, source=zero, kdot=zero, plastic_rate=zero)
-    mech = heat.mechanics(prep, law, kappa, root["rate"], root["x"], fractions)
-    width = drive.width_m
-    creep_power, plastic_power = width*mech["creep_work"], width*mech["plastic_work"]
-    drive_power, drag_power = root["drive_power_w_m"], root["drag_power_w_m"]
-    return dict(rate=root["rate"], velocity_m_s=root["velocity_m_s"], x=root["x"], force=mech["force"],
-                drive_power_w_m=drive_power, drag_power_w_m=drag_power, creep_power_w_m=creep_power,
-                plastic_power_w_m=plastic_power, work=mech["work"], creep_work=mech["creep_work"],
-                plastic_work=mech["plastic_work"], heat=mech["heat"], stored=mech["stored"], source=mech["source"],
-                kdot=mech["kdot"], plastic_rate=mech["plastic_rate"], force_relative=root["force_relative"],
-                power_relative=abs(drive_power-drag_power-creep_power-plastic_power)/drive_power,
-                same_stress=bool(np.array_equal(mech["stress"], root["stress"])),
-                evaluations=root["evaluations"], iterations=root["iterations"]+mech["iterations"])
-
-
-def note(stats, s):
-    """Scalar diagnostics of one committed stage; no per-stage history is retained."""
-    stats["max_force_relative"] = max(stats["max_force_relative"], s["force_relative"])
-    stats["max_power_relative"] = max(stats["max_power_relative"], s["power_relative"])
-    stats["min_source_w_m2"] = min(stats["min_source_w_m2"], float(np.min(s["source"])))
-    stats["min_dissipation_w_m"] = min(stats["min_dissipation_w_m"], s["drag_power_w_m"], s["creep_power_w_m"],
-                                       s["plastic_power_w_m"])
-    stats["restress_mismatches"] += int(not s["same_stress"])
-    stats["evaluations"] += s["evaluations"]
-    stats["iterations"] += s["iterations"]
-    stats["stages"] += 1
-
-
-def reference_throughput(thermal, elapsed):
-    """Balanced steady-reference fluxes (radiogenic throughput), reported apart from the departure accounts."""
-    top, bottom = thermal.boundary_temperature
-    g_top, g_bot = thermal.boundary_conductance
-    out = g_top*(float(thermal.steady_k[0])-top) if top is not None else 0.
-    into = g_bot*(bottom-float(thermal.steady_k[-1])) if bottom is not None else 0.
-    radiogenic = math.fsum(thermal.radiogenic)
-    return dict(surface_outflow_w_m2=out, basal_inflow_w_m2=into, radiogenic_w_m2=radiogenic,
-                balance_relative=ratio(out-into-radiogenic, abs(out)+abs(into)+abs(radiogenic)), elapsed_s=elapsed,
-                surface_outflow_j_m2=out*elapsed, basal_inflow_j_m2=into*elapsed, radiogenic_j_m2=radiogenic*elapsed)
 
 
 # ----------------------------------------------------------------------------- coupled evolution

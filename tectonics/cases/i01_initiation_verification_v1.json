@@ -1,0 +1,37 @@
+{
+  "schema": "atlas.i01-initiation-verification.v1",
+  "basis": "ATLAS_ANALYTICAL_CONTROLS_NOT_PUBLISHED_CASE_REPRODUCTION",
+  "scientific_acceptance": false,
+  "generated_initiation_enabled": false,
+  "channel": {
+    "height_m": 10000.0,
+    "viscosity_pa_s": 1e21,
+    "density_contrast_kg_m3": 100.0,
+    "gravity_m_s2": 9.81,
+    "dip_rad": 0.7853981633974483,
+    "traction_pa": 0.0,
+    "coefficient_basis": "Explicit synthetic SI verification scenario, not calibrated mantle parameters or a Gurnis input row.",
+    "geometry": "One-dimensional plane-parallel shear; fixed wall at s=0, traction at s=H, periodic tangential direction; no advective mass supply.",
+    "temperature": "Prescribed isothermal constant viscosity; thermal and plastic coupling are excluded from this analytical limit."
+  },
+  "policy": {
+    "cells": [8, 16, 32],
+    "relative_balance_tolerance": 1e-10,
+    "constant_nodal_relative_tolerance": 1e-10,
+    "fine_relative_velocity_tolerance": 0.001,
+    "fine_relative_power_tolerance": 0.003,
+    "minimum_refinement_ratio": 3.5,
+    "basis": "Predeclared numerical verification only: exact quadratic nodal solution; second-order variable-coefficient midpoint scheme and integrated power. No tolerance is inferred from an Atlas result."
+  },
+  "acceptance_levels": {
+    "i01": "Select equations, inputs, support and test hierarchy; demonstrate bounded force-release/buoyancy/energy feasibility.",
+    "i07": "Before generated initiation: shared objective elasto-visco-plastic kernel; resolved thermal/history/interface case; h/h2/h4 and independent timestep/rotated-domain checks; exterior sensitivity; reaction-work and finite-window gravity-supported continuation.",
+    "published_comparison": "Optional external comparison once its source case is coherent. Missing Li-Gurnis inputfile.txt, morbphase.txt and rheology mapping do not block independent verification, and are never guessed."
+  },
+  "sources": [
+    "https://aspect-documentation.readthedocs.io/en/latest/user/benchmarks/index.html",
+    "https://aspect-documentation.readthedocs.io/en/latest/user/benchmarks/benchmarks/newton_solver_benchmark_set/spiegelman_et_al_2016/README.html",
+    "https://doi.org/10.5194/se-3-313-2012",
+    "https://doi.org/10.1093/gji/ggac332"
+  ]
+}

@@ -1,0 +1,749 @@
+{
+  "schema": "atlas.i01-column-heat-evidence.v1",
+  "status": "PASS_BOUNDED_COLUMN_HEAT_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "adapter": {
+      "status": "PASS",
+      "seconds": 0.008245699980761856,
+      "passed": true,
+      "checks": {
+        "geometry_bitwise": true,
+        "same_temperature_bitwise": true,
+        "perturbed_matches_kernel_bitwise": true,
+        "new_state_new_fingerprint": true,
+        "mechanics_equal_reviewed_respond": true,
+        "heat_equals_work": true,
+        "prepared_arrays_immutable": true
+      },
+      "points": 256,
+      "heat_minus_work_relative": 5.058525097618857e-13
+    },
+    "conduction": {
+      "status": "PASS",
+      "seconds": 0.010791299981065094,
+      "passed": true,
+      "checks": {
+        "steady_order": true,
+        "steady_finest": true,
+        "steady_flows": true,
+        "cookbook_reproduced": true,
+        "insulated_uniform_source": true,
+        "zero_source_bitwise": true,
+        "eigen_order": true,
+        "eigen_finest": true,
+        "eigen_energy": true
+      },
+      "steady_orders_per_layer": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "steady_max_error_k": [
+        0.11992660244555964,
+        0.031085964684791634,
+        0.007903947145280199,
+        0.0019921318598790094
+      ],
+      "steady_observed_orders": [
+        1.9478164612327538,
+        1.97561814587049,
+        1.9882601564286606
+      ],
+      "finest_flows_w_m2": {
+        "surface": 0.055000000000026625,
+        "interfaces": [
+          0.034999999999920796,
+          0.02999999999993162,
+          0.030000000000122918
+        ],
+        "base": 0.029999999999873274
+      },
+      "analytic": {
+        "surface_flow": 0.055,
+        "interface_flow": [
+          0.035,
+          0.030000000000000002,
+          0.030000000000000002
+        ],
+        "interface_temperature": [
+          633.0,
+          893.0,
+          1013.0
+        ],
+        "base_flow": 0.030000000000000002
+      },
+      "uniform_source_relative_error": 6.474820679613913e-15,
+      "eigenvalue_per_s": 3.813711488174345e-15,
+      "eigen_orders_per_layer": [
+        16,
+        32,
+        64
+      ],
+      "eigen_max_error_k": [
+        0.07858304551614381,
+        0.0204275101992053,
+        0.005195672617276159
+      ],
+      "eigen_observed_orders": [
+        1.9437047087356902,
+        1.9751309387395524
+      ],
+      "eigen_energy_relative": 1.9726357671288537e-13
+    },
+    "homogeneous": {
+      "status": "PASS",
+      "seconds": 0.04913140001008287,
+      "passed": true,
+      "checks": {
+        "uniform": true,
+        "temperature_order": true,
+        "history_order": true,
+        "finest": true,
+        "energy": true,
+        "insulated_no_boundary_heat": true,
+        "work_to_heat": true
+      },
+      "oracle": {
+        "temperature_rise": 2.385046491847106,
+        "history_gain": 0.04157538655320758,
+        "force": 1192591008506.936,
+        "evaluations": 230,
+        "always_yielding": true
+      },
+      "steps": [
+        16,
+        32,
+        64
+      ],
+      "temperature_errors": [
+        1.1245398115710695e-06,
+        2.812936660721964e-07,
+        7.034672911786543e-08
+      ],
+      "history_errors": [
+        9.615022862966494e-07,
+        2.406957587867365e-07,
+        6.020778950116432e-08
+      ],
+      "force_errors": [
+        1.846369424649191e-08,
+        4.622666651240049e-09,
+        1.1563619754753748e-09
+      ],
+      "temperature_orders": [
+        1.999185764325488,
+        1.9995218179052687
+      ],
+      "history_orders": [
+        1.9980795672375657,
+        1.99918866514593
+      ],
+      "uniform_relative_spread": 4.282538130804436e-15
+    },
+    "limits": {
+      "status": "PASS",
+      "seconds": 0.13183319999370724,
+      "passed": true,
+      "checks": {
+        "no_heating_temperature_bitwise": true,
+        "no_heating_mechanics_bitwise": true,
+        "no_heating_stored_all_work": true,
+        "no_feedback_mechanics_bitwise": true,
+        "no_feedback_heats": true,
+        "no_feedback_energy": true,
+        "no_feedback_work_to_heat": true
+      },
+      "reviewed_force_end": 15216749149785.207,
+      "no_feedback": {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "strain": 0.04000000000000002,
+        "force_start": 15515681142423.709,
+        "force_end": 15216749149785.207,
+        "max_step_energy_relative": 1.4067460542059395e-13,
+        "max_temperature_step_k": 0.15874450257908632,
+        "stages": 129,
+        "scalar_iterations": 526,
+        "yield_switching_points": 0,
+        "accounts": {
+          "external_work_j_m2": 614684743788.4962,
+          "creep_work_j_m2": 275768146699.181,
+          "plastic_work_j_m2": 338916597088.97095,
+          "heat_j_m2": 614684743788.152,
+          "stored_j_m2": 0.0,
+          "surface_loss_j_m2": 16706349804.895649,
+          "base_gain_j_m2": -171531717.8851127,
+          "thermal_change_j_m2": 597806862265.3289,
+          "energy_relative": 6.706919747926184e-14,
+          "partition_relative": 5.600241176124704e-13,
+          "work_to_heat_relative": 0.0
+        },
+        "max_temperature_rise_k": 6.798766106812868,
+        "depth_of_max_rise_km": 44.15177789788003,
+        "min_temperature_change_k": 5.3260359027338094e-05,
+        "max_history_gain_by_layer": [
+          0.0800000000000125,
+          0.07999994965405222,
+          0.07976336931042916,
+          0.0
+        ],
+        "warming_by_layer_k": [
+          {
+            "maximum": 4.477134523815703,
+            "volume_weighted_mean": 2.483092685651873
+          },
+          {
+            "maximum": 5.992174358657415,
+            "volume_weighted_mean": 5.467768165388684
+          },
+          {
+            "maximum": 6.798766106812868,
+            "volume_weighted_mean": 6.337036422360964
+          },
+          {
+            "maximum": 5.133546765537527,
+            "volume_weighted_mean": 0.8287033684734254
+          }
+        ],
+        "yielding_points_final": 118
+      }
+    },
+    "coupled": {
+      "status": "PASS",
+      "seconds": 0.7734954000334255,
+      "passed": true,
+      "checks": {
+        "smooth_time_order": true,
+        "time_force": true,
+        "time_temperature": true,
+        "depth_force": true,
+        "depth_energy": true,
+        "feedback_depth": true,
+        "feedback_positive": true,
+        "feedback_resolved": true,
+        "energy": true,
+        "work_to_heat": true,
+        "partition": true,
+        "all_complete": true
+      },
+      "feedback_on": {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "strain": 0.04000000000000002,
+        "force_start": 15515681142423.709,
+        "force_end": 14750966014798.496,
+        "max_step_energy_relative": 1.4512458501992947e-13,
+        "max_temperature_step_k": 0.15872832326940628,
+        "stages": 129,
+        "scalar_iterations": 1579,
+        "yield_switching_points": 5,
+        "accounts": {
+          "external_work_j_m2": 605104057818.9006,
+          "creep_work_j_m2": 277595605118.7144,
+          "plastic_work_j_m2": 327508452699.32733,
+          "heat_j_m2": 605104057818.042,
+          "stored_j_m2": 0.0,
+          "surface_loss_j_m2": 16699691195.552296,
+          "base_gain_j_m2": -171524350.7654349,
+          "thermal_change_j_m2": 588232842271.6825,
+          "energy_relative": 6.731797706525874e-14,
+          "partition_relative": 1.4194033367514667e-12,
+          "work_to_heat_relative": 4.0346882795721475e-16
+        },
+        "max_temperature_rise_k": 6.679864516835079,
+        "depth_of_max_rise_km": 43.912881781299966,
+        "min_temperature_change_k": 5.325560655971683e-05,
+        "max_history_gain_by_layer": [
+          0.0800000000000125,
+          0.07999993637595937,
+          0.07969717759080153,
+          0.0
+        ],
+        "warming_by_layer_k": [
+          {
+            "maximum": 4.44479313015661,
+            "volume_weighted_mean": 2.469640252084452
+          },
+          {
+            "maximum": 5.90347844664034,
+            "volume_weighted_mean": 5.394029659760235
+          },
+          {
+            "maximum": 6.679864516835079,
+            "volume_weighted_mean": 6.199470521917703
+          },
+          {
+            "maximum": 4.967918077282215,
+            "volume_weighted_mean": 0.8091735470321524
+          }
+        ],
+        "yielding_points_final": 113
+      },
+      "feedback_off": {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "strain": 0.04000000000000002,
+        "force_start": 15515681142423.709,
+        "force_end": 15216749149785.207,
+        "max_step_energy_relative": 1.4067460542059395e-13,
+        "max_temperature_step_k": 0.15874450257908632,
+        "stages": 129,
+        "scalar_iterations": 526,
+        "yield_switching_points": 0,
+        "accounts": {
+          "external_work_j_m2": 614684743788.4962,
+          "creep_work_j_m2": 275768146699.181,
+          "plastic_work_j_m2": 338916597088.97095,
+          "heat_j_m2": 614684743788.152,
+          "stored_j_m2": 0.0,
+          "surface_loss_j_m2": 16706349804.895649,
+          "base_gain_j_m2": -171531717.8851127,
+          "thermal_change_j_m2": 597806862265.3289,
+          "energy_relative": 6.706919747926184e-14,
+          "partition_relative": 5.600241176124704e-13,
+          "work_to_heat_relative": 0.0
+        },
+        "max_temperature_rise_k": 6.798766106812868,
+        "depth_of_max_rise_km": 44.15177789788003,
+        "min_temperature_change_k": 5.3260359027338094e-05,
+        "max_history_gain_by_layer": [
+          0.0800000000000125,
+          0.07999994965405222,
+          0.07976336931042916,
+          0.0
+        ],
+        "warming_by_layer_k": [
+          {
+            "maximum": 4.477134523815703,
+            "volume_weighted_mean": 2.483092685651873
+          },
+          {
+            "maximum": 5.992174358657415,
+            "volume_weighted_mean": 5.467768165388684
+          },
+          {
+            "maximum": 6.798766106812868,
+            "volume_weighted_mean": 6.337036422360964
+          },
+          {
+            "maximum": 5.133546765537527,
+            "volume_weighted_mean": 0.8287033684734254
+          }
+        ],
+        "yielding_points_final": 118
+      },
+      "yield_state_changed_by_heat_km": [
+        16.111553551723933,
+        31.214628192961204,
+        45.6073140964806,
+        45.84822210211997,
+        46.087118218700034
+      ],
+      "thermal_force_reduction": {
+        "32": 0.0312034514038886,
+        "64": 0.030609897712172363,
+        "128": 0.030828752334040626
+      },
+      "feedback_depth_change": 0.007099042461948967,
+      "time_steps": [
+        32,
+        64,
+        128
+      ],
+      "time_force_changes": [
+        6.115052105113416e-09,
+        3.895376253066057e-09
+      ],
+      "time_temperature_changes_k": [
+        5.166456532812447e-06,
+        1.99171509063234e-06
+      ],
+      "time_observed_order": [
+        0.6506021072755652
+      ],
+      "yield_switching_points": {
+        "32": 5,
+        "64": 5,
+        "128": 5
+      },
+      "smooth_reference": {
+        "note": "feedback off: same steps and heating law, mechanics held at the initial temperature, so no temperature-driven yield switching",
+        "force_changes": [
+          1.6420698401341987e-09,
+          4.1091798770683325e-10
+        ],
+        "temperature_changes_k": [
+          1.7801104235104503e-07,
+          4.439772194331226e-08
+        ],
+        "force_orders": [
+          1.9985930986168954
+        ],
+        "temperature_orders": [
+          2.0034091783902777
+        ]
+      },
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "depth_force_changes": [
+        0.0004211225422362045,
+        0.00017115128841559935
+      ],
+      "depth_energy_changes": [
+        0.0001557570685784527,
+        3.0575570043244424e-05
+      ],
+      "max_rise_by_order_k": {
+        "32": 6.681100360965314,
+        "64": 6.679864516835079,
+        "128": 6.679941368498396
+      },
+      "heat_flows_w_m2": {
+        "surface_initial": 0.054999999999977796,
+        "surface_final": 0.05575949327499459,
+        "base_initial": 0.029999999999975917,
+        "base_final": 0.029992336862578194
+      },
+      "retained_heat_fraction": 0.9721184888311677
+    },
+    "refusal": {
+      "status": "PASS",
+      "seconds": 0.023503600037656724,
+      "passed": true,
+      "checks": {
+        "refuse_advection": true,
+        "refuse_eulerian_geometry": true,
+        "refuse_strain_bound": true,
+        "refuse_temperature_guard": true,
+        "refuse_force_control": true,
+        "refuse_latent_heat": true,
+        "refuse_variable_conductivity": true,
+        "refuse_zero_conductivity": true,
+        "refuse_negative_radiogenic": true,
+        "refuse_renamed_layer": true,
+        "refuse_supplied_flux": true,
+        "refuse_amplified_heat": true,
+        "refuse_other_mechanics": true,
+        "refuse_step_ceiling": true,
+        "refuse_steps_0": true,
+        "refuse_steps_257": true,
+        "refuse_steps_2.0": true,
+        "refuse_zero_rate": true,
+        "refuse_guard_above_ceiling": true,
+        "refuse_thermal_for_other_column": true,
+        "refuse_propagator_other_step": true,
+        "refuse_theta_shape": true,
+        "refuse_nonpositive_temperature": true,
+        "refuse_insulated_with_radiogenic": true,
+        "refuse_support_volume_1pct": true,
+        "refuse_support_same_size_foreign": true,
+        "refuse_support_replaced_copy": true,
+        "refuse_thermal_density_1pct": true,
+        "refuse_derived_capacity_replaced": true,
+        "temperature_step_refused": true,
+        "small_strain_refused": true,
+        "refused_accounts_close": true
+      },
+      "refused_cases": [
+        "advection",
+        "amplified_heat",
+        "derived_capacity_replaced",
+        "eulerian_geometry",
+        "force_control",
+        "guard_above_ceiling",
+        "insulated_with_radiogenic",
+        "latent_heat",
+        "negative_radiogenic",
+        "nonpositive_temperature",
+        "other_mechanics",
+        "propagator_other_step",
+        "renamed_layer",
+        "step_ceiling",
+        "steps_0",
+        "steps_2.0",
+        "steps_257",
+        "strain_bound",
+        "supplied_flux",
+        "support_replaced_copy",
+        "support_same_size_foreign",
+        "support_volume_1pct",
+        "temperature_guard",
+        "thermal_density_1pct",
+        "thermal_for_other_column",
+        "theta_shape",
+        "variable_conductivity",
+        "zero_conductivity",
+        "zero_rate"
+      ],
+      "accepted_before_strain_refusal": 13
+    },
+    "reuse": {
+      "status": "PASS",
+      "seconds": 0.45086219999939203,
+      "passed": true,
+      "checks": {
+        "bitwise_parity": true
+      },
+      "reused_seconds": 0.08508119999896735,
+      "rebuilt_seconds": 0.3621826999587938,
+      "saved_seconds": 0.27710149995982647,
+      "saved_percent": 76.50876201192183,
+      "scope": "one matched reference evolution; eigendecomposition and exponential factors per step versus once; temperature-dependent creep terms rebuilt at every stage in both"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_column_heat.py": "08db9f14e9e6e0e2a8d7830f0dcec49dbd8a95b78fd26b52716e43ceb1a51618",
+    "cases/i01_column_heat_v1.json": "5a5c7cef6a397d40217b2c06f918bed83b6f962e1eff329ea5daa8cd7fc977a0",
+    "docs/I01_COLUMN_HEAT.md": "a670d2568ad31f59cc7ef0d09a9411887183f9716093a50ab7bb39bce6220c20",
+    "tests/test_i01_column_heat.py": "7e6f69c037c5a1c5246e0fed1229e63ecf18fbe657757d1d4041e30fa97fc477",
+    "tools/check_i01_weakening.py": "93f76391cc2b9f6efe6d6e817bb9090e2854c27088c38402bc74cf24427fedb9",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "docs/I01_WEAKENING.md": "9de937038303c93cd0668b16a3a53de0a692b6c070518eb077c0bd78eb8e84f0",
+    "tests/test_i01_weakening.py": "22773e731daa13003afb02ee94597c123f4bab0051306b8f2b9125952f59fae7",
+    "tools/check_i01_column.py": "7e4c4982718bdd28b0f6b88ef47677bea255ca4275d00dd3885c129b7114d8d9",
+    "cases/i01_column_v1.json": "4e04683a751e721ee559528ee6d2e8e288671cd584b09f7b0bfa5782f06e0f0a",
+    "evidence/i01-column-r1.json": "48f5b2317d4201baf36c343a0b2f405f48a108cf0faca929c1422f3127afcd5f",
+    "evidence/i01-weakening-r2.json": "14fa0e8606ebd38ba6dfb0e6f8019191b28260aaea0dc5fa4bae38ce6939ac7f"
+  },
+  "helpers_match_reviewed_weakening_r2": {
+    "tools/check_i01_weakening.py": true,
+    "cases/i01_weakening_v1.json": true,
+    "docs/I01_WEAKENING.md": true,
+    "tests/test_i01_weakening.py": true,
+    "tools/check_i01_column.py": true,
+    "cases/i01_column_v1.json": true,
+    "evidence/i01-column-r1.json": true
+  },
+  "spec": {
+    "schema": "atlas.i01-column-heat-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "fixed-geometry, small-strain, laterally uniform layered column at a supplied axial rate: conservative conduction and once-only creep/plastic dissipation feeding temperature back into the reviewed weakening law; not advection, finite strain, rupture, breakup, global coupling or calibration",
+    "provenance": {
+      "mechanics": "reviewed cases/i01_weakening_v1.json (bound by the weakening r2 receipt): layers, densities, rheology, weakening law, gravity, inherited history, axial rate 1e-15/s and total strain 0.04",
+      "thermal": "ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, retrieved 2026-09-27): conductivity 2.5 W/m/K, heat capacity 750 J/kg/K, compositional heating 1.0e-6 / 0.25e-6 / 0 W/m3 for upper crust / lower crust / mantle lithosphere, box boundary temperatures 273 K top and 1613 K bottom, and the initial-temperature function constants reproduced under cookbook_constants",
+      "initial_state": "discrete steady conduction of this operator with those sources and boundaries; it approximates the cookbook's analytic piecewise-quadratic geotherm (checked in the conduction control)",
+      "heat_partition": "all creep and plastic dissipation becomes heat (fractions 1, 1): an explicit D4 choice, not a calibrated rock-specific partition; the cookbook itself does not enable shear heating",
+      "authored": "the homogeneous, two-layer eigenmode, uniform-source and refusal fixtures, step counts, the 5 K step guard and every tolerance are authored control inputs, not Earth values"
+    },
+    "representation": {
+      "geometry": "fixed laterally uniform column; material depth coordinates; small strain; no advection",
+      "thermal_support": "one control volume per mechanical Gauss point; widths equal its quadrature weight; interfaces exact",
+      "conduction": "conservative one-dimensional finite volume; series interface resistance; constant per-layer properties",
+      "time_integration": "exact modal conduction with second-order source quadrature; Heun history; atomic accepted steps",
+      "heating": "creep plus plastic dissipation of the reviewed law deposited once; radiogenic heat only in the steady reference",
+      "control": "supplied axial rate",
+      "max_axial_strain": 0.05,
+      "max_temperature_step_k": 5.0
+    },
+    "mechanics": {
+      "weakening_case": "cases/i01_weakening_v1.json",
+      "use": "layers, densities, weakening law, gravity, inherited history, supplied axial rate and total strain; its linear temperature profiles are only the preparation template and are replaced by the thermal state"
+    },
+    "thermal_layers": [
+      {
+        "name": "upper-crust-wet-quartzite",
+        "conductivity_w_m_k": 2.5,
+        "heat_capacity_j_kg_k": 750.0,
+        "radiogenic_w_m3": 1e-06
+      },
+      {
+        "name": "lower-crust-wet-anorthite",
+        "conductivity_w_m_k": 2.5,
+        "heat_capacity_j_kg_k": 750.0,
+        "radiogenic_w_m3": 2.5e-07
+      },
+      {
+        "name": "mantle-lid-dry-olivine",
+        "conductivity_w_m_k": 2.5,
+        "heat_capacity_j_kg_k": 750.0,
+        "radiogenic_w_m3": 0.0
+      },
+      {
+        "name": "mantle-lithosphere-dry-olivine",
+        "conductivity_w_m_k": 2.5,
+        "heat_capacity_j_kg_k": 750.0,
+        "radiogenic_w_m3": 0.0
+      }
+    ],
+    "boundaries": {
+      "top": {
+        "type": "temperature",
+        "value_k": 273.0
+      },
+      "bottom": {
+        "type": "temperature",
+        "value_k": 1613.0
+      }
+    },
+    "heat_fractions": [
+      1.0,
+      1.0
+    ],
+    "cookbook_constants": {
+      "surface_heat_flow_w_m2": 0.055,
+      "interface_heat_flow_w_m2": [
+        0.035,
+        0.03
+      ],
+      "interface_temperature_k": [
+        633.0,
+        893.0
+      ],
+      "source": "Function constants ts1-3, qs1-3, A1-3, k1-3 of the cookbook's initial temperature; a check that the layered analytic reference reproduces them"
+    },
+    "campaign": {
+      "reference_order": 64,
+      "reference_steps": 64,
+      "time_steps": [
+        32,
+        64,
+        128
+      ],
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "steady_orders": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "homogeneous": {
+        "layer": {
+          "name": "uniform-wet-quartzite",
+          "thickness_m": 10000.0,
+          "temperature_k": [
+            600.0,
+            600.0
+          ],
+          "mean_pressure_pa": [
+            150000000.0,
+            150000000.0
+          ],
+          "pore_pressure_pa": [
+            0.0,
+            0.0
+          ],
+          "grain_m": 0.001,
+          "cohesion_pa": 20000000.0,
+          "friction_rad": 0.5235987755982988,
+          "plastic_viscosity_pa_s": 1e+21,
+          "creep": [
+            {
+              "a": 8.57e-28,
+              "n": 4.0,
+              "energy_j_mol": 223000.0
+            }
+          ]
+        },
+        "thermal": {
+          "density_kg_m3": 2700.0,
+          "heat_capacity_j_kg_k": 750.0,
+          "conductivity_w_m_k": 2.5
+        },
+        "order": 8,
+        "rate_s": 1e-15,
+        "initial_history": 2.0,
+        "total_strain": 0.04,
+        "steps": [
+          16,
+          32,
+          64
+        ]
+      },
+      "eigenmode": {
+        "thickness_m": [
+          20000.0,
+          30000.0
+        ],
+        "conductivity_w_m_k": [
+          2.5,
+          4.0
+        ],
+        "density_kg_m3": [
+          2700.0,
+          3300.0
+        ],
+        "heat_capacity_j_kg_k": [
+          750.0,
+          1200.0
+        ],
+        "boundary_k": 273.0,
+        "amplitude_k": 100.0,
+        "efolds": 1.0,
+        "steps": 4,
+        "orders": [
+          16,
+          32,
+          64
+        ]
+      },
+      "uniform_source": {
+        "thickness_m": 10000.0,
+        "order": 16,
+        "conductivity_w_m_k": 2.5,
+        "density_kg_m3": 2700.0,
+        "heat_capacity_j_kg_k": 750.0,
+        "temperature_k": 600.0,
+        "source_w_m3": 1e-06,
+        "duration_s": 10000000000000.0,
+        "steps": 8
+      },
+      "refusal": {
+        "fast_rate_s": 1e-13,
+        "strain": 0.04,
+        "steps": 1,
+        "strain_steps": 16,
+        "excess_strain": 0.06
+      }
+    },
+    "policy": {
+      "max_steps": 256,
+      "maximum_seconds": 120.0,
+      "steady_order_range": [
+        1.8,
+        2.2
+      ],
+      "steady_finest_k": 0.01,
+      "flow_relative": 1e-09,
+      "cookbook_temperature_k": 1e-09,
+      "uniform_source_relative": 1e-12,
+      "eigen_order_range": [
+        1.8,
+        2.2
+      ],
+      "eigen_finest_k": 0.01,
+      "energy_relative": 1e-10,
+      "work_heat_relative": 1e-10,
+      "oracle_order_range": [
+        1.8,
+        2.2
+      ],
+      "oracle_relative": 1e-05,
+      "uniform_relative": 1e-13,
+      "time_force_relative": 0.0001,
+      "time_temperature_k": 0.01,
+      "depth_force_relative": 0.003,
+      "depth_energy_relative": 0.01,
+      "feedback_depth_relative": 0.03,
+      "coupling_resolution_factor": 10.0
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 1.4539432000019588
+}

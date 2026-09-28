@@ -6,6 +6,10 @@ plastic history and material labels stay at their material points. Every stage r
 quadrature widths, overburden and creep coefficients before balancing F = D v + F_column(v/w). Conduction follows the
 material-coordinate heat equation, whose whole-strip operator is lam^2 times the reference one, so one eigensystem is
 advanced along a thermal clock. No inflow, extraction, lateral localisation, rupture, melting or world assembly.
+I02.2a: the coupled solver (evolve and its geometry, stage, clock and conduction helpers) is owned by
+atlas_tectonics.integration_evolution. This tool re-exports those same objects and keeps the prescribed-history
+conduction control, independent oracles, case, campaign, evidence and CLI. I02.2b: evolve is now the compatibility
+wrapper over that module's continuable core, and the declared representation texts are the package's one copy.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
@@ -28,6 +32,14 @@ from scipy.optimize import brentq
 import threadpoolctl
 from threadpoolctl import threadpool_limits
 
+from atlas_tectonics import (_integration_column, _integration_heat, _integration_motion,
+                             _integration_thermomechanical, _integration_weakening, integration_evolution)
+# The package-owned solver, re-exported: these are the same objects, not copies.
+from atlas_tectonics.integration_evolution import (
+    STRETCH_CEILING, TEMPERATURE_CEILING_K, REPRESENTATION, REPRESENTATION_LIMITS, REBUILD_KEYS, STAGE_ACCOUNTS,
+    THERMAL_ACCOUNTS, Refused, coefficients, column_at, stage, clock, clock_source, eigensystem, clock_propagator,
+    rebuilt_propagator, check_rebuild, advance_map, window_of, paired, weighted, evolve)
+
 import check_i01_thermomechanical_motion as tm
 
 heat, motion, weakening = tm.heat, tm.motion, tm.weakening
@@ -42,43 +54,35 @@ TINY = weakening.TINY
 # separate the current and reference products on either side, so 16 u bounds the comparison with margin.
 CONSERVATION_ROUNDOFF = 16*np.finfo(float).eps/2
 BOUND_TOLERANCE = 1e-12                  # float comparison of the declared and computed drag-only stretch bound
-STRETCH_CEILING = (.6, 1.4)              # frozen: the drag-only reachable range at the authored forcing and 1e14 s
-TEMPERATURE_CEILING_K = (273., 1613.)    # frozen: the reviewed surface and strip-base temperatures
 number, positive = weakening.number, weakening.positive
 relative_change, verdict, check_deadline = weakening.relative_change, weakening.verdict, weakening.check_deadline
 ratio, expired, CountdownDeadline, mutated = tm.ratio, tm.expired, tm.CountdownDeadline, tm.mutated
 orders, in_range = tm.orders, tm.in_range
+# I02.2a: the solver is package-owned, so this tool's own sources include that package file; the retained helpers'
+# package owners must likewise have been recorded by the accepted upstream receipts before they can vouch for them.
 NEW_FILES = ("tools/check_i01_finite_strain.py", "cases/i01_finite_strain_v1.json", "docs/I01_FINITE_STRAIN.md",
-             "tests/test_i01_finite_strain.py")
+             "tests/test_i01_finite_strain.py", "src/atlas_tectonics/integration_evolution.py")
 RETAINED = ("tools/check_i01_thermomechanical_motion.py", "tools/check_i01_column_heat.py",
             "tools/check_i01_motion_coupling.py", "tools/check_i01_weakening.py", "tools/check_i01_column.py",
             "cases/i01_thermomechanical_motion_v1.json", "cases/i01_column_heat_v1.json",
-            "cases/i01_motion_coupling_v1.json", "cases/i01_weakening_v1.json")
+            "cases/i01_motion_coupling_v1.json", "cases/i01_weakening_v1.json",
+            "src/atlas_tectonics/_integration_thermomechanical.py", "src/atlas_tectonics/_integration_heat.py",
+            "src/atlas_tectonics/_integration_motion.py", "src/atlas_tectonics/_integration_weakening.py",
+            "src/atlas_tectonics/_integration_column.py")
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-thermomechanical-motion-r1.json": "c9eb3b75cbd4f27aa36fa19809b8595b25769a4a58d829c19d3866cd9212ecc1",
-    "evidence/i01-column-heat-r2.json": "325f55b13ba18186e0262e3990ad4aa2f2d1236e5d83b4e864e3d9cb8e13dfd4",
+    "evidence/i01-thermomechanical-motion-r2.json": "23c3ea8c9811700d068632ea30125b17c8d8b07d7bbf0a6b662decd1da25089a",
+    "evidence/i01-column-heat-r3.json": "e78ba8537d9301cfac4f27265b00eab6a5746a4f698f316d58c799f11fdb26bf",
     "evidence/i01-motion-coupling-r1.json": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c"}
 IMPORTED = {"tools/check_i01_thermomechanical_motion.py": tm, "tools/check_i01_column_heat.py": heat,
             "tools/check_i01_motion_coupling.py": motion, "tools/check_i01_weakening.py": weakening,
-            "tools/check_i01_column.py": column}
+            "tools/check_i01_column.py": column,
+            "src/atlas_tectonics/integration_evolution.py": integration_evolution,
+            "src/atlas_tectonics/_integration_thermomechanical.py": _integration_thermomechanical,
+            "src/atlas_tectonics/_integration_heat.py": _integration_heat,
+            "src/atlas_tectonics/_integration_motion.py": _integration_motion,
+            "src/atlas_tectonics/_integration_weakening.py": _integration_weakening,
+            "src/atlas_tectonics/_integration_column.py": _integration_column}
 INPUTS = {"thermomechanical_case": "cases/i01_thermomechanical_motion_v1.json"}
-REPRESENTATION = {
-    "geometry": "closed laterally uniform incompressible plane-strain strip of unit strike; affine pure shear about "
-                "the surface: w = w0 lam, z = z0/lam, h = h0/lam; no inflow, extraction, births or mixing",
-    "finite_strain": "log stretch ln(lam) with lam_dot = v/w0 = a lam; raw engineering plastic history is "
-                     "constitutive memory, never geometry",
-    "control": "constant external driving force balanced by disjoint generalised drag and the layered column "
-               "resistance at the current geometry, overburden and temperature at every stage",
-    "thermal": "material-coordinate conduction C0 dT/dt = -lam^2 (K0 T - b0) + radiogenic + mechanical heat; "
-               "constant per-material properties, perfect layer contact, fixed-temperature surface and strip base; "
-               "fixed enthalpy reference",
-    "heating": "column creep plus plastic dissipation deposited once per material control volume; external drag "
-               "dissipation is not column heat; no latent or adiabatic heat",
-    "time_integration": "one reference eigensystem; ETD2 along the thermal clock dtau = 2 dt/(lam_n^-2 + lam_a^-2); "
-                        "the same stage weights integrate history, stretch and every account; accepted endpoint "
-                        "re-solved before commit",
-}
-REPRESENTATION_LIMITS = {"stretch_window", "temperature_window_k", "max_temperature_step_k"}
 NEW_GATES = {"maximum_seconds": 120., "time_stretch_relative": 1e-4, "depth_stretch_relative": .003}
 SPECIAL_POLICY = {"max_steps", "coupling_resolution_factor", "oracle_order_range"}
 CAMPAIGN_KEYS = {"reference_order", "reference_steps", "time_steps", "orders", "kinematics", "clock", "homogeneous",
@@ -89,394 +93,11 @@ SUB_KEYS = {"kinematics": {"order", "steps", "uniform_departure_k"},
             "states": {"order", "steps", "rest_amplitude_k"},
             "refusal": {"order", "steps", "window_steps", "temperature_margin_k", "temperature_guard_k",
                         "compressive_volume_m3_mol"}}
-REBUILD_KEYS = {"thicknesses", "props", "densities", "boundaries", "reference_temperature"}
-# Weighted-trapezoid accounts (account, stage power); all are whole-strip W/m of strike integrated to J/m.
-STAGE_ACCOUNTS = (("drive_work_j_m", "drive_power_w_m"), ("drag_work_j_m", "drag_power_w_m"),
-                  ("creep_work_j_m", "creep_power_w_m"), ("plastic_work_j_m", "plastic_power_w_m"),
-                  ("column_work_j_m", "column_power_w_m"), ("heat_j_m", "heat_power_w_m"),
-                  ("stored_j_m", "stored_power_w_m"))
-THERMAL_ACCOUNTS = ("radiogenic_j_m", "reference_outflow_j_m", "departure_surface_loss_j_m",
-                    "departure_basal_gain_j_m", "reference_surface_loss_j_m", "reference_basal_gain_j_m",
-                    "thermal_change_j_m")
 MECHANICAL = ("drive_work_j_m", "drag_work_j_m", "creep_work_j_m", "plastic_work_j_m", "column_work_j_m", "heat_j_m",
               "stored_j_m")
 
 
-class Refused(Exception):
-    """An atomic refusal of one trial step; nothing of the trial is booked and the accepted prefix is returned."""
-
-    def __init__(self, status, reason):
-        super().__init__(reason)
-        self.status, self.reason = status, reason
-
-
-# ----------------------------------------------------------------------------- material strip at a stretch
-
-def coefficients(base):
-    """Temperature- and pressure-independent creep terms per (point, mechanism), padded as the kernel pads them.
-
-    ``constant = log A - m log d`` and ``volume`` are heat.ArrheniusUpdate.of's; ``energy`` is E. At lam = 1 the
-    rebuilt numerator E + P V is therefore ArrheniusUpdate's, bitwise.
-    """
-    arr = heat.ArrheniusUpdate.of(base)
-    energy = np.zeros(arr.numerator.shape)
-    for i in range(base.size):
-        mechanisms, _, _ = base.layer_inputs[int(base.layer[i])]
-        for j, m in enumerate(mechanisms):
-            energy[i, j] = m.energy_j_mol
-    return arr.constant, weakening.frozen(energy), arr.volume
-
-
-def column_at(base, coeffs, stretch, temperature):
-    """The reviewed preparation at the current geometry and transported temperature, with a new identity.
-
-    At fixed material coordinates depths, quadrature widths, thickness and overburden (lithostatic, or the supplied
-    oracle overburden) all scale as 1/lam; log c = [log A - m log d] - (E + P V)/(R T) and V/(R T) are rebuilt with
-    the kernel's own expression. At lam = 1 this equals heat.ArrheniusUpdate.of(base).at(T) bitwise.
-    """
-    lam = number(stretch, "stretch", positive=True)
-    t = np.asarray(temperature)
-    if t.dtype.kind != "f" or t.shape != (base.size,) or not np.all(np.isfinite(t) & (t > 0)):
-        raise ValueError("temperature must be finite, positive and one value per material point")
-    constant, energy, volume = coeffs
-    pressure = base.reference_pa/lam
-    rt = heat.R*t
-    log_c = constant-(energy+pressure[:, None]*volume)/rt[:, None]
-    if not np.all(np.isfinite(log_c[base.active])):
-        raise ValueError("log creep coefficient outside finite support")
-    vrt = volume/rt[:, None] if base.closure == weakening.LITHOSTATIC else np.zeros_like(volume)
-    digest = hashlib.sha256(base.fingerprint.encode()+np.float64(lam).tobytes()+t.astype(float).tobytes()).hexdigest()
-    frozen = weakening.frozen
-    return dataclasses.replace(base, thickness_m=base.thickness_m/lam, depth_m=frozen(base.depth_m/lam),
-                               weight=frozen(base.weight/lam), reference_pa=frozen(pressure), temperature_k=frozen(t),
-                               log_c=frozen(log_c), volume_rt=frozen(vrt), fingerprint=digest)
-
-
-def stage(base, coeffs, law, stretch, temperature, kappa, drive, fractions, *, geometry_feedback=True, warm=None,
-          deadline=None):
-    """Balance F = D v + F_column(v/w) at the current geometry, overburden and temperature; heat from that state.
-
-    ``drive.width_m`` is the reference width w0. The retained thermomechanical stage multiplies per-current-area
-    column powers by the current width once; ``msource`` is the mechanical heat per reference-area control volume,
-    (w/w0) sigma, used by the thermal clock. ``warm`` is a starting guess only, never a cached answer.
-    """
-    geometry = stretch if geometry_feedback else 1.
-    prep = column_at(base, coeffs, geometry, temperature)
-    local = motion.Drive(drive.force_n_m, drive.drag_pa_s, drive.width_m*geometry)
-    s = tm.stage(prep, law, kappa, local, fractions, warm=warm, deadline=deadline)
-    width = local.width_m
-    return dict(s, geometry=geometry, width_m=width, thickness_m=prep.thickness_m, column_power_w_m=width*s["work"],
-                heat_power_w_m=width*s["heat"], stored_power_w_m=width*s["stored"], speed=abs(s["rate"]),
-                msource=geometry*s["source"])
-
-
-# ----------------------------------------------------------------------------- thermal clock
-
-def clock(stretch_n, stretch_a, dt):
-    """Thermal-clock increment and stage weights of one step (method document, section 3).
-
-    dtau = 2 dt/(lam_n^-2 + lam_a^-2) is the tau-trapezoid of dt/dtau = lam^-2 spanning exactly dt; the weights
-    lam^-2/(lam_n^-2 + lam_a^-2) then integrate every account, history and stretch with one rule, exact for constants.
-    """
-    wn, wa = 1./(stretch_n*stretch_n), 1./(stretch_a*stretch_a)
-    total = wn+wa
-    return 2*dt/total, wn/total, wa/total
-
-
-def clock_source(radiogenic, msource, stretch):
-    """Source along the clock per reference area [W/m^2]: r0/lam^2 - r0 + m/lam^2; exactly m at lam = 1."""
-    inv = 1./(stretch*stretch)
-    return (radiogenic*inv-radiogenic)+msource*inv
-
-
-def eigensystem(thermal, modes=None):
-    """One reference eigensystem per support; its dt and time factors are replaced for every step."""
-    modes = heat.prepare_propagator(thermal, 1.) if modes is None else modes
-    if type(modes) is not heat.Propagator or modes.fingerprint != thermal.fingerprint:
-        raise ValueError("eigensystem prepared for a different thermal support")
-    return modes
-
-
-def clock_propagator(modes, dtau):
-    """The reference eigensystem over one clock increment: new exponential and phi factors, same eigenvectors.
-
-    C0^(-1/2) (lam^2 K0) C0^(-1/2) = lam^2 Q Lambda Q^T with a constant whole-strip capacity, so only the factors of
-    -Lambda dtau change. A step's factors are never reused for a different increment.
-    """
-    e, p1, p2, p3 = heat.phi_functions(-modes.lam*dtau)
-    frozen = weakening.frozen
-    return dataclasses.replace(modes, dt=dtau, e=frozen(e), p1=frozen(p1), p2=frozen(p2), p3=frozen(p3))
-
-
-def rebuilt_propagator(thermal, inputs, stretch, dt):
-    """Comparator only: the retained support assembled at the current geometry and factorised again for the step."""
-    now = heat.prepare_thermal(thermal.layer, thermal.depth_m/stretch, thermal.volume_m/stretch,
-                               [h/stretch for h in inputs["thicknesses"]], inputs["props"], inputs["densities"],
-                               inputs["boundaries"], reference_temperature=inputs["reference_temperature"])
-    return heat.prepare_propagator(now, dt)
-
-
-def check_rebuild(thermal, inputs):
-    if type(inputs) is not dict or set(inputs) != REBUILD_KEYS:
-        raise ValueError("rebuild declares only thicknesses, properties, densities, boundaries and reference")
-    again = heat.prepare_thermal(thermal.layer, thermal.depth_m, thermal.volume_m, list(inputs["thicknesses"]),
-                                 inputs["props"], inputs["densities"], inputs["boundaries"],
-                                 reference_temperature=inputs["reference_temperature"],
-                                 mechanical_fingerprint=thermal.mechanical_fingerprint)
-    if again.fingerprint != thermal.fingerprint:
-        raise ValueError("rebuild inputs do not reproduce the supplied thermal support")
-
-
-def advance_map(thermal, modes, rebuild, dtau, dt):
-    """Conduction over one clock increment: returns f(theta, g_n[, g_a]) -> (theta_new, integral of theta dtau)."""
-    if rebuild is not None:
-        # Frozen coefficient lam_bar^2 = dtau/dt over dt: the same exponentials, source lam_bar g per current area.
-        lam = math.sqrt(dtau/dt)
-        p, scale = rebuilt_propagator(thermal, rebuild, lam, dt), lam*lam
-
-        def rebuilt(theta, g_n, g_a=None):
-            new, integral = heat.conduct(p, theta, lam*g_n, None if g_a is None else lam*g_a)
-            return new, scale*integral
-        return rebuilt
-    if modes is not None:
-        p = clock_propagator(modes, dtau)
-        return lambda theta, g_n, g_a=None: heat.conduct(p, theta, g_n, g_a)
-    capacity = np.asarray(thermal.capacity)
-
-    def still(theta, g_n, g_a=None):          # conduction explicitly off: C0 dtheta/dtau = g, exact for linear g
-        g_a = g_n if g_a is None else g_a
-        return (theta+dtau*(g_n+g_a)/2/capacity,
-                dtau*theta+dtau*dtau*(g_n/2+(g_a-g_n)/6)/capacity)
-    return still
-
-
-# ----------------------------------------------------------------------------- coupled evolution
-
-def window_of(window):
-    """A declared stretch/temperature window inside the frozen ceilings; a tighter window is always admitted."""
-    if type(window) is not dict or set(window) != {"stretch", "temperature_k"}:
-        raise ValueError("window declares only its stretch and temperature ranges")
-    bounds = []
-    for key in ("stretch", "temperature_k"):
-        pair = window[key]
-        if type(pair) not in (list, tuple) or len(pair) != 2:
-            raise ValueError(key+" window must be [low, high]")
-        bounds += [number(value, key+" window") for value in pair]
-    lo, hi, tlo, thi = bounds
-    if not STRETCH_CEILING[0] <= lo < 1. < hi <= STRETCH_CEILING[1]:
-        raise ValueError("stretch window must contain the reference geometry and lie within [0.6, 1.4]")
-    if not TEMPERATURE_CEILING_K[0] <= tlo < thi <= TEMPERATURE_CEILING_K[1]:
-        raise ValueError("temperature window must lie within the reviewed [273, 1613] K range")
-    return lo, hi, tlo, thi
-
-
-def paired(base, thermal, *, modes, conduction, rebuild, inputs):
-    """Refuse stale, foreign, replaced or contradictory preparations before any work; return the modes to reuse."""
-    if type(base) is not weakening.PreparedColumn or type(thermal) is not heat.ThermalColumn:
-        raise ValueError("reviewed mechanical preparation and thermal support required")
-    if inputs is not None and weakening.fingerprint(*inputs) != base.fingerprint:
-        raise ValueError("prepared coefficients are stale for these inputs; prepare again")
-    if thermal.mechanical_fingerprint != base.fingerprint:
-        raise ValueError("thermal support was prepared for a different mechanical column")
-    if not heat.same_support(thermal, base):          # a matching label is not evidence of equal support
-        raise ValueError("thermal layers, depths or widths differ from the mechanical quadrature")
-    if np.any(np.asarray(base.pore_pa) != 0):
-        raise ValueError("supplied pore pressure is not transported under finite strain")
-    if type(conduction) is not bool:
-        raise ValueError("conduction must be boolean")
-    if not conduction:
-        if modes is not None or rebuild is not None or any(thermal.boundary_conductance):
-            raise ValueError("conduction off admits only an insulated support, without modes or a rebuild")
-        return None
-    if rebuild is not None:
-        if modes is not None:
-            raise ValueError("the rebuilt comparator reuses no eigensystem")
-        check_rebuild(thermal, rebuild)
-        return None
-    return eigensystem(thermal, modes)
-
-
-def weighted(dt, wn, wa, a, b, name):
-    return dt*(wn*a[name]+wa*b[name])
-
-
-def evolve(base, thermal, law, kappa0, drive, *, duration_s, steps, window, temperature_step_k, fractions, policy,
-           modes=None, conduction=True, geometry_feedback=True, theta0=None, warm_start=True, rebuild=None,
-           inputs=None, deadline=None):
-    """Constant-drive evolution of stretch lam, temperature departure theta and raw history kappa at material points.
-
-    Every run starts at the reference geometry lam = 1, where ``drive.width_m`` is w0. Each accepted step: Euler
-    stretch lam_a = lam_n + dt v_n/w0; clock increment and stage weights from (lam_n, lam_a); ETD2 predictor
-    temperature; predictor stage at (lam_a, T_a, kappa_n + dt kdot_n); ETD2 corrector with the clock source linear
-    between the stages; weighted-trapezoid history, stretch, displacement and accounts; checks; the endpoint re-solved
-    at the committed state before anything is booked. Stretch-window, temperature-window, temperature-step,
-    constitutive and deadline refusals return the accepted prefix unchanged. ``geometry_feedback=False`` is a
-    comparator only: the mechanics stays at the reference geometry while kinematics and conduction follow lam.
-    """
-    lo, hi, tlo, thi = window_of(window)
-    if type(law) is not weakening.WeakeningLaw or type(drive) is not motion.Drive:
-        raise ValueError("typed weakening law and external drive required")
-    if type(geometry_feedback) is not bool or type(warm_start) is not bool:
-        raise ValueError("geometry_feedback and warm_start must be boolean")
-    modes = paired(base, thermal, modes=modes, conduction=conduction, rebuild=rebuild, inputs=inputs)
-    heat.policy_limits(policy)
-    if type(steps) is not int or not 1 <= steps <= policy["max_steps"]:
-        raise ValueError("accepted steps must be an integer in 1..256")
-    limit = positive(temperature_step_k, "temperature step guard")
-    if limit > 5.:
-        raise ValueError("temperature step guard above the declared 5 K ceiling")
-    duration = positive(duration_s, "duration")
-    fractions = heat.heat_fractions(fractions)
-    law.certify(base)
-    kappa0 = weakening.history_array(base, kappa0).copy()
-    theta = np.zeros(base.size) if theta0 is None else tm.departure(theta0, base.size)
-    theta_start = theta.copy()
-    reference = np.asarray(thermal.steady_k)          # fixed enthalpy reference; never reset to a stretched geotherm
-
-    def inside(temperature):
-        return bool(np.all((temperature >= tlo) & (temperature <= thi)))
-    if not inside(reference+theta):
-        raise ValueError("initial material temperatures lie outside the declared window")
-    dt, w0 = duration/steps, drive.width_m
-    coeffs = coefficients(base)
-    r0, capacity = np.asarray(thermal.radiogenic), np.asarray(thermal.capacity)
-    produced = math.fsum(r0)                          # W/m^2 of reference area; constant under affine stretch
-    g_top, g_bot = thermal.boundary_conductance
-    flows = tm.reference_throughput(thermal, 0.)
-    q_top, q_base = flows["surface_outflow_w_m2"], flows["basal_inflow_w_m2"]
-
-    def solve(stretch, th, k, previous, trial=True):
-        warm = previous if warm_start and previous is not None and previous["x"] is not None else None
-        try:
-            return stage(base, coeffs, law, stretch, reference+th, k, drive, fractions,
-                         geometry_feedback=geometry_feedback, warm=warm, deadline=deadline)
-        except ValueError as exc:
-            if not trial:
-                raise
-            raise Refused("REFUSED_CONSTITUTIVE", str(exc)) from exc
-
-    lam = 1.
-    current = solve(lam, theta, kappa0, None, trial=False)
-    first, kappa = current, kappa0.copy()
-    displacement = log_quadrature = path = tau = 0.
-    acc = dict.fromkeys([key for key, _ in STAGE_ACCOUNTS]+list(THERMAL_ACCOUNTS), 0.)
-    stats = dict(max_force_relative=0., max_power_relative=0., min_source_w_m2=math.inf, min_dissipation_w_m=math.inf,
-                 restress_mismatches=0, evaluations=0, iterations=0, stages=0)
-    tm.note(stats, current)
-    yield_stages = (current["plastic_rate"] > 0).astype(int)
-    worst_energy = worst_step = 0.
-    accepted, status, reason = 0, "COMPLETE", None
-    for _ in range(steps):
-        try:
-            check_deadline(deadline)
-            lam_a = lam+dt*current["velocity_m_s"]/w0
-            if not lo <= lam_a <= hi:
-                raise Refused("REFUSED_STRETCH_WINDOW", "predictor stretch leaves the declared window")
-            dtau, wn, wa = clock(lam, lam_a, dt)
-            advance = advance_map(thermal, modes, rebuild, dtau, dt)
-            g_n = clock_source(r0, current["msource"], lam)
-            theta_a, _ = advance(theta, g_n)
-            if not np.all(np.isfinite(theta_a)):
-                raise RuntimeError("predictor temperature is not finite")
-            if not inside(reference+theta_a):
-                raise Refused("REFUSED_TEMPERATURE_WINDOW", "predictor temperature leaves the declared window")
-            predictor = solve(lam_a, theta_a, kappa+dt*current["kdot"], current)
-            new_theta, integral = advance(theta, g_n, clock_source(r0, predictor["msource"], lam_a))
-            new_kappa = kappa+dt*(wn*current["kdot"]+wa*predictor["kdot"])
-            moved = weighted(dt, wn, wa, current, predictor, "velocity_m_s")
-            new_lam = lam+moved/w0
-            new_path = path+weighted(dt, wn, wa, current, predictor, "speed")
-            if not lo <= new_lam <= hi:
-                raise Refused("REFUSED_STRETCH_WINDOW", "endpoint stretch leaves the declared window")
-            jump = float(np.abs(new_theta-theta).max())
-            if jump > limit:
-                raise Refused("REFUSED_TEMPERATURE_STEP", "temperature change exceeds the per-step guard")
-            new_t = reference+new_theta
-            if not np.all(np.isfinite(new_t)) or np.any(new_t <= 0) or np.any(new_kappa < kappa):
-                raise RuntimeError("temperature nonpositive or raw history decreased")
-            if not inside(new_t):
-                raise Refused("REFUSED_TEMPERATURE_WINDOW", "endpoint temperature leaves the declared window")
-            if np.any(new_kappa-kappa0 > 2*new_path*(1+1e-10)):
-                raise RuntimeError("plastic history exceeds twice the accumulated log-strain path")
-            endpoint = solve(new_lam, new_theta, new_kappa, predictor)     # re-solved before anything is booked
-            check_deadline(deadline)                                    # final solve may consume the remaining budget
-        except RuntimeError:
-            if not expired(deadline):
-                raise
-            status, reason = "REFUSED_DEADLINE", "cooperative time budget exhausted during the trial step"
-            break
-        except Refused as refusal:
-            status, reason = refusal.status, refusal.reason
-            break
-        heat_step = weighted(dt, wn, wa, current, predictor, "heat_power_w_m")
-        surface = w0*g_top*integral[0]                 # departure heat leaving at the surface [J/m]
-        base_in = -w0*g_bot*integral[-1]               # departure heat entering at the strip base
-        radiogenic, outflow = w0*produced*dt, w0*produced*dtau
-        change = w0*math.fsum(capacity*(new_theta-theta))
-        budget = heat_step+(radiogenic-outflow)-surface+base_in
-        worst_energy = max(worst_energy, ratio(change-budget, abs(heat_step)+abs(radiogenic-outflow)+abs(surface)
-                                               + abs(base_in)))
-        for key, name in STAGE_ACCOUNTS:
-            acc[key] += weighted(dt, wn, wa, current, predictor, name)
-        for key, value in (("radiogenic_j_m", radiogenic), ("reference_outflow_j_m", outflow),
-                           ("departure_surface_loss_j_m", surface), ("departure_basal_gain_j_m", base_in),
-                           ("reference_surface_loss_j_m", w0*q_top*dtau), ("reference_basal_gain_j_m", w0*q_base*dtau),
-                           ("thermal_change_j_m", change)):
-            acc[key] += value
-        displacement += moved
-        log_quadrature += weighted(dt, wn, wa, current, predictor, "rate")
-        tau += dtau
-        theta, kappa, lam, path, current = new_theta, new_kappa, new_lam, new_path, endpoint
-        worst_step = max(worst_step, jump)
-        accepted += 1
-        for s in (predictor, endpoint):
-            tm.note(stats, s)
-            yield_stages += s["plastic_rate"] > 0
-    fc, fp = fractions
-    drive_work, drag_work = acc["drive_work_j_m"], acc["drag_work_j_m"]
-    column_terms = acc["creep_work_j_m"]+acc["plastic_work_j_m"]
-    ideal = fc*acc["creep_work_j_m"]+fp*acc["plastic_work_j_m"]
-    exchange = acc["radiogenic_j_m"]-acc["reference_outflow_j_m"]
-    surface = acc["reference_surface_loss_j_m"]+acc["departure_surface_loss_j_m"]
-    basal = acc["reference_basal_gain_j_m"]+acc["departure_basal_gain_j_m"]
-    departure = acc["heat_j_m"]+exchange-acc["departure_surface_loss_j_m"]+acc["departure_basal_gain_j_m"]
-    absolute = acc["heat_j_m"]+acc["radiogenic_j_m"]-surface+basal
-    acc.update(
-        surface_loss_j_m=surface, basal_gain_j_m=basal,
-        motion_work_relative=ratio(drive_work-drag_work-column_terms, drive_work),
-        drive_displacement_relative=ratio(drive_work-drive.force_n_m*displacement, drive_work),
-        partition_relative=ratio(column_terms-acc["column_work_j_m"], acc["column_work_j_m"]),
-        column_energy_relative=ratio(acc["column_work_j_m"]-acc["heat_j_m"]-acc["stored_j_m"], acc["column_work_j_m"]),
-        work_to_heat_relative=ratio(acc["heat_j_m"]-ideal, ideal),
-        drag_excluded_relative=ratio(acc["heat_j_m"]+acc["stored_j_m"]-(drive_work-drag_work), drive_work),
-        energy_relative=ratio(acc["thermal_change_j_m"]-departure, abs(acc["heat_j_m"])+abs(exchange)
-                              + abs(acc["departure_surface_loss_j_m"])+abs(acc["departure_basal_gain_j_m"])),
-        absolute_energy_relative=ratio(acc["thermal_change_j_m"]-absolute, abs(acc["heat_j_m"])
-                                       + abs(acc["radiogenic_j_m"])+abs(surface)+abs(basal)))
-    width, thickness = w0*lam, base.thickness_m/lam
-    volume0 = w0*base.thickness_m
-    mass0 = w0*math.fsum(base.density*base.weight) if base.closure == weakening.LITHOSTATIC else None
-    capacity0 = w0*math.fsum(capacity)
-    conservation = dict(
-        volume_relative=ratio(width*thickness-volume0, volume0),
-        mass_relative=None if mass0 is None else ratio(width*math.fsum(base.density*(base.weight/lam))-mass0, mass0),
-        capacity_relative=ratio(width*math.fsum(capacity/lam)-capacity0, capacity0))
-    switching = (yield_stages > 0) & (yield_stages < stats["stages"])
-    return dict(status=status, reason=reason, accepted_steps=accepted, elapsed_s=accepted*dt, time_step_s=dt,
-                clock_s=tau, stretch=lam, log_strain=math.log(lam), log_strain_quadrature=log_quadrature,
-                log_path=path, width_m=width, thickness_m=thickness, displacement_m=displacement, theta=theta,
-                theta0=theta_start, kappa=kappa, kappa0=kappa0,
-                mean_history_gain=math.fsum(base.weight*(kappa-kappa0))/math.fsum(base.weight),
-                velocity_start_m_s=first["velocity_m_s"], velocity_end_m_s=current["velocity_m_s"],
-                column_force_start_n_m=first["force"], column_force_end_n_m=current["force"], accounts=acc,
-                conservation=conservation,
-                reference=dict(surface_outflow_w_m2=q_top, basal_inflow_w_m2=q_base, radiogenic_w_m2=produced,
-                               balance_relative=flows["balance_relative"],
-                               note="per reference area at lam = 1; whole-strip flows are w0 lam^2 times these"),
-                max_step_energy_relative=worst_energy, max_temperature_step_k=worst_step,
-                yield_switching_points=int(np.count_nonzero(switching)), yielded=yield_stages > 0, final=current,
-                **stats)
-
+# ----------------------------------------------------------------------------- exact prescribed-history control
 
 def conduct_history(thermal, stretch, *, duration_s, steps, window, theta0=None, modes=None, deadline=None):
     """EXACT CONTROL ONLY: conduction of material temperatures along a PRESCRIBED smooth stretch history.

@@ -1,0 +1,412 @@
+{
+  "schema": "atlas.i01-separation-law.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "contract": "atlas.cohesion-loss-separation.v1",
+  "resolved_neck": false,
+  "event_authorised": false,
+  "mc01_closed": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "controls": {
+    "law": {
+      "status": "PASS",
+      "seconds": 0.00013329996727406979,
+      "passed": true,
+      "checks": {
+        "peak_yield": true,
+        "residual_yield": true,
+        "breakdown_slip": true,
+        "fracture_energy": true,
+        "softening_stiffness": true,
+        "cohesion_only_energy_pressure_free": true,
+        "friction_energy_rises_with_pressure": true,
+        "bond_ductile_no_history": true,
+        "bond_partly_softened": true,
+        "bond_completed": true,
+        "bond_beyond_completion": true,
+        "bond_hot_plastic_history": true,
+        "bond_deep_plastic_history": true,
+        "bond_unknown_history_back_in_support": true,
+        "bond_violated_history_back_in_support": true,
+        "bond_weakened_intact": true,
+        "bond_weakened_intact_cohesive": true
+      },
+      "bond_states": {
+        "ductile_no_history": "BONDED",
+        "partly_softened": "BONDED",
+        "completed": "BROKEN",
+        "beyond_completion": "BROKEN",
+        "hot_plastic_history": "UNRESOLVED",
+        "deep_plastic_history": "UNRESOLVED",
+        "unknown_history_back_in_support": "UNRESOLVED",
+        "violated_history_back_in_support": "UNRESOLVED",
+        "weakened_intact": "BONDED",
+        "weakened_intact_cohesive": "BONDED"
+      },
+      "friction_softening_energies_j_m2": [
+        33000000000.0,
+        58000000000.0
+      ]
+    },
+    "retained_memory": {
+      "status": "PASS",
+      "seconds": 0.0016143000102601945,
+      "passed": true,
+      "checks": {
+        "event_sequence": true,
+        "rate_equation": true,
+        "root_in_declared_bracket": true,
+        "yield_time": true,
+        "forgotten_yield": true,
+        "memory_advance": true,
+        "completion_time": true,
+        "traction_continuous_at_bond_loss": true,
+        "breakdown_is_fracture_energy": true,
+        "residual_friction": true,
+        "strength_work": true,
+        "bond_before": true,
+        "bond_lost_at_completion": true,
+        "bond_after": true,
+        "stability_ratio": true,
+        "rate_independent_reference": true,
+        "viscoplastic_lag": true,
+        "balance": true,
+        "subdivision_state": true,
+        "subdivision_accounts": true,
+        "subdivision_events": true
+      },
+      "events": [
+        {
+          "event": "yield",
+          "time_s": 8125000000000.286,
+          "bracket_s": [
+            8124999999999.859,
+            8125000000000.286
+          ],
+          "traction_pa": 76000000.0,
+          "bond_state": "BONDED"
+        },
+        {
+          "event": "softening_complete",
+          "time_s": 13749922859352.297,
+          "bracket_s": [
+            13749922859351.906,
+            13749922859352.297
+          ],
+          "traction_pa": 61999753.149926014,
+          "bond_state": "BROKEN"
+        }
+      ],
+      "completion_root": 8.999876574963114,
+      "closed_completion_s": 13749922859351.945,
+      "accounts_at_completion": {
+        "work_j_m2": 90874552583.29178,
+        "stored_change_j_m2": 20999521728.93596,
+        "creep_dissipation_j_m2": 0.0,
+        "plastic_dissipation_j_m2": 69875030854.35574,
+        "overstress_dissipation_j_m2": 1875030854.3550258,
+        "breakdown_dissipation_j_m2": 7999999999.999999,
+        "residual_friction_dissipation_j_m2": 60000000000.000786,
+        "plastic_slip_m": 1000.0000000000131
+      },
+      "final_accounts": {
+        "work_j_m2": 98530693345.98642,
+        "stored_change_j_m2": 19113027189.115917,
+        "creep_dissipation_j_m2": 0.0,
+        "plastic_dissipation_j_m2": 79417666156.87044,
+        "overstress_dissipation_j_m2": 2076991028.3641684,
+        "breakdown_dissipation_j_m2": 7999999999.999999,
+        "residual_friction_dissipation_j_m2": 69340675128.50633,
+        "plastic_slip_m": 1155.677918808439
+      },
+      "balance_relative_residual": 6.551176668946894e-16
+    },
+    "unstable_softening": {
+      "status": "PASS",
+      "seconds": 0.000901999999769032,
+      "passed": true,
+      "checks": {
+        "event_sequence": true,
+        "rate_equation": true,
+        "root_in_declared_bracket": true,
+        "yield_time": true,
+        "completion_time": true,
+        "stability_ratio": true,
+        "rate_independent_unstable": true,
+        "breakdown_is_fracture_energy": true,
+        "balance": true,
+        "bond_after": true,
+        "exact_positive_drive_completes": true,
+        "exact_zero_drive_stationary": true,
+        "exact_negative_drive_relaxes": true,
+        "exact_balance": true
+      },
+      "completion_root": 2.4368396975756115,
+      "events": [
+        {
+          "event": "yield",
+          "time_s": 32500000000001.816,
+          "bracket_s": [
+            32499999999999.773,
+            32500000000001.816
+          ],
+          "bond_state": "BONDED"
+        },
+        {
+          "event": "softening_complete",
+          "time_s": 35546049621971.36,
+          "bracket_s": [
+            35546049621971.16,
+            35546049621971.36
+          ],
+          "bond_state": "BROKEN"
+        }
+      ],
+      "final_accounts": {
+        "work_j_m2": 230770567170.8764,
+        "stored_change_j_m2": 129048157692.36855,
+        "creep_dissipation_j_m2": 0.0,
+        "plastic_dissipation_j_m2": 101722409478.50775,
+        "overstress_dissipation_j_m2": 9445550772.775448,
+        "breakdown_dissipation_j_m2": 8000000000.0,
+        "residual_friction_dissipation_j_m2": 84276858705.73233,
+        "plastic_slip_m": 1404.6143117622055
+      },
+      "exact_yield_completion_s": 20.518277686240115,
+      "exact_yield_events": [
+        {
+          "event": "softening_complete",
+          "time_s": 20.518277686240367,
+          "bracket_s": [
+            20.51827768623866,
+            20.518277686240367
+          ],
+          "traction_pa": 1.414213562373593,
+          "bond_state": "BROKEN"
+        }
+      ]
+    },
+    "creep_regime": {
+      "status": "PASS",
+      "seconds": 0.000928299967199564,
+      "passed": true,
+      "checks": {
+        "hot_steady": true,
+        "hot_never_yields": true,
+        "hot_traction": true,
+        "narrow_steady": true,
+        "narrow_yields": true,
+        "narrow_breaks": true,
+        "cold_steady": true,
+        "cold_yields": true,
+        "cold_breaks": true,
+        "creep_dissipates": true,
+        "balance": true
+      },
+      "hot_final_traction_pa": 10000000.000000596,
+      "narrow_events": [
+        "yield",
+        "softening_complete"
+      ],
+      "cold_events": [
+        "yield",
+        "softening_complete"
+      ],
+      "narrow_yield_s": 22936536721256.266,
+      "cold_yield_s": 8671847797782.019,
+      "cold_accounts": {
+        "work_j_m2": 129441875408.89455,
+        "stored_change_j_m2": 18962018010.243187,
+        "creep_dissipation_j_m2": 8468717319.200025,
+        "plastic_dissipation_j_m2": 102011140079.45137,
+        "overstress_dissipation_j_m2": 2288391934.2760143,
+        "breakdown_dissipation_j_m2": 8000000000.0,
+        "residual_friction_dissipation_j_m2": 91722748145.17532,
+        "plastic_slip_m": 1528.7124690862552
+      }
+    },
+    "objectivity": {
+      "status": "PASS",
+      "seconds": 5.9699988923966885e-05,
+      "passed": true,
+      "checks": {
+        "components": true,
+        "rotation_+0.30": true,
+        "rotation_+1.70": true,
+        "rotation_-2.50": true,
+        "rigid_motion_no_slip": true,
+        "opening_refused": true
+      },
+      "components": {
+        "normal_traction_pa": -65600000.0,
+        "shear_traction_pa": 10800000.0,
+        "effective_pressure_pa": 65600000.0,
+        "slip_m": 250.0,
+        "shear_sense": 1,
+        "slip_sense": 1
+      }
+    },
+    "sections": {
+      "status": "PASS",
+      "seconds": 0.00024120003217831254,
+      "passed": true,
+      "checks": {
+        "section_cohesionless_surface": true,
+        "section_broken_band": true,
+        "section_crust_only_break": true,
+        "section_alternating_bridge": true,
+        "section_unresolved_bridge": true,
+        "section_unresolved_face": true,
+        "section_negative_film": true,
+        "interval_band_breaks": true,
+        "interval_crust_breaks_first": true,
+        "interval_crust_stays_broken": true,
+        "interval_inherited_gap": true,
+        "interval_graph_reconnected": true,
+        "interval_unresolved_after": true,
+        "interval_film_persists": true,
+        "wording_issue_demonstrated": true
+      },
+      "diagnostics": {
+        "cohesionless_surface": {
+          "crust": "DISCONNECTED",
+          "mantle_lithosphere": "DISCONNECTED",
+          "union": "DISCONNECTED",
+          "set_union": "CONNECTED"
+        },
+        "broken_band": {
+          "crust": "DISCONNECTED",
+          "mantle_lithosphere": "DISCONNECTED",
+          "union": "DISCONNECTED",
+          "set_union": "CONNECTED"
+        },
+        "crust_only_break": {
+          "crust": "DISCONNECTED",
+          "mantle_lithosphere": "CONNECTED",
+          "union": "CONNECTED",
+          "set_union": "CONNECTED"
+        },
+        "alternating_bridge": {
+          "crust": "DISCONNECTED",
+          "mantle_lithosphere": "DISCONNECTED",
+          "union": "CONNECTED",
+          "set_union": "CONNECTED"
+        },
+        "unresolved_bridge": {
+          "crust": "UNRESOLVED",
+          "mantle_lithosphere": "DISCONNECTED",
+          "union": "UNRESOLVED",
+          "set_union": "CONNECTED"
+        },
+        "unresolved_face": {
+          "crust": "UNRESOLVED",
+          "mantle_lithosphere": "DISCONNECTED",
+          "union": "UNRESOLVED",
+          "set_union": "CONNECTED"
+        },
+        "negative_film": {
+          "crust": "CONNECTED",
+          "mantle_lithosphere": "CONNECTED",
+          "union": "CONNECTED",
+          "set_union": "CONNECTED"
+        }
+      }
+    },
+    "negative_example": {
+      "status": "PASS",
+      "seconds": 0.0003087999648414552,
+      "passed": true,
+      "checks": {
+        "copied_from_decision_case": true,
+        "ladder_thicknesses_positive": true,
+        "positive_at_false_limit": true,
+        "positive_with_halved_width": true,
+        "film_connected": true,
+        "no_event": true,
+        "thickness_field_refused": true,
+        "unrepresentable_thickness_refused": true
+      },
+      "thickness_at_false_limit_m": 0.36787944117144233,
+      "halved_width_thickness_m": 0.18393972058572117
+    },
+    "refusals": {
+      "status": "PASS",
+      "seconds": 0.00012079998850822449,
+      "passed": true,
+      "checks": {
+        "grid_width": true,
+        "no_softening": true,
+        "missing_provenance": true,
+        "unknown_residual_state": true,
+        "healing": true,
+        "reverse_loading": true,
+        "outside_support": true,
+        "thickness_field": true,
+        "broken_anchor": true,
+        "opening": true,
+        "cohesive_broken_residual": true,
+        "surface_overflow": true
+      },
+      "observed": {
+        "grid_width": "REFUSED_WIDTH_NOT_PHYSICAL",
+        "no_softening": "REFUSED_NO_SOFTENING",
+        "missing_provenance": "REFUSED_MISSING_PROVENANCE",
+        "unknown_residual_state": "REFUSED_INVALID_INPUT",
+        "healing": "REFUSED_HEALING_NOT_IN_SLICE",
+        "reverse_loading": "REFUSED_REVERSE_OR_TENSILE_LOADING",
+        "outside_support": "REFUSED_OUTSIDE_SUPPORT",
+        "thickness_field": "REFUSED_UNSUPPORTED_FIELD",
+        "broken_anchor": "REFUSED_INVALID_SECTION",
+        "opening": "REFUSED_OPENING_NOT_OWNED",
+        "cohesive_broken_residual": "REFUSED_INCONSISTENT_RESIDUAL",
+        "surface_overflow": "REFUSED_NUMERIC_RANGE"
+      }
+    },
+    "timing": {
+      "status": "PASS",
+      "seconds": 0.03955099999438971,
+      "passed": true,
+      "checks": {
+        "reuse_parity": true,
+        "finite_nonnegative": true
+      },
+      "samples_seconds": {
+        "prepared": [
+          0.0038647999754175544,
+          0.0038009000127203763,
+          0.0037911999970674515,
+          0.0037801999715156853,
+          0.0037675999919883907
+        ],
+        "rebuilt": [
+          0.00411139999050647,
+          0.004071499977726489,
+          0.004111299989745021,
+          0.004046700021717697,
+          0.00416469998890534
+        ]
+      },
+      "median_seconds": {
+        "prepared": 0.0037911999970674515,
+        "rebuilt": 0.004111299989745021
+      },
+      "median_difference_seconds": 0.0003200999926775694,
+      "scope": "50 identical local advances per sample; setup reuse only, not a solver or world speedup"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_separation_law.py": "0de553b4c6b2539f9132f99f9621bda63998c90466d6ddf3aa15e941ca019b02",
+    "tests/test_i01_separation_law.py": "d5c423bf9a26fc1ba21303e36697e47f8fd44ca88c1066ebd42d0e9fc127f9a8",
+    "cases/i01_separation_law_v1.json": "70f174fce531b77353e7e2c5ac7e319f45fcdee662195aa1c1c18eb3c9914d8b",
+    "docs/I01_SEPARATION_LAW.md": "4c6986149333eda4d3dceb7b9d760ed997a7f330c63749ecd3676422ddb23854",
+    "cases/i01_separation_decision_v1.json": "de5ae7e9385c1154c672f9346074cf0bc2cbff3517d00eb7ed19c712d2749f5f",
+    "docs/I01_SEPARATION_DECISION.md": "17d8b8f70581f3063c49839f2f8b703c41ec687da9f03d39f26caf3d7b61cabc"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.04521910002222285
+}

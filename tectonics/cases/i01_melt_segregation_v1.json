@@ -1,0 +1,74 @@
+{
+  "schema": "atlas.i01-melt-segregation-case.v1",
+  "status": "WORKING NON-CANON; SYNTHETIC CONTROL VALUES ONLY; EXECUTION STATUS IN CURRENT_STATE",
+  "contract": "atlas.two-phase-compaction-1d.v1",
+  "document": "tectonics/docs/I01_MELT_SEGREGATION.md",
+  "policy": {
+    "maximum_cells": 65536,
+    "maximum_cell_over_compaction_length": 0.25,
+    "balance_relative": 1e-12,
+    "compatibility_relative": 1e-12,
+    "pressure_relative": 1e-11,
+    "constant_coefficient_error_coefficient": 0.5,
+    "order_window": [1.8, 2.2],
+    "manufactured_error_cap": 0.01,
+    "discrimination_fraction": 0.25,
+    "gauss_points_per_cell": 8,
+    "timing_repetitions": 5,
+    "maximum_seconds": 120.0
+  },
+  "synthetic": {
+    "material": {
+      "solid_density_kg_m3": 3300,
+      "liquid_density_kg_m3": 2800,
+      "gravity_m_s2": 9.81,
+      "liquid_viscosity_pa_s": 1,
+      "shear_viscosity_pa_s": 3e18,
+      "bulk_viscosity_pa_s": 6e18,
+      "bulk_viscosity_reference_porosity": 0.01,
+      "bulk_viscosity_exponent": 1,
+      "permeability_m2": 1e-13,
+      "permeability_reference_porosity": 0.01,
+      "permeability_exponent": 3,
+      "provenance": {
+        "status": "SYNTHETIC control values: not an Atlas, Earth or Diadem calibration and not provider output",
+        "densities": "SYNTHETIC: 3300 and 2800 kg/m3, the illustration values listed in Spiegelman (1993) Table 1, held constant as individually incompressible phases",
+        "gravity": "SYNTHETIC: 9.81 m/s2 control value, not a planetary declaration",
+        "viscosities": "SYNTHETIC: melt 1 Pa s; matrix shear 3e18 Pa s and bulk 6e18 Pa s at 1% liquid with bulk viscosity proportional to 1/phi, chosen so that zeta + 4 eta/3 = 1e19 Pa s gives a 1 km compaction length. Power-law form after Keller & Katz (2016) Table 1, without their (1 - phi) factors, melt weakening or values",
+        "permeability": "SYNTHETIC: 1e-13 m2 at 1% liquid, cubic in the liquid volume fraction; the power-law form of Spiegelman (1993) eq. 5, not a calibrated grain size, geometric factor or percolation threshold"
+      }
+    },
+    "uniform_liquid_volume_fraction": 0.01,
+    "melting_rate_kg_m3_s": 1e-9,
+    "matrix_velocity_m_s": 1e-9,
+    "column_bottom_m": 0,
+    "column_top_m": 4000,
+    "column_provenance": "SYNTHETIC control state: uniform or declared analytic liquid volume fractions near 1% and melting rates of order 1e-9 kg m-3 s-1 on a 4 km column; not a provider state, a melting-column history or an observation",
+    "boundary_provenance": "SYNTHETIC control boundary data chosen to exercise each supported condition; not a physical extraction boundary, axial lid or observed upwelling rate"
+  },
+  "controls": {
+    "grids": [32, 64, 128],
+    "boundary_pairs": [["flux", "rigid"], ["flux", "flux"], ["rigid", "rigid"], ["rigid", "flux"], ["free_flux", "rigid"], ["flux", "free_flux"]],
+    "flux_values_m_s": {"bottom": 0.0, "top": 2e-10},
+    "stiff_viscosity_factor": 100,
+    "manufactured": {"fraction_amplitude": 0.2, "overpressure_pa": 5000000.0},
+    "injected_top_flux_over_buoyancy_flux": -2.0,
+    "dry_base_cells": 16,
+    "disconnected_ranges": [[0, 16], [48, 64]],
+    "balance": {"cells": 128, "grading_exponent": 1.3, "fraction_amplitude": 0.5, "dry_ranges": [[0, 16], [48, 64]]},
+    "porosity_basis": {"liquid_mass_fraction": 0.1, "liquid_volume_m3": 1.0, "solid_volume_m3": 9.0},
+    "reuse": {
+      "cells": 128,
+      "fraction_amplitude": 0.5,
+      "dry_base_cells": 16,
+      "loads": [
+        {"melting_rate_factor": 1.0, "liquid_density_kg_m3": 2800, "gravity_m_s2": 9.81, "matrix_velocity_m_s": 1e-9},
+        {"melting_rate_factor": 0.0, "liquid_density_kg_m3": 2800, "gravity_m_s2": 9.81, "matrix_velocity_m_s": 1e-9},
+        {"melting_rate_factor": 2.0, "liquid_density_kg_m3": 2900, "gravity_m_s2": 9.81, "matrix_velocity_m_s": 0.0},
+        {"melting_rate_factor": -1.0, "liquid_density_kg_m3": 2800, "gravity_m_s2": 3.71, "matrix_velocity_m_s": -1e-9}
+      ]
+    },
+    "timing": {"cells": [256, 4096], "loads": 16}
+  },
+  "source": "Authored manufactured and synthetic controls for the MC-03 melt-segregation closure selection. All material values are synthetic and labelled as such; the phase densities repeat the illustration values of Spiegelman (1993) Table 1 without adopting them. At the uniform 1% liquid volume fraction, k = K/mu = 1e-13 m2/(Pa s) and zeta + 4 eta/3 = 1e19 Pa s give a 1000 m compaction length, so the 32/64/128-cell grids on the 4 km column resolve h/delta = 1/8, 1/16 and 1/32. The melting rate 1e-9 kg m-3 s-1 gives a reaction-volume source Gamma (1/rho_f - 1/rho_s) of about 5.4e-14 per second, comparable in effect to the buoyancy-driven flux of about 4.9e-10 m/s. The manufactured state varies the liquid volume fraction by 20% with a cosine overpressure that vanishes at the rigid top. The balance state has a graded grid, a dry base, a disconnected wet segment, melting and freezing and a free-flux top. No observed region, provider state, calibration or planetary default."
+}

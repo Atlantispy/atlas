@@ -1,4 +1,8 @@
-"""Focused guards for I01 force-driven motion with thermal/weakening feedback; no native import.
+"""Focused guards for I01 force-driven motion with thermal/weakening feedback.
+
+Since I02.2a the force-balanced stage and its column, weakening, heat and motion dependencies are package-owned
+(atlas_tectonics._integration_*); the tools re-export those same objects and this tool keeps its own small-strain
+evolution, so these guards exercise the package implementation through the retained entry points.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 import dataclasses
