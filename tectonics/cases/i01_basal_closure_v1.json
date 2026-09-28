@@ -1,0 +1,107 @@
+{
+  "schema": "atlas.i01-basal-closure-case.v1",
+  "status": "WORKING_NON_CANON",
+  "task": "atlas-i01-mc04-basal-closure-20260927",
+  "kind": "decision_and_bounded_account_controls_not_production_configuration",
+  "contract_document": "docs/I01_BASAL_CLOSURE.md",
+  "refines": {
+    "matrix_item": "MC-04 of docs/I01_CLOSURE_MATRIX.md section 6.2 (read-only)",
+    "contract": "docs/I01_PHYSICAL_CONTRACT.md D4 moving-control-volume enthalpy balance and D6 event ownership (unchanged)",
+    "retained_route": "docs/I01_FINITE_STRAIN.md closed affine strip with a fixed material-base temperature stays the admitted closed route, unchanged"
+  },
+  "decision": {
+    "selected_law": "atlas.basal-inflow-closure.v1",
+    "configuration": "plane-strain box of width W and base depth z_b below the initial surface; retained 100 km lithosphere over named asthenosphere; reference z_b = 150 km (a 50 km asthenosphere layer)",
+    "mechanical_base": "fixed Eulerian base (w = 0): normal velocity prescribed, uniform along the base (u.n = -u_in); tangential traction zero, tangential velocity solved; the normal traction is the solved reaction",
+    "sides": "normal velocity prescribed outward (v_L, v_R >= 0); tangential traction zero; mesh moves only tangentially (w.n = 0); insulating",
+    "top": "free surface: zero normal and tangential traction; mesh normal velocity equals the material normal velocity (impermeable material surface); fixed surface temperature; no surface diffusion in this law",
+    "pressure": "no normalisation; the traction-free surface fixes the absolute pressure; no constant-pressure nullspace; no compatibility constraint on prescribed fluxes because the free surface absorbs the net flux as domain-volume change",
+    "reference_rule": "u_in = (v_L + v_R) z_b / W: the ASPECT continental-extension Function expression v*2*d/w applied at the deeper base; a prescribed reference configuration, not the force-driven coupling",
+    "force_driven_coupling": "later: side velocities from the D1/I04/I09 force balance each interval with the same component structure; the side reactions become the D1 regional reactions; not implemented or validated here",
+    "incoming_state": "named asthenosphere (never crust or ocean crust), solid, actual boundary temperature T_b = 1613 K, Boussinesq reference density 3300 kg/m3, Cp 750 J/kg/K, zero raw plastic history, entry interval and source recorded; potential temperature refused because the selected Boussinesq energy law has no adiabatic term",
+    "datum": "caloric specific energy e = Cp (T - T_ref) with one datum T_ref = 273 K for every stream, cohort, source and receiver; the pressure flow work P/rho belongs to the mechanical ledger",
+    "thermal_boundary": "Dirichlet temperature and fixed composition only where material enters (and temperature on impermeable parts); outflow carries the actual outgoing state with zero conductive flux at an outflow base",
+    "balance": "moving control volume of incompressible constant-density material: dV = sum of swept volumes (w.n) = inflow - outflow ((u - w).n); inflow equals outflow only when dV = 0; mismatches are refused, never corrected",
+    "established": "the boundary specification (one prescribed quantity per component, a necessary check and not a proof of well-posedness) and its account arithmetic on supplied or manufactured fluxes, with cohort inventories bound to the domain volume, conduction bound to each segment's thermal condition and endpoint proposals bound to their account; one exact analytical Newtonian pure-shear control of the mechanical ledger in a homogeneous box; not a numerical Stokes solution, a resolved neck, melting or breakup",
+    "not_selected": [
+      "ASPECT's own base at the lithosphere base (100 km): refused for the separation experiment by the cookbook's statement that it cannot represent breakup without an upwelling asthenosphere layer; admitted only as the classical I05 passive-upwelling special case and as a control",
+      "Winkler basal foundation (Brune et al. 2014, citing Popov and Sobolev 2008): formulation not read, so not specified; a comparison arm only after it is read and specified",
+      "free-slip impermeable base (Brune et al. 2014 alternative): the sections read do not state its side-mesh convention or volume balance, so it is not specified"
+    ]
+  },
+  "interfaces": {
+    "i07_resolved_boundary": "resolved_prescription(configuration): per-segment velocity/traction components, mesh convention, inflow-only Dirichlet temperature and composition, pressure datum, work ownership and the solver outputs required (reaction tractions, free-surface swept volume, per-segment crossing volumes with actual outgoing temperatures, conductive heat per segment, dissipation, gravity work, domain volume at both ends); status BOUNDARY_PRESCRIPTION_ONLY",
+    "i05_open_domain_cohorts": "strip_open_base: the accepted affine strip in pure shear about the stationary surface over the full depth to a fixed base z_b >= h0, material-following sides; the lithosphere base h0/lam must lie at or above z_b at both endpoints (equality admitted), otherwise the missing lithosphere-export route is refused and nothing is exported as asthenosphere; base volume w0 z_b |lam1 - lam0|; each inflow becomes a named asthenosphere cohort with zero raw plastic history, entry interval, source and entry temperature; shortening exports the actual outgoing state; material-following sides book no lateral conduction because the strip supplies none; the closed strip route is refused here and stays unchanged",
+    "accounts": "propose_interval(account): supplied interval fluxes booked into proposed source debits, receiver credits, domain cohort deltas and new inflow cohorts, with volume, component, caloric and mechanical ledgers; the start cohorts must fill the start domain volume and the end cohorts the end volume at their constant reference densities (never rescaled); each segment's conduction must obey the law's thermal condition for its kind and actual flow regime, from the table resolved_prescription uses; the proposal records the start inventory it was booked against; atomic refusal; status PROPOSED_NOT_COMMITTED; persistence and once-only commit belong to I02",
+    "diagnostic": "diagnose_endpoint(account, proposal, end masses, end energy, end volume): recomputes the proposal from the account and refuses any difference (foreign parent or interval, account edited after booking, edited deltas), so no status, law or claimed digest authenticates contents; then compares the supplied end volume with the booked end volume, the supplied inventory with that volume, per-cohort masses and the total caloric energy; consistency of supplied data, not a flow solution"
+  },
+  "work_ownership": [
+    "side normal reaction x prescribed side velocity: exterior plates (prescribed reference now; D1 regional reaction later); mechanical ledger only",
+    "side and base tangential traction: zero by the law; no work",
+    "basal normal reaction x inflow, including the flow work P/rho of entering rock: exterior asthenosphere account; mechanical ledger only, never heat",
+    "free-surface traction: zero; water or sediment loads are separately owned D5/I08 exchanges",
+    "D1 basal drag on the resolved footprint: replaced by the resolved asthenosphere; not applied twice",
+    "gravity: D1/D5 GPE ledger",
+    "interior dissipation: mechanical sink; heat once as heat_fraction x dissipation (IN-05)",
+    "elastic storage: not in this viscoplastic configuration; open with the MC-01 elastic-memory choice"
+  ],
+  "units": {
+    "length": "m",
+    "time": "s; ASPECT inputs in m/yr are converted with its 365.2425-day year",
+    "velocity": "m/s; normal components positive outward",
+    "volume": "m2 per metre of strike",
+    "mass": "kg per metre of strike",
+    "energy": "J per metre of strike",
+    "temperature": "K, actual; potential temperature refused",
+    "stress": "Pa; normal stress positive in tension",
+    "specific_energy": "J/kg, Cp (T - T_ref) at the common datum"
+  },
+  "control_policy": {
+    "maximum_seconds": 10.0,
+    "closure_relative": 1e-12,
+    "oracle_relative": 1e-12,
+    "temperature_window_k": [273.0, 1613.0],
+    "stretch_window": [0.6, 1.4],
+    "speed_limit_m_s": 1e-8,
+    "scope": "one kinematic asthenosphere-inflow base for the declared regional rifting box; boundary prescription and moving-control-volume accounts on supplied or manufactured interval fluxes; finite proposals with atomic refusal; I05 open-base strip adapter; one exact analytical pure-shear control of the mechanical ledger; not a numerical Stokes, transport, melting or breakup solution"
+  },
+  "control_parameters": {
+    "configuration": {"width_m": 200000.0, "base_depth_m": 150000.0, "lithosphere_thickness_m": 100000.0,
+                      "side_velocity_m_per_aspect_year": 0.0025, "aspect_year_s": 31556952.0,
+                      "surface_temperature_k": 273.0, "base_temperature_k": 1613.0, "datum_k": 273.0,
+                      "gravity_m_s2": 9.81},
+    "cookbook": {"width_m": 200000.0, "depth_m": 100000.0, "side_velocity_m_per_aspect_year": 0.0025},
+    "asthenosphere": {"name": "asthenosphere", "density_kg_m3": 3300.0, "heat_capacity_j_kg_k": 750.0,
+                      "components": {"asthenosphere": 1.0}},
+    "interval_aspect_years": 1000000.0,
+    "exterior_source_mass_kg": 1e13,
+    "dissipation_j": 1e15,
+    "heat_fraction": 1.0,
+    "datum_shifts_k": [0.0, 1000.0],
+    "under_balance_factor": 0.8,
+    "corner_offset_m": 500.0,
+    "surface_slope": -0.01,
+    "reversed": {"base_outward_velocity_m_per_aspect_year": 0.001, "outgoing_temperature_k": 1605.0,
+                 "cohort_mean_temperature_k": 1600.0, "cohort_temperature_range_k": [1590.0, 1610.0]},
+    "strip": {"reference_width_m": 100000.0, "stretch_start": 1.0, "stretch_extension": 1.2,
+              "stretch_compression": 0.9},
+    "pure_shear": {"viscosity_pa_s": 1e21}
+  },
+  "parameter_provenance": {
+    "configuration": "width 200 km, side velocity 0.25 cm/yr, 1613 K bottom and 273 K top: ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, read 27 September 2026); base depth 150 km: the domain depth of Brune et al. (2014) Methods, whose asthenosphere layers below their 120/105/90 km lithosphere variants span 30-60 km; the 50 km layer here lies inside that range; lithosphere 100 km, gravity and densities: retained cases/i01_weakening_v1.json; ASPECT year 365.2425 days: ASPECT global parameters; datum 273 K: the retained surface temperature and the cookbook's Visco Plastic reference temperature",
+    "cookbook": "the cookbook's literal box (200 x 100 km, 0.25 cm/yr, bottom velocity v*2*d/w) used only for the constant-volume control and as the refused separation base",
+    "asthenosphere": "density 3300 kg/m3 and heat capacity 750 J/kg/K: the cookbook's background material and the retained mantle and thermal layers, checked against the retained cases at run time; the constitutive law of the incoming material is an IN-04 input of the resolved neck and is not selected here",
+    "retained_state": "layer thicknesses, densities, linear geotherm (273/633/893/1013/1613 K), heat capacities, radiogenic heat and the cookbook heat flows 0.055/0.030 W/m2 are read from retained cases at run time, never duplicated",
+    "manufactured": "interval 1 Myr, stock 1e13 kg/m, dissipation 1e15 J/m, heat fraction 1, under-balance 0.8, corner offset 500 m, slope -0.01, reversed velocity 0.1 cm/yr and its 1590-1610 K cohort, strip stretches 0.9/1.0/1.2 and the flat-surface, unthinned-side states are authored control inputs for account arithmetic, not a solution or a calibration; the gravity work of these box accounts is set to close their ledger, so they are not a sign test",
+    "pure_shear": "viscosity 1e21 Pa s is an authored constant for the exact homogeneous Newtonian pure-shear control, not a rheology selection (IN-04); its strain rate (v_L + v_R)/W, density 3300 kg/m3, gravity, width and height z_b are the configuration's, so its basal inflow a z_b is the selected reference rule; its isothermal thermal entries are declared and not tested",
+    "gates": "closure and oracle tolerances 1e-12 are round-off bounds for short correctly rounded sums (at most about 65 eps of the gross scale); the speed limit 1e-8 m/s is a unit guard above plate speeds, not a physical bound; the temperature and stretch windows are the accepted strip's"
+  },
+  "blocked": {
+    "i07_closure_tolerance": "the resolved-domain account-closure tolerance must be predeclared with the I07 run from its solver tolerances, including the conduction a resolved run reports where the law requires exactly zero; this tool fixes only the analytical 1e-12 and exact zeros",
+    "base_depth_sensitivity": "I07 must report the three separation diagnostics at z_b = 150 km and a deeper base with the same law, as a sensitivity, never tuned",
+    "winkler_or_free_slip_comparison": "needs the SLIM3D Winkler formulation (Popov and Sobolev 2008, not read) and the side-mesh convention of Brune's free-slip test",
+    "interior_melting": "1613 K asthenosphere decompressed without adiabatic cooling crosses the retained dry solidus near 2.08 GPa; a resolved run reaching such states needs MC-03 or must refuse",
+    "force_driven_sides": "side velocities from the D1 force balance (I04/I09)"
+  },
+  "acceptance_claim": "Passing demonstrates only that the selected basal law is specified with exactly one condition per component; that its prescription and moving-control-volume accounts close on supplied or manufactured fluxes against exact rational and closed-form oracles, with inventories bound to domain volume and conduction bound to each segment's thermal condition; that the mechanical ledger closes on traction, gravity and dissipation powers derived independently from one exact Newtonian pure-shear field of a homogeneous box and refuses sign and double-count errors; that endpoint proposals are bound to their account by recomputation; that the I05 strip keeps its lithosphere above the base; that finite sources and cohorts refuse atomically; and that invalid, incompatible or unowned inputs are refused. Component counting and account closure do not prove general well-posedness. It is not a numerical Stokes or transport solution, not a resolved neck, not a melting or breakup result and not a calibration; MC-01 and the I07 sensitivity comparison remain open."
+}

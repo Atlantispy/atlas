@@ -1,0 +1,193 @@
+{
+  "schema": "atlas.i01-initiation-decision.v1",
+  "version": 1,
+  "date": "2026-09-28",
+  "status": "WORKING_NON_CANON",
+  "kind": "design_test_specification_not_runnable_configuration_or_evidence",
+  "method": "tectonics/docs/I01_INITIATION_DECISION.md",
+  "decision": "resolved_time_dependent_regional_elasto_visco_plastic_initiation",
+  "mc02_status": "METHOD_SELECTED_BENCHMARK_INPUTS_INCOMPLETE",
+  "implementation_owner": "I07",
+  "scientific_acceptance": false,
+  "generated_initiation_enabled": false,
+  "selected_assumptions": {
+    "geometry": "declared inherited weak interface, polarity and actual incoming material; no spontaneous fault or global split claim",
+    "elasticity": "incompressible logarithmic-objective branch; fixed positive material G; general noncoaxial implementation remains required",
+    "plastic_history_rate": "2*sqrt(Dp:Dp/2); equivalent engineering plastic shear; zero healing; preserve raw kappa separately from total logarithmic strain",
+    "yield_convention": "D2 plane strain: C*cos(phi)+max(P_lith+P_dynamic-P_pore,0)*sin(phi); zero dilatancy; declared positive regularisation viscosity",
+    "pore_pressure": "lambda_p*P_lith at current common-datum column; material-carried lambda_p in [0,1]; prescribed scenario, not fluid evolution",
+    "weakening": "linear C and friction angle versus min(kappa_bar/kappa_f,1), explicit residuals, fixed physical ell Helmholtz filter and explicit inflow/closed boundaries",
+    "weak_path": "fully weakened constitutive branch surface-to-base connectivity; uncertain support UNRESOLVED; not material separation",
+    "resistance": "resolved boundary reaction and accounts; no added authored R or extra bending resistance",
+    "surface_and_base": "D5 common datum/load and MC-04 moving-volume/thermal/material boundary accounts"
+  },
+  "release_protocol": {
+    "status": "PROSPECTIVE_ATLAS_TEST_NOT_GURNIS_EXPERIMENT",
+    "parent": "exact same accepted geometry, inventory, thermal, plastic and elastic state",
+    "boundary_change": "replace imposed driving velocity with zero driving traction; retain declared physical reference/support pressure, not zero velocity",
+    "driving_audit": "all remaining imposed positive driving work and energy/material ports explicit; no hidden mantle or basal drive",
+    "classification": ["FORCED_INCIPIENT", "UNFORCED_CONTINUATION_OVER_WINDOW", "STALLED_OR_REVERSED", "UNRESOLVED"],
+    "requires": ["predeclared finite window and material downward-flux support", "continued sinking and actual incoming transfer", "gravitational release distinguished from elastic rebound", "closed work, heat and stock accounts", "resolved spatial and temporal error"],
+    "live_world_mutation": false,
+    "indefinite_self_sustain_claim": false
+  },
+  "published_comparisons": {
+    "source": "https://doi.org/10.1029/2003GC000681",
+    "original_pdf": "https://authors.library.caltech.edu/records/p4ehh-qw433",
+    "source_pdf_sha256": "c4f1834908bb1e0a3f520a0b810e8fe967352075e97950504c54cb9ad8e1287d",
+    "status": "NOT_RUN_INPUT_RECONCILIATION_REQUIRED",
+    "case23_table3": {
+      "ages_Myr": [10, 40],
+      "age_order": ["left_overriding", "right_subducting"],
+      "plate_roles_source": "Figure 13 caption p22 and section 4.4 paragraph60 pp22-23; older plate underthrusts younger",
+      "domain_km": [1000, 300],
+      "one_side_speed_cm_per_year": 2,
+      "mesh_km": 1,
+      "paper_weakening_strain": 0.5,
+      "crust_included": false,
+      "reported_critical_convergence_km": 109,
+      "reported_work_J_per_m": 1.17e17,
+      "use": "source comparison only; neither a generator trigger nor an Atlas calibrated parameter"
+    },
+    "source_parameters": {
+      "status": "SOURCE_EXPLICIT_NOT_COMPLETE_SOLVER_INPUTS",
+      "source_location": "Table 2 p13; case23-specific eta0, eta_min and Tm from Table 3 p14",
+      "initial_cohesion_Pa": 44000000,
+      "initial_friction_coefficient": 0.6,
+      "shear_modulus_Pa": 3e10,
+      "bulk_modulus_Pa": 5e10,
+      "creep_exponent": 3.05,
+      "reference_strain_rate_per_s": 1e-15,
+      "reference_viscosity_Pa_s": 5e19,
+      "minimum_viscosity_Pa_s": 1e18,
+      "maximum_viscosity_Pa_s": 3e27,
+      "creep_reference_temperature_C": 1400,
+      "case23_mantle_temperature_C": 1400,
+      "surface_temperature_C": 0,
+      "reference_density_kg_per_m3": 3200,
+      "thermal_expansion_per_K": 3e-5,
+      "derived": {
+        "basis": "SOURCE_DERIVED",
+        "initial_friction_angle": "atan(0.6), in radians; not exactly 30 degrees",
+        "young_modulus_Pa": 7.5e10,
+        "poisson_ratio": 0.25,
+        "elastic_conversion": "E=9KG/(3K+G); nu=(3K-2G)/(2*(3K+G))",
+        "creep_reference_temperature_K": 1673.15,
+        "constant_convergence_km_per_Myr": 20
+      },
+      "creep_equation": "eta=eta0*(strain_rate_II/strain_rate0)^(1/n-1)*exp[H/(n*R)*(1/T-1/T0)]",
+      "creep_equation_source": "Eq6 p12; absolute temperatures; H and R in consistent molar-energy units; strain-rate invariant normalisation unresolved",
+      "use": "published parameter facts; finite K is not Atlas incompressible elasticity, and these values do not complete any missing profile or convention"
+    },
+    "source_definition_gaps": {
+      "basal_temperature": {
+        "status": "CONFLICT",
+        "prose_C": 1500,
+        "prose_source": "section3 paragraph35 p12",
+        "case23_mantle_C": 1400,
+        "figure_condition": "Figure5 p13 labels base T=Tm but expressly illustrates Case15",
+        "adopted_basal_temperature_C": null
+      },
+      "driven_side": {
+        "status": "INFERRED",
+        "candidate": "right driven, left stationary",
+        "basis": "Figure5 schematic and one-side Table3 entry, not a case-specific boundary function",
+        "velocity_profile": null
+      },
+      "missing": [
+        "activation_parameter_H, thermal_diffusivity and gravity numerical values",
+        "case23 residual cohesion and friction angle",
+        "initial weak-plane strain amplitude, width, depth, taper and assignment",
+        "initial stress, topography and pressure/density reference implementation",
+        "case-specific side-velocity profiles and boundary work extraction",
+        "full thermal profiles, basal-temperature reconciliation and heat-equation terms",
+        "plastic flow and accumulated-plastic-strain convention/conversion",
+        "pore-pressure field or equivalent intrinsic/effective-friction convention",
+        "force integration support, side combination and critical-work stopping rule"
+      ],
+      "no_inheritance_default": "Lavier2000 model constants and Figure10 homogeneous-case residuals are not established Case23 inputs"
+    },
+    "reported_graphical_readings": {
+      "status": "NOT_ADMITTED_INCOMPLETE_EXTRACTION_PROVENANCE",
+      "basis": "Complete existing 28-sample JSON received inline; source hash matches. Extraction script, coordinate calibration and exact vector selection were not retained",
+      "reported_method": "Original vector polyline intersections in a horizontal half-stroke-width band, widened vertically by half stroke width. Outward-rounded 0.01e12 force intervals. These are graphical reading bands, not numerical simulation uncertainty or scientific acceptance tolerances. Figure13a time mapped to nominal convergence using 20 km/Myr. No smoothing.",
+      "extraction_provenance_missing": [
+        "PDF panel rectangles, tick anchors, coordinate orientation and affine transforms",
+        "vector object/path identifiers, selection/colour/clipping rules and original vertices",
+        "PDF stroke widths and vertical force half-widths",
+        "endpoint, vertical-segment and multiple-intersection handling",
+        "executable script, command and parser/library versions",
+        "unrounded force extrema and centreline values"
+      ],
+      "force_rounding_increment_N_per_m": 1e10,
+      "ordinate_unit": "1e12 N/m",
+      "abscissa_unit": "km cumulative convergence",
+      "uncertainty_kind": "graphical reading intervals only; not physical error, numerical convergence error or acceptance allowances",
+      "figure8b_p17": {
+        "convergence_km": [5, 10, 20, 30, 40, 50],
+        "reported_horizontal_halfwidth_km": 0.1774548014942117,
+        "curve_ids": ["figure8b_case1", "figure8b_case5"],
+        "reported_curve_colours": ["red", "black"],
+        "case1_total_rate_cm_per_year": 1,
+        "case5_total_rate_cm_per_year": 2,
+        "case1_left_force_intervals": [[2.94, 3.02], [3.00, 3.07], [1.96, 2.14], [1.03, 1.15], [0.83, 0.92], [0.74, 0.87]],
+        "case5_left_force_intervals": [[3.03, 3.12], [3.09, 3.16], [2.27, 2.43], [1.07, 1.19], [0.90, 1.02], [0.81, 0.91]]
+      },
+      "figure13a_p22": {
+        "convergence_km": [10, 20, 40, 60, 80, 100, 109, 120],
+        "reported_horizontal_halfwidth_km": 0.46882568520171836,
+        "curve_ids": ["figure13a_case23_right40Myr", "figure13a_case23_left10Myr"],
+        "reported_curve_colours": ["blue", "red"],
+        "time_conversion": "time_Myr*20 km/Myr, derived from Table3 one-side2cm/year",
+        "right_subducting_force_intervals": [[2.09, 2.27], [1.60, 1.70], [1.05, 1.16], [0.83, 0.95], [0.64, 0.77], [0.17, 0.33], [0.07, 0.23], [0.23, 0.37]],
+        "left_overriding_force_intervals": [[1.22, 1.40], [0.63, 0.69], [-0.07, 0.00], [-0.33, -0.27], [-0.59, -0.53], [-0.99, -0.93], [-1.16, -1.08], [-0.98, -0.88]]
+      },
+      "work_comparison": "NOT_ADMITTED; sparse drawn-curve readings and unresolved force/work conventions cannot reproduce tabulated critical work",
+      "reference_curve_populated": false
+    },
+    "rate_pair": "Figure 8b, cases 1/5; compare force against convergence, not matching elapsed time",
+    "mesh_pair": "Figure 8a, cases 3/4; source mesh-linked weakness, not fixed-length convergence evidence",
+    "excluded_pair": "Figure 9 case labels conflict with Table 3; reconcile before use",
+    "convention_warning": "paper Eq3 weakens friction angle and uses its own accumulated-plastic-strain convention; convert before comparison",
+    "model_difference": "source compressible FLAC-style, velocity-driven, mesh-linked localisation versus Atlas incompressible physical-length route"
+  },
+  "predeclared_checks": [
+    {"id": "IN-SHEAR", "status": "NOT_RUN", "expected": "engineering-shear factor preserved; raw plastic history distinct from reversible stretch"},
+    {"id": "IN-MEMORY", "status": "NOT_RUN", "expected": "rigid-rotation objectivity and unload/reload energy consistency for general solver"},
+    {"id": "IN-LOAD", "status": "NOT_RUN", "expected": "analytic elastic-load interior stresses; zero-stress and load-edge singularities handled explicitly"},
+    {"id": "IN-PRESSURE", "status": "NOT_RUN", "expected": "datum consistency; pore pressure applied once; effective coefficient plus pore weakening refused"},
+    {"id": "IN-REFINEMENT", "status": "NOT_RUN", "expected": "h/h2/h4, timestep and rotated mesh at fixed physical law; report force curve, peak, work, width, connectivity and event brackets"},
+    {"id": "IN-RELEASE", "status": "NOT_RUN", "expected": "forced and released branches from same parent; no live inventory mutation; early rebound not accepted as gravitational continuation"},
+    {"id": "IN-REFUSAL", "status": "NOT_RUN", "expected": "unsupported inputs or ambiguous fields give UNRESOLVED; no distance trigger, invisible drive, material deletion or double resistance"}
+  ],
+  "required_before_campaign": [
+    "complete initial interface, material and boundary profiles",
+    "thermal and creep constants with tensor/unit conventions",
+    "residual strength assignments and provenance",
+    "physical ell, inherited width and plastic regularisation viscosity",
+    "locked numerical and curve-comparison allowances, including extraction uncertainty",
+    "release window, flux support, reference-pressure work and refinement criteria"
+  ],
+  "benchmark_protocol": {
+    "track": "ATLAS_REGULARISED",
+    "inputs": {
+      "interface_geometry": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "material_assignment": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "mechanical_boundaries": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "thermal_profiles": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "creep_laws": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "elastic_constants": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "strength_history": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "pressure_convention": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "plastic_strain_conversion": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "physical_regularisation": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "release_window_and_flux": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "release_work_ports": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false},
+      "refinement_policy": {"basis": "MISSING", "definition": null, "source": null, "locator": null, "reviewed": false}
+    },
+    "reference_curve": null,
+    "comparison_policy": null
+  },
+  "existing_evidence_rule": "i01-transitions-r2 and i01-elastic-memory-r1 retain their original bounded scope; neither validates this design",
+  "efficiency": "immutable parent reuse; branch-owned mutable state; valid sparse structure reuse; bounded diagnostics/checkpoints; independent cases parallel only within resource budget; no measured saving"
+}

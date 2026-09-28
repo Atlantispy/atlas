@@ -1,0 +1,66 @@
+{
+  "schema": "atlas.i01-junction-events-control.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "generated_reorganisation": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_junction_events.py": "df5e5d375803b5588b17e6a8447f90a7a9860bc2d4e3e86a572f0e9c3590a2e3",
+    "tests/test_i01_junction_events.py": "64c6fa218cfb678890e701e0c726d56568279884d978ee4143d0ef1ed7f78d2a",
+    "cases/i01_junction_events_v1.json": "43682ffe0c29cd70804ac4c94aa0472660315979627f10e68ada39755b762ccb",
+    "docs/I01_JUNCTION_EVENTS.md": "3c805bda5d353e8f37d6d57faeecdf6ed53c5ce96d926d65aa29b304f8353f69"
+  },
+  "passed": true,
+  "checks": {
+    "exact_double_root": true,
+    "no_sign_change_needed": true,
+    "no_past_replay_claim": true,
+    "endpoint_contact_distinct": true,
+    "near_miss_preserved": true,
+    "persistent_contact_distinct": true,
+    "moving_frame_invariant": true,
+    "no_topology_permission": true,
+    "exact_reuse_parity": true
+  },
+  "event": {
+    "status": "COLLISION_CANDIDATE_NOT_REORGANISED",
+    "parent_id": "manufactured-parent",
+    "edge_id": "shared-edge",
+    "offset_s_exact": {
+      "numerator": "4",
+      "denominator": "1"
+    },
+    "trajectory_model": "affine_planar_junction_paths_v1",
+    "topology_change_authorised": false
+  },
+  "benchmark": {
+    "seconds": {
+      "prepared": [
+        0.0022487000096589327,
+        0.0021850999910384417,
+        0.0021818000241182745,
+        0.002160999982152134,
+        0.0021594000281766057
+      ],
+      "rebuilt": [
+        0.01462769997306168,
+        0.014105200010817498,
+        0.014179899997543544,
+        0.014070099976379424,
+        0.01433299999916926
+      ]
+    },
+    "medians_s": {
+      "prepared": 0.0021818000241182745,
+      "rebuilt": 0.014179899997543544
+    },
+    "saved_s": 0.011998099973425269,
+    "saved_percent": 84.6134315157636,
+    "scope": "1000 queries on identical supplied paths; preparation reuse only, not solver/world speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.130276000010781
+}

@@ -1,6 +1,6 @@
 # Current evidence register
 
-27 September 2026. WORKING NON-CANON. Roadmap Phase A2.
+28 September 2026. WORKING NON-CANON. Roadmap Phase A2.
 
 Old receipts remain useful history, but documentation must not present one as
 evidence about the current checkout after the bytes it bound have changed. The
@@ -37,6 +37,98 @@ results remain observations of the original run. Nothing is re-executed.
 
 ## Coverage today
 
+- **Current connected 3D regional evolution:** [new receipt](../tectonics/evidence/regional-evolution3d-r1.json)
+  binds the package, all three new test modules and the method/tool. Nine joined
+  tests pass in 19.8664455 s; twelve transport and thirteen heat tests separately
+  pass in 6.569 s and 7.460 s. The receipt's tests and matched timing pass in
+  25.9262947 s. Its small 3x3x3 quiescent fixture takes 1.1233156 s rebuilt versus
+  0.5050915 s prepared: 0.6182241 s / 55.04% saved with bit-identical outputs.
+  This is first-order fixed-box Boussinesq material/thermal evolution and
+  constitutive/force feedback, not elastic-tensor, free-surface or planetary
+  acceptance. See [method and consulted sources](../tectonics/docs/REGIONAL_EVOLUTION_3D.md).
+
+- **Current 3D regional mechanics:** [six controls](../tectonics/evidence/regional3d-r1.json)
+  bind the implementation, all package source files, its method and focused tests.
+  Eleven element tests and thirteen solver tests pass (0.020 s and 4.899 s).
+  The small 4x4x4 check passes in 1.7613544 s, including exact fields and
+  bit-identical reuse. Median rebuilt/prepared/cached calls take
+  0.2708626/0.0845028/0.0392329 s: preparation saves 0.1863598 s (68.80%),
+  exact-result reuse 0.2316297 s (85.52%). This is fixed-region mechanics and
+  finite-mode force feedback, not geological history or planetary acceptance.
+  The source checker does not verify the recorded native execution identity.
+  The later transport/heat/evolution module additions change package identity;
+  this unchanged receipt retains its original mechanical measurement scope,
+  not current whole-package runtime acceptance.
+
+- **Current I01 elastic-core connection:** [six controls](../tectonics/evidence/i01-elastic-core-r1.json)
+  pass in 0.184093 s; eighteen focused tests pass in 0.246 s. One declared rock
+  layer produces both bending rigidity and the depth at which load is carried
+  sideways. Independent smooth-pressure/Fourier checks support the
+  [bounded MC-07 selection](../tectonics/docs/I01_ELASTIC_CORE.md), not inference
+  from a thermal/strength profile or arbitrary curved-plate acceptance. At 16,384
+  cells the added median cost is 0.0201 ms (1.57%); this short comparison is not
+  a speedup or a world-runtime estimate. I04/I08 retain spherical and boundary work.
+- **Current I01 outgoing ridge prerequisite:** [nine controls](../tectonics/evidence/i01-ridge-junction-r1.json)
+  pass in 0.169193 s; nine focused tests pass in 0.002 s. Exact symmetric-ridge
+  endpoint constraints and ownership-oriented growth reject incompatible,
+  stationary or reversed local continuations. [Method and sources](../tectonics/docs/I01_RIDGE_JUNCTION.md)
+  distinguish local feasibility from boundary birth and complete geometry.
+  Preparation reuse saves 23.8007 ms (97.8796%) for 300 repeated length queries,
+  not a world-run speedup. MC-05 remains open.
+- **Current I01 junction-contact prerequisite:** [nine controls](../tectonics/evidence/i01-junction-events-r1.json)
+  pass in 0.130276 s; ten focused tests pass in 0.001 s. Exact affine planar
+  contact detection catches a double root without a sign change and preserves
+  tiny near misses. Reusing the prepared path saves 11.9981 ms (84.613%) over
+  1,000 repeated queries, not a world-solver speedup. [Method and sources](../tectonics/docs/I01_JUNCTION_EVENTS.md)
+  distinguish this implemented helper from physical reorganisation, graph edits
+  and later moving-world integration, which it does not provide.
+- **Current I01 water-to-GPE connection:** [eight controls](../tectonics/evidence/i01-water-gpe-r1.json)
+  pass in 0.2123609 s after imports; nineteen focused tests pass in 0.207 s.
+  Dry/Airy/uniform limits, finite-flexure Fourier fields, datum changes and
+  independent pressure integrals check the join. Negative depth refuses; small
+  nonuniform support cannot bypass the shear-depth requirement. At 16,384 cells,
+  the join and traction take a median 1.644 ms, with no baseline saving claimed.
+  [Method and sources](../tectonics/docs/I01_WATER_GPE.md) leave the material
+  producer to the separate elastic-core connection above; weak/broken plate-boundary
+  assembly remains later work. The original receipt has not been rewritten.
+- **Current I01 elastic-memory control:** [nine checks](../tectonics/evidence/i01-elastic-memory-r1.json)
+  pass in 0.1475084 s, with twelve focused tests in 0.002 s. The future rift
+  retains stored stress; the exact local update separates stored energy from heat
+  and rejects general shear. Prepared coefficients give bit-identical results,
+  saving 3.189 ms (34.781%) over 2,000 updates in the bounded benchmark, not a
+  whole-generator speedup. [Method and sources](../tectonics/docs/I01_ELASTIC_MEMORY.md)
+  distinguish this coaxial control from the later general finite-strain implementation.
+- **Current I01 basal closure:** [reviewed controls](../tectonics/evidence/i01-basal-closure-r1.json)
+  bind four new files and three retained cases. Fifty focused tests pass in
+  0.087 s; all eight controls pass in 0.0237441 s. Geometry-bound inventories,
+  thermal boundary conditions, endpoint-account matching and strip containment
+  are checked. An independently integrated exact Newtonian flow tests traction,
+  gravity and dissipation signs. This selects MC-04's boundary/account contract,
+  not a numerical flow solution or coupled I05/I07 acceptance. Sources and
+  deferred resolved checks are in the [method](../tectonics/docs/I01_BASAL_CLOSURE.md).
+- **Current I01 lateral-conduction criterion:** [bounded controls](../tectonics/evidence/i01-lateral-heat-r1.json)
+  bind the four new files. Twelve focused tests pass in 0.876 s; ten control
+  checks pass in 0.0710187 s. The analytical error is 0.1498426 K against an exact
+  0.15 K bound. This selects a conditional semi-discrete thermal criterion,
+  not omission throughout a coupled neck; [assumptions and sources](../tectonics/docs/I01_LATERAL_HEAT.md)
+  remain explicit. No solver-speed improvement or old-receipt rewrite is claimed.
+- **Current I01 breakup analytical feasibility:** [reviewed controls](../tectonics/evidence/i01-breakup-closure-r1.json)
+  bind the four delivered files and retained dependencies/receipt. Thirty-seven
+  tests pass in 1.228 s; all five controls pass in 0.5484289 s. Exact continuum
+  pinch-off is supported only for the declared fixed power law and quadratic
+  weakness; spatial refinement covers the first detection level, not every rung.
+  Resolved events and retained-lithosphere breakup remain UNRESOLVED. Corrected
+  plastic asymptotics, explicit n>4 refusal, in-solver deadlines and immutable
+  bounded quadrature reuse are checked. No generated event or world acceptance.
+- **Current I01 reversible pressure/energy connection:** [pressure-work controls](../tectonics/evidence/i01-phase-pressure-r2.json)
+  bind the method/tool/test/case and corrected partition provider. Thirteen tests
+  pass; the campaign passes in 0.6031263 s. Independent pure work integrals,
+  binary pressure integration and the receiver connection distinguish enthalpy
+  change from external work. Matched 40-call medians: 0.0282109 s Newton versus
+  0.1398615 s bisection, saving 0.1116506 s / 79.83%, parity 1.07e-8 K.
+  Stable minority-component arithmetic fixes the false near-liquidus refusal;
+  heat and entropy inversion pass 1e-6 K inside both phase boundaries. No tolerance
+  relaxation, mantle calibration or native delivery is claimed; r1 is historical.
 - **Current I01 finite-strain admission:** [reviewed controls](../tectonics/evidence/i01-finite-admission-r1.json)
   bind the new tool/test/case/method and unchanged retained providers/receipts.
   Nineteen tests pass in 0.416 s; all five controls in 1.9174636 s. Review closed
@@ -44,25 +136,27 @@ results remain observations of the original run. Nothing is re-executed.
   takes 0.0027452 s versus 0.1439293 s per 40 calls: 0.1411841 s / 98.09% saved,
   identical answers, evolution excluded. Conditional represented-column bound,
   not rupture, restart or world acceptance; see [scope](../tectonics/docs/I01_FINITE_ADMISSION.md).
-- **Current I01 compatible magma receiver:** [finite-receipt control](../tectonics/evidence/i01-magma-receiver-r1.json)
-  binds the new tool/test/case/method and unchanged phase-energy providers. Thirteen
-  tests and the 0.1822241 s campaign pass, including independent crystallisation,
+- **Current I01 compatible magma receiver:** [finite-receipt control](../tectonics/evidence/i01-magma-receiver-r2.json)
+  binds the tool/test/case/method and corrected partition dependency. Thirteen
+  tests and the 0.1879935 s campaign pass, including independent crystallisation,
   entropy and pressure-volume work accounts. Eight co-arriving parcels take
-  0.0126724 s per 20 batched calls versus 0.0470029 s sequentially: 73.04% saved,
+  0.0129064 s per 20 batched calls versus 0.0479586 s sequentially: 73.09% saved,
   temperature parity 2.28e-13 K. Same-pressure analytical ideal mixture only;
   no native emplacement, flow-rate law or persisted delivery transaction.
-- **Current I01 composition-aware phase energy:** [analytical extraction/cooling control](../tectonics/evidence/i01-phase-energy-r2.json)
-  binds the new ideal-mixture caloric law, tests, case, method and unchanged
+- **Current I01 composition-aware phase energy:** [analytical extraction/cooling control](../tectonics/evidence/i01-phase-energy-r3.json)
+  binds the ideal-mixture caloric law, tests, case, method and corrected
   partition helper. Twelve focused tests pass, including thermodynamic identities
-  and pure/congruent melting plateaux. A three-batch comparison saves 83.06% against
+  and pure/congruent melting plateaux. A three-batch comparison saves 83.04% against
   same-accuracy bisection for 40 inversions. This is not calibrated mantle physics,
-  native W08 delivery or a whole-world speedup; the initial r1 measurement remains
-  historical after the solver safeguard changed.
-- **Current I01 composition-aware phase partition:** [analytical controls](../tectonics/evidence/i01-phase-partition-r1.json)
-  bind four new files; nine focused tests pass in 0.001 s and the campaign in
-  0.056310 s. Component depletion survives re-equilibration without recreating
-  extracted liquid. Three interleaved 200-call batches take median 0.0020979 s
-  with safeguarded Newton versus 0.0163525 s bisection: 0.0142546 s / 87.17% saved,
+  native W08 delivery or a whole-world speedup; r1/r2 remain historical after
+  the solver safeguard and partition arithmetic changed respectively.
+- **Current I01 composition-aware phase partition:** [analytical controls](../tectonics/evidence/i01-phase-partition-r2.json)
+  bind four files; eleven focused test methods pass and the campaign takes
+  0.0579674 s. Component depletion survives re-equilibration without recreating
+  extracted liquid. Per-component minority inventories avoid cancellation at
+  phase disappearance and with extreme partition coefficients. Three interleaved
+  200-call batches take median 0.0020329 s with safeguarded Newton versus
+  0.0164274 s bisection: 0.0143945 s / 87.62% saved,
   mass parity 2.37e-9 kg. This is supplied-coefficient fixed-P/T composition
   feasibility, not energy-bearing delivery or a world-runtime claim; see
   [method and the still-required common thermal law](../tectonics/docs/I01_PHASE_PARTITION.md).

@@ -1,0 +1,50 @@
+{
+  "schema": "atlas.i01-water-gpe-case.v1",
+  "status": "WORKING NON-CANON",
+  "contract": "atlas.water-loaded-gpe.v1",
+  "document": "tectonics/docs/I01_WATER_GPE.md",
+  "policy": {
+    "force_relative_tolerance": 1e-7,
+    "volume_relative_tolerance": 1e-11,
+    "state_tolerance_m": 1e-6,
+    "closed_form_displacement_m": 2e-6,
+    "translated_displacement_m": 1e-7,
+    "quadrature_fraction_of_reference": 1e-12,
+    "operator_relative": 1e-12,
+    "discrimination_factor": 1000.0,
+    "gauss_order": 3,
+    "quadrature_sample_stride": 16,
+    "timing_repetitions": 5,
+    "maximum_seconds": 60.0
+  },
+  "retained": {
+    "gpe_case": {
+      "datum": {"pressure_pa": 6474600000, "compensation_elevation_m": -200000, "mantle_density_kg_m3": 3300, "gravity_m_s2": 9.81, "reference_temperature_k": 293.15},
+      "reduction": 1,
+      "crust_density_kg_m3": 2800,
+      "mean_crust_m": 35000
+    },
+    "water_case": {
+      "plate": {"length_x_m": 600000, "length_y_m": 400000, "elastic_thickness_m": 15000},
+      "mean_depth_m": 200,
+      "grids": [32, 64, 128]
+    }
+  },
+  "controls": {
+    "shear_level": {
+      "depth_below_bed_m": 7500,
+      "basis": "Control assumption only: an effective homogeneous elastic core occupying the uppermost Te = 15 km of the rock column, so its Kirchhoff mid-surface lies Te/2 below the loaded bed. Not a selected Earth, Diadem or I08 value; the finite-rigidity shear level remains an unresolved material decision."
+    },
+    "alternative_shear_depth_m": 17500,
+    "uniform": {"shape": [16, 16], "mean_water_m": 1000},
+    "zero_rigidity": {"grid": 32, "elastic_thickness_m": 0},
+    "fourier": {"shape": [16, 16], "mode": [2, 1], "mean_water_m": 1000, "bed_amplitude_m": 10},
+    "small_support": {"bed_amplitude_m": 0.0001, "mean_water_m": [100, 1000, 4000]},
+    "datum_extension_m": 100000,
+    "vertical_translation_m": 100000,
+    "below_datum_fill_m": 10,
+    "shifted_reference_m": 100,
+    "negative_depth_at_dry_cell_m": -1e-7
+  },
+  "source": "Authored manufactured controls for MC-07. Retained values are read from cases/i01_gpe_v1.json (datum, reduction, crust density and mean thickness) and cases/i01_water_flexure_v1.json (plate, mean water depth, grids); both must equal the retained block above. A single constant-density crust layer of thickness h = h0 + s/f, with f = 1 - rho_c/rho_m, reproduces a prescribed dry-surface pattern s: the retained water fixture's bed on its grids, zero for the uniform case, and 10 cos(theta) for the oblique (2,1) mode whose closed form is the retained water test's. The small-support control is the reviewed reproducer: the same mode and plate with a 0.1 mm amplitude and its exact state at 100, 1000 and 4000 m of mean water, which carry the same closed-form support. The negative-depth probe replaces one exactly dry depth of the retained 32-square fixture by -1e-7 m, keeping every other producer field. The shear level is a declared control assumption with its basis, not a selected value. No observed region, calibration or planetary default."
+}

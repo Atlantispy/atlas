@@ -1,0 +1,79 @@
+{
+  "schema": "atlas.i01-separation-decision.v1",
+  "status": "WORKING_NON_CANON",
+  "kind": "selected_diagnostic_specification_not_execution_or_evidence",
+  "document": "tectonics/docs/I01_SEPARATION_DECISION.md",
+  "implemented": false,
+  "scientific_acceptance": false,
+  "event_authorised": false,
+  "physical_mechanism": "OPEN_MC01",
+  "references": [
+    "tectonics/docs/I01_PHYSICAL_CONTRACT.md",
+    "tectonics/docs/I01_TRANSITIONS.md",
+    "tectonics/docs/I01_CLOSURE_MATRIX.md",
+    "tectonics/docs/I01_COLUMN.md",
+    "tectonics/docs/I01_BASAL_CLOSURE.md",
+    "tectonics/docs/I01_ELASTIC_MEMORY.md"
+  ],
+  "diagnostics": {
+    "crustal_connectivity": "Tracked crustal material between predeclared material anchors; milestone only",
+    "mantle_lithosphere_connectivity": "Separate producer-classified tracked material; no temperature/colour shortcut",
+    "union_connectivity": "Includes alternating crust/mantle paths and paths around the candidate cut",
+    "weak_zone_connectivity": "Surface-to-base diagnostic using declared D2 physical state; not side-to-side rock disconnection",
+    "allowed_connectivity_states": ["CONNECTED", "DISCONNECTED", "UNRESOLVED"],
+    "section_strength_N_per_m": "Integral(n.sigma.n-z.sigma.z) dz; signed and absolute-integral reports plus actual cut traction separately",
+    "plastic_width_m": "(integral p dx)^2/integral p^2 dx; p is plastic dissipation on a declared transect; undefined when inactive",
+    "neck_width_m": "Same participation formula on positive material-thickness deficit against predeclared reference; not ell; undefined for zero deficit",
+    "coefficient_support": ["stress", "pressure", "effective_pressure", "temperature", "strain_rate", "raw_history", "elastic_memory"]
+  },
+  "mechanical_handoff": {
+    "branches": "Same parent, forcing, exterior conditions and finite source accounts; coupled versus proposed replacement",
+    "support": "Predeclared physical A with common material correspondence, complete motion components and the same permitted rigid-frame projection",
+    "window": "[t0,t0+H], H>0 supplied before execution and within source/event validity; revalidate on expiry",
+    "norm": "Spatial maximum Euclidean velocity error, supremum over entire window",
+    "reference": "V_ref is supremum of replacement speed on same support, window and gauge; zero or unproved reference refuses relative certification",
+    "criterion": "Certified error bound / V_ref <= eps_v",
+    "eps_v": null,
+    "eps_v_owner": "I02",
+    "integrated_velocity_error_bound_m": "eps_v*V_ref*H; not automatically a particle trajectory bound",
+    "work_energy": "Independently preserve external work, dissipation, stored elastic energy and heat accounts; no energy bound inferred from velocity alone",
+    "implemented_certificate": false
+  },
+  "negative_ladder": {
+    "H_c_m": 64,
+    "a": 1,
+    "c": 1,
+    "w_m": 1,
+    "c_w": 1,
+    "u_a_m": 63,
+    "thickness_levels_m": [64, 32, 16, 8, 4, 2, 1],
+    "opening_levels_m": [0, 32, 48, 56, 60, 62, 63],
+    "increment_ratios": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "false_extrapolated_limit_m": 64,
+    "actual_thickness_at_false_limit_m": "1/e > 0",
+    "halved_w_m": 0.5,
+    "halved_w_false_limit_m": 64,
+    "halved_w_actual_thickness_m": "1/(2e) > 0",
+    "expected_connectivity": "CONNECTED",
+    "expected_event": "REFUSED_NO_PHYSICAL_SEPARATION",
+    "handoff": "UNRESOLVED_WITHOUT_ACTUAL_MECHANICAL_BOUND",
+    "basis": "Exact piecewise analytical field in method section 5; not a run"
+  },
+  "required_cases": [
+    {"id": "crust_only_gap", "given": "Crust disconnected, mantle bridge connected", "expected": "Crustal milestone only; no plate split"},
+    {"id": "alternating_bridge", "given": "Each material subset lacks a complete side-to-side path but their union has one", "expected": "Union CONNECTED; no plate split"},
+    {"id": "unresolved_bridge", "given": "Pixel gap or uncertain sub-resolution positive material", "expected": "UNRESOLVED; no plate split"},
+    {"id": "yield_plateau", "given": "F=1, R_far(v)=v, F_belt=0.9", "coupled_speed": 0.1, "replacement_speed": 1, "derivative_ratio": 0, "actual_relative_velocity_error": 0.9, "expected": "Derivative ratio gives no certificate; evaluate actual error against I02 allowance, and no separation event follows"},
+    {"id": "inherited_gap", "given": "Initially disconnected material with no new bracketed loss", "expected": "Inherited state, not a generated event"},
+    {"id": "interior_boundary_tip", "given": "Proposed new boundary ends inside parent plate", "expected": "Deforming zone, not a valid plate split"},
+    {"id": "transient_error", "given": "Endpoints match but interior-window motion differs", "expected": "Endpoint comparison insufficient for handoff"},
+    {"id": "physical_event_candidate", "given": "Admitted physical law, bracketed complete connectivity loss, supported material and valid closed network", "expected": "Proposal only until mechanical admission, conservative transfers and I02 once-only commit pass"}
+  ],
+  "comparison_plan": {
+    "numerical": "N versus 2N at fixed physical ell plus separate time refinement; same material anchors and support",
+    "physical_sensitivity": "Changed ell or basal depth is not grid refinement",
+    "tolerances": "I01 declares the specific resolved comparison tolerances before execution; no production value selected here",
+    "basal_dependency": "Reuse selected MC04; I05/I07 bind source states, boundary prescriptions and solved moving-volume accounts",
+    "no_scientific_campaign_for_this_record": true
+  }
+}

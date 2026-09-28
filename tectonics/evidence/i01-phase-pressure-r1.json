@@ -1,0 +1,80 @@
+{
+  "schema": "atlas.i01-phase-pressure-evidence.v1",
+  "status": "PASS_BOUNDED_PHASE_PRESSURE_ONLY",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows"
+  },
+  "source_sha256": {
+    "tectonics/tools/check_i01_phase_pressure.py": "b6ada1954262f7f67e0448be173cc9d3f39d206a07a94d3a49b5dbca29fc26a7",
+    "tectonics/tests/test_i01_phase_pressure.py": "81083d381b1cdd725d1bacb35d3068ad6a511fff9af876b83fee2e326946718a",
+    "tectonics/docs/I01_PHASE_PRESSURE.md": "6624150078e397328e5ead489fd0a7916aa32d8c1fc9e579e6a4a0ef57a8d7d0",
+    "tectonics/cases/i01_phase_pressure_v1.json": "4e31c1525ee4b60e5ba085445025483bc58e1ccd4b0002073fbe23f4e23103e6",
+    "tectonics/tools/check_i01_phase_energy.py": "6a1896b87a0288a5e8ff4c3b107bfb51671beb3731f6f7bbe1cf1939beff78df",
+    "tectonics/tools/check_i01_phase_partition.py": "8c51311103c9aff20c887dd0334f65e8625198ac5f0b6ba4b41f72cc6ff53a39",
+    "tectonics/cases/i01_phase_energy_v1.json": "a5ed19877d68d31d276474e4fc7bc42c782bcafebec103ec26d8fc4f09c47949",
+    "tectonics/tools/check_i01_magma_receiver.py": "25f9b1679ecc0a129283585235c4f14783461a6216a698cd4483837ca500afa0"
+  },
+  "passed": true,
+  "checks": {
+    "temperature_k": true,
+    "liquid_fraction": true,
+    "enthalpy_pressure_change_j": true,
+    "compression_work_j": true,
+    "pressure_work_quadrature": true,
+    "quadrature_refines": true,
+    "entropy": true,
+    "decompression_melts": true,
+    "melting_cools": true,
+    "reverse_temperature": true,
+    "solver_parity": true
+  },
+  "pure_accounts": {
+    "temperature_k": 1600.0,
+    "liquid_fraction": 0.7892826463185042,
+    "enthalpy_pressure_change_j": -3192869414.7259827,
+    "compression_work_j": -42869414.72598314
+  },
+  "binary_accounts": {
+    "temperature_k": 1458.330805214555,
+    "liquid_kg": 3013.7172966369253,
+    "entropy_residual_j_k": -2.7939677238464355e-09,
+    "entropy_uncertainty_j_k": 2.6475900281500993e-05,
+    "enthalpy_pressure_change_j": -1513562152.1401424,
+    "compression_work_j": -30383221.22201395,
+    "work_uncertainty_j": 0.09958775723356811,
+    "integral_errors_j": {
+      "16": 0.013206243515014648,
+      "32": 0.002152681350708008,
+      "64": 0.0015223026275634766
+    }
+  },
+  "benchmark": {
+    "calls": 40,
+    "samples_seconds": {
+      "newton": [
+        0.02780959999654442,
+        0.027094799967017025,
+        0.027007800003048033
+      ],
+      "bisection": [
+        0.13515050004934892,
+        0.1346313999965787,
+        0.13549519999651238
+      ]
+    },
+    "newton_seconds": 0.027094799967017025,
+    "bisection_seconds": 0.13515050004934892,
+    "saved_seconds": 0.1080557000823319,
+    "saved_percent": 79.95212747483464,
+    "temperature_parity_k": 1.067769517248962e-08,
+    "iterations": {
+      "newton": 8,
+      "bisection": 34
+    }
+  },
+  "native_delivery_authorised": false,
+  "calibrated_mantle_model": false,
+  "source_unchanged": true,
+  "elapsed_seconds": 0.566871999995783
+}

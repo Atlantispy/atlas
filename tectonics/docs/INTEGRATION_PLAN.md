@@ -219,6 +219,57 @@ performance measurement. Do not postpone all testing or optimisation until I11.
 
 ### I01 — Freeze the end-to-end contract and physical closure choices
 
+The reviewed [closure matrix](I01_CLOSURE_MATRIX.md) and its
+[machine-readable mirror](../cases/i01_closure_matrix_v1.json) map the promised
+routes to producers, evidence and remaining decisions in generation order.
+They distinguish missing I01 physics from later implementation; the matrix is
+not a completed generator or an accepted separation law.
+
+MC-06 now has a [conditional lateral-conduction criterion](I01_LATERAL_HEAT.md)
+and a [bounded control](../evidence/i01-lateral-heat-r1.json). It selects the
+thermal error rule, while valid contact geometry, whole-window bounds and
+coupled feedback remain I05/I06 implementation/admission work. MC-04 now has a
+[reviewed basal specification and accounts](I01_BASAL_CLOSURE.md), with
+[eight bounded controls](../evidence/i01-basal-closure-r1.json), including an
+independent exact mechanical-work solution. Actual transport, source-state to
+prescription binding and resolved-depth sensitivity remain I05/I07 work.
+Four physical-choice items remain open: MC-01, MC-02, MC-03 and MC-05.
+MC-02 now has a [resolved-initiation method and prospective test specification](I01_INITIATION_DECISION.md),
+including retained stress, prescribed pore pressure, physical-length weakening
+and a genuine force-release check. Benchmark inputs and comparison allowances
+still need completion before I07 implementation; the current authored-R control
+is not a generated-initiation result. MC-07's
+[water-loaded columns-to-GPE connection](I01_WATER_GPE.md) now passes nineteen
+tests and [eight controls](../evidence/i01-water-gpe-r1.json), without a second
+isostatic correction or load. Structural dry/Airy/uniform cases need no further
+input; nonuniform finite rigidity requires an explicit shear-transfer depth.
+The [declared single-core producer](I01_ELASTIC_CORE.md) now supplies that depth
+and rigidity from the same homogeneous material layer. Eighteen tests and
+[six bounded controls](../evidence/i01-elastic-core-r1.json) support selecting
+this MC-07 branch. Core geometry and moduli are explicit inputs, not inferred
+from effective elastic thickness or D2 strength. Spherical/boundary assembly,
+variable rigidity and curved-reference admission remain I04/I08 work.
+MC-05 now has [exact contact detection](I01_JUNCTION_EVENTS.md) followed by a
+[local outgoing ridge check](I01_RIDGE_JUNCTION.md): two endpoint laws and
+ownership-oriented growth are checked for a supplied symmetric-ridge candidate.
+Physical boundary birth and complete geometric admission are still required;
+these prerequisites do not close MC-05 or select a graph edit.
+The [MC-05 physical route](I01_JUNCTION_REORGANISATION.md) now selects a local
+multidirectional deforming region, using the common separation/initiation/magma
+mechanisms, followed by joint material-derived topology extraction. I07 must
+retain both horizontal directions and vertical structure in the general regional
+solve; the declared 3D constitutive convention needs explicit parameter conversion.
+I09 owns work-conjugate feedback, I03 the shared geometry and I02 the joint commit.
+No graph score, contact-only flip or new standalone junction fracture law replaces
+that chain. Its implementation and physical controls remain open, not another
+request to rerun the completed contact/ridge helpers.
+MC-01's elastic-memory subchoice is now **retain**, with the
+[logarithmic-objective direction and exact coaxial control](I01_ELASTIC_MEMORY.md)
+checked by twelve tests and [nine controls](../evidence/i01-elastic-memory-r1.json).
+This does not close MC-01's separation mechanism or implement the general law.
+I02/I05 preserve and transport stress; I07 owns non-coaxial mechanics and its
+stored-energy/heat balance. Omitting stress memory is not an admitted default.
+
 Delivered design/control slice: [I01 physical contract](I01_PHYSICAL_CONTRACT.md),
 [versioned case record](../cases/i01_closures_v1.json) and
 [bounded control evidence](../evidence/i01-controls-r1.json), followed by a bounded
@@ -429,6 +480,15 @@ boundary components and a physical pressure reference. Moving surfaces also need
 compatible material/heat/internal-variable remapping; a solver that accepts a
 deformed mesh does not itself provide that transfer.
 
+For [MC-05 junction reorganisation](I01_JUNCTION_REORGANISATION.md), provide a
+shared multidirectional regional solve retaining both horizontal directions and
+vertical structure. Preserve the actual parent's stress and material history;
+use the declared 3D constitutive convention with explicit parameter conversion.
+Return work-conjugate reactions through I09, rather than holding plate motion
+immune to regional resistance. Use the shared MC-01/02/03 mechanisms, not a
+second junction-fracture law. I03 extracts joint topology only from their
+supported outputs; a prescribed multi-arm geometry is not physical birth evidence.
+
 Implement the D6 regime transitions and footprint↔section transfers. Keep fault
 and slab geometry/polarity explicitly supplied or calculated by a named law.
 Pure transform, oblique deformation, oceanic consumption, underthrusting and
@@ -513,6 +573,20 @@ reuse work while changed physics invalidates the correct descendants. Validate
 the real native route; fake API tests alone do not establish this.
 
 ### I11 — End-to-end realism, portability and resource acceptance
+
+**Whole-planet requirement (owner reaffirmed 28 September 2026):** completion
+must include an evolving full sphere, not merely a global initial layout plus
+isolated small-region runs. I03 owns global geometry and material/history
+coverage; I04 owns global motion; I07 supplies detailed active-region mechanics;
+I09 returns regional forces and reconciles all exchanges at a common accepted
+time. Use a declared multiresolution allocation of effort, not a uniformly
+junction-resolution planetary mesh. Regional sizes/resolutions follow physical
+influence and finite resources, not the existing demonstration's small footprint.
+Case K must exercise that complete connection, including multiple interacting
+regions and preservation of material/heat/history outside them. Tiny regional
+checks and a renderer showing a globe cannot satisfy this requirement. Record
+whole-run elapsed time, peak memory and storage before claiming consumer-scale
+planetary usability; no planetary run is authorised by this requirement alone.
 
 **Depends on:** I04–I10; tests/measurements develop alongside earlier increments.
 Run the compact matrix in section 7, including actual sphere-wide output and

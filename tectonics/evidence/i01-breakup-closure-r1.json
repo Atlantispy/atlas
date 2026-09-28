@@ -1,0 +1,1764 @@
+{
+  "schema": "atlas.i01-breakup-closure-evidence.v1",
+  "status": "PASS_BOUNDED_BREAKUP_CLOSURE_ONLY",
+  "scientific_acceptance": false,
+  "generated_breakup_authorised": false,
+  "resolved_event": "UNRESOLVED",
+  "law": "atlas.necking-connectivity-breakup.v1",
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.7.0",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "invariant": {
+      "status": "PASS",
+      "seconds": 0.06512789998669177,
+      "passed": true,
+      "checks": {
+        "invariant_holds": true,
+        "detected_at_declared_thickness": true,
+        "chain_matches_exact_discrete_opening": true,
+        "chain_matches_exact_discrete_time": true,
+        "kinematic_closure": true,
+        "drive_equals_drag_plus_belt": true,
+        "force_root_closes": true,
+        "force_history_nontrivial": true,
+        "opening_independent_of_force_history": true,
+        "time_depends_on_force_history": true,
+        "uniform_columns_identical": true,
+        "uniform_is_affine_opening": true,
+        "uniform_is_affine_time": true,
+        "uniform_independent_of_column_count": true
+      },
+      "exponent": 3.0,
+      "detection_fraction": 0.1,
+      "time_scale_s": 1375000000000000.0,
+      "chains": {
+        "256": {
+          "tau": 3.3587092275226142,
+          "opening_m": 1408938.4626702233,
+          "clock_theta": 0.999003810896995,
+          "invariant_residual": 2.865784866357135e-13,
+          "edge_m": 1408938.4626697383,
+          "kinematic_relative": 3.442210171563231e-13,
+          "thinnest_fraction": 0.10000000000000006,
+          "share_start": 0.499999826604805,
+          "share_end": 0.06719227783919404,
+          "column_spread_relative": 0.7986166601620818,
+          "steps": 26,
+          "evaluations": 305,
+          "work_scaled": {
+            "drive": 2.5617062957631607,
+            "drag": 2.003724444139296,
+            "belt": 0.5579818516238633
+          },
+          "work_relative": 5.200704045399907e-16,
+          "root_residual": 0.0,
+          "oracle_opening_m": 1408938.4626657553,
+          "oracle_tau": 3.3587092275149084,
+          "time_s": 4618225187843594.0,
+          "opening_relative": 3.171196024604315e-12,
+          "time_relative": 2.294284931303742e-12
+        },
+        "1024": {
+          "tau": 3.3577258288466285,
+          "opening_m": 1408434.196163267,
+          "clock_theta": 0.999000238180102,
+          "invariant_residual": 2.746132314601635e-13,
+          "edge_m": 1408434.1961628206,
+          "kinematic_relative": 3.169025184849519e-13,
+          "thinnest_fraction": 0.09999999999999998,
+          "share_start": 0.4999999891627924,
+          "share_end": 0.06725808185129824,
+          "column_spread_relative": 0.799465124455194,
+          "steps": 26,
+          "evaluations": 305,
+          "work_scaled": {
+            "drive": 2.5607894475687645,
+            "drag": 2.0028696075043477,
+            "belt": 0.5579198400644167
+          },
+          "work_relative": 0.0,
+          "root_residual": 2.220446049250313e-16,
+          "oracle_opening_m": 1408434.1961601914,
+          "oracle_tau": 3.3577258288415655,
+          "time_s": 4616873014664114.0,
+          "opening_relative": 2.18360217354036e-12,
+          "time_relative": 1.507884008280494e-12
+        }
+      },
+      "prescribed_history": {
+        "tau": 0.4472342429336467,
+        "opening_m": 1408938.4626658608,
+        "clock_theta": 0.9990038108968567,
+        "invariant_residual": 2.537952487058348e-13,
+        "edge_m": 1408938.4626660233,
+        "kinematic_relative": 1.153462649908101e-13,
+        "thinnest_fraction": 0.1000000000000153,
+        "share_start": 0.5,
+        "share_end": 0.5432260797722819,
+        "column_spread_relative": 0.79861666016208,
+        "steps": 155,
+        "evaluations": 2453
+      },
+      "uniform": {
+        "1": {
+          "tau": 10.200718442370631,
+          "opening_m": 5399999.999999999,
+          "clock_theta": 0.9989999999999534,
+          "invariant_residual": 4.662980071512557e-14,
+          "edge_m": 5399999.99999637,
+          "kinematic_relative": 6.721044580141704e-13,
+          "thinnest_fraction": 0.10000000000000002,
+          "share_start": 0.5,
+          "share_end": 0.02895519050371244,
+          "column_spread_relative": 0.0,
+          "steps": 32,
+          "evaluations": 389,
+          "work_scaled": {
+            "drive": 8.99999999999395,
+            "drag": 8.064466589346543,
+            "belt": 0.9355334106474089
+          },
+          "work_relative": 1.9737298215571608e-16,
+          "root_residual": 1.1102230246251565e-16
+        },
+        "8": {
+          "tau": 10.200718442371928,
+          "opening_m": 5399999.999999999,
+          "clock_theta": 0.9989999999998536,
+          "invariant_residual": 1.4643885062892714e-13,
+          "edge_m": 5399999.999997157,
+          "kinematic_relative": 5.263697218011928e-13,
+          "thinnest_fraction": 0.10000000000000002,
+          "share_start": 0.5,
+          "share_end": 0.02895519050371244,
+          "column_spread_relative": 0.0,
+          "steps": 31,
+          "evaluations": 377,
+          "work_scaled": {
+            "drive": 8.99999999999526,
+            "drag": 8.064466589347866,
+            "belt": 0.9355334106473949
+          },
+          "work_relative": 2.4671622769460916e-17,
+          "root_residual": 1.1102230246251565e-16
+        }
+      },
+      "affine": {
+        "opening_m": 5400000.0,
+        "tau": 10.200718442376491
+      },
+      "scope": "tests the integration, force root, clock and event location against exact discrete solutions at the first detection level; it neither shows that separation is predicted nor resolves deeper rungs"
+    },
+    "pinch": {
+      "status": "PASS",
+      "seconds": 0.2394810999976471,
+      "passed": true,
+      "checks": {
+        "reference_quadrature_self_consistent": true,
+        "reference_independent_hypergeometric": true,
+        "reference_derivative_identity": true,
+        "reference_finite_closed_form_limit": true,
+        "reference_analytically_feasible": true,
+        "reference_opening_tail_recovers_limit": true,
+        "reference_time_tail_recovers_limit": true,
+        "reference_gaps_shrink": true,
+        "reference_belt_share_decreases": true,
+        "second_quadrature_self_consistent": true,
+        "second_independent_hypergeometric": true,
+        "second_derivative_identity": true,
+        "second_finite_closed_form_limit": true,
+        "second_analytically_feasible": true,
+        "second_opening_tail_recovers_limit": true,
+        "second_time_tail_recovers_limit": true,
+        "second_gaps_shrink": true,
+        "second_belt_share_decreases": true,
+        "refinement_opening_order": true,
+        "refinement_time_order": true,
+        "refinement_finest": true,
+        "decoupling_located": true,
+        "decoupling_precedes_analytical_pinch_off": true
+      },
+      "cases": {
+        "reference": {
+          "exponent": 3.0,
+          "levels": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "thinnest_fraction": [
+            0.5,
+            0.25,
+            0.125,
+            0.0625,
+            0.03125,
+            0.015625,
+            0.0078125,
+            0.00390625,
+            0.001953125,
+            0.0009765625,
+            0.00048828125,
+            0.000244140625
+          ],
+          "opening_m": [
+            453307.3586020435,
+            929363.5034790174,
+            1309178.7052217575,
+            1585507.6450436288,
+            1782084.586287905,
+            1921252.4023293853,
+            2019681.4670415516,
+            2089284.295670628,
+            2138501.312208509,
+            2173303.047575259,
+            2197911.5969064413,
+            2215312.4698048597
+          ],
+          "time_s": [
+            1797174755884739.0,
+            3281100799686374.5,
+            4348920767170679.5,
+            5085945035436059.0,
+            5595443896584876.0,
+            5950457679115755.0,
+            6199329096004965.0,
+            6374443116738973.0,
+            6497924117037346.0,
+            6585102272282575.0,
+            6646692583525892.0,
+            6690222114599349.0
+          ],
+          "max_slope": [
+            0.06939390261840635,
+            0.08549547402379404,
+            0.08784546413892515,
+            0.08814590208298968,
+            0.08818356495176709,
+            0.08818827450714405,
+            0.08818886322809273,
+            0.08818893681862582,
+            0.08818894601744892,
+            0.08818894716730193,
+            0.08818894731103354,
+            0.08818894732900001
+          ],
+          "belt_share": [
+            0.26082966456544154,
+            0.14310018351134945,
+            0.08077104018809005,
+            0.04572403238846324,
+            0.02581886209533347,
+            0.014543851283775902,
+            0.008179763713023265,
+            0.004596235629092803,
+            0.0025812869824670998,
+            0.0014492459608284887,
+            0.0008135343382135215,
+            0.0004566350628781243
+          ],
+          "neck_material_scale_m": [
+            226778.6838055363,
+            75592.89460184544,
+            26542.43731222853,
+            9376.144618769908,
+            3314.613614187782,
+            1171.877235180574,
+            414.32047838320426,
+            146.48437936557477,
+            51.79004764311955,
+            18.310546883526513,
+            6.473755931650145,
+            2.2888183593916533
+          ],
+          "quadrature_relative": 1.0859528723621041e-13,
+          "hypergeometric_relative": [
+            1.1378768022632012e-15,
+            1.7019489743022215e-15,
+            2.7750662033385365e-15
+          ],
+          "derivative_relative": [
+            2.0545057496696904e-15,
+            4.7265158123136155e-15,
+            9.669254115670132e-15
+          ],
+          "opening_limit_m": 2257321.8935427587,
+          "pinch_time_s": 6795263664092780.0,
+          "feasibility": {
+            "resolved_event": "UNRESOLVED",
+            "basis": {
+              "law": "fixed_single_mechanism_power_law",
+              "exponent": 3.0,
+              "profile": "non_degenerate_quadratic_minimum",
+              "thickness_m": 100000.0,
+              "half_width_m": 300000.0,
+              "weakness_length_m": 600000.0
+            },
+            "expected_exponent": 0.5,
+            "opening_limit_m": 2257321.8935427587,
+            "opening": {
+              "ratios": [
+                0.7978369900905173,
+                0.7275352291165977,
+                0.7113874550055989,
+                0.7079559543483966,
+                0.7072688751746209,
+                0.7071369501743647,
+                0.7071123043025388,
+                0.7071077813090133,
+                0.7071069609561317,
+                0.7071068133369953
+              ],
+              "last_ratios": [
+                0.7071077813090133,
+                0.7071069609561317,
+                0.7071068133369953
+              ],
+              "verdict": "FINITE_LIMIT",
+              "exponent": 0.49999993440412144,
+              "limit": 2257321.8996747313,
+              "remaining": 42009.429869871776
+            },
+            "time": {
+              "ratios": [
+                0.7195910954892887,
+                0.6902139786744645,
+                0.6912918381208071,
+                0.6967901394919601,
+                0.7010190283740977,
+                0.7036325140221444,
+                0.7051462800111036,
+                0.7060046082763849,
+                0.7064878933267822,
+                0.7067593943711442
+              ],
+              "last_ratios": [
+                0.7060046082763849,
+                0.7064878933267822,
+                0.7067593943711442
+              ],
+              "verdict": "FINITE_LIMIT",
+              "exponent": 0.5007089401452579,
+              "limit": 6795135637584206.0,
+              "remaining": 104913522984857.08
+            },
+            "max_slope": 0.08818894732900001,
+            "first_level_outside": null,
+            "slope_limit": 0.08818894733156663,
+            "status": "ANALYTICAL_CONTINUUM_PINCH_FEASIBLE",
+            "reason": "the exact continuum solution pinches off at finite opening and time; no resolved event is certified"
+          },
+          "opening_gap_m": [
+            1804014.5349407152,
+            1327958.3900637412,
+            948143.1883210011,
+            671814.2484991299,
+            475237.30725485366,
+            336069.4912133734,
+            237640.42650120705,
+            168037.59787213057,
+            118820.58133424958,
+            84018.84596749954,
+            59410.29663631739,
+            42009.423737898935
+          ],
+          "time_gap_s": [
+            4998088908208041.0,
+            3514162864406405.5,
+            2446342896922100.5,
+            1709318628656721.0,
+            1199819767507904.0,
+            844805984977025.0,
+            595934568087815.0,
+            420820547353807.0,
+            297339547055434.0,
+            210161391810205.0,
+            148571080566888.0,
+            105041549493431.0
+          ]
+        },
+        "second": {
+          "exponent": 3.5,
+          "levels": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "thinnest_fraction": [
+            0.5,
+            0.25,
+            0.125,
+            0.0625,
+            0.03125,
+            0.015625,
+            0.0078125,
+            0.00390625,
+            0.001953125,
+            0.0009765625,
+            0.00048828125,
+            0.000244140625
+          ],
+          "opening_m": [
+            435931.53360188636,
+            829694.8242086964,
+            1089954.296392884,
+            1247875.0240883029,
+            1342102.0277781207,
+            1398161.1006071335,
+            1431496.92725661,
+            1451318.7917872637,
+            1463104.9665968819,
+            1470113.0701767732,
+            1474280.1136840968,
+            1476757.8525944268
+          ],
+          "time_s": [
+            1738888594196929.5,
+            2980769338110342.0,
+            3720589811013147.5,
+            4145390445113843.0,
+            4391099151491213.0,
+            4534700864567652.0,
+            4619222933341851.0,
+            4669183690013148.0,
+            4698788842067539.0,
+            4716357219949978.0,
+            4726791411373779.0,
+            4732991475355952.0
+          ],
+          "max_slope": [
+            0.07109497718195024,
+            0.08473994353545665,
+            0.08612341386406637,
+            0.08624736393886004,
+            0.08625833294522044,
+            0.08625930258136054,
+            0.0862593882867078,
+            0.08625939586206816,
+            0.08625939653164179,
+            0.0862593965908243,
+            0.08625939659605535,
+            0.0862593965965177
+          ],
+          "belt_share": [
+            0.26623414094818904,
+            0.15201974811011157,
+            0.08898990560841448,
+            0.05210473199739311,
+            0.03041026195471386,
+            0.01770475236635129,
+            0.010291904993323098,
+            0.005977387906027573,
+            0.0034697679245763724,
+            0.0020135297061401438,
+            0.001168260043137212,
+            0.0006777614671975197
+          ],
+          "neck_material_scale_m": [
+            186828.79989327956,
+            53241.39056496682,
+            15772.254365111261,
+            4687.643057696156,
+            1393.6058470089329,
+            414.32047838320426,
+            123.1781884239671,
+            36.6210938182121,
+            10.887516313462898,
+            3.2368779656837643,
+            0.9623295767839006,
+            0.28610229492190753
+          ],
+          "quadrature_relative": 1.2511076452326413e-13,
+          "hypergeometric_relative": [
+            2.413303949615335e-15,
+            8.306909456186565e-16,
+            6.50707426162561e-15
+          ],
+          "derivative_relative": [
+            3.204594653615975e-15,
+            1.21986278430271e-14,
+            2.711810242830918e-14
+          ],
+          "opening_limit_m": 1480392.0047917278,
+          "pinch_time_s": 4742079864654516.0,
+          "feasibility": {
+            "resolved_event": "UNRESOLVED",
+            "basis": {
+              "law": "fixed_single_mechanism_power_law",
+              "exponent": 3.5,
+              "profile": "non_degenerate_quadratic_minimum",
+              "thickness_m": 100000.0,
+              "half_width_m": 300000.0,
+              "weakness_length_m": 600000.0
+            },
+            "expected_exponent": 0.75,
+            "opening_limit_m": 1480392.0047917278,
+            "opening": {
+              "ratios": [
+                0.6609541274990722,
+                0.6067818641530826,
+                0.5966728058114904,
+                0.5949363837732907,
+                0.5946553335114018,
+                0.5946114592890993,
+                0.5946047502943693,
+                0.5946037364194182,
+                0.594603584239288,
+                0.5946035614879842
+              ],
+              "last_ratios": [
+                0.5946037364194182,
+                0.594603584239288,
+                0.5946035614879842
+              ],
+              "verdict": "FINITE_LIMIT",
+              "exponent": 0.7499999903271984,
+              "limit": 1480392.0048477794,
+              "remaining": 3634.152253352626
+            },
+            "time": {
+              "ratios": [
+                0.5957258589673309,
+                0.5741942128661585,
+                0.578409462352937,
+                0.5844388470951831,
+                0.5885867721453156,
+                0.591097182024346,
+                0.5925681280043439,
+                0.5934229910443334,
+                0.5939188861727985,
+                0.5942064631889244
+              ],
+              "last_ratios": [
+                0.5934229910443334,
+                0.5939188861727985,
+                0.5942064631889244
+              ],
+              "verdict": "FINITE_LIMIT",
+              "exponent": 0.7509637974220481,
+              "limit": 4742070274686626.0,
+              "remaining": 9078799330673.58
+            },
+            "max_slope": 0.0862593965965177,
+            "first_level_outside": null,
+            "slope_limit": 0.08625939659656254,
+            "status": "ANALYTICAL_CONTINUUM_PINCH_FEASIBLE",
+            "reason": "the exact continuum solution pinches off at finite opening and time; no resolved event is certified"
+          },
+          "opening_gap_m": [
+            1044460.4711898414,
+            650697.1805830314,
+            390437.70839884365,
+            232516.9807034249,
+            138289.97701360704,
+            82230.90418459428,
+            48895.07753511774,
+            29073.21300446405,
+            17287.038194845896,
+            10278.934614954516,
+            6111.891107630916,
+            3634.152197300922
+          ],
+          "time_gap_s": [
+            3003191270457586.5,
+            1761310526544174.0,
+            1021490053641368.5,
+            596689419540673.0,
+            350980713163303.0,
+            207379000086864.0,
+            122856931312665.0,
+            72896174641368.0,
+            43291022586977.0,
+            25722644704538.0,
+            15288453280737.0,
+            9088389298564.0
+          ]
+        }
+      },
+      "refinement": {
+        "detection_fraction": 0.1,
+        "continuum_opening_m": 1408400.6322094942,
+        "continuum_time_s": 4616783010641309.0,
+        "rows": [
+          {
+            "columns": 256,
+            "opening_m": 1408938.4626657553,
+            "time_s": 4618225187832999.0,
+            "opening_error": 0.0003818731999696072,
+            "time_error": 0.00031237707909726294
+          },
+          {
+            "columns": 512,
+            "opening_m": 1408534.9283038673,
+            "time_s": 4617143132167926.0,
+            "opening_error": 9.535361693385362e-05,
+            "time_error": 7.800269707000506e-05
+          },
+          {
+            "columns": 1024,
+            "opening_m": 1408434.1961601914,
+            "time_s": 4616873014657152.0,
+            "opening_error": 2.383125222298282e-05,
+            "time_error": 1.9494963405372978e-05
+          },
+          {
+            "columns": 2048,
+            "opening_m": 1408409.0225679595,
+            "time_s": 4616805509998304.0,
+            "opening_error": 5.957366301444544e-06,
+            "time_error": 4.8733841168495065e-06
+          }
+        ],
+        "orders": {
+          "opening": [
+            2.0017341058346627,
+            2.0004329030623316,
+            2.000108186405888
+          ],
+          "time": [
+            2.001692685056165,
+            2.000422561754199,
+            2.000105602233877
+          ]
+        },
+        "scope": "lateral convergence at the first detection level only"
+      },
+      "decoupling": {
+        "delta": 9.850373054334346e-07,
+        "thinnest_fraction": 0.009949873504729026,
+        "opening_m": 1989137.8359443988,
+        "time_s": 6122270470426590.0,
+        "share": 0.009999999999999743,
+        "share_relative": 2.5673907444456745e-14,
+        "analytical_pinch_off_after": {
+          "time_s": 672993193666190.0,
+          "opening_m": 268184.0575983599
+        }
+      },
+      "resolution": {
+        "refinement_detection_fraction": 0.1,
+        "finest_column_width_m": 292.96875,
+        "deepest_neck_material_scale_m": {
+          "reference": 2.2888183593916533,
+          "second": 0.28610229492190753
+        },
+        "rungs_narrower_than_finest_column": {
+          "reference": 5,
+          "second": 6
+        },
+        "resolved_event": "UNRESOLVED",
+        "reason": "lateral convergence is checked only at the first detection level; the other rungs are continuum integrals and no per-rung resolved event certificate is implemented"
+      },
+      "law": "atlas.necking-connectivity-breakup.v1",
+      "event_record": "atlas.connectivity-loss-event.v1",
+      "scope": "analytical continuum feasibility of the declared fixed power law with a non-degenerate quadratic minimum, with the D1 clock; lateral refinement of the exact discrete chain only at the first detection level; no resolved connectivity-loss event is certified"
+    },
+    "no_pinch": {
+      "status": "PASS",
+      "seconds": 0.13327189994743094,
+      "passed": true,
+      "checks": {
+        "subcritical_quadrature_self_consistent": true,
+        "subcritical_closed_forms": true,
+        "subcritical_no_finite_limit": true,
+        "subcritical_inside_validity": true,
+        "decoupled_but_connected": true,
+        "uniform_affine_no_finite_limit": true,
+        "flat_plateau_no_finite_limit": true,
+        "fixed_width_no_finite_limit": true,
+        "fixed_width_is_d2_length": true
+      },
+      "subcritical": {
+        "n=1": {
+          "exponent": 1.0,
+          "opening_m": [
+            512754.2616019347,
+            1377931.0190926036,
+            2750923.482189785,
+            4823994.645499675,
+            7855114.714797333,
+            12210477.183291338,
+            18415661.709152553,
+            27221436.68092611,
+            39694937.85420348,
+            57348830.7153737,
+            82324575.80456075,
+            117652081.90365411
+          ],
+          "time_s": [
+            1969385654004836.5,
+            4476077547731503.5,
+            8080433705474446.0,
+            1.334904911374914e+16,
+            2.096981803699322e+16,
+            3.1879708583228116e+16,
+            4.740341208538093e+16,
+            6.942322060856443e+16,
+            1.0060965908863216e+17,
+            1.4474573401499408e+17,
+            2.0718576812467872e+17,
+            2.955048690657685e+17
+          ],
+          "max_slope": [
+            0.05208333333333334,
+            0.05468749999999999,
+            0.05013020833333332,
+            0.046386718750000035,
+            0.04414876302083334,
+            0.04293823242187501,
+            0.04231007893880208,
+            0.04199028015136718,
+            0.04182895024617511,
+            0.04174792766571045,
+            0.04170732696851096,
+            0.0416870042681694
+          ],
+          "quadrature_relative": 5.43612024085625e-14,
+          "closed_form_relative": 5.3194874244053666e-15,
+          "opening_limit_m": null,
+          "feasibility": {
+            "resolved_event": "UNRESOLVED",
+            "basis": {
+              "law": "fixed_single_mechanism_power_law",
+              "exponent": 1.0,
+              "profile": "non_degenerate_quadratic_minimum",
+              "thickness_m": 100000.0,
+              "half_width_m": 300000.0,
+              "weakness_length_m": 600000.0
+            },
+            "expected_exponent": -0.5,
+            "opening_limit_m": null,
+            "opening": {
+              "ratios": [
+                1.586950240179088,
+                1.509892602493591,
+                1.4621399028377478,
+                1.4368821983034106,
+                1.4247228722634513,
+                1.4190996150193307,
+                1.4165137325517074,
+                1.4153117569741431,
+                1.4147443448080086,
+                1.4144725601955308
+              ],
+              "last_ratios": [
+                1.4153117569741431,
+                1.4147443448080086,
+                1.4144725601955308
+              ],
+              "verdict": "NO_FINITE_LIMIT"
+            },
+            "time": {
+              "ratios": [
+                1.4378935707109948,
+                1.461735516052308,
+                1.4464462354331615,
+                1.4315997055046084,
+                1.4229018555562123,
+                1.41846361083422,
+                1.4162901756040776,
+                1.4152329370527748,
+                1.4147165150925098,
+                1.4144627273256283
+              ],
+              "last_ratios": [
+                1.4152329370527748,
+                1.4147165150925098,
+                1.4144627273256283
+              ],
+              "verdict": "NO_FINITE_LIMIT"
+            },
+            "max_slope": 0.05468749999999999,
+            "first_level_outside": null,
+            "slope_limit": null,
+            "status": "NOT_ESTABLISHED_NO_FINITE_LIMIT",
+            "reason": "n <= q = 2: the exact opening at pinch-off diverges"
+          },
+          "decoupling": {
+            "delta": 0.06491763002980891,
+            "thinnest_fraction": 0.06491763002980891,
+            "opening_m": 4688434.4556715395,
+            "time_s": 1.3006824397887818e+16,
+            "share": 0.009999999999999818,
+            "share_relative": 1.8214596497756474e-14
+          }
+        },
+        "n=2": {
+          "exponent": 2.0,
+          "opening_m": [
+            485510.35347854625,
+            1153522.6679218533,
+            1924288.9500453463,
+            2735958.4857772607,
+            3561500.6429217677,
+            4391415.471622709,
+            5222650.630351819,
+            6054272.856705979,
+            6886006.117289821,
+            7717770.705146206,
+            8549544.01715308,
+            9381319.733292509
+          ],
+          "time_s": [
+            1899505176979698.0,
+            3923021757401242.0,
+            6030568426336994.0,
+            8150374959847794.0,
+            1.025943624060179e+16,
+            1.2356762386486038e+16,
+            1.4446097738609426e+16,
+            1.653077054454402e+16,
+            1.8612910547510256e+16,
+            2.0693724979213372e+16,
+            2.2773859621238444e+16,
+            2.4853649562396884e+16
+          ],
+          "max_slope": [
+            0.06249999999999999,
+            0.07812500000000003,
+            0.08203125000000001,
+            0.08300781249999999,
+            0.083251953125,
+            0.08331298828125,
+            0.08332824707031249,
+            0.08333206176757811,
+            0.08333301544189453,
+            0.08333325386047363,
+            0.0833333134651184,
+            0.08333332836627962
+          ],
+          "quadrature_relative": 7.528194768142948e-14,
+          "closed_form_relative": 4.241559837067009e-16,
+          "opening_limit_m": null,
+          "feasibility": {
+            "resolved_event": "UNRESOLVED",
+            "basis": {
+              "law": "fixed_single_mechanism_power_law",
+              "exponent": 2.0,
+              "profile": "non_degenerate_quadratic_minimum",
+              "thickness_m": 100000.0,
+              "half_width_m": 300000.0,
+              "weakness_length_m": 600000.0
+            },
+            "expected_exponent": 0.0,
+            "opening_limit_m": null,
+            "opening": {
+              "ratios": [
+                1.1538204692615837,
+                1.0530682965213933,
+                1.0170914649397098,
+                1.0052967271490525,
+                1.001590922324204,
+                1.0004656535770722,
+                1.0001335152262196,
+                1.0000376650472314,
+                1.000010488725557,
+                1.0000028903699105
+              ],
+              "last_ratios": [
+                1.0000376650472314,
+                1.000010488725557,
+                1.0000028903699105
+              ],
+              "verdict": "NO_FINITE_LIMIT"
+            },
+            "time": {
+              "ratios": [
+                1.0415267605549852,
+                1.0058171260241837,
+                0.9949310219650055,
+                0.9944358492677118,
+                0.9961900089899985,
+                0.9977684069797338,
+                0.998785035732635,
+                0.9993633611278628,
+                0.9996733059576641,
+                0.9998342891562556
+              ],
+              "last_ratios": [
+                0.9993633611278628,
+                0.9996733059576641,
+                0.9998342891562556
+              ],
+              "verdict": "NO_FINITE_LIMIT"
+            },
+            "max_slope": 0.08333332836627962,
+            "first_level_outside": null,
+            "slope_limit": 0.08333333333333333,
+            "status": "NOT_ESTABLISHED_NO_FINITE_LIMIT",
+            "reason": "n <= q = 2: the exact opening at pinch-off diverges"
+          },
+          "decoupling": {
+            "delta": 0.0004399247627828862,
+            "thinnest_fraction": 0.020974383489935675,
+            "opening_m": 4038628.3203781787,
+            "time_s": 1.1467084137603304e+16,
+            "share": 0.009999999999999998,
+            "share_relative": 1.734723475976807e-16
+          }
+        }
+      },
+      "kinematic": {
+        "uniform": {
+          "opening_m": [
+            600000.0,
+            1800000.0,
+            4200000.0,
+            9000000.0,
+            18600000.0,
+            37800000.0,
+            76200000.0,
+            153000000.0,
+            306600000.0,
+            613800000.0,
+            1228200000.0,
+            2457000000.0
+          ],
+          "verdict": {
+            "ratios": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "last_ratios": [
+              2.0,
+              2.0,
+              2.0
+            ],
+            "verdict": "NO_FINITE_LIMIT"
+          }
+        },
+        "plateau": {
+          "opening_m": [
+            514404.0713266223,
+            1208664.993519554,
+            2064893.6975485897,
+            3300755.5201447085,
+            5417273.762902686,
+            9396434.23677691,
+            17174862.383642226,
+            32604465.097539254,
+            63373682.099735595,
+            124848483.83330964,
+            247753092.38241667,
+            493530493.25528693
+          ],
+          "max_slope": [
+            0.060544808553352654,
+            0.07849791627358128,
+            0.08143008985894823,
+            0.08181244036418392,
+            0.08186049665397706,
+            0.08186650782298054,
+            0.08186725928374286,
+            0.08186735321734823,
+            0.08186736495906469,
+            0.0818673664267795,
+            0.08186736661024382,
+            0.0818673666331769
+          ],
+          "verdict": {
+            "ratios": [
+              1.2332952592585846,
+              1.4433781731220836,
+              1.71258485702868,
+              1.8800501661110596,
+              1.9547912676394315,
+              1.9836401934387107,
+              1.9941678066981814,
+              1.9979319502730895,
+              1.9992680754264804,
+              1.9997411307377373
+            ],
+            "last_ratios": [
+              1.9979319502730895,
+              1.9992680754264804,
+              1.9997411307377373
+            ],
+            "verdict": "NO_FINITE_LIMIT"
+          }
+        },
+        "fixed_width": {
+          "width_m": 5000.0,
+          "opening_m": [
+            3465.7359027997263,
+            6931.471805599453,
+            10397.207708399179,
+            13862.943611198905,
+            17328.67951399863,
+            20794.415416798358,
+            24260.151319598084,
+            27725.88722239781,
+            31191.623125197537,
+            34657.35902799726,
+            38123.09493079699,
+            41588.830833596716
+          ],
+          "verdict": {
+            "ratios": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.000000000000001,
+              0.9999999999999979
+            ],
+            "last_ratios": [
+              1.0,
+              1.000000000000001,
+              0.9999999999999979
+            ],
+            "verdict": "NO_FINITE_LIMIT"
+          }
+        }
+      },
+      "reference_exponent": 3.0,
+      "scope": "n <= 2 and flat or fixed-width necks thin for ever; the D6 decoupling share is reached at finite time while the material stays connected"
+    },
+    "validity": {
+      "status": "PASS",
+      "seconds": 0.08118700003251433,
+      "passed": true,
+      "checks": {
+        "quadrature_self_consistent": true,
+        "reduced_law_predicts_finite_pinch": true,
+        "cusped_neck_refused": true,
+        "slender_sampled_slopes_inside_bound": true,
+        "slender_cusped_neck_refused": true,
+        "rigid_plastic_two_weakest_columns": true,
+        "rigid_plastic_opening_scales_with_column_width": true,
+        "parallel_kernel_parity": true,
+        "parallel_low_stress_refused": true,
+        "parallel_plastic_share_falls": true,
+        "parallel_high_stress_creep_dominated": true,
+        "parallel_exponent_tends_to_creep": true
+      },
+      "cusped": {
+        "exponent": 5.0,
+        "opening_limit_m": 719507.9107728945,
+        "max_slope": [
+          0.07081476992360486,
+          0.10169997053158128,
+          0.14389356068884784,
+          0.2034992332053045,
+          0.2877915084727589,
+          0.40699866029321635,
+          0.5755830255139974,
+          0.8139973209651095,
+          1.1511660510447301,
+          1.6279946419309583,
+          2.3023321020894922,
+          3.2559892838619175
+        ],
+        "reduced_verdict": {
+          "ratios": [
+            0.37780783851484045,
+            0.35601381729766346,
+            0.3537839163710831,
+            0.3535742097375727,
+            0.35355524492871154,
+            0.3535535549348732,
+            0.35355340512015293,
+            0.35355339184217166,
+            0.35355339061096974,
+            0.35355339017965176
+          ],
+          "last_ratios": [
+            0.35355339184217166,
+            0.35355339061096974,
+            0.35355339017965176
+          ],
+          "verdict": "FINITE_LIMIT",
+          "exponent": 1.5000000016878086,
+          "limit": 719507.9107727859,
+          "remaining": 3.8235406001366825
+        },
+        "feasibility": {
+          "resolved_event": "UNRESOLVED",
+          "basis": {
+            "law": "fixed_single_mechanism_power_law",
+            "exponent": 5.0,
+            "profile": "non_degenerate_quadratic_minimum",
+            "thickness_m": 100000.0,
+            "half_width_m": 300000.0,
+            "weakness_length_m": 600000.0
+          },
+          "expected_exponent": 1.5,
+          "opening_limit_m": 719507.9107728945,
+          "opening": {
+            "ratios": [
+              0.37780783851484045,
+              0.35601381729766346,
+              0.3537839163710831,
+              0.3535742097375727,
+              0.35355524492871154,
+              0.3535535549348732,
+              0.35355340512015293,
+              0.35355339184217166,
+              0.35355339061096974,
+              0.35355339017965176
+            ],
+            "last_ratios": [
+              0.35355339184217166,
+              0.35355339061096974,
+              0.35355339017965176
+            ],
+            "verdict": "FINITE_LIMIT",
+            "exponent": 1.5000000016878086,
+            "limit": 719507.9107727859,
+            "remaining": 3.8235406001366825
+          },
+          "time": {
+            "ratios": [
+              0.33949024132336275,
+              0.3349076428819967,
+              0.3411299197341044,
+              0.3458756848723131,
+              0.3488484031299314,
+              0.3506681688563357,
+              0.35178177476283495,
+              0.35246453964204366,
+              0.3528837722685117,
+              0.35314143764864203
+            ],
+            "last_ratios": [
+              0.35246453964204366,
+              0.3528837722685117,
+              0.35314143764864203
+            ],
+            "verdict": "FINITE_LIMIT",
+            "exponent": 1.5016819778888053,
+            "limit": 2595969068681525.5,
+            "remaining": 9559445750.571777
+          },
+          "max_slope": 3.2559892838619175,
+          "first_level_outside": 5,
+          "slope_limit": null,
+          "status": "REFUSED_OUTSIDE_LONG_WAVE_VALIDITY",
+          "reason": "n > 4: the neck-tip slope grows as (H/ell)(h/H)^((4-n)/2) without bound, whatever the sampled slopes"
+        }
+      },
+      "slender": {
+        "thickness_m": 1000.0,
+        "max_slope": [
+          0.0007081476992360485,
+          0.0010169997053158127,
+          0.0014389356068884786,
+          0.002034992332053045,
+          0.002877915084727589,
+          0.0040699866029321645,
+          0.005755830255139975,
+          0.008139973209651095,
+          0.0115116605104473,
+          0.016279946419309584,
+          0.023023321020894924,
+          0.032559892838619174
+        ],
+        "feasibility": {
+          "resolved_event": "UNRESOLVED",
+          "basis": {
+            "law": "fixed_single_mechanism_power_law",
+            "exponent": 5.0,
+            "profile": "non_degenerate_quadratic_minimum",
+            "thickness_m": 1000.0,
+            "half_width_m": 300000.0,
+            "weakness_length_m": 600000.0
+          },
+          "expected_exponent": 1.5,
+          "opening_limit_m": 719507.9107728945,
+          "opening": {
+            "ratios": [
+              0.37780783851484045,
+              0.35601381729766346,
+              0.3537839163710831,
+              0.3535742097375727,
+              0.35355524492871154,
+              0.3535535549348732,
+              0.35355340512015293,
+              0.35355339184217166,
+              0.35355339061096974,
+              0.35355339017965176
+            ],
+            "last_ratios": [
+              0.35355339184217166,
+              0.35355339061096974,
+              0.35355339017965176
+            ],
+            "verdict": "FINITE_LIMIT",
+            "exponent": 1.5000000016878086,
+            "limit": 719507.9107727859,
+            "remaining": 3.8235406001366825
+          },
+          "time": {
+            "ratios": [
+              0.33949024132336275,
+              0.3349076428819967,
+              0.3411299197341044,
+              0.3458756848723131,
+              0.3488484031299314,
+              0.3506681688563357,
+              0.35178177476283495,
+              0.35246453964204366,
+              0.3528837722685117,
+              0.35314143764864203
+            ],
+            "last_ratios": [
+              0.35246453964204366,
+              0.3528837722685117,
+              0.35314143764864203
+            ],
+            "verdict": "FINITE_LIMIT",
+            "exponent": 1.5016819778888053,
+            "limit": 2595969068681525.5,
+            "remaining": 9559445750.571777
+          },
+          "max_slope": 0.032559892838619174,
+          "first_level_outside": null,
+          "slope_limit": null,
+          "status": "REFUSED_OUTSIDE_LONG_WAVE_VALIDITY",
+          "reason": "n > 4: the neck-tip slope grows as (H/ell)(h/H)^((4-n)/2) without bound, whatever the sampled slopes"
+        }
+      },
+      "rigid_plastic": {
+        "rows": [
+          {
+            "columns": 64,
+            "weakest_columns": 2,
+            "opening_m": 168750.0
+          },
+          {
+            "columns": 128,
+            "weakest_columns": 2,
+            "opening_m": 84375.0
+          },
+          {
+            "columns": 256,
+            "weakest_columns": 2,
+            "opening_m": 42187.5
+          }
+        ],
+        "successive_ratios": [
+          2.0,
+          2.0
+        ],
+        "status": "REFUSED_ILL_POSED_RATE_INDEPENDENT"
+      },
+      "parallel_plastic": {
+        "exponent": 3.0,
+        "scaled_creep": 0.0001,
+        "stress_multiples": [
+          10.0,
+          100.0,
+          1000.0,
+          10000.0
+        ],
+        "rate_scaled": [
+          9.1,
+          199.0,
+          100999.0,
+          100009999.0
+        ],
+        "plastic_share": [
+          0.989010989010989,
+          0.49748743718592964,
+          0.009891187041455855,
+          9.998000299950008e-05
+        ],
+        "local_exponent": [
+          1.131868131868132,
+          2.0100502512562812,
+          2.980227527005218,
+          2.9998000499930013
+        ],
+        "kernel_parity_relative": 5.240104646494122e-13,
+        "regimes": [
+          [
+            "frictional-plastic or regularised-plastic dissipation exceeds the declared share",
+            "rate sensitivity leaves the creep window [0.25, 0.5)"
+          ],
+          [
+            "frictional-plastic or regularised-plastic dissipation exceeds the declared share"
+          ],
+          [],
+          []
+        ],
+        "scope": "scaled point law of the retained additive form, independent of the mantle fixture, whose coefficients are not extrapolated; a mathematical counterexample, not a physical state"
+      },
+      "owner": "I07 resolved x-z neck with a physical shear-zone width much smaller than the thickness"
+    },
+    "retained": {
+      "status": "PASS",
+      "seconds": 0.023810200043953955,
+      "passed": true,
+      "checks": {
+        "same_state_as_accepted_receipt": true,
+        "drive_and_thickness_match_chain": true,
+        "force_rises_with_rate": true,
+        "force_falls_with_stretch": true,
+        "rate_sensitivity_in_unit_interval": true,
+        "work_partition_closes": true,
+        "classification_reported": true
+      },
+      "order": 64,
+      "receipt": "evidence/i01-finite-strain-r2.json",
+      "parity_relative": {
+        "velocity": 0.0,
+        "force": 0.0
+      },
+      "operating": {
+        "rate_s": 9.236889212108228e-16,
+        "velocity_m_s": 9.236889212108228e-11,
+        "column_force_n_m": 15381555393945.887,
+        "plastic_share": 0.5505792930429526
+      },
+      "rows": [
+        {
+          "stretch": 1.0,
+          "multiplier": 1.0,
+          "rate_s": 9.236889212108228e-16,
+          "force_n_m": 15381555393945.887,
+          "rate_sensitivity": 0.10857781214776877,
+          "plastic_share": 0.5505792930429526,
+          "partition_relative": 4.5346750003718274e-13,
+          "yielding_points": 117
+        },
+        {
+          "stretch": 1.0,
+          "multiplier": 10.0,
+          "rate_s": 9.236889212108228e-15,
+          "force_n_m": 20112127002063.316,
+          "rate_sensitivity": 0.1408993848978758,
+          "plastic_share": 0.61540973925702,
+          "partition_relative": 9.617230168806134e-13,
+          "yielding_points": 140
+        },
+        {
+          "stretch": 1.0,
+          "multiplier": 100.0,
+          "rate_s": 9.236889212108228e-14,
+          "force_n_m": 35025566307691.38,
+          "rate_sensitivity": 0.4067454499073888,
+          "plastic_share": 0.7070698431577418,
+          "partition_relative": 9.797964558849198e-13,
+          "yielding_points": 171
+        },
+        {
+          "stretch": 1.0,
+          "multiplier": 1000.0,
+          "rate_s": 9.236889212108228e-13,
+          "force_n_m": 144640904009544.88,
+          "rate_sensitivity": 0.7317028833727934,
+          "plastic_share": 0.7757750247597955,
+          "partition_relative": 2.399619776809967e-13,
+          "yielding_points": 199
+        },
+        {
+          "stretch": 1.2,
+          "multiplier": 1.0,
+          "rate_s": 9.236889212108228e-16,
+          "force_n_m": 11153586016230.432,
+          "rate_sensitivity": 0.10779698943051962,
+          "plastic_share": 0.5666874523923011,
+          "partition_relative": 3.620165790851085e-13,
+          "yielding_points": 120
+        },
+        {
+          "stretch": 1.2,
+          "multiplier": 10.0,
+          "rate_s": 9.236889212108228e-15,
+          "force_n_m": 14601473718067.562,
+          "rate_sensitivity": 0.14556811138012715,
+          "plastic_share": 0.6335974510967908,
+          "partition_relative": 1.7644578647930668e-12,
+          "yielding_points": 145
+        },
+        {
+          "stretch": 1.2,
+          "multiplier": 100.0,
+          "rate_s": 9.236889212108228e-14,
+          "force_n_m": 26696339004342.05,
+          "rate_sensitivity": 0.44378526060688184,
+          "plastic_share": 0.725916886551934,
+          "partition_relative": 6.811053668420079e-13,
+          "yielding_points": 179
+        },
+        {
+          "stretch": 1.2,
+          "multiplier": 1000.0,
+          "rate_s": 9.236889212108228e-13,
+          "force_n_m": 118239267804715.17,
+          "rate_sensitivity": 0.7381849858159745,
+          "plastic_share": 0.7818783754689973,
+          "partition_relative": 5.077150042967536e-13,
+          "yielding_points": 202
+        },
+        {
+          "stretch": 1.4,
+          "multiplier": 1.0,
+          "rate_s": 9.236889212108228e-16,
+          "force_n_m": 8532896158390.391,
+          "rate_sensitivity": 0.1043119040972116,
+          "plastic_share": 0.5805379350400766,
+          "partition_relative": 4.932304918890955e-13,
+          "yielding_points": 124
+        },
+        {
+          "stretch": 1.4,
+          "multiplier": 10.0,
+          "rate_s": 9.236889212108228e-15,
+          "force_n_m": 11189943427837.686,
+          "rate_sensitivity": 0.15232137888549535,
+          "plastic_share": 0.6492598014591714,
+          "partition_relative": 1.7216951635595799e-12,
+          "yielding_points": 150
+        },
+        {
+          "stretch": 1.4,
+          "multiplier": 100.0,
+          "rate_s": 9.236889212108228e-14,
+          "force_n_m": 21394937940514.344,
+          "rate_sensitivity": 0.4756119910899568,
+          "plastic_share": 0.74153947910867,
+          "partition_relative": 1.1884090873700521e-12,
+          "yielding_points": 183
+        },
+        {
+          "stretch": 1.4,
+          "multiplier": 1000.0,
+          "rate_s": 9.236889212108228e-13,
+          "force_n_m": 100022752619223.11,
+          "rate_sensitivity": 0.7425475342776375,
+          "plastic_share": 0.7857850960763287,
+          "partition_relative": 8.650495302738389e-13,
+          "yielding_points": 203
+        }
+      ],
+      "thinning_sensitivity": {
+        "1": [
+          1.7628635557825716,
+          1.7374703260342184
+        ],
+        "10": [
+          1.7562405070758311,
+          1.7262784491180725
+        ],
+        "100": [
+          1.4894114852652287,
+          1.4360759946040638
+        ],
+        "1000": [
+          1.1054308963988775,
+          1.0853833315433532
+        ]
+      },
+      "necking_number": {
+        "1": 16.235946561378544,
+        "10": 12.46450088017601,
+        "100": 3.6617778652578665,
+        "1000": 1.5107647127251709
+      },
+      "classification": "REFUSED_REQUIRES_RESOLVED_NECK",
+      "reasons": [
+        "frictional-plastic or regularised-plastic dissipation exceeds the declared share",
+        "rate sensitivity leaves the creep window [0.25, 0.5)"
+      ],
+      "eventual_breakup": "UNRESOLVED",
+      "generated_breakup_authorised": false,
+      "scope": "regime of the accepted fixed-temperature column at sampled states, reported and not gated; REFUSED_REQUIRES_RESOLVED_NECK marks a regime the reduced chain does not support and leaves eventual breakup unresolved, not excluded; consistency would grant nothing, because an exponent inferred at a finite state is not a constant-power-law basis"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_breakup_closure.py": "58c0ec659bf78f43ea9e4ee4d36bd1d4e6067a42a96ff4b207c0478a762e8514",
+    "cases/i01_breakup_closure_v1.json": "dfced2bc6dc6014d9f7612209f5b447b2272f12ff3843a3875a10bbde5869a9c",
+    "docs/I01_BREAKUP_CLOSURE.md": "85fbda75f26613a22af1675bc17b568a3e2787871233e3933c7972a93a2e5bfd",
+    "tests/test_i01_breakup_closure.py": "032d2b36916ac9e50ef035651a71f2c86194bd29c170297a30e0f9ad1f897421",
+    "tools/check_i01_finite_strain.py": "8ae64cd9c34f2719b99960efbe64c10dde64a0345e11044956cfc11c7488d03b",
+    "tools/check_i01_thermomechanical_motion.py": "f561ee0284ce0c0b240a741fa4356b6a5755418e778596ef21fcfc951243099d",
+    "tools/check_i01_column_heat.py": "9f9f9497a9ecfcc4b681b5820662964c676a5432c74b0cdad688ac193ec17ad8",
+    "tools/check_i01_motion_coupling.py": "7bae1652ed2c942c182fa96f0f416500c1034f4a3732eca101a6bb995f39b590",
+    "tools/check_i01_weakening.py": "93f76391cc2b9f6efe6d6e817bb9090e2854c27088c38402bc74cf24427fedb9",
+    "tools/check_i01_column.py": "7e4c4982718bdd28b0f6b88ef47677bea255ca4275d00dd3885c129b7114d8d9",
+    "cases/i01_finite_strain_v1.json": "e527d581df1ef7494bd244dc1e04734923535f964b836b6355a53526c5625acc",
+    "cases/i01_thermomechanical_motion_v1.json": "d2edffe347a468b0aa6a10811b57077c022d63abb4d795a3b3846adb9224fe29",
+    "cases/i01_column_heat_v1.json": "5a5c7cef6a397d40217b2c06f918bed83b6f962e1eff329ea5daa8cd7fc977a0",
+    "cases/i01_motion_coupling_v1.json": "53dc1b0f4bd9986bcede076ba403f01634fba3cd90901c33628af717b4dbfbf0",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "cases/i01_fault2d_v1.json": "bd732804748b371a8a3f5422cb1b86ac8f1a46a9ecf461f9a5c75c92ebb04542",
+    "evidence/i01-finite-strain-r2.json": "e356000b7d467bc3d43bb4dd0637cdc89d06c32f0bac5e335697d5a8d7e97b34"
+  },
+  "evidence_match": {
+    "receipts": {
+      "evidence/i01-finite-strain-r2.json": true
+    },
+    "recorded_sources": {
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_finite_strain_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_weakening_v1.json": true,
+      "docs/I01_FINITE_STRAIN.md": true,
+      "evidence/i01-column-heat-r2.json": true,
+      "evidence/i01-motion-coupling-r1.json": true,
+      "evidence/i01-thermomechanical-motion-r1.json": true,
+      "tests/test_i01_finite_strain.py": true,
+      "tools/check_i01_column.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_weakening.py": true
+    },
+    "retained": {
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true,
+      "cases/i01_finite_strain_v1.json": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_weakening_v1.json": true
+    },
+    "imported": {
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true
+    }
+  },
+  "case": {
+    "schema": "atlas.i01-breakup-closure-case.v1",
+    "status": "WORKING_NON_CANON",
+    "task": "atlas-i01-breakup-closure-20260927",
+    "kind": "decision_and_bounded_feasibility_controls_not_production_configuration",
+    "contract_document": "docs/I01_BREAKUP_CLOSURE.md",
+    "refines": {
+      "document": "docs/I01_PHYSICAL_CONTRACT.md",
+      "decisions": [
+        "D2",
+        "D6"
+      ],
+      "transition": "docs/I01_TRANSITIONS.md section 3, continental separation (atlas.rift-decoupling-handoff.v1 stays the mechanical handoff)"
+    },
+    "decision": {
+      "selected_law": "atlas.necking-connectivity-breakup.v1",
+      "event_record": "atlas.connectivity-loss-event.v1",
+      "representation": "laterally resolved long-wave chain of material columns, each the accepted finite-strain column, carrying one transmitted force set by the D1 drive/drag balance; every column thins by its own pure shear with its own temperature and history",
+      "trigger": "connectivity loss: the thinnest column reaches zero thickness after finite opening and time; only a future resolved certificate may issue atlas.connectivity-loss-event.v1",
+      "established": "ANALYTICAL_CONTINUUM_PINCH_FEASIBLE only: the exact continuum solution of one fixed single-mechanism power law (constant n, time-independent A(X), gravity/GPE disabled, isothermal) with a non-degenerate quadratic weakness minimum pinches off at finite opening and time for 2 < n <= 4, with sampled and limiting neck slopes inside the long-wave bound; the time-stepped chain and lateral refinement of the exact discrete chain are checked only at the first detection level h = 0.1 H (n = 3)",
+      "resolved_event": "UNRESOLVED, not implemented: a resolved connectivity-loss certificate needs a constitutive basis along the whole approach (not an exponent inferred at one finite state), laterally converged events at every rung used (the rung-12 material neck scale is about 2.29 m for n = 3 and 0.286 m for n = 3.5, against about 293 m columns at N = 2048), long-wave validity from the law's asymptotics, declared thermal and GPE coupling errors, and the event record; generated breakup of the retained lithosphere remains unresolved",
+      "criterion": "a = A(X)(F/2h)^n with one constant n and a time-independent A(X); column strength f = h0^n/A with a unique minimum f_min where 1 - f_min/f = c|X - X0|^q (1 + o(1)), c > 0, and bounded away from zero elsewhere: finite opening at pinch-off iff n > q; q = 2 for a non-degenerate quadratic minimum; a smooth quartic minimum has q = 4 and gives no finite-opening pinch-off for n = 3; flat minima and uniform belts never separate",
+      "admitted": "analytical feasibility only for the declared fixed power law with a constant 2 < n <= 4 and the non-degenerate quadratic profile; an effective exponent inferred at a finite state is a regime diagnostic, not a constant-power-law basis",
+      "refused": [
+        "REFUSED_REQUIRES_RESOLVED_NECK: rate-independent or plastic-dominated (frictional or regularised-plastic) states sampled at finite stress; a regime the reduced chain does not support, requiring resolved x-z mechanics (I07); eventual breakup unresolved, not excluded",
+        "REFUSED_OUTSIDE_LONG_WAVE_VALIDITY: n > 4 from the asymptotic tip slope (H/ell)(h/H)^((4-n)/2), whatever the sampled slopes, or a sampled or limiting neck slope above the bound",
+        "REFUSED_UNSUPPORTED_BASIS: any law, profile or provenance other than the declared fixed power law with a non-degenerate quadratic minimum",
+        "NOT_ESTABLISHED_NO_FINITE_LIMIT: thinning without a finite-opening limit (n <= 2 for the quadratic minimum, flat or fixed-width necks)"
+      ],
+      "state_change": "the belt must carry lateral material resolution (I05); the accepted affine strip and any fixed material set cannot reach zero thickness at finite opening"
+    },
+    "distinctions": {
+      "mechanical_decoupling": "belt share phi = F_t/F_drive <= eps_v (D6 atlas.rift-decoupling-handoff.v1); the material stays connected; no boundary split and no new area",
+      "material_separation": "atlas.connectivity-loss-event.v1 issued only by a future resolved certificate; split by current material position at the neck; both margins keep cohorts, ages, heat and D2 memory",
+      "magmatic_ocean_birth": "D3 atlas.decompression-supply.v1 after separation with an actual melt and enthalpy source; otherwise exhumed mantle, never relabelled as basalt"
+    },
+    "rejected_routes": {
+      "thickness_or_strain_cutoff": "no physical law; the event time and opening depend on the cutoff and have no limit (D6 separation control)",
+      "low_resistance_or_decoupling_as_breakup": "a mechanical handoff only; the material stays connected (no_pinch control)",
+      "prescribed_event": "tests transfers in prescribed_history_v1; never a generated transition",
+      "resolved_2d_rift_inside_i01": "physically complete (Brune et al. 2014; ASPECT continental extension) but a full regional solver owned by I07; required for brittle necks",
+      "embrittlement_plus_fault_kinematics": "whole-crust embrittlement is a regime diagnostic; separation by a supplied fault geometry is prescribed kinematics; used here only as the refusal classifier",
+      "universal_fracture_energy_or_brittle_mantle": "no supported universal lithospheric fracture energy; a brittle law is not applied to the ductile mantle",
+      "magma_assisted_breakup": "needs a calibrated melt-supply or dyke-opening law that Atlas does not have"
+    },
+    "ports": {
+      "force_d1": "F_drive - D v(F_t) = F_t with v = sum dX_i lambda_i a_i(F_t + dU_i): a monotone scalar root with independent retained column inversions (respond_force)",
+      "gpe_d1_d5": "F_i = F_t + (U_i - U_ref), U from the I01 GPE column law on the same columns; no separate ridge-push line force; the feasibility controls deliberately disable gravity/GPE, and equal density structure alone would not make U_i - U_ref vanish for columns of different thickness",
+      "temperature_d4": "accepted material-coordinate thermal clock per column with its own lambda_i(t); lateral conduction omitted and not bounded by the slope check, because flat columns can carry sharp lateral temperature differences; a future coupling must declare a thermal length/time/gradient error criterion; fixed material-base temperature or a declared asthenosphere inflow account; the controls here are isothermal and need no thermal solver",
+      "history_d2": "raw plastic history per column, never filtered across the neck in the chain; the D2 nonlocal length belongs to the resolved I07 neck",
+      "material": "exact volume per column; splitting a column into identical halves is exact; separation splits ownership by current material position",
+      "event_d6": "atlas.connectivity-loss-event.v1 (future resolved certificate only): parent, interval, law, ladder, ratios, local exponent, lateral changes, slope, neck position, split rule, handoff error, new boundary identity, D3 supply owner, status or refusal"
+    },
+    "units": {
+      "length": "m",
+      "time": "s; the chain integrates tau = t v_inf/Lambda with Lambda = integral alpha dX",
+      "force_per_length": "N/m",
+      "drag": "Pa s",
+      "stress_exponent": "dimensionless",
+      "rate_prefactor": "A(X) = A_max alpha(X); A_max is fixed by the declared initial belt share",
+      "parallel_plastic": "dimensionless: stress in units of the yield stress Y, rate in units of Y/(2 eta), scaled creep k = 2 eta A Y^(n-1)"
+    },
+    "control_policy": {
+      "maximum_seconds": 60.0,
+      "gauss_orders": [
+        192,
+        384
+      ],
+      "quadrature_relative": 1e-10,
+      "closed_form_relative": 1e-10,
+      "derivative_relative": 1e-09,
+      "decoupling_relative": 1e-09,
+      "root_relative": 1e-14,
+      "ode_rtol": 1e-12,
+      "ode_atol": 1e-13,
+      "ode_span_scaled": 100.0,
+      "invariant_absolute": 1e-09,
+      "chain_oracle_relative": 1e-08,
+      "uniform_spread_relative": 1e-12,
+      "uniform_relative": 1e-09,
+      "accounts_relative": 1e-09,
+      "force_variation_min": 2.0,
+      "history_time_difference_min": 0.01,
+      "ladder_window": 3,
+      "ratio_max": 0.9,
+      "ratio_spread": 0.02,
+      "divergence_ratio": 0.99,
+      "exponent_tolerance": 0.01,
+      "tail_opening_relative": 0.0001,
+      "tail_time_relative": 0.001,
+      "refinement_order_range": [
+        1.8,
+        2.2
+      ],
+      "refinement_finest_relative": 0.0001,
+      "slope_bound": 0.25,
+      "parity_relative": 1e-09,
+      "mesh_ratio_relative": 1e-12,
+      "scope": "long-wave necking chain under one transmitted force; exact power-law controls; analytical continuum pinch feasibility for a fixed power law with a non-degenerate quadratic minimum; no resolved connectivity-loss certificate; retained column classified read-only; not rupture, ocean birth or calibration"
+    },
+    "control_parameters": {
+      "chain": {
+        "thickness_m": 100000.0,
+        "half_width_m": 300000.0,
+        "weakness_length_m": 600000.0,
+        "drive_n_m": 20000000000000.0,
+        "drag_pa_s": 5e+22,
+        "initial_belt_share": 0.5
+      },
+      "exponents": {
+        "reference": 3.0,
+        "second": 3.5,
+        "subcritical": [
+          1.0,
+          2.0
+        ],
+        "outside_validity": 5.0
+      },
+      "ladder_levels": 12,
+      "detection_fraction": 0.1,
+      "chain_columns": [
+        256,
+        1024
+      ],
+      "uniform_columns": [
+        1,
+        8
+      ],
+      "refinement_columns": [
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "prescribed_force": {
+        "mean_share": 0.5,
+        "relative_amplitude": 0.5,
+        "period_scaled": 0.1
+      },
+      "plateau_fraction": 0.2,
+      "fixed_neck_width_m": 5000.0,
+      "slender_thickness_m": 1000.0,
+      "rigid_plastic_columns": [
+        64,
+        128,
+        256
+      ],
+      "parallel_plastic": {
+        "exponent": 3.0,
+        "scaled_creep": 0.0001,
+        "stress_multiples": [
+          10.0,
+          100.0,
+          1000.0,
+          10000.0
+        ]
+      },
+      "decoupling_share": 0.01,
+      "hypergeometric_deltas": [
+        0.25,
+        0.5,
+        0.8
+      ],
+      "retained": {
+        "order": 64,
+        "stretches": [
+          1.0,
+          1.2,
+          1.4
+        ],
+        "rate_multipliers": [
+          1.0,
+          10.0,
+          100.0,
+          1000.0
+        ],
+        "plastic_share_max": 0.1,
+        "creep_rate_sensitivity": [
+          0.25,
+          0.5
+        ]
+      }
+    },
+    "parameter_provenance": {
+      "chain": "H = 100 km is the accepted finite-strain strip thickness; drive 2e13 N/m and drag 5e22 Pa s are the reviewed motion-case values, checked against the retained context at run time; L = 300 km, ell = 600 km and the initial belt share 1/2 are authored",
+      "exponents": "3 and 3.5 lie inside the analytical window (2, 4] (wet anorthite and dry olivine dislocation creep in the retained case, from the ASPECT continental-extension parameter file; wet quartzite there is 4); 1 and 2 are subcritical; 5 lies above the long-wave window; all authored control choices",
+      "fixed_neck_width_m": "equals physical_length_m of cases/i01_fault2d_v1.json (authored D2 fixture), read and compared at run time",
+      "slender_thickness_m": "authored: a belt 100 times thinner than the control belt, whose sampled n = 5 neck slopes all stay inside the bound; it tests that n > 4 is refused from the asymptotics, not from sampled slopes",
+      "parallel_plastic": "authored scaled point law r = k sigma^n + max(sigma - 1, 0) of the retained additive creep plus regularised-plastic form; a mathematical counterexample independent of the mantle fixture, whose coefficients are not extrapolated; not a physical state",
+      "retained": "order 64 is the accepted finite-strain reference order; stretches lie inside the frozen [0.6, 1.4] window; the rate ladder and classification thresholds are authored",
+      "gates": "authored numerical gates frozen before execution; reasons are given in section 9 of the method document; none is a geological constant"
+    },
+    "acceptance_claim": "Passing demonstrates only the reduced mathematical slice and its refusals: the exact continuum solution of the declared fixed power law with a non-degenerate quadratic minimum is analytically feasible for 2 < n <= 4, the time-stepped chain matches the exact discrete chain at the first detection level, and the other regimes are refused or not established. No resolved connectivity-loss event is certified; general event certification is UNRESOLVED and not implemented. It does not accept generated breakup in any world, brittle rupture, ocean birth or calibration; the retained layered column is classified at sampled states, not run in the chain, and its eventual breakup is unresolved."
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.5484289000160061
+}

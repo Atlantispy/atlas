@@ -1,0 +1,120 @@
+{
+  "schema": "atlas.i01-breakup-closure-case.v1",
+  "status": "WORKING_NON_CANON",
+  "task": "atlas-i01-breakup-closure-20260927",
+  "kind": "decision_and_bounded_feasibility_controls_not_production_configuration",
+  "contract_document": "docs/I01_BREAKUP_CLOSURE.md",
+  "refines": {
+    "document": "docs/I01_PHYSICAL_CONTRACT.md",
+    "decisions": ["D2", "D6"],
+    "transition": "docs/I01_TRANSITIONS.md section 3, continental separation (atlas.rift-decoupling-handoff.v1 stays the mechanical handoff)"
+  },
+  "decision": {
+    "selected_law": "atlas.necking-connectivity-breakup.v1",
+    "event_record": "atlas.connectivity-loss-event.v1",
+    "representation": "laterally resolved long-wave chain of material columns, each the accepted finite-strain column, carrying one transmitted force set by the D1 drive/drag balance; every column thins by its own pure shear with its own temperature and history",
+    "trigger": "connectivity loss: the thinnest column reaches zero thickness after finite opening and time; only a future resolved certificate may issue atlas.connectivity-loss-event.v1",
+    "established": "ANALYTICAL_CONTINUUM_PINCH_FEASIBLE only: the exact continuum solution of one fixed single-mechanism power law (constant n, time-independent A(X), gravity/GPE disabled, isothermal) with a non-degenerate quadratic weakness minimum pinches off at finite opening and time for 2 < n <= 4, with sampled and limiting neck slopes inside the long-wave bound; the time-stepped chain and lateral refinement of the exact discrete chain are checked only at the first detection level h = 0.1 H (n = 3)",
+    "resolved_event": "UNRESOLVED, not implemented: a resolved connectivity-loss certificate needs a constitutive basis along the whole approach (not an exponent inferred at one finite state), laterally converged events at every rung used (the rung-12 material neck scale is about 2.29 m for n = 3 and 0.286 m for n = 3.5, against about 293 m columns at N = 2048), long-wave validity from the law's asymptotics, declared thermal and GPE coupling errors, and the event record; generated breakup of the retained lithosphere remains unresolved",
+    "criterion": "a = A(X)(F/2h)^n with one constant n and a time-independent A(X); column strength f = h0^n/A with a unique minimum f_min where 1 - f_min/f = c|X - X0|^q (1 + o(1)), c > 0, and bounded away from zero elsewhere: finite opening at pinch-off iff n > q; q = 2 for a non-degenerate quadratic minimum; a smooth quartic minimum has q = 4 and gives no finite-opening pinch-off for n = 3; flat minima and uniform belts never separate",
+    "admitted": "analytical feasibility only for the declared fixed power law with a constant 2 < n <= 4 and the non-degenerate quadratic profile; an effective exponent inferred at a finite state is a regime diagnostic, not a constant-power-law basis",
+    "refused": [
+      "REFUSED_REQUIRES_RESOLVED_NECK: rate-independent or plastic-dominated (frictional or regularised-plastic) states sampled at finite stress; a regime the reduced chain does not support, requiring resolved x-z mechanics (I07); eventual breakup unresolved, not excluded",
+      "REFUSED_OUTSIDE_LONG_WAVE_VALIDITY: n > 4 from the asymptotic tip slope (H/ell)(h/H)^((4-n)/2), whatever the sampled slopes, or a sampled or limiting neck slope above the bound",
+      "REFUSED_UNSUPPORTED_BASIS: any law, profile or provenance other than the declared fixed power law with a non-degenerate quadratic minimum",
+      "NOT_ESTABLISHED_NO_FINITE_LIMIT: thinning without a finite-opening limit (n <= 2 for the quadratic minimum, flat or fixed-width necks)"
+    ],
+    "state_change": "the belt must carry lateral material resolution (I05); the accepted affine strip and any fixed material set cannot reach zero thickness at finite opening"
+  },
+  "distinctions": {
+    "mechanical_decoupling": "belt share phi = F_t/F_drive <= eps_v (D6 atlas.rift-decoupling-handoff.v1); the material stays connected; no boundary split and no new area",
+    "material_separation": "atlas.connectivity-loss-event.v1 issued only by a future resolved certificate; split by current material position at the neck; both margins keep cohorts, ages, heat and D2 memory",
+    "magmatic_ocean_birth": "D3 atlas.decompression-supply.v1 after separation with an actual melt and enthalpy source; otherwise exhumed mantle, never relabelled as basalt"
+  },
+  "rejected_routes": {
+    "thickness_or_strain_cutoff": "no physical law; the event time and opening depend on the cutoff and have no limit (D6 separation control)",
+    "low_resistance_or_decoupling_as_breakup": "a mechanical handoff only; the material stays connected (no_pinch control)",
+    "prescribed_event": "tests transfers in prescribed_history_v1; never a generated transition",
+    "resolved_2d_rift_inside_i01": "physically complete (Brune et al. 2014; ASPECT continental extension) but a full regional solver owned by I07; required for brittle necks",
+    "embrittlement_plus_fault_kinematics": "whole-crust embrittlement is a regime diagnostic; separation by a supplied fault geometry is prescribed kinematics; used here only as the refusal classifier",
+    "universal_fracture_energy_or_brittle_mantle": "no supported universal lithospheric fracture energy; a brittle law is not applied to the ductile mantle",
+    "magma_assisted_breakup": "needs a calibrated melt-supply or dyke-opening law that Atlas does not have"
+  },
+  "ports": {
+    "force_d1": "F_drive - D v(F_t) = F_t with v = sum dX_i lambda_i a_i(F_t + dU_i): a monotone scalar root with independent retained column inversions (respond_force)",
+    "gpe_d1_d5": "F_i = F_t + (U_i - U_ref), U from the I01 GPE column law on the same columns; no separate ridge-push line force; the feasibility controls deliberately disable gravity/GPE, and equal density structure alone would not make U_i - U_ref vanish for columns of different thickness",
+    "temperature_d4": "accepted material-coordinate thermal clock per column with its own lambda_i(t); lateral conduction omitted and not bounded by the slope check, because flat columns can carry sharp lateral temperature differences; a future coupling must declare a thermal length/time/gradient error criterion; fixed material-base temperature or a declared asthenosphere inflow account; the controls here are isothermal and need no thermal solver",
+    "history_d2": "raw plastic history per column, never filtered across the neck in the chain; the D2 nonlocal length belongs to the resolved I07 neck",
+    "material": "exact volume per column; splitting a column into identical halves is exact; separation splits ownership by current material position",
+    "event_d6": "atlas.connectivity-loss-event.v1 (future resolved certificate only): parent, interval, law, ladder, ratios, local exponent, lateral changes, slope, neck position, split rule, handoff error, new boundary identity, D3 supply owner, status or refusal"
+  },
+  "units": {
+    "length": "m",
+    "time": "s; the chain integrates tau = t v_inf/Lambda with Lambda = integral alpha dX",
+    "force_per_length": "N/m",
+    "drag": "Pa s",
+    "stress_exponent": "dimensionless",
+    "rate_prefactor": "A(X) = A_max alpha(X); A_max is fixed by the declared initial belt share",
+    "parallel_plastic": "dimensionless: stress in units of the yield stress Y, rate in units of Y/(2 eta), scaled creep k = 2 eta A Y^(n-1)"
+  },
+  "control_policy": {
+    "maximum_seconds": 60.0,
+    "gauss_orders": [192, 384],
+    "quadrature_relative": 1e-10,
+    "closed_form_relative": 1e-10,
+    "derivative_relative": 1e-9,
+    "decoupling_relative": 1e-9,
+    "root_relative": 1e-14,
+    "ode_rtol": 1e-12,
+    "ode_atol": 1e-13,
+    "ode_span_scaled": 100.0,
+    "invariant_absolute": 1e-9,
+    "chain_oracle_relative": 1e-8,
+    "uniform_spread_relative": 1e-12,
+    "uniform_relative": 1e-9,
+    "accounts_relative": 1e-9,
+    "force_variation_min": 2.0,
+    "history_time_difference_min": 0.01,
+    "ladder_window": 3,
+    "ratio_max": 0.9,
+    "ratio_spread": 0.02,
+    "divergence_ratio": 0.99,
+    "exponent_tolerance": 0.01,
+    "tail_opening_relative": 1e-4,
+    "tail_time_relative": 1e-3,
+    "refinement_order_range": [1.8, 2.2],
+    "refinement_finest_relative": 1e-4,
+    "slope_bound": 0.25,
+    "parity_relative": 1e-9,
+    "mesh_ratio_relative": 1e-12,
+    "scope": "long-wave necking chain under one transmitted force; exact power-law controls; analytical continuum pinch feasibility for a fixed power law with a non-degenerate quadratic minimum; no resolved connectivity-loss certificate; retained column classified read-only; not rupture, ocean birth or calibration"
+  },
+  "control_parameters": {
+    "chain": {"thickness_m": 100000.0, "half_width_m": 300000.0, "weakness_length_m": 600000.0, "drive_n_m": 2e13, "drag_pa_s": 5e22, "initial_belt_share": 0.5},
+    "exponents": {"reference": 3.0, "second": 3.5, "subcritical": [1.0, 2.0], "outside_validity": 5.0},
+    "ladder_levels": 12,
+    "detection_fraction": 0.1,
+    "chain_columns": [256, 1024],
+    "uniform_columns": [1, 8],
+    "refinement_columns": [256, 512, 1024, 2048],
+    "prescribed_force": {"mean_share": 0.5, "relative_amplitude": 0.5, "period_scaled": 0.1},
+    "plateau_fraction": 0.2,
+    "fixed_neck_width_m": 5000.0,
+    "slender_thickness_m": 1000.0,
+    "rigid_plastic_columns": [64, 128, 256],
+    "parallel_plastic": {"exponent": 3.0, "scaled_creep": 1e-4, "stress_multiples": [10.0, 100.0, 1000.0, 10000.0]},
+    "decoupling_share": 0.01,
+    "hypergeometric_deltas": [0.25, 0.5, 0.8],
+    "retained": {"order": 64, "stretches": [1.0, 1.2, 1.4], "rate_multipliers": [1.0, 10.0, 100.0, 1000.0], "plastic_share_max": 0.1, "creep_rate_sensitivity": [0.25, 0.5]}
+  },
+  "parameter_provenance": {
+    "chain": "H = 100 km is the accepted finite-strain strip thickness; drive 2e13 N/m and drag 5e22 Pa s are the reviewed motion-case values, checked against the retained context at run time; L = 300 km, ell = 600 km and the initial belt share 1/2 are authored",
+    "exponents": "3 and 3.5 lie inside the analytical window (2, 4] (wet anorthite and dry olivine dislocation creep in the retained case, from the ASPECT continental-extension parameter file; wet quartzite there is 4); 1 and 2 are subcritical; 5 lies above the long-wave window; all authored control choices",
+    "fixed_neck_width_m": "equals physical_length_m of cases/i01_fault2d_v1.json (authored D2 fixture), read and compared at run time",
+    "slender_thickness_m": "authored: a belt 100 times thinner than the control belt, whose sampled n = 5 neck slopes all stay inside the bound; it tests that n > 4 is refused from the asymptotics, not from sampled slopes",
+    "parallel_plastic": "authored scaled point law r = k sigma^n + max(sigma - 1, 0) of the retained additive creep plus regularised-plastic form; a mathematical counterexample independent of the mantle fixture, whose coefficients are not extrapolated; not a physical state",
+    "retained": "order 64 is the accepted finite-strain reference order; stretches lie inside the frozen [0.6, 1.4] window; the rate ladder and classification thresholds are authored",
+    "gates": "authored numerical gates frozen before execution; reasons are given in section 9 of the method document; none is a geological constant"
+  },
+  "acceptance_claim": "Passing demonstrates only the reduced mathematical slice and its refusals: the exact continuum solution of the declared fixed power law with a non-degenerate quadratic minimum is analytically feasible for 2 < n <= 4, the time-stepped chain matches the exact discrete chain at the first detection level, and the other regimes are refused or not established. No resolved connectivity-loss event is certified; general event certification is UNRESOLVED and not implemented. It does not accept generated breakup in any world, brittle rupture, ocean birth or calibration; the retained layered column is classified at sampled states, not run in the chain, and its eventual breakup is unresolved."
+}

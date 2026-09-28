@@ -1,0 +1,82 @@
+{
+  "schema": "atlas.i01-junction-reorganisation.v1",
+  "version": 1,
+  "date": "2026-09-28",
+  "status": "WORKING_NON_CANON",
+  "kind": "design_test_specification_not_runnable_configuration_or_evidence",
+  "method": "tectonics/docs/I01_JUNCTION_REORGANISATION.md",
+  "decision": "evolve_multidirectional_region_then_extract_joint_material_derived_topology",
+  "mc05_status": "RESOLVED_PATCH_ROUTE_SELECTED_IMPLEMENTATION_AND_ACCEPTANCE_OPEN",
+  "scientific_acceptance": false,
+  "generated_reorganisation_enabled": false,
+  "dimension": "3D regional volume for general junction; vertical slices or depth-integrated substitution require separate justification",
+  "regional_owner": "I07",
+  "coupling_owner": "I09",
+  "geometry_owner": "I03",
+  "commit_owner": "I02",
+  "shared_mechanism_dependencies": {
+    "MC-01": "admitted physical separation/contact/slip-discontinuity law; no duplicate junction fracture law",
+    "MC-02": "supported initiation with polarity and incoming material",
+    "MC-03": "compatible finite magma/thermal provider where required; absence never creates basalt"
+  },
+  "entry_triggers": [
+    "bracketed physical contact or degeneration of actual geometry including tangent contacts",
+    "loss of compatible rigid representation after geometry/forcing validation; residual is not a fracture criterion"
+  ],
+  "initial_state": ["accepted parent identity and interval", "transported material/cohort inventories", "composition and thermal/enthalpy state", "elastic stress and plastic history", "inherited interface/contact state", "common datum and work-conjugate exterior ports"],
+  "proposed_3d_convention": {
+    "momentum": "incompressible quasi-static Boussinesq; div(v)=0, -grad(p)+div(tau)+rho_b*g=0",
+    "memory": "logarithmic-objective fixed-G elastic branch plus common-stress creep and plastic rates",
+    "stress_invariant": "sqrt(tau:tau/2)",
+    "yield": "6*(C*cos(phi)+P_eff*sin(phi))/(sqrt(3)*(3+sin(phi)))",
+    "pressure": "P_eff=max(P_lith+P_dynamic-P_pore,0), physical surface/load datum",
+    "plastic_multiplier": "max(tau_II-Y_3D,0)/eta_p; eta_p positive engineering-shear convention",
+    "plastic_tensor": "lambda_p*tau/(2*tau_II) for positive tau_II; zero otherwise; no dilatancy",
+    "history": "Dkappa/Dt=lambda_p; zero-healing first branch; fixed physical-length influence filter, raw kappa transported",
+    "source": "ASPECT v3.0.0 source compute_yield_stress; pressure coefficient 6, not conflicting parameter-text coefficient 2",
+    "calibration_warning": "2D coefficients cannot be silently reused as calibrated 3D strengths; no general return mapping implemented"
+  },
+  "exit_rule": [
+    "actual mechanism-issued interfaces or accounted state changes, not caller verification flags",
+    "shared reconstructed geometry, cyclic ownership and exterior coverage",
+    "mechanism and full-vector relative motion support boundary classification",
+    "applicable kinematic checks on the resulting geometry",
+    "whole-window mechanical handoff and compatible material/work/history accounts",
+    "one joint candidate-validate-commit transaction; dependent motion recomputed"
+  ],
+  "otherwise": "continue valid deforming patch, refine unresolved state, or stop at explicit resource/domain limit; never continue invalid rigid graph",
+  "forbidden_selectors": ["minimum residual", "shortest edge", "graph dissipation score", "prescribed 120-degree geometry", "raster or band-width cutoff", "round-off or ID-order winner", "contact timestamp substituted for later physical birth"],
+  "transaction_rules": [
+    "M_after[k]=M_before[k]+M_external_in[k]-M_external_out[k] for each actual component",
+    "internal transfers paired once; no mass/heat/age source from relabelling",
+    "overlapping event footprints and source reservations solved jointly",
+    "exact ledger identity distinct from numerical remap/work error",
+    "all-or-nothing commit; failed branches leave accepted parent intact"
+  ],
+  "predeclared_controls": [
+    {"id": "JR-CONVENTION", "status": "NOT_RUN", "expected": "phi=0 gives Y3=2*C/sqrt(3), not Y2=C; engineering plastic-shear factor and nonnegative power"},
+    {"id": "JR-MEMORY", "status": "NOT_RUN", "expected": "rigid-frame invariance, unload/reload and transported stress/history with no reset"},
+    {"id": "JR-NO-BIRTH", "status": "NOT_RUN", "expected": "contact plus feasible all-ridge kinematics alone cannot issue physical topology change"},
+    {"id": "JR-COMPETITION", "status": "NOT_RUN", "expected": "two horizontal directions compete through actual material physics; symmetric ambiguity not resolved by ID or grid order"},
+    {"id": "JR-DISTRIBUTED", "status": "NOT_RUN", "expected": "supported continued deformation remains a region, not a forced three-line junction"},
+    {"id": "JR-SOURCE", "status": "NOT_RUN", "expected": "competing finite magma demands not independently debited; no unsupported basalt on exhaustion"},
+    {"id": "JR-JOINT-EVENT", "status": "NOT_RUN", "expected": "distinct contact/birth times; tangent contact retained; replay and rollback preserve once-only transfers"},
+    {"id": "JR-COUPLING", "status": "NOT_RUN", "expected": "opposite port work cancels; no duplicate regional/global force; whole-window handoff checked"},
+    {"id": "JR-REFINEMENT", "status": "NOT_RUN", "expected": "h/h2/h4 at fixed physical law, time, rotation and patch/depth sensitivity; full quantities and event brackets reported"}
+  ],
+  "required_before_physical_campaign": [
+    "supported shared MC-01/02/03 mechanism actually used by the chosen case",
+    "complete material parameters, histories, forcing, patch and exterior coverage",
+    "3D coefficient conversion and general stress/plastic integration",
+    "locked physical/numerical length scales, tolerances and handoff window",
+    "budget and restart points; one bounded competing-direction case before broader coverage"
+  ],
+  "reuse_evidence": {
+    "i01-junction-events-r1": "unchanged affine contact controls only",
+    "i01-ridge-junction-r1": "unchanged local symmetric-ridge kinematics only",
+    "i01-transitions-r2": "unchanged prescribed event/accounting controls only"
+  },
+  "no_new_numerical_receipt": true,
+  "efficiency": "local activation, same-region overlap handling, shared immutable parents, valid sparse-structure reuse, bounded diagnostics; parallel only genuinely independent patches",
+  "measured_speedup": null
+}

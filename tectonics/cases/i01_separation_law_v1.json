@@ -1,0 +1,365 @@
+{
+  "schema": "atlas.i01-separation-law-case.v1",
+  "status": "WORKING_NON_CANON",
+  "contract": "atlas.cohesion-loss-separation.v1",
+  "document": "tectonics/docs/I01_SEPARATION_LAW.md",
+  "kind": "predeclared analytical local controls plus an unimplemented resolved comparison; not evidence, calibration or a run",
+  "scientific_acceptance": false,
+  "event_authorised": false,
+  "mc01": "OPEN: candidate mechanism selected; the resolved comparison below is not implemented or run",
+  "policy": {
+    "closed_form_relative": 1e-12,
+    "event_relative": 1e-11,
+    "event_bracket_relative": 1e-13,
+    "energy_relative": 1e-10,
+    "gauss_points": 16,
+    "subinterval_exponent": 4.0,
+    "maximum_exponent": 600.0,
+    "maximum_segments": 4096,
+    "series_threshold": 0.5,
+    "series_terms": 28,
+    "bisection_iterations": 200,
+    "timing_calls": 50,
+    "timing_repetitions": 5,
+    "maximum_seconds": 60.0
+  },
+  "decision": {
+    "route": "the third route of the closure matrix case separation.bounded_rate_argument.separation_needs_one_of: an admitted failure law that creates a discontinuity, here a cohesion (bond) discontinuity",
+    "mechanism": "atlas.cohesion-loss-separation.v1",
+    "status": "SELECTED_CANDIDATE_MC01_OPEN",
+    "supplies": "a research decision and a prerequisite local slice (bond-state rule, band-equivalent strength and energy, exact local controls with retained elastic memory); not an admitted mechanism, event or split",
+    "bond_rule": "BONDED if the strength-controlling history is zero; UNRESOLVED if it is positive and temperature or effective pressure lies outside the declared cohesion-loss support; BROKEN if the residual state is declared broken_surface_sliding with provenance and the history has reached kappa_c inside support; BONDED otherwise",
+    "section_rule": "a section separates only when no BONDED path of tracked crust, mantle lithosphere or their union joins the predeclared intact anchors across WELDED contacts; unresolved states are evaluated both ways; point-set connectivity is reported beside it and never decides an event",
+    "band_equivalence": "uniform band of physical width w_s: D_c = kappa_c w_s, G(P_eff) = (Y0 - Yr) D_c / 2, k_soft = (Y0 - Yr)/D_c; derived locally, never a universal fracture energy",
+    "not_selected": {
+      "singularity": "only the constant-exponent power-law long-wave chain has a proven pinch-off; the retained mixed creep/plastic law's asymptote lies outside coefficient support (I01_BREAKUP_CLOSURE sections 4-6)",
+      "state_change": "melt extraction belongs to open MC-03; mantle-lithosphere reclassification needs an unselected I05 law and cannot remove a crustal bridge; pore-fluid and hydration routes are unowned (UR-07)"
+    },
+    "exclusions": [
+      "creep and elastic loading never remove cohesion",
+      "plastic history outside the declared support is UNRESOLVED, never BROKEN",
+      "a residual declared weakened_intact never breaks",
+      "tensile opening, universal fracture energy, pore-fluid and magma-assisted breakup are refused or unowned",
+      "no thickness, cell fraction, empty gap, detection level or ladder extrapolation enters the event"
+    ],
+    "obstructions": [
+      "mixed necks: bonded creeping lower lithosphere keeps the union connected; through-lithosphere separation needs resolved embrittlement into the law's support or an admitted I05 reclassification law, neither selected",
+      "the retained D2 fixture inputs (ASPECT cookbook 20 MPa cohesion, 30 degree friction, each weakened by a factor 4) carry no residual-state semantics or cohesion-loss support, so their plastic history is UNRESOLVED until IN-04 supplies both"
+    ],
+    "smallest_decision": [
+      "adopt bonded connectivity as the meaning of material connection in the separation diagnostics (proposed_wording_corrections)",
+      "add to IN-04: residual-state semantics with provenance, cohesion-loss support in temperature and effective pressure, and the physical shear-zone width with its basis (the last already requested by I01_TRANSITIONS section 11 item 3)"
+    ],
+    "lengths": {
+      "grid_spacing": "numerical; varied in refinement",
+      "ell": "declared D2 physical/regularisation length; fixed in refinement; changed only as a labelled sensitivity",
+      "w_s": "physical shear-zone width of the represented band; fixed in refinement; halved and doubled as a sensitivity",
+      "D_c": "kappa_c w_s; fixed in refinement",
+      "neck_and_plastic_width": "NA-01 participation diagnostics; results, never inputs",
+      "fracture_regularisation_length": "none introduced"
+    },
+    "energy_interfaces": "W_ext = dE_elastic + D_creep + D_plastic per unit band area; D_plastic = realised breakdown (G at completion) + residual friction (Yr delta_p) + viscoplastic overstress; all dissipation goes to the D4 heat rule (IN-05); stored elastic change is never heat; no stress is reset; nothing is deleted"
+  },
+  "runnable_controls": {
+    "provenance": "analytical control values chosen for exact arithmetic (friction angle with sine 0.6 and cosine 0.8; round powers of ten); not planetary defaults, calibration or IN-04 inputs",
+    "law": {
+      "peak_cohesion_pa": 2.0e7,
+      "peak_friction_rad": 0.6435011087932844,
+      "residual_cohesion_pa": 0.0,
+      "residual_friction_rad": 0.6435011087932844,
+      "softening_history": 1.0,
+      "band_width_m": 1000.0,
+      "width_basis": "physical",
+      "plastic_viscosity_pa_s": 1.0e19,
+      "residual_state": "broken_surface_sliding",
+      "provenance": "analytical control law: cohesion softening at constant friction (the Lavier et al. 2000 equation 2 form) in the retained plane-strain convention; not a material calibration",
+      "support_temperature_k": [273.0, 700.0],
+      "support_effective_pressure_pa": [0.0, 3.0e8]
+    },
+    "stable_loading": {
+      "stiffness_pa_m": 3.2e4,
+      "loading_rate_m_s": 1.0e-10,
+      "creep_viscosity_pa_s": null,
+      "effective_pressure_pa": 1.0e8,
+      "temperature_k": 500.0,
+      "healing_rate_s": 0.0
+    },
+    "unstable_stiffness_pa_m": 8.0e3,
+    "initial_state": {"traction_pa": 5.0e7, "history": 0.0, "time_s": 0.0},
+    "timing_state": {"traction_pa": 7.6e7, "history": 0.1, "time_s": 0.0},
+    "horizons_s": {
+      "stable": 1.5e13,
+      "forgotten": 2.5e13,
+      "unstable": 3.6e13,
+      "hot_creep": 1.0e14,
+      "narrow_creep": 3.0e13,
+      "cold_creep": 2.0e13,
+      "timing": 1.0e11
+    },
+    "subdivisions": 7,
+    "creep": {"hot_viscosity_pa_s": 1.0e20, "cold_viscosity_pa_s": 1.0e22, "narrow_band_width_m": 100.0},
+    "friction_softening": {"residual_friction_rad": 0.1001674211615598, "pressures_pa": [1.0e8, 2.0e8]},
+    "expected": {
+      "peak_yield_pa": 7.6e7,
+      "residual_yield_pa": 6.0e7,
+      "breakdown_slip_m": 1000.0,
+      "fracture_energy_j_m2": 8.0e9,
+      "softening_stiffness_pa_m": 1.6e4,
+      "stability_ratio_stable": 2.0,
+      "stability_ratio_unstable": 0.5,
+      "yield_time_retained_s": 8.125e12,
+      "yield_time_forgotten_s": 2.375e13,
+      "memory_advance_s": 1.5625e13,
+      "strength_work_to_completion_j_m2": 6.8e10,
+      "residual_friction_to_completion_j_m2": 6.0e10,
+      "stable_completion": {
+        "equation": "X - 1 + exp(-X) = kappa_c (k w_s - s)^2 / (eta_p k V) = 8, with X = |g| t' after yield and |g| = (k w_s - s)/eta_p = 1.6e-12 s^-1",
+        "right_hand_side": 8.0,
+        "rate_s": 1.6e-12,
+        "X_bracket": [8.99987, 8.99988],
+        "completion_traction": "Yr + (k V / |g|)(1 - exp(-X)), with k V / |g| = 2.0e6 Pa"
+      },
+      "unstable_completion": {
+        "equation": "exp(X) - 1 - X = kappa_c (s - k w_s)^2 / (eta_p k V) = 8, with X = g t' after yield and g = (s - k w_s)/eta_p = 8.0e-13 s^-1",
+        "right_hand_side": 8.0,
+        "rate_s": 8.0e-13,
+        "X_bracket": [2.4368, 2.4369],
+        "yield_time_s": 3.25e13
+      },
+      "rate_independent": {
+        "yield_loading_m": 812.5,
+        "completion_loading_after_yield_m": 500.0,
+        "completion_time_after_yield_s": 5.0e12,
+        "viscoplastic_lag_s": 6.25e11,
+        "unstable_released_excess_j_m2": 8.0e9
+      },
+      "hot_creep": {"steady_traction_pa": 1.0e7, "relaxation_rate_s": 3.2e-13, "yields": false},
+      "narrow_creep": {"steady_traction_pa": 1.0e8, "relaxation_rate_s": 3.2e-14, "yield_time": "ln((1e8 - 5e7)/(1e8 - 7.6e7))/3.2e-14 = ln(25/12)/3.2e-14 s", "final_bond": "BROKEN"},
+      "cold_creep": {"steady_traction_pa": 1.0e9, "relaxation_rate_s": 3.2e-15, "yield_time": "ln((1e9 - 5e7)/(1e9 - 7.6e7))/3.2e-15 s", "final_bond": "BROKEN"},
+      "friction_softening_energy_j_m2": [3.3e10, 5.8e10],
+      "friction_softening_energy_difference_j_m2": 2.5e10
+    },
+    "bond_states": [
+      {"id": "ductile_no_history", "history": 0.0, "temperature_k": 1500.0, "effective_pressure_pa": 2.0e9, "expected": "BONDED"},
+      {"id": "partly_softened", "history": 0.5, "temperature_k": 500.0, "effective_pressure_pa": 1.0e8, "expected": "BONDED"},
+      {"id": "completed", "history": 1.0, "temperature_k": 500.0, "effective_pressure_pa": 1.0e8, "expected": "BROKEN"},
+      {"id": "beyond_completion", "history": 2.0, "temperature_k": 500.0, "effective_pressure_pa": 1.0e8, "expected": "BROKEN"},
+      {"id": "hot_plastic_history", "history": 2.0, "temperature_k": 1500.0, "effective_pressure_pa": 1.0e8, "expected": "UNRESOLVED"},
+      {"id": "deep_plastic_history", "history": 2.0, "temperature_k": 500.0, "effective_pressure_pa": 5.0e8, "expected": "UNRESOLVED"},
+      {"id": "weakened_intact", "law_changes": {"residual_state": "weakened_intact"}, "history": 2.0, "temperature_k": 500.0, "effective_pressure_pa": 1.0e8, "expected": "BONDED"}
+    ],
+    "surface": {
+      "stress_pa": [[-1.2e8, 3.0e7], [3.0e7, -8.0e7]],
+      "normal": [0.6, 0.8],
+      "jump_m": [-200.0, 150.0],
+      "rotations_rad": [0.3, 1.7, -2.5],
+      "expected": {"normal_traction_pa": -6.56e7, "shear_traction_pa": 1.08e7, "effective_pressure_pa": 6.56e7, "slip_m": 250.0, "shear_sense": 1, "slip_sense": 1}
+    },
+    "sections": {
+      "cohesionless_surface": {
+        "given": "two intact blocks in contact across admitted cohesionless surfaces through crust and mantle lithosphere",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Rc", "COHESIONLESS"], ["Lm", "Rm", "COHESIONLESS"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "DISCONNECTED", "mantle_lithosphere": "DISCONNECTED", "union": "DISCONNECTED", "set_union": "CONNECTED"}
+      },
+      "broken_band": {
+        "given": "a resolved band of BROKEN crust and mantle-lithosphere cells spanning the section; the material still occupies space",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Bc": {"material": "crust", "bond": "BROKEN"}, "Bm": {"material": "mantle_lithosphere", "bond": "BROKEN"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Bc", "Bm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Bc", "WELDED"],
+                     ["Bc", "Rc", "WELDED"], ["Lm", "Bm", "WELDED"], ["Bm", "Rm", "WELDED"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "DISCONNECTED", "mantle_lithosphere": "DISCONNECTED", "union": "DISCONNECTED", "set_union": "CONNECTED"}
+      },
+      "crust_only_break": {
+        "given": "BROKEN crust over bonded, creeping mantle lithosphere",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Bc": {"material": "crust", "bond": "BROKEN"}, "Bm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Bc", "Bm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Bc", "WELDED"],
+                     ["Bc", "Rc", "WELDED"], ["Lm", "Bm", "WELDED"], ["Bm", "Rm", "WELDED"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "DISCONNECTED", "mantle_lithosphere": "CONNECTED", "union": "CONNECTED", "set_union": "CONNECTED"}
+      },
+      "alternating_bridge": {
+        "given": "neither subset has a side-to-side path but crust-mantle-crust-mantle cells do",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "M1": {"material": "mantle_lithosphere", "bond": "BONDED"}, "C1": {"material": "crust", "bond": "BONDED"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "M1", "WELDED"], ["M1", "C1", "WELDED"], ["C1", "Rm", "WELDED"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "DISCONNECTED", "mantle_lithosphere": "DISCONNECTED", "union": "CONNECTED", "set_union": "CONNECTED"}
+      },
+      "unresolved_bridge": {
+        "given": "an UNRESOLVED crust cell (for example sub-resolution or outside support) is the only possible bridge",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Uc": {"material": "crust", "bond": "UNRESOLVED"}, "Bm": {"material": "mantle_lithosphere", "bond": "BROKEN"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Uc", "WELDED"], ["Uc", "Rc", "WELDED"],
+                     ["Lm", "Bm", "WELDED"], ["Bm", "Rm", "WELDED"], ["Uc", "Bm", "WELDED"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "UNRESOLVED", "mantle_lithosphere": "DISCONNECTED", "union": "UNRESOLVED", "set_union": "CONNECTED"}
+      },
+      "unresolved_face": {
+        "given": "an UNRESOLVED crustal contact and a cohesionless mantle contact between intact blocks",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Rc", "UNRESOLVED"], ["Lm", "Rm", "COHESIONLESS"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "UNRESOLVED", "mantle_lithosphere": "DISCONNECTED", "union": "UNRESOLVED", "set_union": "CONNECTED"}
+      },
+      "negative_film": {
+        "given": "the exact positive-thickness film of I01_SEPARATION_DECISION section 5 at any finite opening: bonded crust and mantle film cells",
+        "cells": {
+          "Lc": {"material": "crust", "bond": "BONDED"}, "Lm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Fc": {"material": "crust", "bond": "BONDED"}, "Fm": {"material": "mantle_lithosphere", "bond": "BONDED"},
+          "Rc": {"material": "crust", "bond": "BONDED"}, "Rm": {"material": "mantle_lithosphere", "bond": "BONDED"}
+        },
+        "contacts": [["Lc", "Lm", "WELDED"], ["Fc", "Fm", "WELDED"], ["Rc", "Rm", "WELDED"], ["Lc", "Fc", "WELDED"],
+                     ["Fc", "Rc", "WELDED"], ["Lm", "Fm", "WELDED"], ["Fm", "Rm", "WELDED"]],
+        "anchors": {"left": ["Lc", "Lm"], "right": ["Rc", "Rm"]},
+        "expected": {"crust": "CONNECTED", "mantle_lithosphere": "CONNECTED", "union": "CONNECTED", "set_union": "CONNECTED"}
+      }
+    },
+    "intervals": [
+      {"id": "band_breaks", "before": "negative_film", "after": "broken_band", "expected": {"union_event": "BRACKETED_UNION_LOSS", "crustal_milestone": true}},
+      {"id": "crust_breaks_first", "before": "negative_film", "after": "crust_only_break", "expected": {"union_event": "NO_UNION_EVENT", "crustal_milestone": true}},
+      {"id": "crust_stays_broken", "before": "crust_only_break", "after": "crust_only_break", "expected": {"union_event": "NO_UNION_EVENT", "crustal_milestone": false}},
+      {"id": "inherited_gap", "before": "cohesionless_surface", "after": "cohesionless_surface", "expected": {"union_event": "INHERITED_DISCONNECTION", "crustal_milestone": false}},
+      {"id": "healed", "before": "broken_band", "after": "negative_film", "expected": {"union_event": "RECONNECTED", "crustal_milestone": false}},
+      {"id": "unresolved_after", "before": "negative_film", "after": "unresolved_bridge", "expected": {"union_event": "UNRESOLVED", "crustal_milestone": false}},
+      {"id": "film_persists", "before": "negative_film", "after": "negative_film", "expected": {"union_event": "NO_UNION_EVENT", "crustal_milestone": false}}
+    ],
+    "negative_example": {
+      "source": "tectonics/cases/i01_separation_decision_v1.json negative_ladder; these copied values must equal it at run time",
+      "H_c_m": 64,
+      "a": 1,
+      "c": 1,
+      "w_m": 1,
+      "c_w": 1,
+      "u_a_m": 63,
+      "thickness_levels_m": [64, 32, 16, 8, 4, 2, 1],
+      "opening_levels_m": [0, 32, 48, 56, 60, 62, 63],
+      "false_extrapolated_limit_m": 64,
+      "halved_w_m": 0.5,
+      "film_section": "negative_film",
+      "expected_union": "CONNECTED",
+      "expected_interval": "NO_UNION_EVENT"
+    },
+    "refusals": [
+      {"id": "grid_width", "target": "law", "changes": {"width_basis": "grid_cells"}, "expected": "REFUSED_WIDTH_NOT_PHYSICAL"},
+      {"id": "no_softening", "target": "law", "changes": {"residual_cohesion_pa": 2.0e7}, "expected": "REFUSED_NO_SOFTENING"},
+      {"id": "missing_provenance", "target": "law", "changes": {"provenance": " "}, "expected": "REFUSED_MISSING_PROVENANCE"},
+      {"id": "unknown_residual_state", "target": "law", "changes": {"residual_state": "fractured"}, "expected": "REFUSED_INVALID_INPUT"},
+      {"id": "healing", "target": "loading", "changes": {"healing_rate_s": 1.0e-15}, "expected": "REFUSED_HEALING_NOT_IN_SLICE"},
+      {"id": "reverse_loading", "target": "loading", "changes": {"loading_rate_m_s": -1.0e-10}, "expected": "REFUSED_REVERSE_OR_TENSILE_LOADING"},
+      {"id": "outside_support", "target": "prepared", "changes": {"effective_pressure_pa": 5.0e8}, "expected": "REFUSED_OUTSIDE_SUPPORT"},
+      {"id": "thickness_field", "target": "section", "section": "negative_film", "cell": "Fc", "field": ["thickness_m", 0.36787944117144233], "expected": "REFUSED_UNSUPPORTED_FIELD"},
+      {"id": "broken_anchor", "target": "section", "section": "broken_band", "left_anchor": "Bc", "expected": "REFUSED_INVALID_SECTION"},
+      {"id": "opening", "target": "surface", "jump_m": [60.0, 80.0], "expected": "REFUSED_OPENING_NOT_OWNED"}
+    ],
+    "cost_bound": "whole campaign at most 60 seconds after imports, checked cooperatively inside every control; raw timings only, no saving claimed"
+  },
+  "unimplemented_resolved_comparison": {
+    "status": "PREDECLARED_NOT_IMPLEMENTED",
+    "owner": "I07, with I05 transport and I02 persistence; I01 fixes the tolerances below before execution",
+    "configuration": "the retained lithosphere as one resolved plane-strain x-z neck: retained composite creep within its coefficient support; the I01_PHYSICAL_CONTRACT section 4 D2 elements (plane-strain yield with absolute P_eff, linear softening of Y in kappa_bar to a declared residual, eta_p, Helmholtz ell, transported raw kappa, h(T)); a free surface; owned shear heating; retained elastic stress with the logarithmic-objective direction (I01_ELASTIC_MEMORY); the MC-04 basal closure (I01_BASAL_CLOSURE); this document's bond-state law with declared semantics, support and physical w_s",
+    "inputs_required_before_execution": [
+      "IN-04 residual-state semantics with provenance",
+      "IN-04 cohesion-loss support in temperature and effective pressure",
+      "IN-04 physical shear-zone width w_s and its basis",
+      "material anchors and candidate footprint, declared before any run",
+      "horizon and wall-clock budget, declared by I07 in its own case"
+    ],
+    "resolutions": "N and 2N cells at fixed ell (at least 4 and 8 cells per ell across the band); time steps dt and dt/2 on the finer grid; identical anchors, support and law",
+    "physical_sensitivities_separately_labelled": ["ell doubled", "w_s (hence D_c) halved and doubled", "kappa_c", "eta_p", "MC-04 base depth"],
+    "diagnostics": [
+      "bonded crust, mantle-lithosphere and union connectivity, with point-set connectivity reported beside it",
+      "weak-zone surface-to-base connectivity",
+      "bracket of the union loss in time and opening",
+      "temperature, effective pressure, strain rate, stress and elastic-memory ranges against the declared support along the whole approach",
+      "measured band traction-slip response and realised breakdown energy, compared with the local law using the plastic participation width",
+      "NA-01 neck and plastic widths and the section resultant S",
+      "work, stored elastic energy, dissipation by part and heat",
+      "the negative example passed through the same admission logic"
+    ],
+    "tolerances": {
+      "event_bracket": "union-loss brackets overlap and their midpoints in time and opening differ by at most 3% between N and 2N at fixed ell, and between dt and dt/2",
+      "breakdown_energy": "realised breakdown energy per unit band length differs by at most 3% between N and 2N",
+      "basis": "reuses the retained 3% D2 mesh and time gates (i01_closures_v1 d2_mesh_relative and d2_time_relative; i01_fault2d_v1 mesh_relative and time_relative); feasibility tolerances, not geological uncertainty",
+      "account_closure": "predeclared by I07 from its solver tolerances, as I01_BASAL_CLOSURE requires; no separation claim if closure fails",
+      "support": "exact: every BROKEN cell inside the declared support along the whole approach",
+      "negative_example": "exact: refused by the same admission logic"
+    },
+    "acceptance": "a mechanism is admitted only if the event converges as above, no threshold other than the constitutive completion enters and the physical sensitivities are reported, the state stays inside support, the negative example is refused, and replacing the belt meets E_v <= eps_v over the history window (I01_SEPARATION_DECISION section 4)",
+    "eps_v": null,
+    "eps_v_owner": "I02",
+    "if_none_passes": "the route stays blocked; only the owner can reclassify it as unsupported (INTEGRATION_PLAN section 5)",
+    "cost_bound": "declared by I07 in its case before execution; no run is authorised by this record"
+  },
+  "proposed_wording_corrections": [
+    {
+      "target": "tectonics/docs/I01_SEPARATION_DECISION.md section 2, third paragraph",
+      "current": "Assess paths through reconstructed material in the declared domain, including interfaces and possible paths round the candidate cut.",
+      "proposed": "Assess bonded paths through reconstructed material in the declared domain, including possible paths round the candidate cut. A path may cross a welded material interface, such as crust to mantle, but not material or a surface whose admitted law has removed its cohesion. Contact across an admitted cohesionless surface is not a material connection; a bonded film of any positive thickness is one.",
+      "demonstration": "sections cohesionless_surface and broken_band: point-set CONNECTED, bonded DISCONNECTED"
+    },
+    {
+      "target": "tectonics/docs/I01_SEPARATION_DECISION.md section 1 table",
+      "current": "removes the last resolved crustal material connection; loss of the relevant material connection",
+      "proposed": "removes the last resolved bonded crustal connection; loss of the relevant bonded material connection"
+    },
+    {
+      "target": "tectonics/docs/I01_BREAKUP_CLOSURE.md section 1, item 2",
+      "current": "The continental material joining the two sides thins to nothing somewhere.",
+      "proposed": "add: This applies to the reduced necking chain. An admitted cohesion-loss law can instead remove the bond without zero thickness or an empty gap (I01_SEPARATION_LAW)."
+    },
+    {
+      "target": "tectonics/docs/I01_CLOSURE_MATRIX.md section 6.1(4) and tectonics/cases/i01_closure_matrix_v1.json separation.bounded_rate_argument.statement",
+      "current": "a connected material set therefore stays connected",
+      "proposed": "a connected material point set therefore stays connected; its bonded connectivity can still change through an admitted failure law that removes cohesion without a velocity discontinuity"
+    },
+    {
+      "target": "tectonics/docs/I01_PHYSICAL_CONTRACT.md section 8, first D6 row (source-bound; owner decision)",
+      "current": "bracketed connectivity change",
+      "proposed": "bracketed bonded-connectivity change"
+    }
+  ],
+  "sources": {
+    "read": [
+      "Lavier, Buck and Poliakov (2000), JGR 105(B10):23431-23442, author-hosted scan, all pages: section 3.1 equations 1-2 and the characteristic offset, the 4 MPa numerical residual cohesion, Table 1, section 5 equations 3-4, sections 6.2-6.3",
+      "Aagaard, Knepley and Williams (2013), arXiv:1308.5846v1, sections 1-4.2 and equations 1-56",
+      "PyLith documentation, Fault Interface Conditions, stable build, as returned by a summarising fetch that quoted its statements",
+      "Fei and Choo (2020), arXiv:2003.04779v3, sections 1-2.4, Remarks 1-6, equations 1-51"
+    ],
+    "reused_not_reread": [
+      "Brune et al. (2014), via I01_BREAKUP_CLOSURE section 11",
+      "ASPECT continental-extension cookbook, parameter file and strain_dependent.cc, via I01_BREAKUP_CLOSURE and I01_WEAKENING",
+      "Duretz et al. (2023) and PTsolvers, via I01_FAULT2D",
+      "Hutchinson and Neale (1977) and Audoly and Hutchinson (2019), via I01_BREAKUP_CLOSURE"
+    ],
+    "not_accessible": [
+      "Palmer and Rice (1973): author-hosted PDF failed a TLS certificate check; used only as restated by Fei and Choo",
+      "Bazant and Oh (1983): host certificate expired",
+      "Simo, Oliver and Armero (1993): restricted repository access; abstract only",
+      "Sibson (1977): HTTP 403",
+      "Huismans and Beaumont (2011): not accessed (I01_CLOSURE_MATRIX section 7)"
+    ],
+    "external_software_run": false
+  }
+}

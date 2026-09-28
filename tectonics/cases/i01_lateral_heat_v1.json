@@ -1,0 +1,29 @@
+{
+  "schema": "atlas.i01-lateral-heat-case.v1",
+  "policy": {
+    "max_cells": 256,
+    "max_contacts": 1024,
+    "max_windows": 64,
+    "input_bits": 4096,
+    "oracle_relative": 1e-12
+  },
+  "assumptions": {
+    "geometry": "fixed_orthogonal_control_volumes",
+    "thermal_properties": "prescribed_temperature_independent",
+    "forcing": "identical_prescribed_sources_and_vertical_boundaries",
+    "lateral_boundaries": "closed",
+    "vertical_operator": "nonnegative_offdiagonals_nonpositive_row_sums",
+    "feedback": "none",
+    "claim": "semidiscrete_temperature_only"
+  },
+  "two_cell": {
+    "capacities_j_k": [2000000, 5000000],
+    "contacts": [
+      {"left": 0, "right": 1, "conductivity_w_m_k": 3, "area_m2": 1, "distance_m": 1000}
+    ],
+    "initial_difference_k": 100,
+    "duration_s": 1000000,
+    "permissive_allowance_k": 0.2,
+    "strict_allowance_k": 0.1
+  }
+}

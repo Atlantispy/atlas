@@ -1,0 +1,32 @@
+{
+  "schema": "atlas.i01-phase-pressure-case.v1",
+  "status": "WORKING NON-CANON",
+  "policy": {"max_iterations":64,"temperature_tolerance_k":1e-7,"benchmark_calls":40,"benchmark_repetitions":3,"maximum_seconds":30.0},
+  "target_pressure_pa": 500000000.0,
+  "simpson_panels": [16,32,64],
+  "integral_tolerance_j": 2.0,
+  "pure": {
+    "model": {
+      "component_ids": ["analytical-pure"],
+      "latent_j_kg": [400000.0],
+      "melting_k": [1600.0],
+      "solid_volume_m3_kg": [0.0003],
+      "liquid_volume_m3_kg": [0.00033],
+      "energy_offset_j_kg": [0.0],
+      "cp_j_kg_k": 1000.0,
+      "mixing_r_j_kg_k": 100.0,
+      "reference_temperature_k": 1000.0,
+      "reference_pressure_pa": 0.0,
+      "temperature_bounds_k": [600.0,2600.0],
+      "pressure_bounds_pa": [0.0,3500000000.0],
+      "source_id": "pure-analytical-adiabat-not-mantle-calibration"
+    },
+    "component_mass_kg": [10000.0],
+    "start_pressure_pa": 1000000000.0,
+    "start_temperature_k": 1720.0,
+    "start_liquid_fraction": 0.5,
+    "target_pressure_pa": 0.0,
+    "expected": {"temperature_k":1600.0,"liquid_fraction":0.7892826463185045,"enthalpy_pressure_change_j":-3192869414.725983,"compression_work_j":-42869414.725982},
+    "absolute_tolerance": {"temperature_k":1e-7,"liquid_fraction":1e-10,"enthalpy_pressure_change_j":0.05,"compression_work_j":0.05}
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "atlas.i01-elastic-memory-control.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "resolved_neck": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_elastic_memory.py": "bd7b11f7183ebf392da3e603e67d0f87d4929d1c6abe923f3189b8afd5207307",
+    "tests/test_i01_elastic_memory.py": "77d2e289164d0e390bb069053e03d31f4557d567ea88a65924f4b07ecac362a4",
+    "cases/i01_elastic_memory_v1.json": "50f5f9cc5dc8699d0c78249c69a15af48c447d985acfda69921df5986c431a43",
+    "docs/I01_ELASTIC_MEMORY.md": "6b44fbd7a8211d8159ed031faf92184db13f35a6f879eacdbce7a6f44f7a5fe4"
+  },
+  "passed": true,
+  "checks": {
+    "relaxation": true,
+    "released_stored_heat": true,
+    "memory_not_reset": true,
+    "rigid_rotation_no_heat": true,
+    "tensor_rotation": true,
+    "general_shear_refused": true,
+    "jaumann_generic_refused": true,
+    "omit_elasticity_refused": true,
+    "reuse_bitwise_parity": true
+  },
+  "retained_memory_stress_pa": 3678794.411714424,
+  "relaxation_heat_j_m3": 1441.1078612723122,
+  "fixture_endpoint": {
+    "stress_pa": 7471517.7646857705,
+    "axis_rad": 0.0,
+    "log_stretch": 0.0001,
+    "shear_modulus_pa": 30000000000.0,
+    "time_s": 100000000000.0
+  },
+  "benchmark": {
+    "seconds": {
+      "prepared": [
+        0.005970700003672391,
+        0.006042499968316406,
+        0.00597980001475662,
+        0.00603599997702986,
+        0.005899399984627962
+      ],
+      "rebuilt": [
+        0.009168799966573715,
+        0.009081900003366172,
+        0.009279699996113777,
+        0.009213300014380366,
+        0.009165700001176447
+      ]
+    },
+    "medians_s": {
+      "prepared": 0.00597980001475662,
+      "rebuilt": 0.009168799966573715
+    },
+    "saved_s": 0.0031889999518170953,
+    "saved_percent": 34.78099602394087,
+    "scope": "2000 independent identical local updates; setup reuse, not world speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.14750840002670884
+}

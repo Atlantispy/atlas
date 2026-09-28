@@ -1,0 +1,12 @@
+{
+  "schema": "atlas.i01-junction-events-case.v1",
+  "model": "affine_planar_junction_paths_v1",
+  "policy": {
+    "input_integer_bits": 1024,
+    "arithmetic_bits": 16384,
+    "benchmark_calls": 1000,
+    "benchmark_repeats": 5,
+    "maximum_seconds": 10.0
+  },
+  "fixture": {"gap_m": 12, "closing_speed_m_s": 3, "root_s": 4, "validity_s": 8}
+}

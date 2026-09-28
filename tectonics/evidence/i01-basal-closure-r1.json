@@ -1,0 +1,722 @@
+{
+  "schema": "atlas.i01-basal-closure-evidence.v1",
+  "status": "PASS_BOUNDED_BASAL_CLOSURE_ONLY",
+  "scientific_acceptance": false,
+  "stokes_solution": false,
+  "law": "atlas.basal-inflow-closure.v1",
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "controls": {
+    "constant_volume": {
+      "status": "PASS",
+      "seconds": 0.001146299997344613,
+      "passed": true,
+      "checks": {
+        "cookbook_rule_is_the_literal_expression": true,
+        "cookbook_base_refused_for_separation": true,
+        "cookbook_inflow_equals_side_outflow": true,
+        "cookbook_mass_matches_oracle": true,
+        "cookbook_energy_matches_oracle": true,
+        "cookbook_gain_is_closed_form": true,
+        "selected_rule_is_closed_form": true,
+        "selected_admitted_for_separation": true,
+        "selected_inflow_equals_side_outflow": true,
+        "selected_volume_constant": true,
+        "selected_mass_matches_oracle": true,
+        "constant_volume_is_not_constant_mass": true,
+        "selected_energy_matches_oracle": true,
+        "manufactured_ledger_closes_by_construction": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "cookbook_basal_inflow_m_per_aspect_year": 0.0025,
+      "selected_basal_inflow_m_per_aspect_year": 0.00375,
+      "inflow_volume_m2": 750000000.0,
+      "outflow_volume_m2": 750000000.0,
+      "domain_mass_change_kg": 100000000000.0,
+      "closed_form_mass_change_kg": 100000000000.0,
+      "domain_energy_change_j": 5.99233288e+17,
+      "cookbook_domain_energy_change_j": 7.885749999999997e+17
+    },
+    "moving_surface": {
+      "status": "PASS",
+      "seconds": 0.0003654999891296029,
+      "passed": true,
+      "checks": {
+        "moving_surface_closes": true,
+        "moving_surface_breaks_the_equality": true,
+        "stationary_surface_claim_refused": true,
+        "after_the_fact_flux_correction_refused": true,
+        "corner_offset_closes": true,
+        "corner_offset_breaks_the_equality": true,
+        "material_sides_have_no_side_flux": true,
+        "fixed_sides_balance": true,
+        "conventions_book_different_base_inflow": true,
+        "normal_projection_is_impermeable": true,
+        "vertical_mesh_crossing_matches_closed_form": true,
+        "unowned_crossing_refused": true,
+        "owned_exchange_booked": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "under_balanced_volume_change_m2": -150000000.0,
+      "surface_drop_m": 750.0,
+      "corner_volume_change_m2": -2469008.797164917,
+      "corner_end_offset_m": 487.6549560141663,
+      "material_sides_inflow_m2": 2999999999.9999995,
+      "fixed_box_inflow_m2": 2734823351.909319,
+      "vertical_mesh_crossing_m2": 4999999.999999999
+    },
+    "flow_direction": {
+      "status": "PASS",
+      "seconds": 0.0011075999937020242,
+      "passed": true,
+      "checks": {
+        "zero_flow_base_is_impermeable": true,
+        "zero_flow_temperature_is_conductive_only": true,
+        "zero_flow_moves_nothing": true,
+        "zero_flow_heat_is_conduction_and_sources": true,
+        "zero_flow_input_unchanged": true,
+        "reversed_base_is_outflow": true,
+        "reversed_base_has_no_dirichlet": true,
+        "reversed_source_untouched": true,
+        "reversed_receiver_matches_oracle": true,
+        "outgoing_state_is_the_actual_state": true,
+        "reset_to_boundary_temperature_refused": true,
+        "outflow_into_the_source_refused": true,
+        "missing_outgoing_state_refused": true,
+        "reversed_volume_falls": true,
+        "outflow_base_conduction_refused": true,
+        "impermeable_base_conduction_admitted": true,
+        "accounts_apply_the_prescribed_base_condition": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "zero_flow_energy_change_j": -1.88341712e+17,
+      "reversed_outflow_volume_m2": 200000000.0,
+      "reversed_outflow_energy_j": 6.5934e+17,
+      "reversed_outgoing_temperature_k": 1605.0
+    },
+    "accounts": {
+      "status": "PASS",
+      "seconds": 0.0021243999944999814,
+      "passed": true,
+      "checks": {
+        "start_inventory_fills_the_domain": true,
+        "end_inventory_fills_the_end_domain": true,
+        "domain_mass_matches_oracle": true,
+        "components_match_oracle": true,
+        "source_debits_match_oracle": true,
+        "receiver_credits_match_oracle": true,
+        "transfers_consistent_between_accounts": true,
+        "caloric_change_matches_oracle": true,
+        "datum_shifts_consistent": true,
+        "mixed_datum_refused": true,
+        "enthalpy_minus_energy_is_flow_work": true,
+        "flow_work_is_booked_as_work": true,
+        "enthalpy_source_refused": true,
+        "boundary_work_as_heat_refused": true,
+        "latent_heat_refused": true,
+        "open_ledger_refused": true,
+        "surface_work_refused": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "datum_k": 273.0,
+      "datum_shifts": {
+        "0.0": {
+          "mass_identical": true,
+          "energy_matches_oracle": true,
+          "shift_is_capacity_times_datum_change": true,
+          "energy_change_j": 6.19708288e+17
+        },
+        "1000.0": {
+          "mass_identical": true,
+          "energy_matches_oracle": true,
+          "shift_is_capacity_times_datum_change": true,
+          "energy_change_j": 5.44708288e+17
+        }
+      },
+      "domain_mass_change_kg": 100000000000.0,
+      "caloric_change_j": 5.99233288e+17,
+      "basal_flow_work_j": 3.4948125e+18,
+      "flow_work_counted_twice_if_enthalpy_were_heat_j": 3.4948125e+18,
+      "base_pressure_pa": 4659750000.0
+    },
+    "pure_shear_work": {
+      "status": "PASS",
+      "seconds": 0.0068307999754324555,
+      "passed": true,
+      "checks": {
+        "divergence_free": true,
+        "momentum_balance": true,
+        "stress_is_the_stated_stress": true,
+        "top_traction_free_and_stationary": true,
+        "no_tangential_traction_on_base_and_sides": true,
+        "prescribed_normal_velocities": true,
+        "base_power_is_stated": true,
+        "side_power_is_stated": true,
+        "gravity_power_is_stated": true,
+        "dissipation_is_stated": true,
+        "top_does_no_work": true,
+        "powers_balance_exactly": true,
+        "inflow_is_the_reference_rule": true,
+        "flow_work_equals_base_traction_work": true,
+        "tool_ledger_closes_on_independent_terms": true,
+        "sign_and_double_count_errors_refused": true,
+        "refused_inputs_unchanged": true
+      },
+      "mechanical_terms": "exact analytical pure shear of a homogeneous Newtonian box",
+      "thermal_terms": "declared isothermal state, not tested",
+      "numerical_solve": false,
+      "strain_rate_s": 7.922184626702857e-16,
+      "viscosity_pa_s": 1e+21,
+      "powers_w_per_m": {
+        "base": 115409.19731411323,
+        "right": -28814.642722972567,
+        "top": 0.0,
+        "left": -28814.642722972567,
+        "gravity": -57704.59865705662,
+        "dissipation": 75.31321111148051
+      },
+      "work_j": {
+        "base": 3.6419625e+18,
+        "right": -9.093022973059946e+17,
+        "top": 0.0,
+        "left": -9.093022973059946e+17,
+        "gravity": -1.82098125e+18,
+        "dissipation": 2376655388010857.0
+      },
+      "ledger_residual_j": -105.0,
+      "errors": {
+        "inward_normal": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "base_compression_booked_as_tension": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "gravity_reversed": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "base_flow_work_counted_twice": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "side_viscous_traction_omitted": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "dissipation_omitted": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "base_flow_work_booked_as_heat": {
+          "expected": "REFUSED_THERMAL_SOURCE",
+          "got": "REFUSED_THERMAL_SOURCE",
+          "input_unchanged": true
+        }
+      }
+    },
+    "exhaustion": {
+      "status": "PASS",
+      "seconds": 0.000818900007288903,
+      "passed": true,
+      "checks": {
+        "exact_depletion_accepted": true,
+        "one_ulp_overdraft_refused": true,
+        "refused_input_unchanged": true,
+        "joint_overdraft_refused": true,
+        "each_stream_alone_fits": true,
+        "cohort_overdraft_refused": true,
+        "repeat_is_identical": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "stock_kg": 660000000000.0,
+      "inflow_volume_m2": 200000000.0,
+      "joint_demand_kg": 660000000000.0,
+      "joint_stock_kg": 495000000000.0
+    },
+    "refusals": {
+      "status": "PASS",
+      "seconds": 0.006033999961800873,
+      "passed": true,
+      "checks": {
+        "valid_inputs_pass": true,
+        "every_refusal_has_its_code": true,
+        "refusals_leave_inputs_unchanged": true
+      },
+      "cases": 45,
+      "outcomes": {
+        "prescription:velocity_and_traction_on_one_component": {
+          "expected": "REFUSED_OVERDETERMINED_COMPONENT",
+          "got": "REFUSED_OVERDETERMINED_COMPONENT",
+          "input_unchanged": true
+        },
+        "prescription:no_condition_on_a_component": {
+          "expected": "REFUSED_UNDERDETERMINED_COMPONENT",
+          "got": "REFUSED_UNDERDETERMINED_COMPONENT",
+          "input_unchanged": true
+        },
+        "prescription:base_tangential_velocity": {
+          "expected": "REFUSED_NOT_SELECTED_LAW",
+          "got": "REFUSED_NOT_SELECTED_LAW",
+          "input_unchanged": true
+        },
+        "prescription:base_moving_with_material": {
+          "expected": "REFUSED_NOT_SELECTED_LAW",
+          "got": "REFUSED_NOT_SELECTED_LAW",
+          "input_unchanged": true
+        },
+        "prescription:closed_lid_pressure_nullspace": {
+          "expected": "REFUSED_PRESSURE_NULLSPACE",
+          "got": "REFUSED_PRESSURE_NULLSPACE",
+          "input_unchanged": true
+        },
+        "prescription:closed_lid_incompatible_flux": {
+          "expected": "REFUSED_INCOMPATIBLE_NORMAL_FLUX",
+          "got": "REFUSED_INCOMPATIBLE_NORMAL_FLUX",
+          "input_unchanged": true
+        },
+        "prescription:total_flux_without_distribution": {
+          "expected": "REFUSED_LOCAL_FIELD_UNSPECIFIED",
+          "got": "REFUSED_LOCAL_FIELD_UNSPECIFIED",
+          "input_unchanged": true
+        },
+        "prescription:base_at_the_lithosphere_base": {
+          "expected": "REFUSED_NO_ASTHENOSPHERE_LAYER",
+          "got": "REFUSED_NO_ASTHENOSPHERE_LAYER",
+          "input_unchanged": true
+        },
+        "prescription:potential_temperature": {
+          "expected": "REFUSED_POTENTIAL_TEMPERATURE",
+          "got": "REFUSED_POTENTIAL_TEMPERATURE",
+          "input_unchanged": true
+        },
+        "prescription:melt_bearing_inflow": {
+          "expected": "REFUSED_MELT_BEARING_INFLOW",
+          "got": "REFUSED_MELT_BEARING_INFLOW",
+          "input_unchanged": true
+        },
+        "prescription:instant_ocean_crust": {
+          "expected": "REFUSED_INCOMING_NOT_ASTHENOSPHERE",
+          "got": "REFUSED_INCOMING_NOT_ASTHENOSPHERE",
+          "input_unchanged": true
+        },
+        "prescription:side_inflow": {
+          "expected": "REFUSED_SIDE_INFLOW",
+          "got": "REFUSED_SIDE_INFLOW",
+          "input_unchanged": true
+        },
+        "prescription:nonfinite_width": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "prescription:boolean_width": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "prescription:unknown_field": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "prescription:m_per_year_passed_as_m_per_s": {
+          "expected": "REFUSED_OUTSIDE_WINDOW",
+          "got": "REFUSED_OUTSIDE_WINDOW",
+          "input_unchanged": true
+        },
+        "prescription:celsius_offset_added_twice": {
+          "expected": "REFUSED_OUTSIDE_WINDOW",
+          "got": "REFUSED_OUTSIDE_WINDOW",
+          "input_unchanged": true
+        },
+        "prescription:another_law": {
+          "expected": "REFUSED_NOT_SELECTED_LAW",
+          "got": "REFUSED_NOT_SELECTED_LAW",
+          "input_unchanged": true
+        },
+        "prescription:reference_rule_with_supplied_velocity": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:nonfinite_volume": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:negative_volume": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:reversed_interval": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:unknown_field": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:outflow_outside_window": {
+          "expected": "REFUSED_OUTSIDE_WINDOW",
+          "got": "REFUSED_OUTSIDE_WINDOW",
+          "input_unchanged": true
+        },
+        "account:material_side_crossed": {
+          "expected": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "got": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "input_unchanged": true
+        },
+        "account:side_inflow": {
+          "expected": "REFUSED_SIDE_INFLOW",
+          "got": "REFUSED_SIDE_INFLOW",
+          "input_unchanged": true
+        },
+        "account:missing_conduction_term": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:latent_heat_source": {
+          "expected": "REFUSED_THERMAL_SOURCE",
+          "got": "REFUSED_THERMAL_SOURCE",
+          "input_unchanged": true
+        },
+        "account:heat_fraction_above_one": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:open_mechanical_ledger": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "account:work_on_the_free_surface": {
+          "expected": "REFUSED_MECHANICAL_LEDGER",
+          "got": "REFUSED_MECHANICAL_LEDGER",
+          "input_unchanged": true
+        },
+        "account:fixed_base_sweeping_volume": {
+          "expected": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "got": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "input_unchanged": true
+        },
+        "account:geometry_disagrees_with_fluxes": {
+          "expected": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "got": "REFUSED_INCOMPATIBLE_VOLUME_BALANCE",
+          "input_unchanged": true
+        },
+        "account:potential_source_temperature": {
+          "expected": "REFUSED_POTENTIAL_TEMPERATURE",
+          "got": "REFUSED_POTENTIAL_TEMPERATURE",
+          "input_unchanged": true
+        },
+        "account:source_energy_off_state": {
+          "expected": "REFUSED_SOURCE_STATE_MISMATCH",
+          "got": "REFUSED_SOURCE_STATE_MISMATCH",
+          "input_unchanged": true
+        },
+        "account:source_other_datum": {
+          "expected": "REFUSED_DATUM_MISMATCH",
+          "got": "REFUSED_DATUM_MISMATCH",
+          "input_unchanged": true
+        },
+        "account:cohort_other_datum": {
+          "expected": "REFUSED_DATUM_MISMATCH",
+          "got": "REFUSED_DATUM_MISMATCH",
+          "input_unchanged": true
+        },
+        "account:source_not_asthenosphere": {
+          "expected": "REFUSED_INCOMING_NOT_ASTHENOSPHERE",
+          "got": "REFUSED_INCOMING_NOT_ASTHENOSPHERE",
+          "input_unchanged": true
+        },
+        "account:string_density": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:mixed_directions_on_base": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "got": "REFUSED_INVALID_INPUT",
+          "input_unchanged": true
+        },
+        "account:doubled_start_inventory": {
+          "expected": "REFUSED_INVENTORY_VOLUME_MISMATCH",
+          "got": "REFUSED_INVENTORY_VOLUME_MISMATCH",
+          "input_unchanged": true
+        },
+        "account:heat_through_insulating_side": {
+          "expected": "REFUSED_THERMAL_BOUNDARY_CONDITION",
+          "got": "REFUSED_THERMAL_BOUNDARY_CONDITION",
+          "input_unchanged": true
+        },
+        "case:units": {
+          "expected": "REFUSED_UNIT",
+          "got": "REFUSED_UNIT",
+          "input_unchanged": true
+        },
+        "case:retained_base_temperature": {
+          "expected": "REFUSED_INCOMPATIBLE_RETAINED_CASE",
+          "got": "REFUSED_INCOMPATIBLE_RETAINED_CASE",
+          "input_unchanged": true
+        },
+        "case:julian_year_for_aspect_input": {
+          "expected": "REFUSED_UNIT",
+          "got": "REFUSED_UNIT",
+          "input_unchanged": true
+        }
+      }
+    },
+    "interfaces": {
+      "status": "PASS",
+      "seconds": 0.003361899987794459,
+      "passed": true,
+      "checks": {
+        "i07_prescription_complete_and_unsolved": true,
+        "supplied_accounts_are_not_a_solution": true,
+        "supplied_endpoint_closes": true,
+        "inconsistent_endpoint_refused": true,
+        "end_volume_mismatch_refused": true,
+        "foreign_or_edited_proposals_refused": true,
+        "binding_refusals_leave_inputs_unchanged": true,
+        "i05_interfaces": true,
+        "i05_compression_exports_actual_state": true,
+        "i05_lithosphere_stays_above_the_base": true,
+        "closed_strip_route_refused": true
+      },
+      "manufactured": true,
+      "stokes_solution": false,
+      "i05": {
+        "mckenzie_base_at_lithosphere_base": {
+          "inflow_volume_closed_form": true,
+          "placement_holds_the_inflow": true,
+          "lithosphere_inventory_untouched": true,
+          "one_new_asthenosphere_cohort": true,
+          "same_incoming_state_as_i07": true,
+          "endpoint_closes_on_the_grown_volume": true,
+          "start_volume_as_end_volume_refused": true,
+          "material_sides_book_no_lateral_heat": true
+        },
+        "selected_base": {
+          "inflow_volume_closed_form": true,
+          "placement_holds_the_inflow": true,
+          "lithosphere_inventory_untouched": true,
+          "one_new_asthenosphere_cohort": true,
+          "same_incoming_state_as_i07": true,
+          "endpoint_closes_on_the_grown_volume": true,
+          "start_volume_as_end_volume_refused": true,
+          "material_sides_book_no_lateral_heat": true
+        }
+      },
+      "strip_guard": {
+        "start": {
+          "equality_admitted": true,
+          "one_ulp_shallower_base_refused": true,
+          "reviewed_case_refused": true
+        },
+        "end": {
+          "equality_admitted": true,
+          "one_ulp_shallower_base_refused": true,
+          "reviewed_case_refused": true
+        }
+      },
+      "endpoint_binding": {
+        "foreign_parent": {
+          "got": "REFUSED_FOREIGN_PROPOSAL",
+          "input_unchanged": true
+        },
+        "foreign_interval": {
+          "got": "REFUSED_FOREIGN_PROPOSAL",
+          "input_unchanged": true
+        },
+        "account_edited_after_booking": {
+          "got": "REFUSED_FOREIGN_PROPOSAL",
+          "input_unchanged": true
+        },
+        "edited_delta": {
+          "got": "REFUSED_FOREIGN_PROPOSAL",
+          "input_unchanged": true
+        }
+      },
+      "endpoint_energy_residual_j": 0.0,
+      "compression_outflow_volume_m2": 1499999999.9999998
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_basal_closure.py": "c41fe6371dc5fe49ea383e04eead9330ec404c4aba9fad1ac127e4c0e7405e22",
+    "cases/i01_basal_closure_v1.json": "fa0aa132e0ba1f8212512aaba39ab1f4efca59650808c7e985937c3e417f5ec6",
+    "docs/I01_BASAL_CLOSURE.md": "b36688cb0f0fd72e19ae4b47613e86320f3094ab531c79be0b006f63adcefe0c",
+    "tests/test_i01_basal_closure.py": "eb14e04d823e0f7ad039af7afa8606eae7e20d318ae59fedc728b59e12d9269d",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "cases/i01_column_heat_v1.json": "5a5c7cef6a397d40217b2c06f918bed83b6f962e1eff329ea5daa8cd7fc977a0",
+    "cases/i01_finite_strain_v1.json": "e527d581df1ef7494bd244dc1e04734923535f964b836b6355a53526c5625acc"
+  },
+  "case": {
+    "schema": "atlas.i01-basal-closure-case.v1",
+    "status": "WORKING_NON_CANON",
+    "task": "atlas-i01-mc04-basal-closure-20260927",
+    "kind": "decision_and_bounded_account_controls_not_production_configuration",
+    "contract_document": "docs/I01_BASAL_CLOSURE.md",
+    "refines": {
+      "matrix_item": "MC-04 of docs/I01_CLOSURE_MATRIX.md section 6.2 (read-only)",
+      "contract": "docs/I01_PHYSICAL_CONTRACT.md D4 moving-control-volume enthalpy balance and D6 event ownership (unchanged)",
+      "retained_route": "docs/I01_FINITE_STRAIN.md closed affine strip with a fixed material-base temperature stays the admitted closed route, unchanged"
+    },
+    "decision": {
+      "selected_law": "atlas.basal-inflow-closure.v1",
+      "configuration": "plane-strain box of width W and base depth z_b below the initial surface; retained 100 km lithosphere over named asthenosphere; reference z_b = 150 km (a 50 km asthenosphere layer)",
+      "mechanical_base": "fixed Eulerian base (w = 0): normal velocity prescribed, uniform along the base (u.n = -u_in); tangential traction zero, tangential velocity solved; the normal traction is the solved reaction",
+      "sides": "normal velocity prescribed outward (v_L, v_R >= 0); tangential traction zero; mesh moves only tangentially (w.n = 0); insulating",
+      "top": "free surface: zero normal and tangential traction; mesh normal velocity equals the material normal velocity (impermeable material surface); fixed surface temperature; no surface diffusion in this law",
+      "pressure": "no normalisation; the traction-free surface fixes the absolute pressure; no constant-pressure nullspace; no compatibility constraint on prescribed fluxes because the free surface absorbs the net flux as domain-volume change",
+      "reference_rule": "u_in = (v_L + v_R) z_b / W: the ASPECT continental-extension Function expression v*2*d/w applied at the deeper base; a prescribed reference configuration, not the force-driven coupling",
+      "force_driven_coupling": "later: side velocities from the D1/I04/I09 force balance each interval with the same component structure; the side reactions become the D1 regional reactions; not implemented or validated here",
+      "incoming_state": "named asthenosphere (never crust or ocean crust), solid, actual boundary temperature T_b = 1613 K, Boussinesq reference density 3300 kg/m3, Cp 750 J/kg/K, zero raw plastic history, entry interval and source recorded; potential temperature refused because the selected Boussinesq energy law has no adiabatic term",
+      "datum": "caloric specific energy e = Cp (T - T_ref) with one datum T_ref = 273 K for every stream, cohort, source and receiver; the pressure flow work P/rho belongs to the mechanical ledger",
+      "thermal_boundary": "Dirichlet temperature and fixed composition only where material enters (and temperature on impermeable parts); outflow carries the actual outgoing state with zero conductive flux at an outflow base",
+      "balance": "moving control volume of incompressible constant-density material: dV = sum of swept volumes (w.n) = inflow - outflow ((u - w).n); inflow equals outflow only when dV = 0; mismatches are refused, never corrected",
+      "established": "the boundary specification (one prescribed quantity per component, a necessary check and not a proof of well-posedness) and its account arithmetic on supplied or manufactured fluxes, with cohort inventories bound to the domain volume, conduction bound to each segment's thermal condition and endpoint proposals bound to their account; one exact analytical Newtonian pure-shear control of the mechanical ledger in a homogeneous box; not a numerical Stokes solution, a resolved neck, melting or breakup",
+      "not_selected": [
+        "ASPECT's own base at the lithosphere base (100 km): refused for the separation experiment by the cookbook's statement that it cannot represent breakup without an upwelling asthenosphere layer; admitted only as the classical I05 passive-upwelling special case and as a control",
+        "Winkler basal foundation (Brune et al. 2014, citing Popov and Sobolev 2008): formulation not read, so not specified; a comparison arm only after it is read and specified",
+        "free-slip impermeable base (Brune et al. 2014 alternative): the sections read do not state its side-mesh convention or volume balance, so it is not specified"
+      ]
+    },
+    "interfaces": {
+      "i07_resolved_boundary": "resolved_prescription(configuration): per-segment velocity/traction components, mesh convention, inflow-only Dirichlet temperature and composition, pressure datum, work ownership and the solver outputs required (reaction tractions, free-surface swept volume, per-segment crossing volumes with actual outgoing temperatures, conductive heat per segment, dissipation, gravity work, domain volume at both ends); status BOUNDARY_PRESCRIPTION_ONLY",
+      "i05_open_domain_cohorts": "strip_open_base: the accepted affine strip in pure shear about the stationary surface over the full depth to a fixed base z_b >= h0, material-following sides; the lithosphere base h0/lam must lie at or above z_b at both endpoints (equality admitted), otherwise the missing lithosphere-export route is refused and nothing is exported as asthenosphere; base volume w0 z_b |lam1 - lam0|; each inflow becomes a named asthenosphere cohort with zero raw plastic history, entry interval, source and entry temperature; shortening exports the actual outgoing state; material-following sides book no lateral conduction because the strip supplies none; the closed strip route is refused here and stays unchanged",
+      "accounts": "propose_interval(account): supplied interval fluxes booked into proposed source debits, receiver credits, domain cohort deltas and new inflow cohorts, with volume, component, caloric and mechanical ledgers; the start cohorts must fill the start domain volume and the end cohorts the end volume at their constant reference densities (never rescaled); each segment's conduction must obey the law's thermal condition for its kind and actual flow regime, from the table resolved_prescription uses; the proposal records the start inventory it was booked against; atomic refusal; status PROPOSED_NOT_COMMITTED; persistence and once-only commit belong to I02",
+      "diagnostic": "diagnose_endpoint(account, proposal, end masses, end energy, end volume): recomputes the proposal from the account and refuses any difference (foreign parent or interval, account edited after booking, edited deltas), so no status, law or claimed digest authenticates contents; then compares the supplied end volume with the booked end volume, the supplied inventory with that volume, per-cohort masses and the total caloric energy; consistency of supplied data, not a flow solution"
+    },
+    "work_ownership": [
+      "side normal reaction x prescribed side velocity: exterior plates (prescribed reference now; D1 regional reaction later); mechanical ledger only",
+      "side and base tangential traction: zero by the law; no work",
+      "basal normal reaction x inflow, including the flow work P/rho of entering rock: exterior asthenosphere account; mechanical ledger only, never heat",
+      "free-surface traction: zero; water or sediment loads are separately owned D5/I08 exchanges",
+      "D1 basal drag on the resolved footprint: replaced by the resolved asthenosphere; not applied twice",
+      "gravity: D1/D5 GPE ledger",
+      "interior dissipation: mechanical sink; heat once as heat_fraction x dissipation (IN-05)",
+      "elastic storage: not in this viscoplastic configuration; open with the MC-01 elastic-memory choice"
+    ],
+    "units": {
+      "length": "m",
+      "time": "s; ASPECT inputs in m/yr are converted with its 365.2425-day year",
+      "velocity": "m/s; normal components positive outward",
+      "volume": "m2 per metre of strike",
+      "mass": "kg per metre of strike",
+      "energy": "J per metre of strike",
+      "temperature": "K, actual; potential temperature refused",
+      "stress": "Pa; normal stress positive in tension",
+      "specific_energy": "J/kg, Cp (T - T_ref) at the common datum"
+    },
+    "control_policy": {
+      "maximum_seconds": 10.0,
+      "closure_relative": 1e-12,
+      "oracle_relative": 1e-12,
+      "temperature_window_k": [
+        273.0,
+        1613.0
+      ],
+      "stretch_window": [
+        0.6,
+        1.4
+      ],
+      "speed_limit_m_s": 1e-08,
+      "scope": "one kinematic asthenosphere-inflow base for the declared regional rifting box; boundary prescription and moving-control-volume accounts on supplied or manufactured interval fluxes; finite proposals with atomic refusal; I05 open-base strip adapter; one exact analytical pure-shear control of the mechanical ledger; not a numerical Stokes, transport, melting or breakup solution"
+    },
+    "control_parameters": {
+      "configuration": {
+        "width_m": 200000.0,
+        "base_depth_m": 150000.0,
+        "lithosphere_thickness_m": 100000.0,
+        "side_velocity_m_per_aspect_year": 0.0025,
+        "aspect_year_s": 31556952.0,
+        "surface_temperature_k": 273.0,
+        "base_temperature_k": 1613.0,
+        "datum_k": 273.0,
+        "gravity_m_s2": 9.81
+      },
+      "cookbook": {
+        "width_m": 200000.0,
+        "depth_m": 100000.0,
+        "side_velocity_m_per_aspect_year": 0.0025
+      },
+      "asthenosphere": {
+        "name": "asthenosphere",
+        "density_kg_m3": 3300.0,
+        "heat_capacity_j_kg_k": 750.0,
+        "components": {
+          "asthenosphere": 1.0
+        }
+      },
+      "interval_aspect_years": 1000000.0,
+      "exterior_source_mass_kg": 10000000000000.0,
+      "dissipation_j": 1000000000000000.0,
+      "heat_fraction": 1.0,
+      "datum_shifts_k": [
+        0.0,
+        1000.0
+      ],
+      "under_balance_factor": 0.8,
+      "corner_offset_m": 500.0,
+      "surface_slope": -0.01,
+      "reversed": {
+        "base_outward_velocity_m_per_aspect_year": 0.001,
+        "outgoing_temperature_k": 1605.0,
+        "cohort_mean_temperature_k": 1600.0,
+        "cohort_temperature_range_k": [
+          1590.0,
+          1610.0
+        ]
+      },
+      "strip": {
+        "reference_width_m": 100000.0,
+        "stretch_start": 1.0,
+        "stretch_extension": 1.2,
+        "stretch_compression": 0.9
+      },
+      "pure_shear": {
+        "viscosity_pa_s": 1e+21
+      }
+    },
+    "parameter_provenance": {
+      "configuration": "width 200 km, side velocity 0.25 cm/yr, 1613 K bottom and 273 K top: ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, read 27 September 2026); base depth 150 km: the domain depth of Brune et al. (2014) Methods, whose asthenosphere layers below their 120/105/90 km lithosphere variants span 30-60 km; the 50 km layer here lies inside that range; lithosphere 100 km, gravity and densities: retained cases/i01_weakening_v1.json; ASPECT year 365.2425 days: ASPECT global parameters; datum 273 K: the retained surface temperature and the cookbook's Visco Plastic reference temperature",
+      "cookbook": "the cookbook's literal box (200 x 100 km, 0.25 cm/yr, bottom velocity v*2*d/w) used only for the constant-volume control and as the refused separation base",
+      "asthenosphere": "density 3300 kg/m3 and heat capacity 750 J/kg/K: the cookbook's background material and the retained mantle and thermal layers, checked against the retained cases at run time; the constitutive law of the incoming material is an IN-04 input of the resolved neck and is not selected here",
+      "retained_state": "layer thicknesses, densities, linear geotherm (273/633/893/1013/1613 K), heat capacities, radiogenic heat and the cookbook heat flows 0.055/0.030 W/m2 are read from retained cases at run time, never duplicated",
+      "manufactured": "interval 1 Myr, stock 1e13 kg/m, dissipation 1e15 J/m, heat fraction 1, under-balance 0.8, corner offset 500 m, slope -0.01, reversed velocity 0.1 cm/yr and its 1590-1610 K cohort, strip stretches 0.9/1.0/1.2 and the flat-surface, unthinned-side states are authored control inputs for account arithmetic, not a solution or a calibration; the gravity work of these box accounts is set to close their ledger, so they are not a sign test",
+      "pure_shear": "viscosity 1e21 Pa s is an authored constant for the exact homogeneous Newtonian pure-shear control, not a rheology selection (IN-04); its strain rate (v_L + v_R)/W, density 3300 kg/m3, gravity, width and height z_b are the configuration's, so its basal inflow a z_b is the selected reference rule; its isothermal thermal entries are declared and not tested",
+      "gates": "closure and oracle tolerances 1e-12 are round-off bounds for short correctly rounded sums (at most about 65 eps of the gross scale); the speed limit 1e-8 m/s is a unit guard above plate speeds, not a physical bound; the temperature and stretch windows are the accepted strip's"
+    },
+    "blocked": {
+      "i07_closure_tolerance": "the resolved-domain account-closure tolerance must be predeclared with the I07 run from its solver tolerances, including the conduction a resolved run reports where the law requires exactly zero; this tool fixes only the analytical 1e-12 and exact zeros",
+      "base_depth_sensitivity": "I07 must report the three separation diagnostics at z_b = 150 km and a deeper base with the same law, as a sensitivity, never tuned",
+      "winkler_or_free_slip_comparison": "needs the SLIM3D Winkler formulation (Popov and Sobolev 2008, not read) and the side-mesh convention of Brune's free-slip test",
+      "interior_melting": "1613 K asthenosphere decompressed without adiabatic cooling crosses the retained dry solidus near 2.08 GPa; a resolved run reaching such states needs MC-03 or must refuse",
+      "force_driven_sides": "side velocities from the D1 force balance (I04/I09)"
+    },
+    "acceptance_claim": "Passing demonstrates only that the selected basal law is specified with exactly one condition per component; that its prescription and moving-control-volume accounts close on supplied or manufactured fluxes against exact rational and closed-form oracles, with inventories bound to domain volume and conduction bound to each segment's thermal condition; that the mechanical ledger closes on traction, gravity and dissipation powers derived independently from one exact Newtonian pure-shear field of a homogeneous box and refuses sign and double-count errors; that endpoint proposals are bound to their account by recomputation; that the I05 strip keeps its lithosphere above the base; that finite sources and cohorts refuse atomically; and that invalid, incompatible or unowned inputs are refused. Component counting and account closure do not prove general well-posedness. It is not a numerical Stokes or transport solution, not a resolved neck, not a melting or breakup result and not a calibration; MC-01 and the I07 sensitivity comparison remain open."
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.02374410000629723
+}

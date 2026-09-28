@@ -1,0 +1,567 @@
+{
+  "schema": "atlas.i01-water-gpe.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "finite_rigidity_closure": false,
+  "contract": "atlas.water-loaded-gpe.v1",
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "controls": {
+    "dry_parity": {
+      "status": "PASS",
+      "seconds": 0.0011722000199370086,
+      "passed": true,
+      "checks": {
+        "compensated": true,
+        "potential_bitwise": true,
+        "traction_bitwise": true,
+        "no_water_or_level": true,
+        "reference_mass_unchanged": true
+      },
+      "cells": 1024,
+      "max_abs_traction_pa": 5899671.137035196
+    },
+    "uniform_load": {
+      "status": "PASS",
+      "seconds": 0.0018276000046171248,
+      "passed": true,
+      "checks": {
+        "compensated_every_rigidity": true,
+        "declared_level_immaterial": true,
+        "rigidity_independent": true,
+        "uniform_potential": true,
+        "zero_traction": true,
+        "matches_water_layer_dry_helper": true,
+        "airy_top_is_sea_level": true,
+        "quadrature_at_any_shear_depth": true,
+        "not_double_loaded": true
+      },
+      "potential_j_m2": 2604555000000.0005,
+      "displacement_m": 303.03030303030306,
+      "double_feedback_displacement_m": 434.7826086956522,
+      "max_abs_basal_excess_pa": 1.1420343071222306e-09,
+      "max_abs_traction_pa": 0.0
+    },
+    "zero_rigidity": {
+      "status": "PASS",
+      "seconds": 0.0016255999798886478,
+      "passed": true,
+      "checks": {
+        "compensated": true,
+        "partly_wet": true,
+        "matches_water_layer_dry_helper": true,
+        "airy_top_matches": true
+      },
+      "cells": 1024,
+      "wet_fraction": 0.447265625,
+      "max_difference_j_m2": 88.5849609375,
+      "bound_j_m2": 791.2547646234614,
+      "max_abs_basal_excess_pa": 0.021264761025086048
+    },
+    "finite_rigidity_fourier": {
+      "status": "PASS",
+      "seconds": 0.0755877000046894,
+      "passed": true,
+      "checks": {
+        "undeclared_level_refused": true,
+        "conditional_regime": true,
+        "solver_matches_closed_form": true,
+        "excess_matches_closed_form": true,
+        "support_matches_excess": true,
+        "join_matches_quadrature": true,
+        "solver_join_within_propagated": true,
+        "level_sensitivity_is_excess": true,
+        "datum_extension_bitwise": true,
+        "quadrature_datum_invariant": true,
+        "naive_shifts_by_delta_excess": true,
+        "naive_shift_nonuniform": true,
+        "traction_matches_quadrature": true,
+        "periodic_net_force_zero": true,
+        "airy_rebuild_differs": true
+      },
+      "cells": 256,
+      "flexural_support_relative": 0.0021510040108366924,
+      "max_abs_basal_excess_pa": 29843.080106816098,
+      "shear_term_range_j_m2": 447646201.60224146,
+      "water_effect_range_j_m2": 1486338460.8466797,
+      "max_solver_displacement_error_m": 3.209095780221105e-07,
+      "max_join_quadrature_difference_j_m2": 0.30712890625,
+      "naive_datum_shift_range_j_m2": 5968616021.363219,
+      "airy_rebuild_max_difference_j_m2": 75010166.90673828,
+      "max_abs_traction_pa": 167266.21788177735,
+      "net_traction_pa": 5.820766091346741e-11
+    },
+    "small_nonuniform_support": {
+      "status": "PASS",
+      "seconds": 0.04734940000344068,
+      "passed": true,
+      "checks": {
+        "undeclared_refused_at_every_amount": true,
+        "conditional_with_declared_level": true,
+        "same_closed_form_support": true,
+        "l2_ratio_crosses_retained_tolerance": true,
+        "omitted_level_term_exceeds_oracle": true,
+        "join_matches_quadrature": true
+      },
+      "cells": 256,
+      "bed_amplitude_m": 0.0001,
+      "shear_depth_m": 7500,
+      "quadrature_tolerance_j_m2": 647.4599999999999,
+      "amounts": [
+        {
+          "mean_water_m": 100,
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "flexural_support_relative": 2.151095241083637e-07,
+          "max_abs_basal_excess_pa": 0.29843080103208197,
+          "closed_form_excess_difference_pa": 1.7883333702783943e-10,
+          "closed_form_excess_tolerance_pa": 9.81001277769217e-07,
+          "max_abs_level_term_j_m2": 2238.2310077406146,
+          "max_join_quadrature_difference_j_m2": 0.26220703125
+        },
+        {
+          "mean_water_m": 1000,
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "flexural_support_relative": 2.1510952411429996e-08,
+          "max_abs_basal_excess_pa": 0.2984308023168706,
+          "closed_form_excess_difference_pa": 2.5360514521732824e-09,
+          "closed_form_excess_tolerance_pa": 9.810001277769217e-06,
+          "max_abs_level_term_j_m2": 2238.2310173765295,
+          "max_join_quadrature_difference_j_m2": 0.208984375
+        },
+        {
+          "mean_water_m": 4000,
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "flexural_support_relative": 5.377738107910346e-09,
+          "max_abs_basal_excess_pa": 0.2984308000328019,
+          "closed_form_excess_difference_pa": 1.0171633535449587e-08,
+          "closed_form_excess_tolerance_pa": 3.924000127776922e-05,
+          "max_abs_level_term_j_m2": 2238.2310002460144,
+          "max_join_quadrature_difference_j_m2": 0.2724609375
+        }
+      ]
+    },
+    "retained_fixture_join": {
+      "status": "PASS",
+      "seconds": 0.02664520003600046,
+      "passed": true,
+      "checks": {
+        "conditional_regime_all": true,
+        "undeclared_refused_all": true,
+        "water_mass_conserved_all": true,
+        "sampled_quadrature": true,
+        "translation_resolve_matches": true,
+        "translation_invariant_potential": true,
+        "extension_bitwise": true,
+        "naive_shifts_by_delta_excess": true,
+        "naive_shift_nonuniform": true,
+        "airy_rebuild_differs": true
+      },
+      "grids": [
+        {
+          "cells": 1024,
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "wet_fraction": 0.462890625,
+          "flexural_support_relative": 0.07561925199638721,
+          "force_relative_residual": 3.29391358017353e-09,
+          "volume_relative_residual": 2.842170943040401e-16,
+          "reference_bed_residual_m": 0.0,
+          "depth_residual_m": 6.821210263296962e-13,
+          "water_mass_relative_error": 1.6666666666666665e-16,
+          "max_abs_basal_excess_pa": 1170284.9735471345,
+          "water_effect_range_j_m2": 53535527784.006836,
+          "shear_term_range_j_m2": 12637456994.314922,
+          "alternative_level_max_change_j_m2": 11702849735.471191,
+          "shear_level_sensitivity_bound_j_m2": 40658603194.66098,
+          "max_abs_traction_pa": 5939248.316168945,
+          "max_abs_water_traction_pa": 427139.26242472656,
+          "max_abs_shear_term_traction_pa": 222486.34963834123,
+          "retained_solve_seconds": 0.0008223999757319689,
+          "join_and_traction_seconds": 0.00031860003946349025
+        },
+        {
+          "cells": 4096,
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "wet_fraction": 0.464111328125,
+          "flexural_support_relative": 0.0756387021598899,
+          "force_relative_residual": 3.242827865579502e-09,
+          "volume_relative_residual": 2.842170943040401e-16,
+          "reference_bed_residual_m": 0.0,
+          "depth_residual_m": 5.684341886080801e-13,
+          "water_mass_relative_error": 3.333333333333333e-16,
+          "max_abs_basal_excess_pa": 1171077.1505917227,
+          "water_effect_range_j_m2": 53650765419.81958,
+          "shear_term_range_j_m2": 12670225859.396362,
+          "alternative_level_max_change_j_m2": 11710771505.916992,
+          "shear_level_sensitivity_bound_j_m2": 40686125390.40293,
+          "max_abs_traction_pa": 5967520.87352401,
+          "max_abs_water_traction_pa": 436690.7705389323,
+          "max_abs_shear_term_traction_pa": 246204.38664267928,
+          "retained_solve_seconds": 0.0013036999735049903,
+          "join_and_traction_seconds": 0.0004460999625734985
+        },
+        {
+          "cells": 16384,
+          "regime": "FLEXURAL_CONDITIONAL_SHEAR_LEVEL",
+          "undeclared_refusal": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "wet_fraction": 0.4637451171875,
+          "flexural_support_relative": 0.07564749512145495,
+          "force_relative_residual": 3.235486024046005e-09,
+          "volume_relative_residual": 0.0,
+          "reference_bed_residual_m": 0.0,
+          "depth_residual_m": 5.684341886080801e-13,
+          "water_mass_relative_error": 1.6666666666666665e-16,
+          "max_abs_basal_excess_pa": 1178079.8404149255,
+          "water_effect_range_j_m2": 53706454108.085205,
+          "shear_term_range_j_m2": 12722699619.000364,
+          "alternative_level_max_change_j_m2": 11780798404.149414,
+          "shear_level_sensitivity_bound_j_m2": 40935670544.589645,
+          "max_abs_traction_pa": 5978377.90672625,
+          "max_abs_water_traction_pa": 439286.0831710417,
+          "max_abs_shear_term_traction_pa": 267566.63008895784,
+          "retained_solve_seconds": 0.0043586999527178705,
+          "join_and_traction_seconds": 0.0015304000116884708
+        }
+      ],
+      "sampled_columns": 64,
+      "max_sampled_quadrature_difference_j_m2": 0.30859375,
+      "translated_max_potential_change_j_m2": 0.0009765625,
+      "naive_datum_shift_range_j_m2": 29465366715.51376,
+      "airy_rebuild_max_difference_j_m2": 2638737499.773926
+    },
+    "refusals": {
+      "status": "PASS",
+      "seconds": 0.009803899971302599,
+      "passed": true,
+      "checks": {
+        "doubled_depth": true,
+        "extra_local_airy": true,
+        "double_water_feedback": true,
+        "increment_as_total": true,
+        "airy_rebuild_on_stiff_plate": true,
+        "dropped_flexure": true,
+        "shifted_reference": true,
+        "reordered_columns": true,
+        "mantle_density_mismatch": true,
+        "gravity_mismatch": true,
+        "column_count": true,
+        "forged_status_only": true,
+        "forged_status_zero_arrays": true,
+        "undeclared_shear_level": true,
+        "shear_level_below_rock": true,
+        "shear_level_at_bed": true,
+        "shear_level_without_basis": true,
+        "shear_level_nonfinite": true,
+        "below_datum": true,
+        "water_in_rock_column": true,
+        "unsupported_geometry": true,
+        "foreign_plate": true,
+        "nonfinite_depth": true,
+        "negative_depth_at_dry_cell": true,
+        "zero_volume_with_water": true,
+        "negative_volume": true,
+        "boolean_volume": true,
+        "invalid_columns": true
+      },
+      "cases": {
+        "doubled_depth": {
+          "expected": "REFUSED_WATER_LOAD_MISMATCH",
+          "code": "REFUSED_WATER_LOAD_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "extra_local_airy": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "double_water_feedback": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "increment_as_total": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "airy_rebuild_on_stiff_plate": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "dropped_flexure": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shifted_reference": {
+          "expected": "REFUSED_REFERENCE_MISMATCH",
+          "code": "REFUSED_REFERENCE_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "reordered_columns": {
+          "expected": "REFUSED_REFERENCE_MISMATCH",
+          "code": "REFUSED_REFERENCE_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "mantle_density_mismatch": {
+          "expected": "REFUSED_MATERIAL_MISMATCH",
+          "code": "REFUSED_MATERIAL_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "gravity_mismatch": {
+          "expected": "REFUSED_MATERIAL_MISMATCH",
+          "code": "REFUSED_MATERIAL_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "column_count": {
+          "expected": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "code": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "forged_status_only": {
+          "expected": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "code": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "forged_status_zero_arrays": {
+          "expected": "REFUSED_WATER_LOAD_MISMATCH",
+          "code": "REFUSED_WATER_LOAD_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "undeclared_shear_level": {
+          "expected": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "code": "REFUSED_SHEAR_LEVEL_UNDECLARED",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shear_level_below_rock": {
+          "expected": "REFUSED_SHEAR_LEVEL_OUTSIDE_ROCK",
+          "code": "REFUSED_SHEAR_LEVEL_OUTSIDE_ROCK",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shear_level_at_bed": {
+          "expected": "REFUSED_SHEAR_LEVEL_OUTSIDE_ROCK",
+          "code": "REFUSED_SHEAR_LEVEL_OUTSIDE_ROCK",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shear_level_without_basis": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "shear_level_nonfinite": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "below_datum": {
+          "expected": "REFUSED_BELOW_DATUM",
+          "code": "REFUSED_BELOW_DATUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "water_in_rock_column": {
+          "expected": "REFUSED_WATER_IN_ROCK_COLUMN",
+          "code": "REFUSED_WATER_IN_ROCK_COLUMN",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "unsupported_geometry": {
+          "expected": "REFUSED_UNSUPPORTED_CONTRACT",
+          "code": "REFUSED_UNSUPPORTED_CONTRACT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "foreign_plate": {
+          "expected": "REFUSED_UNSUPPORTED_CONTRACT",
+          "code": "REFUSED_UNSUPPORTED_CONTRACT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "nonfinite_depth": {
+          "expected": "REFUSED_NONFINITE",
+          "code": "REFUSED_NONFINITE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "negative_depth_at_dry_cell": {
+          "expected": "REFUSED_NEGATIVE_WATER_DEPTH",
+          "code": "REFUSED_NEGATIVE_WATER_DEPTH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "zero_volume_with_water": {
+          "expected": "REFUSED_WATER_LOAD_MISMATCH",
+          "code": "REFUSED_WATER_LOAD_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "negative_volume": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "boolean_volume": {
+          "expected": "REFUSED_INVALID_INPUT",
+          "code": "REFUSED_INVALID_INPUT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "invalid_columns": {
+          "expected": "REFUSED_INVALID_COLUMNS",
+          "code": "REFUSED_INVALID_COLUMNS",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      },
+      "negative_depth_cell": 0
+    },
+    "timing": {
+      "status": "PASS",
+      "seconds": 0.04510129999835044,
+      "passed": true,
+      "checks": {
+        "finite_nonnegative": true
+      },
+      "grids": [
+        {
+          "cells": 1024,
+          "samples_seconds": {
+            "retained_water_solve": [
+              0.0007939999923110008,
+              0.0007983999676071107,
+              0.0007587999571114779,
+              0.0007512999582104385,
+              0.0007477999897673726
+            ],
+            "join_and_traction": [
+              0.0003255000337958336,
+              0.00031620002118870616,
+              0.0003049000515602529,
+              0.0002970999921672046,
+              0.00031920004403218627
+            ]
+          },
+          "median_seconds": {
+            "retained_water_solve": 0.0007587999571114779,
+            "join_and_traction": 0.00031620002118870616
+          }
+        },
+        {
+          "cells": 4096,
+          "samples_seconds": {
+            "retained_water_solve": [
+              0.0013495000312104821,
+              0.0013087000115774572,
+              0.0012712000170722604,
+              0.001276099996175617,
+              0.0012659000349231064
+            ],
+            "join_and_traction": [
+              0.0005235999706201255,
+              0.0004629999748431146,
+              0.0003963999915868044,
+              0.00039599998854100704,
+              0.00039009994361549616
+            ]
+          },
+          "median_seconds": {
+            "retained_water_solve": 0.001276099996175617,
+            "join_and_traction": 0.0003963999915868044
+          }
+        },
+        {
+          "cells": 16384,
+          "samples_seconds": {
+            "retained_water_solve": [
+              0.004029400006402284,
+              0.004050499992445111,
+              0.003934699983801693,
+              0.004246000025887042,
+              0.004138599964790046
+            ],
+            "join_and_traction": [
+              0.0012618000037036836,
+              0.0015380000113509595,
+              0.0020140999695286155,
+              0.0016438000020571053,
+              0.0016630000318400562
+            ]
+          },
+          "median_seconds": {
+            "retained_water_solve": 0.004050499992445111,
+            "join_and_traction": 0.0016438000020571053
+          }
+        }
+      ],
+      "scope": "raw timings of different work on identical inputs; no matched baseline, so no saving is claimed"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_water_gpe.py": "e09df2572a2a697dc6741bee5793e20708dd211aa032cc03b52b3fde71195086",
+    "cases/i01_water_gpe_v1.json": "0cf97027110e13b59f1418ea685f781dbab3df4d8b9c6c4718f8ad9cc6f52147",
+    "docs/I01_WATER_GPE.md": "9f231c023f7e23634b2ffaaf6c7a2eb10751f0029eeedcf67ac00a8330298ac9",
+    "tests/test_i01_water_gpe.py": "2b03faa65ac9d3800f160be4ded11676839c0f5a47ac82afc5255966cac8dd97",
+    "tools/check_i01_gpe.py": "78021da5f97c8b44c83df20bf356dbf3b0b508849937bd1705b1164605aa9fc0",
+    "tools/check_i01_closures.py": "09acb83aafe3d3479d675d5940905995dc55f6789c7b09e9b6efee59ae93ecbd",
+    "tools/check_i01_water_flexure.py": "4eb7e7ac2e00d17e6cbadc1498e773d61ef70740e69f3cb443ca2cd9bce513b3",
+    "cases/i01_gpe_v1.json": "5712b77079bb6e16e696315d355ce60c922a2fa586c54262f4d8d6f0126e4ee8",
+    "cases/i01_water_flexure_v1.json": "384fadb1f5f762c06bc65e79df5bc5a9c4d1c766fdfac9fe07f91c003b1d92e0",
+    "evidence/i01-gpe-r1.json": "bfd5ddbaa6a204ca156b9d94b981269fb9ce0956bb5ec37d1fd111b6c248e4fd",
+    "evidence/i01-water-flexure-r1.json": "6e22ad6d509520eaefb30f2ddcba1eea2957770ce3c4f33e78aabe712b6c3932"
+  },
+  "retained_evidence": {
+    "receipts": {
+      "evidence/i01-gpe-r1.json": true,
+      "evidence/i01-water-flexure-r1.json": true
+    },
+    "retained": {
+      "tools/check_i01_gpe.py": true,
+      "tools/check_i01_closures.py": true,
+      "tools/check_i01_water_flexure.py": true,
+      "cases/i01_gpe_v1.json": true,
+      "cases/i01_water_flexure_v1.json": true
+    },
+    "imported": {
+      "tools/check_i01_gpe.py": true,
+      "tools/check_i01_closures.py": true,
+      "tools/check_i01_water_flexure.py": true
+    },
+    "informational": {
+      "docs/I01_GPE.md": true,
+      "docs/I01_WATER_FLEXURE.md": true,
+      "tests/test_i01_gpe.py": true,
+      "tests/test_i01_water_flexure.py": true
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.21236090001184493
+}

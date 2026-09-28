@@ -1,0 +1,69 @@
+{
+  "schema": "atlas.i01-lateral-heat-control.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "coupled_neck_certified": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "source_sha256": {
+    "tools/check_i01_lateral_heat.py": "86dc44e5f986b1328b5122f97e0883039eb49e952239b06e5475217caa733be2",
+    "tests/test_i01_lateral_heat.py": "71a32a66fb6baf94014849977b9c29fd5f4f82cee23117ef77f66b42a307706a",
+    "cases/i01_lateral_heat_v1.json": "15e24e0b3cda36c18902261ea6f11cf18c5df7b6bf0d1f01ddd4500d2cc776a6",
+    "docs/I01_LATERAL_HEAT.md": "c720f65a6e6fcb1e68d132cdd6731d5814377abd229f54a95db4840ccd7a5a1d"
+  },
+  "passed": true,
+  "checks": {
+    "permissive_admitted": true,
+    "strict_refused": true,
+    "analytical_error_within_bound": true,
+    "analytical_heat_conserved": true,
+    "no_coupled_claim": true,
+    "uniform_zero": true,
+    "no_edges_zero": true,
+    "cumulative_budget": true,
+    "samples_only_refused": true,
+    "unknown_refused": true
+  },
+  "permissive": {
+    "conditional_temperature_admissible": true,
+    "coupled_neck_certified": false,
+    "physical_separation_authorised": false,
+    "continuum_error_certified": false,
+    "status": "PASS_CONDITIONAL_THERMAL_BOUND",
+    "error_bound_k": 0.15000000000000002,
+    "error_bound_exact_k": "3/20",
+    "temperature_allowance_exact_k": "3602879701896397/18014398509481984",
+    "duration_exact_s": "1000000",
+    "window_increments_exact_k": [
+      "3/20"
+    ],
+    "windows": 1,
+    "cells": 2,
+    "contacts": 1
+  },
+  "strict": {
+    "conditional_temperature_admissible": false,
+    "coupled_neck_certified": false,
+    "physical_separation_authorised": false,
+    "continuum_error_certified": false,
+    "status": "REFUSED_TEMPERATURE_BUDGET",
+    "error_bound_k": 0.15000000000000002,
+    "error_bound_exact_k": "3/20",
+    "temperature_allowance_exact_k": "3602879701896397/36028797018963968",
+    "duration_exact_s": "1000000",
+    "window_increments_exact_k": [
+      "3/20"
+    ],
+    "windows": 1,
+    "cells": 2,
+    "contacts": 1
+  },
+  "analytical_temperature_error_k": 0.14984261019214304,
+  "analytical_heat_residual_j": 5.820766091346741e-11,
+  "scope": "conditional semi-discrete thermal bound; analytical fixture only",
+  "source_unchanged": true,
+  "elapsed_seconds": 0.07101870002225041
+}

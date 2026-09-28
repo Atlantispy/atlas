@@ -1,0 +1,542 @@
+{
+  "schema": "atlas.i01-elastic-core.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "contract": "atlas.single-elastic-core.v1",
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "controls": {
+    "derivation": {
+      "status": "PASS",
+      "seconds": 0.000610099988989532,
+      "passed": true,
+      "checks": {
+        "retained_plate_carries_core": true,
+        "rigidity_from_core_stresses": true,
+        "density_integrates_to_one": true,
+        "density_centroid_is_mid_surface": true,
+        "running_share_is_cubic": true,
+        "running_share_symmetric": true,
+        "stiffness_does_not_locate_core": true,
+        "explicit_surface_core_is_retained_level": true,
+        "shift_keeps_stiffness_moves_depth": true
+      },
+      "top_depth_m": 5000.0,
+      "bottom_depth_m": 20000.0,
+      "thickness_m": 15000.0,
+      "rigidity_n_m": 2.1000000000000002e+22,
+      "rigidity_from_core_stresses_n_m": 2.1e+22,
+      "shear_transfer_depth_m": 12500.0,
+      "density_integral": 1.0,
+      "density_first_moment_m": 12500.000000000002,
+      "running_shares": [
+        [
+          0.25,
+          0.15625000000000003
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.75,
+          0.8437500000000001
+        ]
+      ],
+      "surface_core_shear_transfer_depth_m": 7500.0
+    },
+    "smooth_profile_fourier": {
+      "status": "PASS",
+      "seconds": 0.11483999999472871,
+      "passed": true,
+      "checks": {
+        "flexural": true,
+        "producer_is_unchanged_join": true,
+        "derived_level_supplied": true,
+        "core_shear_is_plate_support": true,
+        "core_shear_carries_excess": true,
+        "basal_pressure_is_datum_pressure": true,
+        "both_signs_present": true,
+        "smooth_profile_where_excess_positive": true,
+        "smooth_profile_where_excess_negative": true,
+        "face_steps_differ": true,
+        "traction_matches_smooth_profile": true,
+        "periodic_net_force_zero": true,
+        "water_counted_once": true,
+        "solver_within_propagated": true,
+        "datum_extension_bitwise": true,
+        "datum_translation_bitwise": true,
+        "smooth_profile_datum_invariant": true,
+        "explicit_surface_core_is_retained_level": true
+      },
+      "cells": 256,
+      "core_top_m": 5000.0,
+      "core_bottom_m": 20000.0,
+      "shear_transfer_depth_m": 12500.0,
+      "max_abs_basal_excess_pa": 29843.080106818168,
+      "core_term_range_j_m2": 746077002.6704257,
+      "max_core_shear_minus_support_pa": 1.4551915228366852e-11,
+      "max_core_shear_minus_excess_pa": 9.373979992233217e-08,
+      "max_basal_pressure_error_pa": 9.5367431640625e-07,
+      "max_smooth_difference_positive_j_m2": 0.30712890625,
+      "max_smooth_difference_negative_j_m2": 0.31103515625,
+      "min_face_step_difference_j_m2": 223823100.98876953,
+      "max_traction_difference_pa": 2.77343497145921e-06,
+      "max_abs_traction_pa": 164452.5853064388,
+      "net_traction_pa": 4.3655745685100555e-11,
+      "solver_potential_difference_j_m2": 35.5107421875,
+      "solver_bound_j_m2": 2350.8494356563942,
+      "quadrature_tolerance_j_m2": 647.4599999999999
+    },
+    "core_shift": {
+      "status": "PASS",
+      "seconds": 0.03180130000691861,
+      "passed": true,
+      "checks": {
+        "same_stiffness_plate": true,
+        "same_water_and_deflection": true,
+        "partly_wet_flexural": true,
+        "depth_moves_by_delta": true,
+        "potential_changes_by_delta_excess": true,
+        "traction_changes_by_minus_gamma_delta_grad_excess": true,
+        "change_is_nonuniform": true,
+        "smooth_profile_matches_both": true,
+        "smooth_shift_is_delta_excess": true,
+        "datum_deepening_leaves_potential": true,
+        "datum_translation_resolve_matches": true,
+        "datum_translation_leaves_potential": true,
+        "core_translates_with_column": true
+      },
+      "cells": 1024,
+      "wet_fraction": 0.462890625,
+      "core_shift_m": 3000,
+      "max_abs_basal_excess_pa": 1170284.9735471345,
+      "potential_change_range_j_m2": 5054982797.725586,
+      "max_potential_change_error_j_m2": 0.0004724860191345215,
+      "rounding_bound_j_m2": 3.3930730581362067,
+      "max_traction_change_error_pa": 3.6496203392744064e-08,
+      "max_traction_change_pa": 88994.53985533211,
+      "sampled_columns": 64,
+      "max_smooth_difference_j_m2": 0.410888671875,
+      "translated_max_potential_change_j_m2": 0.0
+    },
+    "limits": {
+      "status": "PASS",
+      "seconds": 0.003020400006789714,
+      "passed": true,
+      "checks": {
+        "dry_compensated": true,
+        "dry_potential_bitwise": true,
+        "dry_traction_bitwise": true,
+        "uniform_compensated": true,
+        "uniform_core_depth_immaterial": true,
+        "uniform_potential": true,
+        "uniform_zero_traction": true,
+        "zero_rigidity_is_not_a_core": true,
+        "zero_rigidity_joins_without_core": true,
+        "degenerate_cores_refused": true
+      },
+      "dry_cells": 1024,
+      "uniform_cells": 256,
+      "max_abs_uniform_excess_pa": 1.1420343071222306e-09,
+      "uniform_core_term_max_j_m2": 1.4275428839027882e-05,
+      "zero_rigidity_refusal": {
+        "expected": "REFUSED_ZERO_RIGIDITY_NOT_A_CORE",
+        "code": "REFUSED_ZERO_RIGIDITY_NOT_A_CORE",
+        "refused_as_expected": true,
+        "inputs_unchanged": true
+      },
+      "degenerate": {
+        "zero_modulus": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "zero_thickness": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      }
+    },
+    "refusals": {
+      "status": "PASS",
+      "seconds": 0.007160299981478602,
+      "passed": true,
+      "checks": {
+        "placement_absent": true,
+        "te_only": true,
+        "rigidity_only": true,
+        "null_placement": true,
+        "declared_te_with_placement": true,
+        "inverted_interval": true,
+        "zero_thickness": true,
+        "above_rock_surface": true,
+        "below_thinnest_rock_base": true,
+        "horizontally_varying_depth": true,
+        "horizontally_varying_modulus": true,
+        "multiple_cores": true,
+        "layered_core": true,
+        "nonfinite_depth": true,
+        "nonfinite_modulus": true,
+        "boolean_modulus": true,
+        "nonpositive_modulus": true,
+        "poisson_at_half": true,
+        "poisson_at_minus_one": true,
+        "auxetic_not_retained": true,
+        "blank_basis": true,
+        "missing_material": true,
+        "non_text_basis": true,
+        "sea_surface_reference": true,
+        "thickness_mismatch": true,
+        "modulus_mismatch": true,
+        "poisson_mismatch": true,
+        "same_rigidity_other_material": true,
+        "zero_rigidity_plate": true,
+        "foreign_plate": true,
+        "state_from_other_rigidity": true,
+        "airy_state_on_core_plate": true,
+        "mantle_density_mismatch": true,
+        "gravity_mismatch": true,
+        "invalid_columns": true,
+        "column_count": true,
+        "thinnest_rock_base_admitted": true
+      },
+      "cases": {
+        "placement_absent": {
+          "expected": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "code": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "te_only": {
+          "expected": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "code": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "rigidity_only": {
+          "expected": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "code": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "null_placement": {
+          "expected": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "code": "REFUSED_CORE_PLACEMENT_ABSENT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "declared_te_with_placement": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "inverted_interval": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "zero_thickness": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "above_rock_surface": {
+          "expected": "REFUSED_CORE_OUTSIDE_ROCK",
+          "code": "REFUSED_CORE_OUTSIDE_ROCK",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "below_thinnest_rock_base": {
+          "expected": "REFUSED_CORE_OUTSIDE_ROCK",
+          "code": "REFUSED_CORE_OUTSIDE_ROCK",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "horizontally_varying_depth": {
+          "expected": "REFUSED_UNSUPPORTED_CORE",
+          "code": "REFUSED_UNSUPPORTED_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "horizontally_varying_modulus": {
+          "expected": "REFUSED_UNSUPPORTED_CORE",
+          "code": "REFUSED_UNSUPPORTED_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "multiple_cores": {
+          "expected": "REFUSED_UNSUPPORTED_CORE",
+          "code": "REFUSED_UNSUPPORTED_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "layered_core": {
+          "expected": "REFUSED_UNSUPPORTED_CORE",
+          "code": "REFUSED_UNSUPPORTED_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "nonfinite_depth": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "nonfinite_modulus": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "boolean_modulus": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "nonpositive_modulus": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "poisson_at_half": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "poisson_at_minus_one": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "auxetic_not_retained": {
+          "expected": "REFUSED_UNSUPPORTED_CORE",
+          "code": "REFUSED_UNSUPPORTED_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "blank_basis": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "missing_material": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "non_text_basis": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "sea_surface_reference": {
+          "expected": "REFUSED_INVALID_CORE",
+          "code": "REFUSED_INVALID_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "thickness_mismatch": {
+          "expected": "REFUSED_CORE_SOLVER_MISMATCH",
+          "code": "REFUSED_CORE_SOLVER_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "modulus_mismatch": {
+          "expected": "REFUSED_CORE_SOLVER_MISMATCH",
+          "code": "REFUSED_CORE_SOLVER_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "poisson_mismatch": {
+          "expected": "REFUSED_CORE_SOLVER_MISMATCH",
+          "code": "REFUSED_CORE_SOLVER_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "same_rigidity_other_material": {
+          "expected": "REFUSED_CORE_SOLVER_MISMATCH",
+          "code": "REFUSED_CORE_SOLVER_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "zero_rigidity_plate": {
+          "expected": "REFUSED_ZERO_RIGIDITY_NOT_A_CORE",
+          "code": "REFUSED_ZERO_RIGIDITY_NOT_A_CORE",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "foreign_plate": {
+          "expected": "REFUSED_UNSUPPORTED_CONTRACT",
+          "code": "REFUSED_UNSUPPORTED_CONTRACT",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "state_from_other_rigidity": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "airy_state_on_core_plate": {
+          "expected": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "code": "REFUSED_NOT_FLEXURAL_EQUILIBRIUM",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "mantle_density_mismatch": {
+          "expected": "REFUSED_MATERIAL_MISMATCH",
+          "code": "REFUSED_MATERIAL_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "gravity_mismatch": {
+          "expected": "REFUSED_MATERIAL_MISMATCH",
+          "code": "REFUSED_MATERIAL_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "invalid_columns": {
+          "expected": "REFUSED_INVALID_COLUMNS",
+          "code": "REFUSED_INVALID_COLUMNS",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        },
+        "column_count": {
+          "expected": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "code": "REFUSED_SHAPE_SUPPORT_MISMATCH",
+          "refused_as_expected": true,
+          "inputs_unchanged": true
+        }
+      },
+      "thinnest_rock_m": 29619.396867182175
+    },
+    "timing": {
+      "status": "PASS",
+      "seconds": 0.02183570002671331,
+      "passed": true,
+      "checks": {
+        "finite_nonnegative": true
+      },
+      "grids": [
+        {
+          "cells": 1024,
+          "samples_seconds": {
+            "join_with_derived_level": [
+              0.00027520000003278255,
+              0.0002513999934308231,
+              0.00024720001965761185,
+              0.000249599979724735,
+              0.00024940003640949726
+            ],
+            "core_producer": [
+              0.0002847999567165971,
+              0.00027730001602321863,
+              0.0002764000091701746,
+              0.00027849996695294976,
+              0.0002731999848037958
+            ]
+          },
+          "median_seconds": {
+            "join_with_derived_level": 0.000249599979724735,
+            "core_producer": 0.00027730001602321863
+          },
+          "median_overhead_seconds": 2.770003629848361e-05
+        },
+        {
+          "cells": 16384,
+          "samples_seconds": {
+            "join_with_derived_level": [
+              0.0012620000052265823,
+              0.001277300005313009,
+              0.0013501000357791781,
+              0.0013088000123389065,
+              0.0011897000367753208
+            ],
+            "core_producer": [
+              0.0012945999624207616,
+              0.0014035999774932861,
+              0.0014090999611653388,
+              0.001297399983741343,
+              0.001255699957255274
+            ]
+          },
+          "median_seconds": {
+            "join_with_derived_level": 0.001277300005313009,
+            "core_producer": 0.001297399983741343
+          },
+          "median_overhead_seconds": 2.0099978428333998e-05
+        }
+      ],
+      "scope": "raw interleaved timings of the producer and the join it wraps on identical inputs; no saving or cost is claimed"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_elastic_core.py": "18e57ea62e1c26b8941a2bef5fb71dfae3acb9dbc8229a9303c421aee06bdf2f",
+    "cases/i01_elastic_core_v1.json": "2166280f98a83c0ac4add194c33a901f987de08f81c29231e86f664017cf60d2",
+    "docs/I01_ELASTIC_CORE.md": "82679f88217c5c06b38ca235a677926fd205b9af7f2abf00d9832ed3cda52016",
+    "tests/test_i01_elastic_core.py": "3c0d7535ac5a142f8224aeeb6e1885ec67caf8070297a3fbb43cc84c8ea92190",
+    "tools/check_i01_water_gpe.py": "e09df2572a2a697dc6741bee5793e20708dd211aa032cc03b52b3fde71195086",
+    "cases/i01_water_gpe_v1.json": "0cf97027110e13b59f1418ea685f781dbab3df4d8b9c6c4718f8ad9cc6f52147",
+    "tools/check_i01_gpe.py": "78021da5f97c8b44c83df20bf356dbf3b0b508849937bd1705b1164605aa9fc0",
+    "tools/check_i01_closures.py": "09acb83aafe3d3479d675d5940905995dc55f6789c7b09e9b6efee59ae93ecbd",
+    "tools/check_i01_water_flexure.py": "4eb7e7ac2e00d17e6cbadc1498e773d61ef70740e69f3cb443ca2cd9bce513b3",
+    "cases/i01_gpe_v1.json": "5712b77079bb6e16e696315d355ce60c922a2fa586c54262f4d8d6f0126e4ee8",
+    "cases/i01_water_flexure_v1.json": "384fadb1f5f762c06bc65e79df5bc5a9c4d1c766fdfac9fe07f91c003b1d92e0",
+    "evidence/i01-water-gpe-r1.json": "539f76c29ca0d94e302f81da1cccc1a48dd2460f544d5ce07f8b561eca09100d",
+    "evidence/i01-gpe-r1.json": "bfd5ddbaa6a204ca156b9d94b981269fb9ce0956bb5ec37d1fd111b6c248e4fd",
+    "evidence/i01-water-flexure-r1.json": "6e22ad6d509520eaefb30f2ddcba1eea2957770ce3c4f33e78aabe712b6c3932"
+  },
+  "retained_evidence": {
+    "receipts": {
+      "evidence/i01-water-gpe-r1.json": true,
+      "evidence/i01-gpe-r1.json": true,
+      "evidence/i01-water-flexure-r1.json": true
+    },
+    "retained": {
+      "tools/check_i01_water_gpe.py": true,
+      "cases/i01_water_gpe_v1.json": true,
+      "tools/check_i01_gpe.py": true,
+      "tools/check_i01_closures.py": true,
+      "tools/check_i01_water_flexure.py": true,
+      "cases/i01_gpe_v1.json": true,
+      "cases/i01_water_flexure_v1.json": true
+    },
+    "imported": {
+      "tools/check_i01_water_gpe.py": true,
+      "tools/check_i01_gpe.py": true,
+      "tools/check_i01_closures.py": true,
+      "tools/check_i01_water_flexure.py": true
+    },
+    "informational": {
+      "docs/I01_GPE.md": true,
+      "docs/I01_WATER_FLEXURE.md": true,
+      "docs/I01_WATER_GPE.md": true,
+      "evidence/i01-gpe-r1.json": true,
+      "evidence/i01-water-flexure-r1.json": true,
+      "tests/test_i01_gpe.py": true,
+      "tests/test_i01_water_flexure.py": true,
+      "tests/test_i01_water_gpe.py": true
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 0.1840925000142306
+}

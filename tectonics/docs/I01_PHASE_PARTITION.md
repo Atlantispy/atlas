@@ -45,6 +45,18 @@ components/96 iterations and cancellation/deadline checks. No workers, disk cach
 or growing iteration history are needed. Reuse a prepared partition only at its
 declared P/T and coefficients; a changed physical state needs a new preparation.
 
+Near phase disappearance, subtracting almost all of a component's liquid from
+its bulk mass loses the small solid inventory's precision. Compute the smaller
+of `m_i*f/d_i` and `m_i*(1-f)*K_i/d_i` directly, then subtract that small amount
+from the bulk to obtain the larger one (`d_i=f+(1-f)*K_i`). Choose **per component**,
+not by the total solid/liquid fraction: a strongly partitioned trace ingredient
+can prefer the globally smaller phase. The complemented amount is at least half
+its bulk mass, preventing cancellation amplification. The existing root solver,
+1e-12 fraction tolerance and chemical-equilibrium checks do not change. A positive
+mixed-phase inventory that underflows to zero is refused, not silently removed.
+This improves inventory arithmetic; it does not promise relative accuracy for a
+phase fraction smaller than the existing absolute root tolerance.
+
 Removing equilibrium liquid at unchanged P/T leaves the same coexisting phase
 compositions but changes the bulk composition. Re-equilibration should recover
 the remaining phase masses, not reset the original fraction. The analytical
@@ -69,6 +81,11 @@ full melt/delivery connection.
 
 ## Research/software checked
 
+- [Chemicals 1.5.2 Rachford-Rice numerical notes](https://chemicals.readthedocs.io/chemicals.rachford_rice.html#numerical-notes):
+  checked for the endpoint-arithmetic correction. Equivalent phase formulas have
+  different cancellation behaviour, especially for trace ingredients. Atlas's
+  per-component minority-inventory split is derived from its own lever rule;
+  the gas/liquid package was not installed, copied or benchmarked.
 - [Keller & Katz (2016), section 2.1.1, equations 4-7](https://eprints.gla.ac.uk/195948/1/195948.pdf):
   component/phase constraints. Derivative and bracket were independently derived;
   no published mantle calibration is adopted.
@@ -93,6 +110,10 @@ python -B tectonics/tools/check_i01_phase_partition.py --output NEW_PATH.json
 The exclusive-create receipt binds the tool, tests, case and method, recording
 actual runtime. Independent binary roots, phase/component identities, depletion,
 permutation/scale invariance, endpoint/empty/ambiguous states and refusals are tested.
+Endpoint tests use independent binary tie-line compositions, 1e-9 disappearing
+phase fractions and coefficients from 1e-12 to 1e12. The connected pressure tests
+also recover heat/entropy states 1e-6 K inside both phase boundaries without the
+former false chemical-equilibrium refusal.
 Three interleaved batches compare 200 Newton and bisection solves with identical
 inputs/tolerance, recording raw times, median saving, iterations and mass parity.
 This is a kernel comparison, not a world speedup or a calibrated mantle campaign.

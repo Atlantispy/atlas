@@ -61,6 +61,13 @@ experiment. The [I01 physical integration chapter](docs/how-it-works/06-physical
 explains how strength, motion, heat, material history and changing geometry interact,
 alongside gravitational driving, water loading, melt and transition controls.
 These bounded connections do not yet form the complete evolved-world route.
+The [3D regional solver](docs/REGIONAL_MECHANICS_3D.md) now supplies full-stress
+heterogeneous flow, explicit velocity/traction boundaries and finite-mode
+force feedback, with prepared sparse reuse. Its [connected fixed-box advance](docs/REGIONAL_EVOLUTION_3D.md)
+now carries material, heat and scalar history, conducts heat and recalculates
+motion from the changed constitutive state. Moving surfaces, objective elastic
+history and fully evolving sphere connections remain outstanding. Whole-planet
+evolution remains an explicit integration acceptance requirement.
 Use [current status](../docs/CURRENT_STATE.md) for delivery status
 rather than the dated implementation entries below. The
 [validation record](docs/W10_VALIDATION.md) distinguishes implementation,

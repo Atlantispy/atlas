@@ -1,0 +1,15 @@
+{
+  "schema": "atlas.i01-elastic-memory-case.v1",
+  "policy": {
+    "elastic_strain_limit": 0.01,
+    "log_stretch_limit": 1.0,
+    "maximum_z": 1000000.0,
+    "relative_tolerance": 2e-12,
+    "maximum_seconds": 10.0,
+    "benchmark_calls": 2000,
+    "benchmark_repeats": 5
+  },
+  "kinematics": "coaxial_stretch_plus_rigid_rotation",
+  "fixture": {"G_pa": 30000000000.0, "eta_pa_s": 3e21, "dt_s": 100000000000.0,
+              "stress_pa": 10000000.0, "rate_s": 1e-15}
+}

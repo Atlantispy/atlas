@@ -147,8 +147,24 @@ def _solve(partition, component_mass_kg, *, newton, cancel=None, deadline=None):
             f = trial if lo+.05*(hi-lo) < trial < hi-.05*(hi-lo) else (lo+hi)/2
         else:
             raise ValueError("phase partition iteration budget exhausted")
-    liquid = tuple(m*(f/(f+(1-f)*ki)) for m, ki in zip(mass, k))
-    solid = tuple(m-l for m, l in zip(mass, liquid))
+    # Evaluate the smaller inventory directly for EACH component. Subtracting
+    # near-total liquid from bulk destroys the composition of a vanishing solid;
+    # global phase size alone is insufficient when partition coefficients differ.
+    solid, liquid = [], []
+    for m, ki in zip(mass, k):
+        solid_share = (1-f)*ki
+        denominator = f+solid_share
+        if f <= solid_share:
+            l = m*(f/denominator)
+            s = m-l
+        else:
+            s = m*(solid_share/denominator)
+            l = m-s
+        if m and 0 < f < 1 and (s == 0 or l == 0):
+            raise ValueError("component phase inventory underflows")
+        solid.append(s)
+        liquid.append(l)
+    solid, liquid = tuple(solid), tuple(liquid)
     if any(s < 0 or l < 0 or not math.isfinite(s+l) for s, l in zip(solid, liquid)):
         raise ValueError("unrepresentable phase inventory")
     if 0 < f < 1:

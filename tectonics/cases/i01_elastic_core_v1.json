@@ -1,0 +1,74 @@
+{
+  "schema": "atlas.i01-elastic-core-case.v1",
+  "status": "WORKING NON-CANON",
+  "contract": "atlas.single-elastic-core.v1",
+  "document": "tectonics/docs/I01_ELASTIC_CORE.md",
+  "policy": {
+    "force_relative_tolerance": 1e-7,
+    "volume_relative_tolerance": 1e-11,
+    "closed_form_displacement_m": 2e-6,
+    "translated_displacement_m": 1e-7,
+    "quadrature_fraction_of_reference": 1e-12,
+    "operator_relative": 1e-12,
+    "discrimination_factor": 1000.0,
+    "gauss_order": 3,
+    "quadrature_sample_stride": 16,
+    "timing_repetitions": 5,
+    "maximum_seconds": 60.0
+  },
+  "retained": {
+    "water_gpe_case": {
+      "retained": {
+        "gpe_case": {
+          "datum": {"pressure_pa": 6474600000, "compensation_elevation_m": -200000, "mantle_density_kg_m3": 3300, "gravity_m_s2": 9.81, "reference_temperature_k": 293.15},
+          "reduction": 1,
+          "crust_density_kg_m3": 2800,
+          "mean_crust_m": 35000
+        },
+        "water_case": {
+          "plate": {"length_x_m": 600000, "length_y_m": 400000, "elastic_thickness_m": 15000},
+          "mean_depth_m": 200,
+          "grids": [32, 64, 128]
+        }
+      },
+      "control_shear_depth_m": 7500
+    }
+  },
+  "controls": {
+    "core": {
+      "material": "manufactured control core: homogeneous isotropic elastic rock",
+      "basis": "Control assumption only: one homogeneous isotropic elastic core buried 5 km below the rock surface and 15 km thick, with the retained water-case plate constants E = 70 GPa and nu = 0.25. Declared to exercise the connection; not a selected Earth, Diadem or I08 value, and not inferred from Te, temperature or strength.",
+      "depth_reference": "rock_surface",
+      "top_depth_m": 5000,
+      "bottom_depth_m": 20000,
+      "young_pa": 70000000000,
+      "poisson": 0.25
+    },
+    "surface_core": {
+      "material": "manufactured control core: homogeneous isotropic elastic rock",
+      "basis": "Control assumption only: an explicitly declared surface-starting core, the uppermost 15 km of rock, with E = 70 GPa and nu = 0.25. It reproduces the retained water/GPE control level of 7.5 km. Declared here, not identified with Te.",
+      "depth_reference": "rock_surface",
+      "top_depth_m": 0,
+      "bottom_depth_m": 15000,
+      "young_pa": 70000000000,
+      "poisson": 0.25
+    },
+    "core_shift_m": 3000,
+    "fourier": {"shape": [16, 16], "mode": [2, 1], "mean_water_m": 1000, "bed_amplitude_m": 10},
+    "uniform": {"shape": [16, 16], "mean_water_m": 1000},
+    "fixture_grid": 32,
+    "datum_extension_m": 100000,
+    "vertical_translation_m": 100000,
+    "refusal": {
+      "foreign_elastic_thickness_m": 14000,
+      "foreign_young_pa": 71000000000,
+      "foreign_poisson": 0.3,
+      "auxetic_poisson": -0.2,
+      "above_rock_top_m": -100,
+      "below_rock_margin_m": 1,
+      "same_rigidity_thinner_by_m": 3000
+    },
+    "timing_grids": [32, 128]
+  },
+  "source": "Authored manufactured controls for MC-07's material-depth choice. Retained values are read through cases/i01_water_gpe_v1.json (itself checked against cases/i01_gpe_v1.json and cases/i01_water_flexure_v1.json) and must equal the retained block above, including that case's control shear level of 7500 m. Both declared cores are 15 km thick with E = 70 GPa and nu = 0.25, so each builds exactly the retained 15 km water-case plate; they differ only in placement (5 to 20 km, and an explicit 0 to 15 km). Columns are the retained one-layer crust of thickness h0 + s/f, with f = 1 - rho_c/rho_m, for a prescribed dry-surface pattern s: 10 cos(theta) for the retained oblique (2,1) mode with its closed-form fully wet state, zero for the uniform case, and the retained 32-square partly wet water fixture for the core shift, limits and refusals. The core shift of 3 km keeps the core inside every rock column. No observed region, calibration or planetary default."
+}

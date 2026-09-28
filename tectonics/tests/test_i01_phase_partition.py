@@ -102,6 +102,39 @@ class PartitionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ill-conditioned"):
             m.equilibrate(replace(self.p, coefficients=(1-1e-7, 1+1e-7)), [1., 1.])
 
+    def test_disappearing_phases_keep_their_composition(self):
+        # Independent tie line: cs=(1/3,2/3), cl=(2/3,1/3).
+        # Check inventories, not just the compositions reconstructed from K.
+        for f in (1e-9, 1e-6, 1-1e-6, 1-1e-9):
+            for scale in (1., 1e4):
+                with self.subTest(f=f, scale=scale):
+                    bulk = [scale*(1+f)/3, scale*(2-f)/3]
+                    state = m.equilibrate(self.p, bulk)
+                    sm, lm = map(math.fsum, (state.solid_mass_kg, state.liquid_mass_kg))
+                    self.assertGreater(sm, 0.)
+                    self.assertGreater(lm, 0.)
+                    self.assertAlmostEqual(state.liquid_fraction, f, delta=2e-12)
+                    for mass, s, l, k in zip(bulk, state.solid_mass_kg,
+                                            state.liquid_mass_kg, self.p.coefficients):
+                        self.assertLessEqual(abs((s+l)-mass), math.ulp(mass))
+                        self.assertLessEqual(abs(s/sm-k*l/lm), 2e-11)
+
+    def test_minority_inventory_is_chosen_per_component(self):
+        for f, k in ((.75, (.5, 1e12)), (.25, (1e-12, 2.))):
+            with self.subTest(f=f):
+                cl = ((k[1]-1)/(k[1]-k[0]), (1-k[0])/(k[1]-k[0]))
+                bulk = tuple(c*(f+(1-f)*ki) for c, ki in zip(cl, k))
+                state = m.equilibrate(replace(self.p, coefficients=k), bulk)
+                for c, ki, mass, s, l in zip(cl, k, bulk,
+                        state.solid_mass_kg, state.liquid_mass_kg):
+                    self.assertAlmostEqual(l/(f*c), 1., delta=2e-10)
+                    self.assertAlmostEqual(s/((1-f)*ki*c), 1., delta=2e-10)
+                    self.assertLessEqual(abs(s+l-mass), math.ulp(mass))
+        p = m.Partition(('trace', 'a', 'b'), (1., .5, 2.), 1e9, 1600., 'analytical')
+        with self.assertRaisesRegex(ValueError, 'underflows'):
+            m.equilibrate(p, [math.ulp(0.), .5, .5])
+
+
     def test_cancellation_deadline_and_budget(self):
         event = threading.Event(); event.set()
         with self.assertRaises(CancelledError):

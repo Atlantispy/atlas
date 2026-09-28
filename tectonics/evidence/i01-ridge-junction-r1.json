@@ -1,0 +1,119 @@
+{
+  "schema": "atlas.i01-ridge-junction-control.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "generated_reorganisation": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_ridge_junction.py": "17fdbec68b2861fa53b5e41109c448fe89d2f0e31f3032c92b528022bc250bc2",
+    "tests/test_i01_ridge_junction.py": "5dd47438f7f5ea4d2de2ec55935f85b863efccf244ac6d2d1913a56a8c824b5d",
+    "cases/i01_ridge_junction_v1.json": "80599247f764c7ef89fdde73217593dcbe862191d79a0d04874577c1c7638771",
+    "docs/I01_RIDGE_JUNCTION.md": "7f9960c4fe26e28d1405ca3600703433850ef2dab0fcf4e5cf61031a41c9e3ec",
+    "tools/check_i01_junction_events.py": "df5e5d375803b5588b17e6a8447f90a7a9860bc2d4e3e86a572f0e9c3590a2e3"
+  },
+  "passed": true,
+  "checks": {
+    "independent_linear_solution": true,
+    "independent_forward_length": true,
+    "new_ridge_law_both_endpoints": true,
+    "stationary_not_a_birth": true,
+    "unsigned_length_not_sufficient": true,
+    "observer_invariance": true,
+    "rotation_invariance": true,
+    "no_physical_permission": true,
+    "exact_reuse_parity": true
+  },
+  "candidate": {
+    "model": "symmetric_ridge_outgoing_candidate_v1",
+    "status": "LOCALLY_FEASIBLE_NOT_GENERATED",
+    "parent_id": "manufactured-contact",
+    "candidate_id": "proposed-CD",
+    "plate_ids": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "validity_s_exact": {
+      "numerator": "8",
+      "denominator": "1"
+    },
+    "frame_velocity_m_s_exact": [
+      {
+        "numerator": "-2",
+        "denominator": "1"
+      },
+      {
+        "numerator": "0",
+        "denominator": "1"
+      }
+    ],
+    "junction_a_relative_m_s_exact": [
+      {
+        "numerator": "3",
+        "denominator": "2"
+      },
+      {
+        "numerator": "0",
+        "denominator": "1"
+      }
+    ],
+    "junction_b_relative_m_s_exact": [
+      {
+        "numerator": "5",
+        "denominator": "2"
+      },
+      {
+        "numerator": "0",
+        "denominator": "1"
+      }
+    ],
+    "growth_squared_m2_s2_exact": {
+      "numerator": "1",
+      "denominator": "1"
+    },
+    "normal_constraint_residuals_exact": [
+      {
+        "numerator": "0",
+        "denominator": "1"
+      },
+      {
+        "numerator": "0",
+        "denominator": "1"
+      }
+    ],
+    "topology_change_authorised": false,
+    "physical_birth_verified": false,
+    "global_geometry_verified": false
+  },
+  "benchmark": {
+    "seconds": {
+      "prepared": [
+        0.0005385000258684158,
+        0.0005225999630056322,
+        0.0005156000261195004,
+        0.0005122000002302229,
+        0.0005085999728180468
+      ],
+      "rebuilt": [
+        0.025542200019117445,
+        0.02429530001245439,
+        0.02438989997608587,
+        0.02431629999773577,
+        0.0240522000240162
+      ]
+    },
+    "medians_s": {
+      "prepared": 0.0005156000261195004,
+      "rebuilt": 0.02431629999773577
+    },
+    "saved_s": 0.023800699971616268,
+    "saved_percent": 97.8796115109309,
+    "scope": "300 repeated length queries; immutable preparation reuse, not world speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.16919270000653341
+}

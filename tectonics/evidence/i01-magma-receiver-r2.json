@@ -1,0 +1,68 @@
+{
+  "schema": "atlas.i01-magma-receiver-evidence.v1",
+  "status": "PASS_BOUNDED_MAGMA_RECEIVER_ONLY",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows"
+  },
+  "source_sha256": {
+    "tectonics/tools/check_i01_magma_receiver.py": "25f9b1679ecc0a129283585235c4f14783461a6216a698cd4483837ca500afa0",
+    "tectonics/tests/test_i01_magma_receiver.py": "56104bfe1bb6b13ae78eb91036a5fec141d54058c8f9350adb2b9b58e31396a8",
+    "tectonics/docs/I01_MAGMA_RECEIVER.md": "35be5a6c6ec159e326526a4ae2b5b41d870d3893338662ddc0f387903f6a9810",
+    "tectonics/cases/i01_magma_receiver_v1.json": "73b33c189f165b9797872a3dd7a916cdb760d5dc56118c069344e750165039de",
+    "tectonics/tools/check_i01_phase_energy.py": "6a1896b87a0288a5e8ff4c3b107bfb51671beb3731f6f7bbe1cf1939beff78df",
+    "tectonics/tools/check_i01_phase_partition.py": "7acf98e1873b3c461510195875dfdc82a05180da9ee4a9d1b2322aade0835d86",
+    "tectonics/cases/i01_phase_energy_v1.json": "a5ed19877d68d31d276474e4fc7bc42c782bcafebec103ec26d8fc4f09c47949"
+  },
+  "passed": true,
+  "checks": {
+    "analytic_temperature": true,
+    "analytic_liquid": true,
+    "analytic_energy": true,
+    "analytic_entropy": true,
+    "binary_analytic": true,
+    "component_conservation": true,
+    "repeated_energy": true,
+    "batch_temperature": true,
+    "batch_components": true,
+    "batch_energy": true
+  },
+  "accounts": {
+    "temperature_k": 1500.0,
+    "liquid_kg": 333.3333333333333,
+    "crystallised_kg": 666.6666666666667,
+    "entropy_production_j_k": 89810.21798087633,
+    "boundary_work_j": -27864855.45106232,
+    "internal_energy_residual_j": 5.960464477539063e-08,
+    "repeated_energy_residual_j": 1.9073486328125e-06,
+    "connected_receiver_temperature_k": 1149.9999999999995,
+    "binary_temperature_k": 1099.9999999999995,
+    "binary_entropy_production_j_k": 336550.36725901184,
+    "binary_boundary_work_j": -40153641.93339721
+  },
+  "benchmark": {
+    "samples_seconds": {
+      "batch": [
+        0.01290640002116561,
+        0.01288840000052005,
+        0.013090999971609563
+      ],
+      "sequential": [
+        0.047958599985577166,
+        0.05014760000631213,
+        0.047349900007247925
+      ]
+    },
+    "calls": 20,
+    "parcels_per_call": 8,
+    "batch_seconds": 0.01290640002116561,
+    "sequential_seconds": 0.047958599985577166,
+    "saved_seconds": 0.03505219996441156,
+    "saved_percent": 73.08845540727415,
+    "temperature_parity_k": 2.2737367544323206e-13
+  },
+  "native_delivery_authorised": false,
+  "calibrated_mantle_model": false,
+  "source_unchanged": true,
+  "elapsed_seconds": 0.18799349997425452
+}

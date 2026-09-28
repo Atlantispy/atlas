@@ -1,0 +1,6 @@
+{
+  "schema": "atlas.i01-ridge-junction-case.v1",
+  "model": "symmetric_ridge_outgoing_candidate_v1",
+  "policy": {"calls": 300, "repeats": 5, "maximum_seconds": 10.0},
+  "fixture": {"side_speed_m_s": 2, "top_speed_m_s": 1, "growth_squared_m2_s2": 1}
+}
