@@ -1,6 +1,6 @@
 ## Requested change
 
-Describe the scoped change and the active route. Disclose ChatGPT/Codex or other AI assistance.
+Describe the scoped change and the active route. Disclose ChatGPT/Codex, Claude Code or other AI assistance.
 
 ## Source and behaviour boundaries
 
@@ -12,6 +12,8 @@ Describe the scoped change and the active route. Disclose ChatGPT/Codex or other
 ## Evidence
 
 - Exact checks actually run and their results:
+- `python -B tools/check_before_commit.py` result (required for tectonics code, evidence or receipt-bound docs; docs/CODING_SAFETY.md "Before every commit"):
+- Reader guide (tectonics/docs/how-it-works/) and method document updated, or not applicable:
 - Checks not run, missing dependencies and remaining assumptions:
 - Route guide/review inventory updated where wiring changed:
 

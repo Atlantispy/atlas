@@ -16,6 +16,7 @@ from pathlib import Path
 import shutil
 import stat
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -557,7 +558,13 @@ class RecoveryTests(unittest.TestCase):
                 continue
             for name in names:
                 self.assertIn(name, sys.stdlib_module_names)
-        self.assertFalse(any(name == 'work' or name.startswith('work.') for name in sys.modules))
+        # Check a clean process: other root tests may legitimately load work.* here.
+        import subprocess
+        probe = ("import sys; sys.path.insert(0, sys.argv[1]); import tools.r5_recovery; "
+                 "print(any(n == 'work' or n.startswith('work.') for n in sys.modules))")
+        done = subprocess.run([sys.executable, '-I', '-B', '-c', probe, str(Path(__file__).resolve().parents[1])],
+                              capture_output=True, text=True, timeout=60)
+        self.assertEqual((done.returncode, done.stdout.strip()), (0, 'False'), done.stderr)
 
     def test_cli_inventory_backup_verify_restore_and_nonzero_refusal(self):
         path = self.root / 'plan.json'
@@ -578,6 +585,29 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(r.main(arguments), 0)
         with redirect_stderr(io.StringIO()):
             self.assertEqual(r.main(['verify', '--bundle', str(self.bundle), '--expected-manifest-sha256', '0' * 64]), 2)
+
+
+class ChangeTimeStampTests(unittest.TestCase):
+    """CPython 3.12+ on Windows reports creation time from lstat() but NTFS change
+    time from fstat(); a file changed or replaced after creation must still hash."""
+
+    def test_file_modified_after_creation_is_readable(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'f.bin'
+            p.write_bytes(b'a')
+            time.sleep(0.05)
+            with p.open('ab') as s:
+                s.write(b'b')
+            self.assertEqual(r._hash(p)[1], 2)
+
+    def test_replaced_file_is_readable(self):
+        with tempfile.TemporaryDirectory() as d:
+            t = Path(d) / 't'
+            t.write_bytes(b'z')
+            time.sleep(0.05)
+            p = Path(d) / 'p'
+            os.replace(t, p)
+            self.assertEqual(r._hash(p)[1], 1)
 
 
 if __name__ == '__main__':

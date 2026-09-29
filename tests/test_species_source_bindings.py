@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 
+# Retained R11/R12/R22/R24 sources; the R22 registry import also needs NumPy.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engineering'))
 from work.generator_upgrade_r11 import snapshot
 from work.generator_upgrade_r22 import species
 from work.generator_runtime_r12 import executor as r12, store

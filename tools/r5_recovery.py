@@ -139,7 +139,11 @@ def _safe(path: Path, *, exists: bool = True, directory: bool = False) -> Path:
 
 
 def _stamp(info):
-    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+    # CPython 3.12+ on Windows reports creation time as lstat().st_ctime but NTFS
+    # change time as fstat().st_ctime. Compare creation time across the two APIs;
+    # _reader separately compares fstat change time before and after reading.
+    created = getattr(info, 'st_birthtime_ns', info.st_ctime_ns) if os.name == 'nt' else info.st_ctime_ns
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, created)
 
 
 @contextmanager
@@ -148,10 +152,13 @@ def _reader(path: Path) -> Iterator[Any]:
     before = path.lstat()
     fd = os.open(path, os.O_RDONLY | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0))
     with os.fdopen(fd, 'rb') as stream:
-        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode) or _stamp(os.fstat(stream.fileno())) != _stamp(before):
+        opened = os.fstat(stream.fileno())
+        if not stat.S_ISREG(opened.st_mode) or _stamp(opened) != _stamp(before):
             raise RecoveryError('source changed before reading')
         yield stream
-        if _stamp(os.fstat(stream.fileno())) != _stamp(before) or _stamp(_safe(path).lstat()) != _stamp(before):
+        after = os.fstat(stream.fileno())
+        if (_stamp(after) != _stamp(before) or after.st_ctime_ns != opened.st_ctime_ns
+                or _stamp(_safe(path).lstat()) != _stamp(before)):
             raise RecoveryError('source changed during reading')
 
 

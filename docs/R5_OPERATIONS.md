@@ -1,6 +1,6 @@
 # R5 shared-store backup and recovery
 
-Atlas is vibe-coded with OpenAI ChatGPT/Codex under the owner's direction.
+Atlas is vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under the owner's direction.
 **WORKING NON-CANON.** These operational tools preserve selected bytes; they do not
 accept terrain physics, run a simulation or establish runtime compatibility.
 

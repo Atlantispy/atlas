@@ -256,6 +256,8 @@ def verify(record: dict[str, Any], root: Path = ROOT) -> str:
 
 def source_link(root: Path) -> bytes:
     """Plain editable source paths only; never executable .pth statements."""
+    if "\n" in str(root) or "\r" in str(root):
+        raise DevelopmentError("source path cannot contain newline characters")
     paths = [str(safe(root) / part) for part in ("development", "engineering")]
     if any("\n" in path or "\r" in path for path in paths):
         raise DevelopmentError("source path cannot contain newline characters")

@@ -29,8 +29,9 @@ A rebuild needs four inputs. Three can be reproduced from this repository:
    `build.py`, from `index.html`, `styles.css` and `app.mjs` to `serve.mjs` and the
    view, data, reader and manager modules. **It is not in this repository**, so a
    reviewer cannot rebuild the accepted application from a clone. The build refuses
-   a snapshot unless every file matches `desktop/ui-snapshot.json`, a tracked
+   a snapshot unless every file matches `desktop/ui-snapshot.json`, a
    name-to-SHA-256 pin of those 33 files with schema `atlas.desktop-ui-snapshot.v1`.
+   That pin is not yet in the repository either; `build.py` refuses until it is added.
    Create that pin once from the accepted build's `build-manifest.json`, whose
    `resources/app/ui/NAME` entries record the delivered digests; the pin holds
    digests, not UI content. Obtaining the snapshot itself remains the open dependency.

@@ -17,3 +17,6 @@ runtime_work/
 
 # Private local development bindings, environments, caches and receipts
 .atlas-dev/
+
+# Machine-local Claude Code settings
+.claude/settings.local.json

@@ -1,6 +1,6 @@
 # Independent Atlas development
 
-Atlas is vibe-coded with OpenAI ChatGPT/Codex under the owner's direction.
+Atlas is vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under the owner's direction.
 **WORKING NON-CANON.** This is a runnable **public-component development package**,
 not a substitute installation of the private scientific runtime.
 
@@ -134,6 +134,15 @@ The commands do not expose arbitrary recipes, historical resume, world simulatio
 cleanup, automatic sync, background tasks or scientific acceptance. Test workers
 and all generated data are synthetic. Developer tests execute repository code;
 this is **not** a security sandbox for untrusted pull requests.
+
+## Troubleshooting
+
+- **Windows path length.** The R12 cache refuses a record path of 260 UTF-16 units
+  or more. `smoke` stores its cache under `.atlas-dev/cache/<16 hex>/`, which keeps
+  record paths within that limit for checkout roots of up to 90 characters. For a
+  longer root, clone into a shorter directory.
+- **`INCOMPLETE` on Windows.** A skipped permission-dependent symlink test makes a
+  profile incomplete rather than failed; see the previous section.
 
 ## Keep local records private
 

@@ -100,7 +100,10 @@ def smoke(binding: dict[str, Any], root: Path = core.ROOT) -> dict[str, Any]:
         })
     recipe = {"schema": "diadem.snapshot-graph-recipe.r11", "context": context,
               "stages": stages, "required_categories": ["geology"], "evidence": data["evidence"]}
-    cache_root = core.safe(root / ".atlas-dev/cache" / identity)
+    # The namespace (producer_id) already commits to the full binding identity.
+    # A short directory keeps R12's Windows record path under 260 UTF-16 units
+    # for checkout roots up to 90 characters.
+    cache_root = core.safe(root / ".atlas-dev/cache" / identity[:16])
     cache = store.Store(cache_root, producer_id, max_bytes=8 * 1024 * 1024)
     first_stats: dict[str, Any] = {}
     warm_stats: dict[str, Any] = {}

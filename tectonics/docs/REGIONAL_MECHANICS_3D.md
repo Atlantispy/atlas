@@ -68,9 +68,16 @@ limits, not a promise every such grid fits the selected memory budget.
 In practice the assembly reservation alone is 8 MiB plus 420,000 bytes per cell
 plus 3,000 bytes per velocity unknown (three per Q2 node) and per pressure node,
 before the separate factor allowance. For cubes that is about 176 MiB at 7x7x7
-and about 257 MiB at 8x8x8, so the default 256 MiB budget refuses 8x8x8 and
-larger; an external review on 28 September 2026 found 7x7x7 to be the largest
-cube admitted. The 24x24x24 interface limit would need about 6.9 GB (6.4 GiB)
+and about 257 MiB at 8x8x8. The default GMRES route then reserves an
+incomplete-factor allowance of 160 bytes per nonzero of the free velocity block
+plus 1,024 bytes per free velocity unknown, so it grows as fewer velocity
+components are prescribed. At 6x6x6 the factor allowance is about 85 MiB with all
+faces velocity-prescribed, 131 MiB with free-slip faces and 151 MiB with only the
+base velocity-prescribed (combined about 200, 246 and 265 MiB); at 7x7x7 even the
+all-velocity case needs about 325 MiB. The default 256 MiB budget therefore
+refuses every 7x7x7 cube and admits 6x6x6 only for velocity-dominated boundaries
+(measured 29 September 2026; an earlier 28 September estimate of 7x7x7 counted
+assembly only). The 24x24x24 interface limit would need about 6.9 GB (6.4 GiB)
 for assembly alone. Larger grids need an explicitly larger budget and machine;
 nothing is subdivided or coarsened automatically. The connected evolution
 fixture is 3x3x3.

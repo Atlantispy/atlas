@@ -54,13 +54,18 @@ def _profile(name: str, record: dict) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Atlas offline public development; no historical run adoption.")
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command", required=True,
+                                metavar="{doctor,bootstrap,capture,check,smoke,test}")
     sub.add_parser("doctor", help="Report supported profiles and exclusions without importing Atlas")
     sub.add_parser("bootstrap", help="Create a NEW package-free venv and NEW initial public binding")
     capture = sub.add_parser("capture", help="Explicitly create a NEW binding after reviewed public edits")
     capture.add_argument("--output", required=True)
+    helps = {"check": "Verify a binding against current sources and runtime",
+             "smoke": "Run the four-node integer graph fixture",
+             "test": "Run a public test profile (or all-public) in fresh subprocesses"}
     for name in ("check", "smoke", "test", "_profile"):
-        child = sub.add_parser(name, help=argparse.SUPPRESS if name == "_profile" else None)
+        # The internal _profile command gets no help entry, so it is not listed.
+        child = sub.add_parser(name, **({"help": helps[name]} if name in helps else {}))
         child.add_argument("--binding", required=True)
         if name in ("test", "_profile"):
             child.add_argument("--profile", required=True)
