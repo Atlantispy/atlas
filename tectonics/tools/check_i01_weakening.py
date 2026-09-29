@@ -37,7 +37,7 @@ import check_i01_column as column
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT/"cases/i01_weakening_v1.json"
 COLUMN_CASE = ROOT/"cases/i01_column_v1.json"
-COLUMN_RECEIPT = ROOT/"evidence/i01-column-r1.json"
+COLUMN_RECEIPT = ROOT/"evidence/i01-column-r2.json"
 SCHEMA = "atlas.i01-weakening-case.v1"
 REPRESENTATION = {
     "geometry": "laterally uniform column; coaxial plane-strain pure shear; material depth coordinates; small strain",

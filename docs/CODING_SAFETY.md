@@ -169,6 +169,42 @@ impact, exact checks actually run and their outcome, and untested dependencies.
 Keep the report bounded to the request. No repeated broad audit or coordination
 acknowledgement loop is needed.
 
+### Before every commit
+
+A Windows working copy can hold CRLF bytes for files that Git stores with LF, so a
+check run in place can pass on bytes that no clone receives. Before committing
+tectonics code, evidence or the documentation its receipts bind, run from the
+repository root with the tested tectonics interpreter (the I01/I02 modules need
+NumPy, SciPy and threadpoolctl):
+
+```text
+python -B tools/check_before_commit.py
+python -B tools/check_before_commit.py --staged
+python -B -m unittest discover -s tests -p test_check_before_commit.py -v
+```
+
+The first form checks everything `git add --all` would stage, including unstaged
+and untracked files; `--staged` checks exactly the index and names each
+working-tree change it leaves out. Both copy the index to a temporary file, export
+the Git-normalised candidate bytes and run `tools/check_current_evidence.py`,
+`tectonics/tests/test_digest_line_endings.py` and the I01/I02 test modules on that
+export. The real index, working tree and Git settings are not changed; like
+`git add`, the tool may store Git objects for changed files. It is not an installed
+hook and never commits. The third command runs the guard's own tests on throwaway
+repositories. A failure names the file: fix the writer or source, or capture a
+successor receipt. Never repin a recorded digest to make the guard pass.
+
+Git must not start other programs while the candidate is built. Every Git call,
+from the first, disables the fsmonitor hook or daemon and finds hook files only in
+an empty private directory; these are per-command options, not setting changes.
+The guard refuses, and checks nothing, when a candidate path has an applicable
+external clean or process filter (a Git LFS attribute, for example), when a hook
+is configured for `post-index-change` (Git 2.54 and later run hooks defined in
+configuration as well as hook files) or when the index holds a submodule. A filter
+is never skipped, because the bytes without it are not the bytes Git would commit.
+Remove an unintended filter, hook or submodule, or check such a commit without this
+guard; it is not a general Git sandbox.
+
 ### Keep changes and current status small
 
 Use [CURRENT_STATE.md](CURRENT_STATE.md) as the single current checkpoint; update

@@ -1,0 +1,196 @@
+{
+  "schema": "atlas.i01-column-admission-evidence.v1",
+  "status": "PASS_BOUNDED_COLUMN_ADMISSION_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Windows",
+    "numpy": "2.4.6",
+    "blas_threads": 1
+  },
+  "source_sha256": {
+    "tools/check_i01_column_admission.py": "faf7abca53c6fc4817d0d1200e6445f5ab8e044f7416888e2a68e23e4bf2e925",
+    "cases/i01_column_admission_v1.json": "a4761ace20be07285270b2ff92c33533cf685175533d9d27b22f9a949380c67d",
+    "docs/I01_COLUMN_ADMISSION.md": "d898ac6694f7ca67aaa239333057e3433e74940d0c0910bb5c054d3c38b31f62",
+    "tests/test_i01_column_admission.py": "b2d6a1d3bf79b0a515552df17591c623905e449127ce2293071b7482a2b9e394",
+    "tools/check_i01_decoupling.py": "95b52a1a11f36a3275ace151f222ed528c16d8d9f7dbff4ab4a23f8235032a9a",
+    "tools/check_i01_motion_coupling.py": "2f264ac3afa7b1458fb973085000d2235859794f93aa9fae1b5c264f0a363820",
+    "tools/check_i01_weakening.py": "7feec9532c8052ab8cfc172ebc2d510a12285481043dea50b6820607afcec860",
+    "tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "cases/i01_column_v1.json": "4e04683a751e721ee559528ee6d2e8e288671cd584b09f7b0bfa5782f06e0f0a",
+    "evidence/i01-motion-coupling-r2.json": "2c122d11cb07342165ceed7bd8621a2cf72597008ad9979ac1d6ebee8b2657b8",
+    "evidence/i01-decoupling-r1.json": "af0a679fc808e0ae3952966b63e13caf55266ffca24e26a3e620536e015ca8e6",
+    "src/atlas_tectonics/_integration_motion.py": "2adecb6e93a449e8035f0be989675d264572597676785b7ddf78e4bd232e9da3",
+    "src/atlas_tectonics/_integration_weakening.py": "1b2c1642417614806b066a899d8579f94606946c1ba515844e9cf9f867f1ae2c",
+    "src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113"
+  },
+  "case": {
+    "schema": "atlas.i01-column-admission-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "Sufficient exact bound on represented fixed-column motion omission, not a generated rupture criterion or continuum enclosure",
+    "provenance": "Unchanged layered material/weakening inputs and external drive from reviewed I01 controls. Analytical linear and mixed-mechanism controls are authored, not calibrated geological defaults. Tolerances freeze acceptance before execution.",
+    "drive": {
+      "force_n_m": 20000000000000.0,
+      "drag_pa_s": 5e+22,
+      "width_m": 100000.0
+    },
+    "duration_s": 1000000000000.0,
+    "orders": [
+      16,
+      32,
+      64
+    ],
+    "relative_tolerance": 0.01,
+    "analytical_tolerance": 1e-05,
+    "displacement_limit_m": 100.0,
+    "policy": {
+      "maximum_seconds": 30.0,
+      "repetitions": 10,
+      "batches": 3,
+      "oracle_relative": 1e-08,
+      "inequality_relative": 1e-09
+    },
+    "limitations": [
+      "fixed geometry/temperature/pore/drive",
+      "positive extension",
+      "nondecreasing raw history",
+      "positive plastic regularisation at every point",
+      "0.05 total small-strain ceiling including earlier accepted strain",
+      "failed bound means not certified, not proof of excessive actual error"
+    ]
+  },
+  "controls": {
+    "passed": true,
+    "checks": {
+      "layer_bounds": true,
+      "honest_nonadmission": true,
+      "analytical": true,
+      "exact_threshold": true,
+      "mixed_creep": true,
+      "evolving": true,
+      "no_rupture": true,
+      "same_decisions": true
+    },
+    "layered": [
+      {
+        "order": 16,
+        "actual_force_to_bound": [
+          0.10848966622218532,
+          0.10666146488639008
+        ],
+        "judgment": {
+          "numerical_admissible": false,
+          "generated_separation_authorised": false,
+          "status": "NOT_CERTIFIED_BY_BOUND",
+          "reference_speed_m_s": 4.0000000000000007e-10,
+          "relative_error_limit": 0.01,
+          "duration_s": 1000000000000.0,
+          "strain_upper_bound": 0.004000000000000001,
+          "scope": "represented fixed column, drive and temperature; nondecreasing raw history; extension"
+        },
+        "yield_bound_n_m": 142481361241512.22,
+        "linear_bound_pa_s": 4e+21
+      },
+      {
+        "order": 32,
+        "actual_force_to_bound": [
+          0.10862020415408317,
+          0.10678216537863888
+        ],
+        "judgment": {
+          "numerical_admissible": false,
+          "generated_separation_authorised": false,
+          "status": "NOT_CERTIFIED_BY_BOUND",
+          "reference_speed_m_s": 4.0000000000000007e-10,
+          "relative_error_limit": 0.01,
+          "duration_s": 1000000000000.0,
+          "strain_upper_bound": 0.004000000000000001,
+          "scope": "represented fixed column, drive and temperature; nondecreasing raw history; extension"
+        },
+        "yield_bound_n_m": 142481361241512.22,
+        "linear_bound_pa_s": 4e+21
+      },
+      {
+        "order": 64,
+        "actual_force_to_bound": [
+          0.10864459642708334,
+          0.10679771712350261
+        ],
+        "judgment": {
+          "numerical_admissible": false,
+          "generated_separation_authorised": false,
+          "status": "NOT_CERTIFIED_BY_BOUND",
+          "reference_speed_m_s": 4.0000000000000007e-10,
+          "relative_error_limit": 0.01,
+          "duration_s": 1000000000000.0,
+          "strain_upper_bound": 0.004000000000000001,
+          "scope": "represented fixed column, drive and temperature; nondecreasing raw history; extension"
+        },
+        "yield_bound_n_m": 142481361241512.25,
+        "linear_bound_pa_s": 4.0000000000000005e+21
+      }
+    ],
+    "analytical": {
+      "relative_error": 1.803524252721885e-12,
+      "judgment": {
+        "numerical_admissible": true,
+        "generated_separation_authorised": false,
+        "status": "CERTIFIED_COLUMN_WINDOW",
+        "reference_speed_m_s": 4.0000000000000007e-10,
+        "relative_error_limit": 1e-05,
+        "duration_s": 1000000000000.0,
+        "speed_error_bound_m_s": 4.000000000000001e-15,
+        "displacement_error_bound_m": 0.004000000000000001,
+        "driving_work_error_bound_J_m": 80000000000.00002,
+        "strain_upper_bound": 0.004000000000000001,
+        "scope": "represented fixed column, drive and temperature; nondecreasing raw history; extension"
+      }
+    },
+    "mixed": {
+      "exponents": [
+        1.0,
+        3.5
+      ],
+      "actual_force_n_m": 133332444.45060906,
+      "bound_n_m": 159998933.34073296
+    },
+    "evolving": {
+      "strain": 0.0009011349556560825,
+      "window_after_evolution": {
+        "numerical_admissible": false,
+        "generated_separation_authorised": false,
+        "status": "NOT_CERTIFIED_BY_BOUND",
+        "reference_speed_m_s": 4.0000000000000007e-10,
+        "relative_error_limit": 0.01,
+        "duration_s": 1000000000000.0,
+        "strain_upper_bound": 0.0049011349556560835,
+        "scope": "represented fixed column, drive and temperature; nondecreasing raw history; extension"
+      }
+    },
+    "benchmark": {
+      "count": 10,
+      "batches": 3,
+      "samples_seconds": {
+        "rebuilt": [
+          0.01928170002065599,
+          0.020942999981343746,
+          0.01936790009494871
+        ],
+        "reused": [
+          0.0014585999306291342,
+          0.0013255999656394124,
+          0.0011987999314442277
+        ]
+      },
+      "rebuilt_median_seconds": 0.01936790009494871,
+      "reused_median_seconds": 0.0013255999656394124,
+      "saved_seconds": 0.018042300129309297,
+      "saved_percent": 93.15568564924011,
+      "decisions_equal": true,
+      "scope": "same public admission calls, rebuilt versus reused envelope, including guards; retained mechanical preparation excluded in both; not simulation/world speedup"
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.1479532999219373
+}

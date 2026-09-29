@@ -147,11 +147,15 @@ replace conservation or resolution checks.
 
 **Reading evidence status:** a test file defines a check; it is not a passing-run
 receipt. A recorded pass applies to the code, inputs, runtime and configuration
-named in that record. W01–W12 numerical records are not yet classified by the
-initial [current-evidence register](../../docs/CURRENT_EVIDENCE.md), so this guide
-does not promote them to fresh current-code acceptance. The registered Step 7 r2,
-bundle r2 and motion-frame r2 integration receipts are historical. A current case
-matrix defines an experiment; it does not prove the experiment passed.
+named in that record. Receipts linked from these chapters are dated records of
+those runs. Only receipts that the [current-evidence register](../../docs/CURRENT_EVIDENCE.md)
+lists as current still match the files they bind; treat every other linked receipt,
+including all W01–W12 records, as historical or unclassified, not as evidence
+about today's code. Most checks compare the code with analytical cases, its own
+refinements, conservation accounts or warm/cold parity. Those are V1/V2 evidence
+that the implementation is consistent, not V3 validation against independent
+observations. A current case matrix defines an experiment; it does not prove the
+experiment passed.
 
 The guide was expanded by reading code, existing checks and method references.
 No numerical campaign was rerun to write it. Detailed findings remain in

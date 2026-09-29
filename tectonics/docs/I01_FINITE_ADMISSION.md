@@ -406,8 +406,12 @@ python -B tools/check_i01_finite_admission.py --output NEW_PATH.json
 ```
 
 The exclusive-create receipt binds, before and after execution, the four new files,
-the retained tools and cases listed in the tool, and the accepted receipts
-`i01-finite-strain-r2` and `i01-column-admission-r1` at their accepted SHA-256
-values. Before any control it verifies that every source those receipts recorded
+the retained tools, cases and package modules listed in the tool, and the
+finite-strain and column-admission receipts that the tool pins, at their accepted
+SHA-256 values. The designated successors for the package-owned code are
+`i01-finite-strain-r4` and `i01-column-admission-r2`; each is evidence only once
+captured, reviewed and listed as current in the
+[evidence register](../../docs/CURRENT_EVIDENCE.md). Before any control the tool
+verifies that every source the pinned receipts recorded
 still has its bytes and that each imported module resolves to its bound path.
 Timings exclude imports. The reuse comparison is one small matched observation.

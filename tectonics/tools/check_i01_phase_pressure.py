@@ -250,7 +250,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
-    with args.output.open('x', encoding='utf-8') as output:
+    with args.output.open('x', encoding='utf-8', newline='\n') as output:
         report = dict(schema='atlas.i01-phase-pressure-evidence.v1',status='FAIL',
             runtime=dict(python=platform.python_version(),platform=platform.system()))
         started = time.perf_counter()

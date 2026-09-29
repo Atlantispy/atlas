@@ -1,0 +1,245 @@
+{
+  "schema": "atlas.i01-motion-coupling-evidence.v1",
+  "status": "PASS_BOUNDED_MOTION_COUPLING_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "blas_threads": 1
+  },
+  "source_sha256": {
+    "tools/check_i01_motion_coupling.py": "2f264ac3afa7b1458fb973085000d2235859794f93aa9fae1b5c264f0a363820",
+    "cases/i01_motion_coupling_v1.json": "53dc1b0f4bd9986bcede076ba403f01634fba3cd90901c33628af717b4dbfbf0",
+    "docs/I01_MOTION_COUPLING.md": "769cd908faec9dc08ce4fba5c9183c4aa228a3c16bff6250cee0cfc64b986095",
+    "tests/test_i01_motion_coupling.py": "baf0b81440b1deb36a64f019dbd027cf0e67146633b6a76e67f8d2dcacba424d",
+    "tools/check_i01_weakening.py": "7feec9532c8052ab8cfc172ebc2d510a12285481043dea50b6820607afcec860",
+    "tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "evidence/i01-weakening-r3.json": "30829616b08badd96ad0946870aa4092b10bf199f65ea083bba7ca8ef2990b31",
+    "src/atlas_tectonics/_integration_motion.py": "2adecb6e93a449e8035f0be989675d264572597676785b7ddf78e4bd232e9da3",
+    "src/atlas_tectonics/_integration_weakening.py": "1b2c1642417614806b066a899d8579f94606946c1ba515844e9cf9f867f1ae2c",
+    "src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113"
+  },
+  "reviewed_helper_match": {
+    "tools/check_i01_weakening.py": true,
+    "tools/check_i01_column.py": true,
+    "cases/i01_weakening_v1.json": true,
+    "src/atlas_tectonics/_integration_weakening.py": true,
+    "src/atlas_tectonics/_integration_column.py": true
+  },
+  "case": {
+    "schema": "atlas.i01-motion-coupling-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "fixed-temperature small-strain column plus disjoint generalised drag; constant external drive, no global coupling or separation certificate",
+    "provenance": "Authored force, width, integrated drag, duration and gates; layer physics and inherited engineering plastic history from reviewed i01_weakening_v1.json. No fit to an Earth speed.",
+    "drive_n_m": 20000000000000.0,
+    "drag_pa_s": 5e+22,
+    "width_m": 100000.0,
+    "duration_s": 30000000000000.0,
+    "strain_bound": 0.05,
+    "orders": [
+      32,
+      64,
+      128
+    ],
+    "steps": [
+      16,
+      32,
+      64
+    ],
+    "time_relative": 0.0001,
+    "depth_relative": 0.003,
+    "parity_relative": 1e-08,
+    "maximum_seconds": 120.0
+  },
+  "controls": {
+    "passed": true,
+    "checks": {
+      "complete": true,
+      "time": true,
+      "depth": true,
+      "evolving": true,
+      "fixed_strength": true,
+      "work": true,
+      "reuse_parity": true,
+      "root_parity": true
+    },
+    "time_refinement": [
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 16,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.02734042392263894,
+        "displacement_m": 2734.042392263894,
+        "velocity_start_m_s": 8.96244234454691e-11,
+        "velocity_end_m_s": 9.268021249677941e-11,
+        "energy_j_m": {
+          "drive": 5.468084784527788e+16,
+          "drag": 1.2459489154971362e+16,
+          "creep": 1.851195721122398e+16,
+          "plastic": 2.3709401479034788e+16
+        },
+        "work_relative": 8.732856545150252e-13,
+        "max_force_relative": 1.0276224315930449e-12,
+        "max_power_relative": 2.3386563790966192e-12,
+        "evaluations": 86,
+        "iterations": 1077
+      },
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 32,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.02734043881242776,
+        "displacement_m": 2734.043881242776,
+        "velocity_start_m_s": 8.96244234454691e-11,
+        "velocity_end_m_s": 9.268021553064365e-11,
+        "energy_j_m": {
+          "drive": 5.468087762485552e+16,
+          "drag": 1.2459495921581278e+16,
+          "creep": 1.851195473270065e+16,
+          "plastic": 2.370942697055761e+16
+        },
+        "work_relative": 2.9231425489656695e-13,
+        "max_force_relative": 4.918287999089443e-13,
+        "max_power_relative": 1.457253854108585e-12,
+        "evaluations": 166,
+        "iterations": 1893
+      },
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.027340442539086622,
+        "displacement_m": 2734.044253908662,
+        "velocity_start_m_s": 8.96244234454691e-11,
+        "velocity_end_m_s": 9.268021629037328e-11,
+        "energy_j_m": {
+          "drive": 5.468088507817324e+16,
+          "drag": 1.2459497612920474e+16,
+          "creep": 1.8511954108016484e+16,
+          "plastic": 2.370943335722102e+16
+        },
+        "work_relative": 2.7914690806811523e-13,
+        "max_force_relative": 4.620748228489902e-13,
+        "max_power_relative": 1.38821462130351e-12,
+        "evaluations": 326,
+        "iterations": 3365
+      }
+    ],
+    "depth_refinement": [
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 32,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.027363895124095157,
+        "displacement_m": 2736.3895124095156,
+        "velocity_start_m_s": 8.969350691332774e-11,
+        "velocity_end_m_s": 9.276796600222974e-11,
+        "energy_j_m": {
+          "drive": 5.472779024819031e+16,
+          "drag": 1.2480896281112032e+16,
+          "creep": 1.8455735837474616e+16,
+          "plastic": 2.379115812958547e+16
+        },
+        "work_relative": 3.3240881675469357e-13,
+        "max_force_relative": 4.802824804528427e-13,
+        "max_power_relative": 1.4422477477656837e-12,
+        "evaluations": 166,
+        "iterations": 1825
+      },
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 32,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.02734043881242776,
+        "displacement_m": 2734.043881242776,
+        "velocity_start_m_s": 8.96244234454691e-11,
+        "velocity_end_m_s": 9.268021553064365e-11,
+        "energy_j_m": {
+          "drive": 5.468087762485552e+16,
+          "drag": 1.2459495921581278e+16,
+          "creep": 1.851195473270065e+16,
+          "plastic": 2.370942697055761e+16
+        },
+        "work_relative": 2.9231425489656695e-13,
+        "max_force_relative": 4.918287999089443e-13,
+        "max_power_relative": 1.457253854108585e-12,
+        "evaluations": 166,
+        "iterations": 1893
+      },
+      {
+        "status": "COMPLETE",
+        "accepted_steps": 32,
+        "elapsed_s": 30000000000000.0,
+        "strain": 0.02733844741587694,
+        "displacement_m": 2733.844741587694,
+        "velocity_start_m_s": 8.962389991116367e-11,
+        "velocity_end_m_s": 9.266762372199885e-11,
+        "energy_j_m": {
+          "drive": 5.4676894831753864e+16,
+          "drag": 1.2457672189657366e+16,
+          "creep": 1.851693734537083e+16,
+          "plastic": 2.370228529670786e+16
+        },
+        "work_relative": 3.2569515980739125e-13,
+        "max_force_relative": 5.067057884389214e-13,
+        "max_power_relative": 1.5153176385005748e-12,
+        "evaluations": 166,
+        "iterations": 1919
+      }
+    ],
+    "fixed_strength": {
+      "status": "COMPLETE",
+      "accepted_steps": 32,
+      "elapsed_s": 30000000000000.0,
+      "strain": 0.014568028164379953,
+      "displacement_m": 1456.8028164379953,
+      "velocity_start_m_s": 4.856009388126649e-11,
+      "velocity_end_m_s": 4.856009388126649e-11,
+      "energy_j_m": {
+        "drive": 2.9136056328759904e+16,
+        "drag": 3537124076636124.0,
+        "creep": 1.2638097658554838e+16,
+        "plastic": 1.296083459391527e+16
+      },
+      "work_relative": 1.1886577788434022e-11,
+      "max_force_relative": 1.1929124354992382e-11,
+      "max_power_relative": 1.1887345281597225e-11,
+      "evaluations": 70,
+      "iterations": 156
+    },
+    "time_relative": 8.197322650182704e-09,
+    "depth_relative": 0.00013586296247482602,
+    "root_comparison": [
+      {
+        "sign": 1,
+        "velocity_m_s": 8.96244234454691e-11,
+        "relative": 2.2004629845707874e-16,
+        "force_relative": 2.220446049250313e-16,
+        "power_relative": 3.1388551147924925e-13
+      },
+      {
+        "sign": -1,
+        "velocity_m_s": -1.0699655770031368e-11,
+        "relative": 9.365720638137266e-14,
+        "force_relative": 2.886579864025407e-15,
+        "power_relative": 5.628077963436383e-13
+      }
+    ],
+    "warm_start": {
+      "cold_seconds": 0.46078740002121776,
+      "warm_seconds": 0.09730919997673482,
+      "saved_seconds": 0.36347820004448295,
+      "saved_percent": 78.88197464334874,
+      "parity": 7.983153059283138e-13,
+      "cold_evaluations": 390,
+      "warm_evaluations": 166,
+      "cold_iterations": 10979,
+      "warm_iterations": 1893
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 1.250980900018476
+}

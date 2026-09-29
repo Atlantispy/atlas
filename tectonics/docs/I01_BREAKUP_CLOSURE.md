@@ -430,7 +430,7 @@ The case fixes every input and gate; the tool refuses a case that differs.
 | `pinch` | Analytical continuum feasibility of the declared power law; not a resolved event | For `n = 3` and `3.5` on a 12-rung ladder:<br>• Quadrature self-consistency, independent `2F1` values and the derivative identity.<br>• Closed-form `U*`, and `t*` by an endpoint-regularised quadrature.<br>• `FINITE_LIMIT` for opening and time, with exponent `n/2 - 1`; the tail estimates recover `U*` and `t*`; sampled and limiting slopes within bound; status `ANALYTICAL_CONTINUUM_PINCH_FEASIBLE`.<br>• Lateral refinement (256–2048 columns) of the exact discrete chain converges to the continuum at second order, at the first detection level only.<br>• Decoupling precedes the analytical pinch-off.<br>• Reported: the material neck scale at every rung, the finest column width, and `resolved_event: UNRESOLVED`. |
 | `no_pinch` | Negative cases: thinning and weakening are real, breakup is not established | • `n = 1` and `n = 2`: closed forms agree with the quadrature; `NO_FINITE_LIMIT` within validity; decoupled but connected.<br>• A uniform (affine) belt.<br>• A flat-bottomed plateau weakness with `n = 3`.<br>• A fixed 5 km neck width, equal to the D2 fixture length and read from its case.<br>All five are `NO_FINITE_LIMIT`. |
 | `validity` | Refusals outside the representation, and the plastic asymptote | • `n = 5`: the reduced law predicts a finite `U*`, but the neck slope exceeds the bound, so `REFUSED_OUTSIDE_LONG_WAVE_VALIDITY`.<br>• The same `n = 5` ladder on the slender belt: every sampled slope is inside the bound, and the status is still `REFUSED_OUTSIDE_LONG_WAVE_VALIDITY`.<br>• A rate-independent chain's event opening halves with each column halving, so `REFUSED_ILL_POSED_RATE_INDEPENDENT`.<br>• The scaled parallel-plastic law matches the retained point kernel. The frozen classification rule refuses it at 10 times yield and admits it at 10000 times yield. Its plastic share falls along the ladder, and its local exponent approaches `n`. |
-| `retained` | Connection to the accepted column | The accepted finite-strain column (order 64) at its committed initial state must reproduce the r2 receipt's first-stage speed and column force. Force rises with rate and falls with stretch. Along a rate ladder at stretch 1, 1.2 and 1.4 it reports `m_eff`, the plastic share and the necking number `gamma = (-dlnF/dln lambda)/m_eff`. The frozen classification is reported, not gated; the eventual breakup is reported as `UNRESOLVED`. |
+| `retained` | Connection to the accepted column | The accepted finite-strain column (order 64) at its committed initial state must reproduce the pinned finite-strain receipt's first-stage speed and column force. Force rises with rate and falls with stretch. Along a rate ladder at stretch 1, 1.2 and 1.4 it reports `m_eff`, the plastic share and the necking number `gamma = (-dlnF/dln lambda)/m_eff`. The frozen classification is reported, not gated; the eventual breakup is reported as `UNRESOLVED`. |
 
 **Why the gates are discriminating.**
 
@@ -588,7 +588,11 @@ binds:
 - the four new files;
 - the retained imported tools and cases;
 - the fault2d case (read for its length);
-- the accepted `i01-finite-strain-r2` receipt at its accepted SHA-256.
+- the package modules those tools execute;
+- the finite-strain receipt that the tool pins, at its accepted SHA-256. The
+  designated successor for the package-owned code is `i01-finite-strain-r4`,
+  evidence only once captured, reviewed and listed as current in the
+  [evidence register](../../docs/CURRENT_EVIDENCE.md).
 
 **Before any control runs,** the tool verifies two things: every source recorded by
 that receipt still has its bytes, and each imported module resolves to its bound path.

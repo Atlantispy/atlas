@@ -103,12 +103,14 @@ changing column geometry; gravitational driving and water loading; melt and
 transition accounts. Each explanation links the scientific basis to the actual
 method and its checks. W01–W12 name the component work packages; I01–I12 name the
 integration programme. I01's method choices, contracts and bounded feasibility
-are complete; a connected whole-world engine and physical-event acceptance remain
-later work. I02's eight-step implementation is authorised with review between
-steps. Its initial shared state and package-owned solver extraction are reviewed;
-in-memory continuation is implemented but has an outstanding prepared-runner
-ownership repair. See the current-state record for results and the next action.
-The authorised development loop stops before I03.
+are selected; its bounded controls check the code against analytical cases,
+refinement and conservation, not against independent physical observations, and a
+connected whole-world engine and physical-event acceptance remain later work.
+I02's shared state, package-owned solver and bounded in-memory continuation are
+reviewed, including isolation of inspected or caller-owned prepared objects.
+The affected controls have new source-bound evidence. This is not yet persisted
+restart or the complete I02 workflow. Work is stopped at the owner's I02.2 boundary;
+I02.3 needs fresh authority. See the current-state record for evidence and status.
 This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing

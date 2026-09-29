@@ -39,6 +39,33 @@ class BuildTests(unittest.TestCase):
         self.assertIn('bundle-data.mjs', build.UI_FILES)
         self.assertTrue(all('/' not in name and not name.endswith('.test.mjs') for name in build.UI_FILES))
 
+    def test_ui_snapshot_must_match_its_pin_before_any_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            ui = root / 'ui'
+            ui.mkdir()
+            for name in build.UI_FILES:
+                (ui / name).write_bytes(name.encode())
+            pin = root / 'ui-snapshot.json'
+            record = {'schema': build.UI_PIN_SCHEMA,
+                      'files': {name: build.digest(ui / name) for name in build.UI_FILES}}
+            pin.write_text(json.dumps(record), encoding='utf-8')
+            self.assertEqual(build.ui_snapshot(ui, pin), record['files'])
+            (ui / 'serve.mjs').write_bytes(b'edited')
+            with self.assertRaisesRegex(ValueError, 'serve.mjs'):
+                build.ui_snapshot(ui, pin)
+            (ui / 'serve.mjs').unlink()
+            with self.assertRaisesRegex(ValueError, 'Not a plain UI file: serve.mjs'):
+                build.ui_snapshot(ui, pin)
+            (ui / 'serve.mjs').write_bytes(b'serve.mjs')
+            del record['files']['bundle-data.mjs']
+            pin.write_text(json.dumps(record), encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'exactly the 33'):
+                build.ui_snapshot(ui, pin)
+            with self.assertRaisesRegex(ValueError, 'No pinned UI snapshot'):
+                build.ui_snapshot(ui, root / 'absent.json')
+        self.assertEqual(build.UI_PIN, build.ROOT / 'desktop' / 'ui-snapshot.json')
+
     def test_build_manifest_tracks_delivered_bytes_not_itself(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

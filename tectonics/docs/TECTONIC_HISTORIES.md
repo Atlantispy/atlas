@@ -67,6 +67,8 @@ entire accumulated output sequence into every new checkpoint: each record has on
 parent link, with only the latest output kept live. Existing factor/preparation
 reuse remains active for missing outputs. Native thread, 128 MiB accounted work,
 128 source-file and 256-output limits are unchanged. Accounted bytes are not RSS.
+The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised the source-file limit to 512; the other limits stated here are unchanged.
 
 Recovered accounts are checked against actual producer inputs: underthrust stocks,
 motion/work and centroid gravity; W04 reference/current state IDs and absolute

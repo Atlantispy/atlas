@@ -22,7 +22,7 @@ import check_i01_motion_coupling as m
 w = m.w
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "cases/i01_column_admission_v1.json"
-PRIOR = ROOT / "evidence/i01-motion-coupling-r1.json"
+PRIOR = ROOT / "evidence/i01-motion-coupling-r2.json"
 POLICY = dict(maximum_seconds=30., repetitions=10, batches=3,
               oracle_relative=1e-8, inequality_relative=1e-9)
 

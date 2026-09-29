@@ -1,0 +1,501 @@
+{
+  "scientific_acceptance": false,
+  "status": "PASS_BOUNDED_G25_COMMON_GIBBS_CONNECTION_ONLY",
+  "python": "3.12.14",
+  "system": "Windows",
+  "input_kind": "pinned native KLB1 software reference; not withheld experiment",
+  "metadata": {
+    "worker_sha256": "df6a08ec07546d7fce54d0feabc05fd0b8f7f8724c6a7a4c343111358a7bf701",
+    "julia_version": "1.10.12",
+    "ready": true,
+    "native_sha256": "5a0e78c44051f117ce2df5db917f459aa9ff29312bad6b71d803b2e8a4e5231c",
+    "wrapper_version": "2.3.7",
+    "wrapper_source_sha256": "d19b3627278658c2b16a757e46e80179ab66653143e29fede68efe3eb977d9e9",
+    "manifest_sha256": "5097dece7a6f69562ff76a028603707a33c060c5e7fbfea8d5b25474a0b6ee1f"
+  },
+  "native": {
+    "database": "ig",
+    "dataset": "tc_ds636",
+    "native_version": "2.0.4 [19/09/2026]",
+    "bulk_residual": 1.6745046764021443e-12,
+    "solve_ms": 142.7329
+  },
+  "controls": {
+    "temperature_step_k": 1.0,
+    "pressure_step_pa": 1000000.0,
+    "component_tolerance": 1e-07,
+    "relative_derivative_tolerance": 0.001,
+    "entropy_tolerance_j_kg_k": 0.1,
+    "volume_tolerance_m3_kg": 1e-08,
+    "branch_coordinate_tolerance": 0.05,
+    "max_points": 1024,
+    "cache_points": 256
+  },
+  "input_mass_kg": [
+    0.4485998757799856,
+    0.03512440460662543,
+    0.030719127773559955,
+    0.39527543882331106,
+    0.08203198359575636,
+    0.00018272042040997106,
+    0.00300557634209395,
+    0.001549438129760986,
+    0.0002979390294582968,
+    0.00321349549903838,
+    0.0
+  ],
+  "solid": {
+    "provider_id": "3d0d94376bd05db2e20427d6e51e669d84f5a44f84c987727a40db6626ce7cf0",
+    "pressure_pa": 800000000.0,
+    "temperature_k": 1073.15,
+    "component_mass_kg": [
+      0.4485998757799856,
+      0.03512440460662543,
+      0.030719127773559955,
+      0.39527543882331106,
+      0.08203198359575636,
+      0.00018272042040997106,
+      0.00300557634209395,
+      0.001549438129760986,
+      0.0002979390294582968,
+      0.00321349549903838,
+      0.0
+    ],
+    "enthalpy_j": -13307497.062695252,
+    "entropy_j_k": 2035.5211008441504,
+    "volume_m3": 0.0003047626920447893,
+    "phases": [
+      {
+        "key": "ol",
+        "component_mass_kg": [
+          0.2379328158423396,
+          0.0,
+          0.00011141157959588242,
+          0.2863511908827208,
+          0.05841820929714571,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "enthalpy_j": -7693090.378925104,
+        "entropy_j_k": 1192.5650396839007,
+        "volume_m3": 0.00017768138701571904,
+        "entropy_discrepancy_j_k": 0.004428011931994903,
+        "volume_discrepancy_m3": 5.08848365214138e-10
+      },
+      {
+        "key": "spl",
+        "component_mass_kg": [
+          0.0,
+          0.019698795023062137,
+          0.0,
+          0.007339543236343272,
+          0.0028432011349627984,
+          0.0,
+          0.0,
+          8.32577503222199e-06,
+          4.533361160686562e-05,
+          0.0030070142502301917,
+          0.0
+        ],
+        "enthalpy_j": -437418.6178602139,
+        "entropy_j_k": 65.2896954486585,
+        "volume_m3": 8.834094859511871e-06,
+        "entropy_discrepancy_j_k": 0.00015893186130808493,
+        "volume_discrepancy_m3": 5.435250359724616e-10
+      },
+      {
+        "key": "cpx",
+        "component_mass_kg": [
+          0.08162638109868046,
+          0.003959933741536874,
+          0.0294792618033526,
+          0.024542961524535813,
+          0.004661676438250712,
+          0.0001827204204099592,
+          0.0028752398762690473,
+          0.001422357885528932,
+          0.00013148218977354533,
+          5.159641909815514e-05,
+          0.0
+        ],
+        "enthalpy_j": -1994576.6098885655,
+        "entropy_j_k": 297.30966588204217,
+        "volume_m3": 4.593310365354663e-05,
+        "entropy_discrepancy_j_k": 0.00031232331009365885,
+        "volume_discrepancy_m3": 8.390395385093949e-10
+      },
+      {
+        "key": "opx",
+        "component_mass_kg": [
+          0.12904067883896334,
+          0.011465675842027755,
+          0.0011284543906095591,
+          0.07704174317971338,
+          0.016108896725397705,
+          0.0,
+          0.0001303364658247155,
+          0.00011875446919974101,
+          0.00012112322807788156,
+          0.00015488482971025896,
+          0.0
+        ],
+        "enthalpy_j": -3182411.4560213676,
+        "entropy_j_k": 480.35669982954903,
+        "volume_m3": 7.231410651601163e-05,
+        "entropy_discrepancy_j_k": 0.0030185367390186263,
+        "volume_discrepancy_m3": 1.833890225389121e-11
+      }
+    ],
+    "entropy_discrepancy_j_k": 0.007917803842415274,
+    "volume_discrepancy_m3": 1.909751841949886e-09,
+    "component_residual_kg": [
+      -2.220446049250313e-15,
+      1.339206523454095e-15,
+      -1.915134717478395e-15,
+      2.220446049250313e-15,
+      5.551115123125783e-16,
+      -1.1872013788716274e-17,
+      -1.8735013540549517e-16,
+      -9.107298248878237e-17,
+      -4.2825985813177425e-18,
+      2.259477327459791e-16,
+      0.0
+    ]
+  },
+  "melting": {
+    "provider_id": "3d0d94376bd05db2e20427d6e51e669d84f5a44f84c987727a40db6626ce7cf0",
+    "pressure_pa": 800000000.0,
+    "temperature_k": 1673.15,
+    "component_mass_kg": [
+      0.4485998757799856,
+      0.03512440460662543,
+      0.030719127773559955,
+      0.39527543882331106,
+      0.08203198359575636,
+      0.00018272042040997106,
+      0.00300557634209395,
+      0.001549438129760986,
+      0.0002979390294582968,
+      0.00321349549903838,
+      0.0
+    ],
+    "enthalpy_j": -12420816.348542072,
+    "entropy_j_k": 2678.3313820645353,
+    "volume_m3": 0.0003243920722144882,
+    "phases": [
+      {
+        "key": "liq",
+        "component_mass_kg": [
+          0.13743209622329167,
+          0.03128916147884059,
+          0.028134186485064133,
+          0.040772960820356446,
+          0.02385095468079982,
+          0.00018272042040991916,
+          0.002987601146516574,
+          0.0015308648523662495,
+          0.00023995537505694774,
+          0.000680631843988357,
+          0.0
+        ],
+        "enthalpy_j": -3159740.208630542,
+        "entropy_j_k": 765.7619193332689,
+        "volume_m3": 9.385243526635411e-05,
+        "entropy_discrepancy_j_k": 0.008668899353954124,
+        "volume_discrepancy_m3": 4.210906476200335e-10
+      },
+      {
+        "key": "opx",
+        "component_mass_kg": [
+          0.04387669769800677,
+          0.0030543848770877517,
+          0.0010942090591842,
+          0.02646081613725043,
+          0.004245760816835284,
+          0.0,
+          1.797519557652505e-05,
+          1.842270072143752e-05,
+          4.6595162471553155e-05,
+          0.001073432550388624,
+          0.0
+        ],
+        "enthalpy_j": -1022323.0266002449,
+        "entropy_j_k": 208.46054488136525,
+        "volume_m3": 2.5187396138003213e-05,
+        "entropy_discrepancy_j_k": 0.0002737624981851675,
+        "volume_discrepancy_m3": 2.0428241807209832e-09
+      },
+      {
+        "key": "ol",
+        "component_mass_kg": [
+          0.26729108185867184,
+          0.0,
+          0.00149073222930373,
+          0.32747065527444846,
+          0.05355943204450374,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "enthalpy_j": -8209310.654706757,
+        "entropy_j_k": 1696.6826284411407,
+        "volume_m3": 0.00020456695927165567,
+        "entropy_discrepancy_j_k": 0.007416079388027477,
+        "volume_discrepancy_m3": 3.418086265307533e-09
+      },
+      {
+        "key": "spl",
+        "component_mass_kg": [
+          0.0,
+          0.0007808582506899849,
+          0.0,
+          0.0005710065912750664,
+          0.0003758360536164592,
+          0.0,
+          0.0,
+          1.5057667286270873e-07,
+          1.1388491929753966e-05,
+          0.0014594311046646528,
+          0.0
+        ],
+        "enthalpy_j": -29442.45860443699,
+        "entropy_j_k": 7.4262894087125675,
+        "volume_m3": 7.85281538468663e-07,
+        "entropy_discrepancy_j_k": 2.605664676393023e-05,
+        "volume_discrepancy_m3": 1.3449737046598325e-10
+      }
+    ],
+    "entropy_discrepancy_j_k": 0.0163847978869307,
+    "volume_discrepancy_m3": 6.016498464114533e-09,
+    "component_residual_kg": [
+      -1.532107773982716e-14,
+      -7.105427357601002e-15,
+      -7.892991815694472e-15,
+      1.9317880628477724e-14,
+      -1.0685896612017132e-15,
+      -5.1906179007743525e-17,
+      -8.513155458356181e-16,
+      -4.36282954208167e-16,
+      -4.195862407518902e-17,
+      3.253907560063496e-15,
+      0.0
+    ]
+  },
+  "refinement": [
+    {
+      "phase": "liq",
+      "entropy_difference_j_kg_k": 0.01744469670302351,
+      "volume_difference_m3_kg": 1.8818287284894965e-08
+    },
+    {
+      "phase": "opx",
+      "entropy_difference_j_kg_k": 0.006644846189828968,
+      "volume_difference_m3_kg": 9.385930434019536e-10
+    },
+    {
+      "phase": "ol",
+      "entropy_difference_j_kg_k": 0.025879403163798997,
+      "volume_difference_m3_kg": 8.23708020981093e-09
+    },
+    {
+      "phase": "spl",
+      "entropy_difference_j_kg_k": 0.20185377359166523,
+      "volume_difference_m3_kg": 7.215204993356577e-08
+    }
+  ],
+  "changed_bulk_phase_comparison": [
+    {
+      "phase": "liq",
+      "entropy_difference_j_kg_k": 0.0026514707346905197,
+      "volume_difference_m3_kg": 4.649032331143204e-09
+    },
+    {
+      "phase": "opx",
+      "entropy_difference_j_kg_k": 0.014155811280488706,
+      "volume_difference_m3_kg": 2.020771701285052e-08
+    },
+    {
+      "phase": "ol",
+      "entropy_difference_j_kg_k": 0.00015339863784902263,
+      "volume_difference_m3_kg": 9.59710446437603e-09
+    },
+    {
+      "phase": "spl",
+      "entropy_difference_j_kg_k": 0.013041091524428339,
+      "volume_difference_m3_kg": 2.58214506705743e-08
+    }
+  ],
+  "extraction": {
+    "enthalpy_residual_j": 1.9112317766994238,
+    "comparison_allowance_j": 33.649846738818006,
+    "parcel": {
+      "provider_id": "3d0d94376bd05db2e20427d6e51e669d84f5a44f84c987727a40db6626ce7cf0",
+      "pressure_pa": 800000000.0,
+      "component_mass_kg": [
+        0.013743209622329167,
+        0.003128916147884059,
+        0.0028134186485064133,
+        0.004077296082035645,
+        0.002385095468079982,
+        1.8272042040991918e-05,
+        0.00029876011465165744,
+        0.00015308648523662495,
+        2.3995537505694775e-05,
+        6.80631843988357e-05,
+        0.0
+      ],
+      "enthalpy_j": -315974.0208630542
+    }
+  },
+  "receiver_temperature_k": 1673.15,
+  "entropy_recovery_temperature_k": 1673.15,
+  "declared_thermal_branches": {
+    "receiver": {
+      "provider_id": "3d0d94376bd05db2e20427d6e51e669d84f5a44f84c987727a40db6626ce7cf0",
+      "controls": {
+        "temperature_step_k": 1.0,
+        "pressure_step_pa": 1000000.0,
+        "component_tolerance": 1e-07,
+        "relative_derivative_tolerance": 0.001,
+        "entropy_tolerance_j_kg_k": 0.1,
+        "volume_tolerance_m3_kg": 1e-08,
+        "branch_coordinate_tolerance": 0.05,
+        "max_points": 1024,
+        "cache_points": 256
+      },
+      "component_ids": [
+        "SiO2",
+        "Al2O3",
+        "CaO",
+        "MgO",
+        "FeO",
+        "K2O",
+        "Na2O",
+        "TiO2",
+        "O",
+        "Cr2O3",
+        "H2O"
+      ],
+      "component_mass_kg": [
+        0.4485998757799856,
+        0.03512440460662543,
+        0.030719127773559955,
+        0.39527543882331106,
+        0.08203198359575636,
+        0.00018272042040997106,
+        0.00300557634209395,
+        0.001549438129760986,
+        0.0002979390294582968,
+        0.00321349549903838,
+        0.0
+      ],
+      "pressure_pa": 800000000.0,
+      "temperature_bounds_k": [
+        1671.15,
+        1675.15
+      ],
+      "phase_keys": [
+        "liq",
+        "ol",
+        "opx",
+        "spl"
+      ],
+      "support": "Declared continuous pre-existing-phase KLB1 branch within T_reference +/- 2 K; conditional software control, not a proof excluding unsampled transitions"
+    },
+    "entropy_recovery": {
+      "provider_id": "3d0d94376bd05db2e20427d6e51e669d84f5a44f84c987727a40db6626ce7cf0",
+      "controls": {
+        "temperature_step_k": 1.0,
+        "pressure_step_pa": 1000000.0,
+        "component_tolerance": 1e-07,
+        "relative_derivative_tolerance": 0.001,
+        "entropy_tolerance_j_kg_k": 0.1,
+        "volume_tolerance_m3_kg": 1e-08,
+        "branch_coordinate_tolerance": 0.05,
+        "max_points": 1024,
+        "cache_points": 256
+      },
+      "component_ids": [
+        "SiO2",
+        "Al2O3",
+        "CaO",
+        "MgO",
+        "FeO",
+        "K2O",
+        "Na2O",
+        "TiO2",
+        "O",
+        "Cr2O3",
+        "H2O"
+      ],
+      "component_mass_kg": [
+        0.4485998757799856,
+        0.03512440460662543,
+        0.030719127773559955,
+        0.39527543882331106,
+        0.08203198359575636,
+        0.00018272042040997106,
+        0.00300557634209395,
+        0.001549438129760986,
+        0.0002979390294582968,
+        0.00321349549903838,
+        0.0
+      ],
+      "pressure_pa": 800000000.0,
+      "temperature_bounds_k": [
+        1671.15,
+        1675.15
+      ],
+      "phase_keys": [
+        "liq",
+        "ol",
+        "opx",
+        "spl"
+      ],
+      "support": "Declared continuous pre-existing-phase KLB1 branch within T_reference +/- 2 K; conditional software control, not a proof excluding unsampled transitions"
+    }
+  },
+  "phase_boundary_refused": true,
+  "startup_seconds": 7.009654000052251,
+  "timing": {
+    "uncached_samples_s": [
+      1.295736400061287,
+      1.3002208999823779,
+      1.2944958000443876
+    ],
+    "cached_samples_s": [
+      0.00021959992591291666,
+      0.00021920003928244114,
+      0.00022849999368190765
+    ],
+    "uncached_median_s": 1.295736400061287,
+    "cached_median_s": 0.00021959992591291666,
+    "cached_bit_identical": true,
+    "saved_seconds": 1.295516800135374,
+    "saved_percent": 99.98305211415666
+  },
+  "elapsed_seconds": 25.097395799937658,
+  "limitations": [
+    "not withheld geological calibration",
+    "no latent-plateau inversion",
+    "declared branch support; sampled phase agreement is not an interval certificate",
+    "no extraction rate, focusing or axial lid",
+    "no spatial transport or persistent transaction",
+    "Windows run; Linux not executed"
+  ],
+  "source_bindings": {
+    "tools/i01_gibbs_provider.py": "56e59da458fa4b0988018202c30f9ce76b66bbf60723fa6ae65e71344de275b7",
+    "tools/magemin_g25.py": "87fc88d583f1952318ceed379c9f6982e69395aef72e40d623d77bfdfa885c0e",
+    "tools/magemin_g25.jl": "df6a08ec07546d7fce54d0feabc05fd0b8f7f8724c6a7a4c343111358a7bf701",
+    "tools/check_i01_gibbs_provider.py": "dc9c35f2d0a23e37d0a73b862b804c5a31521c82e3fcb0ab0ad73abb21869ca8",
+    "tests/test_i01_gibbs_provider.py": "946856c8183c14bd6afd1393dea4858945d78c4bcc629894def8b936f3453659",
+    "docs/I01_THERMO_PROVIDER_CONTRACT.md": "8eb1e7544704a82cf3c608fc7a69df75221a707933e24daa186e1f577c773347"
+  }
+}

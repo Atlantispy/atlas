@@ -219,6 +219,8 @@ class Limited(unittest.TestCase):
 
 class OwnershipTests(Limited):
     def test_downstream_receipts_bind_the_executed_package_owners(self):
+        records = json.loads((ROOT/"evidence/current-evidence.json").read_text(encoding="utf-8"))["records"]
+        current = {record["path"]: record["sha256"] for record in records if record["status"] == "current"}
         for tool, owners in ((tfa, PACKAGE), (tb, PACKAGE), (tca, (C, W, M))):
             bound = tool.bindings()
             for owner in owners:
@@ -232,8 +234,10 @@ class OwnershipTests(Limited):
             if tool is not tca:
                 match = tool.evidence_match(bound)
                 self.assertTrue(all(match["imported"].values()))
-                # Old receipts cannot certify the moved code; do not silently rebind them.
-                self.assertFalse(all(match["retained"].values()))
+                # The register decides "current": only accepted receipts it lists as current at their pinned digests
+                # may vouch for the moved code, and a historical predecessor never can. Nothing is rebound to pass.
+                accepted = all(current.get("tectonics/"+name) == digest for name, digest in tool.ACCEPTED_RECEIPTS.items())
+                self.assertEqual(all(match["retained"].values()), accepted, tool.__name__)
 
     def test_package_modules_import_no_campaign_code(self):
         allowed = {"__future__", "concurrent.futures", "dataclasses", "hashlib", "json", "math", "time", "numpy",

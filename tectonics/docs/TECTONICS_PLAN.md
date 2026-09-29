@@ -2112,27 +2112,28 @@ A successful numerical run is not necessarily geologically plausible. A geologic
 
 ### 1.4 Current implementation and document maintenance
 
-**Current local engineering status:** the item-12 package builds on local items
-2–11 (remote base `0590774b…`). Shared resource and combination tests are Linux-
-accepted within their measured envelope; Windows is unverified. The next scientific
-work now continues from delivered open-boundary transport towards the remaining
-material-history/creation work and physically defined loading.
-Continue using the optimised defaults, and carry resource/ownership tests into each
-physical increment. No statement here means a new remote commit or a passed W05.
+**Status lives in [current status](../../docs/CURRENT_STATE.md).** This table records
+which work packages have implemented components and where their methods are
+described. Implemented does not mean physically accepted: the
+[evidence register](../../docs/CURRENT_EVIDENCE.md) says which receipts are current,
+and W01–W12 receipts it does not list are dated records of their own runs. Nothing
+here records a remote commit or a passed physical acceptance.
 
-
-Verified documentation baseline: `remake` at `612d53eba495202101a8e638578f47fb37752649`; delivered numerical foundation: `11317165b7e2aeab7201a1fe3e3f646cb640d51e`. The [module README][url-006] and [delivery record][url-007] are the source of this status, not a new run.
-
-| Work package | Delivered portion | Still outstanding |
+| Work package | Implemented components (method records) | Still outstanding |
 | --- | --- | --- |
 | W00 | Synthetic foundation case and verification rules. | The next physical case’s complete inputs, observations and acceptance decisions. |
-| W01 | Geometric/declarative stages 1–4B (including 3B/3C): optimised coordinates/time, corrected geometry, shared/global boundaries, seeded partitions, and typed geological descriptions with explicit evidence, layers, thermal initial conditions and precedence, plus the sourced material library and condition-aware mixtures. | Stage-3C Earth-like scientific acceptance is reopened; a reference-conditioned candidate exists but its full morphology/history is not accepted. Stages 5–8: initial-condition sampler, motion-to-regional adapter, W01→W02 workflow and combined acceptance. Static geometry/descriptions do not supply evolving spherical material physics. W01 remains partial. |
+| W01 | Geometric/declarative stages 1–4B (coordinates/time, geometry, shared/global boundaries, seeded partitions, geological descriptions, material library and mixtures) and stages 5–8: [initial sampling](W01_INITIAL_SAMPLING.md), [motion forcing](W01_MOTION_FORCING.md), the [regional workflow](W01_REGIONAL_WORKFLOW.md) and the [combined technical assessment](W01_COMBINED_ACCEPTANCE.md). | Stage-3C Earth-like scientific acceptance is reopened, so whole W01 stays incomplete; the reference-conditioned candidate's morphology/history is not accepted. Static geometry/descriptions do not supply evolving spherical material physics. |
 | W02 | Regional implementation complete: cohorts/history, prescribed transfers, conservative nonuniform remap, ALE u-w motion, complete interval ownership, split/merge/reassignment/activity, marker maps, direct snapshot restoration and existing executor/cache integration. | Physical/geological acceptance is not implied. General 2D/spherical junctions and predictive source/force laws require W01/W06–W08 extensions. |
-| W03 | Analytical half-space temperature reference. | Evolving thermal solver, finite plate and compaction. |
-| W04 | Uniform periodic 1D discrete flexure. | Physical load construction and further geometries/boundaries. |
-| W05–W10 | Planning and method studies only. | Coupled mechanisms and independent physical validation. |
-| W11 | Local items 2–12 and W02-specific native, allocation, accuracy-cost and combined-path checks; bounded Linux evidence. Item 1 explicitly skipped. | Windows acceptance, future mechanisms and their physical scale-transfer/world-scale evidence. |
-| W12 | Planning only. | Production integration and release acceptance after scientific and scale gates. |
+| W03 | Analytical half-space reference plus [thermal columns](W03_THERMAL_COLUMNS.md), [thermal support](W03_THERMAL_SUPPORT.md), [compaction](W03_COMPACTION.md) and their [workflow](W03_WORKFLOW.md). | Coupled thermal evolution with moving material in the evolving-world route, and physical calibration. |
+| W04 | Periodic flexure plus [column loads](W04_COLUMN_LOADS.md), [finite regions](W04_FINITE_REGIONS.md), [variable rigidity](W04_VARIABLE_RIGIDITY.md), the [workflow](W04_WORKFLOW.md) and [combined acceptance](W04_COMBINED_ACCEPTANCE.md). | Spherical and weak/broken-boundary support and moving-world integration. |
+| W05 | [Regional extension](W05_REGIONAL_EXTENSION.md) and its [combined acceptance](W05_COMBINED_ACCEPTANCE.md) for specified stretching and fault histories. | Predictive fault and source laws and independent physical validation. |
+| W06 | Oceanic [birth](W06_BIRTH.md), [spreading](W06_SPREADING.md), [cooling](W06_COOLING.md), staged [histories](W06_HISTORIES.md) and the [workflow](W06_WORKFLOW.md). | Generated rather than prescribed ridge histories and global ocean-age evolution. |
+| W07 | [Regional mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_HETEROGENEOUS_THERMAL.md) and [surface-strength](W07_SURFACE_STRENGTH.md) connections and the [workflow](W07_WORKFLOW.md); the fixed-box 3D [mechanics](REGIONAL_MECHANICS_3D.md) and [evolution](REGIONAL_EVOLUTION_3D.md) branch. | Calibrated rheology, moving surfaces, elastic/finite-strain tensor history and global coupling. |
+| W08 | Supported [regimes](W08_REGIMES.md): [shortening](W08_SHORTENING.md), [transform](W08_TRANSFORM.md), [subduction](W08_SUBDUCTION.md), [underthrusting](UNDERTHRUST.md), [magmatism](W08_MAGMATISM.md) and [joined regimes](W08_JOINED.md). | Generated regime transitions and physical-event acceptance. |
+| W09 | Retained [water](W09_WATER.md), [erosion](W09_EROSION.md) and [surface-process](W09_SURFACE_PROCESSES.md) interfaces. | Completed global feedback with the downstream modules. |
+| W10 | Scoped [validation](W10_VALIDATION.md) that keeps implementation, resolution, physical observations and assembly separate. | Independent physical validation of the coupled mechanisms. |
+| W11 | Local items 2–12, W02-specific checks and the module-wide measured optimisation pass ([reference](OPTIMISATION_REFERENCE.md)). Item 1 explicitly skipped. | Physical scale-transfer and world-scale resource evidence for future mechanisms. |
+| W12 | [Supported column assembly](W12_ASSEMBLY.md): a runnable W01–W04 example, graph/cache connection, exports, jobs and recovery. | Production integration and release acceptance after the scientific and scale gates. |
 
 **Two maintained documents:** update this plan for scope, equations, dependencies and acceptance; update `OPTIMISATION_REFERENCE.md` for execution, storage, language and method detail. Word files are reading editions of the same Markdown content, not extra authorities. Keep change history inside these documents/Git history; do not create another supplement, general review guide, source-register file or performance-plan copy for routine findings. Case specifications and obtained test evidence stay next to code and are not competing roadmaps.
 

@@ -16,6 +16,8 @@ world-ui.mjs world-views.mjs world-structure-ui.mjs world-motion-ui.mjs
 evolution-data.mjs evolution-ui.mjs evolution-views.mjs serve.mjs result-reader.mjs
 job-manager.mjs view-reader.mjs new-world-bridge.mjs world-manager.mjs
 evolution-manager.mjs native-launch.mjs bundle-data.mjs'''.split()
+UI_PIN = ROOT / 'desktop' / 'ui-snapshot.json'      # tracked name -> SHA-256 pin of the UI owner's snapshot
+UI_PIN_SCHEMA = 'atlas.desktop-ui-snapshot.v1'
 
 
 def digest(path):
@@ -45,6 +47,30 @@ def copy_tree(source, target, select=lambda p: True):
             raise ValueError(f'Symlink in payload: {item.name}')
         if item.is_file() and '__pycache__' not in item.parts and select(item):
             copy_file(item, target / item.relative_to(source))
+
+
+def ui_snapshot(ui, pin=UI_PIN):
+    """Digests of the 33 UI files, which must equal the pinned snapshot exactly; checked before any output."""
+    try:
+        record = json.loads(pin.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        raise ValueError('No pinned UI snapshot: create desktop/ui-snapshot.json from the accepted '
+                         "build's manifest (see desktop/README.md).") from None
+    if type(record) is not dict or record.get('schema') != UI_PIN_SCHEMA:
+        raise ValueError('Unsupported UI snapshot pin.')
+    files = record.get('files')
+    if type(files) is not dict or sorted(files) != sorted(UI_FILES):
+        raise ValueError('The UI snapshot pin must list exactly the 33 UI files.')
+    found = {}
+    for name in UI_FILES:
+        source = ui / name
+        if source.is_symlink() or source.is_junction() or not source.is_file():
+            raise ValueError(f'Not a plain UI file: {name}')
+        found[name] = digest(source)
+    changed = [name for name in UI_FILES if found[name] != files[name]]
+    if changed:
+        raise ValueError('UI files differ from the pinned snapshot: ' + ', '.join(changed))
+    return found
 
 
 def seal(output):
@@ -84,6 +110,7 @@ def main():
         raise ValueError('Build output must not overlap copied source trees.')
     if digest(args.electron) != ELECTRON_SHA256:
         raise ValueError('Electron checksum mismatch.')
+    pinned_ui = ui_snapshot(args.ui)
     args.output.mkdir(parents=True)
     with zipfile.ZipFile(args.electron) as archive:
         for info in archive.infolist():
@@ -95,9 +122,11 @@ def main():
     app = args.output / 'resources' / 'app'
     for name in ['package.json', 'main.cjs', 'runtime.cjs', 'smoke.cjs']:
         copy_file(ROOT / 'desktop' / name, app / name)
-    # UI is the owner's current source snapshot, with tests/private records excluded.
+    # UI is the owner's pinned source snapshot, with tests/private records excluded.
     for name in UI_FILES:
         copy_file(args.ui / name, app / 'ui' / name)
+    if {name: digest(app / 'ui' / name) for name in UI_FILES} != pinned_ui:
+        raise ValueError('Copied UI files differ from the pinned snapshot.')
     native = args.output / 'resources' / 'atlas'
     for name in ['src', 'tools']:
         copy_tree(ROOT / 'tectonics' / name, native / 'tectonics' / name, lambda p: p.suffix == '.py')

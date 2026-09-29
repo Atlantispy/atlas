@@ -114,7 +114,9 @@ two-equilibrium calculation from the incorrect current-operator load-delta route
 Actual W03 advancement also checks unchanged inventory/thermal/water accounting.
 No existing benchmark threshold, source cap or R4.4 hold is relaxed. Historical
 reports are not rebound; the two new modules participate in current loaded-code
-identity. The production inventory is 122 files under the unchanged 128-file cap.
+identity. The production inventory was then 122 files under the 128-file cap; the
+later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised that cap to 512 files.
 
 The bounded runner is `tectonics/tools/check_evolving_inputs.py --report NEW.json`.
 It measures three changed regional requests and three changed elastic/load

@@ -2,10 +2,12 @@
 SPDX-License-Identifier: AGPL-3.0-only
 
 Git stores the text suffixes named in tectonics/.gitattributes with LF, so a digest
-of CRLF bytes matches no checkout. Both checks only read files and run on every
+of CRLF bytes matches no checkout. These checks only read files and run on every
 platform: the first finds such bindings; the second finds a working copy whose line
-endings would make locally computed digests disagree with the repository.
+endings would make locally computed digests disagree with the repository; the third
+keeps the I01 receipt writers from writing platform (CRLF) line endings again.
 """
+import ast
 import hashlib
 from pathlib import Path
 import re
@@ -14,8 +16,9 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 # reference_data keeps exact upstream bytes (-text) and is deliberately not scanned.
 SCANNED=('cases','docs','evidence','src','tests','tools')
-# Lists the superseded CRLF values on purpose: it is their correction audit trail.
-CORRECTION_RECORD='evidence/line-ending-digest-correction-r1.json'
+# These list superseded CRLF values on purpose: they are the correction audit trails.
+CORRECTION_RECORDS=frozenset(('evidence/line-ending-digest-correction-r1.json',
+                              'evidence/line-ending-digest-correction-r2.json'))
 HEX=re.compile(rb'(?<![0-9a-fA-F])[0-9a-f]{64}(?![0-9a-fA-F])')
 LF,CRLF=b'\n',b'\r\n'
 
@@ -55,7 +58,7 @@ class RecordedDigestLineEndingTests(unittest.TestCase):
         cls.allowed|=set(cls.lf)
         cls.recorded=[(name,match.start(),match.group().decode())
                       for name,raw in cls.files.items()
-                      if name!=CORRECTION_RECORD and b'\0' not in raw[:8192]
+                      if name not in CORRECTION_RECORDS and b'\0' not in raw[:8192]
                       for match in HEX.finditer(raw)]
 
     def test_no_recorded_digest_matches_only_a_crlf_rendering(self):
@@ -73,6 +76,34 @@ class RecordedDigestLineEndingTests(unittest.TestCase):
                                       'checking their content against the bound repository version; '
                                       'preserve local edits and original execution records. Do not '
                                       'reset or rewrite the whole checkout.',*stale]))
+
+
+def text_writes(path):
+    """Lines of text-mode open(), Path.open() or write_text() writes in one tool that omit newline='\\n'."""
+    lines=[]
+    for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
+        if not isinstance(node,ast.Call):continue
+        name=node.func.id if isinstance(node.func,ast.Name) else getattr(node.func,'attr',None)
+        keywords={keyword.arg:keyword.value for keyword in node.keywords}
+        if name=='open':
+            at=1 if isinstance(node.func,ast.Name) else 0          # open(path, mode) or path.open(mode)
+            mode=keywords.get('mode',node.args[at] if len(node.args)>at else None)
+            writes=(isinstance(mode,ast.Constant) and isinstance(mode.value,str)
+                    and bool(set(mode.value)&set('wxa+')) and 'b' not in mode.value)
+        else:
+            writes=name=='write_text'
+        newline=keywords.get('newline')
+        if writes and not (isinstance(newline,ast.Constant) and newline.value=='\n'):lines.append(node.lineno)
+    return lines
+
+
+class ReceiptWriterTests(unittest.TestCase):
+    def test_i01_receipt_writers_emit_explicit_lf_text(self):
+        # Their receipts are registered by digest; the platform newline makes Windows runs write CRLF bytes.
+        bad=[f'tools/{path.name}:{line}' for path in sorted((ROOT/'tools').glob('check_i01_*.py'))
+             for line in text_writes(path)]
+        if bad:self.fail('\n'.join([f"{len(bad)} I01 receipt writes use the platform newline. Open text "
+                                    "output with encoding='utf-8', newline='\\n'.",*bad]))
 
 
 if __name__=='__main__':

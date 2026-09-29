@@ -76,6 +76,13 @@ controls, not scientific error bars or a cosmetic alteration of generated maps.
 First-order donor-cell carriage uses an outgoing-volume CFL no greater than one.
 This is robust and conservative but diffuses sharp interfaces. The current
 connection does not claim a sharp-interface or fracture-resolving calculation.
+On the coarse grids that fit the default memory budget (at most 7 cells per axis
+for a cube; see [memory admission](REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse)),
+a sharp contrast spans only a few cells, and the checked fixture is 3x3x3. This
+first-order numerical diffusion is then large relative to the features the grid can
+represent and spreads a moving contrast over neighbouring cells. Such results are
+not resolution-converged: there is no higher-order limiter, and an interval whose
+outgoing CFL would exceed one is refused, not subdivided.
 Each constituent has separate local face-transfer, domain and finite-exterior
 inventory accounts; trace constituents are not scaled by bulk mass. All six
 sides must declare stocks, including explicit empty stocks for no inflow.

@@ -29,6 +29,12 @@ must not imply endorsement or replace source discrepancies with repaired data.
 The diagnostic visual tool includes this attribution in its output manifest and
 on the reference map itself.
 
+The retained upstream README also links `PB2002_steps.csv`, a CSV conversion added
+by the mirror's maintainer. That file is not vendored, so the link does not resolve;
+the original `PB2002_steps.dat.txt` and its field description are included. The
+README stays byte-for-byte as pinned in the source manifest, so the link is left as
+published and no substitute file is supplied.
+
 ## Material knowledge and external software
 
 `earth_material_data.py` and the material-library records retain property sources,
@@ -41,5 +47,13 @@ Scientific libraries declared in `pyproject.toml` are installed separately; thei
 binaries are not bundled in this source delivery. Their own licences continue to
 apply. This inventory is not a legal audit of every historical Atlas directory,
 which remains outside the isolated tectonics package.
+
+**Optional external thermodynamics.** The experimental G25 provider
+(`tools/magemin_g25.py` with its Julia worker `tools/magemin_g25.jl`) can drive a
+separately installed Julia with MAGEMin_C and native MAGEMin, pinned by version and
+commit in [its method record](docs/I01_THERMO_PROVIDER_CONTRACT.md). Atlas does not
+include, download, install or redistribute Julia or MAGEMin; the tests do not
+launch them, and the default route does not need them. Their own licences apply to
+anyone who installs them.
 
 Licensing guidance: [GitHub repository licensing](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository).

@@ -71,8 +71,8 @@ RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_column_admissio
 _PACKAGE_IMPORTS = {name: module for name, module in fs.IMPORTED.items() if name.startswith("src/")}
 RETAINED += tuple(_PACKAGE_IMPORTS)
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-finite-strain-r3.json": "90898b22f36f829cc8b3cc9082c7f85dfddff287511a689386fe45efb26c301f",
-    "evidence/i01-column-admission-r1.json": "abe11697a0ea3b3feb4089dc77231bda90780e2ff504ee0de4a45687d77d0520"}
+    "evidence/i01-finite-strain-r4.json": "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c",
+    "evidence/i01-column-admission-r2.json": "c8c9552030adf99c168a1e1d132de4261777e6988fe6b27c2d8e511ff8c3cc59"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_column_admission.py": ca,
             "tools/check_i01_decoupling.py": d, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,

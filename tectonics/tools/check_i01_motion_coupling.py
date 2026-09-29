@@ -26,7 +26,7 @@ import check_i01_weakening as w
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "cases/i01_motion_coupling_v1.json"
-RECEIPT = ROOT / "evidence/i01-weakening-r2.json"
+RECEIPT = ROOT / "evidence/i01-weakening-r3.json"
 # Retained helper sources, their package owners included, whose bytes the reviewed receipt must have recorded.
 REVIEWED_HELPERS = ("tools/check_i01_weakening.py", "tools/check_i01_column.py", "cases/i01_weakening_v1.json",
                     "src/atlas_tectonics/_integration_weakening.py", "src/atlas_tectonics/_integration_column.py")

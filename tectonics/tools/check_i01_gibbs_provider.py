@@ -150,7 +150,7 @@ def main():
              'docs/I01_THERMO_PROVIDER_CONTRACT.md']
     # Prove destination permission/no-overwrite BEFORE any native work. A failed
     # run leaves an explicitly incomplete record, never a false success receipt.
-    with Path(args.output).open('x', encoding='utf-8') as stream:
+    with Path(args.output).open('x', encoding='utf-8', newline='\n') as stream:
         json.dump({'status':'INCOMPLETE','scientific_acceptance':False},stream)
         stream.flush()
         before = {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}

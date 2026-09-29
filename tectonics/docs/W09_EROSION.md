@@ -88,6 +88,8 @@ identity, and keep only one latest complete-request cache entry. Changed forcing
 or initial state computes new physics while reusing preparation. Both new modules
 join the loaded-code identity; the package now has 119 Python source files under
 the unchanged 128-file bound. Old reports/checkpoints are not repinned.
+The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised that bound to 512 files; the count above is this checkpoint's.
 
 The river path uses ordered scalar solves rather than a general global nonlinear
 matrix. The hillslope path uses sparse shared-face Jacobians and one multi-cohort

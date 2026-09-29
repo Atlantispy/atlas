@@ -380,7 +380,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
-    with args.output.open('x', encoding='utf-8') as out:
+    with args.output.open('x', encoding='utf-8', newline='\n') as out:
         report = dict(schema='atlas.i01-phase-energy-evidence.v1', status='FAIL',
             runtime=dict(python=platform.python_version(), platform=platform.system()))
         start = time.perf_counter()

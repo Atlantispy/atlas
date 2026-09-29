@@ -109,12 +109,17 @@ Run from the repository root with the existing compatible scientific environment
 
 ```text
 python -B -m unittest discover -s tectonics/tests -p test_i01_motion_coupling.py -v
-python -B tectonics/tools/check_i01_motion_coupling.py --output tectonics/evidence/i01-motion-coupling-r1.json
+python -B tectonics/tools/check_i01_motion_coupling.py --output NEW_PATH.json
 ```
 
 The exclusive-created receipt binds this method, tool, tests, case, the actual
-retained helper sources/case and reviewed r2 receipt before/after execution. It
-checks helper bytes against r2. Runtime version observations are not binary seals.
+retained helper sources/case, their package owners and the weakening receipt that
+the tool names, before/after execution. It checks helper bytes against that
+receipt. The [weakening r2 receipt](../evidence/i01-weakening-r2.json) binds the
+layout before the I02.2a package move; its designated successor `i01-weakening-r3`
+is evidence only once captured, reviewed and listed as current in the
+[evidence register](../../docs/CURRENT_EVIDENCE.md). Runtime version observations
+are not binary seals.
 
 ## Papers and software actually consulted
 

@@ -1,0 +1,57 @@
+{
+  "schema": "atlas.i01-phase-energy-evidence.v1",
+  "status": "PASS_BOUNDED_PHASE_ENERGY_ONLY",
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Windows"
+  },
+  "source_sha256": {
+    "tectonics/tools/check_i01_phase_energy.py": "ae1e81902c6daf3fd1e2f51824fb2559eb13aea15b483ddadbce0e5a33300c28",
+    "tectonics/tests/test_i01_phase_energy.py": "0f064b60c7df401f3ff9ec5c8210369dba2be8d6b2a6979147e3fce78d60e9ae",
+    "tectonics/docs/I01_PHASE_ENERGY.md": "672309cf694a036af8b671ef6dc665893778940db080d79a0e0be7daa0abc721",
+    "tectonics/cases/i01_phase_energy_v1.json": "a5ed19877d68d31d276474e4fc7bc42c782bcafebec103ec26d8fc4f09c47949",
+    "tectonics/tools/check_i01_phase_partition.py": "5c66c50ef1724c03296dbc1dd096b06971ac5eaee44dd67dcda222dcab08e9b0"
+  },
+  "passed": true,
+  "accounts": {
+    "initial_h_j": 5799999999.999996,
+    "removed_h_j": 899999999.9999961,
+    "residual_h_j": 4900000000.0,
+    "removed_mass_kg": 999.9999999999958,
+    "residual_liquid_kg": 1000.0000000047773,
+    "recovered_temperature_k": 1500.000000000169,
+    "cooled_temperature_k": 1000.0,
+    "cooled_liquid_kg": 0.0,
+    "heat_to_surroundings_j": 899999999.9999961,
+    "component_residual_kg": 5.684341886080801e-13,
+    "total_energy_residual_j": 1.1920928955078125e-07
+  },
+  "benchmark": {
+    "samples_seconds": {
+      "newton": [
+        0.02035130001604557,
+        0.020114999962970614,
+        0.02064460003748536
+      ],
+      "bisection": [
+        0.123065400053747,
+        0.11963690002448857,
+        0.12387769995257258
+      ]
+    },
+    "calls": 40,
+    "newton_seconds": 0.02035130001604557,
+    "bisection_seconds": 0.123065400053747,
+    "saved_seconds": 0.10271410003770143,
+    "saved_percent": 83.46302046947604,
+    "temperature_parity_k": 2.310207491973415e-08,
+    "iterations": {
+      "newton": 5,
+      "bisection": 34
+    }
+  },
+  "native_delivery_authorised": false,
+  "calibrated_mantle_model": false,
+  "source_unchanged": true,
+  "elapsed_seconds": 0.429787699948065
+}

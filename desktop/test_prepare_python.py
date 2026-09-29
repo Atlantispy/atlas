@@ -2,11 +2,17 @@
 import base64
 import hashlib
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 import prepare_python as payload
+
+# prepare() refuses every platform except Windows CPython 3.12, the only supported packaging route.
+SUPPORTED = sys.platform == "win32" and sys.version_info[:2] == (3, 12)
+WINDOWS_ONLY = unittest.skipUnless(SUPPORTED, "packaging payload check for Windows CPython 3.12 only; a skip "
+                                   "here is not validation of the Windows executable")
 
 
 class PackagingGuards(unittest.TestCase):
@@ -33,6 +39,7 @@ class PackagingGuards(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 payload.record_path(name)
 
+    @WINDOWS_ONLY
     def test_nonempty_destination_is_preserved(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -49,6 +56,7 @@ class PackagingGuards(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Linked"):
                 payload.checked_path(Path("linked/child/file"))
 
+    @WINDOWS_ONLY
     def test_wheel_drift_refused_without_source_mutation(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -74,6 +82,14 @@ class PackagingGuards(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "digest mismatch"):
                 payload.prepare(base, site, [requirement], output)
             self.assertEqual(original.read_bytes(), b"changed")
+
+    @unittest.skipIf(SUPPORTED, "the supported platform runs the payload checks above")
+    def test_unsupported_platform_refuses_before_touching_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaisesRegex(ValueError, "Run with Windows CPython 3.12"):
+                payload.prepare(root / "base", root / "site", [], root / "output")
+            self.assertEqual(list(root.iterdir()), [])
 
 
 if __name__ == "__main__":

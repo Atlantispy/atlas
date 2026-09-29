@@ -336,8 +336,12 @@ class ProvenanceTests(Limited):
         with self.assertRaises(TypeError):
             f.Evolution(ev.base, ev.thermal, ev.law, ev.drive, ev.key, ev.kappa0,
                         **SETTINGS, modes=writable)
-        with self.assertRaises(ValueError):
+        # replace() refuses the init=False field: ValueError on Python 3.12, TypeError on 3.13.
+        with self.assertRaises((TypeError, ValueError)):
             dataclasses.replace(ev, modes=writable)
+        with self.assertRaises(dataclasses.FrozenInstanceError):
+            ev.modes = writable
+        self.assertIsNot(ev.modes, writable)
         for name in ("lam", "to_modal", "source_modal", "from_modal", "e", "p1", "p2", "p3"):
             values = getattr(ev.modes, name)
             with self.subTest(name), self.assertRaises(ValueError):

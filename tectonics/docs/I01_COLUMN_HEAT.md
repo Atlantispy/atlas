@@ -5,7 +5,11 @@ atlas-i01-column-heat-20260927.** This makes temperature evolve inside the
 reviewed [layered weakening column](I01_WEAKENING.md) and feed back into its
 resistance and history. The reviewed helpers `check_i01_weakening.py` and
 `check_i01_column.py` are imported read-only; their bytes are bound and compared
-with the [weakening r2 receipt](../evidence/i01-weakening-r2.json). The
+with the weakening receipt named by `WEAKENING_RECEIPT`. The
+[weakening r2 receipt](../evidence/i01-weakening-r2.json) binds the layout before the
+I02.2a package move; its designated successor `i01-weakening-r3` is evidence only
+once captured, reviewed and listed as current in the
+[evidence register](../../docs/CURRENT_EVIDENCE.md). The
 [case](../cases/i01_column_heat_v1.json), [tool](../tools/check_i01_column_heat.py) and focused
 tests as first delivered are bound by the [column-heat r1 evidence](../evidence/i01-column-heat-r1.json).
 Review corrections (section 10) changed the tool, tests and this document. The
@@ -366,9 +370,10 @@ The receipt binds, before and after execution:
 - this document, the tool, case and tests;
 - the imported `check_i01_weakening.py` and `check_i01_column.py`;
 - the weakening case, document and tests;
-- the column case and receipt;
-- the weakening r2 receipt, whose recorded hashes the imported helper bytes must
-  match.
+- the column case and the column receipt listed in the tool;
+- the weakening receipt named by `WEAKENING_RECEIPT`, whose recorded hashes the
+  imported helper bytes and their package owners must match. The designated
+  successors for the package-owned code are `i01-column-r2` and `i01-weakening-r3`.
 
 Timings exclude imports. The reuse comparison is one matched observation, not a
 generator speedup. No existing helper, native source, shared status or receipt was

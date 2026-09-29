@@ -1,4 +1,12 @@
-# Current scoped package: 0.1.0.dev42
+# Atlas tectonics package
+
+**Version string `0.1.0.dev42`. WORKING NON-CANON.** The string was last changed at
+dev42 and has not been incremented for the later I01/I02 package modules. It is a
+development label, not a release or acceptance marker: receipts bind the package by
+source digests and native execution identity, so a new version string alone would
+certify nothing. Delivery status is kept in [current status](../docs/CURRENT_STATE.md);
+the sections below are dated implementation entries, and a heading that calls an
+older entry "current" describes that entry's own date.
 
 The [new-world step 1 contract](docs/NEW_WORLD_CONTRACT.md) provides reproducible
 128-bit seeds, Fixed/Auto settings, strict plan identities and safe save/load via
@@ -793,8 +801,9 @@ source imports: the verifier intentionally refuses pre-existing local bytecode.
 Do not delete an existing working tree to get a pass; investigate it or use a clean
 copy. Do not use `--system-site-packages` for a fresh independent installation;
 the cleanup test harness used it only to reuse already installed dependencies
-without downloading/installing anything. Linux execution is verified by this
-delivery; Windows/macOS instructions alone are not platform acceptance. Full verification
+without downloading/installing anything. Instructions for any platform are not
+platform acceptance; the latest full-suite result, which is not a pass, is in
+[current status](../docs/CURRENT_STATE.md#full-suite-status). Full verification
 also exercises real filesystem symlinks; a host unable to create those fixtures
 has not completed that part of verification. Skips are not counted as a full pass.
 
@@ -840,12 +849,15 @@ their existing licences; see [third-party notices](THIRD_PARTY_NOTICES.md). The
 earlier unapplied Apache proposal is superseded, not an alternative grant.
 
 
-## Current cleanup evidence
+## Historical cleanup evidence
+
+These receipts record an earlier cleanup snapshot; the suite and package have grown
+since, so they are not a current pass.
 
 - [Linked-interpreter full suite](evidence/review-cleanup-linked-tests.json):
-  1,512 tests, no failures, errors or skips.
+  that snapshot's 1,512 tests, with no failures, errors or skips.
 - [Copied-interpreter full suite](evidence/review-cleanup-copied-tests.json):
-  the same 1,512 tests, no failures, errors or skips.
+  the same 1,512 tests, with no failures, errors or skips.
 - [Cleanup scope and preservation](evidence/review-cleanup.json) and
   [actual-code visual inspection](evidence/review-cleanup-visual-qa.json).
 

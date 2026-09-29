@@ -9,8 +9,8 @@ what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains th
 single progress summary; do not maintain another competing status ledger here.
 
 This is the complete planning scope, not blanket execution authority. The latest
-owner instruction permits the reviewed Claude/Codex sequence through **I02 only**;
-stop before I03 unless separately resumed. Preparing the later briefs does not
+owner instruction permits the repair and acceptance work through **I02.2 only**;
+stop before I02.3 unless separately resumed. Preparing the later briefs does not
 start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
 live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
 current-state record. No installations, reopening R4.4, broad/full-world runs,
@@ -483,10 +483,11 @@ validation or permission to generate an unsupported event.
 
 ### I02 — Common state, exchange transactions and accepted-time controller
 
-**Status: implementation authorised, review between steps.** On 28 September 2026
-the owner resumed I02.1 and then approved continuation through all eight I02
-steps. Claude implements one bounded assignment; Codex reviews the actual change
-and runs focused checks before dispatching its successor. Stop before I03.
+**Status: I02.1 and I02.2 reviewed; stopped before I02.3.** The owner's later stop
+instruction supersedes the earlier approval to continue through all eight I02
+steps. The bounded continuation and ownership correction are accepted with
+refreshed dependent evidence; the remaining steps require fresh authority.
+Claude implements bounded assignments and Codex reviews their actual changes.
 Preserve existing work; permission, usage and unresolved technical failures still
 stop dispatch. No blanket installation, broad simulation or publication approval.
 

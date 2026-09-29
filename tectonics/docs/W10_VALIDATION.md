@@ -302,6 +302,8 @@ acceptance. No whole-world, production-ready or calibrated-uncertainty flag is s
 These measurements are from Windows and the existing Python 3.12.14,
 NumPy 2.4.6 / SciPy 1.17.1 environment. No new Linux execution is claimed.
 The production package remains 124/128 source files; no numerical laws changed.
+The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised the 128-file ceiling to 512; the count above is this checkpoint's.
 
 ## Papers and existing software consulted
 

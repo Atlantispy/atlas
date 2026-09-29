@@ -322,7 +322,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     # Reserve the destination before computation; exclusive creation also closes
     # the check/create race. A refused campaign leaves its actual failure visible.
-    destination = nullcontext(None) if args.output is None else args.output.open("x", encoding="utf-8")
+    destination = nullcontext(None) if args.output is None else args.output.open("x", encoding="utf-8", newline="\n")
     with destination as stream:
         started = time.monotonic()
         before = None

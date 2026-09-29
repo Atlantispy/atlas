@@ -1,0 +1,96 @@
+{
+  "schema": "atlas.i01-column.v1",
+  "status": "PASS_BOUNDED_CONTROLS_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "system": "Windows"
+  },
+  "source_sha256": {
+    "tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "tests/test_i01_column.py": "fa30fbe13c5151c141886401bac9099aa40c83ab8e40605566acae55856cfbd3",
+    "cases/i01_column_v1.json": "4e04683a751e721ee559528ee6d2e8e288671cd584b09f7b0bfa5782f06e0f0a",
+    "docs/I01_COLUMN.md": "29713becbb5be5e038bc3cc689ad4668331cd55e7240d9190b25c74bf264ee77",
+    "src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113"
+  },
+  "passed": true,
+  "column_64": {
+    "force_n_m": 25655385202271.957,
+    "work_w_m2": 0.02565538520227196,
+    "creep_work_w_m2": 0.01238267978566894,
+    "plastic_work_w_m2": 0.013272705416585507,
+    "work_relative_residual": 6.826546580914669e-13,
+    "scalar_iterations": 349,
+    "quadrature_points": 192
+  },
+  "column_128": {
+    "force_n_m": 25646000174755.902,
+    "work_w_m2": 0.025646000174755903,
+    "creep_work_w_m2": 0.012343091668381377,
+    "plastic_work_w_m2": 0.013302908506360575,
+    "work_relative_residual": 5.439696677354586e-13,
+    "scalar_iterations": 699,
+    "quadrature_points": 384
+  },
+  "warm_100k": {
+    "force_n_m": 9224074559274.418,
+    "work_w_m2": 0.009224074559274419,
+    "creep_work_w_m2": 0.0063100266637344336,
+    "plastic_work_w_m2": 0.0029140478955360224,
+    "work_relative_residual": 4.297280032956289e-13,
+    "scalar_iterations": 584,
+    "quadrature_points": 384
+  },
+  "tenfold_rate": {
+    "force_n_m": 34011713188188.42,
+    "work_w_m2": 0.34011713188188425,
+    "creep_work_w_m2": 0.13999780205280873,
+    "plastic_work_w_m2": 0.2001193298287979,
+    "work_relative_residual": 8.162225341942762e-13,
+    "scalar_iterations": 726,
+    "quadrature_points": 384
+  },
+  "column_refinement_relative_change": 0.0003659450772870477,
+  "paired_column_seconds": 0.00197049998678267,
+  "benchmark": {
+    "bisection": {
+      "seconds": 0.0003845000173896551,
+      "stresses": [
+        13889438.117246982,
+        14273238.156606842,
+        14632851.154057931,
+        14971640.859974906,
+        15292285.526480416,
+        15596955.81071094,
+        15887437.881103694,
+        16165220.936415302,
+        16431560.892682806,
+        16687527.676079059
+      ],
+      "iterations": 373
+    },
+    "newton": {
+      "seconds": 4.880002234131098e-05,
+      "stresses": [
+        13889438.117234645,
+        14273238.156532504,
+        14632851.154060636,
+        14971640.859988842,
+        15292285.526447058,
+        15596955.810742026,
+        15887437.881057017,
+        16165220.936326228,
+        16431560.892676793,
+        16687527.676161349
+      ],
+      "iterations": 30
+    },
+    "max_stress_relative_difference": 5.510197109692334e-12,
+    "saved_seconds": 0.00033569999504834414,
+    "saved_percent": 87.30818722126176,
+    "scope": "one ten-solve prepared local-law comparison, not generator speedup"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 0.01617940003052354
+}

@@ -75,6 +75,8 @@ Bounds remain 256 nodes, 2048 connectors, 128 MiB shared accounted work and 256
 cumulative accepted subintervals. No ceiling was increased. Source membership is
 now 117 Python files, below the unchanged 128-file cap; both W09 modules join the
 existing loaded-code/source identity. Old checkpoint identities are not repinned.
+The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised that cap to 512 files; the count above is this checkpoint's.
 
 ## Verification and measured efficiency
 

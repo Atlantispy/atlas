@@ -65,6 +65,15 @@ for every element. Memory is admitted before mesh/factor construction and actual
 factor storage is checked afterwards. Admission is an accounting bound, not an
 operating-system RSS guarantee. Cell counts 2-24 per direction are interface
 limits, not a promise every such grid fits the selected memory budget.
+In practice the assembly reservation alone is 8 MiB plus 420,000 bytes per cell
+plus 3,000 bytes per velocity unknown (three per Q2 node) and per pressure node,
+before the separate factor allowance. For cubes that is about 176 MiB at 7x7x7
+and about 257 MiB at 8x8x8, so the default 256 MiB budget refuses 8x8x8 and
+larger; an external review on 28 September 2026 found 7x7x7 to be the largest
+cube admitted. The 24x24x24 interface limit would need about 6.9 GB (6.4 GiB)
+for assembly alone. Larger grids need an explicitly larger budget and machine;
+nothing is subdivided or coarsened automatically. The connected evolution
+fixture is 3x3x3.
 Cancellation, loaded-source identity, single-owner use and closure are checked.
 Only the latest immutable result and one finite-mode response are retained;
 there is no growing history cache. Caller-retained snapshots remain caller storage.

@@ -86,6 +86,8 @@ accepted intervals, including internal variable-mass integration steps. The
 tagged-history metadata is bounded to 512 KiB. Accounted work is not process RSS.
 Only the latest live output is retained; caller-retained older outputs require
 their own allowance. Source membership remains bounded to 128 files (115 now).
+The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+raised that bound to 512 files; the count above is this checkpoint's.
 
 ## Acceptance and timing
 

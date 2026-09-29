@@ -5,6 +5,7 @@ objects, so these guards exercise the package implementation through the retaine
 SPDX-License-Identifier: AGPL-3.0-only
 """
 import dataclasses
+import json
 import math
 from pathlib import Path
 import sys
@@ -417,8 +418,21 @@ class RefusalTests(Base):
                 f.conduct_history(self.thermal, history, duration_s=DURATION, steps=2, window=WINDOW)
 
 
+def unregistered(receipts):
+    """Accepted receipts that the evidence register does not list as current at exactly their pinned digest."""
+    records = json.loads((f.ROOT/"evidence/current-evidence.json").read_text(encoding="utf-8"))["records"]
+    current = {record["path"]: record["sha256"] for record in records if record["status"] == "current"}
+    return sorted(name for name, digest in receipts.items() if current.get("tectonics/"+name) != digest)
+
+
 class EvidenceTests(unittest.TestCase):
     def test_accepted_receipts_and_recorded_sources_match(self):
+        # The register and this check agree on "current": while an accepted receipt is historical, its successor capture
+        # is pending. That is reported as a failure, never skipped or satisfied by repinning the old receipt.
+        pending = unregistered(f.ACCEPTED_RECEIPTS)
+        if pending:
+            self.fail("successor capture pending: the evidence register does not list " + ", ".join(pending)
+                      + " as current at the pinned SHA-256 (docs/CURRENT_EVIDENCE.md)")
         match = f.evidence_match(f.bindings())
         for group, values in match.items():
             for name, ok in values.items():

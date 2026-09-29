@@ -223,9 +223,12 @@ python -B tectonics/tools/check_i01_thermomechanical_motion.py --output NEW_PATH
 
 The exclusive-create receipt binds, before and after execution:
 
-- the four new files;
+- the four new files and the package module that now owns the stage;
 - the imported tools and loaded cases;
-- the column-heat r2 and motion-coupling r1 receipts.
+- the column-heat and motion-coupling receipts that the tool pins. The designated
+  successors for the package-owned code are `i01-column-heat-r4` and
+  `i01-motion-coupling-r2`; each is evidence only once captured, reviewed and
+  listed as current in the [evidence register](../../docs/CURRENT_EVIDENCE.md).
 
 The receipts must equal their accepted SHA-256 values. Every retained tool and
 case must equal the bytes those receipts recorded, and each imported module

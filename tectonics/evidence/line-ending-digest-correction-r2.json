@@ -1,0 +1,194 @@
+{
+  "schema": "atlas.line-ending-digest-correction.v1",
+  "source_status": "WORKING NON-CANON",
+  "status": "CORRECTED_RECORDED_VALUES_ONLY",
+  "scope": "Recorded SHA-256 values of 13 I01 receipts that had been computed from Windows working copies with CRLF line endings: 13 evidence-register records and 6 closure-matrix receipt entries. Git stores these JSON files with LF (tectonics/.gitattributes: text eol=lf), so the values matched no checkout. Only the 64-character values listed here changed. No receipt, source, case, tolerance, numerical result or recorded source binding changed, and nothing was rerun.",
+  "base_commit": "577c044425e83a2383cc83a0041e57b2dd891e43",
+  "detected_by": "External review of 577c044 on 28 September 2026: tools/check_current_evidence.py and tectonics/tests/test_digest_line_endings.py reported each value as the digest of a CRLF rendering of the committed receipt.",
+  "cause": "The six I01 receipt writers listed below opened their output in text mode with the platform newline, so Windows runs wrote CRLF and the digest was taken from that copy. They now write LF. That writer change alters tool bytes the affected current receipts bind, so those receipts were reclassified as historical in the same change rather than repinned; successors come from the corrected writers.",
+  "writers_corrected": [
+    "tectonics/tools/check_i01_phase_partition.py",
+    "tectonics/tools/check_i01_phase_energy.py",
+    "tectonics/tools/check_i01_phase_pressure.py",
+    "tectonics/tools/check_i01_magma_receiver.py",
+    "tectonics/tools/check_i01_separation_feasibility.py",
+    "tectonics/tools/check_i01_gibbs_provider.py"
+  ],
+  "proof": "For every entry, old_sha256 equals SHA-256 of the target bytes at base_commit with each LF replaced by CRLF, and those bytes contain no CR; new_sha256 is SHA-256 of those committed bytes.",
+  "rule": "direct: the target is unchanged and new_sha256 is SHA-256 of its committed LF bytes. Neither holder is bound by a recorded digest, so no value cascades.",
+  "holders": [
+    "tectonics/cases/i01_closure_matrix_v1.json",
+    "tectonics/evidence/current-evidence.json"
+  ],
+  "entries": [
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/2/sha256",
+      "target": "tectonics/evidence/i01-separation-feasibility-r3.json",
+      "kind": "direct",
+      "old_sha256": "4fc95678d2c0f0e37d7e0f14ff3225fdccfe0635bdb9e5432e2bc645db29c55e",
+      "new_sha256": "8a9cf57dda36dec8fddd6f0f02056300500e640b61d26f9c725415307255b432"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/3/sha256",
+      "target": "tectonics/evidence/i01-separation-feasibility-r2.json",
+      "kind": "direct",
+      "old_sha256": "e86ed2baf24700433c7c01dda9342d879ce469319df7b67bcab322c334f7a207",
+      "new_sha256": "ce1d42b6be9d79670eace3707d02d1de82e1e96a51b9ef32f7705c0ad703417f"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/4/sha256",
+      "target": "tectonics/evidence/i01-separation-feasibility-r1.json",
+      "kind": "direct",
+      "old_sha256": "8587ebe659b72f7acb648f866546c2b6fa6a2b5f61244c1105e3f12539852b21",
+      "new_sha256": "a48343af85efecf225cc249c396aa06a3cf4e819055362112d2f98cf42cae87f"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/8/sha256",
+      "target": "tectonics/evidence/i01-gibbs-provider-r2.json",
+      "kind": "direct",
+      "old_sha256": "dd5017c5c05509d9a3678f101349fff3e843c3197afecbdde9cb7995e9e0ef1d",
+      "new_sha256": "c49be8c15b0e211276de6e4712da0f75df66f4fdd66e0dfdf57ff0b3d303392d"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/21/sha256",
+      "target": "tectonics/evidence/i01-phase-partition-r2.json",
+      "kind": "direct",
+      "old_sha256": "8cc8cca493db464f7d9b3ddcefb95f136162542a40c8472025cc57c7141c979b",
+      "new_sha256": "2a89d8897651c8f859514e185a5b2c4b05188f1f22dfe9c7fef956bef2ab8edb"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/31/sha256",
+      "target": "tectonics/evidence/i01-phase-partition-r1.json",
+      "kind": "direct",
+      "old_sha256": "4fcd6354ab98e4de688659ee81925ca2649eb5a90b50698103643eabb9767c25",
+      "new_sha256": "7b8fde6df584a0b451023fdd02ea2e8f7888678a7750963cb9c1d8b2ba0e83c9"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/22/sha256",
+      "target": "tectonics/evidence/i01-phase-energy-r3.json",
+      "kind": "direct",
+      "old_sha256": "5b79832c76c55def60f4bb1f5516162db93fb5688e7b5296574ded8117c9c09e",
+      "new_sha256": "4f6538237e8d8b2819df93bd37716b8829b7a76ba4de533b973369233628d91d"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/29/sha256",
+      "target": "tectonics/evidence/i01-phase-energy-r2.json",
+      "kind": "direct",
+      "old_sha256": "f77a0e3b2046e0214714a8b7e9f6c1e0e538506619b3245ae97323b4ffb838ec",
+      "new_sha256": "fb4118a6214bd17af38e39e1eb246cb5766db530d659ed6ae75ec78b6d919764"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/30/sha256",
+      "target": "tectonics/evidence/i01-phase-energy-r1.json",
+      "kind": "direct",
+      "old_sha256": "bb06ae244c29e276d60e57b392c47a654f4e7fbc7cdd4c4c17d294e1560c8505",
+      "new_sha256": "41351f506a4c331d9c160be02b51cfa0ea7ca290dfb237e36504d0195481e25c"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/23/sha256",
+      "target": "tectonics/evidence/i01-magma-receiver-r2.json",
+      "kind": "direct",
+      "old_sha256": "8a2221c5c64b559e18bb3d1431a1d8ea271477254c8dc2de7540d32c00ddacc5",
+      "new_sha256": "b6d8cee3906dd1fa878b9944c93f0227e8590b0620161158bc95b463de20809e"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/28/sha256",
+      "target": "tectonics/evidence/i01-magma-receiver-r1.json",
+      "kind": "direct",
+      "old_sha256": "bd2202e4beb4da7e594ee241859b84e5753347bb282c8b3116f8597e1f0f950d",
+      "new_sha256": "785f7d9c342fca331be110d06e68baea0e27eff88951330239f9781447095ea1"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/24/sha256",
+      "target": "tectonics/evidence/i01-phase-pressure-r2.json",
+      "kind": "direct",
+      "old_sha256": "9605fb3606acddf73cdc6ea3d2afb76e619cf69bc10352472f1f2fee29905e2b",
+      "new_sha256": "e43ccd1cff8b6d532a02e8114a06e6467c5670a93993813a599cc4e9fb5d0ee8"
+    },
+    {
+      "holder": "tectonics/evidence/current-evidence.json",
+      "location": "/records/25/sha256",
+      "target": "tectonics/evidence/i01-phase-pressure-r1.json",
+      "kind": "direct",
+      "old_sha256": "3fbfaf535e8072c6e21a522e3a337a1e474c7f55192a79ebfc4ce14978b33710",
+      "new_sha256": "df73b74127960401fcc70013cdd3f32b16851fa357862d0a57da8158fe97cd5d"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-separation-feasibility-r3/sha256",
+      "target": "tectonics/evidence/i01-separation-feasibility-r3.json",
+      "kind": "direct",
+      "old_sha256": "4fc95678d2c0f0e37d7e0f14ff3225fdccfe0635bdb9e5432e2bc645db29c55e",
+      "new_sha256": "8a9cf57dda36dec8fddd6f0f02056300500e640b61d26f9c725415307255b432"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-gibbs-provider-r2/sha256",
+      "target": "tectonics/evidence/i01-gibbs-provider-r2.json",
+      "kind": "direct",
+      "old_sha256": "dd5017c5c05509d9a3678f101349fff3e843c3197afecbdde9cb7995e9e0ef1d",
+      "new_sha256": "c49be8c15b0e211276de6e4712da0f75df66f4fdd66e0dfdf57ff0b3d303392d"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-phase-partition-r2/sha256",
+      "target": "tectonics/evidence/i01-phase-partition-r2.json",
+      "kind": "direct",
+      "old_sha256": "8cc8cca493db464f7d9b3ddcefb95f136162542a40c8472025cc57c7141c979b",
+      "new_sha256": "2a89d8897651c8f859514e185a5b2c4b05188f1f22dfe9c7fef956bef2ab8edb"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-phase-energy-r3/sha256",
+      "target": "tectonics/evidence/i01-phase-energy-r3.json",
+      "kind": "direct",
+      "old_sha256": "5b79832c76c55def60f4bb1f5516162db93fb5688e7b5296574ded8117c9c09e",
+      "new_sha256": "4f6538237e8d8b2819df93bd37716b8829b7a76ba4de533b973369233628d91d"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-magma-receiver-r2/sha256",
+      "target": "tectonics/evidence/i01-magma-receiver-r2.json",
+      "kind": "direct",
+      "old_sha256": "8a2221c5c64b559e18bb3d1431a1d8ea271477254c8dc2de7540d32c00ddacc5",
+      "new_sha256": "b6d8cee3906dd1fa878b9944c93f0227e8590b0620161158bc95b463de20809e"
+    },
+    {
+      "holder": "tectonics/cases/i01_closure_matrix_v1.json",
+      "location": "/receipts/i01-phase-pressure-r2/sha256",
+      "target": "tectonics/evidence/i01-phase-pressure-r2.json",
+      "kind": "direct",
+      "old_sha256": "9605fb3606acddf73cdc6ea3d2afb76e619cf69bc10352472f1f2fee29905e2b",
+      "new_sha256": "e43ccd1cff8b6d532a02e8114a06e6467c5670a93993813a599cc4e9fb5d0ee8"
+    }
+  ],
+  "local_normalisation": [
+    "tectonics/evidence/i01-separation-feasibility-r3.json",
+    "tectonics/evidence/i01-separation-feasibility-r2.json",
+    "tectonics/evidence/i01-separation-feasibility-r1.json",
+    "tectonics/evidence/i01-gibbs-provider-r2.json",
+    "tectonics/evidence/i01-phase-partition-r2.json",
+    "tectonics/evidence/i01-phase-partition-r1.json",
+    "tectonics/evidence/i01-phase-energy-r3.json",
+    "tectonics/evidence/i01-phase-energy-r2.json",
+    "tectonics/evidence/i01-phase-energy-r1.json",
+    "tectonics/evidence/i01-magma-receiver-r2.json",
+    "tectonics/evidence/i01-magma-receiver-r1.json",
+    "tectonics/evidence/i01-phase-pressure-r2.json",
+    "tectonics/evidence/i01-phase-pressure-r1.json"
+  ],
+  "regression_guard": "tectonics/tests/test_digest_line_endings.py",
+  "windows_working_copy": "Each target under local_normalisation was a working copy whose bytes differed from its committed bytes only by CRLF line endings; it was rewritten with exactly the committed bytes. No other file was normalised and no checkout or reset was used."
+}

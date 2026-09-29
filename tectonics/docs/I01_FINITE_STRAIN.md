@@ -321,8 +321,12 @@ python -B tectonics/tools/check_i01_finite_strain.py --output NEW_PATH.json
 ```
 
 The exclusive-create receipt binds, before and after execution, the four new
-files, the retained tools and cases listed in the tool, and the accepted receipts
-`i01-thermomechanical-motion-r1`, `i01-column-heat-r2` and
-`i01-motion-coupling-r1`, which must equal their accepted SHA-256 values. Timings
+files, the package solver module, the retained tools, cases and package modules
+listed in the tool, and the thermomechanical, column-heat and motion-coupling
+receipts that the tool pins, which must equal their accepted SHA-256 values. The
+designated successors for the package-owned code are
+`i01-thermomechanical-motion-r3`, `i01-column-heat-r4` and `i01-motion-coupling-r2`;
+each is evidence only once captured, reviewed and listed as current in the
+[evidence register](../../docs/CURRENT_EVIDENCE.md). Timings
 exclude imports; the cooperative budget is 120 s after them. The reuse
 comparison is one matched observation, not a generator forecast.

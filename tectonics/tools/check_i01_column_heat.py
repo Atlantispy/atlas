@@ -39,7 +39,7 @@ import check_i01_weakening as weakening
 column = weakening.column
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT/"cases/i01_column_heat_v1.json"
-WEAKENING_RECEIPT = ROOT/"evidence/i01-weakening-r2.json"
+WEAKENING_RECEIPT = ROOT/"evidence/i01-weakening-r3.json"
 SCHEMA = "atlas.i01-column-heat-case.v1"
 number, positive = weakening.number, weakening.positive
 relative_change, verdict, check_deadline = weakening.relative_change, weakening.verdict, weakening.check_deadline
@@ -746,14 +746,14 @@ def bindings():
 
 
 def reviewed_helpers(current):
-    """Imported helper/case bytes must equal the hashes recorded by the reviewed weakening r2 receipt.
+    """Imported helper/case bytes must equal the hashes recorded by the reviewed weakening r3 receipt.
 
     The package owners of those helpers are compared too: a receipt that never recorded them cannot vouch for them.
     """
     recorded = json.loads(WEAKENING_RECEIPT.read_text(encoding="utf-8"))["source_sha256"]
     names = ("tools/check_i01_weakening.py", "cases/i01_weakening_v1.json", "docs/I01_WEAKENING.md",
              "tests/test_i01_weakening.py", "tools/check_i01_column.py", "cases/i01_column_v1.json",
-             "evidence/i01-column-r1.json", "src/atlas_tectonics/_integration_weakening.py",
+             "evidence/i01-column-r2.json", "src/atlas_tectonics/_integration_weakening.py",
              "src/atlas_tectonics/_integration_column.py")
     return {name: recorded.get(name) == current[name] for name in names}
 
@@ -771,7 +771,7 @@ def main():
         try:
             before = bindings()
             spec, weak = load_case()
-            result.update(source_sha256=before, helpers_match_reviewed_weakening_r2=reviewed_helpers(before), spec=spec)
+            result.update(source_sha256=before, helpers_match_reviewed_weakening_r3=reviewed_helpers(before), spec=spec)
             deadline = time.perf_counter()+spec["policy"]["maximum_seconds"]
             for name, control in CONTROLS:
                 begin = time.perf_counter()
@@ -784,7 +784,7 @@ def main():
                                                     error_type=type(exc).__name__,
                                                     error=str(exc).replace(str(ROOT), "TECTONICS_ROOT"))
             result["source_unchanged"] = before == bindings()
-            passed = (result["source_unchanged"] and all(result["helpers_match_reviewed_weakening_r2"].values())
+            passed = (result["source_unchanged"] and all(result["helpers_match_reviewed_weakening_r3"].values())
                       and all(c["status"] == "PASS" for c in result["controls"].values()))
             result["status"] = "PASS_BOUNDED_COLUMN_HEAT_ONLY" if passed else "FAIL"
         except Exception as exc:

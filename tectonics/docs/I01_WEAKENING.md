@@ -3,10 +3,15 @@
 **27 September 2026. WORKING NON-CANON. Bounded adapter and controls, task
 atlas-i01-weakening-20260927.** This connects the reviewed
 [nonlinear column law](I01_COLUMN.md) to evolving plastic history. The column
-kernel is imported read-only; its bytes are bound and compared with its own
-[reviewed receipt](../evidence/i01-column-r1.json). The [case](../cases/i01_weakening_v1.json),
-[tool](../tools/check_i01_weakening.py) and focused tests are bound by the
-[reviewed weakening evidence](../evidence/i01-weakening-r2.json). D2/D4/D6 context is in the
+kernel is imported read-only; its bytes and package owner are bound and compared
+with the column receipt named in the tool. Each weakening receipt binds the
+[case](../cases/i01_weakening_v1.json), [tool](../tools/check_i01_weakening.py) and
+focused tests. The [column r1](../evidence/i01-column-r1.json) and
+[weakening r2](../evidence/i01-weakening-r2.json) receipts bind the layout before the
+I02.2a package move, so they cannot vouch for the moved code. Their designated
+successors `i01-column-r2` and `i01-weakening-r3` are evidence only once captured,
+reviewed and listed as current in the [evidence register](../../docs/CURRENT_EVIDENCE.md).
+D2/D4/D6 context is in the
 [I01 contract](I01_PHYSICAL_CONTRACT.md).
 
 This is not a native component, a rift or necking model, a rupture criterion or
@@ -193,8 +198,10 @@ Tolerances were frozen in the case before the evidence run.
 
 The reviewed r2 keeps the physical laws, case and numerical tolerances unchanged.
 It adds immutable-preparation and direct-entry/refill/window guards, plus three
-regression tests. The original r1 receipt is retained as historical evidence;
-the current source-bound result is r2. No old receipt was rewritten.
+regression tests. The original r1 receipt is retained as historical evidence.
+r2 binds the layout before I02.2a moved the executed code into package modules,
+so it cannot vouch for the moved code. Its designated successor, from the
+dependency-ordered capture, records its own results. No old receipt was rewritten.
 
 | Quantity | Value |
 | --- | --- |
