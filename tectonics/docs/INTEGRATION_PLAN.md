@@ -956,6 +956,19 @@ the required claim; full coupled physical-event acceptance is still mandatory.
    resolve the full mixed-material neck and required depth/exterior/along-strike
    sensitivities. Return admitted separation/handoff evidence to I06. These two
    kernel substeps need I02/I03/I05 interfaces, **not completed I06**.
+   *Solver-scaling prerequisite:* the resolved neck needs finer regional grids
+   than the assembled 3D Stokes route admits. The default 256 MiB budget refused
+   every 7x7x7 cube, and the 24x24x24 assembly alone reserved about 6.4 GiB. A
+   matrix-free Q2 operator with a hybrid p/h Galerkin multigrid and flexible
+   deflated GMRES is now integrated locally (`method='multigrid'`; see
+   [its method section](REGIONAL_MECHANICS_3D.md#matrix-free-multigrid-candidate-i072-solver-scaling)).
+   It keeps the equations, gates and outputs. A multigrid-first `auto` choice
+   between it and the assembled route is now the default for new runs
+   ([rule and measurements](REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto)).
+   Both are reviewed and corrected in the working tree. Automatic evolution
+   pins its admitted solver choices for restart consistency; temporary memory
+   pressure refuses work instead of rerouting it. Neither is the neck,
+   moving-material transfer or any other I07.2 deliverable.
 3. **I07.3 — Implement the resolved initiation experiment.** Lock coefficients,
    geometry, thermal/history state, boundaries, observation window and numerical
    criteria. Compare forced and genuinely released continuations of the same

@@ -23,7 +23,8 @@ from .constitutive import (BoussinesqMaterial, DiffusiveScales, RheologyProfile,
     evaluate_rheology, advance_memory, boussinesq_response)
 from .regional_execution import RegionalMechanicsScales, RegionalMechanicalSnapshot
 from .regional_execution3d import (PreparedRegionalStokes3D, SIDES, _array, _cancel,
-    _name, _json, _hash, _digest_array, _local_tokens)
+    _name, _json, _hash, _digest_array, _local_tokens, _selection)
+from .regional_solver_selection3d import POLICY as _SELECTION_POLICY
 from .regional_transport3d import PreparedRegionalTransport3D
 from .regional_heat3d import PreparedRegionalHeat3D
 from .resources import select_budget
@@ -53,6 +54,12 @@ class PreparedRegionalEvolution3D:
     rate and (for BF23) carried damage determine viscosity at all Gauss points.
     Temperature and damage are cell averages, piecewise constant at those points.
     Pressure and supplied tractions are dynamic (reference hydrostatics removed).
+    ``mechanics_method='auto'`` (the default) lets each prepared Stokes operator
+    choose multigrid or gmres. The definition then records the request and the
+    selection policy and admitted-method mask, so a state continues only under a
+    plan with the same routing context. The admission choices are pinned; later
+    shared-budget pressure refuses work rather than silently rerouting it.
+    Explicit methods are recorded and honoured unchanged.
     """
 
     def __setattr__(self, key, value):
@@ -64,13 +71,16 @@ class PreparedRegionalEvolution3D:
                  mechanical_scales, boundary_types, *, composition_values,
                  frame_id, vertical_datum, include_viscous_heating,
                  divergence_rtol, max_velocity_correction_m_s,
-                 max_relative_correction, budget=None, cancel=None):
+                 max_relative_correction, budget=None, cancel=None,
+                 mechanics_method='auto'):
         if type(material) is not BoussinesqMaterial or type(profile) is not RheologyProfile:
             raise TectonicsError('explicit registered material and rheology required')
         if type(constitutive_scales) is not DiffusiveScales or type(mechanical_scales) is not RegionalMechanicsScales:
             raise TectonicsError('explicit constitutive and mechanical scales required')
         if type(include_viscous_heating) is not bool:
             raise TectonicsError('declare whether viscous dissipation is converted to heat')
+        if mechanics_method not in ('auto', 'gmres', 'direct', 'multigrid'):
+            raise TectonicsError('mechanics method must be auto, gmres, direct or multigrid')
         _name(frame_id, 'frame'); _name(vertical_datum, 'vertical datum')
         if type(boundary_types) is not dict or set(boundary_types) != set(SIDES):
             raise TectonicsError('declare all six mechanical sides')
@@ -88,8 +98,11 @@ class PreparedRegionalEvolution3D:
         self._resource = select_budget(budget)
         self._transport = self._heat = self._mechanical = None
         self._eta = self._last = self._guard = None
+        self._method = mechanics_method
+        self._mechanics_selection_bytes = None
         self._stats = dict(mechanical_preparations=0, mechanical_reuses=0,
-                           endpoint_cache_hits=0, accepted_intervals=0)
+                           mechanical_geometry_reuses=0, endpoint_cache_hits=0, accepted_intervals=0,
+                           mechanical_methods={}, mechanical_method_switches=0)
         try:
             self._transport = PreparedRegionalTransport3D(cells, lengths_m,
                 divergence_rtol=divergence_rtol,
@@ -98,6 +111,7 @@ class PreparedRegionalEvolution3D:
                 budget=self._resource, cancel=cancel)
             self.cells, self.lengths_m = tuple(cells), tuple(float(x) for x in lengths_m)
             self._n = int(np.prod(cells))
+            self._advance_work_bytes = 8192*self._n+65536
             guard = self._resource.reserve(65536+4096*self._n, category='regional-evolution3d')
             guard.__enter__()
             self._guard = guard
@@ -129,6 +143,7 @@ class PreparedRegionalEvolution3D:
                 vertical_datum=vertical_datum, material=asdict(material),
                 rheology=profile.descriptor(), constitutive_scales=asdict(constitutive_scales),
                 mechanical_scales=asdict(mechanical_scales), boundary_types=self._pattern,
+                mechanics_method=mechanics_method,
                 composition_values=c.tolist(), include_viscous_heating=include_viscous_heating,
                 projection=dict(divergence_rtol=divergence_rtol,
                     max_velocity_correction_m_s=max_velocity_correction_m_s,
@@ -137,6 +152,17 @@ class PreparedRegionalEvolution3D:
                 pressure='dynamic relative to removed reference hydrostatics',
                 sampling='piecewise-constant cell temperature/composition/damage; Gauss-point depth and strain',
                 execution=self._context.identity)
+            if mechanics_method == 'auto':
+                self._definition['mechanics_selection_policy'] = _SELECTION_POLICY
+                # Reservations depend on this fixed geometry and boundary pattern,
+                # not viscosity. Pin their admission mask, not transient byte counts:
+                # distinct budgets with the same choices remain restart-compatible.
+                self._mechanics_selection_bytes = max(
+                    0, self._resource.available_bytes-self._advance_work_bytes)
+                selection = _selection(self.cells, self.lengths_m, self._ms, self._pattern,
+                                       1., self._mechanics_selection_bytes)
+                self._definition['mechanics_selection_admission'] = {
+                    method: item['admitted'] for method, item in selection['admission'].items()}
             self.plan_id = _hash(self._definition)
             self._verify()
         except BaseException:
@@ -168,7 +194,8 @@ class PreparedRegionalEvolution3D:
         return json.loads(_json(self._definition))
 
     def statistics(self):
-        return dict(self._stats, heat=self._heat.statistics(),
+        return dict(self._stats, mechanical_methods=dict(self._stats['mechanical_methods']),
+                    heat=self._heat.statistics(),
                     transport=self._transport.statistics(), budget=self._resource.statistics())
 
     def empty_boundary_stocks(self, tracer_names=()):
@@ -271,16 +298,27 @@ class PreparedRegionalEvolution3D:
             law = self._law(td, damage, rate, cancel)
             eta = law['viscosity']*self._cs.viscosity_pa_s
             if self._eta is None or not np.array_equal(eta, self._eta):
-                if self._mechanical is not None:
-                    self._mechanical.close()
-                self._mechanical = None
-                self._eta = None
-                self._mechanical = PreparedRegionalStokes3D(self.cells, self.lengths_m,
-                    eta, self._pattern, scales=self._ms,
-                    reference_viscosity_pa_s=self._cs.viscosity_pa_s,
-                    frame_id=self._frame, vertical_datum=self._datum,
-                    material_source=self.plan_id, budget=self._resource, cancel=cancel)
+                previous, self._mechanical, self._eta = self._mechanical, None, None
+                if previous is None:
+                    self._mechanical = PreparedRegionalStokes3D(self.cells, self.lengths_m,
+                        eta, self._pattern, scales=self._ms,
+                        reference_viscosity_pa_s=self._cs.viscosity_pa_s,
+                        frame_id=self._frame, vertical_datum=self._datum,
+                        material_source=self.plan_id, method=self._method,
+                        budget=self._resource, cancel=cancel,
+                        _selection_available_bytes=self._mechanics_selection_bytes)
+                else:
+                    # Same box, boundary pattern and scales: only viscosity changed.
+                    # The old operators are released first; the new plan reuses the
+                    # viscosity-independent geometry unless auto changed its method.
+                    before = previous.method
+                    self._mechanical = previous.with_viscosity(eta, material_source=self.plan_id,
+                        cancel=cancel, release=True)
+                    self._stats['mechanical_geometry_reuses'] += int(self._mechanical._reused)
+                    self._stats['mechanical_method_switches'] += int(self._mechanical.method != before)
                 self._eta = frozen(eta)
+                methods = self._stats['mechanical_methods']
+                methods[self._mechanical.method] = methods.get(self._mechanical.method, 0)+1
                 self._stats['mechanical_preparations'] += 1
             else:
                 self._stats['mechanical_reuses'] += 1
@@ -319,7 +357,7 @@ class PreparedRegionalEvolution3D:
         response, with exterior resistance only (never count the region twice).
         Rejection publishes no new state and mutates no input or exterior stock.
         """
-        with self._operation(cancel), self._resource.reserve(8192*self._n+65536,
+        with self._operation(cancel), self._resource.reserve(self._advance_work_bytes,
                 category='regional-evolution3d-advance'):
             dt = scalar(duration_s, 'duration', positive=True)
             _name(driving_source, 'driving source'); _name(heat_source, 'heat source')

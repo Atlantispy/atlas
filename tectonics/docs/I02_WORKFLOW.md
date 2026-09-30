@@ -596,31 +596,35 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r2](../evidence/i02-workflow-timing-r2.json),
+**Current source-bound measurement:** [i02-workflow-timing-r5](../evidence/i02-workflow-timing-r5.json),
 30 September 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
-one BLAS thread. After R1 and its dtype-identity correction were integrated, the
-corrected harness ran five repetitions of the same supported
-16-step, 32-material-point case, saving every four steps and reopening at step eight.
-All seven checks passed, including cold/warm physical equality, reopened accounts
-and unchanged sources. The record binds 149 source files and records the execution
-identity; hashing is outside the measured regions. Earlier timings from the harness
+one BLAS thread. It was recaptured after the 3-D evolution restart-admission
+correction, following the multigrid-first automatic solver choice. The harness ran five
+repetitions of the same supported 16-step, 32-material-point case, saving every
+four steps and reopening at step eight. All seven checks passed, including
+cold/warm physical equality, reopened accounts and unchanged sources. The record
+binds 151 source files and records the execution identity; hashing is outside the
+measured regions. This is a fresh bounded-column receipt, not a 3-D speedup
+measurement: the column workflow does not use the 3-D solvers, and the new
+record exists because the package sources it binds changed. Earlier timings from the harness
 with incomplete equality checks are not current acceptance evidence.
 Warm medians of the four later repetitions unless marked cold:
 
 | Mode | Seconds | Relative |
 | --- | --- | --- |
-| Bare physics: the retained evolve, operators reused | 0.06935885 | reference |
-| Bare physics including preparation and the eigensystem | 0.07048370 (cold 0.07077130) | |
-| Common-state continuation of the same steps, in memory | 0.06963190 | +0.39% |
-| Stored workflow: new ledger, accepted clock, 4 commits in a fresh store | 0.10636615 (cold 0.21933480) | +0.03700730 s / +53.36% |
-| of which the 4 commits | 0.01972095 | 18.54% of the workflow |
-| of which ledger creation | 0.00749945 (cold 0.12073560) | |
-| Reopening in a fresh process at step 8: root, head restore, operators (cold) | 0.11756380 (0.11064210 + 0.00400220 + 0.00291950) | |
-| then the remaining 8 steps, cold | 0.04760240 | uninterrupted warm remainder: 0.03506600 |
-| Importing the package in that fresh process | 0.74974600 | |
+| Bare physics: the retained evolve, operators reused | 0.06942225 | reference |
+| Bare physics including preparation and the eigensystem | 0.07055135 (cold 0.07200920) | |
+| Common-state continuation of the same steps, in memory | 0.06916625 | -0.37% |
+| Stored workflow: new ledger, accepted clock, 4 commits in a fresh store | 0.10483610 (cold 0.25231910) | +0.03541385 s / +51.01% |
+| of which the 4 commits | 0.01962780 | 18.72% of the workflow |
+| of which ledger creation | 0.00720425 (cold 0.15538810) | |
+| Reopening in a fresh process at step 8: root, head restore, operators (cold) | 0.11811750 (0.11099510 + 0.00416610 + 0.00295630) | |
+| then the remaining 8 steps, cold | 0.04678690 | uninterrupted warm remainder: 0.03418340 |
+| Importing the package in that fresh process | 0.76603600 | |
 
-The continuation difference is only 0.00027305 s on this tiny case; it does not
-establish a meaningful speed gain or a general overhead percentage. Durable saving
+The continuation difference is only -0.00025600 s on this tiny case (r2 recorded
++0.00027305 s); it does not establish a meaningful speed gain or a general
+overhead percentage. Durable saving
 has a measurable cost here. This is an overhead measurement, not an optimisation
 speedup claim, and the cold remainder is not a matched warm comparison.
 
@@ -691,6 +695,17 @@ R1 then changed `timebase` and `w08_inventory`, and strengthened whole-package
 loaded-code/data identity. Fresh finite-admission r5 passed all five controls and
 supersedes r4; timing r2 passed all seven equivalence checks and supersedes r1.
 Their valid prerequisites were reused. Prior receipt bytes remain unchanged.
+
+The 3-D solver scaling (the matrix-free multigrid method and the automatic
+gmres/multigrid choice) then rewrote three 3-D package modules and added two. No
+I01 or I02 control reads them, but timing r2 binds every package source. Timing
+r3 was captured on a first version of the choice that was never committed. Timing
+r4 on the multigrid-first version passed all seven checks with 151 bindings and
+superseded r3, which superseded r2. The subsequent 3-D evolution restart-admission
+correction changed package sources again. Fresh timing r5 passed all seven checks
+over five repetitions with 151 bindings and supersedes r4; r1-r4 remain unchanged.
+This successor checks the bounded column workflow, not 3-D solver speed. No other
+current record binds the changed files.
 
 ## 9. Acceptance commands after review
 

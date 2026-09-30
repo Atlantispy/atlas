@@ -11,6 +11,8 @@ dense element matrices is retained. At the maximum 24**3 cells, A has at most
 9*193**3 = 64,701,513 scalar entries: about 741 MiB for float64 values and int32
 indices alone. Geometry, B, transient allocations and any factorisation need
 additional memory; the caller must admit a mesh against its execution budget.
+The velocity pattern is built on the first ``assemble`` call, so a caller that
+applies the same form matrix-free (``regional_multigrid3d``) never allocates it.
 
 SPDX-License-Identifier: AGPL-3.0-only
 """
@@ -184,8 +186,7 @@ class TaylorHoodBox:
         if not np.all(np.isfinite(kernel)):
             raise ValueError("lengths exceed representable gradient products")
         self._kernel = _frozen(kernel.reshape(27, 81*81))
-        self._a_ptr, self._a_indices, self._a_low, self._a_widths = _pattern(
-            self._velocity_grid, self._velocity_shape, 3)
+        self._a_ptr = self._a_indices = self._a_low = self._a_widths = None
         self._b_ptr, self._b_indices, self._b_low, self._b_widths = _pattern(
             2*pressure_grid, self._velocity_shape, 1)
         b_data = np.zeros(len(self._b_indices))
@@ -216,6 +217,10 @@ class TaylorHoodBox:
         """
         _check(cancel)
         viscosity = _field(viscosity, (self.nc, 27), "viscosity", positive=True)
+        if self._a_ptr is None:
+            # Built once, on first assembly; matrix-free users never allocate it.
+            self._a_ptr, self._a_indices, self._a_low, self._a_widths = _pattern(
+                self._velocity_grid, self._velocity_shape, 3)
         data = np.zeros(len(self._a_indices))
         pressure_mass_diagonal = np.zeros(self.np)
         components = np.arange(3)

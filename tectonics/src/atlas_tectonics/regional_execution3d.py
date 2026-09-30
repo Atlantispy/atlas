@@ -27,6 +27,8 @@ from scipy import sparse
 from scipy.sparse.linalg import LinearOperator, gmres, spilu, splu
 
 from . import regional_elements3d as elements3d
+from . import regional_multigrid3d as multigrid3d
+from . import regional_solver_selection3d as selection3d
 from ._validation import TectonicsError, scalar, frozen
 from .regional_execution import RegionalMechanicsScales, RegionalMechanicalSnapshot
 from .resources import select_budget, MemoryLimitError
@@ -90,6 +92,19 @@ def _magnitude(m):
     return sparse.csr_matrix((np.abs(m.data), m.indices, m.indptr), shape=m.shape)
 
 
+def _assembly_bytes(nc, nv, np_):
+    """Conservative sparse assembly, work arrays and result envelope of the assembled routes.
+
+    Allocator overhead and caller buffers are not an operating-system RSS guarantee.
+    """
+    return 8*1024**2+420000*nc+3000*(3*nv+np_)
+
+
+def _ilu_allowance(nnz, n):
+    """Admitted bytes for the incomplete factor of the free velocity block (checked after)."""
+    return 16*10*nnz+1024*n
+
+
 def _local_tokens(module):
     """Track the new modules as well as the retained context's fixed inventory."""
     out = []
@@ -104,6 +119,42 @@ def _local_tokens(module):
     return tuple(out)
 
 
+def _selection(cells, lengths, scales, pattern, viscosity_pa_s, available):
+    """The ``auto`` selection record for a validated box, pattern and scales.
+
+    Both methods' complete reservations are predicted with their own formulas
+    (``_assembly_bytes``/``_ilu_allowance`` and the multigrid projections),
+    without assembling, factoring or solving anything.
+    """
+    nc = int(np.prod(cells))
+    nv = int(np.prod(2*np.asarray(cells)+1))
+    np_ = int(np.prod(np.asarray(cells)+1))
+    eta = _array(viscosity_pa_s, (nc, 27), 'quadrature viscosity', scalar_ok=True, positive=True)
+    dimension = _factored_scale(np.asarray(lengths), (), (scales.length_m,), 'scaled box')
+    features = selection3d.workload_features(cells, np.asarray(lengths)/np.asarray(cells), eta, pattern)
+    nnz, free = selection3d.assembled_free_nonzeros(cells, pattern)
+    needs = dict(gmres=_assembly_bytes(nc, nv, np_)+_ilu_allowance(nnz, free),
+                 multigrid=selection3d.multigrid_bytes(cells, np.asarray(dimension, dtype=float)/np.asarray(cells),
+                                                       pattern))
+    try:
+        return selection3d.select(features, needs, available)
+    except ValueError as exc:
+        raise TectonicsError(str(exc)) from exc
+
+
+class _SharedPreparation:
+    """Viscosity-independent preparation a changed-viscosity plan may reuse.
+
+    Holds only geometry-bound data (mesh tables, the divergence matrix and, for
+    the multigrid candidate, masks, patterns and transfers). Its key is checked
+    against the new plan's cells, scaled dimensions, boundary pattern and method.
+    """
+    __slots__ = ('key', 'mesh', 'B', 'geometry')
+
+    def __init__(self, key, mesh, B, geometry):
+        self.key, self.mesh, self.B, self.geometry = key, mesh, B, geometry
+
+
 class PreparedRegionalStokes3D:
     """Prepared heterogeneous finite-box solver with bounded reusable factors.
 
@@ -112,12 +163,20 @@ class PreparedRegionalStokes3D:
     cannot acquire conflicting copies. Traction input uses face Gauss samples.
     Only the latest immutable solution is cached. Caller-held results are caller
     storage, not retained by an unbounded history. A changed material needs a new
-    plan. ``gmres`` is the normal path; ``direct`` is an explicitly bounded check.
+    plan; ``with_viscosity`` prepares one that reuses only viscosity-independent
+    structure. ``auto`` (the default) chooses ``multigrid`` or ``gmres`` for this
+    workload before anything is reserved (see ``regional_solver_selection3d``)
+    and records the request, the resolved method and the reason in the plan
+    definition. ``gmres`` (assembled operator, incomplete factor) is the reference
+    path; ``direct`` is an explicitly bounded check. ``multigrid`` is the
+    matrix-free method (see ``regional_multigrid3d``): the same equations, gates
+    and outputs without an assembled velocity block. Explicit methods are
+    honoured unchanged.
     """
     def __init__(self, cells, lengths_m, viscosity_pa_s, boundary_types, *,
                  scales, reference_viscosity_pa_s, frame_id, vertical_datum,
-                 material_source, physical_mean_pressure_pa=None, method='gmres',
-                 budget=None, cancel=None):
+                 material_source, physical_mean_pressure_pa=None, method='auto',
+                 budget=None, cancel=None, _shared=None, _selection_available_bytes=None):
         start = perf_counter()
         if (type(cells) not in (tuple, list) or len(cells) != 3
                 or any(type(n) is not int or not 2 <= n <= 24 for n in cells)):
@@ -131,8 +190,12 @@ class PreparedRegionalStokes3D:
         for value, name in ((frame_id, 'frame'), (vertical_datum, 'vertical datum'),
                             (material_source, 'material source')):
             _name(value, name)
-        if method not in ('gmres', 'direct'):
-            raise TectonicsError('select gmres or explicit direct method')
+        if method not in ('auto', 'gmres', 'direct', 'multigrid'):
+            raise TectonicsError('select auto, gmres, explicit direct or multigrid method')
+        if _selection_available_bytes is not None and (
+                method != 'auto' or type(_selection_available_bytes) is not int
+                or _selection_available_bytes < 0):
+            raise TectonicsError('a pinned selection allowance requires auto and nonnegative integer bytes')
         if type(boundary_types) is not dict or set(boundary_types) != set(SIDES):
             raise TectonicsError('all six boundary sides must be declared')
         pattern = {}
@@ -145,23 +208,54 @@ class PreparedRegionalStokes3D:
         self._active = False
         self._owner = threading.get_ident()
         self._context = self._latest = self._latest_key = self._mode_cache = None
+        self._mg = self._shared = None
         self._reservations = []
         self._resource = select_budget(budget)
         self._scales, self._eta0 = scales, eta0
-        self._lengths, self._pattern = lengths, pattern
+        self._cells, self._lengths, self._pattern = tuple(cells), lengths, pattern
+        self._identity = dict(frame_id=frame_id, vertical_datum=vertical_datum,
+                              physical_mean_pressure_pa=physical_mean_pressure_pa)
+        if type(_shared) is list:
+            # Handed over by with_viscosity: take the only reference, so structure
+            # this plan does not reuse is freed rather than held unreserved.
+            _shared = _shared.pop() if _shared else None
+        self._requested_method, self._selection = method, None
+        self._selection_available_bytes = _selection_available_bytes
+        if method == 'auto':
+            # Decided before anything is reserved; nothing is solved or timed to decide.
+            clock = perf_counter()
+            self._selection, available = self._select(viscosity_pa_s)
+            method = self._selection['method']
+            clock = perf_counter()-clock
+            if type(_shared) is _SharedPreparation and _shared.key[-1] != method:
+                _shared = None                  # prepared for the other method: nothing is shared
         self._method = method
+        self._reused = _shared is not None
         self._stats = dict(solves=0, result_hits=0, coupling_response_hits=0,
                            factorizations=0, krylov_iterations=0)
+        if method == 'multigrid':
+            self._stats.update(preconditioner_applications=0, geometry_reused=_shared is not None)
+        if self._selection is not None:
+            self._stats['solver_selection'] = dict(requested='auto', method=method,
+                reason=self._selection['reason'], seconds=clock, available_bytes=available,
+                selection_available_bytes=(available if self._selection_available_bytes is None
+                                           else self._selection_available_bytes))
         nc = int(np.prod(cells))
         nv = int(np.prod(2*np.asarray(cells)+1))
         np_ = int(np.prod(np.asarray(cells)+1))
-        # Conservative sparse assembly, work arrays and result envelope; allocator
-        # overhead and caller buffers are not an operating-system RSS guarantee.
-        self._retain(8*1024**2+420000*nc+3000*(3*nv+np_), 'regional3d-assembly')
+        if method != 'multigrid':
+            self._retain(_assembly_bytes(nc, nv, np_), 'regional3d-assembly')
         try:
+            if method == 'multigrid':
+                # Geometry tables, operators, Krylov/level work and the result
+                # envelope; factors are admitted separately once their sizes are
+                # known. Inside the try, so a refusal returns every reservation.
+                projected = multigrid3d.projected_bytes(cells)
+                self._retain(projected['structure'], 'regional3d-multigrid')
+                self._retain(projected['work'], 'regional3d-multigrid-work')
             _cancel(cancel)
             import sys
-            self._modules = (sys.modules[__name__], elements3d)
+            self._modules = (sys.modules[__name__], elements3d, multigrid3d, selection3d)
             for module in self._modules:
                 if hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() != module._LOADED_SOURCE_SHA256:
                     raise TectonicsError('3D source changed since import; restart the process')
@@ -169,12 +263,23 @@ class PreparedRegionalStokes3D:
             self._context = ExecutionContext('scipy')
             self._context_id = self._context.identity
             dimension = _factored_scale(np.asarray(lengths), (), (scales.length_m,), 'scaled box')
-            self._mesh = elements3d.TaylorHoodBox(tuple(cells), tuple(dimension))
+            key = (tuple(cells), tuple(float(x) for x in dimension),
+                   tuple((side, pattern[side]) for side in SIDES), method)
+            if _shared is not None and (type(_shared) is not _SharedPreparation or _shared.key != key):
+                raise TectonicsError('reused 3D preparation does not match this geometry, boundary or method')
+            self._mesh = elements3d.TaylorHoodBox(tuple(cells), tuple(dimension)) if _shared is None else _shared.mesh
             mesh = self._mesh
             self._eta = _array(viscosity_pa_s, (nc, 27), 'quadrature viscosity', scalar_ok=True, positive=True)
             eta = _factored_scale(self._eta, (), (eta0,), 'scaled viscosity')
-            with _native_lease():
-                self._A, self._B, self._pw, self._pd = mesh.assemble(eta, cancel=cancel)
+            if method == 'multigrid':
+                # No assembled velocity block: the divergence matrix is geometric.
+                self._A = self._pd = None
+                self._B = (sparse.csr_matrix((mesh._b_data, mesh._b_indices, mesh._b_ptr),
+                           shape=(mesh.np, 3*mesh.nv)) if _shared is None else _shared.B)
+                self._pw = np.array(mesh._pressure_weights)
+            else:
+                with _native_lease():
+                    self._A, self._B, self._pw, self._pd = mesh.assemble(eta, cancel=cancel)
             coord = mesh.velocity_coordinates
             mask = np.zeros((mesh.nv, 3), dtype=bool)
             for side in SIDES:
@@ -197,9 +302,14 @@ class PreparedRegionalStokes3D:
                 rigid[:, :, 3+j] = np.cross(np.eye(3)[j], xyz)
             if np.linalg.matrix_rank(rigid.reshape(-1, 6)[self._fixed]) != 6:
                 raise TectonicsError('boundary conditions leave a free rigid translation or rotation')
-            self._Af = self._A[self._free][:, self._free].tocsc()
-            self._Bf = self._B[:, self._free].tocsr()
-            pressure_leak = np.asarray(self._Bf.T@np.ones(mesh.np)).ravel()
+            if method == 'multigrid':
+                # B_f^T 1 is (B^T 1) on the free columns; no second copy of B.
+                self._Af = self._Bf = None
+                pressure_leak = np.asarray(self._B.T@np.ones(mesh.np)).ravel()[self._free]
+            else:
+                self._Af = self._A[self._free][:, self._free].tocsc()
+                self._Bf = self._B[:, self._free].tocsr()
+                pressure_leak = np.asarray(self._Bf.T@np.ones(mesh.np)).ravel()
             # Relative to the divergence entries themselves (they scale as the
             # squared dimensionless spacing); an absolute floor would mistake a
             # small traction box for a closed one.
@@ -212,25 +322,30 @@ class PreparedRegionalStokes3D:
             self._physical = not self._gauge or physical_mean_pressure_pa is not None
             self._mean = physical_mean_pressure_pa
             self._w = self._pw/np.sum(self._pw)
-            if self._gauge:
-                w = sparse.csc_matrix(self._w[:, None])
-                self._K = sparse.bmat([[self._Af, self._Bf.T, None],
-                                      [self._Bf, None, w], [None, w.T, None]], format='csc')
+            if method == 'multigrid':
+                self._prepare_multigrid(eta, pattern, projected, _shared, cancel)
             else:
-                self._K = sparse.bmat([[self._Af, self._Bf.T], [self._Bf, None]], format='csc')
-            if method == 'direct':
-                allowance = 16*self._K.shape[0]**2+1024*self._K.shape[0]
-            else:
-                allowance = 16*10*self._Af.nnz+1024*self._Af.shape[0]
-            self._retain(allowance, 'regional3d-factor')
-            with _native_lease():
-                _cancel(cancel)
-                self._factor = (splu(self._K, permc_spec='COLAMD') if method == 'direct'
-                                else spilu(self._Af, drop_tol=1e-4, fill_factor=8., permc_spec='COLAMD'))
-            if _sparse_bytes(self._factor.L)+_sparse_bytes(self._factor.U) > allowance:
-                raise MemoryLimitError('realised factor exceeded admitted factor allowance')
+                if self._gauge:
+                    w = sparse.csc_matrix(self._w[:, None])
+                    self._K = sparse.bmat([[self._Af, self._Bf.T, None],
+                                          [self._Bf, None, w], [None, w.T, None]], format='csc')
+                else:
+                    self._K = sparse.bmat([[self._Af, self._Bf.T], [self._Bf, None]], format='csc')
+                if method == 'direct':
+                    allowance = 16*self._K.shape[0]**2+1024*self._K.shape[0]
+                else:
+                    allowance = _ilu_allowance(self._Af.nnz, self._Af.shape[0])
+                self._retain(allowance, 'regional3d-factor')
+                with _native_lease():
+                    _cancel(cancel)
+                    self._factor = (splu(self._K, permc_spec='COLAMD') if method == 'direct'
+                                    else spilu(self._Af, drop_tol=1e-4, fill_factor=8., permc_spec='COLAMD'))
+                if _sparse_bytes(self._factor.L)+_sparse_bytes(self._factor.U) > allowance:
+                    raise MemoryLimitError('realised factor exceeded admitted factor allowance')
+                self._P = LinearOperator(self._K.shape, matvec=self._precondition, dtype=float) if method == 'gmres' else None
             self._stats['factorizations'] = 1
-            self._P = LinearOperator(self._K.shape, matvec=self._precondition, dtype=float) if method == 'gmres' else None
+            self._shared = _SharedPreparation(key, mesh, self._B if method == 'multigrid' else None,
+                                              self._mg.geometry if method == 'multigrid' else None)
             self._definition = dict(schema='atlas.regional3d-plan.v1', cells=list(cells),
                 lengths_m=list(lengths), scales=asdict(scales), reference_viscosity_pa_s=eta0,
                 viscosity_sha256=_digest_array(self._eta), boundary_types=pattern,
@@ -241,12 +356,81 @@ class PreparedRegionalStokes3D:
                 element='Q2/Q1 tensor-product hexahedron; 3-point Gauss in each direction',
                 coordinates='Cartesian right-handed x,y horizontal; z up from box bottom',
                 execution=self._context_id)
+            if self._selection is not None:
+                self._definition.update(requested_method='auto', solver_selection=self._selection)
+            if method == 'multigrid':
+                self._definition['solver'] = dict(multigrid3d.SETTINGS, max_iterations=1200,
+                                                  levels=self._mg.levels())
             self.plan_id = _hash(self._definition)
             self._verify()
             self._stats['prepare_seconds'] = perf_counter()-start
         except BaseException:
             self.close()
             raise
+
+    def _prepare_multigrid(self, eta, pattern, projected, shared, cancel):
+        """Matrix-free operator, hierarchy and factors for the candidate method."""
+        mesh = self._mesh
+        with _native_lease():
+            _cancel(cancel)
+            geometry = (multigrid3d.StructuredGeometry(mesh, pattern, self._fixed, self._free, self._B, cancel)
+                        if shared is None else shared.geometry)
+            allowance = multigrid3d.factor_allowance(geometry)
+            self._retain(allowance, 'regional3d-multigrid-factor')
+            try:
+                self._mg = multigrid3d.MultigridStokes(geometry, eta, cancel=cancel)
+            except ValueError as exc:
+                raise TectonicsError('3D multigrid preparation refused: '+str(exc)) from exc
+        if self._mg.factor_bytes() > allowance:
+            raise MemoryLimitError('realised multigrid factors exceeded admitted factor allowance')
+        structure = self._mg.structure_bytes()+sum(a.nbytes for a in (
+            mesh.velocity_coordinates, mesh.velocity_cells, mesh.pressure_cells,
+            mesh.quadrature_coordinates, self._eta, self._fixed, self._free))
+        if structure > projected['structure']:
+            raise MemoryLimitError('realised multigrid structure exceeded admitted allowance')
+        self._K = self._factor = self._P = None
+
+    def _select(self, viscosity_pa_s):
+        """Resolve ``auto`` before any reservation; refuse when neither method fits."""
+        available = self._resource.available_bytes
+        # Evolution pins the admission choices for restart reproducibility. This
+        # is a decision allowance only: every actual reservation still charges
+        # the live shared budget and may refuse, never silently choose a fallback.
+        decision_available = (available if self._selection_available_bytes is None
+                              else self._selection_available_bytes)
+        record = _selection(self._cells, self._lengths, self._scales, self._pattern,
+                            viscosity_pa_s, decision_available)
+        if record['method'] is None:
+            needs = record['admission']
+            raise MemoryLimitError('automatic 3D solver selection refused: neither gmres (%d bytes) nor '
+                                   'multigrid (%d bytes) fits the %d bytes available; no limit was raised'
+                                   % (needs['gmres']['bytes'], needs['multigrid']['bytes'], decision_available))
+        return record, available
+
+    def with_viscosity(self, viscosity_pa_s, *, material_source, cancel=None, release=False):
+        """Prepare a new plan for changed viscosity, reusing geometry-bound structure.
+
+        Cells, lengths, boundary pattern, scales, reference viscosity, frame,
+        datum, mean pressure, requested method and budget are carried over. Only viscosity-independent data are shared
+        (mesh tables, divergence matrix, masks, sparsity patterns and multigrid
+        transfers); operators, factors, caches and identity are new. With
+        ``release`` this plan is closed first, so its operators and reservations
+        are returned before the new plan is admitted (the same peak as closing and
+        preparing afresh); otherwise it remains open and unchanged.
+
+        An ``auto`` plan selects again for the new viscosity exactly as a fresh
+        plan with the same selection allowance would. If that changes the method, nothing is shared and the plan
+        is prepared afresh; the old structure is released with the old plan.
+        """
+        self._verify()
+        arguments = dict(scales=self._scales, reference_viscosity_pa_s=self._eta0, material_source=material_source,
+                         method=self._requested_method, budget=self._resource, cancel=cancel,
+                         _selection_available_bytes=self._selection_available_bytes,
+                         _shared=[self._shared], **self._identity)
+        cells, lengths, pattern = list(self._cells), self._lengths, dict(self._pattern)
+        if release:
+            self.close()
+        return PreparedRegionalStokes3D(cells, lengths, viscosity_pa_s, pattern, **arguments)
 
     def _retain(self, count, category):
         guard = self._resource.reserve(int(count), category=category)
@@ -297,7 +481,22 @@ class PreparedRegionalStokes3D:
         self._verify()
         return json.loads(_json(self._definition))
 
+    @property
+    def method(self):
+        """The method that prepared this plan (``auto`` already resolved)."""
+        return self._method
+
+    @property
+    def requested_method(self):
+        return self._requested_method
+
+    def solver_selection(self):
+        """A copy of the automatic selection record; None for an explicit method."""
+        return None if self._selection is None else json.loads(_json(self._selection))
+
     def statistics(self):
+        if self._mg is not None:
+            self._stats['preconditioner_applications'] = self._mg.applications
         return dict(self._stats, budget=self._resource.statistics())
 
     def _precondition(self, rhs):
@@ -356,7 +555,8 @@ class PreparedRegionalStokes3D:
         if requested and not (np.any(load) or np.any(lift)):
             raise TectonicsError('nonzero 3D forcing underflows to zero in assembly; '
                                  'choose RegionalMechanicsScales near the problem magnitudes')
-        lifted = self._A@lift
+        multigrid = self._method == 'multigrid'
+        lifted = self._mg.apply(lift) if multigrid else self._A@lift
         rv = (load-lifted)[self._free]
         rp = -self._B@lift
         # A declared mean pressure is added after solving: a closed box has
@@ -371,15 +571,33 @@ class PreparedRegionalStokes3D:
         _cancel(cancel)
         count = 0
         nf, npr = len(self._free), self._mesh.np
-        magnitude_a, magnitude_b = _magnitude(self._A), _magnitude(self._B)
-        stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
+        if multigrid:
+            # Assembled |A| row sums and products are regenerated from element
+            # contributions (summed before the absolute value), not stored.
+            magnitude_a, magnitude_b = None, _magnitude(self._B)
+            stiffness = float(np.max(self._mg.row_magnitudes()[self._free], initial=0.))
+        else:
+            magnitude_a, magnitude_b = _magnitude(self._A), _magnitude(self._B)
+            stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
+        latest = {}
+
+        def products(u):
+            """A u and |A||u| with the assembled entries of A."""
+            if multigrid:
+                return self._mg.products(u, cancel=cancel)
+            return self._A@u, magnitude_a@np.abs(u)
 
         def implied_velocity(x):
             """Momentum operand scale and the velocity magnitude it implies."""
+            if 'x' in latest and np.array_equal(latest['x'], x):
+                return latest['value']
             u = lift.copy(); u[self._free] = x[:nf]
-            scale = float(np.max((magnitude_a@np.abs(u)+magnitude_b.T@np.abs(x[nf:nf+npr])
+            au, viscous = products(u)
+            scale = float(np.max((viscous+magnitude_b.T@np.abs(x[nf:nf+npr])
                                   +np.abs(load))[self._free], initial=0.))
-            return u, scale, (scale/stiffness if stiffness > 0. else 0.)
+            latest['x'] = x.copy()
+            latest['value'] = (u, scale, (scale/stiffness if stiffness > 0. else 0.), au, viscous)
+            return latest['value']
 
         def solve(vector, candidate=False):
             """Solve K y = vector. A refinement correction (candidate=True) that
@@ -398,6 +616,23 @@ class PreparedRegionalStokes3D:
                 nonlocal count
                 count += 1
                 _cancel(cancel)
+            if multigrid:
+                # Aims for a stricter target but counts as converged only when the
+                # recomputed true residual meets the reference's own relative target
+                # (never looser), with the same 1200-iteration ceiling. The method is
+                # flexible, so no variation of the preconditioner could invalidate
+                # its Krylov relation.
+                try:
+                    y, converged, _ = self._mg.solve(vector/size, self._gauge,
+                        min(_LINEAR_RTOL, multigrid3d.SETTINGS['krylov_rtol']), 1200, callback,
+                        accept=_LINEAR_RTOL)
+                except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
+                    raise TectonicsError('3D multigrid Krylov solve failed: '+str(exc)) from exc
+                if candidate:
+                    return y*size, converged
+                if not converged:
+                    raise TectonicsError('3D FGMRES-DR did not converge; no silent direct fallback')
+                return y*size
             # atol=0: SciPy then stops at rtol*||rhs||_2, a purely relative target.
             y, info = gmres(self._K, vector/size, M=self._P, rtol=_LINEAR_RTOL, atol=0.,
                             restart=60, maxiter=1200, callback=callback, callback_type='legacy')
@@ -428,11 +663,13 @@ class PreparedRegionalStokes3D:
             """Combined and blockwise residuals of a zero-mean solution."""
             if not np.all(np.isfinite(x)):
                 raise TectonicsError('nonfinite 3D solve')
-            error = float(np.linalg.norm(self._K@x-rhs, np.inf)/rhs_norm) if forced else 0.
-            u, _, implied = implied_velocity(x)
+            if not multigrid:
+                error = float(np.linalg.norm(self._K@x-rhs, np.inf)/rhs_norm) if forced else 0.
+            u, _, implied, au, viscous = implied_velocity(x)
             p = x[nf:nf+npr]
-            balance = self._A@u+self._B.T@p-load
+            balance = au+self._B.T@p-load
             momentum_error = continuity_error = 0.
+            residual = None
             if forced:
                 # Blockwise backward errors against the magnitudes each block sums,
                 # so a dominant continuity (or momentum) right-hand side cannot hide
@@ -442,7 +679,6 @@ class PreparedRegionalStokes3D:
                 # round-off (256 eps) of the pressure and load terms: in a
                 # load-dominated state those terms cancel, and at full weight they
                 # would admit velocity errors far above 2e-9 of the velocity scale.
-                viscous = magnitude_a@ua
                 balanced = magnitude_b.T@np.abs(p)+np.abs(load)
                 momentum_error = block(balance[self._free], (viscous+(256*_EPS/2e-9)*balanced)[self._free])
                 # Continuity against |B||u| plus the round-off (64 eps) of the
@@ -456,8 +692,14 @@ class PreparedRegionalStokes3D:
                     continuity = continuity+self._w*x[-1]
                     continuity_terms = continuity_terms+self._w*abs(x[-1])
                 continuity_error = block(continuity, continuity_terms)
+                if multigrid:
+                    # K x - rhs from the same assembled-entry rows the blocks judge.
+                    residual = np.concatenate((balance[self._free], continuity)
+                                              + (([float(self._w@p)],) if self._gauge else ()))
+            if multigrid:
+                error = float(np.linalg.norm(residual, np.inf)/rhs_norm) if forced else 0.
             return dict(error=error, momentum=momentum_error, continuity=continuity_error,
-                        u=u, p=p, balance=balance)
+                        u=u, p=p, balance=balance, magnitude=viscous, residual=residual)
 
         passes = lambda a: a['error'] <= 2e-9 and a['momentum'] <= 2e-9 and a['continuity'] <= 2e-9
         badness = lambda a: max(a['error'], a['momentum'], a['continuity'])
@@ -467,7 +709,8 @@ class PreparedRegionalStokes3D:
             unconverged GMRES correction is kept only if it lowers the worst gate
             ratio. Either way the published solution faces every gate."""
             try:
-                correction, converged = solve(rhs-self._K@x, candidate=True)
+                correction, converged = solve(-state['residual'] if multigrid else rhs-self._K@x,
+                                              candidate=True)
             except TectonicsError:
                 return None
             trial = gauged(x+correction)
@@ -490,7 +733,7 @@ class PreparedRegionalStokes3D:
             # error is tiny. Refine (at most twice) only when the velocity is
             # below 1% of the magnitude the load implies.
             for _ in range(2):
-                u_now, _, implied_now = implied_velocity(x)
+                u_now, _, implied_now, _, _ = implied_velocity(x)
                 if not (np.all(np.isfinite(x)) and float(np.max(np.abs(u_now))) < 1e-2*implied_now):
                     break
                 step = refine(x, assess(x))
@@ -534,7 +777,8 @@ class PreparedRegionalStokes3D:
         self._stats['krylov_iterations'] += count
         errors = dict(linear=error, momentum=momentum_error, continuity=continuity_error, forced=forced,
                       refinements=refinements)
-        datum = dict(mean=mean, reaction=datum_reaction.reshape(-1, 3))
+        # |A||u| of the published solution, reused by the work round-off bound.
+        datum = dict(mean=mean, reaction=datum_reaction.reshape(-1, 3), viscous_magnitude=state['magnitude'])
         return u.reshape(-1, 3), p, constrained_reaction.reshape(-1, 3), errors, count, momentum_residual, datum
 
     def solve(self, body_force_n_m3, velocity_m_s, traction_pa, *, parent_state_id,
@@ -704,16 +948,17 @@ class PreparedRegionalStokes3D:
         load = self._mesh.load(f,extra_stress=s)+natural
         return f,d,t,s,body,natural,load
 
-    def _work_roundoff(self, u, p, r, extra, load, body, natural, pressure_q):
+    def _work_roundoff(self, u, p, r, extra, load, body, natural, pressure_q, viscous):
         """Binary64 round-off bound of the work identity.
 
         Bounded by the magnitudes of the terms actually multiplied and summed
         (|A||u|, |B^T||p|, loads and reactions; quadrature powers use a 4/h
         per-node shape-derivative bound), times 64 units of round-off. Nothing
         here is an absolute floor, so rescaling the problem cannot bypass it.
+        ``viscous`` is |A||u| (assembled entries) of this same solution.
         """
         ua = np.abs(u.ravel())
-        operands = float(ua@(_magnitude(self._A)@ua)+np.abs(p)@(_magnitude(self._B)@ua)
+        operands = float(ua@viscous+np.abs(p)@(_magnitude(self._B)@ua)
                          +ua@(np.abs(load)+np.abs(body)+np.abs(natural)+np.abs(r.ravel())))
         gradient_bound = 108/float(np.min(self._mesh._spacing))*np.max(
             np.abs(u)[self._mesh.velocity_cells], axis=(1, 2))
@@ -745,7 +990,8 @@ class PreparedRegionalStokes3D:
         work_error -= math.fsum(u.ravel()*momentum)
         work_scale = max(abs(viscous_power)+abs(extra_power)+abs(pressure_power),
                          abs(body_power)+abs(natural_power)+abs(reaction_power))
-        work_scale += self._work_roundoff(u,p,r,extra,load,body,natural,values['pressure_q'])/5e-9
+        work_scale += self._work_roundoff(u,p,r,extra,load,body,natural,values['pressure_q'],
+                                          datum['viscous_magnitude'])/5e-9
         if not (math.isfinite(work_scale) and math.isfinite(work_error)):
             raise TectonicsError('3D mechanical work is outside binary64 range; '
                                  'choose RegionalMechanicsScales near the problem magnitudes')
@@ -798,8 +1044,10 @@ class PreparedRegionalStokes3D:
         if getattr(self,'_closed',True):
             return
         self._closed = True
+        if self._mg is not None:
+            self._stats['preconditioner_applications'] = self._mg.applications
         self._factor = self._P = self._K = self._A = self._B = self._Af = self._Bf = None
-        self._mesh = self._latest = self._mode_cache = None
+        self._mesh = self._latest = self._mode_cache = self._mg = self._shared = None
         self._context = None
         for guard in reversed(self._reservations):
             guard.__exit__(None,None,None)

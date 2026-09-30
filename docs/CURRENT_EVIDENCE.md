@@ -66,12 +66,17 @@ Successor r5 was captured after R1 and its dtype-identity correction were integr
 all five controls passed with unchanged sources. Its valid upstream receipts were reused.
 See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r2.json)
-was recaptured after R1 and its dtype-identity correction. It supersedes r1 without rewriting it, and
-records five repetitions on one Windows machine, unchanged sources and passing
-equality/parity comparisons. Its 149 source-file digests are checked by the
-register; its opaque package/native `execution_identity` is classified as an
-unchecked runtime observation. This is operational timing, not scientific
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r5.json)
+was recaptured on 30 September 2026 after the automatic 3-D evolution restart
+admission fix changed two bound package modules. Multigrid-first remains unchanged.
+It supersedes r4, captured after the multigrid-first choice was applied locally;
+r4 superseded r3's earlier uncommitted choice, r3 superseded r2, and r2 succeeded r1
+after R1. None was rewritten. r5 records five repetitions on one Windows machine,
+unchanged sources and passing equality/parity comparisons. Its 151 source-file digests
+are checked by the register; its opaque package/native `execution_identity` is
+classified as an unchecked runtime observation. A further change to any package
+source makes r5 stale in turn. The column does not use the 3-D solvers; this renews
+source bindings, not a 3-D speedup measurement. This is operational timing, not scientific
 acceptance, a whole-generator speed claim or other-platform evidence.
 
 I02.1 adds a package module, changing source membership and native execution

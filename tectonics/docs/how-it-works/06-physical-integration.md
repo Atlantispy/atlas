@@ -196,6 +196,55 @@ from viscous heating. That interface does not itself update elastic history.
 The solver prepares its sparse matrix once, reuses factors for changed loads,
 and keeps only one latest result and one motion-response cache.
 
+That stored matrix is what limited resolution. Each velocity unknown is coupled
+to about 180 others, so the matrix and its approximate factor grew so quickly that
+the default memory allowance refused every 7x7x7 box. A second solver avoids
+that. It is a reviewed optimisation candidate, now applied locally with the
+automatic choice described below and not yet accepted. It applies the same
+equations directly from one shared table for
+a standard box-shaped cell, without storing the big matrix. It speeds up the
+iteration with a hierarchy of coarser versions of the same problem: first simpler
+functions on the same cells, then larger cells. It finishes with the same checks,
+tolerances and outputs as before. Viscosity is sampled at the same points on the
+coarser levels, so strong and weak rock stay distinct there. When only the
+viscosity changes, the box layout, boundary pattern and coarse-level connections
+are reused rather than rebuilt. The
+[method section](../REGIONAL_MECHANICS_3D.md#matrix-free-multigrid-candidate-i072-solver-scaling)
+lists the papers and programs consulted
+([May, Brown and Le Pourhiet](https://jedbrown.org/files/MayBrownLePourhiet-ScalableMatrixFreeMultigridPreconditionerFEHeterogeneousStokes-2015.pdf),
+[Clevenger and Heister](https://arxiv.org/abs/1907.06696), ASPECT, PETSc and
+MFEM) and what the scratch measurements found.
+
+Which solver runs is now decided per prepared problem, unless the caller names
+one. Before anything is reserved, Atlas works out how much memory each solver
+would need, and measures how varied the viscosity is, the shape of the cells and
+how many cells there are. The new solver runs whenever it fits the memory
+allowance and the problem lies in the range where it has been shown to converge:
+- viscosity varying by up to a factor of 100,000 in near-cubic cells, or up to
+  1,000 in cells as flat as 4:1;
+- at least 4 cells along every axis.
+
+Outside that range, or when only the original solver fits, the original solver
+runs. If neither fits, the problem is refused. The rule solves nothing to decide
+and takes about a millisecond. Each result records which solver ran and why, and
+a saved run can only be continued with the same selection policy and set of
+admitted solvers. Evolution keeps those admission choices fixed: temporary
+competition for shared memory refuses work rather than silently switching
+solver. Changed viscosity can still change the choice under the recorded rule.
+
+On 29 measured problems, the new solver was faster or about equal in 27 and
+passed every check in all of them. Choosing it everywhere took about a quarter
+of the original solver's time; an earlier, more cautious rule took about half.
+That aggregate does not include the separate range-edge probes. Some small,
+rough-viscosity cases lose more: one took 2.37 seconds instead of 0.97 seconds
+(1.40 seconds, or 144%, longer). Easy problems solved many times over can also
+be slower. Multigrid-first deliberately accepts these exceptions; it is not a
+promise to choose the fastest solver for every workload.
+Above the stated range each solver fails some cases the other solves, so the
+original stays the choice there. The
+[method section](../REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto)
+gives the rule, its measurements and its limits.
+
 [FEniCSx](https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_stokes.html)
 and [ASPECT](https://aspect-documentation.readthedocs.io/en/latest/user/methods/numerical-methods.html)
 informed the mixed-element and block-solver choices. The actual

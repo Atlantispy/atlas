@@ -26,7 +26,8 @@ from atlas_tectonics.regional_execution3d import PreparedRegionalStokes3D, SIDES
 
 def bindings():
     names = ['tools/check_regional3d.py', 'docs/REGIONAL_MECHANICS_3D.md',
-             'tests/test_regional_elements3d.py', 'tests/test_regional_execution3d.py']
+             'tests/test_regional_elements3d.py', 'tests/test_regional_execution3d.py',
+             'tests/test_regional_multigrid3d.py', 'tests/test_regional_solver_selection3d.py']
     names += [str(p.relative_to(ROOT)).replace('\\', '/')
               for p in sorted((ROOT/'src'/'atlas_tectonics').glob('*.py'))]
     return {n: hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in names}
@@ -37,7 +38,7 @@ def cross_shear(xyz):
     return np.stack((y*z,z*x,x*y),axis=-1)
 
 
-def controls():
+def controls(method='gmres'):
     start = perf_counter()
     cells = (4,4,4)
     nodes = np.indices((9,9,9)).reshape(3,-1).T/8
@@ -53,7 +54,7 @@ def controls():
             {side:('velocity',)*3 for side in SIDES},
             scales=RegionalMechanicsScales(1.,1.),reference_viscosity_pa_s=1.,
             frame_id='analytical-Cartesian',vertical_datum='box-bottom-z-zero',
-            material_source='eta=1+x analytic field',physical_mean_pressure_pa=0.)
+            material_source='eta=1+x analytic field',physical_mean_pressure_pa=0.,method=method)
     def solve(plan,parent):
         return plan.solve(force,velocity,traction,parent_state_id=parent,
             epoch_id='same-time',time_s=0.,force_source='continuous-manufactured-force',
@@ -102,12 +103,16 @@ def controls():
             'weak_divergence_max','quadrature_divergence_l2','krylov_iterations')},
         benchmark=dict(cells=list(cells),samples_seconds=samples,median_seconds=med,savings=savings,
             scope='same-time 4x4x4 exact 3D heterogeneous fixture, imported runtime, not world speedup',
+            method=method,
             prepared_statistics=stats), execution_identity=descriptor['plan']['execution'])
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--method',choices=('gmres','multigrid','auto'),default='gmres',
+                        help='assembled reference (default), the matrix-free multigrid method, '
+                             'or the automatic selection between them')
     args = parser.parse_args()
     with args.output.open('x',encoding='utf-8',newline='\n') as out:
         begin = perf_counter()
@@ -117,7 +122,7 @@ def main():
                          numpy=np.__version__,scipy=scipy.__version__))
         try:
             report['source_sha256'] = bindings()
-            report.update(controls())
+            report.update(controls(args.method))
             report['source_unchanged'] = report['source_sha256'] == bindings()
             report['status'] = 'PASS_BOUNDED_CONTROLS_ONLY' if report['passed'] and report['source_unchanged'] else 'FAIL'
         except Exception as exc:

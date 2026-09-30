@@ -109,6 +109,28 @@ reuses it. Mechanics retains one operator for exactly unchanged viscosity, plus
 one endpoint result reusable as the next interval's start when state and driving
 identities match. Changed viscosity rebuilds the operator; it is never reused
 because a change merely looks small. Old factors are released before replacement.
+The rebuild goes through `with_viscosity(..., release=True)`: the old plan is
+closed first, then the new plan reuses only the viscosity-independent mesh tables,
+divergence matrix, masks and patterns. The results are bitwise the same as
+preparing afresh. `mechanics_method` selects `auto` (default), `gmres`,
+`direct` or the
+[matrix-free multigrid method](REGIONAL_MECHANICS_3D.md#matrix-free-multigrid-candidate-i072-solver-scaling),
+and the choice is part of the plan identity. Under
+[`auto`](REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto),
+each prepared operator chooses multigrid or gmres from its own inputs, exactly as
+a fresh plan with the same selection allowance would, so a viscosity drifting across the rule's range switches
+method at that step. A change of method shares no preparation. The evolution
+definition records the selection policy and which of the two methods fit its
+mechanical allowance. This allowance is established after fixed preparation,
+leaving room for the advance workspace. These admission choices stay pinned;
+temporary pressure on a shared or parent budget can refuse work, but cannot
+silently choose another solver. Every actual reservation still uses the live
+budget. A reopened plan with a different admitted-method mask refuses the saved
+state; different byte limits with the same mask remain compatible. Viscosity
+changes can still switch methods under the recorded policy and admission mask.
+Statistics count preparations by resolved method and method switches. Focused
+regressions cover changed masks, compatible budgets and temporary contention
+followed by recovery, without rerunning the numerical benchmark campaign.
 Source/runtime identities, frame, parent, source and result hashes remain bound.
 Admission uses the shared byte budget; it is not an operating-system memory cap.
 

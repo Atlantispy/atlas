@@ -3,11 +3,11 @@
   "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
-      "id": "i02-workflow-timing-r2",
-      "path": "tectonics/evidence/i02-workflow-timing-r2.json",
-      "sha256": "ebc1584b438214e7c9815a6d099a43101028ae33640166bf16b28209dc3faf01",
+      "id": "i02-workflow-timing-r5",
+      "path": "tectonics/evidence/i02-workflow-timing-r5.json",
+      "sha256": "a9df0f954604f0e5e4ec2f0a32b1f8527f933bb826bda414b640846089d75656",
       "status": "current",
-      "note": "Operational Windows timing recaptured after integrating R1 and the reviewed dtype-identity correction on 30 September 2026. Five repetitions, unchanged source bindings and all seven equality/parity checks passed. No scientific acceptance or whole-world claim.",
+      "note": "Operational Windows timing recaptured on 30 September 2026 after fixing the automatic 3-D evolution restart admission context. Multigrid-first remains unchanged. Five repetitions, 151 unchanged source bindings and all seven equality/parity checks passed. The bounded column does not use the 3-D solvers: this renews source bindings, not a 3-D speedup measurement. Local changes are not committed. No scientific acceptance or whole-world claim.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -25,6 +25,30 @@
         "One Windows machine and interpreter; no other-platform or whole-generator performance claim.",
         "The bounded column workflow preserves the retained scientific tolerances and 256-step ceiling; timing and numerical parity do not establish physical validation or generated-world acceptance."
       ]
+    },
+    {
+      "id": "i02-workflow-timing-r4",
+      "path": "tectonics/evidence/i02-workflow-timing-r4.json",
+      "sha256": "81baafa7e03a1b5f8501647cb3c493de7cb5a134e2078133513cd161ceb950bc",
+      "status": "superseded",
+      "note": "The automatic 3-D evolution restart admission fix changed two bound package sources. Superseded by i02-workflow-timing-r5 after its recapture passed. Original receipt bytes and measurements remain unchanged.",
+      "superseded_by": "i02-workflow-timing-r5"
+    },
+    {
+      "id": "i02-workflow-timing-r2",
+      "path": "tectonics/evidence/i02-workflow-timing-r2.json",
+      "sha256": "ebc1584b438214e7c9815a6d099a43101028ae33640166bf16b28209dc3faf01",
+      "status": "superseded",
+      "note": "The 3-D solver scaling changed bound package sources (regional_elements3d, regional_execution3d and regional_evolution3d; regional_multigrid3d and regional_solver_selection3d added); superseded by i02-workflow-timing-r3 after its recapture passed. Original receipt bytes and measurements remain unchanged.",
+      "superseded_by": "i02-workflow-timing-r3"
+    },
+    {
+      "id": "i02-workflow-timing-r3",
+      "path": "tectonics/evidence/i02-workflow-timing-r3.json",
+      "sha256": "e7e08cb16d36a131cf195e4d6a9dbcf927448ea3cea8aee5c856e70781f38f86",
+      "status": "superseded",
+      "note": "Captured on the first, cost-predicting version of the automatic 3-D solver choice (never committed). That version was replaced the same day by the multigrid-first rule, which changed bound package sources; superseded by i02-workflow-timing-r4 after its recapture passed. Receipt bytes and measurements remain unchanged.",
+      "superseded_by": "i02-workflow-timing-r4"
     },
     {
       "id": "i02-workflow-timing-r1",
