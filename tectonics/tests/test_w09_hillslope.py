@@ -96,6 +96,33 @@ class HillslopeTests(unittest.TestCase):
             self.assertEqual(again.state.tags,s.tags)
             self.assert_balance(r.state); self.assert_balance(again.state)
 
+    def test_completed_partitions_end_exactly_at_the_requested_time(self):
+        # R1 (latent): the last partition target and state.time_s+used could
+        # differ from the requested end by one ulp for full-mantissa clocks.
+        rng = np.random.default_rng(7)
+        with model([1.,1.],[[0,1]],[1.],[1.]) as p:
+            for _ in range(40):
+                start = float(rng.uniform(0.001,5.)); duration = float(rng.uniform(0.1,3.))
+                parts = int(rng.integers(1,6))
+                state = p.initial_state([0.,0.],[[2250.],[1500.]],[tag()],time_s=start)
+                result = p.advance(state,duration,partitions=parts)
+                self.assertEqual(result.status,'COMPLETE')
+                self.assertEqual(result.state.time_s,result.requested_end_time_s)
+
+    def test_continuation_after_depletion_can_declare_the_original_end(self):
+        # Verification finding: resuming with requested_end-state.time_s could
+        # land one ulp away from the original requested end.
+        start, end = 0.020301896609317943, 0.3
+        self.assertNotEqual(start+(end-start), end)
+        with model([1.,1.],[[0,1]],[1.],[1.]) as p:
+            state = p.initial_state([0.,0.],[[2250.],[1500.]],[tag()],time_s=start)
+            result = p.advance(state,end-start,end_time_s=end)
+            self.assertEqual(result.requested_end_time_s,end)
+            if result.status == 'COMPLETE':
+                self.assertEqual(result.state.time_s,end)
+            with self.assertRaises(TectonicsError):
+                p.advance(state,.5,end_time_s=end)
+
     def test_evolving_flux_is_implicit_and_time_refines(self):
         # Two equal cells, phi=.4: ds/dt=-2 D s/(1-s^2).
         # Its independent implicit analytic solution obeys log(s)-s^2/2=C-2Dt.

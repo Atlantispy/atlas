@@ -42,6 +42,83 @@ SSP-RK2 advances the surface and inventory together, without post-hoc volume
 correction or artificial surface traction. The pressure reference is the
 physical top traction, not an arbitrary zero-mean gauge.
 
+### Relaxation timestep gate and end time (R1, 30 September 2026)
+
+Before this change nothing limited the step length except a displacement check
+that scales with the (small) amplitude. Explicit SSP-RK2 multiplies a relaxing
+mode by `G(z) = 1 - z + z^2/2` per step, with `z = rate*dt`; above `z = 2` the
+mode grows. In the review (finding s08-1) three steps at `z = 4` grew a cosine
+128-fold and a 24,957-year SI step turned 5 m of relief into 7.93 m (exact
+0.41 m), while every volume, mass and density gate passed at round-off.
+
+**Fastest rate.** For this route (homogeneous layer on a no-slip base, free-slip
+sides, gravity only) the finite-depth decay rate of a cosine of wavenumber k is
+`rho g/(2 eta k) (sinh kH cosh kH - kH)/(cosh^2 kH + (kH)^2)`, the closed form
+already used by the B09 oracle (`tests/w07_surface_reference.py`, checked there
+against an independent traction boundary-value solve and the thin/deep limits).
+Maximising it over k gives `0.160698 rho g H/eta` at `kH = 2.1195`; this
+re-derivation agrees with the reviewer's value. The gate uses the thickest
+column, `H_max`, of both stages of each step.
+
+**Discrete operator.** A scratch measurement of the full discrete relaxation
+spectrum (finite-difference response matrix of the actual solver, flat layers,
+2 to 8 vertical elements) found the physical branch within 1.2% of the
+continuum bound while the element width is at most the layer depth (7.6% at
+1.33 H). Wide elements add a spurious intra-element branch: 2.0 times the bound
+at width 4H and 3.08 times (0.495 rho g H/eta, apparently saturating near 0.5)
+at 32H, almost independent of the vertical element count. A timestep limit set
+from the continuum bound also covers that branch, as shown next.
+
+**Accuracy limit.** Let `zeta = 0.160698 rho g H_max dt/eta`. For the fastest
+physical mode the Heun error relative to exact decay is:
+
+| zeta | error after one e-folding | largest error / initial amplitude (any duration) |
+| --- | --- | --- |
+| 0.05 | 0.043% | 0.016% |
+| 0.1 (default) | 0.18% | 0.066% |
+| 0.25 (maximum) | 1.26% | 0.47% |
+
+The route's declared B09 amplitude gate is 1% at the finest mesh, so the
+default `relaxation_step_limit=0.1` spends less than a fifth of it on time
+discretisation. For the flat reference state the spurious branch then has
+`z <= 0.31` (`z <= 0.77` at the 0.25 maximum), so every mode of that spectrum
+decays monotonically (`0 < G < 1`). Larger declared limits are refused.
+
+**Surface Courant limit.** A sloped surface adds another family: surface-parallel
+flow advects relief, giving nearly imaginary eigenvalues `lambda*dt = i*y`. For
+these SSP-RK2 has `|G|^2 = 1 + y^4/4`, which exceeds 1 for any step, while their
+size is set by the flow speed, not by rho g H/eta. Adversarial verification
+found an admitted single step on a 32x2 mesh with 0.3H relief growing a seeded
+mode 1.135-fold (1.52-fold over ten advances) while every conservation gate
+passed. A scratch measurement of the discrete Jacobian over 8-32 columns, 2-4
+layers, W/H 2 and 6 and relief 0.1-0.5H gave `y <= 2.064 C`, where
+`C = max|u_top| dt/dx_node` is the surface Courant number (dx_node is half the
+element width). Each step must therefore also satisfy `C <= surface_courant_limit`
+(default and maximum 0.1; a caller may only tighten it), using the larger surface
+speed of the predictor and corrector stages. At 0.1 `y <= 0.21`, so a purely
+advective mode grows by at most `1 + y^4/8 = 1.0002` per step, the same order as
+the relaxation gate's per-step error; relaxation damps the finest surface modes
+more strongly than that at admitted steps. A second verification round showed why
+looser values are refused: at 0.25 a seeded mode grew 12.6% beyond a substepped
+reference over 64 admitted steps (per-step factor about 1.008). With the named number of substeps the seeded mode above
+tracks a 48-substep reference to within 0.2% over five advances.
+
+The gates refuse rather than subdivide, so the declared partition is what is
+published. The relaxation test runs before any solve, on the rounded substep
+boundaries actually integrated, and names the minimum admissible step count (or
+says that more than the remaining accepted-step budget would be needed); each substep is rechecked with the
+trial stage's geometry, the Courant test uses both stages, and the corrector's
+displacement obeys the same 0.2-element-height envelope as the predictor. On the
+B09 case at the limit, the measured time-only error after one e-folding is 0.12%,
+matching the table.
+
+**End time.** The last substep ends exactly at the declared end: the caller's
+`end_time_s` (whose duration must be exactly `end - start`), or `start+duration`.
+Interior boundaries keep the former `start+duration*i/n` form. This is the
+shared rule in `timebase.interval_end`/`interval_partition`, also used by W07
+heat, W08 and W09; previously `start+duration*n/n` could miss a full-mantissa
+output time by one ulp, and the workflow then refused its own fresh result.
+
 Exact element Jacobian minima, linear/independent mechanical gates, cell fluxes,
 volume and mass are checked under the existing tolerances. Finite-element
 continuity is weak/element-integrated; pointwise divergence is separately
@@ -165,8 +242,9 @@ Isolated timing SHA-256: `635ddacb3434c3bdac831050a08e4bb48d8f9e22b51f8719437927
   advection. Relevant method text read; ASPECT was not executed.
 - [ASPECT 3.0 free-surface stabilisation documentation](https://aspect-documentation.readthedocs.io/en/v3.0.0/user/methods/freesurface/stabilization.html):
   reviewed its Kaus-et-al-based quasi-implicit traction approach. Not enabled;
-  explicit timestep refinement is used here. This is not a claim of a separate
-  full Kaus-paper review this turn.
+  explicit timestep refinement is used here, and since R1 it is enforced by the
+  relaxation and surface Courant gates above rather than only advised. This is not a claim of a
+  separate full Kaus-paper review this turn.
 - [ASPECT ViscoPlastic documentation](https://aspect-documentation.readthedocs.io/en/latest/doxygen/classaspect_1_1MaterialModel_1_1ViscoPlastic.html)
   and [DruckerPrager documentation](https://aspect.geodynamics.org/doc/doxygen/classaspect_1_1MaterialModel_1_1Rheology_1_1DruckerPrager.html):
   detailed 2D strength and effective viscosity formulas checked. The frozen C01

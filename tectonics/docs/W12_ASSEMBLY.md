@@ -205,6 +205,13 @@ case and native dependencies, then computes missing work only. Older reports
 remain untouched. A repeated run ID cannot launch a second calculation; different
 inputs under that ID refuse. Browser draft Save is still not checkpoint saving.
 
+**Effect of the unreviewed I02 candidate (29 September 2026).** Applying it changes
+the package execution identity and `tectonics_job.py` and `read_tectonics.py`
+(Windows file-replacement retries). A job started before it then refuses `resume`
+with `SOURCE_MISMATCH`, and its saved results, read through `read_tectonics.py` or
+the view adapter, report `VERIFICATION_FAILED`. Nothing is rebound; see the
+[I02 workflow](I02_WORKFLOW.md#8-evidence-effects).
+
 OS file locks enforce one active job per root and one owner per job on Windows
 and POSIX. Locks release on process death; no PID reuse heuristic is used. A
 previously active status without a live lock is reported as interrupted. Reopening
@@ -365,6 +372,15 @@ Packed mixed-unit matrices have ordered column descriptions. Dry water surfaces,
 partial ocean occupancy and unknown underthrust enthalpy keep their masks;
 placeholder zero values are not promoted to known physical zeroes. Unknown output
 classes and authored fields without supported unit contracts refuse.
+
+Regional mechanical snapshots without a pressure datum
+(`physical_pressure_defined=False`) mark every field that carries the declared
+pressure gauge as `known.kind = "declared-gauge"`: the three normal stresses and,
+since 30 September 2026, the normal boundary tractions `boundary_traction_left_u_pa`,
+`right_u_pa`, `bottom_w_pa` and `top_w_pa` (traction = effective traction minus
+the normal times the gauge-relative pressure). Tangential tractions and total
+forces are gauge-free and stay ordinary known values. A consumer must not treat a
+declared-gauge field as an absolute load.
 
 The receiving hydrology, geology, terrain or other module must apply its own
 response to these quantities. W12's sample downstream graph operation only reads

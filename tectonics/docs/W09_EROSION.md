@@ -52,6 +52,11 @@ It is not the erosion rate law. All releases remain explicit per-cell/tag stocks
 including density, signed reference enthalpy, origin and formation time. They
 are available for Step 4 transport; release is not yet a routed ocean export.
 Porosity defines bulk volume but does not manufacture saturation or water.
+A release that crosses layers ends exactly at the requested duration under the
+shared end-time rule (`timebase.interval_end`): before 30 September 2026 (review
+s16) `elapsed+(duration-elapsed)` could round below the duration, so a
+0.0203 kg first layer followed by 100 kg, released for 0.3 s at 1 kg/s, raised a
+false exhaustion at 0.29999999999999993 s.
 
 The prepared river graph is an explicit frozen operator. Adverse slopes refuse;
 competing receivers, changing lakes and evolved routing need the Step 4 joined
@@ -78,8 +83,9 @@ Bare rock is immobile, including steep cliffs. Soil-covered slopes at or above
 the supplied critical slope refuse the missing failure law; no denominator clamp
 or blanket terrain smoothing is applied. At finite depletion a constrained
 volume/time solve returns `status='DEPLETED'`, its valid state and event time;
-the unadvanced remainder is explicit. Newly received soil can become a donor on
-the next interval. Weathering, landslides and pore-water flow are not invented.
+the unadvanced remainder is explicit. A completed advance ends exactly at the
+requested end (shared end-time rule; previously its last partition could land one
+ulp away), and a continuation may pass the original end as `end_time_s`. Newly received soil can become a donor on the next interval. Weathering, landslides and pore-water flow are not invented.
 
 ## Efficiency, source protection and recovery
 

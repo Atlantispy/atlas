@@ -1,6 +1,6 @@
 # Current evidence register
 
-29 September 2026. WORKING NON-CANON. Roadmap Phase A2.
+30 September 2026. WORKING NON-CANON. Roadmap Phase A2.
 
 Old receipts remain useful history, but documentation must not present one as
 evidence about the current checkout after the bytes it bound have changed. The
@@ -37,21 +37,42 @@ results remain observations of the original run. Nothing is re-executed.
 
 ## Coverage today
 
-All fifteen [successors captured on 29 September 2026](#successor-capture-after-i022a-and-the-writer-correction)
-passed their bounded controls and are registered as current. Nine cover the
-column/weakening/heat/motion/finite-strain/admission/breakup chain after I02.2a
-moved the executed numerical implementation into package owners; five cover the
-phase/receiver/separation writer correction; one covers G25 in the pinned
-Julia/MAGEMin environment. Their immediate predecessors are superseded and remain
-byte-identical. The separate separation-performance comparison remains historical.
+The [current connected evidence chain](#successor-capture-after-i022a-and-the-writer-correction)
+contains eight successors captured on 30 September 2026 after the I02 cold-restart
+stress-resolution correction, plus the unchanged `i01-column-r2` receipt reused
+from 29 September. All eight bounded captures passed. The five
+phase/receiver/separation writer-correction receipts and G25 receipt captured on
+29 September also remain current; their inputs were unaffected and were not rerun.
+The replaced receipts are superseded and remain byte-identical. The separate
+separation-performance comparison remains historical.
 No physics gate is waived. `python -B tools/check_current_evidence.py` prints the
 live record counts; this page does not repeat them.
 
 The superseded entries below retain their original measurements and timings;
 those numbers are historical observations, not measurements of the new successors.
 Use the linked current receipts in the capture table for the new run results.
-I02.2 is accepted only for bounded continuation. Work stops before I02.3; this
-does not establish broader integration, physical-event or world acceptance.
+I02 evidence covers the bounded column's shared state, continuation, exchanges,
+accepted clock and save/reopen workflow; it does not establish physical-event or
+whole-world acceptance.
+
+I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
+[i01-finite-admission-r5](../tectonics/evidence/i01-finite-admission-r5.json) now
+binds that tool, its method document, the restoration modules and the renewed
+upstream receipts. Its predecessor r4 is superseded, with its recorded bytes intact.
+Restoration checks consistency in a trusted local store, not authorship of records.
+Repair batch R1 (30 September 2026) changed two restoration modules r4 binds
+(`src/atlas_tectonics/timebase.py` and `src/atlas_tectonics/w08_inventory.py`).
+Successor r5 was captured after R1 and its dtype-identity correction were integrated;
+all five controls passed with unchanged sources. Its valid upstream receipts were reused.
+See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
+
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r2.json)
+was recaptured after R1 and its dtype-identity correction. It supersedes r1 without rewriting it, and
+records five repetitions on one Windows machine, unchanged sources and passing
+equality/parity comparisons. Its 149 source-file digests are checked by the
+register; its opaque package/native `execution_identity` is classified as an
+unchecked runtime observation. This is operational timing, not scientific
+acceptance, a whole-generator speed claim or other-platform evidence.
 
 I02.1 adds a package module, changing source membership and native execution
 identity even though existing physical code is unchanged. The three registered
@@ -367,8 +388,9 @@ measurements remain useful; none was rewritten or rerun to refresh its label.
   motion-frame r2; the [separation-performance comparison](../tectonics/evidence/i01-separation-performance-r1.json);
   and the line-ending correction trails [r1](../tectonics/evidence/line-ending-digest-correction-r1.json)
   and [r2](../tectonics/evidence/line-ending-digest-correction-r2.json).
-- **Superseded:** S7 r1, by S7 r2, and the fifteen immediate predecessors of the
-  [new I01 successors](#successor-capture-after-i022a-and-the-writer-correction).
+- **Superseded:** S7 r1, by S7 r2; the fifteen immediate predecessors of the
+  29 September I01 captures; and the eight connected receipts replaced by the
+  [30 September successors](#successor-capture-after-i022a-and-the-writer-correction).
   Their original results must not be quoted as current-checkout measurements.
 - **Invalid:** none.
 
@@ -392,10 +414,12 @@ Receipts may contain identities that cannot be checked locally; the register mus
 name each one if such a receipt is classified current. Each current record's
 `limits` are printed on every run. For
 example, `native_execution_id` is an atlas_tectonics loaded-code and runtime
-identity, not a file hash. The checker never compares it with a file. So changes
-under `tectonics/src/atlas_tectonics` or to the scientific runtime are not
-detected here. Generated worlds, job files and output identities live outside the
-repository and are listed as artefacts.
+identity, not a file hash. The checker never compares it with a file. An opaque
+identity observation alone cannot detect changes to package sources or the
+scientific runtime. Separate file bindings can check source bytes, as the current
+I02 timing receipt does; they still do not verify the installed runtime.
+Generated worlds, job files and output identities live outside the repository
+and are listed as artefacts.
 
 ## Line-ending digest correction r2
 
@@ -414,26 +438,29 @@ the current ones among them became historical rather than being repinned.
 
 ## Successor capture after I02.2a and the writer correction
 
-All fifteen successor captures completed successfully on 29 September 2026 and
-are registered as current. The nine connected captures below ran in dependency
-order against the reviewed package extraction and repairs. Each tool was
-retargeted before its run; downstream captures bind the new upstream receipts
-and the package owners they execute. Outputs were written exclusively as new
-files; no old receipt or recorded measurement was rewritten.
+All fifteen original successor captures completed successfully on 29 September
+2026 and were then registered as current. Nine covered the connected column
+chain after the reviewed package extraction. On 30 September the I02
+cold-restart stress-resolution correction required eight further successors;
+`i01-column-r2` remained valid and was reused. The current chain is below.
+Each affected tool was retargeted before its run, so downstream captures bind
+the new upstream receipts and the package owners they execute. Every output was
+written as a new file; no old receipt or recorded measurement was rewritten.
 
 | Order | Control in `tectonics/tools/` | Captured current receipt | Receipts it checks |
 | --- | --- | --- | --- |
-| 1 | `check_i01_column.py` | [i01-column-r2](../tectonics/evidence/i01-column-r2.json) | none |
-| 2 | `check_i01_weakening.py` | [i01-weakening-r3](../tectonics/evidence/i01-weakening-r3.json) | column r2 |
-| 3 | `check_i01_column_heat.py` | [i01-column-heat-r4](../tectonics/evidence/i01-column-heat-r4.json) | weakening r3, column r2 |
-| 4 | `check_i01_motion_coupling.py` | [i01-motion-coupling-r2](../tectonics/evidence/i01-motion-coupling-r2.json) | weakening r3 |
-| 5 | `check_i01_column_admission.py` | [i01-column-admission-r2](../tectonics/evidence/i01-column-admission-r2.json) | motion coupling r2, decoupling r1 |
-| 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r3](../tectonics/evidence/i01-thermomechanical-motion-r3.json) | column heat r4, motion coupling r2 |
-| 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r4](../tectonics/evidence/i01-finite-strain-r4.json) | thermomechanical r3, column heat r4, motion coupling r2 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r3](../tectonics/evidence/i01-finite-admission-r3.json) | finite strain r4, column admission r2 |
-| 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r3](../tectonics/evidence/i01-breakup-closure-r3.json) | finite strain r4 |
+| 1 | `check_i01_column.py` | [i01-column-r2](../tectonics/evidence/i01-column-r2.json), reused from 29 September | none |
+| 2 | `check_i01_weakening.py` | [i01-weakening-r4](../tectonics/evidence/i01-weakening-r4.json) | column r2 |
+| 3 | `check_i01_column_heat.py` | [i01-column-heat-r5](../tectonics/evidence/i01-column-heat-r5.json) | weakening r4, column r2 |
+| 4 | `check_i01_motion_coupling.py` | [i01-motion-coupling-r3](../tectonics/evidence/i01-motion-coupling-r3.json) | weakening r4 |
+| 5 | `check_i01_column_admission.py` | [i01-column-admission-r3](../tectonics/evidence/i01-column-admission-r3.json) | motion coupling r3, decoupling r1 |
+| 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r4](../tectonics/evidence/i01-thermomechanical-motion-r4.json) | column heat r5, motion coupling r3 |
+| 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r5](../tectonics/evidence/i01-finite-strain-r5.json) | thermomechanical r4, column heat r5, motion coupling r3 |
+| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r5](../tectonics/evidence/i01-finite-admission-r5.json) | finite strain r5, column admission r3 |
+| 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r4](../tectonics/evidence/i01-breakup-closure-r4.json) | finite strain r5 |
 
-The five phase/receiver/separation successors and the G25 successor also passed:
+The five phase/receiver/separation successors and the G25 successor passed on
+29 September and remain current without a new capture:
 
 | Control in `tectonics/tools/` | Captured current receipt | Capture boundary |
 | --- | --- | --- |
@@ -444,20 +471,23 @@ The five phase/receiver/separation successors and the G25 successor also passed:
 | `check_i01_separation_feasibility.py` | [i01-separation-feasibility-r4](../tectonics/evidence/i01-separation-feasibility-r4.json) | Corrected LF writer; bounded spatial separation controls |
 | `check_i01_gibbs_provider.py` | [i01-gibbs-provider-r3](../tectonics/evidence/i01-gibbs-provider-r3.json) | Corrected LF writer; pinned isolated Julia/MAGEMin environment |
 
-The current-evidence checker passes, and the closure-matrix mirror follows the
-register. All 633 I01/I02 tests passed in 12.390 s; the three digest-line-ending
-tests passed in 0.777 s. The earlier pending-capture failures are resolved, with
-no skipped substitute or old-receipt repin. Physical laws, thresholds, cases and
-the 256-step ceiling remain unchanged. The final Git-normalised candidate check
-also passed all three guards in 17.7 s: the register, line endings and all 633
-I01/I02 tests (12.704 s for the exported-byte test suite). Nothing was staged or
-committed. These are source-bound bounded controls
-and I02.2 continuation evidence, not broader integration or physical acceptance;
-the stop before I02.3 remains in force.
+The 29 September verification recorded 633 I01/I02 tests passing in 12.390 s
+and three digest-line-ending tests in 0.777 s. Its Git-normalised candidate
+check passed all three guards in 17.7 s, including the exported-byte test suite
+in 12.704 s. Those are historical measurements of that day's source snapshot.
+
+On 30 September all eight refreshed captures passed in 24.72 seconds in total
+after imports. The final Git-normalised I02 closeout passed all three checks in
+154.1 s, including 758 I01/I02 tests in 149.794 s. The evidence register matched
+445 digests across 37 current records, with 28 historical, 31 superseded and no
+invalid records; the closure-matrix receipt digests and statuses matched the
+register. These are the recorded closeout results, not a full-suite or
+independent physical-validation claim. No physical law, acceptance threshold,
+case or retained 256-step ceiling changed, and no old receipt was repinned.
 
 The separation-performance comparison used a harness outside the repository and
-has no successor route. Its older timings remain historical. The fifteen new
-receipts are captured and registered locally; they have not been committed.
+has no successor route. Its older timings remain historical. Capture and
+registration are local evidence states; Git commit and publication are separate.
 
 ## Integration checks
 

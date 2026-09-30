@@ -8,12 +8,14 @@ from contextlib import closing
 from dataclasses import replace
 from decimal import Decimal, localcontext
 import copy
+import errno
 import hashlib
 import json
 import math
 from pathlib import Path
 import pickle
 import sqlite3
+import stat
 import tempfile
 import unittest
 from unittest import mock
@@ -323,6 +325,54 @@ class StorageTests(unittest.TestCase):
         with self.assertRaises(StoreConflict):self.store.put(key('m'),{'a':np.ones(10)},{'unit':'km'})
         self.store.close()
         with self.assertRaises(StoreError):self.store.statistics()
+
+
+class StorePathTests(unittest.TestCase):
+    """Store paths: links are refused, and a path is absent exactly where pathlib's exists() says so."""
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.target=Path(self.tmp.name)/'absent'/'store.db'
+        self.real=Path.lstat
+
+    def raising(self,code):
+        def lstat(path,*args,**kwargs):
+            if path==self.target:raise OSError(code,'injected')
+            return self.real(path,*args,**kwargs)
+        return mock.patch.object(Path,'lstat',lstat)
+
+    def linked(self,links):
+        def lstat(path,*args,**kwargs):
+            if path==self.target:return mock.Mock(st_mode=stat.S_IFREG|0o600,st_nlink=links,st_file_attributes=0)
+            return self.real(path,*args,**kwargs)
+        return mock.patch.object(Path,'lstat',lstat)
+
+    def test_pathlib_absent_errors_are_absent_and_others_propagate(self):
+        from atlas_tectonics import storage
+        for code in (errno.ENOENT,errno.ENOTDIR,errno.EBADF,errno.ELOOP):
+            with self.subTest(errno=errno.errorcode[code]),self.raising(code):storage._path(self.target)
+        with self.raising(errno.EACCES):
+            with self.assertRaises(PermissionError):storage._path(self.target)
+            storage._path(self.target,sidecar=True)          # a sidecar being deleted refuses access: absent
+        with self.raising(errno.EIO),self.assertRaises(OSError):storage._path(self.target,sidecar=True)
+
+    def test_pathlib_absent_windows_errors_are_absent(self):
+        from atlas_tectonics import storage
+        def raising(winerror,code=errno.EINVAL):
+            def lstat(path,*args,**kwargs):
+                if path==self.target:
+                    exc=OSError(code,'injected');exc.winerror=winerror;raise exc
+                return self.real(path,*args,**kwargs)
+            return mock.patch.object(Path,'lstat',lstat)
+        for winerror in (21,123,1921):                      # not ready, invalid name, cannot resolve the name
+            with self.subTest(winerror=winerror),raising(winerror):storage._path(self.target)
+        with raising(5,errno.EACCES),self.assertRaises(PermissionError):storage._path(self.target)
+
+    def test_only_a_sidecar_may_show_no_remaining_link(self):
+        from atlas_tectonics import storage
+        with self.linked(0):
+            storage._path(self.target,sidecar=True)
+            with self.assertRaises(StoreError):storage._path(self.target)
+        with self.linked(2),self.assertRaises(StoreError):storage._path(self.target,sidecar=True)
 
 
 class ReuseTests(unittest.TestCase):

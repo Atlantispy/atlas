@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 29 September 2026. WORKING NON-CANON.** This is the single current
+**Updated: 30 September 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 working branch is `remake`; use `git status` and `git log`, not this page, for
@@ -8,9 +8,24 @@ commit and push state.
 
 ## Active checkpoint
 
-The three repository defects from the 28 September review of `577c044` are
-corrected and their focused checks pass on Windows. The changes are local;
-no commit, push or new full-suite run is claimed:
+**I02 is complete for the agreed supported workflow.** The reviewed candidate and
+its benchmark/restart corrections are integrated locally. One real coupled column
+now runs through create, advance, atomic save, reopen, continue and inspect without
+replaying its accepted history. No I03 work, commit, push or new full-suite run was
+performed during this closeout.
+
+**R1 output-integrity repairs are now integrated locally**, including the reviewed
+NumPy dtype identity correction and the I02-compatible landing updates. The 56
+execution/reuse tests pass. Fresh finite-admission r5 and workflow-timing r2
+receipts passed all five and seven controls respectively; their predecessors
+remain unchanged and superseded. The final Git-normalised integration guard
+passed all 758 I01/I02 tests, all three line-ending tests and 445 recorded source
+digests (169.1 s total). Nothing has been committed or pushed; I03 remains outside
+this work. The earlier 2,478-test R1 candidate result was reused, not rerun as a
+full-suite claim for this integration.
+
+The three repository defects from the 28 September review of `577c044` were
+corrected before this integration and remain covered:
 
 1. Six I01 receipt writers wrote CRLF text on Windows, so 13 receipts were
    registered by the digest of a CRLF rendering that no checkout contains. The
@@ -19,7 +34,9 @@ no commit, push or new full-suite run is claimed:
 2. I02.2a moved the I01 solver into package modules, so nine receipts bind an
    earlier tool layout, and the writer fix changes tools that seven more records
    bind. Fifteen new passing receipts were captured, reviewed and registered in
-   [dependency order](CURRENT_EVIDENCE.md#successor-capture-after-i022a-and-the-writer-correction).
+   [dependency order](CURRENT_EVIDENCE.md#successor-capture-after-i022a-and-the-writer-correction)
+   Eight of that set now have fresh successors for the I02 restoration path and
+   numerical correction; the other seven are unchanged and reused.
    Both stale-evidence test failures are resolved; old receipts were not repinned.
 3. One finite-admission test expected Python 3.12's exception type. Python 3.13
    raises `TypeError` for the same refused replacement; the test now accepts either
@@ -28,15 +45,21 @@ no commit, push or new full-suite run is claimed:
 A [before-commit guard](CODING_SAFETY.md#before-every-commit) runs the evidence
 checks on Git-normalised candidate bytes rather than on the working copy.
 
-**I02:** I02.1 (shared state) is reviewed. I02.2a (one package-owned solver) is
-accepted as an ownership refactor, not as new campaign evidence. I02.2b
-(continuation) and its prepared-runner ownership correction are now accepted
-for the bounded in-memory route. Inspected and caller-owned objects cannot alter
-later pieces; reuse and split-run parity pass. I02.3 has not started. Work is
-stopped at the owner's I02.2 boundary, not authorised through the remaining I02 steps.
-See the [I02 shared-state contract](../tectonics/docs/I02_COMMON_STATE.md).
+The 30 September review corrections separately check cold and warm benchmark
+outputs and reopened physical accounts, refusing timings on disagreement. A
+direct-stress refinement fixes precision stalls in the constitutive solve without
+changing its equations, residual tolerance or iteration limit. Cold continuation
+and failed-save recovery pass, including the existing 256-step limit.
 
-**Next action:** await owner direction before I02.3. The desktop build's missing
+The final Git-normalised check passed all 758 I01/I02 tests, current-evidence
+bindings and LF-digest checks. Eight affected physical controls were freshly
+captured; the corrected timing record checks equivalent work and binds its sources.
+See the [workflow method](../tectonics/docs/I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead)
+for scope, test results and measured time/storage overhead. This is Windows
+coverage, not a new full-suite or cross-platform pass.
+
+**Next action:** stop before I03 and await the owner's next instruction. The
+Saturday review hold was released on 30 September. The desktop build's missing
 UI snapshot remains a separate delivery dependency. Work follows the
 [completion roadmap](ATLAS_ROADMAP.md); planning is not execution authority.
 
@@ -47,9 +70,10 @@ UI snapshot remains a separate delivery dependency. Work follows the
 | Evidence register | Each listed receipt is current, historical, superseded or invalid; `python -B tools/check_current_evidence.py` prints the live counts. Current means the declared byte bindings match, not physics, runtime or platform. Unlisted receipts, including all W01–W12 records, are unclassified. | [Evidence guide](CURRENT_EVIDENCE.md), [register](../tectonics/evidence/current-evidence.json) |
 | First review-repair batch (A1–A6) | W12 export and surface policy, bundle inspection and staging, line-ending digest corrections, 512-file source capacity, public-path redaction, a tested Windows environment and one status page. | [Repair record](../tectonics/docs/REVIEW_REPAIRS_2026-09-26.md), [environment](TECTONICS_ENVIRONMENT.md) |
 | I01 physical integration | Method choices, input and ownership contracts and bounded feasibility are selected for all seven MC items. The controls check the code against analytical cases, refinement, conservation and warm/cold parity; they are not independent physical validation, calibration or generated-world acceptance. Full events remain with their I02–I09 owners. | [Closure matrix](../tectonics/docs/I01_CLOSURE_MATRIX.md), [physical contract](../tectonics/docs/I01_PHYSICAL_CONTRACT.md), [reader chapter](../tectonics/docs/how-it-works/06-physical-integration.md) |
-| I01 evidence | Fifteen affected controls have passing, current successor receipts, including G25 in the installed pinned Julia/MAGEMin environment. Previous receipts remain intact and superseded. The old separation performance comparison remains historical. | [Coverage today](CURRENT_EVIDENCE.md#coverage-today) |
-| I02 common state and continuation | I02.1 and I02.2 reviewed and accepted for their bounded scope, including the ownership correction. No exchange transaction, persisted restart, accepted-time controller or event is implemented by this acceptance. Stopped before I02.3. | [I02 contract](../tectonics/docs/I02_COMMON_STATE.md), [integration plan](../tectonics/docs/INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller) |
-| 3D regional mechanics and evolution | Fixed-box Q2/Q1 full-stress Stokes with first-order donor-cell transport and conduction. At the default 256 MiB budget the largest admitted cube is about 7x7x7 cells, where first-order transport is strongly diffusive. Receipts are historical after package membership changed. | [Mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse), [evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) |
+| I01 evidence | Fifteen affected controls have current passing successors, including G25 in the pinned Julia/MAGEMin environment. Eight were refreshed for the final I02 numerical/restoration changes; seven unchanged controls were reused. Finite-admission r5 was freshly captured after R1 integration and passed all five controls with its unchanged prerequisites reused. Old receipts remain intact; the old separation performance comparison remains historical. | [Coverage today](CURRENT_EVIDENCE.md#coverage-today) |
+| I02 common state, exchanges, clock and restart | I02.1–I02.8 reviewed, corrected, integrated locally and accepted for the declared coupled-column workflow. Atomic state/exchange commits, one accepted clock, save/reopen/fresh-process continuation, cancellation, inspection and measured overhead are connected. Linux coverage remains open. The new execution identity intentionally makes earlier W12/New World jobs refuse continuation or verification; saved bundles remain inspectable, without rebinding ([compatibility effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects)). | [I02 contract](../tectonics/docs/I02_COMMON_STATE.md), [I02 workflow](../tectonics/docs/I02_WORKFLOW.md), [integration plan](../tectonics/docs/INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller) |
+| 3D regional mechanics and evolution | Fixed-box Q2/Q1 full-stress Stokes with first-order donor-cell transport and conduction. At the default 256 MiB budget every 7x7x7 cube is refused and 6x6x6 is admitted only for velocity-dominated boundaries, where first-order transport is strongly diffusive. Receipts are historical after package membership changed. | [Mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse), [evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) |
+| Repair batch R1 (output integrity) | Integrated locally: scale-invariant 3D Stokes acceptance gates, a free-surface relaxation timestep gate and shared interval ends, thread-safe prepared geometry, a New World column envelope, no fabricated case 1a pressure, membership-derived execution identity including dtype layouts/metadata, and gauge-aware plate torques and port masks. Fresh workflow-timing r2 and finite-admission r5 supersede the affected receipts without rewriting them. No tolerance was relaxed and the step ceiling is unchanged. | [3D mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse), [W07 surface](../tectonics/docs/W07_SURFACE_STRENGTH.md), [New World evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md) |
 | New World, steps 1–7 | Seeded request, plate layout, crust, motion, regional evolution, save/load and portable bundles are implemented. The Step 7 r2 and bundle r2 receipts are historical; the Step 7 case matrix is current. | [Combined acceptance](../tectonics/docs/NEW_WORLD_ACCEPTANCE.md), [bundle](../tectonics/docs/NEW_WORLD_BUNDLE.md) |
 | B1 boundary diagnostics | One matched original/prototype comparison against PB2002 development at 100/250/500 km. Descriptive, not realism acceptance; the prototype's motion was not refitted. | [Method and checkpoint](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1), [receipt](../tectonics/evidence/boundary-kinematics-r1.json) |
 | B2 causal generation | Diagnosis only: saved worlds keep their initial conditions and crust does not shape the plate layout. No producer fix; the owner rejected post-generation fairing as the realism fix. | [Diagnosis](../tectonics/docs/NEW_WORLD_LAYOUT.md#causal-generation-diagnosis-and-replacement-design) |

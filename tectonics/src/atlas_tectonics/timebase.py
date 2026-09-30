@@ -192,3 +192,42 @@ def advance_time(time_s: float, duration_s: float) -> float:
     if duration > 0 and end <= start:
         raise TectonicsError('positive interval is not resolvable at this epoch; choose a nearer epoch')
     return end
+
+
+def interval_end(start_s: float, duration_s: float, end_time_s: float | None = None) -> float:
+    """The published end of one interval: the declared end, never a re-sum.
+
+    Shared end-time rule. A caller that knows its declared output time passes it
+    as ``end_time_s``; ``duration_s`` must then be exactly ``end_time_s-start_s``
+    as evaluated in binary64 (the value actually integrated). The result is
+    ``end_time_s`` itself, because ``start+(end-start)`` can miss ``end`` by one
+    rounding unit. Without a declared end the end is ``start+duration``.
+    """
+    start = scalar(start_s,'interval start')
+    duration = scalar(duration_s,'interval duration',positive=True)
+    if end_time_s is None:
+        return advance_time(start,duration)
+    end = scalar(end_time_s,'declared interval end')
+    if not end > start or end-start != duration:
+        raise TectonicsError('declared interval end is not start plus the integrated duration')
+    return end
+
+
+def interval_partition(start_s: float, end_s: float, steps: int) -> tuple[float, ...]:
+    """Boundaries t_0..t_n of a fixed n-step partition, with t_n = end exactly.
+
+    Interior boundaries are ``start+(end-start)*i/n`` (the existing W07 form);
+    the last is the declared ``end_s`` itself, as in ``extension.py``. Every
+    substep must remain strictly positive in binary64.
+    """
+    start = scalar(start_s,'interval start')
+    end = scalar(end_s,'interval end')
+    if type(steps) is not int or steps < 1:
+        raise TectonicsError('positive integer interval partition required')
+    duration = end-start
+    if not end > start or not math.isfinite(duration):
+        raise TectonicsError('unresolvable interval for partition')
+    points = (start, *(start+duration*i/steps for i in range(1, steps)), end)
+    if any(not b > a for a, b in zip(points, points[1:])):
+        raise TectonicsError('unresolvable interval substep')
+    return points

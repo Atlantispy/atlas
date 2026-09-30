@@ -19,6 +19,7 @@ import hashlib
 import json
 import math
 import struct
+import threading
 
 import numpy as np
 import shapely
@@ -217,8 +218,43 @@ def _measure_components(g):
     visit(g)
     area=GeometryCollection(areas) if len(areas)!=1 else areas[0]
     boundary=GeometryCollection(edges) if len(edges)!=1 else edges[0]
-    shapely.prepare(area)
     return area,boundary
+
+
+class _PointPredicates:
+    """Private prepared copies of one immutable geometry, used under one lock.
+
+    GEOS builds a prepared geometry's locators and segment indexes lazily inside
+    predicate calls, and that build is not thread-safe: concurrent first use
+    crashed the process (review s03-1). Which call completes the build is internal
+    to GEOS, so no "initialised" flag can safely release the lock early. Published
+    shapely objects therefore stay unprepared (safe to share); point classification
+    uses these private copies, built on first use, and holds the lock for every
+    call that can touch their lazy state. Concurrent classifications of the SAME
+    geometry are serialised; different geometries still run in parallel.
+    """
+    __slots__ = ('_lock', '_wkb', '_area', '_shape')
+
+    def __init__(self, wkb):
+        self._lock = threading.Lock()
+        self._wkb = wkb
+        self._area = self._shape = None
+
+    # A copy is a fresh private cache (new lock, lazy rebuild), so dataclass
+    # asdict/astuple, copy, deepcopy and pickle never try to copy a lock.
+    def __copy__(self): return _PointPredicates(self._wkb)
+    def __deepcopy__(self, memo): return _PointPredicates(self._wkb)
+    def __reduce__(self): return (_PointPredicates, (self._wkb,))
+
+    def __call__(self, query):
+        """Return (strict-interior contains, closed intersects) for point geometries."""
+        with self._lock:
+            if self._shape is None:
+                shape = shapely.from_wkb(self._wkb)
+                area, _ = _measure_components(shape)
+                shapely.prepare(shape); shapely.prepare(area)
+                self._shape, self._area = shape, area
+            return shapely.contains(self._area, query), shapely.intersects(self._shape, query)
 
 
 def _overlay_budget(a, b, limits, budget):
@@ -241,14 +277,16 @@ class PlanarGeometry:
 
     WKB is the lossless retained definition. The cached GEOS representation and
     prepared search data are reconstructible. IDs describe geometry and frame,
-    not material identity or a complete scientific execution receipt.
+    not material identity or a complete scientific execution receipt. The shared
+    shapely objects are never prepared, so any thread may use them; prepared
+    point-classification data are private and lock-guarded (_PointPredicates).
     """
     frame_id: str
     geometry_id: str
     _wkb: bytes = field(repr=False, compare=False)
     _geom: Any = field(repr=False, compare=False)
-    _area_geom: Any = field(repr=False, compare=False)
     _boundary_geom: Any = field(repr=False, compare=False)
+    _points: Any = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise GeometryError('use polygon(), polyline() or from_wkb()')
@@ -263,11 +301,10 @@ class PlanarGeometry:
         obj = object.__new__(cls)
         object.__setattr__(obj, 'frame_id', frame_id)
         object.__setattr__(obj, '_wkb', raw)
-        shapely.prepare(shape)
         object.__setattr__(obj, '_geom', shape)
-        area_g, boundary_g = _measure_components(shape)
-        object.__setattr__(obj, '_area_geom', area_g)
+        _, boundary_g = _measure_components(shape)
         object.__setattr__(obj, '_boundary_geom', boundary_g)
+        object.__setattr__(obj, '_points', _PointPredicates(raw))
         object.__setattr__(obj, 'geometry_id', hashlib.sha256(
             _json({'schema':_SCHEMA, 'space':'planar-metres', 'frame_id':frame_id})+b'\0'+raw).hexdigest())
         return obj
@@ -371,8 +408,7 @@ class PlanarGeometry:
             for start in range(0,n,limits.batch_points):
                 _check_cancel(cancel);a=points[start:start+limits.batch_points]
                 query=shapely.points(a)
-                inside=shapely.contains(self._area_geom,query)
-                covered=shapely.intersects(self._geom,query)
+                inside,covered=self._points(query)
                 out[start:start+len(a)]=np.where(inside,1,np.where(covered,0,-1))
                 if tol:
                     near=shapely.distance(boundary,query)<=tol

@@ -30,6 +30,11 @@ One explicit requested interval performs:
    The invariant is `sqrt(D:D/2)` with `D=sym(grad u)`, including all three axes.
    Fixed-point iteration must reach a maximum log-viscosity change of `1e-8`
    within 32 iterations, in addition to the retained force/work residual gates.
+   Those gates are relative to their own operands (see
+   [solving and safe reuse](REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse)), so
+   the mechanical scales chosen here change conditioning, not acceptance. Each
+   Picard solve that would previously have returned zero or inaccurate velocity
+   for small dimensionless loads is now either accurate or refused.
 2. Convert solved Q2 velocity to shared conservative transport-face streams.
 3. Update the registered BF23 scalar memory by its exact frozen-coefficient
    material-point formula, and accumulate scalar strain. Apply the declared

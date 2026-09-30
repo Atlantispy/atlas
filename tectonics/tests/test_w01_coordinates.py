@@ -29,6 +29,7 @@ from atlas_tectonics import (
 )
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics._validation import frozen
+from atlas_tectonics.timebase import interval_end, interval_partition
 from atlas_tectonics.reuse import ExecutionContext
 from atlas_tectonics.storage import ArrayStore, StoreLimits
 
@@ -401,6 +402,24 @@ class TimeTests(unittest.TestCase):
         self.assertEqual(advance_time(2.,0.),2.)
         for t,d in ((1e20,1),(0,-1),(0,True),(1e308,1e308)):
             with self.assertRaises(TectonicsError):advance_time(t,d)
+
+    def test_shared_interval_end_rule_publishes_the_declared_end(self):
+        # R1: start+(end-start) and start+d*n/n can miss end by one ulp.
+        start, end = 0.006394989738541456, 0.02878803804725395
+        self.assertNotEqual(start+(end-start), end)
+        self.assertEqual(interval_end(start, end-start, end), end)
+        self.assertEqual(interval_end(10., 2.), 12.)
+        for bad in ((start, .01, end), (end, end-start, start), (0., 1., 1.+2**-40)):
+            with self.assertRaises(TectonicsError):interval_end(*bad)
+        rng = np.random.default_rng(11)
+        for _ in range(200):
+            a = float(rng.uniform(0., 5.)); b = a+float(rng.uniform(1e-3, 7.)); n = int(rng.integers(1, 257))
+            points = interval_partition(a, b, n)
+            self.assertEqual((points[0], points[-1], len(points)), (a, b, n+1))
+            self.assertTrue(all(y > x for x, y in zip(points, points[1:])))
+        self.assertEqual(interval_partition(0., 0.011583828702548055, 3)[-1], 0.011583828702548055)
+        for bad in ((1., 1., 1), (0., 1., 0), (0., 1., True), (1e20, 1e20+1e4, 3)):
+            with self.assertRaises(TectonicsError):interval_partition(*bad)
 
     def test_model_duration_does_not_relabel_w02(self):
         from atlas_tectonics import ColumnGrid1D, MaterialCohort, MaterialState

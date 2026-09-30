@@ -53,6 +53,14 @@ storage contract.
   through the bundle `result` interface. Native resume still refuses mismatched
   bindings; no automatic installation, compatibility migration or silent repin is
   performed. Only supported saved schemas are admitted.
+- Applying the unreviewed I02 candidate (29 September 2026) changes the package
+  execution identity and `tectonics_job.py` and `read_tectonics.py`, which every
+  New World job binds. Jobs started before it then refuse resume, output export and
+  bundle saving with `SOURCE_MISMATCH`; bundles already saved stay inspectable as
+  described above. Saved worlds with initial structure and motion still load, but new
+  evolution jobs from them, motion generated from a saved structure and re-saving with
+  structure and motion refuse with `SOURCE_MISMATCH`
+  ([I02 workflow](I02_WORKFLOW.md#8-evidence-effects)).
 - Strict member allowlists, record/total limits, duplicate/linked/encrypted/
   compressed-member refusal, bounded central-directory parsing and manual member
   copying prevent archive-path extraction and unbounded decompression. No

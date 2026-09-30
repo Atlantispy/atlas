@@ -285,7 +285,11 @@ class PreparedW08Workflow:
             if spec['retirement'] is None and spec['magmatism'] is None:
                 if r is not None: raise TectonicsError('unexpected transfer in kinematic/cessation interval')
                 total_steps += 1; continue
-            if (type(r) is not dict or r.get('source_id') != spec['source_id'] or r.get('duration_s') != duration):
+            start = self.initial.time_s if j==0 else self.intervals[j-1].end_time_s
+            exact_end = (type(r) is dict and r.get('exhaustion_duration_s') == r.get('duration_s')
+                         and type(r.get('duration_s')) is float and start+r['duration_s'] == end)
+            if (type(r) is not dict or r.get('source_id') != spec['source_id']
+                    or (r.get('duration_s') != duration and not exact_end)):
                 raise TectonicsError('transfer event source or duration mismatch')
             selected = r['selected_node_ids']
             if spec['retirement'] is not None:
@@ -355,15 +359,18 @@ class PreparedW08Workflow:
         inv = self.initial if parent is None else parent.inventory
         duration = s.end_time_s-inv.time_s
         a = spec['retirement']; m = spec['magmatism']; receipt = None; stopped=False
-        def transfer(dt):
+        # The declared interval end is published as is (shared end-time rule);
+        # an exhaustion event ends at its derived start+duration instead.
+        def transfer(dt,end=None):
             if a is not None:
                 return advance_retirement(inv,tuple(a['selected_node_ids']),tuple(a['destination_ids']),dt,
-                    source_id=s.source_id,parameters=a['parameters'],budget=self._resource,cancel=cancel)
+                    source_id=s.source_id,parameters=a['parameters'],end_time_s=end,
+                    budget=self._resource,cancel=cancel)
             return advance_magmatic(inv,tuple(m['selected_node_ids']),m['rates_kg_s'],dt,
                     source_id=s.source_id,heat_w=m['heat_w'],thermodynamics=self.thermodynamics,
-                    context=self._context,budget=self._resource,cancel=cancel)
+                    context=self._context,end_time_s=end,budget=self._resource,cancel=cancel)
         if a is not None or m is not None:
-            try: candidate,receipt=transfer(duration)
+            try: candidate,receipt=transfer(duration,s.end_time_s)
             except (RetirementExhaustionError,MagmaticExhaustionError) as exhausted:
                 duration=exhausted.exhaustion_duration_s
                 if duration<=0: raise
@@ -371,6 +378,10 @@ class PreparedW08Workflow:
                 # once up to its declared feasibility event, publish, then stop.
                 candidate,receipt=transfer(duration);stopped=True
             inv=candidate
+            # An exhaustion whose derived end start+duration rounds onto the
+            # declared end completes the interval, exactly as an exhaustion whose
+            # duration equals end-start does; the schedule continues from there.
+            if stopped and inv.time_s == s.end_time_s: stopped=False
         else:
             inv = inv.retime(s.end_time_s,source_id=s.source_id,budget=self._resource,cancel=cancel)
         motion = self._motion.evaluate(inv.time_s,cancel=cancel)

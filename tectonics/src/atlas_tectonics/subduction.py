@@ -759,11 +759,15 @@ class PreparedSubduction:
             # (including its edge-midpoint order) to retain positive orientation.
             points_xz = mesh.points*np.array([1000.,-1000.])
             public_velocity = velocity*np.array([SPEED_M_S,-SPEED_M_S])
+            # Case 1a prescribes the analytic corner-flow velocity and solves no
+            # Stokes system, so it has no pressure: publish none rather than a
+            # fabricated zero field in Pa (review s13-1).
+            pressure_computed = case != '1a'
             fields = (_freeze(points_xz), _freeze(mesh.cells[:,[0,2,1,5,4,3]]),
                 _freeze(mesh.regions), _freeze(wedge.global_nodes), _freeze(wedge.global_elements),
                 _freeze(temperature), _freeze(public_velocity),
                 _freeze(projected.element_node_velocity[:,[0,2,1,5,4,3]]*np.array([SPEED_M_S,-SPEED_M_S])),
-                _freeze(pressure*ETA0_PA_S*SPEED_M_S/1000.))
+                _freeze(pressure*ETA0_PA_S*SPEED_M_S/1000. if pressure_computed else np.empty(0)))
             h = hashlib.sha256((self.plan_id+case).encode())
             for a in fields: h.update(a.tobytes())
             statistics = dict(elapsed_s=perf_counter()-start, mechanics=mechanics, thermal=thermal,transport=projected.diagnostics(),
@@ -780,7 +784,9 @@ class PreparedSubduction:
                 accounted_peak_bytes=self.budget.peak_reserved_bytes, original2008_source_exact=False,
                 outflow_operator=self.outflow, stabilisation=self.stabilisation,
                 public_coordinates='x-right-z-up, metres; vz is negative for downward motion',
-                pressure_support='first len(wedge_pressure_pa) wedge_global_nodes')
+                pressure_computed=pressure_computed,
+                pressure_support='first len(wedge_pressure_pa) wedge_global_nodes' if pressure_computed else
+                    'none: case 1a prescribes analytic corner-flow velocity and computes no pressure')
             if nonlinear:
                 statistics['nonlinear'] = dict(method='safeguarded depth-3 log-viscosity Anderson; beta=.5',
                     evaluations=iteration, temperature_delta=t_error, log_viscosity_residual=eta_error,

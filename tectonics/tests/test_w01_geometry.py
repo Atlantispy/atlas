@@ -468,6 +468,73 @@ class IndexCoverageStorageTests(unittest.TestCase):
                 for out in pool.map(lambda _:index.query(q),range(12)):
                     self.assertEqual(out.pairs.tobytes(),expected)
 
+    def test_cold_concurrent_first_use_does_not_crash_the_process(self):
+        # R1 (s03-1): GEOS builds prepared indexes lazily on first predicate use,
+        # and a barrier-released cold start crashed the whole process (access
+        # violation / heap corruption). The existing thread test warms up first.
+        # The storm runs in a child process so a crash fails this test only.
+        import atlas_tectonics
+        script = r'''
+import faulthandler, math, sys, threading
+faulthandler.enable()
+import numpy as np, shapely
+from shapely.geometry import LineString
+from atlas_tectonics.geometry import PlanarGeometry
+from atlas_tectonics.geometry_index import GeometryIndex, GeometryFeature
+from atlas_tectonics.spherical_geometry import SphericalGeometry, SphericalChart
+from atlas_tectonics.coordinates import SphericalFrame
+rng = np.random.default_rng(0)
+t = np.linspace(0, 2*math.pi, 4000, endpoint=False)
+ring = np.c_[1000*(1+.3*np.sin(7*t))*np.cos(t), 1000*(1+.3*np.sin(7*t))*np.sin(t)]
+points = rng.uniform(-1400, 1400, size=(20000, 2))
+lines = [LineString(rng.uniform(-1400, 1400, size=(2, 2))) for _ in range(64)]
+def storm(work, workers=8):
+    out, barrier = [None]*workers, threading.Barrier(workers)
+    def run(k):
+        barrier.wait(); out[k] = work()
+    threads = [threading.Thread(target=run, args=(k,)) for k in range(workers)]
+    [x.start() for x in threads]; [x.join() for x in threads]
+    return out
+for trial in range(12):
+    scale = 1+trial*1e-3
+    expected = PlanarGeometry.polygon(ring*scale, frame_id='f').classify(points)
+    fresh = PlanarGeometry.polygon(ring*scale, frame_id='f')
+    assert all(np.array_equal(o, expected) for o in storm(lambda: fresh.classify(points)))
+    fresh = PlanarGeometry.polygon(ring*scale, frame_id='f')
+    shared = fresh._geom
+    covers = [bool(shapely.covers(PlanarGeometry.polygon(ring*scale, frame_id='f')._geom, l)) for l in lines]
+    assert all(o == covers for o in storm(lambda: [bool(shapely.covers(shared, l)) for l in lines]))
+    features = [GeometryFeature('f%d' % i, PlanarGeometry.polygon(ring*scale*.3+[(i % 3)*700.-700, (i//3)*700.-700],
+                                                                     frame_id='f')) for i in range(9)]
+    with GeometryIndex(features) as serial:
+        pairs = serial.query(points).pairs.tobytes()
+    with GeometryIndex(features) as index:
+        assert all(o == pairs for o in storm(lambda: index.query(points).pairs.tobytes()))
+chart = SphericalChart(SphericalFrame(6.371e6, 'r1-sphere'), (0., 0., 1.), min_cosine=.5)
+cap = np.array([[math.cos(a)*.3, math.sin(a)*.3, 1.] for a in np.linspace(0, 2*math.pi, 600, endpoint=False)])
+directions = np.c_[rng.uniform(-.4, .4, (5000, 2)), np.ones(5000)]
+for trial in range(6):
+    expected = SphericalGeometry.polygon(cap*(1+trial*1e-3), chart=chart).classify(directions)
+    fresh = SphericalGeometry.polygon(cap*(1+trial*1e-3), chart=chart)
+    assert all(np.array_equal(o, expected) for o in storm(lambda: fresh.classify(directions)))
+print('storm-ok')
+'''
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(
+            [str(Path(atlas_tectonics.__file__).resolve().parents[1]), os.environ.get('PYTHONPATH', '')]))
+        done = subprocess.run([sys.executable, '-B', '-c', script], capture_output=True, text=True,
+                              env=env, timeout=600)
+        self.assertEqual(done.returncode, 0, done.stdout[-2000:]+done.stderr[-4000:])
+        self.assertIn('storm-ok', done.stdout)
+
+    def test_private_prepared_state_copies_as_a_fresh_cache(self):
+        # The per-geometry lock must not break asdict/astuple/copy/pickle.
+        import dataclasses
+        g=PG.polygon([[0,0],[2,0],[2,2],[0,2]],frame_id='p'); g.classify([[1,1]])
+        self.assertIn('_geom',dataclasses.asdict(g))
+        self.assertEqual(len(dataclasses.astuple(Feature('a',g))),2)
+        for clone in (copy.copy(g),pickle.loads(pickle.dumps(g))):
+            assert_array_equal(clone.classify([[1,1],[3,3],[2,1]]),[1,-1,0])
+
     def test_index_close_releases_retained_reservation(self):
         b=WorkBudget(1<<20);idx=GeometryIndex([Feature('a',box())],budget=b)
         self.assertGreater(b.reserved_bytes,0);idx.close();self.assertEqual(b.reserved_bytes,0)

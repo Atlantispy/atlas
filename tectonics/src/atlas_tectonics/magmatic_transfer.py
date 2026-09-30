@@ -23,6 +23,7 @@ from .constitutive import _cancel
 from .materials import _name, _json
 from .resources import WorkBudget, select_budget
 from .stokes_execution import _native_lease
+from .timebase import interval_end
 
 CAP = 128*1024**2
 ROUND = 128*np.finfo(float).eps
@@ -307,16 +308,23 @@ class PreparedMagmaticTransfer:
         if sol.status != 'finished': raise TectonicsError('magmatic integration failed')
         return path, steps
 
-    def evaluate(self, duration_s, *, cancel=None):
+    def evaluate(self, duration_s, *, end_time_s=None, cancel=None):
+        """A declared ``end_time_s`` (duration exactly end-start) is the published end."""
         if self._closed or self._active or threading.get_ident() != self._thread:
             raise TectonicsError('magmatic plan closed, active or wrong driving thread')
         duration = scalar(duration_s, 'duration', nonnegative=True)
         if self.exhaustion_duration_s is not None and duration > self.exhaustion_duration_s:
             raise MagmaticExhaustionError(self.exhaustion_duration_s, self.exhausted_node_ids)
-        end = scalar(self.inventory.time_s+duration, 'ending time')
+        if duration > 0 and end_time_s is not None:
+            end = interval_end(self.inventory.time_s, duration, end_time_s)
+        else:
+            end = scalar(self.inventory.time_s+duration, 'ending time')
+            if end_time_s is not None and end_time_s != end:
+                raise TectonicsError('declared magmatic end is not start plus duration')
         if duration > 0 and end == self.inventory.time_s: raise TectonicsError('unresolved inventory clock')
         self.context.verify(); _cancel(cancel)
-        if self._latest is not None and self._latest.duration_s == duration: return self._latest
+        if (self._latest is not None and self._latest.duration_s == duration
+                and self._latest.remaining.time_s == end): return self._latest
         n = len(self.mass); e = len(self.edges); k = len(self.inventory.component_ids); size = n+e+2
         # Matrix exponential workspace or active DOP853 stages; no time history.
         work = (40*size*size+40*size*(n+2)+16*size*(k+1))*8+65536

@@ -153,6 +153,27 @@ class WorkflowPortTests(unittest.TestCase):
             np.testing.assert_array_equal(port['fields']['regional.enthalpy_j'],out.regional.enthalpy_j)
             self.assertEqual(port['descriptor']['native'],out.descriptor())
 
+    def test_gauge_snapshot_marks_normal_tractions_as_gauge_relative(self):
+        # R1 (s01-2): without a pressure datum the normal boundary tractions move
+        # with the gauge exactly as the normal stresses do, yet were exported as
+        # ordinary known values. Tangential tractions are gauge-free.
+        from atlas_tectonics.workflow_ports import _Port
+        from test_regional_execution import prepare, solve
+        with prepare('extension') as plan:
+            gauge = solve('extension', plan)
+        with prepare('extension', physical_mean_pressure_pa=10.) as plan:
+            datum = solve('extension', plan)
+        self.assertFalse(gauge.descriptor()['physical_pressure_defined'])
+        relative = {'stress_xx_pa', 'stress_zz_pa', 'stress_yy_pa', 'boundary_traction_left_u_pa',
+                    'boundary_traction_right_u_pa', 'boundary_traction_bottom_w_pa', 'boundary_traction_top_w_pa'}
+        for snapshot, marked in ((gauge, relative), (datum, set())):
+            port = _Port(); port.snapshot(snapshot, 'm')
+            kinds = {name: port.specs['m.'+name]['known']['kind'] for name in snapshot.array_names}
+            self.assertEqual({n for n, k in kinds.items() if k == 'declared-gauge'}, marked)
+        for name in gauge.array_names:
+            moved = float(np.max(np.abs(gauge.array(name)-datum.array(name)))) if gauge.array(name).size else 0.
+            self.assertEqual(moved > 1e-9, name in relative, name)
+
     def test_arbitrary_duck_types_and_unimplemented_results_refuse(self):
         for value in (None,{},SimpleNamespace(descriptor=lambda:{},result_id='made-up'),np.zeros(1)):
             with self.subTest(kind=type(value).__name__):

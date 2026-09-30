@@ -63,7 +63,14 @@ or replacement still requires its explicit finite-host Step 5 operation.
 ## Checkpoint and cache contract
 
 Only a completed supplied interval or a validated exact-exhaustion endpoint may
-be saved. One `ArrayStore.put` transaction publishes current/reference geometry,
+be saved. The retirement and magma kernels publish the supplied interval end
+itself (`end_time_s`, shared end-time rule), not `start+(end-start)`, which can
+fall one ulp short: an interval from 0.020301896609317943 s to 0.3 s was refused
+as a mid-event output before 30 September 2026. An exhaustion endpoint is still
+derived as start plus the exhaustion duration. When that derived end rounds onto
+the declared end (the exhaustion duration one ulp short of end minus start), the
+interval completes exactly as it does when the durations are equal, and the
+schedule continues; previously the workflow refused its own result. One `ArrayStore.put` transaction publishes current/reference geometry,
 reference stocks, component/enthalpy stocks, formation/origin bindings, finite
 deformation, completed event cursor, exhausted nodes, owners and transfer history.
 The output identity and parent checkpoint/output identities are checked together.

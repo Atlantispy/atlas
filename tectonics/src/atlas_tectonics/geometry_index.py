@@ -63,7 +63,12 @@ class GeometryIndex:
     The retained native-index allowance is held until close(). It is an estimate,
     not a hard GEOS heap cap. Owner-held geometry payloads are counted separately.
     Read queries are safe to run concurrently; close only after joining readers.
-    Query batches bound native candidate arrays and total output is limited.
+    The tree holds private prepared copies of the feature parts, never the shared
+    feature objects, and its exact point predicates run under one index lock:
+    GEOS builds prepared indexes lazily and that first build is not thread-safe
+    (review s03-1). Concurrent queries of one index therefore serialise only that
+    predicate step. Query batches bound native candidate arrays and total output
+    is limited.
     """
     def __setattr__(self, name, value):
         if name in ('features','feature_ids','limits','budget','spherical','identity') and hasattr(self,name):
@@ -90,7 +95,7 @@ class GeometryIndex:
         if vertices>self.limits.max_vertices:raise GeometryError('index vertex budget exceeded')
         self._guard=self.budget.reserve(512*vertices+2048*len(features)+16384,category='geometry-index-retained')
         self._guard.__enter__()
-        self._lock=threading.Lock();self._active=0;self._closed=False
+        self._lock=threading.Lock();self._predicate_lock=threading.Lock();self._active=0;self._closed=False
         try:
             self._groups=[];grouped={}
             for i,f in enumerate(self.features):
@@ -102,6 +107,10 @@ class GeometryIndex:
                     shapes.append(part);owners.append(i)
             for key,(chart,shapes,owners) in sorted(grouped.items()):
                 if len(shapes)>self.limits.max_hits:raise GeometryError('index entry count exceeds query envelope')
+                if chart is None:
+                    # Exact planar predicates use private prepared copies only.
+                    shapes=shapely.from_wkb(shapely.to_wkb(np.asarray(shapes,dtype=object)))
+                    shapely.prepare(shapes)
                 self._groups.append((chart,STRtree(shapes),np.asarray(owners,dtype=np.int64),len(shapes)))
             self.identity=hashlib.sha256(_json({'schema':'atlas.geometry-index.v1',
                 'features':[(f.feature_id,f.geometry.geometry_id) for f in self.features]})).hexdigest()
@@ -166,7 +175,8 @@ class GeometryIndex:
                         candidate_count+=candidates.shape[1]
                         if not candidates.size:continue
                         if chart is None:
-                            exact=shapely.intersects(tree.geometries.take(candidates[1]),query.take(candidates[0]))
+                            with self._predicate_lock:
+                                exact=shapely.intersects(tree.geometries.take(candidates[1]),query.take(candidates[0]))
                             candidates=candidates[:,exact]
                             if not candidates.size:continue
                         pairs=np.column_stack((valid[candidates[0]],owners[candidates[1]]))

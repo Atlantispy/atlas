@@ -4,7 +4,7 @@
 
 Tectonic processes affect one another. Temperature changes rock strength; strength affects motion; motion changes thickness, heating and the forces driving the next interval. I01 investigates the physical rules needed to connect these effects without losing material, inventing heat or counting a force twice.
 
-**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** Its reviewed implementations are bounded controls, not a connected whole-world engine or accepted physical events. W01–W12 name the existing component responsibilities; I01–I12 are the separate integration increments. I02 has resumed: its first step, a shared-state record for the finite-strain column (section 1), is reviewed and tested. The first part of its second step, one reusable package-owned implementation of that column's coupled solver (section 5), has passed extraction review and focused numerical checks. The second part, continuing that same calculation from the shared record in pieces without restarting its history (section 1), is implemented; its checks passed in review, which also found an ownership defect in the reusable solver. The ownership correction and its mutation/continuation checks have now passed review and execution; bounded I02.2 continuation is accepted, and work is stopped before I02.3. The nine affected old campaign records are historical because their source bindings predate the move, and the phase, receiver, separation and G25 records became historical when their receipt writers were corrected to write the bytes Git stores. Fifteen passing successor records have now been captured and registered in dependency order, never rebound; see [current evidence](../../../docs/CURRENT_EVIDENCE.md). The sections below follow physical dependencies, not implementation dates. In the coupled controls, related quantities are updated together at declared integration stages. The eventual assembled loop must also check that its interacting processes agree at the accepted interval endpoint. See the [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) and [current status](../../../docs/CURRENT_STATE.md). The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
+**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). It is not the later evolving-planet route. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event and spherical work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
 
 The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
 
@@ -75,9 +75,9 @@ calculation had failed, although no accepted record changed. The solver now keep
 private copies of its prepared column and heat-flow operators, and inspection hands
 out a fresh copy each time, so editing that copy, or the objects originally supplied,
 cannot affect later pieces. This protection recomputes nothing. The correction and its
-mutation and continuation regressions have passed review and execution. Committing exchanges, running one
-accepted clock, and saving and reopening a record are the following I02 steps; this is
-not yet a restartable workflow.
+mutation and continuation regressions have passed review and execution. Committing
+exchanges, one accepted clock, and saving and reopening a record now exist as an
+integrated workflow, described in section 8.
 
 ## 2. Calculate support and gravitational driving from the columns
 
@@ -169,6 +169,17 @@ as Taylor-Hood elements. The full stress connects the movement directions; it
 does not treat them as three unrelated flow problems. A pressure reference is
 kept distinct from actual confinement, and prescribed flow that would accumulate
 incompressible rock inside a closed box is rejected.
+These acceptance checks are relative to the problem's own magnitudes, so the
+internal units chosen for a calculation cannot make an inaccurate or empty answer
+pass; before 30 September 2026 a problem posed in SI units with unit scales could
+return zero velocity while reporting a tiny residual. Each equation is judged
+against its own terms, so a weak layer beside strong rock, or a small density
+anomaly riding on the full weight of rock balanced by pressure, is checked at its
+own scale. When a first answer falls short, the solver refines it and still
+refuses if it cannot meet the same checks. A separate energy balance confirms
+that the published stresses agree with the equations; it cannot see an error in
+the rotational part of the flow or in the published pressure's scaling, which the
+exact test solutions cover instead.
 
 The connection can also calculate how fast declared boundary motions should be.
 It measures the region's resistance to each independent motion, then balances
@@ -203,6 +214,10 @@ The two sides exchange exactly the same mechanical work. Fixed supports and
 unowned boundaries are kept separate, so their resistance is not wrongly charged
 to a plate. The calculation can either use supplied rotations or solve rotations
 from full driving torques and the region's calculated resistance.
+In a closed box without a declared mean pressure, the pressure is known only up
+to a constant, and that constant would shift each plate's torque unless its
+boundary motion carries no net volume flux. Such per-plate torques are therefore
+refused rather than published; totals remain available.
 
 An analytical twisting column checks the rotation, returned torque and work
 independently. The mapping is prepared once and reuses the existing solver's
@@ -282,7 +297,8 @@ available. The physics, tolerances and refusals are unchanged; this change creat
 new physical result. The same solver is now split into starting a history, advancing
 it by whole steps and reporting the result, so the original uninterrupted run and a
 history continued in pieces from the shared record (section 1) use one step loop.
-Saving, shared transactions and an accepted clock remain later
+Shared transactions, the accepted clock and saving follow in section 8 as an integrated
+[workflow](../I02_WORKFLOW.md); the continuation itself is described with the
 [I02 steps](../I02_COMMON_STATE.md#9-the-package-owned-solver-i022a-and-its-continuation-i022b).
 
 That closed strip holds its base at a fixed temperature, so nothing enters or leaves it. When a rift thins the lithosphere, the hot mantle beneath rises into the space. [ASPECT's continental-extension example](https://aspect-documentation.readthedocs.io/en/latest/user/cookbooks/cookbooks/continental_extension/doc/continental_extension.html) states that without such an upwelling layer its box cannot represent breakup. The [basal closure](../I01_BASAL_CLOSURE.md) therefore opens the bottom of the regional rifting box. Named asthenosphere enters through a fixed base 150 km down, below the 100 km lithosphere, at a prescribed, uniform upward speed. It brings its actual temperature and composition and no deformation history. Rock leaves through the sides at its own actual state, never reset to a boundary value. The top is a free surface: it rises and falls, but no rock crosses it.
@@ -402,7 +418,7 @@ to create a boundary. Real separation/initiation mechanisms, compatible finite
 magma where needed, evolving history, joint timing/transfers and the full
 mechanical handoff remain conditions for physical reorganisation.
 
-The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution can pass: editing the clock cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](../../evidence/i01-finite-admission-r2.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation; persisted continuation and physical breakup remain separate responsibilities.
+The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](../../evidence/i01-finite-admission-r2.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
 
 The [breakup control](../I01_BREAKUP_CLOSURE.md) examines whether a narrowing neck can reach zero thickness in finite time, rather than declaring breakup at an arbitrary thickness. For its precisely stated creep law and quadratic weakness, an exact continuum solution shows when this is possible. The discrete columns agree at the first thinning level; they do not resolve every later, much narrower neck. The [reviewed checks](../../evidence/i01-breakup-closure-r2.json) therefore establish analytical feasibility, not a generated split. They also show why weak resistance alone does not prove separation and why a finite set of gentle slopes cannot justify a law whose limiting neck becomes too steep. The method documents the Hutchinson-Neale and Audoly-Hutchinson necking sources and the Brune/ASPECT rifting comparisons; no new geological calibration is implied. The mixed-creep/plastic lithosphere still needs resolved neck mechanics before an event can be issued.
 
@@ -443,3 +459,103 @@ The [source reconstruction](../../cases/i01_li_gurnis_reconstruction_v1.json) no
 Reading the original benchmark more closely matters here: its older, 40-million-year right-hand plate sinks beneath the younger, 10-million-year left-hand plate. Its published material constants are now recorded, but a complete input recipe is still unavailable. The paper's basal-temperature descriptions disagree, and several boundary and weakening definitions remain missing. The research also recovered approximate graph readings; their line thickness describes how precisely we can read a figure, not how accurately a model represents nature. All 28 readings now have the reproducible extractor and coordinate calibration described above. They remain outside accepted comparisons because complete benchmark inputs, applicability and axis/systematic uncertainty allowances are unresolved. Nor can the paper's weakening-strain number simply be copied: its precise definition must first be related to Atlas's accumulated engineering plastic shear.
 
 Generated breakup, complete melt-derived supply and crust birth, resolved initiation and evolving global geometry still require their later implementation and physical acceptance. The unresolved published benchmark remains separate from the new analytical verification route. The [reviewed transition evidence](../../evidence/i01-transitions-r2.json) supports bounded event machinery, not generated-world acceptance. Existing receipts and source-bound method documents retain their original meaning; explaining their connections does not renew or extend their evidence.
+
+## 8. Accept, save and continue one evolving state
+
+**The I02.3–I02.8 route is integrated locally; current verification and platform
+coverage are recorded in [current status](../../../docs/CURRENT_STATE.md).** Sections 1–7 describe what is calculated
+within an interval. This section follows one history of the finite-strain column of
+section 5 through the loop that accepts, stores and continues it. The method detail,
+its design choices and its checks are in the [I02 workflow method](../I02_WORKFLOW.md).
+
+**Start from the declared record.** The starting record of section 1 becomes the first
+entry, the root, of a ledger kept in Atlas's existing storage file. The unstretched
+reference, the starting temperatures and plastic history, and the rock records are
+stored there once. Finite stores attached to the record keep their starting amounts
+there too; the ledger carries their current amounts from then on.
+
+**Take one coupled step.** Each step is exactly the package calculation of section 5:
+current geometry from the original shape, rock strength from temperature and history,
+motion from the force balance, heat from that motion, then conduction. The step length
+comes from the original timetable. Asking for "five more steps" or "continue until this
+time" never recalculates it, and the step count keeps running towards the same 256-step
+ceiling, whatever is asked.
+
+**Check, then commit everything at once.** A step counts only if the existing checks
+pass: stretch and temperatures stay inside their windows, no temperature changes by more
+than the per-step guard, the rock-strength calculation succeeds and the time budget
+holds. Accepted steps are saved at chosen points as one database transaction containing
+the new temperatures and history, every heat and work account, any attached finite stores
+and transfers between them, and the move of the "latest accepted" position. SQLite's
+rollback journal makes that transaction all-or-nothing inside the one file. There is no
+separate pointer to the latest entry: each entry can be followed only by one entry,
+written in a slot reserved for it, so if two writers try to extend the same entry, the
+first succeeds and the second is refused with nothing written. Transfers between declared
+stores move stated amounts of each ingredient and of heat content, which may be negative,
+exactly once. Nothing is created; a store cannot give more than it holds, an emptied
+store cannot keep heat, and anything leaving or entering the represented stores is booked
+against a named outside source or sink. Amounts are kept exactly; a stored amount is
+rounded to the computer's number format once per save, and that rounding, which at a very
+large store can be comparable to a small transfer, is reported rather than hidden (a
+transfer too small to change the stored number is refused). The column itself exchanges
+no rock. Only steps
+the package has just calculated can be saved as new entries: a reloaded or hand-made
+record, however well-formed, cannot be appended as new physics. Events are declared once,
+with the history, and events this route cannot represent stop the history just before
+them rather than being invented. Each transfer names the run of steps it was produced
+for, and that run is saved in one entry together with its transfers or not at all: a
+refused transfer, or a stop part-way through its run, leaves the history at the run's
+start and says so. Otherwise a stop or an interruption still saves the steps already
+accepted; a save that fails is tried once more, and the report of an interruption says
+whether, and as which entry, the steps were saved.
+
+**Checkpoint and continue.** Every saved entry is a checkpoint. Reopening rebuilds the
+starting record through the same checks that created it, and refuses a different program
+or runtime identity rather than quietly relabelling old results. Later entries are rebuilt
+from their stored values, which must reproduce every recorded identity exactly, stay
+inside the history's limits and obey the step's own relations (for example, the recorded
+displacement must equal the change of width, and the work accounts must balance). Solvers
+are rebuilt from the recorded inputs, never read back as opaque objects, and a new process
+continues from the last entry without recalculating the earlier steps. Reopening
+also exposed a numerical precision bug:
+on very stiff rock branches, two neighbouring log-stress values could lie either
+side of the answer but neither was accurate enough. Refining directly in stress
+when that happens now meets the same tolerance, without changing the rock law or
+loosening its checks. Tests repeat the previously failing saved histories and
+compare their complete heat/work accounts with uninterrupted runs.
+Each entry records a
+fingerprint of the one before it, and every read first confirms that the chain from the
+start to the latest entry is unchanged, checking it again whenever the file may have
+changed, so an entry edited in the file without also editing every later one is refused.
+The file itself is trusted: these checks show that its contents are consistent, not who
+wrote them, so a consistent entry added to it by other means would be continued like a
+calculated one. A process killed while saving leaves either the previous entry or the new
+one, never a mixture; the checks deliberately kill writers in the middle of a save to show
+this. The finite-admission check of section 7 issues a starting state from a reopened entry
+only through this restoration, and only for the same retained evolution.
+
+**Inspect the results.** A small command tool creates the declared case, advances it,
+reports status, cancels a running advance while keeping every accepted step, saves a copy,
+loads it into a new project and continues it. A request is checked completely before
+anything starts, so a mistaken one changes nothing, and a stray or damaged cancellation
+file can neither cancel nor stop a run. Inspection works on a read-only copy of the file:
+it re-checks the chain of short descriptions, rebuilds and checks only the requested entry
+and answers from it (for example, each rock parcel's temperature in kelvin at the accepted
+time, with its source and runtime identity). It never re-runs physics or writes the
+project. Loading a saved copy checks every entry, not only the latest, again for
+consistency: a saved copy is trusted input.
+
+**What the checks establish.** Splitting the history into several requests and save
+points within one process gives exactly the same numbers and accounts as one uninterrupted
+run. Continuing in a new process, including after a time budget stops a run, re-solves the
+starting stage and agrees within the existing solver tolerance rather than bit for bit,
+and the conservation identities close. Injected failures and killed writers never expose a
+partial save, competing writers cannot both extend the history, and on Windows a program
+polling the status while a run saves no longer makes the run fail. The final integrated
+I01/I02 suite passed all 758 tests on Windows. In the corrected timing comparison,
+bare physics took 0.07085 s and saving every fourth step made this tiny column's
+run take 0.10790 s: an additional 0.03705 s (52.30%). That is a saving/recovery cost,
+not a physics speedup; the
+[method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead) gives the measured
+seconds. This reviewed, connected and restartable route completes I02 for its
+declared case. Whole-planet integration and Linux platform coverage remain separate.

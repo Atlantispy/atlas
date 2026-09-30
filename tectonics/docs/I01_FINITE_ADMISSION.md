@@ -1,7 +1,9 @@
 # I01: motion admission on the evolving finite-strain column
 
-**27 September 2026. WORKING NON-CANON. One bounded I01 connection; not I02, rupture or
-topology, a whole-world run or an automatic solver switch.** The
+**27 September 2026; restoration of I02 ledger commits added 29 September 2026. WORKING
+NON-CANON. One bounded I01 connection, which also admits states the I02 ledger restores
+(section 5) but is not itself I02; not rupture or topology, a whole-world run or an
+automatic solver switch.** The
 [case](../cases/i01_finite_admission_v1.json), [tool](../tools/check_i01_finite_admission.py)
 and [focused tests](../tests/test_i01_finite_admission.py) are new. The accepted
 [finite-strain strip](I01_FINITE_STRAIN.md), [column admission](I01_COLUMN_ADMISSION.md)
@@ -235,6 +237,37 @@ result     = admit(envelope, base, thermal, law, drive, later_state,
   `object.__setattr__` on a frozen record, private names, monkeypatching this module,
   `gc`, `ctypes` or edited pickles. No persistence, restart, cross-process identity,
   registry or log: issued records live only in the process that made them.
+- **Engine-owned restoration (I02.5).** `restored(evolution, ledger, commit)` issues a state
+  for an accepted commit of the package ledger
+  ([I02 workflow](I02_WORKFLOW.md#5-saving-reopening-and-continuing)). The ledger re-reads the
+  commit on its accepted chain and rebuilds its state with the package restorer, which
+  re-derives every identity from stored values and checks the admitted ranges and the
+  retained step relations; the tool then requires that state to be exactly this evolution's
+  history (fingerprints, law, drive, fractions, step, window, guard, policy, initial
+  departure and history, production solver). A common state, a fingerprint, a raw output, a
+  `Commit` object edited after it was issued or a commit of another ledger is refused. The
+  ledger store is trusted local input: these checks establish consistency, not who wrote a
+  record, so a consistent record appended to the store by other means is restored and
+  admitted like a computed one. The source and runtime identities are those its caller
+  declared when opening the ledger (`Ledger.open` compares them with the recorded ones);
+  `restored()` does not check which code produced the history, so admitting a restored state
+  does not depend on it. The issued record itself stays process-local.
+- **Where restoration is tested.** The frozen controls of section 8 run this tool's own
+  retained evolution in memory and do not exercise `restored()`: a restoration control would
+  need an I02 ledger store and common-state root built by the I02 test fixtures, which this
+  tool does not bind. `restored()` is exercised instead by `tests/test_i02_persistence.py`
+  (admission of restored commits, the binding of every module it executes, and the
+  trusted-store boundary). A receipt of this tool therefore binds the restoration sources
+  without running them in a control; adding a bounded restoration control, or binding that
+  test file, is a decision for the next capture.
+- **What restoration executes, and what is bound.** `restored()` executes the package
+  modules `integration_ledger`, `integration_state`, `storage`, `_validation`, `materials`,
+  `resources` and `timebase`, and `w08_inventory` with `constitutive` when stocks are
+  attached; the `Ledger.open` or `Ledger.create` it relies on also executes `mesh`. These
+  ten are the tool's `RESTORATION` sources: all are bound and all are import-checked (an
+  evidence run refuses before any control if an imported module is not its bound file).
+  The retained package owners it executes as well (`integration_evolution` and the
+  `_integration_*` modules) were already bound and import-checked with the retained tools.
 
 **Why the reachability guard alone was not enough.** Before this contract a state
 carried its clock as a plain field, and the only clock check was
@@ -330,7 +363,7 @@ lateral localisation or necking, compression, elasticity or inertia.
 | History | raw history at or above the floor, no healing | floor check; retained monotone evolution |
 | Column | plastic branch at every point, `C0 >= 0`, `phi0 >= 0`, zero pore pressure | preparation |
 | Model | represented Gauss-point strip, affine pure shear, closed | inherited finite-strain limits |
-| Provenance | states issued by this tool's own run of one retained evolution; envelopes prepared from that evolution | issue mark outside constructors and `replace()`; evolution identity at admission; raw outputs refused |
+| Provenance | states issued by this tool's own run of one retained evolution, or restored by the engine from a commit of that evolution in a trusted local I02 ledger store; envelopes prepared from those states | issue mark outside constructors and `replace()`; evolution identity at admission; raw outputs refused; restoration only through `restored()`, which checks a trusted store's consistency, not who wrote it |
 
 ## 8. Controls (frozen before execution)
 
@@ -357,9 +390,11 @@ The cooperative budget is 60 s after imports (hard ceiling 120 s).
   for every issued state, and a generator cannot yet alternate admission and
   evolution without re-running.
 - The **I02 common state and transactions** must carry the evolution identity,
-  cumulative clock and stretch with the material as an authenticated checkpoint that
-  survives persistence and restart. This tool's issued records are process-local
-  and are not serialisable evidence. It refuses re-referencing through its own
+  cumulative clock and stretch with the material as a checkpoint that survives
+  persistence and restart. The I02 ledger and `restored()` above provide one from a
+  trusted local store, checked for consistency rather than authorship; this tool's
+  issued records themselves remain process-local and are not serialisable evidence.
+  It refuses re-referencing through its own
   objects, but it cannot recognise a column re-prepared from scratch at thinner
   layer thicknesses as the same material.
 - A **creep-aware envelope** for thick hot lithosphere needs a proven lower

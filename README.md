@@ -106,11 +106,13 @@ integration programme. I01's method choices, contracts and bounded feasibility
 are selected; its bounded controls check the code against analytical cases,
 refinement and conservation, not against independent physical observations, and a
 connected whole-world engine and physical-event acceptance remain later work.
-I02's shared state, package-owned solver and bounded in-memory continuation are
-reviewed, including isolation of inspected or caller-owned prepared objects.
-The affected controls have new source-bound evidence. This is not yet persisted
-restart or the complete I02 workflow. Work is stopped at the owner's I02.2 boundary;
-I02.3 needs fresh authority. See the current-state record for evidence and status.
+I02 now connects the shared state and package-owned coupled solver to atomic
+state-and-exchange commits, one accepted clock, save/reopen/continue and a small
+command workflow for one bounded column case. Its restart precision and timing
+checks are corrected, and affected controls have fresh source-bound evidence.
+[Section 8 of that chapter](tectonics/docs/how-it-works/06-physical-integration.md#8-accept-save-and-continue-one-evolving-state)
+explains the connected route. See the current-state record for acceptance and
+platform coverage.
 This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing

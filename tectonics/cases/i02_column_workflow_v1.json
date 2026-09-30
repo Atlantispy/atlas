@@ -1,0 +1,39 @@
+{
+  "schema": "atlas.i02-column-workflow-case.v1",
+  "status": "WORKING NON-CANON",
+  "case_id": "i02-layered-extension-order8-v1",
+  "scope": "the first I02 route: the closed, laterally uniform layered finite-strain column of the I01 controls, advanced under one accepted clock, saved, reopened and continued; a bounded supported case, not a generated world, whole-planet run or physical acceptance",
+  "inputs": {
+    "weakening_case": "cases/i01_weakening_v1.json",
+    "column_heat_case": "cases/i01_column_heat_v1.json",
+    "motion_case": "cases/i01_motion_coupling_v1.json",
+    "finite_strain_case": "cases/i01_finite_strain_v1.json"
+  },
+  "column": {
+    "order": 8,
+    "drive": "the reviewed motion-case extension drive, drag and reference width, unchanged",
+    "heat_fractions": [1.0, 1.0]
+  },
+  "schedule": {
+    "duration_s": 1e14,
+    "steps": 16
+  },
+  "initial_departure": {
+    "shape": "amplitude_k * sin(2 pi z0 / h0) at every material point: warmer above mid-depth, cooler below",
+    "amplitude_k": 2.0
+  },
+  "inherited_history": "the weakening case's campaign initial_history_by_layer at every material point of its layer",
+  "identity": {
+    "world_id": "atlas-bounded-control:not-a-generated-world",
+    "scenario_id": "cases/i02_column_workflow_v1.json#i02-layered-extension-order8-v1",
+    "epoch_id": "i02-workflow-epoch",
+    "frame_id": "i02-workflow-strip",
+    "start_time_s": 2.5e6
+  },
+  "provenance": {
+    "physics": "every physical input is the reviewed I01 layered column: its layers, densities, rheology, weakening law, gravity, thermal properties, boundary temperatures, drive and policy, used unchanged through the package-owned preparation",
+    "schedule": "the retained finite-strain horizon of 1e14 s in 16 whole steps of 6.25e12 s, the time step of the I02.2 continuation checks; well inside the 256-step ceiling",
+    "departure": "the signed 2 K departure of the I02.1/I02.2 checks, so the initial thermal content and its enthalpy are nonzero and of both signs; an authored control input, not an observation",
+    "history": "the weakening case's authored inherited raw plastic history, so weakening memory is nonzero from the start"
+  }
+}

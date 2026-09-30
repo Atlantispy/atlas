@@ -60,6 +60,25 @@ whole footprint and elapsed horizon. A conservative affine trajectory bound
 includes shear and common translation. These are approximation bounds, not proof
 that the surrounding global plate network remains compatible through time.
 
+**Column envelope (R1, 30 September 2026).** The chart bound alone admitted more
+strain for smaller footprints. The review (s17) found a 1 km footprint whose
+34 km crust thickened to 182 km in the default 100 kyr (357 km, 0.056 R, at
+140 kyr), with +18 to +40 km of surface change, far below the column's own
+121.75 km lithosphere base. `assemble_input` now refuses, before `prepare`
+succeeds, any scenario whose thickest evolved crust exceeds the smaller of two
+bounds the repository already declares: the sampled column's source lithosphere
+thickness (crust is part of the lithosphere), and the 0.05 depth/radius ratio
+that admitted the planar column approximation in
+[NEW_WORLD_STRUCTURE.md](NEW_WORLD_STRUCTURE.md). For this constant-gradient map
+the area ratio is exactly `det exp(G t) = exp(trace(G) t)`, monotonic in time,
+so the thickest crust over the horizon is the initial equivalent thickness
+divided by `min(1, J(T))`; no time sampling is needed. The bound, both sources,
+the minimum area ratio and the admitted maximum thickness are recorded as
+`column_envelope` in the native input and in every evaluated output, and
+`evaluate` refuses to publish any thickness above the recorded bound. Thinning has
+no declared bound and is not limited by this envelope; choosing one would be a
+new scientific threshold, not part of this repair.
+
 Spherical shell volume is **not** silently treated as planar depth times area.
 The planar initial thickness is its volume-equivalent representation. Native
 bulk-reference phase/matrix volumes stay distinct from intrinsically known grain
@@ -120,7 +139,9 @@ repeated work without changing the selected equations or precision.
 ## How it is checked
 
 Independent controls check column weight balance, exact finite area/thickness
-relations, normal-plus-shear motion, pure-shear/translation zero-relief cases,
+relations, the column envelope (the reviewer's seed-42 cases are refused, the
+default case is admitted with a recorded bound matched by the published
+thickness to 1e-12), normal-plus-shear motion, pure-shear/translation zero-relief cases,
 constant cohort inventory, unknown preservation and direct-restoration identity.
 Native sampling checks cover complete footprint admission and retained source
 arrays. Lifecycle checks cover changed sources/inputs, malformed or partial

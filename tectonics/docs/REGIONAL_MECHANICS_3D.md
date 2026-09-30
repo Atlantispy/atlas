@@ -41,8 +41,12 @@ jump is not exactly representable by continuous Q1 and needs refinement evidence
 The matrix has velocity block A and divergence block B = -integral(q div(u)).
 Prescribed velocities are eliminated without modifying the original equations
 used to recover reactions. A volume-weighted pressure-mean constraint is added
-only when a constant pressure is genuinely undetermined. Incompatible net
-boundary flux is refused, not projected away. A numerical zero mean is not a
+only when a constant pressure is genuinely undetermined; that test compares the
+pressure leak with the divergence entries themselves, so a small open (traction)
+box is never mistaken for a closed one. Incompatible net boundary flux is
+refused, not projected away: the net flux must be below `2e-11` of the
+integrated absolute normal boundary flux, `integral(|u.n|)` over the six faces,
+plus the binary64 rounding bound of the computed sum. A numerical zero mean is not a
 physical pressure datum; `physical_pressure_pa` is available only with an
 explicit mean pressure or normal-traction conditions that determine it.
 Unconstrained rigid translations/rotations are refused rather than hidden pins
@@ -58,7 +62,105 @@ viscosity-weighted pressure-mass diagonal. A separately selected sparse direct
 method supplies small independent comparisons; a failed iterative solve never
 silently switches to it. The fixed tolerances are linear relative residual
 2e-9, mechanical-work residual 5e-9 and coupled-force residual 5e-8. GMRES asks
-for relative tolerance 1e-11, absolute tolerance 1e-13 and at most 1,200 iterations.
+for relative tolerance 1e-11 of the right-hand side (absolute tolerance 0, so
+SciPy's stopping target is purely relative) and at most 1,200 iterations.
+
+Every gate is relative to its own operands, with no absolute floor, so the
+caller's choice of L, V and eta0 cannot make a gate pass by shrinking the
+numbers. (Scales still set conditioning: a badly chosen scale can make a solve
+refuse, and the forward error of an accepted solve is its backward error times
+the conditioning of the scaled system.) The right-hand side is normalised to unit
+size before GMRES or the direct solve, so SciPy's internal 2-norms cannot
+underflow or overflow. A forced problem whose right-hand side is zero or below
+about 1e-281 after scaling is refused, as is nonzero forcing that underflows to
+zero in assembly; an exactly unforced problem has the exact zero solution.
+
+In a closed box the zero-mean pressure gauge is enforced exactly after every
+solve (the gauge weights sum to one and `B_f^T 1 = 0`, so velocity is
+unaffected); no gate would otherwise see a constant in pressure units. When the
+velocity is below 1% of the magnitude the load implies (a load-dominated state,
+such as full rho*g balanced by pressure), the solution is refined up to twice:
+a relative stop on the whole right-hand side otherwise leaves the small driving
+velocity inaccurate. If any gate still fails, up to two further working-precision
+refinement steps are taken before refusing; fixed-precision refinement is a
+standard way to recover componentwise backward stability for an accurate but
+badly scaled solve (Skeel's 1980 analysis, cited from background knowledge and
+not re-read for this change). A first GMRES solve that does not converge is
+refused. A refinement correction that reaches the iteration limit is kept only if
+it lowers the worst gate ratio: discarding such corrections refused well-scaled
+problems (a buoyant inclusion at contrast 1e4) whose corrected solution passed
+every gate. Refinement never changes a gate, and the published solution always
+faces all of them. Three linear gates must then all pass:
+
+- the combined relative residual `||K x - rhs||_inf/||rhs||_inf <= 2e-9`;
+- the momentum block, row by row: `|r_i| <= 2e-9 (|A||u|)_i + 256 eps (|B^T||p| + |load|)_i`
+  on the free rows. Pressure and load enter only at their round-off level
+  because in a load-dominated state they cancel; at full weight they admitted
+  velocity errors of 1e-5 when rho0 = 3300 drove a density anomaly of 0.01;
+- the continuity block, row by row: `|B u + w lambda|_i` against
+  `(|B|(|u| + 64 eps/2e-9 U*))_i + w_i |lambda|`, where `U*` is the momentum
+  scale divided by the largest free-row sum of `|A|`, the velocity magnitude the
+  momentum block implies. Only its round-off share enters: in a hydrostatic state u itself is
+  round-off, while a larger share let an inflated pressure-balanced scale hide
+  continuity error.
+
+Rows are judged componentwise (Oettli-Prager form), each against its own
+magnitudes, because normalising by the largest row let a weak layer's rows go
+unchecked: a velocity error confined there was accepted at 2e-5 (viscosity
+contrast 1e4) and 1e-4 (contrast 1e6). Rows below 1e-8 of the largest
+magnitude are judged at that floor. Blockwise checks matter because one dominant
+block can otherwise hide the other inside the combined norm.
+
+A declared physical mean pressure is added to the pressure after solving, and
+every gate and the work identity use the zero-mean solution: in a closed box the
+datum cannot change velocity, whereas inside the right-hand side a 3 GPa datum
+dominated every relative target and let GMRES move the velocity by 2.5e-7, and
+inside the gate magnitudes it loosened them. Reactions are then recomputed with
+the datum included.
+
+The work identity is a consistency check between the published quadrature
+fields and the assembled operators. In exact arithmetic its error equals the
+momentum residual weighted by velocity, which the momentum gate already bounds,
+so that exact term is subtracted. What remains must be `<= 5e-9` of the larger
+side of the power balance (viscous, extra-stress and pressure power against
+body, traction and constraint power), never of `max(1, ...)`. For rigid or
+exactly balanced states, whose powers are all round-off, the only floor is 64
+binary64 units on the magnitudes actually multiplied (`|A||u|`, `|B^T||p|`,
+loads and reactions, and a shape-derivative bound for quadrature powers). A
+forced solve whose powers underflow to zero or overflow is refused. The identity
+detects a mis-scaled or mis-assembled symmetric strain rate (an injected scale
+error of 2e-9 or a symmetric-part error of about 1e-7), but it cannot see an
+error in the antisymmetric (spin) part of the gradient, in the velocity
+interpolated to quadrature points, or in the scaling of the published pressure,
+because those enter neither side of the balance it compares. Those outputs rely
+on the exact-field and manufactured-solution tests instead.
+
+Before 30 September 2026 (review finding s11-1) GMRES used an absolute tolerance
+of 1e-13 and both gates were floored at 1. A problem posed in SI with unit scales
+therefore returned velocities 2.6e-4 away from the direct answer, or exactly zero,
+while reporting residuals near 1e-14. Intermediate candidates of this repair were
+shown by adversarial verification to accept rigid fields with 225-8210% error at
+badly chosen scales (combined residual only, with a work floor that absorbed the
+residual), to let a datum or a hydrostatic load loosen the gates, to miss
+weak-layer errors and to refuse well-scaled problems by discarding an unconverged
+correction; the rules above close those cases. Scratch probes on the candidate
+(Windows, CPython 3.12.14; not acceptance) found accepted velocity errors of at
+most 3.5e-9 over a 430-case sweep of layered, inclusion and random viscosity
+contrasts 1e3-1e6 with badly chosen reference viscosities, and 5.0e-9 over 192
+lithosphere/asthenosphere solves with full rho*g, extra stress and four boundary
+sets. Random-sign errors injected into momentum or continuity rows were accepted
+only up to about 1e-10.
+
+The gates bound backward error, not forward error. An adversarial residual that
+fills each gate in the worst direction, with refinement disabled, was accepted
+with velocity errors of 1.2e-8 in a uniform box and about 2e-9 times the
+viscosity contrast in a layered one (1.85e-6 at contrast 1e4). A load-dominated
+state has a floor of about eps times the ratio of the load-implied velocity to
+the actual velocity, a property of solving the full pressure in binary64 that a
+refined direct solve shares: it reaches 1e-8 only when rho0/delta-rho exceeds
+about 1e7. Deliberately mis-scaled choices (for example L = 1e-3 m with
+eta0 = 1e30) are refused, and GMRES alone refuses some strong-contrast cases
+(layered contrast 1e6 at 4x4x4 did not converge) that the direct method solves.
 
 Assembly reuses a sparse structure instead of retaining dense contributions
 for every element. Memory is admitted before mesh/factor construction and actual
@@ -138,6 +240,18 @@ mapping/source identity, angular rates, both torque signs and each plate's power
 The native conditioning, incompatible-flux and conservation refusals still apply;
 a geometrically small or insufficiently resisted rotation can be inadmissible.
 
+In a closed box without a declared mean pressure, the pressure is known only up
+to a constant c, and c shifts the torque projected on each plate mode by
+`-c` times that mode's net boundary flux. Totals and flux-free generalized forces
+stay gauge-free and the native snapshot still publishes
+`velocity_constraint_reaction_n` with `physical_pressure_defined=False`. The
+adapter therefore refuses per-plate torques in that case unless every owned
+plate mode is net-flux neutral (`1^T B m = 0`, tested with the closed-box flux
+tolerance and recorded as `mode_net_flux_neutral`). Before 30 September 2026
+(review s11-2) such torques were published as if the mean pressure were zero; in
+the test box a 1000 Pa constant moves them by 39,000 and 18,000 N m. Declaring a
+physical mean pressure, or traction faces, makes them physical.
+
 The torque is the transpose of the same discrete velocity map acting on the
 native nodal reactions. It therefore preserves virtual work without interpolating
 stress onto another boundary or multiplying integrated nodal forces by area again.
@@ -166,6 +280,24 @@ full-stress assembly, quadrature, interface loads, traction work and cancellatio
 The prepared-solver tests use exact affine, genuinely 3D heterogeneous, hydrostatic,
 mixed-traction and layered-shear solutions; retained extra stress; dimensional
 rescaling; direct/iterative agreement; and a non-polynomial refinement case.
+Scale controls solve one heterogeneous problem at load amplitudes 1 to 1e-14 and
+one SI problem under length scales 1e-3 to 1e5 m: GMRES must match the direct
+oracle to 1e-9 or be refused. A 5% net inflow into a closed box must be refused
+with unit and physical scales alike, and a small traction box must not acquire a
+pressure gauge. A scratch sweep of 64 scale combinations on two boundary types
+found 28 accepted wrong answers before the change and none after; badly
+conditioned choices (dimensionless viscosity 1e-9 with an open top) are refused.
+Further controls cover rigid translation, rotation and boundary shear at badly
+chosen scales (accurate to 1e-8 or refused), a 3 and 10 GPa pressure datum
+(velocity unchanged to 1e-9, pressure shifted by the datum) and underflowing
+forcing or power (refused, not published as zero). A rho0 = 3300 load driving a
+0.01 density anomaly must give the anomaly's velocity to 1e-8 with either method
+(baseline GMRES was 8.6e-6 away); a momentum-row error confined to a weak layer
+(contrast 1e4) must be refused when refinement cannot repair it and repaired when
+it can; a reference viscosity at the weak end of a 1e5-1e6 contrast must, with
+the direct method at 4x4x4, be refined to an accurate solution rather than
+refused; and a buoyant weak inclusion (contrast 1e4) whose GMRES correction
+reaches the iteration limit must be accepted and match the direct solution to 1e-8.
 Force-driven controls change viscosity and driving force against an analytical
 response. Refusal and reuse tests cover net flux, source changes, resources,
 mutable inputs and pressure assumptions. These check implementation and bounded

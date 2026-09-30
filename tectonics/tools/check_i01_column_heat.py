@@ -39,7 +39,7 @@ import check_i01_weakening as weakening
 column = weakening.column
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT/"cases/i01_column_heat_v1.json"
-WEAKENING_RECEIPT = ROOT/"evidence/i01-weakening-r3.json"
+WEAKENING_RECEIPT = ROOT/"evidence/i01-weakening-r4.json"
 SCHEMA = "atlas.i01-column-heat-case.v1"
 number, positive = weakening.number, weakening.positive
 relative_change, verdict, check_deadline = weakening.relative_change, weakening.verdict, weakening.check_deadline

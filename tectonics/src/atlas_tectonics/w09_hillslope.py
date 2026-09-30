@@ -36,6 +36,7 @@ from .materials import _json
 from .resources import WorkBudget, select_budget
 from .reuse import ExecutionContext
 from .stokes_execution import _native_lease
+from .timebase import interval_end, interval_partition
 
 
 CAP = 128 * 1024**2
@@ -405,7 +406,7 @@ class PreparedHillslope:
                 raise TectonicsError('hillslope Newton damping failed; refine interval')
         raise TectonicsError('hillslope nonlinear iteration bound; refine interval')
 
-    def _interval(self, state, dt, cancel):
+    def _interval(self, state, dt, cancel, target=None):
         rho = np.array([t.density_kg_m3 for t in state.tags])
         solid = state.mass_kg/rho
         v0 = np.sum(solid,axis=1)
@@ -471,25 +472,33 @@ class PreparedHillslope:
                     raise TectonicsError('shared-face cell mass account does not close')
         new = SoilState(state.base_m,mass,state.porosity,state.tags,
             exported_mass_kg=state.exported_mass_kg+exported,
-            initial_mass_kg=state.initial_mass_kg,time_s=state.time_s+used,
+            # A fully used partition ends at its declared boundary, not a re-sum.
+            initial_mass_kg=state.initial_mass_kg,
+            time_s=target if target is not None and used == dt else state.time_s+used,
             accepted_intervals=state.accepted_intervals+1,plan_id=self.plan_id,
             execution_id=self.execution_id,parent_id=state.state_id)
         # Newly wetted mobile donors also have to remain within the chosen law.
         self._flux(v,new,v > 0)
         return new,booked,exported,depleted
 
-    def advance(self, state, duration_s, *, partitions=1, cancel=None):
+    def advance(self, state, duration_s, *, partitions=1, end_time_s=None, cancel=None):
+        """A declared ``end_time_s`` (duration exactly end-start) is the requested end."""
         with self._operation(cancel):
             self._validate(state)
             duration = scalar(duration_s,'duration',nonnegative=True)
-            end = scalar(state.time_s+duration,'end time')
+            if duration > 0 and end_time_s is not None:
+                end = interval_end(state.time_s,duration,end_time_s)
+            else:
+                end = scalar(state.time_s+duration,'end time')
+                if end_time_s is not None and end_time_s != end:
+                    raise TectonicsError('declared hillslope end is not start plus duration')
             if duration > 0 and end <= state.time_s:
                 raise TectonicsError('unrepresentable hillslope interval')
             if type(partitions) is not int or not 1 <= partitions <= LIMIT:
                 raise TectonicsError('1..256 interval partitions required')
             if duration and state.accepted_intervals+partitions > LIMIT:
                 raise TectonicsError('cumulative accepted hillslope interval limit')
-            key = (state.state_id,duration,partitions)
+            key = (state.state_id,duration,partitions,end)
             if self._latest is not None and self._latest[0] == key:
                 self._stats['latest_hits'] += 1
                 return self._latest[1]
@@ -498,9 +507,10 @@ class PreparedHillslope:
             current, events = state, []
             with self._resource.reserve(16*1024**2,category='w09-hillslope-candidate'):
                 if duration:
+                    bounds = interval_partition(state.time_s,end,partitions)
                     for part in range(partitions):
-                        target = state.time_s+duration*(part+1)/partitions
-                        current,booked,out,depleted = self._interval(current,target-current.time_s,cancel)
+                        target = bounds[part+1]
+                        current,booked,out,depleted = self._interval(current,target-current.time_s,cancel,target)
                         self._stats['computed_intervals'] += 1
                         face += booked; exports += out
                         if depleted:

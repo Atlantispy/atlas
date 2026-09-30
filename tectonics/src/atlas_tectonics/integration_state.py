@@ -13,8 +13,10 @@ formation history; an optional W08Inventory carries finite exterior stocks in it
 material is never also counted as a reservoir. The envelope itself runs no physics. ``Continuation`` connects it to
 the package-owned continuable core (integration_evolution): operators are rebuilt once from the pinned inputs, every
 carried reference byte is reproduced, whole steps of the fixed schedule are advanced and verified successor states
-are issued with parent lineage. There is no transfer, transaction, storage, accepted clock or event here, no births
-and no physical admission. Holding a preparation fingerprint issues nothing to the finite-admission tool.
+are issued with parent lineage. ``restore`` (I02.5) rebuilds a persisted accepted successor for the native ledger
+(integration_ledger) from its root and recorded values, without re-running physics. Transfers, transactions, storage
+and the accepted clock live in integration_ledger and integration_clock; there are no births and no physical
+admission here. Holding a preparation fingerprint issues nothing to the finite-admission tool.
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from __future__ import annotations
@@ -79,6 +81,9 @@ _THERMAL = frozenset(('provider', 'inputs', 'fingerprint', 'mechanical_fingerpri
 _THERMAL_INPUTS = frozenset(('thicknesses', 'props', 'densities', 'boundaries', 'reference_temperature'))
 _PROPS = frozenset(('name', 'conductivity_w_m_k', 'heat_capacity_j_kg_k', 'radiogenic_w_m3'))
 PIECE_COMPLETE, HISTORY_COMPLETE, HISTORY_INCOMPLETE = 'PIECE_COMPLETE', 'HISTORY_COMPLETE', 'HISTORY_INCOMPLETE'
+# How an envelope was issued: provenance only, never part of its identity. Only a COMPUTED state (a Continuation's
+# accepted successor) can be committed as new history; a RESTORED state is a checkpoint read back from a store.
+DECLARED, COMPUTED, RESTORED = 'declared', 'computed', 'restored'
 MATERIAL_ROLE = ('unchanged W02 reference inventory: cohort identity, origin, formation provenance and partial '
                  'thickness h_k at lam = 1, dated at the history start; current strip geometry is derived from the '
                  'reference and the accepted stretch at the state time, never written back')
@@ -968,6 +973,7 @@ class CommonState(_Immutable):
     unchanged reference, settings and native payloads of its parent; current geometry is always derived from the
     original reference and the accepted stretch. ``admission`` is always NOT_CONFERRED: finite admission still
     requires a state issued by that tool's own retained evolution. Operational timing never enters the identity.
+    ``issued_by`` records how this object was issued (DECLARED, COMPUTED or RESTORED); it is provenance, not identity.
     """
     schema: str
     route: str
@@ -992,9 +998,14 @@ class CommonState(_Immutable):
     admission: str
     state_id: str
     _record: bytes = field(repr=False)
+    _issuer: str = field(repr=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('CommonState is issued by initial_state() or, for successors, by Continuation.advance()')
+
+    @property
+    def issued_by(self):
+        return self._issuer
 
     @property
     def root_state_id(self):
@@ -1090,7 +1101,7 @@ _LABELS = ('world_id', 'scenario_id', 'epoch_id', 'source_id', 'runtime_id', 'un
 
 
 def _envelope(labels, start, frame, reference, settings, column, materials, layer_cohorts, stocks, basis, parent,
-              root):
+              root, issuer):
     """One envelope record over already-checked parts. Native payloads keep their own dates and roles."""
     time_s = advance_time(start, column.elapsed_s)
     record = _canonical(dict(
@@ -1119,7 +1130,7 @@ def _envelope(labels, start, frame, reference, settings, column, materials, laye
                   start_time_s=start, time_s=time_s, parent_state_id=parent, initial_state_id=root,
                   reference=reference, settings=settings, column=column, materials=materials,
                   layer_cohorts=layer_cohorts, reservoirs=stocks, reservoir_basis=basis, admission=NOT_CONFERRED,
-                  state_id=hashlib.sha256(record).hexdigest(), _record=record)
+                  state_id=hashlib.sha256(record).hexdigest(), _record=record, _issuer=issuer)
 
 
 def initial_state(*, identity, start_time_s, frame_id, reference, settings, theta0_k, kappa0, materials,
@@ -1141,7 +1152,7 @@ def initial_state(*, identity, start_time_s, frame_id, reference, settings, thet
     stocks = _reservoir_payload(reservoirs, reservoir_basis, time_s, cohort_ids)
     labels = {name: getattr(identity, name) for name in _LABELS}
     return _envelope(labels, start, frame, reference, settings, column, materials, layer_cohorts, stocks,
-                     None if stocks is None else reservoir_basis, None, None)
+                     None if stocks is None else reservoir_basis, None, None, DECLARED)
 
 
 # ----------------------------------------------------------------------------- continuation (I02.2b)
@@ -1248,6 +1259,11 @@ def _carried(state):
                 velocity_start_m_s=column.velocity_start_m_s, column_force_start_n_m=column.column_force_start_n_m)
 
 
+SUCCESSOR_SEMANTICS = ('accepted state: cumulative since the reference at lam = 1 over whole steps of the fixed global '
+                       'schedule; accounts, counters, extrema and yield counts cover booked stages only, never a '
+                       'reconstruction re-solve')
+
+
 def _successor(parent, prefix, budget):
     """The accepted successor of ``parent``: the prefix as a new column record; everything unchanged is shared."""
     settings, previous = parent.settings, parent.column
@@ -1268,15 +1284,14 @@ def _successor(parent, prefix, budget):
                        max_step_energy_relative=values['max_step_energy_relative'],
                        max_temperature_step_k=values['max_temperature_step_k'])
         column = _column_state(
-            'accepted state: cumulative since the reference at lam = 1 over whole steps of the fixed global schedule; '
-            'accounts, counters, extrema and yield counts cover booked stages only, never a reconstruction re-solve',
+            SUCCESSOR_SEMANTICS,
             scalars, tuple((name, float(values['accounts'][name])) for name in STAGE_ACCOUNTS+THERMAL_ACCOUNTS),
             tuple((name, int(diagnostics[name])) for name in COUNTERS),
             tuple((name, float(extrema[name])) for name in EXTREMA),
             previous._theta0, values['theta'], previous._kappa0, values['kappa'], values['yield_counts'])
     return _envelope({name: getattr(parent, name) for name in _LABELS}, parent.start_time_s, parent.frame_id,
                      parent.reference, settings, column, parent.materials, parent.layer_cohorts, parent.reservoirs,
-                     parent.reservoir_basis, parent.state_id, parent.root_state_id)
+                     parent.reservoir_basis, parent.state_id, parent.root_state_id, COMPUTED)
 
 
 @dataclass(frozen=True, init=False, eq=False, slots=True)
@@ -1423,3 +1438,239 @@ class Continuation:
         prefix, _, _ = self._prefix(state, deadline)
         complete = prefix.accepted == state.settings.steps
         return _evolution.finish(self._runner, prefix, HISTORY_COMPLETE if complete else HISTORY_INCOMPLETE, None)
+
+
+# ----------------------------------------------------------------------------- restoration (I02.5)
+
+_COLUMN_KEYS = frozenset(('schema', 'route', 'semantics', *_SCALARS, 'accounts_j_m', 'counters', 'extrema', 'arrays'))
+
+
+def _consistent(settings, reference, scalars, accounts, worst, theta, theta0):
+    """Relations the retained step enforces on every accepted state, checked before a record is restored or published.
+
+    Each follows from the engine lines cited; only the power cap adds a margin beyond them (see Power balance).
+    Lines cited are those of this candidate. Every stage account is accumulated with the same positive stage weights
+    lam^-2/(lam_n^-2 + lam_a^-2) (integration_evolution.clock:145-153, advance:604-605), so a relation between the
+    powers of each stage carries over to the accounts up to rounding: ``rounding`` = 32 (n+2) u of the terms' total,
+    with n accepted steps and u = 2^-53, covers the n nonnegative contributions and their accumulation about eightfold.
+
+    - Displacement: one increment enters both the stretch and the displacement (advance:571-572, 611), so
+      displacement = w0 (lam - 1), checked to 1e-9 of w0.
+    - Log strain: the path integrates |rate| with the weights with which the quadrature integrates rate
+      (advance:573, 612), so |quadrature| <= path, checked with a 1e-12 relative slack.
+    - A zero drive is exact rest (_integration_motion.solve:58, _integration_thermomechanical.stage:53): stretch 1;
+      displacement, path, quadrature, every stage account, the start velocity and force and the force and power
+      extrema are 0.
+    - A nonzero drive moves every stage in its direction (solve:116, x in (0, 1]): the start velocity has the drive's
+      sign; the balanced column force has it too and is no larger than the drive within twice the solver's force
+      tolerance (solve:114, _integration_heat.mechanics:356); every stage account is nonnegative; and the first step
+      alone moves the edge by at least dt |v_start|/(1 + lo^-2) (its first weight, with lam_n = 1 and lam_a >= lo) and
+      books F times that as drive work, a bound that vanishes only where it would underflow.
+    - Drive work is F times the displacement, both accumulating the same F v increments (advance:571, 604), within
+      rounding.
+    - Power balance: the motion solve refuses a stage whose power residual |drive - drag - creep - plastic|/drive
+      exceeds 2e-10 (solve:122). The residual recorded for a stage (_integration_thermomechanical.stage:65) is that
+      same residual whenever the heat re-evaluation reproduces the motion's stresses, as it does by starting from them
+      at the same rate and stopping at its first evaluation (_integration_weakening.stresses:289-296); a stage where it
+      does not is counted in restress_mismatches, and the engine does not bound its residual. max_power_relative is
+      held to 2e-10 + 8 TOL, the motion's bound plus a margin for such a stage that is not a derived bound, and the
+      accounts, which also include the head stage a new process re-solves cold (not recorded), balance within that
+      bound times the drive work, within rounding. A genuine state could exceed the cap only through such a stage;
+      Ledger.commit would then refuse it rather than publish it.
+    - Work partition: each stage's creep plus plastic work lies within 2 TOL of its column work
+      (_integration_heat.mechanics:360), so |column - creep - plastic| <= 2 TOL column, within rounding.
+    - Heat: each stage books heat = fc creep + fp plastic and stored = (1-fc) creep + (1-fp) plastic
+      (mechanics:365), so heat + stored = creep + plastic and heat = fc creep + fp plastic, within rounding.
+    - Thermal change: each step books w0 fsum(C (theta_new - theta)) (advance:600), which telescopes to
+      w0 sum(C (theta - theta0)); every departure lies inside the temperature window, so the accumulated rounding is at
+      most 32 (n+2) u w0 sum(C B), B the larger distance from the steady temperature to a window edge.
+    - Steady production: each step books w0 P dt of radiogenic heat and w0 P dtau of reference outflow (advance:599,
+      606-610), P the column's radiogenic production (the fsum of the reference's radiogenic source, runner:470), and
+      the thermal clock is the sum of the dtau (advance:613), so radiogenic = n w0 P dt and reference outflow =
+      w0 P clock, within rounding.
+    - Steady reference flows: each step books w0 q dtau of reference surface loss and basal gain (advance:608), q the
+      surface outflow and basal inflow the runner takes from the prepared thermal column (runner:465,
+      _integration_thermomechanical.reference_throughput:85-88). _reference_flows evaluates the runner's own
+      expressions on the carried reference, so each account is w0 q clock, within rounding.
+    - Insulated boundaries: each step books w0 g times the boundary value of the departure's integral as departure
+      surface loss or basal gain (advance:597-598), and g is 0 at an insulated boundary (prepare_thermal:221-222), so
+      that account is exactly 0 there.
+    - The motion solver accepts no stage whose force residual exceeds its tolerance (solve:114), so max_force_relative
+      is at most that tolerance; source, dissipation and power extrema are nonnegative.
+
+    The energy and flow closure identities are not checked: the engine records their residual (advance:600-603) but
+    never enforces it, and it grows as the step shortens. Beyond vanishing at an insulated boundary, the departure
+    surface loss and basal gain need the thermal solve's boundary values, which a state does not carry, so they are
+    not related here. These relations bound a record's consistency, not its authenticity: a record that satisfies
+    them is restored whoever wrote it.
+    """
+    force, _, width = settings.drive_parameters
+    fc, fp = settings.heat_fractions
+    lo, _, tlo, thi = settings.window
+    rounding = 32*(scalars['accepted_steps']+2)*2.**-53
+    stretch, moved = scalars['stretch'], scalars['displacement_m']
+    quadrature, path = scalars['log_strain_quadrature'], scalars['log_path']
+    v0, f0 = scalars['velocity_start_m_s'], scalars['column_force_start_n_m']
+    mechanical = tuple(accounts[name] for name in STAGE_ACCOUNTS)
+    drive, drag, creep, plastic, column, heat, stored = mechanical
+    if abs(moved-width*(stretch-1)) > 1e-9*width:
+        raise TectonicsError('restored displacement is not the width times the stretch change of the same steps')
+    if abs(quadrature) > path*(1+1e-12):
+        raise TectonicsError('restored log-strain quadrature exceeds the log-strain path it is bounded by')
+    if force == 0:
+        if not (stretch == 1 and moved == 0 and path == 0 and quadrature == 0 and v0 == 0 and f0 == 0
+                and all(value == 0 for value in mechanical)
+                and worst['max_force_relative'] == 0 and worst['max_power_relative'] == 0):
+            raise TectonicsError('restored motion does not follow the declared drive: a zero drive is exact rest')
+    else:
+        first = settings.step_s*abs(v0)/(1+1/(lo*lo))*(1-1e-9)
+        if (v0*force <= 0 or f0*force < 0 or abs(f0) > abs(force)*(1+2*_motion.FORCE_TOL) or moved*force < 0
+                or any(value < 0 for value in mechanical) or abs(moved) < first or drive < abs(force)*first):
+            raise TectonicsError('restored motion does not follow the declared drive')
+    power = 2e-10+8*_weakening.TOL
+    if (abs(drive-force*moved) > rounding*(drive+abs(force*moved))
+            or abs(drive-drag-creep-plastic) > power*drive+rounding*(drive+drag+creep+plastic)
+            or abs(column-creep-plastic) > 2*_weakening.TOL*column+rounding*(column+creep+plastic)
+            or abs(heat+stored-creep-plastic) > rounding*(heat+stored+creep+plastic)
+            or abs(heat-fc*creep-fp*plastic) > rounding*(heat+creep+plastic)):
+        raise TectonicsError("restored accounts break the engine's exact account identities")
+    capacity, steady = reference._capacity, reference._steady
+    edge = np.maximum(np.abs(thi-steady), np.abs(tlo-steady))
+    expected = width*math.fsum(capacity*(theta-theta0))
+    if abs(accounts['thermal_change_j_m']-expected) > rounding*width*math.fsum(capacity*edge):
+        raise TectonicsError('restored thermal change is not the capacity-weighted change of the restored temperatures')
+    produced = math.fsum(reference._radiogenic)
+    radiogenic = scalars['accepted_steps']*width*produced*settings.step_s
+    outflow = width*produced*scalars['clock_s']
+    if (abs(accounts['radiogenic_j_m']-radiogenic) > rounding*radiogenic
+            or abs(accounts['reference_outflow_j_m']-outflow) > rounding*outflow):
+        raise TectonicsError('restored radiogenic heat or reference outflow is not the steady production over the '
+                             'whole steps and the thermal clock')
+    q_top, q_base = _reference_flows(reference)
+    surface, basal = width*q_top*scalars['clock_s'], width*q_base*scalars['clock_s']
+    if (abs(accounts['reference_surface_loss_j_m']-surface) > rounding*abs(surface)
+            or abs(accounts['reference_basal_gain_j_m']-basal) > rounding*abs(basal)):
+        raise TectonicsError('restored reference surface loss or basal gain is not the steady reference flow over the '
+                             'thermal clock')
+    top, bottom = reference.boundary_temperature_k
+    if ((top is None and accounts['departure_surface_loss_j_m'] != 0)
+            or (bottom is None and accounts['departure_basal_gain_j_m'] != 0)):
+        raise TectonicsError('restored departure heat crosses an insulated boundary')
+    if worst['max_force_relative'] > _motion.FORCE_TOL or worst['max_power_relative'] > power or any(
+            worst[name] < 0 for name in ('max_force_relative', 'max_power_relative', 'min_source_w_m2',
+                                         'min_dissipation_w_m')):
+        raise TectonicsError('restored stage extrema cannot result from solved stages')
+
+
+def _reference_flows(reference):
+    """The steady reference's surface outflow and basal inflow [W/m^2] as the runner computes them, without preparing
+    an operator: each boundary conductance is the end point's conductivity over its distance to the boundary
+    (_integration_heat.prepare_thermal:221-222), times the steady departure from the boundary temperature, and zero
+    where no temperature is fixed (_integration_thermomechanical.reference_throughput:85-88). The conductivities are
+    the carried pinned inputs from which Continuation also builds its runner, and _reproduces confirms the support,
+    thickness, boundary temperatures and steady geotherm, so with this code these are the runner's values.
+    _reproduces compares the fingerprint of the pinned inputs, conductivities included, but not the conductances a
+    runtime derives from them: a runtime that derived others is refused here, at commit, only where that changes a
+    steady boundary flow. Where both flows vanish (an insulated or isothermal reference) the recorded runtime
+    identity is the only guard against it."""
+    props = reference.thermal_inputs()['props']
+    layer, depth, steady = reference._layer, reference._depth, reference._steady
+    top, bottom = reference.boundary_temperature_k
+    k_top, k_bottom = (float(props[int(layer[i])]['conductivity_w_m_k']) for i in (0, -1))
+    out = k_top/depth[0]*(float(steady[0])-top) if top is not None else 0.
+    into = k_bottom/(reference.thickness_m-depth[-1])*(bottom-float(steady[-1])) if bottom is not None else 0.
+    return out, into
+
+
+def publishable(state):
+    """``state`` if it satisfies the relations restore() checks (_consistent), otherwise TectonicsError.
+
+    Ledger.commit applies this to the end state of every commit before publishing it, so the engine never publishes a
+    state that breaks these relations; restore()'s range checks and record reproduction are not repeated here.
+    """
+    state = _verified(state)
+    column = state.column
+    record = json.loads(column._record)
+    scalars = {name: record[name] for name in _SCALARS}
+    _consistent(state.settings, state.reference, scalars, record['accounts_j_m'], record['extrema'], column._theta,
+                column._theta0)
+    return state
+
+
+def restore(root, *, parent_state_id, column, theta_k, kappa, yield_stage_counts, budget=None):
+    """I02.5 engine-owned restoration of one persisted accepted successor of ``root``; no physics is re-run.
+
+    ``root`` is the verified declared initial state of the history (itself rebuilt through initial_state() from its
+    persisted inputs); ``column`` is the successor's persisted column record and the three arrays its current departure,
+    raw history and yield counts. Every scalar, account, counter, extreme and array must lie inside the admitted
+    history exactly as a carried prefix (the bounds resume() applies before any re-solve) and satisfy the relations
+    the engine enforces (_consistent, which Ledger.commit applies before publishing), and the rebuilt column record
+    must reproduce the persisted one. The successor shares the root's reference, settings, initial departure and
+    history and native payloads. The caller compares the returned identity with the persisted one: a mismatch refuses,
+    never rebinds. The returned state carries no admission; a Continuation re-solves its endpoint cold before any step.
+    """
+    root = _verified(root)
+    if root.parent_state_id is not None:
+        raise TectonicsError('restoration starts from the declared initial state of the history')
+    _sha(parent_state_id, 'restored parent identity')
+    if not isinstance(column, Mapping) or set(column) != _COLUMN_KEYS:
+        raise TectonicsError('the persisted column record has unexpected fields')
+    record = _document(column, 'persisted column record')
+    if (record['schema'], record['route'], record['semantics']) != (
+            'atlas.i02-finite-strain-column-state.v1', ROUTE, SUCCESSOR_SEMANTICS):
+        raise TectonicsError('the persisted column record is not an accepted state of this route')
+    settings, reference = root.settings, root.reference
+    lo, hi, tlo, thi = settings.window
+    accepted = record['accepted_steps']
+    if type(accepted) is not int or not 1 <= accepted <= settings.steps:
+        raise TectonicsError('a restored successor holds 1..%d whole steps of its fixed schedule' % settings.steps)
+    scalars = {name: accepted if name == 'accepted_steps' else _number(record[name], 'restored '+name)
+               for name in _SCALARS}
+    if scalars['elapsed_s'] != accepted*settings.step_s:
+        raise TectonicsError('restored elapsed time is not its whole steps of the fixed global schedule')
+    if not lo <= scalars['stretch'] <= hi or scalars['clock_s'] <= 0 or scalars['log_path'] < 0:
+        raise TectonicsError('restored stretch, clock or path lie outside the admitted history')
+    # Every clock increment 2 dt/(lam_n^-2 + lam_a^-2) lies in [dt lo^2, dt hi^2], and the edge moves at most across
+    # the stretch window, so a restored clock or displacement outside these bounds cannot be an accepted history.
+    elapsed, slack = scalars['elapsed_s'], 1e-9
+    width = settings.drive_parameters[2]
+    if (not elapsed*lo*lo*(1-slack) <= scalars['clock_s'] <= elapsed*hi*hi*(1+slack)
+            or abs(scalars['displacement_m']) > width*(hi-lo)*(1+slack)):
+        raise TectonicsError('restored thermal clock or displacement cannot result from whole steps inside the window')
+    names = STAGE_ACCOUNTS+THERMAL_ACCOUNTS
+    for group, keys in (('accounts_j_m', names), ('counters', COUNTERS), ('extrema', EXTREMA)):
+        if type(record[group]) is not dict or set(record[group]) != set(keys):
+            raise TectonicsError('the restored '+group+' do not name exactly the carried quantities')
+    accounts = tuple((name, _number(record['accounts_j_m'][name], 'restored account')) for name in names)
+    counters = tuple((name, record['counters'][name]) for name in COUNTERS)
+    if any(type(value) is not int or value < 0 for _, value in counters):
+        raise TectonicsError('restored counters are nonnegative integers')
+    stages = dict(counters)['stages']
+    if stages != 1+2*accepted or dict(counters)['restress_mismatches'] > stages:
+        raise TectonicsError('restored stage count is not the reference balance plus two stages per accepted step')
+    extrema = tuple((name, _number(record['extrema'][name], 'restored extreme')) for name in EXTREMA)
+    worst = dict(extrema)
+    if worst['max_temperature_step_k'] > settings.temperature_step_k or worst['max_step_energy_relative'] < 0 \
+            or worst['max_temperature_step_k'] < 0:
+        raise TectonicsError('restored step diagnostics lie outside the admitted guard')
+    count = reference.points
+    with select_budget(budget).reserve(_capture_bytes(count), category='i02-state-capture'):
+        theta = _floats(theta_k, 'restored temperature departure', count)
+        now = _floats(kappa, 'restored raw plastic history', count, nonnegative=True)
+        yields = _integers(yield_stage_counts, 'restored yield stage counts', count)
+        temperature = reference._steady+theta
+        if not np.all((temperature >= tlo) & (temperature <= thi)):
+            raise TectonicsError('restored material temperatures lie outside the declared window')
+        _consistent(settings, reference, scalars, dict(accounts), worst, theta, root.column._theta0)
+        kappa0 = root.column._kappa0
+        if np.any(now < kappa0) or np.any(now-kappa0 > 2*scalars['log_path']*(1+1e-10)):
+            raise TectonicsError('restored raw history decreased or exceeds twice the accumulated log-strain path')
+        if np.any(yields < 0) or np.any(yields > stages):
+            raise TectonicsError('restored yield counts lie outside the booked stages')
+        restored = _column_state(SUCCESSOR_SEMANTICS, scalars, accounts, counters, extrema, root.column._theta0, theta,
+                                 kappa0, now, yields)
+    if json.loads(restored._record) != record:
+        raise TectonicsError('the persisted column record is not reproduced by its values: edited or foreign record')
+    return _verified(_envelope({name: getattr(root, name) for name in _LABELS}, root.start_time_s, root.frame_id,
+                               reference, settings, restored, root.materials, root.layer_cohorts, root.reservoirs,
+                               root.reservoir_basis, parent_state_id, root.state_id, RESTORED))

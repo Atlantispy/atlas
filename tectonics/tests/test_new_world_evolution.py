@@ -16,7 +16,7 @@ import new_world_evolution as model
 from new_world_contract import ContractError
 
 
-def initial(gradient=None, velocity=(0., 0.)):
+def initial(gradient=None, velocity=(0., 0.), envelope_m=100000.):
     # Analytical control, deliberately not offered as generated-world evidence.
     native = dict(polygons_m=[[[0.,0.],[10000.,0.],[10000.,10000.],[0.,10000.]]],
         parcel_ids=['control'], cohorts=[dict(cohort_id='crust', material_id='rock',
@@ -25,7 +25,9 @@ def initial(gradient=None, velocity=(0., 0.)):
         frame_id='control-plane', datum_id='initial-surface',
         gradient_s=gradient if gradient is not None else [[-1e-14,0.],[2e-14,0.]],
         velocity_m_s=list(velocity), anchor_m=[0.,0.], max_elapsed_s=1e12,
-        max_work_bytes=128*1024**2, mantle_density_kg_m3=3300.)
+        max_work_bytes=128*1024**2, mantle_density_kg_m3=3300.,
+        # Declared analytic column; generated inputs derive it in new_world_native.
+        metadata=dict(column_envelope=dict(max_crust_thickness_m=envelope_m)))
     r = dict(schema=model.SCHEMA, method=model.METHOD, source_binding={'test':'analytic'},
         project_id='analytic-not-generated', max_elapsed_s=1e12, native_input=native,
         support=dict(method='dry-local-Airy-change-v1', elastic_rigidity_nm=0.,
@@ -108,6 +110,42 @@ class NativeEvolutionTests(unittest.TestCase):
             for value in (-1., 1e12+1., float('nan'), True):
                 with self.subTest(value=value), self.assertRaises(ContractError):
                     p.evaluate(value)
+
+    def test_column_envelope_is_recorded_and_enforced_before_publication(self):
+        with model.PreparedEvolution(initial()) as prepared:
+            self.assertEqual(prepared.evaluate(1e12)['column_envelope'], dict(max_crust_thickness_m=100000.))
+        # 30,000 m thickens to 30,301.5 m at 1e12 s: a 30,100 m envelope refuses.
+        with model.PreparedEvolution(initial(envelope_m=30100.)) as prepared:
+            self.assertEqual(len(prepared.evaluate(0.)['thickness_m']), 1)
+            with self.assertRaisesRegex(ContractError, 'column envelope'):
+                prepared.evaluate(1e12)
+        def altered(change):
+            r = initial(); change(r['native_input']); r.pop('initial_id')
+            r['initial_id'] = model._digest(r)
+            return r
+        # Missing or malformed envelopes refuse as contract errors at preparation.
+        for label, change in (('missing', lambda n: n.pop('metadata')),
+                              ('missing', lambda n: n['metadata'].pop('column_envelope')),
+                              ('invalid', lambda n: n['metadata'].__setitem__('column_envelope', {})),
+                              ('invalid', lambda n: n['metadata']['column_envelope'].__setitem__('max_crust_thickness_m', None)),
+                              ('invalid', lambda n: n['metadata']['column_envelope'].__setitem__('max_crust_thickness_m', '1e9')),
+                              ('invalid', lambda n: n['metadata']['column_envelope'].__setitem__('max_crust_thickness_m', True)),
+                              ('invalid', lambda n: n['metadata']['column_envelope'].__setitem__('max_crust_thickness_m', -1.))):
+            with self.subTest(label=label), self.assertRaisesRegex(ContractError, 'envelope is '+label):
+                model.PreparedEvolution(altered(change))
+        # A generated record's envelope is re-derived from its own source column.
+        def generated(limit):
+            def change(n):
+                n['metadata'].update(schema='atlas.new-world-native-input.v1', column_id='c',
+                    chart=dict(radius_m=6371000., centre=[0.,0.,1.], basis_x=[1.,0.,0.], basis_y=[0.,1.,0.]),
+                    geological_case_definition=dict(
+                        columns=[dict(column_id='c', lithosphere_thickness_m=125000.)]))
+                n['metadata']['column_envelope']['max_crust_thickness_m'] = limit
+            return altered(change)
+        with model.PreparedEvolution(generated(125000.)) as prepared:
+            self.assertEqual(prepared.evaluate(1e12)['column_envelope']['max_crust_thickness_m'], 125000.)
+        with self.assertRaisesRegex(ContractError, 'differs from its source column'):
+            model.PreparedEvolution(generated(1e7))
 
     def test_cancelled_preparation_and_closed_owner_refuse(self):
         event = Event(); event.set()

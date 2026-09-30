@@ -8,10 +8,13 @@ and 0 < v <= F/D, so its column resistance is at most Ybar + Abar v at any tempe
 
     Ybar = 2 g sum((q0/L) (Cmax + (P0/L) min(1, phimax))),   Abar = 4 g sum(q0 eta)/(w0 L^2),   g = 1 + 2^-50.
 
-Provenance: only reference_state() and evolved() issue a State, evolved() by running the retained evolve itself for
-one Evolution, and only prepare() issues an envelope. The issue mark is no constructor argument and replace() never
-copies it, so a built, edited or imported state or envelope is refused, and admit() takes a state only from the
-envelope's own evolution. A raw evolution output is never evolution evidence; introspection is not defended.
+Provenance: only reference_state(), evolved() and restored() issue a State, evolved() by running the retained evolve
+itself for one Evolution and restored() (I02.5) from an accepted commit that the package ledger re-reads from its
+store and restores through its own range- and relation-checking restorer; only prepare() issues an envelope. The issue
+mark is no constructor argument and replace() never copies it, so a built, edited or imported state or envelope is
+refused, and admit() takes a state only from the envelope's own evolution. A raw evolution output, a common state or a
+fingerprint is never evolution evidence; introspection is not defended. The ledger store is trusted local input: its
+checks establish consistency, not who wrote a record.
 A certificate covers a declared future window of that model inside its frozen stretch, temperature and time scope;
 failure means NOT certified by this bound. No solver switch, separation, rupture, necking or world assembly.
 SPDX-License-Identifier: AGPL-3.0-only
@@ -24,6 +27,7 @@ import copy
 import dataclasses
 from dataclasses import dataclass
 from fractions import Fraction
+import importlib
 import json
 import math
 from pathlib import Path
@@ -55,7 +59,8 @@ CERTIFIED, NOT_CERTIFIED = "CERTIFIED_FINITE_WINDOW", "NOT_CERTIFIED_BY_BOUND"
 DERIVED_ROUNDING = Fraction(2**50+1, 2**50)
 HORIZON_CEILING_S = 1e14                   # frozen: the accepted finite-strain duration from the reference geometry
 SCOPE = ("represented Gauss-point finite-strain strip measured from its absolute reference; states issued by this "
-         "tool's own run of one retained evolution; positive constant extension force; stretch and raw history at or "
+         "tool's own run of one retained evolution, or restored from a commit of that evolution in a trusted local I02 "
+         "ledger store; positive constant extension force; stretch and raw history at or "
          "above the prepared floors; any temperature inside the admitted window; zero pore pressure; holds while the "
          "retained model continues inside its temperature window and constitutive support; not the continuous depth "
          "model, the coupled thermal trajectory or physical separation")
@@ -70,14 +75,24 @@ RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_column_admissio
 # The compatibility tools execute these package owners; bind and check their actual imports too.
 _PACKAGE_IMPORTS = {name: module for name, module in fs.IMPORTED.items() if name.startswith("src/")}
 RETAINED += tuple(_PACKAGE_IMPORTS)
+# I02.5 restored() executes these package modules besides the retained owners above: the ledger, its store and the
+# common-state restorer, with the validation, material, work-budget and epoch-time helpers they call, and the stock
+# inventory (with its constitutive checks) when stocks are attached. mesh is executed by the Ledger.open or
+# Ledger.create whose rebuilt root restored() relies on. All are bound, and import-checked below.
+RESTORATION = ("src/atlas_tectonics/integration_ledger.py", "src/atlas_tectonics/integration_state.py",
+               "src/atlas_tectonics/storage.py", "src/atlas_tectonics/_validation.py",
+               "src/atlas_tectonics/materials.py", "src/atlas_tectonics/resources.py",
+               "src/atlas_tectonics/timebase.py", "src/atlas_tectonics/w08_inventory.py",
+               "src/atlas_tectonics/constitutive.py", "src/atlas_tectonics/mesh.py")
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-finite-strain-r4.json": "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c",
-    "evidence/i01-column-admission-r2.json": "c8c9552030adf99c168a1e1d132de4261777e6988fe6b27c2d8e511ff8c3cc59"}
+    "evidence/i01-finite-strain-r5.json": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
+    "evidence/i01-column-admission-r3.json": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_column_admission.py": ca,
             "tools/check_i01_decoupling.py": d, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
             "tools/check_i01_weakening.py": w, "tools/check_i01_column.py": w.column}
 IMPORTED.update(_PACKAGE_IMPORTS)
+IMPORTED.update({name: importlib.import_module("atlas_tectonics."+Path(name).stem) for name in RESTORATION})
 INPUTS = {"finite_strain_case": "cases/i01_finite_strain_v1.json",
           "column_admission_case": "cases/i01_column_admission_v1.json"}
 CONTRACT_KEYS = {"stretch_window", "temperature_window_k", "horizon_s", "pore_pressure_pa"}
@@ -201,6 +216,51 @@ def evolved(evolution, steps, *, deadline=None):
                   e.base.fingerprint)
     object.__setattr__(state, "evolution", e)
     return out, state
+
+
+def restored(evolution, ledger, commit):
+    """Issue the State of an accepted I02 ledger commit, restored by the engine, for exactly this evolution (I02.5).
+
+    ``ledger`` must be the package Ledger, which rebuilt its root through the validating constructors when it was
+    created or opened, and ``commit`` one of its Commit objects. The ledger re-reads the commit's record from its
+    store, requires it on the accepted chain from the root and returns its state, rebuilt by the package restorer from
+    the recorded values inside the admitted ranges and the retained step relations (or the state it committed itself);
+    it never re-runs the accepted prefix. That state must be this evolution's history: the same reference and thermal
+    fingerprints, weakening law, drive, heat fractions, window, temperature guard, policy, fixed time step and initial
+    departure and history, in the production solver configuration. Only then is a State issued, with this evolution's
+    geometry expressions. A common state, a fingerprint, a raw output, a Commit object edited after issue or a commit
+    of another ledger is refused. The store is trusted local input: these checks establish consistency, not who wrote
+    a record, so a well-formed, well-linked and consistent record appended to the store by other means is restored
+    and admitted like one the clock committed. The source and runtime identities are the ones the caller declared to
+    Ledger.open; this function does not check which code produced the history.
+    """
+    from atlas_tectonics import integration_ledger as ledgers, integration_state as common
+    if type(evolution) is not Evolution:
+        raise ValueError("an authorised evolution is required")
+    if type(ledger) is not ledgers.Ledger or type(commit) is not ledgers.Commit:
+        raise ValueError("an accepted commit of a package ledger is required; a common state or fingerprint is not "
+                         "evolution evidence")
+    try:
+        state = ledger.state(ledger.verify(commit))
+    except common.TectonicsError as exc:
+        raise ValueError("the commit was not restored from its store: "+str(exc)) from exc
+    e, settings, reference, column = evolution, state.settings, state.reference, state.column
+    same = (reference.mechanical_fingerprint == e.base.fingerprint and reference.thermal_fingerprint
+            == e.thermal.fingerprint and settings.law_parameters == (e.law.start, e.law.end, e.law.cohesion_factor,
+                                                                      e.law.friction_factor)
+            and settings.drive_parameters == (e.drive.force_n_m, e.drive.drag_pa_s, e.drive.width_m)
+            and settings.heat_fractions == tuple(e.fractions) and settings.step_s == e.step_s
+            and settings.window == tuple(fs.window_of(e.window)) and settings.temperature_step_k == e.temperature_step_k
+            and settings.policy() == e.policy and settings.descriptor()["numerical_policy"]["solver"] == common.SOLVER
+            and column.initial_theta_k.tobytes() == np.asarray(e.theta0).tobytes()
+            and column.initial_kappa.tobytes() == np.asarray(e.kappa0).tobytes())
+    if not same:
+        raise ValueError("the restored commit belongs to another evolution: preparation, law, drive, schedule, window, "
+                         "policy or initial history differ")
+    out = State(column.stretch, column.elapsed_s, state.current_width_m, state.current_thickness_m, column.kappa,
+                column.theta_k, e.base.fingerprint)
+    object.__setattr__(out, "evolution", e)          # the issue mark; no constructor or replace() sets it
+    return out
 
 
 def issued(state, base, thermal, law, drive):
@@ -1080,6 +1140,8 @@ def reuse_control(spec, ctx, fix, deadline=None):
               "cache, log or parallel worker; not a simulation or world speed-up"))
 
 
+# restored() is not among these controls: they run this tool's own evolution in memory, and a restoration control
+# would need an I02 ledger store and root built by the I02 test fixtures. tests/test_i02_persistence.py exercises it.
 CONTROLS = (("analytic", analytic_control), ("trajectory", trajectory_control), ("refusal", refusal_control),
             ("repeat", repeat_control), ("reuse", reuse_control))
 
@@ -1087,7 +1149,7 @@ CONTROLS = (("analytic", analytic_control), ("trajectory", trajectory_control), 
 # ----------------------------------------------------------------------------- evidence
 
 def bindings():
-    return {name: fs.digest(name) for name in NEW_FILES+RETAINED+tuple(ACCEPTED_RECEIPTS)}
+    return {name: fs.digest(name) for name in NEW_FILES+RETAINED+RESTORATION+tuple(ACCEPTED_RECEIPTS)}
 
 
 def evidence_match(current):

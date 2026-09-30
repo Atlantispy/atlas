@@ -18,6 +18,7 @@ from .regional_thermomechanical import RegionalThermalBodyForce, temperature_str
 from .regional_transport import RectangularTransportGrid, PreparedHeatTransport, HeatBoundary
 from .free_surface import PreparedFreeSurface2D
 from .surface_geometry import SurfaceProjection
+from .timebase import interval_partition
 from .resources import WorkBudget, select_budget
 from .reuse import ExecutionContext
 from .storage import ArrayStore
@@ -321,7 +322,8 @@ class PreparedW07Workflow:
             if time==start:
                 state=initial;mechanics=self._mechanical.mechanics(state,cancel=cancel);account=None
             else:
-                advanced=self._mechanical.advance(initial,time-start,steps=self.steps[index],cancel=cancel)
+                advanced=self._mechanical.advance(initial,time-start,steps=self.steps[index],
+                                                  end_time_s=time,cancel=cancel)
                 state,mechanics,account=advanced.state,advanced.mechanics,advanced.descriptor()
             receipt['surface']=account
         elif self.route=='thermal':
@@ -333,7 +335,7 @@ class PreparedW07Workflow:
                 initial=self._solve(start,T,cancel) if previous is None else previous.mechanics
                 velocity,coupling=self._transport_velocity(initial)
                 evolved=self._heat.evolve(T,*velocity,time-start,
-                    steps=self.steps[index],boundaries=self._heat_boundaries,time_s=start,
+                    steps=self.steps[index],boundaries=self._heat_boundaries,time_s=start,end_time_s=time,
                     source_w_m3=self._homogeneous['heat_production_w_m3'],cancel=cancel)
                 T=self._temperature(evolved['temperature_k'])
                 account={k:v for k,v in evolved.items() if k!='temperature_k'}
@@ -467,9 +469,9 @@ class PreparedW07Workflow:
             a.get('final_state_id')!=final or a.get('accepted_steps')!=n or
             a.get('heat_or_heterogeneous_remap') is not False or len(a.get('intervals',[]))!=n):
             raise TectonicsError('surface history/ownership mismatch')
-        start=receipt['start_time_s'];duration=receipt['end_time_s']-start
+        bounds=interval_partition(receipt['start_time_s'],receipt['end_time_s'],n)
         for j,d in enumerate(a['intervals']):
-            if (d.get('start_time_s')!=start+duration*j/n or d.get('end_time_s')!=start+duration*(j+1)/n or
+            if (d.get('start_time_s')!=bounds[j] or d.get('end_time_s')!=bounds[j+1] or
                 any(not 0.<=scalar(d.get(k),'surface residual')<=1e-9 for k in
                     ('volume_residual_scaled','mass_residual_scaled','uniform_density_residual_scaled'))):
                 raise TectonicsError('surface interval acceptance mismatch')

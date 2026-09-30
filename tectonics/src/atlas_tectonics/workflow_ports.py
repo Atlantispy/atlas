@@ -41,6 +41,11 @@ _DIMENSIONLESS = frozenset(('void_ratio', 'ocean_fraction', 'deformation_gradien
     'cell_offsets', 'row_cell', 'phase_row', 'unit_code', 'province_code',
     'phase_cohort_code', 'phase_material_code', 'phase_kind', 'owner_pairs',
     'selected_rows', 'centre_strip_index'))
+# Fields that carry the declared pressure gauge when no physical datum exists:
+# normal stresses and the normal traction components of each regional side.
+_GAUGE_RELATIVE_FIELDS = frozenset(('stress_xx_pa', 'stress_zz_pa', 'stress_yy_pa',
+    'boundary_traction_left_u_pa', 'boundary_traction_right_u_pa',
+    'boundary_traction_bottom_w_pa', 'boundary_traction_top_w_pa'))
 
 
 def _json(value):
@@ -144,7 +149,10 @@ class _Port:
                 units = 'm/s' if kind == 'velocity' else 'Pa' if kind == 'traction' else None
             support = _snapshot_support(name, native)
             known = None
-            if name in ('stress_xx_pa','stress_zz_pa','stress_yy_pa') and native.get('physical_pressure_defined') is False:
+            # Without a pressure datum the normal stresses and the NORMAL traction
+            # components (traction = effective - n*(p_ref+offset)) carry the same
+            # arbitrary constant; tangential components and total forces do not.
+            if name in _GAUGE_RELATIVE_FIELDS and native.get('physical_pressure_defined') is False:
                 known = {'kind': 'declared-gauge', 'meaning': native['stress_pressure_convention'],
                          'physical_absolute_pressure_known': False}
             self.add(prefix+'.'+name, snapshot.array(name), units=units, support=support,

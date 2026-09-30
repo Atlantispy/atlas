@@ -1,11 +1,10 @@
 # I02.1: the common physical state around the finite-strain column
 
-**28 September 2026. WORKING NON-CANON. I02.1 reviewed and focused checks passed.
-I02.2a (one package-owned solver, section 9) reviewed. I02.2b (the continuable core
-and its common-state connection, section 9) is implemented. Review ran its focused
-checks, which passed, and reproduced a prepared-runner ownership defect; the
-correction is implemented and awaiting review, and its checks have not yet been run.
-I02.2 is not complete.**
+**30 September 2026. WORKING NON-CANON. I02.1 and I02.2 (the package-owned solver
+and its continuation, including the prepared-runner ownership correction, section 9)
+are reviewed and accepted for their bounded scope. I02.3–I02.8 are now integrated
+locally, described in [I02 workflow](I02_WORKFLOW.md); the current-state record
+owns final verification and platform coverage.**
 This is the first of the eight I02 steps in the [integration plan](INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller).
 It defines the shared state envelope and the initial-state contract of the first
 physical route. It does not complete I02, run or continue physics, or establish a
@@ -23,9 +22,11 @@ continuation needs, without serialising prepared operators, functions or pickle.
 
 The envelope itself performs no physics. Since I02.2b its `Continuation` connects it
 to the package-owned core, which advances the column and issues successor envelopes
-(section 9). There is still no transfer execution, transaction, checkpoint, accepted
-clock, event calendar, remapping or user interface; nothing creates material or
-confers physical admission. Those belong to I02.3–I02.8 and later stages (section 10).
+(section 9). Transfers, the store transaction, checkpoints, the accepted clock and
+the command workflow are integrated through I02.3–I02.8 in
+[I02 workflow](I02_WORKFLOW.md), which also adds the envelope's engine-owned
+`restore`; remapping and a user interface belong to later stages. Nothing here
+creates material or confers physical admission.
 
 ## 2. What an accepted state records
 
@@ -190,15 +191,20 @@ participates in `ExecutionContext` source membership, so contexts created before
 addition refuse and new contexts receive a new identity. The loaded-code identity
 module list and all existing receipts are unchanged; nothing was repinned. The
 three registered whole-package receipts are now historical for the changed source
-membership, not failures of their unchanged physical methods.
+membership, not failures of their unchanged physical methods. Since repair batch R1
+(30 September 2026) the loaded-code set is derived from the package source membership
+rather than a fixed list, so new modules are bound automatically; this changed every
+package execution identity without repinning any receipt.
 
 ## 8. Finite admission is not conferred
 
 `CommonState.admission` is always `NOT_CONFERRED`, for successors as well as the
 root. The [finite-admission tool](I01_FINITE_ADMISSION.md) issues states only from its
-own retained evolution. Passing the envelope, or a `State` rebuilt from its values and
-preparation fingerprint, to that tool is refused. Holding a fingerprint authorises
-nothing.
+own retained evolution and, through I02.5, from an accepted ledger
+commit that the package ledger re-reads and restores itself
+([I02 workflow](I02_WORKFLOW.md#5-saving-reopening-and-continuing)). Passing the
+envelope, or a `State` rebuilt from its values and preparation fingerprint, to that
+tool is refused. Holding a fingerprint authorises nothing.
 
 ## 9. The package-owned solver (I02.2a) and its continuation (I02.2b)
 
@@ -415,9 +421,10 @@ physical campaign or performance benchmark was needed for this carrier review.
 The I02.2a extraction checks of section 9 passed at review. The same file now also
 holds the I02.2b continuation checks. Before the ownership correction, review ran
 them: 23 continuation tests pass in 2.503 s and 16 shared-state tests in 0.099 s, and
-the affected finite-strain, finite-admission and breakup numerical checks pass, with
-the known stale-receipt check still failing. The corrected code and its added checks
-are **prepared but not yet run**:
+the affected finite-strain, finite-admission and breakup numerical checks passed,
+with the then-stale receipt check still failing. That historical failure is now
+resolved by fresh successor captures. The corrected ownership and continuation
+checks passed within the final 30 September Git-normalised I01/I02 suite (758 tests):
 
 ```text
 python -B -m unittest discover -s tectonics/tests -p test_i02_evolution.py -v
@@ -439,8 +446,8 @@ exact prefixes after stretch-window and temperature-step refusals, expiry after 
 final endpoint solve, immutable prior states and caller edits, look-alike, swapped,
 edited and incompatible states, and rebuilt-reference mismatches of one overburden or
 geotherm value. The package-only child process now also continues the route from a
-common state. The existing stale-receipt freshness failures are unchanged and must stay
-failing until the evidence refresh; they are not converted or skipped.
+common state. Receipt-freshness checks now pass against the renewed evidence;
+they were not converted or skipped.
 
 The ownership correction adds two checks and adapts one. Review's two reproductions
 (reshaping the public weight array or eigenvalues), and shape, dtype and `.base`-chain
@@ -455,13 +462,13 @@ round-off. The operator-reuse check now requires inspection copies to share the 
 eigensystem's memory rather than be the same object. Its refusal of any eigensystem,
 support or preparation rebuild and its stage counts are unchanged.
 
-Remaining I02 work: review and execution of the corrected I02.2b checks, then the
-affected dependency-ordered evidence refresh; joint commits of state and finite
-exchanges in the native store (I02.3); one accepted clock and event calendar (I02.4);
-save, reopen and continuation (I02.5); a backend workflow (I02.6); joined
-verification and overhead measurement (I02.7); and closing documentation (I02.8). The
-full I02 gate still requires an actual coupled advance/save/reopen parity on the real
-route.
+The remaining I02 machinery is integrated: joint commits of state and finite
+exchanges, one accepted clock, save/reopen/continue, the command workflow and
+joined verification with measured overhead. The precision repair retains the
+original constitutive tolerance and iteration ceiling; failed-step exceptions
+also identify the last accepted checkpoint. Fresh finite-admission evidence is
+captured. See [I02 workflow](I02_WORKFLOW.md) and the current-state record for
+final acceptance; Linux execution remains a separate platform coverage gap.
 
 ## 11. Sources
 

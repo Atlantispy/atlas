@@ -36,6 +36,18 @@ class WorkBudget:
         self._categories = {}
         self._category_peaks = {}
         self._lock = threading.Lock()
+        # Returned reservations waiting for the lock. A lease is often returned by a garbage-collection
+        # finalizer, which runs in whatever thread triggered the collection and at any point, possibly while
+        # that thread holds this lock; a return therefore never waits for it (_release), and whoever holds
+        # the lock next applies the queue first.
+        self._returned = []
+
+    def _settle(self):
+        # The caller holds self._lock. list.append/pop are atomic, so a finalizer may queue meanwhile.
+        while self._returned:
+            count, label = self._returned.pop()
+            self._used -= count
+            self._categories[label] -= count
 
     @property
     def max_bytes(self):
@@ -44,6 +56,7 @@ class WorkBudget:
     @property
     def reserved_bytes(self):
         with self._lock:
+            self._settle()
             return self._used
 
     @property
@@ -55,6 +68,7 @@ class WorkBudget:
     def available_bytes(self):
         # Admission rechecks atomically: this value is only a scheduling hint.
         with self._lock:
+            self._settle()
             available = self._max_bytes - self._used
         if self._parent is not None:
             available = min(available, self._parent.available_bytes)
@@ -62,6 +76,7 @@ class WorkBudget:
 
     def statistics(self):
         with self._lock:
+            self._settle()
             return dict(max_bytes=self._max_bytes, reserved_bytes=self._used,
                         peak_reserved_bytes=self._peak, refusals=self._refusals,
                         categories=dict(self._categories),
@@ -102,6 +117,8 @@ def reserve_budgets(count: int, *budgets: WorkBudget, category: str = 'work'):
     with ExitStack() as stack:
         for node in ordered:
             stack.enter_context(node._lock)
+        for node in ordered:
+            node._settle()
         if any(count > node._max_bytes - node._used for node in ordered):
             for node in ordered:
                 node._refusals += 1
@@ -116,12 +133,25 @@ def reserve_budgets(count: int, *budgets: WorkBudget, category: str = 'work'):
     try:
         yield
     finally:
-        with ExitStack() as stack:
-            for node in ordered:
-                stack.enter_context(node._lock)
-            for node, label in charged:
-                node._used -= count
-                node._categories[label] -= count
+        _release(charged, count)
+
+
+def _release(charged, count):
+    """Return one reservation without ever waiting for a lock.
+
+    A return may run inside a garbage-collection finalizer (weakref.finalize of a lease owner), in whatever thread
+    triggered the collection and at any point of it, including while that thread holds one of these locks inside
+    another reservation; waiting there would deadlock. Each budget queues the return and applies it now when its lock
+    is free, otherwise its next holder applies it before using the account. Refusal and admission stay atomic.
+    """
+    for node, label in charged:
+        node._returned.append((count, label))
+    for node, _ in charged:
+        if node._lock.acquire(blocking=False):
+            try:
+                node._settle()
+            finally:
+                node._lock.release()
 
 
 # Conservative local policy, not the owner's hardware specification. Stores and

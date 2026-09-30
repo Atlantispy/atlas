@@ -81,6 +81,17 @@ class SubductionMaterialTests(unittest.TestCase):
             self.assertEqual(plan.evaluate(20.).result_id, end.result_id)
             np.testing.assert_array_equal(plan.inventory.mass_kg, [120., 400.])
 
+    def test_declared_end_time_is_published_exactly(self):
+        # R1 (s16 missed #0): the kernel stamped start+duration, one ulp below
+        # the declared end for this pair, so W08 refused its own interval.
+        start, end = 0.020301896609317943, 0.3
+        self.assertNotEqual(start+(end-start), end)
+        with prepare(inventory(time_s=start)) as plan:
+            self.assertEqual(plan.evaluate(end-start, end_time_s=end).remaining.time_s, end)
+            self.assertEqual(plan.evaluate(end-start).remaining.time_s, start+(end-start))
+            with self.assertRaises(TectonicsError):
+                plan.evaluate(.1, end_time_s=end)
+
     def test_near_exhaustion_preserves_small_remaining_composition(self):
         with prepare() as plan:
             result = plan.evaluate(np.nextafter(20., 0.))

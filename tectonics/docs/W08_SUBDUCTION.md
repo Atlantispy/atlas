@@ -156,6 +156,12 @@ comparison remain preserved; PGC reference temperatures and2C/1C gates are uncha
 - `PreparedSubduction` owns source/runtime verification, native single-thread
   execution, geometry/operator preparation and one latest immutable result.
   Mesh algebra is in km/slab-speed units; published fields are kelvin, m/s and Pa.
+  Case 1a prescribes the analytic corner-flow velocity and solves no Stokes
+  system, so it publishes **no** wedge pressure: `wedge_pressure_pa` is empty and
+  the statistic `pressure_computed` is `False` (true for 1b, 1c, 2a and 2b). Before
+  30 September 2026 (review s13-1) it published exact zeros in Pa (107 at 24 km
+  spacing), while the solved 1b pressure there spans about -7.2e9 to 2.7e7 Pa. An analytic corner-flow
+  pressure with a stated gauge remains possible later; it is not implemented.
   Complete result geometry and velocity convert explicitly to Atlas x-right/z-up
   metres, z=-y and vz=-vy, with triangle orientation/midpoint ordering preserved.
 - A shared128MiB accounted-work envelope admits geometry, assembly and sparse

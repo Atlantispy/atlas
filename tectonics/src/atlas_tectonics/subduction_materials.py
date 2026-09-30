@@ -19,6 +19,7 @@ from ._validation import TectonicsError, input_shape, read_array, scalar
 from .materials import MaterialCohort, _catalogue, _name, _json, _immutable_bytes
 from .regional import _cancelled
 from .resources import WorkBudget, DEFAULT_BUDGET, select_budget
+from .timebase import interval_end
 
 
 DESTINATIONS = ('accretion', 'deep-storage', 'export')
@@ -286,13 +287,19 @@ class PreparedSubductionRetirement:
     def destination_fractions(self): return np.frombuffer(self._partition, np.float64).reshape(-1, 3)
     def descriptor(self): return json.loads(self._record)
 
-    def evaluate(self, duration_s, *, cancel=None):
+    def evaluate(self, duration_s, *, end_time_s=None, cancel=None):
+        """A declared ``end_time_s`` (duration exactly end-start) is the published end."""
         if self._closed: raise TectonicsError('retirement preparation is closed')
         _cancelled(cancel); duration = scalar(duration_s, 'retirement duration', nonnegative=True)
         if self.exhaustion_duration_s is not None and duration > self.exhaustion_duration_s:
             raise RetirementExhaustionError(self.exhaustion_duration_s, self.exhausted_cohort_ids)
         source = self.inventory; c, k = len(source.cohorts), len(source.component_ids)
-        end = scalar(source.time_s+duration, 'retirement endpoint')
+        if duration > 0 and end_time_s is not None:
+            end = interval_end(source.time_s, duration, end_time_s)
+        else:
+            end = scalar(source.time_s+duration, 'retirement endpoint')
+            if end_time_s is not None and end_time_s != end:
+                raise TectonicsError('declared retirement end is not start plus duration')
         if duration > 0 and end == source.time_s: raise TectonicsError('inventory clock cannot resolve retirement duration')
         with self._budget.reserve(512*c*(k+2)+16384, category='subduction-retirement-output'):
             mass = source.mass_kg; initial = np.column_stack((mass, source.enthalpy_j, source.component_mass_kg))

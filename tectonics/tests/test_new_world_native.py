@@ -122,5 +122,103 @@ class NativeInputTests(unittest.TestCase):
             bridge.assemble_input(self.project, dict(max_elapsed_s=1e18))
 
 
+class ColumnEnvelopeTests(unittest.TestCase):
+    """R1: regional evolution published crust thicker than its own lithosphere."""
+    @classmethod
+    def setUpClass(cls):
+        import new_world_contract as contract
+        # The reviewer's seed-42 world (s17 verifier probe v6), not a new fixture.
+        settings = {k: dict(mode='fixed', value=v) for k, v in dict(radius_m=6371000., gravity_m_s2=9.81,
+            plate_count=6, continental_fraction=.3).items()}
+        plan = contract.resolve_request(contract.new_request(f'{42:032x}', settings=settings,
+            support_cells=192, resources=dict(max_wall_seconds=120., max_work_bytes=256 << 20)))
+        candidate = generate_layout_candidate(plan)
+        structure = generate_structure(plan)
+        cls.project = SavedProject(dict(plan=plan, report=candidate.report, atlas_id=candidate.atlas.atlas_id),
+            candidate.atlas, True, structure, generate_motion(plan, candidate, structure))
+        cls.columns = {c.column_id: c for c in structure.state.case.columns}
+
+    def test_absurd_thickening_is_refused_before_prepare(self):
+        year = 365.25*86400
+        # Baseline published 182,164 m and 357,083 m of crust from a 34,042 m
+        # crust with 121,750 m lithosphere (0.056 R in the second case).
+        for options in (dict(width_m=1000., length_m=500.),
+                        dict(width_m=1000., length_m=500., max_elapsed_s=1.4e5*year)):
+            with self.subTest(options=options):
+                with self.assertRaisesRegex(ContractError, 'column envelope') as caught:
+                    bridge.assemble_input(self.project, options)
+                self.assertEqual(caught.exception.code, 'NATIVE_INPUT_REFUSED')
+
+    def test_admitted_scenario_records_and_respects_the_envelope(self):
+        import new_world_evolution as evolution
+        result = bridge.assemble_input(self.project, {})
+        envelope = result['metadata']['column_envelope']
+        column = self.columns[result['metadata']['column_id']]
+        self.assertEqual(envelope['max_crust_thickness_m'], min(column.lithosphere_thickness_m, .05*6371000.))
+        self.assertEqual(envelope['source_lithosphere_thickness_m'], column.lithosphere_thickness_m)
+        self.assertLessEqual(envelope['admitted_max_crust_thickness_m'], envelope['max_crust_thickness_m'])
+        with patch.object(evolution, 'source_binding', return_value={'test': 'generated'}):
+            initial = dict(schema=evolution.SCHEMA, method=evolution.METHOD, source_binding={'test': 'generated'},
+                project_id='r1-envelope', max_elapsed_s=result['max_elapsed_s'], native_input=result,
+                support=dict(method='dry-local-Airy-change-v1', elastic_rigidity_nm=0., fill_density_kg_m3=0.,
+                             mantle_density_kg_m3=result['mantle_density_kg_m3']))
+            initial['initial_id'] = evolution._digest(initial)
+            with evolution.PreparedEvolution(initial) as prepared:
+                output = prepared.evaluate(result['max_elapsed_s'])
+        self.assertEqual(output['column_envelope'], envelope)
+        thickest = float(np.max(np.sum(output['thickness_m'], axis=0)))
+        self.assertLessEqual(thickest, envelope['max_crust_thickness_m'])
+        # The native map accepts a relative area error of MAP_ERROR.
+        from atlas_tectonics.transform import MAP_ERROR
+        self.assertLessEqual(abs(thickest/envelope['admitted_max_crust_thickness_m']-1.), MAP_ERROR)
+
+    def test_scenario_admitted_at_the_bound_is_published_at_its_horizon(self):
+        # Verifier finding: with a 64-ulp margin, prepare admitted scenarios whose
+        # own horizon evaluate then refused (the native area check allows 1e-10).
+        import new_world_evolution as evolution
+        from atlas_tectonics.transform import MAP_ERROR
+        base = dict(width_m=2000., length_m=1., cells_across=64, edge_index=43, fraction=.5)
+        probe = bridge.assemble_input(self.project, dict(base, max_elapsed_s=3.15576e9))['metadata']['column_envelope']
+        trace = float(np.trace(bridge.assemble_input(self.project, dict(base, max_elapsed_s=3.15576e9))['gradient_s']))
+        threshold = probe['max_crust_thickness_m']*(1-2*MAP_ERROR)
+        horizon = math.log(probe['initial_max_crust_thickness_m']/threshold)/trace*(1-1e-12)
+        with self.assertRaisesRegex(ContractError, 'column envelope'):
+            bridge.assemble_input(self.project, dict(base, max_elapsed_s=horizon*(1+1e-9)))
+        with patch.object(evolution, 'source_binding', return_value={'test': 'generated'}):
+            native = bridge.assemble_input(self.project, dict(base, max_elapsed_s=horizon))
+            initial = dict(schema=evolution.SCHEMA, method=evolution.METHOD, source_binding={'test': 'generated'},
+                project_id='r1-bound', max_elapsed_s=horizon, native_input=native,
+                support=dict(method='dry-local-Airy-change-v1', elastic_rigidity_nm=0., fill_density_kg_m3=0.,
+                             mantle_density_kg_m3=native['mantle_density_kg_m3']))
+            initial['initial_id'] = evolution._digest(initial)
+            with evolution.PreparedEvolution(initial) as prepared:
+                output = prepared.evaluate(horizon)
+        self.assertLessEqual(float(np.max(np.sum(output['thickness_m'], axis=0))),
+                             native['metadata']['column_envelope']['max_crust_thickness_m'])
+
+    def test_envelope_uses_both_declared_bounds_and_the_exact_area_law(self):
+        from types import SimpleNamespace
+        square = [[[0., 0.], [100., 0.], [100., 100.], [0., 100.]]]
+        volume = [[3e6]]          # 300 m of crust over 1e4 m2
+        column = SimpleNamespace(lithosphere_thickness_m=1000.)
+        g = [[-1e-12, 0.], [3e-12, 0.]]
+        admitted = bridge._column_envelope(column, square, volume, g, 1e12, 1e6)
+        self.assertEqual(admitted['max_crust_thickness_m'], 1000.)
+        self.assertAlmostEqual(admitted['admitted_max_crust_thickness_m'], 300.*math.e, places=9)
+        with self.assertRaisesRegex(ContractError, 'column envelope'):
+            bridge._column_envelope(column, square, volume, g, 2e12, 1e6)
+        # A small planet makes 0.05 R the binding declared limit.
+        with self.assertRaisesRegex(ContractError, 'column envelope'):
+            bridge._column_envelope(column, square, volume, g, 1e12, 1.5e4)
+        thinning = bridge._column_envelope(column, square, volume, [[5e-12, 0.], [0., 0.]], 1e12, 1e6)
+        self.assertEqual(thinning['minimum_area_ratio'], 1.)
+        self.assertEqual(thinning['admitted_max_crust_thickness_m'], 300.)
+        # At a late epoch the producer integrates (epoch+T)-epoch, not T.
+        epoch, elapsed = 1.4e17, 2400072202077.37
+        late = bridge._column_envelope(column, square, volume, [[-1e-13, 0.], [0., 0.]], elapsed, 1e6, epoch)
+        self.assertEqual(late['integrated_duration_s'], max(elapsed, (epoch+elapsed)-epoch))
+        self.assertGreater(late['integrated_duration_s'], elapsed)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -606,6 +606,27 @@ source changes, native settings, index-vs-exhaustive equality, cancellation, mem
 admission, concurrent reads, corruption and fresh-process/cold backup restoration.
 A GEOS-vs-GEOS index comparison checks pruning, not independent correctness of GEOS.
 
+Prepared geometry and threads (R1, 30 September 2026). GEOS builds a prepared
+geometry's point locator and segment indexes lazily, inside the first predicate
+calls, and that build is not thread-safe. Review finding s03-1 showed that eight
+threads released together onto a never-queried polygon or index crashed the
+process (access violation or heap corruption). A one-call warm-up does not
+prevent it, and which call completes the build is a GEOS internal, so Atlas no
+longer publishes prepared objects at all. Shared shapely objects stay unprepared
+and may be used from any thread. Point classification uses private prepared copies
+built on first use and held under a per-geometry lock; `GeometryIndex` builds its
+tree from private prepared copies of the parts and evaluates exact planar
+predicates under a per-index lock. Concurrent reads of the same geometry or index
+therefore serialise that predicate step; different geometries still run in
+parallel. A barrier-released cold-start storm in a child process (planar
+classification, `covers` on shared objects, a fresh index and spherical
+classification) crashed before the change and now completes with results equal
+to serial ones. Measured serial cost on Windows (4,000-vertex polygon, 20,000
+points, medians of three runs): classification 0.00606 to 0.00611 s warm and
+0.01025 to 0.01037 s cold (+1%); index build plus first query 0.01134 to
+0.01745 s (+6.1 ms for private copies of 64,000 vertices); a warm index query
+unchanged at 0.0111 s.
+
 Primary method references:
 - Shapely 2.1.2 STRtree: https://shapely.readthedocs.io/en/2.1.2/strtree.html
 - Double-precision overlay semantics: https://shapely.readthedocs.io/en/2.1.2/reference/shapely.intersection.html
@@ -739,7 +760,8 @@ an excuse to select one arbitrarily. A zero-band raw predicate that cannot estab
 coverage refuses rather than guessing the nearest region.
 
 The index is explicitly opened/closed and reusable for bounded batches. Threaded
-reads are tested; closing while a reader is active is refused. Source/restored
+reads, including a cold first use, are tested (see the prepared-geometry note
+above); closing while a reader is active is refused. Source/restored
 arrays have immutable byte backing with fresh metadata views. Index state is
 reconstructed, never saved as executable/object-graph data. Missing/corrupt objects
 block restoration and remain distinct from an absent disposable snapshot.

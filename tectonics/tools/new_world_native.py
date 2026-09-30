@@ -168,6 +168,49 @@ def _footprint(atlas, state, index, opts, *, budget, cancel):
         whole_footprint_proof='circumscribed cap excludes every other interplate edge, both selected endpoints and every crust-province boundary')
 
 
+# Planar-column admission of NEW_WORLD_STRUCTURE.md: depth/radius <= 0.05.
+PLANAR_DEPTH_RADIUS_RATIO = 0.05
+
+
+def _column_envelope(column, polygons, volume, gradient, elapsed, radius, epoch=0.):
+    """Refuse an affine scenario that thickens crust past the declared column.
+
+    Only bounds the repository already declares are used: the sampled column's
+    source lithosphere thickness (crust is part of the lithosphere) and the 0.05
+    depth/radius ratio that admitted the planar column approximation. For the
+    constant-gradient map, det F(t) = det exp(G t) = exp(tr(G) t) exactly, so the
+    area ratio is monotonic and the thickest crust over [0, T] is h0/min(1, J(T)).
+    The duration is the one the producer integrates, (epoch+T)-epoch, and the
+    margin covers the native map's accepted relative area error (MAP_ERROR).
+    Thinning has no declared bound and is not limited here.
+    """
+    import numpy as np
+    from atlas_tectonics.transform import MAP_ERROR
+    areas = [abs(math.fsum(a[0]*b[1]-b[0]*a[1] for a, b in zip(p, p[1:]+p[:1])))/2 for p in polygons]
+    initial = [math.fsum(row[j] for row in volume)/areas[j] for j in range(len(polygons))]
+    trace = float(np.trace(np.asarray(gradient)))
+    integrated = max(elapsed, (epoch+elapsed)-epoch)
+    ratio = min(1., math.exp(trace*integrated))
+    lithosphere = float(column.lithosphere_thickness_m)
+    planar = PLANAR_DEPTH_RADIUS_RATIO*radius
+    limit = min(lithosphere, planar)
+    thickest = max(initial)/ratio if ratio > 0 else math.inf
+    margin = 2*MAP_ERROR
+    if not math.isfinite(thickest) or thickest > limit*(1-margin):
+        _fail(f'Affine thickening would give {thickest:.6g} m of crust, beyond the declared column '
+              f'envelope {limit:.6g} m (source lithosphere {lithosphere:.6g} m; 0.05 depth/radius '
+              f'{planar:.6g} m). Shorten the horizon, widen the footprint or choose another boundary.')
+    return dict(rule='max evolved crust thickness <= min(source lithosphere thickness, 0.05 R planar depth)',
+        max_crust_thickness_m=limit, source_lithosphere_thickness_m=lithosphere,
+        planar_depth_radius_ratio=PLANAR_DEPTH_RADIUS_RATIO, planar_depth_limit_m=planar,
+        initial_max_crust_thickness_m=max(initial), minimum_area_ratio=ratio,
+        admitted_max_crust_thickness_m=thickest, integrated_duration_s=integrated,
+        relative_margin=margin,
+        area_ratio_law='det exp(G t) = exp(trace(G) t), monotonic in t',
+        thinning='no declared thinning bound; not limited by this envelope',
+        sources='NEW_WORLD_STRUCTURE.md planar-column admission; sampled S3 column lithosphere')
+
+
 def _promote(state, atlas, budget, cancel):
     from atlas_tectonics import GeologicalCase, InitialConditionState
     case = state.case
@@ -300,6 +343,7 @@ def assemble_input(saved_project, options:dict, *, cancel=None):
             _fail('Footprint plus finite Euler sweep exceeds the 0.05-radian local scenario envelope.')
         projected_radius = radius*math.tan(swept_cap)
         speed_error = omega*projected_radius
+        envelope = _column_envelope(column, polygons, volume, gradient, elapsed, radius, case.time_s)
         metadata = dict(schema='atlas.new-world-native-input.v1', status='WORKING NON-CANON',
             source_binding=binding, options=opts, edge_index=index, edge_id=atlas.edge_ids[index],
             left_plate_id=edge.left_plate_id, right_plate_id=edge.right_plate_id,
@@ -324,6 +368,7 @@ def assemble_input(saved_project, options:dict, *, cancel=None):
                 relative_projected_velocity_variation_bound_m_s=2*speed_error,
                 frozen_velocity_path_error_bound_m=speed_error*elapsed,
                 bound_scope='all affine parcel trajectories and rigid Euler paths fit the admitted cap; velocity/path errors bound midpoint-frozen rigid kinematics only, not constitutive-model or global plate-boundary error'),
+            column_envelope=envelope,
             inventory_semantics='exact native S5 spherical phase/matrix reference volumes; intrinsic solid-volume unknown masks are retained; equivalent planar thickness is V / planar polygon area; no renormalisation',
             density_semantics='supplied constant reference-density scenario, not hot-state mass or an equation of state',
             temperature_semantics='retained native initial volume-weighted temperatures and known masks; no evolved heat/enthalpy',

@@ -58,6 +58,86 @@ class FreeSurfaceTests(unittest.TestCase):
             MEASUREMENTS.append(dict(case='flat SI',diagnostics=result.descriptor()['diagnostics'],
                                      budget_peak=p.statistics()['budget']['peak_reserved_bytes']))
 
+    def test_relaxation_gate_refuses_steps_that_would_grow_topography(self):
+        # R1 (s08-1): with z=rate*dt above 2, SSP-RK2 amplifies a relaxing mode
+        # by 1-z+z^2/2 per step; 3 steps at z=4 grew a cosine 128-fold, accepted.
+        rate=0.14424591716886523
+        with plan() as p:
+            x=np.linspace(0.,2.,9)
+            state=p.initial_state(1.+1e-4*np.cos(np.pi*x),epoch_id='relaxation gate')
+            for z,steps in ((.5,1),(3.,1),(3.,4),(4.,3)):
+                with self.subTest(z=z,steps=steps),self.assertRaisesRegex(TectonicsError,'relaxation limit'):
+                    p.advance(state,z*steps/rate,steps=steps)
+            # The refusal names an admissible partition; it tracks the analysis.
+            with self.assertRaisesRegex(TectonicsError,'at least 12 steps'):
+                p.advance(state,1./rate,steps=1)
+            result=p.advance(state,1./rate,steps=12)
+            fine=p.advance(state,1./rate,steps=96)
+            amplitude=lambda s:float(np.dot(s.array('mesh_nodes_m')[-1,:,1]-1.,np.cos(np.pi*x))/5.)
+            # Time-only error after one e-folding is about z^2/6 (z<=0.1/1.114).
+            self.assertLess(abs(amplitude(result.state)/amplitude(fine.state)-1.),2e-3)
+            self.assertLess(amplitude(result.state),1e-4)
+            self.assertTrue(all(i['relaxation_step']<=.1 for i in result.descriptor()['intervals']))
+        with self.assertRaisesRegex(TectonicsError,'above 0.25'):
+            plan(relaxation_step_limit=.3)
+        with plan(relaxation_step_limit=.05) as p:
+            state=p.initial_state(1.+1e-4*np.cos(np.pi*np.linspace(0.,2.,9)),epoch_id='tighter')
+            with self.assertRaisesRegex(TectonicsError,'at least 23 steps'):
+                p.advance(state,1./rate,steps=12)
+            self.assertEqual(p.descriptor()['relaxation_step_limit'],.05)
+
+    def test_sloped_surface_steps_obey_the_surface_courant_limit(self):
+        # Verification finding: on sloped topography surface-parallel flow adds
+        # advective modes (lambda*dt ~ 2.06i*C) that SSP-RK2 amplifies at any dt;
+        # a relaxation-admitted single step grew a seeded mode 1.135-fold.
+        from atlas_tectonics.free_surface import RELAXATION_RATE_COEFFICIENT
+        with plan(16,2,budget=WorkBudget(1<<30)) as p:
+            x=np.linspace(0.,2.,33)
+            state=p.initial_state(1.+.3*np.cos(np.pi*x/2.),epoch_id='sloped')
+            dt=.1/(RELAXATION_RATE_COEFFICIENT*1.3)*.97
+            with self.assertRaisesRegex(TectonicsError,'surface Courant limit 0.1') as caught:
+                p.advance(state,dt,steps=1)
+            needed=int(str(caught.exception).split('at least ')[1].split()[0])
+            result=p.advance(state,dt,steps=needed)
+            self.assertTrue(all(i['surface_courant']<=.1 and i['relaxation_step']<=.1
+                                for i in result.descriptor()['intervals']))
+        with self.assertRaisesRegex(TectonicsError,'above 0.1'):
+            plan(surface_courant_limit=.11)
+        # A vanishing declared limit refuses cleanly instead of overflowing.
+        with plan(relaxation_step_limit=5e-324) as p:
+            state=p.initial_state(1.+1e-4*np.cos(np.pi*np.linspace(0.,2.,9)),epoch_id='tiny')
+            with self.assertRaisesRegex(TectonicsError,'more than the 256'):
+                p.advance(state,1.,steps=1)
+
+    def test_si_relaxation_step_is_refused_not_published(self):
+        # A 24,957-year step on a 9,983-year relaxation time gave 7.93 m of relief
+        # from a 5 m cosine (exact 0.41 m), with every conservation gate passing.
+        with plan(width_m=4000.,reference_height_m=1000.,viscosity_pa_s=1e18,density_kg_m3=3300.,
+                  gravity_m_s2=9.81,external_pressure_pa=0.,strike_width_m=1.,
+                  scales=RegionalMechanicsScales(1000.,1e-10)) as p:
+            x=np.linspace(0.,4000.,9)
+            state=p.initial_state(1000.+5.*np.cos(np.pi*x/2000.),epoch_id='SI relaxation')
+            with self.assertRaisesRegex(TectonicsError,'relaxation limit'):
+                p.advance(state,24957.*31557600.,steps=1)
+
+    def test_last_substep_ends_exactly_at_the_declared_end(self):
+        t1=0.011583828702548055
+        self.assertNotEqual(t1*3/3,t1)
+        with plan() as p:
+            state=p.initial_state(1.+1e-4*np.cos(np.pi*np.linspace(0.,2.,9)),epoch_id='clock')
+            result=p.advance(state,t1-0.,steps=3,end_time_s=t1)
+            self.assertEqual(result.state.descriptor()['time_s'],t1)
+            self.assertEqual(result.descriptor()['intervals'][-1]['end_time_s'],t1)
+            self.assertEqual(p.advance(state,t1,steps=3).state.descriptor()['time_s'],t1)
+            later=p.initial_state(1.+1e-4*np.cos(np.pi*np.linspace(0.,2.,9)),epoch_id='clock',
+                                  time_s=0.006394989738541456)
+            end=0.02878803804725395
+            self.assertNotEqual(0.006394989738541456+(end-0.006394989738541456),end)
+            moved=p.advance(later,end-0.006394989738541456,steps=1,end_time_s=end)
+            self.assertEqual(moved.state.descriptor()['time_s'],end)
+            with self.assertRaisesRegex(TectonicsError,'declared interval end'):
+                p.advance(later,.01,steps=1,end_time_s=end)
+
     def test_curved_one_advance_conserves_mass_volume_and_uniform_density(self):
         with plan(8,4,width_m=8.,reference_height_m=3.,viscosity_pa_s=25.,
                   density_kg_m3=2.,gravity_m_s2=3.,external_pressure_pa=7.,strike_width_m=5.,

@@ -3,6 +3,38 @@
   "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
+      "id": "i02-workflow-timing-r2",
+      "path": "tectonics/evidence/i02-workflow-timing-r2.json",
+      "sha256": "ebc1584b438214e7c9815a6d099a43101028ae33640166bf16b28209dc3faf01",
+      "status": "current",
+      "note": "Operational Windows timing recaptured after integrating R1 and the reviewed dtype-identity correction on 30 September 2026. Five repetitions, unchanged source bindings and all seven equality/parity checks passed. No scientific acceptance or whole-world claim.",
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
+      "not_checked": [
+        {
+          "pointer": "/execution_identity",
+          "kind": "runtime",
+          "reason": "Opaque package and native runtime identity observed during capture; byte bindings are checked separately, not native runtime compatibility."
+        }
+      ],
+      "limits": [
+        "One Windows machine and interpreter; no other-platform or whole-generator performance claim.",
+        "The bounded column workflow preserves the retained scientific tolerances and 256-step ceiling; timing and numerical parity do not establish physical validation or generated-world acceptance."
+      ]
+    },
+    {
+      "id": "i02-workflow-timing-r1",
+      "path": "tectonics/evidence/i02-workflow-timing-r1.json",
+      "sha256": "d08d3af69fbb1773c8be6d3ae7552b3197548661e2920f52998f8640994bb74e",
+      "status": "superseded",
+      "note": "R1 changed bound sources; superseded by i02-workflow-timing-r2 after the integrated correction passed. Original receipt bytes and measurements remain unchanged.",
+      "superseded_by": "i02-workflow-timing-r2"
+    },
+    {
       "id": "i01-separation-performance-r1",
       "path": "tectonics/evidence/i01-separation-performance-r1.json",
       "sha256": "7d90169607529a2517424955594aa19de575f12dbb64e753cb2d0bd0c28e5b02",
@@ -287,11 +319,11 @@
       ]
     },
     {
-      "id": "i01-breakup-closure-r3",
-      "path": "tectonics/evidence/i01-breakup-closure-r3.json",
-      "sha256": "8736fa718b977df2d166d36fc95efeae49796c670512456168a99da6f510414d",
+      "id": "i01-breakup-closure-r4",
+      "path": "tectonics/evidence/i01-breakup-closure-r4.json",
+      "sha256": "c34aafd8b7613d9671c0c2ef6e15afea43efd24bfc5dec919acf8e87c4d7b07c",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -303,6 +335,14 @@
         "Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls.",
         "Resolved event and generated breakup of the retained lithosphere remain UNRESOLVED; no separation event or new crust is authorised, and a finite-state refusal neither predicts nor excludes eventual breakup."
       ]
+    },
+    {
+      "id": "i01-breakup-closure-r3",
+      "path": "tectonics/evidence/i01-breakup-closure-r3.json",
+      "sha256": "8736fa718b977df2d166d36fc95efeae49796c670512456168a99da6f510414d",
+      "status": "superseded",
+      "superseded_by": "i01-breakup-closure-r4",
+      "note": "Superseded on 2026-09-30 by i01-breakup-closure-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls. Resolved event and generated breakup of the retained lithosphere remain UNRESOLVED; no separation event or new crust is authorised, and a finite-state refusal neither predicts nor excludes eventual breakup."
     },
     {
       "id": "i01-breakup-closure-r2",
@@ -436,11 +476,11 @@
       "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-pressure-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
     },
     {
-      "id": "i01-finite-admission-r3",
-      "path": "tectonics/evidence/i01-finite-admission-r3.json",
-      "sha256": "552bf79b8a718f1a3f76501bde3ec043579c5cd630a0dd0f9f7531b189f5094d",
+      "id": "i01-finite-admission-r5",
+      "path": "tectonics/evidence/i01-finite-admission-r5.json",
+      "sha256": "c80102f82262598f64b3ce61051bc287d4de6da388f9b9392796d4de51b334b8",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured after integrating R1 and the reviewed dtype-identity correction on 30 September 2026. All five bounded controls passed with unchanged source bindings; valid finite-strain-r5 and column-admission-r3 prerequisites were reused. No scientific acceptance or whole-world claim.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -449,9 +489,25 @@
       ],
       "not_checked": [],
       "limits": [
-        "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted. No rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance.",
-        "Issued states are process-local; persisted identity and efficient restart remain I02/I05 work. The derivation, not endpoint samples, supports intermediate-stage bounds."
+        "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance.",
+        "States may be issued by this evolution or restored from a consistent accepted commit in its trusted local I02 ledger. Store checks establish consistency, not authorship. The derivation, not endpoint sampling, supports intermediate-stage bounds; runtime versions are recorded observations, not sealed binaries."
       ]
+    },
+    {
+      "id": "i01-finite-admission-r4",
+      "path": "tectonics/evidence/i01-finite-admission-r4.json",
+      "sha256": "c51fb2b7b1586d7bd97a84c9aa94db32da0f760b149a6deb44f162c2d6518629",
+      "status": "superseded",
+      "note": "R1 changed bound sources; superseded by i01-finite-admission-r5 after the integrated correction passed. Original receipt bytes and measurements remain unchanged.",
+      "superseded_by": "i01-finite-admission-r5"
+    },
+    {
+      "id": "i01-finite-admission-r3",
+      "path": "tectonics/evidence/i01-finite-admission-r3.json",
+      "sha256": "552bf79b8a718f1a3f76501bde3ec043579c5cd630a0dd0f9f7531b189f5094d",
+      "status": "superseded",
+      "superseded_by": "i01-finite-admission-r4",
+      "note": "Superseded on 2026-09-30 by i01-finite-admission-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Historical in the unreviewed I02.3-I02.8 candidate (29 September 2026): tools/check_i01_finite_admission.py gained restored(), the engine-owned issue path for accepted I02 ledger commits, and now also binds the package modules it executes, and docs/I01_FINITE_ADMISSION.md documents it, so this receipt's recorded tool and method-document digests no longer match. No recorded digest was edited and no new receipt was written. Successor to capture only after the candidate is reviewed and accepted: i01-finite-admission-r4, by the same dependency-ordered route. Scope of the original result, unchanged: conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance. Its issued states were process-local; the derivation, not endpoint samples, supports intermediate-stage bounds. No physical law, case, tolerance or step ceiling changed."
     },
     {
       "id": "i01-finite-admission-r2",
@@ -498,11 +554,11 @@
       "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-partition-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
     },
     {
-      "id": "i01-finite-strain-r4",
-      "path": "tectonics/evidence/i01-finite-strain-r4.json",
-      "sha256": "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c",
+      "id": "i01-finite-strain-r5",
+      "path": "tectonics/evidence/i01-finite-strain-r5.json",
+      "sha256": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -514,6 +570,14 @@
         "Closed laterally uniform incompressible affine strip, authored force and drag, fixed per-material properties and material-base temperature.",
         "No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries. ASPECT references were consulted, not run as a comparison solver."
       ]
+    },
+    {
+      "id": "i01-finite-strain-r4",
+      "path": "tectonics/evidence/i01-finite-strain-r4.json",
+      "sha256": "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c",
+      "status": "superseded",
+      "superseded_by": "i01-finite-strain-r5",
+      "note": "Superseded on 2026-09-30 by i01-finite-strain-r5 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Closed laterally uniform incompressible affine strip, authored force and drag, fixed per-material properties and material-base temperature. No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries. ASPECT references were consulted, not run as a comparison solver."
     },
     {
       "id": "i01-finite-strain-r3",
@@ -539,11 +603,11 @@
       "note": "Original failed campaign retained unchanged: six groups passed, states failed because its compression endpoint was compared with positive extension forcing. Review also closed endpoint-deadline and prescribed-control temperature-window guards. Current corrected evidence is r2; no old receipt was rewritten."
     },
     {
-      "id": "i01-column-admission-r2",
-      "path": "tectonics/evidence/i01-column-admission-r2.json",
-      "sha256": "c8c9552030adf99c168a1e1d132de4261777e6988fe6b27c2d8e511ff8c3cc59",
+      "id": "i01-column-admission-r3",
+      "path": "tectonics/evidence/i01-column-admission-r3.json",
+      "sha256": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -557,6 +621,14 @@
       ]
     },
     {
+      "id": "i01-column-admission-r2",
+      "path": "tectonics/evidence/i01-column-admission-r2.json",
+      "sha256": "c8c9552030adf99c168a1e1d132de4261777e6988fe6b27c2d8e511ff8c3cc59",
+      "status": "superseded",
+      "superseded_by": "i01-column-admission-r3",
+      "note": "Superseded on 2026-09-30 by i01-column-admission-r3 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Sufficient bound for the represented Gauss-point fixed column with constant drive, drag, width, temperature and pore state, positive extension and nondecreasing history; every point needs plastic regularisation and total used plus future strain stays at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim; an inherited column left uncertified is not falsely admitted. Runtime versions are recorded observations, not sealed binaries."
+    },
+    {
       "id": "i01-column-admission-r1",
       "path": "tectonics/evidence/i01-column-admission-r1.json",
       "sha256": "abe11697a0ea3b3feb4089dc77231bda90780e2ff504ee0de4a45687d77d0520",
@@ -565,11 +637,11 @@
       "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Exact rational sufficient resistance bound from the retained mixed-creep column into the existing motion-admission gate. Ten focused tests and eight connected control checks pass; no actual rheology is fitted or replaced and no physical rupture is authorised. Scope of the original result: Binds twelve source, case, test, method and reviewed-receipt files before/after; runtime versions are observations, not binary seals. Windows only. Reference software and paper sections consulted, not independently executed. Sufficient bound for the represented Gauss-point fixed column, constant drive/drag/width/temperature/pore state, positive extension and nondecreasing history. Every point needs plastic regularisation; total used plus future strain remains at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim. Ten tests pass in 0.011 s; all eight controls pass in 0.1361079 s. Three interleaved batches of ten actual admission calls: rebuilt median 0.0187222 s, reused 0.0011830 s, saving 0.0175392 s / 93.68% with identical outputs. Mechanical preparation excluded equally; not a simulation/world speedup. The inherited column remains uncertified at the 1% allowance, not falsely admitted."
     },
     {
-      "id": "i01-thermomechanical-motion-r3",
-      "path": "tectonics/evidence/i01-thermomechanical-motion-r3.json",
-      "sha256": "02960c10b0e3070c126f0a9842f5335f43eb4e1cb15e937fbf8901e6b06d0af3",
+      "id": "i01-thermomechanical-motion-r4",
+      "path": "tectonics/evidence/i01-thermomechanical-motion-r4.json",
+      "sha256": "59b91c7d453340b9ee32cd7827f87ee48677cdef498e7cae25aefc207e0eaa13",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -581,6 +653,14 @@
         "Fixed geometry and width, constant thermal layer properties and authored constant external force and drag, below 0.05 axial strain.",
         "No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries."
       ]
+    },
+    {
+      "id": "i01-thermomechanical-motion-r3",
+      "path": "tectonics/evidence/i01-thermomechanical-motion-r3.json",
+      "sha256": "02960c10b0e3070c126f0a9842f5335f43eb4e1cb15e937fbf8901e6b06d0af3",
+      "status": "superseded",
+      "superseded_by": "i01-thermomechanical-motion-r4",
+      "note": "Superseded on 2026-09-30 by i01-thermomechanical-motion-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Fixed geometry and width, constant thermal layer properties and authored constant external force and drag, below 0.05 axial strain. No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-thermomechanical-motion-r2",
@@ -599,11 +679,11 @@
       "superseded_by": "i01-thermomechanical-motion-r2"
     },
     {
-      "id": "i01-column-heat-r4",
-      "path": "tectonics/evidence/i01-column-heat-r4.json",
-      "sha256": "ee12fd44d8624bd1e625dfdf99478b22b0342474f7d218d27733179ea0cf30bc",
+      "id": "i01-column-heat-r5",
+      "path": "tectonics/evidence/i01-column-heat-r5.json",
+      "sha256": "576ea2153ac23b3e6458594832926d5a9d733bed07eec124ea5280767e7b08a2",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -615,6 +695,14 @@
         "Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance.",
         "Prepared thermal content is verified; arbitrary forged mechanical internals remain outside this guard. Runtime versions are recorded observations, not sealed binaries."
       ]
+    },
+    {
+      "id": "i01-column-heat-r4",
+      "path": "tectonics/evidence/i01-column-heat-r4.json",
+      "sha256": "ee12fd44d8624bd1e625dfdf99478b22b0342474f7d218d27733179ea0cf30bc",
+      "status": "superseded",
+      "superseded_by": "i01-column-heat-r5",
+      "note": "Superseded on 2026-09-30 by i01-column-heat-r5 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance. Prepared thermal content is verified; arbitrary forged mechanical internals remain outside this guard. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-column-heat-r3",
@@ -640,11 +728,11 @@
       "note": "Original heat-control receipt retained unchanged. Valid-case physical measurements remain useful, but its layer means were unweighted point means and support pairing allowed incorrect volume/capacity. Reviewed current evidence is i01-column-heat-r2; no silent rebind."
     },
     {
-      "id": "i01-motion-coupling-r2",
-      "path": "tectonics/evidence/i01-motion-coupling-r2.json",
-      "sha256": "2c122d11cb07342165ceed7bd8621a2cf72597008ad9979ac1d6ebee8b2657b8",
+      "id": "i01-motion-coupling-r3",
+      "path": "tectonics/evidence/i01-motion-coupling-r3.json",
+      "sha256": "6aa3837acd8a0e150c0f2dfda581479deb6bdc8eacfb5e51241f0c6f13fb7297",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -658,6 +746,14 @@
       ]
     },
     {
+      "id": "i01-motion-coupling-r2",
+      "path": "tectonics/evidence/i01-motion-coupling-r2.json",
+      "sha256": "2c122d11cb07342165ceed7bd8621a2cf72597008ad9979ac1d6ebee8b2657b8",
+      "status": "superseded",
+      "superseded_by": "i01-motion-coupling-r3",
+      "note": "Superseded on 2026-09-30 by i01-motion-coupling-r3 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Fixed-temperature, fixed-width small-strain column and constant authored external force and generalised drag. No spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate. Runtime versions are recorded observations, not sealed binaries. Timings are small-control observations, not world speedups."
+    },
+    {
       "id": "i01-motion-coupling-r1",
       "path": "tectonics/evidence/i01-motion-coupling-r1.json",
       "sha256": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c",
@@ -666,11 +762,11 @@
       "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. External drive and disjoint generalised drag coupled to actual evolving layered resistance; motion solved at each accepted Heun stage. Eight focused tests and bounded time/depth, both-sign root, work and warm/cold controls pass. Scope of the original result: Binds eight new/retained tool, case, test, method and reviewed receipt files. Runtime versions are observations, not binary seals. Retained weakening/column helpers and Claude's independent heat files were not changed. Fixed-temperature, fixed-width small-strain column and constant authored external force/generalised drag. No full spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate. Eight tests pass in 0.157 s; campaign 1.209959 s after imports. Finest time/depth velocity differences 8.20e-9 and 1.36e-4 relative. One matched cold/warm observation: 0.4459559/0.0926285 s, saving 0.3533274 s / 79.23%, relative outcome difference 7.99e-13. Not a world speedup."
     },
     {
-      "id": "i01-weakening-r3",
-      "path": "tectonics/evidence/i01-weakening-r3.json",
-      "sha256": "30829616b08badd96ad0946870aa4092b10bf199f65ea083bba7ca8ef2990b31",
+      "id": "i01-weakening-r4",
+      "path": "tectonics/evidence/i01-weakening-r4.json",
+      "sha256": "41110048ebd3854e5ec2f08a971b794cb67cd98998a24eff8e96a699f4619177",
       "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
+      "note": "Successor captured on 2026-09-30 in dependency order after the I02 cold-restart stress-resolution correction. All bounded controls passed with unchanged source bindings during capture; no physical law, case, acceptance tolerance or step ceiling changed.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -682,6 +778,14 @@
         "Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration.",
         "Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. Runtime versions are recorded observations, not sealed binaries."
       ]
+    },
+    {
+      "id": "i01-weakening-r3",
+      "path": "tectonics/evidence/i01-weakening-r3.json",
+      "sha256": "30829616b08badd96ad0946870aa4092b10bf199f65ea083bba7ca8ef2990b31",
+      "status": "superseded",
+      "superseded_by": "i01-weakening-r4",
+      "note": "Superseded on 2026-09-30 by i01-weakening-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration. Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-weakening-r2",

@@ -11,12 +11,14 @@ from __future__ import annotations
 from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass
+import errno
 import hashlib
 import json
 import math
 from pathlib import Path
 import re
 import sqlite3
+import stat
 import struct
 import threading
 import tempfile
@@ -195,15 +197,31 @@ def _array_view(value):
     return value
 
 
-def _path(path):
-    # Refuse static links/reparse points, including directory ancestors.
+_ABSENT_ERRNOS = (errno.ENOENT, errno.ENOTDIR, errno.EBADF, errno.ELOOP)   # as pathlib's exists() treats them
+_ABSENT_WINERRORS = (21, 123, 1921)          # not ready, invalid name, cannot resolve the name
+
+
+def _path(path, *, sidecar=False):
+    # Refuse static links/reparse points, including directory ancestors, from one lstat per path. A path is absent
+    # where pathlib's exists() would say so (missing, under a regular file, a symbolic-link loop or an unusable name).
+    # A rollback-journal sidecar can be deleted by another connection's commit between checks, and on Windows a file
+    # being deleted refuses access, or shows no remaining link, until it is gone; either way it is absent, not a
+    # failure (and never a hard link).
     for p in (path, *path.parents):
-        if p.exists() or p.is_symlink():
+        try:
             st = p.lstat()
-            if p.is_symlink() or getattr(st, 'st_file_attributes', 0) & 0x400:
-                raise StoreError('linked/reparse store paths are forbidden')
-            if p == path and p.is_file() and st.st_nlink != 1:
-                raise StoreError('hard-linked database is forbidden')
+        except OSError as exc:
+            if exc.errno in _ABSENT_ERRNOS or getattr(exc, 'winerror', None) in _ABSENT_WINERRORS:
+                continue
+            if isinstance(exc, PermissionError) and sidecar and p == path:
+                continue
+            raise
+        if stat.S_ISLNK(st.st_mode) or getattr(st, 'st_file_attributes', 0) & 0x400:
+            raise StoreError('linked/reparse store paths are forbidden')
+        if p == path and stat.S_ISREG(st.st_mode) and st.st_nlink != 1:
+            if sidecar and st.st_nlink == 0:
+                continue
+            raise StoreError('hard-linked database is forbidden')
 
 
 class ArrayStore:
@@ -229,7 +247,7 @@ class ArrayStore:
         if not self.path.parent.is_dir():
             raise StoreError('create the dedicated store directory explicitly')
         for suffix in ('-journal', '-wal', '-shm'):
-            _path(Path(str(self.path) + suffix))
+            _path(Path(str(self.path) + suffix), sidecar=True)
         self._blosc = None
         if compression.codec == 'zstd':
             try:
@@ -925,6 +943,17 @@ class ArrayStore:
         """Manifest existence only; get() verifies all referenced payloads."""
         with self._read_scope():
             return self._manifest(invocation) is not None
+
+    def change_token(self):
+        """An opaque value, read in one pinned snapshot, that changes whenever the database may have changed.
+
+        PRAGMA data_version changes when another connection commits; total_changes when rows are inserted, updated or
+        deleted through this one (schema changes made directly through this connection are not counted). Equal tokens
+        mean nothing was written in between through those channels; a changed token means only that something may
+        have been. Out-of-band raw file changes are not covered, as for the store's own caches.
+        """
+        with self._read_scope():
+            return self._db.execute('PRAGMA data_version').fetchone()[0], self._db.total_changes
 
     def metadata(self, invocation):
         with self._read_scope():

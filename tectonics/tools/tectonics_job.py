@@ -52,7 +52,16 @@ def _atomic(path, value):
             stream.write('\n')
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        for attempt in range(reader.REPLACE_RETRIES):
+            try:
+                os.replace(temporary, path)
+                break
+            except PermissionError:
+                # On Windows a status or cancel reader holding the destination open blocks the replacement for
+                # microseconds; wait briefly. POSIX renames never fail this way; a persistent denial still raises.
+                if not reader.WINDOWS or attempt == reader.REPLACE_RETRIES-1:
+                    raise
+                time.sleep(reader.REPLACE_WAIT_S)
     finally:
         temporary.unlink(missing_ok=True)
 

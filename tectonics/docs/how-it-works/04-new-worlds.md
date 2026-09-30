@@ -204,6 +204,10 @@ Admission checks the whole footprint, not just its centre: it must fit the
 supported geological column and selected plate pair without crossing an
 unhandled boundary. The spherical-to-local chart has stated distortion and
 velocity-variation bounds. Unsupported requests are refused, not silently shrunk.
+The finite deformation may not thicken the sampled crust beyond its own
+lithosphere, or beyond the 5% depth-to-radius limit that admitted flat columns:
+a small footprint driven for long enough used to publish crust hundreds of
+kilometres thick. The admitted bound is saved with the input and every output.
 Native W01 sampling preserves spherical shell volumes; those volumes are converted
 to equivalent planar thickness rather than treating spherical area × radial depth
 as the same quantity without correction.

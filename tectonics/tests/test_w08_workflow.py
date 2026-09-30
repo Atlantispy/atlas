@@ -171,6 +171,45 @@ class W08WorkflowTests(unittest.TestCase):
                         out=p.run()
                         np.testing.assert_allclose(out.inventory.mass_kg[[0,2,3]],[1.5,3,1.5],rtol=0,atol=1e-13)
 
+    def test_declared_interval_end_is_published_for_inexact_clock_pairs(self):
+        # R1: the kernels labelled start+(end-start), one ulp below 0.3, and the
+        # workflow refused its own output as 'mid-event'.
+        inv, region, intervals, owner = fixture_inputs(case='A07')
+        retirement = intervals[0].descriptor()['retirement']
+        t0, t1 = 0.020301896609317943, 0.3
+        self.assertNotEqual(t0+(t1-t0), t1)
+        schedule = (RegimeInterval(t0, 'subduction', 'r1-a', retirement=retirement),
+                    RegimeInterval(t1, 'subduction', 'r1-b', retirement=retirement))
+        with PreparedW08Workflow(inv, region, schedule, source_id='r1-clock', budget=owner) as plan:
+            out = plan.run()
+        self.assertEqual(out.inventory.time_s, t1)
+        self.assertEqual(out.descriptor()['end_time_s'], t1)
+
+    def test_exhaustion_whose_derived_end_rounds_onto_the_declared_end(self):
+        # Verification findings: E-S is one ulp longer than the exhaustion
+        # duration, the kernel raises exhaustion, and S+exhaustion rounds to E.
+        # The workflow first refused its own exact event, then blocked the rest
+        # of the schedule. It now completes the interval, as an exhaustion whose
+        # duration equals E-S does, and the declared next interval runs.
+        from atlas_tectonics.w08_inventory import W08Inventory
+        inv0, region, intervals, owner = fixture_inputs(case='A07')
+        c = inv0.component_mass_kg
+        outcomes = []
+        for start, end in ((0.0, 10/3), (1.0, 4.333333333333334)):
+            inv = W08Inventory(NODES, KINDS, ('A','B'), c, c.sum(axis=1)*10, formation_time_s=np.full(10,-1.),
+                origin_ids=tuple('origin-'+n for n in NODES), source_id='initial-synthetic-stocks',
+                enthalpy_source='synthetic-enthalpy', time_s=start, budget=owner)
+            first = dict(intervals[0].descriptor()); first['end_time_s'] = end
+            second = dict(intervals[1].descriptor()); second['end_time_s'] = 6.
+            with PreparedW08Workflow(inv, region, (RegimeInterval(**first), RegimeInterval(**second)),
+                                     source_id='exh-ulp', budget=owner) as plan:
+                interval = plan.run(through=0)
+                self.assertEqual(interval.inventory.time_s, end)
+                self.assertFalse(interval.descriptor()['stopped_at_exhaustion'])
+                outcomes.append(interval.inventory.mass_kg.tolist())
+                self.assertEqual(plan.run().inventory.time_s, 6.)
+        self.assertEqual(outcomes[0], outcomes[1])
+
     def test_partial_history_and_mid_event_refusal(self):
         for mode in ('gap','phase','time','owner','cursor'):
             with self.subTest(mode=mode),TemporaryDirectory() as path:

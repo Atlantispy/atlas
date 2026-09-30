@@ -266,7 +266,6 @@ class SphericalGeometry:
             if self.is_empty:
                 _check_cancel(cancel)
                 return _typed_frozen(out.reshape(shape[:-1]),np.int8)
-            shape_g=self._projected._geom
             boundary=self._projected._boundary_geom
             for start in range(0,n,limits.batch_points):
                 _check_cancel(cancel);a=p[start:start+limits.batch_points];local=a@self.chart.basis.T
@@ -274,8 +273,7 @@ class SphericalGeometry:
                 if not visible.any():continue
                 indices=np.flatnonzero(visible);xy=local[visible,:2]/local[visible,2,None]
                 q=shapely.points(xy)
-                inside=shapely.contains(self._projected._area_geom,q)
-                covered=shapely.intersects(shape_g,q)
+                inside,covered=self._projected._points(q)
                 result=np.where(inside,1,np.where(covered,0,-1)).astype('i1')
                 if tol:
                     # Gnomonic derivative <= 1/cos^2. Use a conservative broad

@@ -83,6 +83,7 @@ running in the public source-only environment. Do not weaken those checks.
 | R5 integrity/proposal adapter | R5 session/history tests plus R4 `test_integrity.py`, `test_scheduling.py`, `test_session.py` |
 | Retained archive/codec behaviour | R3 `test_session.py`, `test_compression.py`; relevant R4/R5 continuation tests |
 | Numerical representation or migration | R2 `test_numerics.py`, `test_evolve.py`, `test_migration.py`; affected successor continuation tests |
+| I02 common state, ledger, accepted clock or column workflow | `tectonics/tests/test_i02_common_state.py`, `test_i02_evolution.py`, `test_i02_exchange.py`, `test_i02_clock.py`, `test_i02_persistence.py`, `test_i02_workflow.py`, `test_i02_joined.py`; `test_i02_persistence.py` also covers the finite-admission restoration path (`restored()`) and `test_i01_finite_admission.py` the rest of that tool; storage, resource-budget (`test_combined_resources.py`) and job-tool tests where their seams change |
 
 For a future adapter simplification, require focused evidence for keyword-only
 arguments, closure/default handling, private recursion, non-mutation of parents,

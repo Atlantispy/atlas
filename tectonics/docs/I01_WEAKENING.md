@@ -160,6 +160,15 @@ e   = sum_i A_i d^-m_i s^n_i exp[-(E_i + P V_i)/(R T)] + max(s - Y, 0)/(2 eta_p)
     doubles until bracketed.
   - For compressive creep with an activation volume, the rate must stay monotone:
     `n - s V/(R T) > 0` at the upper bracket, or the input is refused.
+  - **Restart precision correction (30 September 2026).** Near a stiff plastic
+    branch, adjacent floating-point log-stress values can bracket the answer yet
+    both miss the residual tolerance. A cold solve then fails although a warm
+    solve succeeds. If the log iteration stalls, refine directly in stress
+    inside the same bracket, using the remaining iteration allowance. This keeps
+    the original residual tolerance and constitutive equation; it neither accepts
+    the nearest inaccurate value nor repeats the elapsed physical history.
+    Focused I02 checks compare uninterrupted and fresh-process continuations,
+    including an insulated column and recovery after a failed checkpoint write.
 - **Time stepping.** Heun (explicit trapezoid) for history and strain.
   - Accepted steps are atomic; a refused step books nothing.
   - The response at the committed state is reused as the next step's first

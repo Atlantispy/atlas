@@ -339,5 +339,73 @@ class ManagedJobTests(unittest.TestCase):
         self.assertNotIn(str(self.root), json.dumps(result))
 
 
+
+class ReplaceRetryTests(unittest.TestCase):
+    """Windows refuses a replacement while another process holds the destination open, and an open while a
+    replacement is in progress; both are transient, so the job files retry briefly. POSIX behaviour is unchanged."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix='atlas-job-retry-')
+        self.addCleanup(temporary.cleanup)
+        self.path = Path(temporary.name).resolve() / 'status.json'
+        jobs._atomic(self.path, {'state': 'running', 'n': 0})
+
+    def flaky(self, real, failures):
+        calls = []
+
+        def call(*args, **kwargs):
+            calls.append(1)
+            if len(calls) <= failures:
+                raise PermissionError(13, 'Access is denied')
+            return real(*args, **kwargs)
+        return call, calls
+
+    def test_a_transient_denial_is_retried_on_windows_only(self):
+        replace, calls = self.flaky(jobs.os.replace, 3)
+        with patch.object(jobs.reader, 'WINDOWS', True), patch.object(jobs.os, 'replace', replace), \
+                patch.object(jobs.time, 'sleep'):
+            jobs._atomic(self.path, {'state': 'running', 'n': 1})
+        self.assertEqual((len(calls), jobs._json(self.path)['n']), (4, 1))
+        replace, calls = self.flaky(jobs.os.replace, 1)
+        with patch.object(jobs.reader, 'WINDOWS', False), patch.object(jobs.os, 'replace', replace):
+            with self.assertRaises(PermissionError):
+                jobs._atomic(self.path, {'state': 'running', 'n': 2})
+        self.assertEqual((len(calls), jobs._json(self.path)['n']), (1, 1))
+        self.assertEqual(sorted(p.name for p in self.path.parent.iterdir()), ['status.json'])   # no temporary left
+        opened, calls = self.flaky(Path.open, 2)
+        with patch.object(jobs.reader, 'WINDOWS', True), patch.object(Path, 'open', opened), \
+                patch.object(jobs.reader.time, 'sleep'):
+            self.assertEqual(jobs._json(self.path)['n'], 1)
+        self.assertEqual(len(calls), 3)
+        opened, calls = self.flaky(Path.open, 1)
+        with patch.object(jobs.reader, 'WINDOWS', False), patch.object(Path, 'open', opened):
+            with self.assertRaises(PermissionError):
+                jobs._json(self.path)
+
+    def test_a_persistent_denial_still_raises_after_the_bounded_wait(self):
+        replace, calls = self.flaky(jobs.os.replace, 10**6)
+        with patch.object(jobs.reader, 'WINDOWS', True), patch.object(jobs.os, 'replace', replace), \
+                patch.object(jobs.time, 'sleep'):
+            with self.assertRaises(PermissionError):
+                jobs._atomic(self.path, {'state': 'running', 'n': 3})
+        self.assertEqual(len(calls), jobs.reader.REPLACE_RETRIES)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'the sharing violation is a Windows behaviour')
+    def test_a_reader_holding_the_status_file_no_longer_fails_the_writer(self):
+        held, released = threading.Event(), threading.Event()
+
+        def reader():
+            with self.path.open('rb'):
+                held.set()
+                released.wait(.2)
+        thread = threading.Thread(target=reader)
+        thread.start()
+        held.wait(5)
+        threading.Timer(.1, released.set).start()
+        jobs._atomic(self.path, {'state': 'running', 'n': 4})          # waits for the reader instead of failing
+        thread.join(5)
+        self.assertEqual(jobs._json(self.path)['n'], 4)
+
+
 if __name__ == '__main__':
     unittest.main()

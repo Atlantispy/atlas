@@ -169,5 +169,46 @@ class PlateMappingTests(unittest.TestCase):
                     np.zeros_like(p.coordinates('velocity')),epoch_id='instant',time_s=0.)
 
 
+class GaugeTorqueTests(unittest.TestCase):
+    """R1 (s11-2): closed-box per-plate torques carried the arbitrary pressure mean."""
+    def closed(self, pmean):
+        bc = {s:('velocity',)*3 for s in SIDES}
+        return PreparedRegionalStokes3D((2,2,2),(2.,3.,4.),2.,bc,scales=RegionalMechanicsScales(1.,1.),
+            reference_viscosity_pa_s=2.,frame_id='closed-box',vertical_datum='fixed-box-bottom',
+            material_source='synthetic-constant-viscosity',method='direct',physical_mean_pressure_pa=pmean)
+
+    def torques(self, pmean, origin):
+        with self.closed(pmean) as p:
+            xyz = p.coordinates('velocity'); owners = np.full(len(xyz),-1)
+            owners[xyz[:,2] == 4.] = 0; owners[xyz[:,2] == 0.] = 1
+            mapped = model.PreparedPlateBoundary3D(p,global_frame_id='planet-centred',origin_m=np.asarray(origin),
+                local_axes_global=np.eye(3),plate_ids=('plate-a','plate-b'),node_plate_index=owners,
+                geometry_source='synthetic-closed-box',max_work_bytes=4*1024**2)
+            rate = (.3,-.2,0.)
+            motions = [replace(motion(rate),plate_id=pid) for pid in ('plate-a','plate-b')]
+            result = mapped.solve_prescribed(motions,0.,np.zeros_like(xyz),{s:0. for s in SIDES},**request())
+            return mapped.descriptor().get('mode_net_flux_neutral'), result.exchange.array('torque_on_region_nm')
+
+    def test_gauge_only_pressure_refuses_non_neutral_plate_torques(self):
+        off_centre = [2.,5.,10.]
+        # Each plate mode has net flux here: a 1000 Pa constant moves the two
+        # plate torques by +/-(39000, -18000, 0) N m but leaves their sum.
+        neutral, zero = self.torques(0., off_centre)
+        _, shifted = self.torques(1000., off_centre)
+        assert_allclose(shifted-zero, [[-39000.,18000.,0.],[39000.,-18000.,0.]], atol=1e-6)
+        assert_allclose(shifted.sum(axis=0), zero.sum(axis=0), atol=1e-6)
+        with self.assertRaisesRegex(TectonicsError,'undetermined pressure constant'):
+            self.torques(None, off_centre)
+        # Rotation about z is tangential on the owned top/bottom faces: neutral.
+        self.assertEqual(neutral, [False, False, True, False, False, True])
+
+    def test_neutral_modes_keep_gauge_free_torques_in_a_closed_box(self):
+        centred = [-1.,-1.5,10.]
+        neutral, gauge = self.torques(None, centred)
+        self.assertEqual(neutral, [True]*6)
+        for pmean in (0., 1000.):
+            assert_allclose(self.torques(pmean, centred)[1], gauge, atol=1e-9)
+
+
 if __name__ == '__main__':
     unittest.main()

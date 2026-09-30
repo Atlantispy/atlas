@@ -215,6 +215,62 @@ class ExecutionTests(unittest.TestCase):
 
 
 class IdentityTests(unittest.TestCase):
+    def test_checkpoint_dtype_change_invalidates_existing_and_fresh_identity(self):
+        from atlas_tectonics import regional_checkpoint
+        with ExecutionContext('scipy') as context:
+            original = context.identity
+            for dtype in (np.dtype('f4'), np.dtype('>f8')):
+                with self.subTest(dtype=dtype), mock.patch.object(regional_checkpoint, '_DTYPE', dtype):
+                    with self.assertRaisesRegex(TectonicsError, 'loaded implementation changed'):
+                        context.verify()
+                    self.assertNotEqual(reuse.execution_identity('scipy'), original)
+            context.verify()
+            self.assertEqual(reuse.execution_identity('scipy'), original)
+
+    def test_dtype_layout_is_captured_without_lossy_str_or_descr_shortcuts(self):
+        encode = lambda value: reuse._json(reuse._constant(value))
+        layouts = [np.dtype('<f8'), np.dtype('>f8'), np.dtype('<i8'),
+            np.dtype([('a', '<f8')]), np.dtype([('b', '<f8')]),
+            np.dtype([('a', '<i8')]), np.dtype([(('title', 'a'), '<f8')]),
+            np.dtype([('a', '<f8')], align=True),
+            np.dtype(('<f8', (2, 3))), np.dtype(('<f8', (3, 2))),
+            np.dtype({'names': ['a','b'], 'formats': ['<i4','<i4'], 'offsets': [0,0], 'itemsize': 8}),
+            np.dtype({'names': ['a','b'], 'formats': ['<i4','<i4'], 'offsets': [0,4], 'itemsize': 8}),
+            np.dtype({'names': ['b','a'], 'formats': ['<i4','<i4'], 'offsets': [4,0], 'itemsize': 8}),
+            np.dtype({'names': ['a','b'], 'formats': ['<i4','<i4'], 'offsets': [0,4], 'itemsize': 12})]
+        self.assertEqual(len(set(map(encode, layouts))), len(layouts))
+        for dtype in layouts:
+            self.assertTrue(reuse._captured(dtype))
+            self.assertEqual(encode(dtype), encode(pickle.loads(pickle.dumps(dtype))))
+
+    def test_dtype_metadata_is_detached_ordered_and_checked_on_every_verify(self):
+        from atlas_tectonics import regional_checkpoint
+        metadata = {'units': ['m'], 'revision': 1}
+        dtype = np.dtype('f8', metadata=metadata)
+        self.assertEqual(dtype, np.dtype('f8'))  # NumPy equality ignores metadata.
+        self.assertNotEqual(reuse._constant(dtype), reuse._constant(np.dtype('f8')))
+        self.assertNotEqual(reuse._constant(np.dtype('f8', metadata={})), reuse._constant(np.dtype('f8')))
+        self.assertEqual(reuse._constant(dtype), reuse._constant(np.dtype('f8',
+            metadata={'revision': 1, 'units': ['m']})))
+        nested = np.dtype('f8', metadata={'count': np.int64(2), 'z': np.complex128(1+2j),
+            'layout': np.dtype([('value', '<f8', (2,))]), 'raw': b'\x01'})
+        self.assertEqual(reuse._constant(nested), reuse._constant(pickle.loads(pickle.dumps(nested))))
+        with mock.patch.object(regional_checkpoint, '_DTYPE', dtype), ExecutionContext('scipy') as context:
+            original = context.identity
+            metadata['units'][0] = 'km'
+            with self.assertRaisesRegex(TectonicsError, 'loaded implementation changed'):
+                context.verify()
+            self.assertNotEqual(reuse.execution_identity('scipy'), original)
+            metadata['units'][0] = 'm'
+            context.verify()
+
+    def test_uninspectable_dtype_metadata_refuses_instead_of_type_only_binding(self):
+        cyclic = []
+        cyclic.append(cyclic)
+        for value, message in ((cyclic, 'cyclic'), (object(), 'unsupported')):
+            with self.subTest(message=message), self.assertRaisesRegex(TectonicsError, message):
+                reuse._constant(np.dtype('f8', metadata={'value': value}))
+
     def test_context_equals_fresh_identity(self):
         for backend in ('reference','scipy'):
             with ExecutionContext(backend) as ctx:
@@ -286,6 +342,102 @@ class IdentityTests(unittest.TestCase):
         import atlas_tectonics._transport_native
         ctx.verify()
         self.assertEqual(ctx.identity,reuse.execution_identity())
+
+    def test_identity_binds_every_module_in_the_source_membership(self):
+        # R1 (s01-1): a fixed list omitted 3D, integration, assembly, ports,
+        # plate-reference and (outside numba) native modules.
+        import atlas_tectonics
+        root=Path(atlas_tectonics.__file__).parent
+        members=sorted(p.stem for p in root.glob('*.py') if p.stem!='__init__')
+        with ExecutionContext('scipy') as ctx:
+            self.assertEqual(list(ctx._modules),members)  # numba is installed in the tested environment
+        for name in ('regional_heat3d','regional_execution3d','workflow_ports','assembly','_integration_heat',
+                     'integration_evolution','plate_reference_use','_regional_native'):
+            self.assertIn(name,members)
+
+    def test_stale_loaded_code_of_formerly_omitted_modules_changes_identity(self):
+        # Same source bytes, different loaded code: the identity must not claim
+        # the fresh source (a long-lived process after a checkout update).
+        from atlas_tectonics import workflow_ports,assembly,regional_heat3d,_integration_heat
+        fresh=reuse.execution_identity('scipy')
+        for module,name in ((workflow_ports,'_public'),(assembly,'_canonical'),
+                            (regional_heat3d,'_sum'),(_integration_heat,'valid_thermal')):
+            with self.subTest(module=module.__name__):
+                with ExecutionContext('scipy') as ctx:
+                    original=getattr(module,name)
+                    stale=lambda *args,_original=original,**kwargs:_original(*args,**kwargs)
+                    with mock.patch.object(module,name,stale):
+                        with self.assertRaisesRegex(TectonicsError,'loaded implementation changed'):ctx.verify()
+                        self.assertNotEqual(reuse.execution_identity('scipy'),fresh)
+                self.assertEqual(reuse.execution_identity('scipy'),fresh)
+
+    def test_stale_module_data_and_numpy_defaults_are_bound(self):
+        # Verification finding: upper-case dicts, sets and numpy scalars (and
+        # numpy function defaults) were not captured, so stale data in a
+        # formerly omitted module still received the fresh-source identity.
+        import numpy as np
+        from atlas_tectonics import _integration_column, _integration_heat, spherical_geometry
+        fresh = reuse.execution_identity('scipy')
+        edits = ((_integration_column, 'POLICY', dict(_integration_column.POLICY, iterations=4)),
+                 (_integration_heat, 'THERMAL_KEYS', set(_integration_heat.THERMAL_KEYS)|{'r1-extra'}),
+                 (_integration_heat, 'UNIT_ROUNDOFF', np.float64(8.881784197001252e-16)),
+                 (spherical_geometry, '_DEFAULT_ANGULAR_BAND', np.float64(1.4551915228366852e-11)))
+        for module, name, stale in edits:
+            with self.subTest(name=module.__name__+'.'+name):
+                with ExecutionContext('scipy') as ctx:
+                    with mock.patch.object(module, name, stale):
+                        with self.assertRaisesRegex(TectonicsError, 'loaded implementation changed'):ctx.verify()
+                        self.assertNotEqual(reuse.execution_identity('scipy'), fresh)
+        self.assertEqual(reuse.execution_identity('scipy'), fresh)
+        # Functions held in tables and compiled patterns are bound by content.
+        import re
+        from atlas_tectonics import integration_state, storage
+        key = next(iter(integration_state._PRESENCE))
+        with ExecutionContext('scipy') as ctx:
+            with mock.patch.dict(integration_state._PRESENCE, {key: lambda state: None}):
+                with self.assertRaisesRegex(TectonicsError, 'loaded implementation changed'):ctx.verify()
+                self.assertNotEqual(reuse.execution_identity('scipy'), fresh)
+            with mock.patch.object(storage, '_SHA', re.compile(r'[0-9a-f]{40}\Z')):
+                with self.assertRaisesRegex(TectonicsError, 'loaded implementation changed'):ctx.verify()
+        self.assertEqual(reuse.execution_identity('scipy'), fresh)
+        self.assertEqual(reuse._constant(float('inf')), {'float': 'inf'})
+        with self.assertRaisesRegex(TectonicsError, 'ambiguous'):reuse._constant({1: 'a', 'int:1': 'b'})
+        self.assertEqual(reuse._constant(np.float64(.1)), {'numpy': '<f8', 'repr': '0.1'})
+        self.assertEqual(reuse._constant(frozenset({'b', 'a'})), {'set': ['a', 'b']})
+
+    def test_unimportable_native_module_is_skipped_only_outside_numba(self):
+        real = reuse.importlib.import_module
+        def broken(name, *args):
+            if name == 'atlas_tectonics._mesh_native':
+                raise ImportError('simulated broken optional runtime')
+            return real(name, *args)
+        with mock.patch.object(reuse.importlib, 'import_module', broken):
+            with ExecutionContext('scipy') as ctx:
+                self.assertNotIn('_mesh_native', ctx._modules)
+                self.assertIn('_transport_native', ctx._modules)
+            with self.assertRaisesRegex(TectonicsError, 'cannot be imported.*_mesh_native'):
+                ExecutionContext('numba')
+        def broken_core(name, *args):
+            if name == 'atlas_tectonics.assembly':
+                raise RuntimeError('simulated import-time failure')
+            return real(name, *args)
+        with mock.patch.object(reuse.importlib, 'import_module', broken_core):
+            with self.assertRaisesRegex(TectonicsError, 'cannot be imported.*assembly'):
+                ExecutionContext('scipy')
+
+    def test_membership_identity_is_independent_of_import_history(self):
+        code=('import sys,importlib\n'
+              'for n in sys.argv[1:]: importlib.import_module("atlas_tectonics."+n)\n'
+              'from atlas_tectonics.reuse import ExecutionContext\n'
+              'print(ExecutionContext("scipy").identity)')
+        import atlas_tectonics
+        env=dict(os.environ,PYTHONPATH=os.pathsep.join([str(Path(atlas_tectonics.__file__).resolve().parents[1]),
+                                                         os.environ.get('PYTHONPATH','')]))
+        run=lambda *names:subprocess.run([sys.executable,'-B','-c',code,*names],capture_output=True,text=True,
+                                         env=env,timeout=300,check=True).stdout.strip()
+        minimal=run()
+        self.assertEqual(len(minimal),64)
+        self.assertEqual(run('assembly','regional_evolution3d','_mesh_native','geometry_index'),minimal)
 
 
 class CacheExecutionTests(unittest.TestCase):

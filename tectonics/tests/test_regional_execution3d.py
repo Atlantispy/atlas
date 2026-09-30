@@ -178,6 +178,300 @@ class RegionalExecution3DTests(unittest.TestCase):
         for name, value in results[0].descriptor()['power_w'].items():
             self.assertAlmostEqual(value, results[1].descriptor()['power_w'][name], delta=3e-8)
 
+    def test_small_magnitude_solves_match_the_direct_oracle(self):
+        # R1: GMRES used an absolute atol and gates floored at max(1, ...), so a
+        # small dimensionless load returned zero velocity with residual ~1e-14.
+        boundary = pattern()
+        boundary['z1'] = ('traction',)*3
+        q = quadrature(cells=(3, 3, 3))
+        eta = np.exp(3*np.sin(3*q[..., 0])*np.cos(2*q[..., 1])+q[..., 2])
+        force = np.stack((np.sin(4*q[..., 2]), np.cos(3*q[..., 0]), np.sin(5*q[..., 1])*q[..., 0]), -1)
+        with prepare(cells=(3, 3, 3), eta=eta, boundary=boundary, method='direct',
+                     reference_viscosity_pa_s=1., physical_mean_pressure_pa=None) as plan:
+            oracle = solve(plan, force=force).array('velocity_m_s')
+        with prepare(cells=(3, 3, 3), eta=eta, boundary=boundary,
+                     reference_viscosity_pa_s=1., physical_mean_pressure_pa=None) as plan:
+            for amplitude in (1., 1e-9, 1e-12, 1e-14):
+                with self.subTest(amplitude=amplitude):
+                    result = solve(plan, force=amplitude*force)
+                    self.assert_gates(result)
+                    self.assertGreater(result.descriptor()['krylov_iterations'], 0)
+                    scaled = result.array('velocity_m_s')/amplitude
+                    self.assertLess(np.max(np.abs(scaled-oracle))/np.max(np.abs(oracle)), 1e-9)
+
+    def test_same_si_problem_under_any_scales_matches_or_refuses(self):
+        # A 1 km box, 1e21 Pa s and a 300 N/m3 anomaly with unit scales used to
+        # give a GMRES velocity 2.6e-4 away from the direct answer, accepted.
+        boundary = pattern()
+        boundary['z1'] = ('traction',)*3
+        length = 1000.
+        def run(scales, method):
+            with prepare(cells=(3, 3, 3), lengths=(length,)*3, eta=1e21, boundary=boundary, method=method,
+                         scales=scales, reference_viscosity_pa_s=1e21, physical_mean_pressure_pa=None) as plan:
+                q = plan.coordinates()
+                force = np.zeros(q.shape)
+                force[..., 2] = -300.*np.cos(np.pi*q[..., 0]/length)
+                return solve(plan, force=force)
+        oracle = run(RegionalMechanicsScales(length, 1e-14), 'direct').array('velocity_m_s')
+        for scales in (RegionalMechanicsScales(1., 1.), RegionalMechanicsScales(1e5, 1e-9),
+                       RegionalMechanicsScales(1e-3, 1e3)):
+            for method in ('gmres', 'direct'):
+                with self.subTest(scales=scales, method=method):
+                    try:
+                        result = run(scales, method)
+                    except TectonicsError:
+                        continue
+                    self.assert_gates(result)
+                    velocity = result.array('velocity_m_s')
+                    self.assertLess(np.max(np.abs(velocity-oracle))/np.max(np.abs(oracle)), 1e-9)
+
+    def test_closed_box_net_inflow_is_refused_at_every_scale(self):
+        # A 5% net inflow into a closed incompressible box was accepted with unit
+        # scales because the flux tolerance was floored at max(1, |d|).
+        length, speed = 1e5, 1e-9
+        for scales in (RegionalMechanicsScales(1., 1.), RegionalMechanicsScales(length, speed)):
+            for method in ('direct', 'gmres'):
+                with self.subTest(scales=scales, method=method), prepare(
+                        lengths=(length,)*3, eta=1e21, scales=scales, method=method,
+                        reference_viscosity_pa_s=1e21) as plan:
+                    xyz = plan.coordinates('velocity')
+                    profile = np.sin(np.pi*xyz[:, 1]/length)*np.sin(np.pi*xyz[:, 2]/length)
+                    velocity = np.zeros_like(xyz)
+                    velocity[xyz[:, 0] == 0, 0] = speed*profile[xyz[:, 0] == 0]
+                    high = xyz[:, 0] == np.max(xyz[:, 0])
+                    velocity[high, 0] = .95*speed*profile[high]
+                    with self.assertRaisesRegex(TectonicsError, 'net flux'):
+                        solve(plan, velocity=velocity)
+                    # Balanced through-flow of the same size remains admissible.
+                    velocity[high, 0] = speed*profile[high]
+                    self.assert_gates(solve(plan, velocity=velocity))
+        with prepare(eta=1., reference_viscosity_pa_s=1.) as plan:
+            xyz = plan.coordinates('velocity')
+            inflow = np.zeros_like(xyz)
+            low = xyz[:, 0] == 0
+            inflow[low, 0] = 1e-12*np.sin(np.pi*xyz[low, 1])*np.sin(np.pi*xyz[low, 2])
+            with self.assertRaisesRegex(TectonicsError, 'net flux'):
+                solve(plan, velocity=inflow)
+
+    def test_small_traction_box_is_not_mistaken_for_a_closed_box(self):
+        # The gauge test was floored at max(1, |B|); small dimensionless boxes
+        # have tiny B entries, so an open (traction) box acquired a pressure gauge.
+        boundary = pattern()
+        boundary['z1'] = ('traction',)*3
+        scales = RegionalMechanicsScales(1e6, 1.)
+        with prepare(boundary=boundary, scales=scales, physical_mean_pressure_pa=None) as plan:
+            self.assertFalse(plan.descriptor()['pressure_gauge_required'])
+            q = plan.coordinates()
+            result = solve(plan, force=np.broadcast_to([0., 0., -6.], q.shape))
+            d = result.descriptor()
+            self.assertLessEqual(d['linear_relative_residual'], 2e-9)
+            self.assertLessEqual(d['work_relative_residual'], 5e-9)
+            self.assertTrue(d['physical_pressure_defined'])
+            # Hydrostatic: velocity is zero relative to its scale f L^2/eta = 3 m/s.
+            assert_allclose(result.array('velocity_m_s'), 0., atol=3e-9)
+            assert_allclose(result.array('physical_pressure_pa'),
+                            6.*(1.-plan.coordinates('pressure')[:, 2]), atol=1e-8)
+        with self.assertRaisesRegex(TectonicsError, 'second datum'):
+            prepare(boundary=boundary, scales=scales, physical_mean_pressure_pa=0.)
+        with prepare(scales=scales) as plan:
+            self.assertTrue(plan.descriptor()['pressure_gauge_required'])
+
+    def test_unrepresentable_load_is_refused_and_exact_zero_is_exact(self):
+        with prepare() as plan:
+            q = plan.coordinates()
+            with self.assertRaisesRegex(TectonicsError, 'binary64 relative precision'):
+                solve(plan, force=np.broadcast_to([1e-300, 2e-300, -1e-300], q.shape))
+            quiet = solve(plan, force_source='explicit-zero-force')
+            self.assert_gates(quiet)
+            assert_array_equal(quiet.array('velocity_m_s'), 0.)
+            self.assertEqual(quiet.descriptor()['linear_relative_residual'], 0.)
+
+    def test_rigid_translation_through_an_open_top_passes_the_work_gate(self):
+        # Every power is round-off here; the work floor is the attributable
+        # residual and operand round-off, not an absolute max(1, ...).
+        boundary = pattern()
+        boundary['z1'] = ('traction',)*3
+        with prepare(boundary=boundary, physical_mean_pressure_pa=None) as plan:
+            velocity = np.zeros((len(plan.coordinates('velocity')), 3))
+            velocity[:, 0] = 5.
+            result = solve(plan, velocity=velocity)
+        self.assert_gates(result)
+        assert_allclose(result.array('velocity_m_s'), velocity, atol=1e-9)
+
+    def test_mis_scaled_solves_never_publish_a_wrong_field(self):
+        # Adversarial verification: a combined residual norm let the momentum
+        # block go unchecked when continuity dominated, and a residual-absorbing
+        # work floor then accepted rigid fields with 225-8210% error.
+        closed = pattern()
+        length = 1e5
+        cases = ((1e-3, 1e-15, 1e30), (1., 1e-9, 1e34), (length, 1e-9, 1e21))
+        for kind in ('translation', 'rotation', 'shear'):
+            for ls, vs, eta0 in cases:
+                with self.subTest(kind=kind, scales=(ls, vs, eta0)), prepare(
+                        cells=(3, 3, 3), lengths=(length, 1.3*length, .7*length), eta=1e21, boundary=closed,
+                        method='direct', scales=RegionalMechanicsScales(ls, vs), reference_viscosity_pa_s=eta0,
+                        physical_mean_pressure_pa=None) as plan:
+                    xyz = plan.coordinates('velocity')
+                    if kind == 'translation':
+                        exact = np.broadcast_to([1e-9, -2e-9, .5e-9], xyz.shape).copy()
+                    elif kind == 'rotation':
+                        exact = np.cross([1e-14, -2e-14, 3e-14], xyz-[.3*length, .2*length, .1*length])
+                    else:
+                        exact = np.zeros_like(xyz)
+                        exact[:, 0] = 1e-9*xyz[:, 2]/(.7*length)
+                    try:
+                        result = solve(plan, velocity=exact)
+                    except TectonicsError:
+                        continue
+                    error = np.max(np.abs(result.array('velocity_m_s')-exact))/np.max(np.abs(exact))
+                    self.assertLess(error, 1e-8)
+                    d = result.descriptor()
+                    self.assertLessEqual(max(d['momentum_backward_error'], d['continuity_backward_error']), 2e-9)
+
+    def test_load_dominated_state_resolves_the_small_driving_velocity(self):
+        # Verification finding: with rho0*g balanced by pressure, a relative stop
+        # on the whole right-hand side left the anomaly-driven velocity inaccurate
+        # while every normwise backward error was tiny. Refinement, and a momentum
+        # gate against |A||u| plus only the round-off of the balanced terms, now
+        # resolve it (rho0 = 3300 and rho0 = 0 give one velocity in exact arithmetic).
+        length, gravity = 1e5, 10.
+        for name, boundary in (('closed', pattern()), ('open-top', dict(pattern(), z1=('traction',)*3))):
+            def run(rho0, method):
+                with prepare(cells=(3, 3, 3), lengths=(length,)*3, eta=1e21, boundary=boundary, method=method,
+                             scales=RegionalMechanicsScales(length, 1e-9), reference_viscosity_pa_s=1e21,
+                             physical_mean_pressure_pa=None) as plan:
+                    q = plan.coordinates()
+                    force = np.zeros(q.shape)
+                    force[..., 2] = -gravity*(rho0+.01*np.cos(np.pi*q[..., 0]/length)*np.cos(np.pi*q[..., 2]/length))
+                    return solve(plan, force=force)
+            reference = run(0., 'direct').array('velocity_m_s')
+            for method in ('gmres', 'direct'):
+                with self.subTest(boundary=name, method=method):
+                    velocity = run(3300., method).array('velocity_m_s')
+                    self.assertLess(np.max(np.abs(velocity-reference))/np.max(np.abs(reference)), 1e-8)
+
+    def _layered_shear(self, contrast, eta0, factor=None):
+        """Closed-box shear over a weak layer (1e21 above z = 2/3, 1e21/contrast below)."""
+        length, speed, cells = 1e5, 1e-9, (4, 4, 4)
+        q = quadrature(cells, (length,)*3)
+        eta = np.where(q[..., 2]/length > 2/3, 1e21, 1e21/contrast)*np.ones(27)
+        with prepare(cells=cells, lengths=(length,)*3, eta=eta, method='direct',
+                     scales=RegionalMechanicsScales(length, speed), reference_viscosity_pa_s=eta0,
+                     physical_mean_pressure_pa=None) as plan:
+            xyz = plan.coordinates('velocity')
+            velocity = np.zeros_like(xyz)
+            velocity[:, 0] = speed*xyz[:, 2]/length
+            velocity[:, 1] = speed*np.sin(np.pi*xyz[:, 0]/length)*xyz[:, 2]/length
+            if factor is not None:
+                plan._factor = factor(plan, plan._factor, xyz[plan._free//3, 2] < 2/3*length)
+            return solve(plan, velocity=velocity).array('velocity_m_s')
+
+    def test_weak_region_rows_are_judged_by_their_own_magnitudes(self):
+        # Verification finding: block errors normalised by the largest row accepted
+        # a velocity error whose residual sits on weak-layer momentum rows (2e-5
+        # at contrast 1e4, 1e-4 at 1e6). Rows are now judged componentwise: with
+        # the refinement correction unavailable a 1e-6 error of that kind is
+        # refused (the combined residual, about 1e-10, would pass), and with the
+        # correction available it is repaired.
+        class Perturbed:
+            def __init__(self, plan, real, weak, size, refine):
+                self.real, self.weak, self.size, self.refine, self.calls = real, weak, size, refine, 0
+                self.free = len(plan._free)
+            def solve(self, vector):
+                self.calls += 1
+                y = self.real.solve(vector)
+                if self.calls == 1:
+                    # K^-1 e for e = +-1 on the weak layer's momentum rows only.
+                    e = np.zeros_like(vector)
+                    e[:self.free] = np.where(np.arange(self.free) % 2, 1., -1.)*self.weak
+                    d = self.real.solve(e)
+                    d /= float(np.max(np.abs(d[:self.free])))
+                    return y+self.size*float(np.max(np.abs(y[:self.free])))*d
+                if not self.refine:
+                    raise TectonicsError('simulated: no refinement correction available')
+                return y
+        reference = self._layered_shear(1e4, 1e21)
+        def error(size, refine):
+            u = self._layered_shear(1e4, 1e21, lambda plan, real, weak: Perturbed(plan, real, weak, size, refine))
+            return np.max(np.abs(u-reference))/np.max(np.abs(reference))
+        self.assertLess(error(0., False), 1e-12)
+        with self.assertRaisesRegex(TectonicsError, 'block residual exceeds'):
+            error(1e-6, False)
+        self.assertLess(error(1e-6, True), 1e-8)
+
+    def test_badly_scaled_contrast_is_refined_not_refused(self):
+        # A reference viscosity at the weak end of a 1e5-1e6 contrast gave an
+        # accurate direct solution that failed the block gates by round-off; one
+        # working-precision refinement step now makes it pass the same gates.
+        for contrast in (1e5, 1e6):
+            with self.subTest(contrast=contrast):
+                reference = self._layered_shear(contrast, 1e21)
+                u = self._layered_shear(contrast, 1e21/contrast)
+                self.assertLess(np.max(np.abs(u-reference))/np.max(np.abs(reference)), 1e-8)
+
+    def test_unconverged_refinement_correction_is_judged_not_discarded(self):
+        # Verification finding: a buoyant weak inclusion (contrast 1e4) in an
+        # open-top box was solved by GMRES to rtol but failed the componentwise
+        # continuity gate; the refinement correction reached the iteration limit
+        # and was thrown away, so a well-scaled problem was refused although the
+        # correction passed every gate. It is now kept when it lowers the worst
+        # gate ratio, and the published solution still faces every gate.
+        length, cells = 1e5, (5, 5, 5)
+        q = quadrature(cells, (length,)*3)
+        inside = np.sum((q/length-[.5, .5, .4])**2, axis=-1) < .06
+        eta = np.where(inside, 1e17, 1e21)
+        force = np.zeros(q.shape)
+        force[..., 2] = -10.*(3300.-30.*inside)
+        def run(method):
+            with prepare(cells=cells, lengths=(length,)*3, eta=eta, method=method,
+                         boundary=dict(pattern(), z1=('traction',)*3),
+                         scales=RegionalMechanicsScales(length, 1e-9), reference_viscosity_pa_s=1e21,
+                         physical_mean_pressure_pa=None) as plan:
+                return solve(plan, force=force)
+        reference = run('direct').array('velocity_m_s')
+        result = run('gmres')
+        velocity = result.array('velocity_m_s')
+        self.assertLess(np.max(np.abs(velocity-reference))/np.max(np.abs(reference)), 1e-8)
+        self.assertGreater(result.descriptor()['linear_refinements'], 0)
+
+    def test_declared_mean_pressure_changes_pressure_not_velocity(self):
+        # A 3 GPa datum inside the right-hand side dominated every relative
+        # target: GMRES velocity moved by 2.5e-7 (1.7e-6 at 10 GPa), accepted.
+        length, speed, eta = 1e5, 3e-10, 1e19
+        def run(datum, method):
+            with prepare(cells=(4, 4, 3), lengths=(length, length, .6*length), eta=eta, method=method,
+                         scales=RegionalMechanicsScales(length, speed), reference_viscosity_pa_s=eta,
+                         physical_mean_pressure_pa=datum) as plan:
+                xyz = plan.coordinates('velocity')
+                velocity = np.zeros_like(xyz)
+                velocity[:, 0] = speed*xyz[:, 2]/(.6*length)
+                velocity[:, 1] = speed*np.sin(np.pi*xyz[:, 0]/length)*xyz[:, 2]/(.6*length)
+                return solve(plan, velocity=velocity)
+        reference = run(None, 'direct')
+        u0 = reference.array('velocity_m_s')
+        for datum in (3e9, 1e10):
+            for method in ('gmres', 'direct'):
+                with self.subTest(datum=datum, method=method):
+                    result = run(datum, method)
+                    self.assertLess(np.max(np.abs(result.array('velocity_m_s')-u0))/np.max(np.abs(u0)), 1e-9)
+                    shift = result.array('physical_pressure_pa')-reference.array('relative_pressure_pa')
+                    assert_allclose(shift, datum, rtol=1e-9)
+
+    def test_underflowing_forcing_and_power_are_refused_not_zeroed(self):
+        # A force of 1e-100 N/m3 in a 1e-90 m box underflowed in assembly and was
+        # returned as exact zero velocity; powers below binary64 were published
+        # as 0 W. Both now refuse and name the scale choice.
+        with prepare(lengths=(1e-90,)*3, eta=1e-20, reference_viscosity_pa_s=1e-20) as plan:
+            q = plan.coordinates()
+            with self.assertRaisesRegex(TectonicsError, 'underflows to zero in assembly'):
+                solve(plan, force=np.broadcast_to([0., 0., -1e-100], q.shape))
+        with prepare(scales=RegionalMechanicsScales(1., 1e100), eta=1., reference_viscosity_pa_s=1.) as plan:
+            xyz = plan.coordinates('velocity')
+            velocity = np.zeros_like(xyz)
+            velocity[:, 0] = 1e-70*xyz[:, 2]
+            with self.assertRaisesRegex(TectonicsError, 'mechanical work'):
+                solve(plan, velocity=velocity)
+
     def test_latest_cache_immutability_and_parent_invalidation(self):
         with prepare() as plan:
             a = solve(plan)

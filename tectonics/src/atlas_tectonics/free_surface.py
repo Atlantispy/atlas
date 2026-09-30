@@ -16,6 +16,32 @@ from .reuse import ExecutionContext
 from .regional_execution import RegionalMechanicalSnapshot, RegionalMechanicsScales, _name, _hash
 from .stokes_execution import _native_lease
 from .surface_geometry import graph_mesh, cell_volume_and_flux, SurfaceProjection
+from .timebase import interval_end, interval_partition
+
+# Fastest continuum relaxation rate of a homogeneous layer of depth H on a
+# no-slip base under gravity: max over k of rho*g/(2*eta*k)*(sinh(kH)cosh(kH)-kH)/
+# (cosh(kH)^2+(kH)^2) = 0.160698 rho g H/eta, at kH = 2.1195 (the closed rate of
+# tests/w07_surface_reference.py, maximised). Explicit SSP-RK2 multiplies a mode
+# by 1-z+z^2/2 per step, z = rate*dt. The gate bounds zeta = 0.160698 rho g
+# H_max dt/eta; the analysis is in docs/W07_SURFACE_STRENGTH.md.
+RELAXATION_RATE_COEFFICIENT = 0.16069800194558428
+RELAXATION_STEP_LIMIT = 0.1
+_MAX_RELAXATION_STEP_LIMIT = 0.25
+# Sloped surfaces add advective modes, lambda*dt ~ i*y with y ~ 2.06*C for the
+# surface Courant number C = max|u_top|*dt/dx_node; SSP-RK2 gives |G|^2 = 1+y^4/4
+# for them at any dt, so C is limited separately (analysis in the same doc).
+SURFACE_COURANT_LIMIT = 0.1
+# Callers may only tighten it: at 0.25 a seeded advective mode grew 12.6% beyond
+# a substepped reference over 64 admitted steps.
+_MAX_SURFACE_COURANT_LIMIT = 0.1
+
+
+def _needed(steps,excess,remaining):
+    """Refusal hint within the remaining accepted-step budget; never a non-finite conversion."""
+    need=steps*excess
+    if not math.isfinite(need) or need>remaining:
+        return f'more than the {remaining} remaining accepted steps would be needed'
+    return f'at least {max(steps+1,math.ceil(need))} steps are needed'
 
 
 @dataclass(frozen=True,slots=True)
@@ -32,7 +58,8 @@ class PreparedFreeSurface2D:
     def __init__(self,nx,nz,width_m,bottom_m,reference_height_m,*,viscosity_pa_s,
                  density_kg_m3,gravity_m_s2,external_pressure_pa,strike_width_m,
                  scales,frame_id,vertical_datum,material_source,load_source,
-                 method='gmres',budget=None,cancel=None):
+                 method='gmres',relaxation_step_limit=RELAXATION_STEP_LIMIT,
+                 surface_courant_limit=SURFACE_COURANT_LIMIT,budget=None,cancel=None):
         from .regional_surface_stokes import PreparedSurfaceStokes2D
         if any(type(n) is not int or not 2<=n<=64 for n in (nx,nz)):
             raise TectonicsError('bounded 2..64 element counts required')
@@ -44,6 +71,15 @@ class PreparedFreeSurface2D:
         values['gravity_m_s2']=scalar(gravity_m_s2,'gravity',nonnegative=True)
         values['external_pressure_pa']=scalar(external_pressure_pa,'external pressure',nonnegative=True)
         values['bottom_m']=scalar(bottom_m,'bottom')
+        limit=scalar(relaxation_step_limit,'relaxation step limit',positive=True)
+        if limit>_MAX_RELAXATION_STEP_LIMIT:
+            raise TectonicsError('relaxation step limit above 0.25 would admit inaccurate or non-monotone decay')
+        values['relaxation_step_limit']=limit
+        courant=scalar(surface_courant_limit,'surface Courant limit',positive=True)
+        if courant>_MAX_SURFACE_COURANT_LIMIT:
+            raise TectonicsError('surface Courant limit above 0.1 would let advective surface modes grow '
+                                 'by more than about 2e-4 per step')
+        values['surface_courant_limit']=courant
         if values['bottom_m']!=0.:
             raise TectonicsError('this mapped surface route requires bottom_m=0 in the explicit vertical datum')
         for value,name in ((frame_id,'frame'),(vertical_datum,'vertical datum'),
@@ -53,7 +89,9 @@ class PreparedFreeSurface2D:
             scales=dict(length_m=scales.length_m,velocity_m_s=scales.velocity_m_s),
             geometry='fixed x columns; Q2 graph; bottom fixed; vertical side tangential mesh sliding',
             physical_boundaries='no-slip bottom; free-slip sides; external-pressure material top',
-            material='explicit homogeneous incompressible isothermal inventory and gravity density')
+            material='explicit homogeneous incompressible isothermal inventory and gravity density',
+            relaxation_rate='0.160698 rho g H_max/eta; zeta=rate*dt per accepted step',
+            surface_courant='max|u_top|*dt/dx_node per accepted stage pair')
         self._resource=WorkBudget(128*1024**2,parent=select_budget(budget))
         self._owner=threading.get_ident();self._active=False;self._closed=False
         self._latest_key=self._latest=None;self._stats={'mechanical_solves':0,'latest_result_hits':0,'accepted_steps':0}
@@ -203,10 +241,22 @@ class PreparedFreeSurface2D:
         # Uniform material: ALE advects inventory with physical MINUS mesh flux.
         change=-self._d['density_kg_m3']*self._d['strike_width_m']*(physical-moving).sum(axis=-1)
         return wm,change,dict(projection,independent_cell_divergence_scaled=continuity,
-            volume_scale_m2=volume_scale,physical_boundary_flux_m2_s=float(physical.sum()))
+            volume_scale_m2=volume_scale,physical_boundary_flux_m2_s=float(physical.sum()),
+            maximum_surface_speed_m_s=float(np.max(np.abs(v[-1,:,0]))))
 
-    def advance(self,state,duration_s,*,steps,cancel=None):
-        """Explicit fixed partition, at most 256 accepted intervals including parent."""
+    def _relaxation_step(self,mesh,dt):
+        """zeta for the fastest relaxation mode admitted by this mesh's thickest column."""
+        d=self._d
+        return (RELAXATION_RATE_COEFFICIENT*d['density_kg_m3']*d['gravity_m_s2']
+                *float(np.max(mesh[-1,:,1]))/d['viscosity_pa_s'])*dt
+
+    def advance(self,state,duration_s,*,steps,end_time_s=None,cancel=None):
+        """Explicit fixed partition, at most 256 accepted intervals including parent.
+
+        The last substep ends exactly at the declared end: ``end_time_s`` when the
+        caller supplies its output time (``duration_s`` must equal end-start), else
+        start+duration. Each step must satisfy the declared relaxation limit.
+        """
         duration=scalar(duration_s,'duration',positive=True)
         if type(steps) is not int or not 1<=steps<=256:
             raise TectonicsError('surface accepted-step history may not exceed 256')
@@ -214,23 +264,42 @@ class PreparedFreeSurface2D:
             d=self._validate(state,cancel)
             if d['accepted_steps']+steps>256:
                 raise TectonicsError('surface accepted-step history may not exceed 256')
-            end=d['time_s']+duration
-            if not math.isfinite(end) or end<=d['time_s']:raise TectonicsError('unresolvable surface interval')
+            end=interval_end(d['time_s'],duration,end_time_s)
+            bounds=interval_partition(d['time_s'],end,steps)
+            limit=self._d['relaxation_step_limit'];courant_limit=self._d['surface_courant_limit']
+            spacing=self._d['width_m']/(2*self._d['nx'])
+            # Check the substeps actually integrated (rounded boundaries), not duration/steps.
+            longest=max(b-a for a,b in zip(bounds,bounds[1:]))
+            zeta=self._relaxation_step(state.array('mesh_nodes_m'),longest)
+            if zeta>limit*(1+8*np.finfo(float).eps):
+                raise TectonicsError(f'surface steps exceed the declared relaxation limit {limit:g} '
+                                     f'(zeta={zeta:.6g}); {_needed(steps,zeta/limit,256-d["accepted_steps"])}')
             original=state;current=state;diagnostics=[]
             for i in range(steps):
-                start=d['time_s']+duration*i/steps;stop=d['time_s']+duration*(i+1)/steps;dt=stop-start
+                start,stop=bounds[i],bounds[i+1];dt=stop-start
                 if dt<=0.:raise TectonicsError('unresolvable surface substep')
                 m=current.array('mesh_nodes_m');mass=current.array('cell_mass_kg')
                 wm0,dm0,a0=self._rate(current,cancel)
                 trial=m+dt*wm0;trialmass=mass+dt*dm0
-                # A declared per-step geometric bound, not an automatic substep.
+                # Declared per-step bounds, not an automatic substep: the thickest
+                # column of either stage sets the fastest relaxation rate.
+                zeta=max(self._relaxation_step(m,dt),self._relaxation_step(trial,dt))
+                if zeta>limit*(1+8*np.finfo(float).eps):
+                    raise TectonicsError(f'surface step exceeds the declared relaxation limit {limit:g} '
+                                         f'(zeta={zeta:.6g}); {_needed(steps,zeta/limit,256-d["accepted_steps"])}')
                 height=np.diff(m[...,1],axis=0)
                 if float(np.max(np.abs(dt*wm0[...,1])))>.2*float(np.min(height)):
                     raise TectonicsError('surface step exceeds geometric displacement envelope')
                 intermediate=self._state(trial,trialmass,d['epoch_id'],stop,d['accepted_steps']+i+1,current.result_id)
                 wm1,dm1,a1=self._rate(intermediate,cancel)
+                courant=max(a0['maximum_surface_speed_m_s'],a1['maximum_surface_speed_m_s'])*dt/spacing
+                if not courant<=courant_limit*(1+8*np.finfo(float).eps):
+                    raise TectonicsError(f'surface step exceeds the declared surface Courant limit {courant_limit:g} '
+                                         f'(C={courant:.6g}); {_needed(steps,courant/courant_limit,256-d["accepted_steps"])}')
                 final=.5*m+.5*(trial+dt*wm1)
                 finalmass=.5*mass+.5*(trialmass+dt*dm1)
+                if float(np.max(np.abs(final[...,1]-m[...,1])))>.2*float(np.min(height)):
+                    raise TectonicsError('surface corrector exceeds geometric displacement envelope')
                 area,_=cell_volume_and_flux(final)
                 rho_width=self._d['density_kg_m3']*self._d['strike_width_m']
                 density_error=float(np.max(np.abs(finalmass-rho_width*area)/np.maximum(rho_width*area,np.finfo(float).tiny)))
@@ -240,7 +309,9 @@ class PreparedFreeSurface2D:
                 if min(float(trialmass.min()),float(finalmass.min()))<=0. or max(density_error,mass_error,volume_error)>1e-9:
                     raise TectonicsError('free-surface geometric/material conservation failed')
                 current=self._state(final,finalmass,d['epoch_id'],stop,d['accepted_steps']+i+1,current.result_id)
-                diagnostics.append(dict(start_time_s=start,end_time_s=stop,volume_residual_scaled=volume_error,
+                diagnostics.append(dict(start_time_s=start,end_time_s=stop,relaxation_step=zeta,
+                    surface_courant=courant,
+                    volume_residual_scaled=volume_error,
                     mass_residual_scaled=mass_error,uniform_density_residual_scaled=density_error,
                     maximum_kinematic_projection_l2_m_s=max(a0['kinematic_projection_l2_m_s'],a1['kinematic_projection_l2_m_s'])))
             mechanical=self._mechanics(current,cancel)

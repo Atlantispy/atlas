@@ -7,6 +7,7 @@ exercise deterministic refusal without attempting enormous allocations.
 from concurrent.futures import CancelledError, ThreadPoolExecutor
 from contextlib import closing
 from dataclasses import replace
+import gc
 import hashlib
 import multiprocessing
 import os
@@ -17,6 +18,7 @@ import threading
 import time
 import unittest
 from unittest import mock
+import weakref
 
 import numpy as np
 
@@ -117,6 +119,56 @@ class SharedBudgetTests(unittest.TestCase):
         self.assertLessEqual(len(b.statistics()['categories']),64)
         d=b.statistics();d['categories'].clear()
         self.assertTrue(b.statistics()['categories'])
+
+
+class FinalizerReleaseTests(unittest.TestCase):
+    """A lease returned by a garbage-collection finalizer never waits for a budget lock. The collection runs in
+    whatever thread triggered it, possibly while that thread holds the lock inside another reservation."""
+
+    def test_a_lease_freed_by_the_collector_inside_a_reservation_cannot_deadlock(self):
+        budget, seen = WorkBudget(MIB), []
+
+        class Owner:
+            pass
+
+        def scenario():
+            owner = Owner()
+            lease = budget.reserve(4096, category='finalized')
+            lease.__enter__()
+            weakref.finalize(owner, lease.__exit__, None, None, None)   # the package's lease-owner pattern
+            owner.cycle = owner                                          # only the cyclic collector frees it
+            del owner
+            with budget._lock:                     # as inside another reservation made by this thread
+                gc.collect()                       # the finalizer returns the lease here
+            seen.append((budget.reserved_bytes, budget.statistics()['categories']))
+        worker = threading.Thread(target=scenario, daemon=True)
+        worker.start()
+        worker.join(20)
+        self.assertFalse(worker.is_alive(), 'a finalizer waited for a lock its own thread held')
+        self.assertEqual(seen, [(0, {'finalized': 0})])
+
+    def test_a_return_while_another_thread_holds_the_lock_is_applied_at_next_use(self):
+        budget = WorkBudget(MIB)
+        lease = budget.reserve(4096)
+        lease.__enter__()
+        holding, done = threading.Event(), threading.Event()
+
+        def hold():
+            with budget._lock:
+                holding.set()
+                done.wait(20)
+        thread = threading.Thread(target=hold, daemon=True)
+        thread.start()
+        self.assertTrue(holding.wait(20))
+        started = time.perf_counter()
+        lease.__exit__(None, None, None)           # returns at once instead of waiting for the holder
+        self.assertLess(time.perf_counter()-started, 5.)
+        done.set()
+        thread.join(20)
+        self.assertEqual((budget.reserved_bytes, budget.available_bytes), (0, MIB))
+        with budget.reserve(MIB):                  # the whole envelope is admissible again
+            self.assertEqual(budget.reserved_bytes, MIB)
+        self.assertEqual(budget.reserved_bytes, 0)
 
 
 class CombinedResourcesTests(unittest.TestCase):

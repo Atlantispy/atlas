@@ -1,5 +1,23 @@
 # Atlas optimisation reference
 
+## R1 execution-identity coverage — 30 September 2026
+
+WORKING NON-CANON, unreviewed candidate. `ExecutionContext` now binds the loaded
+code of every package module in the source membership (137 modules; the seven
+numba kernels whenever importable, skipped for other backends when their optional
+runtime is missing or broken) instead of a fixed 112-name list, fixing review
+finding s01-1. Upper-case module data is bound too: dicts, lists, sets, mapping
+proxies, numpy scalars (exact value) and arrays (dtype, shape, digest), compiled
+patterns, functions held in such tables (by code digest and defaults), and numpy
+function defaults, which were previously reduced to their type. This
+intentionally changes every package execution identity; no receipt was repinned.
+Measured on Windows (CPython 3.12.14, four alternating fresh-process runs,
+medians, scipy backend): first context in a fresh process 0.310 to 0.505 s
+(+0.195 s, mostly the one-time import of the added modules including numba);
+further contexts 0.120 to 0.137 s (+14%); `verify()` 0.0203 to 0.0221 s; bound
+callables 5,542 to 6,253. Single runs: reference 0.301 to 0.494 s cold and 0.106
+to 0.120 s warm; numba 0.505 to 0.581 s cold and 0.191 to 0.207 s warm.
+
 ## W11 module-wide linked-workflow pass — 24 September 2026
 
 WORKING NON-CANON. This supersedes the **scope** of the earlier small regional
@@ -4966,6 +4984,18 @@ It does not trust mtimes. Repeated source reads remain; repeated SHA hashing,
 code normalisation and marshalling are avoided. Changed source or callable state
 refuses the context and requires a new explicit context/controller. No historical
 identity is overwritten. Inventory size is bounded.
+
+The R1 dtype correction also captures loaded NumPy dtype constants recursively:
+byte order, item size/alignment, ordered fields and their offsets/titles, subarray
+base/shape and metadata. Dtype equality/hash and `.str` alone are insufficient.
+Metadata is re-read on each verification; plain scalars/bytes, lists/tuples,
+mappings, NumPy scalars and nested dtypes are supported. Cycles and other opaque
+metadata refuse rather than receive a type-only identity. This intentionally
+changes execution identities; existing caches/checkpoints are not rebound.
+The focused `IdentityTests` in `test_execution_reuse.py` cover actual checkpoint
+dtype replacement, fresh/existing identities, structured layouts and nested
+metadata mutation. See NumPy's [dtype](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html)
+and [structured-array](https://numpy.org/doc/stable/user/basics.rec.html) documentation.
 
 `PreparedInput` captures a compact immutable f64 payload and its typed digest once.
 Each array access returns private shape/dtype metadata; only proven immutable

@@ -25,6 +25,7 @@ import numpy as np
 from ._validation import TectonicsError, scalar, text, read_array, frozen, input_shape
 from .resources import select_budget, WorkBudget
 from .thermochemical import _reference_transfers
+from .timebase import interval_end, interval_partition
 
 
 _SIDES = ('left', 'right', 'bottom', 'top')
@@ -290,14 +291,20 @@ class PreparedHeatTransport:
         return derivative, account, (min(extrema), max(extrema)) if bounded else None
 
     def step(self, temperature_k, u_m_s, w_m_s, duration_s, *, boundaries,
-             time_s=0., mesh_velocity_m_s=(0., 0.), source_w_m3=0., origin_m=None,
-             cancel=None):
-        """One accepted SSP-RK2 interval; every flux is outward-positive energy J."""
+             time_s=0., end_time_s=None, mesh_velocity_m_s=(0., 0.), source_w_m3=0.,
+             origin_m=None, cancel=None):
+        """One accepted SSP-RK2 interval; every flux is outward-positive energy J.
+
+        A declared ``end_time_s`` (with duration exactly end-start) is published
+        as the end time instead of start+duration, which can miss it by one ulp.
+        """
         _cancel(cancel)
         dt = scalar(duration_s, 'duration', positive=True)
         time = scalar(time_s, 'time')
-        if time+dt <= time or not math.isfinite(time+dt):
-            raise TectonicsError('unresolvable transport time interval')
+        try:
+            end = interval_end(time, dt, end_time_s)
+        except TectonicsError as exc:
+            raise TectonicsError('unresolvable transport time interval') from exc
         mesh = _pair(mesh_velocity_m_s, 'mesh_velocity_m_s')
         origin = self.grid.origin_m if origin_m is None else _pair(origin_m, 'origin_m')
         end_origin = tuple(a+dt*b for a, b in zip(origin, mesh))
@@ -316,7 +323,7 @@ class PreparedHeatTransport:
             if np.any(T <= 0.):
                 raise TectonicsError('temperature must be positive kelvin')
             u0, w0 = self._velocity(u_m_s, w_m_s, mesh, time, origin)
-            u1, w1 = self._velocity(u_m_s, w_m_s, mesh, time+dt, end_origin)
+            u1, w1 = self._velocity(u_m_s, w_m_s, mesh, end, end_origin)
             limit = min(self._limit(u0, w0, boundaries), self._limit(u1, w1, boundaries))
             if dt > limit*(1+8*np.finfo(float).eps):
                 raise TectonicsError(f'heat timestep exceeds monotonicity limit {limit:.17g} s')
@@ -329,7 +336,7 @@ class PreparedHeatTransport:
                 if stage.min() < b0[0]-tol or stage.max() > b0[1]+tol:
                     raise TectonicsError('source-free thermal Euler-stage maximum principle failed')
             _cancel(cancel)
-            d1, a1, b1 = self._rhs(stage, u1, w1, boundaries, source_w_m3, time+dt, end_origin)
+            d1, a1, b1 = self._rhs(stage, u1, w1, boundaries, source_w_m3, end, end_origin)
             result = .5*T+.5*(stage+dt*d1)
             if not np.isfinite(result).all() or np.any(result <= 0.):
                 raise TectonicsError('thermal source or boundary flux exceeds positive-temperature support')
@@ -348,7 +355,7 @@ class PreparedHeatTransport:
                         sum(map(abs, diff.values())), abs(source), np.finfo(float).tiny)
             if abs(residual)/scale > 1e-9:
                 raise TectonicsError('open heat storage/flux closure failed')
-            return dict(temperature_k=frozen(result), time_s=time+dt, origin_m=end_origin,
+            return dict(temperature_k=frozen(result), time_s=end, origin_m=end_origin,
                         advective_energy_j=adv, diffusive_energy_j=diff, source_energy_j=source,
                         heat_before_j=before, heat_after_j=after, balance_residual_j=residual,
                         balance_relative=abs(residual)/scale, minimum_k=float(result.min()),
@@ -356,21 +363,25 @@ class PreparedHeatTransport:
                         geometric_conservation_residual_m3=0., accepted_steps=1)
 
     def evolve(self, temperature_k, u_m_s, w_m_s, duration_s, *, steps, boundaries,
-               time_s=0., mesh_velocity_m_s=(0., 0.), source_w_m3=0., cancel=None):
-        """Explicit prescribed partition; never silently substep or exceed 256."""
+               time_s=0., end_time_s=None, mesh_velocity_m_s=(0., 0.), source_w_m3=0., cancel=None):
+        """Explicit prescribed partition; never silently substep or exceed 256.
+
+        The last substep ends exactly at the declared end (``end_time_s`` when
+        given, with duration exactly end-start; otherwise time_s+duration).
+        """
         if type(steps) is not int or not 1 <= steps <= 256:
             raise TectonicsError('W07 requires 1 to 256 accepted intervals')
         duration = scalar(duration_s, 'duration', positive=True)
         time_s = scalar(time_s, 'time')
+        bounds = interval_partition(time_s, interval_end(time_s, duration, end_time_s), steps)
         T, origin = temperature_k, self.grid.origin_m
         adv, diff, sources = {s: [] for s in _SIDES}, {s: [] for s in _SIDES}, []
         before = None
         maximum_balance = 0.
         for i in range(steps):
-            start = time_s+duration*i/steps
-            stop = time_s+duration*(i+1)/steps
+            start, stop = bounds[i], bounds[i+1]
             result = self.step(T, u_m_s, w_m_s, stop-start, boundaries=boundaries,
-                               time_s=start, mesh_velocity_m_s=mesh_velocity_m_s,
+                               time_s=start, end_time_s=stop, mesh_velocity_m_s=mesh_velocity_m_s,
                                source_w_m3=source_w_m3, origin_m=origin, cancel=cancel)
             before = result['heat_before_j'] if before is None else before
             maximum_balance = max(maximum_balance, result['balance_relative'])

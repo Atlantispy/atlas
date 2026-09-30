@@ -115,6 +115,19 @@ class W09ErosionTests(unittest.TestCase):
             self.assertGreater(errors[0]/errors[1],1.5)
             self.assertGreater(errors[1]/errors[2],1.5)
 
+    def test_release_spanning_layers_ends_exactly_without_false_exhaustion(self):
+        # R1 (s16 missed #2a): elapsed+(duration-elapsed) rounded to
+        # 0.29999999999999993 < 0.3 and raised 'finite rock exhausted' with
+        # 99.72 kg still in the next layer.
+        first = 0.020301896609317943
+        self.assertLess(first+(.3-first), .3)
+        with PreparedErosion([1.,0.],[1,-1],[1.,1.],[0.,0.],[TAG],rock_erodibility=[[1.,1.],[0.,0.]],
+                sediment_erodibility=0.,frame_id='f',datum_id='d',source_id='release-clock') as p:
+            out = p.prescribed_release(p.initialise([[[first],[100.]],[[0.],[0.]]]),0,1.,.3,source_id='r1')
+        self.assertEqual(out.time_s,.3)
+        self.assertEqual(out.rock_mass_kg[0,0,0],0.)
+        self.assertAlmostEqual(out.rock_mass_kg[0,1,0],100.-(.3-first),places=12)
+
     def test_finite_substrate_exhaustion_has_valid_endpoint(self):
         with PreparedErosion([1,0],[1,-1],[1,1],[3,0],[TAG],
                 rock_erodibility=[[1],[0]],sediment_erodibility=0,

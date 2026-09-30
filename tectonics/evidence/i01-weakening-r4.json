@@ -1,0 +1,915 @@
+{
+  "schema": "atlas.i01-weakening-evidence.v1",
+  "status": "PASS_BOUNDED_COLUMN_WEAKENING_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "kernel": {
+      "status": "PASS",
+      "seconds": 0.021772900014184415,
+      "passed": true,
+      "checks": {
+        "kernel_force_parity": true,
+        "kernel_work_parity": true,
+        "kernel_point_parity": true,
+        "closed_forms": true,
+        "fixed_point": true,
+        "all_points_compared": true,
+        "extension_compression_asymmetry": true
+      },
+      "reviewed_case_force": {
+        "kernel": 25655385202271.957,
+        "adapter": 25655385202271.957,
+        "relative": 0.0,
+        "max_point_relative": 0.0,
+        "kernel_seconds": 0.0006856999825686216,
+        "adapter_seconds": 0.00047830003313720226,
+        "scope": "one prepared 192-point column solve each; not a speed claim"
+      },
+      "closed_form_max_relative": 7.119620593002231e-13,
+      "closed_form_cases": 16,
+      "fixed_point": {
+        "extension": {
+          "max_relative": 4.8156152379220795e-12,
+          "compared": 256,
+          "skipped": 0,
+          "tensile_mean_stress_points": 6
+        },
+        "compression": {
+          "max_relative": 4.16380511525926e-12,
+          "compared": 256,
+          "skipped": 0,
+          "tensile_mean_stress_points": 0
+        }
+      },
+      "pressure_closure_issue": {
+        "supplied_mean_equal_vertical_load_n_m": 19232148547641.133,
+        "lithostatic_extension_n_m": 15699366751704.1,
+        "lithostatic_compression_n_m": -25663892935659.13,
+        "extension_ratio": 0.8163085217865408,
+        "compression_ratio": 1.3344267215951213
+      }
+    },
+    "homogeneous": {
+      "status": "PASS",
+      "seconds": 0.04232230002526194,
+      "passed": true,
+      "checks": {
+        "uniform": true,
+        "always_yielding": true,
+        "inside_interval": true,
+        "order": true,
+        "finest_history": true,
+        "finest_force": true,
+        "work": true
+      },
+      "oracle": {
+        "history_gain": 0.04474135215145125,
+        "force": 1193598361425.3538,
+        "evaluations": 230,
+        "always_yielding": true
+      },
+      "steps": [
+        16,
+        32,
+        64
+      ],
+      "history_gains": [
+        0.04474110766120276,
+        0.04474129088856804,
+        0.04474133681830361
+      ],
+      "history_errors": [
+        5.464525248665664e-06,
+        1.3692675850177007e-06,
+        3.427063980667898e-07
+      ],
+      "force_errors": [
+        1.332152432782089e-07,
+        3.338058063357017e-08,
+        8.354952421032555e-09
+      ],
+      "observed_orders": [
+        1.9966917532380624,
+        1.9983593772698476
+      ],
+      "uniform_relative_spread": 0.0
+    },
+    "local": {
+      "status": "PASS",
+      "seconds": 0.12243370001669973,
+      "passed": true,
+      "checks": {
+        "upper_crust_history_bitwise": true,
+        "perturbation_acted": true,
+        "weakening_off_force_constant": true,
+        "unreachable_interval_bitwise": true,
+        "unreachable_history_below_start": true,
+        "history_accumulates_without_weakening": true
+      },
+      "upper_crust_points": 64,
+      "off_force_n_m": 19048975108063.33,
+      "zero_history_max": 0.08000000000000218,
+      "interval_start": 1.0,
+      "minimum_homogeneous_axial_strain_to_reach_interval": 0.5
+    },
+    "layered": {
+      "status": "PASS",
+      "seconds": 0.3031876999884844,
+      "passed": true,
+      "checks": {
+        "time_refinement": true,
+        "depth_refinement": true,
+        "feedback_depth_refinement": true,
+        "feedback_resolved": true,
+        "warm_feedback_resolved": true,
+        "warmer_is_weaker": true,
+        "weakening_off_constant": true,
+        "monotone_weakening": true,
+        "work_partition": true,
+        "subyield_history_bitwise": true,
+        "envelope": true,
+        "end_state_fixed_point": true,
+        "all_complete": true
+      },
+      "runs": {
+        "base_on": {
+          "status": "COMPLETE",
+          "accepted_steps": 64,
+          "strain": 0.04000000000000002,
+          "force_start": 15699366751704.1,
+          "force_end": 15390281766745.404,
+          "rate_start": 1e-15,
+          "rate_end": 1e-15,
+          "force_magnitude_range": [
+            15390281766745.404,
+            15699366751704.1
+          ],
+          "rate_magnitude_range": [
+            1e-15,
+            1e-15
+          ],
+          "max_step_force_rise_relative": -0.00030220836938528553,
+          "max_step_rate_fall_relative": 0.0,
+          "accounts": {
+            "external_work_j_m2": 621830005035.7123,
+            "creep_work_j_m2": 271477683437.69946,
+            "plastic_work_j_m2": 350352321597.6202,
+            "partition_relative": 6.315233940664328e-13
+          },
+          "layer_plastic_work_j_m2": [
+            80515970552.74652,
+            152230500612.30948,
+            117605850432.56425,
+            0.0
+          ],
+          "stages": 129,
+          "scalar_iterations": 526,
+          "max_history_gain_by_layer": [
+            0.0800000000000125,
+            0.07999994969025837,
+            0.07976336931042427,
+            0.0
+          ],
+          "yielding_points_final": 120,
+          "yielding_depth_km_by_layer_final": [
+            [
+              0.006949582642278296,
+              16.489654712546574
+            ],
+            [
+              20.006949582642278,
+              31.696444204239928
+            ],
+            [
+              40.00347479132114,
+              46.087118218700034
+            ],
+            null
+          ],
+          "never_yielded_points": 136,
+          "quadrature_points": 256
+        },
+        "base_off": {
+          "status": "COMPLETE",
+          "accepted_steps": 64,
+          "strain": 0.04000000000000002,
+          "force_start": 19048975108063.33,
+          "force_end": 19048975108063.33,
+          "rate_start": 1e-15,
+          "rate_end": 1e-15,
+          "force_magnitude_range": [
+            19048975108063.33,
+            19048975108063.33
+          ],
+          "rate_magnitude_range": [
+            1e-15,
+            1e-15
+          ],
+          "max_step_force_rise_relative": 0.0,
+          "max_step_rate_fall_relative": 0.0,
+          "accounts": {
+            "external_work_j_m2": 761959004322.532,
+            "creep_work_j_m2": 359277857737.504,
+            "plastic_work_j_m2": 402681146584.56226,
+            "partition_relative": 6.111854306407975e-13
+          },
+          "layer_plastic_work_j_m2": [
+            101602634032.75392,
+            188955707793.04684,
+            112122804758.76126,
+            0.0
+          ],
+          "stages": 129,
+          "scalar_iterations": 139,
+          "max_history_gain_by_layer": [
+            0.0800000000000125,
+            0.0799998667432078,
+            0.07903326368236208,
+            0.0
+          ],
+          "yielding_points_final": 110,
+          "yielding_depth_km_by_layer_final": [
+            [
+              0.006949582642278296,
+              16.111553551723933
+            ],
+            [
+              20.006949582642278,
+              30.72993121787799
+            ],
+            [
+              40.00347479132114,
+              44.3926859035194
+            ],
+            null
+          ],
+          "never_yielded_points": 146,
+          "quadrature_points": 256
+        },
+        "warm_on": {
+          "status": "COMPLETE",
+          "accepted_steps": 64,
+          "strain": 0.04000000000000002,
+          "force_start": 6755144838366.835,
+          "force_end": 6674955828871.432,
+          "rate_start": 1e-15,
+          "rate_end": 1e-15,
+          "force_magnitude_range": [
+            6674955828871.432,
+            6755144838366.835
+          ],
+          "rate_magnitude_range": [
+            1e-15,
+            1e-15
+          ],
+          "max_step_force_rise_relative": -0.00018214038607483474,
+          "max_step_rate_fall_relative": 0.0,
+          "accounts": {
+            "external_work_j_m2": 268611852309.75522,
+            "creep_work_j_m2": 176018623094.11118,
+            "plastic_work_j_m2": 92593229215.59866,
+            "partition_relative": 1.6894131171674638e-13
+          },
+          "layer_plastic_work_j_m2": [
+            43396641725.78597,
+            49196587489.812706,
+            0.0,
+            0.0
+          ],
+          "stages": 129,
+          "scalar_iterations": 461,
+          "max_history_gain_by_layer": [
+            0.08000000000000851,
+            0.07961584779069275,
+            0.0,
+            0.0
+          ],
+          "yielding_points_final": 57,
+          "yielding_depth_km_by_layer_final": [
+            [
+              0.006949582642278296,
+              11.696444204239928
+            ],
+            [
+              20.006949582642278,
+              24.68720535980105
+            ],
+            null,
+            null
+          ],
+          "never_yielded_points": 199,
+          "quadrature_points": 256
+        },
+        "warm_off": {
+          "status": "COMPLETE",
+          "accepted_steps": 64,
+          "strain": 0.04000000000000002,
+          "force_start": 7646116487150.67,
+          "force_end": 7646116487150.67,
+          "rate_start": 1e-15,
+          "rate_end": 1e-15,
+          "force_magnitude_range": [
+            7646116487150.67,
+            7646116487150.67
+          ],
+          "rate_magnitude_range": [
+            1e-15,
+            1e-15
+          ],
+          "max_step_force_rise_relative": 0.0,
+          "max_step_rate_fall_relative": 0.0,
+          "accounts": {
+            "external_work_j_m2": 305844659486.027,
+            "creep_work_j_m2": 201209381366.0938,
+            "plastic_work_j_m2": 104635278119.77513,
+            "partition_relative": 5.166675782300832e-13
+          },
+          "layer_plastic_work_j_m2": [
+            53188915124.589165,
+            51446362995.18579,
+            0.0,
+            0.0
+          ],
+          "stages": 129,
+          "scalar_iterations": 139,
+          "max_history_gain_by_layer": [
+            0.07999999999998408,
+            0.07898285723854315,
+            0.0,
+            0.0
+          ],
+          "yielding_points_final": 54,
+          "yielding_depth_km_by_layer_final": [
+            [
+              0.006949582642278296,
+              11.214628192961205
+            ],
+            [
+              20.006949582642278,
+              23.888446448276067
+            ],
+            null,
+            null
+          ],
+          "never_yielded_points": 202,
+          "quadrature_points": 256
+        }
+      },
+      "evolving_force_reduction": {
+        "base": 0.019687735807888268,
+        "warm": 0.01187080535119811
+      },
+      "inherited_force_reduction": {
+        "base": 0.1758419199645737,
+        "warm": 0.11652603648938863
+      },
+      "plastic_work_share_by_layer": {
+        "base": {
+          "upper-crust-wet-quartzite": 0.1294822859957078,
+          "lower-crust-wet-anorthite": 0.24481047775037285,
+          "mantle-lid-dry-olivine": 0.18912861952650553,
+          "mantle-lithosphere-dry-olivine": 0.0
+        },
+        "warm": {
+          "upper-crust-wet-quartzite": 0.16155892360156265,
+          "lower-crust-wet-anorthite": 0.18315121639934437,
+          "mantle-lid-dry-olivine": 0.0,
+          "mantle-lithosphere-dry-olivine": 0.0
+        }
+      },
+      "time_steps": [
+        32,
+        64,
+        128
+      ],
+      "time_force_changes": [
+        1.596194480700204e-09,
+        3.994353040851115e-10
+      ],
+      "time_observed_order": [
+        1.9986026844471212
+      ],
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "depth_force_changes": [
+        0.0004658775253050175,
+        4.8240164608327815e-05
+      ],
+      "feedback_by_order": {
+        "32": 0.019749279586943055,
+        "64": 0.019687735807888268,
+        "128": 0.01969753009122374
+      },
+      "feedback_depth_change": 0.0004972340841777652,
+      "force_envelope_n_m": {
+        "minimum": 15342236795011.69,
+        "maximum": 15699366751704.1,
+        "history_allowance": 0.08
+      },
+      "end_state_fixed_point": {
+        "max_relative": 4.8156152379220795e-12,
+        "compared": 256,
+        "skipped": 0,
+        "tensile_mean_stress_points": 6
+      },
+      "subyield_points": 136,
+      "diagnostics": {
+        "max_dissipation_j_m3": 25931393.499337155,
+        "equivalent_adiabatic_heating_k": 10.47733070680289,
+        "conduction_length_m": 7027.283689263065,
+        "duration_s": 40000000000000.0,
+        "note": "diagnostic only; prescribed temperature receives no heat or conduction feedback"
+      }
+    },
+    "force": {
+      "status": "PASS",
+      "seconds": 0.2208709999686107,
+      "passed": true,
+      "checks": {
+        "inverse_consistency": true,
+        "weakening_off_rate_constant": true,
+        "accelerates": true,
+        "work_identity": true,
+        "rate_envelope": true,
+        "complete": true,
+        "work_partition": true
+      },
+      "transmitted_force_n_m": 15699366751704.1,
+      "weakening_on": {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "strain": 0.04428381271876108,
+        "force_start": 15699366751704.1,
+        "force_end": 15699366751711.986,
+        "rate_start": 1.0000000000000013e-15,
+        "rate_end": 1.2302015717714495e-15,
+        "force_magnitude_range": [
+          15699366751696.04,
+          15699366751712.426
+        ],
+        "rate_magnitude_range": [
+          1.0000000000000013e-15,
+          1.2302015717714495e-15
+        ],
+        "max_step_force_rise_relative": 4.0519647866110464e-13,
+        "max_step_rate_fall_relative": -0.0028966180992941997,
+        "accounts": {
+          "external_work_j_m2": 695227817036.1516,
+          "creep_work_j_m2": 301677607227.7332,
+          "plastic_work_j_m2": 393550209805.86926,
+          "partition_relative": 3.66652801162651e-12
+        },
+        "layer_plastic_work_j_m2": [
+          89945090657.08249,
+          170263693934.30893,
+          133341425214.47798,
+          0.0
+        ],
+        "stages": 129,
+        "scalar_iterations": 3826,
+        "max_history_gain_by_layer": [
+          0.0885676254370682,
+          0.08856757513160085,
+          0.08833160140825091,
+          0.0
+        ],
+        "yielding_points_final": 122,
+        "yielding_depth_km_by_layer_final": [
+          [
+            0.006949582642278296,
+            16.852363130542333
+          ],
+          [
+            20.006949582642278,
+            31.696444204239928
+          ],
+          [
+            40.00347479132114,
+            46.32343581104384
+          ],
+          null
+        ],
+        "never_yielded_points": 134,
+        "quadrature_points": 256
+      },
+      "weakening_off": {
+        "status": "COMPLETE",
+        "accepted_steps": 64,
+        "strain": 0.04000000000000004,
+        "force_start": 19048975108063.33,
+        "force_end": 19048975108063.33,
+        "rate_start": 1.0000000000000013e-15,
+        "rate_end": 1.0000000000000013e-15,
+        "force_magnitude_range": [
+          19048975108063.33,
+          19048975108063.33
+        ],
+        "rate_magnitude_range": [
+          1.0000000000000013e-15,
+          1.0000000000000013e-15
+        ],
+        "max_step_force_rise_relative": 0.0,
+        "max_step_rate_fall_relative": 0.0,
+        "accounts": {
+          "external_work_j_m2": 761959004322.5336,
+          "creep_work_j_m2": 359277857737.5043,
+          "plastic_work_j_m2": 402681146584.56244,
+          "partition_relative": 6.127874894367092e-13
+        },
+        "layer_plastic_work_j_m2": [
+          101602634032.75395,
+          188955707793.0469,
+          112122804758.76157,
+          0.0
+        ],
+        "stages": 129,
+        "scalar_iterations": 139,
+        "max_history_gain_by_layer": [
+          0.0800000000000125,
+          0.0799998667432078,
+          0.07903326368236208,
+          0.0
+        ],
+        "yielding_points_final": 110,
+        "yielding_depth_km_by_layer_final": [
+          [
+            0.006949582642278296,
+            16.111553551723933
+          ],
+          [
+            20.006949582642278,
+            30.72993121787799
+          ],
+          [
+            40.00347479132114,
+            44.3926859035194
+          ],
+          null
+        ],
+        "never_yielded_points": 146,
+        "quadrature_points": 256
+      },
+      "rate_gain": 1.230201571771448,
+      "strain_reached": 0.04428381271876108,
+      "rate_envelope_s": {
+        "minimum": 1.0000000000000013e-15,
+        "maximum": 1.3178526032703412e-15
+      },
+      "work_identity_relative": 7.808184114412326e-13
+    },
+    "refusal": {
+      "status": "PASS",
+      "seconds": 0.014204400009475648,
+      "passed": true,
+      "checks": {
+        "refuse_healing": true,
+        "refuse_depth_nonlocal": true,
+        "refuse_large_strain_bound": true,
+        "refuse_eulerian_temperature": true,
+        "refuse_supplied_closure_campaign": true,
+        "refuse_elastic_modulus": true,
+        "refuse_pore_fluid_law": true,
+        "refuse_zero_factor": true,
+        "refuse_strengthening_factor": true,
+        "refuse_reversed_interval": true,
+        "refuse_unknown_creep_key": true,
+        "refuse_missing_density": true,
+        "refuse_step_ceiling": true,
+        "refuse_friction_only_with_cohesion": true,
+        "refuse_steps_0": true,
+        "refuse_steps_257": true,
+        "refuse_steps_2.0": true,
+        "refuse_negative_history": true,
+        "refuse_history_shape": true,
+        "refuse_zero_rate": true,
+        "refuse_stale_preparation": true,
+        "refuse_window_beyond_small_strain": true,
+        "refuse_compressive_nonmonotone_creep": true,
+        "small_strain_refused": true,
+        "refused_step_not_booked": true,
+        "refused_history_bounded": true,
+        "refused_accounts_close": true
+      },
+      "refused_cases": [
+        "compressive_nonmonotone_creep",
+        "depth_nonlocal",
+        "elastic_modulus",
+        "eulerian_temperature",
+        "friction_only_with_cohesion",
+        "healing",
+        "history_shape",
+        "large_strain_bound",
+        "missing_density",
+        "negative_history",
+        "pore_fluid_law",
+        "reversed_interval",
+        "stale_preparation",
+        "step_ceiling",
+        "steps_0",
+        "steps_2.0",
+        "steps_257",
+        "strengthening_factor",
+        "supplied_closure_campaign",
+        "unknown_creep_key",
+        "window_beyond_small_strain",
+        "zero_factor",
+        "zero_rate"
+      ],
+      "accepted_before_refusal": 13,
+      "strain_at_refusal": 0.048750000000000016
+    },
+    "reuse": {
+      "status": "PASS",
+      "seconds": 0.2913022000575438,
+      "passed": true,
+      "checks": {
+        "bitwise_parity": true,
+        "fingerprint_matches": true,
+        "changed_input_changes_fingerprint": true
+      },
+      "reused_seconds": 0.037094400031492114,
+      "rebuilt_seconds": 0.2510378999868408,
+      "saved_seconds": 0.21394349995534867,
+      "saved_percent": 85.22358574803383,
+      "scope": "one matched reference evolution; re-preparation per accepted step versus reuse; not a generator speedup"
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_weakening.py": "7feec9532c8052ab8cfc172ebc2d510a12285481043dea50b6820607afcec860",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "docs/I01_WEAKENING.md": "4b10f5b7f8ae2c460658af1a3b0cb4d8b27efb142730ed305595c282130a4915",
+    "tests/test_i01_weakening.py": "22773e731daa13003afb02ee94597c123f4bab0051306b8f2b9125952f59fae7",
+    "tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "cases/i01_column_v1.json": "4e04683a751e721ee559528ee6d2e8e288671cd584b09f7b0bfa5782f06e0f0a",
+    "evidence/i01-column-r2.json": "452d9259853a17ae869c86aadcd5e673003a9dc132c50323535bf44a4fe55ef7",
+    "src/atlas_tectonics/_integration_weakening.py": "88cc152d7482b27e3f9eaf5f0274f707bf73e945b45fc166f246cf54f91ab4f8",
+    "src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113"
+  },
+  "kernel_bytes_match_reviewed_receipt": {
+    "tools/check_i01_column.py": true,
+    "cases/i01_column_v1.json": true,
+    "src/atlas_tectonics/_integration_column.py": true
+  },
+  "kernel_policy": {
+    "rate_relative_tolerance": 2e-11,
+    "iterations": 96,
+    "max_layers": 64,
+    "max_mechanisms": 4,
+    "max_order": 128,
+    "column_refinement_tolerance": 0.003,
+    "benchmark_repetitions": 10
+  },
+  "spec": {
+    "schema": "atlas.i01-weakening-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "laterally uniform, small-strain, coaxial plane-strain column with prescribed temperature, lithostatic vertical stress and evolving raw plastic history; returns transmitted resistance for a supplied state; not localisation, rupture, necking, breakup, finite strain or calibration",
+    "provenance": {
+      "rheology": "ASPECT cookbooks/continental_extension/continental_extension.prm (main branch, retrieved 2026-09-27): dislocation-creep prefactors, stress exponents, activation energies and volumes already in ASPECT's invariant SI convention; densities 2700/2900/3300 kg/m3; cohesion 20 MPa; internal friction angle 30 degrees; gravity 9.81 m/s2",
+      "weakening": "same file: 'plastic weakening with plastic strain only', interval 0.5 to 1.5 of ASPECT's accumulated deviatoric second-invariant strain at yielding points, cohesion and friction-angle factors 0.25; converted here to raw engineering plastic shear [1.0, 3.0]",
+      "inherited_history": "authored laterally uniform replacement of the cookbook's random initial plastic strain '0.5 + rand_seed(1)' in the central 100 km of its upper 50 km (mean 1.0, engineering 2.0); zero below 50 km depth",
+      "temperature": "authored piecewise-linear profile retained from i01_column_v1 (273/633/893/1613 K at 0/20/40/100 km depth); the 1013 K breakpoint at 50 km lies on the same line",
+      "authored": "axial rate, plastic viscosity (explicit physical regularisation), grain size, zero pore pressure, the homogeneous/closed-form/refusal fixtures and all tolerances are authored control inputs, not calibrated defaults",
+      "diagnostic_only": "heat capacity 750 J/kg/K and conductivity 2.5 W/m/K from the same ASPECT file are used only for a reported heating/conduction estimate; they never feed back"
+    },
+    "representation": {
+      "geometry": "laterally uniform column; coaxial plane-strain pure shear; material depth coordinates; small strain",
+      "vertical_stress": "lithostatic from supplied layer densities below a free, unloaded surface",
+      "temperature": "prescribed and fixed at material points; no conduction, heating or advection feedback",
+      "pore_pressure": "supplied and fixed at material points",
+      "history": "raw engineering plastic shear per material point; local weakening input; never overwritten",
+      "pressure_closure": "lithostatic_vertical",
+      "gravity_m_s2": 9.81,
+      "max_axial_strain": 0.05,
+      "nonlocal_depth_length_m": 0.0,
+      "healing_per_s": 0.0
+    },
+    "weakening": {
+      "interval_engineering": [
+        1.0,
+        3.0
+      ],
+      "cohesion_factor": 0.25,
+      "friction_factor": 0.25
+    },
+    "diagnostic_thermal": {
+      "heat_capacity_J_kg_K": 750.0,
+      "conductivity_W_m_K": 2.5
+    },
+    "layers": [
+      {
+        "name": "upper-crust-wet-quartzite",
+        "thickness_m": 20000.0,
+        "temperature_k": [
+          273.0,
+          633.0
+        ],
+        "density_kg_m3": 2700.0,
+        "pore_pressure_pa": [
+          0.0,
+          0.0
+        ],
+        "grain_m": 0.001,
+        "cohesion_pa": 20000000.0,
+        "friction_rad": 0.5235987755982988,
+        "plastic_viscosity_pa_s": 1e+21,
+        "creep": [
+          {
+            "a": 8.57e-28,
+            "n": 4.0,
+            "energy_j_mol": 223000.0
+          }
+        ]
+      },
+      {
+        "name": "lower-crust-wet-anorthite",
+        "thickness_m": 20000.0,
+        "temperature_k": [
+          633.0,
+          893.0
+        ],
+        "density_kg_m3": 2900.0,
+        "pore_pressure_pa": [
+          0.0,
+          0.0
+        ],
+        "grain_m": 0.001,
+        "cohesion_pa": 20000000.0,
+        "friction_rad": 0.5235987755982988,
+        "plastic_viscosity_pa_s": 1e+21,
+        "creep": [
+          {
+            "a": 7.13e-18,
+            "n": 3.0,
+            "energy_j_mol": 345000.0
+          }
+        ]
+      },
+      {
+        "name": "mantle-lid-dry-olivine",
+        "thickness_m": 10000.0,
+        "temperature_k": [
+          893.0,
+          1013.0
+        ],
+        "density_kg_m3": 3300.0,
+        "pore_pressure_pa": [
+          0.0,
+          0.0
+        ],
+        "grain_m": 0.001,
+        "cohesion_pa": 20000000.0,
+        "friction_rad": 0.5235987755982988,
+        "plastic_viscosity_pa_s": 1e+21,
+        "creep": [
+          {
+            "a": 6.51e-16,
+            "n": 3.5,
+            "energy_j_mol": 530000.0,
+            "volume_m3_mol": 1.8e-05
+          }
+        ]
+      },
+      {
+        "name": "mantle-lithosphere-dry-olivine",
+        "thickness_m": 50000.0,
+        "temperature_k": [
+          1013.0,
+          1613.0
+        ],
+        "density_kg_m3": 3300.0,
+        "pore_pressure_pa": [
+          0.0,
+          0.0
+        ],
+        "grain_m": 0.001,
+        "cohesion_pa": 20000000.0,
+        "friction_rad": 0.5235987755982988,
+        "plastic_viscosity_pa_s": 1e+21,
+        "creep": [
+          {
+            "a": 6.51e-16,
+            "n": 3.5,
+            "energy_j_mol": 530000.0,
+            "volume_m3_mol": 1.8e-05
+          }
+        ]
+      }
+    ],
+    "campaign": {
+      "rate_s": 1e-15,
+      "total_strain": 0.04,
+      "initial_history_by_layer": [
+        2.0,
+        2.0,
+        2.0,
+        0.0
+      ],
+      "reference_order": 64,
+      "reference_steps": 64,
+      "time_steps": [
+        32,
+        64,
+        128
+      ],
+      "orders": [
+        32,
+        64,
+        128
+      ],
+      "warm_offset_k": 100.0,
+      "homogeneous": {
+        "layer": {
+          "name": "uniform-wet-quartzite",
+          "thickness_m": 10000.0,
+          "temperature_k": [
+            600.0,
+            600.0
+          ],
+          "mean_pressure_pa": [
+            150000000.0,
+            150000000.0
+          ],
+          "pore_pressure_pa": [
+            0.0,
+            0.0
+          ],
+          "grain_m": 0.001,
+          "cohesion_pa": 20000000.0,
+          "friction_rad": 0.5235987755982988,
+          "plastic_viscosity_pa_s": 1e+21,
+          "creep": [
+            {
+              "a": 8.57e-28,
+              "n": 4.0,
+              "energy_j_mol": 223000.0
+            }
+          ]
+        },
+        "order": 8,
+        "initial_history": 2.0,
+        "total_strain": 0.04,
+        "steps": [
+          16,
+          32,
+          64
+        ]
+      },
+      "plastic": {
+        "deep_thickness_m": 20000.0,
+        "shallow_thickness_m": 400.0,
+        "density_kg_m3": 2700.0,
+        "negligible_creep": {
+          "a": 1e-60,
+          "n": 1.0,
+          "energy_j_mol": 0.0
+        },
+        "weakened_history": 2.0
+      },
+      "force": {
+        "steps": 64
+      },
+      "refusal": {
+        "total_strain": 0.06,
+        "steps": 16,
+        "compressive_volume_m3_mol": 0.001
+      }
+    },
+    "policy": {
+      "max_steps": 256,
+      "maximum_seconds": 120.0,
+      "force_iterations": 96,
+      "kernel_parity_relative": 1e-10,
+      "closed_form_relative": 1e-10,
+      "fixed_point_relative": 1e-09,
+      "work_relative": 1e-10,
+      "history_bound_relative": 1e-10,
+      "monotone_relative": 1e-10,
+      "oracle_relative": 1e-05,
+      "order_range": [
+        1.8,
+        2.2
+      ],
+      "uniform_relative": 1e-13,
+      "time_relative": 0.0001,
+      "depth_relative": 0.003,
+      "feedback_depth_relative": 0.03,
+      "coupling_resolution_factor": 10.0,
+      "force_relative": 1e-10,
+      "inverse_rate_relative": 1e-08,
+      "force_work_relative": 1e-09
+    }
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 1.0282908000517637
+}

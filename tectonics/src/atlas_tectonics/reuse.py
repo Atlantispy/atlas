@@ -15,6 +15,7 @@ import marshal
 import math
 from pathlib import Path
 import platform
+import re
 import sys
 import types
 import importlib
@@ -92,8 +93,10 @@ def _normal_code(code):
         _normal_code(c) if isinstance(c, types.CodeType) else c for c in code.co_consts))
 
 
-# Fixed kernel dependency set: unrelated later imports cannot change a cache key.
-# New package source files still participate in source membership verification.
+# Minimum kernel dependency set, retained as an explicit guard: every name here
+# must exist in the package source membership. The bound set itself is derived
+# from that membership (_identity_modules), not from sys.modules, so it is
+# deterministic across processes and unrelated later imports cannot change a key.
 _IDENTITY_MODULES = ("regional_thermomechanical", "regional_rheology", "regional_transport", "regional_execution", "regional_stokes", "w06_workflow", "spreading_checkpoint", "spreading_history", "spreading_history_cooling", "margin_cooling", "spreading_integrals", "spreading_cooling", "spreading", "extension_workflow", "extension_support", "extension", "variable_flexure", "finite_flexure", "w04_workflow", "column_loads", "w03_workflow", "compaction", "compaction_columns", "plate_integrals", "thermal_support", "regional_workflow", "regional_workflow_geometry", "regional_forcing", "_velocity_multigrid", "_validation", "resources", "parameters", "kinematics",
                      "thermal", "plate_cooling", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "adaptive_inner", "convection_benchmark")
 
@@ -109,6 +112,47 @@ _IDENTITY_MODULES += ("w09_drainage", "w09_water", "w09_erosion", "w09_hillslope
 _IDENTITY_MODULES += ("underthrust",)
 _IDENTITY_MODULES += ("evolving_mechanics", "evolving_flexure")
 _IDENTITY_MODULES += ("tectonic_history_codec", "tectonic_history")
+
+
+_NATIVE_SUFFIX = '_native'
+
+
+def _identity_modules(backend):
+    """Every module in the package's source membership, sorted.
+
+    Membership is the same ``*.py`` set that _source_bytes digests, read from the
+    package directory itself. Before R1 a fixed list omitted 25 modules (3D,
+    integration, assembly, ports, plate reference and, outside numba, the native
+    kernels), so a process running stale in-memory code of those modules received
+    the fresh-source identity (review s01-1). Native (numba) modules are bound
+    whenever they import; only a missing optional dependency may skip one, and
+    never for the numba backend. A membership change after capture is refused by
+    ExecutionContext.verify through the source inventory.
+    """
+    root = Path(importlib.import_module(__package__).__file__).parent
+    names = []
+    for path in root.rglob('*.py'):
+        parts = path.relative_to(root).with_suffix('').parts
+        if parts[-1] != '__init__':
+            names.append('.'.join(parts))
+    missing = set(_IDENTITY_MODULES)-set(names)
+    if missing:
+        raise TectonicsError('declared identity module missing from source membership: '+min(missing))
+    out = []
+    for name in sorted(names):
+        try:
+            importlib.import_module('atlas_tectonics.'+name)
+        except (ImportError, OSError) as exc:
+            # A native kernel whose optional runtime is missing or broken has no
+            # loaded code to bind (its source bytes stay bound); the numba backend
+            # needs it, and every other package module must import.
+            if name.endswith(_NATIVE_SUFFIX) and backend != 'numba':
+                continue
+            raise TectonicsError('package module cannot be imported for the execution identity: '+name) from exc
+        except Exception as exc:
+            raise TectonicsError('package module cannot be imported for the execution identity: '+name) from exc
+        out.append(name)
+    return tuple(out)
 
 
 _SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
@@ -179,22 +223,118 @@ def _source_bytes():
     return out
 
 
+_CAPTURED_TYPES = (str, int, float, bool, tuple, list, dict, set, frozenset, types.MappingProxyType,
+                   re.Pattern)
+
+
+def _captured(value):
+    """Upper-case module values bound by the identity (R1: data, not just scalars)."""
+    return (type(value) in _CAPTURED_TYPES or isinstance(value, (np.dtype, np.generic, np.ndarray))
+            or (is_dataclass(value) and not isinstance(value, type)))
+
+
+@lru_cache(maxsize=None)
+def _code_digest(code):
+    """Digest of a code object held in a data table (code objects hash by content)."""
+    return _digest(marshal.dumps(_normal_code(code), 2))
+
+
+def _key(value):
+    """Distinct, ordered text for a dict key; str keys keep their text."""
+    return value if type(value) is str else type(value).__qualname__+':'+repr(value)
+
+
+def _dtype_constant(value, active=None):
+    """Detach dtype layout and metadata; dtype equality ignores metadata.
+
+    Field order, overlapping offsets and subarrays cannot be represented by
+    dtype.str alone. Metadata must be inspectable data, never a type-only token.
+    Revisit it on every verification: metadata can contain mutable containers.
+    """
+    if value is None or type(value) in (bool, int, float, str):
+        return _constant(value)
+    if type(value) is bytes:
+        return {"bytes": value.hex()}
+    if type(value) is complex:
+        return {"complex": [_constant(value.real), _constant(value.imag)]}
+    active = set() if active is None else active
+    if id(value) in active:
+        raise TectonicsError('cyclic dtype metadata cannot be bound')
+    active.add(id(value))
+    try:
+        if isinstance(value, np.dtype):
+            fields = None if value.names is None else [
+                [name, _dtype_constant(value.fields[name][0], active), value.fields[name][1],
+                 _dtype_constant(value.fields[name][2:], active)] for name in value.names]
+            sub = None if value.subdtype is None else [
+                _dtype_constant(value.subdtype[0], active), list(value.subdtype[1])]
+            return {"dtype": dict(str=value.str, byteorder=value.byteorder,
+                itemsize=value.itemsize, alignment=value.alignment,
+                isalignedstruct=value.isalignedstruct, fields=fields, subdtype=sub,
+                metadata=_dtype_constant(value.metadata, active))}
+        if type(value) in (list, tuple):
+            return {type(value).__name__: [_dtype_constant(x, active) for x in value]}
+        if type(value) in (dict, types.MappingProxyType):
+            items = [[_dtype_constant(k, active), _dtype_constant(v, active)]
+                     for k, v in value.items()]
+            return {"mapping": sorted(items, key=lambda item: _json(item[0]))}
+        if isinstance(value, np.generic):
+            item = value.item()
+            if isinstance(item, np.generic):
+                raise TectonicsError('unsupported dtype metadata scalar: '+type(value).__qualname__)
+            return {"numpy": _dtype_constant(value.dtype, active),
+                    "value": _dtype_constant(item, active)}
+        raise TectonicsError('unsupported dtype metadata: '+type(value).__qualname__)
+    finally:
+        active.remove(id(value))
+
+
 def _constant(value):
+    if isinstance(value, np.dtype):
+        return _dtype_constant(value)
+    if type(value) is float and not math.isfinite(value):
+        return {"float": repr(value)}
     if value is None or type(value) in (bool, int, float, str):
         return value
     if type(value) in (tuple, list):
         return [_constant(x) for x in value]
-    if type(value) is dict:
-        return {str(k): _constant(v) for k,v in sorted(value.items())}
+    if type(value) in (dict, types.MappingProxyType):
+        # Keys may be non-comparable (types); a typed text key keeps them distinct and ordered.
+        items = [(_key(k), v) for k, v in value.items()]
+        if len({k for k, _ in items}) != len(items):
+            raise TectonicsError('identity constant has ambiguous dictionary keys')
+        return {k: _constant(v) for k, v in sorted(items)}
+    if isinstance(value, types.FunctionType):
+        # Functions held in tables are bound by their code, not by their type.
+        return {"function": value.__qualname__, "code": _code_digest(value.__code__),
+                "defaults": _constant(value.__defaults__), "kwdefaults": _constant(value.__kwdefaults__)}
+    if isinstance(value, re.Pattern):
+        return {"pattern": _constant(value.pattern), "flags": value.flags}
+    if type(value) in (set, frozenset):
+        return {"set": sorted((_constant(x) for x in value), key=_json)}
+    if isinstance(value, np.generic):
+        # Exact value; repr keeps non-finite values out of strict JSON.
+        return {"numpy": value.dtype.str, "repr": repr(value.item())}
+    if isinstance(value, np.ndarray):
+        array = np.ascontiguousarray(value)
+        out = {"ndarray": array.dtype.str, "shape": list(array.shape)}
+        if array.dtype.kind == 'O':
+            out["items"] = [_constant(x) for x in array.ravel()]
+        else:
+            out["sha256"] = _digest(array.tobytes())
+        if isinstance(value, np.ma.MaskedArray):
+            out["mask"] = _digest(np.ascontiguousarray(np.ma.getmaskarray(value)).tobytes())
+        return out
     if is_dataclass(value) and not isinstance(value, type):
         return {"type": type(value).__qualname__, "values": _constant(asdict(value))}
     # Runtime objects (locks/budgets/modules) are not arbitrary serialised graphs.
     return {"type": type(value).__module__+"."+type(value).__qualname__}
 
 
-def _callable_inventory(backend="reference"):
+def _callable_inventory(backend="reference", modules=None):
     signatures, tokens, constants = {}, [], {}
-    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native", "_mechanics_native") if backend == "numba" else ())
+    if modules is None:
+        modules = _identity_modules(backend)
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         for label, obj in sorted(vars(module).items()):
@@ -203,8 +343,7 @@ def _callable_inventory(backend="reference"):
             transient = name == 'execution' and label in (
                 '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
                 '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
-            if not transient and label.isupper() and (type(obj) in (str, int, float, bool, tuple)
-                                   or (is_dataclass(obj) and not isinstance(obj, type))):
+            if not transient and label.isupper() and _captured(obj):
                 constants[module.__name__+"."+label] = _constant(obj)
             members = [(label, obj)]
             if isinstance(obj, type) and obj.__module__ == module.__name__:
@@ -238,7 +377,7 @@ def _callable_inventory(backend="reference"):
     return signatures, tuple(tokens), _json(constants)
 
 
-def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes) -> None:
+def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes, modules=None) -> None:
     """Compare live bindings without constructing discarded signature/token tables.
 
     ``expected`` retains the original objects, codes and detached defaults. Every
@@ -253,7 +392,8 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
     # duplicate qualified names introduced after preparation. Tokens themselves
     # retain strong references and detached defaults and are not mutated here.
     remaining = expected.copy()
-    modules = _IDENTITY_MODULES + (("_regional_native", "_transport_native", "_materials_native", "_mesh_native", "_geometry_native", "_thermochemical_native", "_mechanics_native") if backend == "numba" else ())
+    if modules is None:
+        modules = _identity_modules(backend)
     for name in modules:
         module = importlib.import_module("atlas_tectonics."+name)
         prefix = module.__name__+"."
@@ -261,8 +401,7 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
             transient = name == 'execution' and label in (
                 '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
                 '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
-            if not transient and label.isupper() and (type(obj) in (str, int, float, bool, tuple)
-                                   or (is_dataclass(obj) and not isinstance(obj, type))):
+            if not transient and label.isupper() and _captured(obj):
                 constants[prefix+label] = _constant(obj)
             members = ((label, obj),)
             if isinstance(obj, type) and obj.__module__ == module.__name__:
@@ -406,7 +545,10 @@ class ExecutionContext:
     def __init__(self, backend="reference"):
         self.backend = backend
         self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
-        signatures, self._tokens, self._constants = _callable_inventory(backend)
+        # The bound module set is captured once from the package membership; any
+        # later membership change is refused by verify() through _source_bytes().
+        self._modules = _identity_modules(backend)
+        signatures, self._tokens, self._constants = _callable_inventory(backend, self._modules)
         self._expected = {token[0]: token for token in self._tokens}
         # Preserve the full legacy check for deliberately ambiguous dotted aliases.
         if len(self._expected) != len(self._tokens):
@@ -450,9 +592,9 @@ class ExecutionContext:
             if (_verify_callable_inventory is not helper[1]
                     or _verify_callable_inventory.__code__ is not helper[2]):
                 raise TectonicsError("loaded implementation changed")
-            _verify_callable_inventory(self.backend, self._expected, self._constants)
+            _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules)
             return
-        _, tokens, constants = _callable_inventory(self.backend)
+        _, tokens, constants = _callable_inventory(self.backend, self._modules)
         if constants != self._constants or len(tokens) != len(self._tokens):
             raise TectonicsError("loaded implementation changed")
         for now, old in zip(tokens, self._tokens):

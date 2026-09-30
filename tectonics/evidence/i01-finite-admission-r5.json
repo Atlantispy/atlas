@@ -1,0 +1,1407 @@
+{
+  "schema": "atlas.i01-finite-admission-evidence.v1",
+  "status": "PASS_BOUNDED_FINITE_ADMISSION_ONLY",
+  "scientific_acceptance": false,
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "threadpoolctl": "3.7.0",
+    "system": "Windows",
+    "machine": "AMD64",
+    "blas_threads": 1
+  },
+  "controls": {
+    "analytic": {
+      "status": "PASS",
+      "seconds": 0.020866599981673062,
+      "passed": true,
+      "checks": {
+        "linear_envelope_closed_form": true,
+        "prepare_uses_the_formula": true,
+        "stage_at_current_geometry": true,
+        "linear_bound_holds": true,
+        "exact_threshold": true,
+        "weakened_envelope_closed_form": true,
+        "weakened_bound_holds": true,
+        "floors_tighten": true,
+        "layered_genuinely_uncertifiable": true,
+        "old_small_strain_guard_unchanged": true,
+        "no_separation": true
+      },
+      "linear": {
+        "exact_speed_m_s": 3.999982933406151e-10,
+        "stage_speed_m_s": 3.999982933413401e-10,
+        "stage_relative": 1.8124380033219302e-12,
+        "threshold": 7.999936000512004e-06,
+        "equality": {
+          "status": "CERTIFIED_FINITE_WINDOW",
+          "relative_error_limit": 7.999936000512004e-06,
+          "speed_error_bound_m_s": 3.199974400204802e-15,
+          "displacement_error_bound_m": 0.07999936000512005,
+          "driving_work_error_bound_J_m": 1599987200102.401,
+          "speed_lower_bound_m_s": 3.999968000255998e-10,
+          "yield_bound_n_m": 0.0,
+          "linear_bound_pa_s": 4.000000000000004e+17,
+          "window_start_s": 0.0,
+          "window_end_s": 25000000000000.0,
+          "stretch_start": 1.0,
+          "stretch_floor": 1.0,
+          "stretch_reach_upper": 1.1,
+          "generated_separation_authorised": false
+        },
+        "tighter": {
+          "status": "NOT_CERTIFIED_BY_BOUND",
+          "relative_error_limit": 7.999936000512004e-06,
+          "speed_lower_bound_m_s": 3.999968000255998e-10,
+          "yield_bound_n_m": 0.0,
+          "linear_bound_pa_s": 4.000000000000004e+17,
+          "window_start_s": 0.0,
+          "window_end_s": 25000000000000.0,
+          "stretch_start": 1.0,
+          "stretch_floor": 1.0,
+          "stretch_reach_upper": 1.1,
+          "generated_separation_authorised": false
+        },
+        "formula_at_stretch": {
+          "yield_bound_n_m": 0.0,
+          "linear_bound_pa_s": 2.5600000000000026e+17
+        },
+        "at_reference": {
+          "yield_bound_n_m": 0.0,
+          "linear_bound_pa_s": 4.000000000000004e+17
+        }
+      },
+      "weakened": {
+        "factors": [
+          0.625,
+          0.625
+        ],
+        "stage_force_to_envelope": 0.9653540003613561,
+        "overburden_offset_pa": 0.0,
+        "floor": {
+          "yield_bound_n_m": 828318530717.9594,
+          "linear_bound_pa_s": 2.5600000000000023e+20
+        },
+        "fully_weakened": {
+          "yield_bound_n_m": 331327412287.1838,
+          "linear_bound_pa_s": 2.5600000000000023e+20
+        },
+        "reference": {
+          "yield_bound_n_m": 1231747704246.8115,
+          "linear_bound_pa_s": 4.000000000000004e+20
+        }
+      },
+      "layered": {
+        "yield_bound_to_force": 7.124068062075617,
+        "certificate": {
+          "status": "NOT_CERTIFIED_BY_BOUND",
+          "relative_error_limit": 0.9999990463256836,
+          "speed_lower_bound_m_s": 0.0,
+          "yield_bound_n_m": 142481361241512.38,
+          "linear_bound_pa_s": 4.000000000000004e+21,
+          "window_start_s": 0.0,
+          "window_end_s": 25000000000000.0,
+          "stretch_start": 1.0,
+          "stretch_floor": 1.0,
+          "stretch_reach_upper": 1.1,
+          "generated_separation_authorised": false
+        }
+      },
+      "old_guard": {
+        "refused": true,
+        "reason": "ValueError: window exceeds remaining small-strain allowance"
+      },
+      "note": "closed forms evaluate the envelope formula at authored floors, never a state; every certificate here is admitted from an issued reference state"
+    },
+    "trajectory": {
+      "status": "PASS",
+      "seconds": 0.014995799981988966,
+      "passed": true,
+      "checks": {
+        "numerical_within_exact_bounds": true,
+        "layered_visibly_uncertified": true,
+        "weak_belt_certified_at_coarse_allowance": true,
+        "weak_belt_not_certified_at_retained_allowance": true,
+        "state_evolves_in_every_window": true,
+        "certified_beyond_small_strain": true,
+        "no_separation": true
+      },
+      "windows": [
+        {
+          "fixture": "layered",
+          "start_step": 0,
+          "end_step": 32,
+          "relative_tolerance": 0.01,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.01,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 142481361241512.38,
+            "linear_bound_pa_s": 4.000000000000004e+21,
+            "window_start_s": 0.0,
+            "window_end_s": 25000000000000.0,
+            "stretch_start": 1.0,
+            "stretch_floor": 1.0,
+            "stretch_reach_upper": 1.1,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.10767564081129337,
+              0.10145378521829353
+            ],
+            "speed_deficit": [
+              0.7690777696972944,
+              0.7249956893014989
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.747493255939941,
+            "stretch_gain": 0.025250674406006146,
+            "stretch_reach": 0.1,
+            "temperature_change_k": 4.499111251318908,
+            "history_gain": 0.04987430645699664,
+            "stretch": [
+              1.0,
+              1.0252506744060061
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "layered",
+          "start_step": 0,
+          "end_step": 32,
+          "relative_tolerance": 0.1,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.1,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 142481361241512.38,
+            "linear_bound_pa_s": 4.000000000000004e+21,
+            "window_start_s": 0.0,
+            "window_end_s": 25000000000000.0,
+            "stretch_start": 1.0,
+            "stretch_floor": 1.0,
+            "stretch_reach_upper": 1.1,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.10767564081129337,
+              0.10145378521829353
+            ],
+            "speed_deficit": [
+              0.7690777696972944,
+              0.7249956893014989
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.747493255939941,
+            "stretch_gain": 0.025250674406006146,
+            "stretch_reach": 0.1,
+            "temperature_change_k": 4.499111251318908,
+            "history_gain": 0.04987430645699664,
+            "stretch": [
+              1.0,
+              1.0252506744060061
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "layered",
+          "start_step": 32,
+          "end_step": 96,
+          "relative_tolerance": 0.01,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.01,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 135306414691626.33,
+            "linear_bound_pa_s": 3.8053960588360847e+21,
+            "window_start_s": 25000000000000.0,
+            "window_end_s": 75000000000000.0,
+            "stretch_start": 1.0252506744060061,
+            "stretch_floor": 1.0252506744060061,
+            "stretch_reach_upper": 1.2252506744060063,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.10683302415186344,
+              0.09187025226633497
+            ],
+            "speed_deficit": [
+              0.7249956893014989,
+              0.6241596187552649
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.6756476743424186,
+            "stretch_gain": 0.06487046513151773,
+            "stretch_reach": 0.2,
+            "temperature_change_k": 7.653165074429646,
+            "history_gain": 0.12270344448471793,
+            "stretch": [
+              1.0252506744060061,
+              1.0901211395375239
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "layered",
+          "start_step": 32,
+          "end_step": 96,
+          "relative_tolerance": 0.1,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.1,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 135306414691626.33,
+            "linear_bound_pa_s": 3.8053960588360847e+21,
+            "window_start_s": 25000000000000.0,
+            "window_end_s": 75000000000000.0,
+            "stretch_start": 1.0252506744060061,
+            "stretch_floor": 1.0252506744060061,
+            "stretch_reach_upper": 1.2252506744060063,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.10683302415186344,
+              0.09187025226633497
+            ],
+            "speed_deficit": [
+              0.7249956893014989,
+              0.6241596187552649
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.6756476743424186,
+            "stretch_gain": 0.06487046513151773,
+            "stretch_reach": 0.2,
+            "temperature_change_k": 7.653165074429646,
+            "history_gain": 0.12270344448471793,
+            "stretch": [
+              1.0252506744060061,
+              1.0901211395375239
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "homogeneous",
+          "start_step": 0,
+          "end_step": 32,
+          "relative_tolerance": 0.01,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.01,
+            "speed_lower_bound_m_s": 3.723859582490712e-10,
+            "yield_bound_n_m": 1231747704246.8115,
+            "linear_bound_pa_s": 4.000000000000004e+20,
+            "window_start_s": 0.0,
+            "window_end_s": 25000000000000.0,
+            "stretch_start": 1.0,
+            "stretch_floor": 1.0,
+            "stretch_reach_upper": 1.1,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.9593239883566762,
+              0.7526580964962228
+            ],
+            "speed_deficit": [
+              0.06624841834593403,
+              0.05206202962890614
+            ],
+            "speed_deficit_bound": 0.069035104377322,
+            "displacement_deficit": 0.058817147960956835,
+            "stretch_gain": 0.09411828520390486,
+            "stretch_reach": 0.1,
+            "temperature_change_k": 5.465770092589907,
+            "history_gain": 0.15083947819259524,
+            "stretch": [
+              1.0,
+              1.0941182852039049
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "homogeneous",
+          "start_step": 0,
+          "end_step": 32,
+          "relative_tolerance": 0.1,
+          "certificate": {
+            "status": "CERTIFIED_FINITE_WINDOW",
+            "relative_error_limit": 0.1,
+            "speed_error_bound_m_s": 4.000000000000001e-11,
+            "displacement_error_bound_m": 1000.0000000000002,
+            "driving_work_error_bound_J_m": 2.0000000000000004e+16,
+            "speed_lower_bound_m_s": 3.723859582490712e-10,
+            "yield_bound_n_m": 1231747704246.8115,
+            "linear_bound_pa_s": 4.000000000000004e+20,
+            "window_start_s": 0.0,
+            "window_end_s": 25000000000000.0,
+            "stretch_start": 1.0,
+            "stretch_floor": 1.0,
+            "stretch_reach_upper": 1.1,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.9593239883566762,
+              0.7526580964962228
+            ],
+            "speed_deficit": [
+              0.06624841834593403,
+              0.05206202962890614
+            ],
+            "speed_deficit_bound": 0.069035104377322,
+            "displacement_deficit": 0.058817147960956835,
+            "stretch_gain": 0.09411828520390486,
+            "stretch_reach": 0.1,
+            "temperature_change_k": 5.465770092589907,
+            "history_gain": 0.15083947819259524,
+            "stretch": [
+              1.0,
+              1.0941182852039049
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true,
+            "certified_speed": true,
+            "certified_displacement": true,
+            "certified_drive_work": true
+          }
+        },
+        {
+          "fixture": "homogeneous",
+          "start_step": 32,
+          "end_step": 96,
+          "relative_tolerance": 0.01,
+          "certificate": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.01,
+            "speed_lower_bound_m_s": 3.783972177088907e-10,
+            "yield_bound_n_m": 953700603336.7302,
+            "linear_bound_pa_s": 3.341422856761315e+20,
+            "window_start_s": 25000000000000.0,
+            "window_end_s": 75000000000000.0,
+            "stretch_start": 1.0941182852039049,
+            "stretch_floor": 1.0941182852039049,
+            "stretch_reach_upper": 1.294118285203905,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.9637555455418318,
+              0.608895080881996
+            ],
+            "speed_deficit": [
+              0.05206202962890614,
+              0.03297017154592818
+            ],
+            "speed_deficit_bound": 0.05400695572777338,
+            "displacement_deficit": 0.04170418587456269,
+            "stretch_gain": 0.191659162825087,
+            "stretch_reach": 0.2,
+            "temperature_change_k": 7.888347822102106,
+            "history_gain": 0.2830098254183997,
+            "stretch": [
+              1.0941182852039049,
+              1.2857774480289919
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "homogeneous",
+          "start_step": 32,
+          "end_step": 96,
+          "relative_tolerance": 0.1,
+          "certificate": {
+            "status": "CERTIFIED_FINITE_WINDOW",
+            "relative_error_limit": 0.1,
+            "speed_error_bound_m_s": 4.000000000000001e-11,
+            "displacement_error_bound_m": 2000.0000000000005,
+            "driving_work_error_bound_J_m": 4.000000000000001e+16,
+            "speed_lower_bound_m_s": 3.783972177088907e-10,
+            "yield_bound_n_m": 953700603336.7302,
+            "linear_bound_pa_s": 3.341422856761315e+20,
+            "window_start_s": 25000000000000.0,
+            "window_end_s": 75000000000000.0,
+            "stretch_start": 1.0941182852039049,
+            "stretch_floor": 1.0941182852039049,
+            "stretch_reach_upper": 1.294118285203905,
+            "generated_separation_authorised": false
+          },
+          "numerical": {
+            "force_to_envelope": [
+              0.9637555455418318,
+              0.608895080881996
+            ],
+            "speed_deficit": [
+              0.05206202962890614,
+              0.03297017154592818
+            ],
+            "speed_deficit_bound": 0.05400695572777338,
+            "displacement_deficit": 0.04170418587456269,
+            "stretch_gain": 0.191659162825087,
+            "stretch_reach": 0.2,
+            "temperature_change_k": 7.888347822102106,
+            "history_gain": 0.2830098254183997,
+            "stretch": [
+              1.0941182852039049,
+              1.2857774480289919
+            ]
+          },
+          "checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true,
+            "certified_speed": true,
+            "certified_displacement": true,
+            "certified_drive_work": true
+          }
+        }
+      ],
+      "numerical_allowance_relative": 1e-09,
+      "small_strain_guard": 0.05,
+      "note": "numerical values come from the retained evolve's raw outputs: each window's two committed endpoint stages and its aggregate displacement, drive work and stretch gain; intermediate stages are not inspected; the allowance covers root tolerances and floating evaluation only; a passing comparison is a diagnostic, not the proof"
+    },
+    "refusal": {
+      "status": "PASS",
+      "seconds": 0.032855299999937415,
+      "passed": true,
+      "checks": {
+        "case_itself_valid": true,
+        "baseline_certified": true,
+        "candidate_premises": true,
+        "every_candidate_refused_for_its_reason": true,
+        "evolution_outputs_unchanged": true,
+        "issued_states_read_only": true,
+        "envelope_unchanged": true,
+        "no_separation": true
+      },
+      "baseline": {
+        "status": "CERTIFIED_FINITE_WINDOW",
+        "relative_error_limit": 0.1,
+        "speed_error_bound_m_s": 4.000000000000001e-11,
+        "displacement_error_bound_m": 2000.0000000000005,
+        "driving_work_error_bound_J_m": 4.000000000000001e+16,
+        "speed_lower_bound_m_s": 3.783972177088907e-10,
+        "yield_bound_n_m": 953700603336.7302,
+        "linear_bound_pa_s": 3.341422856761315e+20,
+        "window_start_s": 25000000000000.0,
+        "window_end_s": 75000000000000.0,
+        "stretch_start": 1.0941182852039049,
+        "stretch_floor": 1.0941182852039049,
+        "stretch_reach_upper": 1.294118285203905,
+        "generated_separation_authorised": false
+      },
+      "refusals": {
+        "case_widened_stretch": {
+          "refused": true,
+          "reason": "ValueError: contract differs from the accepted finite-strain scope"
+        },
+        "case_widened_temperature": {
+          "refused": true,
+          "reason": "ValueError: contract differs from the accepted finite-strain scope"
+        },
+        "case_horizon_beyond": {
+          "refused": true,
+          "reason": "ValueError: contract differs from the accepted finite-strain scope"
+        },
+        "case_pore_pressure": {
+          "refused": true,
+          "reason": "ValueError: contract differs from the accepted finite-strain scope"
+        },
+        "case_other_input": {
+          "refused": true,
+          "reason": "ValueError: only the accepted finite-strain and column-admission cases are admitted"
+        },
+        "case_unaccepted_order": {
+          "refused": true,
+          "reason": "ValueError: fixtures use only the accepted campaign's quadrature orders and time levels"
+        },
+        "case_unaccepted_time_level": {
+          "refused": true,
+          "reason": "ValueError: fixtures use only the accepted campaign's quadrature orders and time levels"
+        },
+        "case_steps_beyond_horizon": {
+          "refused": true,
+          "reason": "ValueError: three increasing committed step counts within one horizon required"
+        },
+        "case_tolerance_at_one": {
+          "refused": true,
+          "reason": "ValueError: relative tolerances lie in (0, 1), increase and include the retained allowance"
+        },
+        "case_retained_allowance_dropped": {
+          "refused": true,
+          "reason": "ValueError: relative tolerances lie in (0, 1), increase and include the retained allowance"
+        },
+        "case_relaxed_allowance": {
+          "refused": true,
+          "reason": "ValueError: policy relaxes a retained tolerance: numerical_allowance_relative"
+        },
+        "case_relaxed_oracle": {
+          "refused": true,
+          "reason": "ValueError: policy relaxes a retained tolerance: oracle_relative"
+        },
+        "case_budget_beyond_ceiling": {
+          "refused": true,
+          "reason": "ValueError: cooperative budget must lie in (0, 120] s"
+        },
+        "case_missing_policy_key": {
+          "refused": true,
+          "reason": "ValueError: policy fields mismatch"
+        },
+        "changed_law": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "changed_force": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "changed_drag": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "changed_reference_width": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "replaced_preparation_copy": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "replaced_support_copy": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "other_material": {
+          "refused": true,
+          "reason": "ValueError: changed preparation, support, law or drive requires a new envelope"
+        },
+        "built_state_of_genuine_values": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "partial_clock_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "renewed_envelope_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "reset_clock": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "before_preparation": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "edited_reference": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "re_referenced_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "edited_history": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "edited_history_shape": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "edited_temperature": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "edited_compressed_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "raw_output_admitted": {
+          "refused": true,
+          "reason": "ValueError: a committed finite-strain state is required; a raw or imported output is not evolution evidence"
+        },
+        "raw_output_prepared": {
+          "refused": true,
+          "reason": "ValueError: a committed finite-strain state is required; a raw or imported output is not evolution evidence"
+        },
+        "state_of_another_evolution": {
+          "refused": true,
+          "reason": "ValueError: state was issued by a different evolution than the envelope's"
+        },
+        "state_of_another_material": {
+          "refused": true,
+          "reason": "ValueError: state was evolved with a different preparation, support, law or drive"
+        },
+        "edited_envelope_horizon": {
+          "refused": true,
+          "reason": "ValueError: an envelope issued by prepare() is required; a built or edited envelope is refused"
+        },
+        "edited_envelope_floors": {
+          "refused": true,
+          "reason": "ValueError: an envelope issued by prepare() is required; a built or edited envelope is refused"
+        },
+        "edited_envelope_bound": {
+          "refused": true,
+          "reason": "ValueError: an envelope issued by prepare() is required; a built or edited envelope is refused"
+        },
+        "built_envelope": {
+          "refused": true,
+          "reason": "ValueError: an envelope issued by prepare() is required; a built or edited envelope is refused"
+        },
+        "not_an_evolution": {
+          "refused": true,
+          "reason": "ValueError: an authorised evolution is required"
+        },
+        "evolution_steps": {
+          "refused": true,
+          "reason": "ValueError: a positive whole number of evolution steps is required"
+        },
+        "stale_evolution_key": {
+          "refused": true,
+          "reason": "ValueError: prepared coefficients are stale for these inputs; prepare again"
+        },
+        "evolution_starts_outside_window": {
+          "refused": true,
+          "reason": "ValueError: initial material temperatures lie outside the evolution window"
+        },
+        "transported_pore_pressure": {
+          "refused": true,
+          "reason": "ValueError: supplied pore pressure is not transported under finite strain"
+        },
+        "incomplete_evolution": {
+          "refused": true,
+          "reason": "ValueError: a complete retained finite-strain evolution of whole steps is required; no state issued"
+        },
+        "expired_evolution": {
+          "refused": true,
+          "reason": "RuntimeError: cooperative time budget exhausted; nothing further committed"
+        },
+        "temperature_above_window": {
+          "refused": true,
+          "reason": "ValueError: state temperature lies outside the admitted window"
+        },
+        "temperature_below_window": {
+          "refused": true,
+          "reason": "ValueError: state temperature lies outside the admitted window"
+        },
+        "earlier_state_below_floors": {
+          "refused": true,
+          "reason": "ValueError: raw history has fallen below the prepared floor"
+        },
+        "stretch_beyond_window": {
+          "refused": true,
+          "reason": "ValueError: stretch lies outside the prepared supported range"
+        },
+        "beyond_horizon": {
+          "refused": true,
+          "reason": "ValueError: window extends beyond the cumulative horizon"
+        },
+        "reach_beyond_tighter_window": {
+          "refused": true,
+          "reason": "ValueError: drag-only reach leaves the admitted stretch window"
+        },
+        "full_horizon_from_reference": {
+          "refused": true,
+          "reason": "ValueError: drag-only reach leaves the admitted stretch window"
+        },
+        "compression_drive": {
+          "refused": true,
+          "reason": "ValueError: positive extension and supported pressure closure required"
+        },
+        "zero_drive": {
+          "refused": true,
+          "reason": "ValueError: positive extension and supported pressure closure required"
+        },
+        "widened_stretch_window": {
+          "refused": true,
+          "reason": "ValueError: stretch window must contain the reference geometry and lie within [0.6, 1.4]"
+        },
+        "widened_temperature_window": {
+          "refused": true,
+          "reason": "ValueError: temperature window must lie within the reviewed [273, 1613] K range"
+        },
+        "horizon_beyond_accepted": {
+          "refused": true,
+          "reason": "ValueError: horizon beyond the accepted finite-strain duration"
+        },
+        "stale_inputs": {
+          "refused": true,
+          "reason": "ValueError: inputs do not reproduce the reference preparation (stretched or stale column)"
+        },
+        "stretched_preparation_as_reference": {
+          "refused": true,
+          "reason": "ValueError: thermal support was prepared for a different mechanical column"
+        },
+        "foreign_support": {
+          "refused": true,
+          "reason": "ValueError: thermal support was prepared for a different mechanical column"
+        },
+        "missing_plastic_branch": {
+          "refused": true,
+          "reason": "ValueError: every point needs finite positive plastic regularisation"
+        },
+        "state_value": {
+          "refused": true,
+          "reason": "ValueError: stretch must be a number"
+        },
+        "not_an_envelope": {
+          "refused": true,
+          "reason": "ValueError: an envelope issued by prepare() is required; a built or edited envelope is refused"
+        },
+        "not_a_state": {
+          "refused": true,
+          "reason": "ValueError: a committed finite-strain state is required; a raw or imported output is not evolution evidence"
+        },
+        "cancelled_preparation": {
+          "refused": true,
+          "reason": "CancelledError: column control cancelled; no result published"
+        },
+        "cancelled_admission": {
+          "refused": true,
+          "reason": "CancelledError: column control cancelled; no result published"
+        },
+        "expired_deadline": {
+          "refused": true,
+          "reason": "RuntimeError: cooperative time budget exhausted; nothing further committed"
+        },
+        "duration_0.0": {
+          "refused": true,
+          "reason": "ValueError: duration: positive value required"
+        },
+        "duration_-1.0": {
+          "refused": true,
+          "reason": "ValueError: duration: positive value required"
+        },
+        "duration_nan": {
+          "refused": true,
+          "reason": "ValueError: duration: finite real number required"
+        },
+        "duration_inf": {
+          "refused": true,
+          "reason": "ValueError: duration: finite real number required"
+        },
+        "duration_True": {
+          "refused": true,
+          "reason": "ValueError: duration: finite real number required"
+        },
+        "duration_'1e13'": {
+          "refused": true,
+          "reason": "ValueError: duration: finite real number required"
+        },
+        "duration_None": {
+          "refused": true,
+          "reason": "ValueError: duration: finite real number required"
+        },
+        "tolerance_1.0": {
+          "refused": true,
+          "reason": "ValueError: relative tolerance must be less than one"
+        },
+        "tolerance_1.5": {
+          "refused": true,
+          "reason": "ValueError: relative tolerance must be less than one"
+        },
+        "tolerance_-0.1": {
+          "refused": true,
+          "reason": "ValueError: relative tolerance: nonnegative value required"
+        },
+        "tolerance_nan": {
+          "refused": true,
+          "reason": "ValueError: relative tolerance: finite real number required"
+        },
+        "displacement_limit_-1.0": {
+          "refused": true,
+          "reason": "ValueError: displacement limit: nonnegative value required"
+        },
+        "displacement_limit_nan": {
+          "refused": true,
+          "reason": "ValueError: displacement limit: finite real number required"
+        }
+      },
+      "attempted": 82
+    },
+    "repeat": {
+      "status": "PASS",
+      "seconds": 0.02699019992724061,
+      "passed": true,
+      "checks": {
+        "numerical_within_exact_bounds": true,
+        "later_state_inside_prepared_floors": true,
+        "window_is_cumulative": true,
+        "renewed_envelope_at_least_as_tight": true,
+        "one_evolution_carried": true,
+        "weak_belt_certified_again": true,
+        "layered_visibly_uncertified": true,
+        "edited_rebuilt_or_foreign_states_refused": true,
+        "no_separation": true
+      },
+      "windows": [
+        {
+          "fixture": "layered",
+          "start_step": 96,
+          "end_step": 128,
+          "carried": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.1,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 135306414691626.33,
+            "linear_bound_pa_s": 3.8053960588360847e+21,
+            "window_start_s": 75000000000000.0,
+            "window_end_s": 100000000000000.0,
+            "stretch_start": 1.0901211395375239,
+            "stretch_floor": 1.0252506744060061,
+            "stretch_reach_upper": 1.190121139537524,
+            "generated_separation_authorised": false
+          },
+          "renewed": {
+            "status": "NOT_CERTIFIED_BY_BOUND",
+            "relative_error_limit": 0.1,
+            "speed_lower_bound_m_s": 0.0,
+            "yield_bound_n_m": 119157703718143.14,
+            "linear_bound_pa_s": 3.3659717622023685e+21,
+            "window_start_s": 75000000000000.0,
+            "window_end_s": 100000000000000.0,
+            "stretch_start": 1.0901211395375239,
+            "stretch_floor": 1.0901211395375239,
+            "stretch_reach_upper": 1.190121139537524,
+            "generated_separation_authorised": false
+          },
+          "carried_numerical": {
+            "force_to_envelope": [
+              0.09187025226633497,
+              0.08394094393954508
+            ],
+            "speed_deficit": [
+              0.6241596187552649,
+              0.570630466155606
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.5974538124974142,
+            "stretch_gain": 0.04025461875025904,
+            "stretch_reach": 0.1
+          },
+          "renewed_numerical": {
+            "force_to_envelope": [
+              0.10431893001156113,
+              0.09531492779671194
+            ],
+            "speed_deficit": [
+              0.6241596187552649,
+              0.570630466155606
+            ],
+            "speed_deficit_bound": 1.0,
+            "displacement_deficit": 0.5974538124974142,
+            "stretch_gain": 0.04025461875025904,
+            "stretch_reach": 0.1
+          },
+          "carried_checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          },
+          "renewed_checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true
+          }
+        },
+        {
+          "fixture": "homogeneous",
+          "start_step": 96,
+          "end_step": 128,
+          "carried": {
+            "status": "CERTIFIED_FINITE_WINDOW",
+            "relative_error_limit": 0.1,
+            "speed_error_bound_m_s": 4.000000000000001e-11,
+            "displacement_error_bound_m": 1000.0000000000002,
+            "driving_work_error_bound_J_m": 2.0000000000000004e+16,
+            "speed_lower_bound_m_s": 3.783972177088907e-10,
+            "yield_bound_n_m": 953700603336.7302,
+            "linear_bound_pa_s": 3.341422856761315e+20,
+            "window_start_s": 75000000000000.0,
+            "window_end_s": 100000000000000.0,
+            "stretch_start": 1.2857774480289919,
+            "stretch_floor": 1.0941182852039049,
+            "stretch_reach_upper": 1.385777448028992,
+            "generated_separation_authorised": false
+          },
+          "renewed": {
+            "status": "CERTIFIED_FINITE_WINDOW",
+            "relative_error_limit": 0.1,
+            "speed_error_bound_m_s": 4.000000000000001e-11,
+            "displacement_error_bound_m": 1000.0000000000002,
+            "driving_work_error_bound_J_m": 2.0000000000000004e+16,
+            "speed_lower_bound_m_s": 3.8646830380959555e-10,
+            "yield_bound_n_m": 583078209907.423,
+            "linear_bound_pa_s": 2.4195153571731967e+20,
+            "window_start_s": 75000000000000.0,
+            "window_end_s": 100000000000000.0,
+            "stretch_start": 1.2857774480289919,
+            "stretch_floor": 1.2857774480289919,
+            "stretch_reach_upper": 1.385777448028992,
+            "generated_separation_authorised": false
+          },
+          "carried_numerical": {
+            "force_to_envelope": [
+              0.608895080881996,
+              0.48747064678227026
+            ],
+            "speed_deficit": [
+              0.03297017154592818,
+              0.026416686215380594
+            ],
+            "speed_deficit_bound": 0.05400695572777338,
+            "displacement_deficit": 0.029566757039849553,
+            "stretch_gain": 0.09704332429601448,
+            "stretch_reach": 0.1
+          },
+          "renewed_numerical": {
+            "force_to_envelope": [
+              0.9744859797179788,
+              0.7800561159696194
+            ],
+            "speed_deficit": [
+              0.03297017154592818,
+              0.026416686215380594
+            ],
+            "speed_deficit_bound": 0.03382924047601111,
+            "displacement_deficit": 0.029566757039849553,
+            "stretch_gain": 0.09704332429601448,
+            "stretch_reach": 0.1
+          },
+          "carried_checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true,
+            "certified_speed": true,
+            "certified_displacement": true,
+            "certified_drive_work": true
+          },
+          "renewed_checks": {
+            "force_envelope": true,
+            "speed_between_bound_and_free": true,
+            "displacement_between": true,
+            "drive_work_between": true,
+            "stretch_within_reach": true,
+            "history_above_floor": true,
+            "temperature_inside": true,
+            "certified_speed": true,
+            "certified_displacement": true,
+            "certified_drive_work": true
+          }
+        }
+      ],
+      "state_flags": {
+        "layered": {
+          "carried_within_bounds": true,
+          "renewed_within_bounds": true,
+          "inside_prepared_floors": true,
+          "window_is_cumulative": true,
+          "renewed_at_least_as_tight": true,
+          "one_evolution_carried": true,
+          "candidates_inside_old_checks": true
+        },
+        "homogeneous": {
+          "carried_within_bounds": true,
+          "renewed_within_bounds": true,
+          "inside_prepared_floors": true,
+          "window_is_cumulative": true,
+          "renewed_at_least_as_tight": true,
+          "one_evolution_carried": true,
+          "candidates_inside_old_checks": true
+        }
+      },
+      "refusals": {
+        "layered:beyond_horizon": {
+          "refused": true,
+          "reason": "ValueError: window extends beyond the cumulative horizon"
+        },
+        "layered:partial_clock_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:renewed_envelope_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:rebuilt_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:reset_clock": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:before_preparation": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:re_referenced_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:relabelled_history": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "layered:state_of_another_evolution": {
+          "refused": true,
+          "reason": "ValueError: state was issued by a different evolution than the envelope's"
+        },
+        "layered:reference_below_floors": {
+          "refused": true,
+          "reason": "ValueError: raw history has fallen below the prepared floor"
+        },
+        "homogeneous:beyond_horizon": {
+          "refused": true,
+          "reason": "ValueError: window extends beyond the cumulative horizon"
+        },
+        "homogeneous:partial_clock_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:renewed_envelope_rollback": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:rebuilt_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:reset_clock": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:before_preparation": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:re_referenced_state": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:relabelled_history": {
+          "refused": true,
+          "reason": "ValueError: state was not issued by an authorised evolution: built, edited and imported states are refused whatever their values"
+        },
+        "homogeneous:state_of_another_evolution": {
+          "refused": true,
+          "reason": "ValueError: state was issued by a different evolution than the envelope's"
+        },
+        "homogeneous:reference_below_floors": {
+          "refused": true,
+          "reason": "ValueError: raw history has fallen below the prepared floor"
+        }
+      }
+    },
+    "reuse": {
+      "status": "PASS",
+      "seconds": 0.444306300021708,
+      "passed": true,
+      "checks": {
+        "same_answers": true,
+        "both_outcomes_exercised": true
+      },
+      "statuses": {
+        "layered": {
+          "0.01": "NOT_CERTIFIED_BY_BOUND",
+          "0.1": "NOT_CERTIFIED_BY_BOUND"
+        },
+        "homogeneous": {
+          "0.01": "NOT_CERTIFIED_BY_BOUND",
+          "0.1": "CERTIFIED_FINITE_WINDOW"
+        }
+      },
+      "benchmark": {
+        "calls_per_batch": 40,
+        "batches": 3,
+        "samples_seconds": {
+          "cold": [
+            0.14301219990011305,
+            0.1432314000558108,
+            0.14269549993332475
+          ],
+          "reused": [
+            0.002669900073669851,
+            0.0026335999136790633,
+            0.0026497000362724066
+          ]
+        },
+        "cold_median_seconds": 0.14301219990011305,
+        "reused_median_seconds": 0.0026497000362724066,
+        "saved_seconds": 0.14036249986384064,
+        "saved_percent": 98.1472209796625,
+        "points": {
+          "layered": 256,
+          "homogeneous": 8
+        },
+        "scope": "the same public admissions at a later committed state: envelope reused versus rebuilt from the same preparing state every call; state guards and the exact gate run in both; evolutions excluded; no cache, log or parallel worker; not a simulation or world speed-up"
+      }
+    }
+  },
+  "source_sha256": {
+    "tools/check_i01_finite_admission.py": "21ca89c75a4bf21622dae409933789236d7acb4058a64fc85c7b605bf8096547",
+    "cases/i01_finite_admission_v1.json": "a0543d26b321436b52d2a92b693f0ad72a336989119b91ba5cab9cd890c8da5f",
+    "docs/I01_FINITE_ADMISSION.md": "145270934f6d213310834e95c20658669579afdcd62e9dd6001bedc94c73f0f1",
+    "tests/test_i01_finite_admission.py": "ff831e1929a0ebbd7b0d7ad1ffb2faedb7c4d520c263e8511e6ba950652762db",
+    "tools/check_i01_finite_strain.py": "0ed1b6df91f480e4dc782095692bbc49438e732a5f411b480b5b219a2494ae46",
+    "tools/check_i01_column_admission.py": "a93a94d37e8754616d5fd3c5c33251524639e204458954dd27b333665db74944",
+    "tools/check_i01_decoupling.py": "95b52a1a11f36a3275ace151f222ed528c16d8d9f7dbff4ab4a23f8235032a9a",
+    "tools/check_i01_thermomechanical_motion.py": "8837a698e6112ae58094cf4e06724ec2fba4169e0c9d39a64f95d1549998cfb6",
+    "tools/check_i01_column_heat.py": "fee28e681788385c5a7f925899b4a6cec56bc33e7a1701c9ad3b276b5d23d609",
+    "tools/check_i01_motion_coupling.py": "06047484fa3dc3c191b8842e69f7e15f6bf4877190be699737beb618f0306e2c",
+    "tools/check_i01_weakening.py": "7feec9532c8052ab8cfc172ebc2d510a12285481043dea50b6820607afcec860",
+    "tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "cases/i01_finite_strain_v1.json": "e527d581df1ef7494bd244dc1e04734923535f964b836b6355a53526c5625acc",
+    "cases/i01_column_admission_v1.json": "a4761ace20be07285270b2ff92c33533cf685175533d9d27b22f9a949380c67d",
+    "cases/i01_thermomechanical_motion_v1.json": "d2edffe347a468b0aa6a10811b57077c022d63abb4d795a3b3846adb9224fe29",
+    "cases/i01_column_heat_v1.json": "5a5c7cef6a397d40217b2c06f918bed83b6f962e1eff329ea5daa8cd7fc977a0",
+    "cases/i01_motion_coupling_v1.json": "53dc1b0f4bd9986bcede076ba403f01634fba3cd90901c33628af717b4dbfbf0",
+    "cases/i01_weakening_v1.json": "68f4bb8047c316846345990e3f29b4cbe1df2145f9c9449584793b046ea2dab0",
+    "src/atlas_tectonics/integration_evolution.py": "2f4bc94dd2f81b309840b36ae2637f308f4f4c043e5825e1111fc1b08c556905",
+    "src/atlas_tectonics/_integration_thermomechanical.py": "50bb419180e6716594b77abbd7a6a0f18bba614282ed53950593d4dc99123bb2",
+    "src/atlas_tectonics/_integration_heat.py": "6eeef77cf8f4966354d3ba01d5909b61bf82dd4e2bfda412993ae9a12b3603aa",
+    "src/atlas_tectonics/_integration_motion.py": "2adecb6e93a449e8035f0be989675d264572597676785b7ddf78e4bd232e9da3",
+    "src/atlas_tectonics/_integration_weakening.py": "88cc152d7482b27e3f9eaf5f0274f707bf73e945b45fc166f246cf54f91ab4f8",
+    "src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113",
+    "src/atlas_tectonics/integration_ledger.py": "023fa0101c99df55b57b58c25c2658ac5b3a6adf638dfba3c42d0d8949dc553c",
+    "src/atlas_tectonics/integration_state.py": "ea0bfcc75dc1cd47ad1056dbb1e9935cb7f836a92ec58b3c79c972a06886effa",
+    "src/atlas_tectonics/storage.py": "84012e60eb2d19d1413b7f2cb9fdbc0ccb28245e1292c53bcdeb50bdf23888ed",
+    "src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "src/atlas_tectonics/materials.py": "c4105322391d0c7b7e25e9ed659f36dd049288c2b9bbb319e9d61e248a8c886b",
+    "src/atlas_tectonics/resources.py": "aa637a9438dfc01a1cc350d016011362503a8006be1307283e6541d075a2b92c",
+    "src/atlas_tectonics/timebase.py": "540902acef2c6825356944982a18f2d320d676bd35650c923577f6a4985ef63a",
+    "src/atlas_tectonics/w08_inventory.py": "1787f002c2f2839bd84a57ecb6bc3549c5b6154ab2dcbea7d3c6169d2b1415a4",
+    "src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "evidence/i01-finite-strain-r5.json": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
+    "evidence/i01-column-admission-r3.json": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3"
+  },
+  "evidence_match": {
+    "receipts": {
+      "evidence/i01-finite-strain-r5.json": true,
+      "evidence/i01-column-admission-r3.json": true
+    },
+    "recorded_sources": {
+      "cases/i01_column_admission_v1.json": true,
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_column_v1.json": true,
+      "cases/i01_finite_strain_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_weakening_v1.json": true,
+      "docs/I01_COLUMN_ADMISSION.md": true,
+      "docs/I01_FINITE_STRAIN.md": true,
+      "evidence/i01-column-heat-r5.json": true,
+      "evidence/i01-decoupling-r1.json": true,
+      "evidence/i01-motion-coupling-r3.json": true,
+      "evidence/i01-thermomechanical-motion-r4.json": true,
+      "src/atlas_tectonics/_integration_column.py": true,
+      "src/atlas_tectonics/_integration_heat.py": true,
+      "src/atlas_tectonics/_integration_motion.py": true,
+      "src/atlas_tectonics/_integration_thermomechanical.py": true,
+      "src/atlas_tectonics/_integration_weakening.py": true,
+      "src/atlas_tectonics/integration_evolution.py": true,
+      "tests/test_i01_column_admission.py": true,
+      "tests/test_i01_finite_strain.py": true,
+      "tools/check_i01_column.py": true,
+      "tools/check_i01_column_admission.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_decoupling.py": true,
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_weakening.py": true
+    },
+    "retained": {
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_column_admission.py": true,
+      "tools/check_i01_decoupling.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true,
+      "cases/i01_finite_strain_v1.json": true,
+      "cases/i01_column_admission_v1.json": true,
+      "cases/i01_thermomechanical_motion_v1.json": true,
+      "cases/i01_column_heat_v1.json": true,
+      "cases/i01_motion_coupling_v1.json": true,
+      "cases/i01_weakening_v1.json": true,
+      "src/atlas_tectonics/integration_evolution.py": true,
+      "src/atlas_tectonics/_integration_thermomechanical.py": true,
+      "src/atlas_tectonics/_integration_heat.py": true,
+      "src/atlas_tectonics/_integration_motion.py": true,
+      "src/atlas_tectonics/_integration_weakening.py": true,
+      "src/atlas_tectonics/_integration_column.py": true
+    },
+    "imported": {
+      "tools/check_i01_finite_strain.py": true,
+      "tools/check_i01_column_admission.py": true,
+      "tools/check_i01_decoupling.py": true,
+      "tools/check_i01_thermomechanical_motion.py": true,
+      "tools/check_i01_column_heat.py": true,
+      "tools/check_i01_motion_coupling.py": true,
+      "tools/check_i01_weakening.py": true,
+      "tools/check_i01_column.py": true,
+      "src/atlas_tectonics/integration_evolution.py": true,
+      "src/atlas_tectonics/_integration_thermomechanical.py": true,
+      "src/atlas_tectonics/_integration_heat.py": true,
+      "src/atlas_tectonics/_integration_motion.py": true,
+      "src/atlas_tectonics/_integration_weakening.py": true,
+      "src/atlas_tectonics/_integration_column.py": true,
+      "src/atlas_tectonics/integration_ledger.py": true,
+      "src/atlas_tectonics/integration_state.py": true,
+      "src/atlas_tectonics/storage.py": true,
+      "src/atlas_tectonics/_validation.py": true,
+      "src/atlas_tectonics/materials.py": true,
+      "src/atlas_tectonics/resources.py": true,
+      "src/atlas_tectonics/timebase.py": true,
+      "src/atlas_tectonics/w08_inventory.py": true,
+      "src/atlas_tectonics/constitutive.py": true,
+      "src/atlas_tectonics/mesh.py": true
+    }
+  },
+  "case": {
+    "schema": "atlas.i01-finite-admission-case.v1",
+    "status": "WORKING NON-CANON",
+    "scope": "exact conservative motion-error admission for a declared future window of the accepted material-following finite-strain strip under a positive constant extension force: width, thickness and overburden change, raw plastic history only grows above a prepared floor and temperatures may evolve anywhere inside the accepted window; represented Gauss-point model only; not the continuous depth model, the fully coupled thermal trajectory, rupture, separation, an automatic solver switch, I02 transactions or world assembly",
+    "provenance": {
+      "physics": "the accepted cases/i01_finite_strain_v1.json, unchanged: its layered strip and its homogeneous wet-quartzite fixture, weakening law, drive 2e13 N/m, generalised drag 5e22 Pa s, reference width 1e5 m, stretch window [0.6, 1.4], temperature window [273, 1613] K, zero pore pressure and 1e14 s duration from the reference geometry",
+      "gate": "the retained exact exponent-1 window gate of check_i01_decoupling through the retained column-admission helpers; the envelope is new, the gate is not",
+      "tolerances": "0.01 is the retained column-admission allowance and is always evaluated; 0.1 is an authored coarse allowance declared before execution so that one certified weak-belt window exists; neither is fitted, and the layered strip is expected to stay uncertified at both",
+      "analytic": "the envelope formula for the retained column-admission analytical rate-linear layer and the accepted homogeneous layer, both at Gauss order 2 whose widths are exactly h/2, evaluated at an authored stretch and history floor (formula inputs, not states); the exact threshold is admitted from the rate-linear layer's own issued reference state over the authored duration",
+      "authored": "committed sampling steps, displacement limit, numerical allowance, benchmark counts and the analytic stretch, history and duration are authored control inputs frozen before any run; the numerical allowance equals the retained column-admission inequality allowance"
+    },
+    "inputs": {
+      "finite_strain_case": "cases/i01_finite_strain_v1.json",
+      "column_admission_case": "cases/i01_column_admission_v1.json"
+    },
+    "contract": {
+      "stretch_window": [
+        0.6,
+        1.4
+      ],
+      "temperature_window_k": [
+        273.0,
+        1613.0
+      ],
+      "horizon_s": 100000000000000.0,
+      "pore_pressure_pa": 0.0
+    },
+    "campaign": {
+      "layered_order": 64,
+      "homogeneous_order": 8,
+      "steps_per_horizon": 128,
+      "committed_steps": [
+        32,
+        96,
+        128
+      ],
+      "relative_tolerances": [
+        0.01,
+        0.1
+      ],
+      "displacement_limit_m": 10000.0,
+      "analytic": {
+        "order": 2,
+        "stretch": 1.25,
+        "duration_s": 25000000000000.0,
+        "weakened_history": 2.0
+      }
+    },
+    "policy": {
+      "maximum_seconds": 60.0,
+      "numerical_allowance_relative": 1e-09,
+      "oracle_relative": 1e-08,
+      "repetitions": 10,
+      "batches": 3
+    }
+  },
+  "fixture_seconds": 1.3748870000708848,
+  "source_unchanged": true,
+  "elapsed_seconds_after_imports": 1.9317689000163227
+}

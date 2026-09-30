@@ -231,6 +231,21 @@ class SubductionTests(unittest.TestCase):
         del current
         self.assertEqual(plan.budget.reserved_bytes,0)
 
+    def test_case1a_publishes_no_fabricated_pressure(self):
+        # R1 (s13-1): 1a published 107 exact zeros in Pa although it solves no
+        # pressure; the solved 1b pressure spans about -7.2e9 to 2.7e7 Pa.
+        with PreparedSubduction(24,source_id='synthetic-focused-test',outflow_operator='natural-zero-diffusive-flux') as plan:
+            analytic=plan.solve('1a')
+            self.assertEqual(analytic.wedge_pressure_pa.shape,(0,))
+            self.assertIs(analytic.statistics['pressure_computed'],False)
+            self.assertTrue(analytic.statistics['pressure_support'].startswith('none'))
+            self.assertEqual(analytic.statistics['mechanics'],{'analytic_velocity':True})
+            self.assertGreater(np.max(np.abs(analytic.wedge_velocity_m_s)),0)
+            solved=plan.solve('1b')
+            self.assertIs(solved.statistics['pressure_computed'],True)
+            self.assertEqual(len(solved.wedge_pressure_pa),plan.wedge.vertex_count)
+            self.assertGreater(np.max(np.abs(solved.wedge_pressure_pa)),0)
+
     def test_case1b_prescribed_flux_compatible(self):
         with PreparedSubduction(24,source_id='synthetic-focused-test',outflow_operator='natural-zero-diffusive-flux') as plan:
             result=plan.solve('1b')

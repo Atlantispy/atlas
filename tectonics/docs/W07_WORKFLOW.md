@@ -76,8 +76,14 @@ round-off without clipping small physical velocities or relaxing solver gates.
 
 ## Recovery, storage and resource ownership
 
-Schedules and cumulative partitions are immutable and source-bound. Requested
-outputs are stored atomically in the existing `ArrayStore`. A compact catalogue
+Schedules and cumulative partitions are immutable and source-bound. Every
+computed output lands exactly on its requested time: the surface and heat
+routes pass the output time as the declared interval end, and the restore checks
+recompute the same partition (`timebase.interval_partition`). Full-mantissa
+output times such as 0.011583828702548055 s over three steps were refused before
+30 September 2026. The default of one step per output remains, but the surface
+route now refuses any partition above its relaxation or surface Courant limit
+and names the step count needed. Requested outputs are stored atomically in the existing `ArrayStore`. A compact catalogue
 deduplicates identical arrays **before** payload copies, by exact dtype, shape
 and bytes; no lossy compression or discarded physical fields are introduced.
 Existing store compression policies, including zstd, remain selectable.

@@ -111,7 +111,9 @@ This implementation supports a one-dimensional strip or periodic chain. Bare
 rock remains immobile, including cliffs. Soil slopes at or beyond the critical
 gradient refuse because their failure mechanism is missing. Donor exhaustion
 returns a depletion time and valid state; the remaining duration is unadvanced.
-No soil is created to keep the equation running.
+No soil is created to keep the equation running. A completed advance, and a
+prescribed river release that crosses layers, ends exactly at its requested time
+under the shared interval rule.
 
 [Hillslope tests](../../tests/test_w09_hillslope.py) compare exact face flux,
 finite depletion and a low-slope sinusoidal profile. The recorded spatial errors
@@ -262,10 +264,29 @@ measured end-to-end improvement.
 
 [Reuse services](../../src/atlas_tectonics/reuse.py) bind inputs, parameters,
 backend, source membership/bytes, loaded instructions and selected runtime
-identities. Prepared immutable inputs can retain their data digest. Source
+identities. The loaded instructions cover every module in the package's source
+membership, including the numba kernels whenever they import, together with each
+module's upper-case data tables and numerical constants. Until 30 September
+2026 a fixed list omitted 25 modules (3D, integration, assembly, workflow ports,
+plate reference and, outside numba, the kernels), so a long-lived process running
+stale code of those modules received the identity of the fresh source. The set
+is derived from file membership, not from whatever happens to be imported, so the
+identity does not depend on import history. Prepared immutable inputs can retain their data digest. Source
 verification still streams every current source file; cheaper file-status work
 does not replace those reads with timestamps. The current inventory admits
 512 files while retaining a 2 MiB digest-record bound.
+
+Data-format constants are part of that check too. Changing a NumPy data type can
+change how saved bytes are interpreted without changing a function: the same
+bytes could become different numbers. The identity records byte order, field
+names/order/offsets, alignment, subarray shape and inspectable metadata, rather
+than relying on NumPy type equality. Focused tests change the actual checkpoint
+type and require both rejection by an existing context and a different fresh
+identity. They also cover metadata changes inside mutable containers. Cyclic or
+unsupported opaque metadata is refused rather than identified only by its class.
+The implementation follows NumPy's [dtype reference](https://numpy.org/doc/stable/reference/generated/numpy.dtype.html)
+and [structured-array layout documentation](https://numpy.org/doc/stable/user/basics.rec.html);
+this is an integrity repair, not a change to the physical equations.
 
 Result caching is distinct from prepared setup. Automatic cache admission weighs
 result size and observed calculation/write/restore cost; explicit always/off
@@ -352,6 +373,12 @@ Initial surfaces inconsistent with the declared policies refuse.
 read-only field consumer through the retained R11 contract, R24 executor and R12
 cache. The consumer inspects actual arrays; it adds no downstream physics. W12
 does not silently retarget R31's historical tectonics operation.
+
+Exported fields keep their known/unknown meaning. When a regional snapshot has
+no pressure datum, its normal stresses and the normal components of its boundary
+tractions carry the same arbitrary pressure constant, so all of them are marked
+`declared-gauge`; tangential tractions are unaffected. (Before 30 September 2026
+the normal tractions were exported as ordinary known values.)
 
 The native checkpoint is saved first, consumer arrays next, completion marker
 last. Resume validates the committed prefix and computes missing outputs only;

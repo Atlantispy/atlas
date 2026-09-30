@@ -203,6 +203,22 @@ class W07WorkflowTests(unittest.TestCase):
                 self.assertEqual(resumed.load(2).state.descriptor()['accepted_steps'], 2)
         self.assertEqual(owner.reserved_bytes, 0)
 
+    def test_full_mantissa_output_times_land_exactly_on_both_routes(self):
+        # R1: t+(T-t)*n/n and time+dt missed the requested output by one ulp;
+        # the workflow then refused its own fresh result as a restore mismatch.
+        t1, a, b = 0.011583828702548055, 0.006394989738541456, 0.02878803804725395
+        for times, steps in (((0., t1), (0, 3)), ((0., a, b), (0, 1, 1))):
+            for route, extra in (('surface', dict(surface_amplitude_m=1e-4)),
+                                 ('thermal', dict(thermal=True, heat_production=1e-6))):
+                with self.subTest(route=route, times=times), make_workflow_fixture(
+                        route, output_times_s=times, interval_steps=steps, **extra) as wf:
+                    out = wf.run()
+                    self.assertEqual(out.state.descriptor()['time_s'], times[-1])
+                    if route == 'thermal':
+                        self.assertEqual(out.descriptor()['heat']['time_s'], times[-1])
+                    else:
+                        self.assertEqual(out.descriptor()['surface']['intervals'][-1]['end_time_s'], times[-1])
+
     def test_supplied_dry_strength_simple_shear_preserves_physical_pressure(self):
         law = DryStrengthProfile('synthetic W07 yield', 'source-declared dry law', .1, 0., 1., (1e-10, 10.), 0., 0.)
         owner = WorkBudget(128*1024**2)

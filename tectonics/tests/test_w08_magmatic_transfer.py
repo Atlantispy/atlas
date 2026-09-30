@@ -134,6 +134,24 @@ class MagmaticTransferTests(unittest.TestCase):
         q[0,1]=.1
         with self.assertRaises(TectonicsError): self.plan(inv,q)
 
+    def test_declared_end_time_is_published_and_not_served_from_cache(self):
+        # R1 (s16 missed #0): the kernel stamped start+duration, which can fall
+        # one ulp short of the declared interval end.
+        start, end = 0.020301896609317943, 0.3
+        self.assertNotEqual(start+(end-start), end)
+        inv = MagmaticInventory(('export','reservoir','source'),('export','reservoir','source-melt'),
+            ('initial','recharge'),[[0,0],[2,0],[0,10]],[0,0,100],source_id='A05-initial',
+            enthalpy_source='synthetic-specific-J-per-kg',time_s=start)
+        q = np.zeros((3,3)); q[2,1] = 1.; q[1,0] = 1.
+        with self.plan(inv,q) as plan:
+            resummed = plan.evaluate(end-start)
+            declared = plan.evaluate(end-start,end_time_s=end)
+            self.assertEqual(resummed.remaining.time_s,start+(end-start))
+            self.assertEqual(declared.remaining.time_s,end)
+            np.testing.assert_array_equal(declared.remaining.component_mass_kg,resummed.remaining.component_mass_kg)
+            with self.assertRaises(TectonicsError):
+                plan.evaluate(.1,end_time_s=end)
+
     def test_zero_duration_and_no_transfers(self):
         inv,q=mixing_case()
         with self.plan(inv,q) as p:

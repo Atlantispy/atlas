@@ -407,12 +407,16 @@ class PreparedErosion:
                 if mass == 0: continue
                 if state.accepted_intervals+count >= LIMIT:
                     raise TectonicsError('cumulative erosion interval limit')
-                dt=min(duration-elapsed,mass/rate)
+                remaining=duration-elapsed
+                dt=min(remaining,mass/rate)
                 if elapsed+dt == elapsed: raise TectonicsError('extraction event not representable')
                 amount=mass if dt == mass/rate else rate*dt
                 moved=rock[cell,layer]*(amount/mass)
                 rock[cell,layer]-=moved; rr[cell]+=moved
-                elapsed+=dt; count+=1
+                # Shared end-time rule: a step that uses the whole remaining
+                # duration ends exactly at it; elapsed+(duration-elapsed) can
+                # round below duration and report a false exhaustion.
+                elapsed=duration if dt == remaining else elapsed+dt; count+=1
                 if elapsed >= duration: break
             key=_hash(dict(parent=state.state_id,cell=cell,rate=rate,duration=duration,source=source_id))
             out=self._new(state,rock,state.soil_mass_kg,rr,state.released_soil_kg,elapsed,count,key)

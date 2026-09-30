@@ -30,6 +30,12 @@ Geological ages running backwards from a reference are explicitly converted to a
 forward clock in seconds. Formation time, cooling onset and elapsed duration stay
 distinct; “year” requires a specified unit.
 
+One shared interval rule serves every later stepped route: a fixed partition's
+last substep ends exactly at the declared end, and a caller's declared output
+time is published as it is. Recomputing `start+(end−start)` can miss the end by
+one rounding unit, which previously made W07, W08 and W09 refuse their own
+results for ordinary computed event times.
+
 [Coordinate](../../src/atlas_tectonics/coordinates.py),
 [rotation](../../src/atlas_tectonics/kinematics.py) and
 [time](../../src/atlas_tectonics/timebase.py) code produces transformed positions,
@@ -64,7 +70,11 @@ adjacency queries. [Geometry tests](../../tests/test_w01_geometry.py),
 [boundary tests](../../tests/test_w01_boundaries.py) and
 [sphere tests](../../tests/test_w01_spherical_atlas.py) compare rational areas,
 octants, known arc lengths, rotated copies and invalid joins. Ambiguous or
-ill-conditioned geometry can be refused. A valid map establishes neither fault
+ill-conditioned geometry can be refused. Fast point queries use GEOS's prepared
+search structures, which GEOS builds lazily and not thread-safely; Atlas keeps
+them private to each geometry or index and serialises their use, so concurrent
+queries can no longer crash the process. A child-process storm test of cold
+concurrent first use checks this. A valid map establishes neither fault
 physics nor plate history. [Shapely's intersection contract](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.intersection.html)
 documents the actual planar dependency.
 

@@ -9,9 +9,9 @@ what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains th
 single progress summary; do not maintain another competing status ledger here.
 
 This is the complete planning scope, not blanket execution authority. The latest
-owner instruction permits the repair and acceptance work through **I02.2 only**;
-stop before I02.3 unless separately resumed. Preparing the later briefs does not
-start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
+owner instruction (30 September 2026) authorised review, corrections and local
+integration of **I02.3–I02.8**, now accepted for their declared workflow; stop before I03. Preparing the later
+briefs does not start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
 live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
 current-state record. No installations, reopening R4.4, broad/full-world runs,
 commits, pushes or paid overage are implied. The I01-only automatic timeout
@@ -483,10 +483,14 @@ validation or permission to generate an unsupported event.
 
 ### I02 — Common state, exchange transactions and accepted-time controller
 
-**Status: I02.1 and I02.2 reviewed; stopped before I02.3.** The owner's later stop
-instruction supersedes the earlier approval to continue through all eight I02
-steps. The bounded continuation and ownership correction are accepted with
-refreshed dependent evidence; the remaining steps require fresh authority.
+**Status: I02.1–I02.8 reviewed, corrected, integrated locally and accepted for the
+declared supported workflow, 30 September 2026.** The owner released the deferred
+review hold and authorised the fixes. The joined route, restart precision repair,
+corrected equivalence checks, refreshed affected evidence and measurements are
+described in [I02 workflow](I02_WORKFLOW.md). All 758 I01/I02 tests passed on
+Git-normalised candidate bytes. Linux coverage remains explicitly outstanding,
+as allowed below; no cross-platform or whole-planet acceptance is claimed.
+Stop before I03.
 Claude implements bounded assignments and Codex reviews their actual changes.
 Preserve existing work; permission, usage and unresolved technical failures still
 stop dispatch. No blanket installation, broad simulation or publication approval.
@@ -1474,14 +1478,12 @@ matrix are met. A new shared-state class, connected graph, green unit suite,
 regional demo, export table or visually attractive world is not a substitute.
 
 **I01 is complete as a model-choice, contract and bounded-feasibility stage.**
-Claude's active assignment is I02.1's shared initial-state contract; do not edit
-that in-flight brief or append another assignment to it. Codex reviews the return
-and continues the authorised eight-step I02 sequence using these bounded briefs.
+I02.1–I02.8 are accepted for the declared connected and restartable column workflow
+(see its method and current-state record), and work stops before I03.
 I03–I12 are planned, not newly started or authorised by this document. Preserve
 the physical-event gates assigned to their later implementation stages. Do not
 repeat completed reading or bounded controls without changed inputs, a failure
 or missing required coverage.
 
-Plan-only verification: local source/interface inspection, documentation links,
-mandatory repository safety/path checks. No physical run, performance gain,
-scientific acceptance or completion of any I-increment is claimed by this file.
+The later-stage briefs are planning only. Acceptance recorded above is supported
+by the linked I01/I02 method and evidence records, not by the existence of this plan.

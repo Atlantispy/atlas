@@ -12,6 +12,7 @@ from contextlib import closing
 from dataclasses import asdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -26,6 +27,10 @@ MAX_REPORT = 2 << 20
 MAX_STORE = 32 << 20
 MAX_RESPONSE = 2 << 20
 CAPABILITIES = dict(inspect=True, generate=False, cancel=False, resume=False)
+# Windows refuses to open a file while another process replaces it (os.replace/MoveFileEx); a replacement
+# finishes within milliseconds, so a reader retries briefly. POSIX renames never cause this error.
+REPLACE_RETRIES, REPLACE_WAIT_S = 100, .01
+WINDOWS = os.name == 'nt'
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT/'src'))
 
@@ -67,9 +72,16 @@ def _constant(_value):
 
 
 def _read_json(path, maximum):
-    path = _path(path, maximum=maximum)
-    with path.open('rb') as stream:
-        raw = stream.read(maximum+1)
+    for attempt in range(REPLACE_RETRIES):
+        try:
+            checked = _path(path, maximum=maximum)
+            with checked.open('rb') as stream:
+                raw = stream.read(maximum+1)
+            break
+        except PermissionError:
+            if not WINDOWS or attempt == REPLACE_RETRIES-1:
+                raise
+            time.sleep(REPLACE_WAIT_S)
     if len(raw) > maximum:
         raise ReadError('INPUT_LIMIT', 'The JSON input exceeds the reader limit.')
     return json.loads(raw, object_pairs_hook=_pairs, parse_constant=_constant)

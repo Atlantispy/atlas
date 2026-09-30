@@ -133,7 +133,36 @@ def check_initial(initial):
     if (support.get('method') != 'dry-local-Airy-change-v1'
             or support.get('elastic_rigidity_nm') != 0. or support.get('fill_density_kg_m3') != 0.):
         _fail('Unsupported vertical support law.')
+    column_envelope_limit(initial['native_input'])
     return initial
+
+
+def column_envelope_limit(native):
+    """The admitted crust-thickness bound, validated before any evaluation.
+
+    A generated native input must carry the bound its own sampled column and
+    chart imply (min(source lithosphere, 0.05 R)); it is re-derived here, not
+    trusted. Analytic controls without generated metadata declare their own.
+    """
+    from new_world_native import PLANAR_DEPTH_RADIUS_RATIO
+    metadata = native.get('metadata') if type(native) is dict else None
+    envelope = metadata.get('column_envelope') if type(metadata) is dict else None
+    if type(envelope) is not dict:
+        _fail('The admitted crustal column envelope is missing.')
+    limit = envelope.get('max_crust_thickness_m')
+    if type(limit) not in (float, int) or not math.isfinite(limit) or limit <= 0:
+        _fail('The admitted crustal column envelope is invalid.')
+    if metadata.get('schema') == 'atlas.new-world-native-input.v1':
+        try:
+            columns = metadata['geological_case_definition']['columns']
+            source = next(c for c in columns if c['column_id'] == metadata['column_id'])
+            expected = min(float(source['lithosphere_thickness_m']),
+                           PLANAR_DEPTH_RADIUS_RATIO*float(metadata['chart']['radius_m']))
+        except (KeyError, TypeError, ValueError, StopIteration):
+            _fail('The column envelope cannot be re-derived from its generated source.')
+        if limit != expected:
+            _fail('The column envelope differs from its source column and planar limit.')
+    return float(limit)
 
 
 def local_isostatic_change(reference_h, current_h, density, mantle_density):
@@ -188,6 +217,7 @@ class PreparedEvolution:
                 _fail('Invalid native sampled material inventory.')
             self._h0 = volume/self._areas
             self._rho = np.asarray(n['density_kg_m3'], float)
+            self._envelope = column_envelope_limit(n)
             self._mantle = self.initial['support']['mantle_density_kg_m3']
             local_isostatic_change(self._h0, self._h0, self._rho, self._mantle)
             event = AffineMotionInterval(n['epoch_time_s'] + self.initial['max_elapsed_s'],
@@ -217,6 +247,9 @@ class PreparedEvolution:
         if elapsed_s and absolute == n['epoch_time_s']:
             _fail('Absolute epoch cannot resolve the requested elapsed time.')
         state = self._material.evaluate(absolute, cancel=self._cancel)
+        envelope = n['metadata']['column_envelope']
+        if float(np.max(np.sum(state.thickness_m, axis=0))) > self._envelope:
+            _fail('Evolved crust exceeds the admitted column envelope; nothing is published.')
         delta, surface, base, balance = local_isostatic_change(
             self._h0, state.thickness_m, self._rho, self._mantle)
         record = dict(schema=OUTPUT_SCHEMA, method=METHOD, status='WORKING NON-CANON',
@@ -233,7 +266,7 @@ class PreparedEvolution:
             crust_thickness_change_m=delta.tolist(), surface_change_m=surface.tolist(),
             base_change_m=base.tolist(), column_balance_residual_kg_m2=balance.tolist(),
             enthalpy_j=None, enthalpy_known=False, evolved_temperature_k=None,
-            absolute_elevation_m=None, support=self.initial['support'],
+            absolute_elevation_m=None, support=self.initial['support'], column_envelope=envelope,
             units=dict(thickness_m='m', surface_change_m='m-upward', base_change_m='m-upward',
                 volume_m3='m3', mass_kg='kg', elapsed_s='s'),
             accounted_workspace_peak_bytes=self._budget.peak_reserved_bytes)

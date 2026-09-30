@@ -303,6 +303,20 @@ surface with an independently derived finite-depth decay rate and refine space
 and time. The supported surface route remains homogeneous and isothermal;
 moving heterogeneous thermal fields require another compatible transfer.
 
+Because the surface step is explicit, a step that is long compared with the
+fastest relaxation time would make topography grow instead of relax, while every
+conservation check still passes. Each step is therefore limited: the fastest
+relaxation rate of a layer of thickness H on a rigid base is
+0.160698 ρgH/η, and the product of that rate and the step length must not exceed
+a declared limit (default 0.1). At the default the time error after one decay
+e-folding is about 0.2%, against the route's 1% amplitude tolerance, and the
+extra fast modes of very wide elements still decay. On a sloped surface the
+flow along it also carries relief sideways, which this explicit method amplifies
+unless each step moves the surface less than about a tenth of a node spacing, so
+that is limited too. A refused request names the number of steps it needs;
+nothing is subdivided silently. Outputs land exactly on
+the requested times.
+
 The [geological W07 workflow](../../src/atlas_tectonics/w07_workflow.py) binds actual
 W01/W02 inputs, ordered layers, reference masses and named physical owners. Its
 three assembled routes are steady mechanics, homogeneous closed-box thermal
@@ -377,7 +391,9 @@ self-consistent collision dynamics calculation.
 
 The [subduction engine](../../src/atlas_tectonics/subduction.py) represents a supplied
 slab, overriding lid and mantle wedge. Slab velocity and geometry are imposed;
-wedge velocity and pressure are calculated. Interface-aligned triangular meshes
+wedge velocity and pressure are calculated, except in the analytical corner-flow
+case, which prescribes the velocity and therefore publishes no pressure (it
+previously published a fabricated field of zeros). Interface-aligned triangular meshes
 keep those regions distinct. Quadratic P2 velocity and linear P1 pressure form a
 Taylor–Hood finite-element pair; temperature uses continuous P2 interpolation.
 The published fields are m/s, Pa and K, with explicit conversion from internal
@@ -501,7 +517,8 @@ processes rather than predicting volcano locations or melt-source chemistry.
 The [W08 workflow](../../src/atlas_tectonics/w08_workflow.py) serialises dated
 shortening, affine transform/oblique motion, retirement, magma transfer and
 cessation. Each node owns its mass and enthalpy once. Events require continuous
-geometry, polarity and source declarations. Cessation advances the clock without
+geometry, polarity and source declarations. A completed interval ends exactly at
+its supplied end time, even when start plus duration rounds one unit short. Cessation advances the clock without
 emptying reservoirs. Exact supported exhaustion is committed before unspecified
 continuation stops. Saved transfers cannot be spent again on restart.
 

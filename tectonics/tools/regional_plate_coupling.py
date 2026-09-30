@@ -76,7 +76,7 @@ class PreparedPlateBoundary3D:
     Unowned fixed supports remain explicit, with separately supplied velocities.
     Max work bytes bounds this adapter's numerical buffers, not native solver/RSS.
     """
-    __slots__ = ('_plan', '_owners', '_modes', '_ids',
+    __slots__ = ('_plan', '_owners', '_modes', '_ids', '_neutral',
                  '_global_frame', '_record', 'mapping_id')
 
     def __setattr__(self, name, value):
@@ -124,15 +124,19 @@ class PreparedPlateBoundary3D:
                 for c in range(3):
                     modes[3*i+c,at] = np.cross(np.eye(3)[c],positions[at])@axes
             modes = _array(modes, modes.shape, 'Euler displacement modes')
+        # A gauge-only pressure shifts each plate torque by -c*(net flux of its
+        # mode); only net-flux-neutral modes give gauge-free per-plate torques.
+        neutral = tuple(bool(plan.net_flux_neutral(m)) for m in modes)
         record = dict(schema='atlas.regional-plate-map.v1', regional_plan_id=plan.plan_id,
             adapter_sha256=_SOURCE_SHA, global_frame_id=global_frame_id,
             local_frame_id=definition['frame_id'], origin_m=origin.tolist(),
             local_axes_global=axes.tolist(), plate_ids=list(ids), geometry_source=geometry_source,
             node_owners_sha256=_digest(owners), modes_sha256=_digest(modes),
+            mode_net_flux_neutral=list(neutral),
             embedding='stationary flat Cartesian box in planet-centred Cartesian axes',
             mode_order='plate order, then global x/y/z angular rates in rad/s',
             required_adapter_work_bytes=required, max_work_bytes=max_work_bytes)
-        for key,value in dict(_plan=plan, _owners=owners, _modes=modes, _ids=ids,
+        for key,value in dict(_plan=plan, _owners=owners, _modes=modes, _ids=ids, _neutral=neutral,
                 _global_frame=global_frame_id, _record=_json(record),
                 mapping_id=hashlib.sha256(_json(record)).hexdigest()).items():
             object.__setattr__(self,key,value)
@@ -168,6 +172,11 @@ class PreparedPlateBoundary3D:
                           base.shape, 'mapped plate velocity')
 
     def _result(self, mechanical, rates, request):
+        if not mechanical.descriptor()['physical_pressure_defined'] and not all(self._neutral):
+            # Totals and neutral generalized forces stay gauge-free and remain
+            # published by the native snapshot; per-plate torques here would not.
+            raise TectonicsError('per-plate torques depend on the undetermined pressure constant of this '
+                                 'closed box; declare a physical mean pressure or use net-flux-neutral plate modes')
         reactions = mechanical.array('velocity_constraint_reaction_n')
         with np.errstate(over='ignore', invalid='ignore'):
             # Adjoint of the SAME discrete velocity map. No stress resampling,

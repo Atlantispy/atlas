@@ -17,6 +17,7 @@ from concurrent.futures import CancelledError
 import hashlib
 import inspect
 import json
+import math
 from pathlib import Path
 import threading
 from time import perf_counter
@@ -34,6 +35,14 @@ from .stokes_execution import _native_lease, _factored_scale
 
 SIDES = ('x0', 'x1', 'y0', 'y1', 'z0', 'z1')
 _LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+_EPS = float(np.finfo(float).eps)
+_TINY = float(np.finfo(float).tiny)
+_LINEAR_RTOL = 1e-11
+# Every gate is relative to the magnitude of its own operands, so it is unchanged
+# when caller-chosen RegionalMechanicsScales rescale the dimensionless problem.
+# The only floor is representability: below this the GMRES target
+# rtol*||rhs|| would no longer be a normal binary64 number.
+_RHS_FLOOR = _TINY/(_EPS*_LINEAR_RTOL)
 
 
 def _cancel(cancel):
@@ -74,6 +83,11 @@ def _digest_array(a):
 
 def _sparse_bytes(a):
     return a.data.nbytes+a.indices.nbytes+a.indptr.nbytes
+
+
+def _magnitude(m):
+    """|m| sharing the sparse structure; only the data array is new."""
+    return sparse.csr_matrix((np.abs(m.data), m.indices, m.indptr), shape=m.shape)
 
 
 def _local_tokens(module):
@@ -186,7 +200,11 @@ class PreparedRegionalStokes3D:
             self._Af = self._A[self._free][:, self._free].tocsc()
             self._Bf = self._B[:, self._free].tocsr()
             pressure_leak = np.asarray(self._Bf.T@np.ones(mesh.np)).ravel()
-            self._gauge = bool(np.linalg.norm(pressure_leak, np.inf) < 1e-12*max(1., np.max(np.abs(self._B.data))))
+            # Relative to the divergence entries themselves (they scale as the
+            # squared dimensionless spacing); an absolute floor would mistake a
+            # small traction box for a closed one.
+            self._gauge = bool(np.linalg.norm(pressure_leak, np.inf) < 1e-12*np.max(np.abs(self._B.data)))
+            self._faces = {side: mesh._face(side)[:3] for side in SIDES}
             if physical_mean_pressure_pa is not None:
                 physical_mean_pressure_pa = scalar(physical_mean_pressure_pa, 'physical mean pressure')
                 if not self._gauge:
@@ -218,7 +236,8 @@ class PreparedRegionalStokes3D:
                 viscosity_sha256=_digest_array(self._eta), boundary_types=pattern,
                 frame_id=frame_id, vertical_datum=vertical_datum, material_source=material_source,
                 physical_mean_pressure_pa=physical_mean_pressure_pa, method=method,
-                linear_rtol=1e-11, pressure_gauge_required=self._gauge,
+                linear_rtol=_LINEAR_RTOL, pressure_gauge_required=self._gauge,
+                acceptance_scaling='relative to own operands; no absolute floor except representability',
                 element='Q2/Q1 tensor-product hexahedron; 3-point Gauss in each direction',
                 coordinates='Cartesian right-handed x,y horizontal; z up from box bottom',
                 execution=self._context_id)
@@ -295,48 +314,228 @@ class PreparedRegionalStokes3D:
         zv -= self._factor.solve(self._Bf.T@zp)
         return np.r_[zv, zp, lam] if self._gauge else np.r_[zv, zp]
 
-    def _linear(self, load, prescribed, mean, cancel):
+    def _absolute_boundary_flux(self, lift):
+        """Integrated |u.n| over all six faces (exact 3x3 Gauss for Q2 traces)."""
+        nodal = lift.reshape(-1, 3)
+        total = []
+        for side in SIDES:
+            cells, shape, weights = self._faces[side]
+            normal = nodal[self._mesh.velocity_cells[cells], 'xyz'.index(side[0])]
+            total.append(float(np.sum(np.abs(normal@shape.T)*weights)))
+        return math.fsum(total)
+
+    def _net_flux_free(self, field):
+        """Zero net boundary flux of a nodal field, at any scale.
+
+        Relative to the boundary flux actually supplied, not to max(1, |d|): a
+        closed incompressible box admits no net inflow at any magnitude. The
+        second term bounds the rounding of the computed sum itself.
+        """
+        flux = float(np.sum(self._B@field))
+        rounding = float(np.sum(abs(self._B)@np.abs(field)))
+        return abs(flux) <= 2e-11*self._absolute_boundary_flux(field)+512*_EPS*rounding
+
+    def net_flux_neutral(self, field_m):
+        """Whether a nodal velocity/displacement field has zero net boundary flux.
+
+        With a pressure gauge, a constant pressure c adds -c*(net flux of m) to
+        the reaction projected on a mode m, so only projections on neutral modes
+        (1^T B m = 0) are independent of the undetermined constant. Same test and
+        tolerance as the closed-box compatibility gate.
+        """
+        self._verify()
+        field = _array(field_m, (self._mesh.nv, 3), 'boundary field')
+        return self._net_flux_free(field.ravel())
+
+    def _linear(self, load, prescribed, mean, cancel, requested=False):
         d = prescribed.ravel()[self._fixed]
         lift = np.zeros(3*self._mesh.nv)
         lift[self._fixed] = d
-        if self._gauge:
-            flux = float(np.sum(self._B@lift))
-            scale = max(1., np.max(np.abs(d)))*sum(np.prod(self._mesh.lengths)/np.asarray(self._mesh.lengths))
-            if abs(flux) > 2e-11*scale:
-                raise TectonicsError('incompressible closed-boundary velocity has nonzero net flux')
-        rv = (load-self._A@lift)[self._free]
+        if self._gauge and not self._net_flux_free(lift):
+            raise TectonicsError('incompressible closed-boundary velocity has nonzero net flux')
+        if requested and not (np.any(load) or np.any(lift)):
+            raise TectonicsError('nonzero 3D forcing underflows to zero in assembly; '
+                                 'choose RegionalMechanicsScales near the problem magnitudes')
+        lifted = self._A@lift
+        rv = (load-lifted)[self._free]
         rp = -self._B@lift
-        rhs = np.r_[rv, rp, mean] if self._gauge else np.r_[rv, rp]
+        # A declared mean pressure is added after solving: a closed box has
+        # B_f^T 1 = 0, so it cannot change velocity, while inside the right-hand
+        # side it would dominate every relative target and hide velocity error.
+        rhs = np.r_[rv, rp, 0.] if self._gauge else np.r_[rv, rp]
+        rhs_norm = float(np.linalg.norm(rhs, np.inf))
+        forced = bool(np.any(load[self._free]) or np.any(lifted[self._free]) or np.any(rp))
+        if forced and not rhs_norm >= _RHS_FLOOR:
+            raise TectonicsError('3D load is zero or below binary64 relative precision after scaling; '
+                                 'choose RegionalMechanicsScales near the problem magnitudes')
         _cancel(cancel)
-        if self._method == 'direct':
-            x = self._factor.solve(rhs)
-            count = 0
-        else:
-            count = 0
+        count = 0
+        nf, npr = len(self._free), self._mesh.np
+        magnitude_a, magnitude_b = _magnitude(self._A), _magnitude(self._B)
+        stiffness = float(np.max((magnitude_a@np.ones(3*self._mesh.nv))[self._free], initial=0.))
+
+        def implied_velocity(x):
+            """Momentum operand scale and the velocity magnitude it implies."""
+            u = lift.copy(); u[self._free] = x[:nf]
+            scale = float(np.max((magnitude_a@np.abs(u)+magnitude_b.T@np.abs(x[nf:nf+npr])
+                                  +np.abs(load))[self._free], initial=0.))
+            return u, scale, (scale/stiffness if stiffness > 0. else 0.)
+
+        def solve(vector, candidate=False):
+            """Solve K y = vector. A refinement correction (candidate=True) that
+            GMRES does not converge is still returned, flagged, for the gates to
+            judge; a first solve that does not converge is refused."""
+            nonlocal count
+            size = float(np.linalg.norm(vector, np.inf))
+            if size == 0.:
+                return (np.zeros_like(vector), True) if candidate else np.zeros_like(vector)
+            # Unit right-hand side: SciPy's internal 2-norms can neither underflow
+            # nor overflow, so the representable range is the whole gate range.
+            if self._method == 'direct':
+                y = self._factor.solve(vector/size)*size
+                return (y, True) if candidate else y
             def callback(_):
                 nonlocal count
                 count += 1
                 _cancel(cancel)
-            x, info = gmres(self._K, rhs, M=self._P, rtol=1e-11, atol=1e-13,
+            # atol=0: SciPy then stops at rtol*||rhs||_2, a purely relative target.
+            y, info = gmres(self._K, vector/size, M=self._P, rtol=_LINEAR_RTOL, atol=0.,
                             restart=60, maxiter=1200, callback=callback, callback_type='legacy')
+            if candidate:
+                return y*size, info == 0
             if info != 0:
                 raise TectonicsError('3D GMRES did not converge; no silent direct fallback')
+            return y*size
+
+        def gauged(x):
+            # Enforce the zero-mean gauge exactly after every solve (w^T 1 = 1 and
+            # B_f^T 1 = 0, so velocity is unaffected): no gate checks the constant
+            # in pressure units, and it must not inflate the operand scales.
+            if self._gauge:
+                x[nf:nf+npr] -= float(self._w@x[nf:nf+npr])
+            return x
+
+        def block(r, scale):
+            # Componentwise (Oettli-Prager) backward error, row by row, so a weak
+            # region's rows are not judged against a strong region's magnitudes;
+            # rows below 1e-8 of the largest magnitude are judged at that floor.
+            top = float(np.max(scale, initial=0.))
+            if top == 0.:
+                return 0. if not np.any(r) else math.inf
+            return float(np.max(np.abs(r)/np.maximum(scale, 1e-8*top)))
+
+        def assess(x):
+            """Combined and blockwise residuals of a zero-mean solution."""
+            if not np.all(np.isfinite(x)):
+                raise TectonicsError('nonfinite 3D solve')
+            error = float(np.linalg.norm(self._K@x-rhs, np.inf)/rhs_norm) if forced else 0.
+            u, _, implied = implied_velocity(x)
+            p = x[nf:nf+npr]
+            balance = self._A@u+self._B.T@p-load
+            momentum_error = continuity_error = 0.
+            if forced:
+                # Blockwise backward errors against the magnitudes each block sums,
+                # so a dominant continuity (or momentum) right-hand side cannot hide
+                # an unbalanced other block inside the combined relative residual.
+                ua = np.abs(u)
+                # Momentum against the viscous operand |A||u| plus only the
+                # round-off (256 eps) of the pressure and load terms: in a
+                # load-dominated state those terms cancel, and at full weight they
+                # would admit velocity errors far above 2e-9 of the velocity scale.
+                viscous = magnitude_a@ua
+                balanced = magnitude_b.T@np.abs(p)+np.abs(load)
+                momentum_error = block(balance[self._free], (viscous+(256*_EPS/2e-9)*balanced)[self._free])
+                # Continuity against |B||u| plus the round-off (64 eps) of the
+                # velocity magnitude the momentum block implies (momentum scale /
+                # largest free-row sum of |A|): when pressure balances the load, u is round-off and
+                # |B||u| alone is no scale, but a larger share would let an inflated
+                # pressure-balanced scale hide continuity error.
+                continuity = self._B@u
+                continuity_terms = magnitude_b@(ua+(64*_EPS/2e-9)*implied)
+                if self._gauge:
+                    continuity = continuity+self._w*x[-1]
+                    continuity_terms = continuity_terms+self._w*abs(x[-1])
+                continuity_error = block(continuity, continuity_terms)
+            return dict(error=error, momentum=momentum_error, continuity=continuity_error,
+                        u=u, p=p, balance=balance)
+
+        passes = lambda a: a['error'] <= 2e-9 and a['momentum'] <= 2e-9 and a['continuity'] <= 2e-9
+        badness = lambda a: max(a['error'], a['momentum'], a['continuity'])
+
+        def refine(x, state):
+            """One refinement step, or None. A converged correction is kept; an
+            unconverged GMRES correction is kept only if it lowers the worst gate
+            ratio. Either way the published solution faces every gate."""
+            try:
+                correction, converged = solve(rhs-self._K@x, candidate=True)
+            except TectonicsError:
+                return None
+            trial = gauged(x+correction)
+            if not np.all(np.isfinite(trial)):
+                return None
+            trial_state = assess(trial)
+            if not converged and not badness(trial_state) < badness(state):
+                return None
+            return trial, trial_state
+
+        refinements = 0
+        if not forced:
+            # Exactly unforced: the exact solution is zero, whatever the method.
+            x = np.zeros_like(rhs)
+        else:
+            x = gauged(solve(rhs))
+            # Load-dominated states (e.g. full rho*g balanced by pressure): the
+            # velocity is a small part of a large solution, so a relative stop on
+            # the whole right-hand side leaves it inaccurate while every backward
+            # error is tiny. Refine (at most twice) only when the velocity is
+            # below 1% of the magnitude the load implies.
+            for _ in range(2):
+                u_now, _, implied_now = implied_velocity(x)
+                if not (np.all(np.isfinite(x)) and float(np.max(np.abs(u_now))) < 1e-2*implied_now):
+                    break
+                step = refine(x, assess(x))
+                _cancel(cancel)
+                if step is None:
+                    break
+                x = step[0]
+                refinements += 1
         _cancel(cancel)
-        if not np.all(np.isfinite(x)):
-            raise TectonicsError('nonfinite 3D solve')
-        error = np.linalg.norm(self._K@x-rhs, np.inf)/max(1., np.linalg.norm(rhs, np.inf))
-        if error > 2e-9:
+        # Every gate and the work identity use the zero-mean solution; a declared
+        # datum (which cannot change velocity) is added only for publication, so a
+        # large datum cannot loosen any operand scale.
+        state = assess(x)
+        for _ in range(2):
+            # Up to two working-precision refinement steps before refusing: they
+            # restore componentwise backward stability to an otherwise accurate
+            # solution of a badly scaled system (fixed-precision refinement). The
+            # gates are unchanged.
+            if not forced or passes(state):
+                break
+            step = refine(x, state)
+            _cancel(cancel)
+            if step is None:
+                break
+            x, state = step
+            refinements += 1
+        error, momentum_error, continuity_error = state['error'], state['momentum'], state['continuity']
+        u, p, balance = state['u'], state['p'], state['balance']
+        if not error <= 2e-9:
             raise TectonicsError('3D linear residual exceeds fixed acceptance tolerance')
-        nf = len(self._free)
-        u = lift
-        u[self._free] = x[:nf]
-        p = x[nf:nf+self._mesh.np]
-        reaction = self._A@u+self._B.T@p-load
+        if not (momentum_error <= 2e-9 and continuity_error <= 2e-9):
+            raise TectonicsError('3D momentum or continuity block residual exceeds fixed acceptance tolerance')
         # Free equations carry numerical residual, not externally applied force.
-        constrained_reaction = np.zeros_like(reaction)
-        constrained_reaction[self._fixed] = reaction[self._fixed]
+        constrained_reaction = np.zeros_like(balance)
+        constrained_reaction[self._fixed] = balance[self._fixed]
+        momentum_residual = np.zeros_like(balance)
+        momentum_residual[self._free] = balance[self._free]
+        datum_reaction = np.zeros_like(balance)
+        if mean:
+            datum_reaction[self._fixed] = mean*(self._B.T@np.ones(npr))[self._fixed]
         self._stats['krylov_iterations'] += count
-        return u.reshape(-1, 3), p, constrained_reaction.reshape(-1, 3), error, count
+        errors = dict(linear=error, momentum=momentum_error, continuity=continuity_error, forced=forced,
+                      refinements=refinements)
+        datum = dict(mean=mean, reaction=datum_reaction.reshape(-1, 3))
+        return u.reshape(-1, 3), p, constrained_reaction.reshape(-1, 3), errors, count, momentum_residual, datum
 
     def solve(self, body_force_n_m3, velocity_m_s, traction_pa, *, parent_state_id,
               epoch_id, time_s, force_source, boundary_source, extra_stress_pa=None,
@@ -362,8 +561,8 @@ class PreparedRegionalStokes3D:
             f, d, t, s, body, natural, load = self._scaled_request(force, velocity, tractions, stress)
             mean = 0. if self._mean is None else float(_factored_scale(np.asarray(self._mean),
                 (self._scales.length_m,), (self._eta0, self._scales.velocity_m_s), 'pressure datum'))
-            u,p,r,error,count = self._linear(load,d,mean,cancel)
-            result = self._result(u,p,r,s,body,natural,metadata,error,count)
+            u,p,r,error,count,momentum,datum = self._linear(load,d,mean,cancel,self._requested(f,d,t,s))
+            result = self._result(u,p,r,s,body,natural,load,momentum,metadata,error,count,datum)
             _cancel(cancel)
             self._verify()
             self._latest, self._latest_key = result, key
@@ -431,10 +630,14 @@ class PreparedRegionalStokes3D:
                 raise TectonicsError('exterior resistance must be symmetric positive semidefinite')
             L,V = self._scales.length_m,self._scales.velocity_m_s
             modes_d = _factored_scale(modes,(),(L,),'scaled displacement modes')
-            _,d,_,s,body,natural,load = self._scaled_request(force,velocity,tractions,stress)
+            f,d,t,s,body,natural,load = self._scaled_request(force,velocity,tractions,stress)
             mean = 0. if self._mean is None else float(_factored_scale(np.asarray(self._mean),
                 (L,),(self._eta0,V),'pressure datum'))
-            _,_,base_r,_,_ = self._linear(load,d,mean,cancel)
+            requested = self._requested(f,d,t,s)
+            # A pressure datum projects to exactly zero on the (necessarily
+            # net-flux-free) coupling modes; keep it out of the coupling solve so
+            # a large datum adds no round-off to the rates. It is published below.
+            _,_,base_r,_,_,_,_ = self._linear(load,d,0.,cancel,requested)
             force_conversion = lambda r: _factored_scale(r,(self._eta0,V,L),(),'reaction force')
             q0 = np.einsum('mij,ij->m',modes,force_conversion(base_r))
             mode_key = _digest_array(modes)
@@ -446,7 +649,7 @@ class PreparedRegionalStokes3D:
                 zero_load = np.zeros(3*self._mesh.nv)
                 for j in range(n):
                     _cancel(cancel)
-                    _,_,r,_,_ = self._linear(zero_load,modes_d[j],0.,cancel)
+                    _,_,r,_,_,_,_ = self._linear(zero_load,modes_d[j],0.,cancel)
                     response[:,j] = np.einsum('mij,ij->m',modes,force_conversion(r))
                 response = frozen(response)
             scale = max(np.max(np.abs(response)),np.finfo(float).tiny)
@@ -459,7 +662,7 @@ class PreparedRegionalStokes3D:
                 raise TectonicsError('coupled motion lacks independent resisting constraints')
             amplitudes = np.linalg.solve(matrix,drive-q0)
             prescribed = d+np.einsum('m,mij->ij',amplitudes,modes_d)
-            u,p,r,error,count = self._linear(load,prescribed,mean,cancel)
+            u,p,r,error,count,momentum,datum = self._linear(load,prescribed,mean,cancel,requested)
             rates = _factored_scale(amplitudes,(V,),(L,),'generalized rates')
             regional_force = np.einsum('mij,ij->m',modes,force_conversion(r))
             exterior_force = drag@rates
@@ -472,7 +675,7 @@ class PreparedRegionalStokes3D:
                 external_force_sha256=_digest_array(drive),external_resistance_sha256=_digest_array(drag),
                 force_relative_residual=float(relative), mode_count=n,
                 convention='mode[m]*rate[1/s]=velocity[m/s]; generalized_force[J]*rate[1/s]=power[W]')
-            base = self._result(u,p,r,s,body,natural,meta,error,count)
+            base = self._result(u,p,r,s,body,natural,load,momentum,meta,error,count,datum)
             arrays = {name:base.array(name) for name in base.array_names}
             arrays.update(generalized_rates_s_inv=rates,generalized_regional_force_j=regional_force,
                           generalized_external_force_j=drive,generalized_drag_force_j=exterior_force,
@@ -483,6 +686,11 @@ class PreparedRegionalStokes3D:
             self._mode_cache = (mode_key,response)
             self._stats['solves'] += 1
             return result
+
+    def _requested(self, f, d, t, s):
+        """Whether any scaled input is nonzero (an all-zero assembly then underflowed)."""
+        return bool(np.any(f) or np.any(s) or np.any(d.ravel()[self._fixed])
+                    or any(np.any(a) for a in t.values()))
 
     def _scaled_request(self, force, velocity, tractions, stress):
         L,V = self._scales.length_m,self._scales.velocity_m_s
@@ -496,7 +704,24 @@ class PreparedRegionalStokes3D:
         load = self._mesh.load(f,extra_stress=s)+natural
         return f,d,t,s,body,natural,load
 
-    def _result(self,u,p,r,extra,body,natural,metadata,error,count):
+    def _work_roundoff(self, u, p, r, extra, load, body, natural, pressure_q):
+        """Binary64 round-off bound of the work identity.
+
+        Bounded by the magnitudes of the terms actually multiplied and summed
+        (|A||u|, |B^T||p|, loads and reactions; quadrature powers use a 4/h
+        per-node shape-derivative bound), times 64 units of round-off. Nothing
+        here is an absolute floor, so rescaling the problem cannot bypass it.
+        """
+        ua = np.abs(u.ravel())
+        operands = float(ua@(_magnitude(self._A)@ua)+np.abs(p)@(_magnitude(self._B)@ua)
+                         +ua@(np.abs(load)+np.abs(body)+np.abs(natural)+np.abs(r.ravel())))
+        gradient_bound = 108/float(np.min(self._mesh._spacing))*np.max(
+            np.abs(u)[self._mesh.velocity_cells], axis=(1, 2))
+        quadrature = float(np.sum(gradient_bound[:, None]*(np.sum(np.abs(extra), axis=(-2, -1))
+                                                           +3*np.abs(pressure_q))*self._mesh.quadrature_weights))
+        return 64*_EPS*(operands+quadrature)
+
+    def _result(self,u,p,r,extra,body,natural,load,momentum,metadata,error,count,datum):
         mesh = self._mesh
         values = mesh.evaluate(u,p)
         gradient = values['gradient_q']
@@ -511,9 +736,30 @@ class PreparedRegionalStokes3D:
         pressure_power = -float(np.sum(values['pressure_q']*div*weights))
         body_power,natural_power,reaction_power = float(u.ravel()@body),float(u.ravel()@natural),float(np.sum(u*r))
         work_error = (viscous_power+extra_power+pressure_power-body_power-natural_power-reaction_power)
-        work_scale = max(1.,abs(viscous_power)+abs(extra_power)+abs(pressure_power),
+        # In exact arithmetic work_error is u_free.(momentum residual), which the
+        # blockwise linear gate already bounds; subtracting it leaves what this
+        # identity uniquely checks: consistency of the evaluated stresses,
+        # divergence and powers with the assembled operators, up to round-off.
+        # Scale by the larger side of the identity, never by max(1, ...); a rigid
+        # or exactly balanced state (near-zero powers) keeps the round-off floor.
+        work_error -= math.fsum(u.ravel()*momentum)
+        work_scale = max(abs(viscous_power)+abs(extra_power)+abs(pressure_power),
                          abs(body_power)+abs(natural_power)+abs(reaction_power))
-        if abs(work_error)/work_scale > 5e-9:
+        work_scale += self._work_roundoff(u,p,r,extra,load,body,natural,values['pressure_q'])/5e-9
+        if not (math.isfinite(work_scale) and math.isfinite(work_error)):
+            raise TectonicsError('3D mechanical work is outside binary64 range; '
+                                 'choose RegionalMechanicsScales near the problem magnitudes')
+        if work_scale == 0.:
+            if error['forced']:
+                raise TectonicsError('3D mechanical work underflows to zero; '
+                                     'choose RegionalMechanicsScales near the problem magnitudes')
+            work_relative = 0. if work_error == 0. else math.inf
+        elif work_scale < _TINY/_EPS:
+            raise TectonicsError('3D mechanical work is below binary64 relative precision; '
+                                 'choose RegionalMechanicsScales near the problem magnitudes')
+        else:
+            work_relative = abs(work_error)/work_scale
+        if not work_relative <= 5e-9:
             raise TectonicsError('3D mechanical work identity failed')
         L,V = self._scales.length_m,self._scales.velocity_m_s
         stress_scale = ((self._eta0,V),(L,))
@@ -523,9 +769,9 @@ class PreparedRegionalStokes3D:
         arrays = dict(velocity_m_s=convert(u,((V,),()),'velocity'),
             velocity_q_m_s=convert(values['velocity_q'],((V,),()),'quadrature velocity'),
             velocity_gradient_s_inv=convert(gradient,((V,),(L,)),'velocity gradient'),
-            relative_pressure_pa=convert(p,stress_scale,'pressure'),
+            relative_pressure_pa=convert(p+datum['mean'],stress_scale,'pressure'),
             extra_plus_viscous_stress_pa=convert(stress,stress_scale,'stress'),
-            velocity_constraint_reaction_n=convert(r,force_scale,'reaction'),
+            velocity_constraint_reaction_n=convert(r+datum['reaction'],force_scale,'reaction'),
             natural_boundary_force_n=convert(natural.reshape(-1,3),force_scale,'natural force'))
         if self._physical:
             arrays['physical_pressure_pa'] = arrays['relative_pressure_pa']
@@ -539,7 +785,9 @@ class PreparedRegionalStokes3D:
             velocity_dofs=3*mesh.nv, pressure_dofs=mesh.np,
             weak_divergence_max=float(np.max(np.abs(self._B@u.ravel())/self._pw)),
             quadrature_divergence_l2=float(np.sqrt(np.sum(div*div*weights))),
-            linear_relative_residual=error,work_relative_residual=abs(work_error)/work_scale,
+            linear_relative_residual=error['linear'],momentum_backward_error=error['momentum'],
+            continuity_backward_error=error['continuity'],linear_refinements=error['refinements'],
+            work_relative_residual=work_relative,
             krylov_iterations=count,power_w=powers, scientific_acceptance=False,
             scope='same-time regional mechanical solve; no material/history advancement or boundary birth')
         return RegionalMechanicalSnapshot(data,arrays)

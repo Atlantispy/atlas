@@ -217,7 +217,7 @@ def _closure(initial, components, enthalpy, heat, moved_c, moved_e):
 
 def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
                      source_id, heat_w=None, thermodynamics=None, context=None,
-                     budget=None, cancel=None):
+                     end_time_s=None, budget=None, cancel=None):
     """Map a finite magma segment into exact shared rows, retaining all others."""
     _cancel(cancel)
     indices = _selection(inventory, selected_node_ids)
@@ -230,7 +230,7 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
             time_s=inventory.time_s, budget=owner, cancel=cancel)
         with PreparedMagmaticTransfer(local, rates_kg_s, source_id=source_id, heat_w=heat_w,
                 thermodynamics=thermodynamics, context=context, budget=owner, cancel=cancel) as plan:
-            result = plan.evaluate(duration_s, cancel=cancel)
+            result = plan.evaluate(duration_s, end_time_s=end_time_s, cancel=cancel)
             c, e = inventory._components.copy(), inventory._enthalpy.copy()
             c[indices], e[indices] = result.remaining.component_mass_kg, result.remaining.enthalpy_j
             moved_c, moved_e, heat = (result.transferred_component_mass_kg,
@@ -253,7 +253,7 @@ def advance_magmatic(inventory, selected_node_ids, rates_kg_s, duration_s, *,
 
 
 def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s, *,
-                       source_id, parameters, budget=None, cancel=None):
+                       source_id, parameters, end_time_s=None, budget=None, cancel=None):
     """Debit finite crust/mantle cohorts and credit all three declared stores.
 
     ``parameters`` contains epoch_id and all explicit physical parameters of
@@ -290,7 +290,7 @@ def advance_retirement(inventory, selected_node_ids, destination_ids, duration_s
         with PreparedSubductionRetirement(local, destination_kinds=DESTINATIONS,
                 destination_ids=destination_ids, source_id=source_id, **supplied,
                 budget=owner, cancel=cancel) as plan:
-            result = plan.evaluate(duration_s, cancel=cancel)
+            result = plan.evaluate(duration_s, end_time_s=end_time_s, cancel=cancel)
             c, e = inventory._components.copy(), inventory._enthalpy.copy()
             c[indices], e[indices] = result.remaining.component_mass_kg, result.remaining.enthalpy_j
             moved_c, moved_e = result.destination_component_mass_kg, result.destination_enthalpy_j

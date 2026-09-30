@@ -219,9 +219,9 @@ def history_array(prep, kappa):
 
 # ----------------------------------------------------------------------------- constitutive response
 
-def _evaluate(prep, x, le, sign, cc, sp, inv):
+def _evaluate(prep, x, le, sign, cc, sp, inv, *, stress=None):
     """Scaled total rate/e and its log-stress derivative at every point; no clipping."""
-    s = np.exp(x)
+    s = np.exp(x) if stress is None else stress
     expo = prep.log_c+prep.exponent*x[:, None]-le
     litho = prep.closure == LITHOSTATIC
     if litho:
@@ -246,6 +246,36 @@ def _evaluate(prep, x, le, sign, cc, sp, inv):
     dplastic = np.where(yielding, s*(1.-dy)*inv, 0.)
     return dict(s=s, creep=creep, plastic=plastic, total=creep+plastic, derivative=dcreep+dplastic,
                 yield_pa=y, slope_min=np.where(prep.active, slope, np.inf).min(axis=1))
+
+
+def _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv, remaining):
+    """Finish a stalled log root in stress, within the original bracket and iteration budget.
+
+    Adjacent log-stress floats can map to stresses tens of stress ulps apart. Near a plastic yield surface that
+    spacing can exceed the fixed rate tolerance even though a stress inside the bracket resolves the same root.
+    Evaluate the same law at that stress directly; log(stress) is still used for the creep powers. No residual is
+    accepted on the strength of a small bracket: every point must meet TOL, including the refined ones.
+    """
+    lo, hi, stress = np.exp(lo), np.exp(hi), out["s"]
+    for used in range(1, remaining+1):
+        residual = out["total"]-1.
+        open_ = np.abs(residual) > TOL
+        hi = np.where(open_ & (residual > 0), stress, hi)
+        lo = np.where(open_ & (residual <= 0), stress, lo)
+        trial = stress-residual*stress/out["derivative"]
+        candidate = np.where((trial > lo) & (trial < hi), trial, lo+(hi-lo)/2)
+        # A midpoint may round back to one end. Try the neighbouring stress in the required direction; unlike the
+        # log neighbour it may still satisfy TOL. If even stress cannot move, keep the existing explicit refusal.
+        candidate = np.where(open_ & (candidate == stress),
+                             np.nextafter(stress, np.where(residual > 0, lo, hi)), candidate)
+        if np.any(open_ & (candidate == stress)):
+            raise ValueError("stress resolution exhausted before convergence")
+        stress = np.where(open_, candidate, stress)
+        x = np.where(open_, np.log(stress), x)
+        out = _evaluate(prep, x, le, sign, cc, sp, inv, stress=stress)
+        if np.all(np.abs(out["total"]-1.) <= TOL):
+            return x, out, used
+    raise ValueError("vectorised creep/plasticity solve did not converge")
 
 
 def stresses(prep, factors, rate, guess=None):
@@ -300,7 +330,10 @@ def stresses(prep, factors, rate, guess=None):
             trial = x-np.log(out["total"])/(out["derivative"]/out["total"])
             candidate = np.where((trial > lo) & (trial < hi), trial, (lo+hi)/2)
             if np.any(open_ & (candidate == x)):
-                raise ValueError("stress resolution exhausted before convergence")
+                x, out, extra = _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv,
+                                                column.POLICY["iterations"]-iteration-1)
+                iteration += extra
+                break
             x = np.where(open_, candidate, x)
         else:
             raise ValueError("vectorised creep/plasticity solve did not converge")

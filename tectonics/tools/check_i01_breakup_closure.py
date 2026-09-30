@@ -58,7 +58,7 @@ CONSISTENT = "PREMISE_CONSISTENT_WITH_REDUCED_PINCH"
 RESOLVED_NECK = "REFUSED_REQUIRES_RESOLVED_NECK"
 EPS = float(np.finfo(float).eps)
 TINY = float(np.finfo(float).tiny)
-RECEIPT = "evidence/i01-finite-strain-r4.json"
+RECEIPT = "evidence/i01-finite-strain-r5.json"
 FAULT_CASE = "cases/i01_fault2d_v1.json"
 NEW_FILES = ("tools/check_i01_breakup_closure.py", "cases/i01_breakup_closure_v1.json",
              "docs/I01_BREAKUP_CLOSURE.md", "tests/test_i01_breakup_closure.py")
@@ -68,7 +68,7 @@ RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_thermomechanica
             "cases/i01_column_heat_v1.json", "cases/i01_motion_coupling_v1.json", "cases/i01_weakening_v1.json")
 _PACKAGE_IMPORTS = {name: module for name, module in fs.IMPORTED.items() if name.startswith("src/")}
 RETAINED += tuple(_PACKAGE_IMPORTS)
-ACCEPTED_RECEIPTS = {RECEIPT: "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c"}
+ACCEPTED_RECEIPTS = {RECEIPT: "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
             "tools/check_i01_weakening.py": weakening, "tools/check_i01_column.py": column}
