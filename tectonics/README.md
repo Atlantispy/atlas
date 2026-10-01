@@ -684,7 +684,7 @@ Older dated sections below describe their delivery-time state. The latest plan
 and current progress table take precedence; previous evidence remains unchanged.
 
 **Branch: `remake`. WORKING NON-CANON. Mathematical verification, not accepted terrain.**
-Vibe-coded with OpenAI ChatGPT/Codex under Michael's direction.
+Vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under Michael's direction.
 
 This isolated package follows the [tectonics plan](docs/TECTONICS_PLAN.md) and
 [consolidated optimisation reference](docs/OPTIMISATION_REFERENCE.md). It imports
@@ -776,6 +776,13 @@ record its actual versions, not claim all dependencies are pinned. The optional
 `visual` extra supplies Matplotlib for the diagnostic tool, not the physical core.
 The commands below install dependencies only when you explicitly run them.
 
+The tested and pinned route is Windows AMD64 CPython 3.12.14 with the requirement
+files in [`requirements/`](requirements/): use the
+[recreate commands](../docs/TECTONICS_ENVIRONMENT.md#recreate-an-environment) in the
+[tectonics environment record](../docs/TECTONICS_ENVIRONMENT.md). The commands below
+instead install floating versions within the `pyproject.toml` ranges. Linux and
+Python 3.13 are not recorded environments ([current status](../docs/CURRENT_STATE.md)).
+
 From the repository root on Linux/macOS:
 
 ```sh
@@ -808,6 +815,32 @@ also exercises real filesystem symlinks; a host unable to create those fixtures
 has not completed that part of verification. Skips are not counted as a full pass.
 
 Primary environment reference: [Python's venv documentation](https://docs.python.org/3.13/library/venv.html).
+
+### Focused regression selections
+
+Use the existing verifier with the tested environment for the changed boundary:
+
+| Option | Coverage |
+| --- | --- |
+| `--i01` | All I01 component/control test modules. |
+| `--i02` | All I02 state, exchange, clock, persistence and workflow tests, including measurement integration. |
+| `--i02-quick` | I02 tests excluding only the four full timing-harness integration tests. |
+| `--i02-measurement` | Those four real-workload measurement, restart and failure-propagation tests. |
+| `--regional3d` | Regional 3-D component, solver and evolution test modules. |
+
+For example, `python -I -B tectonics/verify.py --i02-quick` records the actual
+selected test IDs, timing and source identities. The quick and measurement
+selections together cover the complete I02 selection. Use `--i02` when changing
+its workflow, restart or measurement boundaries; quick-only is not equivalent
+coverage. Existing W01/W04/W05/W06 profiles are unchanged, and **no option still
+means the full suite**. Focused profiles neither loosen tolerances nor establish
+physical or whole-generator acceptance. Do not compare their timings as though
+they ran equivalent work.
+
+For repository navigation/planning edits, the
+[before-commit guard](../docs/CODING_SAFETY.md#before-every-commit) can avoid
+unrelated I01/I02 numerical reruns while still checking Git-normalised evidence
+and line endings. Its reviewed document allowlist is deliberately narrow.
 
 ## Reproducible diagnostic visuals
 

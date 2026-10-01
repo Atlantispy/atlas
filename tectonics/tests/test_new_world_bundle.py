@@ -249,6 +249,36 @@ class NewWorldBundleTests(unittest.TestCase):
         self.assert_refused('BUNDLE_LIMIT', bundle.inspect_bundle, malformed)
         self.assertFalse((self.root / 'escaped').exists())
 
+    def test_outer_zip_parser_failures_are_structured_refusals_without_publication(self):
+        self.save()
+        original = self.archive.read_bytes()
+        central = original.index(b'PK\x01\x02')
+        local = original.index(b'PK\x03\x04')
+        for kind in ('extract-version', 'utf8-name', 'patched-data', 'strong-encryption'):
+            with self.subTest(kind=kind):
+                damaged = bytearray(original)
+                if kind == 'extract-version':
+                    damaged[central + 6:central + 8] = (99).to_bytes(2, 'little')
+                    damaged[local + 4:local + 6] = (99).to_bytes(2, 'little')
+                else:
+                    flag = {'utf8-name': 0x800, 'patched-data': 0x20, 'strong-encryption': 0x40}[kind]
+                    for offset in (central + 8, local + 6):
+                        flags = int.from_bytes(damaged[offset:offset + 2], 'little') | flag
+                        damaged[offset:offset + 2] = flags.to_bytes(2, 'little')
+                    if kind == 'utf8-name':
+                        damaged[central + 46] = damaged[local + 30] = 0xff
+                source, destination = self.root / f'{kind}.atlas', self.root / f'{kind}-loaded'
+                source.write_bytes(damaged)
+                self.loader.reset_mock()
+                self.assert_refused('INVALID_BUNDLE', bundle.inspect_bundle, source)
+                self.assert_refused('INVALID_BUNDLE', bundle.load_bundle, source, destination)
+                answer, code = bundle.response(['inspect', '--file', str(source)], io.BytesIO())
+                self.assertEqual((code, answer['error']['code']), (2, 'INVALID_BUNDLE'))
+                self.assertNotIn(str(self.root), answer['error']['message'])
+                self.assertFalse(destination.exists())
+                self.assertEqual(source.read_bytes(), bytes(damaged))
+                self.loader.assert_not_called()
+
     def test_oversized_control_member_is_refused_before_native_load(self):
         self.save()
         name = f'jobs/{self.ident}/request.json'

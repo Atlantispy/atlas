@@ -11,7 +11,9 @@ the existing guards on that export:
 1. tools/check_current_evidence.py: registered receipts and their declared bindings;
 2. tectonics/tests/test_digest_line_endings.py: no digest of a CRLF rendering and no
    I01 receipt writer using the platform newline;
-3. the I01/I02 test modules, with process-local PYTHONPATH=<export>/tectonics/src.
+3. the I01/I02 test modules, with process-local PYTHONPATH=<export>/tectonics/src,
+   unless every candidate change is an added/modified regular file in the reviewed
+   documentation allowlist below. --full or an explicit --tests keeps this check.
 
 By default the candidate is what `git add --all` would stage: staged, unstaged and
 untracked (not ignored) changes. --staged checks exactly the current index and
@@ -45,6 +47,13 @@ from typing import Iterator, Sequence
 
 EXPORTED = ('tectonics/', 'tools/')
 TESTS = 'test_i0[12]_*.py'
+# Closed list of reviewed navigation/status documents, not all Markdown files:
+# method documents can be inputs to checks (including I01/I02 content assertions).
+DOCUMENTATION = frozenset({
+    'README.md', 'tectonics/README.md', 'docs/CURRENT_STATE.md',
+    'docs/ATLAS_ROADMAP.md', 'docs/CODING_SAFETY.md',
+    'tectonics/docs/TECTONICS_PLAN.md', 'tectonics/docs/OPTIMISATION_REFERENCE.md',
+})
 REGULAR = ('100644', '100755')
 GITLINK = '160000'
 # Programs configuration can make these commands start: clean/process filters for content Git hashes, and hooks
@@ -63,6 +72,7 @@ class Candidate:
     changed: tuple[str, ...]     # 'status path' for each candidate path that differs from HEAD
     excluded: tuple[str, ...]    # working-tree changes a --staged candidate leaves out
     skipped: tuple[str, ...]     # exported-tree index entries that are not regular files
+    regular_changes: bool = False  # every changed path has a regular-file mode in the candidate index
 
 
 @dataclass(frozen=True)
@@ -157,10 +167,11 @@ def _changes(git: _Git) -> tuple[str, ...]:
     return tuple(f'{status} {path}' for status, path in zip(tokens[::2], tokens[1::2]))
 
 
-def _export(git: _Git, target: Path) -> tuple[str, ...]:
+def _export(git: _Git, target: Path,
+            index: Sequence[tuple[str, str, str, str]] | None = None) -> tuple[str, ...]:
     """Write every exported regular-file blob of the candidate index byte for byte; return skipped entries."""
     entries, skipped = [], []
-    for mode, blob, stage, name in _entries(git):
+    for mode, blob, stage, name in _entries(git) if index is None else index:
         if stage != '0':
             raise CandidateError(f'unmerged index entry {name}; resolve it before checking a commit')
         if not name.startswith(EXPORTED):
@@ -217,18 +228,39 @@ def candidate(root: Path, *, staged: bool = False) -> Iterator[Candidate]:
             git('-c', 'core.safecrlf=false', 'add', '--all', '--', '.', private=True)
         export = git.folder / 'candidate'
         export.mkdir()
-        skipped = _export(git, export)
-        yield Candidate(export, _changes(git), excluded, skipped)
+        entries = _entries(git)
+        skipped = _export(git, export, entries)
+        changed = _changes(git)
+        modes = {name: mode for mode, _, stage, name in entries if stage == '0'}
+        regular_changes = all(modes.get(line.partition(' ')[2]) in REGULAR for line in changed)
+        yield Candidate(export, changed, excluded, skipped, regular_changes)
 
 
-def checks(export: Path, pattern: str = TESTS) -> list[tuple[str, list[str], dict[str, str]]]:
+def documentation_only(snapshot: Candidate) -> bool:
+    """Only reviewed, added/modified regular documents can omit the numerical suite.
+
+    Missing HEAD, empty changes, deletions (including renames), unknown paths or
+    statuses and any skipped nonregular entry all retain the existing full route.
+    Index modes cover changed paths outside EXPORTED, too: a .md symlink is not a
+    documentation edit merely because it has a familiar name.
+    """
+    if not snapshot.changed or snapshot.skipped or not snapshot.regular_changes:
+        return False
+    return all(status in ('A', 'M') and path in DOCUMENTATION
+               for status, _, path in (line.partition(' ') for line in snapshot.changed))
+
+
+def checks(export: Path, pattern: str | None = TESTS) -> list[tuple[str, list[str], dict[str, str]]]:
     """The existing guards, run on the export with this interpreter: (name, command, environment additions)."""
     python, tests = sys.executable, str(export / 'tectonics' / 'tests')
-    return [('current-evidence register', [python, '-B', str(export / 'tools' / 'check_current_evidence.py')], {}),
-            ('digest line endings', [python, '-B', '-m', 'unittest', 'discover', '-s', tests,
-                                     '-p', 'test_digest_line_endings.py'], {}),
-            (f'I01/I02 tests ({pattern})', [python, '-B', '-m', 'unittest', 'discover', '-s', tests, '-p', pattern],
-             {'PYTHONPATH': str(export / 'tectonics' / 'src')})]
+    steps = [('current-evidence register', [python, '-B', str(export / 'tools' / 'check_current_evidence.py')], {}),
+             ('digest line endings', [python, '-B', '-m', 'unittest', 'discover', '-s', tests,
+                                      '-p', 'test_digest_line_endings.py'], {})]
+    if pattern is not None:
+        steps.append((f'I01/I02 tests ({pattern})',
+                      [python, '-B', '-m', 'unittest', 'discover', '-s', tests, '-p', pattern],
+                      {'PYTHONPATH': str(export / 'tectonics' / 'src')}))
+    return steps
 
 
 def run(steps: Sequence[tuple[str, list[str], dict[str, str]]], cwd: Path) -> list[tuple[str, int, float]]:
@@ -252,8 +284,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--staged', action='store_true',
                         help='check exactly the current index and list every change it leaves out')
-    parser.add_argument('--tests', default=TESTS, metavar='PATTERN',
-                        help=f'tectonics test-module pattern for the third check (default {TESTS})')
+    parser.add_argument('--tests', metavar='PATTERN',
+                        help=f'force the third check with this tectonics test-module pattern (default {TESTS})')
+    parser.add_argument('--full', action='store_true',
+                        help='keep the I01/I02 suite even for documentation-only changes; --tests selects its pattern')
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1],
                         help='repository root; defaults to the directory containing tools/')
     args = parser.parse_args(argv)
@@ -268,7 +302,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f'  NOT IN CANDIDATE: {line}')
             for line in snapshot.skipped:
                 print(f'  not exported (not a regular file): {line}')
-            results = run(checks(snapshot.root, args.tests), snapshot.root)
+            pattern = args.tests if args.tests is not None else TESTS
+            if args.tests is None and not args.full and documentation_only(snapshot):
+                pattern = None
+                print('Checks: reviewed documentation-only changes; evidence and line endings remain mandatory.')
+            else:
+                print(f'Checks: evidence, line endings and I01/I02 tests ({pattern}).')
+            results = run(checks(snapshot.root, pattern), snapshot.root)
     except (CandidateError, OSError) as error:
         print(f'FAIL: {error}', file=sys.stderr)
         return 1

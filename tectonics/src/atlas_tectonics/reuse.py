@@ -728,6 +728,9 @@ def _cancelled(cancel):
         raise CancelledError("caller cancelled; completed publications are not rolled back")
 
 
+_FLIGHT_RETRIES = 3
+
+
 class _Flights:
     """Bounded process-local single-flight. Completed results are not a new cache."""
     def __init__(self, max_entries=32, max_waiters=128):
@@ -739,36 +742,46 @@ class _Flights:
     def run(self, key, produce, *, cancel=None, timeout=30., validate=None):
         _cancelled(cancel)
         ident = threading.get_ident()
-        with self._lock:
-            entry = self._entries.get(key)
-            if entry is None:
-                if len(self._entries) >= self.max_entries:
-                    raise MemoryLimitError("too many active cache computations")
-                future = Future()
-                self._entries[key] = (ident, future)
-                leader = True
-            else:
-                owner, future = entry
-                if owner == ident:
-                    raise TectonicsError("recursive same-key cache request")
-                if self._waiters >= self.max_waiters:
-                    raise MemoryLimitError("too many waiting cache consumers")
-                self._waiters += 1
-                leader = False
-        if leader:
-            try:
-                result = produce()
-                # The future owns private array metadata; each consumer gets a view.
-                result = frozen(result)
-                future.set_result(result)
-            except BaseException as exc:
-                future.set_exception(exc)
-                raise
-            finally:
-                with self._lock:
-                    self._entries.pop(key, None)
-        else:
-            deadline = time.monotonic()+timeout
+        deadline = time.monotonic()+timeout
+        # An owner's own cancellation is not a waiter's: a waiter whose event is unset registers again (becoming
+        # the owner, or waiting for a newer one) within its first deadline. Other failures are shared as before.
+        # An owner resolves its future before it removes its entry, so a retry skips the future it already saw.
+        seen = None
+        for attempt in range(_FLIGHT_RETRIES+1):
+            with self._lock:
+                entry = self._entries.get(key)
+                if entry is not None and entry[1] is seen:
+                    entry = None
+                if entry is None:
+                    if attempt and time.monotonic() >= deadline:
+                        raise TimeoutError("waiting for identical cache request timed out")
+                    if len(self._entries) >= self.max_entries and key not in self._entries:
+                        raise MemoryLimitError("too many active cache computations")
+                    future = Future()
+                    self._entries[key] = (ident, future)
+                    leader = True
+                else:
+                    owner, future = entry
+                    if owner == ident:
+                        raise TectonicsError("recursive same-key cache request")
+                    if self._waiters >= self.max_waiters:
+                        raise MemoryLimitError("too many waiting cache consumers")
+                    self._waiters += 1
+                    leader = False
+            if leader:
+                try:
+                    result = produce()
+                    # The future owns private array metadata; each consumer gets a view.
+                    result = frozen(result)
+                    future.set_result(result)
+                except BaseException as exc:
+                    future.set_exception(exc)
+                    raise
+                finally:
+                    with self._lock:
+                        if self._entries.get(key, (None, None))[1] is future:
+                            del self._entries[key]
+                break
             try:
                 while True:
                     _cancelled(cancel)
@@ -781,9 +794,17 @@ class _Flights:
                     except FutureTimeout:
                         if future.done():
                             raise  # a producer's own TimeoutError is not a wait timeout
+            except CancelledError as exc:
+                _cancelled(cancel)               # this caller's own cancellation stays its own
+                seen = future
+                if attempt == _FLIGHT_RETRIES:
+                    raise TectonicsError("identical cache computation was cancelled by its other callers "
+                                         "%d times; nothing was cancelled here, retry" % (attempt+1)) from exc
+                continue
             finally:
                 with self._lock:
                     self._waiters -= 1
+            break
         _cancelled(cancel)
         if not leader and validate is not None:
             validate()
@@ -798,10 +819,17 @@ def _process_claim(store, key, cancel, timeout):
     """Crash-released local OS lock; 16 fixed stripes, no stale lease takeover.
 
     Same-process requests first use _FLIGHTS. Separate connections/processes
-    recheck the database after taking this lock. Different keys can share a stripe;
-    that only serialises extra work. No scientific data are stored in lock files.
+    recheck the database after taking this lock. Different keys can share a stripe:
+    the holder records its key after the locked byte, and a request for another key
+    proceeds without the claim instead of waiting behind unrelated work (its lookup
+    and publication are still rechecked and idempotent). A request for the key the
+    holder is computing waits, up to its timeout. While an unrelated key holds the
+    stripe, requests for one key in several processes therefore each compute (a
+    duplicate, never a wrong result). Yields whether the claim is held. The key is a
+    cache identity, not scientific data; a stale or partly written record only
+    decides whether to wait (never correctness).
     """
-    from .storage import _path
+    from .storage import _path, _SHA
     import stat
     stripe = int(key[:8],16) % 16
     path = store.path.with_name(store.path.name+f".compute-{stripe:02d}.lock")
@@ -816,9 +844,12 @@ def _process_claim(store, key, cancel, timeout):
         deadline = time.monotonic()+timeout
         if os.name == "nt":
             import msvcrt
-            if st.st_size == 0:
-                os.write(fd,b"0")
             def take():
+                # A rival may initialise and lock the byte after our size check.
+                # Keep initialisation inside the same bounded contention loop.
+                if os.fstat(fd).st_size == 0:
+                    os.lseek(fd,0,os.SEEK_SET)
+                    os.write(fd,b"0")
                 os.lseek(fd,0,os.SEEK_SET)
                 msvcrt.locking(fd,msvcrt.LK_NBLCK,1)
             def release():
@@ -830,16 +861,30 @@ def _process_claim(store, key, cancel, timeout):
             def release(): fcntl.flock(fd,fcntl.LOCK_UN)
         else:
             raise TectonicsError("local process cache locks unsupported on this platform")
+        def holder():
+            # Bytes 1-64 lie outside the one locked byte, so they stay readable on Windows as well.
+            os.lseek(fd,1,os.SEEK_SET)
+            text = os.read(fd,64).decode("ascii","replace")
+            return text if _SHA.fullmatch(text) else None
         while not acquired:
             _cancelled(cancel)
             try:
                 take(); acquired = True
             except OSError as exc:
                 if exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK): raise
+                other = holder()
+                if other is not None and other != key:
+                    break            # an unrelated computation holds this stripe: do not wait behind it
                 if time.monotonic() >= deadline:
                     raise TimeoutError("cache compute lock timed out") from exc
                 time.sleep(.01)
-        yield
+        if acquired:
+            try:
+                os.lseek(fd,1,os.SEEK_SET)
+                os.write(fd,key.encode("ascii"))
+            except OSError:
+                pass                 # only a hint; a stale one decides at most whether another key waits
+        yield acquired
     finally:
         if acquired: release()
         os.close(fd)
@@ -918,12 +963,15 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
         if type(result) is not np.ndarray or result.shape != shape or result.dtype != np.dtype("float64"):
             raise TectonicsError("cached result contract mismatch")
         return result
+    # One deadline covers this caller's waiting: for an identical in-process flight, then, if it becomes the
+    # owner (also after another owner's cancellation), for the process claim.
+    deadline = time.monotonic()+wait_timeout
     def produce():
         # Kernel/get workspace ends at return, but its result remains resident
         # through validation, compression and publication. Reserve that lifetime
         # before execution so a concurrent producer cannot consume its capacity.
         with budget.reserve(8 * elements(shape), category="pending-result"), \
-                _process_claim(store,key,cancel,wait_timeout):
+                _process_claim(store,key,cancel,max(0.,deadline-time.monotonic())):
             _cancelled(cancel)
             costs = controller.cost(key)
             recompute = cache_policy.mode == "auto" and costs.get("restore",0) > costs.get("compute",float("inf"))

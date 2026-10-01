@@ -8,6 +8,7 @@ from fractions import Fraction
 import math
 from pathlib import Path
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -372,6 +373,63 @@ class ControlTests(Limited):
             with self.subTest(name):
                 out = control(SMALL, CTX, FIX)
                 self.assertTrue(out["passed"], {k: v for k, v in out["checks"].items() if not v})
+
+
+class RestorationTests(Limited):
+    """restored() (I02.5): an accepted commit re-read from a package ledger's store issues a State for exactly this
+    evolution, which prepare() and admit() accept on the restored clock without re-running the accepted prefix. A
+    common state, a fingerprint, another evolution's history or an edited copy issues nothing. Built with the I02
+    workflow fixtures, which this tool then binds."""
+
+    def test_restored_commit_is_admitted_and_nothing_else_issues_a_state(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from atlas_tectonics import integration_clock as clocks, integration_ledger as ledgers
+        import i02_workflow_fixtures as F
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        path = Path(folder.name)/"ledger"/"ledger.sqlite"
+        prepared = F.preparation()
+        base, thermal, key, _ = prepared
+        root = F.root(16, prepared=prepared)
+        writer = F.store(path)
+        ledger, _ = ledgers.Ledger.create(writer, root)
+        clocks.Clock(ledger).advance(steps=4)
+        ledger_id = ledger.ledger_id
+        writer.close()
+        reader = F.store(path)
+        self.addCleanup(reader.close)
+        reopened = ledgers.Ledger.open(reader, ledger_id, source_id=F.SOURCE_ID, runtime_id=F.RUNTIME_ID)
+        head = reopened.head()
+
+        def evolution(theta0):
+            kappa0 = np.asarray(F.WEAK["campaign"]["initial_history_by_layer"], dtype=float)[base.layer]
+            return f.Evolution(base, thermal, F.LAW, F.DRIVE, key, kappa0, root.settings.step_s,
+                               dict(stretch=F.REP["stretch_window"], temperature_k=F.REP["temperature_window_k"]),
+                               F.REP["max_temperature_step_k"], (1., 1.), F.POLICY, theta0=theta0)
+
+        e = evolution(F.theta_signed(base))
+        state = f.restored(e, reopened, head)
+        _, direct = f.evolved(e, 4)
+        self.assertEqual(state.elapsed_s, direct.elapsed_s)
+        self.assertLessEqual(abs(state.stretch-direct.stretch), F.POLICY["parity_relative"]*direct.stretch)
+        envelope = f.prepare(base, thermal, F.LAW, F.DRIVE, key, state, window=f.declared(SPEC), horizon_s=HORIZON)
+        out = f.admit(envelope, base, thermal, F.LAW, F.DRIVE, state, duration_s=root.settings.step_s,
+                      relative_tolerance=SPEC["campaign"]["relative_tolerances"][0],
+                      displacement_limit_m=SPEC["campaign"]["displacement_limit_m"])
+        self.assertIn(out["status"], (f.CERTIFIED, f.NOT_CERTIFIED))
+        self.assertEqual(out["window_start_s"], state.elapsed_s)
+        refused = {
+            "a common state": lambda: f.restored(e, reopened, reopened.state(head)),
+            "a fingerprint": lambda: f.restored(e, reopened, head.state_id),
+            "another evolution": lambda: f.restored(evolution(np.zeros(base.size)), reopened, head),
+            "a common state to prepare": lambda: f.prepare(base, thermal, F.LAW, F.DRIVE, key, reopened.state(head),
+                                                           window=f.declared(SPEC), horizon_s=HORIZON),
+            "an edited restored state": lambda: f.prepare(base, thermal, F.LAW, F.DRIVE, key,
+                                                          dataclasses.replace(state, elapsed_s=0.),
+                                                          window=f.declared(SPEC), horizon_s=HORIZON)}
+        for name, call in refused.items():
+            with self.subTest(name), self.assertRaises(ValueError):
+                call()
 
 
 if __name__ == "__main__":

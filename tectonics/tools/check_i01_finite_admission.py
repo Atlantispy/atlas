@@ -65,7 +65,8 @@ SCOPE = ("represented Gauss-point finite-strain strip measured from its absolute
          "retained model continues inside its temperature window and constitutive support; not the continuous depth "
          "model, the coupled thermal trajectory or physical separation")
 NEW_FILES = ("tools/check_i01_finite_admission.py", "cases/i01_finite_admission_v1.json",
-             "docs/I01_FINITE_ADMISSION.md", "tests/test_i01_finite_admission.py")
+             "docs/I01_FINITE_ADMISSION.md", "tests/test_i01_finite_admission.py",
+             "tests/i02_workflow_fixtures.py")
 RETAINED = ("tools/check_i01_finite_strain.py", "tools/check_i01_column_admission.py", "tools/check_i01_decoupling.py",
             "tools/check_i01_thermomechanical_motion.py", "tools/check_i01_column_heat.py",
             "tools/check_i01_motion_coupling.py", "tools/check_i01_weakening.py", "tools/check_i01_column.py",
@@ -83,7 +84,9 @@ RESTORATION = ("src/atlas_tectonics/integration_ledger.py", "src/atlas_tectonics
                "src/atlas_tectonics/storage.py", "src/atlas_tectonics/_validation.py",
                "src/atlas_tectonics/materials.py", "src/atlas_tectonics/resources.py",
                "src/atlas_tectonics/timebase.py", "src/atlas_tectonics/w08_inventory.py",
-               "src/atlas_tectonics/constitutive.py", "src/atlas_tectonics/mesh.py")
+               "src/atlas_tectonics/constitutive.py", "src/atlas_tectonics/mesh.py",
+               "src/atlas_tectonics/integration_clock.py")
+# The bound restoration test commits its history through the accepted clock.
 ACCEPTED_RECEIPTS = {
     "evidence/i01-finite-strain-r5.json": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
     "evidence/i01-column-admission-r3.json": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3"}
@@ -1140,8 +1143,8 @@ def reuse_control(spec, ctx, fix, deadline=None):
               "cache, log or parallel worker; not a simulation or world speed-up"))
 
 
-# restored() is not among these controls: they run this tool's own evolution in memory, and a restoration control
-# would need an I02 ledger store and root built by the I02 test fixtures. tests/test_i02_persistence.py exercises it.
+# These controls run this tool's evolution in memory. The bound RestorationTests in
+# tests/test_i01_finite_admission.py exercises restored() on the bound I02 fixture column.
 CONTROLS = (("analytic", analytic_control), ("trajectory", trajectory_control), ("refusal", refusal_control),
             ("repeat", repeat_control), ("reuse", reuse_control))
 

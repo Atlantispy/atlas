@@ -17,6 +17,23 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent
 
+# Developer selections only: none establishes additional scientific acceptance.
+FOCUSED_PATTERNS = {
+    'i01': 'test_i01_*.py',
+    'i02': 'test_i02_*.py',
+    'i02-quick': 'test_i02_*.py',
+    'i02-measurement': 'test_i02_*.py',
+    'regional3d': 'test_regional*3d.py',
+}
+# These four tests execute the real timing harness (including its fault paths).
+# Keep them in full discovery and --i02; only --i02-quick omits them.
+I02_MEASUREMENT_TESTS = frozenset({
+    'test_i02_joined.TimingHarnessTests.test_the_harness_times_one_workload_only_after_checking_it_is_the_same',
+    'test_i02_joined.TimingHarnessTests.test_a_measurement_whose_modes_disagree_records_failed_equality',
+    'test_i02_measurement.MeasurementRegressionTests.test_source_drift_withholds_all_times',
+    'test_i02_measurement.MeasurementRegressionTests.test_review_probe_with_cold_temperature_and_reopen_account_drift_withholds_times',
+})
+
 # Stage 8 is a focused composition of existing gates, not all tectonics physics.
 # Keep exact selections reviewable; no implicit all-tests fallback on bad names.
 W01_GATES = {
@@ -244,6 +261,55 @@ def w06_suite():
     return _acceptance_suite(W06_GATES, 'W06')
 
 
+def focused_suite(name):
+    """Select a bounded developer suite; stale partitions refuse, never broaden."""
+    if name not in FOCUSED_PATTERNS:
+        raise ValueError('unknown focused verification profile: ' + name)
+    loader = unittest.TestLoader()
+    discovered = loader.discover(str(ROOT / 'tests'), pattern=FOCUSED_PATTERNS[name])
+    if loader.errors:
+        raise ValueError('focused verification discovery failed: ' + '\n'.join(loader.errors))
+
+    def leaves(group):
+        for item in group:
+            if isinstance(item, unittest.TestSuite):
+                yield from leaves(item)
+            else:
+                yield item
+
+    tests = list(leaves(discovered))
+    ids = [test.id() for test in tests]
+    if not ids or len(ids) != len(set(ids)):
+        raise ValueError('empty or duplicated focused verification selection')
+    if name in ('i02-quick', 'i02-measurement'):
+        if not I02_MEASUREMENT_TESTS.issubset(ids):
+            raise ValueError('I02 measurement partition is stale or incomplete')
+        measurement = name == 'i02-measurement'
+        tests = [test for test in tests if (test.id() in I02_MEASUREMENT_TESTS) == measurement]
+        if not tests:
+            raise ValueError('empty focused verification partition')
+    return unittest.TestSuite(tests), {name: [test.id() for test in tests]}
+
+
+def verification_suite(option):
+    """Retain the default full suite; focused profiles require an explicit flag."""
+    legacy = {'--w01': w01_suite, '--w04': w04_suite,
+              '--w05': w05_suite, '--w06': w06_suite}
+    if option in legacy:
+        return legacy[option]()
+    if option.startswith('--') and option[2:] in FOCUSED_PATTERNS:
+        return focused_suite(option[2:])
+    if option not in ('', '--core', '--native', '--acceptance'):
+        raise ValueError('unknown verification option: ' + option)
+    core_only = option == '--core'
+    suite = unittest.defaultTestLoader.discover(
+        str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
+    if not core_only:
+        suite.addTests(unittest.defaultTestLoader.discover(
+            str(ROOT / 'tests'), pattern='check_native_transport.py'))
+    return suite, None
+
+
 def _checks_passed(result, source_unchanged):
     return (result.wasSuccessful() and result.testsRun > 0 and not result.skipped
             and source_unchanged)
@@ -282,9 +348,13 @@ def main() -> int:
         sys.path.insert(0,str(ROOT/'tools'))
         from check_w10 import main as w10_main
         return w10_main([])
-    if sys.argv[1:] not in ([], ['--core'], ['--native'], ['--acceptance'], ['--w01'], ['--w04'], ['--w05'], ['--w06']):
-        print('Usage: python -I -B tectonics/verify.py [--core | --native | --acceptance | --w01 | --w04 | --w05 | --w06 | --w10]', file=sys.stderr)
+    allowed = ('--core', '--native', '--acceptance', '--w01', '--w04', '--w05', '--w06',
+               *('--' + name for name in FOCUSED_PATTERNS))
+    if len(sys.argv[1:]) > 1 or (sys.argv[1:] and sys.argv[1] not in allowed):
+        print('Usage: python -I -B tectonics/verify.py [' + ' | '.join((*allowed, '--w10')) + ']', file=sys.stderr)
         return 2
+    option = sys.argv[1] if sys.argv[1:] else ''
+    focused = option[2:] if option.startswith('--') and option[2:] in FOCUSED_PATTERNS else None
     w01 = sys.argv[1:] == ['--w01']
     w04 = sys.argv[1:] == ['--w04']
     w05 = sys.argv[1:] == ['--w05']
@@ -295,7 +365,9 @@ def main() -> int:
         if importlib.util.find_spec('psutil') is None:
             raise ImportError('Resource acceptance needs the explicit psutil acceptance extra; no automatic installation')
     core_only = sys.argv[1:] == ['--core']
-    native = not (core_only or w06)
+    # Focused test modules initialise their own required backends. Do not build
+    # unrelated native kernels merely to fill the full-suite telemetry fields.
+    native = not (core_only or w06 or focused)
     if not core_only:
         import importlib.util
         if any(importlib.util.find_spec(p) is None for p in ('scipy', 'numba', 'blosc2', 'threadpoolctl', 'shapely')):
@@ -312,19 +384,7 @@ def main() -> int:
     from atlas_tectonics import reuse
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
-    selection = None
-    if w01:
-        suite, selection = w01_suite()
-    elif w04:
-        suite, selection = w04_suite()
-    elif w05:
-        suite, selection = w05_suite()
-    elif w06:
-        suite, selection = w06_suite()
-    else:
-        suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
-    if native and not (w01 or w04 or w05 or w06):
-        suite.addTests(unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='check_native_transport.py'))
+    suite, selection = verification_suite(option)
     started = time.perf_counter()
     result = unittest.TextTestRunner(stream=sys.stderr, verbosity=2).run(suite)
     elapsed = time.perf_counter()-started
@@ -348,7 +408,7 @@ def main() -> int:
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
         'schema': 'atlas.tectonics.foundation-verification.v26' if w06 else 'atlas.tectonics.foundation-verification.v25' if w05 else 'atlas.tectonics.foundation-verification.v24' if w04 else 'atlas.tectonics.foundation-verification.v23',
-        'profile': 'w06-supported-workflow' if w06 else 'w05-supported-acceptance' if w05 else 'w04-supported-acceptance' if w04 else 'w01-supported-acceptance' if w01 else 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
+        'profile': focused if focused else 'w06-supported-workflow' if w06 else 'w05-supported-acceptance' if w05 else 'w04-supported-acceptance' if w04 else 'w01-supported-acceptance' if w01 else 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
         'status': ('PASS_SUPPORTED_W06_WORKFLOW' if w06 else 'PASS_SUPPORTED_DRY_LISTRIC_1D_W05' if w05 else 'PASS_SUPPORTED_STATIONARY_PLANAR_1D_W04' if w04 else 'PASS_MATHEMATICAL_TESTS_ONLY') if passed else 'FAIL_OR_INCOMPLETE',
         'test_elapsed_seconds': elapsed,
         'w01_acceptance': w01_acceptance_record(passed) if w01 else None,
@@ -357,6 +417,8 @@ def main() -> int:
         'w06_acceptance': w06_acceptance_record(passed) if w06 else None,
         'w05_case_metrics': getattr(sys.modules.get('test_w05_acceptance'), 'CASE_METRICS', None) if w05 else None,
         'selected_tests_by_gate': selection,
+        'focused_profile_scope': ('Explicit developer selection, not additional scientific acceptance; '
+                                  'i02-quick omits the four real measurement-harness workloads only.') if focused else None,
         'tests_run': result.testsRun,
         'failures': len(result.failures), 'errors': len(result.errors),
         'failure_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.failures],

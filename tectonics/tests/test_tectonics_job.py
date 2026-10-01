@@ -2,7 +2,7 @@
 
 SPDX-License-Identifier: AGPL-3.0-only
 """
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -337,6 +337,200 @@ class ManagedJobTests(unittest.TestCase):
         self.assertEqual(result['error'], dict(code='MISSING_INPUT',
             message='A required local job file or directory is missing.'))
         self.assertNotIn(str(self.root), json.dumps(result))
+
+
+class StagedSubmissionTests(unittest.TestCase):
+    """A new job becomes visible complete, and a poll landing at that moment cannot wedge its ID (review infra-code-2).
+    Control files stay canonical and within their own read limit (infra-code-3)."""
+
+    setUp, assert_job_error = ManagedJobTests.setUp, ManagedJobTests.assert_job_error
+    complete, submit = ManagedJobTests.complete, ManagedJobTests.submit
+
+    def racing(self, poll):
+        """Replace jobs._lock so ``poll(path)`` first takes the job's worker lock the moment the submitter asks."""
+        real, polled = jobs._lock, []
+
+        def lock(path):
+            if path.name == 'worker.lock' and not polled:
+                polled.append(path)
+                poll(path)
+            return real(path)
+        return patch.object(jobs, '_lock', side_effect=lock)
+
+    def test_a_poll_at_publication_cannot_wedge_the_job_id(self):
+        directory, seen, held, release = self.root / self.job_id, [], threading.Event(), threading.Event()
+
+        def status_poll():
+            # What `tectonics_job.py status` does for an inactive job, holding the lock a little longer.
+            with jobs._lock(directory / 'worker.lock'):
+                try:
+                    seen.append(jobs._state(directory)['state'])
+                except Exception as exc:
+                    seen.append(type(exc).__name__)
+                held.set()
+                release.wait(5)
+
+        def start(_path):
+            poller = threading.Thread(target=status_poll, daemon=True)
+            poller.start()
+            self.addCleanup(poller.join, 5)
+            self.addCleanup(release.set)             # runs first: never leave the lock held after a failure
+            self.assertTrue(held.wait(5))
+            threading.Timer(.2, release.set).start()
+
+        with self.racing(start):
+            first = jobs.run(self.root, self.job_id, executor=self.complete)['job']
+        self.assertEqual(seen, ['preparing'])        # the poll found a complete job, never half of one
+        self.assertEqual(first['state'], 'completed')
+        self.assertEqual(jobs.run(self.root, self.job_id, executor=Mock())['job']['state'], 'completed')
+        self.assertEqual(jobs.status(self.root, self.job_id)['job']['state'], 'completed')
+        self.assertEqual(jobs.run(self.root, self.job_id, resume=True, executor=Mock())['job']['state'], 'completed')
+
+    def test_a_lock_held_past_the_claim_refuses_busy_but_leaves_a_resumable_job(self):
+        holder = ExitStack()
+        self.addCleanup(holder.close)
+        executor = Mock()
+        with self.racing(lambda path: holder.enter_context(jobs._lock(path))), \
+                patch.object(jobs.time, 'sleep') as sleep:
+            self.assert_job_error('RUN_BUSY', jobs.run, self.root, self.job_id, executor=executor)
+        executor.assert_not_called()
+        holder.close()
+        current = jobs.status(self.root, self.job_id)['job']
+        # The refused submitter records the job as interrupted and never started (not a worker that exited).
+        self.assertEqual((current['state'], current['phase'], current['attempt']), ('interrupted', 'submitted', 1))
+        self.assertTrue(current['capabilities']['resume'])
+        resumed = jobs.run(self.root, self.job_id, resume=True, executor=self.complete)['job']
+        self.assertEqual((resumed['state'], resumed['attempt']), ('completed', 2))
+        self.assertEqual(sleep.call_count, jobs.CLAIM_RETRIES - 1)
+
+    def test_status_and_cancel_before_the_claim_see_a_submitted_job_and_the_cancel_is_kept(self):
+        # Verifier finding: between publication and the worker's claim, polls saw 'interrupted' (resumable) and a
+        # cancel found the lock free and was dropped. The job is reported as submitted and the request is kept.
+        directory, seen, rename = self.root / self.job_id, [], jobs.os.rename
+
+        def published(source, target, *args, **kwargs):
+            rename(source, target, *args, **kwargs)
+            if Path(target) == directory and not seen:
+                seen.append(jobs.status(self.root, self.job_id)['job'])
+                seen.append(jobs.cancel(self.root, self.job_id)['job'])
+
+        def honours_cancel(run, *, cells, resume, cancelled, progress):
+            run.mkdir(exist_ok=True)
+            return dict(status='cancelled', completed_outputs=0) if cancelled() else self.complete(
+                run, cells=cells, resume=resume, cancelled=cancelled, progress=progress)
+
+        with patch.object(jobs.os, 'rename', side_effect=published):
+            answer = jobs.run(self.root, self.job_id, executor=honours_cancel)['job']
+        waiting, cancelling = seen
+        self.assertEqual((waiting['state'], waiting['phase'], waiting['worker_active']), ('preparing', 'submitted', False))
+        self.assertEqual(waiting['capabilities'], dict(cancel=True, resume=False, inspect=False))
+        self.assertEqual((cancelling['state'], cancelling['cancellation_requested']), ('cancelling', True))
+        self.assertEqual((answer['state'], answer['attempt'], answer['phase']), ('cancelled', 1, 'cancelled'))
+        resumed = jobs.run(self.root, self.job_id, resume=True, executor=self.complete)['job']
+        self.assertEqual((resumed['state'], resumed['attempt']), ('completed', 2))
+
+    def test_abandoned_submitted_status_exposes_resume_without_rewriting_it(self):
+        # Exact on-disk state after a hard exit between directory publication and worker claim.
+        directory = self.root / self.job_id
+        directory.mkdir()
+        jobs._atomic(directory / 'request.json', dict(schema=jobs.REQUEST_SCHEMA, job_id=self.job_id,
+            case_id=jobs.CASE, cells=5, sources=jobs._sources(), execution_id=jobs._runtime()))
+        saved = dict(jobs._new_state(self.job_id, 1), phase=jobs.SUBMITTED)
+        jobs._atomic(directory / 'status.json', saved)
+        current = jobs.status(self.root, self.job_id)['job']
+        self.assertEqual((current['state'], current['phase'], current['worker_active']),
+                         ('interrupted', 'submitted', False))
+        self.assertTrue(current['capabilities']['resume'])
+        self.assertFalse(current['capabilities']['cancel'])
+        self.assertEqual(jobs._state(directory), saved)
+        resumed = jobs.run(self.root, self.job_id, resume=True, executor=self.complete)['job']
+        self.assertEqual((resumed['state'], resumed['attempt']), ('completed', 2))
+
+    def test_a_poll_that_locks_a_new_lock_file_before_its_byte_is_written_cannot_fail_submission(self):
+        # Verifier finding: Windows byte locks are mandatory, so a poll locking a just-created, still empty
+        # worker.lock made the creator's one-byte write raise a raw PermissionError out of run().
+        real_open, fired, holder = Path.open, [], ExitStack()
+        self.addCleanup(holder.close)
+
+        def racing_open(path, mode='r', *args, **kwargs):
+            stream = real_open(path, mode, *args, **kwargs)
+            if mode == 'xb' and path.name.endswith('.lock') and path.name != 'active.lock' and not fired:
+                fired.append(path)
+                holder.enter_context(jobs._lock(path))      # a second handle locks byte 0 before the flush
+            return stream
+
+        lock = self.root / 'probe.lock'
+        with patch.object(Path, 'open', racing_open):
+            self.assert_job_error('RUN_BUSY', lambda: jobs._lock(lock).__enter__())
+        holder.close()
+        with jobs._lock(lock):
+            self.assertLessEqual(lock.stat().st_size, 1)
+        fired.clear()
+        held, release = threading.Event(), threading.Event()
+
+        def poll(path):
+            with jobs._lock(path):
+                held.set()
+                release.wait(5)
+
+        def threaded_open(path, mode='r', *args, **kwargs):
+            stream = real_open(path, mode, *args, **kwargs)
+            if mode == 'xb' and path.name == 'worker.lock' and not fired:
+                fired.append(path)
+                poller = threading.Thread(target=poll, args=(path,), daemon=True)
+                poller.start()
+                self.addCleanup(poller.join, 5)
+                self.addCleanup(release.set)
+                self.assertTrue(held.wait(5))
+                threading.Timer(.1, release.set).start()
+            return stream
+
+        with patch.object(Path, 'open', threaded_open):
+            answer = jobs.run(self.root, self.job_id, executor=self.complete)['job']
+        self.assertEqual((answer['state'], answer['attempt']), ('completed', 1))
+        self.assertEqual([path.name for path in fired], ['worker.lock'])
+
+    def test_a_failure_while_staging_leaves_no_job_and_no_staging_folder(self):
+        real_fsync, calls, executor = jobs.os.fsync, [], Mock()
+
+        def fsync(descriptor):
+            calls.append(descriptor)
+            if len(calls) == 2:          # the second control file of the new job
+                raise OSError(5, 'injected write failure')
+            return real_fsync(descriptor)
+
+        with patch.object(jobs.os, 'fsync', side_effect=fsync):
+            with self.assertRaises(OSError):
+                jobs.run(self.root, self.job_id, executor=executor)
+        self.assertEqual(sorted(path.name for path in self.root.iterdir()), ['active.lock'])
+        with patch.object(jobs.reader, 'WINDOWS', True), patch.object(jobs.time, 'sleep'), \
+                patch.object(jobs.os, 'rename', side_effect=PermissionError(13, 'Access is denied')) as rename:
+            with self.assertRaises(PermissionError):
+                jobs.run(self.root, self.job_id, executor=executor)
+        self.assertEqual(rename.call_count, jobs.reader.REPLACE_RETRIES)
+        self.assertEqual(sorted(path.name for path in self.root.iterdir()), ['active.lock'])
+        executor.assert_not_called()
+        # A hard crash can leave a dot-named staging folder: never read, never counted, never deleted automatically.
+        leftover = jobs._staging(self.root / self.job_id, '0' * jobs.STAGING_HEX)
+        leftover.mkdir()
+        (leftover / 'request.json').write_bytes(b'{}')
+        with patch.object(jobs, 'MAX_JOBS', 1):
+            self.submit()
+        self.assertEqual((leftover / 'request.json').read_bytes(), b'{}')
+
+    def test_control_files_are_compact_canonical_and_refused_before_exceeding_the_read_limit(self):
+        path = self.root / 'status.json'
+        jobs._atomic(path, {'b': [1.5, 'x', None], 'a': 'é'})
+        self.assertEqual(path.read_bytes(), b'{"a":"\\u00e9","b":[1.5,"x",null]}\n')
+        largest = {'x': 'y' * (65536 - len(b'{"x":""}\n'))}
+        jobs._atomic(path, largest)
+        self.assertEqual(path.stat().st_size, 65536)
+        self.assertEqual(jobs._json(path), largest)
+        with patch.object(Path, 'open', side_effect=AssertionError('no temporary may be created')):
+            error = self.assert_job_error('OUTPUT_LIMIT', jobs._atomic, path, {'x': largest['x'] + 'y'})
+        self.assertNotIn(str(self.root), str(error))
+        self.assertEqual(jobs._json(path), largest)
+        self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['status.json'])
 
 
 

@@ -343,9 +343,18 @@ def _manifest(archive):
     return manifest, entries
 
 
+@contextmanager
+def _archive_errors():
+    """Translate container-parser failures, not filesystem or environment failures."""
+    try:
+        yield
+    except (zipfile.BadZipFile, EOFError, NotImplementedError, UnicodeDecodeError):
+        _fail('INVALID_BUNDLE')
+
+
 def _read_into(raw_path, staged):
     _guard()
-    with _open(raw_path, MAX_ARCHIVE) as handle:
+    with _open(raw_path, MAX_ARCHIVE) as handle, _archive_errors():
         # Bound the central-directory allocation before ZipFile constructs its
         # per-member Python objects. CPython's own bounded EOCD reader supports
         # normal/ZIP64 records; the allowed entry/byte counts remain small here.

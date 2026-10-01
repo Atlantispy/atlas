@@ -277,6 +277,17 @@ class WorldSessionTests(unittest.TestCase):
         structure_generate.assert_not_called()
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_title_error_describes_the_existing_c0_rule(self):
+        answer, code = self.call('generate', '--file', str(self.target), body=self.body(title='line\nbreak'))
+        self.assertEqual((code, answer['error']['code']), (2, 'INVALID_TITLE'))
+        self.assertIn('C0 control characters (U+0000-U+001F)', answer['error']['message'])
+        # DEL, C1 and zero-width characters remain accepted by the title rule: no policy expansion.
+        with mock.patch.object(session, 'resolve_request', side_effect=session.ContractError('SOURCE_MISMATCH', 'stop')):
+            for title in ('\x7f', '\x85x', '\u200b'):
+                with self.subTest(title=repr(title)):
+                    self.assert_error(self.call('generate', '--file', str(self.target), body=self.body(title=title)),
+                                      'SOURCE_MISMATCH')
+
     def test_existing_and_unsafe_destinations_refuse_before_native_work(self):
         self.target.write_bytes(b'preserve existing project bytes')
         with mock.patch.object(session, 'generate_layout_candidate') as generate, \

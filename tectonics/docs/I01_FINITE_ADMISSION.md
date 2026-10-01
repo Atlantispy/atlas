@@ -253,18 +253,20 @@ result     = admit(envelope, base, thermal, law, drive, later_state,
   `restored()` does not check which code produced the history, so admitting a restored state
   does not depend on it. The issued record itself stays process-local.
 - **Where restoration is tested.** The frozen controls of section 8 run this tool's own
-  retained evolution in memory and do not exercise `restored()`: a restoration control would
-  need an I02 ledger store and common-state root built by the I02 test fixtures, which this
-  tool does not bind. `restored()` is exercised instead by `tests/test_i02_persistence.py`
-  (admission of restored commits, the binding of every module it executes, and the
-  trusted-store boundary). A receipt of this tool therefore binds the restoration sources
-  without running them in a control; adding a bounded restoration control, or binding that
-  test file, is a decision for the next capture.
+  retained evolution in memory and do not exercise `restored()`. The bound
+  `tests/test_i01_finite_admission.py` (`RestorationTests`) does: it commits four accepted
+  steps of the bound I02 fixture column, reopens the ledger, and checks the restored clock
+  and stretch against in-memory evolution. `prepare()` and `admit()` must use that clock;
+  a common state, fingerprint, another evolution's history or an edited copy is refused.
+  The tool also binds `tests/i02_workflow_fixtures.py` and `integration_clock.py`, used by
+  that test. `tests/test_i02_persistence.py` retains wider source-binding and trusted-store
+  boundary checks. The receipt binds this regression; its five controls remain distinct.
 - **What restoration executes, and what is bound.** `restored()` executes the package
   modules `integration_ledger`, `integration_state`, `storage`, `_validation`, `materials`,
   `resources` and `timebase`, and `w08_inventory` with `constitutive` when stocks are
   attached; the `Ledger.open` or `Ledger.create` it relies on also executes `mesh`. These
-  ten are the tool's `RESTORATION` sources: all are bound and all are import-checked (an
+  ten, plus `integration_clock` used by the bound restoration regression, are the tool's
+  eleven `RESTORATION` sources: all are bound and all are import-checked (an
   evidence run refuses before any control if an imported module is not its bound file).
   The retained package owners it executes as well (`integration_evolution` and the
   `_integration_*` modules) were already bound and import-checked with the retained tools.

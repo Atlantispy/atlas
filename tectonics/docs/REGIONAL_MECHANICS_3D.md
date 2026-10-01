@@ -177,20 +177,39 @@ limits, not a promise every such grid fits the selected memory budget.
 In practice the assembly reservation alone is 8 MiB plus 420,000 bytes per cell
 plus 3,000 bytes per velocity unknown (three per Q2 node) and per pressure node,
 before the separate factor allowance. For cubes that is about 176 MiB at 7x7x7
-and about 257 MiB at 8x8x8. The default GMRES route then reserves an
-incomplete-factor allowance of 160 bytes per nonzero of the free velocity block
-plus 1,024 bytes per free velocity unknown, so it grows as fewer velocity
-components are prescribed. At 6x6x6 the factor allowance is about 85 MiB with all
-faces velocity-prescribed, 131 MiB with free-slip faces and 151 MiB with only the
-base velocity-prescribed (combined about 200, 246 and 265 MiB); at 7x7x7 even the
-all-velocity case needs about 325 MiB. The default 256 MiB budget therefore
-refuses every 7x7x7 cube and admits 6x6x6 only for velocity-dominated boundaries
-(measured 29 September 2026; an earlier 28 September estimate of 7x7x7 counted
-assembly only). The 24x24x24 interface limit would need about 6.9 GB (6.4 GiB)
+and about 257 MiB at 8x8x8. GMRES then reserves an incomplete-factor allowance
+of **192 bytes per nonzero** of the free velocity block plus 1,024 bytes per free
+velocity unknown. The 192-byte term counts SuperLU's initial working arrays at
+the unchanged ILU fill factor of eight, not only the final sparse factor. Direct
+LU reserves `max(720*nnz(K), 16*N*N) + 1024*N` bytes: its initial fill estimate
+of 30 or the dense fill bound, plus per-unknown work. The realised check uses
+SuperLU's own stored-entry count (`12*factor.nnz + 8*(N+1)`), without accessing
+`factor.L/U`, which would create CSC copies retained for the plan's lifetime.
+
+At 6x6x6 the combined GMRES reservation is about 216 MiB with all faces
+velocity-prescribed, 271 MiB with free-slip faces and 294 MiB with only the base
+velocity-prescribed. The unchanged default **256 MiB** budget therefore refuses
+every 7x7x7 cube and those latter two 6x6x6 examples. Admission depends on the
+actual boundary components, not a universal six-cell cap. Direct 4x4x4 needs
+about 137 MiB with all faces velocity-prescribed and 236 MiB with free-slip sides
+and base under an open top; every direct 5x5x5 box is refused at the default
+budget (even the closed box needs about 301 MiB). Small direct-oracle tests that
+need these larger reservations use an explicit 512 MiB budget, not a raised
+production default. The 24x24x24 interface limit would need about 6.9 GB (6.4 GiB)
 for assembly alone. Larger grids need an explicitly larger budget and machine;
 nothing is subdivided or coarsened automatically. The connected evolution
 fixture is 3x3x3. These figures describe the assembled `gmres`/`direct` routes;
 the multigrid candidate's admission is described in its own section.
+
+This corrects the assembled accounting on 1 October 2026; the earlier multigrid
+work avoided the assembled factors but did not repair their allowances. Existing
+Windows/CPython 3.12.14, SciPy 1.17.1 scratch measurements found the old direct
+open-top 5x5x5 plan accounted for 179.5 MiB while reaching about 311 MiB of
+solver-attributable peak private commit. The correction was checked in the
+recorded proposal on the three benchmark cases and additional boundary/grid
+shapes; for example, GMRES lithosphere 12x12x12 accounted for about 2,243 MiB
+against 1,769 MiB measured after removing the retained copies. These are reused
+runtime-specific measurements, not a new campaign or an OS memory guarantee.
 Cancellation, loaded-source identity, single-owner use and closure are checked.
 Only the latest immutable result and one finite-mode response are retained;
 there is no growing history cache. Caller-retained snapshots remain caller storage.
@@ -452,6 +471,11 @@ solver equations or the retained performance measurements.
 - The assembled route's accounting was below its measured peak at 12 cells:
   2,017 MB against 2,209 MB.
 
+These are the original 30 September comparisons, before the assembled-factor
+accounting correction described under [safe reuse](#solving-and-safe-reuse).
+The historical timings and memory observations have not been relabelled as a
+new measurement of the corrected assembled route.
+
 The 24-cell case needs about 16.4 GiB of assembled reservation, so the
 reference was not run there.
 
@@ -517,6 +541,11 @@ ms in the measured runs, against preparations of 0.2-10 s.
    multigrid fits the budget there, multigrid is used and the record says it is
    outside its shown range. Its failure mode is a visible refusal
    (`3D FGMRES-DR did not converge`), never a wrong answer.
+
+The corrected assembled-factor allowance can remove GMRES from the admitted set
+at an unchanged budget; it does not change this multigrid-first rule or any
+numerical tolerance. Predictions and real GMRES reservations use the same
+allowance function. Previously saved source identities are not silently rebound.
 
 The plan definition records `requested_method: "auto"`, the resolved `method`
 and a `solver_selection` record, so all three enter `plan_id` and every

@@ -383,6 +383,31 @@ def _restore_history_result(arrays, metadata, *, budget=None, cancel=None):
         return out
 
 
+def history_restore_bytes(metadata):
+    """Largest reservation restore_history_result makes for this envelope, child codecs included.
+
+    Computed from the same checked catalogue and resource record a restore verifies, so an owner can admit a
+    later restoration before publishing: the per-array finite check, then the codec work together with the
+    largest child reservation (one WKB polygon at a time, or the regional snapshot restoration). Byte admission,
+    not measured RSS; the caller adds what it holds itself.
+    """
+    try:
+        specs, costs = metadata['arrays'], metadata['resources']
+        check = max(math.prod(s['shape'])+4096 for s in specs.values())
+        if metadata['kind'] == 'underthrust':
+            child = max((32*s['nbytes']+8192 for k, s in specs.items() if k.startswith('geometry_')), default=0)
+        elif metadata['regional'] is not None:
+            child = metadata['regional']['resources']['restore_work_bytes']
+        else:
+            child = 0
+        total = max(check, costs['work_bytes']+child)
+    except (KeyError, TypeError, ValueError, AttributeError) as exc:
+        raise TectonicsError('tectonic history codec malformed envelope') from exc
+    if type(total) is not int or total < 0:
+        _fail('invalid restoration resource record')
+    return total
+
+
 def pack_history_result(out, *, budget=None, cancel=None):
     """Pack one exact supported result with bounded immutable arrays/metadata."""
     try:

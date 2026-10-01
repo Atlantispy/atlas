@@ -4,9 +4,11 @@ These supplied histories retain each producer's physical meaning. Regional
 mechanics remains quasi-static; W04 outputs share one absolute reference.
 """
 from concurrent.futures import CancelledError
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import replace
+import json
 from pathlib import Path
+import sqlite3
 from tempfile import TemporaryDirectory
 from threading import Event
 import unittest
@@ -121,6 +123,16 @@ class InterruptingStore(ArrayStore):
 
 
 class TectonicHistoryTests(unittest.TestCase):
+    def damage_displacement(self,store,key,*,other_connection=True):
+        row = store._db.execute('SELECT body,digest FROM snapshots WHERE id=?',(key,)).fetchone()
+        chunk = json.loads(row[0])['arrays']['displacement']['chunks'][0]
+        if other_connection:
+            with closing(sqlite3.connect(store.path)) as other, other:
+                other.execute('UPDATE chunks SET payload=? WHERE id=?',(b'corrupt',chunk))
+        else:
+            store._db.execute('UPDATE chunks SET payload=? WHERE id=?',(b'corrupt',chunk))
+        self.assertEqual(store._db.execute('SELECT body,digest FROM snapshots WHERE id=?',(key,)).fetchone(),row)
+
     def equal_result(self, actual, expected):
         self.assertIs(type(actual), type(expected))
         self.assertEqual(actual.descriptor(), expected.descriptor())
@@ -269,6 +281,109 @@ class TectonicHistoryTests(unittest.TestCase):
                         self.assertEqual(resumed.statistics()['restored_outputs'], 0)
             self.assertEqual(owner.reserved_bytes, 0)
 
+    def test_live_reuse_requires_an_unchanged_store_before_continuation(self):
+        for other_connection in (False,True):
+            owner = WorkBudget(CAP)
+            with self.subTest(other_connection=other_connection), TemporaryDirectory() as tmp:
+                with open_store(Path(tmp)/'live.db',owner) as store:
+                    with make_history_fixture('underthrust',budget=owner,store=store) as history:
+                        latest = history.run(through=1)
+                        with patch.object(store,'get',side_effect=AssertionError('unchanged output decoded')):
+                            self.assertIs(history.run(through=1),latest)
+                        token = store.change_token()
+                        self.damage_displacement(store,latest.checkpoint_id,other_connection=other_connection)
+                        self.assertNotEqual(store.change_token(),token)
+                        for end in (1,2):
+                            with self.assertRaisesRegex(StoreError,'checksum'):
+                                history.run(through=end)
+                        self.assertIs(history._current,latest)
+                        self.assertEqual(history.statistics()['computed_outputs'],2)
+                        self.assertFalse(store.contains(history.checkpoint_id(2)))
+                        with self.assertRaisesRegex(StoreError,'checksum'):
+                            history.load(1)
+            self.assertEqual(owner.reserved_bytes,0)
+
+    def test_publication_token_is_not_refreshed_after_an_intervening_writer(self):
+        for through in (1,2):
+            owner = WorkBudget(CAP)
+            with self.subTest(through=through), TemporaryDirectory() as tmp:
+                with open_store(Path(tmp)/'publish-race.db',owner) as store:
+                    with make_history_fixture('underthrust',budget=owner,store=store) as history:
+                        history.run(through=0)
+                        real_put = store.put
+                        def publish_then_damage(key,*args,**kwargs):
+                            result = real_put(key,*args,**kwargs)
+                            self.damage_displacement(store,key)
+                            return result
+                        with patch.object(store,'put',side_effect=publish_then_damage):
+                            if through == 1:
+                                self.assertEqual(history.run(through=1).index,1)
+                            else:
+                                with self.assertRaisesRegex(TectonicsError,'store changed during verification'):
+                                    history.run(through=2)
+                        # The live output is valid, but the database changed after its commit and before adoption.
+                        self.assertEqual(history._current.index,1)
+                        self.assertNotEqual(history._current_store_token,store.change_token())
+                        for end in (1,2):
+                            with self.assertRaisesRegex(StoreError,'checksum'):
+                                history.run(through=end)
+                        self.assertFalse(store.contains(history.checkpoint_id(2)))
+            self.assertEqual(owner.reserved_bytes,0)
+
+    def test_restore_token_change_refuses_before_adopting_the_decoded_output(self):
+        owner = WorkBudget(CAP)
+        with TemporaryDirectory() as tmp, open_store(Path(tmp)/'restore-race.db',owner) as store:
+            with make_history_fixture('underthrust',budget=owner,store=store) as first:
+                key = first.run(through=1).checkpoint_id
+            with make_history_fixture('underthrust',budget=owner,store=store) as history:
+                real_get = store.get
+                def read_then_damage(*args,**kwargs):
+                    arrays = real_get(*args,**kwargs)
+                    self.damage_displacement(store,key)
+                    return arrays
+                with patch.object(store,'get',side_effect=read_then_damage):
+                    with self.assertRaisesRegex(TectonicsError,'store changed during verification'):
+                        history.load(1)
+                self.assertIsNone(history._current)
+                self.assertIsNone(history._current_store_token)
+                with self.assertRaisesRegex(StoreError,'checksum'):
+                    history.run(through=2)
+                self.assertFalse(store.contains(history.checkpoint_id(2)))
+        self.assertEqual(owner.reserved_bytes,0)
+
+    def test_predecessor_change_during_compute_or_put_preparation_refuses_publication(self):
+        for phase,other_connection in (('compute',False),('compute',True),('put',True)):
+            owner = WorkBudget(CAP)
+            with self.subTest(phase=phase,other_connection=other_connection), TemporaryDirectory() as tmp:
+                with open_store(Path(tmp)/'continuation-race.db',owner) as store:
+                    with make_history_fixture('underthrust',budget=owner,store=store) as history:
+                        latest = history.run(through=1)
+                        real_compute,real_put = history._compute,store.put
+                        def compute_then_damage(*args,**kwargs):
+                            result = real_compute(*args,**kwargs)
+                            self.damage_displacement(store,latest.checkpoint_id,other_connection=other_connection)
+                            return result
+                        def damage_then_put(*args,**kwargs):
+                            self.damage_displacement(store,latest.checkpoint_id)
+                            return real_put(*args,**kwargs)
+                        # Fault injection is instance-local: do not change the loaded implementation identity.
+                        if phase == 'compute':
+                            object.__setattr__(history,'_compute',compute_then_damage)
+                        try:
+                            with patch.object(store,'put',side_effect=damage_then_put if phase == 'put' else real_put) as put:
+                                with self.assertRaisesRegex(TectonicsError,'store changed during verification'):
+                                    history.run(through=2)
+                                self.assertEqual(put.call_count,1 if phase == 'put' else 0)
+                        finally:
+                            if phase == 'compute':
+                                object.__delattr__(history,'_compute')
+                        self.assertIs(history._current,latest)
+                        self.assertEqual(history.statistics()['computed_outputs'],2)
+                        self.assertFalse(store.contains(history.checkpoint_id(2)))
+                        with self.assertRaisesRegex(StoreError,'checksum'):
+                            history.load(1)
+            self.assertEqual(owner.reserved_bytes,0)
+
     def test_cancelled_or_failed_publication_preserves_last_accepted_output(self):
         owner = WorkBudget(CAP)
         with TemporaryDirectory() as tmp, open_store(Path(tmp)/'atomic.db', owner, InterruptingStore) as store:
@@ -331,6 +446,67 @@ class TectonicHistoryTests(unittest.TestCase):
                         self.assertEqual(owner.reserved_bytes, retained)
             self.assertEqual(owner.reserved_bytes, 4096)
         self.assertEqual(owner.reserved_bytes, 0)
+
+    def test_published_checkpoint_restores_under_the_budget_that_published_it(self):
+        # Every reservation is deterministic, so a run's peak is exactly the smallest budget that admits it.
+        def peak(action, route='underthrust'):
+            owner = WorkBudget(CAP)
+            with TemporaryDirectory() as tmp, open_store(Path(tmp)/'peak.db', owner) as store:
+                with make_history_fixture(route, budget=owner, store=store) as history:
+                    action(history)
+            return owner.peak_reserved_bytes
+        first, both = peak(lambda h: h.run(through=0)), peak(lambda h: h.run(through=1))
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp)/'history.db'
+            owner = WorkBudget(first)
+            with open_store(path, owner) as store:
+                with make_history_fixture('underthrust', budget=owner, store=store) as history:
+                    published = history.run(through=0)
+                with make_history_fixture('underthrust', budget=owner, store=store) as fresh:
+                    self.equal_output(fresh.load(0), published)
+            owner = WorkBudget(both)
+            with open_store(path, owner) as store:
+                with make_history_fixture('underthrust', budget=owner, store=store) as resumed:
+                    self.assertEqual(resumed.run(through=1).index, 1)
+                    self.assertEqual(resumed.statistics()['restored_outputs'], 1)
+            owner = WorkBudget(both)
+            with open_store(Path(tmp)/'same.db', owner) as store:
+                with make_history_fixture('underthrust', budget=owner, store=store) as history:
+                    history.run(through=0)
+                    self.assertEqual(history.run(through=1).index, 1)
+                    # The stored latest is the live output: reused, not decoded again.
+                    self.assertEqual(history.statistics()['restored_outputs'], 0)
+                    self.assertEqual(history.statistics()['latest_hits'], 1)
+        # One byte less: the restoration admission refuses before the store is written.
+        owner = WorkBudget(first-1)
+        with TemporaryDirectory() as tmp, open_store(Path(tmp)/'short.db', owner) as store:
+            with make_history_fixture('underthrust', budget=owner, store=store) as history:
+                with patch.object(store, 'put', wraps=store.put) as put:
+                    with self.assertRaises(MemoryLimitError):
+                        history.run(through=0)
+                    put.assert_not_called()
+                self.assertFalse(store.contains(history.checkpoint_id(0)))
+                self.assertIsNone(history.load(0))
+        self.assertEqual(owner.reserved_bytes, 0)
+
+    def test_restore_admission_is_the_actual_restoration_peak(self):
+        # The envelope admitted before publication must match what a later restore reserves on every route;
+        # a codec or storage change that alters either side fails here instead of reopening the window.
+        for route in ROUTES:
+            owner = WorkBudget(CAP)
+            with self.subTest(route=route), TemporaryDirectory() as tmp:
+                with open_store(Path(tmp)/'envelope.db', owner) as store:
+                    with make_history_fixture(route, budget=owner, store=store) as history:
+                        history.run(through=0)
+                    with make_history_fixture(route, budget=owner, store=store) as fresh:
+                        key = fresh.checkpoint_id(0)
+                        envelope = fresh._restore_bytes(0, store.get(key), store.metadata(key))
+                        before = fresh._resource.statistics()
+                        self.assertEqual(before['peak_reserved_bytes'], before['reserved_bytes'])
+                        fresh.load(0)
+                        after = fresh._resource.statistics()
+                        self.assertEqual(after['peak_reserved_bytes']-before['reserved_bytes'], envelope)
+            self.assertEqual(owner.reserved_bytes, 0)
 
     def test_nonstored_rewind_refuses_and_latest_hit_still_verifies_source(self):
         with make_history_fixture('underthrust') as history:

@@ -100,9 +100,23 @@ def _assembly_bytes(nc, nv, np_):
     return 8*1024**2+420000*nc+3000*(3*nv+np_)
 
 
+# SuperLU commits its L/U working arrays before factoring: two float64 value and
+# two int32 index arrays of fill*nnz entries each, 24*fill bytes per input entry
+# whatever the realised fill. The ILU fill is the fill_factor passed to spilu;
+# the complete LU uses SuperLU's initial estimate (measured 720-724 bytes per
+# entry of K after warm-up: fill 30). The per-unknown term covers permutation,
+# supernode and work arrays; these remain accounting bounds, not process RSS.
+_ILU_FILL, _LU_FILL = 8, 30
+
+
 def _ilu_allowance(nnz, n):
     """Admitted bytes for the incomplete factor of the free velocity block (checked after)."""
-    return 16*10*nnz+1024*n
+    return 24*_ILU_FILL*nnz+1024*n
+
+
+def _lu_allowance(nnz, n):
+    """Complete factor's initial working storage or dense fill bound, plus O(n) work."""
+    return max(24*_LU_FILL*nnz, 16*n*n)+1024*n
 
 
 def _local_tokens(module):
@@ -332,15 +346,18 @@ class PreparedRegionalStokes3D:
                 else:
                     self._K = sparse.bmat([[self._Af, self._Bf.T], [self._Bf, None]], format='csc')
                 if method == 'direct':
-                    allowance = 16*self._K.shape[0]**2+1024*self._K.shape[0]
+                    allowance = _lu_allowance(self._K.nnz, self._K.shape[0])
                 else:
                     allowance = _ilu_allowance(self._Af.nnz, self._Af.shape[0])
                 self._retain(allowance, 'regional3d-factor')
                 with _native_lease():
                     _cancel(cancel)
                     self._factor = (splu(self._K, permc_spec='COLAMD') if method == 'direct'
-                                    else spilu(self._Af, drop_tol=1e-4, fill_factor=8., permc_spec='COLAMD'))
-                if _sparse_bytes(self._factor.L)+_sparse_bytes(self._factor.U) > allowance:
+                                    else spilu(self._Af, drop_tol=1e-4, fill_factor=float(_ILU_FILL),
+                                               permc_spec='COLAMD'))
+                # Reading L/U builds CSC copies retained by SciPy. Use SuperLU's
+                # stored-entry count for the same realised-factor check instead.
+                if 12*self._factor.nnz+8*(self._factor.shape[0]+1) > allowance:
                     raise MemoryLimitError('realised factor exceeded admitted factor allowance')
                 self._P = LinearOperator(self._K.shape, matvec=self._precondition, dtype=float) if method == 'gmres' else None
             self._stats['factorizations'] = 1

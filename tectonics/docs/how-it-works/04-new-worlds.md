@@ -254,10 +254,30 @@ geological/motion records. It restores these values rather than rerunning the
 seed. Regional jobs save immutable requests, initial data and committed output
 prefixes so a supported interruption can resume without recalculating completed
 outputs. An incomplete preparation is not treated as a restartable checkpoint.
+A job that stopped before its preparation began (cancelled that early, or its
+worker could not start, or input loading failed) has sampled nothing, so resume
+starts its first preparation from the frozen input. Its never-started marker is
+retained through the worker claim and loading; released worker/root locks expose
+an abandoned submission as interrupted. Immediately before preparation the
+worker durably removes that marker. A stop after this conservative boundary
+requires the saved initial map and prefix; it never silently resamples them.
+Jobs are published complete: the frozen input, request and first status are staged
+and renamed into place together, and a failed submission leaves no half-created
+job. Before creating anything, submission refuses a schedule whose complete output
+index could outgrow its own 64 KiB control file and, on Windows, a jobs folder whose
+longest job path would reach the 260-character limit (roots of up to 175 characters
+are admitted; [persistence and resources](../NEW_WORLD_EVOLUTION.md#persistence-resources-and-consumers)).
 
 A portable bundle can contain one original world and selected regional jobs.
 Already compressed world data is stored once, not recompressed for every job.
 Strict member and size checks, hashes and exclusive publication protect integrity.
+A project's ZIP directory is size-checked from its end record before it is parsed,
+and reopening a project applies the same title rule as saving it, because the
+stored hashes are self-digests rather than signatures.
+Unsupported ZIP versions, flags and invalid UTF-8 member names return structured
+project/bundle refusals before destination publication. The title rule remains
+nonblank, at most 160 characters and no C0 controls; its message now states that
+range explicitly rather than implying a broader Unicode rule.
 Hashes identify bytes; they are not a digital signature or scientific approval.
 
 Read-only access and continuation have different admission rules. An otherwise

@@ -154,9 +154,10 @@ Replace the former fairing integration with this order:
 **Full integration scope now governs the sequence:**
 [INTEGRATION_PLAN.md](../tectonics/docs/INTEGRATION_PLAN.md) maps W01–W12 and New
 World into I01–I12, including missing physics, all required representation transfers,
-feedback, lifecycle and end-to-end acceptance. Start with I01 model/contract closure,
-then I02 state/transactions; the five points above are only a B2 summary, not a
-complete integration plan. B3 and B4 share this evolution dependency with B2;
+feedback, lifecycle and end-to-end acceptance. Use that plan for the detailed stage
+sequence and [CURRENT_STATE.md](CURRENT_STATE.md) for the active checkpoint and
+authorised next action; the five points above are only a B2 summary, not a complete
+integration plan. B3 and B4 share this evolution dependency with B2;
 do not close them by painting independent shapes or ages.
 Retain native validity, budget/cancellation and source-drift checks. Exact seam
 removal can remain representation work, never evidence of physical generation.

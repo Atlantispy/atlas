@@ -34,7 +34,7 @@ MAX_WALL_SECONDS = 120
 MESSAGES = {
     'INVALID_ARGUMENTS': 'Use generate --file PATH or read --file PATH.',
     'INVALID_REQUEST': 'A title and valid New World request are required.',
-    'INVALID_TITLE': 'Use a nonempty title of at most 160 characters without control characters.',
+    'INVALID_TITLE': 'Use a nonempty title of at most 160 characters without C0 control characters (U+0000-U+001F).',
     'INVALID_JSON': 'The New World request contains invalid JSON.',
     'INPUT_TOO_LARGE': 'The New World request exceeds 64 KiB.',
     'INTERACTIVE_LIMIT': 'Interactive worlds support up to 1024 support cells, 256 MiB work and 120 seconds.',

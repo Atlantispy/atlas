@@ -310,6 +310,160 @@ class StorageTests(unittest.TestCase):
             conn.execute('CREATE TABLE unrelated(x)')
         with self.assertRaises(StoreError):ArrayStore(path,self.limits)
 
+    def test_publication_refuses_a_snapshot_get_could_not_load(self):
+        # Every array fits max_array_bytes (1 MiB); the 1.2 MB snapshot does not, so get() would refuse it.
+        parts={name:np.full(50000,float(i)) for i,name in enumerate('abc')}
+        with self.assertRaisesRegex(StoreError,'full read limit'):self.store.put(key('total'),parts)
+        self.assertFalse(self.store.contains(key('total')))
+        self.assertEqual(self.store.statistics()['unique_chunks'],0)
+        self.store.put(key('parent'),{'a':parts['a'],'b':parts['b']})
+        self.assertEqual(set(self.store.get(key('parent'))),{'a','b'})
+        # A referenced array counts at its declared size, like the arrays get() would load with it.
+        with self.assertRaisesRegex(StoreError,'full read limit'):
+            self.store.put(key('ref'),{'a':self.store.reference(key('parent'),'a'),'b':parts['b'],'c':parts['c']})
+        self.assertFalse(self.store.contains(key('ref')))
+        self.store.put_incremental(key('edit'),key('parent'),{'a':{0:np.ones(128)}})
+        self.assertEqual(self.store.get(key('edit'))['a'][0],1.)
+
+    def test_only_the_exact_store_schema_opens(self):
+        wanted=json.dumps({'schema':'atlas.array-store.v1','chunk_bytes':1024},sort_keys=True,separators=(',',':'))
+        # The statements every storage.py revision (0590774, ecac085, 6285d4a, 5da042b) executed.
+        genuine=("CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), body BLOB NOT NULL)",
+                 "CREATE TABLE IF NOT EXISTS chunks (id TEXT PRIMARY KEY, descriptor BLOB NOT NULL, codec TEXT NOT NULL, stored_sha TEXT NOT NULL, payload BLOB NOT NULL)",
+                 "CREATE TABLE IF NOT EXISTS snapshots (id TEXT PRIMARY KEY, body BLOB NOT NULL, digest TEXT NOT NULL)")
+        def build(name,statements):
+            path=Path(self.tmp.name)/(name+'.db')
+            with closing(sqlite3.connect(path)) as conn, conn:
+                for statement in statements:conn.execute(statement)
+                if name!='views':conn.execute('INSERT INTO settings VALUES(1,?)',(wanted.encode(),))
+            return path
+        historical=build('historical',genuine)
+        with ArrayStore(historical,self.limits) as s:
+            s.put(key('h'),{'a':np.arange(10.)});assert_array_equal(s.get(key('h'))['a'],np.arange(10.))
+        hostile=dict(
+            views=("CREATE VIEW settings AS SELECT 1 AS id, CAST('%s' AS BLOB) AS body" % wanted,
+                   "CREATE VIEW chunks AS SELECT 1 AS id, 2 AS descriptor, 3 AS codec, 4 AS stored_sha, 5 AS payload",
+                   "CREATE VIEW snapshots AS SELECT 1 AS id, 2 AS body, 3 AS digest"),
+            trigger=genuine+("CREATE TRIGGER t BEFORE INSERT ON settings BEGIN SELECT 1; END",),
+            generated=genuine[:2]+("CREATE TABLE snapshots (id TEXT PRIMARY KEY, x INTEGER, body BLOB GENERATED ALWAYS AS (zeroblob(16)) VIRTUAL, digest TEXT NOT NULL)",),
+            default=(genuine[0],"CREATE TABLE chunks (id TEXT PRIMARY KEY, descriptor BLOB NOT NULL, codec TEXT NOT NULL DEFAULT (hex(randomblob(8))), stored_sha TEXT NOT NULL, payload BLOB NOT NULL)",genuine[2]),
+            index=genuine+("CREATE INDEX extra ON chunks(codec)",))
+        for name,statements in hostile.items():
+            with self.subTest(schema=name):
+                path=build(name,statements);before=path.read_bytes()
+                with self.assertRaisesRegex(StoreError,'unrelated database'):ArrayStore(path,self.limits)
+                self.assertEqual(path.read_bytes(),before)
+
+    def test_hostile_schema_refuses_at_open_without_running_its_sql(self):
+        # Probe-style databases: recursive views and triggers would never finish, a generated column would
+        # allocate about 0.9 GB. A child process bounds the check, so a regression fails instead of hanging.
+        import os,subprocess,sys,time
+        loop="(WITH RECURSIVE r(n) AS (SELECT 0 UNION ALL SELECT n+1 FROM r) SELECT count(*) FROM r)"
+        genuine=("CREATE TABLE settings (id INTEGER PRIMARY KEY CHECK(id=1), body BLOB NOT NULL)",
+                 "CREATE TABLE chunks (id TEXT PRIMARY KEY, descriptor BLOB NOT NULL, codec TEXT NOT NULL, stored_sha TEXT NOT NULL, payload BLOB NOT NULL)",
+                 "CREATE TABLE snapshots (id TEXT PRIMARY KEY, body BLOB NOT NULL, digest TEXT NOT NULL)")
+        wanted=json.dumps({'schema':'atlas.array-store.v1','chunk_bytes':1024},sort_keys=True,separators=(',',':'))
+        files=dict(
+            views=("CREATE VIEW settings AS SELECT 1 AS id, CAST('%s' AS BLOB) AS body" % wanted,
+                   "CREATE VIEW chunks AS SELECT %s AS id, 2 AS descriptor, 3 AS codec, 4 AS stored_sha, 5 AS payload" % loop,
+                   "CREATE VIEW snapshots AS SELECT %s AS id, 1 AS body, 1 AS digest" % loop),
+            trigger=genuine+("CREATE TRIGGER t BEFORE INSERT ON settings BEGIN SELECT %s; END" % loop,),
+            generated=genuine[:2]+("CREATE TABLE snapshots (id TEXT PRIMARY KEY, x INTEGER, body BLOB GENERATED ALWAYS AS (hex(zeroblob(450000000))) VIRTUAL, digest TEXT NOT NULL)",),
+            # SQLite parses the whole schema at the first statement: about 90 bytes of memory per schema byte.
+            huge=genuine+("CREATE VIEW huge AS SELECT 1 IN (%s) AS x" % ','.join(['1234567']*120000),),
+            crowded=genuine)
+        expected=dict(views='unrelated database',trigger='unrelated database',generated='unrelated database',
+                      huge='corrupt',crowded='bounded opening work')
+        paths=[]
+        for name,statements in files.items():
+            path=Path(self.tmp.name)/(name+'-hostile.db');paths.append(str(path))
+            with closing(sqlite3.connect(path)) as conn, conn:
+                for statement in statements:conn.execute(statement)
+                if name=='crowded':      # 20,000 small views, written straight into the schema table
+                    conn.execute('PRAGMA writable_schema=ON')
+                    conn.executemany("INSERT INTO sqlite_master VALUES('view',?,?,0,?)",
+                                     (('v%d'%i,'v%d'%i,'CREATE VIEW v%d AS SELECT %d AS x'%(i,i)) for i in range(20000)))
+        code="""import sys,time
+from atlas_tectonics.storage import ArrayStore,StoreLimits,StoreError
+for path in sys.argv[1:]:
+    start=time.perf_counter()
+    try:
+        ArrayStore(path,StoreLimits(1024,1<<20,4<<20)).close();print('accepted',path)
+    except StoreError as exc:
+        print('refused %.3f %s' % (time.perf_counter()-start,exc))
+    except Exception as exc:
+        print('failed',type(exc).__name__,exc)
+    sys.stdout.flush()
+"""
+        env=dict(os.environ,PYTHONPATH=str(Path(__file__).resolve().parents[1]/'src'),PYTHONDONTWRITEBYTECODE='1')
+        try:
+            proc=subprocess.run([sys.executable,'-B','-c',code,*paths],env=env,text=True,capture_output=True,timeout=60)
+        except subprocess.TimeoutExpired:
+            self.fail('opening a hostile database did not finish')
+        self.assertEqual(proc.returncode,0,proc.stderr)
+        lines=proc.stdout.strip().splitlines()
+        self.assertEqual(len(lines),len(files),proc.stdout)
+        for name,line in zip(files,lines):
+            with self.subTest(schema=name):
+                self.assertTrue(line.startswith('refused') and expected[name] in line,line)
+                self.assertLess(float(line.split()[1]),5.)
+
+    def test_sqlite_failures_are_store_errors_and_contention_is_distinguished(self):
+        junk=Path(self.tmp.name)/'junk.db';junk.write_bytes(b'not a database'*100)
+        with self.assertRaisesRegex(StoreError,'corrupt') as caught:ArrayStore(junk,self.limits)
+        self.assertNotIn('locked',str(caught.exception))
+        self.assertIsInstance(caught.exception.__cause__,sqlite3.DatabaseError)
+        self.store.put(key('before'),{'a':np.arange(10.)})
+        real=sqlite3.connect
+        with closing(sqlite3.connect(self.path,timeout=0,isolation_level=None)) as other:
+            other.execute('BEGIN EXCLUSIVE')
+            with mock.patch.object(sqlite3,'connect',lambda *a,**k:real(*a,**dict(k,timeout=.05))):
+                with self.assertRaisesRegex(StoreError,'locked by another connection'):ArrayStore(self.path,self.limits)
+            self.store._db.execute('PRAGMA busy_timeout=50')
+            with self.assertRaisesRegex(StoreError,'locked by another connection'):
+                self.store.put(key('during'),{'b':np.arange(20.)})
+            other.execute('ROLLBACK')
+        self.store._db.execute('PRAGMA busy_timeout=5000')
+        self.store.put(key('during'),{'b':np.arange(20.)})
+        assert_array_equal(self.store.get(key('during'))['b'],np.arange(20.))
+        # A writer holding its reservation blocks publication: still reported as contention.
+        with closing(sqlite3.connect(self.path,timeout=0,isolation_level=None)) as other:
+            other.execute('BEGIN IMMEDIATE');other.execute("INSERT INTO chunks VALUES('x',x'00','raw','y',x'00')")
+            self.store._db.execute('PRAGMA busy_timeout=50')
+            with self.assertRaisesRegex(StoreError,'storage transaction failed; no snapshot published: .*locked'):
+                self.store.put(key('writer'),{'c':np.arange(30.)})
+            other.execute('ROLLBACK')
+        self.store._db.execute('PRAGMA busy_timeout=5000')
+        # A reader does not stop another connection opening an existing store: opening writes nothing.
+        with closing(sqlite3.connect(self.path,timeout=0,isolation_level=None)) as reader:
+            reader.execute('BEGIN');reader.execute('SELECT count(*) FROM chunks').fetchone()
+            with mock.patch.object(sqlite3,'connect',lambda *a,**k:real(*a,**dict(k,timeout=.05))):
+                ArrayStore(self.path,self.limits).close()
+            reader.execute('ROLLBACK')
+        # A read-only file is an access failure, not damage.
+        copy_path=Path(self.tmp.name)/'readonly.db';copy_path.write_bytes(self.path.read_bytes())
+        copy_path.chmod(stat.S_IREAD)
+        try:
+            with self.assertRaisesRegex(StoreError,r'could not be read or written \(SQLITE_READONLY'):ArrayStore(copy_path,self.limits)
+        finally:
+            copy_path.chmod(stat.S_IREAD|stat.S_IWRITE)
+
+    def test_rows_of_the_wrong_sqlite_type_refuse_as_store_errors(self):
+        # Column affinity lets a crafted genuine-schema store hold text or numbers where the store wrote blobs.
+        a=np.arange(512.)
+        for name,update in (('manifest-text',"UPDATE snapshots SET body=CAST(body AS TEXT)"),
+                            ('manifest-integer',"UPDATE snapshots SET body=7"),
+                            ('descriptor-text',"UPDATE chunks SET descriptor=CAST(descriptor AS TEXT)"),
+                            ('codec-blob',"UPDATE chunks SET codec=CAST(codec AS BLOB)")):
+            with self.subTest(update=name):
+                path=Path(self.tmp.name)/(name+'.db')
+                with ArrayStore(path,self.limits) as s:
+                    s.put(key(name),{'a':a})
+                    s._db.execute(update)
+                    with self.assertRaisesRegex(StoreError,'record types'):s.get(key(name))
+                    if name.startswith('manifest'):
+                        with self.assertRaisesRegex(StoreError,'record types'):s.metadata(key(name))
+
     def test_links_refused(self):
         link=Path(self.tmp.name)/'link.db'
         try:link.symlink_to(self.path)

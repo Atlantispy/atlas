@@ -38,7 +38,10 @@ storage contract.
   file returns `kind: initial-only`, `bundle_id: null` and no jobs.
 - Regional jobs must have a complete initial/prefix pair, even when the prefix
   has zero outputs. Cancellation during incomplete preparation is not magically
-  restartable and returns `INITIAL_INCOMPLETE`.
+  restartable and returns `INITIAL_INCOMPLETE`. A job stopped before its
+  preparation began (status phase `submitted`, R4 repair) is started by the job
+  tool's resume; until then it has no checkpoint to save and the bundle refuses it
+  with `INITIAL_INCOMPLETE` too.
 - Busy jobs return `RUN_BUSY`. A stale active state or unreconciled status counts
   returns `UNSTABLE_JOB` or an integrity refusal: settle/recover the original job
   first. Stable completed, partial, cancelled, failed or interrupted checkpoints
@@ -65,6 +68,36 @@ storage contract.
   compressed-member refusal, bounded central-directory parsing and manual member
   copying prevent archive-path extraction and unbounded decompression. No
   `extractall` is used. Native codecs still enforce their own limits.
+- The central-directory bound is checked from the ZIP end record before
+  `zipfile.ZipFile` reads or parses the directory. The outer bundle admits at most
+  `2 + 32 × (4 + 256)` members in at most 4 MiB. Every project container admits
+  exactly two members in at most 4096 directory bytes, on disk 0: a directly opened
+  `.atlas` project, a legacy initial-only file and a bundle's inner `world.atlas`
+  alike, because all three are read by `new_world_project.load_project`. A saved
+  project's two directory records occupy 117 bytes. Before this check a 64 MiB
+  project listing 1,429,325 members cost about 555 MiB of memory and 3 s before
+  its refusal; it is now refused in milliseconds without that allocation. The end
+  record is read by CPython's private `zipfile._EndRecData`, which reads at most the
+  final 64 KiB; that private name is a dependency on the pinned Python 3.12, and the
+  Python `zipfile` documentation states no directory or member-count bound of its own.
+- A project container that `zipfile` itself cannot read, because a record needs an
+  unsupported extract version, sets flag bit 5 (patched data) or 6 (strong
+  encryption), or has a member name that is not valid UTF-8 under the UTF-8 flag,
+  refuses as `INVALID_PROJECT` "Damaged project container." instead of a raw Python
+  error. The outer bundle reader maps those parser/member-read failures, plus
+  damaged ZIP and premature end-of-file errors, to `INVALID_BUNDLE`. This applies
+  to Python inspection/loading and the command response before destination
+  publication. Filesystem and environment failures retain their distinct handling;
+  nothing is generated or rebound to repair a damaged container.
+- Reopening applies the save-time title rule after the manifest integrity check.
+  The title must be a string that is nonblank after Python's `str.strip()`, at
+  most 160 code points long, with no C0 control character (below U+0020). The rule
+  does not refuse DEL (U+007F), C1 control characters (U+0080 to U+009F) or
+  invisible characters such as U+200B, at save or at load. Project digests are
+  self-digests, not signatures, so a crafted title with recomputed digests that
+  breaks this rule refuses with `INVALID_PROJECT` on load and inspection.
+  The session's `INVALID_TITLE` message names the C0 range explicitly; it does not
+  imply a wider Unicode-control ban than the existing save/load rule.
 - Saving publishes a complete, fsynced file exclusively. Loading validates all
   data in an owned staging directory, then publishes into an exclusively new
   managed directory. `ready.json` is published last. Callers adopt the new world

@@ -99,7 +99,7 @@ Feedback ownership and exchange rules not repeated here are in
 - *Owners:* I04 supplies and I05 carries. D1 reads initial slabs, D2 inherited
   weakness and D4 thermal state.
 - *Evidence:* the D2 and breakup fixtures treat weakness as an authored initial
-  assumption (`i01-controls-r1`, `i01-breakup-closure-r2`).
+  assumption (`i01-controls-r1`, `i01-breakup-closure-r4`).
 - *Refused:* unknown age as zero, mean-age cooling of mixtures, nearest-present-ridge
   ages (UR-03).
 - *Remaining:* report how much retained material depends on assumed history
@@ -113,7 +113,7 @@ Feedback ownership and exchange rules not repeated here are in
   `atlas.regime-transactions.v1`.
 - *Evidence:* `i01-controls-r1` (1D), `i01-fault2d-r1` (periodic 2D), `i01-strength-r1`.
   `boundary-kinematics-r1` is a descriptive PB2002 comparison, not acceptance.
-  The separation, initiation and junction choices now have `i01-separation-feasibility-r3`,
+  The separation, initiation and junction choices now have `i01-separation-feasibility-r4`,
   `i01-initiation-verification-r1` and `i01-junction-feasibility-r1` respectively;
   these do not generate or admit an evolving boundary network.
 - *Refused:* bend-score optimisation, fairing and fitted random rotations presented as
@@ -130,8 +130,8 @@ Feedback ownership and exchange rules not repeated here are in
   forcing. P: prescribed rotations remain a reference mode (UR-01).
 - *Exchange:* rad/s and N m. Positive drag anchors the declared mantle frame; net
   rotation is reported, never subtracted after the solve.
-- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, `i01-motion-coupling-r1`,
-  `i01-thermomechanical-motion-r2`, `i01-finite-strain-r3`, `i01-water-gpe-r1`,
+- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, `i01-motion-coupling-r3`,
+  `i01-thermomechanical-motion-r4`, `i01-finite-strain-r5`, `i01-water-gpe-r1`,
   `i01-elastic-core-r1`.
 - *Validity:* dry compensated columns, manufactured hemispheres and fixed-temperature
   regional balances; separately, periodic planar water-loaded traction with a
@@ -147,8 +147,8 @@ Feedback ownership and exchange rules not repeated here are in
   finite-volume enthalpy with mesh velocity distinct from material velocity; per-cohort
   enthalpy and history; constant-per-material `Cp` and `k`; properties from one endpoint
   state; raw plastic history transported and never filtered in place.
-- *Evidence:* `i01-thermal-r2`, `i01-column-heat-r3`, `i01-thermomechanical-motion-r2`,
-  `i01-finite-strain-r3`, `i01-finite-admission-r2`.
+- *Evidence:* `i01-thermal-r2`, `i01-column-heat-r5`, `i01-thermomechanical-motion-r4`,
+  `i01-finite-strain-r5`, `i01-finite-admission-r6`.
 - *Validity:* small-strain periodic cell, fixed-geometry columns and a closed laterally
   uniform strip. No lateral transport, inflow or melting.
 - *Refused:* mean-age cooling, averaged viscosities or ages as W07 input, bypassed
@@ -162,9 +162,9 @@ Feedback ownership and exchange rules not repeated here are in
 - *Routes:* G column law (composite creep plus regularised friction), evolving
   weakening, force-balanced motion, column heat and finite strain. Mechanical
   decoupling is the separate D6 record `atlas.rift-decoupling-handoff.v1`.
-- *Evidence:* `i01-column-r1`, `i01-weakening-r2`, `i01-column-heat-r3`,
-  `i01-thermomechanical-motion-r2`, `i01-finite-strain-r3`, `i01-decoupling-r1`,
-  `i01-column-admission-r1`, `i01-finite-admission-r2`, `i01-transitions-r2`.
+- *Evidence:* `i01-column-r2`, `i01-weakening-r4`, `i01-column-heat-r5`,
+  `i01-thermomechanical-motion-r4`, `i01-finite-strain-r5`, `i01-decoupling-r1`,
+  `i01-column-admission-r3`, `i01-finite-admission-r6`, `i01-transitions-r2`.
 - *Validity:* laterally uniform strips. The linear handoff bound covers only its linear
   control. The homogeneous strip is admitted at 10%; the layered strip is honestly
   uncertified at 1%.
@@ -190,8 +190,8 @@ Feedback ownership and exchange rules not repeated here are in
   splits ownership. Crustal disconnection is at most a separately named milestone.
   Crustal, mantle-lithosphere and mechanical-handoff diagnostics stay separate
   (section 6.1).
-- *Evidence:* `i01-breakup-closure-r2`, `i01-transitions-r2`, `i01-finite-strain-r3`.
-  `i01-separation-feasibility-r3` passes six controls, with eighteen focused tests:
+- *Evidence:* `i01-breakup-closure-r4`, `i01-transitions-r2`, `i01-finite-strain-r5`.
+  `i01-separation-feasibility-r4` passes six controls, with eighteen focused tests:
   fixed-length/time refinement, independent energy accounts and non-breakage
   controls in a synthetic nonuniform shear strip. Physical acceptance stays false.
   The retained column is `REFUSED_REQUIRES_RESOLVED_NECK`: plastic share 0.5506 at the
@@ -219,8 +219,8 @@ Feedback ownership and exchange rules not repeated here are in
     interface requirements: explicit units/basis/reference, domain/capabilities,
     extensive accounts and failure semantics. Its experimental G25/MAGEMin adapter
     now supplies common-Gibbs phase H/S/V, finite extraction and same-pressure
-    receiving. Sixteen analytical tests and the 21.741 s Windows native campaign
-    pass ([receipt](../evidence/i01-gibbs-provider-r2.json)); this dry software
+    receiving. Sixteen analytical tests and the 25.097 s Windows native campaign
+    pass ([current receipt](../evidence/i01-gibbs-provider-r3.json)); this dry software
     reference is not withheld calibration. The [selected melt route](I01_MELT_ROUTE.md)
     now specifies compatible porous flow, focusing and a solved cooling barrier,
     including its restrictions. The [segregation control](I01_MELT_SEGREGATION.md)
@@ -235,9 +235,9 @@ Feedback ownership and exchange rules not repeated here are in
     satisfies neither MC-03 nor melt-derived generation, and it unblocks no Generate
     obligation.
   - No supply: the new floor is exhumed mantle, a separate D3 phase, never basalt.
-- *Evidence:* `i01-melting-r1`, `i01-delivery-r1`, `i01-phase-partition-r2`,
-  `i01-phase-energy-r3`, `i01-phase-pressure-r2`, `i01-magma-receiver-r2`,
-  `i01-transitions-r2`, `i01-gibbs-provider-r2` (experimental G25 connection only),
+- *Evidence:* `i01-melting-r1`, `i01-delivery-r1`, `i01-phase-partition-r3`,
+  `i01-phase-energy-r4`, `i01-phase-pressure-r3`, `i01-magma-receiver-r3`,
+  `i01-transitions-r2`, `i01-gibbs-provider-r3` (experimental G25 connection only),
   and `i01-melt-segregation-r1` (nine instantaneous mechanical controls).
   The segregation receipt is historical after three relative-link corrections in
   its method document; tool/case/test bindings remain unchanged and its numerical
@@ -653,7 +653,7 @@ MC-05 to MC-07. Current guide/matrix/status links only record this documentation
 evidence register, [INTEGRATION_PLAN.md](INTEGRATION_PLAN.md),
 [I01_PHYSICAL_CONTRACT.md](I01_PHYSICAL_CONTRACT.md),
 [I01_BREAKUP_CLOSURE.md](I01_BREAKUP_CLOSURE.md) and its case, the retained-control
-section of `i01-breakup-closure-r1`, [I01_TRANSITIONS.md](I01_TRANSITIONS.md),
+section of `i01-breakup-closure-r4`, [I01_TRANSITIONS.md](I01_TRANSITIONS.md),
 `cases/i01_closures_v1.json`, the [reader chapter](how-it-works/06-physical-integration.md),
 and the B2 section of [NEW_WORLD_LAYOUT.md](NEW_WORLD_LAYOUT.md). Targeted excerpts
 only: the integration boundaries of the melting, phase-energy, phase-pressure,
@@ -683,7 +683,8 @@ breakup §11.
 No external software was installed or run. No test, campaign or measurement was run
 for this matrix.
 
-The current consistency pass uses the corrected separation r3, initiation r1
+The current consistency pass uses the corrected separation controls (current
+record r4, recaptured after the LF receipt-writer correction), initiation r1
 and junction r1 controls, the plan's I01 finish boundary and the selected melt
 route, plus the delivered melt-segregation receipt and its documented prose-only
 drift. It adds no simulation or physical acceptance; I01's final closure review
@@ -691,9 +692,14 @@ remains with the integrating owner.
 
 The subsequent I01 repair refreshed heat, thermomechanical motion, finite strain,
 admission, breakup and G25 receipts after enforcing actual thermal density and
-explicit thermodynamic branch support. The machine-readable mirror and current
-citations above use those new receipts. Physical event requirements are unchanged;
-592 I01 tests pass and I02 remains paused.
+explicit thermodynamic branch support. The closure-matrix receipt table in the
+machine-readable mirror follows the register. As of 1 October 2026, active row,
+selection and source references here and in the mirror follow the registered
+successor. Historical receipt entries retain their original bytes and status.
+The regression in `tests/test_current_evidence.py` checks mirror paths, digests,
+classifications and stale active references; it does not infer physical acceptance.
+Physical event requirements are unchanged; 592 I01 tests passed at that repair;
+see [current status](../../docs/CURRENT_STATE.md) for I02.
 
 ## 8. Checks for this document
 

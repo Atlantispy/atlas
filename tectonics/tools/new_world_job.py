@@ -37,6 +37,7 @@ MAX_RESULTS = 64 << 20
 MAX_OUTPUTS = 256
 MAX_SECONDS = 300.
 MAX_ATTEMPTS = 1000
+STAGED = ('input.atlas', 'request.json', 'status.json')     # a submitted job never becomes visible without them
 ACTIVE = {'preparing', 'running'}
 STATES = ACTIVE | {'completed', 'partial', 'cancelled', 'failed', 'interrupted'}
 MESSAGES = {
@@ -203,8 +204,9 @@ def _publish(path, body):
 
 
 def _control(path, value):
-    # Reuse the existing atomic, fsynced mutable-control publication mechanism.
-    _encoded(value, 65536)
+    # Reuse the existing atomic, fsynced mutable-control publication mechanism. It writes these canonical bytes
+    # plus one newline, so 65,535 keeps the file within the 65,536-byte read limit below.
+    _encoded(value, 65535)
     jobs._atomic(path, value)
 
 
@@ -216,10 +218,34 @@ def _control_json(path):
 
 def _schedule(values):
     if (type(values) is not list or not 1 <= len(values) <= MAX_OUTPUTS
-            or any(type(v) not in (int, float) or not math.isfinite(v) or v < 0 for v in values)
+            or any(type(v) not in (int, float) or v < 0 or v > sys.float_info.max
+                   or not math.isfinite(v) for v in values)
             or values[0] != 0 or any(a >= b for a, b in zip(values, values[1:]))):
         _fail('INVALID_REQUEST')
     return list(values)
+
+
+def _prefix_fits(job_id, schedule):
+    """Refuse a schedule whose complete prefix, every entry at its largest size, could outgrow its control file."""
+    digest = '0' * 64
+    _encoded(dict(schema=PREFIX_SCHEMA, job_id=job_id, request_sha256=digest, initial_sha256=digest,
+        outputs=[dict(index=index, elapsed_s=elapsed, file=f'output-{index:04d}.json', sha256=digest,
+                      size_bytes=MAX_RECORD, output_id=digest) for index, elapsed in enumerate(schedule)]), 65535)
+
+
+def _path_budget(directory):
+    """Refuse on Windows before creating anything when a path this job can create reaches 260 UTF-16 units.
+
+    The longest is the attempt-1000 cancellation temporary '.cancel-1000.json-<32 hex>' (50 characters); the
+    publication temporary, output-0255.json and every staged path are shorter.
+    """
+    names = ('.' + jobs._cancel_path(directory, dict(attempt=MAX_ATTEMPTS)).name + '-' + '0' * 32,
+             '.new-world-' + '0' * 32 + '.tmp', f'output-{MAX_OUTPUTS - 1:04d}.json')
+    staging = jobs._staging(directory, '0' * jobs.STAGING_HEX)
+    longest = [directory / name for name in names] + [staging / name for name in STAGED]
+    if os.name == 'nt' and max(len(str(path).encode('utf-16-le')) // 2 for path in longest) >= 260:
+        raise jobs.JobError('INVALID_PATH', 'The jobs directory is too long for the files a job writes on Windows; '
+                                            'choose a shorter root.')
 
 
 def _max_new(value):
@@ -243,7 +269,7 @@ def _request(directory):
             or not 0 < source['size_bytes'] <= projects.MAX_PROJECT):
         _fail('INVALID_STATE')
     wall = value['max_wall_seconds']
-    if type(wall) not in (int, float) or not math.isfinite(wall) or not 0 < wall <= MAX_SECONDS:
+    if type(wall) not in (int, float) or not 0 < wall <= MAX_SECONDS or not math.isfinite(wall):
         _fail('INVALID_STATE')
     return value, _sha(body)
 
@@ -315,7 +341,10 @@ def _public(directory, state, busy=False):
     # Requested schedule, not an assertion that every time has a saved result.
     request, _ = _request(directory)
     result['requested_elapsed_s'] = request['schedule_s']
-    if result['state'] in ACTIVE and not busy:
+    # The root lock distinguishes a live submitter from a process killed before it could record terminal status.
+    waiting = (result['state'] in ACTIVE and result.get('phase') == jobs.SUBMITTED
+               and (busy or jobs._busy(directory.parent, 'active.lock')))
+    if result['state'] in ACTIVE and not busy and not waiting:
         result['state'] = 'interrupted'
     result.update(worker_active=busy,
         resume_semantics='saved initial material-map owner; not generic joined-workflow restart',
@@ -330,16 +359,28 @@ def _safe(exc):
     return dict(code=code, message=MESSAGES[code])
 
 
+def _new_state(job_id, attempt, total):
+    timings = dict(prepare_s=0., physics_s=0., store_s=0., restore_s=0., elapsed_s=0.)
+    return dict(schema=SCHEMA, producer_id=PRODUCER, job_id=job_id, state='preparing',
+                attempt=attempt, completed_outputs=0, total_outputs=total,
+                computed_outputs=0, restored_outputs=0, timings=timings, error=None)
+
+
 def _execute(directory, request, request_sha, backend, *, fresh, max_new_outputs=None):
     previous = None if fresh else _state(directory)
+    # A job whose worker stopped before preparation began (phase SUBMITTED, no initial/prefix) sampled nothing, so
+    # resume starts its first preparation from the frozen input; that is not a resample. Any other resume restores.
+    first = fresh or (previous.get('phase') == jobs.SUBMITTED and not (directory / 'initial.json').exists()
+                      and not (directory / 'prefix.json').exists())
     attempt = 1 if fresh else previous['attempt'] + 1
     if attempt > MAX_ATTEMPTS:
         _fail('ATTEMPT_LIMIT')
-    timings = dict(prepare_s=0., physics_s=0., store_s=0., restore_s=0., elapsed_s=0.)
-    state = dict(schema=SCHEMA, producer_id=PRODUCER, job_id=directory.name, state='preparing',
-                 attempt=attempt, completed_outputs=0, total_outputs=len(request['schedule_s']),
-                 computed_outputs=0, restored_outputs=0, timings=timings, error=None)
-    _control(directory / 'status.json', state)
+    state = _new_state(directory.name, attempt, len(request['schedule_s']))
+    if first:
+        state['phase'] = jobs.SUBMITTED
+    timings = state['timings']
+    if not fresh:           # a fresh job's claim has already recorded exactly this record
+        _control(directory / 'status.json', state)
     started = time.perf_counter()
     cancel = _Cancel(directory, state, request['max_wall_seconds'])
     @contextmanager
@@ -349,6 +390,7 @@ def _execute(directory, request, request_sha, backend, *, fresh, max_new_outputs
             yield
         finally:
             timings[name] += time.perf_counter() - tick
+    began = False
     try:
         cancel.check()
         with timing('restore_s'):
@@ -357,10 +399,18 @@ def _execute(directory, request, request_sha, backend, *, fresh, max_new_outputs
                 _fail('INPUT_CHANGED')
             if _sources(backend) != request['sources']:
                 _fail('SOURCE_MISMATCH')
-        if fresh:
+        if first:
             with timing('prepare_s'):
-                initial = backend.prepare(_load_project(directory / 'input.atlas'),
-                                          request['options'], cancel=cancel)
+                saved = _load_project(directory / 'input.atlas')
+                cancel.check()
+                # Persist the conservative no-resampling boundary before calling the producer. Until this write
+                # succeeds, even a hard kill leaves a never-started job; afterwards recovery requires initial/prefix.
+                preparing = dict(state)
+                preparing.pop('phase')
+                _control(directory / 'status.json', preparing)
+                began = True
+                state.pop('phase')
+                initial = backend.prepare(saved, request['options'], cancel=cancel)
                 initial_body = _encoded(initial)
             cancel.check()
             if _sources(backend) != request['sources']:
@@ -450,6 +500,8 @@ def _execute(directory, request, request_sha, backend, *, fresh, max_new_outputs
     except BaseException as exc:
         state['state'] = 'interrupted' if isinstance(exc, (KeyboardInterrupt, SystemExit)) else 'failed'
         state['error'] = _safe(exc)
+    if first and not began:
+        state['phase'] = jobs.SUBMITTED     # stopped before sampling anything: resume starts it (see above)
     timings['elapsed_s'] = time.perf_counter() - started
     _control(directory / 'status.json', state)
     return _public(directory, state)
@@ -458,10 +510,11 @@ def _execute(directory, request, request_sha, backend, *, fresh, max_new_outputs
 def submit(root, job_id, source, *, options, schedule_s, max_wall_seconds=MAX_SECONDS,
            max_new_outputs=None):
     root, directory = jobs._paths(root, job_id, existing=False)
+    _path_budget(directory)
     max_new_outputs = _max_new(max_new_outputs)
     schedule_s = _schedule(schedule_s)
     if (type(options) is not dict or type(max_wall_seconds) not in (int, float)
-            or not math.isfinite(max_wall_seconds) or not 0 < max_wall_seconds <= MAX_SECONDS):
+            or not 0 < max_wall_seconds <= MAX_SECONDS or not math.isfinite(max_wall_seconds)):
         _fail('INVALID_REQUEST')
     # Strict small options, including duplicate-key rejection at the CLI boundary.
     options = parse_json(canonical_bytes(options))
@@ -471,6 +524,15 @@ def submit(root, job_id, source, *, options, schedule_s, max_wall_seconds=MAX_SE
         input=dict(sha256=_sha(input_bytes), size_bytes=len(input_bytes)), options=options,
         schedule_s=schedule_s, max_wall_seconds=max_wall_seconds, sources=_sources(backend))
     request_body = _encoded(request, 65536)
+    _prefix_fits(job_id, schedule_s)
+    state = _new_state(job_id, 1, len(schedule_s))
+    staged = dict(state, phase=jobs.SUBMITTED)      # retained until preparation is durably marked as started
+    _encoded(staged, 65535)
+
+    def unchanged(staging):
+        # The identity is checked against published copied bytes, never a path.
+        if _read(staging / 'input.atlas', projects.MAX_PROJECT) != input_bytes:
+            _fail('INPUT_CHANGED')
     with jobs._lock(root / 'active.lock'):
         if directory.exists():
             original, _ = _request(directory)
@@ -479,13 +541,9 @@ def submit(root, job_id, source, *, options, schedule_s, max_wall_seconds=MAX_SE
             return status(root, job_id)
         if sum(bool(jobs.JOB_ID.fullmatch(p.name)) for p in root.iterdir()) >= jobs.MAX_JOBS:
             _fail('JOB_LIMIT')
-        directory.mkdir()
-        with jobs._lock(directory / 'worker.lock'):
-            _publish(directory / 'input.atlas', input_bytes)
-            # The identity is checked against published copied bytes, never a path.
-            if _read(directory / 'input.atlas', projects.MAX_PROJECT) != input_bytes:
-                _fail('INPUT_CHANGED')
-            _publish(directory / 'request.json', request_body)
+        # Published complete by one rename: never a job directory without its frozen input, request and status.
+        jobs._stage(directory, tuple(zip(STAGED, (input_bytes, request_body, jobs._encode(staged)))), unchanged)
+        with jobs._claim(directory, _control, staged, dict(staged, state='interrupted')):
             return _execute(directory, request, _sha(request_body), backend, fresh=True,
                             max_new_outputs=max_new_outputs)
 
@@ -518,7 +576,8 @@ def cancel(root, job_id):
     _, directory = jobs._paths(root, job_id)
     _request(directory)
     state = _state(directory)
-    if jobs._busy(directory) and state['state'] in ACTIVE:
+    # A job awaiting its claim takes the request without probing its lock; stopped before preparation, it can resume.
+    if state['state'] in ACTIVE and (state.get('phase') == jobs.SUBMITTED or jobs._busy(directory)):
         jobs._atomic(jobs._cancel_path(directory, state), dict(job_id=job_id, attempt=state['attempt']))
     return status(root, job_id)
 
@@ -561,7 +620,10 @@ def response(argv, stdin):
         max_new = _max_new(int(values['--max-new-outputs'])) if '--max-new-outputs' in values else None
         root, job_id = values['--root'], values['--job-id']
         if action == 'submit':
-            body = parse_json(stdin.read(65537))
+            try:
+                body = parse_json(stdin.read(65537))
+            except ContractError:
+                _fail('INVALID_REQUEST')
             if type(body) is not dict or set(body) != {'options', 'schedule_s', 'max_wall_seconds'}:
                 _fail('INVALID_REQUEST')
             answer = submit(root, job_id, values['--file'], max_new_outputs=max_new, **body)

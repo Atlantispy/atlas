@@ -27,7 +27,7 @@ from .reuse import ExecutionContext
 from .spreading import _within_budget
 from .storage import ArrayStore
 from .tectonic_history_codec import (pack_history_result, restore_history_result,
-                                     history_result_id, history_result_nbytes)
+                                     history_result_id, history_result_nbytes, history_restore_bytes)
 from .underthrust import PreparedUnderthrust, UnderthrustState, ROUND
 from .w03_workflow import W03ColumnState
 from .w04_workflow import W04SurfaceInputs, W04ExteriorLoads
@@ -89,6 +89,11 @@ class PreparedTectonicHistory:
     latest result is retained here; inputs are bounded and charged as retained
     data. Historical outputs live in the existing lossless chunk-deduplicated
     store. An earlier requested result can be loaded explicitly, not replayed.
+    A checkpoint is published only when the budget could also restore it: its
+    complete restoration envelope is admitted, while this run still holds the
+    new result and its predecessor, before the store write. The live latest
+    output is reused, not decoded again, when it is the stored latest and the
+    store's change token still matches its verified or published snapshot.
     """
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False):
@@ -104,6 +109,7 @@ class PreparedTectonicHistory:
         self.prepared, self.inputs, self.store = prepared, inputs, store
         self._owner = threading.get_ident(); self._active = self._closed = False
         self._guard = self._current_guard = self._context = self._current = None
+        self._current_store_token = None
         self._stats = dict(computed_outputs=0, restored_outputs=0, latest_hits=0,
                            physics_seconds=0., storage_seconds=0.)
         if type(prepared) is PreparedUnderthrust:
@@ -328,8 +334,21 @@ class PreparedTectonicHistory:
             latest,meta,parent = i,candidate,candidate['output_id']
         return latest,meta
 
+    def _restore_bytes(self,index,arrays,meta):
+        """Largest reservation _restore(index) adds for this checkpoint, from its packed arrays and envelope.
+
+        Its own 3x retained allowance, then the largest of three phases that never overlap: store.get's read
+        workspace with its 2x output envelope, the codec restoration with its child codecs, and the route
+        validation (regional input reconciliation).
+        """
+        total = sum(a.nbytes for a in arrays.values())
+        check = 4*self.inputs[index].nbytes+65536 if self.route == 'evolving-regional-mechanics' else 0
+        return (3*meta['retained_bytes']+MAX_METADATA+
+                max(self.store._read_work_bytes()+2*total,history_restore_bytes(meta['payload']),check))
+
     def _restore(self,index,meta,cancel):
         # Store.get accounts decoding, not the arrays retained by its caller.
+        # _restore_bytes admits this whole envelope before a checkpoint is published; keep the two in step.
         with self._resource.reserve(3*meta['retained_bytes']+MAX_METADATA,
                                     category='tectonic-history-restore'):
             arrays = self.store.get(self.checkpoint_id(index),budget=self._resource)
@@ -345,13 +364,18 @@ class PreparedTectonicHistory:
             self._stats['restored_outputs'] += 1
             return out
 
-    def _adopt(self,out,guard=None):
+    def _check_store_token(self,token):
+        if self.store.change_token() != token:
+            raise TectonicsError('tectonic history store changed during verification; retry')
+
+    def _adopt(self,out,guard=None,*,store_token=None):
         if guard is None:
             guard = self._resource.reserve(history_result_nbytes(out.result)+65536,
                                             category='tectonic-history-latest')
             guard.__enter__()
         old = self._current_guard
         object.__setattr__(self,'_current',out); object.__setattr__(self,'_current_guard',guard)
+        object.__setattr__(self,'_current_store_token',store_token)
         if old is not None: old.__exit__(None,None,None)
 
     def load(self,index,*,checkpoint_id=None,cancel=None):
@@ -361,20 +385,38 @@ class PreparedTectonicHistory:
                 raise TectonicsError('explicit checkpoint belongs to different source/runtime/inputs')
             if self.store is None:
                 return self._current if self._current is not None and self._current.index==index else None
+            token = self.store.change_token()
             last,meta = self._scan(index,cancel)
-            if last != index: return None
-            out = self._restore(index,meta,cancel); self._adopt(out); return out
+            if last != index:
+                self._check_store_token(token)
+                return None
+            out = self._restore(index,meta,cancel)
+            self._check_store_token(token)
+            self._adopt(out,store_token=token); return out
 
     def run(self,*,through=None,cancel=None):
         end = len(self.inputs)-1 if through is None else self._index(through)
         with self._operation(cancel):
             current = self._current
             if self.store is not None:
+                token = self.store.change_token()
                 last,meta = self._scan(end,cancel)
                 if last >= 0:
-                    current = self._restore(last,meta,cancel); self._adopt(current)
+                    reuse = (current is not None and current.index == last and
+                             current.output_id == meta['output_id'] and self._current_store_token == token)
+                    # Matching result IDs do not prove the stored chunks are still intact. A changed token
+                    # requires normal restoration; a change during scan/restore refuses before adoption.
+                    if not reuse:
+                        current = self._restore(last,meta,cancel)
+                    self._check_store_token(token)
+                    if reuse:
+                        self._stats['latest_hits'] += 1
+                    else:
+                        self._adopt(current,store_token=token)
                 elif current is not None:
                     raise TectonicsError('previously committed checkpoint prefix disappeared')
+                else:
+                    self._check_store_token(token)
             elif current is not None and current.index > end:
                 raise TectonicsError('earlier outputs are not retained; use a checkpoint store')
             if current is not None and current.index==end:
@@ -382,6 +424,10 @@ class PreparedTectonicHistory:
                 return current
             first = 0 if current is None else current.index+1
             for i in range(first,end+1):
+                parent_token = self._current_store_token if self.store is not None and current is not None else None
+                if self.store is not None and current is not None:
+                    # A writer may commit just after our previous publication, even within this run call.
+                    self._check_store_token(parent_token)
                 _cancel(cancel); started = perf_counter()
                 out = self._compute(i,current,cancel)
                 self._stats['physics_seconds'] += perf_counter()-started
@@ -390,12 +436,33 @@ class PreparedTectonicHistory:
                 guard.__enter__()
                 try:
                     self._check(cancel)
+                    store_token = None
                     if self.store is not None:
                         started = perf_counter(); arrays,meta = self._pack(out,cancel)
+                        # An immutable checkpoint that this budget could not restore would block the history
+                        # for good (_scan always finds it). Admit its restoration now, holding this result and
+                        # its predecessor, more than a fresh-session restore holds; refuse before writing.
+                        with self._resource.reserve(self._restore_bytes(i,arrays,meta),
+                                                    category='tectonic-history-restore-admission'):
+                            pass
+                        if parent_token is not None:
+                            # Computation and packing release the database; neither may bless an intervening write.
+                            self._check_store_token(parent_token)
+                        def publication_check():
+                            nonlocal store_token
+                            self._check(cancel)
+                            # put calls this after all inserts, inside its SQLite write transaction. Reading
+                            # the token after put returns could bless a different writer's intervening change.
+                            token = self.store.change_token()
+                            # ArrayStore's token is (data_version, total_changes). Our inserts change the second
+                            # component, but another connection's commit during put preparation changes the first.
+                            if parent_token is not None and token[0] != parent_token[0]:
+                                raise TectonicsError('tectonic history store changed during verification; retry')
+                            store_token = token
                         self.store.put(out.checkpoint_id,arrays,meta,budget=self._resource,cancel=cancel,
-                                       publication_check=lambda:self._check(cancel))
+                                       publication_check=publication_check)
                         self._stats['storage_seconds'] += perf_counter()-started
-                    self._check(cancel); self._adopt(out,guard); guard=None
+                    self._check(cancel); self._adopt(out,guard,store_token=store_token); guard=None
                     self._stats['computed_outputs'] += 1; current=out
                 finally:
                     if guard is not None: guard.__exit__(None,None,None)
@@ -408,6 +475,7 @@ class PreparedTectonicHistory:
         object.__setattr__(self,'_closed',True)
         if self._current_guard is not None: self._current_guard.__exit__(None,None,None)
         object.__setattr__(self,'_current',None)
+        object.__setattr__(self,'_current_store_token',None)
         if self._context is not None: self._context.close()
         if self._guard is not None: self._guard.__exit__(None,None,None)
 

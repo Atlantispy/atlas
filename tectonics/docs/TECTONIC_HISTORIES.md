@@ -70,6 +70,61 @@ reuse remains active for missing outputs. Native thread, 128 MiB accounted work,
 The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
 raised the source-file limit to 512; the other limits stated here are unchanged.
 
+**Every published checkpoint can be restored under the budget that published it
+(R4 repair, 30 September 2026 candidate).** Checkpoints are immutable and recovery
+always finds the latest one, so a checkpoint that its own budget could not restore
+would block that store for good; a larger store budget cannot rescue it, because a
+history refuses budgets above 128 MiB. Before the repair this happened: restoring
+reserved three times the retained result plus 512 KiB, then the store read
+workspace and its output envelope, then the codec's own restoration, while
+publication never admitted that envelope. The underthrust fixture published at a
+common budget of 22,636,544 bytes but needed 23,307,104 to restore; the W04 fixture
+18,995,200 against 19,576,352. Scaled underthrust parcels (10,000 and 11,000
+vertices) published at 128 MiB and then could not be loaded in the same session; at
+11,000 vertices every later resume or load also refused.
+
+Of the two repairs considered — admit the restoration before publishing, or cut the
+restoration's reservation — Atlas admits it. Cutting it would still not bound the
+codec's child reservations and would leave a smaller window. Before `ArrayStore.put`,
+the history now reserves and releases, as one admission check, the complete
+restoration envelope of the new checkpoint: its own 3× retained allowance plus
+512 KiB, plus the largest of the three phases that never overlap — the store read
+(its read workspace and 2× the array total), the codec restoration including its
+child codecs (one WKB polygon at a time, or the regional snapshot restoration; the
+codec's `history_restore_bytes`), and the regional input reconciliation. It does so
+while the run still holds the new result and its predecessor, which is more than a
+later restore holds, so a refusal happens before anything is written. A focused
+test requires the admitted envelope to equal the peak a real restoration then
+reserves on all three routes, so a codec or storage change cannot silently reopen
+the window. The live latest output is also reused, not decoded again, when it is
+the stored latest (continuing in the same session) and its verified database
+change token is unchanged; `load` still decodes and verifies the stored record.
+The token observes commits by other SQLite connections and row changes through
+the store's own connection, just as the store's existing chunk caches do. A
+changed token requires restoration before reuse or continuation. Prefix scanning
+and restoration are bracketed by token checks: an intervening write refuses
+before adoption. New publications capture their token inside the publishing
+transaction, after its inserts but before commit, so a write between commit and
+adoption cannot be mistaken for verified data. Continuation rechecks the predecessor
+token after computing and packing, and the publication callback refuses another
+connection's intervening commit during store preparation; the transaction's own
+new inserts are not mistaken for an external write. Unchanged warm reuse still avoids
+decoding. Out-of-band raw file modification remains unsupported; a token is not
+an authentication signature. The cost is a stricter publication limit: the smallest
+admitting budget rose from 22,636,544 to 23,506,240 bytes (+3.8%) for the
+underthrust fixture and from 18,995,200 to 19,661,696 (+3.5%) for W04 (smallest
+budgets found by bisection to 4 KiB). Both scaled underthrust cases are now refused
+at 128 MiB before anything is written. Because the admission counts the result
+already held, a restore in the same session is covered too while the borrowed
+producer retains no more than it did at publication; a later refused or cancelled
+run can leave the producer holding its newer state (measured: +4,128 bytes for the
+underthrust fixture, +59,840 for W04), and a load at the exact publishing budget
+then needs a fresh session or that much more budget. Fresh-session loads and
+resumes were checked at the exact smallest publishing budget on all three routes
+(underthrust, W04, regional at 4 and 8 cells). The same repair makes `ArrayStore.put` refuse a snapshot
+whose total exceeds the store's full read limit, which previously published regional
+checkpoints that `get` refused.
+
 Recovered accounts are checked against actual producer inputs: underthrust stocks,
 motion/work and centroid gravity; W04 reference/current state IDs and absolute
 datum; regional response options, material/source metadata, compensated physical
@@ -82,7 +137,13 @@ checks use the real typed requests rather than inventing source identities.
 `test_tectonic_history.py` checks all-three direct/continued/recovered output
 parity, W04 fixed-reference/parent semantics, source/schedule/context refusals,
 corruption, gaps, transactional cancellation/failure, lifetime and shared-budget
-release. `test_tectonic_history_codec.py` checks exact typed round trips,
+release. Since the R4 repair it also checks that a checkpoint published at the
+exact smallest admitting budget loads and continues in a fresh session at that
+budget, that one byte less is refused before the store is written, that the same
+session continues from its live output without decoding it again, that changed
+stored payloads refuse warm reuse and continuation, that writes during restoration
+or between publication and adoption cannot bless a damaged checkpoint, and that the
+admitted restoration envelope equals the actual restoration peak on every route. `test_tectonic_history_codec.py` checks exact typed round trips,
 known/unknown signed heat, pressure and signed-zero handling, malformed/nonfinite
 records, immutable payloads and bounded cancellation/resource release.
 

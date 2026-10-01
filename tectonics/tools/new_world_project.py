@@ -41,6 +41,7 @@ MAX_JSON = 64 << 10
 MAX_REPORT = 1 << 20
 MAX_NATIVE_METADATA = 2 << 20
 MAX_PROJECT = MAX_STORE + MAX_JSON + 4096
+MAX_DIRECTORY = 4096  # ZIP central directory; a saved project's two records use 117 bytes.
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,12 +220,17 @@ def _check_pair(plan, report, atlas):
         _fail('The stored layout, report and configuration bindings disagree.')
 
 
+def _check_title(title, message='Use a nonempty project title of at most 160 characters.'):
+    """The one title rule; reopening applies it to untrusted archive bytes too."""
+    if (type(title) is not str or not title.strip() or len(title) > 160
+            or any(ord(char) < 32 for char in title)):
+        _fail(message)
+
+
 def save_project(raw_path, plan, candidate, *, title='Untitled world', structure=None, motion=None):
     """Save existing geometry atomically without replacing another project."""
     plan = validate_plan(plan)
-    if (type(title) is not str or not title.strip() or len(title) > 160
-            or any(ord(char) < 32 for char in title)):
-        _fail('Use a nonempty project title of at most 160 characters.')
+    _check_title(title)
     if motion is not None and structure is None:
         _fail('Initial motion requires its matching native structure.')
     report_body = _report_bytes(candidate.report) if motion is not None else canonical_bytes(candidate.report)
@@ -295,6 +301,20 @@ def save_project(raw_path, plan, candidate, *, title='Untitled world', structure
 
 def _read_archive(handle, database):
     try:
+        # Bound the central directory before ZipFile reads and parses it into
+        # per-member objects, as the bundle does for its outer archive. CPython's
+        # private EOCD reader (normal/ZIP64) reads at most 64 KiB from the end;
+        # its OSError/None results map to BadZipFile exactly as ZipFile maps them.
+        try:
+            end = zipfile._EndRecData(handle)
+        except OSError as exc:
+            raise zipfile.BadZipFile('Unreadable end of central directory.') from exc
+        if end is None:
+            raise zipfile.BadZipFile('No end of central directory record.')
+        if (end[zipfile._ECD_ENTRIES_TOTAL] != 2 or end[zipfile._ECD_SIZE] > MAX_DIRECTORY
+                or end[zipfile._ECD_DISK_NUMBER] != 0 or end[zipfile._ECD_DISK_START] != 0):
+            _fail('A project must contain exactly project.json and arrays.sqlite.')
+        handle.seek(0)
         with zipfile.ZipFile(handle, 'r') as archive:
             entries = archive.infolist()
             if len(entries) != 2 or {e.filename for e in entries} != {'project.json', 'arrays.sqlite'}:
@@ -308,7 +328,10 @@ def _read_archive(handle, database):
             manifest = parse_json(archive.read('project.json'))
             with archive.open('arrays.sqlite') as source, database.open('xb') as target:
                 shutil.copyfileobj(source, target, length=65536)
-    except (zipfile.BadZipFile, EOFError) as exc:
+    except (zipfile.BadZipFile, EOFError, NotImplementedError, UnicodeDecodeError) as exc:
+        # zipfile also refuses an unsupported extract version or flag bit 5/6 with
+        # NotImplementedError, and an invalid UTF-8 member name with UnicodeDecodeError
+        # (parse_json maps its own decoding errors), so these are damaged containers too.
         raise ContractError('INVALID_PROJECT', 'Damaged project container.') from exc
     keys = {'schema', 'title', 'status', 'plan', 'report', 'atlas_id',
             'geometry_id', 'store_sha256', 'project_id'}
@@ -330,6 +353,8 @@ def _read_archive(handle, database):
             or manifest['project_id'] != _digest({k: v for k, v in manifest.items() if k != 'project_id'})
             or manifest['store_sha256'] != _file_digest(database)):
         _fail('Project version or integrity check failed.')
+    # Self-digests are not signatures: refuse what save_project refuses.
+    _check_title(manifest['title'], 'The saved project title is invalid.')
     plan = manifest['plan']
     if (type(plan) is not dict or plan.get('plan_id') !=
             _digest({k: v for k, v in plan.items() if k != 'plan_id'})):

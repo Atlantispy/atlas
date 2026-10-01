@@ -90,6 +90,15 @@ arguments, closure/default handling, private recursion, non-mutation of parents,
 source drift refusal and relevant restart/cache paths. Static AST agreement alone
 cannot establish any of these runtime behaviours.
 
+The existing tectonics verifier also has explicit `--i01`, `--i02`,
+`--i02-quick`, `--i02-measurement` and `--regional3d` selections; see
+[focused regression selections](../tectonics/README.md#focused-regression-selections).
+These select coverage, not weaker numerical tolerances. The quick I02 selection
+omits only the four timing-harness integration tests, which remain in the
+measurement, complete I02 and default full selections. Run the complete I02
+selection when its measurement, workflow or restart boundaries change. No-argument
+verification retains the full suite; a selected pass is not a full-suite pass.
+
 ## 4. Migration and source-identity boundaries
 
 - R31 topography source changes require explicit new recipe identities for the
@@ -187,9 +196,26 @@ python -B -m unittest discover -s tests -p test_check_before_commit.py -v
 The first form checks everything `git add --all` would stage, including unstaged
 and untracked files; `--staged` checks exactly the index and names each
 working-tree change it leaves out. Both copy the index to a temporary file, export
-the Git-normalised candidate bytes and run `tools/check_current_evidence.py`,
-`tectonics/tests/test_digest_line_endings.py` and the I01/I02 test modules on that
-export. The real index, working tree and Git settings are not changed; like
+the Git-normalised candidate bytes and always run `tools/check_current_evidence.py`
+and `tectonics/tests/test_digest_line_endings.py` on that export. The I01/I02
+test modules also run unless every candidate change only adds or modifies a
+regular file in this reviewed navigation/planning-document list:
+
+- `README.md` and `tectonics/README.md`;
+- `docs/CURRENT_STATE.md`, `docs/ATLAS_ROADMAP.md`, `docs/CODING_SAFETY.md`;
+- `tectonics/docs/TECTONICS_PLAN.md`, `tectonics/docs/OPTIMISATION_REFERENCE.md`.
+
+This is not a general Markdown exemption. Method contracts, evidence, code,
+tests, configuration, unknown paths, deletions, non-regular files and ambiguous
+or empty changes keep the full I01/I02 selection. In particular, I01 tests read
+some method documents as inputs. Extend the list only after reviewing consumers;
+do not infer independence from a `.md` suffix. `--full` forces the I01/I02 suite;
+an explicit `--tests PATTERN` runs that requested selection. The printed scope
+states which checks actually ran. Documentation-only changes still require their
+relevant content/link and source-only checks above, and bound-source drift still
+fails the evidence check.
+
+The real index, working tree and Git settings are not changed; like
 `git add`, the tool may store Git objects for changed files. It is not an installed
 hook and never commits. The third command runs the guard's own tests on throwaway
 repositories. A failure names the file: fix the writer or source, or capture a

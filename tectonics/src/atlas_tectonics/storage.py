@@ -40,6 +40,35 @@ class StoreConflict(StoreError):
 
 _SHA = re.compile(r'[0-9a-f]{64}\Z')
 _SCHEMA = 'atlas.array-store.v1'
+# The only schema a store may hold, as SQLite records it (IF NOT EXISTS is not kept in sqlite_master.sql). Every
+# storage.py revision created exactly these tables. A view, trigger, generated column, default, check or extra
+# index in a supplied database would run SQL the store never wrote, so anything else refuses before a statement
+# touches the tables.
+_DDL = {
+    'settings': 'CREATE TABLE settings (id INTEGER PRIMARY KEY CHECK(id=1), body BLOB NOT NULL)',
+    'chunks': 'CREATE TABLE chunks (id TEXT PRIMARY KEY, descriptor BLOB NOT NULL, codec TEXT NOT NULL, stored_sha TEXT NOT NULL, payload BLOB NOT NULL)',
+    'snapshots': 'CREATE TABLE snapshots (id TEXT PRIMARY KEY, body BLOB NOT NULL, digest TEXT NOT NULL)',
+}
+_SCHEMA_OBJECTS = frozenset({('table', name, name, sql) for name, sql in _DDL.items()} | {
+    ('index', 'sqlite_autoindex_chunks_1', 'chunks', None),
+    ('index', 'sqlite_autoindex_snapshots_1', 'snapshots', None)})
+# SQLite parses a database's whole schema at the first statement, before it can be compared. Every statement the
+# store runs, and each of its schema rows, is far shorter than _MAX_SQL; _OPEN_TICKS bounds the virtual-machine work
+# of the whole open sequence (ticks of _TICK_OPS operations). An oversized or crowded schema refuses early.
+_MAX_SQL = 4096
+_TICK_OPS, _OPEN_TICKS = 1000, 200
+
+
+def _database_error(exc, action):
+    """StoreError for an SQLite failure: contention, bounded work and file access stay distinguishable from damage."""
+    name = getattr(exc, 'sqlite_errorname', '') or ''
+    if name.startswith(('SQLITE_BUSY', 'SQLITE_LOCKED')) or 'database is locked' in str(exc):
+        return StoreError(action + ': the database is locked by another connection; retry later')
+    if name == 'SQLITE_INTERRUPT':
+        return StoreError(action + ': the database schema exceeds the store\'s bounded opening work')
+    if name.startswith(('SQLITE_READONLY', 'SQLITE_PERM', 'SQLITE_CANTOPEN', 'SQLITE_FULL', 'SQLITE_IOERR')):
+        return StoreError(action + ': the database file could not be read or written (' + name + ')')
+    return StoreError(action + ': corrupt, incompatible or unreadable database')
 
 
 def _json(value) -> bytes:
@@ -229,8 +258,16 @@ class ArrayStore:
 
     Use on a local filesystem. max_store_bytes bounds database pages and logical
     retained records; reserve up to another database-sized rollback journal on disk.
-    max_array_bytes bounds a fully loaded snapshot, not merely one output field.
+    max_array_bytes bounds a fully loaded snapshot, not merely one output field: put()
+    refuses a snapshot that get() under the same limits could not load. Streaming
+    reads (iter_chunks, read_chunk, metadata) still check each declared array only, so
+    snapshots written under larger limits stay readable piecewise.
     iter_chunks reads independent chunks without materialising the full snapshot.
+    Opening bounds the schema parse SQLite performs first (statement length and
+    virtual-machine work), refuses a database whose schema is not exactly the store's
+    own tables (no views, triggers, generated columns or extra indexes), and writes
+    nothing to an existing store. SQLite errors surface as StoreError; contention,
+    bounded-work refusal and file access are named apart from a damaged database.
     Caller must not mutate inputs during put(). No implicit eviction of snapshots.
     Preparation uses a finite spool: staging_memory_bytes plus at most one chunk
     transiently before spilling, and max_staging_bytes of temporary storage. Decoder
@@ -276,10 +313,19 @@ class ArrayStore:
         try:
             self._db = sqlite3.connect(self.path, timeout=5, isolation_level=None,
                                        check_same_thread=False)
-        except BaseException:
+        except BaseException as exc:
             self._resident_reservation.__exit__(None, None, None)
+            if isinstance(exc, sqlite3.Error):
+                raise _database_error(exc, 'cannot open store') from exc
             raise
         try:
+            # The first statement parses whatever schema a supplied file holds; bound that before running any.
+            self._db.setlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH, _MAX_SQL)
+            ticks = [0]
+            def bounded():
+                ticks[0] += 1
+                return ticks[0] > _OPEN_TICKS
+            self._db.set_progress_handler(bounded, _TICK_OPS)
             self._db.execute('PRAGMA journal_mode=DELETE')
             self._db.execute('PRAGMA synchronous=FULL')
             self._db.execute('PRAGMA trusted_schema=OFF')
@@ -291,24 +337,33 @@ class ArrayStore:
             if current > max_pages:
                 raise StoreError('existing database exceeds store budget')
             self._db.execute(f'PRAGMA max_page_count={max_pages}')
-            existing = {r[0] for r in self._db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if existing and existing != {'settings', 'chunks', 'snapshots'}:
-                raise StoreError('refusing to modify an unrelated database')
             self._db.execute('BEGIN IMMEDIATE')
-            self._db.execute('CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), body BLOB NOT NULL)')
+            # Checked inside the write lock, before any statement reads or writes a table, so no other writer can
+            # add a schema object between this comparison and the settings insert below.
+            existing = set(self._db.execute('SELECT type, name, tbl_name, sql FROM sqlite_master'))
+            if existing and existing != _SCHEMA_OBJECTS:
+                raise StoreError('refusing to modify an unrelated database')
+            self._db.execute(_DDL['settings'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
             wanted = _json({'schema': _SCHEMA, 'chunk_bytes': limits.chunk_bytes})
             row = self._db.execute('SELECT body FROM settings WHERE id=1').fetchone()
             if row and row[0] != wanted:
                 raise StoreError('incompatible store schema or chunk size')
             self._db.execute('INSERT OR IGNORE INTO settings VALUES(1,?)', (wanted,))
-            self._db.execute('CREATE TABLE IF NOT EXISTS chunks (id TEXT PRIMARY KEY, descriptor BLOB NOT NULL, codec TEXT NOT NULL, stored_sha TEXT NOT NULL, payload BLOB NOT NULL)')
-            self._db.execute('CREATE TABLE IF NOT EXISTS snapshots (id TEXT PRIMARY KEY, body BLOB NOT NULL, digest TEXT NOT NULL)')
-            self._db.execute('COMMIT')
-        except BaseException:
-            if self._db.in_transaction:
-                self._db.execute('ROLLBACK')
+            self._db.execute(_DDL['chunks'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
+            self._db.execute(_DDL['snapshots'].replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', 1))
+            # An existing store is only read here: ending without a write lets open succeed beside a reader.
+            self._db.execute('COMMIT' if not existing or row is None else 'ROLLBACK')
+            self._db.set_progress_handler(None, 0)
+        except BaseException as exc:
+            try:
+                if self._db.in_transaction:
+                    self._db.execute('ROLLBACK')
+            except sqlite3.Error:
+                pass                                  # closing the connection rolls back regardless
             self._db.close()
             self._resident_reservation.__exit__(None, None, None)
+            if isinstance(exc, sqlite3.Error):
+                raise _database_error(exc, 'cannot open store') from exc
             raise
         self._closed = False
 
@@ -415,7 +470,7 @@ class ArrayStore:
                     self._cache_version, self._cache_changes = version, changes
                 yield
             except sqlite3.Error as exc:
-                raise StoreError('storage read transaction failed') from exc
+                raise _database_error(exc, 'storage read transaction failed') from exc
             finally:
                 try:
                     if owner and self._db.in_transaction:
@@ -596,9 +651,12 @@ class ArrayStore:
                 self._cache.move_to_end(key)
                 self._stats['decoded_hits'] += 1
                 return raw
-        row = self._db.execute('SELECT length(descriptor),length(payload),length(codec),length(stored_sha) FROM chunks WHERE id=?', (key,)).fetchone()
+        row = self._db.execute('SELECT length(descriptor),length(payload),length(codec),length(stored_sha),'
+                               'typeof(descriptor),typeof(payload),typeof(codec),typeof(stored_sha) FROM chunks WHERE id=?', (key,)).fetchone()
         if row is None:
             raise StoreError('snapshot has a missing chunk')
+        if row[4:] != ('blob', 'blob', 'text', 'text'):
+            raise StoreError('invalid chunk record types')
         if row[0] > 256 or row[1] > self.limits.chunk_bytes + 4096 or row[2] > 128 or row[3] != 64:
             raise StoreError('oversized chunk record')
         desc, codec, stored, payload = self._db.execute('SELECT descriptor,codec,stored_sha,payload FROM chunks WHERE id=?', (key,)).fetchone()
@@ -622,9 +680,11 @@ class ArrayStore:
 
     def _manifest(self, key):
         _sha(key)
-        row = self._db.execute('SELECT length(body) FROM snapshots WHERE id=?', (key,)).fetchone()
+        row = self._db.execute('SELECT length(body),typeof(body),typeof(digest) FROM snapshots WHERE id=?', (key,)).fetchone()
         if row is None:
             return None
+        if row[1:] != ('blob', 'text'):
+            raise StoreError('invalid manifest record types')
         if row[0] > self.limits.max_manifest_bytes:
             raise StoreError('oversized manifest')
         body, digest = self._db.execute('SELECT body,digest FROM snapshots WHERE id=?', (key,)).fetchone()
@@ -737,17 +797,26 @@ class ArrayStore:
                 raise CancelledError('storage preparation cancelled')
         # This is an estimated allocation envelope, not RSS or filesystem capacity.
         reference_count = 0
+        # get() loads the whole snapshot and refuses totals above max_array_bytes, so publication refuses them too:
+        # a record this store could not read back in full is never written. Referenced and edited arrays count at
+        # their declared size (edits keep the dtype and shape).
+        total = 0
         for value in values.values():
             if isinstance(value, (ArrayReference, _EditedReference)):
                 ref = value.reference if isinstance(value, _EditedReference) else value
                 with self._read_scope(budget=budget):
-                    reference_count += len(self._reference_description(ref)['chunks'])
+                    desc = self._reference_description(ref)
+                reference_count += len(desc['chunks'])
+                total += math.prod(desc['shape']) * _dtype(desc['dtype']).itemsize
             else:
                 a = _array_view(value)
                 if a.nbytes > self.limits.max_array_bytes:
                     raise StoreError('array exceeds storage input limit')
                 width = self.limits.chunk_bytes // a.itemsize
                 reference_count += (a.size + width - 1) // width
+                total += a.nbytes
+        if total > self.limits.max_array_bytes:
+            raise StoreError('snapshot exceeds the full read limit (max_array_bytes); get() could not load it')
         if reference_count > min(self.limits.max_chunks, self.limits.max_manifest_bytes // 68):
             raise StoreError('too many chunks for the manifest budget')
         projected_manifest = len(meta_bytes) + reference_count * 128 + len(values) * 4096 + 1024
@@ -783,7 +852,10 @@ class ArrayStore:
                 with self._lock:
                     if self._closed:
                         raise StoreError('store is closed')
-                    exists = self._db.execute('SELECT 1 FROM chunks WHERE id=?', (key,)).fetchone()
+                    try:
+                        exists = self._db.execute('SELECT 1 FROM chunks WHERE id=?', (key,)).fetchone()
+                    except sqlite3.Error as exc:
+                        raise _database_error(exc, 'storage preparation failed; no snapshot published') from exc
                 if exists:
                     with self._read_scope():
                         if self._chunk(key, expected_dtype=dt.str, expected_count=len(raw)//dt.itemsize) != raw:
@@ -933,7 +1005,7 @@ class ArrayStore:
                         self._db.execute('ROLLBACK')
                     self._clear_caches()
                     if isinstance(exc, sqlite3.Error):
-                        raise StoreError('storage transaction failed; no snapshot published') from exc
+                        raise _database_error(exc, 'storage transaction failed; no snapshot published') from exc
                     raise
                 finally:
                     self._stats['writer_seconds'] += time.perf_counter() - writer_start

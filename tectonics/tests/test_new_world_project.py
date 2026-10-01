@@ -1,4 +1,5 @@
 """Lossless local project persistence; one small real candidate, no seed search."""
+import contextlib
 import copy
 from dataclasses import replace
 import hashlib
@@ -379,6 +380,125 @@ class NewWorldProjectTests(unittest.TestCase):
         self.assert_load_refuses_unchanged(extra)
         self.assertFalse((self.root / 'unexpected.txt').exists())
         self.assertEqual(self.path.read_bytes(), self.saved_bytes)
+
+    def test_central_directory_is_bounded_before_zip_parsing(self):
+        # Every saved version lists its two members in 117 directory bytes.
+        for saved in (self.saved_bytes, self.structured_bytes, self.motion_bytes):
+            end = zipfile._EndRecData(io.BytesIO(saved))
+            self.assertEqual((end[zipfile._ECD_ENTRIES_TOTAL], end[zipfile._ECD_SIZE]), (2, 117))
+        with zipfile.ZipFile(io.BytesIO(self.saved_bytes)) as archive:
+            members = {item.filename: archive.read(item) for item in archive.infolist()}
+        three = self.root / 'three-members.atlas'
+        self.rewrite_archive(three, extra=True)
+        # Two genuine members, but a per-member comment enlarges the directory.
+        long_directory = self.root / 'long-directory.atlas'
+        with zipfile.ZipFile(long_directory, 'x', compression=zipfile.ZIP_STORED) as archive:
+            for name, value in members.items():
+                info = zipfile.ZipInfo(name)
+                info.comment = b'c' * 4096 if name == 'project.json' else b''
+                archive.writestr(info, value)
+        # The genuine bytes with a nonzero end-record disk number.
+        disk = self.root / 'second-disk.atlas'
+        payload = bytearray(self.saved_bytes)
+        self.assertEqual(payload[-22:-18], b'PK\x05\x06')
+        payload[-18:-16] = (1).to_bytes(2, 'little')
+        disk.write_bytes(payload)
+        for path, entries, size in ((three, 3, None), (long_directory, 2, 117 + 4096), (disk, 2, 117)):
+            with open(path, 'rb') as handle:
+                end = zipfile._EndRecData(handle)
+            self.assertEqual(end[zipfile._ECD_ENTRIES_TOTAL], entries)
+            if size is not None:
+                self.assertEqual(end[zipfile._ECD_SIZE], size)
+            before, inventory = path.read_bytes(), set(self.root.iterdir())
+            unbounded = AssertionError('ZipFile parsed an unbounded central directory.')
+            with self.subTest(path=path.name), mock.patch.object(zipfile, 'ZipFile', side_effect=unbounded):
+                with self.assertRaises(contract.ContractError) as caught:
+                    project.load_project(path)
+                self.assertEqual(caught.exception.code, 'INVALID_PROJECT')
+                self.assertEqual(path.read_bytes(), before)
+                self.assertEqual(set(self.root.iterdir()), inventory)
+        # Non-ZIP bytes and end-record read errors keep ZipFile's damaged-container mapping.
+        junk = self.root / 'not-a-zip.atlas'
+        junk.write_bytes(b'not an Atlas project' * 8)
+        unreadable = mock.patch.object(zipfile, '_EndRecData', side_effect=OSError('Unknown I/O error'))
+        for path, context in ((junk, contextlib.nullcontext()), (self.path, unreadable)):
+            with self.subTest(path=path.name), context, self.assertRaises(contract.ContractError) as caught:
+                project.load_project(path)
+            self.assertEqual((caught.exception.code, str(caught.exception)),
+                             ('INVALID_PROJECT', 'Damaged project container.'))
+        self.assertEqual(self.path.read_bytes(), self.saved_bytes)
+
+    def test_unsupported_zip_records_refuse_as_damaged_containers(self):
+        import new_world_bundle as bundle  # Inspection reaches the same project reader.
+        with zipfile.ZipFile(io.BytesIO(self.saved_bytes)) as archive:
+            infos = archive.infolist()
+        directory, offsets = zipfile._EndRecData(io.BytesIO(self.saved_bytes))[zipfile._ECD_OFFSET], {}
+        for info in infos:
+            self.assertEqual((info.flag_bits, info.extract_version), (0, 20))
+            offsets[info.filename] = directory, info.header_offset
+            directory += 46 + len(info.filename) + len(info.extra) + len(info.comment)
+        central, local = offsets['project.json']
+
+        def crafted(name, *edits):  # One or two fixed-width field edits of the genuine bytes.
+            payload = bytearray(self.saved_bytes)
+            for offset, value in edits:
+                payload[offset:offset + len(value)] = value
+            (self.root / name).write_bytes(payload)
+            return self.root / name
+        flags = lambda value: value.to_bytes(2, 'little')
+        cases = (  # ZipFile's constructor refuses the first two; archive.read the other three.
+            (crafted('version.atlas', (central + 6, flags(99))), NotImplementedError, False),
+            (crafted('directory-name.atlas', (central + 8, flags(0x800)), (central + 46, b'\xff\xfe')),
+             UnicodeDecodeError, False),
+            (crafted('patched.atlas', (central + 8, flags(0x20))), NotImplementedError, True),
+            (crafted('strong-encryption.atlas', (central + 8, flags(0x40))), NotImplementedError, True),
+            (crafted('local-name.atlas', (local + 6, flags(0x800)), (local + 30, b'\xff\xfe')),
+             UnicodeDecodeError, True),
+        )
+        for path, error, inspectable in cases:
+            with self.subTest(path=path.name):
+                with self.assertRaises(error), zipfile.ZipFile(path) as archive:
+                    archive.read('project.json')  # Raw zipfile refusal, not BadZipFile.
+                before, inventory = path.read_bytes(), set(self.root.iterdir())
+                # The bundle's own outer ZipFile parses the directory first, so only
+                # the member-read cases reach the project reader through inspection.
+                for operation in (project.load_project, bundle.inspect_bundle)[:1 + inspectable]:
+                    with self.assertRaises(contract.ContractError) as caught:
+                        operation(path)
+                    self.assertEqual((caught.exception.code, str(caught.exception)),
+                                     ('INVALID_PROJECT', 'Damaged project container.'))
+                self.assertEqual(path.read_bytes(), before)
+                self.assertEqual(set(self.root.iterdir()), inventory)
+
+    def test_reopening_applies_the_saved_title_rule(self):
+        import new_world_bundle as bundle  # Inspection reaches the same project reader.
+        with zipfile.ZipFile(io.BytesIO(self.saved_bytes)) as archive:
+            database = archive.read('arrays.sqlite')
+        with self.assertRaises(contract.ContractError):
+            project.save_project(self.root / 'refused.atlas', self.plan, self.candidate,
+                                 title='<img src=x onerror=alert(1)>\x07')
+        for index, title in enumerate(('<img src=x onerror=alert(1)>\x07', {'not': 'a string'}, 'A' * 40000)):
+            manifest = dict(self.manifest, title=title)
+            manifest['project_id'] = project._digest(
+                {key: value for key, value in manifest.items() if key != 'project_id'})
+            path = self.root / f'crafted-title-{index}.atlas'
+            with zipfile.ZipFile(path, 'x', compression=zipfile.ZIP_STORED) as archive:
+                archive.writestr('project.json', contract.canonical_bytes(manifest))
+                archive.writestr('arrays.sqlite', database)
+            # Recomputed self-digests pass; only the title rule refuses.
+            for operation in (project.load_project, bundle.inspect_bundle):
+                with self.subTest(index=index, operation=operation.__name__):
+                    with self.assertRaises(contract.ContractError) as caught:
+                        operation(path)
+                    self.assertEqual(caught.exception.code, 'INVALID_PROJECT')
+        self.assertFalse((self.root / 'refused.atlas').exists())
+        # The rule itself is unchanged: a 160-character non-ASCII title round-trips.
+        title = 'Ω world ' * 20
+        saved = self.root / 'longest-title.atlas'
+        manifest = project.save_project(saved, self.plan, self.candidate, title=title)
+        self.assertEqual(len(title), 160)
+        self.assertEqual(project.load_project(saved).manifest, manifest)
+        self.assertEqual(manifest['title'], title)
 
     def test_old_configuration_is_inspectable_without_rebinding(self):
         changed = contract.ContractError('SOURCE_MISMATCH', 'Synthetic source change')

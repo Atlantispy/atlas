@@ -29,6 +29,35 @@ if sys.argv[2:3] == ["copy"]:
 '''
 
 
+class DocumentationSelectionTests(unittest.TestCase):
+    def snapshot(self, changed=(), *, skipped=(), regular=True):
+        return guard.Candidate(Path('candidate'), changed, (), skipped, regular)
+
+    def test_only_reviewed_added_or_modified_documents_qualify(self):
+        for path in guard.DOCUMENTATION:
+            for status in ('A', 'M'):
+                with self.subTest(path=path, status=status):
+                    self.assertTrue(guard.documentation_only(self.snapshot((f'{status} {path}',))))
+
+    def test_unknown_or_ambiguous_changes_keep_the_full_route(self):
+        changes = [(), ('A (no HEAD commit: every candidate path is new)',),
+                   ('D README.md',), ('R100 README.md renamed.md',), ('T README.md',),
+                   ('M docs/I01_MELT_SEGREGATION.md',), ('M tectonics/docs/I01_MELT_SEGREGATION.md',),
+                   ('A docs/NEW_METHOD.md',), ('M engineering/work/README.md',),
+                   ('M README.md', 'M tectonics/src/atlas_tectonics/execution.py'),
+                   ('M README.md', 'M tectonics/evidence/current-evidence.json')]
+        for changed in changes:
+            with self.subTest(changed=changed):
+                self.assertFalse(guard.documentation_only(self.snapshot(changed)))
+        self.assertFalse(guard.documentation_only(self.snapshot(('A README.md',), regular=False)))
+        self.assertFalse(guard.documentation_only(self.snapshot(('M README.md',),
+                                                                 skipped=('120000 tectonics/link.md',))))
+
+    def test_omitting_the_suite_keeps_both_mandatory_guards(self):
+        steps = guard.checks(Path('candidate'), None)
+        self.assertEqual([name for name, _, _ in steps], ['current-evidence register', 'digest line endings'])
+
+
 @unittest.skipIf(shutil.which('git') is None, 'git is not on PATH; the guard itself requires Git')
 class CandidateTests(unittest.TestCase):
     def setUp(self):
@@ -49,6 +78,7 @@ class CandidateTests(unittest.TestCase):
         self.write('tectonics/tests/test_digest_line_endings.py', PASSING)
         self.write('tectonics/tests/test_i01_fixture.py', PASSING)
         self.write('tools/check_current_evidence.py', CHECKER)
+        self.write('README.md', b'# Guard fixture\n')
         self.git('add', '--all')
         self.git('commit', '-q', '--no-verify', '-m', 'fixture')
 
@@ -123,6 +153,93 @@ class CandidateTests(unittest.TestCase):
         code, output = self.main('--staged')           # left out, and reported as left out
         self.assertEqual(code, 0)
         self.assertIn('NOT IN CANDIDATE: untracked tectonics/evidence/unexpected.json', output)
+
+    def test_added_and_modified_regular_documents_select_only_mandatory_checks(self):
+        self.write('README.md', b'# Updated guard fixture\n')
+        self.write('docs/CURRENT_STATE.md', b'# Current state\n')
+        with guard.candidate(self.root) as snapshot:
+            self.assertEqual(set(snapshot.changed), {'M README.md', 'A docs/CURRENT_STATE.md'})
+            self.assertTrue(snapshot.regular_changes)
+            self.assertTrue(guard.documentation_only(snapshot))
+        code, output = self.main()
+        self.assertEqual(code, 0)
+        self.assertIn('reviewed documentation-only changes', output)
+        self.assertIn('PASS current-evidence register', output)
+        self.assertIn('PASS digest line endings', output)
+        self.assertNotIn('I01/I02 tests (', output)
+        self.write('tectonics/docs/NEW_METHOD.md', b'# Unreviewed method\n')
+        code, output = self.main()
+        self.assertEqual(code, 0)
+        self.assertIn(f'PASS I01/I02 tests ({guard.TESTS})', output)
+
+    def test_staged_document_selection_uses_only_the_index_and_reports_omissions(self):
+        self.write('README.md', b'# Updated guard fixture\n')
+        self.git('add', 'README.md')
+        self.write('tectonics/tools/tool.py', b'VALUE = 2\n')
+        code, output = self.main('--staged')
+        self.assertEqual(code, 0)
+        self.assertIn('reviewed documentation-only changes', output)
+        self.assertIn('NOT IN CANDIDATE: unstaged tectonics/tools/tool.py', output)
+        code, output = self.main()
+        self.assertEqual(code, 0)
+        self.assertIn(f'I01/I02 tests ({guard.TESTS})', output)
+
+    def test_explicit_full_and_test_pattern_override_document_selection(self):
+        self.write('README.md', b'# Updated guard fixture\n')
+        for args, pattern in ((('--full',), guard.TESTS),
+                              (('--tests', 'test_i01_fixture.py'), 'test_i01_fixture.py'),
+                              (('--full', '--tests', 'test_i01_fixture.py'), 'test_i01_fixture.py')):
+            with self.subTest(args=args):
+                code, output = self.main(*args)
+                self.assertEqual(code, 0)
+                self.assertIn(f'PASS I01/I02 tests ({pattern})', output)
+                self.assertNotIn('reviewed documentation-only changes', output)
+
+    def test_document_symlink_outside_exported_trees_keeps_full_checks(self):
+        # A Git symlink entry needs no OS symlink privilege. Its added path is in
+        # the allowlist but outside EXPORTED, so snapshot.skipped cannot catch it.
+        blob = self.git('rev-parse', 'HEAD:README.md').decode('ascii').strip()
+        self.git('update-index', '--add', '--cacheinfo', f'120000,{blob},docs/CURRENT_STATE.md')
+        with guard.candidate(self.root, staged=True) as snapshot:
+            self.assertEqual(snapshot.changed, ('A docs/CURRENT_STATE.md',))
+            self.assertEqual(snapshot.skipped, ())
+            self.assertFalse(snapshot.regular_changes)
+            self.assertFalse(guard.documentation_only(snapshot))
+        code, output = self.main('--staged')
+        self.assertEqual(code, 0)
+        self.assertIn(f'PASS I01/I02 tests ({guard.TESTS})', output)
+
+    def test_document_change_cannot_bypass_failed_evidence_binding(self):
+        self.write('tectonics/docs/TECTONICS_PLAN.md', b'bound document\n')
+        self.write('tools/check_current_evidence.py', b'''import pathlib, sys
+root = pathlib.Path(__file__).resolve().parents[1]
+sys.exit(0 if (root / "tectonics/docs/TECTONICS_PLAN.md").read_bytes() == b"bound document\\n" else 1)
+''')
+        self.git('add', '--all')
+        self.git('commit', '-q', '--no-verify', '-m', 'bind document fixture')
+        self.write('tectonics/docs/TECTONICS_PLAN.md', b'changed document\n')
+        code, output = self.main()
+        self.assertEqual(code, 1)
+        self.assertIn('reviewed documentation-only changes', output)
+        self.assertIn('FAIL current-evidence register', output)
+        self.assertIn('PASS digest line endings', output)
+        self.assertNotIn('I01/I02 tests (', output)
+
+    def test_document_change_cannot_bypass_failed_line_ending_guard(self):
+        self.write('tectonics/tests/test_digest_line_endings.py', b'''import unittest
+class Fixture(unittest.TestCase):
+    def test_refuses(self):
+        self.fail("synthetic line-ending failure")
+''')
+        self.git('add', '--all')
+        self.git('commit', '-q', '--no-verify', '-m', 'failing line-ending fixture')
+        self.write('README.md', b'# Updated guard fixture\n')
+        code, output = self.main()
+        self.assertEqual(code, 1)
+        self.assertIn('reviewed documentation-only changes', output)
+        self.assertIn('PASS current-evidence register', output)
+        self.assertIn('FAIL digest line endings', output)
+        self.assertNotIn('I01/I02 tests (', output)
 
     def test_the_real_index_and_working_tree_are_left_unchanged(self):
         self.write('tectonics/tools/tool.py', b'VALUE = 2\n')

@@ -5035,8 +5035,10 @@ than deadlock or enqueue unlimited work.
 
 Separate local processes coordinate using crash-released OS locks on 16 fixed
 stripes per store and recheck the database after acquisition. This avoids stale
-lease takeover and unlimited per-key lock files; colliding stripes may serialise
-extra work. Windows locking is implemented but not verified in this environment.
+lease takeover and unlimited per-key lock files; colliding stripes originally
+serialised unrelated work (see the R4 corrections below). Windows locking is
+implemented but was not verified in this original (Linux) environment; the R4
+tests run it on Windows.
 Trusted local paths only. Direct ArrayStore writers still use existing SQLite
 transactions; callers bypassing these wrappers do not inherit compute suppression.
 
@@ -5045,6 +5047,62 @@ transaction. The reuse wrapper rechecks source/cancellation immediately before
 commit; failures roll back candidate rows. Cancellation after publication begins
 cannot revoke a completed atomic snapshot. No schema, codec or deduplication
 algorithm change is introduced here.
+
+**R4 corrections (30 September 2026 candidate; not a new measurement).**
+- *A cancellation stays its caller's own.* A waiter used to re-raise the owner's
+  `CancelledError` although its own event was unset, discarding a completed result.
+  A waiter whose event is unset now registers again, within its original deadline:
+  it becomes the owner and computes with its own cancellation, or waits for a newer
+  owner. A retry never waits again on the finished future of an owner it has
+  already seen cancelled (an owner resolves its future before it removes its entry).
+  After three such retries it reports that other callers cancelled
+  (`TectonicsError`), never a cancellation of its own. One deadline covers a caller's
+  waiting: for an identical in-process flight and, if it takes over, for the process
+  claim. A creator's *failure* is still shared with waiters, as before.
+- *Stripe collisions no longer fail.* The claim is still held across computation for
+  cross-process suppression of identical work, and the 16 lock files are unchanged.
+  The holder now writes its cache identity after the one locked byte (outside the
+  locked region, so it stays readable on Windows). A request that finds its stripe
+  held by a different identity proceeds without the claim — its lookup and
+  publication are rechecked and idempotent — instead of timing out after
+  `wait_timeout`, which previously failed about one in sixteen unrelated requests
+  behind a computation longer than 30 s. A request for the identity the holder is
+  computing still waits. The trade-off: while an unrelated identity holds the stripe,
+  requests for one identity in several processes each compute (a duplicate; the
+  publication stays idempotent), where they previously queued behind the unrelated
+  work. A stale or partly written record only decides whether to wait. Per-key lock
+  files and byte-range locks were not adopted: the first grows without bound, and the
+  second would need untested POSIX lock semantics.
+  On Windows, creating the first lock byte now participates in that same bounded
+  retry loop: a rival can initialise and lock it between the size check and write.
+  This transient contention no longer escapes as a raw `PermissionError`; timeout,
+  cancellation and handle cleanup remain in force.
+- *Store boundary.* Opening compares the database's `sqlite_schema` rows exactly
+  with the store's three tables and their two automatic indexes (every storage
+  revision created the same statements; SQLite records them without `IF NOT
+  EXISTS`, as checked on the pinned SQLite 3.53.1), inside the write lock and before
+  any statement touches a table. Views, triggers, generated columns, defaults,
+  checks and extra indexes refuse. SQLite parses a file's whole schema at the first
+  statement, before any comparison: an 8 MB view measured about 700 MiB of memory.
+  Opening therefore first sets `SQLITE_LIMIT_SQL_LENGTH` to 4,096 bytes (every store
+  statement and schema row is under 200) and a
+  [progress handler](https://www.sqlite.org/c3ref/progress_handler.html) that stops
+  the open sequence after 200 ticks of 1,000 virtual-machine operations (genuine
+  opens of new, small and 8.7 MB stores took no tick; 20,000 schema rows exceed it
+  and refuse in about 0.2 s). SQLite's [security guidance](https://sqlite.org/security.html)
+  (§1.1–1.2) lists that handler; its `integrity_check` and `cell_size_check` are not
+  adopted, because every manifest and chunk is already hashed, typed and
+  length-checked before use and a whole-file check at each open would scan the full
+  store. Opening an existing store ends with `ROLLBACK`, so it writes nothing and
+  succeeds beside a reader. Known limits: a WAL-mode file is converted by
+  `journal_mode=DELETE` before the comparison (the project loader works on a copy),
+  and table root pages are not compared (record hashes still decide integrity).
+  `put` refuses a snapshot whose total exceeds `max_array_bytes`, the limit `get`
+  applies to a full read; streaming reads still check each array only. Manifest and
+  chunk rows of the wrong SQLite type refuse. SQLite errors while opening, reading or
+  publishing become `StoreError`, and lock contention, bounded-work refusal and file
+  access failures (read-only, full, I/O) are named instead of being reported as
+  corruption.
 
 ### Focused measurements and decisions
 

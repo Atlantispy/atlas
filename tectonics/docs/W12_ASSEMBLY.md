@@ -220,6 +220,70 @@ and reaps the owned child; if an owner must terminate an unresponsive process,
 it must not call it cleanly cancelled or delete checkpoints. Subsequent resume
 performs normal native verification. Missing or invalid control files refuse.
 
+**Submission and control files (R4 candidate, 30 September 2026; not accepted).**
+A fresh `run` writes `request.json` and an initial `status.json` (state
+`preparing`, phase `submitted`, attempt 1) into a dot-named staging folder
+`.<job ID>-<16 hex>` in the jobs root and then renames that folder to the job ID
+while it holds `active.lock`. A job directory therefore never becomes visible
+without both control files, so the rule above still holds: a status, cancel or
+result call that arrives during submission finds either no job or a complete one.
+Such a call holds the job's `worker.lock` only for microseconds, so the new worker
+retries that lock for about two seconds (100 attempts, 20 ms apart) before
+refusing `RUN_BUSY`. Once it holds the lock, it records its claim by rewriting the
+status with phase `preparing`, as the worker did before this change.
+
+Phase `submitted` means that no worker has started the job. Windows cannot rename
+a folder while a file inside it is open, so the lock cannot be taken before
+publication. While the submitter holds the root's `active.lock`, status reports the job as
+`preparing`, phase `submitted`, not as `interrupted`. Status can then be polled
+while the worker is being claimed. Cancel records the request without probing
+the lock, so it is kept whether or not a poll holds the lock at that moment, and
+the worker sees it at its first check. If the claim is refused or the submission
+stops before the claim is recorded, the submitter records the job as
+`interrupted`, phase `submitted`, as a best effort, and resume starts it as
+attempt 2. A process killed in that interval leaves `preparing`/`submitted` on
+disk. Once both worker and root locks are free, status reports `interrupted`
+and enables resume without rewriting that saved marker. Resume starts that job
+too and keeps its immediate `RUN_BUSY` when another worker holds either lock.
+While another job holds the root lock, a submitted snapshot stays conservatively
+pending until that lock is released.
+
+Windows byte locks are mandatory. A poll that locks a newly created, still-empty
+`worker.lock` before its creator's one byte is flushed therefore makes that write
+fail. `_lock` now ignores that one refused write, because the file exists and an
+empty lock file is accepted. The creator then sees `RUN_BUSY` and retries like
+any other contended claim, instead of raising a raw `PermissionError`.
+
+If writing the staged files fails before the rename, the tool removes only the
+files it created there, checked by file identity after their handles close,
+and then the empty folder. Windows directory renames briefly blocked by another
+process are retried for up to about one second. A hard crash during submission
+can still leave that staging folder. It is never read, never counted toward the
+32-job limit and never deleted automatically; removing it by hand is safe when
+no submission to that root is running. On Windows `os.rename` never replaces an
+existing destination; on POSIX it would replace an empty directory, which is why
+the absence check and the rename both happen under `active.lock` (trusted local
+roots only, as below).
+
+Control files are now written in one canonical compact form: sorted keys, no
+whitespace, finite ASCII JSON and one trailing newline. A record whose encoded
+bytes would exceed the 64 KiB control-file read limit is refused with
+`OUTPUT_LIMIT` before any temporary file exists, so a writer can no longer
+publish a file that its own reader refuses. The same writer serves the
+generated-world jobs and the I02 column workflow. Limits, file names and error
+codes are otherwise unchanged. `tectonics_job.py` is a hashed adapter source,
+so a job started before this change refuses `resume` with `SOURCE_MISMATCH`;
+nothing is rebound. Focused lifecycle tests hold a poller on `worker.lock`
+exactly when the job appears, hold it past the retry, and poll status and cancel
+before the claim. One test locks a new lock file before its byte is written.
+Others inject a write failure and a persistent rename denial while staging, and
+write a control record at the limit and one byte over it. They were executed only in
+the scratch candidate on Windows/CPython 3.12.14. The Python
+[`os.rename`](https://docs.python.org/3.12/library/os.html#os.rename) reference
+was consulted for the rename semantics. The 259-character file and
+247-character directory limits were measured on that Windows machine, as was
+the refusal to rename a folder that contains an open file.
+
 The case keeps 5..64 columns, three dates, 128 MiB accounted work and a 32 MiB
 native store. Each invocation requests cooperative cancellation at 300 seconds;
 that is not an OS hard wall-time or RSS guarantee. Control storage allows at most

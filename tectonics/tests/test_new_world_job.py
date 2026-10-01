@@ -1,12 +1,16 @@
 """Isolated lifecycle tests: no physical fixtures, random generation or UI."""
 from concurrent.futures import CancelledError
+import contextlib
 import copy
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
+import threading
 from types import SimpleNamespace
 import unittest
 from unittest import mock
@@ -310,6 +314,264 @@ class NewWorldJobTests(unittest.TestCase):
         result = self.submit(schedule_s=[0.,11.])['job']
         self.assertEqual(result['state'], 'failed')
         self.assertFalse((self.directory / 'initial.json').exists())
+
+
+class SubmissionLimitTests(unittest.TestCase):
+    """Staged submission, the Windows path budget and the prefix's own read limit (review infra-code-2/3/4)."""
+
+    setUp, submit, control = NewWorldJobTests.setUp, NewWorldJobTests.submit, NewWorldJobTests.control
+    MYR = 3.15576e13
+
+    def test_a_transient_loader_failure_can_resume_before_preparation_started(self):
+        self.load.side_effect = PermissionError('temporary input refusal')
+        answer = self.submit()['job']
+        self.assertEqual((answer['state'], answer['phase']), ('failed', 'submitted'))
+        self.assertEqual(self.backend.preparations, 0)
+        self.load.side_effect = lambda path: Path(path).read_bytes()
+        resumed = job.resume(self.jobs_root, self.ident)['job']
+        self.assertEqual((resumed['state'], resumed['attempt']), ('completed', 2))
+        self.assertEqual(self.backend.preparations, 1)
+
+    def test_hard_exit_after_claim_before_prepare_leaves_a_recoverable_first_attempt(self):
+        # No exception cleanup: the child exits after its worker claim, while loading the frozen project.
+        script = (
+            "import os, sys; from pathlib import Path; "
+            "sys.path.insert(0, sys.argv[1]); from test_new_world_job import FakeBackend, job; "
+            "job._backend = FakeBackend; job._load_project = lambda path: os._exit(91); "
+            "job.submit(Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4]), "
+            "options={'cells_across':6}, schedule_s=[0.,1.,2.])"
+        )
+        child = subprocess.run([sys.executable, '-B', '-c', script, str(Path(__file__).parent),
+                                str(self.jobs_root), self.ident, str(self.source)],
+                               capture_output=True, text=True, timeout=30)
+        self.assertEqual(child.returncode, 91, child.stderr)
+        saved = self.control('status.json')
+        self.assertEqual((saved['state'], saved['phase']), ('preparing', 'submitted'))
+        self.assertFalse((self.directory / 'initial.json').exists())
+        current = job.status(self.jobs_root, self.ident)['job']
+        self.assertEqual((current['state'], current['worker_active']), ('interrupted', False))
+        self.assertEqual(self.control('status.json'), saved)   # inspection does not rewrite the recovery marker
+        resumed = job.resume(self.jobs_root, self.ident)['job']
+        self.assertEqual((resumed['state'], resumed['attempt']), ('completed', 2))
+        self.assertEqual(self.backend.preparations, 1)
+
+    def test_preparation_boundary_is_durable_and_never_resamples_after_failure(self):
+        def interrupted(*args, **kwargs):
+            self.assertNotIn('phase', self.control('status.json'))
+            raise KeyboardInterrupt()
+        with mock.patch.object(self.backend, 'prepare', side_effect=interrupted) as prepare:
+            answer = self.submit()['job']
+            self.assertEqual(answer['state'], 'interrupted')
+            self.assertNotIn('phase', answer)
+            resumed = job.resume(self.jobs_root, self.ident)['job']
+            self.assertEqual(resumed['error']['code'], 'INITIAL_INCOMPLETE')
+            self.assertEqual(prepare.call_count, 1)
+
+    def test_extreme_integer_schedule_and_wall_limit_refuse_before_publication(self):
+        for changed in ({'schedule_s': [0, 10 ** 400]}, {'max_wall_seconds': 10 ** 400}):
+            with self.subTest(changed=next(iter(changed))):
+                with self.assertRaises(job.jobs.JobError) as raised:
+                    self.submit(**changed)
+                self.assertEqual(raised.exception.code, 'INVALID_REQUEST')
+                body = dict(options={}, schedule_s=[0., 1.], max_wall_seconds=300.)
+                body.update(changed)
+                answer, code = job.response(['submit', '--root', str(self.jobs_root), '--job-id', self.ident,
+                                            '--file', str(self.source)], io.BytesIO(json.dumps(body).encode()))
+                self.assertEqual((code, answer['error']['code']), (2, 'INVALID_REQUEST'))
+        self.assertEqual(list(self.jobs_root.iterdir()), [])
+        self.assertEqual(self.backend.preparations, 0)
+
+    def root_of(self, length):
+        """A new jobs root whose absolute path is exactly ``length`` characters."""
+        root = self.root / (str(length) + 'q' * (length - len(str(self.root)) - 1 - len(str(length))))
+        self.assertEqual(len(str(root)), length)
+        root.mkdir()
+        return root
+
+    def test_every_output_of_a_full_long_float_schedule_stays_readable_and_resumable(self):
+        def prepare(saved, options, *, cancel=None):
+            # Myr-scale horizon and outputs of tens of kilobytes, so each size_bytes has five digits.
+            initial = dict(schema='fake-initial', max_elapsed_s=1e16, source_binding=self.backend.source_binding(),
+                           sampled=[1.] * 600, input_sha256=hashlib.sha256(saved).hexdigest(), options=options)
+            return dict(initial, initial_id=identity(initial))
+        schedule = [0.] + [index * self.MYR / 7 for index in range(1, job.MAX_OUTPUTS)]
+        with mock.patch.object(self.backend, 'prepare', side_effect=prepare):
+            answer = self.submit(schedule_s=schedule)['job']
+        self.assertEqual((answer['state'], answer['completed_outputs']), ('completed', 256))
+        body = (self.directory / 'prefix.json').read_bytes()
+        self.assertLessEqual(len(body), 65536)
+        self.assertEqual(body, job._encoded(json.loads(body), 65535) + b'\n')
+        resumed = job.resume(self.jobs_root, self.ident)['job']
+        self.assertEqual((resumed['state'], resumed['restored_outputs'], resumed['computed_outputs']),
+                         ('completed', 256, 0))
+        self.assertEqual(job.read_output(self.jobs_root, self.ident, 0)['elapsed_s'], 0.)
+        self.assertEqual(job.read_output(self.jobs_root, self.ident)['elapsed_s'], schedule[-1])
+
+    def test_a_schedule_whose_complete_prefix_cannot_fit_is_refused_at_submit(self):
+        schedule = [0] + [10 ** 70 + index for index in range(1, job.MAX_OUTPUTS)]
+        with self.assertRaises(job.jobs.JobError) as raised:
+            self.submit(schedule_s=schedule)
+        self.assertEqual(raised.exception.code, 'OUTPUT_LIMIT')
+        self.assertEqual(list(self.jobs_root.iterdir()), [])
+        self.assertEqual(self.backend.preparations, 0)
+
+    def test_a_failure_while_staging_leaves_no_job_and_the_id_stays_usable(self):
+        read = job._read
+        def copied(path, maximum):
+            body = read(path, maximum)
+            return b'changed while copying' if Path(path).name == 'input.atlas' else body
+        with mock.patch.object(job, '_read', side_effect=copied):
+            with self.assertRaises(job.jobs.JobError) as raised:
+                self.submit()
+        self.assertEqual(raised.exception.code, 'INPUT_CHANGED')
+        self.assertEqual(sorted(path.name for path in self.jobs_root.iterdir()), ['active.lock'])
+        self.assertEqual(self.backend.preparations, 0)
+        self.assertEqual(self.submit()['job']['state'], 'completed')
+        self.assertEqual(job.status(self.jobs_root, self.ident)['job']['state'], 'completed')
+
+    def test_a_poll_at_publication_cannot_wedge_a_new_world_job(self):
+        # A result/status poll takes worker.lock the moment the job directory appears, however it appears.
+        seen, held, release = [], threading.Event(), threading.Event()
+        def poll():
+            with job.jobs._lock(self.directory / 'worker.lock'):
+                try:
+                    seen.append(job._request(self.directory)[0]['job_id'] == self.ident)
+                except Exception as exc:
+                    seen.append(type(exc).__name__)
+                held.set()
+                release.wait(5)
+        def appeared(path):
+            if Path(path) == self.directory and not held.is_set():
+                poller = threading.Thread(target=poll, daemon=True)
+                poller.start()
+                self.addCleanup(poller.join, 5)
+                self.addCleanup(release.set)         # runs first: never leave the lock held after a failure
+                self.assertTrue(held.wait(5))
+                threading.Timer(.2, release.set).start()
+        mkdir, rename = Path.mkdir, os.rename
+        def made(path, *args, **kwargs):
+            mkdir(path, *args, **kwargs)
+            appeared(path)
+        def renamed(source, target, *args, **kwargs):
+            rename(source, target, *args, **kwargs)
+            appeared(target)
+        with mock.patch.object(Path, 'mkdir', made), mock.patch.object(os, 'rename', renamed):
+            answer = self.submit()['job']
+        self.assertEqual(seen, [True])
+        self.assertEqual(answer['state'], 'completed')
+        self.assertEqual(job.status(self.jobs_root, self.ident)['job']['state'], 'completed')
+
+    def test_a_cancel_before_the_worker_starts_leaves_a_job_that_resume_starts(self):
+        # Verifier findings: a cancel landing between publication and the worker's claim either vanished (lock free)
+        # or, when a poll held the lock, stopped the job before preparation and left an ID that could never resume.
+        for held_by_poll in (False, True):
+            with self.subTest(held_by_poll=held_by_poll):
+                self.ident = ('8' if held_by_poll else '7') * 32
+                self.directory, seen, rename = self.jobs_root / self.ident, [], os.rename
+                before = self.backend.preparations
+                def published(source, target, *args, **kwargs):
+                    rename(source, target, *args, **kwargs)
+                    if Path(target) != self.directory or seen:
+                        return
+                    seen.append(job.status(self.jobs_root, self.ident)['job'])
+                    with contextlib.ExitStack() as poll:
+                        if held_by_poll:
+                            poll.enter_context(job.jobs._lock(self.directory / 'worker.lock'))
+                        seen.append(job.cancel(self.jobs_root, self.ident)['job'])
+                with mock.patch.object(os, 'rename', published):
+                    answer = self.submit()['job']
+                waiting, cancelled = seen
+                self.assertEqual((waiting['state'], waiting['phase'], waiting['worker_active']),
+                                 ('preparing', 'submitted', False))
+                self.assertEqual(cancelled['state'], 'preparing')
+                self.assertTrue((self.directory / 'cancel-0001.json').is_file())
+                self.assertEqual((answer['state'], answer['error']['code'], answer['phase']),
+                                 ('cancelled', 'CANCELLED', 'submitted'))
+                self.assertEqual(self.backend.preparations, before)
+                self.assertFalse((self.directory / 'initial.json').exists())
+                resumed = job.resume(self.jobs_root, self.ident)['job']
+                self.assertEqual((resumed['state'], resumed['attempt'], resumed['computed_outputs']), ('completed', 2, 3))
+                self.assertNotIn('phase', resumed)
+                self.assertEqual(self.backend.preparations, before + 1)
+
+    def test_a_lock_held_past_the_claim_leaves_a_new_world_job_that_resume_starts(self):
+        # Verifier finding: the new-world counterpart of the W12 test. A refused first claim left 'interrupted' with
+        # nothing prepared, and every resume refused INITIAL_INCOMPLETE.
+        holder, rename = contextlib.ExitStack(), os.rename
+        self.addCleanup(holder.close)
+        def published(source, target, *args, **kwargs):
+            rename(source, target, *args, **kwargs)
+            if Path(target) == self.directory:
+                holder.enter_context(job.jobs._lock(self.directory / 'worker.lock'))
+        with mock.patch.object(os, 'rename', published), mock.patch.object(job.jobs.time, 'sleep') as sleep:
+            with self.assertRaises(job.jobs.JobError) as raised:
+                self.submit()
+        self.assertEqual(raised.exception.code, 'RUN_BUSY')
+        self.assertEqual(sleep.call_count, job.jobs.CLAIM_RETRIES - 1)
+        holder.close()
+        self.assertEqual(self.backend.preparations, 0)
+        current = job.status(self.jobs_root, self.ident)['job']
+        self.assertEqual((current['state'], current['phase'], current['attempt']), ('interrupted', 'submitted', 1))
+        self.assertEqual(self.submit()['job']['state'], 'interrupted')      # the same submission, not a second one
+        resumed = job.resume(self.jobs_root, self.ident)['job']
+        self.assertEqual((resumed['state'], resumed['attempt'], resumed['computed_outputs']), ('completed', 2, 3))
+        self.assertEqual(self.backend.preparations, 1)
+        self.assertEqual(job.read_output(self.jobs_root, self.ident)['elapsed_s'], 2.)
+
+    def test_path_budget_counts_the_longest_cancellation_temporary(self):
+        # '.cancel-1000.json-<32 hex>' is 50 characters; with the separator it sets the 259-unit maximum.
+        for extra, refused in ((0, False), (1, True)):
+            with self.subTest(refused=refused):
+                directory = self.jobs_root / ('d' * (259 - len(str(self.jobs_root)) - 1 - 33 - 51 + extra)) / self.ident
+                self.assertEqual(len(str(directory)) + 51, 259 + extra)
+                with mock.patch.object(job.os, 'name', 'nt'):
+                    if refused:
+                        with self.assertRaises(job.jobs.JobError) as raised:
+                            job._path_budget(directory)
+                        self.assertEqual(raised.exception.code, 'INVALID_PATH')
+                    else:
+                        job._path_budget(directory)
+
+    @unittest.skipUnless(os.name == 'nt', 'the path budget applies to ordinary Windows paths')
+    def test_a_windows_root_too_long_for_job_files_is_refused_before_anything_exists(self):
+        root = self.root_of(195)
+        for attempt in (1, 2):
+            with self.subTest(attempt=attempt):
+                with self.assertRaises(job.jobs.JobError) as raised:
+                    job.submit(root, self.ident, self.source, options={}, schedule_s=[0., 1.], max_wall_seconds=300.)
+                self.assertEqual(raised.exception.code, 'INVALID_PATH')
+        self.assertEqual(list(root.iterdir()), [])
+        self.assertEqual(self.backend.preparations, 0)
+
+    @unittest.skipUnless(os.name == 'nt', 'the path budget applies to ordinary Windows paths')
+    def test_cancel_works_under_every_admitted_windows_root_length(self):
+        ticks = [0.]
+        def clock():
+            ticks[0] += .11
+            return ticks[0]
+        for length in (175, 176, 177, 178):
+            with self.subTest(length=length):
+                root, requested = self.root_of(length), []
+                def request_cancel(elapsed, root=root, requested=requested):
+                    if elapsed == 1.:
+                        try:
+                            requested.append(job.cancel(root, self.ident)['job']['worker_active'])
+                        except Exception as exc:
+                            requested.append(job._safe(exc)['code'])
+                self.backend.on_evaluate = request_cancel
+                with mock.patch.object(job, 'time', SimpleNamespace(perf_counter=clock)):
+                    try:
+                        result = job.submit(root, self.ident, self.source, options={}, schedule_s=[0., 1., 2.],
+                                            max_wall_seconds=300.)['job']
+                    except job.jobs.JobError as exc:
+                        # 1 + 32 + 1 + 50 characters below the root: 176 is the first refused length.
+                        self.assertEqual((exc.code, length >= 176), ('INVALID_PATH', True))
+                        self.assertEqual(list(root.iterdir()), [])
+                        continue
+                self.assertLess(length, 176)
+                self.assertEqual(requested, [True])
+                self.assertEqual((result['state'], result['error']['code']), ('cancelled', 'CANCELLED'))
+                self.assertTrue((root / self.ident / 'cancel-0001.json').is_file())
 
 
 if __name__ == '__main__':

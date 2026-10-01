@@ -2,9 +2,10 @@
 
 SPDX-License-Identifier: AGPL-3.0-only
 
-Every analytical, scale, gate, refusal and reuse check of
-``test_regional_execution3d`` is repeated with ``method='multigrid'`` (checks
-that explicitly name another method keep it). Element operators are compared
+The default-method analytical, scale, gate, refusal and reuse contracts of
+``test_regional_execution3d`` are repeated with ``method='multigrid'``. Explicit
+direct/GMRES-only controls remain in the reference module, without duplicate
+execution here. Element operators are compared
 with the assembled reference; the reuse path is checked for changed-input
 invalidation; the plate and evolution consumers are exercised directly.
 """
@@ -323,7 +324,8 @@ class MultigridPlanTests(unittest.TestCase):
                 pattern = reference.pattern() if boundary == 'closed' else dict(reference.pattern(), z1=('traction',)*3)
                 with prepare(cells=cells, lengths=(length,)*3, eta=np.where(inside, 1e17, 1e21), boundary=pattern,
                              method=method, scales=RegionalMechanicsScales(length, 1e-9),
-                             reference_viscosity_pa_s=1e21, physical_mean_pressure_pa=None) as plan:
+                             reference_viscosity_pa_s=1e21, physical_mean_pressure_pa=None,
+                             budget=WorkBudget(512*1024**2)) as plan:
                     results[boundary, method] = reference.solve(plan, force=force)
             u0 = results[boundary, 'direct'].array('velocity_m_s')
             u1 = results[boundary, 'multigrid'].array('velocity_m_s')

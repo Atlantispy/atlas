@@ -548,13 +548,21 @@ not the I10 project/UI route.
 
 ## 7. Checks, coverage and measured overhead
 
-The integrated files passed **758 I01/I02 tests on Windows/CPython 3.12.14**
+**Recorded I02 acceptance checkpoint, 30 September 2026 (before R4):**
+the integrated files passed **758 I01/I02 tests on Windows/CPython 3.12.14**
 in 149.794 s on 30 September 2026. The before-commit guard checked Git-normalised
 candidate bytes: all three guards passed in 154.1 s, including the current-evidence
 register and LF-digest checks. Nothing was staged or committed. Eight affected
 I01 controls were freshly captured in dependency order; unchanged evidence and
 the shared job/storage checks below were reused. This accepts the declared I02
 workflow, not the entire tectonics generator. Linux is not covered.
+
+R4 and its follow-up reliability/resource fixes are now integrated. Their
+[focused Windows checks](../../docs/CURRENT_EVIDENCE.md#integration-checks) and
+the r6 captures below cover the changed boundaries. The final Git-normalised
+integration guard passed all three checks in 169.6 s, including 759 I01/I02 tests
+in 164.449 s with no failures or skips. The following per-module counts are retained
+from the earlier I02 checkpoint.
 
 | Plan step and its "done when" | Checks | Result |
 | --- | --- | --- |
@@ -596,19 +604,28 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r5](../evidence/i02-workflow-timing-r5.json),
-30 September 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
-one BLAS thread. It was recaptured after the 3-D evolution restart-admission
-correction, following the multigrid-first automatic solver choice. The harness ran five
+**Current source-bound measurement:** [i02-workflow-timing-r6](../evidence/i02-workflow-timing-r6.json),
+1 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
+one BLAS thread. It was captured after R4 and the final checkpoint, job,
+resource and cache fixes. The harness ran five
 repetitions of the same supported 16-step, 32-material-point case, saving every
 four steps and reopening at step eight. All seven checks passed, including
 cold/warm physical equality, reopened accounts and unchanged sources. The record
 binds 151 source files and records the execution identity; hashing is outside the
 measured regions. This is a fresh bounded-column receipt, not a 3-D speedup
 measurement: the column workflow does not use the 3-D solvers, and the new
-record exists because the package sources it binds changed. Earlier timings from the harness
-with incomplete equality checks are not current acceptance evidence.
-Warm medians of the four later repetitions unless marked cold:
+record exists because the package sources it binds changed. Its warm medians are
+**0.06891915 s** for bare evolution, **0.06927255 s** for in-memory continuation
+(+0.51%), and **0.10706250 s** for the stored workflow (+55.35% against bare
+evolution), of which **0.02012840 s** is four commits. Cold root/head/operator
+reopening totals **0.12608880 s**; the receipt retains every sample and growth
+measurement. These tiny-case costs are not a general overhead or speedup claim.
+
+**Historical r5 measurement, 30 September 2026:** the table and interpretation
+below describe the unchanged [r5 receipt](../evidence/i02-workflow-timing-r5.json),
+not the current r6 checkout. Earlier timings from the harness with incomplete
+equality checks are not current acceptance evidence. Warm medians of the four
+later r5 repetitions unless marked cold:
 
 | Mode | Seconds | Relative |
 | --- | --- | --- |
@@ -706,6 +723,22 @@ correction changed package sources again. Fresh timing r5 passed all seven check
 over five repetitions with 151 bindings and supersedes r4; r1-r4 remain unchanged.
 This successor checks the bounded column workflow, not 3-D solver speed. No other
 current record binds the changed files.
+
+R4 and its follow-up fixes are integrated locally, changing `storage`,
+`tectonic_history`, `tectonic_history_codec`, `reuse`, resource/solver accounting
+and `tools/tectonics_job.py`. Timing r5 (whole package and `tectonics_job.py`) and
+finite-admission r5 (restoration dependencies) are now superseded by fresh
+[timing r6](../evidence/i02-workflow-timing-r6.json) and
+[finite-admission r6](../evidence/i01-finite-admission-r6.json). All seven timing
+checks and all five admission controls passed with unchanged sources; valid
+upstream receipts were reused. The old receipts were not edited. Final
+Git-normalised integration verification passed as recorded in section 6 above.
+`tectonics_job.py` is one of this workflow's sources, so column-workflow projects saved
+before it refuse `advance` and `load` with `SOURCE_MISMATCH`. Its control files are now
+written as compact JSON; they are read as JSON, so the format alone refuses nothing.
+The ledger's store now also reports a lock that is already held when a `put` starts
+preparing as `StoreError` (previously a raw SQLite error), matching the commit
+contract above.
 
 ## 9. Acceptance commands after review
 

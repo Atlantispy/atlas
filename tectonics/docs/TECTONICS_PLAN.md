@@ -383,50 +383,10 @@ reference resolution and combined campaign acceptance remain R4.4 requirements.
 
 ### Obtained dev35 evidence
 
-The final frozen source passed **2,342 tests (51 new), zero failures/errors/skips**,
-with all **175** executable/case/test/tool hashes unchanged and
-`PASS_BOUNDED_CURRENT_PLATFORM`. The retained full-inventory method independently
-checks success/refusal equivalence. Same-length/same-mtime file changes, nested
-mutable defaults, methods/descriptors, JIT options, added/deleted aliases and
-qualified-name collisions remain detected.
-
-Seven unprofiled batches of 20 checks per backend measured verification time
-reductions of **26.6% (reference), 28.2% (SciPy) and 29.9% (Numba)**. The separate
-call profile retains six verification calls and six source-byte reads per coupled
-timestep in both cold and opt-in warm modes; no check is removed.
-
-Five unprofiled repetitions per version and mode compare complete prepared steps:
-
-| Workload, opt-in rk-stage0 | dev34 median, s | dev35 median, s | Less time | Repetition ranges overlap? |
-|---|---:|---:|---:|---|
-| Initial case 1 16×16 | 0.067993 | 0.054048 | 20.5% | No |
-| Developed case 2 16×16 | 0.960354 | 0.976468 | -1.7% | Yes |
-| Initial case 2 16×16 | 0.136271 | 0.123985 | 9.0% | No |
-| Initial case 1 64×64 | 0.222662 | 0.204905 | 8.0% | No |
-| Initial case 1 128×128 | 1.210126 | 1.201074 | 0.7% | Yes |
-
-Negative reduction means slower. Developed nonlinear and 128×128 measurements
-have overlapping ranges and do not establish a dependable complete-step gain;
-cold medians there were 3.0% and 2.7% slower respectively. Small initial cases
-show the clearest benefit. Preparation/first calls, all raw ranges and endpoint
-times are retained separately. These are not whole-campaign forecasts.
-
-All 11 compared physical arrays are byte-identical to dev34 in each of ten
-workload/mode pairs; iteration counts are unchanged. An actual warm 128×128
-four-step CLI/store run equals two fresh-process two-step segments after source
-relocation and store copying. A separate dev34 run gives identical temperature
-and composition bytes. Changed-source continuation is refused in both directions;
-changed starting policy is refused and the original partial store is unchanged.
-Peak admitted numerical memory remains **719,543,976 bytes**, with zero retained
-reservations, under the existing 1 GiB budget. Each retained expected-binding table
-has measured shallow size **51,968 bytes**, sharing captured tokens, plus one
-private shallow copy while checking. Python/JIT/database/native allocator headroom
-is separate; none of these observations is a total-process RSS cap.
-
-See `../evidence/3cr4-4-dev35-tests.json` and
-`../evidence/3cr4-4-dev35-measurements.json` for the source-bound results. Matching
-arrays and passing component/workflow tests do not complete mature convection,
-mesh/time/nonlinear adequacy, outstanding references or R4.4 campaign acceptance.
+The canonical [dev35 evidence account](OPTIMISATION_REFERENCE.md#obtained-dev35-evidence)
+retains the matched timing table, raw receipt links, verification/restart checks,
+memory accounting and measured limitations. It describes that frozen source and
+runtime, not today's checkout or completed R4.4 campaign acceptance.
 
 ### Previous dev34 implementation and retained history
 
@@ -483,49 +443,11 @@ parallelism is included in this isolated task.
 
 ### Obtained dev34 verification and measured limits
 
-The frozen executable source passed **2,291 tests, including 47 new tests**,
-with zero failures/errors/skips and `PASS_BOUNDED_CURRENT_PLATFORM`. All
-173 source/case/test/tool hashes were unchanged during verification.
-Five serial unprofiled repetitions per route compare exact physical inputs and
-unchanged precision/timestep/ILU/convergence gates. Pristine dev33 and dev34 cold
-fields agree bit-for-bit across all five measured workloads; explicit-start
-results are close, **not** relabelled as bit-identical to cold results.
-
-| Workload | dev33 cold, s | dev34 cold, s | dev34 explicit start, s | Same-source speedup |
-|---|---:|---:|---:|---:|
-| Developed case 2, 16×16 timestep | 1.153824 | 1.186607 | 0.978180 | 1.213× |
-| Initial case 2, 16×16 timestep | 0.170884 | 0.157192 | 0.133826 | 1.175× |
-| Initial case 1, 16×16 timestep | 0.069182 | 0.068943 | 0.070019 | 0.985× |
-| Initial case 1, 64×64 timestep | 0.228984 | 0.223949 | 0.215555 | 1.039× |
-| Initial case 1, 128×128 timestep | 1.234523 | 1.225195 | 1.177197 | 1.041× |
-
-
-For developed case 2, stage 1 fell from 76 to 55 Picard iterations while stage 0
-remained cold with 75. The complete prepared timestep is 17.6% cheaper within
-dev34 and 15.2% cheaper than the matched dev33 cold baseline on this host. Initial
-case 2 falls from 11 to 6 stage-1 Picard iterations. Case-1 Picard counts remain
-1/1, although the supplied linear guess reduces some GMRES work. Repeat ranges are retained
-for each route; small single-host differences are not universal speedups or
-whole-campaign forecasts. Preparation, first-call and independent cold
-endpoint timings are in `../evidence/3cr4-4-dev34-measurements.json`.
-
-Independent scalar-root, full coupled ODE/time-refinement, failure/cancellation,
-source/policy refusal and self-contained saved-input tests passed. All 26 Tosi
-input configurations passed matched two-step 4×4 checks under both modes. A
-separate developed 16×16 transient passed 20 steps per mode; maximum final
-warm/cold temperature difference was 1.815e-12 K. These are numerical/short-path
-checks, not mature published convection or a guarantee of a unique nonlinear root.
-A real 128×128 four-step run matched two fresh-process two-step segments exactly
-after source relocation and store copying. Actual run maximum admitted memory
-was 719,543,976 bytes under the retained 1 GiB budget; all closures released their
-reservations, and both changed-source and changed-start-policy continuation were
-refused. WorkBudget is not an OS total-RSS limiter.
-
-One one-step feasibility pilot preceded the new comparison specification; its
-comparison gates were fixed before formal tests/measurements and never loosened.
-The initial descriptor list/tuple mismatch and memory-exception reclassification
-were corrected before final evidence. R4.4 remains IN_PROGRESS; this completes
-only the separately selected explicit-start optimisation, retained as opt-in.
+The canonical [dev34 verification and measured limits](OPTIMISATION_REFERENCE.md#obtained-dev34-verification-and-measured-limits)
+retain the cold/explicit-start comparison, source-bound receipts, numerical and
+restart checks, memory limits and pilot/correction history. Those bounded results
+support the opt-in explicit-start optimisation, not mature convection or complete
+R4.4 acceptance.
 
 ### Previous dev33 implementation and retained history
 
@@ -569,34 +491,10 @@ parallel campaign scheduling and timestep policy are not implemented by this tas
 
 ### Obtained dev33 verification and matched measurements
 
-The final frozen source passes **2,244 tests (26 new)**, with zero failures,
-errors or skips and `PASS_BOUNDED_CURRENT_PLATFORM`. The 171-file executable/
-case/test/tool inventory is unchanged before and after the run. Separate matched
-comparisons use five repetitions per workload, identical explicit inputs, one
-native thread and serial version-isolated processes. Across all seven workloads, the compared saved
-field/operator arrays are bit-for-bit equal on the exercised runtime, including
-the developed transient nonlinear fixture. This is not a universal bit-identity
-claim across other platforms or every admitted input.
-
-| Workload | dev32 seconds | dev33 seconds | Speedup | Less time |
-|---|---:|---:|---:|---:|
-| Initial case 1, 16×16 timestep | 0.077054 | 0.072601 | 1.061× | 5.8% |
-| Initial case 1, 64×64 timestep | 0.234096 | 0.227106 | 1.031× | 3.0% |
-| Initial case 1, 128×128 timestep | 1.281421 | 1.255447 | 1.021× | 2.0% |
-| Developed case 2, 16×16 endpoint solve | 0.772995 | 0.628282 | 1.230× | 18.7% |
-| Developed case 2, 16×16 timestep | 1.572853 | 1.211589 | 1.298× | 23.0% |
-
-
-These are prepared-operation medians, not startup-inclusive campaign timings.
-Ranges and preparation/first-call costs are retained in
-`../evidence/3cr4-4-dev33-measurements.json`. Small initial-grid gains have overlapping
-repeat ranges; their median differences are not treated as established universal
-speedups. Compilation costs are paid during preparation and no disk JIT cache is
-used. Larger bare-operator gains must not be substituted for complete-step gains.
-An extra SciPy column-vector check found an interface error after an initial
-2,242-test pass; the callback now normalises `(N,)`/`(N,1)` inputs to its declared
-length, and two new tests cover column/matrix use and incorrect length. The earlier
-pass is superseded. The independent NumPy residual checks remain unchanged.
+The canonical [dev33 verification and matched measurements](OPTIMISATION_REFERENCE.md#obtained-dev33-verification-and-matched-measurements)
+retain the timing table, raw receipt link, exercised bit-identity scope,
+preparation/compilation costs and superseded-pass correction. Prepared-operation
+measurements are not startup-inclusive campaign forecasts or universal speedups.
 
 ### Previous dev32 contract and retained history
 
@@ -2957,7 +2855,7 @@ These decisions are not an excuse to keep writing general plans. Each is resolve
 
 ## 12. Next development scope and review guide
 
-**Next separately authorised increment:** R4.4 — full applicable convection benchmarks and combined acceptance.
+**Historical (revision 34):** R4.4 — full applicable convection benchmarks and combined acceptance — was then the next increment; it is now held. Current authority and next action: [current state](../../docs/CURRENT_STATE.md) and the [integration plan](INTEGRATION_PLAN.md).
 R4.3's registered component and explicit coupling are delivered under revision 34; R4 remains IN_PROGRESS.
 R4.2's registered constant-property heat/binary-composition envelope is delivered in revision 32; R4.4 remains open.
 R4.1 supplies the constant-viscosity mechanical component; R4 remains IN PROGRESS.

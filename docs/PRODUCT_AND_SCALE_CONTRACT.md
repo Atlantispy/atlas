@@ -8,8 +8,9 @@
 
 This implements the requested *product and scale definition*, not the later
 production integration or regional experiment. Atlas is vibe-coded: OpenAI
-ChatGPT/Codex writes the code under the owner's direction. This revision is for
-owner and independent review, including Claude's review; agreement is not assumed.
+ChatGPT/Codex and Anthropic Claude Code write the code under the owner's
+direction. This revision is for owner and independent review, including Claude's
+review; agreement is not assumed.
 
 **Revision 2 corrects the product definition after the owner's clarification:**
 Atlas is intended to become independent of the Diadem and may eventually generate

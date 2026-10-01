@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -319,6 +320,35 @@ class CurrentEvidenceTests(unittest.TestCase):
                 if rule['pointer'].endswith('native_execution_id'):
                     self.assertEqual(rule['kind'], 'runtime')
             self.assertFalse(any(rule['pointer'].endswith('_id') for rule in record['bindings']))
+
+
+class ClosureMirrorTests(unittest.TestCase):
+    def test_mirror_matches_register_and_active_rows_do_not_cite_superseded_records(self):
+        repository = Path(__file__).resolve().parents[1]
+        records = {r['id']: r for r in evidence.load_register(repository)['records']}
+        mirror = json.loads((repository/'tectonics/cases/i01_closure_matrix_v1.json').read_text(encoding='utf-8'))
+        for key, receipt in mirror['receipts'].items():
+            with self.subTest(receipt=key):
+                self.assertIn(key, records)
+                for field in ('path', 'sha256'):
+                    self.assertEqual(receipt[field], records[key][field])
+                self.assertEqual(receipt['register_status'], records[key]['status'])
+        stale = []
+        def walk(value, path):
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    walk(item, path+'/'+key)
+            elif isinstance(value, list):
+                for index, item in enumerate(value):
+                    walk(item, path+'/'+str(index))
+            elif isinstance(value, str):
+                for key in re.findall(r'\bi\d{2}-[a-z0-9-]+-r\d+\b', value):
+                    if key in records and records[key]['status'] == 'superseded':
+                        stale.append((path, key, records[key]['superseded_by']))
+        for key, value in mirror.items():
+            if key != 'receipts':
+                walk(value, '/'+key)
+        self.assertEqual(stale, [], 'Active matrix citations must follow their registered successors')
 
 
 if __name__ == '__main__':

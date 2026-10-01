@@ -38,9 +38,10 @@ results remain observations of the original run. Nothing is re-executed.
 ## Coverage today
 
 The [current connected evidence chain](#successor-capture-after-i022a-and-the-writer-correction)
-contains eight successors captured on 30 September 2026 after the I02 cold-restart
-stress-resolution correction, plus the unchanged `i01-column-r2` receipt reused
-from 29 September. All eight bounded captures passed. The five
+retains the eight-control chain refreshed on 30 September 2026 after the I02
+cold-restart stress-resolution correction, with finite-admission renewed again
+as r6 on 1 October. The unchanged `i01-column-r2` receipt is reused from
+29 September. All affected bounded captures passed. The five
 phase/receiver/separation writer-correction receipts and G25 receipt captured on
 29 September also remain current; their inputs were unaffected and were not rerun.
 The replaced receipts are superseded and remain byte-identical. The separate
@@ -56,28 +57,34 @@ accepted clock and save/reopen workflow; it does not establish physical-event or
 whole-world acceptance.
 
 I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
-[i01-finite-admission-r5](../tectonics/evidence/i01-finite-admission-r5.json) now
+[i01-finite-admission-r6](../tectonics/evidence/i01-finite-admission-r6.json) now
 binds that tool, its method document, the restoration modules and the renewed
-upstream receipts. Its predecessor r4 is superseded, with its recorded bytes intact.
+upstream receipts. Its predecessor r5 is superseded, with its recorded bytes intact.
 Restoration checks consistency in a trusted local store, not authorship of records.
 Repair batch R1 (30 September 2026) changed two restoration modules r4 binds
 (`src/atlas_tectonics/timebase.py` and `src/atlas_tectonics/w08_inventory.py`).
-Successor r5 was captured after R1 and its dtype-identity correction were integrated;
-all five controls passed with unchanged sources. Its valid upstream receipts were reused.
+Successor r5 followed R1 and its dtype-identity correction. Successor r6 was
+captured on 1 October 2026 after R4 and the final restoration repair: all five
+controls passed in 1.9299832 s after imports with unchanged sources. Valid upstream
+receipts were reused; this is bounded finite admission, not scientific acceptance.
 See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r5.json)
-was recaptured on 30 September 2026 after the automatic 3-D evolution restart
-admission fix changed two bound package modules. Multigrid-first remains unchanged.
-It supersedes r4, captured after the multigrid-first choice was applied locally;
-r4 superseded r3's earlier uncommitted choice, r3 superseded r2, and r2 succeeded r1
-after R1. None was rewritten. r5 records five repetitions on one Windows machine,
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r6.json)
+was captured on 1 October 2026 after the integrated R4 repairs and follow-up
+checkpoint, job, resource and cache fixes changed its bound sources. It supersedes
+r5; r1-r5 retain their original bytes and historical measurements. r6 records five
+repetitions on one Windows machine,
 unchanged sources and passing equality/parity comparisons. Its 151 source-file digests
 are checked by the register; its opaque package/native `execution_identity` is
 classified as an unchecked runtime observation. A further change to any package
-source makes r5 stale in turn. The column does not use the 3-D solvers; this renews
+source makes r6 stale in turn. The column does not use the 3-D solvers; this renews
 source bindings, not a 3-D speedup measurement. This is operational timing, not scientific
 acceptance, a whole-generator speed claim or other-platform evidence.
+
+The native terrain R5 performance figures are historical measurements from the
+original workspace, not a fresh public-checkout run. Its recovery runbook changed
+at `18dfb1d`; the [R5 evidence record](R5_OPERATIONS_EVIDENCE.md) must not be read as
+a new performance receipt for that changed runbook or the present checkout.
 
 I02.1 adds a package module, changing source membership and native execution
 identity even though existing physical code is unchanged. The three registered
@@ -461,7 +468,7 @@ written as a new file; no old receipt or recorded measurement was rewritten.
 | 5 | `check_i01_column_admission.py` | [i01-column-admission-r3](../tectonics/evidence/i01-column-admission-r3.json) | motion coupling r3, decoupling r1 |
 | 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r4](../tectonics/evidence/i01-thermomechanical-motion-r4.json) | column heat r5, motion coupling r3 |
 | 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r5](../tectonics/evidence/i01-finite-strain-r5.json) | thermomechanical r4, column heat r5, motion coupling r3 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r5](../tectonics/evidence/i01-finite-admission-r5.json) | finite strain r5, column admission r3 |
+| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r6](../tectonics/evidence/i01-finite-admission-r6.json) | finite strain r5, column admission r3 |
 | 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r4](../tectonics/evidence/i01-breakup-closure-r4.json) | finite strain r5 |
 
 The five phase/receiver/separation successors and the G25 successor passed on
@@ -496,6 +503,19 @@ registration are local evidence states; Git commit and publication are separate.
 
 ## Integration checks
 
+**R4 integration, 1 October 2026.** The reviewed patch and its follow-up
+checkpoint corruption/race, never-started retry, resource-accounting, cache and
+ZIP/input fixes are integrated locally. Focused Windows checks passed: 45 solver
+tests in 117.055 s; 94 job/bundle/session/worker tests in 17.765 s; 65 reuse tests
+in 23.741 s; 15 history tests in 101.880 s plus four final guards in 7.457 s; and
+one restoration regression. These are selected checks, not a full-suite pass.
+Finite-admission r6 passed all five controls and workflow-timing r6 all seven
+equality/source checks; their r5 predecessors remain unchanged and superseded.
+The final Git-normalised integration guard passed all three checks in 169.6 s:
+the evidence register, three LF-digest tests and 759 I01/I02 tests (164.449 s).
+No failures or skips occurred in that I01/I02 run. Nothing was staged or committed.
+
+**Original checker delivery (historical).**
 Claude supplied the checker and 19 focused tests. Review corrected the three
 whole-record classifications above and tightened strict JSON parsing: exponent
 overflow such as `1e999` is now refused instead of silently becoming infinity.

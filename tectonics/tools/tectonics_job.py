@@ -7,12 +7,13 @@ immutable requests and native commits survive it. This is not a new scheduler.
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager, suppress
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import time
 import uuid
@@ -25,10 +26,18 @@ REQUEST_SCHEMA = 'atlas.tectonics-job-request.v1'
 CASE = 'w12-public-columns-v1'
 MAX_JOBS = 32
 MAX_SECONDS = 300.
+MAX_CONTROL = 64 << 10          # every control file's read limit; writes must fit it, newline included
 ACTIVE = {'preparing', 'running', 'finalising'}
 TERMINAL = {'completed', 'cancelled', 'failed', 'interrupted'}
 JOB_ID = re.compile(r'[0-9a-f]{32}\Z')
 REPORT = re.compile(r'run-[0-9]{5}\.json\Z')
+# A just-published job's worker lock can be held only by a status/cancel/result poll (active.lock excludes every
+# other worker), for microseconds: its first claim waits up to about two seconds before RUN_BUSY.
+CLAIM_RETRIES, CLAIM_WAIT_S = 100, .02
+STAGING_HEX = 16                # random suffix of a dot-named staging folder (see _staging)
+# Status phase of a published job that no worker has started: awaiting its submitter's claim while active, or never
+# started once stopped. Polls report it as it is (never 'interrupted' while it waits) and cancel records a request.
+SUBMITTED = 'submitted'
 
 
 class JobError(ValueError):
@@ -38,18 +47,26 @@ class JobError(ValueError):
 
 
 def _json(path):
-    return reader._read_json(path, 64 << 10)
+    return reader._read_json(path, MAX_CONTROL)
+
+
+def _encode(value):
+    """Canonical compact control bytes (sorted keys, no spaces, finite, ASCII, one newline) within the read limit."""
+    body = (json.dumps(value, allow_nan=False, sort_keys=True, separators=(',', ':')) + '\n').encode('utf-8')
+    if len(body) > MAX_CONTROL:
+        raise JobError('OUTPUT_LIMIT', 'A job control record exceeds its 64 KiB control-file limit.')
+    return body
 
 
 def _atomic(path, value):
+    body = _encode(value)       # refused before any temporary exists
     reader._path(path.parent, directory=True)
     if path.exists() or path.is_symlink():
-        reader._path(path, maximum=64 << 10)
+        reader._path(path, maximum=MAX_CONTROL)
     temporary = path.with_name('.' + path.name + '-' + uuid.uuid4().hex)
     try:
-        with temporary.open('x', encoding='utf-8', newline='\n') as stream:
-            json.dump(value, stream, allow_nan=False, sort_keys=True)
-            stream.write('\n')
+        with temporary.open('xb') as stream:
+            stream.write(body)
             stream.flush()
             os.fsync(stream.fileno())
         for attempt in range(reader.REPLACE_RETRIES):
@@ -71,10 +88,14 @@ def _lock(path):
     """One-byte advisory process lock; never infer liveness from PID reuse."""
     reader._path(path.parent, directory=True)
     try:
-        with path.open('xb') as initial:
-            initial.write(b'0')
+        initial = path.open('xb')
     except FileExistsError:
         pass
+    else:
+        # Windows byte locks are mandatory: another caller may lock this new, still empty file before its byte is
+        # flushed, refusing the write. The file exists either way and an empty lock file is accepted below.
+        with suppress(PermissionError), initial:
+            initial.write(b'0')
     reader._path(path, maximum=1)
     with path.open('r+b') as stream:
         try:
@@ -96,14 +117,94 @@ def _lock(path):
                 fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
-def _busy(directory):
+@contextmanager
+def _claim(directory, write, claimed, abandoned):
+    """Claim a job this call has just published under active.lock (status phase SUBMITTED) and record the claim.
+
+    The worker lock is retried briefly (CLAIM_RETRIES) because a poll may land right after publication; a lock still
+    held after the wait refuses RUN_BUSY as before. ``write(path, record)`` then replaces the staged status with
+    ``claimed``. Until that is recorded, any failure (that RUN_BUSY, an interruption, a failed write) records
+    ``abandoned`` instead, as a best effort: the job reads as interrupted and never started, so resume starts it.
+    """
+    held = ExitStack()
     try:
-        with _lock(directory / 'worker.lock'):
+        for attempt in range(CLAIM_RETRIES):
+            try:
+                held.enter_context(_lock(directory / 'worker.lock'))
+                break
+            except JobError as exc:
+                if exc.code != 'RUN_BUSY' or attempt == CLAIM_RETRIES-1:
+                    raise
+                time.sleep(CLAIM_WAIT_S)
+        write(directory / 'status.json', claimed)
+    except BaseException:
+        with held, suppress(Exception):
+            write(directory / 'status.json', abandoned)
+        raise
+    with held:
+        yield
+
+
+def _busy(directory, name='worker.lock'):
+    try:
+        with _lock(directory / name):
             return False
     except JobError as exc:
         if exc.code == 'RUN_BUSY':
             return True
         raise
+
+
+def _staging(directory, token):
+    # Dot-named sibling '.<job ID>-<16 hex>': never matches JOB_ID, so it is never counted, listed or read as a job.
+    # Its longest path (root + 64 characters) stays below the job directory's own longest control temporary.
+    return directory.with_name('.' + directory.name + '-' + token)
+
+
+def _stage(directory, files, check=None):
+    """Publish a new job directory complete: write its files into a dot-named staging folder, then rename it.
+
+    Call under the root's active.lock. A poll finds no job or one with every control file, never half of one.
+    Before the rename, a failure removes only the files this call created (identity-checked, after their handles
+    closed) and then its empty folder. A hard crash can leave that folder; nothing deletes it automatically.
+    """
+    staging = _staging(directory, uuid.uuid4().hex[:STAGING_HEX])
+    staging.mkdir()
+    folder, owned = os.lstat(staging), []
+    try:
+        for name, body in files:
+            with (staging / name).open('xb') as stream:
+                owned.append((staging / name, os.fstat(stream.fileno())))
+                stream.write(body)
+                stream.flush()
+                os.fsync(stream.fileno())
+        if check is not None:
+            check(staging)
+        for attempt in range(reader.REPLACE_RETRIES):
+            try:
+                os.rename(staging, directory)
+                break
+            except PermissionError:
+                # Windows refuses a directory rename while another process (an indexer or antivirus) has it open.
+                if not reader.WINDOWS or attempt == reader.REPLACE_RETRIES-1:
+                    raise
+                time.sleep(reader.REPLACE_WAIT_S)
+    except BaseException:
+        for path, created in reversed(owned):
+            with suppress(OSError):
+                info = os.lstat(path)
+                if stat.S_ISREG(info.st_mode) and (info.st_dev, info.st_ino) == (created.st_dev, created.st_ino):
+                    os.unlink(path)
+        with suppress(OSError):
+            info = os.lstat(staging)
+            if stat.S_ISDIR(info.st_mode) and (info.st_dev, info.st_ino) == (folder.st_dev, folder.st_ino):
+                os.rmdir(staging)       # only when empty; anything this call did not create is left alone
+        raise
+
+
+def _new_state(job_id, attempt):
+    return dict(schema=SCHEMA, job_id=job_id, state='preparing', phase='preparing', attempt=attempt,
+                completed_outputs=0, total_outputs=3, report=None, product_id=None, seconds=0., error=None)
 
 
 def _paths(root, job_id, *, existing=True):
@@ -199,9 +300,15 @@ def _cancelled(directory, state):
 def _public(directory, state, *, busy):
     request = _request(directory)
     state = dict(state)
-    if state['state'] in ACTIVE and not busy:
-        state.update(state='interrupted', phase='worker-exited')
-    requested = busy and _cancelled(directory, state)
+    # A live submitter holds active.lock even before claiming worker.lock. If both locks are free, a hard-killed
+    # submitter cannot publish its terminal status: expose recovery without changing the saved never-started phase.
+    waiting = (state['state'] in ACTIVE and state.get('phase') == SUBMITTED
+               and (busy or _busy(directory.parent, 'active.lock')))
+    if state['state'] in ACTIVE and not busy and not waiting:
+        state['state'] = 'interrupted'
+        if state.get('phase') != SUBMITTED:
+            state['phase'] = 'worker-exited'
+    requested = (busy or waiting) and _cancelled(directory, state)
     if requested and state['state'] in ACTIVE:
         state['state'] = 'cancelling'
     return dict(schema=SCHEMA, status='ok', job=dict(
@@ -213,7 +320,7 @@ def _public(directory, state, *, busy):
         seconds=state.get('seconds'), statistics=state.get('statistics'),
         error=state.get('error'), cancellation_requested=bool(requested),
         worker_active=busy,
-        capabilities=dict(cancel=busy and state['state'] in ACTIVE | {'cancelling'},
+        capabilities=dict(cancel=(busy or waiting) and state['state'] in ACTIVE | {'cancelling'},
             resume=not busy and state['state'] in {'cancelled', 'interrupted', 'failed'},
             inspect=not busy and state.get('report') is not None),
         resume_validation='Original inputs, source/runtime and native dependencies must verify.',
@@ -238,7 +345,8 @@ def status(root, job_id):
 def cancel(root, job_id):
     _, directory = _paths(root, job_id)
     state = _state(directory)
-    if _busy(directory) and state['state'] in ACTIVE:
+    # A job awaiting its claim takes the request without probing its lock: its worker checks it before any work.
+    if state['state'] in ACTIVE and (state.get('phase') == SUBMITTED or _busy(directory)):
         _atomic(_cancel_path(directory, state),
                 {'job_id': job_id, 'attempt': state['attempt']})
     return status(root, job_id)
@@ -285,8 +393,10 @@ def run(root, job_id, *, cells=None, resume=False, executor=None):
                 raise JobError('JOB_LIMIT', 'This jobs directory has reached its 32-job limit; retain or archive jobs before using a new directory.')
             request = dict(schema=REQUEST_SCHEMA, job_id=job_id, case_id=CASE,
                 cells=8 if cells is None else cells, sources=_sources(), execution_id=_runtime())
-            directory.mkdir()
-            _atomic(directory / 'request.json', request)
+            # The job becomes visible only with a valid request and status, so no poll can wedge its ID. Its status
+            # says SUBMITTED until the claim below records the worker (or records it interrupted, never started).
+            staged = dict(_new_state(job_id, 1), phase=SUBMITTED)
+            _stage(directory, (('request.json', _encode(request)), ('status.json', _encode(staged))))
             previous = None
         else:
             request = _request(directory)
@@ -297,18 +407,17 @@ def run(root, job_id, *, cells=None, resume=False, executor=None):
             previous = _state(directory)
             if previous['state'] == 'completed':
                 return _public(directory, previous, busy=False)
-        with _lock(directory / 'worker.lock'):
+        with (_lock(directory / 'worker.lock') if resume else
+              _claim(directory, _atomic, _new_state(job_id, 1), dict(staged, state='interrupted'))):
             _native_paths(directory / 'run')
             attempt = 1 if previous is None else previous['attempt'] + 1
             if attempt > 1000:
                 raise JobError('ATTEMPT_LIMIT', 'This job has reached its continuation-attempt limit.')
-            state = dict(schema=SCHEMA, job_id=job_id, state='preparing',
-                phase='preparing', attempt=attempt, completed_outputs=0,
-                total_outputs=3, report=None, product_id=None, seconds=0., error=None)
-            if previous is not None:
+            state = _new_state(job_id, attempt)
+            if previous is not None:        # a fresh job's claim has already recorded exactly this record
                 for key in ('completed_outputs', 'report', 'product_id'):
                     state[key] = previous[key]
-            _atomic(directory / 'status.json', state)
+                _atomic(directory / 'status.json', state)
             started = time.perf_counter()
             last_cancel_check = -1.
             requested = False

@@ -3,8 +3,9 @@
 Synthetic arrays, local temporary stores only. No performance thresholds, changed
 physical tolerances, historical rebindings, network calls or installation.
 """
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, CancelledError
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, CancelledError, Future
 from dataclasses import replace
+import errno
 import hashlib
 import json
 import multiprocessing
@@ -24,7 +25,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from atlas_tectonics import Rotation, ThermalParameters, FlexureParameters, PeriodicGrid1D, PeriodicFlexure, half_space_temperature, TectonicsError
 from atlas_tectonics._validation import frozen
-from atlas_tectonics.resources import MemoryLimitError
+from atlas_tectonics.resources import MemoryLimitError, WorkBudget
 from atlas_tectonics.storage import ArrayStore, StoreLimits, StoreError
 from atlas_tectonics.execution import KernelExecutor, ExecutionPolicy, _LIMIT_LOCK
 from atlas_tectonics import reuse
@@ -554,6 +555,145 @@ class CacheExecutionTests(unittest.TestCase):
             _await(lambda:flights._waiters==1);cancel.set()
             with self.assertRaises(CancelledError):b.result(timeout=3)
             release.set();assert_array_equal(a.result(timeout=3),[7.])
+
+    def test_creator_cancellation_does_not_cancel_uncancelled_waiters(self):
+        flights=reuse._Flights();start=threading.Event();release=threading.Event();leader=threading.Event();calls=[]
+        def make(cancel):
+            def produce():
+                calls.append(cancel);start.set();release.wait(3)
+                reuse._cancelled(cancel)          # a producer checks its own caller's cancellation after work
+                return frozen([7.])
+            return produce
+        with ThreadPoolExecutor(2) as pool:
+            a=pool.submit(flights.run,'k',make(leader),cancel=leader);self.assertTrue(start.wait(2))
+            b=pool.submit(flights.run,'k',make(None))
+            _await(lambda:flights._waiters==1);leader.set();release.set()
+            with self.assertRaises(CancelledError):a.result(timeout=3)
+            assert_array_equal(b.result(timeout=3),[7.])
+        self.assertEqual(calls,[leader,None])        # the waiter became the next owner and computed once
+        self.assertEqual((len(flights._entries),flights._waiters),(0,0))
+
+    def test_a_finished_cancelled_owner_is_not_waited_on_again(self):
+        # An owner resolves its future before it removes its entry: a waiter must not spend its retries on it.
+        flights=reuse._Flights();cancelled=Future();cancelled.set_exception(CancelledError('owner cancelled'))
+        flights._entries['k']=(-1,cancelled)
+        assert_array_equal(flights.run('k',lambda:frozen([2.])),[2.])
+        self.assertEqual((flights._entries,flights._waiters),({},0))
+
+    def test_waiter_retries_after_other_cancellations_are_bounded(self):
+        # Every registration meets a different, already cancelled owner: the waiter gives up after its bounded
+        # retries with an error that is not its own cancellation.
+        class Owners(dict):
+            def get(self,key,default=None):
+                future=Future();future.set_exception(CancelledError('owner cancelled'));return (-1,future)
+        flights=reuse._Flights();flights._entries=Owners()
+        with self.assertRaisesRegex(TectonicsError,'cancelled by its other callers'):
+            flights.run('k',lambda:frozen([1.]))
+        self.assertEqual(flights._waiters,0)
+
+    def test_one_deadline_covers_flight_and_process_claim_waits(self):
+        # The owner waits on a process claim another caller holds; it is cancelled, and the waiter that takes over
+        # must not start a second full wait_timeout on that claim.
+        ctx=ExecutionContext('reference');self.addCleanup(ctx.close)
+        record={'schema':'deadline-probe'};key=reuse._digest(reuse._json(record))
+        held=threading.Event();release=threading.Event();owner_cancel=threading.Event()
+        def hold():
+            with reuse._process_claim(self.store,key,None,5.):held.set();release.wait(10)
+        def run(cancel):
+            return reuse._evaluate(self.store,record,lambda:np.ones(4),(4,),WorkBudget(1<<24),context=ctx,
+                                   controller=self.control,cache_policy=ALWAYS,cancel=cancel,wait_timeout=1.)
+        with ThreadPoolExecutor(2) as pool:
+            holder=pool.submit(hold);self.assertTrue(held.wait(3))
+            try:
+                owner=pool.submit(run,owner_cancel);_await(lambda:len(reuse._FLIGHTS._entries)>0)
+                start=time.monotonic();threading.Timer(.4,owner_cancel.set).start()
+                with self.assertRaises(TimeoutError):run(None)
+                self.assertLess(time.monotonic()-start,1.3)
+                with self.assertRaises(CancelledError):owner.result(timeout=5)
+            finally:
+                release.set()
+            holder.result(timeout=5)
+
+    def test_unrelated_key_on_a_busy_stripe_neither_waits_nor_times_out(self):
+        # 'a'*64 and 'a'*63+'b' share a stripe (it is taken from the first 8 hex digits).
+        other='a'*63+'b';held=threading.Event();release=threading.Event()
+        def hold():
+            with reuse._process_claim(self.store,'a'*64,None,5.) as claimed:
+                held.set();release.wait(5);return claimed
+        with ThreadPoolExecutor(1) as pool:
+            holder=pool.submit(hold);self.assertTrue(held.wait(3))
+            try:
+                start=time.monotonic()
+                with reuse._process_claim(self.store,other,None,.5) as claimed:self.assertFalse(claimed)
+                self.assertLess(time.monotonic()-start,.4)
+                with self.assertRaises(TimeoutError):   # the same identity still waits for its holder
+                    with reuse._process_claim(self.store,'a'*64,None,.1):pass
+            finally:
+                release.set()
+            self.assertTrue(holder.result(timeout=5))
+        with reuse._process_claim(self.store,other,None,1.) as claimed:self.assertTrue(claimed)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows byte-lock initialisation')
+    def test_first_lock_byte_contention_retries_within_the_claim_deadline(self):
+        write = os.write
+        attempts = []
+        def raced(fd, data):
+            if data == b'0':
+                attempts.append(data)
+                if len(attempts) == 1:
+                    raise PermissionError(errno.EACCES, 'rival owns the first byte')
+            return write(fd, data)
+        with mock.patch.object(reuse.os, 'write', side_effect=raced):
+            with reuse._process_claim(self.store, 'd'*64, None, 1.) as claimed:
+                self.assertTrue(claimed)
+        self.assertEqual(len(attempts), 2)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows byte-lock initialisation')
+    def test_first_lock_byte_contention_obeys_timeout_and_releases_handle(self):
+        with mock.patch.object(reuse.os, 'write', side_effect=PermissionError(errno.EACCES, 'busy')):
+            with self.assertRaises(TimeoutError):
+                with reuse._process_claim(self.store, 'e'*64, None, 0.):
+                    self.fail('a busy initial byte must not be claimed')
+        with reuse._process_claim(self.store, 'e'*64, None, 1.) as claimed:
+            self.assertTrue(claimed)
+
+    def test_cached_requests_sharing_a_stripe_do_not_time_out_behind_each_other(self):
+        ctx=ExecutionContext('reference');self.addCleanup(ctx.close)
+        def key(record):return reuse._digest(reuse._json(record))
+        first={'schema':'stripe-probe','tag':'A'};i=0
+        while True:
+            second={'schema':'stripe-probe','tag':'B%d'%i};i+=1
+            if int(key(second)[:8],16)%16==int(key(first)[:8],16)%16:break
+        started=threading.Event();release=threading.Event()
+        def slow():started.set();release.wait(5);return np.zeros(4)
+        def run(record,compute,timeout):
+            return reuse._evaluate(self.store,record,compute,(4,),WorkBudget(1<<24),context=ctx,controller=self.control,
+                                   cache_policy=ALWAYS,wait_timeout=timeout)
+        with ThreadPoolExecutor(1) as pool:
+            a=pool.submit(run,first,slow,5.);self.assertTrue(started.wait(3))
+            try:
+                start=time.monotonic()
+                assert_array_equal(run(second,lambda:np.ones(4),.5),np.ones(4))
+                self.assertLess(time.monotonic()-start,.5)
+            finally:
+                release.set()
+            assert_array_equal(a.result(timeout=5),np.zeros(4))
+        self.assertEqual(self.store.statistics()['snapshots'],2)
+
+    def test_unrelated_key_does_not_wait_for_another_process_holding_its_stripe(self):
+        marker=Path(self.tmp.name)/'locked'
+        proc=multiprocessing.get_context('spawn').Process(target=_process_lock_probe,args=(str(self.path),str(marker)))
+        proc.start()
+        try:
+            _await(marker.exists,10.)
+            start=time.monotonic()
+            with reuse._process_claim(self.store,'a'*63+'b',None,2.) as claimed:self.assertFalse(claimed)
+            self.assertLess(time.monotonic()-start,1.)
+            with self.assertRaises(TimeoutError):
+                with reuse._process_claim(self.store,'a'*64,None,.2):pass
+        finally:
+            proc.terminate();proc.join(5)
+        self.assertFalse(proc.is_alive())
 
     def test_wait_timeout_recursive_call_and_saturation(self):
         flights=reuse._Flights(max_entries=1,max_waiters=1)

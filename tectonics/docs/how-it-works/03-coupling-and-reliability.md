@@ -292,9 +292,16 @@ Result caching is distinct from prepared setup. Automatic cache admission weighs
 result size and observed calculation/write/restore cost; explicit always/off
 policies remain available. Bounded same-request coordination lets concurrent
 callers share one computation. Cancellation, corruption and a failed creator
-remain visible. Several prepared workflows retain only their latest complete
-result, limiting growth. Changed physics computes a new answer even when
-unchanged geometry remains reusable.
+remain visible, and a cancellation stays with the caller who asked for it: a
+caller still waiting takes the computation over instead of inheriting someone
+else's cancellation. Separate processes coordinate through 16 lock stripes per
+store; the holder records which request it is computing, so an unrelated request
+that happens to share its stripe proceeds instead of waiting behind it or timing
+out (before the R4 repair it could fail after 30 s). The trade-off is a possible
+duplicate: while an unrelated request holds the stripe, identical requests in
+several processes each compute, and publication stays idempotent. Several prepared workflows
+retain only their latest complete result, limiting growth. Changed physics
+computes a new answer even when unchanged geometry remains reusable.
 
 [Execution-reuse tests](../../tests/test_execution_reuse.py) cover invalidation,
 same-request coordination and failure paths. Hashes support identity and
@@ -322,6 +329,28 @@ are actual software foundations here.
 Reads verify metadata and payloads. Bounded decoded/verification caches are
 invalidated by relevant database changes; chunk reads and streaming avoid loading
 an entire snapshot. Consistent backup creates an independent database copy.
+
+A store opens only a database whose schema is exactly its own three tables. A
+view, trigger, generated column or extra index would run SQL the store never
+wrote, and a shared file can contain one: before the R4 repair a 26 KB crafted
+project made loading hang. SQLite's [security guidance](https://sqlite.org/security.html)
+treats a database file from elsewhere as untrusted input; the store already set
+its recommended `trusted_schema=OFF`, yet a trigger running a recursive query
+still hung the open in Atlas's test. The store therefore compares the recorded
+schema text ([`sqlite_schema`](https://www.sqlite.org/schematab.html)) with its own
+before any statement touches the tables. SQLite parses that schema at the very first
+statement, so the parse itself is bounded too: statement length and the opening's
+[virtual-machine work](https://www.sqlite.org/c3ref/progress_handler.html) are
+capped (an 8 MB view previously cost about 700 MiB before any check could run). A snapshot is also published only when a
+full read under the same limits could load it back, and SQLite failures reach
+callers as the store's own error, with lock contention reported separately from a
+damaged file. Dated histories go one step further: a checkpoint is written only
+after its complete restoration has been admitted under the same memory budget, so
+a stopped history can always resume
+([dated histories](../TECTONIC_HISTORIES.md#recovery-and-optimisation)).
+Reusing the latest output in memory also checks the store's change token. If
+another writer has changed the database, the saved output is verified again;
+matching output names alone cannot hide damaged data or justify continuing it.
 [Storage-profile tests](../../tests/test_storage_profiles.py) exercise malformed
 encodings, changed dependencies, staging, rollback and restoration. The
 [recorded comparisons](../../evidence/storage-comparisons.json) include a slower
@@ -413,6 +442,17 @@ the missing heterogeneous W06→W07 connection or W09 feedback.
 [Managed jobs](../../tools/tectonics_job.py) wrap the same bounded column case
 with immutable requests, process locks, cooperative cancellation and verified
 resume. Repeating an ID cannot start duplicate work; altered inputs refuse.
+A new job appears all at once: its request and first status are written into a
+dot-named staging folder and renamed to the job ID, so a status or cancel call made
+during submission finds no job or a complete one, never half of one (before the R4
+repair a poll at that moment could make the ID permanently unusable). A poll holds
+the job's lock only briefly, so the worker waits for it instead of refusing; until
+the worker has the job, status shows it as submitted and a cancel made then is
+kept. If the worker cannot take it, the job is recorded as interrupted and never
+started, and resume starts it. A failed submission removes only the files it
+created. Control files are compact JSON, refused before writing if they would
+exceed the 64 KiB their own reader accepts
+([managed-run rules](../W12_ASSEMBLY.md#managed-local-run-cancel-and-resume)).
 A cancellation request is distinct from an acknowledged stop, and late
 cancellation can arrive after verified completion. Committed outputs survive
 interruption. [Worker tests](../../tests/test_w12_job_worker.py) exercise these
