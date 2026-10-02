@@ -11,9 +11,12 @@ window cancels active calculations and closes the owned backend; saved exports
 are not deleted. The existing browser-based Atlas workspace is separate.
 
 This is an unsigned development build: Windows may display a publisher warning.
-It packages the current experimental tectonics capability; it does not complete
-I01 or claim a scientifically accepted whole-world generator. Native source and
-runtime compatibility checks remain active when opening or continuing old work.
+The 2 October 2026 refresh packages the accepted I01/I02 backend and R7 repairs
+from commit `c856236`, including the newer 3-D solver. It excludes unfinished
+I03 work and retains the existing UI. I02's coupled-column command workflow is
+included, but connecting it to whole-world UI evolution remains later integration
+work. Native source and runtime compatibility checks remain active when opening
+or continuing old work; an older job is not silently rebound to the new code.
 
 ## Rebuild
 
@@ -31,10 +34,11 @@ A rebuild needs four inputs. Three can be reproduced from this repository:
    reviewer cannot rebuild the accepted application from a clone. The build refuses
    a snapshot unless every file matches `desktop/ui-snapshot.json`, a
    name-to-SHA-256 pin of those 33 files with schema `atlas.desktop-ui-snapshot.v1`.
-   That pin is not yet in the repository either; `build.py` refuses until it is added.
-   Create that pin once from the accepted build's `build-manifest.json`, whose
-   `resources/app/ui/NAME` entries record the delivered digests; the pin holds
-   digests, not UI content. Obtaining the snapshot itself remains the open dependency.
+   The tracked pin was recovered from the accepted 26 September build's
+   `build-manifest.json` and checked against all 33 delivered UI files. It holds
+   digests, not UI content. Use that matching source snapshot, or the unchanged
+   `resources/app/ui` directory from that accepted build. A clone alone still
+   does not contain the UI files needed to rebuild.
 
 Run `python -B desktop/build.py --electron ARCHIVE --python PYTHON_PAYLOAD
 --ui UI_SNAPSHOT_DIRECTORY --output NEW_OUTPUT_DIRECTORY`. Existing destinations
@@ -59,18 +63,27 @@ None of these is a full scientific test suite.
 
 ## Recorded Windows acceptance
 
-The actual executable created a six-plate/192-support-cell world, exported it,
-loaded it through the UI file input, saved it with Save World and reopened it with
-identical world-view fields, 20.009 s after the initial window load. A second
-process restored the same origin, profile and world in a 2.539 s check. The
-globe/interface screenshot was inspected; both processes exited and no Atlas
-process remained. The first restricted-runner attempt could not launch Chromium's
-renderer; normal desktop execution passed with sandboxing retained. That build was
-about 799 MB, with Electron 44.4.5, relocatable CPython 3.12.14 and all 39 pinned
-distributions, and it packaged the UI owner's snapshot without redesign; its
-saved-result reader waits for child exit during shutdown. This is one Windows
-observation of an unsigned build, not scientific acceptance or a check on other
-platforms, and it cannot be repeated without the UI snapshot.
+The 2 October refresh passed its real executable check in an isolated profile:
+six plates and 192 support cells were generated, exported, loaded through the UI
+file input, saved with Save World and reloaded with identical world-view fields.
+This took 20.397 s after the initial window load. After installation, a fresh
+process restored the same origin, profile and saved native world in 2.524 s.
+The globe/interface screenshot was inspected and both processes exited normally.
+The user's normal profile and saved projects were not opened or changed.
+
+All 380 delivered native payload files matched the committed source snapshot,
+including all 280 Python files. The retained CPython 3.12.14 runtime matched all
+39 dependency pins; five build guards and three launcher/security tests passed.
+The packaged I02 command workflow separately created and inspected its initial
+state with zero accepted advancement steps. The first invocation correctly
+refused an absent test root; creating that root resolved the invocation error.
+Existing scientific evidence was reused, not replaced by this packaging check.
+
+The application is approximately 801 MB, with Electron 44.4.5, the relocatable
+Python runtime and the unchanged UI snapshot. The previous 26 September build
+was retained as a recovery copy; the existing Start-menu shortcut targets the
+updated application. This is Windows packaging/lifecycle coverage, not new
+whole-world scientific acceptance or native Linux coverage.
 
 ## Design and security
 

@@ -32,8 +32,9 @@ passing focused checks is not a new full-suite or cross-platform pass. The
 candidate bytes, not only the working copy.
 
 **Next action:** stop before I03 and await the owner's next instruction. The
-Saturday review hold was released on 30 September. The desktop build's missing
-UI snapshot remains a separate delivery dependency. Work follows the
+Saturday review hold was released on 30 September. The desktop package now
+includes accepted I01/I02 and R7 sources at `c856236`; its UI snapshot is available
+locally from the accepted build but remains absent from a public clone. Work follows the
 [completion roadmap](ATLAS_ROADMAP.md); planning is not execution authority.
 
 ## Current status
@@ -56,7 +57,7 @@ UI snapshot remains a separate delivery dependency. Work follows the
 | W01–W12 components | Implemented components with dated method records. Their receipts describe the runs they record; many bound sources have changed since. | [Reader guide](../tectonics/docs/HOW_TECTONICS_IS_MADE.md), [plan status](../tectonics/docs/TECTONICS_PLAN.md#current-implementation), [validation](../tectonics/docs/W10_VALIDATION.md) |
 | Full test suite | No current full-suite pass is claimed on any platform; see below. | [Environment and `verify.py`](../tectonics/README.md#tectonics-environment) |
 | Tested environment | Windows AMD64 CPython 3.12.14 pins and a clean-install receipt are current. Linux and Python 3.13 are not recorded environments. | [Environment guide](TECTONICS_ENVIRONMENT.md) |
-| Windows desktop | Atlas Desktop 0.1.0 (unsigned) was built and checked on Windows. A rebuild needs the UI owner's 33-file snapshot, which is not in this repository. | [Desktop README](../desktop/README.md) |
+| Windows desktop | Updated on 2 October from accepted commit `c856236`, including I01/I02 and R7, excluding unfinished I03. Real New/Save/Load and installed fresh-process reopen passed in an isolated profile; the user's projects were untouched and the previous build retained. All 380 native payload files matched the snapshot. The unchanged 33-file UI now has a tracked digest pin; its content remains outside the public repository. This does not add I02 whole-world UI integration. | [Desktop build and checks](../desktop/README.md) |
 | Wider generator and runtime | R31 connected generator, R12 runtime and the bounded native terrain R5 storage/session route; the 18 categories have entry points, not accepted systems. R5 performance figures are historical original-workspace measurements. The recovery runbook changed at `18dfb1d`; no fresh public performance receipt is claimed. | [Code route map](CODING_SAFETY.md), [R5 operations](R5_OPERATIONS.md), [historical R5 evidence](R5_OPERATIONS_EVIDENCE.md), [independent development](INDEPENDENT_DEVELOPMENT.md), [categories](../README.md#the-18-modelling-categories) |
 | Other modules | Scopes for the 17 non-tectonics categories are planning only. | [Module scopes](MODULE_SCOPES.md), [product contract](PRODUCT_AND_SCALE_CONTRACT.md) |
 
