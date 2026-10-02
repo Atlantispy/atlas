@@ -145,6 +145,25 @@ def _band_product(band,x,absolute=False):
     return y
 
 
+def _one_norm_estimate(apply, transpose, size):
+    """Deterministic Hager/Higham estimate; a norm estimate, not a bound.
+
+    Like LAPACK's DLACN2, use sign/coordinate iterations and an alternating
+    final probe. A fixed five iterations keeps work linear in the band size.
+    No random perturbations, dense inverse or material changes are involved.
+    """
+    x=np.full(size,1./size);estimate=0.;previous=-1
+    for iteration in range(5):
+        y=apply(x);value=float(np.sum(np.abs(y)))
+        if iteration and value<=estimate: break
+        estimate=value
+        z=transpose(np.where(y>=0,1.,-1.));index=int(np.argmax(np.abs(z)))
+        if index==previous: break
+        previous=index;x=np.zeros(size);x[index]=1.
+    x=np.linspace(1.,2.,size);x[1::2]*=-1.
+    return max(estimate,float(np.sum(np.abs(apply(x))))/float(np.sum(np.abs(x))))
+
+
 @dataclass(frozen=True, slots=True)
 class _Factor:
     subdivisions: int
@@ -154,14 +173,18 @@ class _Factor:
     bandwidth: int
     dofs_bytes: bytes
     band_bytes: bytes
+    roundoff_bytes: bytes
+    bending_roundoff_bytes: bytes
     cholesky_bytes: bytes
     scale_bytes: bytes
     endpoint_bytes: bytes
+    endpoint_error_bytes: bytes
     constrained: tuple
 
     @property
     def bytes(self):
-        return sum(len(v) for v in (self.dofs_bytes,self.band_bytes,self.cholesky_bytes,self.scale_bytes,self.endpoint_bytes))
+        return sum(len(v) for v in (self.dofs_bytes,self.band_bytes,self.roundoff_bytes,self.bending_roundoff_bytes,
+                                   self.cholesky_bytes,self.scale_bytes,self.endpoint_bytes,self.endpoint_error_bytes))
 
 
 class VariableRigidityFlexure:
@@ -169,7 +192,7 @@ class VariableRigidityFlexure:
 
 solve returns (source cells,5,4). Rows 0/1/2: one-sided left/centre/right
 (w,w',w'',w'''). Row3: FE polynomial maxima (abs w,slope,curvature,strain).
-Row4: mesh-change estimates (w,slope,curvature,accepted subdivisions).
+Row4: mesh-change plus numerical-error estimates (w,slope,curvature,subdivisions).
 Refinement is numerical evidence, not a rigorous continuum-error certificate.
 """
     def __setattr__(self,name,value):
@@ -199,7 +222,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         self.base_subdivisions=max(1,math.ceil(ratio))
         if 2*self.grid.cells*self.base_subdivisions > accuracy.max_elements:
             raise TectonicsError('base and comparison meshes exceed the explicit element ceiling')
-        self.operator_id=hashlib.sha256(_json(dict(method='hermite-consistent-variable-D-banded-refined-v1',
+        self.operator_id=hashlib.sha256(_json(dict(method='hermite-consistent-variable-D-banded-refined-v2',
             profile=profile.profile_id,K=k,gravity=parameters.gravity_m_s2,
             boundary=boundary if boundary=='periodic' else asdict(boundary),accuracy=asdict(accuracy)))).hexdigest()
         self._sealed=True
@@ -236,15 +259,26 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                 dofs=np.column_stack((2*left,2*left+1,2*right,2*right+1)).astype(np.intp)
                 width=min(5 if periodic else 3,ndof-1)
                 band=np.zeros((width+1,ndof))
+                roundoff=np.zeros_like(band);eps=np.finfo(float).eps
+                # Track coefficient-formation uncertainty before cancellation.
+                # Include the logarithmic scaling's operation magnitudes, not
+                # merely eps times a possibly cancelled assembled coefficient.
+                t_error=eps*(4+2*(np.abs(np.log(np.repeat(self.profile.rigidity_n_m,subdivisions)))+
+                                  abs(math.log(k))+4*abs(math.log(h))))
                 bending=np.array([[12,6,-12,6],[6,4,-6,2],[-12,-6,12,-6],[6,2,-6,4]],float)
                 foundation=np.array([[156,22,54,-13],[22,4,13,-3],[54,13,156,-22],[-13,-3,-22,4]],float)/420
                 for a in range(4):
                     for b in range(a+1):
                         row=np.maximum(dofs[:,a],dofs[:,b]);col=np.minimum(dofs[:,a],dofs[:,b])
                         value=t*bending[a,b]+foundation[a,b]
-                        if a!=b: value=value*np.where(row==col,2.,1.)
+                        uncertainty=8*eps*(np.abs(t*bending[a,b])+abs(foundation[a,b]))
+                        if a!=b:
+                            multiplier=np.where(row==col,2.,1.)
+                            value=value*multiplier;uncertainty=uncertainty*multiplier
                         np.add.at(band,(row-col,col),value)
+                        np.add.at(roundoff,(row-col,col),uncertainty)
                 endpoints=np.zeros((2,2,2))
+                endpoint_errors=np.zeros_like(endpoints)
                 constrained=[]
                 if not periodic:
                     if self.boundary.continuous:
@@ -256,25 +290,31 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                             base=0 if side==0 else ndof-2
                             band[0,base:base+2]+=np.diag(endpoints[side])
                             band[1,base]+=endpoints[side,1,0]
+                            exterior_error=eps*(32+8*(abs(math.log(d))+abs(math.log(k))+abs(math.log(h))))
+                            endpoint_errors[side]=exterior_error*np.abs(endpoints[side])
+                            roundoff[0,base:base+2]+=np.diag(endpoint_errors[side])
+                            roundoff[1,base]+=endpoint_errors[side,1,0]
                     else:
                         for side,mode in enumerate((self.boundary.left,self.boundary.right)):
                             if mode=='clamped': constrained.extend((0,1) if side==0 else (ndof-2,ndof-1))
                 for index in constrained:
                     for offset in range(1,width+1):
-                        if index+offset<ndof: band[offset,index]=0.
-                        if index-offset>=0: band[offset,index-offset]=0.
-                    band[0,index]=1.
+                        if index+offset<ndof: band[offset,index]=roundoff[offset,index]=0.
+                        if index-offset>=0: band[offset,index-offset]=roundoff[offset,index-offset]=0.
+                    band[0,index]=1.;roundoff[0,index]=0.
                 scale=1/np.sqrt(band[0])
                 for offset in range(width+1):
                     stop=ndof-offset
+                    roundoff[offset,:stop]=(roundoff[offset,:stop]+8*eps*np.abs(band[offset,:stop]))*scale[offset:]*scale[:stop]
                     band[offset,:stop]*=scale[offset:]*scale[:stop]
-                if not np.isfinite(band).all() or not np.isfinite(scale).all():
+                if not np.isfinite(band).all() or not np.isfinite(scale).all() or not np.isfinite(roundoff).all():
                     raise TectonicsError('variable support matrix outside numerical range')
                 try: chol=cholesky_banded(band,lower=True,check_finite=False)
                 except np.linalg.LinAlgError as exc:
                     raise TectonicsError('variable support factorisation failed; no stiffness jitter/fallback') from exc
-                factor=_Factor(subdivisions,m,h,ndof,width,dofs.tobytes(),band.tobytes(),chol.tobytes(),
-                               scale.tobytes(),endpoints.tobytes(),tuple(constrained))
+                factor=_Factor(subdivisions,m,h,ndof,width,dofs.tobytes(),band.tobytes(),roundoff.tobytes(),
+                               (t*t_error).tobytes(),chol.tobytes(),
+                               scale.tobytes(),endpoints.tobytes(),endpoint_errors.tobytes(),tuple(constrained))
                 # Admit retained ownership while construction work is still
                 # charged: refusal cannot leave an unaccounted cached factor.
                 self._stack.enter_context(self._budget.reserve(factor.bytes,category='variable-flexure-retained'))
@@ -286,7 +326,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             raise TectonicsError('N pressure cells plus two explicit far-field pressures required')
         return 512*self.grid.cells+8192
 
-    def _linear_solve(self,f,rhs):
+    def _linear_solve(self,f,rhs,*,rhs_uncertainty=None):
         _, cho_solve_banded = _banded_solvers()
         scale=np.frombuffer(f.scale_bytes);band=np.frombuffer(f.band_bytes).reshape(f.bandwidth+1,f.ndof)
         chol=np.frombuffer(f.cholesky_bytes).reshape(band.shape)
@@ -297,9 +337,52 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
         allowance=1024*np.finfo(float).eps*(_band_product(band,np.abs(z),absolute=True)+np.abs(scaled))
         if not np.isfinite(z).all() or np.any(np.abs(residual)>allowance+np.finfo(float).tiny):
             raise TectonicsError('variable support failed scaled equation residual')
-        return z*scale
+        u=z*scale
+        if rhs_uncertainty is None: return u
+        # DPBRFS-style forward-error estimation: propagate residual/rounding
+        # weights through the inverse, including assembly uncertainty. The
+        # Bernstein controls enclose each entire represented polynomial and its
+        # derivatives, so extrema as well as reported sample points are covered.
+        eps=np.finfo(float).eps
+        uncertainty=np.frombuffer(f.roundoff_bytes).reshape(band.shape)
+        rhs_uncertainty=rhs_uncertainty.copy();rhs_uncertainty[list(f.constrained)]=0.
+        weights=(np.abs(residual)+(2*f.bandwidth+2)*eps*(
+            _band_product(band,np.abs(z),absolute=True)+np.abs(scaled))+
+            _band_product(uncertainty,np.abs(z))+rhs_uncertainty*scale)
+        dofs=np.frombuffer(f.dofs_bytes,dtype=np.intp).reshape(f.elements,4)
+        # A rounding error in scalar stiffness t changes the whole element by
+        # delta(t)*B. Preserve that correlation: delta(t)*|B*u|, not independent
+        # entry errors delta(t)*|B|*|u| which spuriously force rigid/affine modes.
+        # Independent matrix assembly/equilibration errors remain above.
+        bending=np.array([[12,6,-12,6],[6,4,-6,2],[-12,-6,12,-6],[6,2,-6,4]],float)
+        local=u[dofs]
+        bending_error=np.frombuffer(f.bending_roundoff_bytes)[:,None]*(
+            np.abs(local@bending.T)+16*eps*(np.abs(local)@np.abs(bending.T)))
+        reaction=np.zeros(f.ndof)
+        for a in range(4): np.add.at(reaction,dofs[:,a],bending_error[:,a])
+        reaction[list(f.constrained)]=0.
+        weights+=scale*reaction
+        controls=(np.array([[1,0,0,0],[1,1/3,0,0],[0,0,1,-1/3],[0,0,1,0]]),
+                  np.array([[0,1,0,0],[-3,-1,3,-1],[0,0,0,1]])/f.h,
+                  np.array([[-6,-4,6,-2],[6,2,-6,4]])/f.h**2)
+        errors=[]
+        for control in controls:
+            def forward(x):
+                v=scale*cho_solve_banded((chol,True),weights*x,check_finite=False)
+                return (v[dofs]@control.T).ravel()
+            def transpose(x):
+                local=x.reshape(f.elements,len(control))@control
+                v=np.zeros(f.ndof)
+                for a in range(4): np.add.at(v,dofs[:,a],local[:,a])
+                return weights*cho_solve_banded((chol,True),scale*v,check_finite=False)
+            estimate=_one_norm_estimate(transpose,forward,f.elements*len(control))
+            evaluation=32*eps*float(np.max(np.abs(u[dofs])@np.abs(control.T)))
+            errors.append(estimate+evaluation)
+        errors=np.asarray(errors)
+        if not np.isfinite(errors).all(): errors[:]=np.inf
+        return u,errors
 
-    def _response(self,f,load,budget=None):
+    def _response(self,f,load,budget=None,*,precision=False):
         h=f.h;m=f.elements;k=self.parameters.restoring_pa_per_m
         with reserve_budgets(2048*m+65536,self._budget,select_budget(budget if budget is not None else self._budget),
                             category='variable-flexure-response'):
@@ -312,15 +395,30 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             unclamped=self.boundary=='periodic' or self.boundary.continuous or (
                 self.boundary.left=='free' and self.boundary.right=='free')
             offset=math.fsum(map(float,q/len(q))) if unclamped else 0.
+            eps=np.finfo(float).eps
+            offset_error=eps*(math.fsum(map(float,np.abs(q)/len(q)))+abs(offset)) if unclamped else 0.
             q=np.repeat(q-offset,f.subdivisions)
             rhs=np.zeros(f.ndof)
+            rhs_uncertainty=np.zeros(f.ndof) if precision else None
             for a,weight in enumerate((.5,1/12,.5,-1/12)):
                 np.add.at(rhs,dofs[:,a],weight*q)
+                if precision:
+                    np.add.at(rhs_uncertainty,dofs[:,a],abs(weight)*(
+                        8*eps*(np.abs(q)+abs(offset))+offset_error))
             if self.boundary!='periodic' and self.boundary.continuous:
                 endpoint=np.frombuffer(f.endpoint_bytes).reshape(2,2,2)
                 rhs[:2]+=endpoint[0,:,0]*(scaled_load[-2]-offset)
                 rhs[-2:]+=endpoint[1,:,0]*(scaled_load[-1]-offset)
-            u=self._linear_solve(f,rhs)
+                if precision:
+                    endpoint_errors=np.frombuffer(f.endpoint_error_bytes).reshape(2,2,2)
+                    for side,indices in ((0,slice(0,2)),(1,slice(-2,None))):
+                        pressure=scaled_load[-2+side]
+                        rhs_uncertainty[indices]+=(
+                            endpoint_errors[side,:,0]*abs(pressure-offset)+
+                            np.abs(endpoint[side,:,0])*(16*eps*(abs(pressure)+abs(offset))+offset_error))
+            solution=self._linear_solve(f,rhs,rhs_uncertainty=rhs_uncertainty)
+            if precision: u,numerical_error=solution
+            else: u=solution
             local=u[dofs]
             out=np.zeros((self.grid.cells,5,4))
             # Source interfaces are sampled one-sided, including D jumps.
@@ -361,6 +459,9 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             for d,values in enumerate((maximum_w,maximum_slope/h,maximum_curvature)):
                 out[:,3,d]=values.reshape(self.grid.cells,f.subdivisions).max(axis=1)
             out[:,3,3]=out[:,3,2]*self.profile.elastic_thickness_m/2
+            if precision:
+                numerical_error[0]+=offset_error+8*eps*(abs(offset)+float(np.max(out[:,3,0])))
+                return frozen(out),numerical_error
             return frozen(out)
 
     def solve(self,packed_load_pa,*,budget=None,cancel=None):
@@ -373,7 +474,7 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
             continuous=self.boundary!='periodic' and self.boundary.continuous
             if not continuous and np.any(load[-2:]!=0):
                 raise TectonicsError('physical/periodic support cannot include exterior pressures')
-            old=None
+            old=None;refused=[];precision_refused=None;numerical={}
             atol=np.array([self.accuracy.absolute_displacement_m,self.accuracy.absolute_slope,
                            self.accuracy.absolute_curvature_per_m])
             for level in range(self.accuracy.max_refinements+1):
@@ -385,10 +486,50 @@ Refinement is numerical evidence, not a rigorous continuum-error certificate.
                     error=np.maximum(np.max(np.abs(current[:,:3,:3]-old[:,:3,:3]),axis=1),
                                      np.abs(current[:,3,:3]-old[:,3,:3]))
                     magnitude=np.max(current[:,3,:3],axis=0)
-                    if np.all(error<=atol+self.accuracy.relative_tolerance*magnitude):
-                        out=current.copy();out[:,4,:3]=error;out[:,4,3]=subdivisions
-                        return frozen(out)
+                    limit=atol+self.accuracy.relative_tolerance*magnitude
+                    if np.all(error<=limit):
+                        # Two accidentally agreeing meshes are insufficient when
+                        # their algebraic solutions cannot resolve that tolerance.
+                        # Estimate only candidate acceptance pairs; reuse estimates
+                        # within this load, never across different right-hand sides.
+                        for count in (subdivisions//2,subdivisions):
+                            if count not in numerical:
+                                _cancel(cancel)
+                                numerical[count]=self._response(self._factor(count,budget),load,budget,precision=True)[1]
+                                _cancel(cancel)
+                        combined=error+numerical[subdivisions//2]+numerical[subdivisions]
+                        if np.all(combined<=limit):
+                            out=current.copy();out[:,4,:3]=combined;out[:,4,3]=subdivisions
+                            return frozen(out)
+                        precision_refused=(subdivisions,numerical[subdivisions//2]+numerical[subdivisions],
+                                           limit-np.max(error,axis=0))
+                    # Diagnosis only: each field's domain-maximum change at this
+                    # refused level and whether that field failed. Never a stop rule.
+                    refused.append((subdivisions,np.max(error,axis=0),
+                                    np.any(error>atol+self.accuracy.relative_tolerance*magnitude,axis=0)))
                 old=current
+            if precision_refused is not None:
+                count,uncertainty,limit=precision_refused
+                raise TectonicsError('variable support numerical precision estimate prevents mesh-change acceptance: '
+                    'at %d subdivisions, estimated pair uncertainty %s exceeds remaining mesh-change allowance %s; '
+                    'no reliable convergence claimed'%(count,uncertainty,limit))
+            # The ceiling is reached. Quote a failing field's smallest change, its
+            # level and the value at the ceiling only where that change did not
+            # fall at the last refinement and lies above the earlier minimum: that
+            # much is observed. Round-off in the banded solve is the usual cause
+            # (the scaled bending term grows as h^-4), but an accidentally small
+            # early estimate looks the same and round-off is erratic enough for a
+            # later level to pass, so the cause is offered and never asserted. A
+            # field still falling at the ceiling keeps the plain refusal.
+            change=np.array([row[1] for row in refused]);best=np.argmin(change,axis=0)
+            stalled=['smallest %s change %.3e%s at %d subdivisions (%.3e%s at %d)'%(
+                         name,change[best[j],j],unit,refused[best[j]][0],change[-1,j],unit,subdivisions)
+                     for j,(name,unit) in enumerate((('displacement',' m'),('slope',''),('curvature',' 1/m')))
+                     if refused[-1][2][j] and change[-1,j]>change[best[j],j] and change[-1,j]>=change[-2,j]]
+            if stalled:
+                raise TectonicsError('variable support mesh-change tolerance not reached and estimates not falling at '
+                                     'the refinement ceiling: '+'; '.join(stalled)+'; if round-off in the banded '
+                                     'solve is the cause, a higher ceiling is unlikely to help')
             raise TectonicsError('variable support mesh-change tolerance not reached within refinement ceiling')
 
     def close(self):

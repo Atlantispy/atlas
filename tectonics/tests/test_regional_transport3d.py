@@ -178,6 +178,53 @@ class RegionalTransport3DTests(unittest.TestCase):
             prepare(budget=tiny)
         self.assertEqual(tiny.reserved_bytes, 0)
 
+    def test_realised_factor_is_checked_without_retained_copies(self):
+        # No exported copies; both admission and the realised check account for
+        # native initial allocation, growth storage and construction work.
+        class Counted:
+            def __init__(self, factor, entries):
+                self.nnz = factor.nnz if entries is None else entries
+                self.shape, self.solve = factor.shape, factor.solve
+
+            @property
+            def L(self):
+                raise AssertionError('a factor copy was built')
+            U = L
+        original, entries = transport.splu, [None]
+        xyz = coordinates(); v = np.zeros_like(xyz); v[:, 0] = xyz[:, 0]*(1-xyz[:, 0])
+        with prepare() as plan:
+            expected = plan.project_velocity(v, source_result_id='interior-q2-bubble')
+        budget = WorkBudget(8*1024**2)
+        with mock.patch.object(transport, 'splu', lambda *a, **k: Counted(original(*a, **k), entries[0])):
+            with prepare(budget=budget) as plan:
+                flow = plan.project_velocity(v, source_result_id='interior-q2-bubble')
+                for name in expected.array_names:
+                    assert_array_equal(flow.array(name), expected.array(name))
+                fixed = 2*1024**2+1024*plan._nc+1024*(plan._nc-1)
+                entries[0] = (plan._allowance-fixed)//24
+            with prepare(budget=budget):
+                pass                                # the largest count the allowance admits
+            entries[0] += 1
+            with self.assertRaises(MemoryLimitError):
+                prepare(budget=budget)
+        self.assertEqual(budget.reserved_bytes, 0)
+
+    def test_preparation_admits_native_peak_before_constructing_the_grid(self):
+        # Retained R7 Windows private-commit observations, not a fresh benchmark.
+        observations = (((16, 16, 16), 22487040), ((20, 20, 20), 71081984),
+                        ((24, 24, 24), 139448320), ((24, 24, 23), 133881856),
+                        ((23, 21, 24), 115830784), ((22, 24, 24), 128786432))
+        for cells, measured_peak in observations:
+            self.assertGreaterEqual(transport._projection_bytes(cells), measured_peak, cells)
+        budget = WorkBudget(115343360)  # old 24-cube allowance, below its measured peak
+        with mock.patch.object(transport.sparse, 'csr_matrix') as build, \
+                self.assertRaises(MemoryLimitError):
+            transport.PreparedRegionalTransport3D((24, 24, 24), (1., 1., 1.),
+                divergence_rtol=1e-10, max_velocity_correction_m_s=2.,
+                max_relative_correction=2., budget=budget)
+        build.assert_not_called()
+        self.assertEqual((budget.reserved_bytes, budget.peak_reserved_bytes), (0, 0))
+
     def test_source_and_foreign_plan_guards(self):
         with prepare() as plan:
             with mock.patch.object(transport, '_sum', lambda _: 0.):

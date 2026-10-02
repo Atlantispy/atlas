@@ -680,4 +680,103 @@ class AdditionalContractTests(unittest.TestCase):
         rows=moved.receipt['block_accounts']
         self.assertEqual(rows[0]['cohorts'][0]['right_exchange_m2'],-rows[1]['cohorts'][0]['left_exchange_m2'])
 
+class BlockOutflowAccountTests(unittest.TestCase):
+    """A block account reports that block's own largest outgoing fraction (v2 receipt)."""
+    def fractions(self,moved):
+        rows=[[c['maximum_outflow_fraction'] for c in b['cohorts']] for b in moved.receipt['block_accounts']]
+        for row in rows:self.assertEqual(len(set(row)),1)  # one admission, shared by a block's cohorts
+        return [row[0] for row in rows]
+    def test_quiescent_block_reports_zero_not_its_neighbours_fraction(self):
+        # Dyadic inputs: width 1/16, duration 1/8 and speed 1/8 give exactly 1/4
+        # in either backend's operation order; the right block does not move.
+        u=np.zeros(17);u[1:8]=.125
+        for backend in ('numba','reference'):
+            for scheme in ('muscl','upwind'):
+                with self.subTest(backend=backend,scheme=scheme):
+                    model=world()
+                    moved=advance_plate_state(model,u,np.zeros(17),.125,left=CLOSED,right=CLOSED,scheme=scheme,
+                        backend=backend,event_id='left-only',expected_parent_id=model.model_id)
+                    left,right=self.fractions(moved)
+                    self.assertEqual((left,right),(.25,0.))
+                    self.assertEqual(math.copysign(1.,right),1.)
+                    self.assertEqual(moved.receipt['operation'],'advance-plate-control-volumes-v2')
+    def test_block_maxima_use_start_and_end_widths_for_muscl_only(self):
+        # The mesh contracts to half width (y=x/2). Relative speed is 1/16 inside
+        # the left block and 1/32 at the cut and inside the right block, so the
+        # exact fractions are 1/8, 1/16 on start widths and 1/4, 1/8 on end widths.
+        x=grid().edges_m;w=-4*x;a=np.zeros(17);a[1:8]=.0625;a[8:16]=.03125
+        for backend in ('numba','reference'):
+            for scheme,expected in (('muscl',[.25,.125]),('upwind',[.125,.0625])):
+                with self.subTest(backend=backend,scheme=scheme):
+                    model=world()
+                    moved=advance_plate_state(model,w+a,w,.125,left=CLOSED,right=CLOSED,scheme=scheme,
+                        backend=backend,event_id='contract',expected_parent_id=model.model_id)
+                    assert_array_equal(moved.material.grid.edges_m,.5*x)
+                    self.assertEqual(self.fractions(moved),expected)
+    def test_random_block_maxima_match_exact_cells_and_the_admitted_maximum(self):
+        rng=np.random.default_rng(4731);ids=(0,7,15,24)
+        for trial in range(6):
+            x=np.r_[0,np.cumsum(rng.uniform(.5,1.5,24))];x=x/x[-1]
+            g=ColumnGrid1D(x,frame_id='test-frame')
+            s=MaterialState(g,COHORTS,rng.uniform(.01,5,(2,24)),time_s=1,epoch_id='test-epoch')
+            t=PlateTopology1D(ColumnGrid1D(g.edges_m[list(ids)],frame_id='test-frame'),
+                (PlateRecord('p'),PlateRecord('q'),PlateRecord('r')),
+                (BlockRecord('left','p'),BlockRecord('middle','q'),BlockRecord('right','r')),
+                (BoundaryRecord('west','rift'),BoundaryRecord('east','rift')))
+            model=TectonicState1D(s,t)
+            u=rng.uniform(-.05,.05,25);w=rng.uniform(-.02,.02,25)
+            u[7:16]=0.;w[7:16]=0.  # the middle block neither moves nor is crossed
+            for scheme in ('muscl','upwind'):
+                dt=.2*ale_timestep_limit(s,u,w,left=ext(),right=ext(),scheme=scheme)
+                for backend in ('numba','reference'):
+                    with self.subTest(trial=trial,scheme=scheme,backend=backend):
+                        moved=advance_plate_state(model,u,w,dt,left=ext(),right=ext(),scheme=scheme,backend=backend,
+                            event_id='step',expected_parent_id=model.model_id)
+                        actual=self.fractions(moved)
+                        # Independent exact rational maxima over each block's own cells.
+                        y=moved.material.grid.edges_m;relative=u-w;exact=[]
+                        for b in range(3):
+                            best=Fraction(0)
+                            for i in range(ids[b],ids[b+1]):
+                                leaving=max(Fraction(relative[i+1]),0)+max(-Fraction(relative[i]),0)
+                                for edges in ((x,y) if scheme=='muscl' else (x,)):
+                                    best=max(best,Fraction(dt)*leaving/Fraction(edges[i+1]-edges[i]))
+                            exact.append(float(best))
+                        close(actual,exact);self.assertEqual(actual[1],0.)
+                        self.assertGreater(min(actual[0],actual[2]),0.)
+                        # The largest block value is the transport's admitted maximum, bit for bit.
+                        admitted=advect_ale(s,u,w,dt,left=ext(),right=ext(),scheme=scheme,backend=backend).accounts[:,5]
+                        self.assertEqual({max(actual)},set(admitted.tolist()))
+    def test_block_fractions_must_reproduce_the_admitted_maximum(self):
+        from atlas_tectonics.topology import _block_outflow_fractions
+        x=grid().edges_m;a=np.zeros(17);a[1:8]=.125;ids=np.array([0,8,16])
+        for backend in ('numba','reference'):
+            self.assertEqual(_block_outflow_fractions(x,x,a,.125,ids,'muscl',backend,.25),[.25,0.])
+            for admitted in (0.,math.nextafter(.25,0.),math.nextafter(.25,1.),.5):
+                with self.subTest(backend=backend,admitted=admitted),self.assertRaises(TectonicsError):
+                    _block_outflow_fractions(x,x,a,.125,ids,'muscl',backend,admitted)
+    def test_velocity_shape_is_refused_before_capture(self):
+        model=world()
+        for u,w in ((np.zeros(16),np.zeros(17)),(np.zeros(17),np.zeros((17,1))),(np.ma.array(np.zeros(17)),np.zeros(17))):
+            with self.subTest(u=np.shape(u),w=np.shape(w)),mock.patch('numpy.asarray',side_effect=AssertionError('converted')):
+                with self.assertRaises(TectonicsError):
+                    advance_plate_state(model,u,w,.1,left=CLOSED,right=CLOSED,event_id='s',expected_parent_id=model.model_id)
+    def test_velocity_capture_and_fraction_scratch_are_admitted(self):
+        model=world();c,n,blocks=2,16,2;budget=WorkBudget(8<<20)
+        earlier=48*c*n+4096*c*blocks+16384  # the reservation before block accounts needed the velocities
+        advance_plate_state(model,np.full(17,.03),np.zeros(17),.1,left=ext(2,1),right=ext(),event_id='advection',
+            expected_parent_id=model.model_id,budget=budget)
+        # At least the eight face-sized arrays alive at the peak of the block account.
+        self.assertGreaterEqual(budget.statistics()['category_peaks']['plate-evolution'],earlier+64*(n+1))
+        self.assertEqual(budget.reserved_bytes,0)
+    def test_v1_receipts_stay_readable_under_their_own_name(self):
+        # A stored v1 receipt is data: it keeps its name, its meaning and its identity.
+        model=world();receipt={'operation':'advance-plate-control-volumes-v1','event_id':'old',
+            'parent_model_id':model.model_id,'block_accounts':[]}
+        old=TectonicState1D(model.material,model.topology,applied_event_ids=('old',),receipt=receipt)
+        self.assertEqual(pickle.loads(pickle.dumps(old)).model_id,old.model_id)
+        with tempfile.TemporaryDirectory() as tmp,ArrayStore(Path(tmp)/'s.db',limits()) as store:
+            save_tectonic_state(old,store);restored=load_tectonic_state(store,old.model_id)
+            self.assertEqual(restored.receipt,receipt);self.assertEqual(restored.model_id,old.model_id)
+
 if __name__=='__main__':unittest.main()

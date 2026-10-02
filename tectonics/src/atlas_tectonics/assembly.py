@@ -161,7 +161,8 @@ def publish_workflow_output(output, store, *, context, scope, budget=None, cance
         description = describe_workflow_output(output)
         owner_binding = _native_owner_binding(output, native_owner, description, cancel)
         binding_descriptor = dict(native=description['descriptor'], native_owner=owner_binding)
-        if description['route'] in ('w06-constant.v1','w06-history.v1') and owner_binding is None:
+        # The two ocean route names published by workflow_ports._w06.
+        if description['route'] in ('w06-constant.v2','w06-history.v2') and owner_binding is None:
             raise TectonicsError('ocean W06 publication requires its exact open native_owner')
         _verify_native_bindings(binding_descriptor, verifier.identity)
         frame_binding = _native_frame_binding(binding_descriptor, context)

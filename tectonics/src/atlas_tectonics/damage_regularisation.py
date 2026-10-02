@@ -6,12 +6,17 @@ Atlas-selected extension, NOT an equation from Becker & Fuchs (2023):
     d_bar - ell^2 * d_bar_xx = d,  d_bar_x = 0 at both ends.
 Cell-centred finite volumes give an SPD M-matrix. A positive physical ell is
 independent of grid spacing. A reusable banded Cholesky factor gives O(n) solves,
-not a dense inverse or a newly invented scheduler. Constants, integral and
-positivity are preserved to round-off. Modal/refinement verification does NOT
+not a dense inverse or a newly invented scheduler. Positivity holds. Constants
+and the integral are preserved only to a relative error that grows roughly as
+eps*(ell/dx)^2: about 4e-16 at ell/dx = 1 and up to about 5e-6 at the admitted
+limit ell/dx = 1e5 (2e-10 to 5e-6 measured there, from 3 to 1,000,000 cells).
+The residual check scales its tolerance by the same factor, so that error is
+accepted; it is not renormalised away. Modal/refinement verification does NOT
 establish mesh-independent shear-band localisation in an as-yet absent R4
-coupled solver. Raw history is retained separately; filtering must not overwrite
-or repeatedly diffuse it. The caller explicitly chooses the value used by the
-strength law, so the published local-law control remains available unchanged.
+coupled solver. Raw history is retained separately; filtering must not
+overwrite or repeatedly diffuse it. The caller explicitly chooses the value
+used by the strength law, so the published local-law control remains available
+unchanged.
 """
 from __future__ import annotations
 from dataclasses import dataclass, asdict

@@ -438,4 +438,52 @@ class ReviewedReferenceUses(unittest.TestCase):
             self.assertFalse(error['geological_model_accepted'])
 
 
+class ShapeToolEvidenceRoles(unittest.TestCase):
+    """R7 (s04-3): the bounded shape tool labelled exposed outlines as validation.
+
+    The tool's own main() runs on the pinned originals. Only layout generation is
+    replaced, in the tool module's namespace: the test is about evidence roles,
+    not about plate layouts, and runs no generator.
+    """
+    def test_development_outlines_are_calibration_and_withheld_are_validation(self):
+        import contextlib
+        import importlib.util
+        import io
+        if any(next((ROOT/folder).rglob('*.pyc'), None) for folder in ('src', 'tests')):
+            self.skipTest('the tool refuses a checkout holding bytecode; run the tests with -B')
+        spec = importlib.util.spec_from_file_location(
+            'atlas_w01_shape_tool_test', ROOT/'tools/measure_w01_plate_shapes.py')
+        tool = importlib.util.module_from_spec(spec)
+        with mock.patch.object(sys, 'path', list(sys.path)):  # the tool prepends its source root
+            spec.loader.exec_module(tool)
+
+        class World:
+            atlas_id = '1'*64
+
+            def descriptor(self):
+                return {'source_bindings': {}}
+
+        ids = ['plate-%06d' % i for i in range(12)]
+        out = io.StringIO()
+        with mock.patch.multiple(tool,
+                generate_plate_layout=lambda sphere, setting, **kwargs: World(),
+                layout_metrics=lambda world, **kwargs: dict(plate_ids=ids, area_steradians=[4*math.pi/12]*12),
+                # Two rings: the tool records the plate and its evaluation, then
+                # declines the single-ring shape measurement.
+                plate_outline_cycles=lambda world, plate_id, **kwargs: [None, None]), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(tool.main(), 0)
+        plates = [plate for row in json.loads(out.getvalue())['candidates'] for plate in row['plates']]
+        self.assertEqual(len(plates), 36)  # twelve ranked outlines for each of three seeds
+        roles = {}
+        for plate in plates:
+            audit = plate['evaluation']
+            expected = (('withheld', 'validation') if plate['reference_plate'] in WITHHELD_MORPHOLOGY_PLATES
+                        else ('development', 'calibration'))
+            self.assertEqual((audit['split'], audit['purpose']), expected, plate['reference_plate'])
+            roles[expected] = roles.get(expected, 0)+1
+        # PS is the only reserved outline among the twelve largest published areas.
+        self.assertEqual(roles, {('development', 'calibration'): 33, ('withheld', 'validation'): 3})
+
+
 if __name__=='__main__':unittest.main()

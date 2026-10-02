@@ -251,7 +251,9 @@ class PreparedRegionalHeat3D:
         except RuntimeError as exc:
             raise TectonicsError('3D heat factorisation failed at the supplied scale') from exc
         _cancel(cancel)
-        if mechanics3d._sparse_bytes(factor.L)+mechanics3d._sparse_bytes(factor.U) > self._factor_allowance:
+        # Reading L/U builds CSC copies retained by SciPy. Use SuperLU's
+        # stored-entry count for the same realised-factor check instead.
+        if 12*factor.nnz+8*(factor.shape[0]+1) > self._factor_allowance:
             raise MemoryLimitError('realised 3D heat factor exceeded admitted allowance')
         self._factor, self._matrix, self._factor_key = factor, matrix, key
         self._stats['factorizations'] += 1

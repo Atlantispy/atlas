@@ -4,8 +4,12 @@ No timings are acceptance gates. Small synthetic geometries exercise broad-phase
 conservatism; old exact overlap checks and serial sampling remain explicit oracles.
 """
 from concurrent.futures import CancelledError, ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import replace
+import json
 import math
+import subprocess
+import sys
 import threading
 import tempfile
 from pathlib import Path
@@ -22,6 +26,7 @@ from atlas_tectonics import (
     ThermalInitialProfile, FeatureGeometry, GeologicalProvince, SurfaceSelector,
     FeaturePrecedence, save_initial_samples, load_initial_samples,
 )
+import atlas_tectonics.execution as execution
 from atlas_tectonics.execution import ExecutionPolicy, KernelExecutor, _AdmittedCall
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.storage import ArrayStore, StoreLimits
@@ -40,6 +45,63 @@ def policy(mode='threads', points=3, cells=2, workers=2, **kwargs):
 def patch(chart, x=0., y=0., size=.01):
     xy = np.array([(x-size,y-size),(x+size,y-size),(x+size,y+size),(x-size,y+size)])
     return SphericalGeometry.polygon(chart._unproject(xy), chart=chart)
+
+
+@contextmanager
+def foreign_lease():
+    """Hold the process-wide native-thread lease on a helper thread.
+
+    While it is held, entering a KernelExecutor on any other thread is refused
+    with the executor's own TectonicsError. A request that returns, or raises
+    its own refusal, inside this block therefore entered no executor.
+    """
+    held = threading.Event(); done = threading.Event(); failure = []
+    def hold():
+        try:
+            with KernelExecutor(ExecutionPolicy(mode='serial')):
+                held.set(); done.wait()
+        except BaseException as exc:
+            failure.append(exc)
+        finally:
+            held.set()
+    holder = threading.Thread(target=hold); holder.start(); held.wait()
+    try:
+        if failure:
+            raise failure[0]
+        yield
+    finally:
+        done.set(); holder.join()
+
+
+def leases():
+    """Process-wide executor claims: (native-thread lease users, CPU pool slots)."""
+    return execution._LIMIT_USERS, execution._POOL_SLOTS
+
+
+def native_limits():
+    from threadpoolctl import threadpool_info
+    import scipy.special  # the executor loads it before recording the limits it restores
+    return sorted((x['filepath'], x['num_threads']) for x in threadpool_info())
+
+
+class WorkerGate:
+    """A cancel token that tells a dispatch's workers from the thread driving it.
+
+    The dispatching thread asks first, before any worker exists, and is never
+    held. Every other thread that asks is one of that dispatch's workers: it
+    reports entry and waits for release. ``cancel=True`` then cancels the call.
+    """
+    def __init__(self, cancel=False):
+        self.cancel = cancel; self.driver = None
+        self.entered = threading.Event(); self.release = threading.Event()
+
+    def is_set(self):
+        me = threading.current_thread()
+        if self.driver is None:
+            self.driver = me
+        elif me is not self.driver:
+            self.entered.set(); self.release.wait(30)
+        return self.cancel and self.entered.is_set()
 
 
 class ThreadedSampling(unittest.TestCase):
@@ -108,17 +170,20 @@ class ThreadedSampling(unittest.TestCase):
         cs=tuple(cell(str(i),patch(ch,x=i*.05,size=.005)) for i in range(8))
         self.compare(state(case(sf)),'cells',(cs,),kwargs={'frame_id':sf.frame_id})
 
+    # R7 (s05-1): the plan no longer has an executor slot to inspect. The six tests
+    # that asserted it was empty now run their request under foreign_lease(), which
+    # turns any executor entry on this thread into the executor's own TectonicsError.
+
     def test_single_worker_never_creates_pool(self):
-        with PreparedPrecursor(state(),execution_policy=policy(workers=1)) as p:
+        with PreparedPrecursor(state(),execution_policy=policy(workers=1)) as p,foreign_lease():
             p.sample_points([[1.,2.]],5.,**REQUEST)
-            self.assertIsNone(p._executor)
             self.assertEqual(p.execution_statistics()['route'],'serial')
 
     def test_auto_keeps_small_request_serial(self):
-        with PreparedPrecursor(state()) as p:
+        with PreparedPrecursor(state()) as p,foreign_lease():
             p.sample_points([[1.,2.]],5.,**REQUEST)
             p.sample_cells((cell(),),**REQUEST)
-            self.assertIsNone(p._executor)
+            self.assertEqual(p.execution_statistics()['route'],'serial')
 
     def test_auto_uses_configured_point_threshold(self):
         cfg=replace(policy('auto'),min_parallel_points=6)
@@ -134,16 +199,14 @@ class ThreadedSampling(unittest.TestCase):
 
     def test_cross_batch_planar_overlap_rejected_before_executor(self):
         cs=(cell('a',rectangle(0,6)),cell('b',rectangle(6,10)),cell('c',rectangle(4,5)))
-        with PreparedPrecursor(state(),execution_policy=policy(cells=1)) as p:
+        with PreparedPrecursor(state(),execution_policy=policy(cells=1)) as p,foreign_lease():
             with self.assertRaisesRegex(GeologyError,'overlap'):p.sample_cells(cs,**REQUEST)
-            self.assertIsNone(p._executor)
 
     def test_cross_batch_spherical_overlap_rejected_before_executor(self):
         sf=SphericalFrame(1000.,'test-sphere');ch=SphericalChart(sf,(1.,0.,0.))
         cs=(cell('a',patch(ch)),cell('b',patch(ch,x=.2)),cell('c',patch(ch,x=.005)))
-        with PreparedPrecursor(state(case(sf)),execution_policy=policy(cells=1)) as p:
+        with PreparedPrecursor(state(case(sf)),execution_policy=policy(cells=1)) as p,foreign_lease():
             with self.assertRaisesRegex(GeologyError,'overlap'):p.sample_cells(cs,**(REQUEST|{'frame_id':sf.frame_id}))
-            self.assertIsNone(p._executor)
 
     def test_explicit_nonadditive_overlaps_remain_labelled(self):
         cs=tuple(cell(str(i)) for i in range(3))
@@ -182,10 +245,10 @@ class ThreadedSampling(unittest.TestCase):
 
     def test_cancel_before_submission_no_pool_or_leak(self):
         b=WorkBudget(64<<20);e=threading.Event();e.set()
-        with PreparedPrecursor(state(),execution_policy=policy(),budget=b) as p:
+        with PreparedPrecursor(state(),execution_policy=policy(),budget=b) as p,foreign_lease():
             held=b.reserved_bytes
             with self.assertRaises(CancelledError):p.sample_points(np.ones((10,2)),5.,cancel=e,**REQUEST)
-            self.assertIsNone(p._executor)
+            self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
             self.assertEqual(b.reserved_bytes,held)
 
     def test_invalid_depth_in_later_batch_drains_and_recovers(self):
@@ -212,12 +275,23 @@ class ThreadedSampling(unittest.TestCase):
             self.assertEqual(b.reserved_bytes,held)
 
     def test_close_from_wrong_thread_does_not_destroy_plan(self):
-        with PreparedPrecursor(state(),execution_policy=policy()) as p:
-            p.sample_points(np.ones((4,2)),5.,**REQUEST)
+        # R7 (s05-1): an executor lasts one dispatch, so no thread owns the plan. A
+        # close from another thread is refused only while a call is active, and
+        # leaves the plan usable; an idle plan closes from any thread.
+        gate=WorkerGate();b=WorkBudget(64<<20)
+        with PreparedPrecursor(state(),budget=b,execution_policy=policy()) as p:
+            def close_during_call():
+                try:
+                    self.assertTrue(gate.entered.wait(30));p.close()
+                finally:gate.release.set()
             with ThreadPoolExecutor(max_workers=1) as pool:
-                with self.assertRaises(GeologyError):pool.submit(p.close).result()
-            self.assertFalse(p._closed)
-            p.sample_points(np.ones((4,2)),5.,**REQUEST)
+                closing=pool.submit(close_during_call)
+                p.sample_points(np.ones((4,2)),5.,cancel=gate,**REQUEST)
+                with self.assertRaises(GeologyError):closing.result()
+                self.assertFalse(p._closed)
+                p.sample_points(np.ones((4,2)),5.,**REQUEST)
+                pool.submit(p.close).result()
+            self.assertTrue(p._closed);self.assertEqual(b.reserved_bytes,0)
 
     def test_execution_configuration_not_scientific_identity(self):
         s=state()
@@ -235,9 +309,9 @@ class ThreadedSampling(unittest.TestCase):
 
     def test_auto_keeps_unindexed_points_serial(self):
         cfg=replace(policy('auto'),min_parallel_points=1)
-        with PreparedPrecursor(state(),execution_policy=cfg) as p:
+        with PreparedPrecursor(state(),execution_policy=cfg) as p,foreign_lease():
             p.sample_points(np.ones((8,2)),5.,**REQUEST)
-            self.assertIsNone(p._executor)
+            self.assertEqual(p.execution_statistics()['route'],'serial')
 
     def test_default_cell_policy_does_not_force_measured_slow_threads(self):
         cfg=PrecursorExecutionPolicy()
@@ -256,6 +330,9 @@ class ThreadedSampling(unittest.TestCase):
         self.assertEqual(b.reserved_bytes,0)
 
     def test_source_invalidation_with_live_pool_releases_all_admission(self):
+        # The name predates R7 and is kept because a recorded test log cites it. No
+        # pool is live between calls now: this covers invalidation after a threaded
+        # call. DispatchScopedExecutor covers invalidation while a pool is live.
         b=WorkBudget(64<<20);p=PreparedPrecursor(state(),budget=b,execution_policy=policy())
         p.sample_points(np.ones((6,2)),5.,**REQUEST)
         p._context._sources=dict(p._context._sources)|{'absent.py':b'changed input'}
@@ -310,6 +387,216 @@ class ThreadedSampling(unittest.TestCase):
             e.enabled=False
             p.sample_points(np.ones((8,2)),5.,cancel=e,**REQUEST)
         self.assertEqual(b.reserved_bytes,0)
+
+
+POINTS=np.array([[1.,5.],[8.,5.],[3.,3.],[6.,2.]])
+
+
+class DispatchScopedExecutor(unittest.TestCase):
+    """R7 (s05-1): each threaded dispatch owns its executor; the plan owns none.
+
+    Where a helper thread makes a plan's first threaded call, that thread stays
+    alive and the plan is closed on it in a ``finally``. Were a plan bound to its
+    first caller again, that still releases the process-wide lease, so a failure
+    here cannot fail every later test. A first caller that has already exited is
+    exercised in a separate interpreter for the same reason.
+    """
+    def test_idle_plan_holds_no_pool_cpu_slots_or_native_lease(self):
+        clean=leases();limits=native_limits();threads=set(threading.enumerate())
+        with PreparedPrecursor(state(mixed_case()),execution_policy=policy()) as p:
+            p.sample_points(POINTS,5.,**REQUEST)
+            self.assertEqual(p.execution_statistics()['route'],'threads')
+            self.assertEqual(leases(),clean);self.assertEqual(native_limits(),limits)
+            self.assertEqual(set(threading.enumerate())-threads,set())
+            def unrelated():
+                with KernelExecutor(ExecutionPolicy(mode='serial')):return True
+            with ThreadPoolExecutor(max_workers=1) as pool:self.assertTrue(pool.submit(unrelated).result(30))
+
+    def test_plan_is_not_bound_to_its_first_threaded_caller(self):
+        b=WorkBudget(64<<20);p=PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy())
+        cs=tuple(cell(str(i),rectangle(i,i+1)) for i in range(4))
+        points=lambda:p.sample_points(POINTS,5.,**REQUEST).sample_id
+        cells=lambda:(p.sample_cells(cs,**REQUEST).sample_id,p.execution_statistics()['route'])
+        with ThreadPoolExecutor(max_workers=1) as first:
+            try:
+                with ThreadPoolExecutor(max_workers=1) as second:
+                    ids=[first.submit(points).result(30),second.submit(points).result(30),points()]
+                    self.assertEqual(len(set(ids)),1)
+                    self.assertEqual(p.execution_statistics()['route'],'threads')
+                    # The cell route dispatches through the same per-call executor.
+                    self.assertEqual(second.submit(cells).result(30),first.submit(cells).result(30))
+                    self.assertEqual(cells()[1],'threads')
+                    second.submit(p.close).result(30)
+                self.assertTrue(p._closed);self.assertEqual(b.reserved_bytes,0)
+            finally:first.submit(p.close).result(30)
+
+    def test_plan_outlives_the_thread_that_first_used_it(self):
+        script='''import json,sys,threading
+sys.path[:0]=sys.argv[1:3]
+from threadpoolctl import threadpool_info
+import scipy.special
+import atlas_tectonics.execution as execution
+from atlas_tectonics import PreparedPrecursor,PrecursorExecutionPolicy
+from atlas_tectonics.execution import ExecutionPolicy,KernelExecutor
+from atlas_tectonics.resources import WorkBudget
+from precursor_fixtures import state,mixed_case,REQUEST
+def native():return sorted((x['filepath'],x['num_threads']) for x in threadpool_info())
+out={};b=WorkBudget(64<<20)
+cfg=PrecursorExecutionPolicy(kernel=ExecutionPolicy(mode='threads',max_workers=2,max_inflight=3),point_batch_size=1)
+p=PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=cfg)
+def attempt(name,call):
+    try:out[name]=call()
+    except Exception as exc:out[name]=type(exc).__name__+': '+str(exc)
+def sample():return p.sample_points([[1.,5.],[8.,5.]],5.,**REQUEST).sample_id
+def unrelated():
+    with KernelExecutor(ExecutionPolicy(mode='serial')):return 'ok'
+def close():p.close();return 'ok'
+before=native()
+caller=threading.Thread(target=attempt,args=('first',sample));caller.start();caller.join()
+out['leases']=[execution._LIMIT_USERS,execution._POOL_SLOTS];out['limits_restored']=native()==before
+# Started once the first caller has gone: if its thread identifier is handed straight back, this thread takes it.
+keep=threading.Event();spare=threading.Thread(target=keep.wait);spare.start()
+caller=threading.Thread(target=attempt,args=('second',sample));caller.start();caller.join()
+attempt('constructor',sample);attempt('unrelated_executor',unrelated);attempt('close',close)
+out['closed']=p._closed;out['reserved']=b.reserved_bytes
+keep.set();spare.join()
+print(json.dumps(out))
+'''
+        tests=Path(__file__).resolve().parent
+        result=subprocess.run([sys.executable,'-I','-B','-c',script,str(tests.parent/'src'),str(tests)],
+                              capture_output=True,text=True,timeout=120)
+        self.assertEqual(result.returncode,0,result.stderr)
+        out=json.loads(result.stdout.strip().splitlines()[-1]);self.maxDiff=None
+        self.assertEqual(len(out['first']),64,out)
+        self.assertEqual(out,{'first':out['first'],'second':out['first'],'constructor':out['first'],
+            'leases':[0,0],'limits_restored':True,'unrelated_executor':'ok','close':'ok','closed':True,'reserved':0})
+
+    def test_threaded_calls_on_one_plan_take_turns(self):
+        gate=WorkerGate();p=PreparedPrecursor(state(mixed_case()),execution_policy=policy())
+        with ThreadPoolExecutor(max_workers=1) as first:
+            try:
+                with ThreadPoolExecutor(max_workers=1) as second:
+                    try:
+                        a=first.submit(lambda:p.sample_points(POINTS,5.,cancel=gate,**REQUEST).sample_id)
+                        self.assertTrue(gate.entered.wait(30))
+                        b=second.submit(lambda:p.sample_points(POINTS,5.,**REQUEST).sample_id)
+                        # The second call queues on the dispatch lock. It neither runs beside the
+                        # first nor meets the first call's native-thread lease, which would refuse it.
+                        with self.assertRaises(TimeoutError):b.result(.25)
+                    finally:gate.release.set()
+                    self.assertEqual(a.result(30),b.result(30))
+            finally:first.submit(p.close).result(30)
+        self.assertTrue(p._closed)
+
+    def test_foreign_lease_refuses_the_call_before_any_job_and_binds_nothing(self):
+        b=WorkBudget(64<<20)
+        with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as p:
+            held=b.reserved_bytes;sample=lambda:p.sample_points(POINTS,5.,**REQUEST).sample_id
+            with foreign_lease():
+                foreign=leases()
+                with self.assertRaises(TectonicsError) as refused:sample()
+                self.assertIs(type(refused.exception),TectonicsError)
+                self.assertEqual((b.reserved_bytes,leases()),(held,foreign))
+                self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
+                self.assertEqual(p.execution_statistics()['route'],'not-run')
+            # The refusal neither bound the plan to this thread nor made it unusable.
+            with ThreadPoolExecutor(max_workers=1) as other:
+                self.assertEqual(sample(),other.submit(sample).result(30))
+            self.assertEqual(b.reserved_bytes,held)
+        self.assertEqual(b.reserved_bytes,0)
+
+    def test_request_overlapping_another_plans_dispatch_is_refused_not_queued(self):
+        gate=WorkerGate();b=WorkBudget(64<<20)
+        busy=PreparedPrecursor(state(mixed_case()),execution_policy=policy())
+        with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as other, \
+                ThreadPoolExecutor(max_workers=1) as pool:
+            held=b.reserved_bytes
+            try:
+                try:
+                    running=pool.submit(lambda:busy.sample_points(POINTS,5.,cancel=gate,**REQUEST).sample_id)
+                    self.assertTrue(gate.entered.wait(30))
+                    with self.assertRaises(TectonicsError) as refused:other.sample_points(POINTS,5.,**REQUEST)
+                    self.assertIs(type(refused.exception),TectonicsError);self.assertEqual(b.reserved_bytes,held)
+                finally:gate.release.set()
+                first=running.result(30)
+                # The refusal lasts for the overlap only, not for the other plan's lifetime.
+                self.assertEqual(other.sample_points(POINTS,5.,**REQUEST).sample_id,first)
+            finally:pool.submit(busy.close).result(30)
+        self.assertTrue(busy._closed)
+
+    def test_callers_own_executor_conflict_is_refused_and_compatible_lease_is_returned(self):
+        b=WorkBudget(64<<20)
+        with PreparedPrecursor(state(mixed_case()),budget=b,execution_policy=policy()) as p:
+            held=b.reserved_bytes
+            with KernelExecutor(ExecutionPolicy(mode='serial',max_workers=1,inner_threads=2)):
+                with self.assertRaises(TectonicsError) as refused:p.sample_points(POINTS,5.,**REQUEST)
+                self.assertIs(type(refused.exception),TectonicsError)
+                self.assertEqual(b.reserved_bytes,held)
+                self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
+            with KernelExecutor(ExecutionPolicy(mode='serial')):
+                outer=leases()
+                p.sample_points(POINTS,5.,**REQUEST)
+                self.assertEqual(p.execution_statistics()['route'],'threads')
+                self.assertEqual(leases(),outer)
+
+    def test_failed_and_cancelled_dispatches_return_pool_and_lease(self):
+        b=WorkBudget(64<<20);clean=leases();threads=set(threading.enumerate())
+        with PreparedPrecursor(state(),budget=b,execution_policy=policy(points=1)) as p:
+            held=b.reserved_bytes
+            def returned():return leases(),b.reserved_bytes,set(threading.enumerate())-threads
+            with self.assertRaises(GeologyError):p.sample_points(np.ones((4,2)),[1.,2.,31.,3.],**REQUEST)
+            self.assertIn('executor-inflight',b.statistics()['category_peaks'])
+            self.assertEqual(returned(),(clean,held,set()))
+            gate=WorkerGate(cancel=True);gate.release.set()
+            with self.assertRaises(CancelledError):p.sample_points(np.ones((8,2)),5.,cancel=gate,**REQUEST)
+            self.assertTrue(gate.entered.is_set());self.assertEqual(returned(),(clean,held,set()))
+            p.sample_points(np.ones((8,2)),5.,**REQUEST)
+            self.assertEqual(returned(),(clean,held,set()))
+
+    def test_source_invalidation_during_a_dispatch_returns_pool_lease_and_admission(self):
+        gate=WorkerGate();b=WorkBudget(64<<20);clean=leases()
+        p=PreparedPrecursor(state(),budget=b,execution_policy=policy())
+        def invalidate():
+            try:
+                self.assertTrue(gate.entered.wait(30))
+                p._context._sources=dict(p._context._sources)|{'absent.py':b'changed input'}
+            finally:gate.release.set()
+        try:
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                changing=pool.submit(invalidate)
+                with self.assertRaisesRegex(TectonicsError,'source changed'):
+                    p.sample_points(np.ones((6,2)),5.,cancel=gate,**REQUEST)
+                changing.result()
+            self.assertIn('executor-inflight',b.statistics()['category_peaks'])
+            self.assertEqual(leases(),clean)
+        finally:
+            with self.assertRaisesRegex(TectonicsError,'source changed'):p.close()
+        self.assertEqual(b.reserved_bytes,0)
+
+    def test_statistics_describe_only_the_last_dispatch(self):
+        with PreparedPrecursor(state(mixed_case()),budget=WorkBudget(64<<20),execution_policy=policy(points=1)) as p:
+            p.sample_points(np.ones((6,2)),5.,**REQUEST);large=p.execution_statistics()
+            p.sample_points(np.ones((1,2)),5.,**REQUEST);small=p.execution_statistics()
+        self.assertEqual((large['parallel_jobs'],large['peak_inflight']),(6,3))
+        self.assertEqual((small['parallel_jobs'],small['peak_inflight']),(1,1))
+        self.assertLess(small['accounted_executor_peak_bytes'],large['accounted_executor_peak_bytes'])
+
+    def test_threaded_request_that_does_not_complete_keeps_the_earlier_statistics(self):
+        # A guard for what the execution contract states, not a repair: it held before R7 too. A threaded request
+        # writes the record only once all its jobs have completed, so the record can describe an earlier request.
+        with PreparedPrecursor(state(),execution_policy=policy(points=1)) as p:
+            p.sample_points(np.ones((6,2)),5.,**REQUEST);recorded=p.execution_statistics()
+            self.assertEqual((recorded['route'],recorded['parallel_jobs']),('threads',6))
+            with self.assertRaises(GeologyError):p.sample_points(np.ones((3,2)),[1.,31.,2.],**REQUEST)
+            self.assertEqual(p.execution_statistics(),recorded)
+            gate=WorkerGate(cancel=True);gate.release.set()
+            with self.assertRaises(CancelledError):p.sample_points(np.ones((8,2)),5.,cancel=gate,**REQUEST)
+            self.assertTrue(gate.entered.is_set());self.assertEqual(p.execution_statistics(),recorded)
+            with foreign_lease(),self.assertRaises(TectonicsError) as refused:
+                p.sample_points(np.ones((2,2)),5.,**REQUEST)
+            self.assertIs(type(refused.exception),TectonicsError);self.assertEqual(p.execution_statistics(),recorded)
+            p.sample_points(np.ones((2,2)),5.,**REQUEST)
+            self.assertEqual(p.execution_statistics()['parallel_jobs'],2)
 
 
 class SphericalBroadPhase(unittest.TestCase):

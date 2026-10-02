@@ -33,6 +33,14 @@ def mixing_case(outflow=1., *, enthalpy_source='synthetic-specific-J-per-kg'):
     return inv,q
 
 
+def source_case(kind, enthalpy_j, law, *, rate=0.):
+    """One 2 kg declared source of the first component beside a 2000 J reservoir."""
+    row = [2.]+[0.]*(len(law.component_ids)-1)
+    inv = MagmaticInventory(('a','b'),(kind,'reservoir'),law.component_ids,[row,row],
+        [enthalpy_j,2000.],source_id='declared-source',enthalpy_source=law.thermodynamics_id)
+    return inv,[[0.,rate],[0.,0.]]
+
+
 class MagmaticTransferTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls): cls.context = ExecutionContext('scipy')
@@ -174,9 +182,37 @@ class MagmaticTransferTests(unittest.TestCase):
         del view; gc.collect()
         self.assertEqual(owner.reserved_bytes,0)
 
+    def test_inventory_rebuilt_from_public_arrays_owns_its_lease(self):
+        # R7 (s14 missed #2): a rebuilt inventory borrowed the first one's bytes,
+        # so its reservation stayed charged until the first one was released.
+        owner=WorkBudget(128*1024**2)
+        def rebuilt(source):
+            return MagmaticInventory(source.node_ids,source.node_kinds,source.component_ids,
+                source.component_mass_kg,source.enthalpy_j,source_id='rebuilt',
+                enthalpy_source=source.enthalpy_source,budget=owner)
+        first=MagmaticInventory(('a','b'),('reservoir','source-melt'),('x','y'),
+            [[1.,2.],[3.,4.]],[5.,6.],source_id='first',enthalpy_source='h',budget=owner)
+        gc.collect(); held=owner.reserved_bytes
+        self.assertGreater(held,0)
+        for _ in range(3):
+            again=rebuilt(first)
+            self.assertEqual(owner.reserved_bytes,2*held)
+            del again; gc.collect()
+            self.assertEqual(owner.reserved_bytes,held)
+        # A copy that outlives its source keeps its values and only its own lease.
+        again=rebuilt(first)
+        del first; gc.collect()
+        self.assertEqual(owner.reserved_bytes,held)
+        np.testing.assert_array_equal(again.component_mass_kg,[[1.,2.],[3.,4.]])
+        np.testing.assert_array_equal(again.enthalpy_j,[5.,6.])
+        del again; gc.collect()
+        self.assertEqual(owner.reserved_bytes,0)
+
     def test_thermodynamic_reference_binding(self):
+        # R7 3e: a zero-latent source kind is judged by temperature, so the
+        # synthetic melting point lies below every stock here (300 K and above).
         law=MagmaticThermodynamics(('initial','recharge'),[10,20],[0,0],
-            melting_temperature_k=350,reference_temperature_k=300,
+            melting_temperature_k=290,reference_temperature_k=300,
             source_id='synthetic',provenance='A05')
         inv,q=mixing_case()
         with self.assertRaises(TectonicsError): self.plan(inv,q,thermodynamics=law)
@@ -185,6 +221,58 @@ class MagmaticTransferTests(unittest.TestCase):
             state=invert_enthalpy(p.evaluate(3.).remaining.component_mass_kg,
                                  p.evaluate(3.).remaining.enthalpy_j,law)
             self.assertTrue(all(t>300 for t in state.temperature_k))
+
+    def test_zero_latent_source_kinds_are_classified_by_temperature(self):
+        # R7 3e (s14 missed #1): without latent heat the inversion gives T but no
+        # liquid fraction, and either source kind used to pass at any temperature.
+        zero=MagmaticThermodynamics(('x',),[10.],[0.],melting_temperature_k=350.,
+            reference_temperature_k=300.,source_id='zero-latent',provenance='R7 3e')
+        # Only the absent component carries latent heat: the node still has none.
+        mixed=MagmaticThermodynamics(('x','y'),[10.,10.],[0.,100.],melting_temperature_k=350.,
+            reference_temperature_k=300.,source_id='mixed-latent',provenance='R7 3e')
+        # Cp is 20 J/K: 10/990/1000/1010/2000 J are 300.5/349.5/350/350.5/400 K.
+        admitted={'source-melt':(False,False,False,True,True),
+                  'source-solid':(True,True,False,False,False)}
+        for law in (zero,mixed):
+            at_tm=invert_enthalpy([[2.]+[0.]*(len(law.component_ids)-1)],[1000.],law)
+            self.assertEqual((at_tm.temperature_k,at_tm.phase),((350.,),('single_phase',)))
+            for kind,expected in admitted.items():
+                for enthalpy,accept in zip((10.,990.,1000.,1010.,2000.),expected):
+                    inv,q=source_case(kind,enthalpy,law)
+                    with self.subTest(law=law.source_id,kind=kind,enthalpy_j=enthalpy):
+                        if accept:
+                            with self.plan(inv,q,thermodynamics=law): pass
+                        else:
+                            with self.assertRaises(TectonicsError): self.plan(inv,q,thermodynamics=law)
+        # Zero-latent laws stay usable: melt above Tm still feeds the reservoir.
+        inv,q=source_case('source-melt',2000.,zero,rate=.5)
+        with self.plan(inv,q,thermodynamics=zero) as p:
+            r=p.evaluate(2.)
+            np.testing.assert_allclose(r.remaining.mass_kg,[1.,3.],rtol=1e-14)
+            np.testing.assert_allclose(r.transferred_enthalpy_j,[1000.],rtol=1e-14)
+
+    def test_reviewed_zero_latent_sources_are_refused(self):
+        # The reproduced cases: Tm 1473.15 K, melt at 300.5 K, idle solid at 3000 K.
+        law=MagmaticThermodynamics(('x',),[1000.],[0.],melting_temperature_k=1473.15,
+            reference_temperature_k=300.,source_id='s',provenance='p')
+        cold=1000.*(300.5-300.); hot=1000.*(3000.-300.); q=np.zeros((3,3)); q[1,2]=.1
+        def network(solid_j,melt_j):
+            return MagmaticInventory(('a','b','c'),('source-solid','source-melt','reservoir'),
+                ('x',),[[1.],[1.],[1.]],[solid_j,melt_j,hot],source_id='i',
+                enthalpy_source=law.thermodynamics_id)
+        with self.assertRaises(TectonicsError): self.plan(network(hot,hot),q,thermodynamics=law)
+        with self.assertRaises(TectonicsError): self.plan(network(cold,cold),q,thermodynamics=law)
+        with self.plan(network(cold,hot),q,thermodynamics=law) as p:
+            self.assertEqual(p.evaluate(1.).transferred_mass_kg[0],.1)
+
+    def test_zero_latent_source_kind_is_checked_on_the_published_remainder(self):
+        law=MagmaticThermodynamics(('x',),[10.],[0.],melting_temperature_k=350.,
+            reference_temperature_k=300.,source_id='zero-latent',provenance='R7 3e')
+        # An idle 350.5 K melt source losing 10 W: 350.3 K after 0.4 s, 349.5 K after 2 s.
+        inv,q=source_case('source-melt',1010.,law)
+        with self.plan(inv,q,heat_w=[-10.,0.],thermodynamics=law) as p:
+            self.assertAlmostEqual(p.evaluate(.4).remaining.enthalpy_j[0],1006.,places=9)
+            with self.assertRaises(TectonicsError): p.evaluate(2.)
 
     def test_physical_calorimetric_density_and_host_control(self):
         f=FIXTURE['physical_control']; s=f['scenario_not_paper_parameters']

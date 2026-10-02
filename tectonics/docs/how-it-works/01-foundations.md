@@ -30,6 +30,11 @@ Geological ages running backwards from a reference are explicitly converted to a
 forward clock in seconds. Formation time, cooling onset and elapsed duration stay
 distinct; “year” requires a specified unit.
 
+A rotation that is saved, copied or sent to another process comes back with exactly
+the same numbers, and the inverse of its inverse is the original exactly. Repeated
+transfers therefore do not drift, and a worker process applies the same rotation
+as its caller.
+
 One shared interval rule serves every later stepped route: a fixed partition's
 last substep ends exactly at the declared end, and a caller's declared output
 time is published as it is. Recomputing `start+(end−start)` can miss the end by
@@ -61,6 +66,46 @@ edges, then calculate actual surface areas in m² and arc lengths in metres.
 Several patches can form one large or disconnected plate. A complete spherical
 atlas checks opposite edge pairing, junction order, connectivity, Euler's relation
 and an area sum of `4π` steradians. No area rescaling repairs a failed closure.
+
+An exact intersection can be a mixture: an area, a line where two outlines only
+touch, and single points. Atlas keeps such a mixture as one collection and holds
+it to one rule, so that nothing in it is measured twice. Its areas must not
+overlap, repeat or share an edge; its line traces must not cross or overlap, and
+two of them may meet only at a point where both end (a closed trace has no end,
+so no other trace may touch it); and no trace may lie inside or along one of its
+areas. Touching at a point is allowed. A stored or imported collection that breaks
+the rule is refused, not merged, because merging would silently change the stored
+shape and its identifier. Without the rule a collection of two overlapping
+squares reported the overlapping area twice, and overlapping traces reported
+their shared length twice.
+
+The rule is applied with the geometry library's own robust tests and no added
+tolerance. A touch therefore has to be exact in the stored numbers. Those tests
+are not exact arithmetic either: in rare cases a touch that is exact, part-way
+along a slanted edge, is refused, as it already was for a multi-part polygon. A
+collection so dense that more than a million trace-and-area pairs (the default
+limit) would have to be compared is refused as too costly, and one just under
+that limit can take seconds to check.
+
+Two side effects were accepted with the repair. Areas that share any length of
+edge are refused, as they already were when stored as one multi-part polygon,
+although their summed area was right. And moving a collection to another
+spherical chart rounds every corner separately, so a corner or a trace end that
+only rests on another member's edge can become a tiny overlap; the move is then
+refused instead of returning it. Checking the repair showed a wider form of that
+second effect, which was not among those accepted. A real result of a set
+operation can be refused in the same way, even where its members share a corner,
+when its inputs had themselves been moved between charts. Such a result can hold
+a trace that runs a rounding step away from an area's edge, and one more move
+can push it inside. In a sample built to provoke this, 1.2% to 1.6% of such
+moves were refused for this reason, beside the 0.9% to 1.6% already refused for
+other rounding reasons; results whose inputs had never been moved were not
+affected. Routes that explicitly require a pure area or line cannot encounter
+this mixed-collection case. The general spherical overlay method can rechart
+mixed operands internally, however, so it can encounter the same refusal even
+without a separate caller request to move the collection.
+[These regression tests](../../tests/test_w01_geometry_corrections.py) check each
+refusal and that admitted collections keep their measures.
 
 [Geometry](../../src/atlas_tectonics/geometry.py),
 [spherical geometry](../../src/atlas_tectonics/spherical_geometry.py),
@@ -94,6 +139,16 @@ cannot become zero, and a room-temperature rock reference cannot become a calibr
 hot-mantle law. The reference library distinguishes grain density from porous bulk
 rock and preserves original measurement conditions. Mixture density is weighted by
 volume; specific heat requires mass weighting. Conductivity also depends on arrangement.
+
+A tabulated starting temperature profile must reach the base of the layers as the
+description represents them. The declared lithosphere thickness only has to agree
+with the sum of the layers to one part in a million million, and layer depths are
+added one layer at a time, so the deepest edge can differ from the declared thickness:
+in its last digit, or by as much as that allowance (a ten-millionth of a metre on a
+100 km column). A table that stops between the two is refused when the description
+is built, rather than accepted there and refused one step later, when the description
+is completed into the initial state that sampling reads; temperatures are never
+extrapolated.
 
 See [partition code](../../src/atlas_tectonics/planetary_generation.py),
 [geological cases](../../src/atlas_tectonics/geological_case.py),
@@ -236,6 +291,13 @@ a boundary records the inventory changing owner; physically moving it uses the
 moving-volume method. [Markers](../../src/atlas_tectonics/markers.py) retain labels
 and accumulated stretch under a declared material map, but carry no mass and do
 not infer trajectories from arbitrary grid motion.
+
+A physically advanced plate state records one account for every block and cohort:
+the amount before and after, what crossed each of the block's two bounding faces, and
+the largest fraction of any of that block's own cells that left during the step. A
+block from whose cells nothing left reports zero for that fraction, not the value
+of a busier block; the largest block value is exactly the fraction the transport
+step was admitted under.
 
 The [integrated tests](../../tests/test_w02_completion.py) combine regrid, motion,
 birth, split, merge and restoration, checking per-cohort balances and replay
@@ -404,9 +466,13 @@ while allowing curvature to change across material boundaries. This interpolatio
 has a [TU Delft derivation](https://interactivetextbooks.citg.tudelft.nl/computational-modelling/structural_linear/euler_bernouilli.html).
 
 At least two meshes are compared, with further refinement until displacement,
-slope and curvature changes meet declared tolerances. Polynomial extrema and local
-elastic thickness contribute to strain checks. These are mesh-change estimates,
-not rigorous bounds on the exact solution. Continuing variable-rigidity cases
+slope and curvature changes plus both meshes' estimated floating-point uncertainty
+meet the declared tolerances. Residual and assembly-rounding effects are propagated
+through the reused band factors to whole-element polynomial controls. This stops
+two accidentally agreeing meshes from claiming precision their arithmetic cannot
+resolve. Polynomial extrema and local elastic thickness contribute to strain
+checks. These are numerical estimates, not rigorous bounds on the exact continuum
+solution. Continuing variable-rigidity cases
 currently require exact declared exterior loads; the uniform uncertainty bound
 cannot be borrowed.
 

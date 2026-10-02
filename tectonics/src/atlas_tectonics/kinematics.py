@@ -34,7 +34,11 @@ def _unit(vector: FloatArray) -> FloatArray:
 
 @dataclass(frozen=True, slots=True)
 class Rotation:
-    """Unit quaternion (w,x,y,z); normalisation preserves a proper rotation."""
+    """Unit quaternion (w,x,y,z); normalisation preserves a proper rotation.
+
+    Construction normalises. A pickle, copy or inverse() of an existing rotation
+    keeps its stored unit components exactly, so repeated transfers cannot drift.
+    """
     quaternion: tuple[float, float, float, float]
     _matrix: FloatArray = field(init=False, repr=False, compare=False)
 
@@ -57,7 +61,8 @@ class Rotation:
 
     def inverse(self) -> Rotation:
         w, x, y, z = self.quaternion
-        return Rotation((w, -x, -y, -z))
+        # Negation keeps the norm exactly: the conjugate is stored as it is.
+        return _restore_rotation((w, -x, -y, -z))
 
     def then(self, following: Rotation) -> Rotation:
         """Apply this rotation first, then following (ordered Hamilton product)."""
@@ -134,11 +139,41 @@ class Rotation:
 
     def __reduce__(self):
         # Do not restore mutable derived matrix state from a generic object pickle.
-        return (type(self), (self.quaternion,))
+        # The stored components are restored as they are; the constructor would
+        # renormalise them. Pickles written before this still name the class.
+        return (_restore_rotation, (self.quaternion,))
 
     def __deepcopy__(self, memo):
         memo[id(self)] = self
         return self
+
+
+def _restore_rotation(quaternion: Any) -> Rotation:
+    """Rebuild a stored unit rotation from its components, without renormalising.
+
+    Normalising an already-unit quaternion is not idempotent in binary64: each
+    pickle, copy or inverse made through the constructor could move a component
+    by one rounding unit. Four finite components whose norm is within 16 eps of
+    one are taken exactly as stored; anything else is refused, not repaired.
+    The constructor stores a norm within about one eps of one, so every
+    constructed rotation passes. The check cannot tell that components came
+    from the constructor: values up to 16 eps from unit norm, which the
+    constructor would have normalised, are also kept as they are. This is a
+    consistency check on restoration, not an accuracy tolerance. New rotations
+    still go through the constructor.
+    """
+    values = tuple(float(x) for x in _vector(quaternion, 4, "stored quaternion"))
+    if abs(math.hypot(*values) - 1) > 16 * np.finfo(float).eps:
+        raise TectonicsError("stored quaternion is not a unit rotation")
+    rotation = object.__new__(Rotation)
+    object.__setattr__(rotation, "quaternion", values)
+    w, x, y, z = values
+    # The same expression as Rotation.__post_init__, on the stored components.
+    matrix = np.array(((1 - 2*(y*y + z*z), 2*(x*y - z*w), 2*(x*z + y*w)),
+                       (2*(x*y + z*w), 1 - 2*(x*x + z*z), 2*(y*z - x*w)),
+                       (2*(x*z - y*w), 2*(y*z + x*w), 1 - 2*(x*x + y*y))))
+    object.__setattr__(rotation, "_matrix", frozen(matrix))
+    return rotation
 
 
 def rigid_velocity(positions_m: Any, angular_velocity_rad_s: Any, *, budget=None) -> FloatArray:

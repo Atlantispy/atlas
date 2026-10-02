@@ -437,7 +437,8 @@ class PrecursorState:
                     raise GeologyError('cannot add porosity to already bulk-reference rock constituents')
                 p = thermal[u.thermal_profile_id]
                 if p.mode == 'tabulated' and p.depths_m[-1] < u.bottom_depth_m:
-                    raise GeologyError('body thermal table does not reach its base; no extrapolation')
+                    raise GeologyError(u.kind + ' ' + u.owner_id + ' layer ' + u.layer.layer_id
+                                       + ': thermal table does not reach its base; no extrapolation')
                 if domain.sphere is not None and u.bottom_depth_m >= domain.sphere.radius_m:
                     raise GeologyError('represented depths must remain strictly outside the sphere centre')
             if sum(f.role == 'temperature_offset' for f in fields) > 1:

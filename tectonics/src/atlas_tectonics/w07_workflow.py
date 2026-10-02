@@ -67,7 +67,13 @@ class W07WorkflowOutput:
 
 
 class PreparedW07Workflow:
-    """Borrow geology/store; retain prepared mechanics and latest physical state."""
+    """Borrow geology/store; retain prepared mechanics and latest physical state.
+
+    A dry-strength Picard refill that is cancelled or fails between the start of its
+    numeric part and its acceptance invalidates the regional plan. The workflow closes
+    and drops such a plan, and its next operation prepares a replacement from the same
+    geology, under this workflow's execution identity or not at all.
+    """
     def __setattr__(self,name,value):
         if name in ('geology','store','route','times','steps','execution_id','plan_id') and hasattr(self,name):
             raise AttributeError('W07 source and policy are immutable; prepare a new workflow')
@@ -162,13 +168,8 @@ class PreparedW07Workflow:
             else:
                 self._validate_motion(d,boundary_motion)
                 pattern={s:{'u':'velocity','w':'velocity'} for s in ('left','right','bottom','top')}
-                self._mechanical=PreparedRegionalStokes2D(geology.nx,geology.nz,geology.width_m,geology.height_m,
-                    float(geology.array('eta_center_pa_s')[0,0]),pattern,scales=scales,frame_id=geology.frame_id,
-                    vertical_datum=geology.vertical_datum,material_source=geology.binding_id,
-                    physical_mean_pressure_pa=physical_mean_pressure_pa,reference_pressure=reference_pressure,
-                    viscosity_center_pa_s=geology.array('eta_center_pa_s'),viscosity_vertex_pa_s=geology.array('eta_vertex_pa_s'),
-                    material_sampling='source-bound pure ordered layers; exact series shear-dual compliance',
-                    budget=self._resource,cancel=cancel)
+                self._mechanical_options=(pattern,scales,physical_mean_pressure_pa,reference_pressure)
+                self._mechanical=self._prepare_mechanical(cancel)
                 self._boundary=self._boundary_values()
                 self._boundary_samples={s:{c:frozen(np.full(self._mechanical.coordinates((s,c))[0].shape,v))
                     if input_shape(v)==() else v for c,v in parts.items()} for s,parts in self._boundary.items()}
@@ -215,6 +216,22 @@ class PreparedW07Workflow:
         except BaseException:
             self.close();raise
 
+    def _prepare_mechanical(self,cancel):
+        # The first regional plan and a replacement come from this one call, so both
+        # carry the same definition. Neither may adopt a different loaded source.
+        g=self.geology;pattern,scales,datum,reference=self._mechanical_options
+        plan=PreparedRegionalStokes2D(g.nx,g.nz,g.width_m,g.height_m,
+            float(g.array('eta_center_pa_s')[0,0]),pattern,scales=scales,frame_id=g.frame_id,
+            vertical_datum=g.vertical_datum,material_source=g.binding_id,
+            physical_mean_pressure_pa=datum,reference_pressure=reference,
+            viscosity_center_pa_s=g.array('eta_center_pa_s'),viscosity_vertex_pa_s=g.array('eta_vertex_pa_s'),
+            material_sampling='source-bound pure ordered layers; exact series shear-dual compliance',
+            budget=self._resource,cancel=cancel)
+        if plan._context_id!=self.execution_id:
+            plan.close()
+            raise TectonicsError('source changed since this W07 workflow was prepared; prepare a new workflow')
+        return plan
+
     def _validate_motion(self,d,motion):
         values=self.geology.array('source_face_velocity_m_s')
         owner=d['ownership']['boundary_motion_owner']
@@ -243,6 +260,8 @@ class PreparedW07Workflow:
         if self._active:raise TectonicsError('W07 workflow already active')
         self._check(cancel);self._active=True
         try:
+            # An interrupted coefficient refill released the regional plan (_solve).
+            if self._mechanical is None:self._mechanical=self._prepare_mechanical(cancel)
             with _native_lease():yield
             self._check(cancel)
         finally:self._active=False
@@ -293,12 +312,24 @@ class PreparedW07Workflow:
             force_source=self._force_source(T),
             boundary_source=_hash(self._boundary_motion.descriptor()),cancel=cancel)
         if self._strength is None:return self._mechanical.solve(fx,fz,self._boundary,**arguments)
-        return solve_regional_strength(self._mechanical,self._strength,fx,fz,self._boundary,
-            material_source=g.binding_id,**arguments).mechanics
+        plan=self._mechanical
+        try:
+            return solve_regional_strength(plan,self._strength,fx,fz,self._boundary,
+                material_source=g.binding_id,**arguments).mechanics
+        except BaseException:
+            if not plan.usable:
+                # An interrupted Picard coefficient refill invalidated the plan. Close and
+                # drop it; the next operation prepares a replacement from the same geology.
+                self._mechanical=None
+                try:plan.close()
+                except TectonicsError:pass  # close released its storage; report the original failure
+            raise
 
     def _transport_velocity(self,mechanics):
         # Closed MAC fluxes are the discrete curl of a zero-boundary streamfunction.
         g=self._heat.grid;u,w=(mechanics.array(k) for k in ('u_m_s','w_m_s'))
+        if u.shape!=(g.nz,g.nx+1) or w.shape!=(g.nz+1,g.nx):
+            raise TectonicsError('mechanical velocity support differs from the heat grid')
         psi=np.zeros((g.nz+1,g.nx+1))
         psi[1:-1,1:-1]=-g.dx*np.cumsum(w[1:-1,:-1],axis=1)
         transported=(np.diff(psi,axis=0)/g.dz,-np.diff(psi,axis=1)/g.dx)
@@ -317,6 +348,7 @@ class PreparedW07Workflow:
         receipt=dict(schema='atlas.w07-workflow-output.v1',invocation=self._invocation(index),
             geology_id=g.binding_id,parent_output_id=parent,route=self.route,source_status='WORKING NON-CANON',
             ownership=self._geology_descriptor['ownership'],start_time_s=start,end_time_s=time)
+        coupling_mechanics=None
         if self.route=='surface':
             initial=self._initial_surface if previous is None else previous.state
             if time==start:
@@ -332,8 +364,10 @@ class PreparedW07Workflow:
             if time==start:
                 mechanics=self._solve(time,T,cancel);account=None
             else:
-                initial=self._solve(start,T,cancel) if previous is None else previous.mechanics
-                velocity,coupling=self._transport_velocity(initial)
+                # The mechanics that carry this interval's heat: a first interval solves them
+                # here; a later one takes its parent's endpoint. _pack stores them.
+                coupling_mechanics=self._solve(start,T,cancel) if previous is None else previous.mechanics
+                velocity,coupling=self._transport_velocity(coupling_mechanics)
                 evolved=self._heat.evolve(T,*velocity,time-start,
                     steps=self.steps[index],boundaries=self._heat_boundaries,time_s=start,end_time_s=time,
                     source_w_m3=self._homogeneous['heat_production_w_m3'],cancel=cancel)
@@ -345,11 +379,15 @@ class PreparedW07Workflow:
             state=self._state(T,time,sum(self.steps[:index+1]),parent);receipt['heat']=account
         else:
             mechanics=self._solve(time,None,cancel);state=self._source_snapshot
-        return W07WorkflowOutput(self.checkpoint_id(index),index,state,mechanics,_json(receipt))
+        return W07WorkflowOutput(self.checkpoint_id(index),index,state,mechanics,_json(receipt)),coupling_mechanics
 
-    def _pack(self,result,cancel):
+    def _pack(self,result,cancel,coupling_mechanics=None):
         from .regional_checkpoint import pack_regional_snapshots
-        arrays,payload=pack_regional_snapshots(dict(state=result.state,mechanics=result.mechanics),budget=self._resource,cancel=cancel)
+        snapshots=dict(state=result.state,mechanics=result.mechanics)
+        # An evolved thermal output also stores the mechanics that carried its heat
+        # interval. Restore regenerates the heat-coupling record from them (_coupling_receipt).
+        if coupling_mechanics is not None:snapshots['coupling_mechanics']=coupling_mechanics
+        arrays,payload=pack_regional_snapshots(snapshots,budget=self._resource,cancel=cancel)
         header=dict(invocation=self._invocation(result.output_index),execution=self.execution_id,
             parent_checkpoint_id=None if result.output_index==0 else self.checkpoint_id(result.output_index-1),
             parent_output_id=result.descriptor()['parent_output_id'],output_id=result.output_id,
@@ -407,12 +445,33 @@ class PreparedW07Workflow:
         if arrays is None:raise TectonicsError('W07 checkpoint disappeared')
         with self._resource.reserve(4*sum(a.nbytes for a in arrays.values())+65536,category='w07-restore'):
             snapshots=restore_regional_snapshots(arrays,meta['payload'],budget=self._resource,cancel=cancel)
-            if set(snapshots)!={'state','mechanics'}:raise TectonicsError('W07 checkpoint field-set mismatch')
+            evolved=self.route=='thermal' and self.steps[index]>0
+            if set(snapshots)!={'state','mechanics'}|({'coupling_mechanics'} if evolved else set()):
+                raise TectonicsError('W07 checkpoint field-set mismatch')
             result=W07WorkflowOutput(self.checkpoint_id(index),index,snapshots['state'],snapshots['mechanics'],_json(meta['receipt']))
             if result.output_id!=meta['output_id']:raise TectonicsError('W07 checkpoint scientific output mismatch')
             self._validate_output(result,cancel)
+            if evolved:self._coupling_receipt(index,meta['receipt'],snapshots['coupling_mechanics'])
         self._stats['restored_outputs']+=1
         return result
+
+    def _coupling_receipt(self,index,receipt,mechanics):
+        # No solve: the stored input mechanics regenerate the whole heat-coupling record
+        # (input identity, admitted correction and transported velocity hashes).
+        try:
+            if not index:
+                # A first interval has no parent record to name its input. Hold the stored
+                # input to the checks of a mechanical output at the geological epoch.
+                d=mechanics.descriptor();self._validate_gates(d);self._validate_epoch(d,self.geology.time_s)
+                self._validate_binding(mechanics,d,self._temperature(self.geology.array('temperature_k')))
+            coupling=self._transport_velocity(mechanics)[1]
+        except (KeyError,TypeError,AttributeError,ZeroDivisionError,OverflowError) as exc:
+            # A stored descriptor without the fields these checks read is refused, not a crash.
+            raise TectonicsError('stored heat-coupling mechanics cannot regenerate their record') from exc
+        # Compared as the canonical bytes that enter output_id: 0.0, -0.0 and 0 are equal numbers
+        # but other records. A correction that is not finite has no such bytes and equals no record.
+        if not math.isfinite(coupling['maximum_correction_m_s']) or _json(coupling)!=_json(receipt['heat']['coupling']):
+            raise TectonicsError('restored heat coupling differs from its stored input mechanics')
 
     def _heat_energy(self,T):
         g=self.geology
@@ -424,8 +483,9 @@ class PreparedW07Workflow:
             if account is not None:raise TectonicsError('initial temperature has an unexpected evolved heat account')
             return
         if type(account) is not dict:raise TectonicsError('missing physical heat account')
-        coupling=account.get('coupling',{})
-        if (coupling.get('method')!='closed MAC discrete curl; admitted divergence correction' or
+        coupling=account.get('coupling')
+        if (type(coupling) is not dict or
+            coupling.get('method')!='closed MAC discrete curl; admitted divergence correction' or
             type(coupling.get('mechanical_input_id')) is not str or len(coupling['mechanical_input_id'])!=64 or
             scalar(coupling.get('maximum_correction_m_s'),'heat velocity correction',nonnegative=True)<0. or
             type(coupling.get('velocity_sha256')) is not list or len(coupling['velocity_sha256'])!=2):
@@ -476,8 +536,10 @@ class PreparedW07Workflow:
                     ('volume_residual_scaled','mass_residual_scaled','uniform_density_residual_scaled'))):
                 raise TectonicsError('surface interval acceptance mismatch')
 
-    def _validate_output(self,result,cancel):
-        d=result.mechanics.descriptor()
+    # _validate_output checks a restored or freshly computed output. Its mechanical checks
+    # are separate methods because a first heat interval's stored input mechanics pass
+    # through the same ones (_coupling_receipt).
+    def _validate_gates(self,d):
         diagnostics=d.get('diagnostics',{})
         gates={'momentum_residual':1e-9,'normalised_work_residual':1e-9}
         linear=diagnostics if self._strength is None else d.get('linear_solve_origin',{})
@@ -492,6 +554,14 @@ class PreparedW07Workflow:
             raise TectonicsError('restored mechanics were not accepted by the frozen numerical gates')
         if d.get('context_id')!=self.execution_id or d.get('source_status')!='WORKING NON-CANON':
             raise TectonicsError('restored mechanical source/status mismatch')
+
+    def _validate_epoch(self,d,time):
+        request=d.get('request',{})
+        if request.get('time_s')!=time or request.get('epoch_id')!=self.geology.epoch_id:
+            raise TectonicsError('restored regional epoch mismatch')
+
+    def _validate_output(self,result,cancel):
+        d=result.mechanics.descriptor();self._validate_gates(d)
         if self.route=='surface':
             with self._mechanical._operation(cancel):s=self._mechanical._validate(result.state,cancel)
             if (s['time_s']!=self.times[result.output_index] or s['epoch_id']!=self.geology.epoch_id or
@@ -507,9 +577,7 @@ class PreparedW07Workflow:
             if not sum(self.steps[:result.output_index+1]) and result.state.result_id!=self._initial_surface.result_id:
                 raise TectonicsError('restored initial surface differs from its source')
         else:
-            request=d.get('request',{});definition=d.get('definition',{});T=None
-            if request.get('time_s')!=self.times[result.output_index] or request.get('epoch_id')!=self.geology.epoch_id:
-                raise TectonicsError('restored regional epoch mismatch')
+            self._validate_epoch(d,self.times[result.output_index]);T=None
             if self.route=='thermal':
                 s=result.state.descriptor();T=self._temperature(result.state.array('temperature_k'))
                 if (set(result.state.array_names)!={'temperature_k','reference_mass_kg'} or
@@ -523,35 +591,39 @@ class PreparedW07Workflow:
                 if not sum(self.steps[:result.output_index+1]) and not np.array_equal(T,self.geology.array('temperature_k')):
                     raise TectonicsError('restored initial temperature differs from its source')
             elif result.state.result_id!=self.geology.binding_id:raise TectonicsError('restored geological state mismatch')
-            fx,fz=self._force(T)
-            if (request.get('force_source')!=self._force_source(T) or
-                request.get('boundary_source')!=_hash(self._boundary_motion.descriptor()) or
-                request.get('forces')!={'u':_array_hash(fx),'w':_array_hash(fz)} or
-                d.get('request_id')!=_hash(request) or
-                request.get('plan_id')!=_hash(dict(definition=definition,context=self.execution_id))):
-                raise TectonicsError('restored mechanical force/plan binding mismatch')
-            if any(not np.array_equal(result.mechanics.array(k),a) for k,a in
-                    (('force_u_n_m3',fx),('force_w_n_m3',fz))):
-                raise TectonicsError('stored mechanical forces differ from their source')
-            expected=self._mechanical.descriptor()
-            for key in expected:
-                if self._strength is not None and key in ('material_source','stress_site_viscosity'):
-                    continue
-                if definition.get(key)!=expected[key]:raise TectonicsError('restored mechanical material/geometry policy mismatch: '+key)
-            if self._strength is not None:
-                binding=d.get('strength_binding',{})
-                if (_json(binding.get('profile'))!=_json(self._strength.descriptor()) or binding.get('material_source')!=self.geology.binding_id or
-                    definition.get('material_source')!='regional-C01='+_hash(binding)):
-                    raise TectonicsError('restored strength law/source mismatch')
-            support=definition.get('stress_site_viscosity',{})
-            if (support.get('centre_sha256')!=_array_hash(result.mechanics.array('viscosity_center_pa_s')) or
-                support.get('vertex_sha256')!=_array_hash(result.mechanics.array('viscosity_vertex_pa_s'))):
-                raise TectonicsError('restored stress-site viscosity mismatch')
-            for side,parts in self._boundary_samples.items():
-                for component,value in parts.items():
-                    if (request.get('boundary',{}).get(side,{}).get(component)!=self._boundary_hashes[side][component] or
-                        not np.array_equal(result.mechanics.array('boundary_input_'+side+'_'+component),value)):
-                        raise TectonicsError('restored physical boundary mismatch')
+            self._validate_binding(result.mechanics,d,T)
+
+    def _validate_binding(self,mechanics,d,T):
+        request=d.get('request',{});definition=d.get('definition',{})
+        fx,fz=self._force(T)
+        if (request.get('force_source')!=self._force_source(T) or
+            request.get('boundary_source')!=_hash(self._boundary_motion.descriptor()) or
+            request.get('forces')!={'u':_array_hash(fx),'w':_array_hash(fz)} or
+            d.get('request_id')!=_hash(request) or
+            request.get('plan_id')!=_hash(dict(definition=definition,context=self.execution_id))):
+            raise TectonicsError('restored mechanical force/plan binding mismatch')
+        if any(not np.array_equal(mechanics.array(k),a) for k,a in
+                (('force_u_n_m3',fx),('force_w_n_m3',fz))):
+            raise TectonicsError('stored mechanical forces differ from their source')
+        expected=self._mechanical.descriptor()
+        for key in expected:
+            if self._strength is not None and key in ('material_source','stress_site_viscosity'):
+                continue
+            if definition.get(key)!=expected[key]:raise TectonicsError('restored mechanical material/geometry policy mismatch: '+key)
+        if self._strength is not None:
+            binding=d.get('strength_binding',{})
+            if (_json(binding.get('profile'))!=_json(self._strength.descriptor()) or binding.get('material_source')!=self.geology.binding_id or
+                definition.get('material_source')!='regional-C01='+_hash(binding)):
+                raise TectonicsError('restored strength law/source mismatch')
+        support=definition.get('stress_site_viscosity',{})
+        if (support.get('centre_sha256')!=_array_hash(mechanics.array('viscosity_center_pa_s')) or
+            support.get('vertex_sha256')!=_array_hash(mechanics.array('viscosity_vertex_pa_s'))):
+            raise TectonicsError('restored stress-site viscosity mismatch')
+        for side,parts in self._boundary_samples.items():
+            for component,value in parts.items():
+                if (request.get('boundary',{}).get(side,{}).get(component)!=self._boundary_hashes[side][component] or
+                    not np.array_equal(mechanics.array('boundary_input_'+side+'_'+component),value)):
+                    raise TectonicsError('restored physical boundary mismatch')
 
     def _adopt(self,result):
         guard=self._resource.reserve(result.state.nbytes+result.mechanics.nbytes+len(result._receipt)+65536,category='w07-latest-output')
@@ -584,14 +656,15 @@ class PreparedW07Workflow:
             for index in range(begin,end+1):
                 self._check(cancel);started=perf_counter()
                 with self._resource.reserve(self._work_bytes,category='w07-output-and-storage-scratch'):
-                    candidate=self._compute(index,current,cancel)
+                    candidate,coupling_mechanics=self._compute(index,current,cancel)
                     self._validate_output(candidate,cancel)
                     self._stats['physics_seconds']+=perf_counter()-started
                     if self.store is not None:
-                        started=perf_counter();arrays,metadata=self._pack(candidate,cancel)
+                        started=perf_counter();arrays,metadata=self._pack(candidate,cancel,coupling_mechanics)
                         self.store.put(candidate.checkpoint_id,arrays,metadata,budget=self._resource,cancel=cancel,
                             publication_check=lambda:self._check(cancel))
                         self._stats['storage_seconds']+=perf_counter()-started
+                    del coupling_mechanics  # only the stored record keeps it; not held into the next interval
                     self._check(cancel);self._adopt(candidate);self._stats['computed_outputs']+=1;current=candidate
             return current
 

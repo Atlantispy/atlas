@@ -3,11 +3,11 @@
   "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
-      "id": "i02-workflow-timing-r6",
-      "path": "tectonics/evidence/i02-workflow-timing-r6.json",
-      "sha256": "80a32a2067180851147fa00e432264330c180e1e6e90b2a8a6c978ead1ec241c",
+      "id": "i02-workflow-timing-r7",
+      "path": "tectonics/evidence/i02-workflow-timing-r7.json",
+      "sha256": "d78cd33b52d08ac452fa15657c73c4c7799f7dfb8e3cbb0932f653450e72e31a",
       "status": "current",
-      "note": "Operational Windows timing recaptured on 1 October 2026 after integrating R4 and the checkpoint-reuse, cache-lock, New World recovery and assembled 3-D memory corrections. Five repetitions and all seven equality/parity checks passed. The bounded column does not use the 3-D solvers: this renews source bindings, not a 3-D speedup measurement. Local changes are not committed. No scientific acceptance or whole-world claim.",
+      "note": "Operational Windows timing recaptured on 2 October 2026 after R7 and its reviewed phase, heat-boundary, flexure-precision and native-memory corrections. Five repetitions and all seven equality/parity checks passed; no Atlas test campaign ran concurrently with this capture. The bounded column does not use the 3-D solvers: this renews source bindings, not a 3-D speedup measurement. Local changes are not committed. No scientific acceptance or whole-world claim.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -25,6 +25,14 @@
         "One Windows machine and interpreter; no other-platform or whole-generator performance claim.",
         "The bounded column workflow preserves the retained scientific tolerances and 256-step ceiling; timing and numerical parity do not establish physical validation or generated-world acceptance."
       ]
+    },
+    {
+      "id": "i02-workflow-timing-r6",
+      "path": "tectonics/evidence/i02-workflow-timing-r6.json",
+      "sha256": "80a32a2067180851147fa00e432264330c180e1e6e90b2a8a6c978ead1ec241c",
+      "status": "superseded",
+      "superseded_by": "i02-workflow-timing-r7",
+      "note": "Retained original receipt; superseded by i02-workflow-timing-r7 after the 2 October 2026 R7 integration. No byte rewrite or digest rebinding."
     },
     {
       "id": "i02-workflow-timing-r5",

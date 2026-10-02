@@ -60,22 +60,37 @@ def _file_hash(path):
     return h.hexdigest()
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=None)
 def _loaded_binary(path):
     # Binary modules are assumed immutable for a process lifetime. Python source
     # and loaded instructions are re-examined per invocation. Paths are not IDs.
+    # Unbounded: the keys are the fixed paths of _runtime_record (about 20). A
+    # 16-entry bound was smaller than the scipy and numba sets, so every new
+    # context of those backends re-read its binaries from disk (R7, s01-3).
     return _file_hash(path)
 
 
 def _interpreter_binary():
-    """Identify the executable target, not a virtual environment's launch link.
+    """Resolve the interpreter path to the regular file that is hashed.
 
     Python virtual environments may legitimately link their interpreter. Resolve
     only this interpreter path; source, data and extension-module paths still
-    pass through the unchanged strict hashing rules. The resolved binary bytes,
+    pass through the unchanged strict hashing rules. The resolved file's bytes,
     not the installation path, enter the runtime identity. Loaded binaries retain
     the existing process-lifetime immutability assumption; this is not protection
     against a hostile process replacing its executable while it runs.
+
+    That file need not contain the interpreter. On Windows it is only a launcher
+    or stub. A virtual environment's ``python.exe`` is normally a copied
+    redirector (a regular file, so resolving changes nothing) that starts the
+    base ``python.exe``; the base executable, which is the hashed file outside
+    a virtual environment, merely loads ``pythonXY.dll``. That DLL (the module at
+    ``sys.dllhandle``) is never hashed, and built-in ``math`` has no file of its
+    own, so the record's 'math' entry repeats the same hash. There the
+    interpreter's identity rests on the recorded ``sys.version`` string: two
+    builds reporting the same string, or an edited DLL, share one runtime
+    identity. Only Windows was examined; the same holds wherever the interpreter
+    lives in a shared library and not in the resolved executable.
     """
     if not isinstance(sys.executable, str) or not sys.executable:
         raise TectonicsError('Python interpreter path is unavailable')

@@ -95,17 +95,6 @@ class _WorkCounter(list):
         super().__setitem__(key, value)
 
 
-def _executor(plan):
-    # Enter lazily on the driving thread, not during plan construction or a small
-    # concurrent reader call. Reuse the pool on later large calls to this plan.
-    if plan._executor is None:
-        kernel = replace(plan.execution_policy.kernel, mode='threads')
-        executor = KernelExecutor(kernel, budget=plan.budget)
-        executor.__enter__()
-        plan._executor = executor
-    return plan._executor
-
-
 def _point_bounds(plan, count, fields):
     case = plan.state.case
     rows = min(count*(len(case.provinces)+len(case.weak_zones)+1), plan.limits.max_rows)
@@ -203,22 +192,28 @@ def _merge_cells(plan, parts, cells):
 
 
 def _drive(plan, tasks, cancel, aborted):
-    executor = _executor(plan)
-    before = executor.statistics()
-    stream = executor._admitted_calls(tasks, cancel=cancel)
-    try:
-        result = list(stream)
-        after = executor.statistics()
-        plan._last_execution = {
-            'route': 'threads', 'batches': len(result),
-            'parallel_jobs': after['parallel_jobs']-before['parallel_jobs'],
-            'max_workers': after['max_workers'], 'peak_inflight': after['peak_inflight'],
-            'accounted_executor_peak_bytes': after['peak_reserved_bytes'],
-            'inner_threads': after['inner_threads'], 'process_rss_cap': False}
-        return result
-    finally:
-        aborted.set()
-        stream.close()
+    # One executor per dispatch: entered, driven and closed by the calling thread
+    # while it holds the plan's dispatch lock. Its worker pool, CPU slots and the
+    # process-wide native-thread lease end with the call, so an idle plan holds
+    # none of them and belongs to no thread. Another thread's live lease, or a
+    # conflicting native-thread limit, refuses the call here, before any job is
+    # submitted, and leaves the plan usable.
+    kernel = replace(plan.execution_policy.kernel, mode='threads')
+    with KernelExecutor(kernel, budget=plan.budget) as executor:
+        stream = executor._admitted_calls(tasks, cancel=cancel)
+        try:
+            result = list(stream)
+            after = executor.statistics()
+            plan._last_execution = {
+                'route': 'threads', 'batches': len(result),
+                'parallel_jobs': after['parallel_jobs'],
+                'max_workers': after['max_workers'], 'peak_inflight': after['peak_inflight'],
+                'accounted_executor_peak_bytes': after['peak_reserved_bytes'],
+                'inner_threads': after['inner_threads'], 'process_rss_cap': False}
+            return result
+        finally:
+            aborted.set()
+            stream.close()
 
 
 def sample_points(plan, points, depths_m, **kwargs):

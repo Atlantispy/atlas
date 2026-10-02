@@ -16,6 +16,7 @@ from atlas_tectonics import (
     GeologySource, MaterialCohort, CohortDescription, LayerComponent,
     earth_material_library,
 )
+from atlas_tectonics import ColumnDescription
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from precursor_fixtures import (case, state, ingredients, rectangle, column, layer,
     REQUEST, FRAME, SOURCE, ROCK, ROCK_B, WATER, OLD, YOUNG, TEMP)
@@ -183,6 +184,86 @@ class ProvenanceContracts(unittest.TestCase):
         p=ThermalInitialProfile('initial','fixture','tabulated',depths_m=(0.,30.),temperatures_k=(300.,900.))
         b=SubsurfaceBody('b','mantle',SurfaceSelector('domain'),30.,50.,layer('deep',20.,'lithospheric_mantle'),'initial','fixture')
         with self.assertRaises(GeologyError): state(case(thermal_profiles=(p,)),bodies=(b,),body_order=('b',))
+
+
+class ThermalTableCoverageContracts(unittest.TestCase):
+    """A tabulated profile must reach the represented column base, not only the declared one."""
+    def stack(self, thicknesses, declared, table_end):
+        named=(('sediment','sediment'),('crust','crust'),('mantle','lithospheric_mantle'))[-len(thicknesses):]
+        layers=tuple(layer(name,t,role) for (name,role),t in zip(named,thicknesses))
+        c=ColumnDescription('continent','continental',layers,declared,'initial','fixture')
+        p=ThermalInitialProfile('initial','fixture','tabulated',depths_m=(0.,table_end),temperatures_k=(300.,400.))
+        return c,dict(thermal_profiles=(p,),columns=(c,))
+
+    def test_table_ending_at_declared_thickness_above_the_last_layer_edge_is_refused_at_stage_4(self):
+        # 0.1 m + 0.2 m: the running sum of the layers is 0.30000000000000004, one
+        # rounding unit deeper than a declared 0.3 m and inside the 1e-12 stack tolerance.
+        c,changes=self.stack((.1,.2),.3,.3)
+        self.assertGreater(c.layer_edges_m[-1],c.lithosphere_thickness_m)
+        with self.assertRaises(GeologyError): case(**changes)
+
+    def test_table_reaching_the_last_layer_edge_is_accepted_at_both_stages(self):
+        c,changes=self.stack((.1,.2),.3,.1+.2)
+        s=state(case(**changes))
+        self.assertEqual(s.units[-1].bottom_depth_m,c.layer_edges_m[-1])
+        self.assertEqual(s.case.thermal_profiles[0].depths_m[-1],c.layer_edges_m[-1])
+
+    def test_declared_thickness_still_binds_when_it_is_the_deeper(self):
+        # 0.1 m + 0.7 m: the running sum 0.7999999999999999 is shallower than a declared 0.8 m.
+        c,changes=self.stack((.1,.7),.8,.1+.7)
+        self.assertLess(c.layer_edges_m[-1],c.lithosphere_thickness_m)
+        with self.assertRaises(GeologyError): case(**changes)
+        c,changes=self.stack((.1,.7),.8,.8)
+        self.assertEqual(state(case(**changes)).units[-1].bottom_depth_m,c.layer_edges_m[-1])
+
+    def test_table_between_depths_thousands_of_rounding_units_apart_is_refused_at_stage_4(self):
+        # 40 km + 60 km end at exactly 100000 m. A declared thickness 5e-13 or 9.9e-13
+        # relative away passes the 1e-12 stack check thousands of rounding units from that
+        # edge, on either side. A table ending short of the deeper depth is refused at stage 4.
+        for declared in (1e5*(1-5e-13),1e5*(1+5e-13),1e5*(1-9.9e-13),1e5*(1+9.9e-13)):
+            c,_=self.stack((4e4,6e4),declared,1e5)
+            edge=c.layer_edges_m[-1]; shallower,deeper=sorted((declared,edge))
+            self.assertEqual(edge,1e5)
+            self.assertGreater(deeper-shallower,1000*math.ulp(deeper))
+            for end in (shallower,shallower+(deeper-shallower)/2,math.nextafter(deeper,0.)):
+                with self.subTest(declared=declared,end=end),self.assertRaises(GeologyError):
+                    case(**self.stack((4e4,6e4),declared,end)[1])
+            with self.subTest(declared=declared,end=deeper):
+                s=state(case(**self.stack((4e4,6e4),declared,deeper)[1]))
+                self.assertEqual(s.units[-1].bottom_depth_m,edge)
+
+    def test_table_short_of_a_three_layer_running_sum_is_refused_at_stage_4(self):
+        # 0.1 m + 0.2 m + 0.3 m: the declared 0.6 m is the correctly rounded layer sum, yet
+        # the edges, added one layer at a time, end one rounding unit deeper. A table
+        # ending at the declared thickness does not reach them.
+        c,changes=self.stack((.1,.2,.3),.6,.6)
+        self.assertEqual(c.lithosphere_thickness_m,math.fsum((.1,.2,.3)))
+        self.assertEqual(c.layer_edges_m[-1],math.nextafter(.6,1.))
+        with self.assertRaises(GeologyError): case(**changes)
+        c,changes=self.stack((.1,.2,.3),.6,c.layer_edges_m[-1])
+        self.assertEqual(state(case(**changes)).units[-1].bottom_depth_m,c.layer_edges_m[-1])
+
+    def test_body_refusal_names_its_unit(self):
+        p=ThermalInitialProfile('initial','fixture','tabulated',depths_m=(0.,30.),temperatures_k=(300.,900.))
+        b=SubsurfaceBody('deep-slab','mantle',SurfaceSelector('domain'),30.,50.,layer('slab-mantle',20.,'lithospheric_mantle'),
+                         'initial','fixture')
+        with self.assertRaises(GeologyError) as refused:
+            state(case(thermal_profiles=(p,)),bodies=(b,),body_order=('deep-slab',))
+        for name in ('body','deep-slab','slab-mantle'):
+            self.assertIn(name,str(refused.exception))
+
+    def test_body_table_must_reach_its_base_exactly_at_stage_5(self):
+        # PrecursorState compares exactly: the stack tolerance never excuses a short table.
+        b=SubsurfaceBody('deep-slab','mantle',SurfaceSelector('domain'),30.,50.,layer('slab-mantle',20.,'lithospheric_mantle'),
+                         'initial','fixture')
+        for end,reaches in ((50.,True),(math.nextafter(50.,0.),False),(50.*(1-5e-13),False)):
+            p=ThermalInitialProfile('initial','fixture','tabulated',depths_m=(0.,end),temperatures_k=(300.,900.))
+            c=case(thermal_profiles=(p,))  # stage 4 accepts each: the 30 m column is covered
+            with self.subTest(end=end):
+                if reaches:
+                    self.assertEqual(state(c,bodies=(b,),body_order=('deep-slab',)).units[-1].bottom_depth_m,50.)
+                else:
+                    with self.assertRaises(GeologyError): state(c,bodies=(b,),body_order=('deep-slab',))
 
 
 class PriorContracts(unittest.TestCase):

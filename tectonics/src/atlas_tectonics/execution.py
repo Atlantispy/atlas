@@ -70,25 +70,91 @@ _PROCESS_LIMIT_HANDLE = None
 _POOL_SLOTS = 0
 
 
-def _acquire_native_limit(threads):
-    global _LIMIT_USERS, _LIMIT_VALUE, _LIMIT_HANDLE, _LIMIT_OWNER
+class _LimitOwner:
+    """The one thread driving the current limit, its tracked shares and pool jobs.
+
+    The Thread object is kept, never its identifier: the system hands an ended
+    thread's identifier to a later thread, which must not pass as the owner. (A
+    thread that ``threading`` did not start has only a placeholder keyed by its
+    identifier, and is identified no better than before.) A tracked share is
+    returned through this record, so one that was reclaimed after its thread
+    ended is recognised and never returned a second time. Each job submitted to
+    a pool is registered here until it is done.
+    """
+    __slots__ = ("thread", "tracked", "jobs")
+
+    def __init__(self, thread):
+        self.thread, self.tracked, self.jobs = thread, 0, set()
+
+    def ended(self):
+        # Only a definite answer counts. is_alive() is definite for threads that
+        # ``threading`` started. For any other thread CPython 3.12 always answers
+        # alive, and a refusal to answer (RuntimeError) is treated the same way.
+        try:
+            return not self.thread.is_alive()
+        except RuntimeError:
+            return False
+
+    def finished(self, job):
+        # The job's done-callback, on whichever thread completed or cancelled it.
+        with _LIMIT_LOCK:
+            self.jobs.discard(job)
+
+    def idle(self):
+        # A submitted job cannot be interrupted. Until it is done it runs under
+        # this limit, on CPU slots its pool claimed, even if nobody will read its
+        # result. done() does not wait for finished() to have dropped the job.
+        return all(job.done() for job in self.jobs)
+
+
+def _acquire_native_limit(threads, *, tracked=False):
+    """Take one share of the process-wide limit for the calling thread.
+
+    A plain share is returned once by _release_native_limit(), from any thread.
+    A tracked share is returned by passing the owner record, which this call
+    returns for tracked shares only. It is for a holder that only the owning
+    thread can use, so that the share is certainly unused once that thread has
+    ended and the jobs it submitted are done, and can then be recovered. A
+    plain share may still be in use from another thread: it keeps refusing
+    other threads until its holder returns it. An owner that is not known to
+    have ended keeps its shares as well, and so does an ended one while a job
+    it submitted to a pool is still running.
+    """
+    global _LIMIT_USERS, _LIMIT_VALUE, _LIMIT_HANDLE, _LIMIT_OWNER, _POOL_SLOTS
     from threadpoolctl import threadpool_limits
     import scipy.special  # load relevant native libraries before recording limits
+    thread = threading.current_thread()
     with _LIMIT_LOCK:
-        if _LIMIT_USERS and _LIMIT_OWNER != threading.get_ident():
-            raise TectonicsError("native thread controls must have one driving Python thread")
+        if _LIMIT_USERS and _LIMIT_OWNER.thread is not thread:
+            if (not _LIMIT_OWNER.ended() or _LIMIT_OWNER.tracked != _LIMIT_USERS
+                    or not _LIMIT_OWNER.idle()):
+                raise TectonicsError("native thread controls must have one driving Python thread")
+            # The owner has ended holding only tracked shares, which it can
+            # neither drive nor return, and every job it submitted is done. Every
+            # pool that claimed CPU slots was its own and runs nothing now:
+            # restore its limit and start a new lease for this thread.
+            _LIMIT_HANDLE.restore_original_limits()
+            _LIMIT_USERS = _POOL_SLOTS = 0
+            _LIMIT_HANDLE = _LIMIT_VALUE = _LIMIT_OWNER = None
         if _LIMIT_USERS and _LIMIT_VALUE != threads:
             raise TectonicsError("conflicting process-wide native thread budgets")
         if not _LIMIT_USERS:
             _LIMIT_HANDLE = threadpool_limits(limits=threads)
             _LIMIT_VALUE = threads
-            _LIMIT_OWNER = threading.get_ident()
+            _LIMIT_OWNER = _LimitOwner(thread)
         _LIMIT_USERS += 1
+        if tracked:
+            _LIMIT_OWNER.tracked += 1
+            return _LIMIT_OWNER
 
 
-def _release_native_limit():
+def _release_native_limit(owner=None):
     global _LIMIT_USERS, _LIMIT_VALUE, _LIMIT_HANDLE, _LIMIT_OWNER
     with _LIMIT_LOCK:
+        if owner is not None:
+            if owner is not _LIMIT_OWNER:
+                return  # reclaimed after its thread ended: nothing is held
+            owner.tracked -= 1
         _LIMIT_USERS -= 1
         if not _LIMIT_USERS:
             _LIMIT_HANDLE.restore_original_limits()
@@ -203,6 +269,11 @@ class KernelExecutor:
     not adjoining spatial tiles or successive evolving states. Retained output
     after yield and native allocator/worker baselines remain caller costs. Running
     native calls are drained on cancellation; cancelling is not killing a kernel.
+    One thread enters, drives and closes an executor. One left open by a thread
+    that has ended can be closed, never driven, from any thread; its native-thread
+    share and CPU slots are also recovered by the next lease taken on another
+    thread, once every job that thread had submitted is done. If several threads
+    close such an executor at once, one closes it and the others wait for it.
     """
     def __init__(self, policy: ExecutionPolicy | None = None, *, budget=None):
         policy = ExecutionPolicy() if policy is None else policy
@@ -215,6 +286,7 @@ class KernelExecutor:
         self._pool_slots = 0
         self._pool = None
         self._closed = False
+        self._closing = threading.Lock()
         self._entered = False
         self._active = False
         self._iterator = None
@@ -224,15 +296,16 @@ class KernelExecutor:
     def __enter__(self):
         if self._closed or self._entered:
             raise TectonicsError("executor cannot be re-entered")
-        _acquire_native_limit(self.policy.inner_threads)
+        self._lease = _acquire_native_limit(self.policy.inner_threads, tracked=True)
         self._entered = True
-        self._owner_thread = threading.get_ident()
+        self._owner_thread = self._lease.thread
         return self
 
     def _live(self):
-        if self._closed or not self._entered:
+        # An executor whose lease was reclaimed holds no native-thread limit: close only.
+        if self._closed or not self._entered or self._lease is not _LIMIT_OWNER:
             raise TectonicsError("use a live KernelExecutor context")
-        if threading.get_ident() != self._owner_thread:
+        if threading.current_thread() is not self._owner_thread:
             raise TectonicsError("one driving thread per executor; cancel() is thread-safe")
         if self._cancel.is_set():
             raise CancelledError("executor cancelled")
@@ -242,8 +315,17 @@ class KernelExecutor:
 
     def close(self):
         if self._closed: return
-        if self._entered and threading.get_ident() != self._owner_thread:
+        # Only the driving thread closes a live executor. Once that thread has
+        # ended nothing can drive this executor again, so any thread may close it.
+        if (self._entered and threading.current_thread() is not self._owner_thread
+                and not self._lease.ended()):
             raise TectonicsError("close executor on its driving thread after joining consumers")
+        # Several threads may then close it at once. One closes; the others wait
+        # for it and find the executor closed, so nothing is returned twice.
+        with self._closing:
+            if not self._closed: self._close()
+
+    def _close(self):
         self._cancel.set()
         if self._iterator is not None and self._iterator.gi_running:
             raise TectonicsError("join the consuming thread before closing executor")
@@ -264,10 +346,12 @@ class KernelExecutor:
             if self._pool_slots:
                 global _POOL_SLOTS
                 with _LIMIT_LOCK:
-                    _POOL_SLOTS -= self._pool_slots
+                    # A lease reclaimed after its thread ended took these slots with it.
+                    if self._lease is _LIMIT_OWNER:
+                        _POOL_SLOTS -= self._pool_slots
                 self._pool_slots = 0
             if self._entered:
-                _release_native_limit()
+                _release_native_limit(self._lease)
                 self._entered = False
             self._closed = True
 
@@ -439,7 +523,9 @@ class KernelExecutor:
                 raise TectonicsError("threaded matrix backend not verified; use serial or spawn mode explicitly")
         if self._pool is None:
             # Independent executors must not each assume exclusive use of the CPU.
-            # Claim actual pool capacity once, until shutdown has drained its jobs.
+            # Claim actual pool capacity once, until shutdown has drained its jobs
+            # (or, if the driving thread ended without closing, until a lease
+            # reclaimed from it has found every submitted job done).
             global _POOL_SLOTS
             slots = self.policy.max_workers * self.policy.inner_threads
             with _LIMIT_LOCK:
@@ -469,7 +555,14 @@ class KernelExecutor:
                     _POOL_SLOTS -= self._pool_slots
                 self._pool_slots = 0
                 raise
-        return self._pool.submit(_run_job,job)
+        future = self._pool.submit(_run_job,job)
+        # The lease knows its unfinished jobs: it is not reclaimed from an ended
+        # thread, and these CPU slots are not dropped, while one still runs.
+        lease = self._lease
+        with _LIMIT_LOCK:
+            lease.jobs.add(future)
+        future.add_done_callback(lease.finished)
+        return future
 
     def _stream(self,kind,batches,parameters,backend,cancel):
         self._live()

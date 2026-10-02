@@ -134,7 +134,7 @@ class W12PublishingTests(unittest.TestCase):
                 budget = WorkBudget(128<<20)
                 with route_fixture(route,budget=budget,cells=4) as (producer,policy,times):
                     with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
-                        self.roundtrip(plan.run(through=0),'w06-'+route+'.v1',budget=budget,native_owner=plan)
+                        self.roundtrip(plan.run(through=0),'w06-'+route+('.v1' if route == 'margin' else '.v2'),budget=budget,native_owner=plan)
 
     def test_w06_missing_foreign_closed_unretained_and_changed_output_refuse(self):
         budget = WorkBudget(128<<20)
@@ -165,6 +165,23 @@ class W12PublishingTests(unittest.TestCase):
                     self.assertIs(plan._current,out)
                 with self.assertRaisesRegex(TectonicsError,'closed'):
                     publish_workflow_output(out,store,native_owner=plan,**args)
+
+    def test_both_renamed_ocean_routes_still_require_their_native_owner(self):
+        # R7 (3c): the two ocean routes became .v2. The publisher names the same
+        # two routes for its owner requirement; with a stale name there the
+        # publication is still refused, but only by the later binding check.
+        for route in ('constant','history'):
+            with self.subTest(route=route):
+                budget = WorkBudget(128<<20)
+                with TemporaryDirectory() as tmp, route_fixture(route,budget=budget,cells=4) as (producer,policy,times):
+                    with ArrayStore(Path(tmp)/'export.sqlite',limits=LIMITS,compression=Compression(),budget=budget) as store:
+                        with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
+                            out = plan.run(through=0)
+                            description = describe_workflow_output(out)
+                            self.assertEqual(description['route'],'w06-'+route+'.v2')
+                            context = self.output_context(description,plan)
+                            with self.assertRaisesRegex(TectonicsError,'native_owner'):
+                                publish_workflow_output(out,store,context=context,scope=SCOPE,budget=budget)
 
     def test_explicit_native_frame_conflicts_refuse_without_inferred_mapping(self):
         output = workflow_fixture(cells=2,length_m=2.)

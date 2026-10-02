@@ -32,7 +32,10 @@ For supplied extraction fraction `alpha` in [0,1] of the **available liquid**:
 
 Full depletion of an entirely liquid source gives an empty source with zero
 enthalpy and no temperature. Empty/dry sources yield no payload. A zero-latent
-law cannot establish phase availability and is refused. All inputs are borrowed;
+law cannot establish phase availability and is refused. A W08 transfer plan
+checks a *declared* zero-latent source kind against temperature
+([phase admission](W08_MAGMATISM.md#declared-source-kinds-and-the-supplied-phase-rule));
+that does not establish an extractable liquid fraction here. All inputs are borrowed;
 no caller state is mutated. Extreme unresolved arithmetic is refused, not clipped
 into a plausible-looking result.
 

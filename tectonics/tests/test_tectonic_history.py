@@ -531,6 +531,37 @@ class TectonicHistoryTests(unittest.TestCase):
             self.assertEqual(history.statistics()['computed_outputs'], counts['computed_outputs'])
             self.assertEqual(history.statistics()['latest_hits'], counts['latest_hits'])
 
+    def test_regional_history_resumes_after_cancellation_inside_a_coefficient_refill(self):
+        # R7 (s12-2). The regional schedule changes viscosity at every output, so
+        # output 1 refills the borrowed producer's operator. Before the repair a
+        # cancellation inside that refill left the producer refusing for good.
+        owner = WorkBudget(CAP)
+        with make_history_fixture('regional', budget=owner) as direct:
+            expected = tuple(direct.run(through=i) for i in range(3))
+        prepared, inputs = make_history_case('regional', budget=owner)
+        event = Event()
+        with TemporaryDirectory() as tmp, open_store(Path(tmp)/'refill.db', owner) as store:
+            with prepared, PreparedTectonicHistory(prepared, inputs, source_id=SOURCE, store=store) as history:
+                self.equal_output(history.run(through=0), expected[0])
+                core = prepared._plan._core
+                real_numeric = core._numeric
+                def cancel_in_factorisation(coefficients, cancel):
+                    event.set()
+                    return real_numeric(coefficients, cancel)
+                # Fault injection is instance-local: do not change the loaded implementation identity.
+                core._numeric = cancel_in_factorisation
+                with self.assertRaises(CancelledError):
+                    history.run(through=1, cancel=event)
+                event.clear()
+                self.assertFalse(store.contains(history.checkpoint_id(1)))
+                self.assertEqual(history.statistics()['computed_outputs'], 1)
+                self.equal_output(history.run(), expected[2])
+                self.assertEqual(history.statistics()['computed_outputs'], 3)
+                self.assertEqual(prepared.statistics()['preparations'], 2)
+                for i, output in enumerate(expected):
+                    self.equal_output(history.load(i), output)
+        self.assertEqual(owner.reserved_bytes, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

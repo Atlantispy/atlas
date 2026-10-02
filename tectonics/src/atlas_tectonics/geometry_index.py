@@ -125,7 +125,7 @@ class GeometryIndex:
             if not self._closed:
                 self._groups.clear();self._closed=True;self._guard.__exit__(None,None,None)
 
-    def query(self,points,*,angular_tolerance_rad=_DEFAULT_ANGULAR_BAND,budget=None,cancel=None):
+    def query(self,points,*,angular_tolerance_rad=None,budget=None,cancel=None):
         return self._query(points, angular_tolerance_rad=angular_tolerance_rad,
                            budget=budget, cancel=cancel)
 
@@ -134,11 +134,14 @@ class GeometryIndex:
         # returned. The detached child records suballocation without double charge.
         return self._query(points, budget=budget, cancel=cancel, _prepaid=True)
 
-    def _query(self,points,*,angular_tolerance_rad=_DEFAULT_ANGULAR_BAND,budget=None,cancel=None,_prepaid=False):
+    def _query(self,points,*,angular_tolerance_rad=None,budget=None,cancel=None,_prepaid=False):
         """Return all region/trace matches, including every boundary owner candidate.
 
         Spherical numerical bands use a conservative projected envelope followed
         by true finite-arc distance tests. No nearest-only or first-hit tie break.
+        The band belongs to spherical indexes: None selects their default
+        64-epsilon band. A planar index applies raw predicates and has no band,
+        so it refuses an explicit angular_tolerance_rad instead of ignoring it.
         Use query_batches() to avoid retaining an entire world's match table.
         """
         with self._lock:
@@ -146,7 +149,12 @@ class GeometryIndex:
             self._active+=1
         try:
             dim=3 if self.spherical else 2;shape=_point_shape(points,dim);n=elements(shape)//dim
-            tol=scalar(angular_tolerance_rad,'angular tolerance',nonnegative=True)
+            tol=None
+            if self.spherical:
+                tol=scalar(_DEFAULT_ANGULAR_BAND if angular_tolerance_rad is None else angular_tolerance_rad,
+                           'angular tolerance',nonnegative=True)
+            elif angular_tolerance_rad is not None:
+                raise GeometryError('a planar index has no angular band; omit angular_tolerance_rad')
             maximum=min(n*len(self.features),self.limits.max_hits)
             # A tiny query never allocates a full policy-sized point batch.
             # Clamping only execution scratch leaves every predicate unchanged.

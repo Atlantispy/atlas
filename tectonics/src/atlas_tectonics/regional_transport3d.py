@@ -77,6 +77,25 @@ def _sum(a):
     return math.fsum(np.asarray(a).flat)
 
 
+def _projection_bytes(cells, *, factor_nnz=None):
+    """Projection construction and native LU allowance, before/after factoring.
+
+    Keep the existing bounded-grid fill envelope (8192 bytes per cell at
+    12 bytes per sparse entry), but charge native values/indices and growth
+    storage at 24 bytes per entry. SuperLU also starts with fill 30 of the
+    input pattern, even when the final factor is much smaller. The pinned
+    corner removes its diagonal and three symmetric neighbour pairs.
+    Assembly/CSC copies and per-unknown native work are counted separately.
+    This is conservative accounting, not a process-memory cap.
+    """
+    nc = math.prod(cells); n = nc-1
+    faces = sum((cells[a]-1)*math.prod(cells[b] for b in range(3) if b != a) for a in range(3))
+    input_nnz = nc+2*faces-7
+    entries = min(n*(n+1), 8192*nc//12) if factor_nnz is None else factor_nnz
+    native = max(720*input_nnz, 24*entries)+1024*n
+    return 2*1024**2+1024*nc+native
+
+
 class _Arrays:
     """Detached immutable arrays and a detached JSON descriptor."""
     def __init__(self, metadata, arrays):
@@ -174,9 +193,7 @@ class PreparedRegionalTransport3D:
         self._owner = threading.get_ident(); self._active = False; self._closed = False
         self._guard = self._factor = self._context = None
         self._nc = math.prod(cells)
-        # Sparse fill and transient construction allowance, checked against the
-        # realised factor. This is byte admission, not an operating-system cap.
-        self._allowance = 2*1024**2+8192*self._nc
+        self._allowance = _projection_bytes(self.cells)
         try:
             _cancel(cancel)
             guard = self._budget.reserve(self._allowance, category='regional3d-transport-plan')
@@ -202,7 +219,9 @@ class PreparedRegionalTransport3D:
             lap = (self._B@sparse.diags(self._inverse_weight)@self._B.T).tocsc()
             with _native_lease():
                 self._factor = splu(lap[1:, 1:], permc_spec='COLAMD')
-            actual = sum(a.data.nbytes+a.indices.nbytes+a.indptr.nbytes for a in (self._B, self._factor.L, self._factor.U))
+            # Use the same native-allocation model as admission. Reading L/U
+            # would itself create CSC copies retained by SciPy.
+            actual = _projection_bytes(self.cells, factor_nnz=self._factor.nnz)
             if actual > self._allowance:
                 raise MemoryLimitError('realised projection factor exceeded admitted allowance')
             points, weights = np.polynomial.legendre.leggauss(3)

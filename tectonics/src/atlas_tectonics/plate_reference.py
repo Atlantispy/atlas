@@ -173,8 +173,8 @@ def lonlat_directions(coordinates):
     points=np.column_stack((np.cos(lat)*np.cos(lon),np.cos(lat)*np.sin(lon),np.sin(lat)))
     return np.frombuffer(points.tobytes(),dtype='f8').reshape(-1,3)
 
-# Complete held-out outline: CO feature from curator GeoJSON blob
-# 879951b5d17c0e11926025223378174fcb9f41f6. No thinning/smoothing.
+# Complete previously exposed development outline (not held out): CO feature from
+# curator GeoJSON blob 879951b5d17c0e11926025223378174fcb9f41f6. No thinning/smoothing.
 COCOS_COORDINATES = (
     (-86.648, 10.235),
     (-86.4487, 9.9383),
@@ -338,7 +338,12 @@ COCOS_COORDINATES = (
 
 
 def outline_reference_record():
-    """One complete held-out plate outline, not a full PB2002 shape distribution."""
+    """One complete previously exposed outline, not a full PB2002 shape distribution.
+
+    The registered 3C-R1 split marks Cocos as development data already exposed
+    (plate_reference_acceptance.record_role); it is not withheld evidence. The
+    generator still takes no input from this outline.
+    """
     record = {'schema':'pb2002-cocos-complete-outline-v1','plate_code':'CO',
         'source':'https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_plates.json',
         'source_blob':'879951b5d17c0e11926025223378174fcb9f41f6',
@@ -346,7 +351,7 @@ def outline_reference_record():
         'attribution':'Peter Bird (2003); curation Hugo Ahlenius / Nordpil; GeoJSON preparation csterling',
         'licence':'Open Data Commons Attribution Licence 1.0',
         'coordinate_units':'longitude/latitude degrees','coordinates':COCOS_COORDINATES,
-        'role':'held-out numerical/morphology challenge; not used to fit generator',
+        'role':'previously exposed development outline for numerical/morphology checks; not used to fit generator',
         'limitation':'one small oceanic plate cannot validate the complete global shape distribution'}
     record['record_sha256']=hashlib.sha256(_json(record)).hexdigest()
     return record

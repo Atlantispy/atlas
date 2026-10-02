@@ -293,6 +293,10 @@ All three move together: a parcel cannot leave its heat behind or arrive with
 its earlier weakening forgotten. Material entering the box comes from a finite
 declared supply, and material leaving it is returned as an explicit export.
 
+Where a strength law depends on depth, depth is counted down from the top of
+the box. The box is therefore treated as starting at the surface; the height
+reference recorded with it is a label and does not shift that zero.
+
 There is a numerical distinction worth making. A flow can satisfy the mechanical
 equations without balancing the tiny inflow and outflow of every individual
 transport cell exactly. Atlas therefore constructs shared cell-face flows with
@@ -311,6 +315,29 @@ separately. Atlas applies its existing temperature/weakening laws, then solves
 the mechanics again. A joined check demonstrates that heating lowers resistance
 and increases force-driven motion: the changed temperature affects the next
 calculation, not just the map's colours.
+
+Rock that weakens as it deforms faster cannot be solved in one pass. Atlas
+guesses the resistance, solves the flow, corrects the resistance from that flow
+and repeats until the two agree, with at most 32 corrections. Every such
+calculation now begins from the same declared starting point, rock at rest. It
+used to begin from whatever the previous calculation on the same prepared
+region had left behind, which was neither an input nor recorded. The same state
+and driving therefore gave slightly different numbers and a different recorded
+identity depending on what had been calculated before, and a run stopped and
+continued from its saved state did not reproduce one that never stopped. Close
+to the limit of 32 corrections, that leftover even decided whether an interval
+was accepted. Since 1 October 2026 the answer depends only on the declared
+state and driving, and a continued run matches the uninterrupted one exactly.
+This costs time: where the rock changes slowly between intervals the
+mechanical work roughly doubles, because each calculation repeats corrections
+the leftover start used to skip, and an interval that only met the limit thanks
+to that leftover is now refused. Rock whose resistance does not depend on how
+fast it deforms is unaffected. A recorded, caller-supplied starting point could
+win the speed back; it is not built. Focused checks repeat one yielding
+interval after other work on the same region, and on a freshly prepared region
+continuing from the saved state, with each of the four solver choices, and
+require identical results. The
+[method description](../REGIONAL_EVOLUTION_3D.md#heat-and-reuse) gives the counts.
 
 Known translations in every direction test carriage; exact heating and cooling
 examples test heat accounts; a yielding example checks the three-dimensional
@@ -516,6 +543,13 @@ Generated breakup, complete melt-derived supply and crust birth, resolved initia
 
 ## 8. Accept, save and continue one evolving state
 
+I02 also records the owner's [1% plate-velocity handoff limit](../I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v).
+Before a later stage replaces a detailed coupled calculation with a simpler one,
+it must bound the largest velocity difference over the same region and time
+window relative to an established reference speed. I06/I07 consume this policy
+and I09 enforces it; I03 does not need it. The limit is not a claim that every
+solver is accurate to 1%, and recording it does not implement the later handoff.
+
 **The I02.3–I02.8 route is integrated locally; current verification and platform
 coverage are recorded in [current status](../../../docs/CURRENT_STATE.md).** Sections 1–7 describe what is calculated
 within an interval. This section follows one history of the finite-strain column of
@@ -610,9 +644,10 @@ I02 checkpoint passed all 758 I01/I02 tests on Windows. R4 and the subsequent
 checkpoint, recovery, resource and cache fixes are integrated with focused
 regressions and fresh r6 admission/timing receipts. The final Git-normalised
 check passed all three guards, including 759 I01/I02 tests in 164.449 s, with no
-failures or skips. The current r6 timing comparison records
-warm bare evolution at 0.06891915 s and the stored workflow at 0.10706250 s
-(+55.35%) for this tiny column. That is a saving/recovery cost, not a physics speedup; the
+failures or skips. R7 and its follow-up corrections then passed 211 focused checks
+and a fresh Git-normalised guard including 759 I01/I02 tests. The current r7 timing
+comparison records warm bare evolution at 0.06976490 s and the stored workflow at
+0.10974810 s (+0.03998320 s, or 57.31%) for this tiny column. That is a saving/recovery cost, not a physics speedup; the
 [method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead) gives the measured
 seconds. This reviewed, connected and restartable route completes I02 for its
 declared case. Whole-planet integration and Linux platform coverage remain separate.

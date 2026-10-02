@@ -1428,6 +1428,9 @@ shared-boundary support is now supplied by the stage-3 section above.
 - `save_geometry`/`load_geometry` reuse the existing compressed/deduplicated store.
   Bounded 2D WKB definitions are checked before native parsing; prepared objects and
   indexes rebuild on restoration. No pickle-based native-object cache is introduced.
+  Since R7 (1 October 2026) a restored collection is refused, not merged, if its
+  polygons overlap or share an edge, its traces cross or overlap, or a trace lies
+  inside or along one of its polygons.
 - Native double precision is normal. No snapping, `make_valid`, lossy simplification,
   automatic precision reduction or spherical-to-flat metric substitution occurs.
   Optional boundary bands report uncertainty, not repaired geometry or ownership.

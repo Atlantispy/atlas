@@ -114,6 +114,9 @@ capabilities `{inspect: true, generate: false, cancel: false, resume: false}` an
 Specifications retain the native units, named mixed-unit matrix columns and
 known masks unchanged. Cohort and compaction-row descriptor arrays are separately
 ordered to match their respective matrices; they are not interchangeable layers.
+A named column list is always `spec.columns`: one `{name, units}` row per matrix
+column, in matrix order. Every exported route uses that one form (see
+[Native consumer APIs](#native-consumer-apis)).
 
 The browser must use the native strip/table/profile support, not project these
 results onto the illustrative globe. `support.values` is **cell x named column**;
@@ -436,6 +439,33 @@ Packed mixed-unit matrices have ordered column descriptions. Dry water surfaces,
 partial ocean occupancy and unknown underthrust enthalpy keep their masks;
 placeholder zero values are not promoted to known physical zeroes. Unknown output
 classes and authored fields without supported unit contracts refuse.
+
+**One column-list form, and the two ocean routes renamed (R7, 1 October 2026; not
+accepted).** A field specification that names its matrix columns carries
+`columns`: one `{name, units}` row per column, in matrix order, with the same
+units repeated in the field's `units` list. A row may add its own `known` mask,
+as the last W04 column does. Six output forms carry such a list: W04 support
+(`support.values`), W05 extension (`support.cell_means`), the two W06 ocean forms
+(`state.cell_values` and `state.centre_values`) and the direct and dated evolving
+W04 results (`result.values`). Until this repair the two ocean forms listed bare
+column names there and kept the units only in the separate list, so a reader
+written for the W04 and W05 rows failed on an ocean product. They now use the
+common rows. Column names, their order, the units and the array bytes are the
+same as before; only the form of the list changed.
+
+Because that changes a published export, the two ocean routes have new names:
+`w06-constant.v2` and `w06-history.v2`. Nothing publishes the `.v1` ocean names
+any more, so a consumer that selects products by route name must ask for `.v2`,
+and a `.v1` name always means the old bare-name list. `w06-margin.v1` has no
+column list and keeps its name, as do the other fourteen routes. The owner
+requirement above applies to the two renamed routes exactly as before. No tool
+in this repository reads an exported ocean product: the reader, the view adapter
+and the section geometry accept only `w04-support.v1`. The historical
+[w12-assembly-r1.json](../evidence/w12-assembly-r1.json) lists the `.v1` names
+it measured and is left as recorded. Other mixed-unit arrays (for example
+`support.face_centre_response` and `state.heat_accounts_j`) still give a `units`
+list with the column meaning in `support` and carry no `columns`; that is
+unchanged.
 
 Regional mechanical snapshots without a pressure datum
 (`physical_pressure_defined=False`) mark every field that carries the declared

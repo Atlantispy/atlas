@@ -169,7 +169,9 @@ Feedback ownership and exchange rules not repeated here are in
   control. The homogeneous strip is admitted at 10%; the layered strip is honestly
   uncertified at 1%.
 - *Refused:* a derivative ratio as a nonlinear or plastic release.
-- *Remaining:* I02 declares `eps_v`; I09 compares coupled and replacement solutions
+- *Numerical policy:* I02 records the owner-approved [`eps_v = 0.01`](I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v)
+  (1%). The earlier receipt-bound controls remain unchanged and do not acquire new certification.
+- *Remaining:* I09 compares coupled and replacement solutions
   with a declared norm, reference scale and history window (transitions §3); I05
   carries the belt state; I07 resolves belts.
 
@@ -399,7 +401,7 @@ Do not build these as further I01 prototypes. A new I01 control needs an MC item
 
 | ID | Owner | Work already assigned | Plan case |
 | --- | --- | --- | --- |
-| LS-I02 | I02 | Accepted-state contract, event calendar, candidate-validate-commit, `eps_v` numerical contract, persisted identity of issued states, once-only delivery transactions | plumbing |
+| LS-I02 | I02 | Accepted-state contract, event calendar, candidate-validate-commit, owner-approved [`eps_v = 0.01` numerical contract](I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v) (recorded 2 October 2026; I06.2/I07.2 consume, I09 enforces), persisted identity of issued states, once-only delivery transactions | plumbing |
 | LS-I03 | I03 | Moving shared boundaries and junctions, conservative spherical transfers, moving ridge segments, closed-sphere source and sink control | A, G |
 | LS-I04 | I04 | Starting family that consumes structure and inheritance; D1/D2 on the evolving sphere; force-parameter challenges; orientation-independent localisation on the production mesh | B, H |
 | LS-I05 | I05 | Heterogeneous deforming thermal/material bridge; conservative raw-history and irreversible bond-cohort transport; necking-chain belt state and per-column clocks; W06 occupied-material means and age distributions | A, F |

@@ -202,9 +202,13 @@ def _layers(workflow, laws):
 
 
 def bind_regional_geology(workflow, *, nz, material_laws, ownership,
-                          gravity_m_s2, vertical_datum, external_pressure_pa=0.,
+                          gravity_m_s2, vertical_datum, external_pressure_pa=None,
                           w03=None, w06_state_id=None, budget=None, cancel=None):
-    """Bind initial ordered geology, preserving depth/vector conventions."""
+    """Bind initial ordered geology, preserving depth/vector conventions.
+
+    The external surface pressure is required and has no assumed value: state it
+    in Pa, zero gauge as an explicit 0. An unstated pressure is refused.
+    """
     _cancel(cancel)
     if type(workflow) is not RegionalWorkflowState:
         raise TectonicsError('typed current RegionalWorkflowState required')
@@ -248,7 +252,8 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
     if len(laws) != len(material_laws):
         raise TectonicsError('duplicate material laws')
     gravity = scalar(gravity_m_s2, 'gravity', nonnegative=True)
-    pressure = scalar(external_pressure_pa, 'external pressure', nonnegative=True)
+    pressure = None if external_pressure_pa is None else scalar(
+        external_pressure_pa, 'external pressure', nonnegative=True)
     _name(vertical_datum, 'vertical datum')
     resource = WorkBudget(128*1024**2, parent=select_budget(budget))
     count = len(workflow.material.cohorts)
@@ -259,6 +264,10 @@ def bind_regional_geology(workflow, *, nz, material_laws, ownership,
         if context.identity != workflow.execution_id or _hash(workflow.descriptor()) != workflow.workflow_id:
             raise TectonicsError('upstream workflow source/runtime/identity changed; no automatic rebind')
         layers = _layers(workflow, laws)
+        if pressure is None:
+            # Stated, never assumed. Refused only here, so that an inadmissible
+            # geology keeps its own refusal whether or not the pressure was stated.
+            raise TectonicsError('explicit external surface pressure required; zero gauge is stated as 0.')
         top, bottom = workflow.support.top_depth_m, workflow.support.bottom_depth_m
         height = bottom-top
         width = workflow.material.grid.length_m

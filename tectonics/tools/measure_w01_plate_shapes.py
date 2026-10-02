@@ -108,8 +108,10 @@ def main():
                     item = dict(plate_id=plate_id, reference_plate=name,
                                 area_rank=rank+1, reference_shape_role=role,
                                 reference_table_area_sr=table_area,
+                                # Exposed development outlines are calibration; only
+                                # a withheld outline may be recorded as validation.
                                 evaluation=evaluation_record(dataset.dataset_id, world.atlas_id,
-                                    split=split, purpose='validation',
+                                    split=split, purpose='validation' if split == 'withheld' else 'calibration',
                                     run_id=f'W01-short-20260922-seed-{setting.seed}-rank-{rank+1}'))
                     rings = plate_outline_cycles(world, plate_id, budget=budget, cancel=deadline)
                     if len(rings) != 1:

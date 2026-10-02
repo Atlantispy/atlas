@@ -8,6 +8,7 @@ import unittest
 import numpy as np
 
 from atlas_tectonics._validation import TectonicsError
+from atlas_tectonics.magmatic_thermodynamics import MagmaticThermodynamics
 from atlas_tectonics.magmatic_transfer import MagmaticExhaustionError
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.reuse import ExecutionContext
@@ -137,6 +138,19 @@ class W08InventoryTests(unittest.TestCase):
         solid = stock(node_kinds=initial.node_kinds[:5]+('source-solid',)+initial.node_kinds[6:])
         with self.assertRaises(TectonicsError):
             advance_magmatic(solid, selected, rates, 1., source_id='no-implicit-melting', context=self.context)
+
+    def test_magmatic_adapter_applies_the_zero_latent_source_rule(self):
+        # R7 3e: the forwarded thermal law judges a zero-latent source kind by
+        # temperature. The melt source is at 300.5 K (100 J over 200 J/K, Tref 300 K).
+        def law(melting_temperature_k):
+            return MagmaticThermodynamics(('A', 'B'), [10., 20.], [0., 0.],
+                melting_temperature_k=melting_temperature_k, reference_temperature_k=300.,
+                source_id='zero-latent', provenance='R7 3e')
+        below, above = law(350.), law(290.)
+        with self.assertRaises(TectonicsError):
+            self.magma(stock(enthalpy_source=below.thermodynamics_id), 3., thermodynamics=below)
+        final, _ = self.magma(stock(enthalpy_source=above.thermodynamics_id), 3., thermodynamics=above)
+        np.testing.assert_allclose(final.mass_kg[[3, 5, 6]], [3, 7, 2], atol=2e-14, rtol=0)
 
     def test_retirement_simultaneous_destinations_existing_stocks_and_signed_heat(self):
         initial = stock()

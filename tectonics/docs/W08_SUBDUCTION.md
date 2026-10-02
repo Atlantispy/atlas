@@ -139,6 +139,29 @@ comparison remain preserved; PGC reference temperatures and2C/1C gates are uncha
   separate advective boundary flux and consistent SUPG including the quadratic
   diffusive Laplacian. Degree-six triangle quadrature and sixth-order edge Gauss
   quadrature are explicit. No temperature marching to100Myr is required.
+- The heat solve is accepted on its componentwise linear residual,
+  constant-temperature preservation, positive absolute temperature and one summed
+  balance: the reactions at the free nodes must add to zero within 1e-9 of the
+  reaction scale. The three reported heat statistics restate that balance and are
+  not an independent boundary-flux check. The test functions sum to one, so the
+  column sums of the assembled operator are the advective boundary-flux weights
+  and the summed reaction equals the advective export identically.
+  `boundary_heat_residual_w_m` is therefore minus the free-node balance (in W/m)
+  up to round-off, and `diffusive_input_w_m` is
+  `advective_export_relative_273k_w_m` plus that residual: the summed consistent
+  reaction at the prescribed-temperature nodes, with their advective and SUPG
+  parts, not a separately integrated `k grad(T).n`. The gate on the residual
+  therefore tests the same quantity as the balance gate, at a tolerance no
+  tighter, and adds no further check on how well the temperature solves the
+  assembled equations. Apart from round-off, it can fail on its own only if the
+  assembled column sums no longer equal the flux weights: a fault of the
+  assembly, which is what its refusal text names. A flux recovered from the
+  temperature gradient would differ by discretisation error and is not
+  implemented.
+  (R7, 1 October 2026, review s13-2: the code comment and refusal
+  text no longer call this quantity independent; gates, tolerances and statistic
+  keys are unchanged. `test_boundary_heat_statistics_restate_the_free_node_balance`
+  holds the identity at 24 km.)
 - Heat transport uses a separate locally divergence-free P2 velocity, obtained
   from the curl of a continuous cubic streamfunction fitted in L2. Boundary
   normal traces are retained; tangential traces and the mechanical velocity are
@@ -169,8 +192,12 @@ comparison remain preserved; PGC reference temperatures and2C/1C gates are uncha
   allowance. This is not a process-RSS or allocator-enforced memory guarantee.
   Existing W07 mesh and256-history-interval limits are unchanged.
   Assembly scratch is released before factorisation; sparse matrices and retained
-  output fields have separate leases. Scalar factors have an additional64MiB
-  allowance ceiling and are still checked against their realised fill.
+  output fields have separate leases. The scalar factors have different allowance
+  ceilings: the transport (P3 streamfunction-projection) factor is capped at
+  64 MiB, the heat factor at 72 MiB, and the BFBT pressure-Poisson factor has no
+  fixed ceiling beyond the shared 128 MiB envelope. All three are still checked
+  against their realised fill. (Corrected in R7, 1 October 2026, review s13
+  missed #0: this sentence gave one 64 MiB ceiling for every scalar factor.)
   Heat-gradient tables are prepared only for the thermal phase, then released
   before mechanics; their polynomial arithmetic is unchanged. Conservative
   transport retains its measured immutable backing arrays rather than reserving

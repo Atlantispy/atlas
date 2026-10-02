@@ -14,6 +14,20 @@ component on all six faces. One shared nodal velocity trace avoids contradictory
 edge/corner copies. Material, frame, datum, parent state, epoch and forcing
 identities accompany the arrays. Public inputs and outputs use SI units.
 
+That velocity array is a complete nodal field. `solve` validates the whole
+array and then reads only its entries on prescribed-velocity components, the
+ones where `velocity_mask()` is true. Validation covers every entry, read or
+not: each must be finite, and must neither overflow nor round a nonzero value
+to zero when divided by the plan's velocity scale; otherwise the request is
+refused before anything is solved. A `NaN` or an infinity used to mark an
+unprescribed entry is therefore refused, and the refusal names the array, not
+the entry. Zero is always safe there. Once the array is admitted, the values on
+traction-controlled and interior components are ignored: they change no output
+and do not enter `result_id`. This is deliberately unlike tractions, where a
+nonzero value on a prescribed-velocity component is refused; callers such as
+the plate adapter pass full fields. A changed ignored entry only misses the
+single-result cache, and the repeated solve publishes the same result.
+
 The geometry, viscosity and boundary-condition pattern are fixed in a prepared
 plan. Changing them requires a new plan; changing a force can reuse its matrix
 and factor. The constitutive producer owns effective viscosity and retained
@@ -185,6 +199,26 @@ LU reserves `max(720*nnz(K), 16*N*N) + 1024*N` bytes: its initial fill estimate
 of 30 or the dense fill bound, plus per-unknown work. The realised check uses
 SuperLU's own stored-entry count (`12*factor.nnz + 8*(N+1)`), without accessing
 `factor.L/U`, which would create CSC copies retained for the plan's lifetime.
+Since R7 (1 October 2026) the multigrid coarse and pressure-mass factors, the
+transport projection factor (`regional_transport3d.py`) and the heat factor
+(`regional_heat3d.py`) stopped exporting those copies. The 2 October correction
+also accounts for native allocation in transport and multigrid, as described
+below; the heat route retains its separate dense-factor envelope. In the saved
+R7 Windows scratch measurement (not acceptance), removing the copies reduced
+a 24x24x24 transport plan's retained memory from about 219 MB to 113 MB, but its
+139 MB preparation peak still exceeded the old 115 MB allowance.
+
+Transport now reserves `2 MiB + 1024*cells` for retained geometry and assembly
+temporaries, plus `max(720*input_nnz, 24*factor_entries) + 1024*N` for the native
+factor, where `N = cells-1`. Its pinned-corner seven-point Laplacian has exactly
+`cells + 2*interior_faces - 7` input entries. The existing empirical fill envelope
+of `8192*cells/12` entries is retained, capped by dense triangular storage, but
+charged at 24 bytes per entry to allow native values, indices and growth storage.
+After factoring, the same formula uses the actual stored-entry count and refuses
+an overrun without exporting L/U. The new 24x24x24 preparation reservation is
+256,900,096 bytes (about 245 MiB), above the saved 139 MB peak. Subsequent face
+projection and transport work still require their separately reserved bytes, so
+preparing a plan does not promise every operation fits the remaining budget.
 
 At 6x6x6 the combined GMRES reservation is about 216 MiB with all faces
 velocity-prescribed, 271 MiB with free-slip faces and 294 MiB with only the base
@@ -315,9 +349,28 @@ to the bounded grids measured below.
 - **Admission.** The candidate reserves structure (mesh, B, patterns, transfers,
   level matrices), work (Krylov basis, element and stencil transients, the result
   envelope) and, once the coarse and pressure-mass sizes are known, a factor
-  allowance. It refuses if the realised structure or factors exceed what was
-  admitted. As before, these are accounting bounds, not an operating-system RSS
-  guarantee.
+  allowance. Each factor now admits the larger of `720*input_nnz` for SuperLU's
+  initial native arrays and `24*factor_entries` for fill and growth, plus 1,024
+  bytes per unknown for native work. Preflight bounds input entries by at most
+  81 per coarse velocity row and 27 per pressure row (also capped by dense
+  storage), and keeps the existing empirical structural fill bounds. The
+  realised check uses actual input and factor counts with the same allocation
+  model. The two-factor allowance retains 1 MiB of fixed slack. Automatic
+  selection uses that same prediction; no user budget is increased.
+  It refuses if the realised structure or factors exceed what was admitted.
+  These remain conservative accounting envelopes, not operating-system RSS caps.
+
+  The saved R7 24x24x24 open-top observation committed about 298 MB across its
+  two factors, above the old 230 MB factor allowance, although the old complete
+  reservation already covered the measured total peak. The corrected factor
+  allowance is about 494 MB and the complete reservation about 1,970 MB, against
+  the saved 553 MB total peak. These comparisons reuse the recorded Windows
+  measurements; they are not a new memory campaign or a universal allocator
+  bound. The unchanged 256 MiB default now admits the closed 9x9x9 case at
+  252.45 MiB, but refuses the formerly admitted closed 10x10x10 case whose
+  corrected estimate is 322.92 MiB. Boundary conditions and coarse-grid changes
+  affect admission, so this is not a universal nine-cell limit. Numerical
+  equations, gates, tolerances and the 2-24 cell interface remain unchanged.
 
 ### Evidence from the literature and software
 
@@ -472,7 +525,9 @@ solver equations or the retained performance measurements.
   2,017 MB against 2,209 MB.
 
 These are the original 30 September comparisons, before the assembled-factor
-accounting correction described under [safe reuse](#solving-and-safe-reuse).
+accounting correction described under [safe reuse](#solving-and-safe-reuse) and
+the 2 October multigrid factor correction above. The original eleven-cell
+admission statement is historical; use the current allowance for new plans.
 The historical timings and memory observations have not been relabelled as a
 new measurement of the corrected assembled route.
 
@@ -571,6 +626,16 @@ limits admitting the same methods are compatible; raw free-byte counts are not
 part of the identity. To continue a run, pass its recorded `mechanics_method`
 and use a budget supporting the same admission choices. States from before
 this change are refused because the package's execution identity changed.
+
+A continued run reproduces the continuous one bit for bit (R7, 1 October 2026).
+Each mechanical solve of the evolution starts its constitutive iteration from
+zero strain rate, a start recorded in the evolution plan definition as
+`constitutive_start`, so no earlier solve on the plan reaches a later result.
+Before that repair a long-lived plan started from its previous solve while a
+reopened plan started from zero, and the two published different ids for the
+same saved state under every method.
+[Heat and reuse](REGIONAL_EVOLUTION_3D.md#heat-and-reuse) states the accepted
+cost.
 
 ### Why multigrid first
 
@@ -759,6 +824,17 @@ A mode in metres multiplied by its unknown rate in 1/s gives velocity. Its
 conjugate force has units joules (a rotation mode gives torque); force times
 rate gives watts. Solving each independent mode gives a regional resistance
 matrix. The same regional matrix and factor serve the whole calculation.
+
+The base velocity and each mode are complete nodal fields. As in `solve`, each
+is validated whole and then only the entries where `velocity_mask()` is true
+are read. Every entry, read or not, must be finite and must neither overflow
+nor round a nonzero value to zero when divided by the plan's velocity scale
+(base velocity) or length scale (modes); otherwise the request is refused
+before anything is solved. Values on other components of an admitted array are
+ignored and change no published array. Ignored base-velocity entries do not
+enter `result_id`. The recorded `modes_sha256`, however, is the digest of the
+mode array as supplied, so an ignored mode entry changes that digest, and with
+it `result_id`, without changing any number.
 
 The connection solves regional reaction plus explicitly separate exterior
 resistance against supplied driving forces. More resistant material therefore

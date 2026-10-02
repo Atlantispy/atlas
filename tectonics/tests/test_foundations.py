@@ -3,11 +3,13 @@
 Expected values are derived independently of implementation where possible.
 All material constants in foundations.json are synthetic, not Earth calibration.
 """
+import copy
 from dataclasses import FrozenInstanceError, replace
 from functools import partial
 import json
 import math
 from pathlib import Path
+import pickle
 import unittest
 from unittest import mock
 
@@ -175,6 +177,80 @@ class RotationTests(unittest.TestCase):
             Rotation((1,0,0,0)).apply([1,2])
         with self.assertRaises(TectonicsError):
             rigid_velocity([1e308,1e308,0], [0,0,1e308])
+
+
+class RotationRestoreTests(unittest.TestCase):
+    """A stored rotation keeps its bytes: renormalising a unit quaternion is not idempotent."""
+
+    @staticmethod
+    def stored(rotation):
+        # Bytes, not ==: the sign of a zero component is part of the stored value.
+        return np.array(rotation.quaternion).tobytes(), rotation.matrix.tobytes()
+
+    @staticmethod
+    def rotations():
+        rng = np.random.default_rng(5)
+        return [Rotation.from_axis_angle(rng.normal(size=3), float(rng.uniform(-7, 7)))
+                for _ in range(200)]
+
+    def test_pickle_and_copy_keep_stored_bytes(self):
+        points = np.arange(30.).reshape(10, 3) * 6.371e5
+        for rotation in self.rotations():
+            once = pickle.loads(pickle.dumps(rotation))
+            walked = once
+            for _ in range(3):
+                walked = pickle.loads(pickle.dumps(walked))
+            for other in (once, walked, copy.copy(rotation)):
+                self.assertIsNot(other, rotation)
+                self.assertEqual(other, rotation)
+                self.assertEqual(self.stored(other), self.stored(rotation))
+                self.assertEqual(other.apply(points).tobytes(), rotation.apply(points).tobytes())
+                with self.assertRaises(ValueError):
+                    other.matrix.setflags(write=True)
+            self.assertEqual(pickle.dumps(once), pickle.dumps(rotation))
+            self.assertIs(copy.deepcopy(rotation), rotation)
+
+    def test_inverse_is_the_exact_conjugate(self):
+        for rotation in self.rotations():
+            w, x, y, z = rotation.quaternion
+            inverse = rotation.inverse()
+            self.assertEqual(np.array(inverse.quaternion).tobytes(), np.array((w, -x, -y, -z)).tobytes())
+            # Conjugation transposes every matrix entry's arithmetic exactly.
+            self.assertEqual(inverse.matrix.tobytes(), rotation.matrix.T.tobytes())
+            self.assertEqual(self.stored(inverse.inverse()), self.stored(rotation))
+
+    def test_restore_keeps_what_passes_the_unit_check_and_refuses_the_rest(self):
+        rotation = Rotation.from_axis_angle([1, 2, 3], .7)
+        restore, (quaternion,) = rotation.__reduce__()
+        self.assertEqual(self.stored(restore(quaternion)), self.stored(rotation))
+        eps = float(np.finfo(float).eps)
+        # Inside the check (norm within 16 eps of one) components are kept as stored,
+        # not renormalised. The check does not prove they came from the constructor:
+        # it would have stored (1, 0, 0, 0) for each of these.
+        for near in ((1 + 8*eps, 0., 0., 0.), (1 + 16*eps, 0., 0., 0.), (1 - 16*eps, 0., 0., 0.)):
+            with self.subTest(near=near):
+                self.assertEqual(restore(near).quaternion, near)
+                self.assertEqual(Rotation(near).quaternion, (1., 0., 0., 0.))
+        for bad in ((2., 0., 0., 0.), (1 + 17*eps, 0., 0., 0.), (1 - 17*eps, 0., 0., 0.),
+                    (1 + 64*eps, 0., 0., 0.), (1 - 64*eps, 0., 0., 0.),
+                    (0., 0., 0., 0.), (.6, .8, 0.), (1., 0., 0., 0., 0.), (math.nan, 0., 0., 0.),
+                    (math.inf, 0., 0., 0.), (True, 0., 0., 0.), 'wxyz', None):
+            with self.subTest(bad=bad), self.assertRaises(TectonicsError):
+                restore(bad)
+
+    def test_pickle_written_before_the_restorer_still_loads(self):
+        # Protocol-2 bytes written at 8ee1041 for a rotation holding these components.
+        # They name the class, so they load through the constructor exactly as before.
+        old = (b'\x80\x02catlas_tectonics.kinematics\nRotation\nq\x00(G?\xb2C\xaf\xe0@\xc4\x8f'
+               b'G?\xe0R\xf0\x0bV[RG?\xea\xf5Z\xf5\x8d\x88\x0eG?\xc48\xf0\xaa\xaf\x1e6tq\x01\x85q\x02Rq\x03.')
+        written = tuple(float.fromhex(v) for v in ('0x1.243afe040c48fp-4', '0x1.052f00b565b52p-1',
+                                                    '0x1.af55af58d880ep-1', '0x1.438f0aaaf1e36p-3'))
+        restored = pickle.loads(old)
+        self.assertIs(type(restored), Rotation)
+        self.assertEqual(self.stored(restored), self.stored(Rotation(written)))
+        close(restored.quaternion, written)
+        # Written again, it is now held exactly.
+        self.assertEqual(self.stored(pickle.loads(pickle.dumps(restored))), self.stored(restored))
 
 
 class BoundaryTests(unittest.TestCase):

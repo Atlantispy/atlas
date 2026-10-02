@@ -90,6 +90,17 @@ plan is an attached review artefact, not claimed to be published in this reposit
    Boundary diagnostics use x east / y north and right normal `(t_y,-t_x)`;
    relative velocity is right minus left. Positive normal motion means opening
    only under correct declared side geometry. No automatic geological interpretation.
+   Constructing a rotation normalises its quaternion. A pickle, a copy, a transfer
+   to a worker process and `inverse()` instead keep the stored unit components
+   exactly and rebuild the matrix from them. Renormalising an already-unit
+   quaternion is not idempotent in binary64: before R7 (1 October 2026) each such
+   pass could move a component by one rounding unit, so repeated transfers drifted
+   and a process-mode rotation could differ from the serial one in its last bits.
+   Restoration refuses components that are not finite or whose norm is not within
+   16 eps of one; that is a consistency check on stored values, not an accuracy
+   tolerance. `from_axis_angle()` and `then()` results are unchanged, `inverse()`
+   is now the exact conjugate, and pickles written earlier still load through the
+   constructor.
 2. **N01 source-free transport.** Constant-density solid-equivalent thickness H
    satisfies `dH/dt + d(uH)/dx = 0` on a fixed periodic uniform grid. H is a cell
    average; u[i] is the velocity on cell i's right face. A shared upwind flux
@@ -352,8 +363,12 @@ cell receives the integral over every intersecting donor interval:
 
 A sorted overlap sweep stores at most Ns+Nt-1 nonempty intersections: O(Ns+Nt)
 geometry, not a dense Ns*Nt matrix. Local midpoint offsets reduce cancellation
-from large absolute coordinates. Compiled integration uses one reused slope
-vector and accurate positive accumulators. Formation ages/IDs are never averaged.
+from large absolute coordinates. Compiled limited-linear integration retains a
+C x Ns array of joint slopes (one per cohort and source cell) from the
+sum-consistent cohort limiter described under [W02 cohort transport](#w02-cohorts),
+applied here on the nonuniform source widths, plus O(Ns+C) total and candidate
+scratch and accurate positive accumulators. The explicit constant scheme builds
+no slopes. Formation ages/IDs are never averaged.
 The same physical domain and frame are mandatory. Do not call cropping a remap.
 Conservation of inventory does not restore high-frequency information lost by
 coarsening; only suitably reversible mappings receive inverse tests.
@@ -400,6 +415,25 @@ intervals are overlaid and their per-cohort transferred inventory is reported.
 It is not physical material motion. `advance_plate_state` instead moves physical
 control volumes through ALE and requires cuts aligned with material mesh faces.
 A missing alignment requires an explicit conservative regrid first.
+
+Its receipt (`advance-plate-control-volumes-v2`) holds one account per block and
+cohort: inventory before and after, inflow and outflow, the signed exchanges through
+the block's two bounding faces, the rounding residual and `maximum_outflow_fraction`.
+That last value is the block's own: the largest, over the block's cells, of dt times
+the relative speed leaving a cell divided by the cell width, taken on the start width
+and, for MUSCL, on the end width as well. It is the quantity the ALE admission bounds
+by 1/2 (MUSCL) or 1 (upwind). The account recomputes it from the same captured
+velocities in the selected backend's own operation order, so the largest block value
+must equal the admitted whole-domain maximum bit for bit; a disagreement refuses the
+event. A block from whose cells nothing leaves reports zero. V1 receipts
+(`advance-plate-control-volumes-v1`) wrote the whole-domain maximum into every block
+row, so a quiescent block carried the busiest block's value. A stored v1 receipt
+remains readable under its own name and meaning; because the receipt is hashed into
+the model identity, a state advanced by this code is not the v1 state. Only this
+diagnostic changed: material, face fluxes, inventories and conservation residuals
+are identical. The velocities are now captured once for the transport kernel and
+the account, and the event reserves 96 bytes per face for them and the fraction
+scratch (R7, 1 October 2026).
 
 Each event is bound to its model parent and a previously unused ID. Full earlier
 receipts should be retained in the existing history store when needed; the live
@@ -547,6 +581,30 @@ No `make_valid`, coordinate snapping, buffering-to-repair or tolerance-based del
 Geometry IDs preserve the declared coordinate representation and frame. Two shapes
 with equal area or geometrically equivalent ring order need not have equal IDs.
 
+A mixed result is held as a GeometryCollection, and GEOS validates a collection
+only member by member. Atlas therefore holds every collection to one rule, so that
+neither area nor length can be counted twice (R7, 1 October 2026; review finding
+s03-2). Taken at any nesting depth, its polygons must be valid together as one
+MultiPolygon, its traces must be simple together as one MultiLineString (the rule
+already applied to a MultiLineString: two traces may meet only at a point where
+both of them end, and a closed trace, which has no end, may not be touched by
+another trace at all), and no trace may share positive length with one of its
+polygons. Point contacts stay valid: polygons touching at a point, a polygon
+inside another member's hole, and a trace that ends on, or passes through, a
+single point of a polygon's boundary.
+Members that overlap, repeat, nest or cross are refused with `GeometryError`. They
+are never unioned, because a union would change the stored bytes and therefore
+the identity. Polygons that share an edge are refused too: their summed area was
+right, but the shared edge was counted twice in the perimeter, and the same
+members are refused as a MultiPolygon. The three tests are GEOS's robust
+predicates, applied to the stored binary64 coordinates: validity, simplicity, and
+the DE-9IM relation of each trace with each polygon whose bounding box it meets.
+Atlas adds no tolerance and constructs no intersection, because rounded
+intersection points can hide a rounding-size overlap. The predicates are not
+exact arithmetic: a contact that is exactly collinear is occasionally refused, as
+it already is in a MultiPolygon (rates in the repair note below). More than
+`max_overlay_pairs` such trace/polygon pairs is refused as an execution limit.
+
 For a spherical chart with unit centre c and tangent basis e,n, a unit direction p is
 mapped to gnomonic coordinates
 
@@ -582,6 +640,10 @@ uses a 64-machine-epsilon angular band by default to report roundoff-level ambig
 zero requests raw chart predicates. This band does not change stored coordinates,
 expand area, repair a mesh or choose a plate owner. All candidates are retained by
 the index for subsequent shared-boundary/sidedness work.
+A planar `GeometryIndex` query applies raw predicates and has no band: it refuses
+an explicit `angular_tolerance_rad` instead of validating and then ignoring it,
+while a spherical index uses the 64-epsilon band unless another is given (R7,
+1 October 2026).
 
 ### Coverage, persistence and acceptance
 
@@ -597,6 +659,8 @@ coordinate counts, payload length and configured limits before native parsing.
 Identifiers and full descriptors are checked after reconstruction. Static definition
 bytes use existing ArrayStore snapshots; derived GEOS/search state is rebuilt. This
 is not a security boundary against a process capable of changing code and records.
+The reconstructed shape must also pass the collection rule above. An identifier is
+only a hash of the frame and the bytes, so it does not vouch for the shape.
 
 The independent fixtures use rational planar areas, scalar ray crossing, an octant's
 pi/2 solid angle, the spherical rectangle solid angle
@@ -626,6 +690,148 @@ points, medians of three runs): classification 0.00606 to 0.00611 s warm and
 0.01025 to 0.01037 s cold (+1%); index build plus first query 0.01134 to
 0.01745 s (+6.1 ms for private copies of 64,000 vertices); a warm index query
 unchanged at 0.0111 s.
+
+Collections (R7, 1 October 2026). Before this repair a stored or imported
+collection of two overlapping 2 m squares was admitted with an area of 8 m² where
+the squares cover 7 m²; two overlapping chart squares on the unit sphere reported
+0.0738 sr for 0.0645 sr. A repeated member doubled its area and was then accepted
+by overlays that treated it as counted once. Two overlapping traces reported 4 m
+for 3 m, and a trace inside or along a member polygon added its length to the
+perimeter. The overlapping polygons and the overlapping traces were already
+refused when written as a MultiPolygon or a MultiLineString. All of these
+collections are now refused on every route that builds geometry: `from_wkb`,
+`from_projected_wkb`, `load_geometry`, pickle restoration, `in_chart` and the
+private constructors. Admitted shapes keep their bytes, identifiers and measures;
+no stored shape is rewritten and the schema is unchanged. Only a generic
+`save_geometry` store entry, a pickle or imported WKB holding such a collection
+changes from accepted to refused; nothing is migrated. The boundary-network,
+geological-case, W08 checkpoint and underthrust-history restores already refused
+every collection by its kind.
+
+Two consequences were accepted when the repair was dispatched. First, a
+collection whose polygons share an edge is refused although its area was correct
+(see the rule under "Topology versus metric"). Second, a collection whose point
+contact is not a shared vertex (a corner, or a trace end, lying on another
+member's edge) still restores, but `in_chart` may now refuse it. A new chart
+rounds each vertex separately, which can push the contact across the edge, and
+the result is then an overlap. Polygon members with such a contact were already
+refused this way as a MultiPolygon; before the repair the collection was returned
+with the overlap admitted.
+
+The independent check of the repair found the second consequence to be wider
+than that. The wider part was not among the consequences accepted at dispatch
+and is recorded here as a known limit. `in_chart` can also refuse a real overlay
+output, whether or not its members meet at a shared vertex. A shared vertex stays
+shared (equal coordinates mapped to equal coordinates in every case checked on
+the tested Windows runtime), and two members that meet only there, with their
+edges leaving it at an open angle, were moved without refusal in every case
+tried. The exception arises when the operands reached the overlay through a
+chart other than the one they were defined in, so that coordinates meant to
+coincide differ in their last bits. The exact overlay then keeps what coincident
+inputs would have merged: a trace that starts one or two rounding steps along a
+polygon's edge from its corner, or that ends or runs just outside an edge at a
+rounding-size distance, sometimes beside the whole edge. In the stored
+coordinates that trace shares no length with the polygon, so the collection is
+admitted. Rounding in one more chart can put the trace inside the polygon, and
+the move is then refused.
+
+A seeded sample on the tested runtime applied the four set operations to a
+rectangle and a trace, both on a 1/16 lattice restored in one chart, and moved
+each mixed output to four random charts about 0.1 rad away. With both operands
+left in the chart they were defined in, on exactly representable coordinates,
+none of 22,832 moves was refused. With the trace alone first moved to a random
+chart, the collection rule refused 274 of 23,088 moves; with both operands first
+moved to one common chart, 375 of 22,912; with both first moved to different
+charts, 372 of 23,064. In 89, 174 and 134 of those the members met at a shared
+vertex. A further 374, 195 and 236 moves in the same three samples were refused
+for reasons that applied before the repair (a vertex collapsing onto its
+neighbour, a ring repeating a vertex, an invalid polygon, a self-crossing trace,
+a degenerate spherical edge). The sample is built to produce collinear contacts;
+it is not an estimate for other inputs. Before the repair 272, 373 and 368 of
+the moves that the rule now refuses were returned with the trace inside or along
+the polygon, for up to 0.26 in chart coordinates where the shapes are a few
+tenths across.
+
+Callers that explicitly require a pure area or line cannot move a mixed
+collection. The generic `SphericalGeometry.overlay` method has no such kind
+restriction and can rechart mixed operands internally; these refusals are not
+limited to explicit public `in_chart` calls. GEOS also refuses mixed collections
+as overlay operands in all but trivial cases where the operands' bounding
+boxes are apart (22,665 of 22,860 sampled overlays of two mixed outputs held in
+different charts, before and after the repair; the rule turned one of the other
+195 into a refusal). The public `in_chart` is therefore where the change is
+seen. A spherical overlay tries its operands' charts in turn and then a joint
+chart, so a refused move there normally shows as the result being built in the
+other operand's chart; the overlay is refused only if none of those charts
+admits both operands.
+
+Atlas adds no tolerance, so a contact has to be exact in binary64 to count as a
+point contact. A trace written to start at (0.3, 0.7), on the edge x + y = 1 of a
+triangle, does not start on that edge once the decimals are stored. As binary64
+values 0.3 and 0.7 sum to slightly less than one, so the trace starts just inside
+the triangle, shares a rounding-size length with it, and the collection is
+refused. Being exact is necessary but not always sufficient, because GEOS's
+predicates are robust floating-point tests, not exact arithmetic. In a sample of
+44,970 contacts that rational arithmetic on the stored doubles shows to be exact
+(a point lying on a polygon's edge, tried both as the corner of a second polygon
+and as the end of a trace, with everything else strictly outside), GEOS 3.13.1
+refused 54 in both forms. All 54 were among the 10,432 contacts placed a quarter
+of the way along an edge between full-precision coordinates; none was refused
+among 14,911 placed at the midpoint or among 19,627 on lattice or decimal-grid
+coordinates. Each of the 54 is refused in the same way when the two polygons are
+written as a MultiPolygon, before and after the repair, so the collection rule
+adds no new kind of refusal. The error was found on that side only: none of
+15,113 corners placed one or two units in the last place inside a polygon was
+admitted, none of 14,833 placed as far outside was refused, and none of 30,280
+contacts at a shared vertex between full-precision coordinates was refused.
+These are samples on the pinned GEOS 3.13.1, not a proof.
+
+`tests/test_w01_geometry_corrections.py` (`CollectionRuleRegressions`) checks the
+refusals on each route, the unchanged kind, measures and bytes of admitted
+collections, fixed and sampled real overlay outputs, an exact and an inexact point
+contact, an exactly collinear contact judged as its MultiPolygon is, closed
+traces, the rechart behaviour for un-noded contacts and for two recorded overlay
+outputs, the pair limit and batch independence. Scratch probes run for the repair
+with the same seeds before and after (not retained as tests) gave identical
+counts for 61,279 planar and spherical overlays, 19,028 of them emitting a
+collection, and for 12,345 recharts of collection outputs. In those probes the
+operands either shared one chart on exactly representable coordinates or crossed
+each other at open angles; none had edges or vertices that were meant to
+coincide and had been rounded apart by an earlier chart move. That is a sample,
+not a proof that no overlay output can be refused after rounding; the sample
+above, which has such operands, shows that some are.
+
+Only collections pay for the rule: one validity pass over their polygons, one
+simplicity pass over their traces and one relation for each neighbouring
+trace/polygon pair. Its transient multipart copies, spatial index and candidate
+indices are not separately charged to the work budget; the vertex and pair limits
+bound them (16 MiB of traced scratch was measured for a 2,000-member collection
+with one million candidate pairs, the default pair limit). The same two limits
+bound the time, which in the worst case is far above that of an overlay output
+with a few members. A valid collection built so that every trace's bounding box
+meets every polygon's pays one relation for every pair. In a matched scratch
+measurement on the tested Windows runtime with the machine otherwise idle (2
+October 2026; two runs per tree, each the median of three restores; not an
+evidence receipt), restoring 1,000 polygons with 1,000 traces (one million
+pairs) took 2.1 s against 0.11 s before the repair; 12,000 small polygons with
+80 traces of 220 vertices (960,000 pairs) 6.1 to 6.3 s against 0.8 s; and
+11,800 small polygons with 80 traces of 660 vertices (944,000 pairs, 100,000
+vertices) 8.2 to 8.4 s against 0.8 s. A spherical restore validates a shape
+three times (when its bytes are parsed, as a spherical shape and as its planar
+record) and so pays the rule three times: 6.5 s against 0.4 s and 19.1 to
+19.6 s against 3.3 s for the first two shapes. Ordinary collections pay far
+less: 5,000 squares restored in 0.40 s against 0.33 s, and 5,000 squares with
+5,000 touching traces in 0.66 s against 0.53 s. This time is spent inside
+validation, which has no cancellation point and is not charged to the work
+budget. A valid collection with more than `max_overlay_pairs` neighbouring pairs
+is refused where it was admitted before, and only after the pairs below the
+limit have been compared (2.1 s for 1,001,000 pairs in the same runs). That
+execution limit was
+introduced by the repair; its dispatch did not name it. The GEOS behaviour
+relied on (collection validity is per member; a constructed intersection can lose
+a rounding-size overlap; relating two many-part sets at once is quadratic; the
+predicates are robust but not exact) was observed by running the pinned Shapely
+2.1.2 and GEOS 3.13.1. No new source was consulted for this repair.
 
 Primary method references:
 - Shapely 2.1.2 STRtree: https://shapely.readthedocs.io/en/2.1.2/strtree.html
@@ -869,8 +1075,32 @@ input consistency checks, not error limits for later physical integrations.
 Initial thermal data can be unknown, constant, tabulated (linear, no extrapolation)
 or the existing half-space initial condition. Half-space cooling-start time is in
 the named case epoch and independent of cohort formation. Both dates must not lie
-in the future; table coverage must reach the assigned column base. No temperature
+in the future; table coverage must reach the represented column base. No temperature
 profile is evaluated during description construction. W03 evolution is not present.
+
+The represented column base is the deeper of two depths: the declared lithosphere
+thickness, and the last layer edge, which is the running sum of the bulk layer
+thicknesses from the surface down. Stage 5 samples layers between those edges. The
+two depths need not be equal, for two reasons. The declared thickness has only to
+match the correctly rounded sum of the layers within the 1e-12 relative stack
+tolerance, so the last edge can lie shallower or deeper than the declared base by
+anything up to that tolerance, which is 1e-7 m on a 100 km column: layers of 0.1 m
+and 0.2 m end at 0.30000000000000004 m under a declared 0.3 m, one rounding unit
+apart, and layers of 40 km and 60 km end at 100000 m under a declared
+99999.99999995 m, 5e-8 m (3436 rounding units) apart. The edges are also added one
+layer at a time, so with three or more layers the last edge can differ by one or
+more rounding units even from a declared thickness that is exactly that rounded sum:
+layers of 0.1 m, 0.2 m and 0.3 m end at 0.6000000000000001 m under a declared 0.6 m.
+A table that stops short of the deeper depth is refused here, naming the column.
+Before R7 (1 October 2026) a table that reached the declared thickness but stopped
+short of a deeper last edge passed this stage, could be saved, and was refused only
+when the precursor state was built, in words that named a body although the failing
+unit was a column layer; that later refusal now names the unit kind, its owner and
+the layer. A case saved before R7 with such a table is now refused when it is
+restored, because restoration rebuilds the description through this check. Nothing
+is relaxed: both stages compare the table end exactly, the stack tolerance never
+excuses a short table, no temperature is extrapolated at either stage, and a case
+refused here could never have been sampled.
 
 All candidate matches are retained in a precedence receipt. Highest-first supplied
 province precedence chooses one complete column only for a point already known to

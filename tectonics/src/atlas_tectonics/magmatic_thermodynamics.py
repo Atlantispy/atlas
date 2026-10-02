@@ -114,7 +114,8 @@ class MagmaticThermalState:
 
     Empty nodes require exactly zero enthalpy and have T=f=None. A node with
     zero total latent heat has a defined T but f=None and phase='single_phase':
-    enthalpy supplies no phase information for a zero-cost transition.
+    enthalpy supplies no phase information for a zero-cost transition. A transfer
+    plan judges such a node's declared source kind by T against Tm instead.
     """
     component_ids: tuple[str, ...]
     thermodynamics_id: str
@@ -307,6 +308,9 @@ def melt_source_fraction(component_mass_kg, enthalpy_j, fraction, external_heat_
     from an equilibrated mixed node. Empty, already-molten, mixed-phase and
     zero-latent/phase-ambiguous sources are refused. Use ordinary bulk transport
     for already-liquid material; calling this again on the liquid is an error.
+    The zero-latent refusal holds at every temperature, because no latent cost
+    exists to pay; a transfer plan's temperature test of a declared source kind
+    does not make such a node convertible here.
     """
     _cancel(cancel)
     shape = _shape(component_mass_kg, enthalpy_j, thermodynamics)

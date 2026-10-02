@@ -2,8 +2,10 @@
 
 SPDX-License-Identifier: AGPL-3.0-only
 
-Arrays retain their native immutable backing. Mixed-unit arrays carry ordered
-column specifications; unknown values retain their producer's validity masks.
+Arrays retain their native immutable backing. Mixed-unit arrays carry an ordered
+units list, one unit per entry of the last axis. Where a specification also names
+those columns it lists one {name, units} row per column, in the same form on
+every route. Unknown values retain their producer's validity masks.
 The caller owns retained output memory and authenticates the producing workflow.
 An export is descriptive data, not proof of scientific acceptance or a checkpoint.
 """
@@ -243,12 +245,15 @@ def _extension(out, port):
 
 def _ocean(state, port):
     phases = state.cell_values.shape[1]-5
-    units = ['K']*phases+['kg/m2','m','m','J/m2','J/m2']
-    columns = ['phase_temperature_'+str(i) for i in range(phases)]+[
-        'thermal_sheet_anomaly','downward_subsidence','water_depth','outward_top_heat','outward_base_heat']
+    # The same {name, units} rows as W04 and W05 (routes w06-*.v2); v1 listed
+    # bare column names beside a separate units list.
+    columns = [dict(name=name, units=unit) for name, unit in (
+        *(('phase_temperature_'+str(i),'K') for i in range(phases)),
+        ('thermal_sheet_anomaly','kg/m2'), ('downward_subsidence','m'), ('water_depth','m'),
+        ('outward_top_heat','J/m2'), ('outward_base_heat','J/m2'))]
     for name in ('cell_values','centre_values'):
         mask = 'state.ocean_fraction' if name == 'cell_values' else 'state.centre_valid'
-        port.add('state.'+name, getattr(state,name), units=units, columns=columns,
+        port.add('state.'+name, getattr(state,name), units=[x['units'] for x in columns], columns=columns,
             support='occupied-ocean cell means' if name == 'cell_values' else 'cell-centre points',
             owner='W06 cooling and single thermal support',
             known=dict(kind='positive-mask' if name == 'cell_values' else 'mask', mask_field=mask,
@@ -280,17 +285,20 @@ def _ocean(state, port):
 def _w06(out, port):
     state = out.state
     if type(state) in (SpreadingThermalState, HistoryThermalState):
-        kind = 'constant' if type(state) is SpreadingThermalState else 'history'
+        # v2 (R7): the column-list form of the two ocean matrices changed, so the
+        # published route names changed with it. assembly.publish_workflow_output
+        # names the same two routes for its native-owner requirement.
+        route = 'w06-constant.v2' if type(state) is SpreadingThermalState else 'w06-history.v2'
         md = _ocean(state, port)
     elif type(state) is MarginSupportResult:
-        kind = 'margin'
+        route = 'w06-margin.v1'
         for name in ('depth_edges_m','mean_temperature_k','initial_reference_temperature_k','temperature_change_k','outward_heat_j_m2'):
             port.add('state.thermal.'+name, getattr(state.thermal,name),
                      support='source depth edges/layer means; heat vector is outward top/base', owner='W06 inherited margin')
         md = _public(state)
     else:
         raise TectonicsError('unsupported W06 checkpoint state type')
-    return kind, dict(checkpoint_id=out.checkpoint_id, output_index=out.output_index, state=md)
+    return route, dict(checkpoint_id=out.checkpoint_id, output_index=out.output_index, state=md)
 
 
 def _w08(out, port):
@@ -369,8 +377,8 @@ def describe_workflow_output(output):
     elif cls is ExtensionWorkflowCheckpoint:
         route, identity, descriptor = 'w05-extension.v1', output.checkpoint_id, _extension(output,port)
     elif cls is W06WorkflowCheckpoint:
-        kind, descriptor = _w06(output,port)
-        route, identity = 'w06-'+kind+'.v1', output.checkpoint_id
+        route, descriptor = _w06(output,port)
+        identity = output.checkpoint_id
     elif cls is W07WorkflowOutput:
         receipt = output.descriptor()
         if receipt['route'] not in ('steady','thermal','surface'):

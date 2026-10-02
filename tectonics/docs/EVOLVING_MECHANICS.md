@@ -90,6 +90,56 @@ identical request still verifies live source identity. Only one current operator
 and latest response are retained. Geometry, boundary types and pressure convention
 changes need a new plan, not a silently reused incompatible operator.
 
+**An interrupted viscosity change no longer breaks the plan (R7 repair, 1 October
+2026 candidate).** A coefficient change can be cancelled, or fail, at three kinds
+of moment: before the numeric refill starts, during it (including after the solver
+core has taken the new coefficients but before the operator records them), and at
+the operator's closing cancellation/source check, after the change was accepted.
+The same exception type can come from all three, so the exception does not say
+which material the operator holds. Before the repair the interface assumed it
+still held the previous one and kept the operator whatever had happened:
+
+- after a cancellation or failure during the refill it held an operator that
+  [refuses every operation](W07_HETEROGENEOUS_THERMAL.md), so every later request
+  was refused, and a tectonic history on this route could not resume;
+- after a cancellation at the closing check it held the new material under the
+  previous material's label, so the next request carrying the previous material
+  skipped the refill and was solved, and published without error, using the new
+  viscosity.
+
+The interface now treats its material label as unknown from the moment it asks
+for a change until that change returns. If the change raises and left the
+operator invalid (its `usable` property is False), the interface closes it,
+releases its storage and prepares a new operator from the next request's
+material. If the change raises but the operator is still usable, the operator's
+own record names the material it holds, old or new; the next request reads the
+label back from that record and asks for a change only if its own material
+differs. The operator's own rule is unchanged: nothing is rolled back and an
+interrupted operator is never used again.
+
+A replacement operator must carry the execution identity of the plan's first
+operator. If the source changed in between, the request is refused and a new plan
+is needed; a replacement is never adopted under different source bytes.
+
+What this costs and changes:
+
+- The replacement is a cold preparation, not a refill, and the operator's retained
+  allowance is released in between. It publishes the same bytes and identifiers
+  as an uninterrupted change; the focused tests compare them.
+- `statistics()['preparations']` can exceed one. `statistics()['mechanics']` is
+  `None` while no operator is held, which can now also happen after the first
+  preparation: from a failure that released the operator until a request has
+  prepared a new one. A failure that leaves the operator usable keeps its
+  statistics, and a new operator's counters start at zero.
+- While the source differs from the first preparation, each refused request still
+  pays for one preparation before it is refused.
+- After a change that raised but left the operator usable, the next request reads
+  the operator's descriptor once. It makes no extra coefficient comparison,
+  reservation or source check. A budget that is too small to admit a coefficient
+  change therefore still serves the unchanged material after a refused change,
+  as it did before the repair; a focused test holds this at the smallest budget
+  that admits the fixture's preparation and solve.
+
 These inputs can describe successive supplied states. There is no interpolation,
 transport, integrated displacement or invented geological history between them.
 Joined histories and persistent continuation belong to the next tectonics step.
@@ -108,6 +158,27 @@ material/thermal/mechanical producers, not an implicit law in this interface.
   cancellation and shared reservation release.
 - Nine shared execution-identity checks pass (2.275 s). Static safety passes
   13 source maps / 41 paths and 31 tests (0.110 s; one environmental skip).
+
+**Repair note (R7, 1 October 2026 candidate).** The counts and times above are
+the 23 September record and are not rewritten. The interrupted-viscosity-change
+repair adds eight regional-input methods in their own class of
+[the same module](../tests/test_evolving_mechanics.py): cancellation at every
+cancellation check of a coefficient change, with the previous and the new
+material then solved exactly and with the identifiers an uninterrupted plan
+publishes; a cancellation, a factorisation failure and an interruption that is
+not an ordinary exception (as a keyboard interrupt is) inside the refill, each
+followed by a released operator and a replacement; a cancellation just after an
+accepted change; a cancellation before the refill and a budget-refused change,
+which both keep the operator and still serve the unchanged material; byte parity
+between a replacement operator and an uninterrupted change; and two checks that
+a replacement is refused under another execution identity. One added
+[tectonic-history method](../tests/test_tectonic_history.py) resumes a stored
+regional history after a cancellation inside a coefficient refill, with outputs
+equal to an uninterrupted run. Cancellations and failures are injected through
+cancel tokens and through attributes of the one operator object; the changed
+source is emulated as the existing source-drift method does it. These were run
+in the repair's scratch candidate on Windows/CPython 3.12.14 only; no timing is
+recorded here and nothing is claimed for other platforms.
 
 The unchanged-load/changed-rigidity control explicitly distinguishes the correct
 two-equilibrium calculation from the incorrect current-operator load-delta route.

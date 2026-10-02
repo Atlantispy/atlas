@@ -18,6 +18,17 @@ The [Step 1 specification](W07_REGIONAL_MECHANICS.md) and
   Identical coefficients retain factors; identical definition retains the latest
   verified result. Changed provenance invalidates result reuse. Failed numeric
   refill leaves the public plan unusable until closed and rebuilt.
+  Since the R7 repair (1 October 2026 candidate) the refusal says so: "regional
+  plan invalidated by an interrupted coefficient refill; close it and prepare a
+  new plan". Before, it read as a closed, active or wrong-thread plan. That older
+  refusal is still tested first, so a call made while a refill is running is
+  refused as active, not as interrupted. A read-only `usable` property is False
+  once the plan is closed or invalidated, and while a numeric refill is running.
+  An exception from a coefficient update does not say which material the plan
+  holds: it can come before anything changed, from inside the numeric refill, or
+  from the closing cancellation/source check after the new material was accepted.
+  Callers read `usable`; when it is True the descriptor and plan ID name the
+  material held. Nothing is rolled back, and the invalid state is not cleared.
 - `regional_rheology.py`: explicit Kelvin/depth/rate scales and retained Tosi
   temperature/depth/plastic laws and BF23 fixed-damage snapshots. Both temperature
   supports and, for BF23, both damage supports are supplied. Tensor components
@@ -33,6 +44,22 @@ The [Step 1 specification](W07_REGIONAL_MECHANICS.md) and
   physical minus mesh velocity. Material rectangles move at physical velocity,
   retain finite exterior stocks and sharp geometry, and use exact space-time
   intersections for gross inflow/outflow, including complete throughflow.
+  A prescribed face temperature shapes the limited advective normal slope only
+  on inward relative faces; it must equal the inflow temperature there or the
+  step is refused. On outward faces, the slope comes from the adjacent interior
+  cell only when that inner face also carries fluid towards the boundary (or is
+  stationary). This one-sided extrapolation preserves affine through-outflow.
+  It falls back to a constant normal reconstruction at closed faces, where both
+  normal faces export during a turn, or when extrapolation would be nonpositive.
+  Thus a conducting wall cannot change the advective reconstruction on a closed
+  or outward face. Its heat enters through the half-cell conductive flux.
+  The existing `2*outgoing` timestep allowance covers the extra half-slope loss;
+  shared interior fluxes, SSP-RK2 accounts and all acceptance tolerances remain
+  unchanged. No temperature is clipped after an update. At zero conductivity
+  the wall temperature does not widen the source-free maximum-principle bounds;
+  at positive conductivity it remains a legitimate conductive bound. The
+  focused regressions cover both extrema on every side, closed and turning
+  outflow, zero/subnormal/tiny conductivity, affine outflow and heat closure.
 - `regional_thermomechanical.py`: a public interval joining start mechanics,
   heat/material transport and endpoint mechanics from the changed temperature.
   One detached initial temperature feeds both stages. The named linear
@@ -134,6 +161,19 @@ and `tectonics/tests` on PYTHONPATH. Named modules: `test_regional_heterogeneous
 `test_w07_thermomechanical`, `test_regional_execution`, and
 `test_execution_reuse.IdentityTests`. No Linux execution claim.
 
+**Repair note (R7, 1 October 2026 candidate).** The table and counts above are
+the 23 September record and are not rewritten. The interrupted-refill repair
+adds three methods in their own class of `test_w07_material_execution`: the
+interrupted plan refuses `solve`, `coordinates` and `update_viscosity` with the
+new text until it is closed, and afterwards as closed; a call made during a
+healthy refill, from the driving thread and from another thread, is refused as
+active while `usable` reads False, the refill then completes, and `usable` reads
+True until that never-interrupted plan is closed and False afterwards; and one
+exception type raised before, during and after the numeric refill leaves three
+different states that only `usable` and the descriptor tell apart. The existing
+`test_refill_failure_is_closed_to_scientific_reuse` is unchanged and still
+passes. Run in the repair's scratch candidate on Windows/CPython 3.12.14 only.
+
 Initial bridge failures were missing reader labels, scalar/zero-dimensional array
 conversion, scalar hash handling, JSON infinity, and an exact-equality assertion
 on accumulated floating-point origin. They were corrected without changing
@@ -187,6 +227,11 @@ escalated invocation completed. No historical report was overwritten.
 - [Clawpack solver documentation](https://www.clawpack.org/pyclaw/solvers.html)
   and [ASPECT 3.0 ALE documentation](https://aspect-documentation.readthedocs.io/en/v3.0.0/user/methods/freesurface/arbitrary-le-implementation.html):
   conservative reconstruction/time stepping and physical-versus-mesh velocity.
+- For the R7 heat-boundary correction, the [Clawpack boundary documentation](https://www.clawpack.org/bc.html)
+  and solver page above were consulted on 2 October 2026 for outflow extrapolation
+  and reconstruction context. The conditional interior one-sided slope and its
+  constant fallback described above are an Atlas derivation, not Clawpack's
+  copied-cell ghost-boundary algorithm or a newly checked external benchmark.
 
 No external framework was installed or executed; no generated third-party solver
 source was copied. **Next: Step 4 surface/strength response**, with real moving

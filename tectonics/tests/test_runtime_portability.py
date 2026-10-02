@@ -124,3 +124,39 @@ class InterpreterPortabilityTests(unittest.TestCase):
         self.assertTrue(target.is_file())
         self.assertFalse(target.is_symlink())
         self.assertEqual(target, Path(sys.executable).resolve(strict=True))
+
+
+class LoadedBinaryReuseTests(unittest.TestCase):
+    """R7 (s01-3): a loaded binary is hashed once per process, for every backend.
+
+    The former 16-entry cache was smaller than the scipy and numba binary sets,
+    so each new context of those backends evicted and re-read its own files.
+    Every cache miss is exactly one _file_hash call. Nothing is patched, so the
+    loaded-implementation inventory of a live context is left undisturbed.
+    """
+    def setUp(self):
+        reuse._loaded_binary.cache_clear()
+        self.addCleanup(reuse._loaded_binary.cache_clear)
+
+    def test_repeated_runtime_record_hashes_no_file(self):
+        for backend in ('reference', 'scipy', 'numba'):
+            with self.subTest(backend=backend):
+                reuse._loaded_binary.cache_clear()
+                first = reuse._runtime_record(backend)
+                cold = reuse._loaded_binary.cache_info().misses
+                # The cold record really read its files; some entries share one.
+                self.assertGreater(cold, 0)
+                self.assertLessEqual(cold, len(first['binaries']))
+                self.assertEqual(reuse._runtime_record(backend), first)
+                self.assertEqual(reuse._loaded_binary.cache_info().misses, cold)
+
+    def test_second_execution_context_hashes_no_binary(self):
+        # The public entry point; W12 publication opens one scipy and one numba
+        # context per product (assembly._verify_native_bindings).
+        for backend in ('scipy', 'numba'):
+            with self.subTest(backend=backend):
+                with reuse.ExecutionContext(backend) as first:
+                    hashed = reuse._loaded_binary.cache_info().misses
+                    with reuse.ExecutionContext(backend) as second:
+                        self.assertEqual(second.identity, first.identity)
+                    self.assertEqual(reuse._loaded_binary.cache_info().misses, hashed)

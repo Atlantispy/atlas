@@ -1452,9 +1452,41 @@ completed outputs and allocator/interpreter baselines need additional headroom.
 Excess requests fail rather than changing precision, law, history or resolution.
 The complete request's count bound applies before jobs are submitted. A failed
 or cancelled worker aborts siblings and drains active native work before releasing
-reservations; a failed request does not poison the pool. Closing a live plan or
-its executor from the wrong driving thread is refused without discarding its
-live reservation. No unbounded task queue is added.
+reservations; a failed request leaves the plan usable, and its executor is closed
+with it. Closing a plan while an evaluation is active is refused without discarding
+its live reservation. No unbounded task queue is added.
+
+**R7 repair (1 October 2026): the executor belongs to the evaluation, not the plan.**
+Before this repair the first threaded `evaluate` created an executor lazily and the
+plan kept it until close. That tied the plan, the process-wide native-thread limit
+and the pool's CPU slots to whichever thread made that call: other threads were
+refused, and the plan could not be closed once that thread had gone. A first
+threaded call that was itself refused, for example while another thread held the
+native-thread lease, left an executor that had never started, and every later
+threaded call on that plan was refused as well. Now each threaded evaluation
+creates, drives and closes its own executor on the calling thread. An idle plan
+holds no worker pool, CPU slot or native-thread limit and may be closed from any
+thread; a close is refused only while an evaluation is active. Any thread may make
+a threaded evaluation, one at a time: an overlapping call on the same plan is
+refused, as before, not queued, and this adds no wider thread-safety guarantee.
+While another live thread holds a native-thread lease, or the calling thread holds one
+with a different inner-thread count, the evaluation raises the executor's existing
+`TectonicsError` before any job is submitted, releases its reservation and leaves
+the plan usable. So does an evaluation whose pool would exceed the CPU slots left
+by executor pools the calling thread already holds.
+The accepted cost is that the worker pool is rebuilt, and the
+native-thread limit set and restored, for every threaded evaluation; no timing of
+that cost is recorded here. The normal serial route creates no executor and is
+unaffected. `execution_statistics` is `None` until the first threaded evaluation
+and then describes the last one only, including one that failed or was cancelled
+after its executor started: its job counts and executor peak are no longer totals
+over the plan's lifetime, and its shared-budget entry is read when the property is
+read. In a run of `check_constitutive_r3.py` made after this repair, the
+thread-mode "reused" calls are repeat calls on one prepared plan, each building and
+closing its own executor; the timings recorded for this section were taken while
+the plan kept one pool across those calls, and are not rewritten and were not
+re-measured here. Scientific outputs are unchanged. The package identity, and with
+it every plan and result identity, changes as it does for any source edit.
 
 New loaded modules participate in the existing callable/source inventory. The
 SciPy LAPACK binary is recorded for the banded solver alongside existing SciPy
@@ -1510,7 +1542,7 @@ change. R2 is delivered within its registered envelope; R3 remains unstarted.
 
 The Python executable path is resolved strictly before hashing its regular-file
 target. This supports linked and copied virtual-environment launchers. Only the
-interpreter receives that treatment, including the built-in `math` fallback.
+interpreter path receives that treatment, including the built-in `math` fallback.
 Source files, reference data and binary extensions keep their existing symlink
 refusals. Broken/cyclic interpreter links and non-files fail explicitly. Hashes
 identify binary content rather than absolute installation paths; the existing
@@ -1518,6 +1550,25 @@ process-lifetime immutability assumption for loaded binaries is unchanged.
 This is runtime provenance, not a defence against arbitrary hostile process edits.
 See [environment setup](../README.md#environment) for the independent tectonics
 venv; the older source-only bootstrap is not its dependency environment.
+
+**Correction (R7, 1 October 2026): the hashed file need not contain the
+interpreter.** The paragraph above reads as if the interpreter's own bytes entered
+the runtime identity. On Windows they do not. In the pinned environment
+`sys.executable` is the virtual environment's `python.exe`, a 277,808-byte copied
+launcher. It is a regular file, so resolving it changes nothing, and it is the
+file that is hashed. The process itself runs the base `python.exe` (107,312
+bytes), which is only a stub that loads `python312.dll` (6,985,520 bytes, the
+module at `sys.dllhandle`); that DLL holds the interpreter and its built-in
+modules. Neither of those two files is hashed. Built-in `math` has no file of its
+own, so the record's `math` entry repeats the launcher's hash and adds nothing.
+On Windows the interpreter's identity therefore rests on the recorded
+`sys.version` string (version, build date and compiler): two builds that report
+the same string, or an edited DLL, share one runtime identity. Extension modules
+(NumPy, SciPy, Numba, Shapely and its bundled GEOS libraries) are still hashed as
+files. What is hashed did not change in R7: hashing the DLL would change the
+Windows runtime identity and is left as a separate decision. Only
+Windows/CPython 3.12.14 was examined; the same gap applies wherever the
+interpreter lives in a shared library and not in the resolved executable.
 
 ### Delivery and evidence policy
 
@@ -1605,10 +1656,47 @@ The existing `ExecutionPolicy` defaults remain two workers (or fewer if only one
 CPU is available), at most four queued/in-flight tasks, and one inner native
 thread. Explicit one-worker policies remain serial. A prepared native index is
 shared in-process, not pickled to spawned workers; requesting that unsupported
-process mode is refused. A pool is created lazily on the driving thread and
-reused. The executor must be driven/closed from that same thread; small independent
+process mode is refused. Each threaded request creates, drives and closes its own
+executor on the calling thread, inside the plan's dispatch lock. Small independent
 serial readers still share the immutable prepared state. No second scheduler or
 unbounded worker queue was introduced.
+
+**R7 repair (1 October 2026): the executor belongs to the request, not the plan.**
+Before this repair the first threaded request created a pool lazily and the plan
+kept it until close. That tied the plan, the process-wide native-thread limit and
+the pool's CPU slots to whichever thread made that request: other threads were
+refused, and the plan could not be closed once that thread had gone. Now the
+executor ends with the request. An idle plan holds no worker pool, CPU slot or
+native-thread limit and may be closed from any thread; a close is refused only
+while a call is active. Threaded requests on one plan take turns under the dispatch
+lock. They are serialised, not run in parallel, and this adds no wider
+thread-safety guarantee. A request still waiting for its turn is not yet active:
+a close made then succeeds, and the waiting request is refused because the plan
+is closed. The native-thread limit is set when a threaded request
+starts its jobs and restored when they end, so it changes once per threaded request
+instead of once per plan; a compatible lease already held by the calling thread is
+shared for the request and left in place. While another live thread holds a
+native-thread lease, or the calling thread holds one with a different inner-thread
+count, the request raises the executor's existing `TectonicsError` before any job
+is submitted, releases its reservation and leaves the plan usable. So does a
+request whose pool would exceed the CPU slots left by executor pools the calling
+thread already holds. A threaded
+request is therefore refused, not queued, while a threaded request on another plan
+is running on a different thread. The refusal arrives after input capture and, for
+cells, after whole-request validation. The accepted cost is that the worker pool is
+rebuilt, and the native-thread limit set and restored, for every threaded request;
+no timing of that cost is recorded here.
+`execution_statistics()` describes one dispatch only, as its contract already
+said: `peak_inflight` and `accounted_executor_peak_bytes` are no longer maxima over
+the plan's lifetime. It is the last dispatch that was recorded, which is not always
+the last request. A serial request writes the record when it is routed; a threaded
+request writes it only once all its jobs have completed. A threaded request that
+fails, is cancelled or is refused therefore leaves the earlier record in place, as
+it did before this repair. The local-law plan differs: its record also describes a
+threaded evaluation that failed or was cancelled
+([R3 execution notes](#3cr3-execution)). Scientific outputs are unchanged. The
+package identity, and with it every plan and sample identity, changes as it does
+for any source edit.
 
 The prior-evaluation native batch default is 32,768 rather than 4,096 points.
 This changes scheduling/scratch, not per-point mode summation or numerical order;
@@ -1636,7 +1724,8 @@ queries. Original errors and the explicit non-additive opt-in remain. Ordered
 assembly shifts sparse offsets and phase-to-row references without re-summing a
 physical cell in a different order. Shared thermal means remain call-local and
 bounded. Worker failures/cancellation abort siblings and drain native work before
-reservations are released; the pool can be reused after the failed request.
+reservations are released; the plan can be reused after the failed request, whose
+executor is closed with it (R7, 1 October 2026).
 
 Execution configuration, worker order and diagnostics do not enter the scientific
 sample identity. The sampling method is versioned `atlas.precursor-sampling.v2`;
@@ -1672,6 +1761,11 @@ sequential cases; setup is not an isolated cold-process startup comparison.
 Timing is not a test gate and is not extrapolated to all meshes or machines.
 No R1 reacquisition, full-world simulation, dependency installation, Windows
 acceptance, physical validation or R3 implementation occurs in this increment.
+
+R7 note (1 October 2026): in a run of this script made after the repair above,
+"reused" calls are repeat calls on one prepared plan, each building and closing its
+own executor. The timings recorded for this section were taken while the plan kept
+one pool across those calls; they are not rewritten and were not re-measured here.
 
 ## Historical revision 25 execution delivery
 
@@ -1961,6 +2055,24 @@ metric is reported independently, with observation scale and unresolved-object
 counts. No single realism score, invented scientific threshold or automatic
 scientific pass is supplied. Realism acceptance remains at the later registered
 process/population gates.
+
+**Repair note (R7, 1 October 2026; not accepted): one purpose for each split.**
+`evaluation_record` already refused a withheld evaluation recorded as calibration.
+It still accepted a development evaluation recorded as `validation`, although the
+registered protocol treats development outlines and motion rows as already
+exposed. It now refuses that pair as well, so each split carries exactly one
+purpose: development with calibration, withheld with validation, and
+source-verification with itself. The registered protocol and its `protocol_id` are
+unchanged, and so is every record with a permitted pair.
+`tools/measure_w01_plate_shapes.py` recorded `validation` for all twelve ranked
+outlines. Eleven of them (PA, AF, AN, NA, EU, AU, SA, SO, NZ, IN, SU) are
+development outlines and only PS is withheld; the tool now takes the purpose from
+the split, as every other caller already did. No committed evidence carries the
+refused pair: a tally of every `split`/`purpose` pair in the JSON files under
+`tectonics/evidence` on that date finds 263 development/calibration and 250
+withheld/validation records and no other pair. That tool's JSON output was never
+committed; [w01-bounded-validation.md](../evidence/w01-bounded-validation.md)
+describes its earlier run and is left as recorded.
 
 ### Optimisation and ownership
 
@@ -2283,7 +2395,23 @@ accuracy and no claim that a successful coarse prior resolves detailed boundarie
 * **Independent outline challenge:** the complete Cocos plate ring, 157 edges plus
   the repeated closure point. Spherical area agrees with the separately printed
   Table 1 area. This tests genuine concavity, perimeter and turning; it is one
-  withheld small-plate outline, NOT the entire Earth's morphology distribution.
+  previously exposed development outline, NOT withheld evidence and NOT the entire
+  Earth's morphology distribution. The generator takes no input from it.
+  (Corrected in R7, 1 October 2026: this bullet and the record's `role` said
+  "withheld" and "held-out", against the registered 3C-R1 split, which marks
+  Cocos previously exposed. The role now reads "previously exposed development
+  outline for numerical/morphology checks; not used to fit generator", so
+  `outline_reference_record()['record_sha256']` changes from
+  `18194b5ee0f1666f3bada259be4b92f9ad012c01ac07f06ec7c0b697328ef387` to
+  `74f49fa952890f94b11534d10145f33607211b36a348ff8ee7f6b397b74bc8cb`;
+  `plate_reference_record` is unaffected. The stored
+  [plate-layout-comparisons.json](../evidence/plate-layout-comparisons.json) is
+  left as recorded and still carries the older label and hash, and a `scope`
+  that calls the outline and the 12-step motion sample "held-out". The script
+  that writes that record,
+  [measure_plate_layout.py](../tests/measure_plate_layout.py), now writes
+  "calibration and previously exposed limited references" there, because the
+  registered split marks both as previously exposed.)
 * **Independent motion sample:** the original signed AF/AN Euler poles and 12
   original boundary steps reproduce the published opening/right-lateral values
   within their rounded source precision. The sign convention is explicit.
@@ -4970,6 +5098,51 @@ Because native thread control is backend-sensitive, explicit threaded matrix run
 are restricted to the tested OpenBLAS/pthreads arrangement; other arrangements must
 select serial or spawn explicitly. Auto does not rely on threaded BLAS rotations.
 
+**R7 repair (1 October 2026): the lease owner is a thread object, and an ended
+owner's lease is recovered.** The owner of the native-thread lease, and each
+executor's driving thread, used to be recorded as a thread identifier. The system
+hands an ended thread's identifier to a later thread, which then passed as the
+owner: it could drive the ended thread's executor and share its lease. A thread
+that ended with an executor still open also left the lease, the native-thread limit
+and the pool's CPU slots held for the rest of the process: every other thread's
+executor was refused, the open executor could not be closed, and garbage
+collection of it returned neither the lease nor the slots. Now the owner is the
+`Thread` object itself. While the owner is alive the rules are unchanged: other
+threads are refused, and only the driving thread drives or closes its executor.
+Once the owner has ended, any thread may close an executor it left open, which
+returns that executor's pool, CPU slots and share; such an executor is never driven
+again. If several threads close it at once, one closes it and the others wait for
+that close, so nothing is returned twice.
+The next thread to take a lease, by entering an executor or through a solver
+plan, also reclaims the lease itself: the
+thread counts that applied before the ended thread's lease are restored, its shares
+and CPU slots are dropped, and a new lease starts for that thread. An
+executor whose lease was reclaimed refuses further use, and closing it returns
+nothing a second time and does not disturb the new lease. Nothing happens at the
+moment the owner ends: the limit stays applied until one of those two events.
+A reclaim leaves the ended thread's idle workers, and any reservation held by a
+stream it left suspended, in place until its executor is closed or collected.
+
+Four cases keep the earlier refusal instead of guessing. Only shares held by
+executors are reclaimed, because only its driving thread can use an executor. A
+share taken directly for a plan's lifetime, as the evolving flexure support does,
+may still be in use from another thread after the thread that took it has ended, so
+other threads stay refused until that plan is closed, which any thread may do. A thread
+that Python's `threading` module did not start is represented by a placeholder
+keyed by its identifier, which CPython 3.12 never reports as ended: such an owner
+is identified no better than before and its lease is not reclaimed. Any owner
+that the interpreter does not definitely report as ended is treated the same way.
+A thread that ends in the middle of a stream can leave jobs running in its pool.
+They cannot be interrupted, and until they are done they occupy the CPU slots that
+pool claimed and run under the ended thread's limit. Its lease is therefore not
+reclaimed while a job it submitted is unfinished: other threads stay refused,
+instead of being admitted beside those jobs with the slot count reset, and are
+accepted once the jobs are done or that executor has been closed, which waits for
+them. Each pool job is registered with its lease for this purpose.
+And an executor left open by a thread that is still alive remains that thread's
+to close. No admission formula, limit or default changes, and no timing is
+recorded for the extra ownership checks or the per-job registration.
+
 Close an iterator on early termination (or exit its executor context). Cancellation
 stops new admission and discards unconsumed results, but cannot instantly interrupt
 a running native operation. Independent outputs already consumed remain outputs;
@@ -5007,6 +5180,26 @@ The execution/invocation schema is versioned to v2. Old entries remain stored bu
 are not repinned into the new schema. Runtime binaries keep the prior explicit
 process-lifetime immutability assumption; this is not a hostile-process sandbox or
 recursively authenticated installation. Hashes/contexts are not geological proof.
+
+**Repair note (R7, 1 October 2026; not accepted): each loaded binary is hashed once
+per process.** The runtime record's binary digests were kept in a 16-entry
+least-recently-used cache. On the pinned Windows environment the reference record
+names 11 distinct files, the SciPy record 17 and the Numba record 19, so the last
+two never fitted: every new context of those backends evicted and re-read its own
+files, 15 files (19,382,272 bytes) per SciPy context and 18 files
+(126,458,160 bytes) per Numba context, and each W12 publication opens one of each.
+The cache is now unbounded. Its keys are the fixed paths of the runtime record
+(about 20), so it does not grow with use, and a repeated record or a second
+context of the same backend hashes no file
+([`LoadedBinaryReuseTests`](../tests/test_runtime_portability.py)). The record's
+content is unchanged; only the repeated reading is removed. One behaviour changes
+with it: a binary replaced on disk while the process runs is no longer noticed by
+a later SciPy or Numba context, as the assumption above already said. Before the
+repair such a context re-read most of its files (15 of SciPy's 17, 18 of Numba's
+19) and took the identity of a replacement among those, although the process was
+still running the binary it had loaded. The figures are
+file and byte counts from a reproducer run in the scratch candidate on
+Windows/CPython 3.12.14; no time saving was measured.
 
 ### 8. Admission, same-request coordination and safe publication
 

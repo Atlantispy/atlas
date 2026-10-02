@@ -44,6 +44,33 @@ class WorkflowPortTests(unittest.TestCase):
                 self.assertIn(spec['known']['mask_field'],port['fields'])
         return port
 
+    def check_columns(self, port):
+        """One column-list form: an ordered {name, units} row per matrix column.
+
+        Every mixed-unit array, named or not, has one unit per last-axis entry.
+        """
+        listed = set()
+        for name, spec in port['field_specs'].items():
+            if type(spec['units']) is list:
+                self.assertEqual(len(spec['units']),port['fields'][name].shape[-1],name)
+                for unit in spec['units']:
+                    self.assertIs(type(unit),str,name)
+                    self.assertTrue(unit,name)
+            if 'columns' not in spec:
+                continue
+            listed.add(name)
+            rows = spec['columns']
+            self.assertIs(type(rows),list,name)
+            self.assertEqual(len(rows),port['fields'][name].shape[-1],name)
+            for row in rows:
+                self.assertIs(type(row),dict,name)
+                for key in ('name','units'):
+                    self.assertIs(type(row.get(key)),str,name)
+                    self.assertTrue(row[key],name)
+            self.assertEqual([row['units'] for row in rows],spec['units'],name)
+            self.assertEqual(len({row['name'] for row in rows}),len(rows),name)
+        return listed
+
     def test_regional_and_columns_preserve_native_state_without_thermal_evaluation(self):
         regional = workflow_fixture(cells=2,length_m=2.)
         port = self.check_port(regional,'w01-w02-regional.v1')
@@ -95,13 +122,75 @@ class WorkflowPortTests(unittest.TestCase):
                 with route_fixture(route,budget=budget,cells=4) as (producer,policy,times):
                     with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
                         out = plan.run(through=0)
-                        port = self.check_port(out,'w06-'+route+'.v1')
+                        port = self.check_port(out,'w06-'+route+('.v1' if route == 'margin' else '.v2'))
                 if route == 'margin':
                     np.testing.assert_array_equal(port['fields']['state.thermal.mean_temperature_k'],out.state.thermal.mean_temperature_k)
                 else:
                     np.testing.assert_array_equal(port['fields']['state.cell_values'],out.state.cell_values)
                     self.assertEqual(port['field_specs']['state.cell_values']['known']['mask_field'],'state.ocean_fraction')
                     self.assertEqual(port['field_specs']['state.heat_accounts_j']['units'][-1],'1')
+
+    def test_every_packed_matrix_lists_its_columns_as_name_and_units_rows(self):
+        # R7 (s01 missed #1): the two ocean routes listed bare column names beside
+        # a separate units list, while W04 and W05 listed {name, units} rows, so a
+        # reader written for one form failed on the other. The ocean routes are
+        # republished as .v2 in the common form. All 17 output forms are described
+        # here, not only the six that carry 'columns' today, so a list in another
+        # form fails on whichever route it appears, and so does a route that gains
+        # or loses a list without the table at the end of this test changing.
+        listed = {}
+        def check(output):
+            port = describe_workflow_output(output)
+            self.assertNotIn(port['route'],listed)
+            listed[port['route']] = self.check_columns(port)
+            return port
+        regional = workflow_fixture(cells=2,length_m=2.)
+        check(regional)
+        check(initialise(regional))
+        reference = initialise(workflow_fixture(cells=8))
+        dry = surface(reference,volumes=np.r_[np.zeros(4),np.full(4,reference.reservoir_fluid_m3/4)])
+        with PreparedW04Support(reference,dry,W04_POLICY) as plan:
+            check(plan.solve(reference,dry))
+        budget = WorkBudget(128<<20)
+        helper = w05_fixture.W05WorkflowTests()
+        with ExecutionContext('reference') as context:
+            helper.context = context
+            with helper.motion(budget) as motion:
+                with PreparedExtensionWorkflow(motion,w05_fixture.POLICY,(0.,1.),budget=budget) as plan:
+                    check(plan.run(through=0))
+        for route in ('constant','history','margin'):
+            budget = WorkBudget(128<<20)
+            with route_fixture(route,budget=budget,cells=4) as (producer,policy,times):
+                with PreparedW06Workflow(producer,times,budget=budget,margin_policy=policy) as plan:
+                    out = plan.run(through=0)
+                    port = check(out)
+            if route != 'margin':
+                # Names, order and units are those of the v1 lists; only the form changed.
+                phases = out.state.cell_values.shape[1]-5
+                rows = [dict(name='phase_temperature_'+str(i),units='K') for i in range(phases)]+[
+                    dict(name=name,units=unit) for name,unit in (
+                        ('thermal_sheet_anomaly','kg/m2'),('downward_subsidence','m'),('water_depth','m'),
+                        ('outward_top_heat','J/m2'),('outward_base_heat','J/m2'))]
+                for name in ('state.cell_values','state.centre_values'):
+                    self.assertEqual(port['field_specs'][name]['columns'],rows,route)
+        for route in ('steady','thermal','surface'):
+            with w07_fixture(route,nx=4,nz=4,thermal=route=='thermal') as plan:
+                check(plan.run(through=0))
+        with w08_fixture(parcels=2) as plan:
+            check(plan.run(through=0))
+        for route in ('underthrust','w04','regional'):
+            with make_history_fixture(route,cells=4,regional_n=4) as history:
+                out = history.run(through=0)
+                check(out)
+                check(out.result)
+        ocean = {'state.cell_values','state.centre_values'}
+        carrying = {'w04-support.v1':{'support.values'},'w05-extension.v1':{'support.cell_means'},
+            'w06-constant.v2':ocean,'w06-history.v2':ocean,
+            'tectonic-history-evolving-w04.v1':{'result.values'},'tectonic-evolving-w04.v1':{'result.values'}}
+        without = ('w01-w02-regional.v1','w03-columns.v1','w06-margin.v1','w07-steady.v1','w07-thermal.v1',
+            'w07-surface.v1','w08-joined.v1','tectonic-history-underthrust.v1','tectonic-underthrust.v1',
+            'tectonic-history-evolving-regional.v1','tectonic-evolving-regional.v1')
+        self.assertEqual(listed,{**carrying,**{route:set() for route in without}})
 
     def test_all_three_regional_snapshot_routes_keep_all_native_fields(self):
         for route in ('steady','thermal','surface'):

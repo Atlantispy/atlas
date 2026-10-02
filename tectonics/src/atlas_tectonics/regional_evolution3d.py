@@ -53,7 +53,13 @@ class PreparedRegionalEvolution3D:
     Composition changes buoyancy, not reference mass. Temperature, depth, strain
     rate and (for BF23) carried damage determine viscosity at all Gauss points.
     Temperature and damage are cell averages, piecewise constant at those points.
+    Depth is the distance down from the box top divided by ``depth_scale_m``, so
+    the top face is depth zero; ``vertical_datum`` is recorded only and does not
+    move that origin. There is no top-depth input.
     Pressure and supplied tractions are dynamic (reference hydrostatics removed).
+    Every mechanical solve starts its constitutive iteration from zero strain
+    rate (recorded as ``constitutive_start``): a result depends on its state and
+    driving, never on what this plan solved before or on a refused advance.
     ``mechanics_method='auto'`` (the default) lets each prepared Stokes operator
     choose multigrid or gmres. The definition then records the request and the
     selection policy and admitted-method mask, so a state continues only under a
@@ -149,8 +155,10 @@ class PreparedRegionalEvolution3D:
                     max_velocity_correction_m_s=max_velocity_correction_m_s,
                     max_relative_correction=max_relative_correction),
                 constitutive_log_tolerance=1e-8, constitutive_max_iterations=32,
+                constitutive_start='zero strain rate at every mechanical solve',
                 pressure='dynamic relative to removed reference hydrostatics',
                 sampling='piecewise-constant cell temperature/composition/damage; Gauss-point depth and strain',
+                depth='distance down from box top / depth_scale_m; vertical_datum is recorded only',
                 execution=self._context.identity)
             if mechanics_method == 'auto':
                 self._definition['mechanics_selection_policy'] = _SELECTION_POLICY
@@ -290,9 +298,10 @@ class PreparedRegionalEvolution3D:
         if self._last is not None and self._last[0] == key:
             self._stats['endpoint_cache_hits'] += 1
             return self._last[1:]
+        # Declared start: zero strain rate, never the rate of an earlier solve. The
+        # result is then a function of this state and driving alone, so a reused
+        # endpoint and a restart on a new plan publish what a fresh solve would.
         rate = np.zeros((self._n, 27))
-        if self._last is not None:
-            rate = self._last[3]
         for iteration in range(32):
             _cancel(cancel)
             law = self._law(td, damage, rate, cancel)

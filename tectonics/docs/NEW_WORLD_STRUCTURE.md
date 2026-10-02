@@ -13,6 +13,13 @@ privileging a geographic pole or map seam. The number/shape/distribution is an
 explicit, uncalibrated scenario prior, not an Earth coastline distribution.
 
 Each province has one shared layer stack, crust formation date and thermal model.
+The ordered sum of the generated layer widths defines the represented depth
+boundaries. The declared column base and thermal profile use those same
+boundaries, including every continental material interface. Subtracted widths
+can otherwise sum a floating-point rounding unit beyond the nominal base and
+leave a temperature table too short. This construction correction does not
+retry seeds, extend a table by extrapolation, or relax native coverage checks.
+Regression seeds 12, 14, 37 and 52 cover the formerly refused construction.
 Continental columns vary between 30–45 km crust and 110–150 km total lithosphere;
 oceanic crust varies between 6.2–8.0 km above a 125 km thermal-plate base. Basalt,
 gabbro, granite and peridotite reference records come from the retained material

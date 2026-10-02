@@ -209,7 +209,18 @@ class PreparedRegionalStokes2D:
         """Refill current coefficients, retaining geometry; never retain stale physics.
 
         Identical values may retain factors; changed provenance still changes the
-        plan and latest-result identity. A failed refill invalidates result reuse.
+        plan and latest-result identity. A failure between the start of the
+        numeric refill and its acceptance invalidates the whole plan, not only
+        result reuse: the core may already hold coefficients this definition does
+        not name. Every operation except ``close`` then refuses, naming the
+        interrupted refill.
+
+        An exception does not tell the caller which material the plan holds. It
+        can be raised before anything changed, during the numeric refill, or by
+        the closing cancellation/source check after the new material was
+        accepted. The caller must read ``usable``. If it is False, close the plan
+        and prepare a new one. If it is True, ``descriptor()`` and ``plan_id``
+        name the material the plan holds, which may be the old or the new one.
         """
         _name(material_source,'material source')
         d=self._definition
@@ -259,6 +270,18 @@ class PreparedRegionalStokes2D:
     def plan_id(self):
         return self._plan_id
 
+    @property
+    def usable(self):
+        """False once closed or once a coefficient refill was interrupted.
+
+        Also False while a numeric refill is in progress, from its start until it
+        is accepted, so a reader inside that refill (a cancel callback) sees False
+        although the refill may still complete. It does not report whether some
+        other operation is active. When False, ``descriptor()`` and ``plan_id``
+        may not name the coefficients the core holds.
+        """
+        return not (self._closed or self._invalid)
+
     def descriptor(self):
         return json.loads(_json(self._definition))
 
@@ -281,8 +304,12 @@ class PreparedRegionalStokes2D:
     @contextmanager
     def _operation(self, cancel):
         with self._lock:
-            if self._closed or self._invalid or self._active or self._owner != threading.get_ident():
+            if self._closed or self._active or self._owner != threading.get_ident():
                 raise TectonicsError('closed/active regional plan or wrong driving thread')
+            # Tested second: a refill still in progress is active and was refused
+            # above, so only a refill that ended in failure is called interrupted.
+            if self._invalid:
+                raise TectonicsError('regional plan invalidated by an interrupted coefficient refill; close it and prepare a new plan')
             self._active = True
         try:
             _cancel(cancel)

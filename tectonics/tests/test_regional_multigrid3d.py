@@ -242,16 +242,20 @@ class MultigridPlanTests(unittest.TestCase):
                 with self.subTest(changes=changes), self.assertRaisesRegex(TectonicsError, 'does not match'):
                     prepare(_shared=shared, **changes)
 
-    def test_default_budget_now_admits_a_ten_cube_that_assembly_refuses(self):
+    def test_default_budget_admits_a_nine_cube_and_refuses_underfunded_native_factors(self):
         # The assembled route refuses every 7x7x7 cube in the default 256 MiB.
         with self.assertRaises(MemoryLimitError):
             prepare(cells=(7, 7, 7), method='gmres')
-        with prepare(cells=(10, 10, 10)) as plan:
+        with prepare(cells=(9, 9, 9)) as plan:
             stats = plan.statistics()['budget']
             self.assertLessEqual(stats['reserved_bytes'], 256*1024**2)
             self.assertIn('regional3d-multigrid-factor', stats['categories'])
             self.assertEqual(plan.descriptor()['solver']['krylov_rtol'], 1e-13)
             self.assertGreaterEqual(len(plan.descriptor()['solver']['levels']), 2)
+        # The old sparse-entry-only allowance admitted this despite omitting
+        # SuperLU's initial native arrays. Keep the 256 MiB user limit intact.
+        with self.assertRaises(MemoryLimitError):
+            prepare(cells=(10, 10, 10))
         with self.assertRaises(MemoryLimitError):
             prepare(budget=WorkBudget(4*1024**2))
 
@@ -262,6 +266,51 @@ class MultigridPlanTests(unittest.TestCase):
             with self.assertRaises(MemoryLimitError):
                 prepare(budget=budget)
             self.assertEqual(budget.reserved_bytes, 0)
+
+    def test_realised_factors_are_checked_without_retained_copies(self):
+        # Native initial allocation and realised growth are both charged.
+        # No L/U copies are made to check the exact acceptance boundary.
+        class Counted:
+            def __init__(self, factor, entries):
+                self.nnz = entries.get(factor.shape[0], factor.nnz)
+                self.shape, self.solve = factor.shape, factor.solve
+
+            @property
+            def L(self):
+                raise AssertionError('a factor copy was built')
+            U = L
+        original, entries = multigrid3d.splu, {}
+        with prepare() as plan:
+            expected = reference.solve(plan, force=1.)
+        budget = WorkBudget(512*1024**2)
+        with mock.patch.object(multigrid3d, 'splu', lambda *a, **k: Counted(original(*a, **k), entries)):
+            with prepare(budget=budget) as plan:
+                result = reference.solve(plan, force=1.)
+                for name in expected.array_names:
+                    assert_array_equal(result.array(name), expected.array(name))
+                mg = plan._mg
+                coarse_bytes = multigrid3d._native_factor_bytes(mg.coarse.shape[0], mg.matrices[-1].nnz, mg.coarse.nnz)
+                mass_n = mg.mass.shape[0]
+                fixed = 1024**2+coarse_bytes+1024*mass_n
+                entries[mass_n] = (multigrid3d.factor_allowance(mg.geometry)-fixed)//24
+            with prepare(budget=budget):
+                pass                                # the largest counts the allowance admits
+            entries[mass_n] += 1
+            with self.assertRaises(MemoryLimitError):
+                prepare(budget=budget)
+        self.assertEqual(budget.reserved_bytes, 0)
+
+    def test_native_factor_model_covers_recorded_initial_allocations(self):
+        # Reuse R7 observations: (order, input nnz, factor nnz, private bytes
+        # committed by splu). A tiny realised factor can retain large initial
+        # arrays, so an nnz-only check is insufficient.
+        observations = ((1176, 70344, 280812, 51621888),
+                        (4913, 117649, 1663252, 84963328),
+                        (450, 24071, 72186, 17379328),
+                        (15625, 389017, 10057480, 280637440))
+        for n, input_nnz, factor_nnz, committed in observations:
+            self.assertGreaterEqual(multigrid3d._native_factor_bytes(n, input_nnz, factor_nnz),
+                                    committed, n)
 
     def test_floor_limited_high_contrast_case_is_accepted_where_the_reference_is(self):
         # Review finding: a 1e13-conditioned box (base prescribed only, cellwise

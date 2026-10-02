@@ -807,6 +807,13 @@ class PreparedRegionalStokes3D:
         stress contribution. This interface does not itself integrate elasticity.
         Tractions are prescribed only on components marked traction; other
         supplied components must be zero. All side keys are required.
+        Velocity is one full nodal field, validated whole: every entry must be
+        finite and must neither overflow nor round a nonzero value to zero
+        when divided by the plan's ``scales.velocity_m_s``, or the request is
+        refused. Of an admitted field only the entries where
+        ``velocity_mask()`` is true are read. The values of the other entries
+        are then ignored: they change no output and do not enter
+        ``result_id``.
         """
         with self._operation(cancel):
             metadata, force, velocity, tractions, stress = self._request(
@@ -872,6 +879,15 @@ class PreparedRegionalStokes3D:
         External resistance is a supplied symmetric positive-semidefinite J s
         matrix for physics OUTSIDE this region, never a second regional drag.
         This finite-mode coupling is not the unimplemented spherical mapper.
+        The base velocity and every mode are full nodal fields, validated
+        whole as in ``solve``: every entry must be finite and must neither
+        overflow nor round a nonzero value to zero when divided by the plan's
+        ``scales.velocity_m_s`` (base velocity) or ``scales.length_m`` (modes).
+        Of the admitted fields only the entries where ``velocity_mask()`` is
+        true are read; the values of the others are then ignored and change
+        no output. Ignored base-velocity entries do not enter ``result_id``.
+        The recorded ``modes_sha256`` hashes each mode as supplied, so an
+        ignored mode entry changes that digest and the id.
         """
         with self._operation(cancel):
             _name(coupling_source,'coupling source')

@@ -69,15 +69,16 @@ controls passed in 1.9299832 s after imports with unchanged sources. Valid upstr
 receipts were reused; this is bounded finite admission, not scientific acceptance.
 See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r6.json)
-was captured on 1 October 2026 after the integrated R4 repairs and follow-up
-checkpoint, job, resource and cache fixes changed its bound sources. It supersedes
-r5; r1-r5 retain their original bytes and historical measurements. r6 records five
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r7.json)
+was captured on 2 October 2026 after the integrated R7 repairs and follow-up
+phase, heat-boundary, flexure-precision and native-memory fixes changed its bound
+sources. It supersedes r6; r1-r6 retain their original bytes and historical
+measurements. r7 records five
 repetitions on one Windows machine,
 unchanged sources and passing equality/parity comparisons. Its 151 source-file digests
 are checked by the register; its opaque package/native `execution_identity` is
 classified as an unchecked runtime observation. A further change to any package
-source makes r6 stale in turn. The column does not use the 3-D solvers; this renews
+source makes r7 stale in turn. The column does not use the 3-D solvers; this renews
 source bindings, not a 3-D speedup measurement. This is operational timing, not scientific
 acceptance, a whole-generator speed claim or other-platform evidence.
 
@@ -502,6 +503,29 @@ has no successor route. Its older timings remain historical. Capture and
 registration are local evidence states; Git commit and publication are separate.
 
 ## Integration checks
+
+**R7 integration, 2 October 2026.** The reviewed candidate and follow-up fixes
+are integrated locally. Adequate unchanged R7 checks were reused; affected paths
+received 211 focused checks: 132 phase/structure/heat/3-D controls, 12 flexure
+controls, and 67 coupled support/heat/save-reopen/project checks. The first
+132-test selection took 83.911 s and exposed one new test fixture exceeding the
+existing heat timestep limit; correcting only its timestep gave 19 heat tests
+passing in 0.869 s on a byte-verified private snapshot. The other 113 results
+were reused. All 12 final flexure controls passed in 0.128 s, including the
+unchanged independent Green-function and two-material tolerances; the 67 seam
+checks passed in 101.129 s. No failed assertion or numerical tolerance was
+weakened to manufacture acceptance.
+
+Workflow-timing r7 passed all seven checks over five repetitions, captured after
+the test processes ended. An earlier overlapping capture was kept only in local
+scratch, never registered or cited for performance. The final Git-normalised
+guard passed all three checks in 169.0 s: 37 current records and 449 matching
+bindings (28 historical, 39 superseded, none invalid), three LF-digest tests and
+759 I01/I02 tests in 164.726 s with no failures or skips. Static source-map and
+public-path checks also passed. The sandbox initially refused the guard's private
+candidate-object write; the authorised rerun completed without modifying the
+real index, staging, committing or pushing. These are bounded Windows checks,
+not a full-suite or whole-planet acceptance claim.
 
 **R4 integration, 1 October 2026.** The reviewed patch and its follow-up
 checkpoint corruption/race, never-started retry, resource-accounting, cache and

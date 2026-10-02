@@ -123,10 +123,17 @@ class _Cancellation:
 class PreparedRheology:
     """Source-verified prepared evaluator; caller-owned, explicit close.
 
-    Uses the existing executor lazily. Processes cannot share this source-bound
+    Processes cannot share this source-bound
     plan and are refused. The normal route is native bulk serial: the registered local-law workloads
     were not faster with threads. An explicit auto/threads policy reuses bounded
     scheduling for verified workload-specific choices, never different physics.
+    Each threaded evaluation creates, drives and closes its own executor on the
+    calling thread: the plan keeps no worker pool, CPU slots or native-thread
+    lease between calls and is not bound to a thread. One evaluation runs at a
+    time; an overlapping call is refused, not queued. A live native-thread lease
+    on another thread, or a conflicting limit, refuses that evaluation and leaves
+    the plan usable. An idle plan may be closed from any thread; an active one
+    refuses the close.
     """
     def __init__(self,profile,*,scales=None,limits=None,execution=None,budget=None):
         if type(profile) is not RheologyProfile: raise TectonicsError('typed profile required')
@@ -137,7 +144,7 @@ class PreparedRheology:
             raise TectonicsError('typed limits and thread/serial execution policy required')
         self.profile=profile; self.scales=scales; self.limits=limits; self.execution=execution
         self.budget=select_budget(budget); self._closed=False; self._active=False
-        self._lock=threading.Lock(); self._executor=None; self._context=None
+        self._lock=threading.Lock(); self._last_execution=None; self._context=None
         self._guard=self.budget.reserve(5*1024**2,category='constitutive-plan')
         self._guard.__enter__()
         try:
@@ -163,17 +170,14 @@ class PreparedRheology:
         with self._lock:
             if self._active: raise TectonicsError('join active law evaluation before closing')
             if self._closed: return
-            if (self._executor is not None and self._executor._entered and
-                threading.get_ident()!=self._executor._owner_thread):
-                raise TectonicsError('close the law executor on its driving thread')
+            # No executor outlives an evaluation and none is active here, so the
+            # plan holds no worker pool or native-thread lease and has no owning
+            # thread: any thread may close it.
             self._closed=True
         try:
-            if self._executor is not None: self._executor.close()
+            if self._context is not None: self._context.close()
         finally:
-            try:
-                if self._context is not None: self._context.close()
-            finally:
-                self._guard.__exit__(None,None,None)
+            self._guard.__exit__(None,None,None)
 
     @contextmanager
     def _operation(self,cancel):
@@ -214,9 +218,6 @@ class PreparedRheology:
             parallel=self.execution.max_workers>1 and (self.execution.mode=='threads' or
                 (self.execution.mode=='auto' and n>=self.execution.min_parallel_elements))
             if parallel:
-                if self._executor is None:
-                    self._executor=KernelExecutor(replace(self.execution,mode='threads'),budget=self.budget)
-                    self._executor.__enter__()
                 aborted=threading.Event(); token=_Cancellation(cancel,aborted)
                 batch=self.limits.batch_points
                 def calls():
@@ -230,11 +231,22 @@ class PreparedRheology:
                                 raise TectonicsError('law worker returned invalid arrays')
                             return result
                         yield _AdmittedCall(run,accept,aborted.set,size,512*size+131072)
-                stream=self._executor._admitted_calls(calls(),cancel=token)
-                pieces=[]
-                try:
-                    pieces.extend(stream)
-                finally: stream.close()
+                # One executor per evaluation: entered, driven and closed by the
+                # calling thread while this plan is marked active. Its worker pool,
+                # CPU slots and the process-wide native-thread lease end with the
+                # call, so an idle plan holds none of them and belongs to no thread.
+                # Another thread's live lease, or a conflicting native-thread limit,
+                # refuses the call here, before any job is submitted, and leaves the
+                # plan usable.
+                with KernelExecutor(replace(self.execution,mode='threads'),budget=self.budget) as executor:
+                    stream=executor._admitted_calls(calls(),cancel=token)
+                    pieces=[]
+                    try:
+                        pieces.extend(stream)
+                    finally:
+                        stream.close()
+                        # Taken once the jobs have drained, whether or not they succeeded.
+                        self._last_execution=executor.statistics()
                 response={k:np.concatenate([r[k] for r in pieces]).reshape(shape) for k in pieces[0]}
             else:
                 response=evaluate_rheology(self.profile,*views,limits=self.limits,budget=self.budget,cancel=cancel)
@@ -280,7 +292,15 @@ class PreparedRheology:
 
     @property
     def execution_statistics(self):
-        return None if self._executor is None else self._executor.statistics()
+        """Detached record of the last threaded evaluation; None before the first.
+
+        The job counts and the executor's own accounted bytes describe that one
+        evaluation, including one that failed or was cancelled once its executor
+        had started. They are not totals over the plan's lifetime, and a serial
+        evaluation leaves them unchanged. The shared-budget entry is read now.
+        """
+        last=self._last_execution
+        return None if last is None else dict(last,shared_budget=self.budget.statistics())
 
 
 def save_law_result(result,store,*,budget=None,cancel=None):

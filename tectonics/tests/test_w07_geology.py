@@ -58,7 +58,7 @@ def geology_fixture(*, layered=False, thermal=False, speed=0., density_law='refe
     if layered:
         laws += (GeologicalMaterialLaw('other-rock', 1000., SOURCE, density_law),)
     kwargs = dict(nz=nz, material_laws=laws, ownership=RegionalPhysicsOwnership(SOURCE, SOURCE, SOURCE, SOURCE),
-        gravity_m_s2=1., vertical_datum='mechanical-bottom-z0')
+        gravity_m_s2=1., vertical_datum='mechanical-bottom-z0', external_pressure_pa=0.)
     return state, kwargs
 
 
@@ -173,6 +173,39 @@ class GeologicalBindingTests(unittest.TestCase):
             cls.return_value.__enter__.return_value.identity = 'changed'
             with self.assertRaisesRegex(TectonicsError, 'source/runtime changed'):
                 result.verify()
+
+
+class ExternalPressureTests(unittest.TestCase):
+    """R7 (s10a-5): the external surface pressure is stated by the caller, never assumed."""
+    def test_unstated_external_pressure_is_refused(self):
+        state, kwargs = geology_fixture()
+        stated = bind_regional_geology(state, **kwargs)
+        self.assertEqual(stated.descriptor()['external_pressure_pa'], 0.)
+        del kwargs['external_pressure_pa']
+        with self.assertRaises(TectonicsError):
+            bind_regional_geology(state, **kwargs)
+        with self.assertRaises(TectonicsError):
+            bind_regional_geology(state, **kwargs, external_pressure_pa=None)
+
+    def test_stated_external_pressure_is_recorded_and_reaches_the_surface_route(self):
+        state, kwargs = geology_fixture()
+        zero = bind_regional_geology(state, **kwargs)
+        self.assertEqual(zero.descriptor()['external_pressure_pa'], 0.)
+        self.assertEqual(zero.surface_parameters()['external_pressure_pa'], 0.)
+        # An integer zero states the same pressure and gives the same binding.
+        self.assertEqual(bind_regional_geology(state, **dict(kwargs, external_pressure_pa=0)).binding_id,
+                         zero.binding_id)
+        loaded = bind_regional_geology(state, **dict(kwargs, external_pressure_pa=101325.))
+        self.assertEqual(loaded.descriptor()['external_pressure_pa'], 101325.)
+        self.assertEqual(loaded.surface_parameters()['external_pressure_pa'], 101325.)
+        self.assertNotEqual(loaded.binding_id, zero.binding_id)
+        # The stated pressure is the only recorded difference between the two bindings.
+        self.assertEqual(dict(loaded.descriptor(), external_pressure_pa=0.), zero.descriptor())
+        for name in zero.array_names:
+            assert_array_equal(loaded.array(name), zero.array(name))
+        for unsupported in (-1., float('nan'), True, '0'):
+            with self.subTest(value=unsupported), self.assertRaises(TectonicsError):
+                bind_regional_geology(state, **dict(kwargs, external_pressure_pa=unsupported))
 
 
 if __name__ == '__main__':

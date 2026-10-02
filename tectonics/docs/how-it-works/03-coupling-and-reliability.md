@@ -308,6 +308,15 @@ same-request coordination and failure paths. Hashes support identity and
 corruption detection; they are not signatures against an attacker who controls
 both code and stored records. Loaded binary identity also assumes those binaries
 remain unchanged during the process.
+Each one is therefore hashed once per process and its digest is reused. Until the
+R7 repair of 1 October 2026 the digests were kept in a 16-entry cache, smaller
+than the SciPy and Numba binary sets, so every new context of those backends read
+its files from disk again (about 126 MB for Numba on the pinned Windows
+environment).
+The interpreter is a weaker entry than the extension modules. On Windows the
+hashed file is only the small `python.exe` launcher; the interpreter itself lives
+in `python312.dll`, which is not hashed, so there the interpreter is identified by
+its recorded version and build string and not by its bytes.
 
 ### Save losslessly, share unchanged chunks and publish atomically
 
@@ -364,9 +373,31 @@ in addition to the database allowance; referenced histories are dependencies.
 independent batches, preserving returned order. Small requests stay serial;
 automatic execution normally uses at most two workers, four in-flight tasks and
 one inner native thread. Process execution is explicit. Precursor point sampling
-can share prepared indices across threads, while its automatic cell route stays
-serial following measured overhead. Dependent physical timesteps are not
-independent jobs.
+can share one plan's prepared indices and starting state among worker threads,
+while its automatic cell route stays serial following measured overhead. Each
+threaded precursor request builds its own bounded executor on the calling thread
+and closes it before returning. A prepared plan therefore keeps no worker pool or
+native-thread limit between requests, is not tied to the thread that first used
+it, and can be closed from any thread once no call is active. Threaded requests on
+one plan take turns: each uses several workers, but two never overlap. The
+process-wide native-thread limit is set only while such a request runs, and a
+request made while another live thread holds that limit is refused and leaves the plan
+usable. The [execution contract](../OPTIMISATION_REFERENCE.md#3cr2-scaling-execution)
+records this 1 October 2026 repair and its cost: the pool is rebuilt for each
+threaded request. The prepared local-law evaluator
+([PreparedRheology](../../src/atlas_tectonics/constitutive_execution.py)) follows
+the same rule when a caller selects threads; its normal route is serial. It differs
+in one respect: an evaluation that overlaps another on the same plan is refused
+instead of waiting its turn
+([R3 execution notes](../OPTIMISATION_REFERENCE.md#3cr3-execution)).
+The native-thread limit has one owning thread at a time, recorded as the thread
+itself and not as its identifier, which the system reuses. Should that thread end
+with an executor still open, any thread may close that executor, and the next
+thread to take the limit reclaims it and the pool's CPU slots once every job the
+ended thread had submitted is done; before the
+same repair every other thread stayed refused for the rest of the process
+([executor contract](../OPTIMISATION_REFERENCE.md#execution-reuse-delivery)).
+Dependent physical timesteps are not independent jobs.
 
 [WorkBudget](../../src/atlas_tectonics/resources.py) admits estimated simultaneous
 allocations before work and shares reservations between related owners.
@@ -429,6 +460,16 @@ They require explicit world, snapshot, calendar, spatial frame, vertical referen
 and scenario identities. Matching names do not transform coordinates or reconcile
 incompatible physics. Ocean outputs additionally require their exact open native
 owner for authentication.
+
+Where a table lists its columns by name, it does so in one way on every route:
+an ordered list with one name-and-unit row per column. Until the R7 repair
+of 1 October 2026 the two ocean forms listed bare column names and kept the units
+in a separate list, so a reader written for the support tables failed on them.
+Their values did not change, but the published format did, so those two routes
+are now named `w06-constant.v2` and `w06-history.v2`; a reader that selects by
+route name must ask for the new names. The
+[port tests](../../tests/test_w12_ports.py) describe all 17 output forms and
+check the row form wherever such a list appears.
 
 [Publishing tests](../../tests/test_w12_publishing.py) check full fields, native
 bindings, frame refusal and value bits. A consumer export supports inspection and

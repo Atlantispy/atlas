@@ -72,6 +72,32 @@ class ReferenceTests(unittest.TestCase):
         self.assertEqual(COCOS_COORDINATES[0],COCOS_COORDINATES[-1])
         r=outline_reference_record();self.assertIn('not used to fit',r['role'])
         self.assertEqual(r['source_blob'],'879951b5d17c0e11926025223378174fcb9f41f6')
+    def test_cocos_outline_role_agrees_with_the_registered_split(self):
+        # R7 (s04 missed #1): the record called this outline held out, while the
+        # registered 3C-R1 split marks Cocos as previously exposed development data.
+        from atlas_tectonics.plate_reference_acceptance import record_role
+        self.assertEqual(record_role(observable='outline',plate_id='CO'),'DEVELOPMENT_PREVIOUSLY_EXPOSED')
+        role=outline_reference_record()['role']
+        self.assertIn('previously exposed development',role)
+        for label in ('held-out','held out','withheld'):self.assertNotIn(label,role)
+    def test_comparison_script_scope_agrees_with_the_registered_split(self):
+        # R7 (s04 missed #1): measure_plate_layout.py writes the stored comparison
+        # record and embeds the outline record above. Its scope called its two
+        # limited references (the Cocos outline and AF-AN steps 1-12) held out,
+        # although the registered split marks both previously exposed, so a rerun
+        # wrote a scope that contradicted the role beside it. The label is read
+        # from the script's source; running it would generate six layouts.
+        import ast
+        from atlas_tectonics.plate_reference_acceptance import record_role
+        self.assertEqual(record_role(observable='outline',plate_id='CO'),'DEVELOPMENT_PREVIOUSLY_EXPOSED')
+        for step in range(1,len(STEP_ROWS)+1):
+            self.assertEqual(record_role(observable='motion',boundary='AF-AN',step_number=step),'DEVELOPMENT_PREVIOUSLY_EXPOSED')
+        tree=ast.parse(Path(__file__).with_name('measure_plate_layout.py').read_text(encoding='utf-8'))
+        scopes=[ast.literal_eval(value) for node in ast.walk(tree) if isinstance(node,ast.Dict)
+            for key,value in zip(node.keys,node.values) if isinstance(key,ast.Constant) and key.value=='scope']
+        self.assertEqual(len(scopes),1)
+        self.assertIn('previously exposed',scopes[0])
+        for label in ('held-out','held out','withheld'):self.assertNotIn(label,scopes[0])
     def test_cocos_area_agrees_with_independent_printed_table(self):
         r=spherical_ring_metrics(lonlat_directions(COCOS_COORDINATES))
         self.assertLess(abs(r['area_steradians']-.07223),.000005)

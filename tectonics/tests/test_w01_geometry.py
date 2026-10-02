@@ -567,6 +567,37 @@ print('storm-ok')
             it=idx.query_batches(batches());next(it);it.close()
             self.assertEqual(seen,[0])
 
+    def test_planar_index_refuses_an_explicit_angular_tolerance(self):
+        # R7 (s03-3): a planar index applies raw predicates and has no band. It
+        # used to validate angular_tolerance_rad and then ignore it, so a caller
+        # asking for a band silently got none. None is the only planar value.
+        from atlas_tectonics.spherical_geometry import _DEFAULT_ANGULAR_BAND
+        points=[[1.5,.5],[1.0000001,.5],[.5,.5]]
+        with GeometryIndex([Feature('a',box(0,0,1,1)),Feature('b',box(5,5,6,6))]) as idx:
+            expected=idx.query(points).pairs.tolist()
+            self.assertEqual(expected,[[2,0]])
+            for value in (.6,1e9,0.,0,_DEFAULT_ANGULAR_BAND,-1.,'wide'):
+                with self.subTest(value=value):
+                    with self.assertRaises(GeometryError):idx.query(points,angular_tolerance_rad=value)
+                    with self.assertRaises(GeometryError):
+                        next(idx.query_batches([points],angular_tolerance_rad=value))
+            # The refusal leaves the index usable, and None is the default.
+            self.assertEqual(idx.query(points,angular_tolerance_rad=None).pairs.tolist(),expected)
+            self.assertEqual([hits.pairs.tolist() for hits in idx.query_batches([points])],[expected])
+
+    def test_spherical_index_default_band_is_unchanged_by_the_none_default(self):
+        from atlas_tectonics.spherical_geometry import _DEFAULT_ANGULAR_BAND
+        p=SG.polygon(np.eye(3),chart=CH);q=np.array([[1,1,-1e-15],[1,1,-1e-6]])
+        with GeometryIndex([Feature('a',p)]) as idx:
+            default=idx.query(q).pairs.tolist()
+            self.assertEqual(default,[[0,0]])
+            for value in (None,_DEFAULT_ANGULAR_BAND):
+                self.assertEqual(idx.query(q,angular_tolerance_rad=value).pairs.tolist(),default)
+            # An explicit spherical band is still honoured, and still validated.
+            self.assertEqual(idx.query(q,angular_tolerance_rad=1e-5).pairs.tolist(),[[0,0],[1,0]])
+            self.assertEqual(idx.query(q,angular_tolerance_rad=0).pairs.tolist(),[])
+            with self.assertRaises(TectonicsError):idx.query(q,angular_tolerance_rad=-1.)
+
     def test_coverage_complete_and_contact(self):
         report=audit_coverage(box(),[Feature('left',box(0,0,1,2)),Feature('right',box(1,0,2,2))])
         self.assertTrue(report.complete);self.assertEqual(len(report.contacts),1)

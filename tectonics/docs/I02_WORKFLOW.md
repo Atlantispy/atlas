@@ -371,6 +371,50 @@ agrees with an uninterrupted one within the retained parity (section 5), not bit
 Bitwise identity therefore depends on where process boundaries fall, including where a
 time budget stops a run.
 
+### Relative plate-velocity handoff contract (`eps_v`)
+
+**Owner-approved numerical policy: `eps_v = 0.01` (dimensionless, 1%).**
+Approved on 1 October 2026 and recorded here on 2 October 2026. I02 owns this
+declaration; I06.2 and I07.2 consume it, and I09 enforces it when accepting a
+coupled-to-replacement handoff. I03 does not require it. The current I02 column
+workflow does not perform that regional/global handoff; recording the policy is
+not a claim that its future certificate or enforcement is implemented.
+
+Use the comparison defined in [I01's separation decision, section 4](I01_SEPARATION_DECISION.md):
+the coupled branch C and replacement R share their parent, forcing, source
+accounts, exterior conditions, physical support A, material correspondence and
+declared window `[t0,t0+H]`. Apply the same permitted rigid-frame gauge to both,
+preserving normal and tangential motion. Admit replacement only when a supported
+whole-window bound establishes
+
+```text
+E_v = sup_(A, time) ||v_C - v_R||_2 / V_ref <= eps_v = 0.01
+V_ref = sup_(A, time) ||v_R||_2 > 0
+```
+
+The reference speed must be established on that same support, window and gauge.
+Sample maxima or endpoint agreement alone are not a certificate. If the reference
+speed is zero or unavailable, this relative criterion is unavailable: refuse it
+rather than insert a hidden speed floor. The declared validity window must not be
+shortened to hide an error, and the certificate must be revalidated on expiry.
+For the [linear zero-intercept rift control only](I01_TRANSITIONS.md), this gives
+`Pi_c = eps_v / (1 - eps_v) = 1/99`, approximately `0.01010101`. Nonlinear,
+history-dependent or plastic belts still need the actual error certificate.
+
+The value is the owner's fixed model-replacement accuracy budget, not a geological
+constant. Existing regional L2 benchmark gates supplied scale context, not proof
+of this maximum-norm bound or a universal 1% solver accuracy claim. This does not
+replace force, energy, conservation, iteration, mesh or timestep checks, or grant
+a 1% error allowance independently to every coupling operation. I09 must account
+for the combined error of the accepted replacement. Record the policy and
+comparison support/window in the consuming run and handoff identities.
+Do not relax the value to obtain a pass or to fit the unchanged 256-step ceiling.
+
+Receipt-bound I01 case files that contain `"eps_v": null` remain unchanged as
+records of their earlier specification. This declaration resolves the missing
+production value; it does not retroactively certify those cases. No new paper or
+external benchmark was used to record the owner's decision.
+
 ## 5. Saving, reopening and continuing
 
 Saving is the commit. The root stores the reference, initial history and native
@@ -604,10 +648,11 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r6](../evidence/i02-workflow-timing-r6.json),
-1 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
-one BLAS thread. It was captured after R4 and the final checkpoint, job,
-resource and cache fixes. The harness ran five
+**Current source-bound measurement:** [i02-workflow-timing-r7](../evidence/i02-workflow-timing-r7.json),
+2 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
+one BLAS thread. It was captured after R7 and the phase, heat-boundary,
+flexure-precision and native-memory corrections, without a concurrent Atlas test
+campaign. The harness ran five
 repetitions of the same supported 16-step, 32-material-point case, saving every
 four steps and reopening at step eight. All seven checks passed, including
 cold/warm physical equality, reopened accounts and unchanged sources. The record
@@ -615,15 +660,16 @@ binds 151 source files and records the execution identity; hashing is outside th
 measured regions. This is a fresh bounded-column receipt, not a 3-D speedup
 measurement: the column workflow does not use the 3-D solvers, and the new
 record exists because the package sources it binds changed. Its warm medians are
-**0.06891915 s** for bare evolution, **0.06927255 s** for in-memory continuation
-(+0.51%), and **0.10706250 s** for the stored workflow (+55.35% against bare
-evolution), of which **0.02012840 s** is four commits. Cold root/head/operator
-reopening totals **0.12608880 s**; the receipt retains every sample and growth
+**0.06976490 s** for bare evolution, **0.06936895 s** for in-memory continuation
+(-0.57%, within small-run variation), and **0.10974810 s** for the stored workflow
+(+57.31%, or 0.03998320 s, against bare evolution), of which **0.02088000 s** is
+four commits. Cold root/head/operator reopening totals **0.11901790 s**;
+the receipt retains every sample and growth
 measurement. These tiny-case costs are not a general overhead or speedup claim.
 
 **Historical r5 measurement, 30 September 2026:** the table and interpretation
 below describe the unchanged [r5 receipt](../evidence/i02-workflow-timing-r5.json),
-not the current r6 checkout. Earlier timings from the harness with incomplete
+not the current checkout. Earlier timings from the harness with incomplete
 equality checks are not current acceptance evidence. Warm medians of the four
 later r5 repetitions unless marked cold:
 
@@ -739,6 +785,14 @@ written as compact JSON; they are read as JSON, so the format alone refuses noth
 The ledger's store now also reports a lock that is already held when a `put` starts
 preparing as `StoreError` (previously a raw SQLite error), matching the commit
 contract above.
+
+R7 and its follow-up corrections change the shared package identity again.
+[Timing r7](../evidence/i02-workflow-timing-r7.json) supersedes r6 after passing all
+seven checks over five repetitions; 151 source bindings are renewed without
+rewriting an earlier receipt. Finite-admission r6 and the other unchanged current
+records remain valid and were reused. Earlier saved execution-bound states must
+still satisfy their exact source/runtime contracts; no silent migration is added.
+The current integration checks are in [the evidence guide](../../docs/CURRENT_EVIDENCE.md#integration-checks).
 
 ## 9. Acceptance commands after review
 

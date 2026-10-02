@@ -208,8 +208,6 @@ def generate_structure(plan):
                         stack = [('upper-crust', 'crust', upper, 'rock.granite'),
                                  ('lower-crust', 'crust', crust-upper, 'rock.gabbro'),
                                  ('mantle', 'lithospheric_mantle', litho-crust, 'rock.peridotite')]
-                        thermal = continental_profile((0., upper, crust, litho),
-                            (2.5, 2.5, 3.3), (1e-6, .25e-6, .02e-6))
                         cooling_age = None
                         cooling.append(CoolingHistory(name+'-thermal', SOURCE, None,
                             'Prescribed steady layered geotherm; no cooling onset inferred from crust formation.'))
@@ -220,8 +218,21 @@ def generate_structure(plan):
                         stack = [('basalt', 'crust', .25*crust, 'rock.basalt'),
                                  ('gabbro', 'crust', .75*crust, 'rock.gabbro'),
                                  ('mantle', 'lithospheric_mantle', litho-crust, 'rock.peridotite')]
-                        thermal = ocean_profile(cooling_age, budget=budget)
                         cooling.append(CoolingHistory(name+'-thermal', SOURCE, now-cooling_age))
+                    # Use the same ordered additions as ColumnDescription's
+                    # represented layer edges. Subtraction-created widths need
+                    # not add back to their nominal endpoints bit for bit.
+                    # Geometry and thermal profiles must share one actual base,
+                    # rather than extrapolating a short table or relaxing coverage.
+                    edges = [0.]
+                    for _, _, thickness, _ in stack:
+                        edges.append(edges[-1]+thickness)
+                    litho = edges[-1]
+                    if kind == 'continental':
+                        thermal = continental_profile(tuple(edges),
+                            (2.5, 2.5, 3.3), (1e-6, .25e-6, .02e-6))
+                    else:
+                        thermal = ocean_profile(cooling_age, thickness_m=litho, budget=budget)
                     layers = []
                     for label, role, thickness, material in stack:
                         cid = name+'-'+label

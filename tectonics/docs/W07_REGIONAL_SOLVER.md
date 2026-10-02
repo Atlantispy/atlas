@@ -43,6 +43,31 @@ subtracting a mean afterwards is forbidden. Unconstrained rigid translations and
 rotation are a separate issue: either constrain their named means or refuse.
 Incompatible force/torque is not repaired by drag or altered boundary loads.
 
+Both compatibility conditions are judged in the solver's own discrete quadrature,
+not as continuum integrals. This was true from the start but was not stated here
+until 1 October 2026 (R7); the gates themselves are unchanged. When all four
+normal velocities are prescribed, each face-centre normal value stands for the
+mean normal velocity over its whole face. The net outward flux is the sum of
+those values times their face lengths, and it must cancel to within 1e-12 of the
+summed absolute face fluxes, or of 1 in the solver's scaled units if that is
+larger. The two corner samples of a side carry no flux. When the velocity
+conditions leave rigid motion free and its named means constrain it, the body
+and traction loads must exert no net force or torque on those free modes, to
+within 1e-11 of their summed absolute contributions (with the same floor of 1).
+The sums use the solver's weights: each body-force sample times the volume its
+face owns (half a cell on a boundary face), each normal traction times its whole
+face, and each tangential traction by the trapezoid rule over the boundary
+vertices. These are midpoint and trapezoid rules, so point samples of a smooth
+field that is exactly compatible in the continuum miss both conditions by a
+quadrature error that is second order in the grid spacing and far above either
+tolerance. They are refused with "prescribed normal velocity has incompatible
+net boundary flux" or "external force/torque is incompatible with unconstrained
+rigid modes". A caller supplies face-mean normal velocities, and loads that
+balance under these weights. The tolerances are not a margin to loosen: the
+discrete continuity equations sum to exactly this net flux, so a remainder
+leaves them without a solution, and a net load on a constrained rigid mode would
+be taken up by the constraint as the drag ruled out above.
+
 The independent returned-field checks scatter stresses directly, rather than
 reuse the assembled matrix multiplication. They check momentum, cell divergence,
 gauge, boundary traces, rigid constraints and mechanical work. Dirichlet reactions
@@ -71,6 +96,10 @@ trace compatibility. `coordinates('u'|'w'|'p')` returns the relevant axes;
 `coordinates((side,component))` returns paired boundary point coordinates.
 Callbacks may generate input arrays, but the public plan stores sampled bytes,
 not mutable callbacks as scientific inputs.
+These coordinates say where a value is attached, not that a point sample taken
+there is admissible: a face-centre normal velocity is used as its face's mean,
+and the [compatibility checks](#equations-and-boundary-implementation) use the
+discrete weights given there.
 
 The scales are L0 and U0; viscosity supplies stress eta U0/L0 and body-force
 eta U0/L0². Conversions refuse nonfinite values and nonzero underflow. The wrapper
@@ -110,6 +139,30 @@ snapshot after source/input checks; there is no growing history or another disk
 cache. Changed input/provenance invalidates that latest result. Exceptions,
 cancellation and close release the relevant reservations; a failed final check
 cannot leave a newly accepted cached result.
+
+Stress-site coefficients can later be replaced on a prepared plan
+([Step 3](W07_HETEROGENEOUS_THERMAL.md)). A replacement that is cancelled or
+fails between the start of its numeric refill and its acceptance leaves the plan
+invalid: the solver core may hold coefficients that the plan's definition does
+not name. Nothing is rolled back and the state is never cleared. Every operation
+except `close` then refuses with "regional plan invalidated by an interrupted
+coefficient refill; close it and prepare a new plan" (R7 repair, 1 October 2026
+candidate; before it this refusal read as a closed, active or wrong-thread
+plan). Closed, active and wrong-thread calls are tested first and keep that
+older refusal, so a call made while a refill is still running is not reported as
+interrupted. The read-only `usable` property is False once the plan is closed or
+invalidated, and also from the start of a numeric refill until it is accepted;
+it does not report whether some other operation is active. An exception from a
+coefficient update does not identify the material the plan holds, because the
+closing cancellation/source check can raise after the new material was accepted.
+A caller reads `usable`: when it is True the descriptor and plan ID name the
+material held. An owner that keeps one plan across coefficient changes must
+close an unusable plan and prepare another. The
+[evolving-input interface](EVOLVING_MECHANICS.md) does that itself; the Picard
+routes take a caller-owned plan, and that caller receives the refusal until it
+does. The
+[W07 workflow](W07_WORKFLOW.md#recovery-storage-and-resource-ownership) lends
+its own plan to the dry-strength Picard route and replaces it itself.
 
 The iterative solver uses the current coupled equations with bounded restarted
 GMRES, velocity-block incomplete LU and a pressure-mass Schur approximation.

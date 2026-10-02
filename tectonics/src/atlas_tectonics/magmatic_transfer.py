@@ -46,7 +46,10 @@ def _identity(record, *arrays):
 
 
 def _keep(array, owner):
-    out = frozen(array)
+    # Each small retained payload owns its lease. Borrowing an earlier state's
+    # bytes would pin this state's reservation until that earlier state dies.
+    checked = frozen(array)
+    out = np.frombuffer(checked.tobytes(), dtype=np.float64).reshape(checked.shape)
     lease = owner.reserve(out.nbytes+256, category='magma-retained-array')
     lease.__enter__()
     root = out
@@ -165,6 +168,11 @@ class PreparedMagmaticTransfer:
     mass mixing is admitted only before a singular mixed-reservoir exhaustion.
     Pure finite-feed exhaustion is an exact supported event. No empty node may
     pass material through without a separate prescribed zero-storage closure.
+
+    A supplied thermal law checks each declared source at preparation and in
+    every published remainder: source-melt fully liquid, source-solid solid.
+    A node without latent heat is judged by T against the common Tm instead
+    (melt above, solid below) and is refused at exactly Tm. Empty nodes pass.
     """
     _BOUND_FIELDS = frozenset(('inventory','rates','heat','mass','net','qout','qin',
         'edges','feed','exact','exhaustion_duration_s','exhausted_node_ids',
@@ -242,8 +250,16 @@ class PreparedMagmaticTransfer:
             raise TectonicsError('inventory enthalpy convention does not match supplied law')
         state = invert_enthalpy(inventory.component_mass_kg, inventory.enthalpy_j,
             self.thermodynamics, budget=self.budget, cancel=cancel)
+        melting = self.thermodynamics.melting_temperature_k
         for i, kind in enumerate(inventory.node_kinds):
             fraction = state.liquid_fraction[i]
+            if kind in ('source-melt', 'source-solid') and state.phase[i] == 'single_phase':
+                # A node without latent heat has a temperature but no liquid
+                # fraction, so its declared kind is judged by T against the
+                # common Tm. Exactly Tm is either phase at the same enthalpy.
+                if state.temperature_k[i] == melting:
+                    raise TectonicsError(kind+' without latent heat is phase-ambiguous at exactly the melting temperature')
+                fraction = 1. if state.temperature_k[i] > melting else 0.
             if kind == 'source-melt' and fraction is not None and fraction != 1.:
                 raise TectonicsError('source-melt must be fully liquid under the supplied phase rule')
             if kind == 'source-solid' and fraction is not None and fraction != 0.:

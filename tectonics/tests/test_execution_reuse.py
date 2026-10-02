@@ -215,6 +215,200 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual(ex.statistics()['reserved_bytes'],0)
 
 
+_LEASE_OWNER_PRELUDE='''import gc,json,sys,threading
+sys.path.insert(0,sys.argv[1])
+import numpy as np
+from threadpoolctl import threadpool_info
+import scipy.special
+import atlas_tectonics.execution as execution
+from atlas_tectonics import ThermalParameters
+from atlas_tectonics.execution import ExecutionPolicy,KernelExecutor
+THERMAL=ThermalParameters('synthetic','lease owner checks',300.,1300.,1.)
+THREADS=ExecutionPolicy(mode='threads',max_workers=2)
+def native():return sorted((x['filepath'],x['num_threads']) for x in threadpool_info())
+def leases():return [execution._LIMIT_USERS,execution._POOL_SLOTS]
+def limited():return all(n==1 for _,n in native())
+def workers():return sum(t.name.startswith('atlas-kernel') for t in threading.enumerate())
+def drive(executor):return len(list(executor.temperatures([(np.arange(8.),1.)]*3,THERMAL)))
+out={};box={}
+def attempt(name,call):
+    try:out[name]=call()
+    except Exception as exc:out[name]=type(exc).__name__
+def abandon(policy=THREADS,first=lambda:None):
+    # A thread enters an executor, uses it and ends without closing it.
+    def run():
+        box['identifier']=threading.get_ident();first()
+        box['executor']=KernelExecutor(policy);box['executor'].__enter__();drive(box['executor'])
+    box['owner']=threading.Thread(target=run);box['owner'].start();box['owner'].join()
+def mine():
+    with KernelExecutor(THREADS) as executor:return [drive(executor),leases(),limited()]
+before=native()
+'''
+
+
+class LeaseOwnerTests(unittest.TestCase):
+    """R7 (3f): a Thread object owns the native-thread lease, and an ended owner's lease is recovered.
+
+    An executor left open by a thread that has ended cannot be cleaned up by the
+    unrepaired code. Every case here therefore runs in its own interpreter, where
+    a regression cannot leave the lease held for every later test in this process.
+    Refusals are compared by exception type, never by message.
+    """
+    def scenario(self,body):
+        source=Path(__file__).resolve().parents[1]/'src'
+        result=subprocess.run([sys.executable,'-I','-B','-c',_LEASE_OWNER_PRELUDE+body+'\nprint(json.dumps(out))\n',
+                               str(source)],capture_output=True,text=True,timeout=120)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.maxDiff=None
+        return json.loads(result.stdout.strip().splitlines()[-1])
+
+    def test_ended_owners_share_and_cpu_slots_are_reclaimed_by_the_next_executor(self):
+        out=self.scenario('''abandon();out['abandoned']=leases()
+def next_executor():
+    with KernelExecutor(THREADS) as executor:
+        first=[drive(executor),leases(),limited()]
+        box['executor'].close()   # late: its share and CPU slots were reclaimed when this executor was entered
+        return first+[leases(),limited(),drive(executor)]
+attempt('next_executor',next_executor)
+out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'abandoned':[1,2],'next_executor':[3,[1,2],True,[1,2],True,3],'after':[[0,0],True,0]})
+
+    def test_executor_of_an_ended_thread_is_closed_from_another_thread_but_never_driven(self):
+        out=self.scenario('''abandon()
+attempt('drive',lambda:drive(box['executor']))
+attempt('close',lambda:box['executor'].close())
+out['after_close']=[leases(),native()==before,workers()]
+attempt('next_executor',mine);out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'drive':'TectonicsError','close':None,'after_close':[[0,0],True,0],
+                              'next_executor':[3,[1,2],True],'after':[[0,0],True,0]})
+
+    def test_collected_executor_with_another_limit_does_not_refuse_the_next(self):
+        out=self.scenario('''two=ExecutionPolicy(mode='serial',max_workers=1,inner_threads=2)
+def collected():
+    abandon(two);held=[leases(),execution._LIMIT_VALUE]
+    del box['executor'];gc.collect();return held
+def plain_share():   # the share a solver plan takes around one operation
+    execution._acquire_native_limit(1);held=[leases(),execution._LIMIT_VALUE,limited()]
+    execution._release_native_limit();return held+[leases(),native()==before]
+out['abandoned']=collected();attempt('plain_share',plain_share)
+out['abandoned_again']=collected();attempt('next_executor',mine)
+out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'abandoned':[[1,0],2],'plain_share':[[1,0],1,True,[0,0],True],
+                              'abandoned_again':[[1,0],2],'next_executor':[3,[1,2],True],'after':[[0,0],True,0]})
+
+    def test_later_thread_with_the_ended_owners_identifier_is_not_the_owner(self):
+        out=self.scenario('''abandon();found={}
+def later():
+    if threading.get_ident()!=box['identifier']:return
+    found['same_thread_object']=threading.current_thread() is box['owner']
+    try:found['drive']=drive(box['executor'])
+    except Exception as exc:found['drive']=type(exc).__name__
+    try:
+        with KernelExecutor(ExecutionPolicy(mode='serial')):found['users_in_its_own_executor']=execution._LIMIT_USERS
+    except Exception as exc:found['users_in_its_own_executor']=type(exc).__name__
+for _ in range(20000):
+    thread=threading.Thread(target=later);thread.start();thread.join()
+    if found:break
+out.update(found)''')
+        if not out:self.skipTest('no later thread was handed the ended thread\'s identifier in 20000 attempts')
+        # Before the repair this thread passed as the owner: it drove the ended thread's executor and shared its lease.
+        self.assertEqual(out,{'same_thread_object':False,'drive':'TectonicsError','users_in_its_own_executor':1})
+
+    def test_plain_share_of_an_ended_thread_is_not_reclaimed_until_it_is_returned(self):
+        out=self.scenario('''abandon(first=lambda:box.update(plain=execution._acquire_native_limit(1)))
+out['abandoned']=[leases(),box['plain'] is None]   # a plain share carries no owner record
+attempt('refused',mine);out['still_held']=leases()
+execution._release_native_limit()   # what closing the plain share's holder does, from any thread
+attempt('next_executor',mine);out['after']=[leases(),native()==before]''')
+        self.assertEqual(out,{'abandoned':[[2,2],True],'refused':'TectonicsError','still_held':[2,2],
+                              'next_executor':[3,[1,2],True],'after':[[0,0],True]})
+
+    def test_executor_whose_lease_was_reclaimed_is_never_driven_again(self):
+        # During interpreter shutdown the main thread reports itself ended while code still runs on it.
+        # A thread that does the same stands in for it: its lease is reclaimed although it can still call its executor.
+        out=self.scenario('''class ReportsEnded(threading.Thread):
+    def is_alive(self):return False
+entered=threading.Event();reclaimed=threading.Event()
+def run():
+    with KernelExecutor(THREADS) as stale:
+        drive(stale);entered.set();reclaimed.wait(30)
+        attempt('drive_after_reclaim',lambda:drive(stale))
+thread=ReportsEnded(target=run);thread.start();entered.wait(30)
+def next_executor():
+    with KernelExecutor(THREADS) as executor:
+        first=[drive(executor),leases()]
+        reclaimed.set();thread.join(30)   # the stale executor is refused, then closed by its own thread
+        return first+[leases(),drive(executor)]
+attempt('next_executor',next_executor)
+reclaimed.set();thread.join(30)
+out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'drive_after_reclaim':'TectonicsError','next_executor':[3,[1,2],[1,2],3],
+                              'after':[[0,0],True,0]})
+
+    def test_owner_not_known_to_have_ended_keeps_its_lease(self):
+        # The interpreter gives no definite answer for a thread it did not start. One that refuses to answer stands
+        # in for it: its lease is not reclaimed, and the refusal stays the executor's own error.
+        out=self.scenario('''class Unanswerable(threading.Thread):
+    def is_alive(self):raise RuntimeError('no answer')
+entered=threading.Event();leave=threading.Event()
+def run():
+    with KernelExecutor(THREADS) as executor:
+        box['executor']=executor;drive(executor);entered.set();leave.wait(30)
+thread=Unanswerable(target=run);thread.start();entered.wait(30)
+attempt('next_executor',mine);attempt('close',lambda:box['executor'].close());out['held']=leases()
+leave.set();thread.join(30)
+out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'next_executor':'TectonicsError','close':'TectonicsError','held':[1,2],
+                              'after':[[0,0],True,0]})
+
+    def test_ended_owners_lease_is_not_reclaimed_while_a_job_it_submitted_still_runs(self):
+        # The owner ends in the middle of a stream: a job it submitted is still running in its pool. Its CPU slots
+        # stay counted and its limit stays applied until that job is done; only then is the lease reclaimed.
+        out=self.scenario('''import time
+from atlas_tectonics.execution import _AdmittedCall
+started=threading.Event();finish=threading.Event()
+def slow(budget):started.set();finish.wait(30);return 1
+def calls():
+    yield _AdmittedCall(lambda budget:0,lambda result:result,lambda:None,1,1024)
+    yield _AdmittedCall(slow,lambda result:result,lambda:None,1,1024)
+def run():
+    box['executor']=KernelExecutor(THREADS);box['executor'].__enter__()
+    box['stream']=box['executor']._admitted_calls(calls());next(box['stream'])   # submits both, returns the first
+owner=threading.Thread(target=run);owner.start();owner.join();out['job_running']=started.wait(30)
+out['abandoned']=leases()
+attempt('while_it_runs',mine);out['still_held']=[leases(),limited()]
+finish.set();deadline=time.monotonic()+10
+while True:   # the job is done a moment after it is told to finish
+    attempt('once_it_is_done',mine)
+    if out['once_it_is_done']!='TectonicsError' or time.monotonic()>deadline:break
+    time.sleep(.005)
+box['executor'].close();out['after']=[leases(),native()==before,workers()]''')
+        self.assertEqual(out,{'job_running':True,'abandoned':[1,2],'while_it_runs':'TectonicsError',
+                              'still_held':[[1,2],True],'once_it_is_done':[3,[1,2],True],'after':[[0,0],True,0]})
+
+    def test_ended_owners_executor_closed_by_two_threads_at_once_is_closed_once(self):
+        # Any thread may close an ended thread's executor, so two may try together. The first is held inside its
+        # pool shutdown, before anything is returned. The second must wait for it, not run the close as well:
+        # two closes side by side return the executor's CPU slots, or its share, a second time.
+        out=self.scenario('''abandon();pool=box['executor']._pool;shutdown=pool.shutdown
+inside=threading.Event();release=threading.Event();shutdowns=[]
+def held(**options):
+    shutdowns.append(threading.current_thread().name)
+    if len(shutdowns)==1:inside.set();release.wait(30)
+    return shutdown(**options)
+pool.shutdown=held
+def close(name):attempt(name,lambda:box['executor'].close())
+first=threading.Thread(target=close,args=('first',));first.start();out['first_inside']=inside.wait(30)
+second=threading.Thread(target=close,args=('second',));second.start();second.join(.5)
+out['second_waits']=second.is_alive();out['held']=leases()
+release.set();first.join(30);second.join(30)
+out['pool_shutdowns']=len(shutdowns);out['after']=[leases(),native()==before,workers()]
+attempt('next_executor',mine);out['finally']=leases()''')
+        self.assertEqual(out,{'first_inside':True,'second_waits':True,'held':[1,2],'first':None,'second':None,
+                              'pool_shutdowns':1,'after':[[0,0],True,0],'next_executor':[3,[1,2],True],
+                              'finally':[0,0]})
+
+
 class IdentityTests(unittest.TestCase):
     def test_checkpoint_dtype_change_invalidates_existing_and_fresh_identity(self):
         from atlas_tectonics import regional_checkpoint

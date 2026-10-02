@@ -66,8 +66,9 @@ checked after every solve.
 `VariableFlexureAccuracy` requires a source, relative tolerance and separate
 absolute tolerances for displacement, slope and curvature. Starting subcells
 respect the smallest prescribed flexural length. At least two meshes are solved;
-subdivision doubles until every cell's point/maxima change passes its selected
-absolute tolerance plus relative tolerance times that field's domain maximum.
+subdivision doubles until every cell's point/maxima change, plus the estimated
+numerical uncertainty of both meshes, passes its selected absolute tolerance plus
+relative tolerance times that field's domain maximum.
 The returned answer is the finer computed solution, not an extrapolation.
 Default maximum refinements is six, bounded to eight and an explicit element
 ceiling (default 65,536). Budget or convergence failure refuses the answer.
@@ -78,6 +79,39 @@ residual prove a small forward error for every extreme stiffness/mesh condition.
 The independent controls include an exact two-material continuum solution and
 uniform-rigidity analytical Green response; broad geological calibration remains
 separate. An insufficient mesh ceiling is not repaired by loosening a tolerance.
+When the ceiling is reached and a failing field's domain-maximum change did not
+fall at the last refinement and lies above an earlier minimum, the refusal quotes
+that minimum, its subdivisions and the change at the ceiling instead of saying
+only that the tolerance was not reached. Round-off in the banded solve is the
+usual cause (the scaled bending term grows as `h^-4`), and then a higher ceiling
+is unlikely to help. The estimates do not establish that cause. An accidentally
+small early estimate gives the same pattern. Two later levels can also agree
+within the tolerance while round-off still moves each of them by more than that.
+The mesh-change diagnostic offers the cause conditionally and never asserts it.
+A failing field that is still falling at the ceiling keeps the plain refusal.
+
+Before accepting a mesh pair, an additional numerical-precision check now
+propagates scaled equation residuals and floating-point rounding estimates through
+the retained Cholesky factors. Assembly estimates include the magnitudes of the
+logarithmic stiffness scaling and the element contributions before cancellation.
+A scalar stiffness error preserves its correlated element bending operator;
+the local contraction's rounding and independent matrix assembly/equilibration
+errors remain included. Right-hand-side formation and polynomial evaluation are
+included separately.
+The three output operators are the Bernstein controls for displacement, slope
+and curvature. Their convex-hull property covers the whole represented element,
+including maxima between samples. A deterministic, bounded Hager/Higham norm
+estimate applies the LAPACK forward-error-estimation approach to those output
+operators. No elastic-input perturbation is used as an error bound.
+
+The acceptance allowance includes the mesh change and both numerical estimates.
+An apparent mesh pass that cannot fit this allowance is refused explicitly for
+numerical precision after the available levels have been tried. Tolerances and
+physical equations are unchanged. This is an engineering **error estimate**, not
+interval arithmetic or a rigorous upper bound: norm estimation can underestimate,
+and elementary-function rounding is modelled rather than certified. It improves
+the previous mesh-only gate without claiming a continuum-error certificate or
+guaranteed digits for arbitrary ill-conditioned systems (R7, 2 October 2026).
 
 The low-level immutable result has shape `(N,5,4)`:
 
@@ -85,14 +119,14 @@ The low-level immutable result has shape `(N,5,4)`:
 | --- | --- |
 | 0 / 1 / 2 | Left face / centre / right face: w, w', w'', w''' |
 | 3 | FE-polynomial maxima in the source cell: abs(w), abs(slope), abs(curvature), strain |
-| 4 | Mesh-change estimates for w, slope, curvature; accepted subdivisions |
+| 4 | Mesh-change plus both numerical-error estimates for w, slope, curvature; accepted subdivisions |
 
 True source/material faces remain one-sided. A centre falling on an artificial
 internal FE face averages its two traces, making sampling reflection-consistent
 without smoothing a material interface. Displacement/slope extrema include roots
 inside each cubic, not merely centre/face samples. The third derivative is a
 diagnostic FE derivative, **not** certified by the first-three-field mesh gate.
-The bridge adds mesh-change estimates to its displacement, slope and strain
+The bridge adds these combined estimates to its displacement, slope and strain
 validity assessment; that remains a conditional engineering screen, not a proof
 of all continuum subcell extrema or of realistic terrain.
 
@@ -108,6 +142,10 @@ All elements remain in one coupled solve. Finite bandwidth is three; folding the
 periodic ring keeps bandwidth at most five, so factorisation/storage are linear
 in the number of internal elements. Factors for visited meshes are retained once
 per prepared profile, not rebuilt per load or stored as a growing load history.
+Coefficient-rounding estimates add one retained band, one element vector and two
+small endpoint blocks. Numerical-precision estimation runs only for a mesh pair
+that otherwise passes: it uses a fixed number of band solves and linear-sized vectors, without
+a dense inverse. Estimates are reused only within the current load's solve.
 Each new load still passes the same refinement gate; previous loads do not select
 a different answer. Short kernels remain serial; this does not need worker startup.
 
@@ -139,6 +177,12 @@ process RSS limit. See [focused checks and measured savings](../evidence/w04-var
   and [factor reuse](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.cho_solve_banded.html)
   documentation: selected compact SPD factorisation/repeated solves over dense
   matrices or a generic sparse solve per snapshot.
+- LAPACK [DPBRFS](https://www.netlib.org/lapack/double/dpbrfs.f)
+  and the deterministic sign/coordinate norm-estimation approach used by
+  [DLACN2](https://www.netlib.org/lapack/explore-html/d6/d2d/group__lacn2.html):
+  selected residual-plus-rounding forward-error estimates and explicit distinction
+  between an estimated error and a rigorous bound. The implementation estimates
+  the physical output operators rather than only the solution-vector norm.
 
 These are paper/documentation reviews, not external gFlex execution, external
 source-code audits or measured superiority to another terrain generator.

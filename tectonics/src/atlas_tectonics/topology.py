@@ -12,7 +12,7 @@ import json
 import math
 from typing import Mapping
 import numpy as np
-from ._validation import TectonicsError, scalar
+from ._validation import TectonicsError, scalar, input_shape, snapshot
 from .resources import select_budget
 from .mesh import ColumnGrid1D
 from .materials import (MaterialState, MaterialCohort, _name, _sha, _json, _account,
@@ -320,6 +320,29 @@ def move_partition(world,new_edges_m,*,event_id,expected_parent_id,budget=None,c
     return _commit_change(world,target,event_id,'reclassify-ownership-v1',{'old_cuts':t.cuts.grid_id,'new_cuts':target.cuts.grid_id},budget=budget,cancel=cancel)
 
 
+def _block_outflow_fractions(x,y,relative,dt,ids,scheme,backend,admitted):
+    """Largest outgoing Courant fraction among each block's own cells.
+
+    A cell's fraction is dt*leaving/width on its start width and, for MUSCL, on
+    its end width too. Each backend's admission is repeated operation for
+    operation, so the largest block value must be the admitted whole-domain
+    maximum bit for bit, while a quiescent block reports zero, not its
+    neighbour's value. A disagreement means this account and the transport
+    kernel no longer describe the same admission; the event is refused.
+    """
+    leaving=np.maximum(relative[1:],0.)+np.maximum(-relative[:-1],0.)
+    cells=None
+    for edges in (x,y) if scheme=='muscl' else (x,):
+        width=np.diff(edges)
+        # advance_ale forms (dt/width)*leaving; _ale_reference forms dt*leaving/width.
+        fraction=(dt/width)*leaving if backend=='numba' else (dt*leaving)/width
+        cells=fraction if cells is None else np.maximum(cells,fraction)
+    # Floor at +0, where advance_ale starts: an idle block is never labelled -0.
+    fractions=[max(0.,float(v)) for v in np.maximum.reduceat(cells,ids[:-1])]
+    if max(fractions)!=admitted:raise TectonicsError('block outflow fractions disagree with the admitted ALE maximum')
+    return fractions
+
+
 def advance_plate_state(world,u,w,dt,*,left,right,event_id,expected_parent_id,
                           event_times_s=(),scheme='muscl',backend='numba',budget=None,cancel=None):
     """Advance aligned control volumes and their shared ownership faces together.
@@ -327,6 +350,8 @@ def advance_plate_state(world,u,w,dt,*,left,right,event_id,expected_parent_id,
     A plate cut must coincide exactly with a mesh face before the interval. Regrid
     explicitly to insert missing cuts. Its flux is then the SAME ALE face flux used
     by adjacent blocks, so block/cohort budgets cannot double-count a transfer.
+    Each block account carries that block's own largest outgoing fraction (v2);
+    v1 receipts repeated the whole-domain maximum in every block.
     No generated ridge production or slab force is inferred from a boundary label.
     """
     _begin(world,event_id,expected_parent_id,cancel)
@@ -334,7 +359,11 @@ def advance_plate_state(world,u,w,dt,*,left,right,event_id,expected_parent_id,
     ids=np.searchsorted(x,cuts)
     if np.any(ids>=len(x)) or not np.array_equal(x[ids],cuts):raise TectonicsError('plate cuts must align with material faces; remap first')
     c=len(old.cohorts);n=old.grid.cells
-    with select_budget(budget).reserve(48*c*n+4096*c*len(t.blocks)+16384,category='plate-evolution'):
+    if input_shape(u)!=(n+1,) or input_shape(w)!=(n+1,):raise TectonicsError('N+1 physical and mesh face velocities required')
+    # 96 bytes per face: the captured velocities and the outflow-fraction scratch.
+    with select_budget(budget).reserve(48*c*n+96*(n+1)+4096*c*len(t.blocks)+16384,category='plate-evolution'):
+        # One capture serves the transport kernel and the block accounts alike.
+        u=snapshot(u,'physical face velocity');w=snapshot(w,'mesh velocity')
         motion=advect_ale(old,u,w,dt,left=left,right=right,scheme=scheme,backend=backend,
                            event_times_s=event_times_s,budget=budget,cancel=cancel)
         new=motion.state;y=new.grid.edges_m
@@ -342,15 +371,16 @@ def advance_plate_state(world,u,w,dt,*,left,right,event_id,expected_parent_id,
         from ._mesh_native import block_inventories
         before_all=block_inventories(old.thickness_m,x,ids)
         after_all=block_inventories(new.thickness_m,y,ids)
+        fractions=_block_outflow_fractions(x,y,u-w,float(dt),ids,scheme,backend,float(motion.accounts[0,5]))
         accounts=[]
         for b in range(len(t.blocks)):
             start,end=int(ids[b]),int(ids[b+1]);rows=[]
             for k in range(c):
                 before=float(before_all[b,k]);after=float(after_all[b,k])
                 rows.append(dict(zip(_METRICS,_account(before,after,float(dt)*motion.face_flux_m2_s[k,start],
-                    -float(dt)*motion.face_flux_m2_s[k,end],float(motion.accounts[k,5])))))
+                    -float(dt)*motion.face_flux_m2_s[k,end],fractions[b]))))
             accounts.append({'block_id':t.blocks[b].block_id,'plate_id':t.blocks[b].plate_id,'cohorts':rows})
-        receipt={'operation':'advance-plate-control-volumes-v1','event_id':event_id,'parent_model_id':world.model_id,
+        receipt={'operation':'advance-plate-control-volumes-v2','event_id':event_id,'parent_model_id':world.model_id,
             'time_s':new.time_s,'duration_s':float(dt),'old_topology_id':t.topology_id,'new_topology_id':target.topology_id,
             'material_transition_id':new.transition_id,'block_accounts':accounts,'scheme':scheme,'backend':backend}
         result=TectonicState1D(new,target,applied_event_ids=world.applied_event_ids+(event_id,),receipt=receipt,budget=budget)

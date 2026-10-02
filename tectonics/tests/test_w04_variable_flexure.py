@@ -2,6 +2,7 @@
 from dataclasses import FrozenInstanceError, replace
 from concurrent.futures import CancelledError
 import math
+import re
 from threading import Event
 import unittest
 
@@ -14,7 +15,7 @@ from atlas_tectonics.parameters import FlexureParameters
 from atlas_tectonics.regional import RegionalGrid1D
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.variable_flexure import (
-    RigidityProfile1D, VariableFlexureAccuracy, VariableRigidityFlexure,
+    RigidityProfile1D, VariableFlexureAccuracy, VariableRigidityFlexure, _one_norm_estimate,
 )
 
 
@@ -85,7 +86,50 @@ def two_piece_oracle(cells=8, length=4., rigidities=(1., 16.), pressures=(2., -1
     return result
 
 
+def ceiling_outcome(p, parameters, load, tolerances, refinements, **policy):
+    """A periodic solve's outcome (the result, or the refusal's text), the
+    subdivisions built, and each successive pair's domain-maximum changes
+    recomputed from the retained factors."""
+    accuracy = VariableFlexureAccuracy(SOURCE, *tolerances, max_refinements=refinements,
+                                       max_elements=1 << 20, **policy)
+    with VariableRigidityFlexure(p, parameters, 'periodic', accuracy) as plan:
+        try:
+            outcome = plan.solve(load)
+        except TectonicsError as error:
+            outcome = str(error)
+        levels = sorted(plan._levels)
+        responses = [plan._response(plan._factor(s), load) for s in levels]
+    changes = np.array([np.max(np.maximum(np.max(np.abs(new[:, :3, :3]-old[:, :3, :3]), axis=1),
+                                          np.abs(new[:, 3, :3]-old[:, 3, :3])), axis=0)
+                        for old, new in zip(responses, responses[1:])])
+    return outcome, levels, changes
+
+
+def quoted_changes(message):
+    """Every (change, subdivisions) pair a ceiling refusal quotes, in order."""
+    return [(float(value), int(count)) for value, count in
+            re.findall(r'(\d\.\d+e[-+]\d+)[^;()]*? at (\d+)', message)]
+
+
 class VariableRigidityFlexureTests(unittest.TestCase):
+    def test_error_estimator_does_not_stop_at_a_constant_mode_nullspace(self):
+        # Derivative maps annihilate constants. An initial zero product must
+        # still reach coordinate probes, not falsely report zero sensitivity.
+        matrix=np.array([[1.,1.,-1.,-1.],[-1.,-1.,1.,1.]])
+        estimate=_one_norm_estimate(lambda x: matrix@x,lambda x: matrix.T@x,4)
+        self.assertEqual(estimate,np.linalg.norm(matrix,1))
+
+    def assert_quotes(self, message, levels, changes, fields):
+        # A ceiling refusal must quote, for exactly these fields and in this order,
+        # the smallest change with its subdivisions and then the change at the
+        # ceiling. The wording around those numbers is not pinned.
+        best = np.argmin(changes, axis=0)
+        expected = [pair for field in fields for pair in
+                    ((changes[best[field], field], levels[best[field]+1]), (changes[-1, field], levels[-1]))]
+        quoted = quoted_changes(message)
+        self.assertEqual([count for _, count in quoted], [count for _, count in expected], message)
+        assert_allclose([value for value, _ in quoted], [value for value, _ in expected], rtol=1e-3, atol=0.)
+
     def test_uniform_load_is_exact_equilibrium_for_arbitrary_positive_rigidity(self):
         d = [1., 16., 2., 4., 8., 1., 3., 5.]
         for boundary in (FREE, CONTINUOUS, 'periodic'):
@@ -219,6 +263,130 @@ class VariableRigidityFlexureTests(unittest.TestCase):
                 PARAMETERS, CONTINUOUS, ACCURACY) as plan:
             with self.assertRaisesRegex(TectonicsError, 'scaled pressure'):
                 plan.solve(np.r_[np.zeros(8), np.nextafter(0., 1.), 0.])
+
+    def test_ceiling_refusal_quotes_the_smallest_estimate_where_refinement_stalled(self):
+        # Sixteen periodic cells with elastic thicknesses of 45, 30 and 8 km over six
+        # of the smallest flexural lengths. Past 32-64 subdivisions the mesh-change
+        # estimates grow again (round-off in the banded solve), so a tolerance below
+        # that floor is met at none of the eight levels. The refusal used to say only
+        # that the tolerance was not reached within the ceiling.
+        parameters = FlexureParameters('round-off-floor', SOURCE, 7e10, 20e3, .25, 3300., 9.81)
+        thickness = np.where(np.arange(16) < 8, 30e3, 8e3); thickness[0] = 45e3
+        rigidity = 7e10*thickness**3/(12*(1-.25**2))
+        length = 6*float(np.min((4*rigidity/parameters.restoring_pa_per_m)**.25))
+        p = RigidityProfile1D(RegionalGrid1D(16, length, 0.), np.full(16, 7e10), thickness, np.full(16, .25),
+            source_id=SOURCE, frame_id='synthetic-planar-frame', datum_id='synthetic-datum',
+            epoch_id='fixed-reference-epoch')
+        load = np.r_[1e7*np.cos(1.7*np.arange(16)+.3), 0., 0.]
+
+        def run(tolerances, refinements):
+            return ceiling_outcome(p, parameters, load, tolerances, refinements)
+
+        below_floor = (1e-9, 1e-9, 1e-14, 1e-18)
+        message, levels, changes = run(below_floor, 8)
+        self.assertIsInstance(message, str)                                 # refused
+        self.assertEqual(levels, [2**k for k in range(9)])                  # every level was still tried
+        best = np.argmin(changes, axis=0)
+        self.assertTrue(np.all(changes[-1] > changes[best, range(3)]))      # every field rose again
+        named = quoted_changes(message)
+        for field in range(3):
+            smallest, subdivisions = changes[best[field], field], levels[best[field]+1]
+            self.assertTrue(any(count == subdivisions and abs(value-smallest) <= 1e-3*smallest
+                                for value, count in named), (field, smallest, subdivisions, message))
+        self.assert_quotes(message, levels, changes, (0, 1, 2))
+        # A field whose estimate rose is not named while it meets its tolerance: with
+        # a 10 m displacement allowance only slope and curvature fail at 256.
+        mixed, levels, changes = run((1e-9, 10., 1e-14, 1e-18), 8)
+        self.assertIsInstance(mixed, str)
+        self.assertEqual(levels, [2**k for k in range(9)])
+        self.assertGreater(changes[-1, 0], changes[-2, 0])                  # the displacement rose too
+        self.assertLess(changes[-1, 0], 10.)                                # but within its allowance
+        self.assert_quotes(mixed, levels, changes, (1, 2))
+        # Estimates that only fell (a ceiling too low for the tolerance) keep the plain refusal.
+        plain, levels, changes = run(below_floor, 2)
+        self.assertIsInstance(plain, str)
+        self.assertEqual(levels, [1, 2, 4])
+        self.assertTrue(np.all(np.argmin(changes, axis=0) == len(changes)-1))
+        self.assertNotEqual(plain, message)
+        self.assertFalse(re.search(r'\d\.\d+e[-+]\d+', plain))
+        # This pair formerly passed at 64 subdivisions despite a displacement
+        # change already rising from its minimum. The independent precision
+        # allowance now refuses that unsupported pass, without stopping early.
+        refused, levels, changes = run((1e-4, 1e-6, 1e-9, 1e-13), 8)
+        self.assertEqual(levels, [2**k for k in range(9)])
+        self.assertGreater(changes[5, 0], changes[4, 0])
+        self.assertIsInstance(refused,str)
+        self.assertIn('numerical precision',refused)
+
+    def test_accidentally_agreeing_meshes_do_not_pass_below_numerical_precision(self):
+        # Captured continuous-profile regression: at 384 subdivisions the old
+        # displacement change was 4.9e-8 m against a 7.1e-8 m allowance, yet a
+        # 64-ulp material perturbation moved it by 5.5e-6 m. The perturbation is
+        # evidence for this fixture, never the solver's error-estimation method.
+        parameters=FlexureParameters('precision-control',SOURCE,7e10,20e3,.25,3300.,9.81)
+        thickness=np.full(13,71344.75169996313)
+        material=(7e10,float(thickness[0]),.25)
+        p=RigidityProfile1D(RegionalGrid1D(13,1084244.4854291864,0.),
+            np.full(13,7e10),thickness,np.full(13,.25),source_id=SOURCE,
+            frame_id='synthetic-planar-frame',datum_id='synthetic-datum',
+            epoch_id='fixed-reference-epoch',far_left=material,far_right=material)
+        load=np.array([3278.6980138314125,1061.7840278089784,-1693.8767316038447,
+            -672.455277689334,-3898.585612172092,-2900.7305771289743,-430.7953436446985,
+            -2914.570884041081,-1033.551672021682,-227.6991654316522,470.91614345353537,
+            3949.6663951871315,-544.2218342500279,1657973.0630892566,-317591.7304542913])
+        accuracy=VariableFlexureAccuracy(SOURCE,2.7592818405398763e-9,
+            2.0065868640322665e-10,1.648344846558318e-16,1.92250304598375e-13,
+            max_refinements=7,max_elements=65536,max_element_over_alpha=.25)
+        with VariableRigidityFlexure(p,parameters,CONTINUOUS,accuracy) as plan:
+            with self.assertRaisesRegex(TectonicsError,'precision|tolerance'):
+                plan.solve(load)
+            # Independent acceptance requirement: even when the platform's
+            # successive-mesh differences happen to agree, its arithmetic
+            # sensitivity cannot be smaller than the requested displacement.
+            result,uncertainty=plan._response(plan._factor(384),load,precision=True)
+            limit=accuracy.absolute_displacement_m+accuracy.relative_tolerance*np.max(result[:,3,0])
+            self.assertGreater(uncertainty[0],limit)
+
+    def test_ceiling_refusal_stays_plain_while_a_failing_field_is_still_falling(self):
+        # Five periodic cells whose first slope estimate is small by accident: 1.3e-9
+        # at 2 subdivisions, then 1.4e-8 at 4, and from there it falls at every level
+        # until the tolerance is met at 32. At ceilings 3 and 4 the slope fails and
+        # lies above that early minimum while refinement is still reducing it. A
+        # refusal that named a floor there said the opposite of what a higher ceiling
+        # then does.
+        parameters = FlexureParameters('early-dip', SOURCE, 7e10, 20e3, .25, 3300., 9.81)
+        p = RigidityProfile1D(RegionalGrid1D(5, 12e3, 0.), np.full(5, 7e10),
+            np.array([15e3, 10e3, 7.3e3, 24e3, 17e3]), np.full(5, .25), source_id=SOURCE,
+            frame_id='synthetic-planar-frame', datum_id='synthetic-datum',
+            epoch_id='fixed-reference-epoch')
+        load = np.array([-1.0e7, -1.8e7, 1.7e7, -7.4e6, -4.3e6, 0., 0.])
+
+        def run(refinements):
+            return ceiling_outcome(p, parameters, load, (1e-12, 1e-2, 5e-10, 1e-10), refinements,
+                                   max_element_over_alpha=1.)
+
+        plain, levels, changes = run(1)                 # one estimate cannot have stopped falling
+        self.assertIsInstance(plain, str)
+        self.assert_quotes(plain, levels, changes, ())
+        for refinements in (3, 4):
+            with self.subTest(refinements=refinements):
+                message, levels, changes = run(refinements)
+                self.assertEqual(levels, [2**k for k in range(refinements+1)])
+                self.assertGreater(changes[-1, 1], np.min(changes[:, 1]))   # above its earlier minimum
+                self.assertLess(changes[-1, 1], changes[-2, 1])             # and still falling
+                self.assertEqual(message, plain)
+        accepted, levels, changes = run(8)
+        self.assertEqual(levels, [1, 2, 4, 8, 16, 32])
+        self.assertTrue(np.all(accepted[:, 4, 3] == 32.))
+        # One refinement after the early minimum nothing yet shows the slope falling,
+        # so that refusal quotes the minimum, for the slope alone (the curvature fails
+        # too but is falling). It is the same solve that ceiling 5 accepts, which is
+        # why the refusal may offer round-off as a cause but must not assert it.
+        message, levels, changes = run(2)
+        self.assertEqual(levels, [1, 2, 4])
+        self.assertGreater(changes[-1, 1], changes[-2, 1])
+        self.assertLess(changes[-1, 2], changes[-2, 2])
+        self.assert_quotes(message, levels, changes, (1,))
 
     def test_immutable_snapshots_lazy_factor_reuse_close_and_per_call_budget(self):
         budget = WorkBudget(32<<20)

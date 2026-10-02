@@ -6,6 +6,11 @@ Polygons describe occupied area; polylines describe zero-width fault/feature tra
 A distance query can describe a weak-zone corridor without polygonising a circle.
 Authored polygon holes must not touch. Overlays and WKB restoration retain valid
 point-touching holes produced by set operations, subject to structural validation.
+A mixed result (GeometryCollection) is held to one rule, so that no area or
+length is counted twice: its polygons must be valid together as a MultiPolygon,
+its traces simple together as a MultiLineString, and no trace may lie inside or
+along one of its polygons. Members may touch at points. Members that overlap,
+repeat or share an edge are refused, never unioned (see _validate_collection).
 
 Coordinates are metres in an identified Cartesian plane, NOT longitude/latitude.
 The geometry does not assign plate ownership or decide which overlapping feature
@@ -125,7 +130,9 @@ def _inspect_wkb(raw, limits):
 
     A tiny corrupt payload must not request billions of native points/rings. Only
     standard 2D WKB types 1-7 are supported; EWKB/SRID/Z/M need an explicit importer.
-    This parser does not repair topology. GEOS still validates the actual shape.
+    This parser does not repair topology. _validate_shape then checks the actual
+    shape: GEOS validity, the vertex-sequence rules and, because GEOS validity
+    does not compare the members of a collection, the collection rule.
     """
     offset=0;vertices=0;parts=0;pending=[(None,0)]
     def count_at(position,endian):
@@ -165,7 +172,76 @@ def _inspect_wkb(raw, limits):
     if offset!=len(raw):raise GeometryError('WKB trailing bytes are not part of geometry')
 
 
-def _validate_shape(g, limits, *, allow_empty=True):
+def _collection_members(g, kind, out):
+    """Gather non-empty members of one kind through nested collections and Multi* parts."""
+    for part in g.geoms:
+        if part.is_empty: continue
+        if part.geom_type == kind: out.append(part)
+        elif part.geom_type in ('Multi'+kind, 'GeometryCollection'): _collection_members(part, kind, out)
+    return out
+
+
+def _trace_shares_length(traces, polygons, limits):
+    """Does any trace lie inside or along any polygon? Judged pair by pair.
+
+    DE-9IM entries 0 and 1 are the dimensions in which a trace's interior meets
+    a polygon's interior and boundary; 1 is shared length, 0 a point contact. The
+    relation is GEOS's robust predicate with no tolerance added here; it is not
+    exact arithmetic (see _validate_collection). A constructed intersection is
+    not used: its rounded nodes can collapse a rounding-size overlap to a point
+    and so admit it. Relating the two whole sets at once is quadratic in their
+    part counts, so only pairs whose bounding boxes meet are related. The overlay
+    pair limit bounds their number and the candidate indices held at once;
+    batch_points bounds the relation scratch.
+    """
+    from shapely.strtree import STRtree
+    areas = np.asarray(polygons, dtype=object); lines = np.asarray(traces, dtype=object)
+    tree = STRtree(areas); pairs = 0; step = limits.batch_points
+    batch = max(1, min(step, limits.max_overlay_pairs//len(areas)))
+    for start in range(0, len(lines), batch):
+        part = lines[start:start+batch]
+        trace, area = tree.query(part)
+        pairs += len(trace)
+        if pairs > limits.max_overlay_pairs:
+            raise GeometryError('collection trace/polygon comparison envelope exceeds limit; partition explicitly')
+        for at in range(0, len(trace), step):
+            related = shapely.relate(part[trace[at:at+step]], areas[area[at:at+step]])
+            if any('1' in matrix[:2] for matrix in related):
+                return True
+    return False
+
+
+def _validate_collection(g, limits):
+    """One rule for a GeometryCollection: no area or length may be counted twice.
+
+    GEOS validates a collection member by member only. Overlapping polygons,
+    overlapping traces or a trace lying along a polygon were therefore admitted
+    and their common area or length was summed twice (review s03-2). Taken at any
+    nesting depth, the polygons must be valid together as one MultiPolygon, the
+    traces simple together as one MultiLineString, and no trace may share positive
+    length with a polygon. Point contacts stay valid. Polygons sharing an edge
+    are refused as well, exactly as they are in a MultiPolygon. Two traces may
+    meet only where both end; a closed trace has no end, so no other trace may
+    touch it. The three tests are GEOS's robust predicates on the stored
+    coordinates, with no tolerance added here. They are not exact arithmetic: a
+    contact that is exactly collinear between full-precision coordinates is
+    occasionally refused, as it already is in a MultiPolygon. A failure is
+    refused, never unioned or repaired.
+    """
+    polygons = _collection_members(g, 'Polygon', [])
+    traces = _collection_members(g, 'LineString', [])
+    try:
+        if len(polygons) > 1 and not shapely.is_valid(shapely.multipolygons(polygons)):
+            raise GeometryError('collection polygons overlap, repeat or share an edge; occupied area is ambiguous')
+        if len(traces) > 1 and not shapely.is_simple(shapely.multilinestrings(traces)):
+            raise GeometryError('collection traces cross, repeat or overlap; split the feature explicitly')
+        if polygons and traces and _trace_shares_length(traces, polygons, limits):
+            raise GeometryError('collection trace lies inside or along a collection polygon')
+    except GEOSException as exc:
+        raise GeometryError('collection members could not be compared; no repair attempted') from exc
+
+
+def _validate_shape(g, limits, *, allow_empty=True, _member=False):
     if g is None or shapely.has_z(g) or shapely.has_m(g):
         raise GeometryError('only explicit two-dimensional geometry supported')
     n = int(shapely.get_num_coordinates(g))
@@ -200,7 +276,11 @@ def _validate_shape(g, limits, *, allow_empty=True):
         raise GeometryError('zero-length trace')
     if g.geom_type in ('GeometryCollection', 'MultiLineString', 'MultiPolygon'):
         for part in g.geoms:
-            _validate_shape(part, limits)
+            _validate_shape(part, limits, _member=True)
+        # Members valid one by one can still overlap each other. The outermost
+        # collection flattens its nested members, so they are not rechecked here.
+        if g.geom_type == 'GeometryCollection' and not _member:
+            _validate_collection(g, limits)
 
 
 
@@ -358,6 +438,10 @@ class PlanarGeometry:
 
         Uses the overlay-output contract, not polygon()'s stricter authored-hole
         rule, so storing an exact set operation does not change its admissibility.
+        A GeometryCollection must also meet the collection rule: polygons that
+        overlap, repeat or share an edge, traces that cross or overlap, and a
+        trace inside or along a polygon are refused, not unioned. A shape refused
+        after parsing raises 'invalid stored geometry'; the reason is its __cause__.
         """
         limits = _limits(limits)
         if type(raw) is not bytes or len(raw) > 64*limits.max_vertices+4096:

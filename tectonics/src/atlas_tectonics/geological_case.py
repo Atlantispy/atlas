@@ -263,8 +263,12 @@ class GeologicalCase:
                     if not math.isfinite(age): raise GeologyError('cooling age exceeds numerical range')
             for c in catalogues['columns']:
                 thermal = ref('thermal_profiles',c.thermal_profile_id)
-                if thermal.mode == 'tabulated' and thermal.depths_m[-1] < c.lithosphere_thickness_m:
-                    raise GeologyError('thermal table does not reach the column base; extrapolation refused')
+                # Stage 5 samples layers down to the last layer edge, a running sum.
+                # The declared thickness need only match the layer sum within the
+                # stack tolerance, and the running sum rounds on its own, so either
+                # depth can be the deeper. The table must reach both, compared exactly.
+                if thermal.mode == 'tabulated' and thermal.depths_m[-1] < max(c.lithosphere_thickness_m, c.layer_edges_m[-1]):
+                    raise GeologyError('thermal table does not reach the represented base of column '+c.column_id+'; extrapolation refused')
                 if c.fluid_material_id is not None and ref('materials',c.fluid_material_id).material_class != 'fluid':
                     raise GeologyError('pore material must explicitly be a fluid')
                 for layer in c.layers:

@@ -247,6 +247,15 @@ class PreparedEvolvingRegionalMechanics:
     These are quasi-static snapshots, not integrated displacement histories.
     Material coefficients refill only when changed; loads reuse existing factors.
     Grid, frame, pressure convention and boundary types remain fixed per plan.
+
+    A cancelled or failed coefficient change never leaves a partly updated
+    operator in use. An operator the change invalidated is closed and released,
+    and the next request prepares a new one from its own material, under the
+    execution identity of the first preparation or not at all. After any failed
+    change the retained material label is unknown: the exception does not say
+    whether the old or the new material is held, so the next request reads the
+    label back from the usable operator's own record. ``statistics()['mechanics']``
+    is None while no operator is held, and a new operator starts its own counters.
     """
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False): raise AttributeError('evolving mechanics policy is immutable')
@@ -269,7 +278,7 @@ class PreparedEvolvingRegionalMechanics:
         self._guard = self._resource.reserve(65536, category='evolving-mechanics-owner')
         self._guard.__enter__()
         self._plan = self._latest = self._latest_guard = None
-        self._material_id = None; self._request_id = None
+        self._material_id = None; self._request_id = None; self._execution_id = None
         self._owner = threading.get_ident(); self._closed = self._active = False
         self._stats = dict(preparations=0, changed_outputs=0, latest_hits=0)
         self._sealed = True
@@ -299,13 +308,26 @@ class PreparedEvolvingRegionalMechanics:
                         vertical_datum=context.vertical_datum, material_source=material.result_id,
                         viscosity_center_pa_s=material.array('centre'), viscosity_vertex_pa_s=material.array('vertex'),
                         material_sampling=md['sampling'], budget=self._resource, cancel=cancel, **opts)
+                    if self._execution_id not in (None, plan._context_id):
+                        # A replacement operator must not adopt a different loaded source.
+                        plan.close()
+                        raise TectonicsError('source changed since this evolving-mechanics plan first prepared; create a new plan')
+                    object.__setattr__(self,'_execution_id',plan._context_id)
                     object.__setattr__(self,'_plan',plan)
                     object.__setattr__(self,'_material_id',material.result_id)
                     self._stats['preparations'] += 1
-                elif material.result_id != self._material_id:
-                    self._plan.update_viscosity(material.array('centre'),material.array('vertex'),
-                        material_source=material.result_id,material_sampling=md['sampling'],cancel=cancel)
-                    object.__setattr__(self,'_material_id',material.result_id)
+                else:
+                    if self._material_id is None:
+                        # Unknown after a change that raised. The operator kept here is
+                        # usable, so its own record names the material it holds.
+                        object.__setattr__(self,'_material_id',self._plan.descriptor()['material_source'])
+                    if material.result_id != self._material_id:
+                        # Unknown until the change is accepted: an exception can leave the
+                        # operator holding the old material, the new one, or invalid.
+                        object.__setattr__(self,'_material_id',None)
+                        self._plan.update_viscosity(material.array('centre'),material.array('vertex'),
+                            material_source=material.result_id,material_sampling=md['sampling'],cancel=cancel)
+                        object.__setattr__(self,'_material_id',material.result_id)
                 fu, fw = (_sum_forces(request.body_forces, name) for name in ('u','w'))
                 boundary = {side:{name:request.boundary.array(side+'_'+name) for name in ('u','w')}
                             for side in json.loads(self._pattern)}
@@ -341,6 +363,13 @@ class PreparedEvolvingRegionalMechanics:
             if self._latest_guard is not None:
                 self._latest_guard.__exit__(None,None,None)
                 object.__setattr__(self,'_latest_guard',None)
+            plan = self._plan
+            if plan is not None and not plan.usable:
+                # An interrupted coefficient change invalidated the operator. Close and
+                # drop it; the next request prepares a new one from its own material.
+                object.__setattr__(self,'_plan',None); object.__setattr__(self,'_material_id',None)
+                try: plan.close()
+                except TectonicsError: pass  # close released its storage; report the original failure
             raise
         finally:
             object.__setattr__(self,'_active',False)

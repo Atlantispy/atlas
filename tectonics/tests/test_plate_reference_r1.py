@@ -320,6 +320,18 @@ class EvidencePolicy(unittest.TestCase):
         self.assertTrue(all(v['status']=='NOT_ACQUIRED' for v in r['outstanding_reference_challenges']))
     def test_withheld_cannot_be_calibration(self):
         with self.assertRaises(ReferenceDataError):evaluation_record(ID,OTHER,split='withheld',run_id='trial',purpose='calibration')
+    def test_development_cannot_be_validation(self):
+        # R7 (s04-3): development observations are already exposed; a record could label them validation.
+        with self.assertRaises(ReferenceDataError):evaluation_record(ID,OTHER,split='development',run_id='trial',purpose='validation')
+    def test_each_split_carries_exactly_one_purpose(self):
+        accepted=set()
+        for split in ('development','withheld','source-verification'):
+            for purpose in ('calibration','validation','source-verification'):
+                try:r=evaluation_record(ID,OTHER,split=split,run_id='trial',purpose=purpose)
+                except ReferenceDataError:continue
+                accepted.add((r['split'],r['purpose']))
+        self.assertEqual(accepted,{('development','calibration'),('withheld','validation'),
+                                   ('source-verification','source-verification')})
     def test_use_record_never_grants_model_acceptance(self):
         r=evaluation_record(ID,OTHER,split='withheld',run_id='independent-trial',purpose='validation')
         self.assertFalse(r['geological_model_accepted']);self.assertEqual(r['independent_evidence_families'],1)

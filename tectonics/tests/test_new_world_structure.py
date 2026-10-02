@@ -73,6 +73,22 @@ class InitialStructureTests(unittest.TestCase):
                 if f == 0.:
                     self.assertEqual(w.state.case.weak_zones, ())
 
+    def test_subtraction_created_layers_and_thermal_tables_share_exact_edges(self):
+        # These seeds formerly constructed a table a rounding unit shorter than
+        # the actual continental stack. No seed retries or coverage tolerance.
+        for seed in (12, 14, 37, 52):
+            with self.subTest(seed=seed):
+                w = structure.generate_structure(plan(seed=seed))
+                profiles = {p.profile_id: p for p in w.state.case.thermal_profiles}
+                for column in w.state.case.columns:
+                    thermal = profiles[column.thermal_profile_id]
+                    self.assertEqual(column.lithosphere_thickness_m, column.layer_edges_m[-1])
+                    self.assertEqual(thermal.depths_m[-1], column.layer_edges_m[-1])
+                    if column.crust_type == 'continental':
+                        for edge in column.layer_edges_m:
+                            self.assertIn(edge, thermal.depths_m)
+                self.assertFalse(w.state.preflight(require_temperature=True, require_porosity=True))
+
     def test_mixed_spherical_inventory_adds_under_cell_refinement(self):
         w = self.world
         feature = next(g.geometry for g in w.state.case.geometries if g.geometry.kind == 'Polygon')

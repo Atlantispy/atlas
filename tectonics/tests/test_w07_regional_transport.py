@@ -150,6 +150,115 @@ class RegionalHeatTransportTests(unittest.TestCase):
         self.assertGreaterEqual(result['minimum_k'],1.-5e-14)
         self.assertLessEqual(result['maximum_k'],2.+5e-14)
 
+    def test_inflow_must_equal_a_prescribed_face_temperature(self):
+        # Pure advection, u=1, CFL 0.4, declared inflow 450 K on the left. A face
+        # temperature of 100 K has no conductive role here, yet it shaped the
+        # boundary cell's slope: that cell fell to 395 K, below every advected
+        # state, and the step was accepted.
+        g=RectangularTransportGrid(4,2,1.,1.,'synthetic-cartesian')
+        T=np.array([[500.,1000.,1000.,1000.]]*2)
+        u,w=np.ones((2,5)),np.zeros((3,4))
+        closed=HeatBoundary(None,'outward_flux',0.)
+        def step(left,conductivity=0.,u=u,right=closed):
+            return PreparedHeatTransport(g,conductivity,1.).step(T,u,w,.1,
+                boundaries=dict(left=left,right=right,bottom=closed,top=closed))
+        for conductivity in (0.,.01):
+            result=step(HeatBoundary(450.,'temperature',450.),conductivity)
+            self.assertGreater(result['minimum_k'],450.)
+            self.assertLessEqual(result['maximum_k'],1000.)
+            for face in (100.,2000.,float(np.nextafter(450.,451.)),lambda x,z,t:450.+z):
+                with self.subTest(conductivity=conductivity,face=face),self.assertRaises(TectonicsError):
+                    step(HeatBoundary(450.,'temperature',face),conductivity)
+        # Only inward faces are compared: row 1 leaves through the left side.
+        counter=u*np.array([[1.],[-1.]])
+        opposite=HeatBoundary(450.,'outward_flux',0.)
+        result=step(HeatBoundary(np.array([450.,777.]),'temperature',450.),u=counter,right=opposite)
+        self.assertGreater(result['minimum_k'],450.)
+        self.assertLessEqual(result['maximum_k'],1000.)
+        for left in (HeatBoundary(np.array([777.,450.]),'temperature',450.),
+                     HeatBoundary(450.,'temperature',np.array([777.,450.]))):
+            with self.assertRaises(TectonicsError):
+                step(left,u=counter,right=opposite)
+
+    def test_wall_temperature_does_not_drive_closed_or_turning_advection(self):
+        # Inflow turns in the last column and leaves to the left, optionally
+        # also through the right face. A 2000 K wall formerly made that column
+        # export 400 K fluid and warm from 500 to 522 K, even with subnormal
+        # conductivity. Check both extrema and all four side orientations.
+        dt=.04
+        for side in ('left','right','bottom','top'):
+            for outward in (0.,.25):
+                u=np.full((2,5),-1.);u[:,-1]=outward
+                w=np.zeros((3,4));w[1,3]=-2*(1+outward);w[2,3]=-4*(1+outward)
+                hot=np.full((2,4),400.);hot[:,3]=500.
+                if side=='left':
+                    hot,u,w=hot[:,::-1],-u[:,::-1],w[:,::-1]
+                elif side in ('bottom','top'):
+                    hot,u,w=hot.T,w.T,u.T
+                    if side=='bottom':
+                        hot,u,w=hot[::-1],u[::-1],-w[::-1]
+                nz,nx=hot.shape
+                g=RectangularTransportGrid(nx,nz,1.,1.,'synthetic-cartesian')
+                for wall_temperature,inflow,T in ((2000.,500.,hot),(100.,400.,900.-hot)):
+                    closed=HeatBoundary(inflow,'outward_flux',0.)
+                    bc={s:closed for s in ('left','right','bottom','top')}
+                    reference=PreparedHeatTransport(g,0.,1.).step(T,u,w,dt,boundaries=bc)
+                    bc[side]=HeatBoundary(inflow,'temperature',wall_temperature)
+                    for conductivity in (0.,float(np.nextafter(0.,1.)),1e-9):
+                        with self.subTest(side=side,outward=outward,wall=wall_temperature,k=conductivity):
+                            result=PreparedHeatTransport(g,conductivity,1.).step(T,u,w,dt,boundaries=bc)
+                            # The largest possible wall contribution over dt is
+                            # its half-cell conductance times the largest jump.
+                            # This tends to zero with k, unlike the old 22 K jump.
+                            bound=dt*2*conductivity*max(abs(wall_temperature-400.),
+                                abs(wall_temperature-500.))/min(g.dx,g.dz)**2
+                            self.assertLessEqual(result['maximum_k'],500.+bound+1e-11)
+                            self.assertGreaterEqual(result['minimum_k'],400.-bound-1e-11)
+                            self.assertLess(result['balance_relative'],1e-12)
+                            if conductivity==0.:
+                                np.testing.assert_array_equal(result['temperature_k'],reference['temperature_k'])
+                                self.assertEqual(result['advective_energy_j'],reference['advective_energy_j'])
+                                self.assertEqual(result['diffusive_energy_j'][side],0.)
+
+    def test_outflow_reconstruction_uses_interior_temperature(self):
+        g=RectangularTransportGrid(4,2,1.,1.,'synthetic-cartesian')
+        x,z=g.edges();X,Z=np.meshgrid(x[:-1]+g.dx/2,z[:-1]+g.dz/2)
+        T=500.+100.*X
+        closed=HeatBoundary(None,'outward_flux',0.)
+        inflow=lambda x,z,t:500.-100.*t
+        for wall_temperature in (100.,2000.):
+            with self.subTest(wall=wall_temperature):
+                result=PreparedHeatTransport(g,0.,1.).step(T,np.ones((2,5)),np.zeros((3,4)),.05,
+                    boundaries=dict(left=HeatBoundary(inflow,'temperature',inflow),
+                        right=HeatBoundary(None,'temperature',wall_temperature),bottom=closed,top=closed))
+                np.testing.assert_allclose(result['temperature_k'],T-5.,rtol=0.,atol=1e-12)
+                self.assertAlmostEqual(result['advective_energy_j']['right'],.05*(600.-2.5),places=12)
+                self.assertLess(result['balance_relative'],1e-12)
+        # A steep outgoing gradient must not extrapolate below absolute zero
+        # and turn positive fluid export into a negative heat flux.
+        T=np.array([[1000.,1000.,1000.,1.]]*2)
+        result=PreparedHeatTransport(g,0.,1.).step(T,np.ones((2,5)),np.zeros((3,4)),.01,
+            boundaries=dict(left=HeatBoundary(1000.,'temperature',1000.),
+                right=HeatBoundary(None,'temperature',1.),bottom=closed,top=closed))
+        self.assertGreater(result['advective_energy_j']['right'],0.)
+        self.assertGreater(result['minimum_k'],0.)
+        self.assertLessEqual(result['maximum_k'],1000.)
+
+    def test_conducting_wall_can_change_fluid_extrema(self):
+        # Why a conducting face is counted: in still fluid nothing is advected, and
+        # heat conducted from the wall alone lifts the last column above every
+        # cell state.
+        g=RectangularTransportGrid(4,2,1.,1.,'synthetic-cartesian')
+        closed=HeatBoundary(None,'outward_flux',0.)
+        wall=HeatBoundary(None,'temperature',2000.)
+        still=PreparedHeatTransport(g,.01,1.).step(np.full((2,4),500.),np.zeros((2,5)),np.zeros((3,4)),
+            .05,boundaries=dict(left=closed,right=wall,bottom=closed,top=closed))
+        self.assertGreater(still['maximum_k'],500.)
+        self.assertLess(still['maximum_k'],2000.)
+        conducted=-still['diffusive_energy_j']['right']
+        self.assertGreater(conducted,0.)
+        self.assertAlmostEqual(still['heat_after_j']-still['heat_before_j'],conducted)
+
     def test_source_and_diffusive_accounts_use_si_strike_width(self):
         g = RectangularTransportGrid(8,6,2.,3.,'synthetic',strike_width_m=4.)
         plan = PreparedHeatTransport(g,0.,3.)

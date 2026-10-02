@@ -269,6 +269,16 @@ two-stage SSP-RK2 stepping, together with conduction. Physical velocity minus me
 velocity governs transport relative to a translating grid. Material rectangles
 use exact space-time intersections to retain gross incoming and outgoing stocks,
 including material passing completely through the region.
+Where a side prescribes a face temperature, fluid entering through that side must
+be declared at the same temperature; a differing pair is refused, not blended.
+On a closed or outward face, the wall temperature affects only conduction.
+Ordinary outflow extrapolates from adjacent interior cell means, preserving
+affine transport. Closed or turning flow uses a constant normal state, as does
+an extrapolation that would be nonpositive. This prevents an unused cold wall
+from creating artificial heating through the advective reconstruction. Tests
+cover both extrema on all four sides down to subnormal conductivity and retain
+the exact affine moving-grid check; conservative flux accounts and timestep
+limits are unchanged.
 
 The [thermal–mechanical bridge](../../src/atlas_tectonics/regional_thermomechanical.py)
 solves start mechanics, advances heat using that frozen velocity, and solves endpoint
@@ -326,6 +336,32 @@ thermal route. [Workflow tests](../../tests/test_w07_workflow.py) and
 [evidence](../../evidence/w07-workflow.json) cover those joins and exact recovery.
 Unsupported mixtures, spherical sections and incompatible evolved columns remain
 integration gaps.
+
+When the thermal route carries heat across an interval, it records which
+mechanical solution carried the heat, how far that solution's velocity had to be
+corrected so that heat is conserved, and the hashes of the corrected velocity.
+Each saved thermal output that evolved heat also keeps the mechanical solution
+that carried it. When a saved output is read back, the workflow rebuilds the
+record from that stored solution and refuses the output unless the rebuilt record
+equals the saved one. Nothing is solved again. For the first interval, which has
+no earlier saved output to name its solution, the stored solution must also be
+the one for the starting geological state. Before this repair (R7, 1 October 2026
+candidate) a saved output whose hashes had been made consistent could carry a
+wrong record unnoticed. The stored velocity itself is not recomputed, so it is
+trusted as saved, as every restored field is. The cost is a larger saved output,
+by up to one mechanical solution each; an output saved without it is refused. The
+[method record](../W07_WORKFLOW.md#recovery-storage-and-resource-ownership) gives
+the exact sizes.
+
+The steady route's optional dry strength law repeats its solve, changing the
+viscosity inside the workflow's prepared solver each time. If such a change is
+cancelled or fails part-way, the solver refuses all further work rather than run
+with half-changed coefficients. The workflow does not keep a solver in that
+state. It closes it, and the next request first prepares a new one from the same
+geological inputs, so the same workflow can be asked again and returns what an
+uninterrupted run returns. A new solver prepared from different source code is
+refused. The [method record](../W07_WORKFLOW.md#recovery-storage-and-resource-ownership)
+states the cost, which is one fresh preparation.
 
 ## W08: shortening, sliding, subduction and finite magma
 
@@ -503,6 +539,15 @@ unsupported. [Keller and Suckale](https://academic.oup.com/gji/article/219/1/185
 provide the distinction between transported energy and phase-reaction energy;
 Atlas is not reproducing their full multiphase continuum model.
 
+When a thermal law is supplied, each stock declared as a melt or solid source must
+match its phase under that law, at the start and in every published remainder. A
+stock with no latent heat has a temperature but no melt fraction, so it is compared
+with the melting temperature instead: melt above it, solid below it. A stock exactly
+at that temperature is refused as ambiguous. This comparison checks only the label
+declared for a transfer. Heat-paid melting and the separate
+[delivery interface](../I01_DELIVERY.md) still refuse a stock with no latent heat at
+every temperature.
+
 [Emplacement](../../src/atlas_tectonics/magmatic_emplacement.py) assigns intrusion
 or extrusion and accounts for finite displaced/replaced host material. Net load
 depends on incoming minus outgoing mass per area. It does not independently run a
@@ -542,3 +587,23 @@ refusals and duplicate force ownership. The related
 requires separate absolute reference/current equilibria. Preserving these exchange
 boundaries makes the individual methods useful together without claiming a fully
 coupled planet.
+
+A viscosity change can be interrupted: cancelled, or failed, while the solver's
+coefficients are being replaced. A half-replaced operator would pair new
+coefficients with the previous material's name. The regional plan therefore
+refuses all further work once a change was interrupted, says that this is the
+reason, and reports it through a `usable` flag; it does not try to undo the
+change. The interface does not keep such an operator. It closes it and prepares a
+new one from the next request's own material, which gives the same result as an
+uninterrupted change at the cost of one fresh preparation. A cancellation can
+also arrive just after a change was accepted, so the error alone does not show
+which material the operator holds. After any failed change the interface
+therefore stops trusting its own record of that. Before the next request is
+solved it reads back from the operator which material is in place, and changes
+the coefficients if the request needs another one, so a request is never solved
+with whatever happened to be left behind. A replacement operator must come from
+the same source code as the first one; otherwise the request is refused. The
+evolving-mechanics tests cancel a change at every point where cancellation is
+checked, and a [history test](../../tests/test_tectonic_history.py) resumes a dated
+sequence after such a cancellation. The [method record](../EVOLVING_MECHANICS.md)
+lists what the repair costs.

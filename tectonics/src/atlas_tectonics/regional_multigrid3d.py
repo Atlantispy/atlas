@@ -117,11 +117,30 @@ def factor_allowance(geometry):
     Structural fill bounds: at most about 30 n^(4/3) and 26 n^(4/3) entries were
     measured for the coarse and pressure-mass factors over 2-24 cells per axis,
     three boundary patterns and flat boxes; 66.6 and 48 n^(4/3) are admitted.
+    Each bound is charged for native LU storage, including initial allocation
+    at fill 30 of the input pattern, growth storage and per-unknown work.
+    Q1/Galerkin velocity rows couple at most 27 nodes with three components;
+    pressure-mass rows couple at most 27 nodes. These conservative structural
+    counts keep preflight identical without assembling either matrix.
     """
     coarse = len(geometry.levels[-1]['free']) if geometry.levels else len(geometry.free1)
     mass = geometry.np
-    entries = min(coarse*coarse, int(288*(coarse/3)**(4/3)))+min(mass*mass, int(48*mass**(4/3)))
-    return 1024**2+12*entries+64*(coarse+mass)
+    coarse_entries = min(coarse*(coarse+1), int(288*(coarse/3)**(4/3)))
+    mass_entries = min(mass*(mass+1), int(48*mass**(4/3)))
+    return (1024**2+_native_factor_bytes(coarse, min(coarse*coarse, 81*coarse), coarse_entries)
+            + _native_factor_bytes(mass, min(mass*mass, 27*mass), mass_entries))
+
+
+def _native_factor_bytes(n, input_nnz, factor_nnz):
+    """Native LU allocation model, not the size of exported CSC factors.
+
+    As in the assembled 3D route, initial float64/int32 working arrays cost
+    24*30 bytes per input entry. Factor growth reserves 24 bytes per realised
+    stored entry; 1024 bytes per unknown covers permutations, supernodes and
+    work. Source/runtime binding and the realised check still apply; this is
+    an accounting envelope, not an allocator/RSS guarantee.
+    """
+    return max(720*input_nnz, 24*factor_nnz)+1024*n
 
 
 def _node_mask(shape, pattern):
@@ -343,7 +362,10 @@ class MultigridStokes:
 
     # ------------------------------------------------------------ structure
     def factor_bytes(self):
-        return sum(_nbytes(f.L, f.U) for f in (self.coarse, self.mass))
+        # Count native initial allocation as well as realised fill, without
+        # exporting L/U (SciPy would retain those additional CSC copies).
+        return 1024**2+sum(_native_factor_bytes(f.shape[0], matrix.nnz, f.nnz)
+            for f, matrix in ((self.coarse, self.matrices[-1]), (self.mass, self._mass_matrix)))
 
     def structure_bytes(self):
         """Retained non-factor bytes of the geometry and these operators."""

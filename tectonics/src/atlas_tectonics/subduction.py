@@ -474,16 +474,21 @@ class _Heat:
             raise TectonicsError('thermal discretisation produced non-positive absolute temperature')
         # Reaction at each prescribed-temperature node is a declared heat input;
         # open natural boundaries have zero diffusive normal flux. The summed
-        # discrete steady balance is independent of the linear residual norm.
+        # discrete steady balance is the free-node residual added up, gated here
+        # at its own scale besides the componentwise linear residual above.
         reaction = raw@t
         balance = float(np.sum(reaction[free]))
         scale = float(np.sum(np.abs(reaction)))
         if abs(balance) > 1e-9*max(1., scale): raise TectonicsError('thermal reaction balance failed')
+        # The test functions sum to one, so the assembled operator's column
+        # sums are flux_weights and sum(reaction) is flux_weights@t. heat_error
+        # is therefore -balance up to round-off: an algebraic identity of the
+        # assembled operator, not a second closure of the boundary heat flux.
         diffusive_input = float(np.sum(reaction)-balance)
         advective_export = float(flux_weights@t)
         heat_error = diffusive_input-advective_export
         if abs(heat_error) > 1e-9*max(1.,scale,abs(advective_export)):
-            raise TectonicsError('independent boundary heat flux does not close')
+            raise TectonicsError('assembled boundary heat flux identity does not close')
         scale_w_m = 3300*1250*SPEED_M_S*1000
         _cancel(cancel)
         return t+273., dict(linear_residual=error, free_heat_balance=balance,

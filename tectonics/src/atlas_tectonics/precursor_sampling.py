@@ -406,7 +406,14 @@ class PreparedPrecursor:
     A verified ExecutionContext covers source/runtime invalidation. The existing
     KernelExecutor provides admitted parallel batches; no second scheduler or
     alternative persistence service is added.
-    Public scientific inputs are immutable. Close only after joining readers.
+    Each threaded request creates, drives and closes its own executor on the
+    calling thread: the plan keeps no worker pool, CPU slots or native-thread
+    lease between calls and is not bound to a thread. Threaded requests on one
+    plan take turns under its dispatch lock; they do not run in parallel. A live
+    native-thread lease on another thread, or a conflicting limit, refuses that
+    request and leaves the plan usable.
+    Public scientific inputs are immutable. Close only after joining readers:
+    an idle plan may be closed from any thread, an active one refuses the close.
     """
     def __setattr__(self, name, value):
         if name in ('state', 'limits', 'geometry_limits', 'budget', 'identity', 'execution_policy') and hasattr(self, name):
@@ -422,7 +429,6 @@ class PreparedPrecursor:
         if type(self.execution_policy) is not PrecursorExecutionPolicy:
             raise GeologyError('typed PrecursorExecutionPolicy required')
         self._dispatch_lock = threading.Lock()
-        self._executor = None
         self._last_execution = {'route': 'not-run', 'batches': 0, 'parallel_jobs': 0}
         self.state = state
         self.limits = PrecursorSamplingLimits() if limits is None else limits
@@ -508,12 +514,11 @@ class PreparedPrecursor:
             if self._active:
                 raise GeologyError('join active sampling calls before closing the precursor plan')
             if not self._closed:
-                if self._executor is not None and self._executor._entered and threading.get_ident() != self._executor._owner_thread:
-                    raise GeologyError('close the sampling executor on its driving thread')
+                # No executor outlives a dispatch and no call is active here, so
+                # the plan holds no worker pool or native-thread lease and has no
+                # owning thread: any thread may close it.
                 self._closed = True
                 try:
-                    if self._executor is not None:
-                        self._executor.close()
                     if self._index is not None:
                         self._index.close()
                     if self._spherical_areas is not None:
@@ -573,7 +578,12 @@ class PreparedPrecursor:
         return self._unit_validity_known[code]
 
     def execution_statistics(self):
-        """Detached last-dispatch diagnostics; not part of scientific identity."""
+        """Detached last-dispatch diagnostics; not part of scientific identity.
+
+        The last dispatch recorded: a serial request records when it is routed,
+        a threaded one only once all its jobs have completed. A threaded request
+        that fails, is cancelled or is refused leaves the earlier record in place.
+        """
         return dict(self._last_execution)
 
     def sample_points(self, points, depths_m, *, frame_id, epoch_id, depth_reference_id,

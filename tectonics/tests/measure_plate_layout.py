@@ -54,7 +54,9 @@ def main():
                 'geological_validation':False})
             if seed==41:maps.append((method,world))
     refmotion=reference_motion_sample();cocos=spherical_ring_metrics(lonlat_directions(COCOS_COORDINATES))
-    result={'schema':'atlas.plate-layout-comparison.v1','scope':'calibration and held-out limited references; no geological acceptance',
+    # The registered 3C-R1 split marks the Cocos outline and AF-AN steps 1-12 as
+    # previously exposed development data; neither is held out.
+    result={'schema':'atlas.plate-layout-comparison.v1','scope':'calibration and previously exposed limited references; no geological acceptance',
         'runtime':{'python':platform.python_version(),'numpy':np.__version__,'platform':platform.system()},
         'seeds':[41,42,43],'plate_count':12,'candidate_support_cells':512,
         'reference':plate_reference_record(),'outline_reference':outline_reference_record(),

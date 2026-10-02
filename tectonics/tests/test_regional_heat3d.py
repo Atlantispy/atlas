@@ -247,6 +247,44 @@ class RegionalHeat3DTests(unittest.TestCase):
                 PreparedRegionalHeat3D(cells, (1., 1., 1.), capacity, conductivity, budget=budget)
         self.assertEqual(budget.reserved_bytes, 0)
 
+    def test_realised_factor_is_checked_without_retained_copies(self):
+        # factor.L/U build CSC copies that SciPy keeps with the factor. SuperLU's
+        # stored-entry count gives the same after-the-fact check, which still
+        # refuses an exceeded allowance and leaves the plan usable.
+        class Counted:
+            def __init__(self, factor, entries):
+                self.nnz = factor.nnz if entries is None else entries
+                self.shape, self.solve = factor.shape, factor.solve
+
+            @property
+            def L(self):
+                raise AssertionError('a factor copy was built')
+            U = L
+        original, entries = regional_heat3d.splu, [None]
+        old = np.full((2, 2, 2), 300.)
+        boundaries = insulated()
+        boundaries['x0'] = ('temperature', 310.)
+        with PreparedRegionalHeat3D((2, 2, 2), (2., 2., 2.), 1., 2.) as plan:
+            expected = advance(plan, old, boundaries=boundaries, source=5.)
+        budget = WorkBudget(32*1024**2)
+        with mock.patch.object(regional_heat3d, 'splu', lambda *a, **k: Counted(original(*a, **k), entries[0])):
+            with PreparedRegionalHeat3D((2, 2, 2), (2., 2., 2.), 1., 2., budget=budget) as plan:
+                # 12 bytes per stored entry plus the column pointers of the 8 unknowns.
+                entries[0] = (plan._factor_allowance-8*(8+1))//12+1
+                with self.assertRaises(MemoryLimitError):
+                    advance(plan, old, boundaries=boundaries, source=5.)
+                self.assertEqual(plan.statistics()['factorizations'], 0)
+                entries[0] -= 1                     # the largest count the allowance admits
+                advance(plan, old, boundaries=boundaries, source=5.)
+                entries[0] = None
+                result = advance(plan, old, duration=2., boundaries=boundaries, source=5.)
+                self.assert_controls(result)
+                self.assertEqual(plan.statistics()['factorizations'], 2)
+                result = advance(plan, old, boundaries=boundaries, source=5.)
+                for name in expected.array_names:
+                    np.testing.assert_array_equal(result.array(name), expected.array(name))
+        self.assertEqual(budget.reserved_bytes, 0)
+
     def test_cancellation_owner_and_source_guards_release_budget(self):
         budget = WorkBudget(32*1024**2)
         old = np.full((2, 2, 2), 300.)

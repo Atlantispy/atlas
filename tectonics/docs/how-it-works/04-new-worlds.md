@@ -73,6 +73,12 @@ and [morphology tests](../../tests/test_new_world_layout_morphology.py) distingu
 coverage/connectivity, rotation invariance, seed replay and area variation from
 geological realism. Code: [layout adapter](../../tools/new_world_layout.py);
 details and reference-use restrictions: [candidate layouts](../NEW_WORLD_LAYOUT.md).
+A qualified comparison with that reference records its split and purpose.
+Observations already seen during development count as calibration only; only the
+reserved, withheld part may be recorded as validation. Since the R7 repair of
+1 October 2026 the
+[audit record](../../src/atlas_tectonics/plate_reference_acceptance.py) refuses a
+development comparison labelled as validation, which it previously accepted.
 
 ## 3. Supply crust, materials and inherited structure
 
@@ -120,6 +126,12 @@ Profiles are saved as shared compact tables. Their interpolation error is bounde
 against the underlying analytical profile, and the sampler integrates them over
 actual radial volume. A small interpolation error measures numerical representation,
 not error in the chosen physical assumptions.
+
+The material stack and thermal table use the same represented depth boundaries.
+Adding layer widths back together can differ from a nominal drawn depth in the
+last floating-point digit; constructing both from the same ordered sum prevents
+a valid seed producing a table shorter than its rock column. No physical law,
+interpolation tolerance or random draw is changed by this numerical correction.
 
 **Basis and checks.** The [thermal foundations chapter](01-foundations.md) explains
 the W03 cooling/conduction basis. [Thermal adapter tests](../../tests/test_new_world_thermal.py)

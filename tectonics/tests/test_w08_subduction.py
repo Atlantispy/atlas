@@ -214,6 +214,25 @@ class SubductionTests(unittest.TestCase):
             self.assertLess(result.statistics['thermal']['constant_temperature_residual'],1e-10)
             self.assertLess(result.statistics['transport']['scaled_divergence_max'],1e-10)
 
+    def test_boundary_heat_statistics_restate_the_free_node_balance(self):
+        # R7 (s13-2): the second heat gate is an algebraic identity of the
+        # assembled operator, not an independent boundary-flux closure.
+        with PreparedSubduction(24,source_id='synthetic-focused-test',outflow_operator='natural-zero-diffusive-flux') as plan:
+            thermal=plan.solve('1c').statistics['thermal']
+            _,_,rhs,lu,free,full,raw,flux_weights=plan.heat.last
+            columns=np.asarray(raw.T@np.ones(raw.shape[0])).ravel()
+            scale=float(np.max(np.asarray(abs(raw).sum(axis=0))))
+            self.assertLess(float(np.max(np.abs(columns-flux_weights))),1e-12*scale)
+            # A wrong temperature moves balance and residual by equal, opposite amounts.
+            t=full.copy(); t[free]=lu.solve(rhs)+5.
+            reaction=raw@t; balance=float(np.sum(reaction[free]))
+            heat_error=float(np.sum(reaction)-balance)-float(flux_weights@t)
+            self.assertGreater(abs(balance),1e-9*float(np.sum(np.abs(reaction))))
+            self.assertLess(abs(balance+heat_error),1e-10*abs(balance))
+            for key in ('free_heat_balance','boundary_heat_residual_w_m','diffusive_input_w_m',
+                        'advective_export_relative_273k_w_m'):
+                self.assertIn(key,thermal)
+
     def test_different_case_evicts_unneeded_result_before_mechanics(self):
         with PreparedSubduction(24,source_id='synthetic-cache-lifetime',outflow_operator='natural-zero-diffusive-flux') as plan:
             previous=weakref.ref(plan.solve('1a'))

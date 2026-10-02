@@ -2,6 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 """
 from concurrent.futures import CancelledError, ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import replace
 import copy
 import hashlib
@@ -20,9 +21,60 @@ from numpy.testing import assert_allclose, assert_array_equal
 from atlas_tectonics import (PreparedRheology, RheologyProfile, reference_rheology,
     ConstitutiveLimits, DiffusiveScales, LawResult, save_law_result, load_law_result,
     DamageLengthScale, PreparedDamageRegularisation, TectonicsError)
-from atlas_tectonics.execution import ExecutionPolicy
+import atlas_tectonics.execution as execution
+from atlas_tectonics.execution import ExecutionPolicy, KernelExecutor
 from atlas_tectonics.resources import WorkBudget, MemoryLimitError
 from atlas_tectonics.storage import ArrayStore, StoreLimits
+
+
+@contextmanager
+def foreign_lease():
+    """Hold the process-wide native-thread lease on a helper thread.
+
+    While it is held, entering a KernelExecutor on any other thread is refused
+    with the executor's own TectonicsError.
+    """
+    held=threading.Event();done=threading.Event();failure=[]
+    def hold():
+        try:
+            with KernelExecutor(ExecutionPolicy(mode='serial')):
+                held.set();done.wait()
+        except BaseException as exc:failure.append(exc)
+        finally:held.set()
+    holder=threading.Thread(target=hold);holder.start();held.wait()
+    try:
+        if failure:raise failure[0]
+        yield
+    finally:done.set();holder.join()
+
+
+def leases():
+    """Process-wide executor claims: (native-thread lease users, CPU pool slots)."""
+    return execution._LIMIT_USERS,execution._POOL_SLOTS
+
+
+def native_limits():
+    from threadpoolctl import threadpool_info
+    import scipy.special  # the executor loads it before recording the limits it restores
+    return sorted((x['filepath'],x['num_threads']) for x in threadpool_info())
+
+
+class WorkerGate:
+    """A cancel token that tells an evaluation's workers from the thread driving it.
+
+    The driving thread asks first, before any worker exists, and is never held.
+    Every other thread that asks is one of that evaluation's workers: it reports
+    entry and waits for release. ``cancel=True`` then cancels the evaluation.
+    """
+    def __init__(self,cancel=False):
+        self.cancel=cancel;self.driver=None
+        self.entered=threading.Event();self.release=threading.Event()
+    def is_set(self):
+        me=threading.current_thread()
+        if self.driver is None:self.driver=me
+        elif me is not self.driver:
+            self.entered.set();self.release.wait(30)
+        return self.cancel and self.entered.is_set()
 
 
 class PreparedTests(unittest.TestCase):
@@ -65,6 +117,8 @@ else:raise AssertionError('missing solver silently replaced')
     def test_process_mode_refused(self):
         with self.assertRaises(TectonicsError):PreparedRheology(self.profile,execution=ExecutionPolicy(mode='processes'))
     def test_reuse_executor_after_worker_failure(self):
+        # R7 (3f): the name predates the per-evaluation executor. What is reused
+        # after a worker failure is the plan; the failed call's executor has gone.
         with PreparedRheology(self.profile,execution=ExecutionPolicy(mode='threads'),limits=ConstitutiveLimits(batch_points=2)) as p:
             with self.assertRaises(TectonicsError):p.evaluate([0,.5,2,1],0,1,0)
             r=p.evaluate([0,.5,1,1],0,1,0)
@@ -103,17 +157,28 @@ else:raise AssertionError('missing solver silently replaced')
             with p._operation(None):
                 with self.assertRaises(TectonicsError):p.evaluate(0,0,1,0)
     def test_wrong_thread_close_preserves_live_plan_and_admission(self):
-        b=WorkBudget(32<<20)
+        # R7 (3f): an executor lasts one evaluation, so no thread owns the plan. A
+        # close from another thread is refused only while an evaluation is active,
+        # and leaves the plan and its admission intact; an idle plan closes from
+        # any thread.
+        b=WorkBudget(32<<20);gate=WorkerGate()
         p=PreparedRheology(self.profile,budget=b,execution=ExecutionPolicy(mode='threads'))
         try:
             p.evaluate([0.,.5],0,1,0)
             held=b.reserved_bytes
+            def close_during_evaluation():
+                try:
+                    self.assertTrue(gate.entered.wait(30));p.close()
+                finally:gate.release.set()
             with ThreadPoolExecutor(max_workers=1) as workers:
-                future=workers.submit(p.close)
+                future=workers.submit(close_during_evaluation)
+                p.evaluate([0.,.5],0,1,0,cancel=gate)
                 with self.assertRaises(TectonicsError):future.result()
-            self.assertFalse(p._closed)
-            self.assertEqual(b.reserved_bytes,held)
-            p.evaluate([0.,.5],0,1,0)
+                self.assertFalse(p._closed)
+                self.assertEqual(b.reserved_bytes,held)
+                p.evaluate([0.,.5],0,1,0)
+                workers.submit(p.close).result()
+            self.assertTrue(p._closed)
         finally:p.close()
         self.assertEqual(b.reserved_bytes,0)
     def test_initial_damage_required(self):
@@ -214,6 +279,214 @@ else:raise AssertionError('missing solver silently replaced')
                 event.clear();count[0]=100
                 p.evaluate(np.zeros(10),0,1,0)
         self.assertEqual(b.reserved_bytes,0)
+
+
+T64=np.linspace(0,1,64);E64=np.logspace(-4,8,64);D64=np.linspace(0,20,64)
+
+
+def threaded(budget=None,batch=16):
+    """A threaded plan whose 64-point request below is four worker jobs."""
+    return PreparedRheology(reference_rheology('bf23-memory'),budget=budget,
+        execution=ExecutionPolicy(mode='threads',max_inflight=3),limits=ConstitutiveLimits(batch_points=batch))
+
+
+class DispatchScopedExecutor(unittest.TestCase):
+    """R7 (3f): each threaded evaluation owns its executor; the plan owns none.
+
+    Where a helper thread makes a plan's first threaded call, that thread stays
+    alive and the plan is closed on it in a ``finally``. Were a plan bound to its
+    first caller again, that still releases the process-wide lease, so a failure
+    here cannot fail every later test. A first caller that has already exited is
+    exercised in a separate interpreter for the same reason.
+    """
+    def test_idle_plan_holds_no_pool_cpu_slots_or_native_lease(self):
+        clean=leases();limits=native_limits();threads=set(threading.enumerate())
+        with threaded() as p:
+            p.evaluate(T64,.5,E64,D64)
+            self.assertEqual(p.execution_statistics['parallel_jobs'],4)
+            self.assertEqual(leases(),clean);self.assertEqual(native_limits(),limits)
+            self.assertEqual(set(threading.enumerate())-threads,set())
+            def unrelated():
+                with KernelExecutor(ExecutionPolicy(mode='serial')):return True
+            with ThreadPoolExecutor(max_workers=1) as pool:self.assertTrue(pool.submit(unrelated).result(30))
+
+    def test_plan_is_not_bound_to_its_first_threaded_caller(self):
+        b=WorkBudget(32<<20);p=threaded(b)
+        call=lambda:(p.evaluate(T64,.5,E64,D64).result_id,p.execution_statistics['parallel_jobs'])
+        with ThreadPoolExecutor(max_workers=1) as first:
+            try:
+                with ThreadPoolExecutor(max_workers=1) as second:
+                    results=[first.submit(call).result(30),second.submit(call).result(30),call()]
+                    self.assertEqual(len(set(results)),1);self.assertEqual(results[0][1],4)
+                    second.submit(p.close).result(30)
+                self.assertTrue(p._closed);self.assertEqual(b.reserved_bytes,0)
+            finally:first.submit(p.close).result(30)
+
+    def test_plan_outlives_the_thread_that_first_used_it(self):
+        script='''import json,sys,threading
+sys.path.insert(0,sys.argv[1])
+import numpy as np
+from threadpoolctl import threadpool_info
+import scipy.special
+import atlas_tectonics.execution as execution
+from atlas_tectonics import PreparedRheology,reference_rheology,ConstitutiveLimits
+from atlas_tectonics.execution import ExecutionPolicy,KernelExecutor
+from atlas_tectonics.resources import WorkBudget
+def native():return sorted((x['filepath'],x['num_threads']) for x in threadpool_info())
+out={};b=WorkBudget(32<<20)
+p=PreparedRheology(reference_rheology('bf23-memory'),budget=b,
+    execution=ExecutionPolicy(mode='threads'),limits=ConstitutiveLimits(batch_points=16))
+T=np.linspace(0,1,64);E=np.logspace(-4,8,64);D=np.linspace(0,20,64)
+def attempt(name,call):
+    try:out[name]=call()
+    except Exception as exc:out[name]=type(exc).__name__+': '+str(exc)
+def evaluate():return p.evaluate(T,.5,E,D).result_id
+def unrelated():
+    with KernelExecutor(ExecutionPolicy(mode='serial')):return 'ok'
+def close():p.close();return 'ok'
+before=native()
+caller=threading.Thread(target=attempt,args=('first',evaluate));caller.start();caller.join()
+out['leases']=[execution._LIMIT_USERS,execution._POOL_SLOTS];out['limits_restored']=native()==before
+# Started once the first caller has gone: if its thread identifier is handed straight back, this thread takes it.
+keep=threading.Event();spare=threading.Thread(target=keep.wait);spare.start()
+caller=threading.Thread(target=attempt,args=('second',evaluate));caller.start();caller.join()
+attempt('constructor',evaluate);attempt('unrelated_executor',unrelated);attempt('close',close)
+out['closed']=p._closed;out['reserved']=b.reserved_bytes
+keep.set();spare.join()
+print(json.dumps(out))
+'''
+        source=Path(__file__).resolve().parents[1]/'src'
+        result=subprocess.run([sys.executable,'-I','-B','-c',script,str(source)],
+                              capture_output=True,text=True,timeout=120)
+        self.assertEqual(result.returncode,0,result.stderr)
+        out=json.loads(result.stdout.strip().splitlines()[-1]);self.maxDiff=None
+        self.assertEqual(len(out['first']),64,out)
+        self.assertEqual(out,{'first':out['first'],'second':out['first'],'constructor':out['first'],
+            'leases':[0,0],'limits_restored':True,'unrelated_executor':'ok','close':'ok','closed':True,'reserved':0})
+
+    def test_overlapping_evaluation_is_refused_not_queued_and_the_running_one_completes(self):
+        gate=WorkerGate();b=WorkBudget(32<<20)
+        with threaded(b) as p,ThreadPoolExecutor(max_workers=1) as pool:
+            held=b.reserved_bytes;refusals=[]
+            def overlap():
+                try:
+                    self.assertTrue(gate.entered.wait(30));reserved=b.reserved_bytes
+                    try:p.evaluate(T64,.5,E64,D64)
+                    except TectonicsError as exc:refusals.append((type(exc),b.reserved_bytes==reserved))
+                finally:gate.release.set()
+            other=pool.submit(overlap)
+            first=p.evaluate(T64,.5,E64,D64,cancel=gate).result_id
+            other.result(30)
+            # The second call met an active plan: it neither waited for the first nor ran beside it.
+            self.assertEqual(refusals,[(TectonicsError,True)])
+            self.assertEqual(pool.submit(lambda:p.evaluate(T64,.5,E64,D64).result_id).result(30),first)
+            self.assertEqual(b.reserved_bytes,held)
+
+    def test_foreign_lease_refuses_the_call_before_any_job_and_binds_nothing(self):
+        b=WorkBudget(32<<20)
+        with threaded(b) as p:
+            held=b.reserved_bytes;call=lambda:p.evaluate(T64,.5,E64,D64).result_id
+            with foreign_lease():
+                foreign=leases()
+                with self.assertRaises(TectonicsError) as refused:call()
+                self.assertIs(type(refused.exception),TectonicsError)
+                self.assertEqual((b.reserved_bytes,leases()),(held,foreign))
+                self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
+                self.assertIsNone(p.execution_statistics)
+            # The refusal neither bound the plan to this thread nor made it unusable.
+            with ThreadPoolExecutor(max_workers=1) as other:
+                self.assertEqual(call(),other.submit(call).result(30))
+            self.assertEqual(b.reserved_bytes,held)
+        self.assertEqual(b.reserved_bytes,0)
+
+    def test_request_overlapping_another_plans_dispatch_is_refused_not_queued(self):
+        gate=WorkerGate();b=WorkBudget(32<<20);busy=threaded()
+        with threaded(b) as other,ThreadPoolExecutor(max_workers=1) as pool:
+            held=b.reserved_bytes
+            try:
+                try:
+                    running=pool.submit(lambda:busy.evaluate(T64,.5,E64,D64,cancel=gate).result_id)
+                    self.assertTrue(gate.entered.wait(30))
+                    with self.assertRaises(TectonicsError) as refused:other.evaluate(T64,.5,E64,D64)
+                    self.assertIs(type(refused.exception),TectonicsError);self.assertEqual(b.reserved_bytes,held)
+                finally:gate.release.set()
+                first=running.result(30)
+                # The refusal lasts for the overlap only, not for the other plan's lifetime.
+                self.assertEqual(other.evaluate(T64,.5,E64,D64).result_id,first)
+            finally:pool.submit(busy.close).result(30)
+        self.assertTrue(busy._closed)
+
+    def test_callers_own_executor_conflict_is_refused_and_compatible_lease_is_returned(self):
+        b=WorkBudget(32<<20)
+        with threaded(b) as p:
+            held=b.reserved_bytes
+            with KernelExecutor(ExecutionPolicy(mode='serial',max_workers=1,inner_threads=2)):
+                with self.assertRaises(TectonicsError) as refused:p.evaluate(T64,.5,E64,D64)
+                self.assertIs(type(refused.exception),TectonicsError)
+                self.assertEqual(b.reserved_bytes,held)
+                self.assertNotIn('executor-inflight',b.statistics()['category_peaks'])
+            with KernelExecutor(ExecutionPolicy(mode='serial')):
+                outer=leases()
+                p.evaluate(T64,.5,E64,D64)
+                self.assertEqual(p.execution_statistics['parallel_jobs'],4)
+                self.assertEqual(leases(),outer)
+
+    def test_failed_and_cancelled_dispatches_return_pool_and_lease(self):
+        b=WorkBudget(32<<20);clean=leases();threads=set(threading.enumerate())
+        with threaded(b,batch=2) as p:
+            held=b.reserved_bytes
+            def returned():return leases(),b.reserved_bytes,set(threading.enumerate())-threads
+            with self.assertRaises(TectonicsError):p.evaluate([0,.5,2,1],0,1,0)
+            self.assertIn('executor-inflight',b.statistics()['category_peaks'])
+            self.assertEqual(returned(),(clean,held,set()))
+            gate=WorkerGate(cancel=True);gate.release.set()
+            with self.assertRaises(CancelledError):p.evaluate(np.zeros(8),0,1,0,cancel=gate)
+            self.assertTrue(gate.entered.is_set());self.assertEqual(returned(),(clean,held,set()))
+            p.evaluate(np.zeros(8),0,1,0)
+            self.assertEqual(returned(),(clean,held,set()))
+
+    def test_source_invalidation_during_an_evaluation_returns_pool_lease_and_admission(self):
+        gate=WorkerGate();b=WorkBudget(32<<20);clean=leases();p=threaded(b)
+        def invalidate():
+            try:
+                self.assertTrue(gate.entered.wait(30))
+                p._context._sources=dict(p._context._sources)|{'absent.py':b'changed input'}
+            finally:gate.release.set()
+        try:
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                changing=pool.submit(invalidate)
+                # The workers finish; the check after them refuses the changed source.
+                with self.assertRaises(TectonicsError):p.evaluate(T64,.5,E64,D64,cancel=gate)
+                changing.result()
+            self.assertEqual(p.execution_statistics['completed_jobs'],4)
+            self.assertEqual(leases(),clean)
+        finally:
+            with self.assertRaises(TectonicsError):p.close()
+        self.assertEqual(b.reserved_bytes,0)
+
+    def test_statistics_describe_only_the_last_dispatch(self):
+        own=lambda record:{k:v for k,v in record.items() if k!='shared_budget'}
+        b=WorkBudget(32<<20)
+        with PreparedRheology(reference_rheology('bf23-memory'),budget=b,limits=ConstitutiveLimits(batch_points=10),
+                              execution=ExecutionPolicy(min_parallel_elements=20,max_inflight=3)) as p:
+            self.assertIsNone(p.execution_statistics)
+            p.evaluate(np.linspace(0,1,60),0,1,0);large=p.execution_statistics
+            p.evaluate(np.linspace(0,1,20),0,1,0);small=p.execution_statistics
+            self.assertEqual([(s['parallel_jobs'],s['completed_jobs'],s['peak_inflight'],s['reserved_bytes'])
+                              for s in (large,small)],[(6,6,3,0),(2,2,2,0)])
+            self.assertLess(small['peak_reserved_bytes'],large['peak_reserved_bytes'])
+            # Automatic execution keeps the next request serial: the record still describes the last dispatch.
+            p.evaluate([0,1],0,1,0)
+            self.assertEqual(own(p.execution_statistics),own(small))
+            # Each read is a detached copy, and its budget entry is the budget as it is now.
+            small['parallel_jobs']=-1;small['shared_budget']['reserved_bytes']=-1
+            self.assertEqual(p.execution_statistics['parallel_jobs'],2)
+            self.assertEqual(p.execution_statistics['shared_budget']['reserved_bytes'],b.reserved_bytes)
+        # A dispatch that fails after its executor started is described too.
+        with threaded(batch=2) as p:
+            with self.assertRaises(TectonicsError):p.evaluate([0,.5,2,1],0,1,0)
+            failed=p.execution_statistics
+            self.assertEqual((failed['parallel_jobs'],failed['completed_jobs'],failed['reserved_bytes']),(2,1,0))
 
 
 class StorageTests(unittest.TestCase):

@@ -24,6 +24,9 @@ arrays with a geological-looking label. It preserves geological case, initial
 sampling, original thermal profile, material cohorts, forcing, frame, epoch,
 datum and source identities. Raw construction of the geological binding refuses.
 Inward-positive source depth becomes upward-positive mechanical z explicitly.
+The external surface pressure has no assumed value: the caller states
+`external_pressure_pa`, zero gauge as an explicit `0.`, and an unstated pressure
+is refused (R7 repair, 1 October 2026 candidate; before it, it silently became 0 Pa).
 
 Pure ordered horizontal layers supply point viscosity at cell centres and exact
 vertical-series compliance over shear dual intervals. This is a stated series
@@ -73,6 +76,9 @@ allowance integrated across the domain. Larger corrections refuse. The original
 mechanical field is unchanged; the heat receipt binds that field's identity,
 transported velocity hashes and maximum correction. This resolves near-rest
 round-off without clipping small physical velocities or relaxing solver gates.
+A restore regenerates that record from the stored mechanical field and requires
+the stored record to equal it (R7 repair, 1 October 2026 candidate; see
+[the heat-coupling record on restore](#recovery-storage-and-resource-ownership)).
 
 ## Recovery, storage and resource ownership
 
@@ -89,7 +95,9 @@ and bytes; no lossy compression or discarded physical fields are introduced.
 Existing store compression policies, including zstd, remain selectable.
 
 Recovery verifies the contiguous parent/source/schedule prefix, then decodes only
-its newest physical state. It checks geometry, inventory, force, viscosity,
+its newest record: the physical state, its endpoint mechanics and, for a thermal
+output that evolved heat, the mechanics that carried the interval.
+It checks geometry, inventory, force, viscosity,
 boundary and constitutive bindings, numerical gates and heat accounts without
 rerunning completed mechanical solves. Closed heat accounts check source energy,
 prescribed fluxes, stored energy and parent continuity. Corrupted or incompatible
@@ -99,6 +107,142 @@ Thermal continuation reuses the accepted endpoint mechanics; surface continuatio
 seeds only its validated endpoint into the prepared solver. Initial-state, actual
 force-array, dry-strength linear-origin and surface-history checks also apply on
 restore, including when a corrupted record has internally consistent hashes.
+
+**Heat-coupling record on restore (R7 repair, 1 October 2026 candidate).** A heat
+interval is carried by one mechanical field, its input mechanics: the solve at
+the geological epoch for a first interval, the parent output's endpoint
+mechanics for a later one. The heat receipt's coupling record names that field
+(`mechanical_input_id`), the largest velocity correction and the hashes of the
+two transported velocity arrays. The record is a function of the input mechanics
+alone. Before the repair a restore could not see them: a first interval's input
+solve was used and then discarded, and a later interval's input was known only
+as an identity in its parent's metadata. Restore therefore checked the types of
+the three fields and, for a later interval, the input identity against the
+parent. A record rewritten with consistent hashes was accepted with a wrong
+input identity at a first interval, and with wrong velocity hashes or an
+inadmissible correction at any interval.
+
+Every thermal checkpoint that evolved heat now stores its input mechanics as a
+third snapshot, `coupling_mechanics`, beside `state` and `mechanics`. On restore
+the workflow regenerates the coupling record from that snapshot, with the
+function that produced the record, and requires the stored record to equal the
+result exactly. The two are compared as the canonical bytes that enter the
+output identifier, not as numbers. A correction that is exactly zero is recorded
+as `0.0`; a record that states it as `-0.0` or as the integer `0` is an equal
+number but other bytes, would restore as another output, and is refused. This
+re-applies the admitted-correction limit. No mechanical solve is run. Two
+further rules tie the snapshot to the run:
+
+- A first interval has no parent record to name its input. Its stored input must
+  pass the checks of a mechanical output at the geological epoch: the frozen
+  numerical gates and execution identity, the epoch and time, the force source
+  and force arrays of the source temperature, the plan definition, the
+  stress-site viscosity and the physical boundary values.
+- A later interval's record must name its parent's endpoint mechanics. That
+  comparison existed; it now binds the snapshot that is actually stored.
+
+A stored input on another velocity support than the heat grid, or whose
+descriptor lacks the fields the regeneration reads, is refused. So is one whose
+velocities are finite but overflow the regeneration: its correction is not a
+number, which no stored record can equal. A coupling record that is not an
+object is refused as an invalid binding; before the repair it raised an
+unrelated error.
+
+What this does not establish. The stored velocity and the stored diagnostics are
+not recomputed, so they are trusted as stored, as a restored endpoint's are: a
+stored input rewritten together with its record is caught only where a rule
+above catches it. Only the newest record is decoded. Earlier records in the
+prefix are still checked from their metadata alone. The exact comparison covers
+the coupling record only. The receipt's other fields are still compared as
+numbers, the heat account within its tolerances, so a record resealed with an
+equal number in another encoding there (the step count `1` written as `1.0`) is
+accepted and restores under another output identifier, as before the repair.
+
+Costs and changes, accepted with the repair:
+
+- Checkpoint content changes. An evolved thermal record without the snapshot is
+  refused with a field-set mismatch, and so is a record at the geological epoch
+  that carries one. Records written before the repair are recomputed in any
+  case, because the package execution identity changed.
+- Stores grow by up to one mechanics snapshot per evolved output. The store
+  keeps each distinct array once, so a later interval's input, which is its
+  parent's endpoint, adds no array payload; a first interval's epoch solve adds
+  its own arrays. Each evolved record's manifest grows by about 10 KB when the
+  input shares all its arrays with the endpoint (material at rest) and by about
+  18 KB when it shares none.
+- A restore decodes and hashes one more snapshot. The published outputs and
+  their identifiers are unchanged by the stored input.
+- The restore's own reservation keeps its rule: four times the record's distinct
+  stored array bytes plus 64 KiB. It now has to cover a third decoded snapshot
+  as well. In every case run for this candidate it still covered what a restore
+  holds while it validates, which is the arrays read from the store and every
+  decoded snapshot. The cases were square grids from 2 x 2 to 64 x 64 without
+  gravity, at rest under gravity and with flow, and elongated grids from 64 x 2
+  to 2 x 64 without flow, each on both schedules. The margin is smallest where
+  nearly all stored fields coincide: 46,231 B on 64 x 64 without gravity and
+  with a zero pressure datum. There four times the distinct bytes alone falls
+  19,305 B short, and the 64 KiB term supplies the cover. A focused test holds
+  the rule on the flow fixture.
+
+Measured on the workflow test fixture, three outputs, raw lossless store, on
+Windows/CPython 3.12.14 in the repair's scratch candidate against `8ee1041`.
+These are exact byte counts and accounted allowances, not timings or RSS. "Flow"
+is linear Boussinesq buoyancy under a laterally varying bottom heat flux, where
+input and endpoint share no solved field; "epoch" and "first" are the schedules
+(0, 0.01, 0.02) s and (0.01, 0.02, 0.03) s, with two and three evolved outputs.
+
+| Case | Array payload, B | Manifests, B | Database file, B |
+|---|---:|---:|---:|
+| At rest, 16 x 16, epoch | 48,192 → 48,192 | 77,580 → 97,015 | 176,128 → 192,512 |
+| At rest, 16 x 16, first | 48,192 → 48,192 | 78,535 → 107,688 | 176,128 → 204,800 |
+| Flow, 16 x 16, epoch | 127,680 → 127,680 | 77,618 → 114,659 | 323,584 → 360,448 |
+| Flow, 16 x 16, first | 127,680 → 163,280 | 78,551 → 134,122 | 327,680 → 438,272 |
+| Flow, 64 x 64, epoch | 1,909,824 → 1,909,824 | 78,466 → 115,628 | 2,068,480 → 2,101,248 |
+| Flow, 64 x 64, first | 1,909,824 → 2,445,008 | 79,465 → 135,228 | 2,068,480 → 2,666,496 |
+
+The smallest shared budget that admits the store and the workflow, for the flow
+cases with three outputs (each threshold is admitted exactly and refused one
+byte lower):
+
+| Grid, schedule | To run, B | To restore the last output, B |
+|---|---:|---:|
+| 4 x 4, epoch | 47,511,346 → 48,420,082 | 32,450,185 → 32,455,913 |
+| 16 x 16, epoch | 52,264,391 → 53,174,031 | 36,211,183 → 36,282,383 |
+| 64 x 64, epoch | 123,443,050 → 124,354,538 | 91,529,071 → 92,599,439 |
+
+With flow, a run needs about 0.91 MB more at every grid size, which is the
+store's staging allowance for the larger manifest and the additional arrays,
+and a restore needs twice the added distinct array bytes more. At rest a run
+needs about 0.08 MB more and a restore nothing more. On the largest regional
+grid, 64 x 64, the run uses 124,354,538 B of the 134,217,728 B default. A
+restore still needs less than the run that wrote the record in every measured
+case, so no budget can publish a checkpoint that it cannot restore. Wall-clock
+restore and storage time were not measured for this candidate.
+
+Ten methods in their own class of the
+[workflow tests](../tests/test_w07_workflow.py) hold this, nine on a flow case
+and one on a case without gravity, where nothing moves and the correction is
+exactly zero. Receipts are rewritten with consistent hashes at the first and at
+a later interval: the input identity (a made-up one, and the record's own
+endpoint), the velocity hashes (made up, exchanged, malformed), the correction
+(inadmissible, the next representable number and, where it is exactly zero,
+`-0.0` and the integer `0`) and the record itself replaced by a list or by
+nothing. Records are also published with a substituted snapshot: none, an
+unexpected one at the epoch, the endpoint in place of a first interval's input
+with and without a matching record, the endpoint relabelled to the epoch, the
+epoch input labelled with another time or with diagnostics that failed the
+gates, another mechanics of the same run in place of a parent's endpoint, and an
+input on another support, without diagnostics or with velocities that overflow
+the regeneration. The remaining methods hold that an honest first-interval
+restore equals the continuous run and solves nothing, that a run does not
+continue from a resealed latest record, which snapshots a record stores, that a
+restore is admitted by the smallest budget that admits the run and reserves for
+itself exactly what its rule states, and that an interval's input is not kept
+alive into the next interval. Seven of the ten fail without the repair; the
+three that pass either way guard what the repair must not change (no solve on
+restore, no budget that publishes what it cannot restore, and no more snapshots
+alive during a solve than before). These were run in the repair's scratch
+candidate on Windows/CPython 3.12.14 only.
 
 One driving thread and one native thread, shared 128 MiB accounted admission,
 256 cumulative accepted steps, cancellation and publication checks remain in
@@ -110,6 +254,61 @@ rather than increasing the 2 MiB source-inventory limit. Final inventory is
 `regional_strength` match HEAD after removing docstrings. Further source growth
 must address the bounded representation explicitly; no physical fields were
 removed. No numerical tolerance, grid or physical duration was changed to pass.
+
+**Interrupted dry-strength refill (R7 repair, 1 October 2026 candidate).** The
+steady dry-strength route lends the workflow's own regional plan to the C01
+Picard loop, which refills the plan's stress-site viscosity at every iteration.
+A refill that is cancelled or fails between the start of its numeric part and
+its acceptance leaves that plan
+[invalid](W07_REGIONAL_SOLVER.md#resources-execution-and-reuse): it refuses
+every further operation. Before the repair the workflow kept the dead plan, so
+every later `run` on it was refused and the caller had to close the workflow and
+prepare another one. The workflow now closes and drops such a plan as the
+failure passes through it, which releases the plan's retained allowance. Its
+next operation, `run` or `load`, first prepares a new plan from the same
+geological binding, scales and pressure convention, through the one call that
+also prepared the first plan. The new plan must carry the workflow's execution
+identity: if the loaded source differs it is closed, the operation is refused
+and a new workflow is needed. The regional plan's own rule is unchanged: nothing
+is rolled back and an invalidated plan is never used again.
+
+A failure that leaves the plan usable keeps it, for example a cancellation
+before a refill starts or just after one was accepted. The Picard loop always
+restarts from the creep viscosity, so coefficients left behind by an abandoned
+iteration never enter a result. The other routes never refill coefficients and
+are unaffected.
+
+What this costs and changes:
+
+- The new plan is a cold preparation and needs fresh admission of the plan's
+  retained allowance. The dead plan is released first, so a retry reserves no
+  more than an uninterrupted run; a focused test holds this at the smallest
+  budget that admits the route. A new plan whose preparation is refused or
+  cancelled is not adopted, and the next operation tries again.
+- A `load` that follows an interrupted run also prepares the new plan, even
+  when it then finds nothing to restore.
+- The retried output, its identifiers and its stored checkpoint equal those of
+  an uninterrupted workflow.
+
+Ten methods in their own class of the
+[workflow tests](../tests/test_w07_workflow.py) hold this. They interrupt a run
+by a cancellation inside the factorisation, a cancellation after the solver core
+took the new coefficients, a factorisation failure and an interruption that is
+not an ordinary exception, and then compare the same workflow's retried, stored
+and restored output with an uninterrupted workflow's. They also cover the
+released reservation, a restore that needs the new plan before any solve, a
+cancellation at every cancellation check of the new plan's preparation, a new
+plan the budget refuses, a second interrupted refill on the new plan, the
+smallest admitting budget, the kept plan after a failure that left it usable,
+and a new plan refused under another execution identity or a changed source. The
+plan refused under another identity is closed at once: the test reads its
+returned allowance while the refusal is still being raised, not after the
+garbage collector has released it. Cancellations and failures are injected
+through cancel tokens and attributes of the one plan or workflow object; the
+changed source is emulated as the existing source-drift tests do it. These were
+run in the repair's scratch candidate on Windows/CPython 3.12.14 only. The
+counts and timings recorded below are the 23 September record and are not
+rewritten.
 
 ## Verification and measurements
 

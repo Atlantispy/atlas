@@ -2,7 +2,9 @@
 """Bounded R2 indexing/scheduling evidence, not a planetary benchmark.
 
 Measures complete matched requests (admission, validation, output construction),
-first calls separately from pool reuse, and index construction within validation.
+first calls separately from repeat calls on the reused plan (each threaded call
+builds and closes its own executor; no pool is kept between calls), and index
+construction within validation.
 Input construction is reported separately. Numerical arrays/identities must match;
 timing is descriptive and never an acceptance gate. No reference acquisition.
 """

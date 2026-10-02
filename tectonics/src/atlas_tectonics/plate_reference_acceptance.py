@@ -111,12 +111,16 @@ def evaluation_record(dataset_id, candidate_id, *, split, run_id, purpose):
 
     This is an audit record, not access control against someone editing Python.
     'withheld' must be deliberate; no default silently evaluates it during tuning.
+    Each split has one purpose: development observations are already exposed, so
+    they carry calibration only and can never be recorded as validation; withheld
+    carries validation; source-verification pairs only with itself.
     """
     if split not in ('development','withheld','source-verification'):
         raise ReferenceDataError('explicit supported split required')
     if purpose not in ('calibration','validation','source-verification'):
         raise ReferenceDataError('explicit evidence purpose required')
-    if (split=='withheld' and purpose!='validation') or (split=='source-verification')!=(purpose=='source-verification'):
+    if ((split=='withheld' and purpose!='validation') or (split=='development' and purpose!='calibration')
+            or (split=='source-verification')!=(purpose=='source-verification')):
         raise ReferenceDataError('evidence split and intended use disagree')
     for value in (dataset_id,candidate_id):
         if not isinstance(value,str) or len(value)!=64 or any(c not in '0123456789abcdef' for c in value):

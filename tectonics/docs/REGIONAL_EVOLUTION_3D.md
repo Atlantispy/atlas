@@ -24,6 +24,13 @@ carried damage. Cell temperature/damage/composition are piecewise constant;
 depth and strain are evaluated at the mechanical Gauss points. No new mixture
 viscosity rule, mineral equation of state or experimental calibration is implied.
 
+Constitutive depth is the distance down from the top of the box divided by
+`depth_scale_m`: the top face is depth zero, and a Gauss-point depth beyond the
+depth scale is refused. `vertical_datum` is recorded in the plan and in every
+state but does not move that origin, so a box whose top is not the surface is
+still evaluated as if it were; no top-depth input exists. The plan definition
+records the convention as `depth`, as the two-dimensional regional route does.
+
 One explicit requested interval performs:
 
 1. Solve mechanics and its local rheology together at the starting state.
@@ -35,6 +42,12 @@ One explicit requested interval performs:
    the mechanical scales chosen here change conditioning, not acceptance. Each
    Picard solve that would previously have returned zero or inaccurate velocity
    for small dimensionless loads is now either accurate or refused.
+   Every such solve starts its fixed-point iteration from zero strain rate, that
+   is from the law's zero-rate viscosity, and never from the rate left by an
+   earlier solve on the same plan. The plan definition records this as
+   `constitutive_start`. A published result is therefore a function of the
+   state, the frozen driving and the plan definition alone
+   ([heat and reuse](#heat-and-reuse) gives the reason and the cost).
 2. Convert solved Q2 velocity to shared conservative transport-face streams.
 3. Update the registered BF23 scalar memory by its exact frozen-coefficient
    material-point formula, and accumulate scalar strain. Apply the declared
@@ -133,6 +146,64 @@ regressions cover changed masks, compatible budgets and temporary contention
 followed by recovery, without rerunning the numerical benchmark campaign.
 Source/runtime identities, frame, parent, source and result hashes remain bound.
 Admission uses the shared byte budget; it is not an operating-system memory cap.
+Transport and multigrid reserve native SuperLU initial allocation, factor growth
+and temporary work before execution, and check realised fill with the same model.
+The corrected accounting can refuse a formerly admitted grid at the same budget;
+it changes neither the equations nor the default 256 MiB limit. See the
+[memory model](REGIONAL_MECHANICS_3D.md) for the bounded measurements and admission
+examples. This is an allocation estimate, not an allocator or peak-RSS guarantee.
+
+**Declared constitutive start (R7, 1 October 2026).** Every mechanical solve
+starts its fixed-point iteration from zero strain rate. Until this repair it
+started from the strain rate of whatever the plan had solved last: another
+state, another driving, or the start of an advance that was refused afterwards.
+That rate was not an argument, not part of the reuse key and not recorded. The
+same state and driving therefore published different result ids and array bits
+after a different call order and on a new plan continuing a saved state
+(differences from round-off size up to a few parts in 1e9, inside the `1e-8`
+log-viscosity tolerance), and near the 32-iteration ceiling the same interval
+was accepted on one history and refused on another. With the declared start a
+result depends only on its state, driving and plan definition. The reused
+endpoint result is exactly what a fresh solve of the next interval's start
+would publish, and a new plan given a saved state and its remaining stocks
+reproduces the continuous run bit for bit under `auto`, `multigrid`, `gmres`
+and `direct`. Under `auto` the method that prepares each intermediate operator
+is fixed too, because the first operator always serves the zero-rate viscosity.
+Nothing else solved earlier reaches a later result: the linear solvers start
+from zero, the retained operator serves only exactly equal viscosity, and the
+finite-mode response cache belongs to that one operator.
+
+The accepted cost: a state whose viscosity depends on strain rate now pays the
+full iteration count at both solves of every interval, where the endpoint and
+the following start used to continue from a nearby rate. On the four-interval
+3x3x3 buoyancy-driven yielding example used to scope the repair, the iterations
+per interval went from 14 and 5 (then 5 and 5) to 14 and 14, and the operator
+preparations from 34 to 70, under each of the four methods; its final arrays
+moved by at most 6e-10 relative. In a matched scratch measurement on one Windows
+machine that was otherwise idle (2 October 2026; a fresh process for each run,
+three runs per tree, medians; not an evidence receipt) the whole example took
+12.1 s before and 21.5 s after with `direct`, 12.3 s and 22.1 s with `gmres`,
+15.3 s and 27.7 s with `multigrid`, and 12.3 s and 22.0 s with `auto`: about 1.8
+times the run time for about twice the operator preparations. (The scoping run
+of the prototype had recorded 12.6 s and 31.6 s in one unrepeated run.) On the
+2x2x2 yielding test fixture a first interval takes 4 preparations where it took
+3, and each following interval 2 where it took 1; four intervals took 3.9 s
+before and 4.9 s after (4.2 s and 5.2 s with `multigrid`). Constant and
+rate-independent viscosity is unchanged (about 2.8 s on both trees). An interval that reached the tolerance within 32
+iterations only because of the leftover rate is now refused on every history;
+the ceiling was not raised to compensate. No package module consumes this route
+yet, so today the cost falls on tests and tools.
+
+A declared warm start could win the speed back without the hidden input. The
+caller would pass the parent interval's accepted mechanics, whose result id
+would enter the reuse key and the constitutive records, in the way the
+two-dimensional thermochemical route declares its `nonlinear_start` and records
+its starting-guess ids. A restart would then need that snapshot as well as the
+state and stocks. It is a design item for when a consumer needs it, and is not
+implemented. R7's integration retains the deterministic zero start: adding a
+saved starting guess is a separate state/continuation contract change, not a
+reason to reintroduce an unrecorded cache dependency or raise the iteration
+ceiling. The measured nonlinear cost above is retained explicitly.
 
 ## What the bounded checks establish
 
@@ -144,6 +215,19 @@ factor reuse, cancellation and resource refusal. Joined controls exercise actual
 solved translation, heat-dependent force-driven motion, three-dimensional
 yielding convention, carried healing/history, once-only viscous heat and repeated
 cooling intervals. They also test immutable state/provenance and failed advances.
+
+Controls added with the declared start (R7) run two yielding intervals under
+`auto`, `multigrid`, `gmres` and `direct`. A new plan continuing from a state
+and stocks rebuilt from their descriptors and arrays must publish the same
+second interval as the continuous run, and the first interval solved again on a
+plan that has just solved the second must equal its first solution: mechanics
+and state ids, iteration records and arrays identical. An advance refused after
+its start mechanics converged must leave the following advance unchanged, and a
+force-driven yielding interval must be unchanged by another interval solved in
+between. These establish independence from call history for the tested cases on
+Windows/CPython 3.12.14, not for every platform or BLAS build. The tool below
+still compares rebuilding with reuse on a constant-viscosity fixture, which
+cannot see a starting-rate effect.
 
 `tools/check_regional_evolution3d.py` runs the focused joined tests and compares
 rebuilding with prepared reuse on the same small fixture using three interleaved
@@ -173,3 +257,7 @@ connection does not replace those responsibilities or forget whole-planet scope.
   constitutive implementation is reused with its own strain-norm convention.
   This pass inspected that code; the publisher fetch was unavailable, so it is
   not claimed as a newly reread paper or a new benchmark reproduction.
+- The declared constitutive start (R7, 1 October 2026) consulted no paper or
+  external software. It applies the zero-rate start that the two-dimensional
+  regional route (`regional_rheology.py`) already uses, and its checks are
+  Atlas's own.

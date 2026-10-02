@@ -124,6 +124,11 @@ class HeatBoundary:
 
     Inflow temperature is required only on inward relative faces. Diffusion is
     either a face temperature (K), or outward conductive heat flux (W/m2).
+    A face temperature shapes the advective slope only on inward relative faces,
+    where the inflow temperature must equal it: a differing pair is refused.
+    Outflow reconstruction uses interior cells; closed or turning flow uses a
+    constant normal reconstruction. With zero conductivity a face temperature
+    conducts nothing and is not counted among the extrema below.
     Specified Neumann fluxes and sources can change extrema: those cases have no
     unconditional homogeneous maximum principle. No post-update clipping occurs.
     """
@@ -244,16 +249,25 @@ class PreparedHeatTransport:
             upstream = T.copy()
             diffusion = _sample(boundary.diffusion_value, x, z, time, side+' diffusion')
             if boundary.diffusion_kind == 'temperature':
-                # Reconstruct boundary cells with the SAME limited reflected
-                # wall jump as R4.2, now on every side. Retain exact affine
-                # fields on open Dirichlet boundaries without changing the
-                # closed predecessor's support or adding an outflow condition.
+                # A wall value is an advected state only on an inward face.
+                # Otherwise it must not shape export towards the interior: a
+                # hot wall could make the cell export colder fluid and warm
+                # without conductive input, even at zero conductivity.
                 i = _SIDES.index(side)
                 wall_jump = 2*sign*(diffusion-T)
                 interior_jump = sign*(T-interior_values[i])
-                slope = np.where(wall_jump*interior_jump > 0.,
+                wall_slope = np.where(wall_jump*interior_jump > 0.,
                     np.sign(wall_jump)*np.minimum(np.minimum(2*np.abs(interior_jump),
                         np.abs(.5*wall_jump+.5*interior_jump)),np.abs(wall_jump)),0.)
+                # Through-outflow can extrapolate the interior difference and
+                # preserve affine fields. If both normal faces export (a turn),
+                # or extrapolation is nonpositive, retain the constant state.
+                # No exterior temperature enters either choice. The half-slope
+                # loss is covered by the existing 2*outgoing CFL coefficient.
+                through_outflow = ((sign*v > 0.) & (sign*interior_velocity[i] >= 0.) &
+                                   (T+.5*sign*interior_jump > 0.))
+                slope = np.where(inward, wall_slope,
+                                 np.where(through_outflow, interior_jump, 0.))
                 donor = sign*interior_velocity[i] < 0.
                 interior_faces[i][donor] = interior_velocity[i][donor]*(T-.5*sign*slope)[donor]
                 upstream = T+.5*sign*slope
@@ -263,6 +277,11 @@ class PreparedHeatTransport:
                 inflow = _sample(boundary.inflow_temperature_k, x, z, time, side+' inflow')
                 if np.any(inflow[inward] <= 0.):
                     raise TectonicsError('inflow temperature must be positive kelvin')
+                # The face temperature shaped this inward face's slope above.
+                # A different advected inflow state would let a value
+                # with no physical role there set the boundary cell: refuse.
+                if boundary.diffusion_kind == 'temperature' and np.any(inflow[inward] != diffusion[inward]):
+                    raise TectonicsError(side + ': inflow temperature must equal the face temperature on inward faces')
                 upstream[inward] = inflow[inward]
                 extrema.extend((float(inflow[inward].min()), float(inflow[inward].max())))
             af[:] = v*upstream
@@ -270,7 +289,10 @@ class PreparedHeatTransport:
                 if np.any(diffusion <= 0.):
                     raise TectonicsError('boundary temperature must be positive kelvin')
                 df[:] = sign*2*self.conductivity*(T-diffusion)/spacing
-                extrema.extend((float(diffusion.min()), float(diffusion.max())))
+                # Without conduction a face temperature bounds nothing, so it
+                # must not widen the source-free maximum-principle gate.
+                if self.conductivity > 0.:
+                    extrema.extend((float(diffusion.min()), float(diffusion.max())))
             else:
                 df[:] = sign*diffusion
                 no_neumann_input = no_neumann_input and not np.any(diffusion)
