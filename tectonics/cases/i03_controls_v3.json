@@ -1,0 +1,504 @@
+{
+  "schema": "atlas.i03-controls.v3",
+  "status": "WORKING NON-CANON",
+  "provenance": {
+    "written": "3 October 2026, during I03b (the task brief of 2 October 2026, launched 3 October). Every control here is declared in this file before its check first runs. Controls that use a criterion of the I03b bounds proposal (3 October 2026) are run only after the coordinator approves that criterion.",
+    "inherits": "cases/i03_controls_v1.json and cases/i03_controls_v2.json: their sphere, units, meshes, worlds, materials, tolerances and controls apply unchanged; no value there is changed"
+  },
+  "tolerances": {
+    "relative": "cases/i03_controls_v1.json#tolerances.relative",
+    "new": []
+  },
+  "controls": {
+    "bridge_identity": {
+      "part": "I03.3",
+      "world": "three_plates with the crust fixture",
+      "footprint_faces": [
+        "s03-b01",
+        "s03-b02"
+      ],
+      "centre_lon_lat_deg": [
+        210.0,
+        0.0
+      ],
+      "azimuth_deg": 0.0,
+      "depth_m": [
+        0.0,
+        35000.0
+      ],
+      "rule": "extract the footprint ('3d') and return every piece as extracted",
+      "expects": "the returned state is the parent itself: the same network, material and state identities; nothing is refused",
+      "tolerances": []
+    },
+    "bridge_redistribution": {
+      "part": "I03.3",
+      "world": "three_plates with the crust fixture",
+      "rule": "extract faces s03-b01 (plate A, cohort inherited-A) and s04-b01 (plate B, cohort inherited-B), the same latitude band, and return each holding half of each face's piece: every stored value halved, which is exact, so each face keeps its area to rounding and every account is conserved exactly; a cohort's material is independent of the plate that carries it",
+      "expects": "every account conserved exactly over the footprint and the sphere; every piece outside the footprint keeps its bytes; the exact accounts unchanged; the network unchanged; and every cohort's exact amounts over the footprint unchanged (round 1, B1)",
+      "tolerances": [
+        "relative"
+      ],
+      "footprint_faces": [
+        "s03-b01",
+        "s04-b01"
+      ],
+      "centre_lon_lat_deg": [
+        240.0,
+        -15.0
+      ]
+    },
+    "bridge_full_vector": {
+      "part": "I03.3",
+      "world": "three_plates with the crust fixture",
+      "azimuths_deg": [
+        0.0,
+        40.0,
+        123.0,
+        270.0
+      ],
+      "turn_deg": 0.5,
+      "duration_myr": 1.0,
+      "rule": "extract the bridge_identity footprint with one_plate_motion's stage rotations over the interval, in each orientation",
+      "expects": "the velocities in the sphere's axes are the same bytes in every orientation; in each, the local components carried back by the frame's basis give the sphere vector within the angular tolerance relative to its speed, and the speed equals the rigid speed |omega x r|",
+      "tolerances": [
+        "angular_absolute_rad"
+      ]
+    },
+    "bridge_refusals": {
+      "part": "I03.3",
+      "world": "three_plates with the crust fixture",
+      "rule": "two extracts sharing a face returned together; a result for a state that has advanced; a result of another representation; a result that does not conserve an account; a footprint naming an unknown face",
+      "expects": "unresolved overlap, stale geometry, omitted dimension, incompatible support and incompatible support, respectively; the parent state is unchanged",
+      "tolerances": []
+    },
+    "bridge_projection": {
+      "part": "I03.3, after approval of R3-5",
+      "world": "three_plates with the crust fixture",
+      "map_tolerance_small": 1e-06,
+      "map_tolerance_large": 0.1,
+      "map_tolerance_admitting": 0.3,
+      "correction": "3 October 2026: map_tolerance_large (0.1, declared first) is below this footprint's own distortion. The bridge_identity faces reach (180, +-30) degrees from the centre (210, 0), where cos(rho) = cos(30)cos(30) = 0.75, so 1 - cos(rho_max) = 0.25. The I03.3 verifier found this by running the check before R3-5 was approved, outside the approval rule (reported in the I03b progress file). 0.1 is kept as a second refused case; map_tolerance_admitting (0.3, above 0.25) is the admitted one",
+      "rule": "a 'map' footprint of the bridge_identity faces with declared distortions map_tolerance_small and map_tolerance_large, both below its distortion, and map_tolerance_admitting above it; a footprint whose faces reach beyond the conditioned-chart limit of its centre; a 'section' along the motion and one across it",
+      "expects": "the two small tolerances and the far footprint refused with 'projection invalid', the admitting tolerance admitted with its reported distortion 1 - cos(rho_max); the section across the motion refused with 'omitted dimension'; the section along it admitted, with no plan-view area",
+      "tolerances": []
+    },
+    "event_split_meridian": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "plate": "A",
+      "parts": {
+        "A1": "the faces of sector s02",
+        "A2": "the faces of sector s03"
+      },
+      "boundary": {
+        "boundary_id": "ridge-split",
+        "kind": "ridge",
+        "meridian": 3,
+        "accretion_fraction": 0.5
+      },
+      "rule": "a still interval (every stage rotation the identity) whose end commits the split of A along meridian 3",
+      "expects": "every face owned as declared and keeping its geometry bytes; every piece keeping its bytes on its face; every account unchanged exactly; A retired with the new plates as its children; the records that bordered A re-sided whole; the network restores from its record",
+      "tolerances": []
+    },
+    "event_split_latitude": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "plate": "A",
+      "parts": {
+        "A-north": "bands b02, b03 and north of sectors s02 and s03",
+        "A-south": "bands b00, b01 and south"
+      },
+      "boundary": {
+        "boundary_id": "transform-split",
+        "kind": "transform",
+        "latitude_index": 2
+      },
+      "rule": "the split of A along the equator from meridian 2 to meridian 4: its new record ends on the ridge and the trench that border A",
+      "expects": "the ridge and the trench each cut at the equator into two fresh records whose identities name the event, the old ones retired and reserved; two new triple junctions; ownership and material as for the meridian split",
+      "tolerances": []
+    },
+    "event_merge": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "plates": [
+        "A",
+        "B"
+      ],
+      "new_plate": "AB",
+      "rule": "a still interval whose end merges A and B",
+      "expects": "every face of A and B owned by AB, geometry and pieces unchanged; the trench between them retired with its identity reserved; every account unchanged exactly",
+      "tolerances": []
+    },
+    "event_merge_after_motion": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "turn_deg": 0.5,
+      "plates": [
+        "A",
+        "B"
+      ],
+      "new_plate": "AB",
+      "rule": "one_plate_motion(turn_deg), then a still interval whose end merges A and B: B's coordinates are carried into the frame A had",
+      "expects": "every vertex direction of the merged network equals its direction before the merge within the angular tolerance; restoration reproduces the state",
+      "tolerances": [
+        "angular_absolute_rad"
+      ]
+    },
+    "event_ridge_jump": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "turn_deg": 0.5,
+      "follow_turn_deg": 0.5,
+      "split": {
+        "event_id": "jump-split",
+        "plate": "A",
+        "parts": {
+          "A-slice": "every face of A at the endpoint outside sector s03, the strips born at the old ridge included",
+          "A-east": "the faces of sector s03"
+        },
+        "boundary_id": "ridge-new",
+        "meridian": 3
+      },
+      "merge": {
+        "event_id": "jump-merge",
+        "plates": [
+          "A-slice",
+          "C"
+        ],
+        "new_plate": "C-grown"
+      },
+      "rule": "A turns turn_deg between fixed B and C, with supplies on both sides of the old ridge and the trench as its sink; the interval's end commits the jump: A split along meridian 3 and its western slice merged with C across the old ridge, which retires. Then A-east turns follow_turn_deg with the new ridge supplied on both sides",
+      "expects": "the jump commits although A and C moved apart over the interval (the slice is captured at the instant of the jump); the old ridge retired and reserved; the new ridge spreads in the next interval; every account closes exactly; both steps restore",
+      "tolerances": [],
+      "grown_turn_deg": 0.7,
+      "round_1": "3 October 2026, round 1: in the follow interval the grown plate and B also turn grown_turn_deg, and A-east turns grown_turn_deg + follow_turn_deg, so that 'moves with its new plate after' can fail: the slice must follow the grown plate's rotation, not A-east's and not stand still"
+    },
+    "event_simultaneous": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "events": [
+        "split of A along meridian 3 (event 'split-a')",
+        "merge of B and C into 'BC' (event 'merge-bc')"
+      ],
+      "rule": "both events in one still interval, supplied in both orders; then each order applied directly",
+      "expects": "the same committed state from both supplied orders and from both application orders; the lineage lists the events in canonical identity order",
+      "tolerances": []
+    },
+    "event_refusals": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "rule": "a split and a merge sharing plate A in one interval; a standalone retirement of A; a split whose new record ends inside A; a merge of A and B while only A turns; a split reusing a retired or an existing plate identity; a merge of two plates without a common record; an event proposal of another basis",
+      "expects": "each refused with its own cause, and the parent unchanged",
+      "tolerances": []
+    },
+    "event_rollback": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "rule": "a ridge jump whose merge names a plate that does not border the slice, and a valid split together with an invalid merge in one interval, each committed through the clock",
+      "expects": "the interval refused whole: the head stays at the parent, no snapshot is written, and the parent then accepts a valid interval",
+      "tolerances": []
+    },
+    "event_replay": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "rule": "commit the meridian split through the ledger; commit it again over the same interval and parent; commit a changed split over the same interval and parent; apply the split again to the network that already holds it",
+      "expects": "the identical replay returns the same commit and writes nothing; the changed replay is refused as a stale parent; the repeated application is refused",
+      "tolerances": []
+    },
+    "event_cascade": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "rule": "two proposals made from the parent: the merge of A and B (interval 0-1) and the meridian split of A (interval 1-2). The split is valid on the parent",
+      "expects": "after the merge commits, the split is evaluated on the committed state and refused (A is retired): evaluating both from the parent would have fired it",
+      "tolerances": []
+    },
+    "event_ceiling": {
+      "part": "I03.4",
+      "world": "three_plates with the crust fixture",
+      "rule": "a still interval from step 0 to the 256-step ceiling whose end commits the meridian split; then any interval with an event from there",
+      "expects": "the first commits; a proposal past the ceiling is refused when it is declared",
+      "tolerances": []
+    },
+    "event_continuation": {
+      "part": "I03.4 and the stage finish",
+      "world": "three_plates with the crust fixture",
+      "turn_deg": 0.5,
+      "rule": "through the I02 clock and ledger: one_plate_motion, then the ridge jump of event_ridge_jump, then two intervals of A-east turning at the new ridge; the same history saved after the jump and continued by a fresh process",
+      "expects": "the continued history reaches exactly the uninterrupted network state; every stored commit restores; the event records travel with their commit",
+      "tolerances": []
+    },
+    "event_closed_sphere": {
+      "part": "I03.4 closed-sphere source/sink control",
+      "world": "three_plates with the crust fixture",
+      "turn_deg": 0.5,
+      "intervals": 3,
+      "born_total_deg": 1.5,
+      "consumed_total_deg": 1.5,
+      "rule": "A turns turn_deg in each of three intervals between fixed B and C: the old ridge supplied on both sides from the mantle source and the trench sinking to the slab; the second interval ends with the ridge jump of event_ridge_jump; in the third, A-east turns at the new ridge, supplied on both sides",
+      "derivation": "rigid plates: each interval opens a lune of turn_deg at the spreading ridge and closes one of turn_deg at the trench, so born and consumed are each three times turn_deg",
+      "expects": "every state covers the sphere once (area residual within the existing area-closure tolerance); the source, birth, sink and heat accounts are separate and each matches its declared areal value times its lune (relative tolerance); the old ridge's accounts persist after it retires; the exact identity holds account by account",
+      "tolerances": [
+        "relative",
+        "area_closure_absolute_sr"
+      ]
+    },
+    "event_scarce_stock": {
+      "part": "I03.4",
+      "world": "three_plates with the finite_stock pieces of cases/i03_controls_v1.json",
+      "event": "the split of B along meridian 5: B-west the faces of sector s04, B-east those of s05 (a ridge record 'ridge-b', accretion fraction 0.5)",
+      "share_of_stock_per_side": 0.75,
+      "rule": "through the clock: A turns by clock_commit's rotation with both sides of the ridge supplied from store-a, the A-component mass per area scaled so that one side alone debits share_of_stock_per_side of store-a's A (the debit is linear in the mass per area: the scale is read from the declared supply's own debit), and the interval ends with the split of B. Then the same interval with the right side supplied from store-b at the declared values",
+      "expects": "the joint demand (twice the share) is refused whole: no first-come allocation and no clipping; the head stays at the root and no snapshot is written; the interval with one side from each stock commits, the split included",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "equivalence_rotated": {
+      "part": "I03 stage finish (E1 of the I03b bounds proposal; run only after its approval)",
+      "world": "three_plates with the crust fixture, plain and about the case's tilt axis",
+      "history": "event_closed_sphere: three intervals of turn_deg, the second ending with the ridge jump",
+      "rule": "the same history in plain and tilted axes; compare every face's measured area, every plate's area and amounts, every cohort's amounts and every named supplied account",
+      "expects": "each within the relative tolerance of the plain value (E1); every face of the history has area over perimeter above the C7 range, so the C7 alternative does not arise; the exact identity holds in both",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "equivalence_meshes": {
+      "part": "I03 stage finish (E2 of the I03b bounds proposal, approved with a correction on 3 October 2026)",
+      "world": "three_plates with the crust fixture on sector6 and on its nested refinement",
+      "refined_longitudes_deg": [
+        0.0,
+        30.0,
+        60.0,
+        90.0,
+        120.0,
+        150.0,
+        180.0,
+        210.0,
+        240.0,
+        270.0,
+        300.0,
+        330.0
+      ],
+      "refined_latitudes_deg": [
+        -60.0,
+        -45.0,
+        -30.0,
+        -15.0,
+        0.0,
+        15.0,
+        30.0,
+        45.0,
+        60.0
+      ],
+      "refined_plates": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "A",
+        "A",
+        "A",
+        "A",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "refined_kinds": {
+        "0": {
+          "kind": "transform"
+        },
+        "4": {
+          "kind": "ridge",
+          "accretion_fraction": 0.5
+        },
+        "8": {
+          "kind": "trench",
+          "subducting_side": "left"
+        }
+      },
+      "turn_deg": 0.5,
+      "intervals": 2,
+      "rule": "one_plate_motion(turn_deg) for each interval on sector6 (ridge meridian 2, trench meridian 4), on its nested refinement (meridians 4 and 8) and on a non-nested mesh with the same plate boundaries (meridians 3 and 6); compare only supports common to the meshes, against sector6",
+      "expects": "within the relative tolerance (E2, as corrected): the global total of every account; each plate's area and amounts; each named supplied account, records matched by role; per trench, the consumed area and amounts; born area per ridge side against the analytic lune 2R^2 * (turn_deg/2 per interval); and, in this single-cohort-consumption class, each cohort's amounts, born cohorts matched by side and interval. The distribution of a cohort within a plate is not compared",
+      "tolerances": [
+        "relative"
+      ],
+      "non_nested_longitudes_deg": [
+        0.0,
+        40.0,
+        80.0,
+        120.0,
+        165.0,
+        200.0,
+        240.0,
+        300.0
+      ],
+      "non_nested_latitudes_deg": [
+        -50.0,
+        -20.0,
+        10.0,
+        40.0
+      ],
+      "non_nested_plates": [
+        "C",
+        "C",
+        "C",
+        "A",
+        "A",
+        "A",
+        "B",
+        "B"
+      ],
+      "non_nested_kinds": {
+        "0": {
+          "kind": "transform"
+        },
+        "3": {
+          "kind": "ridge",
+          "accretion_fraction": 0.5
+        },
+        "6": {
+          "kind": "trench",
+          "subducting_side": "left"
+        }
+      },
+      "cohort_class": "single-cohort consumption, on every mesh here: in each interval the faces the step books to the trench (the consumed region, read from the step's own overlap rows) hold only cohort inherited-A at the interval's start; the cohorts born at the ridge lie 120 degrees west. Consumption cannot mix cohorts, so per-cohort totals are compared. The test checks this premise on every mesh in every interval and fails if it does not hold",
+      "per_trench": "the consumed area (the trench's area account) and consumed amounts (the slab destination's accounts) are compared per trench on every mesh",
+      "declared": "3 October 2026, after the coordinator's approval of E2 with its correction and before the E2 control first ran: the class above, the per-trench comparison and the non-nested mesh (optional in the approval) were added",
+      "premise_correction": "3 October 2026, first run: the premise was checked on every face of A sharing any vertex with the trench record. That counted the strips born at the ridge, which meet the trench only at its end junctions (the poles) and are not consumed, so the premise check failed on sector6 in the second interval before any comparison ran. It now reads the consumed faces from the step's rows, which is what the class is about. No tolerance, expected value or compared quantity changed",
+      "precondition": "every face of every state on every mesh lies above the C7 range (area over perimeter above 2.2e-4 rad), so 1e-12 applies throughout; asserted, round 1"
+    },
+    "reexpression_slow_jump": {
+      "part": "I03.4, D7'' (approved 3 October 2026 with conditions)",
+      "world": "three_plates with the crust fixture",
+      "history": "clock_commit's slow_then_normal_deg (cases/i03_controls_v1.json): A turns 1e-4 degrees, then 0.4 degrees, the second interval ending with the ridge jump of event_ridge_jump (the I03.4 refuter's p05c)",
+      "rule": "commit the jump; compare every face's measure with the same interval without the event",
+      "expects": "accepted; every face measured again changed by at most its D7'' bound (C7 of the old and new rings plus 4 eps P, times R^2; the C7 terms zero above the C7 range); its allowance is max(1e-12 mu, its allowance before) + |delta|, the delta exact; the step restores; the exact identity holds. With the bound forged one ulp below a face's |delta|, the jump is refused; at |delta| exactly, accepted",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "reexpression_above_range": {
+      "part": "I03.4, D7''",
+      "world": "three_plates with the crust fixture",
+      "slow_turn_deg": 0.1,
+      "derivation": "a per-side strip of a turn theta is a lune of angle theta/2; its band faces near the equator are about R (theta/2) cos(15 deg) wide, 5.4 km at 0.1 degrees, with area over perimeter about half their width over R, 4.2e-4 rad: above the C7 range (2.2e-4) and within 3-11 km",
+      "rule": "A turns slow_turn_deg, then a still interval ends with the merge of A and C (C, the larger, continues): A's strips are carried into C's frame",
+      "expects": "accepted; at least one face 3-11 km wide above the C7 range is measured again with |delta| > 0, within 4 eps P R^2 alone (its bound has no C7 term)",
+      "tolerances": []
+    },
+    "reexpression_repeated": {
+      "part": "I03.4, D7''",
+      "world": "three_plates with the crust fixture",
+      "slow_turn_deg": 0.0001,
+      "turn_deg": 0.4,
+      "history": "1: A turns slow_turn_deg. 2: still, ending with the merge of A and C into AC (C continues). 3: still, ending with the split of AC along meridian 2 into C2 (the faces C had) and A2 (the faces A had), a ridge 'ridge-back'. 4: A2 turns turn_deg, ridge-back supplied on both sides, the trench sinking. 5: still, ending with the merge of A2 and C2 (C2 continues)",
+      "rule": "follow the allowance of every face measured again in either merge, through all five intervals",
+      "expects": "both merges accepted; a face's allowance grows only at a merge that measures it again, each time to max(1e-12 mu, its allowance) + |delta|; rides and the split carry it unchanged; the growth is reported",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "bridge_cohort_relabel": {
+      "part": "I03.3, round 1 (B1)",
+      "world": "three_plates with the crust fixture, after one_plate_motion(0.5)",
+      "rule": "extract face s03-b01 (cohort inherited-A) and return its row unchanged but labelled as a cohort born at the ridge, then as inherited-B",
+      "expects": "refused with 'incompatible support': a regional process changes no cohort's amounts; a cohort change would need a named, booked transformation, which is not built",
+      "declared": "3 October 2026, round 1; its test was written first, failed (the relabel was accepted), and then passed",
+      "tolerances": []
+    },
+    "event_cut_twice": {
+      "part": "I03.4, round 1 (V1)",
+      "world": "three_plates with the crust fixture",
+      "rule": "in one still interval, the equatorial split of A (meridians 2-4) and of C (meridians 0-2): disjoint plates, but both cut the ridge between them at the equator",
+      "expects": "each alone accepted; together refused with their named cause (both cut record 'boundary-m02') before anything is applied, not by the two-order check",
+      "declared": "3 October 2026, round 1; its test was written first, failed (refused only by the two-order check), and then passed",
+      "tolerances": []
+    },
+    "bridge_return_commit": {
+      "part": "I03.3, round 1 (B2)",
+      "world": "three_plates with the crust fixture",
+      "footprint_faces": [
+        "s01-b01",
+        "s02-b01"
+      ],
+      "centre_lon_lat_deg": [
+        120.0,
+        -15.0
+      ],
+      "turn_deg": 0.5,
+      "rule": "extract the two faces either side of the ridge (cohorts inherited-C and inherited-A, equal areas) from the interval's parent; return each holding half of both pieces, carried in the Motion of one_plate_motion(turn_deg); both faces ride whole over the interval (C is fixed and A keeps its edge at the ridge)",
+      "expects": "the interval commits with the return applied at its end: the two faces hold the halves, every cohort's amounts over the footprint and every account unchanged; the step restores from its record; through the clock and ledger the history reopens, verifies and continues. Refused: a return for a face the interval changed (s03-b01, cut at the trench: 'stale geometry identity'); a return read from another state ('stale geometry identity'); a relabelled return ('incompatible support'). A Motion without returns keeps its record",
+      "declared": "3 October 2026, round 1, before its tests ran",
+      "tolerances": []
+    },
+    "equivalence_rotated_slow": {
+      "part": "I03 stage finish (E1 with thin faces), round 1 (S1)",
+      "world": "three_plates with the crust fixture",
+      "turns_deg": [
+        0.0001,
+        0.4
+      ],
+      "jump_after_interval": 2,
+      "follow_turn_deg": 0.5,
+      "axes": [
+        [
+          "tilt",
+          "cases/i03_controls_v1.json#tilt"
+        ],
+        [
+          "x90",
+          {
+            "axis": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "angle_rad": 1.5707963267948966
+          }
+        ]
+      ],
+      "rule": "A turns turns_deg[k] in interval k+1; interval 2 ends with the ridge jump of event_ridge_jump; then A-east turns follow_turn_deg at the new ridge. The same history plain and in each rotated frame",
+      "expects": "per face: a thin face within its C7 bound (the larger of the two sides'), every other face within relative 1e-12; per plate, per cohort and per supplied account, every column within the aggregate bound; the fraction of the bound used is reported. the aggregate bound ruled by the coordinator on 3 October 2026 ('E1/E2 aggregate bound'): a total over a set of faces agrees within 1e-12 x |total| + the sum, over the thin faces in the set (area over perimeter below 1.1e-4 rad), of each face's C7 bound in m2, computed on both sides with the larger used. For a total of an amount (mass, volume, enthalpy) each face's term is scaled by the share of the face's measured area its counted pieces carry, |value| / area: the error a face's measure passes to its pieces is in proportion to what they hold. That scaling is this worker's application of the ruling to amounts, flagged for the coordinator. Faces between 1.1e-4 and 2.2e-4 rad, and above, add nothing: they are held to 1e-12 individually. The bound is never widened after a result",
+      "declared": "3 October 2026, round 1, before its test ran",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "equivalence_meshes_slow": {
+      "part": "I03 stage finish (E2 with thin faces), round 1 (S1)",
+      "world": "as equivalence_meshes",
+      "turn_deg": 0.0001,
+      "intervals": 2,
+      "rule": "equivalence_meshes with turn_deg lowered to clock_commit's slow rate; sector6 against the nested refinement and the non-nested mesh",
+      "class": "single-cohort consumption, its premise checked in every interval on every mesh, as in equivalence_meshes",
+      "expects": "the global total, each plate's, each cohort's, each named supplied account and the per-trench consumed area and amounts, every column within the aggregate bound (the sum over each mesh's thin faces in the set, the larger mesh's sum used); born area per ridge side against the analytic lune within 1e-12 of the lune plus that mesh's thin born faces' C7 sum. A difference beyond the bound is a mesh dependence and fails; it is reported, not absorbed. the aggregate bound ruled by the coordinator on 3 October 2026 ('E1/E2 aggregate bound'): a total over a set of faces agrees within 1e-12 x |total| + the sum, over the thin faces in the set (area over perimeter below 1.1e-4 rad), of each face's C7 bound in m2, computed on both sides with the larger used. For a total of an amount (mass, volume, enthalpy) each face's term is scaled by the share of the face's measured area its counted pieces carry, |value| / area: the error a face's measure passes to its pieces is in proportion to what they hold. That scaling is this worker's application of the ruling to amounts, flagged for the coordinator. Faces between 1.1e-4 and 2.2e-4 rad, and above, add nothing: they are held to 1e-12 individually. The bound is never widened after a result",
+      "declared": "3 October 2026, round 1, before its test ran",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "consumption_sweep_c7_repair": {
+      "declared": "3 October 2026, Codex repair: declared before the new acceptance control ran",
+      "turn_deg": 0.0002,
+      "intervals": 2,
+      "world": "three_plates/crust, also equivalence_meshes nested and non-nested meshes, and equivalence_rotated_slow axes",
+      "class": "single-cohort, uniform-density consumption, asserted before every interval",
+      "expects": "For cumulative consumed area and each amount: absolute difference <= relative*abs(reference) + max(sum of step sweep bounds in each representation). Each step's bound is sum of existing C7(ring)*R^2 over its actually swept polygons, scaled by the largest absolute donor density for that column. C7 must be defined; undefined bounds are unknown, never zero. Historical strict tests retain their original expected failures. A positive change beyond the declared bound fails.",
+      "tolerances": ["relative"],
+      "authority": "coordinator S1 follow-up (b), 3 October 2026, confirmed at Codex repair; no old criterion widened"
+    },
+    "merge_tie": {
+      "part": "I03.4, round 1 (minor)",
+      "world": "sector6 as two mirror-image hemisphere plates along a closed equatorial transform carried by its right side (the coordinator's p3)",
+      "turn_deg": 10.0,
+      "rule": "north turns turn_deg, then a still interval ends with the merge of north and south into NS; the same history with north spelled 'znorth'",
+      "expects": "the measured plate areas tie (the coordinator's p3), but the exact rational piece-area accounts do not; under both spellings NS continues the plate with the larger exact account, so the outcome does not depend on the names. On an exact tie of the accounts the first plate in identity order continues (declared, documented; no control produces such a tie)",
+      "declared": "3 October 2026, round 1, before its test ran",
+      "tolerances": [],
+      "revision": "3 October 2026, round 1: the first run of this control, as declared, found that the exact accounts do not tie: north exceeds south by 3/1024 m2, so its premise of an exact tie failed. It now checks spelling independence where the measured areas tie. No tolerance or expected value of any other control changed"
+    }
+  }
+}

@@ -1,0 +1,447 @@
+{
+  "schema": "atlas.i03-controls-case.v1",
+  "status": "WORKING NON-CANON",
+  "case_id": "i03a-sphere-network-controls-v1",
+  "scope": "Bounded controls of I03.1 (one shared spherical network beside the I02 accepted state) and I03.2 (moving it by supplied finite rotations and transferring its material). Small declared sector worlds on a closed sphere; prescribed_history_v1 only. Not a generated world, not Earth data, and no evidence of physically generated motion, events, regional bridges or joint event commits.",
+  "mode": "prescribed_history_v1",
+  "sphere": {
+    "radius_m": 6371000.0,
+    "frame_id": "i03-control-frame",
+    "epoch_id": "i03-control-epoch",
+    "start_time_s": 0.0
+  },
+  "units": {
+    "myr_s": 31557600000000.0,
+    "time": "SI seconds forward from the named epoch; one Myr is 365.25 days of 86400 s times 1e6",
+    "angles": "degrees of longitude about the world axis for plate motions; radians for axis-angle records",
+    "accounts": "area m2, reference mass kg per phase, phase volume m3 per phase, signed enthalpy J in the declared basis"
+  },
+  "tilt": {
+    "axis": [0.3, -0.5, 0.8],
+    "angle_rad": 0.7,
+    "purpose": "the same world expressed about a tilted axis, so that no vertex lies on the frame's poles and sectors cross its antimeridian: the seam and pole control"
+  },
+  "meshes": {
+    "sector6": {
+      "longitudes_deg": [0.0, 60.0, 120.0, 180.0, 240.0, 300.0],
+      "latitudes_deg": [-60.0, -30.0, 0.0, 30.0, 60.0],
+      "faces": 36,
+      "vertices": 32,
+      "layout": "six pole-to-pole sectors between consecutive meridians, each four latitude bands and a triangle at either pole"
+    },
+    "sector8": {
+      "longitudes_deg": [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0],
+      "latitudes_deg": [-60.0, -30.0, 0.0, 30.0, 60.0],
+      "faces": 48,
+      "vertices": 42,
+      "layout": "eight sectors of the same bands"
+    },
+    "octahedron": {
+      "faces": 8,
+      "vertices": 6,
+      "layout": "the eight octants on the six axis directions"
+    }
+  },
+  "worlds": {
+    "static": {
+      "mesh": "sector6",
+      "plates": ["A", "A", "B", "B", "C", "C"],
+      "boundaries": "every meridian between two plates is one ridge record with accretion fraction 0.5, running from the south pole to the north pole",
+      "accretion_fraction": 0.5
+    },
+    "lune": {
+      "mesh": "sector8",
+      "plates": ["east", "east", "east", "east", "west", "west", "west", "west"],
+      "kinds": {
+        "0": {"kind": "ridge", "accretion_fraction": 0.5},
+        "4": {"kind": "trench", "subducting_side": "right"}
+      },
+      "note": "the trench record runs south to north with east on its left; west is the declared subducting side"
+    },
+    "three_plates": {
+      "mesh": "sector6",
+      "plates": ["C", "C", "A", "A", "B", "B"],
+      "kinds": {
+        "0": {"kind": "transform"},
+        "2": {"kind": "ridge", "accretion_fraction": 0.5},
+        "4": {"kind": "trench", "subducting_side": "left"}
+      },
+      "note": "C from 0 to 120 degrees, A from 120 to 240, B from 240 to 360; ridge C|A on meridian 2, trench A|B with A subducting on meridian 4, boundary B|C on meridian 0"
+    },
+    "octahedron": {
+      "mesh": "octahedron",
+      "plates": "north (z > 0) and south (z < 0)",
+      "boundary": "one closed transform record along the equator with north on its left"
+    }
+  },
+  "materials": {
+    "static": {
+      "phases": ["crust", "mantle-lid"],
+      "mass_per_area_kg_m2": {"crust": 20300000.0, "mantle-lid": 99000000.0},
+      "thickness_m": {"crust": 7000.0, "mantle-lid": 30000.0},
+      "enthalpy_per_area_j_m2": -3500000000000.0,
+      "enthalpy_basis": "declared-exterior-enthalpy",
+      "note": "declared reference columns for the account checks, not Earth values"
+    },
+    "moving": {
+      "phases": ["crust"],
+      "density_and_thickness": "cases/i01_closures_v1.json#control_parameters.D3 (density_kg_m3, thickness_m)",
+      "birth_heat_j_per_kg": 1440000.0,
+      "birth_heat_source": "tools/check_i01_closures.py ocean_control: declared cp*(Tbirth - Treference) = 1200*1200 J/kg, no latent term",
+      "inherited_enthalpy_fraction": 0.25,
+      "enthalpy_basis": "declared-exterior-enthalpy",
+      "exteriors": [["mantle-source", "source"], ["slab", "sink"]],
+      "note": "new crust takes the D3 control's declared areal mass, thickness and birth enthalpy; inherited crust the same mass and thickness and a quarter of that enthalpy, so the two are distinguishable in the heat account"
+    }
+  },
+  "tolerances": {
+    "relative": {
+      "value": 1e-12,
+      "source": "cases/w01_spherical_atlas.json#acceptance.relative_tolerance; the same value in cases/w01_geometry.json, cases/w01_boundaries.json and cases/w02_completion.json#verification"
+    },
+    "angular_absolute_rad": {
+      "value": 2e-12,
+      "source": "cases/w01_spherical_atlas.json#acceptance.angular_absolute_rad"
+    },
+    "area_closure_absolute_sr": {
+      "value": 2e-11,
+      "source": "cases/w01_spherical_atlas.json#acceptance.area_closure_absolute_sr"
+    },
+    "attachment_band_rad": {
+      "value": 1.4210854715202004e-14,
+      "source": "cases/w01_spherical_atlas.json#acceptance.source_attachment_rad and ambiguity_refusal_rad (64 binary64 epsilons)"
+    },
+    "junction_algebra_relative": {
+      "value": 1e-11,
+      "source": "cases/i01_transitions_v1.json#control_policy.algebra_relative"
+    },
+    "exact": "exact rational accounts (declared totals, supplied amounts, rounding) are compared exactly; identities, bytes and records are compared exactly",
+    "new": [],
+    "applications": [
+      "area closure of every issued network: the W01 atlas's own area_closure_absolute_sr check",
+      "the pieces of a face occupy its measured area: relative, of that face's area; checked for every face of a declaration and, after a step, for every face the step created or changed (a face that only rode with its plate is not measured against its pieces again)",
+      "the pieces of every state together cover the sphere once: area_closure_absolute_sr times the radius squared, against the network's own summed area",
+      "two faces that share no conditioned chart cannot overlap when a great circle through an edge of one has that face within attachment_band_rad of its inner side and every vertex of the other beyond that band on the outer side",
+      "a small overlap far from its chart centre against its closed-form area (control polar_rows.small_overlap): cases/w01_geometry.json#acceptance.small_spherical_area_relative, the tolerance W01 already applies to the same closed form",
+      "the overlap rows of a changed face close on its measured area, and every receiving face is filled: relative, of that face's area",
+      "a trench consumes what it swept: relative, of the larger of the swept area and the area of the subducting cells that end at that trench (an intersection is measured to the rounding of the faces it is cut from, however thin the sweep)",
+      "a boundary vertex is moved to one point by every record that ends there: spread within attachment_band_rad and closure residual (spread over the largest relative displacement of the plates there) within junction_algebra_relative",
+      "a plate's own position of a boundary vertex coincides with the boundary's: within attachment_band_rad; such a corner neither opens nor is consumed",
+      "born and consumed areas against the lune formula, and the same history in rotated coordinates: relative; for motions far smaller than a cell, relative times the area of the cells measured (control slow_boundary)",
+      "vertex positions and rotations against independently composed ones: angular_absolute_rad"
+    ]
+  },
+  "resources": {
+    "work_budget_bytes": 16777216,
+    "refused_budget_bytes": 65536,
+    "refused_max_vertices": 8,
+    "cancel_trip_polls": [1, 2, 5, 20, 60],
+    "clock_deadline_s": 600.0,
+    "child_timeout_s": 240.0,
+    "note": "caps are execution limits of these controls, not acceptance criteria. Network and step controls run under a WorkBudget of work_budget_bytes; a budget of refused_budget_bytes and a vertex limit of refused_max_vertices must refuse. Ledger and clock controls use the I02 default budget, a cooperative clock deadline of clock_deadline_s and a child-process timeout of child_timeout_s. A set cancellation event must stop a build, a step and a commit at their first poll, and an event that trips at poll k must stop a step there, publishing nothing."
+  },
+  "controls": {
+    "coverage": {
+      "substep": "I03.1",
+      "world": "static",
+      "also_tilted": true,
+      "expects": {
+        "euler_characteristic": 2,
+        "unpaired_edges": 0,
+        "plate_area_fraction": "one third of 4 pi R^2 each",
+        "interplate_edges": 18,
+        "junction_vertices": ["N", "S"],
+        "boundary_records": ["boundary-m00", "boundary-m02", "boundary-m04"]
+      },
+      "tolerances": ["area_closure_absolute_sr", "relative"]
+    },
+    "refused_declarations": {
+      "substep": "I03.1",
+      "world": "static",
+      "variants": [
+        "a missing face (gap)", "a second face on the same ring, of the same or another plate (overlap, duplicate owner)",
+        "a face that skips a seam vertex its neighbours use (T-junction, unpaired seam)",
+        "a second vertex at an existing position (never welded)", "a reversed face, a bow-tie face and a whole-sphere reversal (pinch, orientation)",
+        "an unused registered vertex", "a face that fits no open hemisphere",
+        "a missing, repeated, reversed, mis-sided or seam-following boundary record",
+        "a chain through a junction", "undeclared kind rules", "reused retired identities", "cyclic or unknown plate lineage",
+        "non-finite time, empty epoch, step outside 0..256"
+      ],
+      "unfit_hemisphere_vertices": {
+        "N": [0.0, 0.0, 1.0], "S": [0.0, 0.0, -1.0], "a": [1.0, 0.0, 0.0], "b": [-0.5, 0.8, 0.0], "c": [-0.5, -0.8, 0.0]
+      },
+      "tolerances": ["exact"]
+    },
+    "identity": {
+      "substep": "I03.1",
+      "world": "static",
+      "regrouped_plates": ["A", "B", "B", "B", "C", "C"],
+      "plate_rotation": {"plate": "B", "axis": [0.0, 0.0, 1.0], "angle_rad": 0.1},
+      "frame_rotation": {"axis": [0.2, 0.9, -0.4], "angle_rad": 1.1, "frame_id": "i03-rotated-frame"},
+      "small_rotation": {"plate": "A", "axis": [0.0, 0.0, 1.0], "angle_rad": 1e-09},
+      "moved_latitude_deg": {"from": 60.0, "to": 61.0},
+      "other_accretion_fraction": 0.25,
+      "tolerances": ["relative", "angular_absolute_rad", "area_closure_absolute_sr"]
+    },
+    "material_accounts": {
+      "substep": "I03.1",
+      "world": "static",
+      "material": "static",
+      "dated_cohorts_s": {"inherited-A": [-5.0, -5.0], "inherited-B": [-9.0, -7.0]},
+      "query_time_s": 1.0,
+      "occupancy_excess_relative": 1e-09,
+      "shared_face": "s03-b01",
+      "shared_fraction": 0.25,
+      "tolerances": ["relative", "area_closure_absolute_sr", "exact"]
+    },
+    "persistence": {
+      "substep": "I03.1",
+      "world": "static",
+      "tilted": true,
+      "plate_rotation": {"plate": "B", "axis": [1.0, 2.0, 3.0], "angle_rad": 0.2},
+      "trench": {"meridian": 2, "subducting_side": "right"},
+      "retired_face": "gone",
+      "edits": ["a vertex moved", "a stock doubled", "a face given to another plate", "the network time changed", "an array removed", "the state identity replaced", "an exact account replaced"],
+      "tolerances": ["exact"]
+    },
+    "ledger_attachment": {
+      "substep": "I03.1",
+      "world": "static",
+      "column": "the reviewed I02 layered column of tests/i02_workflow_fixtures.py (cases/i02_column_workflow_v1.json inputs), as the ledger root",
+      "epoch_id": "i02-workflow-epoch",
+      "start_time_s": 2500000.0,
+      "stock_link": {"receives": "lithosphere", "returns": "returned"},
+      "exchange_exteriors": [["lithosphere", "sink"], ["returned", "source"]],
+      "linked_material": {
+        "phases": ["A", "B"],
+        "mass_per_area_kg_m2": {"A": 1.0, "B": 2.0},
+        "thickness_m": {"A": 3.0, "B": 4.0}
+      },
+      "retired_face": "retired-before-the-start",
+      "tolerances": ["exact"]
+    },
+    "stationary": {
+      "substep": "I03.2",
+      "world": "lune",
+      "end_time_s": 3.0,
+      "expects": "the identity map: no row, no transfer, the same bytes; only time, step and lineage change",
+      "tolerances": ["exact"]
+    },
+    "rigid_rotation": {
+      "substep": "I03.2",
+      "world": "lune",
+      "tilted": true,
+      "rotation": {"axis": [0.6, -0.1, 0.4], "angle_rad": 0.9},
+      "prior_rotation": {"axis": [-0.2, 0.7, 0.3], "angle_rad": 0.5},
+      "probe_direction_deg": [10.0, 20.0],
+      "interval_end_myr": [2.0, 4.0],
+      "inherited_east_formed_myr": -100.0,
+      "expects": "every plate turns by the same rotation: no row, no transfer, no heat and no age reset; measures, adjacency and junctions unchanged; a plate that already carries a total rotation composes the stage after it (R_total = R_stage R_prior)",
+      "tolerances": ["exact", "relative", "angular_absolute_rad", "area_closure_absolute_sr"]
+    },
+    "d3_lune": {
+      "substep": "I03.2",
+      "world": "lune",
+      "also_tilted": true,
+      "stages": "cases/i01_closures_v1.json#control_parameters.D3 (stages_Myr, plate_deg_per_Myr, ridge_deg_per_Myr)",
+      "rule": "the eastern plate moves at the D3 plate rate and the ridge at the D3 ridge rate; with accretion fraction 0.5 the western plate therefore moves at twice the ridge rate minus the plate rate. One accepted interval per stage.",
+      "expects": {
+        "born_per_side_deg": [3.0, 3.75],
+        "born_per_side_total_deg": 6.75,
+        "consumed_total_deg": 13.5,
+        "area_formula": "A = 2 R^2 delta_longitude",
+        "cohort_formation_myr": [[0.0, 2.0], [2.0, 5.0]],
+        "cohort_ages_at_end_myr": [[3.0, 5.0], [0.0, 3.0]],
+        "stage_1_strip_longitudes_deg": [4.0, 7.0],
+        "stage_2_strip_longitudes_deg": [0.25, 4.0],
+        "stage_1_midpoint_deg": 5.5,
+        "trajectory_mean_age_myr": 4.0,
+        "distance_over_present_rate_myr": 4.2,
+        "born_faces_per_stage": 12,
+        "consumed_faces_per_stage": 6
+      },
+      "tolerances": ["relative", "angular_absolute_rad", "area_closure_absolute_sr", "junction_algebra_relative", "attachment_band_rad", "exact"]
+    },
+    "one_plate": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "also_tilted": true,
+      "plate": "A",
+      "rotation_deg": 3.0,
+      "interval_myr": 1.0,
+      "destinations": [["slab", 0.75], ["accretion", 0.25]],
+      "inherited_formed_myr": [-40.0, -30.0],
+      "expects": {
+        "born_per_side_deg": 1.5,
+        "consumed_deg": 3.0,
+        "plate_area_change": "A loses the consumed lune and gains half the born area; C gains the other half; B is unchanged",
+        "born_faces": 12,
+        "consumed_faces": 6
+      },
+      "tolerances": ["relative", "area_closure_absolute_sr", "angular_absolute_rad", "exact"]
+    },
+    "asymmetric_ridge": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "ridge_meridian": 2,
+      "accretion_fractions": [0.25, 0.0, 1.0],
+      "plate": "A",
+      "rotation_deg": 3.0,
+      "interval_myr": 1.0,
+      "rule": "with n.J = n.((1-f) v_L + f v_R) the left plate accretes the share f of the opening and the right plate 1-f; the fraction is a declared input of this prescribed history, not a law",
+      "expects": "born area on the left f times the lune of the rotation and on the right (1-f) times it; a side with share zero opens nothing, so a supply declared for it is refused",
+      "tolerances": ["relative", "angular_absolute_rad", "exact"]
+    },
+    "oblique_boundaries": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "also_tilted": true,
+      "zigzag_deg": 4.0,
+      "plate": "A",
+      "rotation_deg": 3.0,
+      "interval_myr": 1.0,
+      "rule": "every meridian's vertices are shifted east and west alternately by zigzag_deg from one latitude row to the next, so each boundary segment is oblique to the plate motion; the area between any pole-to-pole curve and its copy turned by an angle about the axis is still the lune of that angle",
+      "expects": "born area per ridge side the lune of half the rotation and consumed area the lune of the rotation, with exact balances, as for straight meridians",
+      "tolerances": ["relative", "area_closure_absolute_sr", "exact"]
+    },
+    "slow_boundary": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "also_tilted": true,
+      "plate": "A",
+      "rotation_deg": [0.0001, 1e-07, 1e-10],
+      "inside_band_deg": 1e-13,
+      "followed_by_deg": 0.4,
+      "consecutive": {"rotation_deg": 0.01, "intervals": 6},
+      "interval_myr": 1.0,
+      "resolution": "relative tolerance times the area of one 60 degree sector (4 pi R^2 / 6): an overlap is measured to the rounding of the cells it is cut from",
+      "expects": "born and consumed areas equal the lune of the rotation within that resolution; inside the attachment band nothing opens or is consumed and a declared supply or destination is refused; the thin strips born in a slow interval ride on through later intervals, including a rigid turn of the whole sphere, with their pieces unchanged",
+      "tolerances": ["relative", "attachment_band_rad", "exact"]
+    },
+    "polar_rows": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "also_tilted": true,
+      "top_latitude_deg": [89.99, 89.9999],
+      "rotation_deg": [1e-10, 1e-08, 0.001, 1.0],
+      "interval_myr": 1.0,
+      "rule": "the outer latitude rows are moved to within a hundredth and a ten-thousandth of a degree of the poles, so each sector ends in a polar triangle about 1 km or 11 m tall beside cells thousands of kilometres across",
+      "expects": "never a wrong answer and never a wrong diagnosis: the step is either accepted, with born and consumed areas equal to the lune of the rotation within the slow_boundary resolution and exact balances, or refused as an unresolved overlap",
+      "resolution_note": "rounding a vertex (about 1.1e-16 rad) changes a face's area by up to that times its perimeter, so overlaps of a face are certain to close to the relative tolerance only while its area over its perimeter exceeds about 1.1e-4 rad (about 700 m on this sphere). Both triangles are below that (about 3e-5 and 3e-7 rad): the first is usually accepted, the second usually refused at the larger rotations",
+      "small_overlap": {"half_width_rad": 1e-07, "face": "s03-b01", "offset_deg": [25.0, 12.0],
+                        "tolerance": "cases/w01_geometry.json#acceptance.small_spherical_area_relative",
+                        "rule": "a gnomonic square of this half-width, centred at this longitude and latitude offset from the face's south-west corner, lies inside the face and far from its centre; its overlap with the face must equal its own area 4 atan(a^2 / sqrt(1 + 2 a^2)) within the existing W01 tolerance for small spherical areas"},
+      "tolerances": ["relative", "exact"]
+    },
+    "coarse_rows": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "also_tilted": true,
+      "latitudes_deg": [-10.0, 10.0],
+      "rotation_deg": 3.0,
+      "interval_myr": 1.0,
+      "rule": "two latitude rows only, so each sector is one band and two polar triangles 80 degrees tall; the north and south triangles of a sector share no conditioned chart and do not overlap",
+      "expects": "accepted with the lunes of the one_plate control: faces that a great circle separates need no shared chart",
+      "tolerances": ["relative", "exact"]
+    },
+    "motion_refusals": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "closing_ridge_deg": -3.0,
+      "cell_width_deg": 60.0,
+      "exhausting_deg": 70.0,
+      "sufficient_deg": 50.0,
+      "retreating_override": {"trench_meridian": 0, "subducting_side": "right", "plate": "B", "rotation_deg": 3.0},
+      "tipped": {"plate": "A", "axis": [1.0, 0.0, 0.0], "angle_deg": 3.0},
+      "sliding_transform": {"world": "octahedron", "plate": "north", "rotation_deg": 5.0},
+      "tolerances": ["relative", "exact"]
+    },
+    "mesh_change": {
+      "substep": "I03.2",
+      "world": "lune",
+      "inherited_east_formed_myr": [-9.0, -8.0],
+      "interval_myr": 1.0,
+      "merge": ["s01-b01", "s01-b02"],
+      "split": "s01-b01",
+      "refine": {"faces": ["s01-b01", "s01-b02"], "seam": [[1, 2], [2, 2]], "new_vertex": "seam-mid",
+                 "rule": "a new vertex at the middle of the seam arc shared by the two faces, added to both; then the first face is split through it"},
+      "nudged_ridge_vertex_deg": [1.0, -30.0],
+      "merged_strips": ["boundary-m00|right|1|0002", "boundary-m00|right|1|0003"],
+      "expects": "the same plates, records and time on other faces; every account conserved exactly; cohorts and formation dates unchanged",
+      "tolerances": ["relative", "exact"]
+    },
+    "prepared_map": {
+      "substep": "I03.2",
+      "control": "one_plate",
+      "slower_deg": 2.0,
+      "forged_row_factor": 0.999999999,
+      "forged_exchange": {"faces": ["s03-b00", "s03-b03"], "fraction": 0.25,
+                          "rule": "two cells of the subducting plate that do not touch each give this fraction of their own row to the other's endpoint face, so every donor, receiver and trench sum is unchanged"},
+      "stacked_closure": {"face": "s03-b01", "fraction_of_relative": 0.9,
+                          "rule": "one subducting cell's own row is lengthened by this fraction of the relative tolerance of its endpoint face, and its consumption row is shortened by that amount and by the same fraction of the tolerance of the cell itself; the cell's rows, the endpoint face's rows and the trench balance each stay inside the tolerance, while the pieces delivered to the endpoint face exceed its measured area by nearly twice the tolerance"},
+      "expects": "a prepared map is reused only for the same parent, moved and endpoint geometry and the same motion; a forged row no longer closes; rows that each pass the audit but together deliver pieces that miss an endpoint face are refused with the port code 'unresolved overlap'",
+      "tolerances": ["exact", "relative"]
+    },
+    "clock_commit": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "column": "the reviewed I02 layered column of tests/i02_workflow_fixtures.py, as the ledger root",
+      "column_steps": 8,
+      "plate": "A",
+      "rotation_deg_per_interval": 0.4,
+      "first_request_steps": 3,
+      "commit_intervals": [[0, 1], [1, 3]],
+      "rival_deg": 0.2,
+      "backward_deg": -0.4,
+      "mesh_merge": ["s00-b01", "s00-b02"],
+      "slow_then_normal_deg": [0.0001, 0.4],
+      "tolerances": ["angular_absolute_rad", "exact"]
+    },
+    "finite_stock": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "stocks": "tests/i02_workflow_fixtures.py reservoirs(): store-a and store-b, components A and B",
+      "stock_link": {"receives": "lithosphere", "returns": "returned"},
+      "exchange_exteriors": [["lithosphere", "sink"], ["returned", "source"]],
+      "pieces": {
+        "phases": ["A", "B"],
+        "mass_per_area_kg_m2": {"A": 4e-12, "B": 1e-12},
+        "thickness_m": {"A": 3.0, "B": 4.0},
+        "enthalpy_per_area_j_m2": -2e-12
+      },
+      "supply": {
+        "source": "store-a",
+        "mass_per_area_kg_m2": {"A": 2e-12, "B": 1e-12},
+        "thickness_m": {"A": 3.0, "B": 4.0},
+        "enthalpy_per_area_j_m2": -1e-12
+      },
+      "exhausting_mass_per_area_kg_m2": {"A": 2e-10, "B": 1e-12},
+      "return_to": "store-b",
+      "note": "areal values are tiny because the I02 control stocks hold kilograms; they are declared control inputs",
+      "tolerances": ["relative", "exact"]
+    },
+    "continuation": {
+      "substep": "I03.2",
+      "world": "three_plates",
+      "uninterrupted_steps": 6,
+      "saved_after_steps": 3,
+      "continued_steps": 3,
+      "expects": "the history saved after three intervals and continued by a fresh process reaches exactly the state identity of the uninterrupted history",
+      "edits": ["a piece account", "a vertex", "an overlap row", "the motion record", "the parent identity"],
+      "edit_factors": {"piece": 1.000000000001, "row": 0.999999999, "motion_deg": 0.5, "vertex_deg": [33.0, 12.0]},
+      "tolerances": ["exact"]
+    }
+  },
+  "provenance": {
+    "geometry": "authored control meshes; the sphere radius is a round declared value",
+    "d3": "the accepted I01 D3 staged-lune control parameters, read from their case file and not copied here",
+    "written": "2 October 2026, during I03a. The values of the controls coverage to continuation are the ones their checks first ran with; none was changed after a result. The slow_boundary magnitudes were chosen after a probe exposed a false exhaustion refusal at small motions; its resolution bound is the existing relative tolerance applied to the measured cells and was declared before the corrected code ran. Controls asymmetric_ridge, oblique_boundaries, polar_rows and coarse_rows, the mesh refinement and the slow_boundary follow-on intervals were declared here before their checks first ran. One expectation was then corrected without changing any tolerance: polar_rows was declared with both latitudes expected to be accepted; some of its cases were refused as unresolved, and analysis showed both triangles lie below what the relative tolerance can certify, so its expectation became 'accepted correctly or refused as unresolved' and the accuracy of a small overlap is checked directly instead (small_overlap, against the existing W01 small-area tolerance). The prepared_map stacked_closure rule was declared here before its check first ran."
+  },
+  "does_not_establish": [
+    "physically generated plate motion, boundary events or their timing",
+    "geological realism or morphology",
+    "regional process bridges or joint event commits (I03.3, I03.4)",
+    "sliding transforms, moving junctions that would reorganise, or asymmetric accretion laws (refused in this version)",
+    "a planetary runtime or behaviour on another platform than the one the checks were run on"
+  ]
+}

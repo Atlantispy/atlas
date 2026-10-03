@@ -1,6 +1,6 @@
 # Current evidence register
 
-30 September 2026. WORKING NON-CANON. Roadmap Phase A2.
+3 October 2026. WORKING NON-CANON. Roadmap Phase A2.
 
 Old receipts remain useful history, but documentation must not present one as
 evidence about the current checkout after the bytes it bound have changed. The
@@ -40,7 +40,7 @@ results remain observations of the original run. Nothing is re-executed.
 The [current connected evidence chain](#successor-capture-after-i022a-and-the-writer-correction)
 retains the eight-control chain refreshed on 30 September 2026 after the I02
 cold-restart stress-resolution correction, with finite-admission renewed again
-as r6 on 1 October. The unchanged `i01-column-r2` receipt is reused from
+as r8 on 3 October. The unchanged `i01-column-r2` receipt is reused from
 29 September. All affected bounded captures passed. The five
 phase/receiver/separation writer-correction receipts and G25 receipt captured on
 29 September also remain current; their inputs were unaffected and were not rerun.
@@ -57,9 +57,9 @@ accepted clock and save/reopen workflow; it does not establish physical-event or
 whole-world acceptance.
 
 I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
-[i01-finite-admission-r6](../tectonics/evidence/i01-finite-admission-r6.json) now
+[i01-finite-admission-r8](../tectonics/evidence/i01-finite-admission-r8.json) now
 binds that tool, its method document, the restoration modules and the renewed
-upstream receipts. Its predecessor r5 is superseded, with its recorded bytes intact.
+upstream receipts. Its predecessors remain superseded, with recorded bytes intact.
 Restoration checks consistency in a trusted local store, not authorship of records.
 Repair batch R1 (30 September 2026) changed two restoration modules r4 binds
 (`src/atlas_tectonics/timebase.py` and `src/atlas_tectonics/w08_inventory.py`).
@@ -69,17 +69,26 @@ controls passed in 1.9299832 s after imports with unchanged sources. Valid upstr
 receipts were reused; this is bounded finite admission, not scientific acceptance.
 See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r7.json)
-was captured on 2 October 2026 after the integrated R7 repairs and follow-up
-phase, heat-boundary, flexure-precision and native-memory fixes changed its bound
-sources. It supersedes r6; r1-r6 retain their original bytes and historical
-measurements. r7 records five
+Successor r7 was captured on 3 October after the I03 ledger/clock integration and
+the correction of stale prerequisite names in the method prose. Its five controls
+passed in 1.9232363 s after imports, with unchanged sources and matching imports
+and upstream receipts. The correct finite-strain r5 and column-admission r3
+prerequisites were reused; their bytes and the original r6 receipt were not changed.
+
+Successor r8 was captured after the final I03 K1–K5 repairs on 3 October.
+All five controls passed in 1.9032870 s after imports. The unchanged finite-strain
+r5 and column-admission r3 prerequisites were reused; r7 retains its original bytes.
+
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r10.json)
+was captured on 3 October 2026 (evening) after the I03 N1 change to
+`integration_transfer.py`, which followed the K1–K5 repairs. It supersedes r9; r1-r9
+retain their original bytes and historical measurements. r10 records five
 repetitions on one Windows machine,
-unchanged sources and passing equality/parity comparisons. Its 151 source-file digests
+unchanged sources and passing equality/parity comparisons. Its 156 source-file digests
 are checked by the register; its opaque package/native `execution_identity` is
 classified as an unchecked runtime observation. A further change to any package
-source makes r7 stale in turn. The column does not use the 3-D solvers; this renews
-source bindings, not a 3-D speedup measurement. This is operational timing, not scientific
+source makes r10 stale in turn. The column does not use spherical movement or the
+3-D solvers; this renews source bindings, not their speed measurement. This is operational timing, not scientific
 acceptance, a whole-generator speed claim or other-platform evidence.
 
 The native terrain R5 performance figures are historical measurements from the
@@ -469,7 +478,7 @@ written as a new file; no old receipt or recorded measurement was rewritten.
 | 5 | `check_i01_column_admission.py` | [i01-column-admission-r3](../tectonics/evidence/i01-column-admission-r3.json) | motion coupling r3, decoupling r1 |
 | 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r4](../tectonics/evidence/i01-thermomechanical-motion-r4.json) | column heat r5, motion coupling r3 |
 | 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r5](../tectonics/evidence/i01-finite-strain-r5.json) | thermomechanical r4, column heat r5, motion coupling r3 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r6](../tectonics/evidence/i01-finite-admission-r6.json) | finite strain r5, column admission r3 |
+| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r8](../tectonics/evidence/i01-finite-admission-r8.json) | finite strain r5, column admission r3 |
 | 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r4](../tectonics/evidence/i01-breakup-closure-r4.json) | finite strain r5 |
 
 The five phase/receiver/separation successors and the G25 successor passed on
@@ -503,6 +512,70 @@ has no successor route. Its older timings remain historical. Capture and
 registration are local evidence states; Git commit and publication are separate.
 
 ## Integration checks
+
+**I03 K1–K5 repairs, 3 October 2026: reviewed and integrated locally.**
+The candidate preserves junction paths through mesh/rename replay, covers all
+supported declared-vertex traversals (including D5 endpoints `f=0` and `f=1`),
+recovers degenerate GEOS overlays with exact spherical operands within the caller's
+budget, corrects C7 range semantics, and checks fresh-admission replay for all three
+regional bridge representations. Old step/map schemas are explicitly refused.
+C1/C4 application derivations are now documented under Michael's “approve fix
+everything” authority; this does not assert an earlier Claude approval.
+
+The final production-source I03 run completed 323 tests in 190.579 s: 320 passed,
+two original strict slow-consumption comparisons remained historical expected
+failures, and one obsolete assertion still expected overlay refusal. Only that
+assertion was replaced with exact-overlay recovery, conservation and replay
+checks. It passed together with the unchanged I02 persistence/finite-admission
+seams (42 tests in 10.918 s). Five checks affected by late fixture-binding edits
+passed in 1.854 s. Reusing the unchanged full-run passes gives final I03 coverage
+of 321 passes and the two historical expected failures; no new clean 323-test
+invocation is claimed. The local review logs are `i03-repair-final.log`,
+`repair-seams.log` and `fixture-binding-check.log`. The original strict per-trench
+audit and physical tolerances remain unchanged.
+
+Matched one-case exact-fallback measurements decreased from 2.3598282 to
+1.7407953 s at 48 bands (26.2%) and from 17.0186592 to 11.5097252 s at 192 bands
+(32.4%), with identical rows, states and peak budget use. The 96-band case did
+not use exact fallback and showed no gain (4.0196 to 4.0530 s). These are bounded
+case observations, not whole-planet performance.
+
+Finite-admission r8 passed all five controls and workflow-timing r9 all seven
+checks over five repetitions, after other test processes had stopped. Original
+receipt bytes and unchanged prerequisites were retained. The candidate register
+passes with 37 current records and 454 matching bindings, 28 historical,
+43 superseded and none invalid; its closure-mirror check passed. Coding-safety
+checks passed (13 source maps, 41 required paths; 30 tests passed with one existing
+Windows symlink-privilege skip in 0.114 s). The public-path guard and its 14 tests
+passed (0.828 s). All 26 promoted files matched the tested candidate. The final
+Git-normalised guard passed 3/3 checks in 8.9 s: the register, three line-ending
+tests (0.774 s) and two combined path/mesh replay tests (5.022 s). Final status-only
+closeout edits do not alter the tested source, cases or receipt bindings.
+No commit, push, EXE rebuild, full Atlas regression, Linux or
+planetary-run claim is made.
+
+That 8.9 s guard used an explicit `--tests` selection, which replaces the default
+I01/I02 tests. On the same K1–K5 bytes, the coordinator session then ran the default
+Git-normalised guard: 3/3 checks passed in 163.5 s, including 759 I01/I02 tests.
+A clean full I03 run gave 323 tests in 186.069 s, OK with the two historical
+expected failures.
+
+**I03 N1 follow-up, 3 October 2026 (evening): integrated locally.** D1-b at a
+junction where a plate builds a D5 transient triangle is not constructed. It was
+refused with misleading geometric or seam causes, and it is now refused by name
+(`integration_transfer.py`). A pass beside a zero-opening side, outside the
+triangle, stays admitted with exact closure and restore. The cases are in v4
+`d5_traversal`, recorded after they were first probed. Of two new tests in
+`test_i03_vertex_traversal.py`, the refusal test failed on the previous source (five
+subtests with the old messages) and passes now; the admitted-pass test passes on both,
+as a non-regression control. The full I03 suite ran 325 tests in 177.330 s, OK with the two
+historical expected failures. Workflow-timing r10 passed all seven checks over five
+repetitions with no concurrent test process. It supersedes r9; only
+`integration_transfer.py` differs from r9's bindings, and finite-admission r8 does
+not bind it. The register passes with 37 current records and 454 matching bindings,
+28 historical, 44 superseded and none invalid. The final default Git-normalised guard
+result is recorded below. No tolerance changed, and no case is newly admitted.
+The default Git-normalised guard (`tools/check_before_commit.py`, without `--tests`) passed 3/3 checks in 161.3 s: the register, digest line endings and 759 I01/I02 tests in 156.977 s. Coding-safety (31 tests), public-path (14) and register (20) tests passed; the safety and register runs each have their existing Windows symlink skip. Only this status paragraph and the matching CURRENT_STATE sentence were written after that run.
 
 **R7 integration, 2 October 2026.** The reviewed candidate and follow-up fixes
 are integrated locally. Adequate unchanged R7 checks were reused; affected paths

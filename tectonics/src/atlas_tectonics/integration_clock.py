@@ -368,7 +368,7 @@ class Clock:
         """Transfer proposals grouped by their declared interval: {end_step: (start_step, proposals)}."""
         if transfers is None:
             return {}
-        if type(transfers) not in (tuple, list) or any(type(p) is not _ledger.Transfer for p in transfers):
+        if type(transfers) not in (tuple, list) or any(not _ledger._proposal(p) for p in transfers):
             raise ClockError('transfers are a sequence of Transfer proposals, each declaring its interval')
         groups = {}
         for proposal in transfers:
@@ -403,16 +403,20 @@ class Clock:
                 'were not committed' % (self._head.accepted_steps, span[0], span[1]))
 
     def _carried(self, commit):
-        """The transfers the stored record of ``commit`` carries, in order, by their declared content."""
+        """The transfers the stored record of ``commit`` carries, in order, by their declared content, then (I03.2)
+        the motion of an attached network; the finite-stock transfers that motion produced are its own."""
+        metadata = self._ledger.store.metadata(commit.key)
+        own, motion = _ledger._network_content(metadata)
         return [(r['label'], r['producer'], r['donor'], r['receiver'], sorted(r['component_mass_kg'].items()),
                  r['enthalpy_j'], r['basis'], r['interval']['start_step'], r['interval']['end_step'])
-                for r in self._ledger.store.metadata(commit.key)['transfers']]
+                for r in metadata['transfers'] if r['producer'] != own]+motion
 
     @staticmethod
     def _content(moves):
-        """The declared content of proposed transfers, comparable with _carried()."""
+        """The declared content of proposed transfers, then of a proposed motion, comparable with _carried()."""
         return [(m.label, m.producer, m.donor, m.receiver, sorted(dict(m.component_mass_kg).items()), m.enthalpy_j,
-                 m.basis, m.start_step, m.end_step) for m in moves]
+                 m.basis, m.start_step, m.end_step) for m in moves if type(m) is _ledger.Transfer]+[
+                     ('motion', m.motion_id) for m in moves if type(m) is not _ledger.Transfer]
 
     def _commit(self, pending, moves):
         """One attempt to commit the pending steps after the head: (commit or None, refusal or None, overtaken).

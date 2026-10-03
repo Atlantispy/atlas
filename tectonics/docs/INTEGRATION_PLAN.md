@@ -9,8 +9,9 @@ what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains th
 single progress summary; do not maintain another competing status ledger here.
 
 This is the complete planning scope, not blanket execution authority. The latest
-owner instruction (30 September 2026) authorised review, corrections and local
-integration of **I02.3–I02.8**, now accepted for their declared workflow; stop before I03. Preparing the later
+owner instruction (3 October 2026) authorised closing the I03 review findings,
+including the larger supplied-junction geometry and transient-accounting extension.
+I02.3–I02.8 remain accepted for their declared workflow; stop before I04. Preparing the later
 briefs does not start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
 live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
 current-state record. No installations, reopening R4.4, broad/full-world runs,
@@ -490,7 +491,7 @@ corrected equivalence checks, refreshed affected evidence and measurements are
 described in [I02 workflow](I02_WORKFLOW.md). All 758 I01/I02 tests passed on
 Git-normalised candidate bytes. Linux coverage remains explicitly outstanding,
 as allowed below; no cross-platform or whole-planet acceptance is claimed.
-Stop before I03.
+I03 is now separately authorised; this I02 acceptance does not authorise I04 or later work.
 Claude implements bounded assignments and Codex reviews their actual changes.
 Preserve existing work; permission, usage and unresolved technical failures still
 stop dispatch. No blanket installation, broad simulation or publication approval.
@@ -684,6 +685,15 @@ I11–I12 retain their wider end-to-end acceptance and release responsibilities.
 evolution remains the target, not a feature removed by using a bounded first case.
 
 ### I03 — Evolving sphere, conservative history and spatial bridges
+
+**Implemented route:** [I03's method](I03_SPHERICAL_NETWORK.md) connects the
+prescribed spherical history to the I02 clock and ledger, with conservative
+material, interval-bound regional returns and joint supplied events. The 3 October
+review extension adds declared-vertex traversal, explicit compatible curved
+junction paths, and material supplied and consumed within one interval, including
+moving continuation after reopening. It does not choose future junction paths
+from an unstated physical law. The current checkpoint owns acceptance and limits;
+I04 and physical event generation have not been started by this repair pass.
 
 **Focused research decisions:** choose a conservative spherical intersection/remap
 method for the actual cell edges and physical measures; specify polar/seam
@@ -1492,8 +1502,9 @@ regional demo, export table or visually attractive world is not a substitute.
 
 **I01 is complete as a model-choice, contract and bounded-feasibility stage.**
 I02.1–I02.8 are accepted for the declared connected and restartable column workflow
-(see its method and current-state record), and work stops before I03.
-I03–I12 are planned, not newly started or authorised by this document. Preserve
+(see its method and current-state record). I03 is under the separately authorised
+review-and-repair scope described above; stop before I04. I04–I12 remain planned,
+not newly started or authorised by this document. Preserve
 the physical-event gates assigned to their later implementation stages. Do not
 repeat completed reading or bounded controls without changed inputs, a failure
 or missing required coverage.

@@ -648,22 +648,22 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r7](../evidence/i02-workflow-timing-r7.json),
-2 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
-one BLAS thread. It was captured after R7 and the phase, heat-boundary,
-flexure-precision and native-memory corrections, without a concurrent Atlas test
-campaign. The harness ran five
+**Current source-bound measurement:** [i02-workflow-timing-r10](../evidence/i02-workflow-timing-r10.json),
+3 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
+one BLAS thread. It was captured after the I03 N1 change to
+`integration_transfer.py`, which followed the K1–K5 repairs, without a concurrent
+Atlas test campaign. The harness ran five
 repetitions of the same supported 16-step, 32-material-point case, saving every
 four steps and reopening at step eight. All seven checks passed, including
 cold/warm physical equality, reopened accounts and unchanged sources. The record
-binds 151 source files and records the execution identity; hashing is outside the
+binds 156 source files and records the execution identity; hashing is outside the
 measured regions. This is a fresh bounded-column receipt, not a 3-D speedup
-measurement: the column workflow does not use the 3-D solvers, and the new
+measurement: the column workflow does not use the 3-D solvers or spherical motion, and the new
 record exists because the package sources it binds changed. Its warm medians are
-**0.06976490 s** for bare evolution, **0.06936895 s** for in-memory continuation
-(-0.57%, within small-run variation), and **0.10974810 s** for the stored workflow
-(+57.31%, or 0.03998320 s, against bare evolution), of which **0.02088000 s** is
-four commits. Cold root/head/operator reopening totals **0.11901790 s**;
+**0.07044400 s** for bare evolution, **0.07009810 s** for in-memory continuation
+(-0.49%, within small-run variation), and **0.10774630 s** for the stored workflow
+(+52.95%, or 0.03730230 s, against bare evolution), of which **0.01942420 s** is
+four commits. Cold root/head/operator reopening totals **0.12080310 s**;
 the receipt retains every sample and growth
 measurement. These tiny-case costs are not a general overhead or speedup claim.
 
@@ -793,6 +793,20 @@ rewriting an earlier receipt. Finite-admission r6 and the other unchanged curren
 records remain valid and were reused. Earlier saved execution-bound states must
 still satisfy their exact source/runtime contracts; no silent migration is added.
 The current integration checks are in [the evidence guide](../../docs/CURRENT_EVIDENCE.md#integration-checks).
+
+I03's ledger/clock integration and junction extension then required finite-admission
+r7 and timing r8. The final K1–K5 repairs supersede those receipts with
+[finite-admission r8](../evidence/i01-finite-admission-r8.json) and
+[timing r9](../evidence/i02-workflow-timing-r9.json): all five admission controls
+and all seven timing checks passed, with unchanged prerequisite receipts.
+The I03 N1 change to `integration_transfer.py` then superseded timing r9 with
+[timing r10](../evidence/i02-workflow-timing-r10.json), whose seven checks also
+passed; finite-admission r8 does not bind that file and stays current.
+Earlier receipts retain their original bytes. These successors renew the bounded
+column's affected source bindings; they do not measure spherical or 3-D solver
+performance, establish whole-world acceptance or migrate saved execution-bound
+states. The repaired candidate is integrated locally; final promotion checks are
+recorded in the evidence guide.
 
 ## 9. Acceptance commands after review
 

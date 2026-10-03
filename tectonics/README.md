@@ -69,6 +69,12 @@ experiment. The [I01 physical integration chapter](docs/how-it-works/06-physical
 explains how strength, motion, heat, material history and changing geometry interact,
 alongside gravitational driving, water loading, melt and transition controls.
 These bounded connections do not yet form the complete evolved-world route.
+The [spherical network method](docs/I03_SPHERICAL_NETWORK.md) describes I03: one
+closed network beside the accepted state, moved under supplied plate rotations with
+exact transfer of its material, with bridges to regional models and supplied plate
+splits, merges and ridge jumps. Supplied compatible junction paths generate curved
+ends; transient ridge-to-trench material is accounted for within the same interval.
+See [current status](../docs/CURRENT_STATE.md) for reviewed scope and checks.
 The [3D regional solver](docs/REGIONAL_MECHANICS_3D.md) now supplies full-stress
 heterogeneous flow, explicit velocity/traction boundaries and finite-mode
 force feedback, with prepared sparse reuse. Its [connected fixed-box advance](docs/REGIONAL_EVOLUTION_3D.md)

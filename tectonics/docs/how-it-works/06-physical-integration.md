@@ -4,7 +4,7 @@
 
 Tectonic processes affect one another. Temperature changes rock strength; strength affects motion; motion changes thickness, heating and the forces driving the next interval. I01 investigates the physical rules needed to connect these effects without losing material, inventing heat or counting a force twice.
 
-**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). It is not the later evolving-planet route. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event and spherical work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
+**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
 
 The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
 
@@ -78,6 +78,61 @@ cannot affect later pieces. This protection recomputes nothing. The correction a
 mutation and continuation regressions have passed review and execution. Committing
 exchanges, one accepted clock, and saving and reopening a record now exist as an
 integrated workflow, described in section 8.
+
+### The shared spherical network: one owner for every point of the sphere
+
+The column above is one strip of rock. A planet also needs to know where its plates
+are. The [spherical network](../I03_SPHERICAL_NETWORK.md) is that map, kept beside
+the column in the same saved history. It divides the whole sphere into faces. Each
+face belongs to exactly one plate, so every point has one owner and the faces
+together cover the sphere once.
+
+A boundary between two plates is stored once, as a line with a direction, a plate on
+its left and a plate on its right. It also says what kind of boundary it is and the
+one rule that kind needs: a ridge states what share of its opening each side
+receives, and a trench states which side goes down. Nothing is assumed when a rule
+is missing. Points where boundary lines end are junctions; Atlas works these out
+from the lines rather than accepting them as given. Each plate carries one rotation
+describing how far it has turned since a stated reference time, and each boundary
+records where it came from: the declared starting condition or a named event.
+
+The geometry is the closed spherical atlas of the
+[foundations chapter](01-foundations.md#geological-geometry-and-shared-plate-boundaries),
+checked by that atlas's own tests. A gap, an overlap, a face claimed twice, a
+boundary line that stops part-way along an edge or a pinched face is refused. Atlas
+does not close gaps, merge near-identical points or tidy a declaration to make it
+valid. The lines that separate plates are also kept apart from the mesh used for
+bookkeeping: an edge between two faces of the same plate is only a seam of that
+mesh, and it can later be redrawn without touching a plate boundary.
+
+Rock is recorded separately from plates. Each face holds one or more pieces, and
+each piece belongs to a cohort: rock with one origin, one formation interval and
+one reference to its history. A piece has four kinds of account, never merged: the
+area it occupies, a reference mass and a volume for each declared rock phase, and
+its heat content measured against a stated baseline, which can be negative. A plate
+name never appears in a rock record, so regrouping faces into different plates
+changes no rock. An account that was not declared is reported as unknown, not as
+zero, and so is a formation date that was not given. The pieces of a face must fill
+it: this is checked for every face when a world is declared, after every interval and
+whenever a saved state is reopened. All the pieces together must always cover the
+sphere once.
+
+The totals are also kept as exact fractions, so "what is stored equals what was
+declared plus what has since been supplied" can be checked exactly rather than
+approximately. Every network, material record and state has an identity derived
+from its complete contents. A saved history that includes a network binds that
+identity into its own, and reopening rebuilds the network through the same checks
+that created it; a record or array edited in the file no longer matches and is
+refused.
+
+[These checks](../../tests/test_i03_network.py) build small declared worlds of six
+or eight pole-to-pole sectors, confirm their coverage and boundaries, and
+deliberately try each kind of invalid declaration. They repeat the world about a
+tilted axis, so that nothing depends on where the coordinate poles are, and confirm
+that expressing it in rotated axes changes no area, neighbour or junction. Further
+[checks through the saved history](../../tests/test_i03_ledger.py) reopen it in a
+new process. They establish that the bookkeeping and geometry are consistent. They
+do not show that any such plate layout is geologically plausible.
 
 ## 2. Calculate support and gravitational driving from the columns
 
@@ -284,6 +339,327 @@ mesh. The material/heat connection below advances a solved region; joining many
 evolving regions and plate motions into one world state remains separate work.
 
 ## 5. Advance heat, history and geometry together
+
+### Move the plates of the shared network and carry their rock
+
+Over each accepted interval, the [network of section 1](#the-shared-spherical-network-one-owner-for-every-point-of-the-sphere)
+is moved by one supplied rotation per plate. In this mode the rotations, and what
+ridges supply and trenches remove, are given to Atlas; calculating them from forces
+is later work. A plate that does not move must be told so. Leaving a plate out is
+refused, because unknown motion is not the same as no motion.
+
+**Faces ride with their plate.** A face away from any plate boundary keeps its
+shape, and its rock records are not touched at all: afterwards they are the same
+bytes. Each plate keeps its corners in its own frame of reference, turned once to
+place them on the sphere. A ridge keeps its corners the same way, in a frame of its
+own. So a face that only rides keeps exactly the same numbers and the same measured
+area, however far it travels. An earlier version re-rounded every corner each
+interval, and over many intervals a narrow strip's area drifted from the rock it
+held. Only what happens at the boundaries changes anything. Where a plate's face uses
+a corner kept by another plate or by a ridge, the plate keeps its own copy of it, and
+that copy may lie no further from the corner than 64 times the spacing of the stored
+numbers; this is checked again whenever a state is saved or reopened. Two plates
+moving apart more slowly than that each interval therefore still open a ridge once
+their motion adds up, instead of leaving a gap that no account records.
+
+**Each boundary moves by its declared rule.** A boundary between two plates that
+turn together is locked and moves with them. A ridge moves with a blend of its two
+plates' motions set by its declared share; with equal shares it travels at their
+average. A trench moves with the plate that stays at the surface. A boundary where
+plates only slide past each other moves with the plate it names as carrying it; the
+other plate's cells beside it are sheared and their rock passed along between them,
+never across the boundary. It is accepted only when the slip runs exactly along the
+boundary's great circle; a boundary with any opening or closing must be declared a
+ridge or a trench.
+
+**New crust is made as new faces.** When a ridge opens, each plate keeps the edge it
+had, and the strip between that old edge and the ridge's new position becomes new
+faces of that plate. They hold a new cohort whose formation interval is exactly the
+accepted interval, and whose mass, volume and heat are the declared amounts per
+unit area from a named source. Older faces are never stretched to fill the space.
+This is what keeps ages honest. In the staged test from the
+[physical contract](../I01_PHYSICAL_CONTRACT.md), where the ridge and plate speeds
+change part-way, crust born in the first stage reports a mean age of 4.0 million
+years from its own record. Dividing its present distance from the ridge by the
+present spreading rate would wrongly give 4.2.
+
+**Consumed crust leaves through the trench.** The down-going plate's cells that
+touch the trench are shortened to end at the trench's new position. The part that
+has passed the trench is removed, with every cohort it held, and its mass, volume
+and heat are booked to declared destinations in declared shares. A cell cannot give
+more than it holds: a movement larger than the cells at the trench is refused, not
+trimmed.
+
+**Amounts move by measured overlap.** Wherever a cell changed shape, Atlas
+intersects its old outline, carried with its plate, with the new cells and with the
+strip the trench swept. The areas are measured on the sphere itself. Each account
+is divided in proportion to those areas, and the parts add up to the original
+exactly, so nothing is created, lost or counted twice. A cohort's dates and history
+reference travel with each part unchanged, and no average age is ever formed. The
+overlaps must add up to each cell's own area to about one part in a million million,
+or the interval is refused. A cell roughly a kilometre across or less on an
+Earth-sized sphere cannot always be measured that precisely, because its corners
+are stored as rounded numbers. When a cell lies wholly inside another, Atlas decides
+that exactly, without rounding, and moves its rock whole. So renaming a narrow strip,
+merging it into its neighbouring cell or splitting it off again always balances. When a
+redraw merges two very thin strips, their balance is held to the largest error that
+rounding their measured areas could produce. That bound grows with a strip's length,
+not its width. For strips a few metres wide it is about five parts in a thousand
+million of the strip's area; for strips a fraction of a micrometre wide it reaches a
+few per cent. The cell keeps an allowance of up to twice that, which governs every
+later check of its rock against its area. A rename keeps the allowance unchanged, and
+a later redraw replaces it rather than adding to it. When a trench cuts a very thin
+cell, the interval can still be refused.
+If a
+source or destination is one of the saved history's
+finite stores, the amount is taken from or added to that store in the same save,
+and an empty store refuses the whole interval.
+
+**Junctions must stay closed.** Where three or more boundaries meet, each boundary's
+rule says where the meeting point should go. If they agree, it goes there. If one
+straight boundary runs through the point and a third ends on it, the point slides
+along the straight one, to where the third one's new position crosses it. The plate
+carrying the straight boundary keeps its old corner as a new point on it, so its own
+faces do not change. Three independently rotated, rigid boundary ends generally stop
+meeting exactly. That does not by itself mean the plates must physically rearrange:
+the boundary ends may need new segments as the junction advances. For an
+outward-growing ridge junction, the supplied-history route now accepts an explicit
+path for that meeting point and constructs the ends left behind it. The path is an
+input because plate speeds alone do not uniquely choose future oblique ridge
+directions. Atlas does not smooth the map until it looks plausible.
+
+Curved ends are represented by short great-circle segments. A declared error bound
+controls their spacing, while the actual analytic tangent controls velocity closure.
+The supplied path must match the inherited tangent, and a conservative bound checks
+that the meeting directions stay distinguishable throughout the interval, not just
+at a few sampled times. An inconclusive bound refuses; it does not prove physical
+instability. Accuracy must lie above coordinate roundoff and below the declared
+90-degree representation cap. Neither changes the physical closure tolerance.
+
+More stringent accuracy adds segments by repeated halving: one, two, four and so
+on. A ceiling of three therefore allows at most two segments. Exact great-circle
+ends stay sparse, but still split if one nearly antipodal segment would violate the
+existing chart limits. The declared memory ceiling remains charged until geometry
+and material transfer finish. The
+[path-contract controls](../../tests/test_i03_path_contract.py) exercise these rules;
+[moving-history controls](../../tests/test_i03_junction_paths.py) cover rotated
+coordinates, refinement, saving and nonzero continuation.
+
+Ordinary sampling vertices can also be passed without treating them as physical
+collisions: along a carried transform line, by a carried ridge ending on that line,
+and by a ridge ending on a trench line. A strict pass, an exact landing and several
+passed vertices must leave the new strip and trench accounts on the updated chains.
+These are the [vertex-traversal controls](../../tests/test_i03_vertex_traversal.py).
+Passing a sampling vertex is not built where the vertex would subdivide a
+same-interval ridge-to-trench triangle at the junction. Such a step is refused,
+and the refusal says so rather than blaming the geometry; a pass outside the
+triangle is admitted.
+A material seam is different: its endpoint must follow its carried interior edge's
+intersection with the trench. Unconstructed seam changes still refuse. A real
+encounter with another junction needs an admitted reorganisation.
+
+Some crust can be born at a ridge and swallowed by the adjacent trench before the
+interval ends. Atlas now records both transfers from the actual swept geometry,
+preserving the new crust's formation interval, source and heat even though it has
+no surviving cell. The finite source and destination stocks commit together, or
+neither changes. Restart checks cover that short-lived material as well as the
+visible endpoint map.
+At a ridge fraction of exactly zero or one, a side with no opening receives no new
+rock. It may still lose old rock at the trench; no zero-area birth is manufactured.
+
+**The mesh can be redrawn.** Cells may be merged or split between intervals, for
+example to merge the narrow strips that many small openings leave behind. Rock is
+transferred by the same measured overlaps. A redraw cannot move a plate boundary,
+give a cell to another plate or change any formation date.
+When a saved mesh is rebuilt, replay keeps every other field of the original motion,
+including the supplied junction paths, events, returns, sources and destinations.
+Replacing the mesh is not permission to reconstruct an older, shorter version of
+the proposal. The combined path/mesh/event record and its identities must reproduce
+before a reopened history can continue.
+
+**The same memory limit follows the work.** Moving geometry, transferring rock and
+restoring a saved step all charge the budget supplied by the caller. Reusing saved
+overlaps saves calculation, but does not remove the memory needed to reconstruct
+the state. Focused checks deliberately exhaust that budget and confirm that Atlas
+refuses without publishing a partial result or leaking temporary reservations.
+
+[The checks](../../tests/test_i03_transfer.py) use exact geometry: the area between
+two meridians a known angle apart. A state that does not move, and a whole sphere
+turned as one piece, transfer nothing and change no rock record. One plate turning
+between fixed neighbours gains and loses exactly the predicted areas, and its
+mass, volume and heat balance exactly. The same histories about a tilted axis give
+the same accounts. Very slow boundaries, down to a ten-thousand-millionth of a
+degree per interval, still balance at the precision the cells can be measured to,
+and the strips a few metres wide that they leave ride on through later intervals.
+A state holding a 55-metre strip, turned twenty times as one piece, keeps every
+cell's rock equal to its area after every turn; the strip can then be renamed,
+merged into its neighbour and split off again, with every account exact.
+Cells at the poles only a kilometre and eleven metres tall are either moved with the
+right balances or refused as unresolved, never moved wrongly. A square about a metre
+across, far from the middle of a cell thousands of kilometres wide, is measured to
+the precision the foundations already require of small areas. Each refusal above is
+provoked deliberately. These checks show that the bookkeeping
+follows the supplied motion; they say nothing about whether such motion would
+arise physically. Two effects are approximate and recorded as limits in the
+[method document](../I03_SPHERICAL_NETWORK.md#12-limits-and-what-remains): cells
+along a trench exchange a small amount with their neighbours each interval, so the
+mix of cohorts within those cells is not exact, and a cell holds its cohorts
+uniformly rather than recording where in the cell each one lies. The same section
+gives the [measured cost](../I03_SPHERICAL_NETWORK.md#11-measured-cost) of a step and
+how it grows with the number of cells.
+
+**Sources reused here.** This connection uses the existing W01 shared spherical
+atlas and finite rotations, the [I01 transition contract](../I01_TRANSITIONS.md)
+and I02's exact accounts and replay. The supplied path's exponential/logarithm
+convention uses the previously consulted
+[Modern Robotics section 3.2.3 transcript](https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-2-3-exponential-coordinates-of-rotation-part-2-of-2/).
+The curve-error and conditioning bounds are derived for Atlas's stated trace;
+that source supplies no tectonic path-selection law. The later review repairs
+reuse these sources and derivations, without a new literature or physical-validation
+claim. The [specialist source list](../I03_SPHERICAL_NETWORK.md#14-sources) records
+what was actually consulted.
+
+### Hand part of the network to a regional model and take it back
+
+A regional model, such as the three-dimensional solver of section 4, works on a box
+or a slice, not on the whole sphere. A
+[bridge](../I03_SPHERICAL_NETWORK.md#8-regional-bridges-i033) hands it a declared set
+of whole cells of the network and takes its result back, without either side owning
+the rock twice.
+
+**Going out.** Each cell's rock records travel exactly as stored, with the cell's area
+measured on the sphere: the area every amount is counted against.
+- **Positions.** The region also receives the cells' corner positions in its own flat
+  frame of east, north and up. That frame is an exact rotation of the sphere's
+  coordinates, not a map projection, so a model that keeps all three directions loses
+  nothing.
+- **Fewer directions.** A map model that drops the vertical must declare how much
+  shortening of lengths it accepts, because the curved surface falls away below a flat
+  plane. It is also told how far its cells' flat areas depart from their true areas,
+  and the largest share of the motion it drops by ignoring the vertical. A section model
+  that drops one horizontal direction is accepted only where no motion runs across the
+  section.
+- **Motion.** The plates' turning speeds and the velocity at every corner travel as
+  complete three-dimensional vectors. This port currently represents constant
+  turning rates. It refuses every motion with supplied junction paths, including
+  special cases with a constant spatial rate. The current port does not inspect
+  those cases to admit exceptions or substitute a final rotation for a different
+  forcing history. Omitting motion still permits material-only reading for a map
+  or three-dimensional region; a section requires motion.
+- **Forces and work** are not calculated here. They are passed as unknown, never as
+  zero.
+
+**Coming back.** The region's result replaces the rock in those cells only. Every
+amount must come back exactly, with no rock appearing or disappearing. Each kind of
+rock must come back in the same amounts too: a region may move rock between its cells,
+but may not relabel it as rock of another age or origin. Anything a region exchanges
+with the world outside must go through a named source or sink. Rock outside the region
+keeps its exact bytes. Refused:
+- a result for a state that has since moved on;
+- two regions claiming one cell;
+- a result that drops a direction its region kept.
+
+A result is saved with the interval it belongs to: it travels with that interval's
+motion and is applied at its end, only to cells the interval carried unchanged.
+Its calculation must use the same plate motion and elapsed time as the committed
+interval. Checking the starting state alone would let a result calculated for one
+motion be used under another. For three-dimensional regions, maps and sections
+alike, Atlas makes a fresh extract from the actual parent, motion and duration and
+checks that its identity matches. This reapplies all admission rules, including
+finite velocities and any omitted direction, rather than checking projection
+metadata alone. Changed sources, sinks, mesh or events are part of a changed
+forcing declaration too. Atlas also checks the cells' actual spatial support:
+two equally full cells in different places are not interchangeable. A rigid ride
+with the plate is allowed; a mesh change that relocates the cell is not. These
+checks also run when the saved history is reopened, or the interval is refused.
+
+[The checks](../../tests/test_i03_bridges.py):
+- return a region unchanged and get back the very same state;
+- move rock between two cells of different plates with every account exact;
+- compare the velocities across four orientations of the frame;
+- provoke each refusal, including attempts to alter what was handed out.
+
+The limits on how much a map may distort were approved before their checks first
+counted. A map model declares the distortion it accepts, and anything beyond it is
+refused. Nothing here shows that a regional model's answer is right: a bridge only
+checks that the bookkeeping is.
+
+**The same case seen two ways.** The same history in tilted axes, and the same motion
+on a coarse mesh, a finer one and a differently drawn one, give the same plate totals,
+the same rock born and consumed, and the same amounts handed to each source and sink.
+- **Ordinary motion.** Where the motion is not tiny against the cells, they agree to
+  about one part in a hundred million million.
+- **Very slow motion.** The new strips are only metres wide and are measured less
+  precisely. The original comparison counted uncertainty in the remaining strips
+  but missed the thin regions swept away by trenches. Those old checks remain
+  visible as expected failures. A separately declared comparison now includes the
+  actual swept regions and the density of their rock and heat. The retained
+  comparison reported agreement in rotated axes and on both alternative meshes, using at most
+  1.192% of its uncertainty bound. That newer comparison uses a turn of `0.0002°`
+  per interval, twice the historical control's `0.0001°`, and checks that the swept
+  regions really lie in the thin range. The reported bound uses the existing size
+  rule: full for thin rings, capped in the transition range and zero beyond it.
+  This does not loosen conservation or let a trench consume more than it swept.
+  Where ordinary arithmetic cannot meet that strict area check, Atlas recalculates
+  only the affected overlaps with exact geometric predicates and higher-precision
+  area arithmetic.
+  If an ordinary planar intersection wrongly contains only lines or points despite
+  a significant overlap detected by its union, the same bounded exact method handles
+  the original spherical polygons. Unresolved geometry still refuses. A conservative
+  reach check and reuse of each donor's triangulation avoid unnecessary exact work;
+  the [bounded timing comparison](../I03_SPHERICAL_NETWORK.md#11-measured-cost) is
+  not a claim of whole-planet performance or final combined acceptance.
+
+The way one kind of rock is spread within a plate depends on the mesh, and is not
+compared. Where a trench consumes cells holding only one kind of rock, as here, the
+amount of each kind is compared too. Where it consumes cells mixing rock of different
+weight per area, only the consumed area can be compared.
+
+### Change which plate owns which cells: supplied splits, merges and ridge jumps
+
+Plates are not permanent. A plate can break in two, two plates can join, and a
+spreading ridge can jump to a new position. In this mode such changes are supplied as
+history, not calculated. Atlas commits them at the end of the interval that carries
+them, together with that interval's motion, in one save, or not at all. The
+[method](../I03_SPHERICAL_NETWORK.md#9-joint-geometry-commits-i034) describes the
+records.
+
+**A change of plate moves no rock.** Each change declares its time and takes effect
+only at the end of the interval that ends then, never in the middle of one.
+- **Split.** It names, cell by cell, which new plate each cell of the old one joins.
+  The new boundary follows existing cell edges and ends on existing boundaries.
+  Boundaries it meets are cut there, and the cut pieces get new names.
+- **Merge.** Two plates that moved together and shared a boundary are joined, and
+  that boundary retires.
+- **Ridge jump.** The plate the ridge jumps into is split, and the slice left behind
+  merges with the plate across the old ridge, whose boundary retires.
+
+Every cell keeps its place and its rock records, so every amount is unchanged exactly. A merged plate continues
+one of the two: for a ridge jump the plate across the old ridge, otherwise the larger. The other's cells are then
+described in that plate's frame and measured again there. For a very thin strip that can change its measured area
+by more than the usual one part in a million million, though no rock moves. Atlas admits such a change only within
+the largest error that rounding can produce there, derived from the existing measurement bounds, and books the exact
+change against that cell. A larger change would be a real displacement, and is refused.
+Names of retired plates and boundaries stay reserved, and a plate cannot simply vanish
+on its own.
+
+**Several changes at once.**
+- Changes that touch different plates in one interval give the same result in either
+  order, and this is checked.
+- Two changes that touch one plate must be proposed together.
+- A later change is judged against the state after the earlier one is saved: once
+  two plates have merged, a proposed split of one of them is refused.
+- If the interval's demands on a finite store exceed it, the whole interval is
+  refused, change included, rather than serving whichever came first.
+
+[The checks](../../tests/test_i03_events.py):
+- commit each kind of change, save it and reopen it in a new process;
+- run a closed sphere through a ridge jump, with every source, sink and heat account
+  matching exact geometry;
+- provoke every refusal.
+
+Generating such changes from the rock's own physics is later work (section 7). These
+checks show only that supplied changes are committed consistently.
 
 ### Carry material and heat through the solved three-dimensional region
 
@@ -499,7 +875,7 @@ to create a boundary. Real separation/initiation mechanisms, compatible finite
 magma where needed, evolving history, joint timing/transfers and the full
 mechanical handoff remain conditions for physical reorganisation.
 
-The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](../../evidence/i01-finite-admission-r6.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
+The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](../../evidence/i01-finite-admission-r8.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
 
 The [breakup control](../I01_BREAKUP_CLOSURE.md) examines whether a narrowing neck can reach zero thickness in finite time, rather than declaring breakup at an arbitrary thickness. For its precisely stated creep law and quadratic weakness, an exact continuum solution shows when this is possible. The discrete columns agree at the first thinning level; they do not resolve every later, much narrower neck. The [reviewed checks](../../evidence/i01-breakup-closure-r4.json) therefore establish analytical feasibility, not a generated split. They also show why weak resistance alone does not prove separation and why a finite set of gentle slopes cannot justify a law whose limiting neck becomes too steep. The method documents the Hutchinson-Neale and Audoly-Hutchinson necking sources and the Brune/ASPECT rifting comparisons; no new geological calibration is implied. The mixed-creep/plastic lithosphere still needs resolved neck mechanics before an event can be issued.
 
@@ -632,6 +1008,21 @@ and answers from it (for example, each rock parcel's temperature in kelvin at th
 time, with its source and runtime identity). It never re-runs physics or writes the
 project. Loading a saved copy checks every entry, not only the latest, again for
 consistency: a saved copy is trusted input.
+
+**With a spherical network attached.** When the history carries the network of
+section 1, each saved entry also holds the network's move for that run of steps
+(section 5): the new cell outlines, the rock pieces, the measured overlaps and any
+transfers to or from finite stores, in the same all-or-nothing transaction. Every
+run of steps must then name its plate motion; a request without one saves nothing.
+Reopening does not trust the stored result. It repeats the recorded motion to
+rebuild the outlines, checks the stored overlaps against them, applies them to the
+previous entry's rock again and requires every stored value and identity to match.
+The stored overlaps are tested against conditions they must satisfy; they are not
+measured a second time, which the method document records as a limit.
+[These checks](../../tests/test_i03_clock.py) save a history after three intervals,
+continue it in a new process and reach exactly the state of an uninterrupted run;
+they also edit stored values, including in the latest entry, and confirm each edit
+is refused.
 
 **What the checks establish.** Splitting the history into several requests and save
 points within one process gives exactly the same numbers and accounts as one uninterrupted

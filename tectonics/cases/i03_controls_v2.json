@@ -1,0 +1,841 @@
+{
+  "schema": "atlas.i03-controls-case.v2",
+  "status": "WORKING NON-CANON",
+  "mode": "prescribed_history_v1",
+  "provenance": {
+    "written": "2 and 3 October 2026, during I03a-2 (the task brief of 2 October 2026). Every control here was declared in this file before its check first ran. Controls that use a criterion of the I03a-2 bounds proposal (revision 2, 3 October 2026) were added only after the coordinator approved that criterion (3 October 2026, under the owner's delegation; Codex confirms at review).",
+    "inherits": "cases/i03_controls_v1.json: its sphere, units, meshes, worlds, materials, tolerances and controls apply unchanged; no value there is changed",
+    "ride_then_remesh_source": "Codex's review of I03a (finding P2, 'accepted rigid motion can strand later remeshing') and its reproducer repro_geometry_occupancy.py: the same advance, the same rigid rotation and the same number of rides",
+    "withdrawn": "migrating_t_junction (3 October 2026): declared for the hemispheres world with beta = 3 degrees and run once, on the code before the junction advance existed, where it was refused at interval 1 as expected. It was then withdrawn, before the feature it tests was built, on the claim that the world cannot hold a migrating junction. That claim was wrong (round 1 of the coordinator's verification): its motion opened a second-order gap beside one junction, but a motion whose relative rotation is normal to the plane through both junctions and the world axis does slide them, and that is now the hemispheres_slide control. It was replaced at the time by one_plate_on_a_transform."
+  },
+  "tolerances": {
+    "relative": "cases/i03_controls_v1.json#tolerances.relative",
+    "new": [
+      "C4 (approved 3 October 2026): two lines at a junction cross at sin psi >= 1/16",
+      "C7 (approved 3 October 2026, with conditions): the ring bound 9 eps sum |v_j - c| |v_j+1 - c| + max(14 eps, 4.4 eps + 5 alpha) sum |T_j|, used in full below an area over perimeter of 1.1e-4 rad, up to 2 rho mu below 2.2e-4 rad and not above; D7' for the allowance",
+      "C10 (approved 3 October 2026): a copy within the 64 eps band plus 4 eps of its vertex",
+      "not approved: the 120 degree limit on the pair of vertices that forms a trace's great circle (a choice of evaluation)"
+    ]
+  },
+  "controls": {
+    "ride_then_remesh": {
+      "part": "1",
+      "world": "three_plates (cases/i03_controls_v1.json)",
+      "advance_deg": 0.001,
+      "rides": 20,
+      "ride_rotation": "cases/i03_controls_v1.json#controls.rigid_rotation.rotation, applied to every plate",
+      "thin_face": "boundary-m02|right|1|0002",
+      "rule": "plate A turns by advance_deg between fixed neighbours, which leaves strips about 55 m wide; then every plate turns by the same rigid rotation, rides times. Then three remeshes of the thin strip, each from the ridden state: a rename, a merge with the cell of its plate that shares its long old-ridge edge, and, from that merged state, a split back into the strip and the cell",
+      "expects": "after every interval each face's pieces occupy its measured area within the existing relative tolerance, the thin strip included; the rename, the merge and the split are accepted with every exact account closing; the strip's measured area after the rides is bit for bit its area when it was born",
+      "tolerances": [
+        "relative",
+        "exact"
+      ]
+    },
+    "ridge_frame": {
+      "part": "1",
+      "world": "three_plates",
+      "advance_deg": 0.5,
+      "intervals": 6,
+      "rule": "plate A turns by advance_deg per interval between fixed neighbours; follow the middle vertex of the ridge's chain (meridian 2), which is not a junction",
+      "expects": "the vertex is kept in its ridge record's frame: its stored reference direction is bit for bit the declared one after every interval, and its direction in the sphere's axes is that frame applied once to it (the brief's non-accumulating form for boundary vertices). It lies on the meridian half way between the plates' rotations, within the existing angular tolerance",
+      "tolerances": [
+        "angular_absolute_rad"
+      ]
+    },
+    "containment": {
+      "part": "1",
+      "outer_lon_lat_deg": [
+        [
+          0,
+          0
+        ],
+        [
+          20,
+          0
+        ],
+        [
+          20,
+          10
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          2,
+          10
+        ],
+        [
+          0,
+          10
+        ]
+      ],
+      "cases": {
+        "inside": {
+          "lon_lat_deg": [
+            [
+              5,
+              1
+            ],
+            [
+              15,
+              1
+            ],
+            [
+              15,
+              5
+            ],
+            [
+              5,
+              5
+            ]
+          ],
+          "contained": true
+        },
+        "on_its_boundary": {
+          "lon_lat_deg": [
+            [
+              0,
+              0
+            ],
+            [
+              5,
+              0
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              0,
+              3
+            ]
+          ],
+          "contained": true
+        },
+        "identical": {
+          "lon_lat_deg": "the outer ring itself",
+          "contained": true
+        },
+        "across_the_notch": {
+          "lon_lat_deg": [
+            [
+              1,
+              7
+            ],
+            [
+              18,
+              7
+            ],
+            [
+              18,
+              9
+            ],
+            [
+              1,
+              9
+            ]
+          ],
+          "contained": false
+        },
+        "disjoint": {
+          "lon_lat_deg": [
+            [
+              30,
+              0
+            ],
+            [
+              35,
+              0
+            ],
+            [
+              35,
+              5
+            ],
+            [
+              30,
+              5
+            ]
+          ],
+          "contained": false
+        }
+      },
+      "rule": "an outer face with a narrow notch cut from its top edge (great-circle edges between the listed corners); each case's ring is tested for lying within it by the exact test behind whole-face mesh rows",
+      "expects": "the declared answer for every case. In across_the_notch every corner and every edge's middle lies inside the outer face, but the long edges cross the notch: only the crossing test refuses it. In disjoint nothing crosses and every piece lies outside",
+      "tolerances": [
+        "exact"
+      ]
+    },
+    "thin_face_bound": {
+      "part": "1, after approval of C7 and D7 (coordinator, 3 October 2026)",
+      "strip_widths_m": [
+        55.0,
+        5.5,
+        0.55
+      ],
+      "strip_length_km": 3200.0,
+      "strip_vertices_per_side": [
+        2,
+        10
+      ],
+      "compact_sides_m": [
+        1.0,
+        1000.0,
+        100000.0
+      ],
+      "compact_vertices": [
+        4,
+        12
+      ],
+      "reference_digits": 90,
+      "atan2_samples": 20000,
+      "rule": "the measured area of each ring (integration_sphere._measure, binary64) against the same formula evaluated exactly on the same binary64 numbers to reference_digits decimal digits, with a hand-written arctangent; and math.atan2 against the exact arctangent of its own binary64 arguments over the range the fan uses (denominator between 1+sqrt(2) and 4)",
+      "expects": "every measured error at most the derived bound e(ring) of the proposal (C7); math.atan2 within one unit in the last place, the platform assumption C7's derivation states. A measured error above its bound fails: the bound is never adjusted",
+      "tolerances": [
+        "C7 e(ring), approved 3 October 2026",
+        "one ulp (platform assumption)"
+      ]
+    },
+    "thin_face_true_area": {
+      "part": "C7 after approval (3 October 2026)",
+      "source": "the C7 verifier (3 October 2026): for a square annulus 44 degrees across whose outer rows are 16 eps longer than unit and whose hole rows are 15.5 eps shorter, the measured area missed the true area by 1.18 times the bound, because the bound's area term used the face's net area",
+      "centre_lon_lat_deg": [
+        37.0,
+        21.0
+      ],
+      "turn_rad": 1.1,
+      "phase_rad": 0.4,
+      "circumradius_deg": 44.0,
+      "gaps": [
+        0.001,
+        0.1
+      ],
+      "vertex_counts": [
+        3,
+        4,
+        6
+      ],
+      "norm_departures_eps": [
+        0,
+        8,
+        16
+      ],
+      "rule": "a regular outer ring and a regular hole (radius 1 - gap of it, opposite orientation, every vertex within 45 degrees of the anchor), the outer rows scaled by 1 + k eps and the hole rows by 1 - k eps, k the largest value up to the given one that the stored-direction contract keeps unchanged; the reference is the true area of the exactly normalised directions, evaluated to reference_digits with an exact arctangent",
+      "expects": "the measured area within the bound of the true area for every ring; the bound is never adjusted",
+      "tolerances": [
+        "C7"
+      ]
+    },
+    "thin_face_range": {
+      "part": "C7 after approval (3 October 2026)",
+      "world": "three_plates after thin_merge's rides at each rate",
+      "source": "the C7 verifier (3 October 2026): the bound of a whole-face closure exceeded 1e-12 of the face far above the approved range, up to 94 times inside it, for faces whose closures are exact",
+      "rates_deg": [
+        0.5,
+        0.05,
+        0.005
+      ],
+      "rule": "thin_merge's first strip, after its rides at each rate, is renamed by a mesh change; the closure bounds the step applies to its donor and receiver are read",
+      "expects": "the rename accepted; each closure bound at most 1e-12 of its face's measured area where the face's area over perimeter is at least twice R3-1's 1.1e-4 rad, at most twice that between 1.1e-4 and 2.2e-4 rad (the range the approval flags), and the derived bound itself below 1.1e-4 rad",
+      "tolerances": [
+        "relative",
+        "C7"
+      ]
+    },
+    "thin_bound_size": {
+      "part": "C7 (round 1 of the coordinator's verification, minor, 3 October 2026)",
+      "world": "thin_merge's history",
+      "source": "the thin-faces verifier of round 1: with whole-face closures allowed 10^6 times E, all 188 I03 tests passed; the forged-row check could not see the size of the bound",
+      "neighbour": "boundary-m02|right|2|0002",
+      "edge": [
+        "m02-p01|A|2",
+        "m02-p02|A|2"
+      ],
+      "sliver_bound_multiple": 4.0,
+      "rule": "the two thin strips merge, and an added vertex X on the merged face's edge with the neighbour, offset into the neighbour, gives the merged face a sliver of the neighbour sliver_bound_multiple times the bound E of the plain merge's closure; the rows are the measured ones without the sliver row",
+      "expects": "refused by a closure ('its overlap rows sum to'), not by the later per-face check",
+      "tolerances": [
+        "C7"
+      ]
+    },
+    "occupancy_allowance": {
+      "part": "D7' (round 1 of the coordinator's verification, F1 and F2; the coordinator withdrew the cumulative D7 on 3 October 2026)",
+      "source": "the thin-faces and codex-findings verifiers of round 1: every rename added to a face's allowance although its discrepancy stayed zero; above A/P 2.2e-4 rad one rename added 2 rho mu, after which a rider forged 1.5e-12 off was accepted; rows leaving out a sliver at every step were accepted for 16 steps",
+      "renames": 4,
+      "above_range": {
+        "rate_deg": 0.1,
+        "intervals": 2,
+        "face": "boundary-m02|left|1|0002",
+        "mismatch_relative": 1.5e-12
+      },
+      "drift": {
+        "steps": 16,
+        "fraction": 0.4,
+        "neighbour": "boundary-m02|right|2|0002",
+        "edge": [
+          "m02-p01|A|2",
+          "m02-p02|A|2"
+        ],
+        "refused_by_step": 10
+      },
+      "rule": "D7' (proposal addendum): a rename carries a face's allowance unchanged; any other receiver of a mesh step gets at most the bound of that step's own closures, E_recv + sum of shares times E_donor, never added to earlier allowances; zero above A/P 2.2e-4 rad and at most 2 rho mu between 1.1e-4 and 2.2e-4",
+      "expects": "after the thin merge, renames leave the merged face's allowance unchanged; above the range a renamed face keeps a zero allowance and the forged rider is refused; the drift construction is refused before refused_by_step",
+      "tolerances": [
+        "relative",
+        "C7"
+      ]
+    },
+    "thin_merge": {
+      "part": "1, after approval of C7 and D7",
+      "advance_deg": 5e-05,
+      "rides": 10,
+      "first_strip": "boundary-m02|right|1|0002",
+      "second_strip": "boundary-m02|right|1|0003",
+      "rule": "plate A turns by advance_deg per interval between fixed neighbours, which leaves strips about 3 m wide; after rides intervals two neighbouring strips of one side are merged end to end by a mesh change, ride one more interval, and are split back",
+      "expects": "before C7 the merge is refused (the merged face's own measure differs from its parts' sum by about 1.2e-12, its evaluation error). With C7 the merge, the ride and the split are accepted with every exact account closing; the merged face's pieces stay within its stored occupancy allowance, which is above 1e-12 of its area and at most its derived bound; the same merge with one of its rows enlarged by four times that bound is refused",
+      "tolerances": [
+        "relative",
+        "C7",
+        "D7"
+      ]
+    },
+    "hemispheres": {
+      "part": "2, after approval (3 October 2026)",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "latitudes_deg": [
+        -60,
+        -30,
+        0,
+        30,
+        60
+      ],
+      "rule": "a world of three plates: O owns every face north of the equator; S1 the southern faces from 0 to 180 degrees east, S2 those from 180 to 360. Trench records run along the equator with O overriding (trench-s1 from 0 to 180 east, trench-s2 from 180 to 360); the ridge record runs from (0, 0) south along meridian 0, through the south pole and north along meridian 180 to (180, 0), with S1 on its left and accretion fraction 0.5. Junctions at (0, 0) and (180, 0) are T-junctions: the equator is one line carried by O, and the ridge ends on it",
+      "rotation_vectors_deg": "per interval, O (0, 0, gamma), S1 (alpha, 0, beta+gamma), S2 (-alpha, 0, beta+gamma), in the world's axes (tilted with the world): three different poles; relative to O both southern plates subduct along the equator and separate at the ridge"
+    },
+    "persisting_t_junction": {
+      "part": "2",
+      "alpha_deg": 0.5,
+      "gamma_deg": 0.3,
+      "intervals": 20,
+      "rule": "the hemispheres world, plain and about the tilted axis. Per interval O turns by gamma about the world axis; S1 turns by alpha about the axis through (0, 0) and then with O, S2 by -alpha about it and then with O: three different poles. Relative to O each southern plate turns about the axis through both junctions, so the ridge between them carries each junction to the same point as O does (I03a's case, D4)",
+      "expects": "every interval accepted; the sphere's area closes at 4 pi R^2 within the atlas closure; every exact account closes; every face within its allowance of its pieces; each junction stays at its longitude in O's frame (within 1e-9 degrees) and on O's equator plane; plain and tilted give the same accounts within the relative tolerance",
+      "tolerances": [
+        "relative",
+        "angular_absolute_rad",
+        "area_closure_absolute_sr"
+      ]
+    },
+    "sliding_transform_cumulative": {
+      "part": "3 (round 1 of the coordinator's verification, F3, 3 October 2026)",
+      "world": "sliding_transform's twin hemispheres; bent: the same with its bent trace",
+      "source": "the transforms verifier of round 1: a far plate turning 60 eps per interval about the x axis (pure opening and closing, no slip) passed C6 every interval and accumulated 36 band widths, 41 m2 opened and closed with no account; on the bent trace an exact slip of 2e-13 rad per interval was accepted for 36 intervals",
+      "normal_turn_eps": 60,
+      "normal_axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "bent_slip_band_fraction": 0.4,
+      "intervals": 6,
+      "rule": "C6 judged on the far plate's total frame relative to the carrier's: every trace vertex, carried by that relative rotation, must stay within the existing 64 eps band of the trace's great circle stored at declaration; on a trace that is not one great circle, within the band of where it was",
+      "expects": "the normal turn refused with the port code 'transform not slip-parallel' at the second interval (120 eps in total); the bent slip of 0.4 band per interval accepted twice and refused with the port code at the third (1.2 band in total)",
+      "tolerances": [
+        "C6"
+      ]
+    },
+    "degenerate_overlay": {
+      "part": "3 (round 1 of the coordinator's verification, minor, 3 October 2026)",
+      "world": "sliding_transform's twin hemispheres",
+      "slip_deg": 300.0,
+      "source": "the transforms verifier of round 1: for this slip, GEOS returned the intersection of two overlapping chart polygons, whose shared edge has vertices about 1 ulp apart, as points with no area; the row was dropped, and the interval was refused only because the rows then did not close, while the same rotation written as -60 degrees was accepted",
+      "rule": "one interval; the north plate turns by slip_deg about the trace's pole",
+      "expects": "if the overlay of two faces whose interiors meet has no polygonal part, the interval is refused with that cause ('no polygonal part'), never by a dropped row",
+      "tolerances": []
+    },
+    "sliding_transform_short_segments": {
+      "part": "3",
+      "world": "sliding_transform's twin hemispheres with two more meridians short_deg and twice short_deg east of each of its meridians",
+      "source": "the Part 3 verifier (3 October 2026): C6 tested each far image against the circle of a 2.2 km segment carried 7.5 degrees beyond it, so in tilted and D3 axes an exact slip was refused at 84 eps",
+      "short_deg": 0.02,
+      "slip_deg": 7.5,
+      "intervals": 2,
+      "rule": "as sliding_transform, plain, with the world and the rotation turned by the case's tilt, and seen from axes rotated by junction_frames_and_composition's frame rotation after the first interval (D3)",
+      "expects": "every interval accepted in every frame",
+      "tolerances": [
+        "C6"
+      ]
+    },
+    "sliding_transform": {
+      "part": "3, after approval (3 October 2026: D6, C6)",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "latitudes_deg": [
+        -60,
+        -30,
+        0,
+        30,
+        60
+      ],
+      "slip_deg": 7.5,
+      "intervals": 3,
+      "off_pole_rad": 1e-06,
+      "rule": "two plates, north and south of the equator, share one closed transform record along the equator with the south plate declared as its carrier (carrier_side right). The north plate turns by slip_deg per interval about the pole of the equator, so the slip is exactly along the trace",
+      "expects": "every interval accepted with no party: nothing born or consumed and every exact account closing; the north plate's boundary cells along the equator are sheared and remapped among themselves, each receiving only from itself and its western neighbour; cells away from the trace ride with their exact bytes; both plates keep their areas within the relative tolerance. Refused with the port code 'transform not slip-parallel': the same slip about a pole off_pole_rad from the trace's pole, and any slip along a transform with a bend; refused as before (I03a): a sliding transform with no declared carrier",
+      "tolerances": [
+        "relative",
+        "C6"
+      ]
+    },
+    "one_plate_on_a_transform": {
+      "part": "2 and 3, after approval (3 October 2026)",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        100,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "latitudes_deg": [
+        -60,
+        -30,
+        0,
+        30,
+        60
+      ],
+      "plate_sectors": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "omega_deg": 2.0,
+      "intervals": 14,
+      "next_vertex_deg": 10.0,
+      "rule": "plate P owns the northern faces of sectors 3 to 6 (90 to 180 degrees east; the meridian at 100 degrees puts a declared equator vertex 10 degrees ahead of the junction) and turns east about the north pole by omega_deg per interval; W owns every other northern face and S every southern face, and both stay fixed. The W|P ridge (accretion fraction 0.5) runs along meridian 90 from the equator to the north pole, the W|P trench along meridian 180 from the pole to the equator with P subducting, and two transform records along the equator, both carried by S: P|S from 90 to 180 east and W|S from 180 east round to 90. The junction at (90, 0) is a ridge ending on a through-going transform line carried by S",
+      "expects": "the first interval is refused: P, on the moving side of the ridge, slides along the transform line relative to its carrier, so its old corner would have to slide along the line as a vertex of it, which is option D1-c (deferred by the coordinator); the refusal names it. The junction at (180, 0) and the north pole would stay where they are",
+      "tolerances": [
+        "relative",
+        "angular_absolute_rad",
+        "area_closure_absolute_sr",
+        "C1",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "expectation_changed": "3 October 2026, after its first run: the first expectation (migration by omega/2 per interval, then a segment shortening to zero) was refused at interval 1 by the overlap audit, because the ridge-side plate's old corner has no donor without a sliding seam vertex (D1-c). The expectation now names that refusal; migration is controlled by rotating_north"
+    },
+    "every_interval_occupancy": {
+      "part": "1",
+      "world": "three_plates",
+      "mismatch_relative": 2e-12,
+      "rule": "a state whose material holds, for one face that only rides in the next interval, pieces that miss that face's measured area by mismatch_relative of it (twice the existing tolerance); the state is assembled with the internal constructors, as no public route issues one",
+      "expects": "the next interval is refused: every face is measured against its pieces after every interval, including faces that only rode",
+      "tolerances": [
+        "relative"
+      ]
+    },
+    "sub_band_ridge": {
+      "part": "1, C10 after approval (3 October 2026, form a)",
+      "world": "three_plates with the ridge's accretion fraction set to accretion_fraction",
+      "accretion_fraction": 1e-6,
+      "turn_rad": 1e-8,
+      "intervals": 6,
+      "source": "the conservation verifier of Part 1 (probe 10, case 2): on the code it verified, 200 such intervals were accepted while plate C's copies drifted 140 band widths from the ridge and about 162 m2 of C's side opened with no birth",
+      "rule": "plate A turns turn_rad per interval, its own side supplied, and C's side supplied in an interval only when it is refused for want of a supply: the ridge moves 1e-14 rad per interval relative to C, inside the 64 eps band",
+      "expects": "every interval accepted; after every interval every copy lies within the band plus 4 eps of its vertex (C10); C's side of the ridge books births once the motion since C's corner was placed exceeds the band",
+      "tolerances": [
+        "angular band 64 eps (existing) plus 4 eps derived rounding"
+      ]
+    },
+    "copy_placement": {
+      "part": "1, C10 after approval (3 October 2026, form a)",
+      "world": "three_plates after one interval of ridge_frame's advance",
+      "displaced_beyond_eps": 80,
+      "displaced_within_eps": 48,
+      "rule": "one plate's copy of a vertex kept elsewhere is set to the vertex's own placement turned by the given multiple of the binary64 epsilon, about an axis perpendicular to it; the network is issued through the internal constructor and, with the check off, restored from its record",
+      "expects": "beyond: refused on issue and on restore, because a copy must lie within the existing 64 eps band plus 4 eps of rounding (two placements and one pull-back) of its vertex's placement; within: accepted on issue and on restore",
+      "tolerances": [
+        "angular band 64 eps (existing) plus 4 eps derived rounding"
+      ]
+    },
+    "rotating_north": {
+      "part": "2 and 3, after approval (3 October 2026)",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        100,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "latitudes_deg": [
+        -60,
+        -30,
+        0,
+        30,
+        60
+      ],
+      "plate_sectors": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "omega_deg": 2.0,
+      "intervals": 8,
+      "next_vertex_deg": 10.0,
+      "rule": "the northern hemisphere is two plates, N1 on sectors 3 to 6 (90 to 180 degrees east) and N2 on the rest, joined by two transform records along meridians 90 and 180 that declare no carrier (so they move only while N1 and N2 share one rotation); the southern hemisphere is plate S. Two transform records along the equator, N1|S and N2|S, are both carried by S. N1 and N2 turn east together by omega_deg per interval about the north pole; S stays fixed. Each junction where a meridian meets the equator is a T-junction: the equator is one line carried by S, and the meridian, carried by N1 and N2, slides east along it",
+      "expects": "every accepted interval keeps exact accounts, closes the sphere and keeps every face within its allowance; both junctions advance east along the equator by omega per interval (within 1e-9 degrees); S keeps each old junction corner as a vertex of the record behind; the junction at 90 degrees reaches the declared equator vertex at 100 degrees and is then refused because a boundary segment would shorten to zero, at interval ceil(next_vertex_deg/omega) or the one before (lifetime reported, never extended)",
+      "tolerances": [
+        "relative",
+        "area_closure_absolute_sr",
+        "C1",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ]
+    },
+    "junction_frames_and_composition": {
+      "part": "2",
+      "world": "rotating_north",
+      "frame_rotation": {
+        "axis": [
+          0.3,
+          -0.5,
+          0.81
+        ],
+        "angle_deg": 37.0
+      },
+      "intervals": 4,
+      "rule": "frame invariance (D3): the same history seen from axes rotated by Q after the first interval, R_k -> G_k R_k G_(k-1)^-1 with G_0 = I and G_k = Q, starting from the same declared state; tilted axes: the world and its rotations turned by the case's tilt; composition (C9): one interval of 2 omega against two of omega",
+      "expects": "frame invariance: the same intervals accepted and the same refused; every junction at Q times its original position within the angular tolerance; plate areas and every account total within the relative tolerance. Tilted: the same acceptance and totals within the relative tolerance. Composition: the plate-carried junction at the same point within 8 eps / sin psi (derived, C9), the plate areas within the relative tolerance",
+      "tolerances": [
+        "relative",
+        "angular_absolute_rad",
+        "C9"
+      ]
+    },
+    "ledger_continuation": {
+      "part": "2 (round 1 of the coordinator's verification, minor, 3 October 2026)",
+      "world": "rotating_north declared at the I02 column's epoch and start",
+      "uninterrupted_steps": 4,
+      "saved_after_steps": 2,
+      "rule": "rotating_north's motion committed with the column by the I02 clock; saved after saved_after_steps and continued in a fresh process through Ledger.open and the clock",
+      "expects": "the continued history reaches exactly the state identity of the uninterrupted one, and every commit restores on reopening",
+      "tolerances": []
+    },
+    "junction_subdivision": {
+      "part": "2 (C8, predeclared in the bounds proposal, section 6)",
+      "world": "rotating_north",
+      "total_deg": 2.0,
+      "subdivisions": [
+        2,
+        4,
+        8,
+        16
+      ],
+      "rule": "N1 and N2 turn by total_deg about the north pole in one interval, and in n equal intervals of total_deg / n; S is fixed. The third trace (the seam) is carried by its plate, so the junction does not depend on n",
+      "expects": "every interval accepted; each junction after n intervals within 8 eps / sin psi of its position after one (sin psi = 1: the seams cross the equator at right angles); a measured excess fails and the bound is not adjusted",
+      "tolerances": [
+        "C8"
+      ]
+    },
+    "junction_frames_slow_and_large": {
+      "part": "2",
+      "world": "rotating_north",
+      "source": "the Part 2 verifier (3 October 2026): under the case's own frame rotation a slow T-junction was refused by C1's residual, and under a frame rotation of 100 degrees the advanced junction's sign was taken against its start position and the interval refused by C5",
+      "cases": [
+        {
+          "omega_deg": 0.0001,
+          "frame_angle_deg": 37.0
+        },
+        {
+          "omega_deg": 0.01,
+          "frame_angle_deg": 100.0
+        },
+        {
+          "omega_deg": 0.01,
+          "frame_angle_deg": 150.0
+        }
+      ],
+      "frame_axis": [
+        0.3,
+        -0.5,
+        0.81
+      ],
+      "intervals": 3,
+      "rule": "as junction_frames_and_composition (D3: R_k -> G_k R_k G_(k-1)^-1 with G_0 = I and G_k = Q), with N1 and N2 turning by omega_deg and Q by frame_angle_deg about frame_axis",
+      "expects": "every interval accepted in both frames, with every junction at Q times its plain position within the angular tolerance",
+      "tolerances": [
+        "angular_absolute_rad"
+      ]
+    },
+    "same_point_ridge_on_a_transform": {
+      "part": "2 and 3",
+      "world": "one_plate_on_a_transform with the ridge's accretion fraction set per case",
+      "source": "the Part 3 verifier (3 October 2026): with the ridge moving with W (fraction 0), P's corner at the junction was pulled along the transform while P's side of the ridge opened, and at a motion of 1e-11 degrees about 1.9 m2 of opening was accepted with no birth",
+      "cases": [
+        {
+          "accretion_fraction": 0.0,
+          "p_deg": 1e-11,
+          "s_deg": 0.0
+        },
+        {
+          "accretion_fraction": 0.0,
+          "p_deg": 2.0,
+          "s_deg": 0.0
+        },
+        {
+          "accretion_fraction": 0.5,
+          "p_deg": 2.0,
+          "s_deg": 1.0
+        }
+      ],
+      "rule": "P turns p_deg and S turns s_deg about the north pole, W is fixed; every record carries the junction where the ridge meets the transforms to one point, and P, the far plate of its transform, opens the ridge there",
+      "expects": "the first interval is refused naming D1-c: P's old corner would have to slide along the line as a vertex of it",
+      "tolerances": [
+        "band 64 eps (existing)"
+      ]
+    },
+    "one_segment_line": {
+      "part": "2",
+      "world": "rotating_north with longitudes_deg and N1 on plate_sectors, so that equator-n1 is one segment between its two junctions",
+      "source": "the Part 2 verifier (3 October 2026): this motion was refused with 'no single face to slide into', while the same world with a vertex at 120 degrees was accepted",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        150,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "plate_sectors": [
+        3
+      ],
+      "omega_deg": 2.0,
+      "intervals": 3,
+      "rule": "N1 and N2 turn by omega_deg about the north pole and S is fixed: both junctions of equator-n1 slide east along the equator",
+      "expects": "every interval accepted, each junction at its start longitude plus omega_deg per interval on the equator, within the angular tolerance",
+      "tolerances": [
+        "angular_absolute_rad"
+      ]
+    },
+    "ridge_on_a_trench": {
+      "part": "2",
+      "world": "hemispheres with the ridge's accretion fraction set to accretion_fraction",
+      "accretion_fraction": 0.25,
+      "axis_lon_lat_deg": [
+        0.0,
+        30.0
+      ],
+      "alpha_deg": 2.0,
+      "rule": "O is fixed; S1 and S2 turn by +alpha and -alpha about the axis at longitude 0, latitude 30: both converge on the trench away from the junctions and slide along it at them, and the ridge, with unequal shares, carries its end along the trench line",
+      "expects": "the first interval is refused naming D5: the junction would migrate along the trench with a ridge-side plate subducting beneath it, and the triangle born and consumed inside one interval there (D5, approved) is not booked in this version",
+      "tolerances": [
+        "band 64 eps (existing)"
+      ]
+    },
+    "carried_ridge": {
+      "part": "2 (round 1 of the coordinator's verification, F4 and F5, 3 October 2026)",
+      "world": "four northern plates and S: ridge-a N4|N2 on longitude ridge_lon with accretion fraction 1 (carried by N2), trench-w N2|N1 on trench_w_lon (N1 subducting), trench-e N1|N3 on trench_e_lon (N1 subducting), ridge-b N3|N4 on ridge_b_lon with fraction 0, and four equator transforms carried by S",
+      "source": "the junctions verifier of round 1: a ridge-ended junction slides along S's line with the ridge while N4, locked to S, shares S's old corner; it was accepted in fixed axes and refused under D3 and with a moving line carrier",
+      "longitudes_deg": [
+        0,
+        30,
+        60,
+        90,
+        92,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330
+      ],
+      "ridge_lon": 60,
+      "trench_w_lon": 90,
+      "trench_e_lon": 92,
+      "ridge_b_lon": 120,
+      "omega_deg": 0.5,
+      "accepted_intervals": 3,
+      "narrow_deg": [
+        1e-05,
+        0.0001,
+        0.001
+      ],
+      "narrow_intervals": 3,
+      "moving_carrier": {
+        "axis": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "angle_deg": 1.0
+      },
+      "d3_frames": [
+        {
+          "axis": [
+            0.3,
+            -0.5,
+            0.81
+          ],
+          "angle_deg": 37.0
+        },
+        {
+          "axis": [
+            1.0,
+            2.0,
+            -0.5
+          ],
+          "angle_deg": 123.0
+        },
+        {
+          "axis": [
+            -0.7,
+            0.1,
+            0.4
+          ],
+          "angle_deg": 171.0
+        }
+      ],
+      "rule": "N2 turns east by omega_deg (or each narrow_deg) about the north pole relative to S; everything else moves with S. The junction on ridge_lon slides east with the ridge, N4 opening a strip beside S's old corner; the junction on trench_w_lon slides east with N2's trench toward the fixed junction on trench_e_lon. Histories: S fixed; the same seen from axes rotated by d3_frames (D3); S and the others turning by moving_carrier each interval with N2 slipping about S's current equator pole; the world and rotations tilted by the case's tilt; one interval of 2 omega against two of omega",
+      "expects": "plain: accepted_intervals accepted, each junction at its start longitude plus omega per interval in S's frame and on S's equator, then refused when the trench_w junction would reach the trench_e junction (C5, a segment between junctions shortens to zero); every narrow rate accepted for narrow_intervals in fixed, D3 and moving-carrier histories alike, with every face within its allowance of its pieces; tilted totals within the relative tolerance of plain; halves within 8 eps of one interval (sin psi = 1)",
+      "tolerances": [
+        "relative",
+        "angular_absolute_rad",
+        "C8"
+      ]
+    },
+    "hemispheres_slide": {
+      "part": "2 (round 1 of the coordinator's verification, F5, 3 October 2026)",
+      "world": "hemispheres",
+      "source": "the junctions verifier of round 1: the hemispheres world holds a T-junction that slides along O's trench line under three poles, contrary to the earlier withdrawn-control note",
+      "alpha_deg": 0.5,
+      "gamma_deg": 0.3,
+      "delta_deg": 3.8,
+      "next_vertex_deg": 30.0,
+      "accepted_intervals": 8,
+      "halves": {
+        "alpha_deg": 0.5,
+        "gamma_deg": 0.3,
+        "delta_deg": 1.3
+      },
+      "d3_frames": [
+        {
+          "axis": [
+            0.3,
+            -0.5,
+            0.81
+          ],
+          "angle_deg": 37.0
+        },
+        {
+          "axis": [
+            1.0,
+            2.0,
+            -0.5
+          ],
+          "angle_deg": 123.0
+        },
+        {
+          "axis": [
+            -0.7,
+            0.1,
+            0.4
+          ],
+          "angle_deg": 171.0
+        }
+      ],
+      "rule": "per interval O turns by gamma about the world axis; S1 turns by alpha about the axis through both junctions as they are at the start of the interval, then by delta about the world axis; S2 the same with -alpha. Every record carries each junction to one point, which slides along O's equator by delta - gamma per interval relative to O. Plain and tilted; D3 over three intervals; one interval against two halves at the halves rates",
+      "expects": "accepted_intervals accepted, each junction at its start longitude plus (delta - gamma) per interval in O's frame and on O's equator, then refused by C5 when it would reach the vertex next_vertex_deg along the line; tilted the same; D3 positions within the angular tolerance; halves within 8 eps of one interval",
+      "tolerances": [
+        "relative",
+        "angular_absolute_rad",
+        "C8"
+      ]
+    },
+    "declared_vertex_ahead": {
+      "part": "2 (round 1 of the coordinator's verification, minor, 3 October 2026)",
+      "world": "rotating_north with one more vertex, 'mid', declared on equator-n1 at mid_lon_deg (used only by the two faces beside that segment)",
+      "mid_lon_deg": 95.0,
+      "refused_interval": 3,
+      "rule": "rotating_north's motion: the western junction slides east by omega per interval and would pass 'mid' in the third interval",
+      "expects": "refused at refused_interval naming option D1-b (approved, not built) and not the reorganisation cause; rotating_north itself, whose vertex ahead is a seam vertex, is refused naming option D1-c",
+      "tolerances": []
+    },
+    "shallow_junction": {
+      "part": "2",
+      "world": "rotating_north with 30-degree sectors (longitudes 0 to 330 in steps of 30) and N1 on sectors 3 to 5",
+      "moved_vertex": {
+        "name": "m03-p03",
+        "to_lon_lat_deg": [
+          118.0,
+          1.5
+        ]
+      },
+      "omega_deg": 2.0,
+      "rule": "the western seam's first segment runs from the junction (90, 0) to (118, 1.5), so it crosses the equator at about 3.2 degrees, below asin(1/16) = 3.58 degrees",
+      "expects": "the first interval is refused because the lines at the junction cross too shallowly (C4: sin psi below 1/16); nothing is accepted",
+      "tolerances": [
+        "C4"
+      ]
+    }
+  }
+}

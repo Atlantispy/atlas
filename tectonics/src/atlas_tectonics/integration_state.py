@@ -116,6 +116,37 @@ _COUNTER_MEANINGS = dict(
     iterations='stress iterations of booked stages; warm-start dependent operational diagnostic',
     restress_mismatches='booked stages whose heat re-evaluation changed the solved stress')
 _STRIP = 'whole strip per metre of strike'
+_SPHERE_OWNER = 'I03 spherical network'
+_SPHERE_DECLARED = 'declared network (integration_sphere); accepted motion step (integration_transfer)'
+_SPHERE_QUANTITIES = (
+    ('sphere.vertex_direction', '1', 'network vertex', _SPHERE_DECLARED,
+     'unit direction of each shared vertex in the sphere frame at the accepted time'),
+    ('sphere.face_plate', '1', 'network face', _SPHERE_DECLARED,
+     'the one plate (and block) owning each sampling face; never a material identity'),
+    ('sphere.face_area_m2', 'm2', 'network face', 'derived by the network from its minor-arc faces',
+     'measured area of each face on the sphere; the faces cover 4 pi R^2 once'),
+    ('sphere.boundaries', '1', 'shared boundary', _SPHERE_DECLARED,
+     'one record per interface between two plates: oriented vertex chain, left and right plates, kind and declared '
+     'rule, origin (prescribed initial condition or named creation event)'),
+    ('sphere.junctions', '1', 'junction', 'derived by the network from its boundary records',
+     'vertices where boundary records end, with their incident record ends and plates in counter-clockwise order'),
+    ('sphere.plate_rotation', '1', 'plate', 'supplied finite rotations (prescribed_history_v1)',
+     'total finite rotation of each plate since the reference time, as a unit quaternion (w, x, y, z)'),
+    ('sphere.lineage', '1', 'network', _SPHERE_DECLARED,
+     'parent and root network identities, applied event identities in order and reserved retired identities'),
+    ('sphere.cohorts', 's', 'cohort', _SPHERE_DECLARED,
+     'cohort identity, origin, formation interval in epoch seconds (None is unknown) and opaque history reference'),
+    ('sphere.piece_area_m2', 'm2', 'cohort x face', _SPHERE_DECLARED,
+     'area each cohort occupies in each face; the pieces of a face occupy it and all pieces cover the sphere once'),
+    ('sphere.reference_mass_kg', 'kg', 'cohort x face x phase', _SPHERE_DECLARED,
+     'fixed-density reference mass per declared phase; unknown when no phase is declared'),
+    ('sphere.phase_volume_m3', 'm3', 'cohort x face x phase', _SPHERE_DECLARED,
+     'volume per declared phase, a separate account from area and reference mass; unknown when no phase is declared'),
+    ('sphere.enthalpy_j', 'J', 'cohort x face', _SPHERE_DECLARED,
+     'signed enthalpy in the declared basis; unknown without one'),
+    ('sphere.exterior_accounts', 'm2; kg; m3; J', 'named exterior', 'accepted motion step (integration_transfer)',
+     'exact cumulative amounts each named source, sink, boundary or linked finite stock has supplied to the pieces'),
+)
 
 # One owner and one producer per quantity. Status: required (always present), supported (present when this
 # instance carries it, otherwise unknown) or unknown (not represented by this route; owner names the later stage).
@@ -212,6 +243,10 @@ CATALOGUE = (
      'laterally uniform strip; no lateral localisation or necking'),
     ('external_loads_pa', 'Pa', 'strip surface', 'I08 exchange ports', 'none in this route', 'unknown',
      'closed dry strip; no water, sediment or geology exchange'),
+    # I03.1: the spherical network (integration_sphere). It is carried beside this envelope in an accepted commit
+    # (integration_ledger.Ledger.sphere), never inside it, so an envelope alone reports every entry as not carried.
+    *((name, units, support, _SPHERE_OWNER, producer, 'supported', meaning)
+      for name, units, support, producer, meaning in _SPHERE_QUANTITIES),
 )
 _INDEX = {entry[0]: entry for entry in CATALOGUE}
 CATALOGUE_ID = hashlib.sha256(_json([list(entry) for entry in CATALOGUE])).hexdigest()
@@ -961,6 +996,7 @@ _PRESENCE = {
     'reference_mass_kg_m': lambda s: s.reference.density_kg_m3 is not None,
     'finite_reservoirs': lambda s: s.reservoirs is not None,
     **{'extrema.'+name: (lambda s, name=name: s.column.extrema[name] is not None) for name in EXTREMA},
+    **{entry[0]: (lambda s: False) for entry in _SPHERE_QUANTITIES},    # held by the commit, never by an envelope
 }
 
 

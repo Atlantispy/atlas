@@ -1,0 +1,127 @@
+{
+  "schema": "atlas.i03-controls.v4",
+  "status": "WORKING NON-CANON",
+  "provenance": {
+    "written": "3 October 2026 during the authorised K1-K5 review repairs. Existing junction-path and transient fixtures are recorded retrospectively, not represented as predeclared. New traversal, path-contract and sweep-repair controls below were recorded before their repair checks ran.",
+    "inherits": ["i03_controls_v1.json", "i03_controls_v2.json", "i03_controls_v3.json"],
+    "authority": "Michael approved fixing everything after the review and explicit discussion of documenting the junction-path numerical gates. This does not invent a separate Claude approval or retroactively approve earlier undeclared tests. No tolerance is enlarged."
+  },
+  "controls": {
+    "rename_allowance": {
+      "parent": "v3 reexpression_above_range",
+      "relative_perturbation_fraction": 0.9999,
+      "provenance": "Existing F3 regression retrospectively recorded, with no changed value or acceptance tolerance"
+    },
+    "degenerate_overlay": {
+      "parent": "v2 degenerate_overlay, unchanged slip_deg 300",
+      "expects": "Recover missing GEOS polygon area with the bounded exact spherical intersector; preserve plate areas, exact accounts, no cross-transform transfers and successful restore. Invalid exact operands and insufficient budget still refuse.",
+      "provenance": "Supersedes the old correct-but-incomplete refusal policy after the authorised exact fallback. The full repair run identified its old refusal assertion; replacement checks retain the same fixture and tolerances."
+    },
+    "ridge_on_a_trench": {
+      "parent": "v2 ridge_on_a_trench, all values unchanged",
+      "expects": "Refuse because the computed D5 intersection X is not inside both the old ridge end segment and the advanced trench end segment, not because transient bookkeeping is absent."
+    },
+    "declared_vertex_ahead": {
+      "parent": "v2 declared_vertex_ahead and rotating_north",
+      "mid_lon_deg": 95.0,
+      "intervals": 4,
+      "exact_landing_longitudes_deg": [94.0],
+      "exact_landing_turn_deg": 4.0,
+      "multiple_longitudes_deg": [92.0,94.0,96.0],
+      "multiple_turn_deg": 7.0,
+      "expects": "Pass the unchanged degree-two samples, including exact landing, preserving their position; v2's refusal expectation is historical and superseded.",
+      "provenance": "Existing tests retrospectively recorded, not predeclared"
+    },
+    "bridge_admission": {
+      "duration_s": 1e-306,
+      "map_declared_distortion": 0.9,
+      "section_azimuth_deg": 0.0,
+      "section_faces": ["s02-b01"],
+      "section_centre_lon_lat_deg": [150.0,0.0],
+      "section_fixture_correction": "The first trial used s03-b01, deliberately cut by the trench in the existing v3 bridge refusal control. Corrected to the existing whole-riding s02-b01 support and its centred chart. No acceptance criterion changed.",
+      "rule": "The supplied review's self-consistently forged map/3d return with non-finite velocity must refuse. Changes to event, mesh, supply or sink must invalidate forcing identity. A valid section return must survive close/reopen and a second moving interval.",
+      "provenance": "Adversarial duration from the review reproducer; other values are caller inputs, not acceptance thresholds. Recorded before these tests run."
+    },
+    "junction_paths": {
+      "provenance": "Existing fixture, retrospectively recorded",
+      "junction_rate_rad": [0.001, 0.002, 0.0015],
+      "spread_rad": 0.04,
+      "unsupported_large_spread_rad": [0.1,0.2],
+      "accuracy_rad": 0.000001,
+      "refined_accuracy_rad": 0.00000025,
+      "max_segments": 256,
+      "longitudes_deg": [0,30,60,90,120,150,180,210,240,270,300,330],
+      "latitudes_deg": [-60,-30,0,30,60],
+      "rule": "Three northern plates spread at three ridges meeting at the north pole above a fixed southern plate. The north junction has its explicit exponential path. Exact account closure, restoration, frame covariance and moving continuation use the existing criteria."
+    },
+    "transient": {
+      "provenance": "Existing fixture, retrospectively recorded",
+      "rotation_axis": [1,-1,0],
+      "rotation_deg": [4,2],
+      "longitudes_deg": [0,45,90,135,180,225,270,315],
+      "latitudes_deg": [-60,-30,0,30,60],
+      "finite_component_mass_kg": [[50,20],[1,0.5]],
+      "finite_enthalpy_j": [-30,4],
+      "split_sink_fractions": [0.25,0.75],
+      "endpoint_fractions": [0,1],
+      "endpoint_intervals": 2,
+      "endpoint_frames": ["plain", "v1 tilt"],
+      "endpoint_expectation": "No birth or transient row on the zero-opening side; opposite side births and exact material closure. Restore every moving interval. Declared before the endpoint-repair checks.",
+      "rule": "Material born at the V-shaped ridge can reach the outer trench within the same interval; account separately for surviving and immediately consumed births. The finite-stock persistence fixture has a stationary follow-up; moving continuation is covered separately."
+    },
+    "vertex_traversal": {
+      "carried_ridge_turn_deg": 0.5,
+      "carried_ridge_midpoints_deg": [[60.7],[60.5],[60.2,60.35,60.7]],
+      "trench_delta_deg": 3.8,
+      "ridge_gamma_deg": 0.3,
+      "plate_alpha_deg": 0.5,
+      "trench_midpoints_deg": [[5,355],[3.5,355]],
+      "intervals": 3,
+      "frames": ["plain", "v1 tilt", "v2 d3_frames"],
+      "rule": "A degree-two vertex ahead on an unchanged incident line is passed, including exact landing and multiple vertices. Each accepted interval restores and continues. This supersedes v2 declared_vertex_ahead's refusal expectation, without rewriting that historical file."
+    },
+    "junction_path_contract": {
+      "point": [0,0,1],
+      "near_antipodal_gap_rad": 0.0001,
+      "near_antipodal_axis": [0,1,0],
+      "accuracy_rad": 0.000001,
+      "near_antipodal_ceilings": [1,2],
+      "small_circle_point_unscaled": [1,0,1],
+      "small_circle_rate_rad": [0,0,1],
+      "small_circle_accuracy_rad": 0.05,
+      "small_circle_ceilings": [3,4],
+      "exact_small_rate_rad": [0,0.02,0],
+      "exact_small_accuracy_rad": 0.0000000001,
+      "exact_small_ceiling": 1,
+      "subresolution_rate_eps": [0,32,0],
+      "normal_samples": 33,
+      "rule": "Use the existing chart and angular-resolution bounds. A near-antipodal exact path needs two conditioned chords; a small circle requires four, so a dyadic ceiling of three refuses. Construction checks probe either side of the existing band and pi/2 with nextafter. No new numerical tolerance."
+    },
+    "sweep_repair": {
+      "world": "three_plates",
+      "turn_deg": [0.0002,0.06,1.0],
+      "benchmark_bands": [48,96,192],
+      "benchmark_amendment": "48/96 evaluated first; 96 did not enter exact fallback, so the already scoped 192-band review control was added before measuring it. Retain and report the 96-band no-fallback result too.",
+      "benchmark_latitude_range_deg": [-80,80],
+      "intervals": 2,
+      "rule": "Exercise C7 thin, transitional and out-of-range sweeps. The C7 report follows the existing piecewise size rule. Compare exact-fallback row bytes before/after conservative spatial rejection and deterministic per-donor triangulation reuse; matched 48/96/192-band timings, unchanged tolerances and budget."
+    },
+    "d5_traversal": {
+      "provenance": "Added 3 October 2026 (evening) for review item N1, after the refusal messages were changed and the cases were first probed. Not predeclared. Refusals only: no case is newly admitted and no tolerance changes.",
+      "world": "test_i03_transient.world with the ridge's accretion_fraction set, one degree-two sample 'mid' on trench-s1",
+      "intervals": 1,
+      "named_refusals": [
+        {"fraction": 0.5, "segment": 0, "longitude_deg": 1, "message": "passes declared vertex 'mid' of trench 'trench-s1', which ends the trench segment"},
+        {"fraction": 0.5, "segment": 1, "longitude_deg": 89, "message": "passes declared vertex 'mid' of trench 'trench-s1', which ends the trench segment"},
+        {"fraction": 1, "segment": 0, "longitude_deg": 1, "message": "passes declared vertex 'mid' of trench 'trench-s1', which ends the trench segment"},
+        {"fraction": 0, "segment": 0, "longitude_deg": 3, "message": "lies between the D5 intersection X of plate 'S2' and the new junction"},
+        {"fraction": 0.5, "segment": 0, "longitude_deg": 3, "message": "X lies beyond declared vertex 'mid' of trench 'trench-s1'"}
+      ],
+      "still_admitted": [
+        {"fraction": 0, "segment": 0, "longitude_deg": 1},
+        {"fraction": 0, "segment": 1, "longitude_deg": 89}
+      ],
+      "rule": "D1-b at a junction where a plate builds a D5 triangle is not constructed. A pass of the vertex that ends that triangle's trench segment, or of a vertex at or between X and the new junction, is refused by name, not with a misleading geometric cause; a vertex between the new junction and X that was not passed is named in the X-outside refusal (X lies beyond it). A pass outside the triangle on the zero-opening side stays admitted, with exact closure and restore."
+    }
+  }
+}

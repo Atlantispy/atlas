@@ -113,6 +113,13 @@ checks are corrected, and affected controls have fresh source-bound evidence.
 [Section 8 of that chapter](tectonics/docs/how-it-works/06-physical-integration.md#8-accept-save-and-continue-one-evolving-state)
 explains the connected route. See the current-state record for acceptance and
 platform coverage.
+The [spherical network method](tectonics/docs/I03_SPHERICAL_NETWORK.md) describes I03:
+one closed network of plates, boundaries and material beside that accepted state,
+moved under supplied plate rotations, with bridges to regional models and supplied
+plate splits, merges and ridge jumps. Explicit compatible junction trajectories
+generate curved boundary ends, and material born and consumed within one interval
+is accounted for without inventing an endpoint cell. Current acceptance is recorded
+in [current state](docs/CURRENT_STATE.md).
 This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing

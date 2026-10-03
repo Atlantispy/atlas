@@ -148,7 +148,7 @@ Feedback ownership and exchange rules not repeated here are in
   enthalpy and history; constant-per-material `Cp` and `k`; properties from one endpoint
   state; raw plastic history transported and never filtered in place.
 - *Evidence:* `i01-thermal-r2`, `i01-column-heat-r5`, `i01-thermomechanical-motion-r4`,
-  `i01-finite-strain-r5`, `i01-finite-admission-r6`.
+  `i01-finite-strain-r5`, `i01-finite-admission-r8`.
 - *Validity:* small-strain periodic cell, fixed-geometry columns and a closed laterally
   uniform strip. No lateral transport, inflow or melting.
 - *Refused:* mean-age cooling, averaged viscosities or ages as W07 input, bypassed
@@ -164,7 +164,7 @@ Feedback ownership and exchange rules not repeated here are in
   decoupling is the separate D6 record `atlas.rift-decoupling-handoff.v1`.
 - *Evidence:* `i01-column-r2`, `i01-weakening-r4`, `i01-column-heat-r5`,
   `i01-thermomechanical-motion-r4`, `i01-finite-strain-r5`, `i01-decoupling-r1`,
-  `i01-column-admission-r3`, `i01-finite-admission-r6`, `i01-transitions-r2`.
+  `i01-column-admission-r3`, `i01-finite-admission-r8`, `i01-transitions-r2`.
 - *Validity:* laterally uniform strips. The linear handoff bound covers only its linear
   control. The homogeneous strip is admitted at 10%; the layered strip is honestly
   uncertified at 1%.
@@ -402,7 +402,7 @@ Do not build these as further I01 prototypes. A new I01 control needs an MC item
 | ID | Owner | Work already assigned | Plan case |
 | --- | --- | --- | --- |
 | LS-I02 | I02 | Accepted-state contract, event calendar, candidate-validate-commit, owner-approved [`eps_v = 0.01` numerical contract](I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v) (recorded 2 October 2026; I06.2/I07.2 consume, I09 enforces), persisted identity of issued states, once-only delivery transactions | plumbing |
-| LS-I03 | I03 | Moving shared boundaries and junctions, conservative spherical transfers, moving ridge segments, closed-sphere source and sink control | A, G |
+| LS-I03 | I03 | Implemented prescribed-history network: shared moving boundaries, compatible supplied junction paths, conservative spherical and transient transfers, regional bridges and joint supplied events. [Method and support limits](I03_SPHERICAL_NETWORK.md); [current review outcome](../../docs/CURRENT_STATE.md). Physical motion/event producers remain with later owners. | A, G |
 | LS-I04 | I04 | Starting family that consumes structure and inheritance; D1/D2 on the evolving sphere; force-parameter challenges; orientation-independent localisation on the production mesh | B, H |
 | LS-I05 | I05 | Heterogeneous deforming thermal/material bridge; conservative raw-history and irreversible bond-cohort transport; necking-chain belt state and per-column clocks; W06 occupied-material means and age distributions | A, F |
 | LS-I06 | I06 | Chain connectivity-loss certificate (five obligations) and split; rift-to-spreading with finite supply; exhumed-mantle phase; ridge controls | C |

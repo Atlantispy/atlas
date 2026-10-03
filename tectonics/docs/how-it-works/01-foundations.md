@@ -123,6 +123,11 @@ concurrent first use checks this. A valid map establishes neither fault
 physics nor plate history. [Shapely's intersection contract](https://shapely.readthedocs.io/en/2.1.2/reference/shapely.intersection.html)
 documents the actual planar dependency.
 
+The integration work keeps one such closed atlas as an evolving
+[shared network](06-physical-integration.md#the-shared-spherical-network-one-owner-for-every-point-of-the-sphere)
+beside its accepted state, adding plate ownership, one record per plate boundary
+and separate material accounts.
+
 ### Generated partitions, geological descriptions and reference materials
 
 The initial spherical partition method assigns surface directions to their nearest
@@ -303,7 +308,9 @@ The [integrated tests](../../tests/test_w02_completion.py) combine regrid, motio
 birth, split, merge and restoration, checking per-cohort balances and replay
 refusal. Their conservation basis is shared with the preceding W02 methods.
 General spherical transport, force-derived topology changes and complete burial
-or thermal histories are outside this one-dimensional material contract.
+or thermal histories are outside this one-dimensional material contract. Transfer
+between moving cells on the sphere under supplied rotations is described in the
+[integration chapter](06-physical-integration.md#move-the-plates-of-the-shared-network-and-carry-their-rock).
 
 ## W03: temperature, thermal support and compaction
 

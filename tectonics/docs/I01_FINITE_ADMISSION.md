@@ -446,7 +446,7 @@ The exclusive-create receipt binds, before and after execution, the four new fil
 the retained tools, cases and package modules listed in the tool, and the
 finite-strain and column-admission receipts that the tool pins, at their accepted
 SHA-256 values. The designated successors for the package-owned code are
-`i01-finite-strain-r4` and `i01-column-admission-r2`; each is evidence only once
+`i01-finite-strain-r5` and `i01-column-admission-r3`; each is evidence only once
 captured, reviewed and listed as current in the
 [evidence register](../../docs/CURRENT_EVIDENCE.md). Before any control the tool
 verifies that every source the pinned receipts recorded

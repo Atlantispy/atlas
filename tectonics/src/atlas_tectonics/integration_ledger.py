@@ -719,16 +719,55 @@ def _copy(array):
     return np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=array.dtype).reshape(array.shape)
 
 
-def _root_metadata(ledger_id, declaration, root, exchange):
+def _root_metadata(ledger_id, declaration, root, exchange, sphere=None):
     """The complete root record of a ledger: what create() stores and open() must find exactly."""
-    return dict(schema=SCHEMA, kind='root', ledger_id=ledger_id, key=root_key(ledger_id), parent_key=None, sequence=0,
-                declaration=declaration, interval=None, path=[], transfers=[],
-                state=dict(state_id=root.state_id, parent_state_id=None, time_s=root.time_s,
-                           elapsed_s=root.column.elapsed_s, accepted_steps=0, record=json.loads(root._record),
-                           reference=root.reference.descriptor(), settings=root.settings.descriptor(),
-                           column=root.column.descriptor(), materials=root.materials.descriptor(),
-                           reservoirs=None if root.reservoirs is None else root.reservoirs.descriptor()),
-                exchange=None if exchange is None else exchange.descriptor())
+    record = dict(schema=SCHEMA, kind='root', ledger_id=ledger_id, key=root_key(ledger_id), parent_key=None,
+                  sequence=0, declaration=declaration, interval=None, path=[], transfers=[],
+                  state=dict(state_id=root.state_id, parent_state_id=None, time_s=root.time_s,
+                             elapsed_s=root.column.elapsed_s, accepted_steps=0, record=json.loads(root._record),
+                             reference=root.reference.descriptor(), settings=root.settings.descriptor(),
+                             column=root.column.descriptor(), materials=root.materials.descriptor(),
+                             reservoirs=None if root.reservoirs is None else root.reservoirs.descriptor()),
+                  exchange=None if exchange is None else exchange.descriptor())
+    if sphere is not None:                   # I03: only a ledger with an attached network records one
+        record['sphere'] = sphere.descriptor()
+    return record
+
+
+def _bound_sphere(root, sphere, exchange):
+    """I03.1: the declared spherical network attached to ``root``, checked against it and the exchange."""
+    from . import integration_sphere as _sphere
+    try:
+        state = _sphere.bound(root, sphere, None if exchange is None else exchange.inventory,
+                              () if exchange is None else exchange.exteriors)
+    except LedgerError:
+        raise
+    except TectonicsError as exc:
+        raise LedgerError('the spherical network cannot be attached to this history: '+str(exc)) from exc
+    return state, dict(schema=_sphere.SCHEMA, state_id=state.state_id)
+
+
+def _sphere_linked(metadata, parent):
+    """I03.2: a successor's stored network step continues its parent commit's network state over its interval."""
+    from . import integration_transfer as _transfer
+    return _transfer.linked(metadata['sphere'], json.loads(parent._metadata)['sphere'], metadata['interval'])
+
+
+def _proposal(value):
+    """A Transfer or (I03.2) the Motion of an attached spherical network: both declare the interval of whole global
+    steps they are committed over."""
+    if type(value) is Transfer:
+        return True
+    from . import integration_transfer as _transfer
+    return type(value) is _transfer.Motion
+
+
+def _network_content(metadata):
+    """(producer of an attached network's own stock transfers, [its motion identity]) of a stored commit."""
+    if 'sphere' not in metadata:
+        return None, []
+    from . import integration_transfer as _transfer
+    return _transfer.content(metadata)
 
 
 class Ledger:
@@ -742,7 +781,7 @@ class Ledger:
     separate stores on one file.
     """
     __slots__ = ('_store', '_ledger_id', '_root', '_root_meta', '_budget', '_states', '_exchanges', '_applied',
-                 '_chain', '_token')
+                 '_chain', '_token', '_spheres')
 
     def __init__(self, *args, **kwargs):
         raise TypeError('a Ledger is issued by Ledger.create() or Ledger.open() only')
@@ -754,27 +793,32 @@ class Ledger:
     def _new(cls, store, ledger_id, budget):
         ledger = object.__new__(cls)
         for name, value in dict(_store=store, _ledger_id=ledger_id, _root=None, _root_meta=None, _budget=budget,
-                                _states={}, _exchanges={}, _applied={}, _chain=None, _token=None).items():
+                                _states={}, _exchanges={}, _applied={}, _chain=None, _token=None,
+                                _spheres={}).items():
             object.__setattr__(ledger, name, value)
         return ledger
 
-    def _rooted(self, metadata, state, exchange):
+    def _rooted(self, metadata, state, exchange, sphere=None):
         commit = self._issued(metadata)
         object.__setattr__(self, '_root', commit)
         object.__setattr__(self, '_root_meta', json.loads(commit._metadata))
         self._keep(self._states, commit, state)
         self._keep(self._exchanges, commit, exchange)
         self._keep(self._applied, commit, ())
+        self._keep(self._spheres, commit, sphere)
         return commit
 
     @classmethod
-    def create(cls, store, root, *, exteriors=(), calendar=(), budget=None):
+    def create(cls, store, root, *, exteriors=(), calendar=(), sphere=None, budget=None):
         """Record the declared initial ``root`` state (and its attached stocks) as the root commit; idempotent.
 
         Attached W08 reservoirs of the root envelope become the initial stocks of the exchange accounts (a copy the
         ledger owns); the envelope keeps them as its initial payload, as it keeps its initial temperature departure.
         Exteriors and the event calendar ((time_s, kind, label) entries, or objects with those attributes) are
-        declared once here and bound into the ledger identity, so every later clock honours them.
+        declared once here and bound into the ledger identity, so every later clock honours them. ``sphere`` (I03)
+        attaches a declared spherical network (integration_sphere.initial_sphere) dated at the root's epoch and
+        start: it is stored in the root commit beside the column state and bound into the ledger identity, and every
+        later commit then carries its successor.
         """
         if not isinstance(store, ArrayStore):
             raise LedgerError('a native ArrayStore is required')
@@ -788,17 +832,23 @@ class Ledger:
         declaration = dict(schema=SCHEMA, route=_state.ROUTE, root_state_id=root.state_id,
                            exchange=None if exchange is None else exchange.descriptor(),
                            calendar=_calendar(calendar, times))
-        ledger_id = hashlib.sha256(_canonical(declaration, 'ledger declaration')).hexdigest()
         arrays = _state_arrays(root)
+        if sphere is not None:
+            if getattr(sphere, 'issued_by', None) != _state.DECLARED:
+                raise LedgerError('a ledger starts from a declared initial network; a computed or restored one '
+                                  'cannot be a root')
+            sphere, declaration['sphere'] = _bound_sphere(root, sphere, exchange)
+            arrays.update(sphere.arrays())
+        ledger_id = hashlib.sha256(_canonical(declaration, 'ledger declaration')).hexdigest()
         if exchange is not None:
             arrays.update(_exchange_arrays(exchange, _applied([])))
-        metadata = _root_metadata(ledger_id, declaration, root, exchange)
+        metadata = _root_metadata(ledger_id, declaration, root, exchange, sphere)
         try:
             store.put(metadata['key'], arrays, metadata, budget=budget)
         except StoreConflict as exc:
             raise LedgerConflict('a different root was recorded under this ledger identity') from exc
         ledger = cls._new(store, ledger_id, budget)
-        return ledger, ledger._rooted(metadata, root, exchange)
+        return ledger, ledger._rooted(metadata, root, exchange, sphere)
 
     @classmethod
     def open(cls, store, ledger_id, *, source_id, runtime_id, budget=None):
@@ -849,13 +899,23 @@ class Ledger:
             raise LedgerError('the stored calendar is invalid') from exc
         rebuilt = dict(schema=SCHEMA, route=_state.ROUTE, root_state_id=root.state_id,
                        exchange=None if exchange is None else exchange.descriptor(), calendar=calendar)
-        expected = _root_metadata(ledger_id, rebuilt, root, exchange)
+        sphere = None
+        if 'sphere' in declaration:              # I03: rebuild the attached network through its own constructors
+            from . import integration_sphere as _sphere
+            try:
+                sphere = _sphere.restore_sphere(metadata.get('sphere'), arrays, budget=budget, exclusive=True)
+            except LedgerError:
+                raise
+            except TectonicsError as exc:
+                raise LedgerError('the stored spherical network is not restored: '+str(exc)) from exc
+            sphere, rebuilt['sphere'] = _bound_sphere(root, sphere, exchange)
+        expected = _root_metadata(ledger_id, rebuilt, root, exchange, sphere)
         if (_canonical(rebuilt, 'ledger declaration') != _canonical(declaration, 'ledger declaration')
                 or _canonical(expected, 'root record') != _canonical(metadata, 'root record')
                 or (exchange is not None and (ledger._stored_exchange(metadata, arrays).exchange_id
                                               != exchange.exchange_id or _digests(arrays['ledger.applied'])))):
             raise LedgerError('the stored root record is not the record of the rebuilt root: edited or foreign')
-        ledger._rooted(metadata, root, exchange)
+        ledger._rooted(metadata, root, exchange, sphere)
         return ledger
 
     @property
@@ -941,10 +1001,12 @@ class Ledger:
         expected = successor_key(self._ledger_id, parent.key)
         steps, step_s, start = self._schedule()
         declared = self._root_meta['declaration']['exchange']
+        sphered = 'sphere' in self._root_meta['declaration']          # I03: every successor then carries its step
+        keys = _SUCCESSOR_KEYS | {'sphere'} if sphered else _SUCCESSOR_KEYS
         try:
             state, interval, path, transfers = (metadata[k] for k in ('state', 'interval', 'path', 'transfers'))
             accepted, column, exchange = state['accepted_steps'], state['column'], metadata['exchange']
-            ok = (type(metadata) is dict and set(metadata) == _SUCCESSOR_KEYS and metadata['schema'] == SCHEMA
+            ok = (type(metadata) is dict and set(metadata) == keys and metadata['schema'] == SCHEMA
                   and metadata['kind'] == 'successor' and metadata['ledger_id'] == self._ledger_id
                   and metadata['key'] == expected and metadata['parent_key'] == parent.key
                   and metadata['parent_digest'] == hashlib.sha256(parent._metadata).hexdigest()
@@ -970,10 +1032,17 @@ class Ledger:
                   and (exchange is None or (type(exchange) is dict and exchange.get('schema') == EXCHANGE_SCHEMA
                                             and exchange.get('exteriors') == declared['exteriors']
                                             and type(exchange.get('exact')) is dict))
-                  and _crosses(self._root_meta['declaration']['calendar'], parent.time_s, state['time_s']) is None)
+                  and _crosses(self._root_meta['declaration']['calendar'], parent.time_s, state['time_s']) is None
+                  and (not sphered or _sphere_linked(metadata, parent)))
         except (KeyError, TypeError, ValueError, TectonicsError):
             ok = False
         if not ok:
+            if sphered and type(metadata) is dict and type(metadata.get('sphere')) is dict:
+                from . import integration_transfer as _transfer
+                schema = metadata['sphere'].get('schema')
+                if schema != _transfer.SCHEMA:
+                    raise LedgerError('unsupported spherical step schema %r; this runtime requires %r; '
+                                      'no implicit history migration' % (schema, _transfer.SCHEMA))
             raise LedgerError('a stored commit is not a well-formed successor of its parent in this ledger')
         return self._issued(metadata)
 
@@ -1020,6 +1089,7 @@ class Ledger:
         commit, metadata = self._on_chain(commit)
         self._restored(commit, metadata)
         self._restored_exchange(commit, metadata)
+        self._restored_sphere(commit, metadata)
         return commit
 
     def verify_chain(self):
@@ -1033,6 +1103,7 @@ class Ledger:
             metadata = self._current(commit)
             self._restored(commit, metadata)
             self._restored_exchange(commit, metadata)
+            self._restored_sphere(commit, metadata)
         return chain[-1]
 
     # ------------------------------------------------------------------------- restoration (I02.5)
@@ -1240,6 +1311,41 @@ class Ledger:
             applied = self._cached(self._applied, commit)
         return applied
 
+    def sphere(self, commit):
+        """The spherical network state (I03) at ``commit``, or None when this history has no network attached.
+
+        The commit must be on the accepted chain to the head. A state read back from the store is rebuilt through
+        integration_sphere's validating constructors; a successor's material must also be its parent's stored
+        material with the commit's recorded transfers applied once (integration_transfer.restored), and every
+        identity must reproduce. The recorded motion is applied again to rebuild the moved geometry; no
+        intersection is measured again.
+        """
+        return self._restored_sphere(*self._on_chain(commit))
+
+    def _restored_sphere(self, commit, metadata):
+        state = self._cached(self._spheres, commit)
+        if state is not _MISSING:
+            return state
+        if 'sphere' not in self._root_meta['declaration']:
+            self._keep(self._spheres, commit, None)
+            return None
+        from . import integration_transfer as _transfer
+        arrays = self._store.get(commit.key, budget=self._budget)
+        try:
+            parent = self._cached(self._spheres, self._issued(self._store.metadata(commit.parent_key)))
+            if parent is _MISSING:
+                parent = (self._store.metadata(commit.parent_key),
+                          self._store.get(commit.parent_key, budget=self._budget))
+            state = _transfer.restored(parent, metadata, arrays, budget=self._budget)
+        except LedgerError:
+            raise
+        except (KeyError, TypeError) as exc:
+            raise LedgerError('the stored spherical network is incomplete') from exc
+        except TectonicsError as exc:
+            raise LedgerError('the stored spherical network is not restored: '+str(exc)) from exc
+        self._keep(self._spheres, commit, state)
+        return state
+
     # ------------------------------------------------------------------------- inspection (I02.5/I02.6)
 
     def describe(self, commit):
@@ -1252,10 +1358,14 @@ class Ledger:
         commit, metadata = self._on_chain(commit)
         state = self._restored(commit, metadata)
         exchange = self._restored_exchange(commit, metadata)
+        sphere = self._restored_sphere(commit, metadata)
+        if sphere is not None:
+            from . import integration_sphere as _sphere
+            sphere = _sphere.summary(sphere)
         record, column = json.loads(state._record), state.column.descriptor()
         schedule = state.settings.descriptor()['numerical_policy']['schedule']
         accepted, steps = state.column.accepted_steps, state.settings.steps
-        return dict(
+        described = dict(
             ledger_id=self._ledger_id, key=commit.key, parent_key=commit.parent_key, sequence=commit.sequence,
             state_id=state.state_id, parent_state_id=state.parent_state_id, root_state_id=state.root_state_id,
             time_s=state.time_s, elapsed_s=state.column.elapsed_s, accepted_steps=accepted,
@@ -1273,6 +1383,9 @@ class Ledger:
                                                         time_s=exchange.inventory.time_s,
                                                         closure=exchange.closure()),
             calendar=[list(event) for event in self.calendar], fields=sorted(self._fields(exchange is not None)))
+        if sphere is not None:                   # I03: only a history with an attached network reports one
+            described['sphere'] = sphere
+        return described
 
     def _fields(self, stocked):
         names = {*_COLUMN_FIELDS, *DERIVED}
@@ -1358,6 +1471,13 @@ class Ledger:
         interval = (parent.time_s, end.time_s, parent.accepted_steps, end.column.accepted_steps)
         key = successor_key(self._ledger_id, parent.key)
         transfers = tuple(transfers) if type(transfers) in (tuple, list) else None
+        step = None
+        if transfers is not None and 'sphere' in self._root_meta['declaration']:
+            # I03.2: the attached network moves over exactly this interval. Its step is computed from the parent
+            # commit's network state, and its finite-stock transfers join this commit's exchange.
+            from . import integration_transfer as _transfer
+            transfers, step = _transfer.proposed(self, parent, expected_parent, interval, transfers,
+                                                 self._budget if budget is None else budget, cancel)
         if transfers is None or len(transfers) > MAX_TRANSFERS:
             raise ExchangeRefused('at most %d transfers per commit' % MAX_TRANSFERS)
         exchange = self._restored_exchange(parent, expected_parent)
@@ -1390,6 +1510,9 @@ class Ledger:
                                    elapsed_s=end.column.elapsed_s, accepted_steps=end.column.accepted_steps,
                                    column=end.column.descriptor()),
                         exchange=None if after is None else after.descriptor())
+        if step is not None:
+            arrays.update(step.arrays())
+            metadata['sphere'] = step.record()
         self._checked(json.loads(_canonical(metadata, 'commit metadata')), parent)   # exactly what head() accepts
         store = self._store
         parent_index = None if after is None else store.reference(parent.key, 'ledger.applied').descriptor_sha256
@@ -1422,4 +1545,5 @@ class Ledger:
         self._keep(self._states, commit, end)
         self._keep(self._exchanges, commit, after)
         self._keep(self._applied, commit, applied)
+        self._keep(self._spheres, commit, None if step is None else step.state)
         return commit
