@@ -60,6 +60,15 @@ checkpoint/runtime dependencies remain unavailable; never invent them. After a
 reviewed source change, capture a new record rather than updating an old binding.
 Do not commit `.atlas-dev/` (local paths, environment and cache state).
 
+## Local review tools
+
+Where a machine provides local review tools (see the untracked `CLAUDE.local.md`), use
+them on relevant work: check-only lint comparing base and candidate with the same
+executable and rules, reporting only introduced findings; independent maths in an
+environment separate from the science environment; symbol navigation where available.
+Never auto-fix or reformat source, never install into the science environment, and treat
+results as review aids, not evidence. Their absence is not a failure.
+
 ## Check and report
 
 For source-only guidance/tool changes, run from the repository root:
