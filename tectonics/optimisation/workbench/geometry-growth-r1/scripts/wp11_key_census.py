@@ -276,8 +276,9 @@ def main():
     ap.add_argument('--set', nargs=5, action='append', required=True,
                     metavar=('LABEL', 'SUPPORTS', 'GRID', 'INTERVAL', 'REPLAY_GLOB'))
     args = ap.parse_args()
-    if os.environ.get('PYTHONHASHSEED') != '0':
-        raise SystemExit('set PYTHONHASHSEED=0, as production does')
+    # os.environ alone is not enough: under -I or -E the interpreter ignores PYTHONHASHSEED.
+    if os.environ.get('PYTHONHASHSEED') != '0' or sys.flags.hash_randomization:
+        raise SystemExit('start with PYTHONHASHSEED=0 and without -I or -E, as production does')
     out = Path(args.out)
     target = out / 'census.json'
     if len(str(target.resolve())) >= 259:

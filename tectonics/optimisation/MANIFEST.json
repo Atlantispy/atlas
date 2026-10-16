@@ -3061,6 +3061,11 @@
    "kind": "drivers"
   },
   {
+   "path": "drivers/start_gate.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/start_gate.py",
+   "kind": "drivers"
+  },
+  {
    "path": "drivers/test_fresh_interval_driver.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_fresh_interval_driver.py",
    "kind": "drivers"
@@ -3088,6 +3093,21 @@
   {
    "path": "drivers/test_s8_producer.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_s8_producer.py",
+   "kind": "drivers"
+  },
+  {
+   "path": "drivers/test_start_gate.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_start_gate.py",
+   "kind": "drivers"
+  },
+  {
+   "path": "drivers/test_width_gate.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_width_gate.py",
+   "kind": "drivers"
+  },
+  {
+   "path": "drivers/width_gate.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/width_gate.py",
    "kind": "drivers"
   },
   {
@@ -3626,8 +3646,43 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/compact-geometry-r1/record_views.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/record_views.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/segment_store.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/segment_store.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/storage_codec_integration_patch.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/storage_codec_integration_patch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/test_b17_binding_directory.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/test_b17_binding_directory.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/test_item14_page_layer.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/test_item14_page_layer.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/test_s1_sealed_read.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/test_s1_sealed_read.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/compact-geometry-r1/native/build_manifest.json",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/native/build_manifest.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/N9-WIDTH-INTEGRATION.md",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/N9-WIDTH-INTEGRATION.md",
    "kind": "workbench"
   },
   {
@@ -3673,6 +3728,11 @@
   {
    "path": "workbench/geometry-growth-r1/scripts/chart_certificates_next.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/chart_certificates_next.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/check_composition.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/check_composition.py",
    "kind": "workbench"
   },
   {
@@ -3723,6 +3783,11 @@
   {
    "path": "workbench/geometry-growth-r1/scripts/compare_surfaces.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/compare_surfaces.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/compare_with_r1.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/compare_with_r1.py",
    "kind": "workbench"
   },
   {
@@ -3921,6 +3986,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/geometry-growth-r1/scripts/run_d12_parity.sh",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/run_d12_parity.sh",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/geometry-growth-r1/scripts/run_deep_profile.sh",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/run_deep_profile.sh",
    "kind": "workbench"
@@ -4106,6 +4176,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/geometry-growth-r1/scripts/test_d1_d2.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/test_d1_d2.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/geometry-growth-r1/scripts/test_source_handles.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/scripts/test_source_handles.py",
    "kind": "workbench"
@@ -4131,6 +4206,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/geometry-growth-r1/transforms/D1-D2-KNOWN.md",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/transforms/D1-D2-KNOWN.md",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/geometry-growth-r1/transforms/complementary_cut.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/transforms/complementary_cut.py",
    "kind": "workbench"
@@ -4138,6 +4218,11 @@
   {
    "path": "workbench/geometry-growth-r1/transforms/complementary_cut_adopt.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/transforms/complementary_cut_adopt.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/transforms/gpy_q2_jets_r4.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/transforms/gpy_q2_jets_r4.py",
    "kind": "workbench"
   },
   {
@@ -5221,6 +5306,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/b17_merge_apply.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/b17_merge_apply.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/check_cell_keys.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/check_cell_keys.py",
    "kind": "workbench"
@@ -5286,6 +5376,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/heat_pairs_counts.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/heat_pairs_counts.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/inspect_sealed_root.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/inspect_sealed_root.py",
    "kind": "workbench"
@@ -5293,6 +5388,11 @@
   {
    "path": "workbench/probes/step9/claude-20261016/item11_mutants.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item11_mutants.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/item11m_before_copy.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item11m_before_copy.py",
    "kind": "workbench"
   },
   {
@@ -5306,6 +5406,16 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/item21_fd_mutant_tests.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_fd_mutant_tests.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/item21_fd_mutants.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_fd_mutants.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/item21_mutant_scenario.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_mutant_scenario.py",
    "kind": "workbench"
@@ -5316,6 +5426,16 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/item21_wg_mutant_tests.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_wg_mutant_tests.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/item21_wg_mutants.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_wg_mutants.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/json_find.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/json_find.py",
    "kind": "workbench"
@@ -5323,6 +5443,11 @@
   {
    "path": "workbench/probes/step9/claude-20261016/machine_load.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/machine_load.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/make_gate_before_copies.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/make_gate_before_copies.py",
    "kind": "workbench"
   },
   {
@@ -5426,6 +5551,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/run_b17_merge_tests.sh",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_b17_merge_tests.sh",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/run_cell_keys.sh",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_cell_keys.sh",
    "kind": "workbench"
@@ -5433,6 +5563,11 @@
   {
    "path": "workbench/probes/step9/claude-20261016/run_frozen_smoke.sh",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_frozen_smoke.sh",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/run_g14_heat_reproof.sh",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_g14_heat_reproof.sh",
    "kind": "workbench"
   },
   {
@@ -5466,6 +5601,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/run_start_gate_checks.sh",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_start_gate_checks.sh",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/run_when_lock_free.sh",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/run_when_lock_free.sh",
    "kind": "workbench"
@@ -5476,6 +5616,11 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/seed_zero_check.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/seed_zero_check.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/show_derived_joined.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/show_derived_joined.py",
    "kind": "workbench"
@@ -5483,6 +5628,16 @@
   {
    "path": "workbench/probes/step9/claude-20261016/stages_on_control_layout.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/stages_on_control_layout.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/start_gate_mutant_tests.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/start_gate_mutant_tests.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/start_gate_mutants.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/start_gate_mutants.py",
    "kind": "workbench"
   },
   {
@@ -5796,6 +5951,96 @@
    "kind": "pending"
   },
   {
+   "path": "pending/heat/rf-s1/rf_alias.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_alias.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_budget.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_budget.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_cancel.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_cancel.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_common.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_common.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_fuzz.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_fuzz.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_systems.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_systems.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_variants.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_variants.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/rf_ver.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/rf_ver.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V0/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V0/private_heat_finish_kernel_r11.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V0/private_heat_finish_kernel_r11.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V1/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V1/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V2/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V2/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V3/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V3/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V4/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V4/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V5/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V5/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V6/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V6/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V7/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V7/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/rf-s1/var_V8/private_heat_closed_owned_r5.py",
+   "source": "<TASK_ROOT>/hs/rf-s1/var_V8/private_heat_closed_owned_r5.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/heat/scripts/ab_heat.py",
    "source": "<TASK_ROOT>/hs/scripts/ab_heat.py",
    "kind": "pending"
@@ -5828,6 +6073,11 @@
   {
    "path": "pending/heat/scripts/ab_heat_r7.py",
    "source": "<TASK_ROOT>/hs/scripts/ab_heat_r7.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/ab_heat_r8.py",
+   "source": "<TASK_ROOT>/hs/scripts/ab_heat_r8.py",
    "kind": "pending"
   },
   {
@@ -5896,6 +6146,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/heat/scripts/dry_job_r4c_r2.py",
+   "source": "<TASK_ROOT>/hs/scripts/dry_job_r4c_r2.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/heat/scripts/h5a_control_layout.py",
    "source": "<TASK_ROOT>/hs/scripts/h5a_control_layout.py",
    "kind": "pending"
@@ -5946,6 +6201,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/heat/scripts/job_h1c_r4c_r2.sh",
+   "source": "<TASK_ROOT>/hs/scripts/job_h1c_r4c_r2.sh",
+   "kind": "pending"
+  },
+  {
    "path": "pending/heat/scripts/job_h2.sh",
    "source": "<TASK_ROOT>/hs/scripts/job_h2.sh",
    "kind": "pending"
@@ -5953,6 +6213,21 @@
   {
    "path": "pending/heat/scripts/l1_generation_note.py",
    "source": "<TASK_ROOT>/hs/scripts/l1_generation_note.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/make_ab_heat_r8.py",
+   "source": "<TASK_ROOT>/hs/scripts/make_ab_heat_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/make_s1_r1.py",
+   "source": "<TASK_ROOT>/hs/scripts/make_s1_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/make_test_s1_r2.py",
+   "source": "<TASK_ROOT>/hs/scripts/make_test_s1_r2.py",
    "kind": "pending"
   },
   {
@@ -5978,6 +6253,11 @@
   {
    "path": "pending/heat/scripts/prof_summary.py",
    "source": "<TASK_ROOT>/hs/scripts/prof_summary.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/pstats_tree_r1.py",
+   "source": "<TASK_ROOT>/hs/scripts/pstats_tree_r1.py",
    "kind": "pending"
   },
   {
@@ -6093,6 +6373,16 @@
   {
    "path": "pending/heat/tests/test_l1_low_ledger_op.py",
    "source": "<TASK_ROOT>/hs/tests/test_l1_low_ledger_op.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/tests/test_s1_closed_reuse.py",
+   "source": "<TASK_ROOT>/hs/tests/test_s1_closed_reuse.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/tests/test_s1_closed_reuse_r2.py",
+   "source": "<TASK_ROOT>/hs/tests/test_s1_closed_reuse_r2.py",
    "kind": "pending"
   },
   {
@@ -6361,6 +6651,66 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/c/wr2/WIDTH_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ps/c/wr2/WIDTH_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/c/wr2/src/atlas_tectonics/integration_exterior_mesh.py",
+   "source": "<TASK_ROOT>/ps/c/wr2/src/atlas_tectonics/integration_exterior_mesh.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/c/wr3/WIDTH_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ps/c/wr3/WIDTH_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/iv1/compare_arms.py",
+   "source": "<TASK_ROOT>/ps/iv1/compare_arms.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/iv1/dump_arm.py",
+   "source": "<TASK_ROOT>/ps/iv1/dump_arm.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/iv1/route1_profile.py",
+   "source": "<TASK_ROOT>/ps/iv1/route1_profile.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/iv1/smoke_compare.py",
+   "source": "<TASK_ROOT>/ps/iv1/smoke_compare.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/iv1/a/manifest-1.json",
+   "source": "<TASK_ROOT>/ps/iv1/a/manifest-1.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/refute/iv1-cmp/FINDINGS.md",
+   "source": "<TASK_ROOT>/ps/refute/iv1-cmp/FINDINGS.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/refute/iv1-cmp/repro_cmp.py",
+   "source": "<TASK_ROOT>/ps/refute/iv1-cmp/repro_cmp.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/refute/iv1-cmp/repro_cmp2.py",
+   "source": "<TASK_ROOT>/ps/refute/iv1-cmp/repro_cmp2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/refute/iv1-cmp/scan_real.py",
+   "source": "<TASK_ROOT>/ps/refute/iv1-cmp/scan_real.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/refute/p1/gen_close.py",
    "source": "<TASK_ROOT>/ps/refute/p1/gen_close.py",
    "kind": "pending"
@@ -6591,8 +6941,23 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/DESIGN-r2-ADDENDUM-E.md",
+   "source": "<TASK_ROOT>/ps/width/DESIGN-r2-ADDENDUM-E.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/DESIGN-r2-KNOWN.md",
+   "source": "<TASK_ROOT>/ps/width/DESIGN-r2-KNOWN.md",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/width/DESIGN.md",
    "source": "<TASK_ROOT>/ps/width/DESIGN.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/N9-RECONCILE.md",
+   "source": "<TASK_ROOT>/ps/width/N9-RECONCILE.md",
    "kind": "pending"
   },
   {
@@ -6611,6 +6976,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/compose_width_r2.py",
+   "source": "<TASK_ROOT>/ps/width/compose_width_r2.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/width/pose_round_probe.py",
    "source": "<TASK_ROOT>/ps/width/pose_round_probe.py",
    "kind": "pending"
@@ -6626,8 +6996,33 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/proof_quanta.py",
+   "source": "<TASK_ROOT>/ps/width/proof_quanta.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/route_parity.py",
+   "source": "<TASK_ROOT>/ps/width/route_parity.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/unit_width.py",
+   "source": "<TASK_ROOT>/ps/width/unit_width.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/unit_width_e.py",
+   "source": "<TASK_ROOT>/ps/width/unit_width_e.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/width/width_deviation_bound.py",
    "source": "<TASK_ROOT>/ps/width/width_deviation_bound.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/width_deviation_bound_exterior.py",
+   "source": "<TASK_ROOT>/ps/width/width_deviation_bound_exterior.py",
    "kind": "pending"
   },
   {
@@ -6636,8 +7031,23 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/refuter-wr1/dev_check.py",
+   "source": "<TASK_ROOT>/ps/width/refuter-wr1/dev_check.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/refuter-wr1/refute_checks.py",
+   "source": "<TASK_ROOT>/ps/width/refuter-wr1/refute_checks.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/OPTIONS.md",
    "source": "<TASK_ROOT>/ck/OPTIONS.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/REFUTER-TEMPLATE.md",
+   "source": "<TASK_ROOT>/ck/REFUTER-TEMPLATE.md",
    "kind": "pending"
   },
   {
@@ -6671,6 +7081,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/d5/check.py",
+   "source": "<TASK_ROOT>/ck/d5/check.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/d5/tree_probe.py",
    "source": "<TASK_ROOT>/ck/d5/tree_probe.py",
    "kind": "pending"
@@ -6683,6 +7098,11 @@
   {
    "path": "pending/kernels/d5/who.py",
    "source": "<TASK_ROOT>/ck/d5/who.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5/refute1/r1.py",
+   "source": "<TASK_ROOT>/ck/d5/refute1/r1.py",
    "kind": "pending"
   },
   {
@@ -6766,8 +7186,23 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/h3/build_layout.py",
+   "source": "<TASK_ROOT>/ck/h3/build_layout.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/job_h3r3.sh",
+   "source": "<TASK_ROOT>/ck/h3/job_h3r3.sh",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/h3/private_heat_compiled_dot_r1.py",
    "source": "<TASK_ROOT>/ck/h3/private_heat_compiled_dot_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/archive/h3_compiled_dot.25023538.py",
+   "source": "<TASK_ROOT>/ck/h3/archive/h3_compiled_dot.25023538.py",
    "kind": "pending"
   },
   {
@@ -6776,8 +7211,48 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/h3/archive/private_heat_compiled_dot_r1.62c100cf.py",
+   "source": "<TASK_ROOT>/ck/h3/archive/private_heat_compiled_dot_r1.62c100cf.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/h3/archive/private_heat_compiled_dot_r1.e10d203e.py",
    "source": "<TASK_ROOT>/ck/h3/archive/private_heat_compiled_dot_r1.e10d203e.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/identity/guard_proof.py",
+   "source": "<TASK_ROOT>/ck/h3/identity/guard_proof.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/identity/repro.py",
+   "source": "<TASK_ROOT>/ck/h3/identity/repro.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/refute-r3/ast_scan.py",
+   "source": "<TASK_ROOT>/ck/h3/refute-r3/ast_scan.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/refute-r3/report.md",
+   "source": "<TASK_ROOT>/ck/h3/refute-r3/report.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/refute-r3/reproduce.py",
+   "source": "<TASK_ROOT>/ck/h3/refute-r3/reproduce.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/refute-r3/sources.py",
+   "source": "<TASK_ROOT>/ck/h3/refute-r3/sources.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/h3/refute-r3/worker_table.py",
+   "source": "<TASK_ROOT>/ck/h3/refute-r3/worker_table.py",
    "kind": "pending"
   },
   {
@@ -6808,6 +7283,16 @@
   {
    "path": "pending/kernels/initpar/ip8_r2_enclose_unfinished.py",
    "source": "<TASK_ROOT>/ck/initpar/ip8_r2_enclose_unfinished.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/initpar/job_initpar_tree.sh",
+   "source": "<TASK_ROOT>/ck/initpar/job_initpar_tree.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/initpar/run_t9.sh",
+   "source": "<TASK_ROOT>/ck/initpar/run_t9.sh",
    "kind": "pending"
   },
   {
@@ -6931,6 +7416,26 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/ip9/INITPAR_MANIFEST.json",
+   "source": "<TASK_ROOT>/ck/ip9/INITPAR_MANIFEST.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/ip9/src/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ck/ip9/src/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/ip9/src/atlas_tectonics/integration_differential_geometry.py",
+   "source": "<TASK_ROOT>/ck/ip9/src/atlas_tectonics/integration_differential_geometry.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/ip9/src/atlas_tectonics/integration_dual_geometry.py",
+   "source": "<TASK_ROOT>/ck/ip9/src/atlas_tectonics/integration_dual_geometry.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/l3/helpers/private_heat_certification_kernel_r1.py",
    "source": "<TASK_ROOT>/ck/l3/helpers/private_heat_certification_kernel_r1.py",
    "kind": "pending"
@@ -6938,6 +7443,16 @@
   {
    "path": "pending/kernels/l3/helpers/private_heat_certification_resources_r1.py",
    "source": "<TASK_ROOT>/ck/l3/helpers/private_heat_certification_resources_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/l3r3/helpers/private_heat_certification_kernel_r1.py",
+   "source": "<TASK_ROOT>/ck/l3r3/helpers/private_heat_certification_kernel_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/l3r3/helpers/private_heat_certification_resources_r1.py",
+   "source": "<TASK_ROOT>/ck/l3r3/helpers/private_heat_certification_resources_r1.py",
    "kind": "pending"
   },
   {
@@ -7151,6 +7666,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/scripts/d5_parity.sh",
+   "source": "<TASK_ROOT>/ck/scripts/d5_parity.sh",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/scripts/gpy_parity.sh",
    "source": "<TASK_ROOT>/ck/scripts/gpy_parity.sh",
    "kind": "pending"
@@ -7261,6 +7781,46 @@
    "kind": "pending"
   },
   {
+   "path": "pending/kernels/work/envclean_test.sh",
+   "source": "<TASK_ROOT>/ck/work/envclean_test.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/roots_test.sh",
+   "source": "<TASK_ROOT>/ck/work/roots_test.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/route_snippet.py",
+   "source": "<TASK_ROOT>/ck/work/route_snippet.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/seed_smoke.sh",
+   "source": "<TASK_ROOT>/ck/work/seed_smoke.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/h3guard/m1/helpers/private_heat_certification_kernel_r1.py",
+   "source": "<TASK_ROOT>/ck/work/h3guard/m1/helpers/private_heat_certification_kernel_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/h3guard/m1/helpers/private_heat_certification_resources_r1.py",
+   "source": "<TASK_ROOT>/ck/work/h3guard/m1/helpers/private_heat_certification_resources_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/h3guard/m2/helpers/private_heat_certification_kernel_r1.py",
+   "source": "<TASK_ROOT>/ck/work/h3guard/m2/helpers/private_heat_certification_kernel_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/work/h3guard/m2/helpers/private_heat_certification_resources_r1.py",
+   "source": "<TASK_ROOT>/ck/work/h3guard/m2/helpers/private_heat_certification_resources_r1.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/kernels/work/h3out/private_heat_certification_kernel_r1.py",
    "source": "<TASK_ROOT>/ck/work/h3out/private_heat_certification_kernel_r1.py",
    "kind": "pending"
@@ -7268,6 +7828,21 @@
   {
    "path": "pending/kernels/work/h3out/private_heat_certification_resources_r1.py",
    "source": "<TASK_ROOT>/ck/work/h3out/private_heat_certification_resources_r1.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/assembly-manifest.md",
+   "source": "<TASK_ROOT>/so/assembly-manifest.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/assembly-manifest.r1-pre-wp12.md",
+   "source": "<TASK_ROOT>/so/assembly-manifest.r1-pre-wp12.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/assembly-manifest.r2-pre-n12s4.md",
+   "source": "<TASK_ROOT>/so/assembly-manifest.r2-pre-n12s4.md",
    "kind": "pending"
   },
   {
@@ -7816,6 +8391,186 @@
    "kind": "pending"
   },
   {
+   "path": "pending/storage/refute/s2/delta-r8/fuzz_stream.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/fuzz_stream.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/grow.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/grow.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/hdr_repro.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/hdr_repro.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/make_my_mutants.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/make_my_mutants.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/mem_peak.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/mem_peak.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/misc.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/misc.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/quad.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/quad.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/r7_vs_r8.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/r7_vs_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/real_boundary.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/real_boundary.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/real_capture.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/real_capture.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/real_operand.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/real_operand.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/test_peak.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/test_peak.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/why2.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/why2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/why_stricter.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/why_stricter.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/b1_block_1p5_mib/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/b1_block_1p5_mib/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/b1_block_1p5_mib/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/b1_block_1p5_mib/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/b1_block_1p5_mib/test_step8_coverage.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/b1_block_1p5_mib/test_step8_coverage.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/b1_block_1p5_mib/test_wp16_preadvance.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/b1_block_1p5_mib/test_wp16_preadvance.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/b2_block_2_mib/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/b2_block_2_mib/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/d1_no_midloop_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/d1_no_midloop_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/d2_no_final_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/d2_no_final_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/d3_no_size_checks/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/d3_no_size_checks/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/w1_lstrip_whitespace/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/w1_lstrip_whitespace/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/w2_lstrip_nul_and_space/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/w2_lstrip_nul_and_space/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x1_max_length_no_remaining/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x1_max_length_no_remaining/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x2_eof_check_skipped_on_block_end/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x2_eof_check_skipped_on_block_end/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x3_ended_not_set_on_eof_with_unused/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x3_ended_not_set_on_eof_with_unused/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x4_raw_exact_off_by_one/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x4_raw_exact_off_by_one/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x5_exceeds_gt_to_ge/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x5_exceeds_gt_to_ge/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/x6_padding_allows_leading_zero_when_empty_out/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/x6_padding_allows_leading_zero_when_empty_out/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/y1_padding_end_not_handled/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/y1_padding_end_not_handled/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/y4_read_count_wrong/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/y4_read_count_wrong/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/m/y6_accept_zlib_format/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/m/y6_accept_zlib_format/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/pt/fresh_interval_driver.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/pt/fresh_interval_driver.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/pt/mk.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/pt/mk.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/refute/s2/delta-r8/pt/prepared_interval_driver.py",
+   "source": "<TASK_ROOT>/so/refute/s2/delta-r8/pt/prepared_interval_driver.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/storage/refute/s4/probe.py",
    "source": "<TASK_ROOT>/so/refute/s4/probe.py",
    "kind": "pending"
@@ -7941,8 +8696,33 @@
    "kind": "pending"
   },
   {
+   "path": "pending/storage/s2/INTEGRATION-r7.md",
+   "source": "<TASK_ROOT>/so/s2/INTEGRATION-r7.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/INTEGRATION-r8.md",
+   "source": "<TASK_ROOT>/so/s2/INTEGRATION-r8.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/INTEGRATION-r9.md",
+   "source": "<TASK_ROOT>/so/s2/INTEGRATION-r9.md",
+   "kind": "pending"
+  },
+  {
    "path": "pending/storage/s2/INTEGRATION.md",
    "source": "<TASK_ROOT>/so/s2/INTEGRATION.md",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/build_measure_r2.py",
+   "source": "<TASK_ROOT>/so/s2/build_measure_r2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/build_s2_r10.py",
+   "source": "<TASK_ROOT>/so/s2/build_s2_r10.py",
    "kind": "pending"
   },
   {
@@ -7961,6 +8741,16 @@
    "kind": "pending"
   },
   {
+   "path": "pending/storage/s2/build_s2_r8.py",
+   "source": "<TASK_ROOT>/so/s2/build_s2_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/build_s2_r9.py",
+   "source": "<TASK_ROOT>/so/s2/build_s2_r9.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/storage/s2/compact_restart_patch.py",
    "source": "<TASK_ROOT>/so/s2/compact_restart_patch.py",
    "kind": "pending"
@@ -7973,6 +8763,16 @@
   {
    "path": "pending/storage/s2/measure_s2.py",
    "source": "<TASK_ROOT>/so/s2/measure_s2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/measure_s2_r2.py",
+   "source": "<TASK_ROOT>/so/s2/measure_s2_r2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/measure_s2_r3.py",
+   "source": "<TASK_ROOT>/so/s2/measure_s2_r3.py",
    "kind": "pending"
   },
   {
@@ -7991,11 +8791,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s2/test_step8_coverage.py",
-   "source": "<TASK_ROOT>/so/s2/test_step8_coverage.py",
-   "kind": "pending"
-  },
-  {
    "path": "pending/storage/s2/test_wp16_preadvance.py",
    "source": "<TASK_ROOT>/so/s2/test_wp16_preadvance.py",
    "kind": "pending"
@@ -8008,6 +8803,241 @@
   {
    "path": "pending/storage/s2/owner/test_step8_coverage.py",
    "source": "<TASK_ROOT>/so/s2/owner/test_step8_coverage.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10/test_s2_route_wiring.py",
+   "source": "<TASK_ROOT>/so/s2/r10/test_s2_route_wiring.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10/test_wp16_preadvance.py",
+   "source": "<TASK_ROOT>/so/s2/r10/test_wp16_preadvance.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/make_mutants_r10.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/make_mutants_r10.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/run_all_r10.sh",
+   "source": "<TASK_ROOT>/so/s2/r10-check/run_all_r10.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/run_tests_r10.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/run_tests_r10.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/drv/drivers_r10.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/drv/drivers_r10.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c1_find_spec_only/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c1_find_spec_only/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c2_checks_every_store/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c2_checks_every_store/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c3_no_library_load/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c3_no_library_load/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c4_import_time_capture/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c4_import_time_capture/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c5_subclass_accepted/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c5_subclass_accepted/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c6_route_error_swallowed/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c6_route_error_swallowed/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/c7_route_imports_store/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/c7_route_imports_store/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l24_no_midloop_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l24_no_midloop_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l25_no_final_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l25_no_final_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l26_zlib_format_accepted/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l26_zlib_format_accepted/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l27_whitespace_padding/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l27_whitespace_padding/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l28_truncated_before_output/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l28_truncated_before_output/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l29_blocks_kept/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l29_blocks_kept/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l30_block_one_and_a_half_mib/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l30_block_one_and_a_half_mib/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l31_library_from_cwd/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l31_library_from_cwd/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l32_reader_library_from_cwd/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l32_reader_library_from_cwd/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r10-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r10-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
    "kind": "pending"
   },
   {
@@ -8133,11 +9163,6 @@
   {
    "path": "pending/storage/s2/r5-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
    "source": "<TASK_ROOT>/so/s2/r5-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/storage/s2/r6/compact_restart_patch.py",
-   "source": "<TASK_ROOT>/so/s2/r6/compact_restart_patch.py",
    "kind": "pending"
   },
   {
@@ -8316,13 +9341,413 @@
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s2/r7-check/drivers/prepared_interval_driver.py",
-   "source": "<TASK_ROOT>/so/s2/r7-check/drivers/prepared_interval_driver.py",
+   "path": "pending/storage/s2/r7-check/drv/drivers_r7.py",
+   "source": "<TASK_ROOT>/so/s2/r7-check/drv/drivers_r7.py",
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s2/r7-check/drv/drivers_r7.py",
-   "source": "<TASK_ROOT>/so/s2/r7-check/drv/drivers_r7.py",
+   "path": "pending/storage/s2/r8/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8/test_s2_route_wiring.py",
+   "source": "<TASK_ROOT>/so/s2/r8/test_s2_route_wiring.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/make_mutants_r8.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/make_mutants_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/run_all_r8.sh",
+   "source": "<TASK_ROOT>/so/s2/r8-check/run_all_r8.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/run_tests_r8.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/run_tests_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/drivers-no-successor/fresh_interval_driver.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/drivers-no-successor/fresh_interval_driver.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/drv/drivers_r8.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/drv/drivers_r8.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r8-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r8-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9/test_wp16_preadvance.py",
+   "source": "<TASK_ROOT>/so/s2/r9/test_wp16_preadvance.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/make_mutants_r9.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/make_mutants_r9.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/run_all_r9.sh",
+   "source": "<TASK_ROOT>/so/s2/r9-check/run_all_r9.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/run_drivers_r9b.sh",
+   "source": "<TASK_ROOT>/so/s2/r9-check/run_drivers_r9b.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/run_tests_r9.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/run_tests_r9.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/drv/drivers_r9.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/drv/drivers_r9.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/drv/drivers_r9b.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/drv/drivers_r9b.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c1_find_spec_only/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c1_find_spec_only/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c2_checks_every_store/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c2_checks_every_store/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c3_no_library_load/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c3_no_library_load/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c4_import_time_capture/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c4_import_time_capture/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c5_subclass_accepted/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c5_subclass_accepted/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c6_route_error_swallowed/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c6_route_error_swallowed/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/c7_route_imports_store/compact_restart_patch.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/c7_route_imports_store/compact_restart_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l10_no_footer_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l11_path_not_contained/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l12_legacy_unbounded/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l13_gzip_bytes_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l14_legacy_raw_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l15_no_container_compare/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l16_no_format_minimum/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l17_no_legacy_file_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l18_dotdot_name/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l19_legacy_whole_file_read/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l1_no_raw_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l20_legacy_leading_zeros/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l21_footer_tail_last_block_only/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l22_legacy_stops_at_first_member/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l23_legacy_padding_kept/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l24_no_midloop_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l24_no_midloop_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l25_no_final_size_check/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l25_no_final_size_check/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l26_zlib_format_accepted/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l26_zlib_format_accepted/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l27_whitespace_padding/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l27_whitespace_padding/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l28_truncated_before_output/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l28_truncated_before_output/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l29_blocks_kept/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l29_blocks_kept/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l2_no_stored_ceiling/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l30_block_one_and_a_half_mib/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l30_block_one_and_a_half_mib/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l3_no_container_form/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l4_no_size_equality/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l5_allocate_first/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l6_legacy_eof_unchecked/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l7_legacy_zlib_uncaught/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l8_hex_any_case/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s2/r9-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
+   "source": "<TASK_ROOT>/so/s2/r9-check/mutants/l9_allocate_before_hash/ledger_fresh_interval.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s3/build_s3.py",
+   "source": "<TASK_ROOT>/so/s3/build_s3.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s3/check/run_with.py",
+   "source": "<TASK_ROOT>/so/s3/check/run_with.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s3/r1/spatial_validation_patch.py",
+   "source": "<TASK_ROOT>/so/s3/r1/spatial_validation_patch.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s3/r1/test_d1b_carried_start.py",
+   "source": "<TASK_ROOT>/so/s3/r1/test_d1b_carried_start.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/storage/s3/r1/test_s3_lazy_rows.py",
+   "source": "<TASK_ROOT>/so/s3/r1/test_s3_lazy_rows.py",
    "kind": "pending"
   },
   {
@@ -8501,11 +9926,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/geometry/cand-jets-r1/TEST_COMPOSITION.json",
-   "source": "<TASK_ROOT>/gg/cand-jets-r1/TEST_COMPOSITION.json",
-   "kind": "pending"
-  },
-  {
    "path": "pending/geometry/cpcut-r1/TEST_COMPOSITION.json",
    "source": "<TASK_ROOT>/gg/cpcut-r1/TEST_COMPOSITION.json",
    "kind": "pending"
@@ -8566,6 +9986,46 @@
    "kind": "pending"
   },
   {
+   "path": "pending/geometry/d12-r1/rb/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/gg/d12-r1/rb/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12-r1/rb/atlas_tectonics/integration_moving_face_moments.py",
+   "source": "<TASK_ROOT>/gg/d12-r1/rb/atlas_tectonics/integration_moving_face_moments.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12-r1/rb/atlas_tectonics/integration_moving_interface_moments.py",
+   "source": "<TASK_ROOT>/gg/d12-r1/rb/atlas_tectonics/integration_moving_interface_moments.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12-r1/rc/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/gg/d12-r1/rc/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12-r1/rc/atlas_tectonics/integration_moving_face_moments.py",
+   "source": "<TASK_ROOT>/gg/d12-r1/rc/atlas_tectonics/integration_moving_face_moments.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12g-iv1/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/gg/d12g-iv1/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12g-iv1/atlas_tectonics/integration_moving_face_moments.py",
+   "source": "<TASK_ROOT>/gg/d12g-iv1/atlas_tectonics/integration_moving_face_moments.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/geometry/d12g-iv2/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/gg/d12g-iv2/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
    "path": "pending/geometry/final-f1/TEST_COMPOSITION.json",
    "source": "<TASK_ROOT>/gg/final-f1/TEST_COMPOSITION.json",
    "kind": "pending"
@@ -8593,16 +10053,6 @@
   {
    "path": "pending/geometry/ipw6-r1/INITPAR_MANIFEST.json",
    "source": "<TASK_ROOT>/gg/ipw6-r1/INITPAR_MANIFEST.json",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/geometry/ipw6-r1/src/atlas_tectonics/integration_differential_geometry.py",
-   "source": "<TASK_ROOT>/gg/ipw6-r1/src/atlas_tectonics/integration_differential_geometry.py",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/geometry/ipw6-r1/src/atlas_tectonics/integration_dual_geometry.py",
-   "source": "<TASK_ROOT>/gg/ipw6-r1/src/atlas_tectonics/integration_dual_geometry.py",
    "kind": "pending"
   },
   {
@@ -8776,8 +10226,23 @@
    "kind": "pending"
   },
   {
+   "path": "docs/release/EXPECTATIONS.md",
+   "source": "<TASK_ROOT>/rm/EXPECTATIONS.md",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/FOLD.md",
+   "source": "<TASK_ROOT>/rm/FOLD.md",
+   "kind": "docs"
+  },
+  {
    "path": "docs/release/LANGUAGES.md",
    "source": "<TASK_ROOT>/rm/LANGUAGES.md",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/RECONCILE.md",
+   "source": "<TASK_ROOT>/rm/RECONCILE.md",
    "kind": "docs"
   },
   {
@@ -8803,6 +10268,156 @@
   {
    "path": "docs/release/time_verify.py",
    "source": "<TASK_ROOT>/rm/time_verify.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/inventory.py",
+   "source": "<TASK_ROOT>/rm/fold/inventory.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/parity.py",
+   "source": "<TASK_ROOT>/rm/fold/parity.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/pindiff.py",
+   "source": "<TASK_ROOT>/rm/fold/pindiff.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/run_trace.sh",
+   "source": "<TASK_ROOT>/rm/fold/run_trace.sh",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/selftest.py",
+   "source": "<TASK_ROOT>/rm/fold/selftest.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/trace_frozen.py",
+   "source": "<TASK_ROOT>/rm/fold/trace_frozen.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r01_key_collision.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r01_key_collision.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r02_nested_pin.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r02_nested_pin.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r03_records_false_fails.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r03_records_false_fails.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r04_external_selfid.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r04_external_selfid.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r05_bookings_userpaths.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r05_bookings_userpaths.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r10_ast_false_pass.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r10_ast_false_pass.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r11_ast_false_fail.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r11_ast_false_fail.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r20_pins_stale_pyc.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r20_pins_stale_pyc.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r21_pins_not_tied.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r21_pins_not_tied.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r22_pins_toplevel_shadow.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r22_pins_toplevel_shadow.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/r30_held.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/r30_held.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_pins/src/atlas_tectonics/__init__.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_pins/src/atlas_tectonics/__init__.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_pins/src/atlas_tectonics/integration_spatial_transport.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_pins/src/atlas_tectonics/integration_spatial_transport.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_pins/src/atlas_tectonics/_private/user_r1.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_pins/src/atlas_tectonics/_private/user_r1.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_pyc/src/atlas_tectonics/_private/mod_r1.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_pyc/src/atlas_tectonics/_private/mod_r1.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_shadow/src/b.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_shadow/src/b.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/fold/refute/case_shadow/src/atlas_tectonics/_private/a.py",
+   "source": "<TASK_ROOT>/rm/fold/refute/case_shadow/src/atlas_tectonics/_private/a.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/closure.py",
+   "source": "<TASK_ROOT>/rm/reconcile/closure.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/expect.py",
+   "source": "<TASK_ROOT>/rm/reconcile/expect.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/idscan.py",
+   "source": "<TASK_ROOT>/rm/reconcile/idscan.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/layers.py",
+   "source": "<TASK_ROOT>/rm/reconcile/layers.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/scan.py",
+   "source": "<TASK_ROOT>/rm/reconcile/scan.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/three.py",
+   "source": "<TASK_ROOT>/rm/reconcile/three.py",
+   "kind": "docs"
+  },
+  {
+   "path": "docs/release/reconcile/trees.py",
+   "source": "<TASK_ROOT>/rm/reconcile/trees.py",
    "kind": "docs"
   }
  ]

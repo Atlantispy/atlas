@@ -20,13 +20,16 @@ zeros, repeated specs and any existing output, store or log (P3c, P3d); its own 
 sections, cut from the script, run on fake folders: the newest generation up to <gen> stands in, this
 generation's arm is required, and the r4 serial replaces r2view's serial only if it ran r2's package
 (P3e). Round 3 (P1): every attempt up to <gen> that the newest replaced is copied to superseded/ and
-judged, so a rerun over a failed attempt FAILs; later generations and non-numeric names are neither.
+judged, so a rerun over a failed attempt FAILs. Round 3 re-review (P1): each case runs on a fresh fake
+tree mirroring the real evidence's names and must refuse for its own reason; an attempt log or store
+with no JSON (crashed or killed), a generation at or above <gen> (or above it at the merge), a rerun
+named other than -r<k>, k >= 2, or of an arm with no first attempt refuses the start and FAILs the
+merge before anything is merged.
 Writes WORK/proof.json; exit 0 only if every case is as expected.
 """
 import copy
 import json
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -353,85 +356,147 @@ case('superseded attempt of a set whose serial is missing (FAIL)', 1,
 
 
 # --- harness ------------------------------------------------------------------------------------
-def fake_harness():
-    """The harness with only its G= and PY= lines changed: a fake evidence tree holding the files the
-    real one has (r2 rerun store, r4 serial) and a stub interpreter, so a broken refusal cannot start
-    a real run or write real evidence."""
-    fake = WORK/'fakeg'
-    (fake/'scripts').mkdir(parents=True)
-    (fake/'evidence'/'workers-dj'/'iv2-store-w6-r2').mkdir(parents=True)
-    (fake/'evidence'/'workers-dj'/'iv1-serial-r4enc.json').write_text('{}', encoding='utf8')
-    stub = WORK/'stub.sh'
+REAL_OUT = HERE.parent/'evidence'/'workers-dj'
+
+
+def fake_harness(root, present=(), absent=()):
+    """The harness with only its G= and PY= lines changed, on a fresh fake evidence tree that mirrors
+    the real one's names (folders empty, files '{}'), so the controls also show that the real tree
+    passes the attempt audit; `present` adds fake OUT entries (a trailing / makes a folder) and `absent`
+    drops mirrored ones. A stub interpreter means a broken refusal cannot start a real run or write
+    real evidence."""
+    out = root/'evidence'/'workers-dj'
+    (root/'scripts').mkdir(parents=True)
+    out.mkdir(parents=True)
+    for p in sorted(REAL_OUT.iterdir()):
+        if p.name in absent:
+            continue
+        (out/p.name).mkdir() if p.is_dir() else (out/p.name).write_text('{}', encoding='utf8')
+    for p in present:
+        path = out/p.rstrip('/')
+        path.mkdir() if p.endswith('/') else path.write_text('{}', encoding='utf8')
+    stub = root/'stub.sh'
     stub.write_bytes(b'#!/usr/bin/env bash\necho STUB-RUN "$@"\nexit 0\n')
     text = HARNESS.read_text(encoding='utf8')
-    text, n1 = re.subn(r'^G=.*$', 'G="%s"' % fake.as_posix(), text, count=1, flags=re.M)
+    text, n1 = re.subn(r'^G=.*$', 'G="%s"' % root.as_posix(), text, count=1, flags=re.M)
     text, n2 = re.subn(r'^PY=.*$', 'PY="%s"' % stub.as_posix(), text, count=1, flags=re.M)
     assert n1 == n2 == 1, (n1, n2)
-    path = WORK/'harness-copy.sh'
+    path = root/'harness-copy.sh'
     path.write_bytes(text.encode('utf8'))
-    return path, fake/'evidence'/'workers-dj'
+    return path
 
 
-FAKE_HARNESS, FAKE_OUT = fake_harness()
+def harness_run(args, present=(), absent=()):
+    path = fake_harness(WORK/('h%03d' % (len(results)+1)), present, absent)
+    run = subprocess.run([BASH, str(path), *args], capture_output=True, text=True, timeout=120)
+    return run.returncode, (run.stdout+run.stderr).strip()
 
 
-def refuses(name, args, present=()):
-    """The harness must exit 2 before starting; `present` names fake OUT entries (a trailing / makes a
-    folder) that exist only for this case."""
-    made = []
-    for p in present:
-        path = FAKE_OUT/p.rstrip('/')
-        path.mkdir() if p.endswith('/') else path.write_text('{}', encoding='utf8')
-        made.append(path)
-    run = subprocess.run([BASH, str(FAKE_HARNESS), *args], capture_output=True, text=True, timeout=60)
-    for path in made:
-        shutil.rmtree(path) if path.is_dir() else path.unlink()
-    out = (run.stdout+run.stderr).strip()
-    fine = run.returncode == 2 and 'start' not in out and 'STUB-RUN' not in out
-    record('harness refuses: ' + name, 0 if fine else 1, 0, 'exit %d: %s' % (run.returncode, out[-140:]))
+def refuses(name, args, why, present=(), absent=()):
+    """The harness must exit 2 before starting, for the reason `why` (a fragment of its message)."""
+    code, out = harness_run(args, present, absent)
+    fine = code == 2 and why in out and 'start' not in out and 'STUB-RUN' not in out
+    record('harness refuses: ' + name, 0 if fine else 1, 0, 'exit %d: %s' % (code, out.replace('\n', ' | ')[-140:]))
 
 
-def proceeds(name, args):
-    run = subprocess.run([BASH, str(FAKE_HARNESS), *args], capture_output=True, text=True, timeout=120)
-    out = (run.stdout+run.stderr).strip()
+def proceeds(name, args, present=()):
+    code, out = harness_run(args, present)
     record('harness control: ' + name,
-           0 if run.returncode != 2 and 'start %s' % ' '.join(args) in out and 'STUB-RUN' in out else 1, 0,
-           'exit %d: %s' % (run.returncode, out.replace('\n', ' | ')[-140:]))
+           0 if code != 2 and 'start %s' % ' '.join(args) in out and 'STUB-RUN' in out else 1, 0,
+           'exit %d: %s' % (code, out.replace('\n', ' | ')[-140:]))
 
 
-proceeds('a valid start proceeds (stub runtime)', ['r7', 'iv2:6'])
+proceeds('a valid start proceeds on the real tree (stub runtime)', ['r3', 'iv2:6'])
 proceeds('two worker counts of one set proceed', ['r8', 'iv2:6', 'iv2:4'])
-refuses('no arguments', [])
-refuses('generation only', ['r3'])
-refuses('generation r1', ['r1', 'iv2:6'])
-refuses('generation without r', ['3', 'iv2:6'])
-refuses('generation r', ['r', 'iv2:6'])
-refuses('generation r3x', ['r3x', 'iv2:6'])
-refuses('generation r02 (leading zero)', ['r02', 'iv2:6'])
-refuses('generation r010 (leading zero)', ['r010', 'iv2:6'])
-refuses('unknown set', ['r3', 'iv3:6'])
-refuses('bad workers', ['r3', 'iv2:x'])
-refuses('workers 06 (leading zero)', ['r3', 'iv2:06'])
-refuses('workers 0', ['r3', 'iv2:0'])
-refuses('repeated spec', ['r3', 'iv2:6', 'iv2:6'])
-refuses('repeated spec after another', ['r3', 'iv2:6', 'iv1:6', 'iv2:6'])
-refuses('repeated r4serial', ['r3', 'iv2:r4serial', 'iv2:r4serial'])
-refuses('existing r2 rerun store of iv2 w6', ['r2', 'iv2:6'])
-refuses('existing r2 rerun after a good spec', ['r2', 'iv1:6', 'iv2:6'])
-refuses('existing rerun output json', ['r5', 'iv2:4'], present=['iv2-w4-r5.json'])
-refuses('existing rerun log', ['r5', 'iv2:4'], present=['iv2-w4-r5.log'])
-refuses('existing r4 serial json', ['r3', 'iv1:r4serial'])
-refuses('existing r4 serial store', ['r3', 'iv2:r4serial'], present=['iv2-store-r4enc/'])
-refuses('existing r4 serial log', ['r3', 'iv2:r4serial'], present=['iv2-serial-r4enc.log'])
-refuses('existing merged folder', ['r6', 'iv2:6'], present=['../workers-dj-merged-r6/'])
+proceeds('earlier generations with their JSON proceed', ['r5', 'iv2:6'],
+         present=['iv2-w6-r3.json', 'iv2-w6-r3.log', 'iv2-store-w6-r3/', 'iv1-w4-r4.json', 'iv1-store-w4-r4/',
+                  '../workers-dj-merged-r3/', '../workers-dj-merged-r4/'])
+refuses('no arguments', [], 'usage')
+refuses('generation only', ['r3'], 'usage')
+refuses('generation r1', ['r1', 'iv2:6'], 'bad generation')
+refuses('generation without r', ['3', 'iv2:6'], 'bad generation')
+refuses('generation r', ['r', 'iv2:6'], 'bad generation')
+refuses('generation r3x', ['r3x', 'iv2:6'], 'bad generation')
+refuses('generation r02 (leading zero)', ['r02', 'iv2:6'], 'bad generation')
+refuses('generation r010 (leading zero)', ['r010', 'iv2:6'], 'bad generation')
+refuses('unknown set', ['r3', 'iv3:6'], 'unknown set')
+refuses('bad workers', ['r3', 'iv2:x'], 'bad workers')
+refuses('workers 06 (leading zero)', ['r3', 'iv2:06'], 'bad workers')
+refuses('workers 0', ['r3', 'iv2:0'], 'bad workers')
+refuses('repeated spec', ['r3', 'iv2:6', 'iv2:6'], 'repeated')
+refuses('repeated spec after another', ['r3', 'iv2:6', 'iv1:6', 'iv2:6'], 'repeated')
+refuses('repeated r4serial', ['r3', 'iv2:r4serial', 'iv2:r4serial'], 'repeated')
+refuses('existing r2 rerun store of iv2 w6', ['r2', 'iv2:6'], 'exists:')
+refuses('existing r2 rerun after a good spec', ['r2', 'iv1:6', 'iv2:6'], 'exists:')
+refuses('existing rerun output json', ['r5', 'iv2:4'], 'exists:', present=['iv2-w4-r5.json'])
+refuses('existing rerun log', ['r5', 'iv2:4'], 'exists:', present=['iv2-w4-r5.log'])
+refuses('existing r4 serial json', ['r3', 'iv1:r4serial'], 'exists:')
+refuses('existing r4 serial store', ['r3', 'iv2:r4serial'], 'exists:', present=['iv2-store-r4enc/'])
+refuses('existing r4 serial log', ['r3', 'iv2:r4serial'], 'exists:', present=['iv2-serial-r4enc.log'])
+refuses('existing merged folder', ['r6', 'iv2:6'], 'exists:', present=['../workers-dj-merged-r6/'])
+# Round 3 re-review (P1): attempts a rerun could hide.
+refuses('crashed r3 (log and store, no JSON) before r4', ['r4', 'iv2:6'], 'no JSON (crashed or killed): iv2-w6-r3.log',
+        present=['iv2-w6-r3.log', 'iv2-store-w6-r3/'])
+refuses('crashed r3 store only, other arm', ['r4', 'iv2:6'], 'no JSON (crashed or killed): iv2-store-w4-r3',
+        present=['iv2-store-w4-r3/'])
+refuses('crashed first attempt (log, no JSON)', ['r3', 'iv2:6'], 'no JSON (crashed or killed): iv2-w6.log',
+        absent=['iv2-w6.json'])
+refuses('crashed r4 serial (log, no JSON)', ['r3', 'iv2:6'], 'r4 serial with no JSON', absent=['iv1-serial-r4enc.json'])
+refuses('later r10 output exists (out of order)', ['r4', 'iv2:6'], 'generation above the one allowed (r3): iv2-w6-r10.json',
+        present=['iv2-w6-r10.json'])
+refuses('same generation on another arm exists', ['r4', 'iv2:6'], 'generation above the one allowed (r3): iv1-w6-r4.json',
+        present=['iv1-w6-r4.json'])
+refuses('later store only (out of order)', ['r4', 'iv2:6'], 'generation above the one allowed (r3): iv1-store-w6-r9',
+        present=['iv1-store-w6-r9/'])
+refuses('later merged folder exists', ['r4', 'iv2:6'], 'generation above the one allowed (r3): workers-dj-merged-r9',
+        present=['../workers-dj-merged-r9/'])
+refuses('merged folder with no generation number', ['r4', 'iv2:6'], 'merged folder with no generation number',
+        present=['../workers-dj-merged-r03/'])
+refuses('rerun named r03', ['r4', 'iv2:6'], 'no generation number (r2 or later): iv2-w6-r03.json', present=['iv2-w6-r03.json'])
+refuses('rerun named r1', ['r4', 'iv2:6'], 'no generation number (r2 or later): iv2-w6-r1.json', present=['iv2-w6-r1.json'])
+refuses('rerun named r3x', ['r4', 'iv2:6'], 'no generation number (r2 or later): iv2-w6-r3x.json', present=['iv2-w6-r3x.json'])
+refuses('rerun of an arm with no first attempt', ['r4', 'iv2:6'], 'no first attempt: iv1-w2-r2.json',
+        present=['iv1-w2-r2.json'])
+refuses('unknown file among the attempts', ['r4', 'iv2:6'], 'unknown file among the attempts: iv2-w6.json.bak',
+        present=['iv2-w6.json.bak'])
+refuses('workers with a leading zero among the attempts', ['r4', 'iv2:6'], 'unknown file among the attempts: iv2-w06.json',
+        present=['iv2-w06.json'])
+
+
+def first_attempt(name, out_exists):
+    """Round 3 re-check (P2): the first-attempt script must refuse an existing OUT before its lock wait,
+    so it cannot write a first-attempt JSON over a crashed attempt; with no OUT it proceeds (stub)."""
+    root = WORK/('h%03d' % (len(results)+1))
+    fake_harness(root)
+    if not out_exists:
+        (root/'evidence'/'workers-dj').rename(root/'evidence'/'workers-dj-set-aside')
+    text = (HERE/'run_workers_parity_dj.sh').read_text(encoding='utf8')
+    text, n1 = re.subn(r'^G=.*$', 'G="%s"' % root.as_posix(), text, count=1, flags=re.M)
+    text, n2 = re.subn(r'^PY=.*$', 'PY="%s"' % (root/'stub.sh').as_posix(), text, count=1, flags=re.M)
+    assert n1 == n2 == 1, (n1, n2)
+    path = root/'first-copy.sh'
+    path.write_bytes(text.encode('utf8'))
+    run = subprocess.run([BASH, str(path)], capture_output=True, text=True, timeout=120)
+    out = (run.stdout+run.stderr).strip()
+    if out_exists:
+        fine = run.returncode == 2 and 'exists:' in out and 'lock acquired' not in out
+    else:
+        fine = 'lock acquired' in out and 'summary exit 0' in out
+    record('first-attempt script: ' + name, 0 if fine else 1, 0, 'exit %d: %s' % (run.returncode, out.replace('\n', ' | ')[-140:]))
+
+
+first_attempt('refuses the real tree (existing OUT, crashed attempt cannot be overwritten)', True)
+first_attempt('control: proceeds when OUT does not exist (stub runtime)', False)
 
 TEXT = HARNESS.read_text(encoding='utf8')
+AUDIT = re.search(r'^audit \(\) \{.*?^\}\n', TEXT, re.S | re.M)
 TAIL = re.search(r'^newest \(\) \{.*\Z', TEXT, re.S | re.M)
 
 
-def merge(name, want, gen, specs, present, check, r2=None):
-    """Run the harness's newest() + merge + summary section on a fake OUT holding `present` files;
-    r2 overrides the workers-six-r2 serials."""
+def merge(name, want, gen, specs, present, check, r2=None, extra=()):
+    """Run the harness's audit() + newest() + merge + summary section on a fake OUT holding `present`
+    JSON files and `extra` entries (a trailing / makes a folder); r2 overrides the workers-six-r2
+    serials."""
     root = WORK/('m%02d' % (len(results)+1))
     out, g = root/'out', root/'g'
     out.mkdir(parents=True)
@@ -444,12 +509,14 @@ def merge(name, want, gen, specs, present, check, r2=None):
         base = stem.split('-r')[0] if re.search(r'-r\d+$', stem) else stem
         body = copy.deepcopy(files['out', base]) if d is None else d
         (out/(stem + '.json')).write_text(json.dumps(body), encoding='utf8')
-    if TAIL is None:
-        record('merge: ' + name, 'no tail', want, 'newest() not found in the harness')
+    for p in extra:
+        (out/p.rstrip('/')).mkdir() if p.endswith('/') else (out/p).write_text('', encoding='utf8')
+    if TAIL is None or AUDIT is None:
+        record('merge: ' + name, 'no tail', want, 'audit() or newest() not found in the harness')
         return
     script = ('OUT="%s"\nG="%s"\nPY="%s"\ngen=%s\nGN=%s\nM="$G/evidence/workers-dj-merged-$gen"\nset -- %s\n'
               % (out.as_posix(), g.as_posix(), Path(sys.executable).as_posix(), gen, gen[1:], ' '.join(specs))
-              + TAIL.group(0))
+              + AUDIT.group(0) + TAIL.group(0))
     run = subprocess.run([BASH, '-c', script], capture_output=True, text=True, cwd=str(HERE), timeout=120)
     m = g/'evidence'/('workers-dj-merged-' + gen)
     text = (run.stdout+run.stderr).strip()
@@ -502,9 +569,32 @@ merge('r2 stands in when r3 reran another arm', 0, 'r3', ['iv1:6'],
       dict(ALL, **{'iv2-w6': marked('iv2-w6@first'), 'iv2-w6-r2': marked('iv2-w6@r2'),
                    'iv1-w6': marked('iv1-w6@first'), 'iv1-w6-r3': marked('iv1-w6@r3')}),
       lambda m, t: same(m, 'iv2-w6', marked('iv2-w6@r2')) is True and same(m, 'iv1-w6', marked('iv1-w6@r3')))
-merge('later generation r4 (failed) neither stands in nor is judged by r3', 0, 'r3', ['iv2:6'],
+merge('later generation r4 (failed) beside r3: FAIL, nothing merged (re-review P1)', 1, 'r3', ['iv2:6'],
       dict(ALL, **{'iv2-w6-r3': marked('iv2-w6@r3'), 'iv2-w6-r4': dict(marked('iv2-w6@r4'), records_sha256='X'*64)}),
-      then(lambda m, t: same(m, 'iv2-w6', marked('iv2-w6@r3')), lambda m, t: superseded_are(m, 'iv2-w6.json')))
+      lambda m, t: ('generation above the one allowed (r3): iv2-w6-r4.json' in t and not m.exists())
+      or 'refused for another reason, or merged')
+merge('crashed r3 (log and store, no JSON) under a passing r4: FAIL (re-review P1)', 1, 'r4', ['iv2:6'],
+      dict(ALL, **{'iv2-w6-r4': None}), extra=['iv2-w6-r3.log', 'iv2-store-w6-r3/'],
+      check=lambda m, t: ('no JSON (crashed or killed): iv2-w6-r3.log' in t
+                          and 'no JSON (crashed or killed): iv2-store-w6-r3' in t and not m.exists())
+      or 'refused for another reason, or merged')
+merge('this generation crashed on one of two arms: FAIL', 1, 'r3', ['iv2:6', 'iv1:6'],
+      dict(ALL, **{'iv2-w6-r3': None}), extra=['iv1-w6-r3.log', 'iv1-store-w6-r3/'],
+      check=lambda m, t: 'no JSON (crashed or killed): iv1-w6-r3.log' in t or 'refused for another reason')
+merge('rerun of an arm with no first attempt: FAIL', 1, 'r3', ['iv2:6'],
+      dict(ALL, **{'iv2-w6-r3': None, 'iv1-w2-r2': marked('iv1-w4@r2')}),
+      lambda m, t: 'no first attempt: iv1-w2-r2.json' in t or 'refused for another reason')
+merge('rerun named r1 (failed): FAIL', 1, 'r3', ['iv2:6'],
+      dict(ALL, **{'iv2-w6-r3': None, 'iv2-w6-r1': dict(marked('iv2-w6@r1'), records_sha256='X'*64)}),
+      lambda m, t: 'no generation number (r2 or later): iv2-w6-r1.json' in t or 'refused for another reason')
+merge('crashed r4 serial (store, no JSON): FAIL', 1, 'r3', ['iv2:6'],
+      dict(ALL, **{'iv2-w6-r3': None}), extra=['iv1-store-r4enc/'],
+      check=lambda m, t: 'r4 serial with no JSON (crashed or killed): iv1-store-r4enc' in t or 'refused for another reason')
+merge('logs and stores beside their JSON: PASS', 0, 'r3', ['iv2:6'],
+      dict(ALL, **{'iv2-w6-r2': None, 'iv2-w6-r3': None}),
+      extra=['iv2-w6.log', 'iv2-store-w6/', 'iv2-w6-r2.log', 'iv2-store-w6-r2/', 'iv2-w6-r3.log', 'iv2-store-w6-r3/',
+             'iv1-w4.log', 'iv1-store-w4/', 'iv2-store/', 'iv2-serial.log'],
+      check=lambda m, t: superseded_are(m, 'iv2-w6.json', 'iv2-w6-r2.json'))
 merge('r3 over a FAILED first attempt: FAIL (round 3 P1)', 1, 'r3', ['iv2:6'],
       dict(ALL, **{'iv2-w6': dict(marked('iv2-w6@first'), records_sha256='X'*64), 'iv2-w6-r3': None}),
       lambda m, t: 'superseded iv2-w6.json FAIL' in t or 'the failed first attempt was not judged')
@@ -518,10 +608,12 @@ merge('r3 passing over two void attempts: PASS', 0, 'r3', ['iv2:6'],
                    'iv2-w6-r2': arm_with('iv2-w6', held('iv2-w6', ('memory', 2))), 'iv2-w6-r3': None}),
       then(lambda m, t: superseded_are(m, 'iv2-w6.json', 'iv2-w6-r2.json'),
            lambda m, t: t.count('VOID-ENVIRONMENT peak') == 2 or 'both superseded attempts should be VOID'))
-merge('non-numeric rerun name neither stands in nor is judged', 0, 'r3', ['iv2:6'],
+merge('non-numeric rerun names (failed): FAIL, nothing merged (re-review P1)', 1, 'r3', ['iv2:6'],
       dict(ALL, **{'iv2-w6-r3': marked('iv2-w6@r3'), 'iv2-w6-r3x': dict(marked('iv2-w6@r3x'), records_sha256='X'*64),
                    'iv2-w6-r03': dict(marked('iv2-w6@r03'), records_sha256='X'*64)}),
-      then(lambda m, t: same(m, 'iv2-w6', marked('iv2-w6@r3')), lambda m, t: superseded_are(m, 'iv2-w6.json')))
+      lambda m, t: ('no generation number (r2 or later): iv2-w6-r3x.json' in t
+                    and 'no generation number (r2 or later): iv2-w6-r03.json' in t and not m.exists())
+      or 'refused for another reason, or merged')
 merge('r10 beats r9 (numeric, not text, order)', 0, 'r10', ['iv2:6'],
       dict(ALL, **{'iv2-w6-r9': marked('iv2-w6@r9'), 'iv2-w6-r10': marked('iv2-w6@r10')}),
       lambda m, t: same(m, 'iv2-w6', marked('iv2-w6@r10')))

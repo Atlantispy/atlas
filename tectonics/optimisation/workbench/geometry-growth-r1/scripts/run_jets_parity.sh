@@ -11,6 +11,8 @@
 # capped query that no deeper stage re-runs (round 2, 16 Oct: deep count and capped lists pinned;
 # round 3: the run reads hashed copies of the lists, and the deep rows must be exactly those queries).
 # The script exits 0 only if all three stages pass. evidence/jets-r1 (bare wait, unchecked) is UNVERIFIED.
+# Partitions are the grid files (make_grid_file.py): replay_surfaces.py refuses a compressed partition over
+# 1 MB (memory rule, 16 Oct), so the whole-partition paths would have failed every shard (smoke, 16 Oct 18:02).
 set -u
 export PYTHONHASHSEED=0
 T="C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10"
@@ -27,8 +29,8 @@ OUT="$G/evidence/$1"
 # Inputs first: an empty reference list would turn --only-cells-from off and run whole shards.
 REFS=$(ls "$F"/ref-iv2-surfaces-s*.jsonl 2>/dev/null | paste -sd, -)
 [ -n "$REFS" ] || { echo "no reference shards in $F"; exit 2; }
-for f in "$G/work/iv1-supports.jsonl.gz" "$G/work/next-iv1-rc1-r1.json.gz" "$G/work/iv1-interval-r1.json.gz" \
-         "$F/iv2-supports.jsonl.gz" "$F/iv2-partition.json.gz" "$G/work/iv2-interval-only-r1.json.gz" \
+for f in "$G/work/iv1-supports.jsonl.gz" "$G/work/next-iv1-rc1-r1.grid.json.gz" "$G/work/iv1-interval-r1.json.gz" \
+         "$F/iv2-supports.jsonl.gz" "$F/iv2-partition.grid.json.gz" "$G/work/iv2-interval-only-r1.json.gz" \
          "$F"/capped-list-{0,1,2,3,4,5}.jsonl; do
   [ -s "$f" ] || { echo "missing or empty input $f"; exit 2; }
 done
@@ -81,12 +83,12 @@ check () {  # stage shards base_rt jets_rt expected_rows cap_rule
 echo "start $(date +%H:%M:%S)"
 for arm in base jets; do
   rt=$RT_IV1_BASE; [ $arm = jets ] && rt=$RT_IV1_JETS
-  run6 iv1-surfaces-$arm "$rt" "$G/work/iv1-supports.jsonl.gz" "$G/work/next-iv1-rc1-r1.json.gz" "$G/work/iv1-interval-r1.json.gz" "$W1" 60 6 0 1 2 3 4 5
+  run6 iv1-surfaces-$arm "$rt" "$G/work/iv1-supports.jsonl.gz" "$G/work/next-iv1-rc1-r1.grid.json.gz" "$G/work/iv1-interval-r1.json.gz" "$W1" 60 6 0 1 2 3 4 5
 done
 check iv1-surfaces 0,1,2,3,4,5 "$RT_IV1_BASE" "$RT_IV1_JETS" "$EXPECT_IV1" none
 for arm in base jets; do
   rt=$RT_IV2_BASE; [ $arm = jets ] && rt=$RT_IV2_JETS
-  run6 iv2-sample-$arm "$rt" "$F/iv2-supports.jsonl.gz" "$F/iv2-partition.json.gz" "$G/work/iv2-interval-only-r1.json.gz" "$W2" 2 60 0 10 20 30 40 50 -- --only-cells-from "$REFS"
+  run6 iv2-sample-$arm "$rt" "$F/iv2-supports.jsonl.gz" "$F/iv2-partition.grid.json.gz" "$G/work/iv2-interval-only-r1.json.gz" "$W2" 2 60 0 10 20 30 40 50 -- --only-cells-from "$REFS"
 done
 # A sample cap counts only for a query the deep stage re-runs (P3-a); IV1 and deep accept no cap, and
 # the deep stage's rows must be exactly the listed queries (round 3).
@@ -95,7 +97,7 @@ for arm in base jets; do
   rt=$RT_IV2_BASE; [ $arm = jets ] && rt=$RT_IV2_JETS
   pairs=()
   for i in 0 1 2 3 4 5; do
-    timeout 5400 "$PY" -B replay_surfaces.py --supports "$F/iv2-supports.jsonl.gz" --partition "$F/iv2-partition.json.gz" \
+    timeout 5400 "$PY" -B replay_surfaces.py --supports "$F/iv2-supports.jsonl.gz" --partition "$F/iv2-partition.grid.json.gz" \
       --interval "$G/work/iv2-interval-only-r1.json.gz" --stream-width $W2 --runtime "$rt" --cap-cpu 120 --kinds interface \
       --only-list "$L/capped-list-$i.jsonl" --output "$OUT/iv2-deep-$arm-s$i.jsonl" > "$OUT/iv2-deep-$arm-s$i.log" 2>&1 &
     pairs+=($! "$i")

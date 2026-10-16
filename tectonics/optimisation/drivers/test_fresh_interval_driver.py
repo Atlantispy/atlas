@@ -30,6 +30,18 @@ R9 = HERE.parents[2]/'heat-repair-20261007'/'probe_heat_original_connected_r9.py
 COMPOSED = HERE/'composed-r2'
 COMMIT_STAGES = ('heat-result-packaging', 'heat-checkpoint-save', 'heat-checkpoint-r3-checks',
                  'heat-exterior-finish', 'endpoint-store-publish')
+# Item 11 M: markers at calls inside the finish and the projection, and three heat counters.
+R9_TICKS = ('component_volume_queries', 'heat_faces', 'heat_faces_collected')
+HEAT_TICKS = ('metric_identity_calls', 'closed_guard_certificates', 'closed_guard_admissible_tests')
+
+
+def closed_guard_scan():
+    """Stand-in for the closed guard's scan: the two nested functions its counters observe, by name."""
+    def certificate(value):
+        return value
+    def admissible(value):
+        return value
+    return certificate, admissible
 
 
 def evaluate(node):
@@ -119,7 +131,8 @@ class Recorder:
         return [c for c in self.calls if c[0] == name]
 
 
-def stand_ins(log, *, opened_kind='root', after_intervals=1, identity='w'*64, r3_checks=True):
+def stand_ins(log, *, opened_kind='root', opened_intervals=0, after_intervals=1, identity='w'*64, r3_checks=True,
+              guard_scan=closed_guard_scan):
     @contextmanager
     def cm(name, value=None, **kwargs):
         log.add(name, **kwargs)
@@ -142,14 +155,17 @@ def stand_ins(log, *, opened_kind='root', after_intervals=1, identity='w'*64, r3
 
     class Workflow:
         def __init__(self, store, intervals, kind):
-            self._store, self.workflow_id, self._intervals = store, 'w'*64, intervals
-            self._root, self._head = json.dumps(root), {'kind': kind, 'key': 'h'*64}
+            self._store, self.workflow_id, self._intervals, self._open = store, 'w'*64, intervals, False
+            self._root, self._head = json.dumps(root), {'kind': kind, 'key': 'h'*64, 'sequence': intervals}
+            self._funding = 'funding'
         def __enter__(self):
+            self._open = True
             return self
         def __exit__(self, *_):
+            self._open = False
             return False
         def inspect(self):
-            return {'intervals': self._intervals, 'head': self._head['key'], 'funding_id': 'funding'}
+            return {'intervals': self._intervals, 'head': self._head['key'], 'funding_id': self._funding}
 
         @classmethod
         def create(cls, *args, **kwargs):
@@ -169,7 +185,7 @@ def stand_ins(log, *, opened_kind='root', after_intervals=1, identity='w'*64, r3
         @classmethod
         def open(cls, *args, **kwargs):
             log.add('open', *args, **kwargs)
-            return cls(args[0], 0, opened_kind)
+            return cls(args[0], opened_intervals, opened_kind)
 
         def _publish(self, *args, **kwargs):
             raise AssertionError('observed only; the stand-in advance never publishes')
@@ -202,7 +218,8 @@ def stand_ins(log, *, opened_kind='root', after_intervals=1, identity='w'*64, r3
         joined=SimpleNamespace(_advance_current_interval=advance,
                                _check_reopened=lambda t, w, r: log.add('check_reopened', r)),
         check_initial_pressure_force=pressure, ACTUATED_CONTROL='actuated',
-        geometry_observer=SimpleNamespace(observe=lambda guard, stages, ticks, **k: cm('observe', stages=stages)),
+        geometry_observer=SimpleNamespace(observe=lambda guard, stages, ticks, **k: cm('observe', stages=stages,
+                                                                                       ticks=ticks)),
         threadpool_limits=lambda n: cm('threadpool_limits', n=n), PF='PF',
         prepared_interval_driver=SimpleNamespace(selector_gate=lambda pf: {'seed': '0'}),
         G=SimpleNamespace(enclose_differential_ale='geometry', component_volume_bounds='bounds-fn'),
@@ -211,8 +228,12 @@ def stand_ins(log, *, opened_kind='root', after_intervals=1, identity='w'*64, r3
     m.J.I = SimpleNamespace(F=SimpleNamespace(LOW=SimpleNamespace(solve='solve'),
         FUNCTIONS=SimpleNamespace(reconstruct='reconstruct', _face='face',
                                   PARALLEL=SimpleNamespace(completed='completed')),
-        FINISH=SimpleNamespace(finish='finish')), N=SimpleNamespace(project='project'),
-        HEAT_LEDGER=SimpleNamespace(package_result='package-result'))
+        FINISH=SimpleNamespace(finish='finish', C=SimpleNamespace(correct='correct'),
+                               Q=SimpleNamespace(closed_guard='closed-guard', _guard=guard_scan),
+                               I=SimpleNamespace(issue='issue'))),
+        N=SimpleNamespace(project='project', R=SimpleNamespace(verified_private='decode', calculate='exact')),
+        HEAT_LEDGER=SimpleNamespace(package_result='package-result'),
+        INDEXED=SimpleNamespace(metric_identity='metric-identity'))
     return m, case, spatial_owner
 
 
@@ -222,6 +243,25 @@ class Store:
 
     def metadata(self, key):
         return {'key': 'k'*64, 'kind': 'root', 'sequence': 0}
+
+
+def lineage(**change):
+    """Item 21: the runner's sealed-lineage record for an interval-1 parent of the stand-in root."""
+    return dict({'schema': 'atlas.fresh-interval-lineage.v1', 'interval': 1, 'workflow_id': 'w'*64,
+                 'root_key': 'k'*64, 'head_key': 'h'*64}, **change)
+
+
+def advance_once(log, effect=None):
+    """The prepared driver's stand-in: it advances the open workflow once, or applies ``effect``."""
+    def advance_prepared_interval(**kwargs):
+        workflow = kwargs['workflow']
+        log.add('driver', **kwargs)
+        assert workflow._open, 'the prepared driver runs with the workflow open'
+        if effect is not None:
+            return effect(workflow)
+        workflow._intervals += 1
+        workflow._head = {'kind': 'successor', 'key': 's'*64, 'sequence': workflow._intervals}
+    return SimpleNamespace(advance_prepared_interval=advance_prepared_interval)
 
 
 class WiringTests(unittest.TestCase):
@@ -278,6 +318,8 @@ class WiringTests(unittest.TestCase):
         self.log = Recorder()
         m, case, owner = stand_ins(self.log, **options)
         finished, record = [], {}
+        # Kept before the call, so a test of a refusal can read what the driver recorded before it refused.
+        self.record = record
 
         def finish(workflow, *, before, after, parent, root_bytes):
             finished.append((before['intervals'], after['intervals']))
@@ -290,7 +332,6 @@ class WiringTests(unittest.TestCase):
             record=record, save=lambda: None, query_checkpoints=lambda execution: self.checkpoints(execution),
             finish=finish)
         self.assertEqual(record['root_reproduced'], {name: expected[name] for name in F.ROOT_IDENTITY})
-        self.record = record
         return result, finished, case, owner
 
     @contextmanager
@@ -320,13 +361,70 @@ class WiringTests(unittest.TestCase):
     def observed_stages(self):
         (observe,) = self.log.named('observe')
         stages = observe[2]['stages']
-        # The six r9 stages first, unchanged.
-        self.assertEqual(stages[:6], [('geometry', 'actual-differential-geometry'),
+        # The six r9 stages keep their functions and order; each item 11 M marker follows the stage it splits.
+        self.assertEqual(stages[:11], [('geometry', 'actual-differential-geometry'),
             ('forward', 'actual-composed-heat-forward'), ('solve', 'heat-low-predictor'),
             ('reconstruct', 'heat-certified-polygon-reconstruction'), ('finish', 'heat-conservative-finish'),
-            ('project', 'heat-native-projection')])
+            ('correct', 'heat-finish-correction'), ('closed-guard', 'heat-finish-closed-guard'),
+            ('issue', 'heat-finish-issue'), ('project', 'heat-native-projection'),
+            ('decode', 'heat-projection-decode'), ('exact', 'heat-projection-exact')])
         self.assertEqual(self.record['observed_stages'], [name for _, name in stages])
-        return {name: value for value, name in stages[6:]}
+        return {name: value for value, name in stages[11:]}
+
+    def observed_ticks(self):
+        (observe,) = self.log.named('observe')
+        return observe[2]['ticks']
+
+    def test_item11m_heat_counters_follow_the_r9_three(self):
+        self.run_b()
+        self.observed_stages()
+        ticks = self.observed_ticks()
+        self.assertEqual([name for _, name in ticks], list(R9_TICKS+HEAT_TICKS))
+        self.assertEqual([value for value, _ in ticks[:4]], ['bounds-fn', 'face', 'completed', 'metric-identity'])
+        # The scan makes its nested functions afresh at each call; the observer reads only their code object.
+        certificate, admissible = closed_guard_scan()
+        (certificates, _), (admissibles, _) = ticks[4:]
+        self.assertEqual((sorted(vars(certificates)), sorted(vars(admissibles))), (['__code__'], ['__code__']))
+        self.assertIs(certificates.__code__, certificate.__code__)
+        self.assertIs(admissibles.__code__, admissible.__code__)
+
+    def test_item11m_a_scan_without_one_direct_nested_function_refuses_before_the_admission(self):
+        def without():
+            return None
+
+        def only_certificate():
+            def certificate(value):
+                return value
+            return certificate
+
+        def twice(flag):
+            if flag:
+                def certificate(value):
+                    return 1
+            else:
+                def certificate(value):
+                    return 2
+            def admissible(value):
+                return value
+            return certificate, admissible
+
+        def deeper():
+            def outer():
+                def certificate(value):
+                    return value
+                def admissible(value):
+                    return value
+                return certificate, admissible
+            return outer
+
+        for scan, missing in ((without, 'certificate'), (only_certificate, 'admissible'), (twice, 'certificate'),
+                              (deeper, 'certificate')):
+            with self.subTest(scan=scan.__name__):
+                with self.assertRaisesRegex(F.FreshIntervalRefused, 'exactly one nested %s' % missing):
+                    self.run_b(guard_scan=scan)
+                # Refused before the admission: run B built no fixture and opened no observer.
+                self.assertEqual((self.log.named('fixture'), self.log.named('observe')), ([], []))
+                self.assertNotIn('observed_stages', self.record)
 
     def test_item11_the_projection_to_commit_window_is_split_in_call_order(self):
         self.run_b()
@@ -397,6 +495,154 @@ class WiringTests(unittest.TestCase):
         finally:
             os.environ['PYTHONHASHSEED'] = saved if saved is not None else '0'
         self.assertEqual(self.log.calls, [])
+
+    # Item 21: interval N >= 2 reopens the adopted interval N-1 head and advances it through the prepared driver.
+    @contextmanager
+    def active_checkpoints(self, execution):
+        self.log.add('checkpoints', execution.kind)
+        yield 'checkpoint-owner'
+        self.log.add('checkpoints-closed')
+
+    def run_successor(self, change=None, chain=None, effect=None, **options):
+        m, _, _ = stand_ins(self.log)
+        expected = self.create_root(m)
+        if change is not None:
+            expected = dict(expected, **change)
+        self.log, self.phases = Recorder(), []
+        m, case, owner = stand_ins(self.log, **{'opened_kind': 'successor', 'opened_intervals': 1, **options})
+        m.prepared_interval_driver = advance_once(self.log, effect)
+        self.chain = lineage() if chain is None else chain
+        self.guard, self.record, self.finished = SimpleNamespace(check='check'), {}, []
+        self.save = lambda: self.log.add('save')
+
+        def finish(workflow, *, before, after, parent, root_bytes):
+            self.log.add('finish')
+            self.finished.append((workflow, before['intervals'], after['intervals']))
+            # Captured before the advance: the adopted parent head and the unchanged root bytes.
+            self.assertTrue(workflow._open)
+            self.assertEqual((parent['kind'], parent['key'], root_bytes), ('successor', 'h'*64, workflow._root))
+            return 'finished'
+        result = F.advance_successor_interval(m, store=Store(), expected_root=expected, lineage=self.chain,
+            budget='budget', artifacts=Path('artifacts'), phase=self.phases.append, guard=self.guard,
+            record=self.record, save=self.save, query_checkpoints=self.active_checkpoints, finish=finish)
+        return result, expected, m, case, owner
+
+    def assertNothingAdvanced(self):
+        self.assertEqual([self.log.named(name) for name in ('checkpoints', 'driver', 'finish')], [[], [], []])
+
+    def test_successor_opens_the_lineage_head_and_advances_once_through_the_prepared_driver(self):
+        result, expected, m, case, owner = self.run_successor()
+        self.assertEqual(result, 'finished')
+        ((workflow, parent_intervals, intervals),) = self.finished
+        self.assertEqual((parent_intervals, intervals), (1, 2))
+        (opened,) = self.log.named('open')
+        self.assertEqual(opened[1][1:5], ('w'*64, case['collar'], case['owner'], case['funding']))
+        self.assertEqual(opened[2], {'budget': 'budget', 'exterior_owner': owner})
+        (driver,) = self.log.named('driver')
+        kwargs = driver[2]
+        self.assertEqual(set(kwargs), {'case', 'workflow', 'base', 'execution', 'guard', 'record', 'save',
+                                       'artifacts', 'query_checkpoints', 'lineage', 'joined_module'})
+        same = {'case': case, 'workflow': workflow, 'guard': self.guard, 'record': self.record, 'save': self.save,
+                'lineage': self.chain, 'joined_module': m.joined}
+        for name, value in same.items():
+            self.assertIs(kwargs[name], value, name)
+        self.assertIsNone(kwargs['base'])
+        self.assertEqual((kwargs['execution'].kind, kwargs['artifacts'], kwargs['query_checkpoints']),
+                         ('scipy', Path('artifacts'), 'checkpoint-owner'))
+        # The completed-query owner is bound to the heat context and stays active through finish;
+        # the record is saved between the advance and finish.
+        self.assertEqual(self.log.named('checkpoints')[0][1], ('scipy',))
+        names = [call[0] for call in self.log.calls]
+        order = ('open', 'checkpoints', 'driver', 'save', 'finish', 'checkpoints-closed')
+        self.assertEqual([name for name in names if name in order], list(order))
+        self.assertLess(names.index('finish'), names.index('verify_boundary'))
+        # The prepared driver owns the continuation pressure/force step, the observer and the thread limit.
+        self.assertEqual([self.log.named(name) for name in ('pressure', 'advance', 'observe', 'threadpool_limits')],
+                         [[], [], [], []])
+        self.assertEqual(self.record['root_reproduced'], {name: expected[name] for name in F.ROOT_IDENTITY})
+        self.assertIn('reopen-adopted-successor-head', self.phases)
+
+    def test_successor_refuses_an_unsealed_or_foreign_lineage_before_any_admission(self):
+        unsigned = {k: v for k, v in lineage().items() if k != 'schema'}
+        for chain, message in ((['not', 'a', 'record'], 'sealed lineage record'),
+                               (lineage(schema='atlas.fresh-interval-lineage.v0'), 'sealed lineage record'),
+                               (unsigned, 'sealed lineage record'),
+                               (lineage(interval=0), 'interval 1 or later'),
+                               (lineage(interval=True), 'interval 1 or later'),
+                               (lineage(interval=1.0), 'interval 1 or later'),
+                               (lineage(interval='1'), 'interval 1 or later'),
+                               (lineage(workflow_id='x'*64), "not of run A's root: workflow_id$"),
+                               (lineage(root_key='x'*64), "not of run A's root: root_key$")):
+            with self.subTest(chain=chain):
+                with self.assertRaisesRegex(F.FreshIntervalRefused, message):
+                    self.run_successor(chain=chain)
+                # Nothing after run A's root ran: no admission, no phase.
+                self.assertEqual((self.log.calls, self.phases), ([], []))
+
+    def test_successor_refuses_a_head_other_than_the_lineage_parent(self):
+        for options, chain, field in (({}, lineage(head_key='x'*64), 'head_key'),
+                                      ({'opened_intervals': 2}, None, 'interval'),
+                                      ({}, lineage(interval=2), 'interval'),
+                                      ({'opened_kind': 'root'}, None, 'kind')):
+            with self.subTest(field=field, options=options):
+                with self.assertRaisesRegex(F.FreshIntervalRefused,
+                                            'other than the sealed lineage parent: '+field+'$'):
+                    self.run_successor(chain=chain, **options)
+                self.assertNothingAdvanced()
+
+    def test_successor_refuses_any_difference_from_run_a_root(self):
+        for change in ({'root_metadata_sha256': '0'*64}, {'execution_provenance': {'context': 'other'}},
+                       {'preparation_ids': {'owner': 'other'}}, {'sequence': 1}, {'kind': 'successor'}):
+            with self.subTest(change=next(iter(change))):
+                with self.assertRaisesRegex(F.FreshIntervalRefused,
+                                            'differs from run A sealed root: '+next(iter(change))+'$'):
+                    self.run_successor(change=change)
+                self.assertNothingAdvanced()
+
+    def test_successor_refuses_unless_the_driver_advanced_exactly_once(self):
+        def successor(workflow, steps):
+            workflow._intervals += steps
+            workflow._head = {'kind': 'successor', 'key': 's'*64, 'sequence': workflow._intervals}
+
+        def nothing(workflow):
+            pass
+
+        def twice(workflow):
+            successor(workflow, 2)
+
+        def root_changed(workflow):
+            successor(workflow, 1)
+            workflow._root = json.dumps({'key': 'x'*64, 'kind': 'root', 'sequence': 0})
+
+        def head_unchanged(workflow):
+            workflow._intervals += 1
+
+        def funding_changed(workflow):
+            successor(workflow, 1)
+            workflow._funding = 'other-funding'
+        for effect in (nothing, twice, root_changed, head_unchanged, funding_changed):
+            with self.subTest(effect=effect.__name__):
+                with self.assertRaisesRegex(F.FreshIntervalRefused, 'interval 2 did not advance exactly once'):
+                    self.run_successor(effect=effect)
+                self.assertEqual((len(self.log.named('driver')), self.log.named('finish')), (1, []))
+
+    def test_successor_refuses_an_unpinned_hash_seed_before_reading_its_lineage(self):
+        import os
+        saved = os.environ.get('PYTHONHASHSEED')
+        os.environ['PYTHONHASHSEED'] = '1'
+        try:
+            m, _, _ = stand_ins(self.log)
+            with self.assertRaisesRegex(F.FreshIntervalRefused, 'PYTHONHASHSEED=0'):
+                F.advance_successor_interval(m, store=Store(), expected_root={}, lineage=None, budget='budget',
+                    artifacts=Path('a'), phase=self.phases.append, guard=None, record={}, save=None,
+                    query_checkpoints=None, finish=None)
+        finally:
+            os.environ['PYTHONHASHSEED'] = saved if saved is not None else '0'
+        self.assertEqual(self.log.calls, [])
+
+    def test_the_lineage_schema_is_the_prepared_driver_schema(self):
+        import prepared_interval_driver as P
+        self.assertEqual((F.LINEAGE_SCHEMA, P.LINEAGE_SCHEMA), ('atlas.fresh-interval-lineage.v1',)*2)
 
 
 def composed_tree(*parts):
@@ -471,8 +717,8 @@ class MeasurementHookTests(unittest.TestCase):
         patch.start()
         self.addCleanup(patch.stop)
 
-    def stand_ins(self, log):
-        m, _, _ = stand_ins(log)
+    def stand_ins(self, log, **options):
+        m, _, _ = stand_ins(log, **options)
         statistics = {'snapshots': 3, 'operations': {'payload_reads': 0}}
 
         @contextmanager
@@ -518,6 +764,23 @@ class MeasurementHookTests(unittest.TestCase):
                 self.assertLess(names.index('initial_metrics'), names.index('statistics'))
                 self.assertLess(names.index('hook'), names.index('initial_spatial_owner'))
                 self.assertEqual(log.named('cache')[0][2], {'path': str(Path('artifacts')/'initial-measurements.sqlite')})
+
+    def test_the_successor_entry_reports_once_between_the_metrics_and_the_owner(self):
+        expected = self.root(Recorder())
+        log, seen = Recorder(), []
+        m, statistics = self.stand_ins(log, opened_kind='successor', opened_intervals=1)
+        m.prepared_interval_driver = advance_once(log)
+        result = F.advance_successor_interval(m, store=Store(), expected_root=expected, lineage=lineage(),
+            budget='budget', artifacts=Path('artifacts'), phase=lambda name: None,
+            guard=SimpleNamespace(check='check'), record={}, save=lambda: None, query_checkpoints=self.checkpoints,
+            finish=lambda workflow, **kwargs: 'finished',
+            measurements=lambda found, bounds: (log.add('hook'), seen.append((found, bounds))))
+        self.assertEqual((result, seen), ('finished', [(statistics, 'bounds')]))
+        names = [call[0] for call in log.calls]
+        self.assertEqual((names.count('statistics'), names.count('hook')), (1, 1))
+        self.assertLess(names.index('initial_metrics'), names.index('statistics'))
+        self.assertLess(names.index('hook'), names.index('initial_spatial_owner'))
+        self.assertLess(names.index('initial_spatial_owner'), names.index('driver'))
 
     def test_without_a_hook_the_store_is_never_asked(self):
         log = Recorder()

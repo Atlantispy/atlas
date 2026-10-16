@@ -41,6 +41,9 @@ TRANSFORMS = {
     # q14 D1/D2 (coordinator 16 Oct): exact, digest-only. d2rot after jetsfast; G-PY after d2rot.
     'd1det': ('transforms/incidence_constant.py', 'atlas_tectonics/integration_moving_interface_moments.py'),
     'd2rot': ('transforms/rotated_hoist.py', 'atlas_tectonics/integration_moving_face_moments.py'),
+    # Kernel twin G-PY r4: a byte copy of its owner's transform (sha 701456a0...), which reviews d2rot's
+    # output f9f00364 as an input; stacked parity jetsfast -> d1det -> d2rot -> gpy4.
+    'gpy4': ('transforms/gpy_q2_jets_r4.py', 'atlas_tectonics/integration_moving_face_moments.py'),
 }
 
 

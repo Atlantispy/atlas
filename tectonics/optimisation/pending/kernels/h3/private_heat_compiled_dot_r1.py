@@ -40,6 +40,8 @@ compiled code (which releases the GIL) reads it.
 Import fails with ImportError unless this is the reviewed build, the MPFR entry points
 bind, and a compiled self-test reproduces r1's dot bit for bit; compilation happens
 there, and no signature is compiled after it.
+Per-process state filled after import (the settings memo) has a lower-case name: loaded-dependency
+identities bind upper-case module values as constants.
 """
 import ctypes
 import hashlib
@@ -107,7 +109,7 @@ _TRAPS = dict(trap_underflow=True, trap_overflow=True, trap_invalid=True, trap_d
 _FIELDS = ('precision', 'real_prec', 'imag_prec', 'round', 'real_round', 'imag_round', 'emax', 'emin',
            'subnormalize', 'trap_underflow', 'trap_overflow', 'trap_inexact', 'trap_invalid',
            'trap_erange', 'trap_divzero', 'allow_complex', 'rational_division')
-_SETTINGS = {}
+_context_settings = {}  # per-process memo of context settings by precision; lower-case: not an identity constant
 
 
 def _layout_ok():
@@ -142,10 +144,10 @@ def contexts_ok(down, up):
     precision = down.precision
     if type(precision) is not int or precision < 2:
         return False
-    if precision not in _SETTINGS:
-        _SETTINGS[precision] = (_settings(G.context(precision=precision, round=G.RoundDown, **_TRAPS)),
+    if precision not in _context_settings:
+        _context_settings[precision] = (_settings(G.context(precision=precision, round=G.RoundDown, **_TRAPS)),
                                 _settings(G.context(precision=precision, round=G.RoundUp, **_TRAPS)))
-    return (_settings(down), _settings(up)) == _SETTINGS[precision]
+    return (_settings(down), _settings(up)) == _context_settings[precision]
 
 
 @intrinsic

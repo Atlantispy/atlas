@@ -6,6 +6,8 @@
 # timing store; each arm starts from its own copy. IV2 (1-in-20 sample): serial, w2 control, w4, w6.
 # IV1: serial, w4, w6. summarise_dj.py applies the checks. Lock 4 GiB TOTAL after a free-memory
 # check. PYTHONHASHSEED=0.
+# First attempts run once: an existing OUT refuses (exit 2), so a re-run cannot write a first-attempt
+# JSON over a crashed attempt's log and store; reruns go through run_dj_rearm.sh (round 3 re-check, P2).
 set -u
 export PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 T="C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10"
@@ -15,7 +17,7 @@ OUT="$G/evidence/workers-dj"
 RT="test:$T/gg/workers6-r6"
 W1="0x2f00cbfcd7c08aad8918ab19af 0x4e3bbe22f900000000000000000000000000000000000"
 W2="0xef6aca6e197d9db2f69d62da0b 0xc6ae51dc48000000000000000000000000000000000000"
-mkdir -p "$OUT"
+mkdir "$OUT" || { echo "exists: $OUT (first attempts run once; reruns go through run_dj_rearm.sh)"; exit 2; }
 cd "$G/scripts"
 for attempt in $(seq 1 480); do
   if "$PY" -B -I -c "import psutil,sys; sys.exit(0 if psutil.virtual_memory().available >= 9*2**30 else 1)"; then

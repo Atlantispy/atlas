@@ -13,6 +13,8 @@
 # Merged copy: each arm's newest rerun up to <gen> stands in for its first attempt (listed with
 # shas in sources.txt); an arm named on this command line must have its <gen> output, or FAIL.
 # Every attempt it replaced goes to <merged>/superseded and must be PASS or VOID there (round 3, P1).
+# An attempt with no JSON (crashed or killed), a generation at or above <gen>, or an unknown attempt
+# name refuses the start and FAILs the merge (round 3 re-review, P1).
 # Before each arm it waits up to about 100 s (4 tries; the queue's rule for a harness's own wait is
 # about 2 min) for a quiet CPU, at most QUIET busy logical CPUs over 5 s, then runs anyway: the gate
 # decides, and summarise_dj.py reports a machine-trimmed arm as VOID-ENVIRONMENT (exit 3), never PASS.
@@ -37,6 +39,41 @@ case $GN in ''|0*|*[!0-9]*) echo "bad generation $gen (want r2, r3, ...)"; exit 
 [ "$GN" -ge 2 ] || { echo "bad generation $gen (r1 is the first run)"; exit 2; }
 M="$G/evidence/workers-dj-merged-$gen"
 [ -e "$M" ] && { echo "exists: $M (never rewritten)"; exit 2; }
+# A rerun must not hide an attempt that crashed or ran out of order (round 3 re-review, P1). Every
+# attempt file in OUT is a first attempt <set>-w<n> or a rerun <set>-w<n>-r<k> (k >= 2, no leading
+# zero) of an arm with a first attempt, at or below the generation allowed, and every log or store has
+# its JSON: one without was crashed or killed, so its verdict is unknown. The start refuses (exit 2)
+# and the merge FAILs (exit 1) on any line this prints, so such an attempt is ruled on before a later
+# one can stand in for it.
+audit () {  # <highest generation allowed>
+  local f base stem rest n g set
+  for f in "$OUT"/iv[12]-w* "$OUT"/iv[12]-store-w* "$OUT"/iv[12]-serial-r4enc.log "$OUT"/iv[12]-store-r4enc; do
+    [ -e "$f" ] || continue
+    base=${f##*/}
+    case $base in
+      iv[12]-serial-r4enc.log|iv[12]-store-r4enc)
+        [ -e "$OUT/${base%%-*}-serial-r4enc.json" ] || echo "r4 serial with no JSON (crashed or killed): $base"
+        continue;;
+      *.json) stem=${base%.json};;
+      *.log) stem=${base%.log};;
+      iv[12]-store-w*) stem="${base%%-*}-${base#*-store-}";;
+      *) echo "unknown file among the attempts: $base"; continue;;
+    esac
+    set=${stem%%-*}; rest=${stem#*-}
+    n=${rest%%-*}
+    case $n in w*) n=${n#w};; *) n=x;; esac
+    case $n in ''|0*|*[!0-9]*|???*) echo "unknown file among the attempts: $base"; continue;; esac
+    case $rest in
+      *-*)
+        g=${rest#*-}
+        case $g in r*) g=${g#r};; *) g=x;; esac
+        case $g in ''|0*|1|*[!0-9]*) echo "attempt with no generation number (r2 or later): $base"; continue;; esac
+        [ "$g" -le "$1" ] || echo "generation above the one allowed (r$1): $base"
+        [ -e "$OUT/$set-w$n.json" ] || echo "rerun of an arm with no first attempt: $base";;
+    esac
+    [ -e "$OUT/$stem.json" ] || echo "attempt with no JSON (crashed or killed): $base"
+  done
+}
 seen=" "
 for spec in "$@"; do
   set=${spec%%:*}; n=${spec##*:}
@@ -55,6 +92,14 @@ for spec in "$@"; do
     done
   fi
 done
+problems=$(audit $((GN-1))
+  for d in "$G/evidence"/workers-dj-merged-*; do
+    [ -e "$d" ] || continue
+    g=${d##*-r}
+    case $g in ''|0*|1|*[!0-9]*) echo "merged folder with no generation number: ${d##*/}"; continue;; esac
+    [ "$g" -lt "$GN" ] || echo "generation above the one allowed (r$((GN-1))): ${d##*/}"
+  done)
+[ -z "$problems" ] || { echo "$problems"; echo "refused: attempts above need a ruling first"; exit 2; }
 cd "$G/scripts"
 echo "start $gen $* $(date +%H:%M:%S)"
 iv2=(--supports "$G/evidence/final-f2/iv2-supports.jsonl.gz" --partition "$G/evidence/final-f1/iv2-partition.grid.json.gz" --interval "$G/work/iv2-interval-only-r1.json.gz" --stream-width $W2 --shard 0 --shards 20)
@@ -91,6 +136,8 @@ newest () {  # <set>-w<n>: path of its newest rerun output up to this generation
   done
   echo "$best"
 }
+problems=$(audit "$GN")
+[ -z "$problems" ] || { echo "$problems"; echo "FAIL: attempts above cannot be judged; nothing merged"; exit 1; }
 mkdir "$M" "$M/r2view" "$M/superseded" || exit 2
 cp "$OUT"/*.json "$M"/
 cp "$G/evidence/workers-six-r2"/*.json "$M/r2view"/

@@ -129,3 +129,20 @@ Design d5/DESIGN.md r1 (Geometry reviews; Pressure agreed the shared primitives)
 | _rotated_normal / _clip2 / _line CPU per call | 72.7 / 81.3 / 33.8 us | 25.0 / 58.3 / 28.5 us (2.91x / 1.39x / 1.18x) | d5/bench1 ABBA x3, component, MEASURED |
 | IV2 deep geometry stage | 1,087 profiled CPU-s | ~3.9% less | PROJECTED from q14 shares |
 Pending: fuzz + mutants, backend test, T1 with/without pose rounding (b), refuter, D-b parity ticket after RESUME.
+
+### 4d-2. D5 build: hooked runtime trees (d5-f2, d5-jets)
+Shared primitives d5/src/integration_exact_twin.py (also for Pressure's P4: native/fraction/bits/lease/Retained/
+dyadic_outward); twins d5/src/integration_wall_measures_gmp.py; transforms/d5_wall_hooks.py adds guarded hooks to
+integration_wall_measures.py (d6b7d472 -> b5e01815; declined calls run the unchanged body); d5/build_tree.py.
+Twins decline off the gmpy2 route, when any of 9 reference objects is wrapped (instrumentation sees every call), or
+outside the exact types they reproduce. Added only: NATIVE_RETAINED surcharge (policy A, mean 14.9 KB per call).
+| what | before | after | measured on |
+|---|---|---|---|
+| same-call identity on the installed runtime (d5/check.py) | reference module beside it | 0 differing: 48,170 real calls + 9,000 fuzz, both trees | d5/chkf, d5/chkj, MEASURED |
+| fail-closed proof | - | 16/16 planted mutants caught; ceiling 2**27 boundary; dyadic 0/20,000 vs Pressure | d5/chkf, MEASURED |
+| backends | - | python route and gmpy2-blocked: twins never used, imports as base | d5/chkf, MEASURED |
+| D-b parity smoke (pinned checker) | jets-r1 / final-f2 | iv1 21/21, iv2 sample 36+1 capped->extra 1/1, deep 1/1 identical | d5-parity-s1, MEASURED |
+| IV2 deep geometry stage CPU | 1,087 profiled CPU-s | ~3.9% less (prototype per-call ratios; build not timed) | PROJECTED |
+Refuter r1: pending. Not done (light window): timing of the build and policy-A cost, T1 with/without (b), the full
+6-process parity ticket. Later steps: every interval's wall measures; the primitives serve Pressure's P4.
+Next-interval capacity: no guard changes; the surcharge can only refuse earlier, never later.

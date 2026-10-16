@@ -1,0 +1,1106 @@
+"""Bounded, authenticated typed segments over an immutable interval store set.
+
+Native v1 chunk identities and per-file schemas are unchanged. This layer puts
+external locators in bounded metadata pages, never native local chunk arrays.
+Logical JSON admission belongs to the codec/domain consumer, not this module.
+"""
+from __future__ import annotations
+
+from bisect import bisect_right
+from concurrent.futures import CancelledError
+from contextlib import contextmanager, nullcontext
+from dataclasses import dataclass
+import gc
+from hashlib import sha256
+from itertools import chain
+import json
+import math
+import re
+import sys
+from threading import RLock
+
+import numpy as np
+
+from atlas_tectonics.integration_spatial_transport import _workspace
+from atlas_tectonics.resources import MemoryLimitError
+
+from compact_contracts import (BindingIndexRef, ContractError, LogicalIdentity,
+    SnapshotLocator, SegmentRef, SEGMENT_REF_SCHEMA, BINDING_INDEX_SCHEMA,
+    BINDING_PAGE_BYTES, INDEX_MAX_DEPTH, NATIVE_CHUNK_BYTES, ROOT_METADATA_MAX,
+    SEGMENT_MANIFEST_BYTES, UINT64_MAX, validate_segment_budget)
+from content_cache import ChargeSpec, OwnedStream
+
+ROOT_SCHEMA = 'atlas.segment-root.v1'
+PAGE_SCHEMA = 'atlas.binding-page.v1'
+# A fixed fan-out keeps the content tree independent of locator/codec spelling.
+# 16 also leaves room for maximal 256-byte names and 16 uint64 dimensions.
+FANOUT = 16
+# Former retained-scope builder booking; kept only as an upper bound name.
+BUILDER_BYTES = 8 << 20
+# L13: the index builder holds at most FANOUT buffered leaves plus FANOUT-1
+# pending nodes per level, each a parsed entry of at most ~4 KiB (256-byte
+# escaped names, 16 uint64 dimensions), plus one 64 KiB page wire and its
+# parsed copy. It is booked on the run budget (a transient), not the
+# retained scope. Measured held state: 38 KB (9,600 leaves), worst names 201 KB.
+BUILDER_WORK_BYTES = (FANOUT + INDEX_MAX_DEPTH * (FANOUT - 1)) * 4096 + 2 * 65536
+# B17 (backlog item 17, 16 Oct 2026): per-view binding directory. Every view
+# already walks and authenticates its WHOLE index when it opens (_validate:
+# every page digest, every leaf, the Merkle root). Named lookups then walked
+# from the root again each time, re-reading, re-parsing and re-hashing about
+# three pages per lookup (authentic IV1 heat-ledger reopen: 27,070 walks,
+# 74,775 page loads, about 42 s of 71 s). The directory keeps the leaves that
+# opening walk authenticated, per array name, as compact immutable rows, and
+# named lookups read it instead; their results are the same entries. Booking:
+# the worst case below while the walk collects, then the measured size
+# (_directory_bytes) for the view's life; if the retained scope declines
+# either, named lookups walk exactly as before.
+# Worst-case bytes per leaf row: 5-tuple 80 + three uint64 ints 3 x 36 + count
+# int 28 + 64-character digest str 113 + list and tuple slots with growth 40.
+DIRECTORY_LEAF_BYTES = 512
+# Worst-case bytes per array: a 256-byte UTF-8 name (at most 1,092 B as a str:
+# one astral character makes CPython store all 253 characters as UCS-4; b17
+# refuter F4), dtype str 60, 16-dimension shape tuple 184 + 16 x 36, the
+# per-array tuple, both row containers and its dict slot.
+DIRECTORY_ARRAY_BYTES = 3072
+DIRECTORY_FIXED_BYTES = 4096
+# Above this worst case a view builds no directory (named lookups walk).
+DIRECTORY_MAX_BYTES = 64 << 20
+
+
+def require(condition, message):
+    if not condition:
+        raise ContractError(message)
+
+
+def _utf8(text):
+    """Exact UTF-8 bytes; lone surrogates and non-text refuse as ContractError (L11)."""
+    if type(text) is not str:
+        raise ContractError('UTF-8 text required')
+    try:
+        return text.encode('utf-8')
+    except UnicodeEncodeError as exc:
+        raise ContractError('text is not valid UTF-8 (lone surrogate)') from exc
+
+
+def _same_canonical(left, right):
+    """L8: compare exact canonical bytes, so 1, 1.0 and true never alias."""
+    try:
+        return canonical(left) == canonical(right)
+    except (TypeError, ValueError):
+        return False
+
+
+def _exact_descriptor(value, dtype, count):
+    """Typed equality without 1/1.0/true aliasing (same as canonical bytes)."""
+    return (type(value) is dict and len(value) == 2 and type(value.get('dtype')) is str and
+            value['dtype'] == dtype and type(value.get('count')) is int and value['count'] == count)
+
+
+def _parse_charge(raw):
+    """L14: bounded pre-scan booking for parsing canonical JSON.
+
+    Covers malformed (tamper-only) manifests: each container is charged a
+    full small-object allocation and each separator a key/element slot, in
+    addition to the former 8 x raw + 64 KiB. One linear pass, no allocation.
+    """
+    containers = raw.count(b'[') + raw.count(b'{')
+    separators = raw.count(b',') + raw.count(b':')
+    return 8 * len(raw) + 65536 + 96 * containers + 24 * separators
+
+
+def cancel_check(cancel):
+    if cancel is not None and cancel.is_set():
+        raise CancelledError('segmented operation cancelled')
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':'),
+                      ensure_ascii=True, allow_nan=False).encode('ascii')
+
+
+def _pairs(items):
+    result = {}
+    for key, value in items:
+        require(key not in result, 'duplicate metadata key')
+        result[key] = value
+    return result
+
+
+def parse(raw):
+    try:
+        result = json.loads(raw, object_pairs_hook=_pairs,
+                            parse_constant=lambda _: (_ for _ in ()).throw(ContractError('nonfinite metadata')))
+        require(canonical(result) == raw, 'noncanonical metadata')
+        return result
+    except (ValueError, TypeError, UnicodeError, RecursionError) as exc:
+        if isinstance(exc, ContractError):
+            raise
+        raise ContractError('invalid canonical metadata') from exc
+
+
+def h(tag, body):
+    return sha256(tag.encode('ascii') + b'\0' + canonical(body)).hexdigest()
+
+
+def _uint(value, name):
+    require(type(value) is int and 0 <= value <= UINT64_MAX, name + ' is not uint64')
+    return value
+
+
+# S1: same acceptance as the former per-character test (exactly 64 characters,
+# each one of the 16 ASCII lowercase hex digits), as one compiled match.
+_HEX_DIGEST = re.compile(r'[0-9a-f]{64}')
+
+
+def _digest(value):
+    require(type(value) is str and _HEX_DIGEST.fullmatch(value) is not None, 'invalid digest')
+    return value
+
+
+def _owned(scope, value, size, purpose, *, dependencies=()):
+    reservation = scope.reserve(ChargeSpec(purpose, size), required=True, cancel=None)
+    return reservation.commit(value, dependencies=dependencies)
+
+
+def _same_scope(obj, scope):
+    require(obj.scope is scope, 'foreign retained scope')
+
+
+def _refuse_if_changed(resolver, error):
+    """Closing identity check after a failed sealed read body (S1 refuter).
+
+    A file that changed during the read refuses with ContractError chained
+    from the body's error; an unchanged file returns and the caller
+    re-raises the body's own error.
+    """
+    try:
+        resolver.assert_cached_read_safe(cancel=None)
+    except ContractError as changed:
+        raise ContractError(*changed.args) from error
+    except OSError as changed:
+        raise ContractError('immutable interval file identity changed '
+                            f'({type(changed).__name__})') from error
+
+
+def _requester(resolver):
+    if hasattr(resolver, 'interval'):
+        return resolver.interval
+    require(resolver.head is not None, 'no accepted interval head')
+    return resolver.head.interval
+
+
+def _manifest(resolver, locator, cancel):
+    if hasattr(resolver, 'interval'):
+        return resolver.resolve_manifest(locator, cancel=cancel)
+    return resolver.resolve_manifest(_requester(resolver), locator, cancel=cancel)
+
+
+def _resolver_usable(resolver, root_interval, cancel):
+    """B17: the refusals _manifest meets loading the walk's root page, without the read.
+
+    A candidate must still be a usable writer; a store set needs its accepted
+    head, must be open, and the root page's interval must still lie in the
+    head's declared reference closure (b17 refuter R7), checked under the
+    set's lock in resolve_manifest's order. That one check covers every page
+    because a view builds a directory only when its opening walk found every
+    index page in the root page's interval (_load_page, _validate), as
+    _IndexBuilder writes them; an index with a page in any other interval
+    keeps the walk, which checks each page's own interval. Views whose
+    resolver has no such checks build no directory (_lifecycle_checkable),
+    so their named lookups walk.
+    """
+    if hasattr(resolver, 'interval'):
+        resolver._writing(cancel)
+    else:
+        requester = _requester(resolver)
+        with resolver._lock:
+            resolver._live()
+            resolver._allowed(requester, root_interval)
+
+
+def _lifecycle_checkable(resolver):
+    if hasattr(resolver, 'interval'):
+        return callable(getattr(resolver, '_writing', None))
+    return (callable(getattr(resolver, '_live', None)) and callable(getattr(resolver, '_allowed', None)) and
+            hasattr(getattr(resolver, '_lock', None), '__enter__'))
+
+
+def _chunk(resolver, owner, key, descriptor, cancel):
+    if hasattr(resolver, 'interval'):
+        return resolver.resolve_chunk(owner, key, descriptor, cancel=cancel)
+    return resolver.resolve_chunk(_requester(resolver), owner, key, descriptor, cancel=cancel)
+
+
+def _metadata(resolver, locator, scope, cancel):
+    """Decode bounded native manifest metadata under a paid owner.
+
+    The raw owner and reservation deliberately remain in failed frames. The
+    ownership implementation keeps their charge if a traceback is retained.
+    """
+    raw = _manifest(resolver, locator, cancel)
+    require(len(raw.value) <= SEGMENT_MANIFEST_BYTES, 'native manifest exceeds segment target')
+    reserve = scope.reserve(ChargeSpec('segment-metadata', _parse_charge(raw.value)),
+                            required=True, cancel=cancel)
+    native = parse(raw.value)
+    require(type(native) is dict and native.get('schema') == 'atlas.array-store.v1' and
+            native.get('invocation') == locator.snapshot_key, 'native root binding differs')
+    arrays = native.get('arrays')
+    require(type(arrays) is dict and bool(arrays), 'metadata carrier inventory missing')
+    for desc in arrays.values():
+        require(type(desc) is dict and set(desc) == {'dtype', 'shape', 'chunks'} and
+                desc['chunks'] == [] and math.prod(desc['shape']) == 0,
+                'index/root has unexpected payload arrays')
+    metadata = native.get('metadata')
+    require(type(metadata) is dict and len(canonical(metadata)) <= ROOT_METADATA_MAX,
+            'root/index metadata exceeds bound')
+    result = reserve.commit(metadata)
+    del native, arrays
+    raw.close()
+    return result
+
+
+@dataclass(frozen=True, slots=True)
+class ArrayInfo:
+    name: str
+    dtype: str
+    shape: tuple[int, ...]
+    logical_bytes: int
+
+    def __post_init__(self):
+        require(type(self.name) is str and bool(self.name) and
+                len(_utf8(self.name)) <= 256, 'bounded UTF-8 array name required')
+        try:
+            dtype = np.dtype(self.dtype)
+        except (TypeError, ValueError) as exc:
+            raise ContractError('invalid typed array') from exc
+        require(dtype.str == self.dtype and dtype.kind in 'biuf' and dtype.itemsize in (1, 2, 4, 8),
+                'unsupported/noncanonical array dtype')
+        require(type(self.shape) is tuple and len(self.shape) <= 16, 'bounded shape required')
+        for n in self.shape:
+            _uint(n, 'dimension')
+        _uint(self.logical_bytes, 'logical array bytes')
+        require(math.prod(self.shape) * dtype.itemsize == self.logical_bytes,
+                'typed logical size differs')
+
+
+@dataclass(frozen=True, slots=True)
+class SegmentBlock:
+    """One owned native range from an ordered, authenticated segment scan."""
+    info: ArrayInfo
+    start: int
+    stop: int
+    data: bytes
+
+
+class BytesArraySource:
+    """Convenience source for already-owned bytes; never copies a whole array."""
+    def __init__(self, info, value):
+        require(type(info) is ArrayInfo, 'ArrayInfo required')
+        require(len(value.value) == info.logical_bytes, 'source byte length differs')
+        self.info, self.owner = info, value.retain()
+
+    def blocks(self, *, max_owned_bytes):
+        require(type(max_owned_bytes) is int and max_owned_bytes > 0, 'positive block bound required')
+        owner = self.owner.retain()
+        def stream():
+            for start in range(0, self.info.logical_bytes, max_owned_bytes):
+                size = min(max_owned_bytes, self.info.logical_bytes - start)
+                reservation = owner.scope.reserve(ChargeSpec('segment-source-block', size),
+                                                   required=True, cancel=None)
+                yield reservation.commit(bytes(memoryview(owner.value)[start:start + size]))
+        return OwnedStream(stream(), owners=(owner,), scope=owner.scope)
+
+    def close(self):
+        self.owner.close()
+
+
+def _leaf_digest(leaf):
+    return h('atlas.segment-leaf.v1', leaf)
+
+
+def _branch_digest(children):
+    return h('atlas.segment-branch.v1', {
+        'leaf_count': sum(c['leaf_count'] for c in children),
+        'children': [{'first_ordinal': c['first_ordinal'], 'leaf_count': c['leaf_count'],
+                      'digest': c['tree_digest']} for c in children]})
+
+
+def _bounds(entries, leaf):
+    if not entries:
+        return {'first_name': None, 'last_name': None, 'first_start': 0, 'last_stop': 0}
+    first, last = entries[0], entries[-1]
+    if leaf:
+        a, b = first['content'], last['content']
+        return dict(first_name=a['name'], last_name=b['name'], first_start=a['start'],
+                    last_stop=b['start'] + b['count'])
+    return {name: first[name] if name.startswith('first_') else last[name]
+            for name in ('first_name', 'last_name', 'first_start', 'last_stop')}
+
+
+def _held(obj):
+    # Object bytes as the allocator holds them (16-byte size classes). None and
+    # CPython's cached small ints are shared singletons, never allocated here.
+    if obj is None or (type(obj) is int and -5 <= obj <= 256):
+        return 0
+    return (sys.getsizeof(obj) + 15) & ~15
+
+
+def _directory_bytes(arrays):
+    """B17: retained bytes of a frozen directory, counted object by object.
+
+    arrays: name -> (array_ordinal, dtype, shape, starts, rows), each row
+    (ordinal, start, count, chunk_id, owner) and starts[i] is rows[i][1].
+    Every other object is counted at every use (starts[i] is the same int as
+    rows[i][1] and is counted once, through the row), so the result is at
+    least the real size.
+    """
+    size = _held(arrays) + DIRECTORY_FIXED_BYTES
+    for name, array in arrays.items():
+        array_ordinal, dtype, shape, starts, rows = array
+        size += _held(name) + _held(array) + _held(array_ordinal) + _held(dtype) + _held(shape)
+        size += sum(_held(n) for n in shape) + _held(starts) + _held(rows)
+        for row in rows:
+            size += _held(row) + sum(_held(item) for item in row)
+    return size
+
+
+def _directory_entry(name, array, row):
+    """The leaf entry exactly as the authenticated walk yields it (fresh dicts)."""
+    array_ordinal, dtype, shape = array[0], array[1], array[2]
+    ordinal, start, count, chunk_id, owner = row
+    content = {'array_ordinal': array_ordinal, 'chunk_id': chunk_id, 'count': count, 'dtype': dtype,
+               'name': name, 'ordinal': ordinal, 'shape': list(shape), 'start': start}
+    return {'content': content, 'descriptor': {'count': count, 'dtype': dtype} if count else None,
+            'owner': owner}
+
+
+class _IndexBuilder:
+    def __init__(self, candidate, scope, cancel):
+        self.candidate, self.scope, self.cancel = candidate, scope, cancel
+        # Booked by the caller's run-budget workspace (BUILDER_WORK_BYTES).
+        self.buffer, self.levels = [], [[] for _ in range(INDEX_MAX_DEPTH)]
+
+    def _page(self, entries, leaf):
+        cancel_check(self.cancel)
+        first = entries[0]['content']['ordinal'] if leaf and entries else (
+            entries[0]['first_ordinal'] if entries else 0)
+        count = len(entries) if leaf else sum(c['leaf_count'] for c in entries)
+        children = [{'first_ordinal': e['content']['ordinal'], 'leaf_count': 1,
+                     'tree_digest': _leaf_digest(e['content'])} for e in entries] if leaf else entries
+        page = dict(schema=PAGE_SCHEMA, kind='leaves' if leaf else 'branch',
+                    first_ordinal=first, leaf_count=count, entries=list(entries))
+        wire = canonical(page)
+        require(len(wire) <= BINDING_PAGE_BYTES, 'binding page exceeds encoded byte cap')
+        if leaf:
+            validate_segment_budget(
+                logical_bytes=sum(e['content']['count'] * np.dtype(e['content']['dtype']).itemsize for e in entries),
+                chunk_references=sum(e['content']['chunk_id'] is not None for e in entries),
+                manifest_bytes=len(wire) + 1024, metadata_bytes=len(wire))
+        digest = h(PAGE_SCHEMA, page)
+        key = h('atlas.binding-page-key.v1', {'digest': digest})
+        locator = self.candidate.put_manifest(key, page, cancel=self.cancel)
+        return dict(locator=locator.to_wire(), digest=digest, first_ordinal=first,
+                    leaf_count=count, tree_digest=_branch_digest(children), **_bounds(entries, leaf))
+
+    def _push(self, level, node):
+        require(level < INDEX_MAX_DEPTH, 'binding index exceeds maximum depth')
+        self.levels[level].append(node)
+        if len(self.levels[level]) == FANOUT:
+            require(level + 1 < INDEX_MAX_DEPTH, 'binding index exceeds maximum depth')
+            parent = self._page(self.levels[level], False)
+            self.levels[level].clear()
+            self._push(level + 1, parent)
+
+    def add(self, entry):
+        self.buffer.append(entry)
+        if len(self.buffer) == FANOUT:
+            node = self._page(self.buffer, True)
+            self.buffer.clear()
+            self._push(0, node)
+
+    def finish(self):
+        if self.buffer:
+            node = self._page(self.buffer, True)
+            self.buffer.clear()
+            self._push(0, node)
+        if not any(self.levels):
+            result = self._page([], False)
+        else:
+            result = None
+            for level, nodes in enumerate(self.levels):
+                if not nodes:
+                    continue
+                if len(nodes) == 1 and not any(self.levels[level + 1:]):
+                    result = nodes.pop()
+                    break
+                node = self._page(nodes, False)
+                nodes.clear()
+                self._push(level + 1, node)
+            require(result is not None, 'invalid binding index completion')
+        return result
+
+
+@dataclass(frozen=True, slots=True)
+class VerificationEvidence:
+    manifests_verified: bool
+    full_file_sha256_verified: bool = False
+    payloads_verified: bool = False
+    logical_body_verified: bool = False
+    checked_payload_bytes: int = 0
+
+
+class SegmentBackend:
+    def publish(self, candidate, *, record_schema, identity, metadata, arrays,
+                producer, representation_profile, scope, cancel=None):
+        _same_scope(candidate, scope)
+        require(type(identity) is LogicalIdentity and record_schema == identity.record_schema,
+                'logical schema/identity mismatch')
+        _digest(producer)
+        require(type(representation_profile) is str and 0 < len(_utf8(representation_profile)) <= 256,
+                'bounded representation profile required')
+        require(type(metadata) is bytes and len(metadata) <= ROOT_METADATA_MAX, 'bounded canonical metadata required')
+        cancel_check(cancel)
+        metadata_owner = scope.reserve(ChargeSpec('segment-input-metadata', _parse_charge(metadata)),
+                                       required=True, cancel=cancel).commit(parse(metadata))
+        preimage = dict(identity=identity.to_wire(), producer=producer,
+                        representation_profile=representation_profile)
+        key = h(ROOT_SCHEMA, preimage)
+        old_locator = candidate.find_manifest(key, cancel=cancel)
+        if old_locator is not None:
+            old = _metadata(candidate, old_locator, scope, cancel)
+            row = old.value
+            require(row.get('schema') == ROOT_SCHEMA and _same_canonical(row.get('identity'), identity.to_wire()) and
+                    _same_canonical(row.get('producer'), producer) and
+                    _same_canonical(row.get('representation_profile'), representation_profile) and
+                    'metadata' in row and canonical(row['metadata']) == metadata,
+                    'immutable segment invocation conflict')
+            ref = SegmentRef.from_wire(row['reference'])
+            require(ref.root_key == old_locator, 'existing root locator mismatch')
+            old.close()
+            self.verify(candidate, ref, scope=scope, cancel=cancel)
+            metadata_owner.close()
+            return ref
+        require(callable(arrays), 'lazy array factory required')
+        with _workspace(scope.run_budget, BUILDER_WORK_BYTES, 'segment-index-builder'):
+            ref, root = self._publish_arrays(candidate, scope, cancel, arrays, key, identity,
+                                             preimage, metadata_owner)
+        require(len(canonical(root)) <= ROOT_METADATA_MAX, 'complete root metadata exceeds cap')
+        cancel_check(cancel)
+        published = candidate.put_manifest(key, root, cancel=cancel)
+        require(published == ref.root_key, 'published root locator differs')
+        metadata_owner.close()
+        return ref
+
+    def _publish_arrays(self, candidate, scope, cancel, arrays, key, identity, preimage, metadata_owner):
+        builder = _IndexBuilder(candidate, scope, cancel)
+        ordinal = array_count = logical_bytes = 0
+        last_name = None
+        # One bounded splice buffer; arbitrary producer block sizes are refused.
+        scratch = scope.reserve(ChargeSpec('segment-chunk-buffer', 2 * NATIVE_CHUNK_BYTES),
+                                required=True, cancel=cancel).commit(bytearray())
+        iterator = iter(arrays())
+        for source in iterator:
+            cancel_check(cancel)
+            supplied = source.info
+            info = ArrayInfo(supplied.name, supplied.dtype, tuple(supplied.shape), supplied.logical_bytes)
+            require(last_name is None or _utf8(info.name) > last_name,
+                    'array source names must be unique and in UTF-8 order')
+            last_name = _utf8(info.name)
+            dt = np.dtype(info.dtype)
+            count = math.prod(info.shape)
+            position = 0
+            def emit(raw):
+                nonlocal ordinal, position
+                n = len(raw) // dt.itemsize
+                require(len(raw) == n * dt.itemsize and n > 0, 'unaligned typed block')
+                descriptor = canonical({'dtype': info.dtype, 'count': n})
+                owner, chunk_id = candidate.put_chunk(descriptor, raw, cancel=cancel)
+                leaf = dict(ordinal=ordinal, array_ordinal=array_count, name=info.name,
+                            dtype=info.dtype, shape=list(info.shape), start=position,
+                            count=n, chunk_id=chunk_id)
+                builder.add(dict(content=leaf, owner=owner, descriptor=parse(descriptor)))
+                ordinal += 1
+                position += n
+            stream = source.blocks(max_owned_bytes=NATIVE_CHUNK_BYTES)
+            for block in stream:
+                _same_scope(block, scope)
+                cancel_check(cancel)
+                raw = block.value
+                require(isinstance(raw, (bytes, bytearray, memoryview)) and len(raw) <= NATIVE_CHUNK_BYTES,
+                        'producer block exceeds requested bound')
+                require(position * dt.itemsize + len(scratch.value) + len(raw) <= info.logical_bytes,
+                        'source has excess array bytes')
+                offset = 0
+                while offset < len(raw):
+                    take = min(NATIVE_CHUNK_BYTES - len(scratch.value), len(raw) - offset)
+                    scratch.value.extend(memoryview(raw)[offset:offset + take])
+                    offset += take
+                    if len(scratch.value) == NATIVE_CHUNK_BYTES:
+                        emit(bytes(scratch.value))
+                        scratch.value.clear()
+                del raw
+                block.close()
+            stream.close()
+            if scratch.value:
+                emit(bytes(scratch.value))
+                scratch.value.clear()
+            require(position == count, 'source has missing array bytes')
+            if count == 0:
+                leaf = dict(ordinal=ordinal, array_ordinal=array_count, name=info.name,
+                            dtype=info.dtype, shape=list(info.shape), start=0, count=0, chunk_id=None)
+                builder.add(dict(content=leaf, owner=None, descriptor=None))
+                ordinal += 1
+            logical_bytes += info.logical_bytes
+            _uint(logical_bytes, 'record logical bytes')
+            array_count += 1
+        close = getattr(iterator, 'close', None)
+        if close is not None:
+            close()
+        scratch.close()
+        tree = builder.finish()
+        locator = SnapshotLocator(candidate.workflow_id, candidate.interval, key)
+        ref = SegmentRef(SEGMENT_REF_SCHEMA, locator, identity, logical_bytes,
+            BindingIndexRef(BINDING_INDEX_SCHEMA, SnapshotLocator.from_wire(tree['locator']), tree['digest'], array_count),
+            h('atlas.segment-content.v1', dict(identity=identity.to_wire(), array_count=array_count,
+                                              logical_bytes=logical_bytes, tree_digest=tree['tree_digest'])))
+        root = dict(schema=ROOT_SCHEMA, **preimage, metadata=metadata_owner.value,
+                    reference=ref.to_wire(), index=tree)
+        return ref, root
+
+    def open(self, stores, ref, *, scope, cancel=None):
+        _same_scope(stores, scope)
+        return SegmentView(stores, ref, scope=scope, cancel=cancel)
+
+    def verify(self, stores, ref, *, scope, cancel=None):
+        view = self.open(stores, ref, scope=scope, cancel=cancel)
+        view.close()
+        return VerificationEvidence(True)
+
+
+class SegmentInfo:
+    def __init__(self, view):
+        self._view = view
+        self.ref = view.ref
+        self.array_count = view.ref.array_bindings.count
+
+    def array(self, name):
+        view = self._view
+        view._live()
+        # S1: one sealed read batch for the walk.
+        with view._sealed_read():
+            for entry in view._entries(name=name):
+                leaf = entry['content']
+                value = ArrayInfo(name, leaf['dtype'], tuple(leaf['shape']),
+                                  math.prod(leaf['shape']) * np.dtype(leaf['dtype']).itemsize)
+                return _owned(view.scope, value, 4096, 'segment-array-info', dependencies=(view._owner,))
+        raise KeyError(name)
+
+
+class SegmentView:
+    def __init__(self, resolver, ref, *, scope, cancel=None):
+        require(type(ref) is SegmentRef, 'validated SegmentRef required')
+        _same_scope(resolver, scope)
+        self.resolver, self.ref, self.scope, self.cancel = resolver, ref, scope, cancel
+        self._closed = False
+        self._read_depth = 0
+        self._read_lock = RLock()
+        # B17: set once by _validate after the whole index is authenticated.
+        self._directory = None
+        self._page_outside_root_interval = False
+        self._owner = _metadata(resolver, ref.root_key, scope, cancel)
+        row = self._owner.value
+        require(set(row) == {'schema', 'identity', 'producer', 'representation_profile', 'metadata', 'reference', 'index'} and
+                row['schema'] == ROOT_SCHEMA and _same_canonical(row['identity'], ref.identity.to_wire()) and
+                _same_canonical(row['reference'], ref.to_wire()), 'segment root metadata/reference mismatch')
+        require(h(ROOT_SCHEMA, {k: row[k] for k in ('identity', 'producer', 'representation_profile')}) == ref.root_key.snapshot_key,
+                'segment root key mismatch')
+        index = row['index']
+        require(type(index) is dict and _same_canonical(index.get('locator'), ref.array_bindings.root_key.to_wire()) and
+                index.get('digest') == ref.array_bindings.digest, 'index reference mismatch')
+        # S1: the whole-index validation walk is one sealed read batch.
+        with self._sealed_read():
+            self._validate()
+
+    @property
+    def info(self):
+        # Keep ownership one-way: escaped info owns its view, but the view
+        # must not retain its own metadata through a reciprocal info cycle.
+        self._live()
+        return SegmentInfo(self)
+
+    def _live(self):
+        require(not self._closed, 'segment view closed')
+        cancel_check(self.cancel)
+
+    def cache_identity(self):
+        """Bind cache ranges to the catalog's sealed file identities.
+
+        Candidate readers have no immutable file identity and cannot use this
+        cache path. The record key also binds this view's exact SegmentRef.
+        """
+        self._live()
+        if hasattr(self.resolver, 'interval'):
+            return None
+        require(self.resolver.catalog_digest is not None, 'sealed catalog identity missing')
+        return sha256(b'atlas.segment-cache-catalog.v1\0' + canonical(dict(
+            workflow_id=self.resolver.workflow_id,
+            catalog_digest=self.resolver.catalog_digest))).digest()
+
+    def check_unchanged(self):
+        # Same checks as before (closed, cancel, sealed resolver, fresh file
+        # identities outside a verified read), with _live inlined: this runs
+        # once per decoded scalar on the sealed path.
+        with self._read_lock:
+            require(not self._closed, 'segment view closed')
+            if self.cancel is not None and self.cancel.is_set():
+                raise CancelledError('segmented operation cancelled')
+            require(not hasattr(self.resolver, 'interval'), 'candidate cannot serve sealed cached reads')
+            if not self._read_depth:
+                self.resolver.assert_cached_read_safe(cancel=self.cancel)
+
+    def _light_unchanged(self):
+        # check_unchanged without the file checks (the enclosing batch owns them).
+        require(not self._closed, 'segment view closed')
+        if self.cancel is not None and self.cancel.is_set():
+            raise CancelledError('segmented operation cancelled')
+        require(not hasattr(self.resolver, 'interval'), 'candidate cannot serve sealed cached reads')
+
+    @contextmanager
+    def _file_batch(self):
+        # S1: before/after file-identity checks of the whole sealed store set,
+        # with per-call manifest/chunk identity checks skipped inside. The
+        # closing check also runs when the body fails (S1 refuter): a changed
+        # file refuses with ContractError chained from the body's error, so
+        # a KeyError never escapes as 'absent' from a changed file.
+        batch = getattr(self.resolver, 'read_batch', None)
+        if batch is not None:
+            with batch(cancel=self.cancel):
+                yield
+            return
+        self.resolver.assert_cached_read_safe(cancel=self.cancel)
+        try:
+            yield
+        except Exception as error:
+            _refuse_if_changed(self.resolver, error)
+            raise
+        self.resolver.assert_cached_read_safe(cancel=self.cancel)
+
+    def _sealed_read(self):
+        return nullcontext() if hasattr(self.resolver, 'interval') else self.verified_read()
+
+    @contextmanager
+    def verified_read(self):
+        """One atomic internal read, with freshness checked before and after.
+
+        No result may escape while this context is entered. Streaming callers
+        exit it before each yielded block. Nested scalar lookups still check
+        cancellation; physical payload reads retain their own authentication.
+        S1: for a sealed store set the outermost verified read is one store-set
+        read batch: file identity is checked once before and once after it,
+        and the manifest/chunk reads inside skip their per-call checks. The
+        closing identity check also runs when the body fails (S1 refuter).
+        """
+        with self._read_lock:
+            self._live()
+            sealed = not hasattr(self.resolver, 'interval')
+            outer = not self._read_depth
+            pin = self._owner.retain() if outer else None
+            try:
+                if sealed:
+                    self._light_unchanged()
+                with (self._file_batch() if sealed and outer else nullcontext()):
+                    self._read_depth += 1
+                    try:
+                        yield
+                    finally:
+                        self._read_depth -= 1
+                # A failed body keeps its original error unless the batch's
+                # closing identity check (run on failure too) refuses.
+                # Successful results are withheld until that check passed.
+                if sealed:
+                    self._light_unchanged()
+                else:
+                    self._live()
+            finally:
+                if pin is not None:
+                    pin.close()
+
+    def _load_page(self, node):
+        locator = SnapshotLocator.from_wire(node['locator'])
+        require(locator.workflow_id == self.ref.root_key.workflow_id and
+                locator.interval <= self.ref.root_key.interval, 'foreign/future index page')
+        if locator.interval != self.ref.array_bindings.root_key.interval:
+            # B17 refuter R7 note: a directory's lookups check only the root
+            # page's interval, so such an index builds none (_validate).
+            self._page_outside_root_interval = True
+        owner = _metadata(self.resolver, locator, self.scope, self.cancel)
+        page = owner.value
+        require(set(page) == {'schema', 'kind', 'first_ordinal', 'leaf_count', 'entries'} and
+                page['schema'] == PAGE_SCHEMA and page['kind'] in ('leaves', 'branch') and
+                type(page['entries']) is list and len(page['entries']) <= FANOUT,
+                'unknown or oversized binding page')
+        require(h(PAGE_SCHEMA, page) == node['digest'] and
+                locator.snapshot_key == h('atlas.binding-page-key.v1', {'digest': node['digest']}),
+                'binding page digest mismatch')
+        return owner
+
+    def _walk(self, node, *, depth=1, name=None, start=None, stop=None, validate=False):
+        require(depth <= INDEX_MAX_DEPTH, 'binding tree depth exceeded')
+        expected_fields = {'locator', 'digest', 'first_ordinal', 'leaf_count', 'tree_digest',
+                           'first_name', 'last_name', 'first_start', 'last_stop'}
+        require(type(node) is dict and set(node) == expected_fields, 'complete index node required')
+        _uint(node['first_ordinal'], 'first ordinal')
+        _uint(node['leaf_count'], 'leaf count')
+        _digest(node['digest']); _digest(node['tree_digest'])
+        if name is not None and node['first_name'] is not None:
+            if _utf8(name) < _utf8(node['first_name']) or _utf8(name) > _utf8(node['last_name']):
+                return
+            if node['first_name'] == node['last_name'] == name and start is not None:
+                if node['last_stop'] <= start or node['first_start'] >= stop:
+                    return
+        owner = self._load_page(node)
+        page = owner.value
+        leaf = page['kind'] == 'leaves'
+        entries = page['entries']
+        require(page['first_ordinal'] == node['first_ordinal'] and page['leaf_count'] == node['leaf_count'],
+                'binding node count differs')
+        require(_bounds(entries, leaf) == {k: node[k] for k in ('first_name', 'last_name', 'first_start', 'last_stop')},
+                'index range summary mismatch')
+        cursor = node['first_ordinal']
+        children = []
+        for entry in entries:
+            cancel_check(self.cancel)
+            if leaf:
+                require(type(entry) is dict and set(entry) == {'content', 'owner', 'descriptor'}, 'invalid binding leaf')
+                body = entry['content']
+                require(type(body) is dict and set(body) == {'ordinal', 'array_ordinal', 'name', 'dtype', 'shape', 'start', 'count', 'chunk_id'},
+                        'invalid content leaf')
+                require(body['ordinal'] == cursor and type(body['ordinal']) is int, 'duplicate/reordered leaf')
+                info = ArrayInfo(body['name'], body['dtype'], tuple(body['shape']),
+                                 math.prod(body['shape']) * np.dtype(body['dtype']).itemsize)
+                _uint(body['array_ordinal'], 'array ordinal')
+                _uint(body['start'], 'range start'); _uint(body['count'], 'range count')
+                count = math.prod(info.shape)
+                require(body['start'] + body['count'] <= count, 'chunk range outside array')
+                if body['count']:
+                    _digest(body['chunk_id']); _uint(entry['owner'], 'chunk owner')
+                    require(entry['owner'] <= self.ref.root_key.interval and
+                            _exact_descriptor(entry['descriptor'], info.dtype, body['count']),
+                            'chunk owner/descriptor mismatch')
+                    validate_segment_budget(logical_bytes=body['count'] * np.dtype(info.dtype).itemsize,
+                                            chunk_references=1, manifest_bytes=4096, metadata_bytes=0)
+                else:
+                    require(count == 0 and body['start'] == 0 and body['chunk_id'] is None and
+                            entry['owner'] is None and entry['descriptor'] is None, 'invalid empty-array leaf')
+                children.append(dict(first_ordinal=cursor, leaf_count=1, tree_digest=_leaf_digest(body)))
+                cursor += 1
+                if name is None or (body['name'] == name and (start is None or
+                        body['start'] < stop and body['start'] + body['count'] > start)):
+                    yield entry
+            else:
+                require(entry['first_ordinal'] == cursor and entry['leaf_count'] > 0, 'branch gaps/duplicates')
+                children.append(entry)
+                yield from self._walk(entry, depth=depth + 1, name=name, start=start, stop=stop, validate=validate)
+                cursor += entry['leaf_count']
+        require(cursor == node['first_ordinal'] + node['leaf_count'] and
+                _branch_digest(children) == node['tree_digest'], 'binding Merkle/count mismatch')
+        owner.close()
+
+    def _entries(self, **kwargs):
+        self._live()
+        name, start, stop = kwargs.get('name'), kwargs.get('start'), kwargs.get('stop')
+        directory = self._directory
+        # Text names with no range or an integer range only; anything else (for
+        # example a start without a stop) walks, so its answer or refusal is the
+        # walk's own (b17 refuter F5).
+        if directory is not None and type(name) is str and (
+                start is None or (type(start) is int and type(stop) is int)):
+            yield from self._directory_entries(directory.value, name, start, stop)
+            return
+        yield from self._walk(self._owner.value['index'], **kwargs)
+
+    def _directory_entries(self, arrays, name, start, stop):
+        """B17: the named walk's result from the authenticated directory.
+
+        Same entries in the same (ordinal) order as _walk(name=..., start=...,
+        stop=...), the same refusal for a name that is not valid UTF-8 text in
+        a nonempty index, and cancellation checked per entry. Wherever the walk
+        would load its root page, the resolver's refusal (closed, sealed or
+        failed candidate; closed store set; root page outside the head's
+        reference closure) is raised first, as the walk's root page load would
+        raise it (b17 refuter F3, R7).
+        """
+        root = self._owner.value['index']
+        if root['first_name'] is not None:
+            # The walk's root-level returns, which load no page.
+            if _utf8(name) < _utf8(root['first_name']) or _utf8(name) > _utf8(root['last_name']):
+                return
+            if (root['first_name'] == root['last_name'] == name and start is not None and
+                    (root['last_stop'] <= start or root['first_start'] >= stop)):
+                return
+        _resolver_usable(self.resolver, self.ref.array_bindings.root_key.interval, self.cancel)
+        array = arrays.get(name)
+        if array is None:
+            return
+        starts, rows = array[3], array[4]
+        if start is None:
+            selected = rows
+        elif type(start) is int and type(stop) is int:
+            # Rows are contiguous and ordered by start: none before the one
+            # holding start can overlap [start, stop).
+            first = max(bisect_right(starts, start) - 1, 0)
+            selected = []
+            for row in rows[first:]:
+                if row[1] >= stop:
+                    break
+                if row[1] + row[2] > start:
+                    selected.append(row)
+        else:
+            selected = [row for row in rows if row[1] < stop and row[1] + row[2] > start]
+        for row in selected:
+            cancel_check(self.cancel)
+            yield _directory_entry(name, array, row)
+
+    def _directory_reservation(self):
+        """Worst-case booking for collecting the directory, or None (walk only)."""
+        leaves, count = self._owner.value['index'].get('leaf_count'), self.ref.array_bindings.count
+        if (type(leaves) is not int or type(count) is not int or leaves < 0 or count < 0 or
+                not _lifecycle_checkable(self.resolver)):
+            return None
+        worst = DIRECTORY_FIXED_BYTES + leaves * DIRECTORY_LEAF_BYTES + count * DIRECTORY_ARRAY_BYTES
+        if worst > DIRECTORY_MAX_BYTES:
+            return None
+        return self.scope.reserve(ChargeSpec('segment-binding-directory-build', worst),
+                                  required=False, cancel=self.cancel)
+
+    def _validate(self):
+        require(self._owner.value['index']['first_ordinal'] == 0, 'root ordinal must start at zero')
+        building = self._directory_reservation()
+        try:
+            starved = False
+            try:
+                collected = self._validate_walk({} if building is not None else None)
+            except MemoryLimitError:
+                if building is None:
+                    raise
+                starved = True
+            if starved:
+                # B17 refuter F2: the optional directory booking must never cost
+                # the walk its required page bookings. Release it and validate
+                # exactly as before, with no directory. This runs after the
+                # handler, and after a collection, so the failed walk's frames
+                # (which keep their charges) are released first.
+                building.close()
+                building = None
+                gc.collect()
+                collected = self._validate_walk(None)
+            if collected is not None and not self._page_outside_root_interval:
+                # Only now is every leaf authenticated (walk complete, Merkle
+                # root equal): freeze, book the measured size, then release
+                # the worst-case booking.
+                frozen = {name: (a[0], a[1], a[2], tuple(a[3]), tuple(a[4])) for name, a in collected.items()}
+                collected = None
+                held = self.scope.reserve(ChargeSpec('segment-binding-directory', _directory_bytes(frozen)),
+                                          required=False, cancel=self.cancel)
+                if held is not None:
+                    self._directory = held.commit(frozen)
+        finally:
+            if building is not None:
+                building.close()
+
+    def _validate_walk(self, collected):
+        """The opening walk's checks; fills and returns collected (None: no directory)."""
+        arrays = logical = ordinal = 0
+        previous = None
+        end = 0
+        expected_count = 0
+        for entry in self._entries(validate=True):
+            body = entry['content']
+            require(body['ordinal'] == ordinal, 'global leaf ordinal mismatch')
+            ordinal += 1
+            if previous is None or body['name'] != previous['name']:
+                require(end == expected_count, 'array has incomplete coverage')
+                require(previous is None or _utf8(previous['name']) < _utf8(body['name']),
+                        'duplicate or unordered array')
+                require(body['array_ordinal'] == arrays, 'array ordinal mismatch')
+                arrays += 1
+                expected_count = math.prod(body['shape'])
+                logical += expected_count * np.dtype(body['dtype']).itemsize
+                end = 0
+                if collected is not None:
+                    current = collected[body['name']] = (body['array_ordinal'], body['dtype'],
+                                                         tuple(body['shape']), [], [])
+            else:
+                require(body['shape'] == previous['shape'] and body['dtype'] == previous['dtype'] and
+                        body['array_ordinal'] == previous['array_ordinal'], 'array descriptor changes within record')
+                require(body['count'] > 0, 'duplicate empty-array leaf')
+            require(body['start'] == end, 'logical range has a gap or overlap')
+            width = NATIVE_CHUNK_BYTES // np.dtype(body['dtype']).itemsize
+            require(body['count'] == min(width, expected_count - end), 'noncanonical typed chunk range')
+            end += body['count']
+            previous = body
+            if collected is not None:
+                start = body['start']
+                current[3].append(start)
+                current[4].append((body['ordinal'], start, body['count'], body['chunk_id'], entry['owner']))
+        require(end == expected_count and arrays == self.ref.array_bindings.count and logical == self.ref.logical_bytes,
+                'complete segment inventory differs')
+        expected = h('atlas.segment-content.v1', dict(identity=self.ref.identity.to_wire(), array_count=arrays,
+            logical_bytes=logical, tree_digest=self._owner.value['index']['tree_digest']))
+        require(expected == self.ref.merkle_root, 'record content Merkle mismatch')
+        return collected
+
+    def metadata_bytes(self):
+        self._live()
+        reservation = self.scope.reserve(ChargeSpec('segment-user-metadata', ROOT_METADATA_MAX),
+                                         required=True, cancel=self.cancel)
+        return reservation.commit(canonical(self._owner.value['metadata']), dependencies=(self._owner,))
+
+    def metadata(self):
+        return self.metadata_bytes()
+
+    def read(self, name, start, stop, *, max_owned_bytes):
+        """Read one typed range.
+
+        Charged peak of one read (M14, restated): the retained result (size),
+        the run-budget scratch (size + 64 KiB), the resolver's native decode
+        workspace per chunk (codec workspace + 8 x 64 KiB) and one page
+        booking per tree level, i.e. about 2 x size + 8.5 MiB + depth x page.
+        The plan's '2 x segment + chunk' omitted the decode workspace and the
+        page bookings; reads are bounded by max_owned_bytes, not SEGMENT_BYTES.
+        S1: on a sealed store set one read is one atomic read batch (file
+        identity before and after the read, not around every page and chunk);
+        the result is withheld until the closing check passes.
+        """
+        self._live()
+        with self._sealed_read():
+            # Held in this frame: a failed closing check keeps it paid in the
+            # traceback, as scan() does, and it never reaches the caller.
+            owned = self._read(name, start, stop, max_owned_bytes)
+        return owned
+
+    def _read(self, name, start, stop, max_owned_bytes):
+        _uint(start, 'read start'); _uint(stop, 'read stop')
+        _uint(max_owned_bytes, 'owned read allowance')
+        # One authenticated root-to-leaf walk per read (was two): the first
+        # covering leaf carries the array's dtype/shape, which the walk binds
+        # to the root through every page digest. Only a range with no covering
+        # leaf (empty array, out of range, missing name) needs the info walk.
+        entries = self._entries(name=name, start=start, stop=stop)
+        first = next(entries, None)
+        if first is None:
+            descriptor = self.info.array(name)
+            info = descriptor.value
+            descriptor.close()
+        else:
+            leaf = first['content']
+            info = ArrayInfo(name, leaf['dtype'], tuple(leaf['shape']),
+                             math.prod(leaf['shape']) * np.dtype(leaf['dtype']).itemsize)
+        require(start <= stop <= math.prod(info.shape), 'read range outside array')
+        itemsize = np.dtype(info.dtype).itemsize
+        size = (stop - start) * itemsize
+        require(size <= max_owned_bytes, 'explicit read allowance exceeded')
+        reservation = self.scope.reserve(ChargeSpec('segment-read', size), required=True, cancel=self.cancel)
+        # Scratch uses the existing failure-retaining run workspace. Only the
+        # final immutable bytes enter retained ownership; a 128 MiB read does
+        # not need two retained slots or expose mutable memoryview.obj backing.
+        with _workspace(self.scope.run_budget, size + 65536, 'segment-read-scratch'):
+            result = bytearray(size)
+            offset = 0
+            for entry in chain(() if first is None else (first,), entries):
+                body = entry['content']
+                lo, hi = max(start, body['start']), min(stop, body['start'] + body['count'])
+                if hi <= lo:
+                    # F8: a zero-length overlap (empty range) decodes no chunk.
+                    continue
+                raw = _chunk(self.resolver, entry['owner'], body['chunk_id'], canonical(entry['descriptor']), self.cancel)
+                count = (hi - lo) * itemsize
+                source_offset = (lo - body['start']) * itemsize
+                require(len(raw.value) == body['count'] * itemsize and offset + count <= size, 'decoded chunk size differs')
+                result[offset:offset + count] = memoryview(raw.value)[source_offset:source_offset + count]
+                offset += count
+                raw.close()
+            require(offset == size, 'read coverage differs')
+            owned = reservation.commit(bytes(result), dependencies=(self._owner,))
+            del result
+        return owned
+
+    def iter(self, name, *, block_bytes, max_owned_bytes):
+        self._live()
+        _uint(block_bytes, 'block bytes'); _uint(max_owned_bytes, 'block allowance')
+        require(0 < block_bytes <= max_owned_bytes, 'invalid block allowance')
+        descriptor = self.info.array(name)
+        info = descriptor.value
+        step = block_bytes // np.dtype(info.dtype).itemsize
+        require(step > 0, 'block smaller than one element')
+        count = math.prod(info.shape)
+        descriptor.close()
+        def stream():
+            for start in range(0, count, step):
+                yield self.read(name, start, min(count, start + step), max_owned_bytes=max_owned_bytes)
+        return OwnedStream(stream(), owners=(self._owner,), scope=self.scope)
+
+    def scan(self, *, max_owned_bytes):
+        """Visit each sealed binding once, including every empty array.
+
+        Each yield owns at most one native payload plus its bounded immutable
+        descriptor. The walk retains only its bounded page/depth stack, never
+        an inventory of unowned rows. Freshness is checked around every step,
+        before its result can escape; cancellation and native authentication
+        remain active. Candidate readers must use their existing fresh reads.
+        """
+        self._live()
+        require(not hasattr(self.resolver, 'interval'), 'candidate cannot serve sealed scans')
+        _uint(max_owned_bytes, 'scan allowance')
+        require(max_owned_bytes >= NATIVE_CHUNK_BYTES, 'scan allowance below native chunk size')
+
+        def stream():
+            entries = self._entries()
+            while True:
+                with self.verified_read():
+                    entry = next(entries, None)
+                    if entry is None:
+                        return
+                    body = entry['content']
+                    size = body['count'] * np.dtype(body['dtype']).itemsize
+                    require(size <= max_owned_bytes, 'scan allowance exceeded')
+                    reservation = self.scope.reserve(
+                        ChargeSpec('segment-scan-block', size + 4096),
+                        required=True, cancel=self.cancel)
+                    info = ArrayInfo(body['name'], body['dtype'], tuple(body['shape']),
+                                     math.prod(body['shape']) * np.dtype(body['dtype']).itemsize)
+                    if size:
+                        raw = _chunk(self.resolver, entry['owner'], body['chunk_id'],
+                                     canonical(entry['descriptor']), self.cancel)
+                        require(len(raw.value) == size, 'decoded chunk size differs')
+                        # Copy under the result's own charge: an escaped block
+                        # never borrows a page row or the transient chunk owner.
+                        data = bytes(memoryview(raw.value))
+                    else:
+                        raw, data = None, b''
+                    owned = reservation.commit(SegmentBlock(
+                        info, body['start'], body['start'] + body['count'], data),
+                        dependencies=(self._owner,))
+                    if raw is not None:
+                        raw.close()
+                    del data, raw, info, entry, body
+                yield owned
+        return OwnedStream(stream(), owners=(self._owner,), scope=self.scope)
+
+    def close(self):
+        if not self._closed:
+            # The owner first: while escaped results still depend on it, its
+            # close refuses and the view stays open and usable, directory too.
+            self._owner.close()
+            self._closed = True
+            directory, self._directory = self._directory, None
+            if directory is not None:
+                directory.close()
+
+    def __enter__(self):
+        self._live()
+        return self
+
+    def __exit__(self, kind, value, traceback):
+        if kind is None:
+            self.close()

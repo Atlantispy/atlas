@@ -6,6 +6,22 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 16 Oct 2026, evening
+
+- Sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED): page and segment reuse merged into
+  `composed-r2/helpers/segment_store.py`. Test failure set unchanged.
+- Start-up measurement reuse 910.9 → 64.4 s (MEASURED under other machine load; indicative).
+- Step 10 growth build checked on real intervals 1 and 2: structure identical to the reference, no violations; the
+  only difference is 245 charts no longer started. Surface CPU: interval 1 893 → 454 s, interval 2 885 → 620 s
+  (MEASURED, serial shards; not a worker-count result).
+- Start gate sized by each run's predicted peak, replacing the fixed 10 GiB start requirement. Built; wiring staged.
+- Pose and heat-number width: conditions 1-3 pass (pose change 0.010-0.033% of the certified radius, limit 1% over
+  1,000 intervals). The interval-1 replay comparison tool was refuted and is being rewritten.
+- Heat certification kernel H3 revision 3: cache names fixed so the identity guard checks the loaded implementation.
+- Changed test expectations between remake and `composed-r2` (groups A-D) accepted; none widens a bound.
+- Every process that imports the runtime now pins hash seed 0 and fails closed otherwise.
+- Added `IN-PROGRESS.md`: part-implemented work, with what is left and each acceptance gate.
+
 ## Compact storage and restart (plan steps 1-10)
 
 - One sealed file per interval:
@@ -88,6 +104,8 @@ All of these are re-tested on the combined build before the fresh interval runs.
 
 ## Built, proof pending, or in progress
 
+Superseded on 16 Oct by `IN-PROGRESS.md`, which lists the current state of each item.
+
 - Built, with the proof run pending:
   - heat reconstruction: accounting fast path, fused dot, inline growth and prepare reuse (about 11 s per interval);
   - compiled exact kernels: heat sum of products (numba with MPFR) and a geometry jet number type (gmpy2);
@@ -106,7 +124,7 @@ All of these are re-tested on the combined build before the fresh interval runs.
 
 - Heat-number width: the composed pose is rounded to a bounded dyadic inside the declared pose error budget, and the
   mesh deviation sum is stored as an outward-rounded bound. The added error must be proven to stay ≤ 1% of the budget
-  over 1,000 intervals. Design first; it lands before the fresh runs.
+  over 1,000 intervals. Conditions 1-3 pass; the interval-1 replay is pending. It lands before the fresh runs.
 - Release mode: check policy D1-D6 plus the seal/promote boundary are approved. Scientific checks and resource guards
   stay on in every build. Not being built yet.
 - Compiled code:

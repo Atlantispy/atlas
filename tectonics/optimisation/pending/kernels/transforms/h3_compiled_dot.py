@@ -33,6 +33,9 @@ not the reviewed build, unexpected object layout, failed self-test; or any failu
 bind or compile) selects the Python route for the process. h3_status() reports the
 route and build info for the runner.
 Record identity: numbers byte-identical; kernel digest and its pin change (D-b).
+r3: the per-process route cache is named _h3_route (r2: _H3). The loaded-dependency identity
+binds upper-case module values as constants, so filling _H3 on first use changed the kernel's
+identity mid-call ("Private source or loaded implementation changed"). Only the name changes.
 """
 from hashlib import sha256
 from pathlib import Path
@@ -47,14 +50,14 @@ RESOURCES_INPUT_SHA256 = {
         'private_heat_certification_resources_r1.py after H2 repin',
 }
 COMPILED_NAME = 'private_heat_compiled_dot_r1.py'
-COMPILED_SHA256 = '62c100cff79742d4254d291b40c529794b857894e1fd2d41e1aa28db8699682a'  # reviewed T/ck/h3/private_heat_compiled_dot_r1.py
+COMPILED_SHA256 = 'e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa'  # T/ck/h3/private_heat_compiled_dot_r1.py r3 (r2 62c100cf, reviewed; only the memo renamed)
 COMPILED_SOURCE = Path(__file__).resolve().parents[1]/'h3'/COMPILED_NAME
 MARK = '# H3: compiled interval dot batches'
 
 HELPER = MARK + ''' (private_heat_compiled_dot_r1, pinned below).
 _H3_NAME = 'private_heat_compiled_dot_r1'
 _H3_SHA256 = '@SHA@'
-_H3 = []
+_h3_route = []  # per-process route choice; lower-case, so the loaded identity binds no state here
 
 
 def _h3_module():
@@ -62,7 +65,7 @@ def _h3_module():
 
     The helper beside this kernel is read once, hashed, and exactly those bytes run.
     """
-    if not _H3:
+    if not _h3_route:
         import sys as _sys
         import types as _types
         from hashlib import sha256 as _sha256
@@ -71,7 +74,7 @@ def _h3_module():
         try:
             data = path.read_bytes()
         except OSError as error:
-            _H3.append((None, 'unavailable: %s' % error))
+            _h3_route.append((None, 'unavailable: %s' % error))
             return None
         if _sha256(data).hexdigest() != _H3_SHA256:
             raise RuntimeError('compiled interval dot helper beside this kernel is not the pinned file')
@@ -88,16 +91,16 @@ def _h3_module():
                 exec(compile(data, str(path), 'exec'), module.__dict__)
             except Exception as error:  # ImportError: not the reviewed build; or it cannot be built
                 del _sys.modules[_H3_NAME]
-                _H3.append((None, 'unavailable: %s: %s' % (type(error).__name__, error)))
+                _h3_route.append((None, 'unavailable: %s: %s' % (type(error).__name__, error)))
                 return None
             module._H3_SEAL = seal
-        _H3.append((module, 'compiled'))
-    return _H3[0][0]
+        _h3_route.append((module, 'compiled'))
+    return _h3_route[0][0]
 
 
 def h3_status():
     module = _h3_module()
-    return dict(route=_H3[0][1], pinned_sha256=_H3_SHA256,
+    return dict(route=_h3_route[0][1], pinned_sha256=_H3_SHA256,
                 build=None if module is None else module.build_info())
 
 

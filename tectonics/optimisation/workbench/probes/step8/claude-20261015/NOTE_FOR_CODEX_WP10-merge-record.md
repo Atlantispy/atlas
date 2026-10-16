@@ -83,3 +83,49 @@ Before copies are in `before-src/`.
   - Compact call: 33.5 s and 30.4 s.
   - Whole check: 95.0 s and 86.0 s.
   - Peak working set: 272 MB.
+
+## Third merge: B17 rev4 + item 14, 16 Oct 2026, 18:15:47 BST
+
+### Authority and conditions
+
+- Michael said yes (about 18:02), through the coordinator. The merge is B17 rev4 (the binding directory) plus item 14 (the page layer), into the live compact folder. It includes your `segment_store.py`, for this merge only.
+- The conditions, as applied:
+  - Live was rechecked against the origin for the four existing files at 18:14:31, and again inside the applier just before its first write.
+  - All seven files went in as one unit. That includes the test sidecar `item14_origin_record_views.py`, placed beside `test_item14_page_layer.py`.
+  - After the merge, the failure set had to stay within the seven IDs of `known-failures-origin-r1.json`, with nothing new.
+  - The storage chat's `NOTE_FOR_CODEX_WP10.md` stays in `fixes/backlog/b17-dir`, where you will see it. This record is the addendum to it.
+
+### Files as merged
+
+The table gives the first 8 hex digits of each sha256. The full values are in `probes/step9/claude-20261016/b17_merge_apply.py`.
+
+| file | before | after |
+|---|---|---|
+| segment_store.py (yours) | 1f503604 | a90ef8f3 |
+| storage_codec_integration_patch.py | 5102778b | 39d71ed0 |
+| test_s1_sealed_read.py | 3c1cf7c1 | 54edda3f |
+| record_views.py | e0a2a845 | a6bbb81d |
+| test_b17_binding_directory.py | new | 25e7339b |
+| test_item14_page_layer.py | new | abd3bbd4 |
+| item14_origin_record_views.py | new | e0a2a845 (the origin record_views, the test's reference) |
+
+- **Applier:** `b17_merge_apply.py`, with modes check, apply and revert.
+  - Every file is pinned by its full sha256.
+  - Each file is copied to a temporary file and moved into place with os.replace, then hashed again.
+  - Any failure rolls the merge back.
+- **Before-copies:** `before-src/<name>.before-b17`.
+- **Revert:** `python -B b17_merge_apply.py revert`. It refuses unless every live file is its candidate and every before-copy is its origin.
+
+### Test results on the merged tree
+
+- **Pre-merge control (18:11):** 15 modules, 207 tests. One failure, which is one of the seven known: test_step7b_segments `test_one_index_walk_exact_native_payloads_descriptors_and_empty_arrays`. 8 skips.
+- **Post-merge (18:21):** 17 modules, 235 tests.
+  - The same one failure and 8 skips; the failure IDs are the same before and after.
+  - Against known-failures r1b, the six heat-file errors are gone (they were in the mirror only, as the storage chat said). Nothing new.
+  - Nothing was written in the compact folder. Peak 0.42 GiB.
+- **Same-call heat re-proof g14:** needed because segment_store and record_views are heat-captured. It ran with seed 0 and no -I, on fresh layouts `g14l0` and `g14l1`. Both arms passed all 9 checks (`probes/step9/claude-20261016/g14-same-call-live0.json` and `live1.json`).
+  - Every array hash and the cell count are identical to g13. So is the metadata length, 1,249,843 bytes.
+  - The metadata sha256 and result ID change, as they did from g12 to g13. They carry the captured implementation identity, and the merged files changed.
+  - Compact call: 40.3 s and 37.0 s (other jobs were running; this was not a timing run).
+  - Whole check: 115.9 s and 96.3 s.
+  - Peak working set: 272 MB per child; 1.04 GiB for the whole process tree.

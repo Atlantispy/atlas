@@ -14,6 +14,10 @@ reader runs between the root interval and interval 1 (Step 9(a)):
   through the composed joined helper with its completed-query owner. The
   runner's ``finish`` callback runs inside that control, while the workflow is
   open (successor checks, bounded pre-seal checks, seal).
+- advance_successor_interval (interval N >= 2, item 21): the same admission, then
+  the adopted interval N-1 head of the runner's sealed lineage is opened and
+  advanced once by prepared_interval_driver through r9's continuation seam, with
+  the joined module interval 1 ran; ``finish`` again runs with the workflow open.
 
 Every physical input, control, work ceiling and tolerance is r9's: the literals
 below are checked against r9's source by test_fresh_interval_driver. The
@@ -40,6 +44,8 @@ INITIAL_METRICS = {'physical_volume_error_m3': Q(32000), 'thermal_volume_error_m
 CREATED_TRACERS = ('tracer:accumulated_strain_ii',)
 PRESSURE_FORCE = {'pressure_max_leaves': 2**19, 'initial_trace_max_leaves': 2**19}
 PARALLEL = {'mode': 'auto', 'workers': 2}
+# The runner's sealed-lineage record for interval N >= 2 (prepared_interval_driver checks the same schema).
+LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
 
 
 class FreshIntervalRefused(ValueError):
@@ -234,6 +240,58 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
 
         return m.check_initial_pressure_force(test, a.case, a.current, a.partition, a.owner.initial_state,
             force_control=m.ACTUATED_CONTROL, **PRESSURE_FORCE, prepared_control=prepared)
+
+
+def advance_successor_interval(m, *, store, expected_root, lineage, budget, artifacts, phase, guard, record, save,
+                               query_checkpoints, finish, measurements=None):
+    """Run B of interval N >= 2: the same admission, then open the adopted interval N-1 head and advance once.
+
+    ``lineage`` is the runner's sealed-lineage record (interval N-1, workflow ID, root and head
+    keys), which its gate bound to the adopted catalog before this call; ``expected_root`` is run
+    A's published root record. Before the admission begins, the lineage must be a sealed record
+    of run A's root for an interval-1-or-later parent. After it, CollarWorkflow.open must accept
+    the re-derived admission, every ROOT_IDENTITY field must equal run A's and the opened head must
+    be the lineage's parent. prepared_interval_driver then advances once through r9's continuation
+    seam with the joined module interval 1 ran; it opens the geometry observer and the thread
+    limit itself and binds the lineage to the opened head again before any physical work.
+    ``query_checkpoints``, ``finish`` and ``measurements``: as for advance_first_interval.
+    """
+    _seed_pinned()
+    # Cheap record checks first: the admission costs minutes.
+    _require(type(lineage) is dict and lineage.get('schema') == LINEAGE_SCHEMA,
+             "an interval N >= 2 run needs the runner's sealed lineage record")
+    interval = lineage.get('interval')
+    _require(type(interval) is int and interval >= 1,
+             'a sealed lineage parent is interval 1 or later; the root advances through advance_first_interval')
+    foreign = [name for name in ('workflow_id', 'root_key') if lineage.get(name) != expected_root[name]]
+    _require(not foreign, "the sealed lineage is not of run A's root: "+', '.join(foreign))
+    with admission(m, budget=budget, artifacts=artifacts, phase=phase, measurements=measurements) as a:
+        phase('reopen-adopted-successor-head')
+        with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
+                             a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
+            before = workflow.inspect()
+            found = published_root(workflow, store, a)
+            differing = [name for name in ROOT_IDENTITY if found[name] != expected_root[name]]
+            _require(not differing, 'run B re-derived admission differs from run A sealed root: '
+                     + ', '.join(differing))
+            record['root_reproduced'] = {name: found[name] for name in ROOT_IDENTITY}
+            head = workflow._head
+            opened = {'interval': before['intervals'], 'kind': head.get('kind'), 'head_key': head.get('key')}
+            parent_head = {'interval': interval, 'kind': 'successor', 'head_key': lineage.get('head_key')}
+            differing = [name for name in opened if opened[name] != parent_head[name]]
+            _require(not differing, 'run B opened a head other than the sealed lineage parent: '
+                     + ', '.join(differing))
+            parent, root_bytes = dict(head), workflow._root
+            with query_checkpoints(a.heat_execution) as checkpoints:
+                m.prepared_interval_driver.advance_prepared_interval(case=a.case, workflow=workflow, base=None,
+                    execution=a.heat_execution, guard=guard, record=record, save=save, artifacts=artifacts,
+                    query_checkpoints=checkpoints, lineage=lineage, joined_module=m.joined)
+                after = workflow.inspect()
+                _require(after['intervals'] == interval+1 and after['funding_id'] == before['funding_id'] and
+                         after['head'] != before['head'] and workflow._root == root_bytes,
+                         'interval %d did not advance exactly once' % (interval+1))
+                save()
+                return finish(workflow, before=before, after=after, parent=parent, root_bytes=root_bytes)
 
 
 def _stages(m):

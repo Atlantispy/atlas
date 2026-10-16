@@ -20,6 +20,7 @@ or changes only digests under field parity. No tolerance is relaxed, and no reso
 | `MANIFEST.json` | Each file's origin in the private engineering tree. |
 | `SANITISED.md` | Files where local user paths or contact details were replaced. |
 | `CHANGELOG.md` | What changed, with MEASURED and PROJECTED results. |
+| `IN-PROGRESS.md` | Part-implemented work: state, location, what is left and the acceptance gate. |
 
 `pending/` and `workbench/` hold only files whose bytes differ from `composed-r2` and the repository package, and
 each unique file appears once.
