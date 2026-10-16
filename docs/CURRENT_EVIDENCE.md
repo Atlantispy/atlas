@@ -57,7 +57,7 @@ accepted clock and save/reopen workflow; it does not establish physical-event or
 whole-world acceptance.
 
 I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
-[i01-finite-admission-r11](../tectonics/evidence/i01-finite-admission-r11.json) now
+[i01-finite-admission-r12](../tectonics/evidence/i01-finite-admission-r12.json) now
 binds that tool, its method document, the restoration modules and the renewed
 upstream receipts. Its predecessors remain superseded, with recorded bytes intact.
 Restoration checks consistency in a trusted local store, not authorship of records.
@@ -484,7 +484,7 @@ written as a new file; no old receipt or recorded measurement was rewritten.
 | 5 | `check_i01_column_admission.py` | [i01-column-admission-r4](../tectonics/evidence/i01-column-admission-r4.json) | motion coupling r4, decoupling r1 |
 | 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r5](../tectonics/evidence/i01-thermomechanical-motion-r5.json) | column heat r6, motion coupling r4 |
 | 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r6](../tectonics/evidence/i01-finite-strain-r6.json) | thermomechanical r5, column heat r6, motion coupling r4 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r11](../tectonics/evidence/i01-finite-admission-r11.json) | finite strain r6, column admission r4 |
+| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r12](../tectonics/evidence/i01-finite-admission-r12.json) | finite strain r6, column admission r4 |
 | 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r5](../tectonics/evidence/i01-breakup-closure-r5.json) | finite strain r6 |
 
 The five phase/receiver/separation successors and the G25 successor passed on
@@ -555,6 +555,8 @@ Focused verification, with valid unchanged results reused:
   Later edits only add the performance record and status documentation.
 
 The [matched operational record](../tectonics/evidence/optimisation-20261005.json)
+is historical since 16 October 2026: a bound tool gained `reuse.py` in its restoration
+inventory, and the external timing harness cannot produce a successor. It
 uses one Windows machine, one fresh process per configuration and one pass of
 seven bounded workloads. Source bytes remained unchanged. Whole-process seconds
 include imports; the release configuration is an explicit diagnostic bootstrap,
