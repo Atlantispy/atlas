@@ -5,7 +5,7 @@ with `<owner-email>`. Nothing else was changed. These files no longer match the 
 `composed-r2/composition.json` or in run records, so a pinned identity check refuses them without the private
 originals. Sanitised bytes do not authenticate historical runs.
 
-272 files.
+273 files.
 
 | File | Original SHA-256 | Staged SHA-256 | Replacements |
 |---|---|---|---|
@@ -39,6 +39,7 @@ originals. Sanitised bytes do not authenticate historical runs.
 | `pending/heat/scripts/job_h1c_r3.sh` | `c702346033ed6718…` | `1e532628b2d5c858…` | 1 |
 | `pending/heat/scripts/job_h1c_r4a.sh` | `c0ffada40a4099d0…` | `54c46bfbc15042e9…` | 1 |
 | `pending/heat/scripts/job_h1c_r4b.sh` | `c133576264dce444…` | `6eb8739588e0b6b5…` | 1 |
+| `pending/heat/scripts/job_h1c_r4c.sh` | `5101699619aa95ab…` | `2ed37e167703cd82…` | 1 |
 | `pending/heat/scripts/job_h2.sh` | `465afe1803efadae…` | `041717ccd9e8e7df…` | 1 |
 | `pending/heat/scripts/prep_lf.sh` | `3fc19f6ea260ad74…` | `46aa36d2a06bde8d…` | 1 |
 | `pending/heat/scripts/prep_r2.sh` | `860530dfadbd61ae…` | `65e4f093d9f56ad5…` | 1 |
@@ -268,7 +269,7 @@ originals. Sanitised bytes do not authenticate historical runs.
 | `workbench/probes/step8/claude-20261015/run_x2_suites.sh` | `11c628fc6a8720f7…` | `36dbf7a0b3c553fd…` | 1 |
 | `workbench/probes/step8/claude-20261015/scouting/baseline-tests.md` | `efd2bf8e9a68ce0c…` | `c09d823d0bb32265…` | 2 |
 | `workbench/probes/step8/claude-20261015/scouting/builder.md` | `5c38c49993a974e9…` | `386acb6a8ab11a70…` | 1 |
-| `workbench/probes/step8/claude-20261015/scouting/exchange-facts.md` | `92e57dd9e06a7e8a…` | `3f1da0873014233e…` | 2 |
+| `workbench/probes/step8/claude-20261015/scouting/exchange-facts.md` | `92e57dd9e06a7e8a…` | `2bb3b6641dfd749d…` | 3 |
 | `workbench/probes/step8/claude-20261015/scouting/harness.md` | `59f67ad522caaf64…` | `37d26fe6646afde2…` | 1 |
 | `workbench/probes/step9/claude-20261016/run_adm_bisect.sh` | `320532ce4228dc59…` | `ed0d90d453adf1a8…` | 1 |
 | `workbench/probes/step9/claude-20261016/run_adm_samples.sh` | `ced57db96960e941…` | `f28ff56cfe5041d3…` | 1 |

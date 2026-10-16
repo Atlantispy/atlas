@@ -5306,6 +5306,16 @@
    "kind": "workbench"
   },
   {
+   "path": "workbench/probes/step9/claude-20261016/item21_mutant_scenario.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_mutant_scenario.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step9/claude-20261016/item21_mutants.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21_mutants.py",
+   "kind": "workbench"
+  },
+  {
    "path": "workbench/probes/step9/claude-20261016/json_find.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/json_find.py",
    "kind": "workbench"
@@ -5881,6 +5891,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/heat/scripts/dry_job_r4c.py",
+   "source": "<TASK_ROOT>/hs/scripts/dry_job_r4c.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/heat/scripts/h5a_control_layout.py",
    "source": "<TASK_ROOT>/hs/scripts/h5a_control_layout.py",
    "kind": "pending"
@@ -5923,6 +5938,11 @@
   {
    "path": "pending/heat/scripts/job_h1c_r4b.sh",
    "source": "<TASK_ROOT>/hs/scripts/job_h1c_r4b.sh",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/heat/scripts/job_h1c_r4c.sh",
+   "source": "<TASK_ROOT>/hs/scripts/job_h1c_r4c.sh",
    "kind": "pending"
   },
   {
@@ -6321,6 +6341,26 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/c/wr1/WIDTH_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ps/c/wr1/WIDTH_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/c/wr1/src/atlas_tectonics/integration_differential_mesh.py",
+   "source": "<TASK_ROOT>/ps/c/wr1/src/atlas_tectonics/integration_differential_mesh.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/c/wr1/src/atlas_tectonics/integration_exterior_mesh.py",
+   "source": "<TASK_ROOT>/ps/c/wr1/src/atlas_tectonics/integration_exterior_mesh.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/c/wr1/src/atlas_tectonics/integration_wall_measures.py",
+   "source": "<TASK_ROOT>/ps/c/wr1/src/atlas_tectonics/integration_wall_measures.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/refute/p1/gen_close.py",
    "source": "<TASK_ROOT>/ps/refute/p1/gen_close.py",
    "kind": "pending"
@@ -6546,6 +6586,11 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/DESIGN-r1.md",
+   "source": "<TASK_ROOT>/ps/width/DESIGN-r1.md",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/width/DESIGN.md",
    "source": "<TASK_ROOT>/ps/width/DESIGN.md",
    "kind": "pending"
@@ -6556,6 +6601,16 @@
    "kind": "pending"
   },
   {
+   "path": "pending/pressure/width/check_round_mpmath_r3.py",
+   "source": "<TASK_ROOT>/ps/width/check_round_mpmath_r3.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/compose_width.py",
+   "source": "<TASK_ROOT>/ps/width/compose_width.py",
+   "kind": "pending"
+  },
+  {
    "path": "pending/pressure/width/pose_round_probe.py",
    "source": "<TASK_ROOT>/ps/width/pose_round_probe.py",
    "kind": "pending"
@@ -6563,6 +6618,21 @@
   {
    "path": "pending/pressure/width/pose_round_probe_r2.py",
    "source": "<TASK_ROOT>/ps/width/pose_round_probe_r2.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/pose_round_probe_r3.py",
+   "source": "<TASK_ROOT>/ps/width/pose_round_probe_r3.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/width_deviation_bound.py",
+   "source": "<TASK_ROOT>/ps/width/width_deviation_bound.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/pressure/width/width_pose_round.py",
+   "source": "<TASK_ROOT>/ps/width/width_pose_round.py",
    "kind": "pending"
   },
   {
@@ -6583,6 +6653,11 @@
   {
    "path": "pending/kernels/d5/bench.py",
    "source": "<TASK_ROOT>/ck/d5/bench.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5/build_tree.py",
+   "source": "<TASK_ROOT>/ck/d5/build_tree.py",
    "kind": "pending"
   },
   {
@@ -6608,6 +6683,31 @@
   {
    "path": "pending/kernels/d5/who.py",
    "source": "<TASK_ROOT>/ck/d5/who.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5/src/integration_exact_twin.py",
+   "source": "<TASK_ROOT>/ck/d5/src/integration_exact_twin.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5/src/integration_wall_measures_gmp.py",
+   "source": "<TASK_ROOT>/ck/d5/src/integration_wall_measures_gmp.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5-f2/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ck/d5-f2/TEST_COMPOSITION.json",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5-f2/atlas_tectonics/integration_wall_measures.py",
+   "source": "<TASK_ROOT>/ck/d5-f2/atlas_tectonics/integration_wall_measures.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/d5-jets/TEST_COMPOSITION.json",
+   "source": "<TASK_ROOT>/ck/d5-jets/TEST_COMPOSITION.json",
    "kind": "pending"
   },
   {
@@ -7138,6 +7238,11 @@
   {
    "path": "pending/kernels/tools/prof_top.py",
    "source": "<TASK_ROOT>/ck/tools/prof_top.py",
+   "kind": "pending"
+  },
+  {
+   "path": "pending/kernels/transforms/d5_wall_hooks.py",
+   "source": "<TASK_ROOT>/ck/transforms/d5_wall_hooks.py",
    "kind": "pending"
   },
   {

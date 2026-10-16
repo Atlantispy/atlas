@@ -272,6 +272,14 @@ class OrdinaryHeadScenarios(unittest.TestCase):
                 self.assertEqual(row['error'], dict(type='TypeError', message=message))
                 self.assertRefusedBeforeWork(row)
 
+    def test_ordinary_owner_checks_refuse_before_any_physical_work(self):
+        for name in ('ordinary-workflow-type', 'ordinary-workflow-budget', 'ordinary-checkpoint-type',
+                     'ordinary-inactive-checkpoints', 'ordinary-checkpoint-budget', 'ordinary-checkpoint-context'):
+            with self.subTest(name=name):
+                row = run_scenario(name)
+                self.assertEqual(row['error'], dict(type='TypeError', message=ORDINARY_TYPE))
+                self.assertRefusedBeforeWork(row)
+
     def test_lineage_mismatch_refuses_before_any_physical_work(self):
         for name, message in (('ordinary-lineage-schema', "needs the runner's sealed lineage record"),
                               ('ordinary-root-head', 'interval 1 or later'),
@@ -281,7 +289,9 @@ class OrdinaryHeadScenarios(unittest.TestCase):
                               ('ordinary-root-kind', 'differs from the sealed lineage: root_kind'),
                               ('ordinary-head-key', 'differs from the sealed lineage: head_key'),
                               ('ordinary-kind', 'differs from the sealed lineage: kind'),
-                              ('ordinary-sequence', 'differs from the sealed lineage: sequence')):
+                              ('ordinary-sequence', 'differs from the sealed lineage: sequence'),
+                              # Equal but not the same type: the comparison is type-strict.
+                              ('ordinary-sequence-float', 'differs from the sealed lineage: sequence')):
             with self.subTest(name=name):
                 row = run_scenario(name)
                 self.assertEqual(row['error']['type'], 'PreparedIntervalRefused')
@@ -540,10 +550,24 @@ def scenario_main(name, directory):
     if ordinary:
         head_duration = first*(1+2**-30) if name == 'ordinary-duration' else first
         workflow.parent = dict(key='parent-key', kind='root' if name == 'ordinary-kind' else 'successor',
-                               sequence=1, advance=dict(duration_s=head_duration))
+                               sequence=1.0 if name == 'ordinary-sequence-float' else 1,
+                               advance=dict(duration_s=head_duration))
         workflow._migration = base if name == 'ordinary-migration-set' else None
         workflow._root = json.dumps(dict(key='root-key', kind='migrated-root' if name == 'ordinary-root-kind' else
                                          'root'), separators=(',', ':')).encode()
+        # One owner condition broken per scenario; each must refuse as a TypeError before any work.
+        if name == 'ordinary-workflow-type':
+            workflow.__class__ = type('ForeignWorkflow', (CollarWorkflow,), {})
+        if name == 'ordinary-workflow-budget':
+            workflow._budget = FakeBudget()
+        if name == 'ordinary-checkpoint-type':
+            query_checkpoints.__class__ = type('ForeignCheckpoints', (EndpointCheckpoints,), {})
+        if name == 'ordinary-inactive-checkpoints':
+            query_checkpoints._active = False
+        if name == 'ordinary-checkpoint-budget':
+            query_checkpoints.budget = FakeBudget()
+        if name == 'ordinary-checkpoint-context':
+            query_checkpoints.context = types.SimpleNamespace()
     if ordinary or name == 'migrated-lineage':
         lineage = dict(schema='atlas.fresh-interval-lineage.v0' if name == 'ordinary-lineage-schema' else LINEAGE_SCHEMA,
                        interval={'ordinary-root-head': 0, 'ordinary-interval-type': True,

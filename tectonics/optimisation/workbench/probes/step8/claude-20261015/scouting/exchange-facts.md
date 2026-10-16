@@ -9,7 +9,7 @@ Path aliases:
 - **H** = `…/heat-repair-20261007`
 
 Scripts (read-only, absolute paths):
-- `C:\Users\LOCAL_USER\AppData\Local\Temp\claude\C--Users-LOCAL_USER-OneDrive-Documents-GitHub-atlas--claude-worktrees-peaceful-bassi-d1a10f\2db1cb0f-65ea-4591-955f-825a0e05a8f7\scratchpad\show_finish.py`
+- `<SCRATCH>`
 - `…\scratchpad\diag_keys.py`
 - `…\scratchpad\retained_stats.py`
 
