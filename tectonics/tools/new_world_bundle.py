@@ -54,6 +54,9 @@ def _fail(code='INVALID_BUNDLE'):
 
 
 def _guard():
+    guard = sys.modules.get('atlas_tectonics.reuse')
+    if guard is not None:
+        guard.release_boundary()
     if hashlib.sha256(_SELF.read_bytes()).hexdigest() != _SELF_HASH:
         _fail('SOURCE_MISMATCH')
 
@@ -113,6 +116,7 @@ def _publish_copy(source, destination, maximum):
                 output.flush(); os.fsync(output.fileno())
             if paths._identity(directory.inspect(name)) != identity:
                 _fail('UNSAFE_PATH')
+            _guard()
             directory.publish(name, path.name)
         finally:
             directory.remove_owned(name, identity)

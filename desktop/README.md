@@ -11,11 +11,12 @@ window cancels active calculations and closes the owned backend; saved exports
 are not deleted. The existing browser-based Atlas workspace is separate.
 
 This is an unsigned development build: Windows may display a publisher warning.
-The 2 October 2026 refresh packages the accepted I01/I02 backend and R7 repairs
-from commit `c856236`, including the newer 3-D solver. It excludes unfinished
-I03 work and retains the existing UI. I02's coupled-column command workflow is
-included, but connecting it to whole-world UI evolution remains later integration
-work. Native source and runtime compatibility checks remain active when opening
+The 3 October 2026 refresh packages commit `30a79e6`: the I01/I02 backend,
+R7 repairs, newer 3-D solver and reviewed I03 spherical network, bridges and events,
+including K1-K5 and the N1 follow-up. It retains the existing UI. I02's
+coupled-column workflow and I03's supplied-motion spherical history are included
+in the backend; the existing evolution controls still run the regional route,
+not whole-planet I03 evolution. Native source and runtime compatibility checks remain active when opening
 or continuing old work; an older job is not silently rebound to the new code.
 
 ## Rebuild
@@ -46,6 +47,15 @@ are refused. The build includes the pinned UI snapshot and unchanged native Pyth
 sources, not personal projects, caches or coordination records.
 `build-manifest.json` records delivered file hashes. Keep it with the build.
 
+New full builds also create `tectonics/.desktop-runtime.json` in the native
+payload. Together with the packaged interpreter and allowed desktop entry point,
+this enables release identity checking: full capture once per backend, full checks
+at persistence/reuse boundaries, cheap inner checks. It never changes the physical
+calculation or scientific identity. Checkout and evidence runs remain strict.
+See [execution policy](../docs/CODING_SAFETY.md#strict-checkout-and-packaged-release-execution).
+This source integration does not alter the installed 3 October EXE; a separate
+authorised rebuild and installed-app check are still required.
+
 ## Checks
 
 - `node --test desktop/runtime.test.cjs` runs wherever Node is available.
@@ -61,7 +71,22 @@ sources, not personal projects, caches or coordination records.
 
 None of these is a full scientific test suite.
 
-## Recorded Windows acceptance
+## Current Windows acceptance (3 October build)
+
+The refresh contains all 389 native payload files from `30a79e6`, with matching
+hashes, and the unchanged pinned UI and CPython runtime. Two targeted I03
+path/mesh/event save-reopen-continue regressions passed using the bundled Python
+and packaged source (4.858 s). Existing scientific acceptance was reused.
+
+The real executable created, exported, loaded and saved a six-plate, 192-cell
+world with identical reloaded fields (20.837 s). The hidden-window test now waits
+for painted globe content rather than a fixed delay. Its reopen check explicitly
+opens Your world from the intentional start page. After installation, that check
+passed in 4.676 s, preserving the isolated profile, origin and saved world.
+The globe screenshot was inspected. The user's normal profile and projects were
+not opened or modified; the 2 October application is retained as a recovery copy.
+
+## Earlier Windows acceptance (2 October build)
 
 The 2 October refresh passed its real executable check in an isolated profile:
 six plates and 192 support cells were generated, exported, loaded through the UI
@@ -79,7 +104,7 @@ state with zero accepted advancement steps. The first invocation correctly
 refused an absent test root; creating that root resolved the invocation error.
 Existing scientific evidence was reused, not replaced by this packaging check.
 
-The application is approximately 801 MB, with Electron 44.4.5, the relocatable
+That application was approximately 801 MB, with Electron 44.4.5, the relocatable
 Python runtime and the unchanged UI snapshot. The previous 26 September build
 was retained as a recovery copy; the existing Start-menu shortcut targets the
 updated application. This is Windows packaging/lifecycle coverage, not new

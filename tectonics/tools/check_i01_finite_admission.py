@@ -88,8 +88,8 @@ RESTORATION = ("src/atlas_tectonics/integration_ledger.py", "src/atlas_tectonics
                "src/atlas_tectonics/integration_clock.py")
 # The bound restoration test commits its history through the accepted clock.
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-finite-strain-r5.json": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
-    "evidence/i01-column-admission-r3.json": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3"}
+    "evidence/i01-finite-strain-r6.json": "3460e9df890a1cd8345b85d91e734e7caa111e223b8edadbf1257d05955c7b53",
+    "evidence/i01-column-admission-r4.json": "e0de86619f8878f48a230c0d9b793debaec614769267a44306340fd3895de037"}
 IMPORTED = {"tools/check_i01_finite_strain.py": fs, "tools/check_i01_column_admission.py": ca,
             "tools/check_i01_decoupling.py": d, "tools/check_i01_thermomechanical_motion.py": tm,
             "tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,

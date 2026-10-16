@@ -101,6 +101,32 @@ verification retains the full suite; a selected pass is not a full-suite pass.
 
 ## 4. Migration and source-identity boundaries
 
+### Strict checkout and packaged release execution
+
+The checkout, tests, scientific benchmarks and evidence producers stay in
+**strict** mode. Every existing per-operation check still reads all package
+source bytes and checks loaded functions, defaults and constants. Only normalised
+deeply immutable constants are reused; mutable values are checked every time.
+
+A fresh desktop build writes an exclusive `.desktop-runtime.json` inside its
+payload. Release mode additionally requires the packaged interpreter, supported
+desktop command and plain payload paths. An environment variable cannot enable
+it in a checkout. Verification and before-commit commands refuse release mode.
+No installed EXE was rebuilt by this source change.
+
+In **release** mode, each backend's first capture and full verification are shared
+under a process lock. Inner checks are cheap, but save/commit, store reopen and
+cache reads perform full checks again. Source or callable drift refuses publication
+or reuse. Scientific identity excludes the policy mode, so equivalent strict and
+release results share their identity. Mode is separate producer provenance in
+project/store manifests and `ExecutionContext.provenance`; old manifests imply
+strict. Existing source/runtime compatibility rules still apply: this does not
+make old-version saves restartable under new code.
+
+Release-mode diagnostic timings are not strict scientific acceptance evidence.
+No change to physical equations, tolerances, reduction order, step limits or
+native thread ownership is permitted by this execution policy.
+
 - R31 topography source changes require explicit new recipe identities for the
   changed operations. Other producers are not automatically re-versioned.
   Older terrain envelopes require the relevant explicit native import; a copied

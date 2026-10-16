@@ -242,20 +242,28 @@ class MultigridPlanTests(unittest.TestCase):
                 with self.subTest(changes=changes), self.assertRaisesRegex(TectonicsError, 'does not match'):
                     prepare(_shared=shared, **changes)
 
-    def test_default_budget_admits_a_nine_cube_and_refuses_underfunded_native_factors(self):
+    def test_default_budget_admits_an_eight_cube_and_refuses_underfunded_native_factors(self):
         # The assembled route refuses every 7x7x7 cube in the default 256 MiB.
         with self.assertRaises(MemoryLimitError):
             prepare(cells=(7, 7, 7), method='gmres')
-        with prepare(cells=(9, 9, 9)) as plan:
+        with prepare(cells=(8, 8, 8)) as plan:
             stats = plan.statistics()['budget']
             self.assertLessEqual(stats['reserved_bytes'], 256*1024**2)
             self.assertIn('regional3d-multigrid-factor', stats['categories'])
             self.assertEqual(plan.descriptor()['solver']['krylov_rtol'], 1e-13)
             self.assertGreaterEqual(len(plan.descriptor()['solver']['levels']), 2)
-        # The old sparse-entry-only allowance admitted this despite omitting
-        # SuperLU's initial native arrays. Keep the 256 MiB user limit intact.
-        with self.assertRaises(MemoryLimitError):
-            prepare(cells=(10, 10, 10))
+        # Retained element buffers, CSR transposes and their construction peak
+        # are now charged alongside SuperLU's native arrays. Keep the 256 MiB
+        # limit intact: the complete nine-cube envelope is about 263 MiB.
+        for n in (9, 10):
+            with self.subTest(cells=n), self.assertRaises(MemoryLimitError):
+                prepare(cells=(n, n, n))
+        larger = WorkBudget(512*1024**2)
+        with prepare(cells=(9, 9, 9), budget=larger) as plan:
+            reserved = plan.statistics()['budget']['reserved_bytes']
+            self.assertGreater(reserved, 256*1024**2)
+            self.assertLessEqual(reserved, larger.max_bytes)
+        self.assertEqual(larger.reserved_bytes, 0)
         with self.assertRaises(MemoryLimitError):
             prepare(budget=WorkBudget(4*1024**2))
 

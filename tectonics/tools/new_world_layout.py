@@ -191,10 +191,13 @@ def generate_layout_candidate(plan, *, policy=None, cancel=None):
                                                 plate_id=f'plate-{labels[i]:06d}')
                                         for i,p in enumerate(support.patches))
                         spec['acceptance']['geometry'] = 'CHECKED'
+                        # Same faces with new owners: the support's identical local
+                        # polygons are reused; every atlas check and ID is recomputed.
                         candidate = build_spherical_atlas(sphere,
                             dict(zip(support.vertex_ids, support.vertex_directions)), patches,
                             budget=budget, cancel=cancellation,
-                            source_bindings={'new_world_layout': spec})
+                            source_bindings={'new_world_layout': spec},
+                            reuse_faces_from=support)
                         _check_cancel(cancellation)
                         _source_hash()
                         validate_plan(plan)

@@ -187,6 +187,11 @@ def _json(path, maximum=65536):
 
 def _publish(path, body):
     """Publish only complete immutable bytes, cleaning only our owned temporary."""
+    # A configuration-only invocation stays stdlib-only. Once native execution
+    # has started, publication must not inherit release mode's cheap inner check.
+    guard = sys.modules.get('atlas_tectonics.reuse')
+    if guard is not None:
+        guard.release_boundary()
     path, parents = paths._checked_path(os.fspath(path))
     with paths._Directory(path.parent, parents) as directory:
         name = '.new-world-' + secrets.token_hex(16) + '.tmp'
@@ -198,6 +203,8 @@ def _publish(path, body):
             info = directory.inspect(name)
             if paths._unsafe(info) or paths._identity(info) != identity:
                 _fail('INVALID_PATH')
+            if guard is not None:
+                guard.release_boundary()
             directory.publish(name, path.name)
         finally:
             directory.remove_owned(name, identity)

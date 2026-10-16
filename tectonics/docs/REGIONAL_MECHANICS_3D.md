@@ -465,6 +465,16 @@ calibration, a whole-world speed forecast or an accepted evidence receipt.
 
 ### Scratch measurements (30 September 2026; not a receipt)
 
+The 5 October bitwise optimisation retains gradient/gather work buffers and CSR
+transposes, and uses pinned Numba 0.65.1 kernels with `fastmath=False` and no disk
+cache. Local multiply/add order, solver acceptance and the single-thread native
+lease are unchanged. All retained buffers, smoother inverses and transpose
+construction peaks now enter the reservation. A closed 8x8x8 control needs
+203.99 MiB; 9x9x9 needs 262.98 MiB, so the latter no longer fits the default
+256 MiB. Callers may explicitly select a larger shared `WorkBudget`, for example
+512 MiB. This is honest resource accounting, not a reduced-resolution fallback.
+The uncoordinated prototype GEMM helper pool was not integrated.
+
 **Setup.**
 - Machine and software: one Windows 11 AMD64 machine (8 cores), CPython 3.12.14,
   NumPy 2.4.6, SciPy 1.17.1.

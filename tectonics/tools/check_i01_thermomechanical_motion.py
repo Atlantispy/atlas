@@ -61,8 +61,8 @@ RETAINED = ("tools/check_i01_column_heat.py", "tools/check_i01_motion_coupling.p
             "src/atlas_tectonics/_integration_motion.py", "src/atlas_tectonics/_integration_weakening.py",
             "src/atlas_tectonics/_integration_column.py")
 ACCEPTED_RECEIPTS = {
-    "evidence/i01-column-heat-r5.json": "576ea2153ac23b3e6458594832926d5a9d733bed07eec124ea5280767e7b08a2",
-    "evidence/i01-motion-coupling-r3.json": "6aa3837acd8a0e150c0f2dfda581479deb6bdc8eacfb5e51241f0c6f13fb7297"}
+    "evidence/i01-column-heat-r6.json": "74b9aba0c532a7c8d0613e861db4eee2cece796ccd223ccdb19b79663e6d16cb",
+    "evidence/i01-motion-coupling-r4.json": "a8102385a0c93922d9d10e76d46fdf3a742eb8e8c5f821f4d7063553a19ba41d"}
 IMPORTED = {"tools/check_i01_column_heat.py": heat, "tools/check_i01_motion_coupling.py": motion,
             "tools/check_i01_weakening.py": weakening, "tools/check_i01_column.py": column,
             "src/atlas_tectonics/_integration_thermomechanical.py": _integration_thermomechanical,

@@ -477,6 +477,52 @@ there (not accessed). M1 and the construction are derived here; they are not tak
 software. The bounds proposal and the coordinator's approval record give the derivations and the approval's
 conditions.
 
+#### Ridge-transform staircase seam extension (I04 repair)
+
+**Owner-authorised extension, 4 October 2026; focused material and coupled controls pass.**
+For exactly one ridge and one great-circle slip-parallel transform, a moving
+two-record corner is the nearer intersection of the advanced ridge and transform
+lines, retaining the existing junction residual, conditioning, non-collapse and
+C6 gates. Each opening plate retains its carried old ridge corner. A corner
+inside the active transform subdivides its chain; one behind the physical endpoint
+remains an internal material seam. Shared inherited-face and newborn-strip edges
+use the same junction and corner vertices. Subsequent far-side material seams ride
+with that plate while the carrier changes only edge subdivision. An explicit
+caller-requested remesh can instead make the corner a shared sampling vertex;
+ordinary conservative overlap then mixes its material across the new faces. It
+preserves cohort inventory, formation time and history identity, not an exact
+sub-face material-interface shape. The existing I05 unresolved-column refusal still
+applies to mixed faces. Existing audited
+birth and overlap rows transfer material and heat: a transform supplies and
+consumes nothing. This is the constructed subset of previously refused D1-c, not
+general seam reorganisation.
+
+The first declared control is a genuine single offset: two meridian ridges joined
+by an equatorial transform, with a distant trench closing the sphere. Coaxial
+rotations leave the transform exactly slip-parallel. At accretion fraction `f`,
+both junctions turn at `(1-f) omega_L + f omega_R`, so the offset is preserved.
+Each hemispherical ridge creates `R^2 delta_theta` of area, split between its sides
+by `f` and `1-f`; both ridges together balance the full-meridian trench's consumption.
+Endpoint fractions alone are insufficient: the controls must cover `f=1/2`, tilted
+axes, multiple intervals, unchanged transform inventories and ledger replay.
+Unsupported seam crossings/collisions, general line reorganisation and arbitrary
+small-circle transforms remain refusals. The controls do not prove that arbitrary
+D1 forcing is kinematically compatible with a prescribed transform.
+
+The coupled control in `tests/test_i04_staircase.py` repeats the offset by a
+half-turn, with explicitly manufactured multipart A/B plates. Two steps in plain
+and tilted frames retain both offsets, positive ridge birth and positive deformation
+work/history through the full D1/D2 solve. Transform belts alone are active; ridge
+and trench resistance are explicitly omitted. The I04 method records its scope
+and numerical results. This is not an arbitrary multi-offset/small-circle solver.
+
+This construction reuses Atlas's stored-pole intersection and conservative material
+rows; no new physical law or weaker numerical bound is introduced. The
+[CGAL spherical-kernel manual](https://doc.cgal.org/latest/Circular_kernel_3/index.html)
+was inspected for circle-aware geometry and exact predicates. No CGAL dependency
+or general circular-arc implementation is used here: a polyline of great-circle
+chords is not silently treated as an exact small circle.
+
 ### R3-4b. Explicit within-interval junction histories
 
 The larger repair adds an opt-in supplied-history representation, not an automatic
@@ -1113,8 +1159,57 @@ Never infer a row from geometry of its own: use the map of the accepted interval
 | `incompatible support` | a supply declares other phases than the network carries, or gives enthalpy when the network has no basis (or the reverse) |
 | `stale geometry identity` | a prepared map is offered for another parent, moved or endpoint geometry or another motion |
 
-Any other refusal carries no code. An accepted I05 port record does not exist yet;
-when it does, differences are to be proposed as amendments to this section.
+Any other refusal carries no code. Differences are proposed as amendments to this
+section; the I04/I05 port record is [I04_I05_PORTS.md](I04_I05_PORTS.md) and I05's
+use of this port is described in [I05_MOVING_STATE.md](I05_MOVING_STATE.md).
+
+**History split (amendment of 4 October 2026, ruling I05-2).** I05 keeps one raw history
+per cohort. When an update would give pieces of one cohort different histories, the
+cohort is first split, in the same interval, never averaged.
+
+- **Carrier.** A `HistorySplit(cohort_id, groups)` (`integration_splits.py`) is carried
+  in the interval's `Motion` as `history_splits`, as events and regional returns are.
+  - It is bound into the motion identity, stored with the step and applied again on
+    restore.
+  - A motion without splits records nothing new and keeps its identity, so stored
+    histories restore unchanged.
+- **Application.** Each group (history reference, face IDs) relabels the named endpoint
+  pieces of the cohort into one sub-cohort. This happens last: after the motion rows,
+  any mesh change, regional returns and events.
+  - Pieces in no group stay in the cohort.
+  - Each relabelled piece keeps its exact stock row, so every per-column sum, exact
+    account and occupancy allowance is unchanged.
+- **Sub-cohort.** It keeps its parent's material, origin and formation interval, so no
+  age is reset, and takes the group's history reference.
+  - Its ID is `split:` followed by the first 32 hex digits of the SHA-256 of (cohort,
+    end step, history reference). It is bounded and never nests its parent's name.
+- **Lineage.** The step's arrays carry `sphere.split_parent` and `sphere.split_child`:
+  indices into the successor's cohorts.
+- **Refusals** (the interval is refused whole):
+  - an unknown cohort, or a face holding none of its pieces;
+  - an empty group, or a piece named twice;
+  - a derived ID already in use;
+  - a cohort split twice in one interval;
+  - a cohort carried by a regional return of the same interval;
+  - a no-op: one group holding every piece;
+  - groups that together name every piece, which would leave the parent cohort without
+    one (one history stays in the parent, so a split never makes cohorts outnumber pieces);
+  - a history reference equal to the parent's.
+- **Regional returns.** `history_splits` stays in the bridges' forcing identity
+  (`_forcing_id`), with no new identity semantics.
+  - A split therefore changes the interval's forcing, even for a cohort no return
+    carries. A return extracted for the split-free motion is refused as stale geometry.
+  - A split motion needs a regional return re-extracted against the split motion itself.
+  - A cohort that a return carries is never split in the same interval. A test runs a
+    real return through `T.advance`.
+- **Checks** ([test_i03_history_split.py](../tests/test_i03_history_split.py)):
+  - split, then transfer, then restore;
+  - exact accounts;
+  - formation kept;
+  - idempotent replay;
+  - each refusal;
+  - independence of a tilted frame;
+  - the identity of motions without splits.
 
 ## 8. Regional bridges (I03.3)
 

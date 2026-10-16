@@ -12,7 +12,7 @@ import numpy as np
 
 from ._validation import TectonicsError, frozen, input_shape, read_array
 from .parameters import PlateCoolingParameters
-from .plate_cooling import _cancel, _erfc_mean, _fourier_age, _IMAGE_LIMIT, _MODES
+from .plate_cooling import _cancel, _erfc_edge_means, _fourier_age, _IMAGE_LIMIT, _MODES
 from .resources import elements, select_budget
 from .stokes_execution import _factored_scale
 from .thermal import _batch_count
@@ -29,9 +29,11 @@ def _deficit(fourier_age, erfc):
     young = (fourier_age > 0) & (fourier_age <= _IMAGE_LIMIT)
     if np.any(young):
         scale = 2*np.sqrt(fourier_age[young])
+        # Consecutive unit intervals share their edges image/scale.
+        means = _erfc_edge_means(np.stack([image/scale for image in range(6)]), erfc)
         value = np.zeros_like(scale)
         for image in range(5):
-            value += (-1)**image*_erfc_mean(image/scale, (image+1)/scale, erfc)
+            value += (-1)**image*means[image]
         result[young] = value
     old = fourier_age > _IMAGE_LIMIT
     if np.any(old):

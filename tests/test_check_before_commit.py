@@ -30,6 +30,17 @@ if sys.argv[2:3] == ["copy"]:
 
 
 class DocumentationSelectionTests(unittest.TestCase):
+    def test_packaged_marker_cannot_produce_commit_evidence(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'tectonics').mkdir()
+            (root / 'tectonics' / '.desktop-runtime.json').write_bytes(b'{}')
+            output = io.StringIO()
+            with contextlib.redirect_stderr(output):
+                code = guard.main(['--root', str(root)])
+            self.assertEqual(code, 1)
+            self.assertIn('cannot produce strict commit evidence', output.getvalue())
+
     def snapshot(self, changed=(), *, skipped=(), regular=True):
         return guard.Candidate(Path('candidate'), changed, (), skipped, regular)
 

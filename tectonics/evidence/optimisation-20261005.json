@@ -1,0 +1,1020 @@
+{
+  "acceptance_limits": [
+    "Candidate checkout defaults to strict. Release runs explicitly set reuse._release_state.mode before runpy as diagnostic only.",
+    "Private-state release measurements do not establish packaged release admission, EXE behaviour or strict scientific acceptance.",
+    "I02 is not an allowed packaged entry point; its release result is a diagnostic cost comparison only.",
+    "Single-pass timings are observations without confidence intervals. No reruns were used to improve timings.",
+    "I02 release diagnostic is slower: the regression is retained. No causal benchmark claim is made."
+  ],
+  "adapted_driver_hashes": {
+    "i02_column": "780ff8f88206ac49901b685ba95973238cad643c34b80a21cb91d4c99da22940",
+    "new_world": "8c9e98af9bf0673738969a0f57963db6edc771ca460c1d30e7fb2225aaa9ad72",
+    "regional3d": "1da73583d024e8b1cd7ea370b2e4fa0a4a443c74dc9d0df38af9ef6ba43b0c9d",
+    "regional_job": "918fd79c2d0a696937b023b28bea019f004cf2f863b7d57642a824b2bed78307",
+    "w03": "5f388beac619fd7904d3e9d7207afb5ea59d3f4ee8816ec92bcb6dbad3dcfc44",
+    "w05_w06": "84d3e0c1c5d31441600b9b98d93fefa10a915a73279fc4ef6792333eb8fa6b48",
+    "w07": "9c7179c8db7eebfb2e432a54048debb1b1617ee5d4ccd8e4b49627328e884055"
+  },
+  "aggregate_process_seconds": {
+    "base_strict": 92.57421520000207,
+    "candidate_release_diagnostic": 44.331294299976435,
+    "candidate_strict": 78.23483740002848
+  },
+  "all_21_modes_observed": true,
+  "candidate_request_derivation": {
+    "configurations": {
+      "base_strict": {
+        "observed_sha256": "ef1e66d75ff00a096380b2f785ab243794363e851a3d90f60fd1fd2f22318942",
+        "payload": {
+          "adapter_sha256": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+          "method": "atlas.variable-plate-layout.v1",
+          "policy": {
+            "max_area_l1_error": 0.04,
+            "max_relative_area_error": 0.25,
+            "size_log_spread": 0.35
+          },
+          "scientific_id": "4acdee13e3ddb45b1297e2254129b13931fb2c65c2a293477c17889800c207fb"
+        },
+        "recomputed_sha256": "ef1e66d75ff00a096380b2f785ab243794363e851a3d90f60fd1fd2f22318942"
+      },
+      "candidate_release_diagnostic": {
+        "observed_sha256": "6e1db50964930718649fbba6a23183c45ee5019c09db3e4e239fbb106043362e",
+        "payload": {
+          "adapter_sha256": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5",
+          "method": "atlas.variable-plate-layout.v1",
+          "policy": {
+            "max_area_l1_error": 0.04,
+            "max_relative_area_error": 0.25,
+            "size_log_spread": 0.35
+          },
+          "scientific_id": "4acdee13e3ddb45b1297e2254129b13931fb2c65c2a293477c17889800c207fb"
+        },
+        "recomputed_sha256": "6e1db50964930718649fbba6a23183c45ee5019c09db3e4e239fbb106043362e"
+      },
+      "candidate_strict": {
+        "observed_sha256": "6e1db50964930718649fbba6a23183c45ee5019c09db3e4e239fbb106043362e",
+        "payload": {
+          "adapter_sha256": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5",
+          "method": "atlas.variable-plate-layout.v1",
+          "policy": {
+            "max_area_l1_error": 0.04,
+            "max_relative_area_error": 0.25,
+            "size_log_spread": 0.35
+          },
+          "scientific_id": "4acdee13e3ddb45b1297e2254129b13931fb2c65c2a293477c17889800c207fb"
+        },
+        "recomputed_sha256": "6e1db50964930718649fbba6a23183c45ee5019c09db3e4e239fbb106043362e"
+      }
+    },
+    "encoding": "SHA-256 of json.dumps(payload, sort_keys=True, separators=(comma,colon), ensure_ascii=True, allow_nan=False).encode(ascii)",
+    "source": "tectonics/tools/new_world_layout.py:223"
+  },
+  "candidate_source_hashes": {
+    "tectonics/src/atlas_tectonics/__init__.py": "e742cd04443cb9a7b3b2fd210a80dee2aa1efe9500f13e816f2fa8f38b9cdc68",
+    "tectonics/src/atlas_tectonics/_geometry_native.py": "3aacf925353595c8ef33f142636ba13d614f5f1ef046858518905b1fb87c638a",
+    "tectonics/src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113",
+    "tectonics/src/atlas_tectonics/_integration_heat.py": "6eeef77cf8f4966354d3ba01d5909b61bf82dd4e2bfda412993ae9a12b3603aa",
+    "tectonics/src/atlas_tectonics/_integration_motion.py": "2adecb6e93a449e8035f0be989675d264572597676785b7ddf78e4bd232e9da3",
+    "tectonics/src/atlas_tectonics/_integration_thermomechanical.py": "50bb419180e6716594b77abbd7a6a0f18bba614282ed53950593d4dc99123bb2",
+    "tectonics/src/atlas_tectonics/_integration_weakening.py": "e7ce5634ce6a8ec8b41708617b607dc5923afa3a39345bd0900f53365d6f853c",
+    "tectonics/src/atlas_tectonics/_materials_native.py": "059e34f03a5abbec997873fb4f8ae8c89f745fbe029c064de55f8f738f2872a9",
+    "tectonics/src/atlas_tectonics/_mechanics_native.py": "fd1d76496ef1e264960a6df3046a1fddca10d9a6888a8fb0ed41274091f07d58",
+    "tectonics/src/atlas_tectonics/_mesh_native.py": "9163632c873e00ef53f0b29b2709ef85178d6136da8545a48d9acb206c816cf9",
+    "tectonics/src/atlas_tectonics/_regional_native.py": "07fa56ec5669fc0d9358aac702aa64ad0a88323a806a61577ff6e7b72e321b36",
+    "tectonics/src/atlas_tectonics/_spherical_candidates.py": "b79d3f78a65936b6678bd3bae29847fff429fe742719a09ee3ec20fd44644b3c",
+    "tectonics/src/atlas_tectonics/_thermochemical_native.py": "7dc7261147bdf1fbf86ccec454056743c2cfff2bce222950c2fcc2ced616e601",
+    "tectonics/src/atlas_tectonics/_transport_native.py": "891f6e3cfe973d5844197f5d76377ac5c39ffdc18d432fbd2f1e2ac697eccc09",
+    "tectonics/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/src/atlas_tectonics/_velocity_multigrid.py": "bf8e70012c10c2963b73e34c8514f269758464c034de9876921fd82353a01868",
+    "tectonics/src/atlas_tectonics/adaptive_inner.py": "ce390df8900894c43990c68e7f1079d7d2fe73e8a06dd44ea216f751082c4832",
+    "tectonics/src/atlas_tectonics/anderson.py": "e789cf39928f41a434304cf544796d517a86f7630cd5882230d5f63f3a4079cf",
+    "tectonics/src/atlas_tectonics/assembly.py": "4116e61843b3938ed17ef588786fe11d3ca5c39882bfd873c5b3316c8c7728b9",
+    "tectonics/src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "tectonics/src/atlas_tectonics/column_loads.py": "efaa52cda1c59937183b5956c08c05df0bec26e40307b67e9ba998459b34c067",
+    "tectonics/src/atlas_tectonics/compaction.py": "406f7dc0ead1ec56ab66ba081ccca58c248e2fd48a6439a5b4e5d1eabd72e6e2",
+    "tectonics/src/atlas_tectonics/compaction_columns.py": "162465cece7244ac2c0c130a4b2600ddce96294c63568d1e05d2a3dfab2bb637",
+    "tectonics/src/atlas_tectonics/constitutive.py": "f4c5dacb09656e05d81e9ca2f4d81daadc52fc65ee6894a7f3161ec10877ce98",
+    "tectonics/src/atlas_tectonics/constitutive_execution.py": "18b7cdbae2afeca65ba5c98d1352f6367967b4fe6991ec21c0e0b7861a132405",
+    "tectonics/src/atlas_tectonics/convection_benchmark.py": "c542616ff2a1e55cab2f77017f85bf8a8e8cb000edcea363380b2b93cef56903",
+    "tectonics/src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "tectonics/src/atlas_tectonics/damage_regularisation.py": "c271f4748d96a898462e17fd1c47ccf049615df6249c362fe9dced1e521e022b",
+    "tectonics/src/atlas_tectonics/deformation_network.py": "50e11fe2a7ce70a7e11f3b96114bdaf12135497e0b17968f2794e5e8e48a73d0",
+    "tectonics/src/atlas_tectonics/earth_material_data.py": "457b5554f21df74e80416096964aec10a2a1f92b6efa21c0fa651477e685240f",
+    "tectonics/src/atlas_tectonics/evolving_flexure.py": "74a15b6505b9bd480fdfa4e8adade61816026a57a0f52d86d113a12807767cdc",
+    "tectonics/src/atlas_tectonics/evolving_mechanics.py": "4b405262e10a80395248b466e15ebf7cbf914f919d19cde7c7da8417ff781c0e",
+    "tectonics/src/atlas_tectonics/execution.py": "6d0e27c903db119f37d818e943eaa9aec9d09ea200b4354bfefd7ac82328c40b",
+    "tectonics/src/atlas_tectonics/extension.py": "a124ae5ca00c71363ac9205945a0ece12a62d906428826df8fbb65c3169a8da4",
+    "tectonics/src/atlas_tectonics/extension_support.py": "3e9363d225e32a77e8735e88bef035dd037d0d148daa2c61fbee6e1af43d9be8",
+    "tectonics/src/atlas_tectonics/extension_workflow.py": "d1d56f58abc3bca547d6381f2bd35661f42937f5f149ae6aa1eecf201e81a4fa",
+    "tectonics/src/atlas_tectonics/fault_slip.py": "8e6c9b2e4a1e2da5e9a6a5e1eeb9efac85f1e94aaf74daf5b3e251a00396b8ef",
+    "tectonics/src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "tectonics/src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "tectonics/src/atlas_tectonics/free_surface.py": "a691746f7a1e0870499c9804ed0de5ec25a25795caa6aa377a7f2ff8bedbc6e0",
+    "tectonics/src/atlas_tectonics/geological_case.py": "a891eb35db81f41c685bd1943fb88ace58f21c17452a63507301ffe7c58c5bec",
+    "tectonics/src/atlas_tectonics/geological_domain.py": "cd34ceb02de0330a885f6584da7bcf53fd79552e24ece2bd638a81b00085a80d",
+    "tectonics/src/atlas_tectonics/geological_records.py": "ca4e4f7262b00a59ce88884fabf0b42719b365063c97c19e5e51fc41e48bcb23",
+    "tectonics/src/atlas_tectonics/geometry.py": "c0873f2a198e974ae1650267895f28dd42f0d921cc94a19395784a57076a099e",
+    "tectonics/src/atlas_tectonics/geometry_index.py": "0f9c66d27be83d04fca13a4d6fd13d2d974ba800973266f7b355151f077c1746",
+    "tectonics/src/atlas_tectonics/integration_basal.py": "1194b13fb955a4fd14cb66b2523737f66bec061b7782ea21e351179fa63e1aac",
+    "tectonics/src/atlas_tectonics/integration_bridges.py": "6b7c58f8bb8846d60efc63fdc781ebc15607d07ba0635e181d216f12932b7e9b",
+    "tectonics/src/atlas_tectonics/integration_clock.py": "16abbd4ff77e278a39f209211a1690a44960bc589474f8b095d1e52c96cf4e17",
+    "tectonics/src/atlas_tectonics/integration_driving.py": "527cfb9657d71ad3603daedacd6fdf2802cedab6c7e9932fd5dcd63f2c291eb4",
+    "tectonics/src/atlas_tectonics/integration_events.py": "6547f23dfe9467f587040c782a740be9dafee92c59992d40338cbb49bbbac0a6",
+    "tectonics/src/atlas_tectonics/integration_evolution.py": "2f4bc94dd2f81b309840b36ae2637f308f4f4c043e5825e1111fc1b08c556905",
+    "tectonics/src/atlas_tectonics/integration_family.py": "c0a6a053212249d6449e6e9071e31f07b36ff6a7453049e8f5dd99ee00bb7b91",
+    "tectonics/src/atlas_tectonics/integration_feedback.py": "589ac0c83573c51b3f9925a2a3b44faaaa83c2b0867222197102e8dc2c6e9a01",
+    "tectonics/src/atlas_tectonics/integration_junction_paths.py": "bbf7498299def9af6c422134f0eceefe27242c7ab25d3c9f16ff92dfabe0d6be",
+    "tectonics/src/atlas_tectonics/integration_ledger.py": "43686c99bd2b3e3ad6f3b94fafb807e989140dc8c31e5f3af5628894158c6466",
+    "tectonics/src/atlas_tectonics/integration_material.py": "bfdf8c7139d5eafead45a7cd9440ca4e7480e49d46c73164a78f09f5145ec547",
+    "tectonics/src/atlas_tectonics/integration_ports.py": "62d7bbbc63233d36557b50a1e7c06417a85a9bc0095ac1d499c73fc7d3385827",
+    "tectonics/src/atlas_tectonics/integration_properties.py": "cd1574c9cda198f10c66c1b1127c5b3116d1f33127d6bfd1ab816d3780c8215b",
+    "tectonics/src/atlas_tectonics/integration_sphere.py": "f224d20e36343f530b93a576c508fb7e1ad8e9d106f0876480a66906f659dc78",
+    "tectonics/src/atlas_tectonics/integration_splits.py": "f9b5566aed284e576d4298e52b66189f8f3e9a2389d1da9c27384f376eb0e5a4",
+    "tectonics/src/atlas_tectonics/integration_state.py": "3c287bee1121aebf181a88592c3fe11382658ef27016daa0620509442a342b8f",
+    "tectonics/src/atlas_tectonics/integration_strength.py": "b4a28582ea121d35f53b7584dc01826f0f7997c69b9f03be572e79e1945a1e3a",
+    "tectonics/src/atlas_tectonics/integration_thermal.py": "a9aacbee913602ccd4f8993c24765f699f10a41688a6d595df1722d15ee4a7e4",
+    "tectonics/src/atlas_tectonics/integration_transfer.py": "0372fa19fff03c09688e36051f29d90c06ad7e73879b1e863088b6e9157fbb23",
+    "tectonics/src/atlas_tectonics/kinematics.py": "36883e4c61ac00b184968c670a4edb235e8ab887448c99ada51c1e35478aea70",
+    "tectonics/src/atlas_tectonics/magmatic_emplacement.py": "422c649aa53977df0dd9beb2604db541327ad9d5e7d7c2868051af1388c8cc6c",
+    "tectonics/src/atlas_tectonics/magmatic_thermodynamics.py": "112e73d0f2396ad541c1ec54b84d8c1823ccb67609f81b9250b69f3736ddd179",
+    "tectonics/src/atlas_tectonics/magmatic_transfer.py": "6623398044a691f5f36ececfa8aac286e09e4a38a4d800a07da50db0a0257a6b",
+    "tectonics/src/atlas_tectonics/margin_cooling.py": "bc021e770c6dc8b2a8eaf3930e8ddee9d7c9332f3d71235644fbe028d5b9aeab",
+    "tectonics/src/atlas_tectonics/markers.py": "abbcb1d4a6f1e803f3d8579fbec2675b736781487d919aadc15ad3c0324bc970",
+    "tectonics/src/atlas_tectonics/material_library.py": "6b3e69cc588cb920ef9b0c055a6212ff89c8fe094206784a1e60ebfa2c358c59",
+    "tectonics/src/atlas_tectonics/materials.py": "38fdd55040e5e6c48f946c0cde4eaa90cdaedc2429684706c31eac5e1c2de34b",
+    "tectonics/src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "tectonics/src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "tectonics/src/atlas_tectonics/planar_exchange.py": "fccf331332639c662c08ab957c634bd7b244cc5e110095e7c0422d4450f6ced9",
+    "tectonics/src/atlas_tectonics/planar_projection.py": "18ce4d036f5aa254b83721a3986a20f4a6607331f51825fe9cd3d60a05ad46f2",
+    "tectonics/src/atlas_tectonics/planetary_generation.py": "26c1bac11ba862e8d40f9228f4c7e847b69bd534cd779aed2b2287886dcbc71d",
+    "tectonics/src/atlas_tectonics/plate_cooling.py": "261abcc0b05c104b7483b5bdca47ef9ac4819ee0d3b58949ed1e6d56ad4e8c31",
+    "tectonics/src/atlas_tectonics/plate_integrals.py": "2f1539630d3a8c3f149dca2490f91d89a0abc1cba841d26a56d64fc94e3651ad",
+    "tectonics/src/atlas_tectonics/plate_layout.py": "64eb062fecb9248907cc43172014fa8685ab63ef5d47d3265c693323df75abca",
+    "tectonics/src/atlas_tectonics/plate_reference.py": "dc88104a301d1d8002a1613852d84a9d0fb961d49ccd78570a70c73339121e5f",
+    "tectonics/src/atlas_tectonics/plate_reference_acceptance.py": "bb242461403792cec5c382421d243ab0f289d7c8bab3afb37148b3d64bb0619a",
+    "tectonics/src/atlas_tectonics/plate_reference_dataset.py": "edb0a712c30494ef0ef1af1c809daff864ef63d86b5217b2181fdad3a746bc8e",
+    "tectonics/src/atlas_tectonics/plate_reference_use.py": "3eb9af243d7e7ba8bfb57c8cbd6a2592f6c3e253d0e6754f092be5fae5241449",
+    "tectonics/src/atlas_tectonics/preconditioner_reuse.py": "ebe861de1a5e94ec5d6cdcf83c26c2061e3241b8f5ffed34e8c4d8d39b793acd",
+    "tectonics/src/atlas_tectonics/precursor.py": "061a580aed4937f3e6ac5b22fa1241c1182bac5af9a9764fa9bf2184b95895b4",
+    "tectonics/src/atlas_tectonics/precursor_execution.py": "ef0957b4ba90a2eaa03d10faae8e4f0575999c8f05aab279c5112ac1107cfabb",
+    "tectonics/src/atlas_tectonics/precursor_sampling.py": "5a7d3d72c44a2ef0b19559ca4ac597b4e7c01d2c2cf961bf98be0537a4919640",
+    "tectonics/src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "tectonics/src/atlas_tectonics/regional_checkpoint.py": "9f407881c067895062142f4fb67e3f7fce07863e164daa226167f32062e1778e",
+    "tectonics/src/atlas_tectonics/regional_elements3d.py": "ba43a2739403a5146f3bf2ab775281bef9b1bee7f61615aa76ea2398a2ecabf8",
+    "tectonics/src/atlas_tectonics/regional_evolution3d.py": "ca78fa839294cc79dadb136f31ec39ebbb761267f04d873bbfcee5c8ece64a4c",
+    "tectonics/src/atlas_tectonics/regional_execution.py": "7ce7753d76de2e57a05b56b0e1f2caa29f472559237e886537c0298fa8a035e8",
+    "tectonics/src/atlas_tectonics/regional_execution3d.py": "6965b6675ddac53780f4d3bc20200ac98727f3fe7fab97d4d097f848b1117d76",
+    "tectonics/src/atlas_tectonics/regional_forcing.py": "b31de590220541ddc027c34e080cfd71031ce913f697ec88d8b27656730e1dad",
+    "tectonics/src/atlas_tectonics/regional_geology.py": "6e1dfa34ef1a6f66a566296aabdf50fece24619383ece57ee21b93dddc2cf955",
+    "tectonics/src/atlas_tectonics/regional_heat3d.py": "3d89be379bc912d741e5c3aaa7e451ba8c84240b3e06431cefb850dc609f8e53",
+    "tectonics/src/atlas_tectonics/regional_multigrid3d.py": "f7fb72da129a4229b37e2bfd996b000f56eb17e17f576c6aaf53a41ab0da9887",
+    "tectonics/src/atlas_tectonics/regional_rheology.py": "50f4341c26c6d5ad3e5900a69cba555e2344cca3e79c4f42db642966f4cbb652",
+    "tectonics/src/atlas_tectonics/regional_solver_selection3d.py": "139050a964d66a1e7b662c498c348dfc1c40f1a326b334c98c0a78175933f614",
+    "tectonics/src/atlas_tectonics/regional_stokes.py": "fa3bd6cde972cc20211ba3294c30dfc56c40071f15f610e7c5e9674971efd403",
+    "tectonics/src/atlas_tectonics/regional_strength.py": "fd3c03e969abe61c3b715a44e1e3efc0c3017ef820f2e8be12196975baab2a93",
+    "tectonics/src/atlas_tectonics/regional_surface_stokes.py": "5ba98c6d4a6f3f0405d984fb0289f2eb460157503e7edc91e9c6552e506ff8bf",
+    "tectonics/src/atlas_tectonics/regional_thermomechanical.py": "c12df1dcc25889cb51ca3968ec837d803215d68b70d2844b2fc7307fae766c12",
+    "tectonics/src/atlas_tectonics/regional_transport.py": "393e782af3e048d409fe8033684ac0840dc5b83b4122ee137ab17804733731a1",
+    "tectonics/src/atlas_tectonics/regional_transport3d.py": "f601ee9e05d850350b85b3dc0d2cc95e88e20bf1de4050f3e722f56606af40a7",
+    "tectonics/src/atlas_tectonics/regional_workflow.py": "213d65c32aa69c1990b4559c112c0b173f234f6e079cc9c1a71f8eef7a50740d",
+    "tectonics/src/atlas_tectonics/regional_workflow_geometry.py": "afb69b7801a4454fa5ca2fb33b1e95ef4ff11e656c68927a2d7deacd8e498e7e",
+    "tectonics/src/atlas_tectonics/remapping.py": "ae31c71c68f714ec893bae4c93fb0f43de762e15fe38cb5e3a0f99349ce5a528",
+    "tectonics/src/atlas_tectonics/resources.py": "aa637a9438dfc01a1cc350d016011362503a8006be1307283e6541d075a2b92c",
+    "tectonics/src/atlas_tectonics/reuse.py": "3ff31f6550e27d7d82c4457797fb8de01580cba9088c98aa275aebc6bbd77789",
+    "tectonics/src/atlas_tectonics/shortening.py": "1b17e44f584d3ab8f0fbc6880a459dd7e39bff909be29cfc85943f6355d75851",
+    "tectonics/src/atlas_tectonics/shortening_support.py": "c1d801df5cc8a152b4468e75ee1c1fe9ba284d2aab5f6127b1c5c096723727e3",
+    "tectonics/src/atlas_tectonics/spherical_atlas.py": "2fd40824da7355956b14518638f5dbbef8806ad22dbff891caf9272c2f0fbdf7",
+    "tectonics/src/atlas_tectonics/spherical_geometry.py": "b3a9271a5332be8e1075a332221bf75b4a4e35764ac12f2e3de8cf54f195df3f",
+    "tectonics/src/atlas_tectonics/spreading.py": "7b02db2d71c537fe3b9cf8a64564559889eac8623748c4e77329957434509c07",
+    "tectonics/src/atlas_tectonics/spreading_checkpoint.py": "8e35ee6c7c8c26fb0278797b60b796c9c52e32455ad23aa941bb6ff491d2ecb8",
+    "tectonics/src/atlas_tectonics/spreading_cooling.py": "8bc7116d68ae4543e856e9bdd9e789a36528c26353590ada7bf4b508e45ce74f",
+    "tectonics/src/atlas_tectonics/spreading_history.py": "02ec9bc70acef2450f78367e7c61eb142ccf8f709e678683daa1f7dc3396e6e2",
+    "tectonics/src/atlas_tectonics/spreading_history_cooling.py": "8aa2eaf5d3f24f3a69334fbc31f8f3fb331df4dadcf6116a373611c85bbdaaea",
+    "tectonics/src/atlas_tectonics/spreading_integrals.py": "74dff87f15c28b1dc219c299ab48e7d3e4a585c09d51410779610e982ab999a9",
+    "tectonics/src/atlas_tectonics/stokes.py": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082",
+    "tectonics/src/atlas_tectonics/stokes_execution.py": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4",
+    "tectonics/src/atlas_tectonics/storage.py": "181180bc5c90ca7c47ca8b13a82d1d352d9c23a32acff85f6f485eb8a953524d",
+    "tectonics/src/atlas_tectonics/subduction.py": "d47d51d2940479fdd031bfb204a7dc2f2f4149c70c44d6cf7365855ed5298506",
+    "tectonics/src/atlas_tectonics/subduction_linear.py": "e3af5744cfee1323d245eca4c2698137f804a3e0a7f8a089d403732fad16fb3b",
+    "tectonics/src/atlas_tectonics/subduction_materials.py": "1ed81431f568f02375f4e5a1f488ad628765ae7242b6b2f097472f3d7e1fdec6",
+    "tectonics/src/atlas_tectonics/subduction_mesh.py": "a67dc38e8708c93ce01167c5ef8874f19239b6c3f216b5289173bbffa27912f4",
+    "tectonics/src/atlas_tectonics/subduction_refinement.py": "96ceb9d47bad3572e407ca60938ec92e84515be3a04d90022ff7f9771c637024",
+    "tectonics/src/atlas_tectonics/subduction_transport.py": "b586119a398f476bcfd7da1b495f5baa36bdac8b80f568a27c905bac00864ff4",
+    "tectonics/src/atlas_tectonics/surface_geometry.py": "40823ed760e90fa175ffe2112bc67cd459635ef7cffa5b08f2f63cfa93fd640b",
+    "tectonics/src/atlas_tectonics/tectonic_history.py": "304fb61964cc40b824cef0be38deab18679e6c3ab1facd95ecf5de3aee04b861",
+    "tectonics/src/atlas_tectonics/tectonic_history_codec.py": "8a52cf52603ec563bc3fd659cc5c24de3c4f513393a929bfc90fb7c0f11b822f",
+    "tectonics/src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "tectonics/src/atlas_tectonics/thermal_support.py": "043fb27b2fe73c6dbd1c6de848dd41a7837e661db955c680e19600433f13762e",
+    "tectonics/src/atlas_tectonics/thermochemical.py": "a2a1e70491915f21326f9d9f0ecc7b3dca4583270557245ab4350784c0ebc937",
+    "tectonics/src/atlas_tectonics/thermochemical_execution.py": "7e7d8aaf32d5e78f75783a8051bd4dfdb319bb6eea95e2b7e8ee3253b8b5a700",
+    "tectonics/src/atlas_tectonics/timebase.py": "540902acef2c6825356944982a18f2d320d676bd35650c923577f6a4985ef63a",
+    "tectonics/src/atlas_tectonics/topology.py": "3d4695ed6a3f0135b86166e1a0f70733dbc00a3b7be66929b064b5916cff4530",
+    "tectonics/src/atlas_tectonics/transform.py": "2010bc31b6e3135f79187ad0aa90502c030d0284f9d21b1545cdd9555b498757",
+    "tectonics/src/atlas_tectonics/transport.py": "1c0427400b3d4581e4d9f427ae458df1b9c2f7ab01e7cf4ff82d3392f3da94d7",
+    "tectonics/src/atlas_tectonics/underthrust.py": "291a751c329e9c4ac05018e3da5d1d50d74463630b713d644096a6ce153ecab4",
+    "tectonics/src/atlas_tectonics/variable_flexure.py": "fd26c5d8c98a258208026d4499e5a3480b62bb995eb19506d49d07e95b471c8b",
+    "tectonics/src/atlas_tectonics/variable_stokes.py": "2af374412b9a90606bade8dcc56b8ba52fe8f351985eae1a5306f9bf1bdcbf34",
+    "tectonics/src/atlas_tectonics/variable_stokes_execution.py": "9a80d01e2d44054879cc5b8221871e00d221dc1235a6338dcdd660ab7e4c1d0f",
+    "tectonics/src/atlas_tectonics/w03_workflow.py": "d1d290f085b4c7487fb16711f43ca246ed30fc6b0062818f00086fe2c40bbf86",
+    "tectonics/src/atlas_tectonics/w04_workflow.py": "440839712685278d19fd7701cc1014577bbda04ce6ef08e4be52cc57a75f1bdb",
+    "tectonics/src/atlas_tectonics/w06_workflow.py": "dcab0e241cc8fc9b33062fa90433cf8dd3bf03c4ed6fc156bcf0b40b1b00df92",
+    "tectonics/src/atlas_tectonics/w07_workflow.py": "258fcbf88e794b10aa74b91b9c069045b2cf9a8bf7d682c78c4a93aa562ef1c5",
+    "tectonics/src/atlas_tectonics/w08_inventory.py": "1787f002c2f2839bd84a57ecb6bc3549c5b6154ab2dcbea7d3c6169d2b1415a4",
+    "tectonics/src/atlas_tectonics/w08_region.py": "81cece4045885bc3f8471c05cf58849a505c3bf8ada9801342fc47f345c45d9d",
+    "tectonics/src/atlas_tectonics/w08_workflow.py": "08ec41c7598bac349dc716fbe0054655e7507365d540204961649196144b3b19",
+    "tectonics/src/atlas_tectonics/w09_drainage.py": "f3f0cd8039aef050df7f7fe662bf57b54694892091ff7db518193296b0687051",
+    "tectonics/src/atlas_tectonics/w09_erosion.py": "d13d6778e7d8368c72cf6fdf457d13aae0ffd9f997229b5c2060692c7da7c2b6",
+    "tectonics/src/atlas_tectonics/w09_hillslope.py": "0feb9fdc3512a8bb5d3b4307977f44b5c75ffc40dd5080badd64965ac1362716",
+    "tectonics/src/atlas_tectonics/w09_water.py": "00a2faf3eb453a96a260cee8fe8df6db5c50521fe33c93b01e7aef57f14176f6",
+    "tectonics/src/atlas_tectonics/workflow_ports.py": "81bc246ca8ce575ece9e0996fadf034b628f66bcebcf0a4edc0868c3c5da82e1",
+    "tectonics/tools/analyse_convection_r4_4.py": "d4dabba66db9273d2c497d1c51f5b4167ab2982b4e8135b83d1bb0fa552bb75f",
+    "tectonics/tools/assess_boundary_kinematics.py": "0a36013cb16e69bd43ddce80c3b96665ae66167269e97791366b5039ca32cf26",
+    "tectonics/tools/assess_convection_suite_r4_4.py": "5b2986f63902fa62dbc95dedbfc66c9dcb17c204a9ae501cda7a187002deedeb",
+    "tectonics/tools/assess_new_world_motion.py": "117b247c24f18e9e48d5926258f509886f83a918515b6bf941416fcebe71bc4a",
+    "tectonics/tools/assess_plate_layout_morphology.py": "4d759f69825c7c4a3e2a31f87beffdca83bbcb69b4a7384ec0a5e4f540baf481",
+    "tectonics/tools/benchmark_combined_start_r4_4.py": "77115cb340e5d8f1f616b99fc987ef6c36325a1fcf05700c1b8784edf4212a03",
+    "tectonics/tools/benchmark_regional3d_solvers.py": "0d8809f22373a8bcf6d17c82bb7abb3aafdb515db103c05f52baa8754a28b268",
+    "tectonics/tools/benchmark_solver_candidates_r4_4.py": "2be3931077e9ea0bf1b11aafdb8edefdb66845b49d3be2c8b91740435925d178",
+    "tectonics/tools/benchmark_w01_forcing.py": "741f7f78183fb4fc80efc47d033416ff6eb85589fea512c21d3156fafa6d2c0f",
+    "tectonics/tools/benchmark_w01_sampling.py": "c64b440e11e4357b4ad4d8ba0d3fa692b4d605845c3fe84af94cab93c379dfe3",
+    "tectonics/tools/benchmark_w03_compaction.py": "c664cb97abec429bef195b30c30fe59dff707b8b21d3840ee362fe5baffe032f",
+    "tectonics/tools/benchmark_w03_cooling.py": "d4598b7d907d4b1a09728695b5db639699e27b57e8f93edac6a6cb865f6b6c07",
+    "tectonics/tools/benchmark_w03_support.py": "b0c5c477026ebe5e51580bd5757aa84b47726f2965d48888c631cfd2db8bd803",
+    "tectonics/tools/benchmark_w03_workflow.py": "10cc55728618211c2865d58c68e53b2ff433b62add057c2f03b0c4ad7058c788",
+    "tectonics/tools/benchmark_w04_finite_region.py": "0ded01aa06f1c464c4bafe4d82d634e9d10cdebdf7a86f496e8fe259a9d30f02",
+    "tectonics/tools/benchmark_w04_loads.py": "c37fbf1c1621dc46b29d84642dd2cb863885a9d752a07f902fc0f7e2ad1462d5",
+    "tectonics/tools/benchmark_w04_variable_rigidity.py": "1df17743c8b90a03a8079f3ab81f0ef975e82bba61fbb7909fce3e74420083b8",
+    "tectonics/tools/benchmark_w04_workflow.py": "f7f9e89cf491a38af936e10788ad1a6c1cb806d159a69ffce18e900f721ce953",
+    "tectonics/tools/benchmark_w05_motion.py": "6c4f7626bafdb9e49afec9c78daa5f7ae065c912d1fb3566feef8b2c354b2fb8",
+    "tectonics/tools/benchmark_w05_support.py": "fb515d62896d2a7aeab35d7c1d5b8aa448295b16465672f3b4d885963c43e3de",
+    "tectonics/tools/benchmark_w05_workflow.py": "6dbeba920c0283eac6ef21cf1c0887f4f2b79779d7cd30856e872b137d9c3ea6",
+    "tectonics/tools/benchmark_w06_cooling.py": "44407acdd5e80f4e2d7de42b8f9f5decd59dc400a3bf44c14cf79aff5d85d416",
+    "tectonics/tools/benchmark_w06_history.py": "01fd3266197fcb0b4b10c048972cdd7745b88b01ef1154ae1889b3d974df84c5",
+    "tectonics/tools/benchmark_w06_margin.py": "a4282078e9b6ce0b37b3a133d55f006631676e4cad5b8d5c780b5a2c4aa26636",
+    "tectonics/tools/benchmark_w06_spreading.py": "08081444a8a8db998689d0d3bf21f22a067f93f0702e6c3d5ca40d17326794fc",
+    "tectonics/tools/benchmark_w06_workflow.py": "06f2fb22203954fa8f6b54978bc5d78d93f8bd60554fb48fef36dd3bde6092e5",
+    "tectonics/tools/benchmark_w07_materials.py": "f301433bfbb0f0052c00c50e64d65d9bac07bb9842006a1c08cf45c427cffac3",
+    "tectonics/tools/benchmark_w11_early.py": "7f8d158bf69e6c33f29f0da6be35e957998cf7b5a5acefa09d5fef784f090ef3",
+    "tectonics/tools/benchmark_w11_late.py": "00ef794e8737816662137a646b09576edd74a523d18a47477693cb67d3fbfd3c",
+    "tectonics/tools/benchmark_w11_storage.py": "5b67e1e10648da1e0d9639c43fd4377f1bc91e6e221b6342aa8ca3bc09d85670",
+    "tectonics/tools/benchmark_w11_w07.py": "9ec6937f0b76567b54dc95ebfbcfec18b006090c3fc19fcffef672b6d30f9f70",
+    "tectonics/tools/check_evolving_inputs.py": "a2b872403763304a4a4dad4da9a5d1ccb9a64d227bb85cb530603fb5c8495091",
+    "tectonics/tools/check_i01_basal_closure.py": "c41fe6371dc5fe49ea383e04eead9330ec404c4aba9fad1ac127e4c0e7405e22",
+    "tectonics/tools/check_i01_breakup_closure.py": "86fc038543c92f7c355a7410b7b7a486fc4ae5c45ecd32258d1c811f55009652",
+    "tectonics/tools/check_i01_closures.py": "09acb83aafe3d3479d675d5940905995dc55f6789c7b09e9b6efee59ae93ecbd",
+    "tectonics/tools/check_i01_column.py": "ac3d33e1bbe297328fd95e19c22c5135acc7012e2a6fe43cba931558f79c7823",
+    "tectonics/tools/check_i01_column_admission.py": "0e8b7d6fbd658b2b5d87f9f9338fc8f0c74bd0ed306fb7aad65973b9afebca29",
+    "tectonics/tools/check_i01_column_heat.py": "c16fb933d2dd660ee2094a9aada14fe2364558e1a4e87eb2c34a5bf931451bd3",
+    "tectonics/tools/check_i01_decoupling.py": "95b52a1a11f36a3275ace151f222ed528c16d8d9f7dbff4ab4a23f8235032a9a",
+    "tectonics/tools/check_i01_delivery.py": "b815b6ba34ecb9cd1b1e1983cd435c7086fbf460edd7228434619f168af0e345",
+    "tectonics/tools/check_i01_elastic_core.py": "18e57ea62e1c26b8941a2bef5fb71dfae3acb9dbc8229a9303c421aee06bdf2f",
+    "tectonics/tools/check_i01_elastic_memory.py": "bd7b11f7183ebf392da3e603e67d0f87d4929d1c6abe923f3189b8afd5207307",
+    "tectonics/tools/check_i01_fault2d.py": "735bdba8bc88340bc53917523e2544cbe68f37e51b8c8dda0e6562252d4e7f71",
+    "tectonics/tools/check_i01_finite_admission.py": "299aa21e71ea400d67a69dc7f11311c0cbc6c72fb1ffc91bd3ecf9968f9d5e68",
+    "tectonics/tools/check_i01_finite_strain.py": "709a94aaa4c8491287e4f4d41282891701187e6fc6827f2c1093e29ba99f340d",
+    "tectonics/tools/check_i01_gibbs_provider.py": "dc9c35f2d0a23e37d0a73b862b804c5a31521c82e3fcb0ab0ad73abb21869ca8",
+    "tectonics/tools/check_i01_gpe.py": "78021da5f97c8b44c83df20bf356dbf3b0b508849937bd1705b1164605aa9fc0",
+    "tectonics/tools/check_i01_initiation_inputs.py": "e1ed4e9c31c9b086def3fff6644713bb8fe4c5c374fd2ef98c81f176da95f17d",
+    "tectonics/tools/check_i01_initiation_verification.py": "252423dac1f99e12b0e1ad4e9f7826d9dce6db9fd9085f0f77803bc7132ca92b",
+    "tectonics/tools/check_i01_junction_events.py": "df5e5d375803b5588b17e6a8447f90a7a9860bc2d4e3e86a572f0e9c3590a2e3",
+    "tectonics/tools/check_i01_junction_feasibility.py": "314f2a27e34c00be2d73b2d1c9d16db362db9a8c9719dcef72dae4803ed11e8c",
+    "tectonics/tools/check_i01_lateral_heat.py": "86dc44e5f986b1328b5122f97e0883039eb49e952239b06e5475217caa733be2",
+    "tectonics/tools/check_i01_magma_receiver.py": "1f12c568ad1eca68807a415cae24ffd7c37812650432a1186d919f479493e65c",
+    "tectonics/tools/check_i01_melt_segregation.py": "0666fc00507d6df45c004fd61fedcf5501e1320cbffda457019dde21b0cc28f1",
+    "tectonics/tools/check_i01_melting.py": "009ba9b87dfa67973b486c188f4b1bffa4f8a488b5145f250bcf848171ae1196",
+    "tectonics/tools/check_i01_motion_coupling.py": "c0115e31423654ba32b3f7bfaa68a13fafa262246d019423586de9b456d5f331",
+    "tectonics/tools/check_i01_phase_energy.py": "ae1e81902c6daf3fd1e2f51824fb2559eb13aea15b483ddadbce0e5a33300c28",
+    "tectonics/tools/check_i01_phase_partition.py": "5c66c50ef1724c03296dbc1dd096b06971ac5eaee44dd67dcda222dcab08e9b0",
+    "tectonics/tools/check_i01_phase_pressure.py": "6a718efdc12721ce3fe79da11a2f0d77235b4e8d99d5d371aaa607e821fe0440",
+    "tectonics/tools/check_i01_ridge_junction.py": "17fdbec68b2861fa53b5e41109c448fe89d2f0e31f3032c92b528022bc250bc2",
+    "tectonics/tools/check_i01_separation_feasibility.py": "77b036cc14bb6fe8745af177c9576d74b5c034119eeb44bbc8f23c036abcc02a",
+    "tectonics/tools/check_i01_separation_law.py": "0de553b4c6b2539f9132f99f9621bda63998c90466d6ddf3aa15e941ca019b02",
+    "tectonics/tools/check_i01_strength.py": "9133d6164f3cab7381d6de00ad1b2a1863479f85f9af5b9118b94eb1b84e96bb",
+    "tectonics/tools/check_i01_thermal.py": "15845782caf407be74029617101bfe34ea0fb9f019bb29cc08cd55943e2441f5",
+    "tectonics/tools/check_i01_thermomechanical_motion.py": "6e8a0504a200ffe8015b4d8f811175cc7a699c0e0729cfabe9fa538c3103ab4f",
+    "tectonics/tools/check_i01_transitions.py": "320238a0ca128ae5e1bc45ea66071177b45812b091c7e125443680f2dc6fc822",
+    "tectonics/tools/check_i01_water_flexure.py": "4eb7e7ac2e00d17e6cbadc1498e773d61ef70740e69f3cb443ca2cd9bce513b3",
+    "tectonics/tools/check_i01_water_gpe.py": "e09df2572a2a697dc6741bee5793e20708dd211aa032cc03b52b3fde71195086",
+    "tectonics/tools/check_i01_weakening.py": "7feec9532c8052ab8cfc172ebc2d510a12285481043dea50b6820607afcec860",
+    "tectonics/tools/check_new_world_acceptance.py": "3252bee5ead2ed650f8cf3556bf9847739aadd2434ef2e77612c69de02ae266a",
+    "tectonics/tools/check_new_world_layout.py": "5b7bed69acc5bdae23bdb2a1aa81a2fb242bda6493636fd954dbfbe238083cd6",
+    "tectonics/tools/check_regional3d.py": "5e0be74ef0940abcb4fe6c7831f1fed03039f543142999d0791fc8b2c57cb975",
+    "tectonics/tools/check_regional_evolution3d.py": "21e1347c724b951fea14988c23c6a48ab90bd0e037c061c60130f53d2d0b18e5",
+    "tectonics/tools/check_tectonic_history.py": "6cb2dee07888ad038a0722671f25a190bbcab6a419e2be8a46431f345b04be29",
+    "tectonics/tools/check_underthrust.py": "40b7535393a057bba59d0a574733a4f1b192adc0caf16189684a489401008027",
+    "tectonics/tools/check_w07_coupling.py": "6de4bc61eb629f7eda53733e794a033205cedf1308d8d53299de9e2a99988587",
+    "tectonics/tools/check_w07_mechanics.py": "fc06d95a9e172ea6ef9462b5a142ced417f8e1b4d6c666ed40c81f6605223c91",
+    "tectonics/tools/check_w07_surface.py": "c88e2901985ee68d105f0faa0bf998c52f5bbdac44eff068dae08149f158e7e8",
+    "tectonics/tools/check_w07_workflow.py": "237ee40a054aedd69118a01190919daab542a7a0446648d31acbdb2403a7c758",
+    "tectonics/tools/check_w08_joined.py": "6f1a7a4deb96df15b126e01f49e83c20d9aaebdb5aa304847c74ccd85af06cfc",
+    "tectonics/tools/check_w08_magmatism.py": "56867071ebd721e70b95cdbe22cc5c3250d9c8679fb10719925419a9a9220626",
+    "tectonics/tools/check_w08_shortening.py": "24515ff6ab8ea29c2e79ccaa60a5dca374815270d11705413920657da1491e96",
+    "tectonics/tools/check_w08_subduction.py": "dbfb1a2a4aef0265fe9f39106c3e9a9dbb00190df9266d66c3179f18ea91405e",
+    "tectonics/tools/check_w08_transform.py": "98ab895762dc2013fd596e7e4c41f6ba7c695846b152af2e4cfdee5ade9f64b1",
+    "tectonics/tools/check_w08_transport_lifetime.py": "58a8f5584c99ef38f67d899bc8ea52d0d18dbcb6c391731b054d80a9b64655e9",
+    "tectonics/tools/check_w09_erosion.py": "1b5759aa724ef2ded16bfe726d9f67a1a4a944fdc8d188cffd24f42d5b86ac4c",
+    "tectonics/tools/check_w09_water.py": "61e0642f3972fd34b22a0182085594fd80dd378b6b2e377bd4781d5c87c8bee4",
+    "tectonics/tools/check_w10.py": "4cfe68dc919fb123ab318a0ea9c15b3f8d82e86fc277a29d9d949590a57e8f37",
+    "tectonics/tools/check_w11.py": "a49b996b21d19cbc0bd64ef86c0909d9448269e25d561ac1c1dd873fe2fb92c9",
+    "tectonics/tools/check_w11_guards.py": "1e1aae45af3356ec0becf82644e6a462ea3d7267c704ab4ce5dad03f903efbf0",
+    "tectonics/tools/check_w11_scale.py": "a2bfd21abc1171233258ab156655d46743deced743b60651a23499b350b406a5",
+    "tectonics/tools/compare_solver_candidates_r4_4.py": "e80d9b58bcaf85b1e0649eb2293699ea2e39830281995c00448d3ccfe922280d",
+    "tectonics/tools/extract_i01_initiation_curves.py": "8e0c568a202bc3622585149b43578a8e4a6a80552e2b2a364dcb65c32a24bb50",
+    "tectonics/tools/i01_gibbs_provider.py": "56e59da458fa4b0988018202c30f9ce76b66bbf60723fa6ae65e71344de275b7",
+    "tectonics/tools/i02_column_workflow.py": "684dad85789ec7fa978c90870019acb07fd35c8b1484e1ec957e5e85b3f1ad56",
+    "tectonics/tools/import_tosi_case5b.py": "57dd43b2581b2d04b039700d8adf87339693f1c9b308122f87e28c1c984146bf",
+    "tectonics/tools/magemin_g25.py": "87fc88d583f1952318ceed379c9f6982e69395aef72e40d623d77bfdfa885c0e",
+    "tectonics/tools/measure_i02_workflow.py": "beeedb9525ef25478f224ea34093bb7873b5b613cea8f7a782e82f9fd442f533",
+    "tectonics/tools/measure_w01_plate_shapes.py": "82f1b57a1ecdf8dfd9d1dc3667b2d6f64b08dbe02f325cab0a3495639a16dd23",
+    "tectonics/tools/new_world.py": "3c5f5ee33cc2c9271f4d77df1dbf3c4c43b18bb78b398280aea010ad3aa91507",
+    "tectonics/tools/new_world_arcs.py": "95305ea5d54abaeae19b20f3fce917e7ae4e85cd9cc8643a5123514ecc8a0386",
+    "tectonics/tools/new_world_boundary.py": "4cf447769ad36fe01b1a20b5dc50659da3f5a9375ab3cb989c30f25d3ae26d6c",
+    "tectonics/tools/new_world_bundle.py": "11005ea009a0bb8821642fffd37443cafa4db28c206849812a85969f73574589",
+    "tectonics/tools/new_world_contract.py": "1cafbeec89d8f51c2b0e6f4b78fcd060068da3e1a1c22ada3a9c7151113541e6",
+    "tectonics/tools/new_world_evolution.py": "efc44838abc605fba95a339ad59cdae49fcf709cbe519bcd4db3bb4a7ff2ff07",
+    "tectonics/tools/new_world_job.py": "6e0e7fa1e12600abe855243b30c97e6d0f07ce9a633ac2a7aff3d15c60c4f6b9",
+    "tectonics/tools/new_world_layout.py": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5",
+    "tectonics/tools/new_world_motion.py": "419e1a6359aa2923027df8191a04736659af0aa661919700b6a576ad9f48ad69",
+    "tectonics/tools/new_world_native.py": "6b8f21ac6ecf7098c93b26d650f48dd3fc344cfafe8540d1269593b35f25bbd3",
+    "tectonics/tools/new_world_project.py": "487e25e6a1d2242cacd756247f8951efa9667fa8db6f5fec4144e1b65a1171e7",
+    "tectonics/tools/new_world_session.py": "d461e13427f825cd0ff9628b25a6d8ab831016c22361f852447ca2d00dbad9b8",
+    "tectonics/tools/new_world_structure.py": "a2ba2cc19b416957a46ae787a77685c0e3695d2d33c531b4caa852e499536503",
+    "tectonics/tools/new_world_thermal.py": "9d492712f376f7beb82f0aad0ba60d76131cae0883c62eddc69f5daf0ecdc7ec",
+    "tectonics/tools/prepare_plate_reference.py": "e7fd52623abb064514deb48d6394535fb3d47b42e2adcbf18be302dc19829ba8",
+    "tectonics/tools/prepare_precursor_example.py": "7ea36cd0af783751b1f63e7e07b6caa477f37065d5c7fe61c66f7e08fce8bb3b",
+    "tectonics/tools/probe_convection_r4_4.py": "22b2bdd790e696cc7e01b373a9aa9df2113b97c8ea8bd0600b481b9f9f7994e5",
+    "tectonics/tools/read_tectonics.py": "e5df05082f5f6dcc5832ca46121b8a9062ac3b343ac941b8be4cd70ca4b26b06",
+    "tectonics/tools/reconstruct_i01_initiation_case.py": "024013db4dafab23e2b56f801b1ad140c132427e111cfa5720feee689f5bac1d",
+    "tectonics/tools/regional_plate_coupling.py": "36fd8d21dd8e16077bf09a2a0b3d236f3a9c853ed62063f168ca9cf29965d775",
+    "tectonics/tools/run_convection_r4_4.py": "a40f83f8e885b7e4b246e70f6c960c2e579673e9e5672ca9fe53a9ed6ce676df",
+    "tectonics/tools/run_tectonics.py": "5f18519c52501f7f50cd3bc44e5ba5f21cf76c391f1856fa7624c2332b6d9a94",
+    "tectonics/tools/run_w01_workflow.py": "1aa15ece233a2a7064124a41ce745308794ce3e5f47704aab586cd874e7a173f",
+    "tectonics/tools/tectonics_job.py": "26246d8fb0d73e94358851a73a22625a323da128779d1fc8ace060e1ae0faff1",
+    "tectonics/tools/thermochemical_example.py": "4a284f9d453d4ca3f1b93ac0987aeb06863b8a0df567c444c2e69b83db57cda2",
+    "tectonics/tools/tosi_case5b_reference.py": "992a51e08e47d4088787fcf7b9372238ba766ad9dc7580c748008139855d9a19",
+    "tectonics/tools/view_tectonics.py": "8c4251950465a867fb41c65bfe9dd73fd31a7f106b5dacd74381a84ddbce17b5",
+    "tectonics/tools/visual_convection_r4_4.py": "984ee2111b6bfa1647ea8fbbf12425a77b23e104196d431fe63a26ec777777bd",
+    "tectonics/tools/visual_qa.py": "fbc4567e1ee3c2e81e04afa48fa35f5acd95551b725c72b59bf1f4875e39a014",
+    "tectonics/tools/visual_r3.py": "1eccbae6614d1e0475c30c2d86c1cd82a969a3c7a4763b3fdd704bedfd1a6b95",
+    "tectonics/tools/visual_stokes_r4_1.py": "492bc895a3c02dd4ae61c08eb45f836af1b25dd9f5cb79447ee69ac9ce976ed5",
+    "tectonics/tools/visual_thermochemical_r4_2.py": "81246758d2ad195da136da6102db36d6497fdec11590fe6c87393e580f62e933",
+    "tectonics/tools/visual_variable_stokes_r4_3.py": "d2af1219789e02deae2655ff38723e34d5baa6c3e9bdea6fd36599c6e137b61e",
+    "tectonics/tools/w07_fe_reference.py": "5587dfe059116b2ab129fcd14948b864608ebeb47ed7c7d92921982794a18ae0",
+    "tectonics/tools/w10_ocean.py": "21510d9040bf3ab75795e2e0dae5dec07bc3bf470b0991d4c7419b14b71e210c",
+    "tectonics/tools/w11_late_profile.py": "599d671a96a5e9a82751cafc27d2b24eb6a98a9155ca4282dc64f3325638ea71",
+    "tectonics/tools/w12_graph.py": "8e7caeb63046e1e71f3c4c6d20e7c34ea714d8fe54a99cbc1aaab1dea2227403",
+    "tectonics/tools/w12_job_worker.py": "ca44c6ba26c95ce99d73483cb5e03202f3e5683f21f09b29c4dbb9920558806c",
+    "tectonics/tools/w12_section_geometry.py": "684f1cbe40698881bf15b806cb33e8254d205453a9404960398c3d2178b1826a"
+  },
+  "commands": {
+    "analysis": "PYTHON -B analyse_parity.py",
+    "bootstrap_import_timing": "Actual elapsed time around subprocess execution is primary; driver wall_s is not used for comparisons.",
+    "per_configuration": "PYTHON -B bootstrap.py --tree TREE --mode MODE --driver WORKLOAD [-- DRIVER_ARGS]",
+    "python_version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "pythonpath": "TREE/tectonics/src;TREE/tectonics/tests;TREE/tectonics/tools",
+    "regional3d_arguments": [
+      "lithosphere:10",
+      "inclusion:10"
+    ],
+    "removed_environment_variable": "ATLAS_IDENTITY_MODE",
+    "runner": "PYTHON -B run_matched.py --start-authorised --output matched-pass-1",
+    "threads": {
+      "BLIS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMBA_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "comparisons": [
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+          "digest_matches_base": true,
+          "driver_wall_s": 7.061323399975663,
+          "process_wall_s": 7.86590669999714,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+          "digest_matches_base": true,
+          "driver_wall_s": 1.7807526999968104,
+          "process_wall_s": 2.6015359000011813,
+          "speedup_percent_vs_base": 66.92643328705987,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+          "digest_matches_base": true,
+          "driver_wall_s": 6.422899700002745,
+          "process_wall_s": 7.232972099998733,
+          "speedup_percent_vs_base": 8.046556158600726,
+          "status": "ok"
+        }
+      },
+      "workload": "w03"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+          "digest_matches_base": true,
+          "driver_wall_s": 5.7058397000073455,
+          "process_wall_s": 6.491434199997457,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+          "digest_matches_base": true,
+          "driver_wall_s": 1.1040139999822713,
+          "process_wall_s": 1.8773177999828476,
+          "speedup_percent_vs_base": 71.08007657254566,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+          "digest_matches_base": true,
+          "driver_wall_s": 5.323139299987815,
+          "process_wall_s": 6.098881500016432,
+          "speedup_percent_vs_base": 6.047241455226926,
+          "status": "ok"
+        }
+      },
+      "workload": "w07"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+          "digest_matches_base": true,
+          "driver_wall_s": 15.93979,
+          "process_wall_s": 16.703083100001095,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+          "digest_matches_base": true,
+          "driver_wall_s": 9.936925,
+          "process_wall_s": 10.755749599979026,
+          "speedup_percent_vs_base": 35.60620194736192,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+          "digest_matches_base": true,
+          "driver_wall_s": 11.174573,
+          "process_wall_s": 11.982115599996177,
+          "speedup_percent_vs_base": 28.264048449861377,
+          "status": "ok"
+        }
+      },
+      "workload": "regional3d"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+          "digest_matches_base": true,
+          "driver_wall_s": 3.0248,
+          "process_wall_s": 3.8112419999961276,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+          "digest_matches_base": true,
+          "driver_wall_s": 5.1378,
+          "process_wall_s": 5.922177500004182,
+          "speedup_percent_vs_base": -55.38707591935119,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+          "digest_matches_base": true,
+          "driver_wall_s": 2.9783,
+          "process_wall_s": 3.771767900005216,
+          "speedup_percent_vs_base": 1.0357279855478074,
+          "status": "ok"
+        }
+      },
+      "workload": "i02_column"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "fa50674aaddd91bb22aa3f381ad4804ec1854d674ccbcda23ef032a15f4c8d62",
+          "digest_matches_base": true,
+          "driver_wall_s": 7.958746,
+          "process_wall_s": 8.944700699998066,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "1eb78ed487b1ee0c5383b04cd0dde6b38a631232f31a63f9b7f239ef15349532",
+          "digest_matches_base": false,
+          "driver_wall_s": 3.826874,
+          "process_wall_s": 4.835626699990826,
+          "speedup_percent_vs_base": 45.93864163624981,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "f79798ec1a44f178404f889f6ac718b8a3309c0000fb2e3d2deecd56c778f5c7",
+          "digest_matches_base": false,
+          "driver_wall_s": 4.324406,
+          "process_wall_s": 5.3036523000046145,
+          "speedup_percent_vs_base": 40.70620719589017,
+          "status": "ok"
+        }
+      },
+      "workload": "new_world"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "177e7a4d4ca2d245174f20b01ea19107f30fa22ec7b7d3adc610c04adc6d5a6f",
+          "digest_matches_base": true,
+          "driver_wall_s": 15.585784,
+          "process_wall_s": 16.42545219999738,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "1956f876172c6f11dbeb0f2f362c8d3377b269f0baf25ef58deb4799afad2644",
+          "digest_matches_base": false,
+          "driver_wall_s": 6.519577,
+          "process_wall_s": 7.325674799998524,
+          "speedup_percent_vs_base": 55.4004680613926,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "1956f876172c6f11dbeb0f2f362c8d3377b269f0baf25ef58deb4799afad2644",
+          "digest_matches_base": false,
+          "driver_wall_s": 11.7579,
+          "process_wall_s": 12.60748340000282,
+          "speedup_percent_vs_base": 23.244223376663985,
+          "status": "ok"
+        }
+      },
+      "workload": "regional_job"
+    },
+    {
+      "configs": {
+        "base_strict": {
+          "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+          "digest_matches_base": true,
+          "driver_wall_s": 31.524081999988994,
+          "process_wall_s": 32.33239630001481,
+          "speedup_percent_vs_base": 0.0,
+          "status": "ok"
+        },
+        "candidate_release_diagnostic": {
+          "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+          "digest_matches_base": true,
+          "driver_wall_s": 10.245919600012712,
+          "process_wall_s": 11.013212000019848,
+          "speedup_percent_vs_base": 65.93753244322691,
+          "status": "ok"
+        },
+        "candidate_strict": {
+          "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+          "digest_matches_base": true,
+          "driver_wall_s": 30.436970300012035,
+          "process_wall_s": 31.23796460000449,
+          "speedup_percent_vs_base": 3.384938406219573,
+          "status": "ok"
+        }
+      },
+      "workload": "w05_w06"
+    }
+  ],
+  "configurations": 3,
+  "date": "2026-10-05",
+  "exact_retained_canonical_differences": {
+    "new_world:base_strict:candidate_strict": [
+      {
+        "left": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "path": "/generate.atlas/source_bindings/new_world_layout/adapter_sha256",
+        "right": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5"
+      },
+      {
+        "left": "ef1e66d75ff00a096380b2f785ab243794363e851a3d90f60fd1fd2f22318942",
+        "path": "/generate.layout_report/candidate_request_id",
+        "right": "6e1db50964930718649fbba6a23183c45ee5019c09db3e4e239fbb106043362e"
+      },
+      {
+        "left": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "path": "/generate.layout_report/specification/adapter_sha256",
+        "right": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5"
+      },
+      {
+        "left": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "path": "/generate.motion/binding/arcs_sha256",
+        "right": "95305ea5d54abaeae19b20f3fce917e7ae4e85cd9cc8643a5123514ecc8a0386"
+      },
+      {
+        "left": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "path": "/open.atlas/source_bindings/new_world_layout/adapter_sha256",
+        "right": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5"
+      },
+      {
+        "left": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "path": "/open.motion/binding/arcs_sha256",
+        "right": "95305ea5d54abaeae19b20f3fce917e7ae4e85cd9cc8643a5123514ecc8a0386"
+      }
+    ],
+    "new_world:candidate_strict:candidate_release_diagnostic": [
+      {
+        "left": "<MISSING>",
+        "path": "/generate.manifest/execution_mode",
+        "right": "release"
+      },
+      {
+        "left": "<MISSING>",
+        "path": "/open.manifest/execution_mode",
+        "right": "release"
+      }
+    ],
+    "regional_job:base_strict:candidate_strict": [
+      {
+        "left": "e245b27a76b0273e9e3aa5d9b6c9586c6edacfa1f9b6868eab5e01e5bc4a7960",
+        "path": "/job/1/1/source_binding/adapters/new_world_arcs",
+        "right": "95305ea5d54abaeae19b20f3fce917e7ae4e85cd9cc8643a5123514ecc8a0386"
+      },
+      {
+        "left": "82803f5240959ba848a19992b42d6328788399abbdffd9d21ad347b6f3f2e75f",
+        "path": "/job/1/1/source_binding/adapters/new_world_layout",
+        "right": "5a74bf44a82690cce03609631b735085adc2896fd91514a752121610f824ffb5"
+      },
+      {
+        "left": "c4be226717b2d88551926eeb5dc7ca8a5343535b1f08b7d002c4f7935e150154",
+        "path": "/job/1/1/source_binding/adapters/new_world_project",
+        "right": "487e25e6a1d2242cacd756247f8951efa9667fa8db6f5fec4144e1b65a1171e7"
+      }
+    ],
+    "regional_job:candidate_strict:candidate_release_diagnostic": []
+  },
+  "executions": 21,
+  "explanations": [
+    {
+      "evidence": "tectonics/tools/new_world_layout.py:55 returns SHA-256 of exact adapter source bytes. All captured hashes equal the frozen source manifest.",
+      "fields": "generate/open atlas source_bindings.new_world_layout.adapter_sha256; layout_report.specification.adapter_sha256"
+    },
+    {
+      "evidence": "tectonics/tools/new_world_motion.py:64 calls new_world_arcs.source_hash; tectonics/tools/new_world_arcs.py:35 hashes exact adapter source bytes.",
+      "fields": "generate/open motion.binding.arcs_sha256"
+    },
+    {
+      "evidence": "tectonics/tools/new_world_evolution.py:54 hashes imported adapter file bytes; all three captured values equal the frozen source manifest.",
+      "fields": "regional job.initial.source_binding.adapters.new_world_arcs/new_world_layout/new_world_project"
+    },
+    {
+      "evidence": "tectonics/tools/new_world_project.py:281 adds execution_mode=release only for release mode; strict omits this provenance field.",
+      "fields": "generate/open manifest.execution_mode"
+    }
+  ],
+  "harness_hashes": {
+    "README.md": "3858a7d2c52e29d4e9ddf77295726e78a934663fe8ef46e7c9cb9fa512e4883a",
+    "analyse_parity.py": "d42b3eca05dbe96f4f065b6064d952035ccd5ba40abed7c3be89ed09ce6b4d23",
+    "bootstrap.py": "b77f8e8221ed740b91062e3db7353a49858f30cb5504ce998eb176de0d609802",
+    "build_public_evidence.py": "0b927b4a94f143da670a0b2b18414626b2140fea617986d3b42a4abe628c055a",
+    "run_matched.py": "869c996fd69f51979b9b5229c6ff904b9e2d578950fe3c34f59050f44388ad37"
+  },
+  "original_digest_summary": {
+    "all_raw_match": false,
+    "explained": [
+      "new_world",
+      "regional_job"
+    ],
+    "explained_workloads": 2,
+    "matching": [
+      "w03",
+      "w07",
+      "regional3d",
+      "i02_column",
+      "w05_w06"
+    ],
+    "matching_workloads": 5
+  },
+  "original_driver_hashes": {
+    "i02_column": "37d5ce3fe41a5b3cf73be3ddbccdd64ae76581f180131f69e7bf0584c14490ff",
+    "new_world": "ec863a1348f52aa7363a3e4065be09cf409fb5dbd1b13d2c2c00b5085ebb9068",
+    "regional3d": "d3c0006518b95f1fe4ecbb3eaade712b992de83dabf1f529dff7f41e5b11c99a",
+    "regional_job": "34037140884c37b1c581442db971ba64bcfe99ed7f41e265ef04c8617918783e",
+    "w03": "b2c01dff010ed53755c15ae93ec06527dcd36e5b671a073e7798879474a7ef99",
+    "w05_w06": "257144f746a15ff22e9e75a367ca65e7fbbe804968cf9f1d41e3ff4aa6b24155",
+    "w07": "fe32c71e8efa9d107da4f4b024fbe309e954179d16c32ecab6f775b55f886e06"
+  },
+  "passes": 1,
+  "prototype_adaptations": [
+    "Original workload/digest exclusions unchanged. Unavailable prototype verification counters replaced by null, not fabricated counts.",
+    "Mode telemetry queries actual production execution_mode, or strict for baseline without that function.",
+    "Regional job source-world child uses the same explicit diagnostic bootstrap and asserts its observed mode equals the parent.",
+    "Both configurations use matched bootstrap import placement; comparison uses external process seconds."
+  ],
+  "raw_records": {
+    "canonical_differences_sha256": "0ca73a06543056a5a4bc62233e10e02c58715ef63eddef75155e29cc906be14f",
+    "location": "External coordinator-held matched-pass-1 records, not part of the repository.",
+    "summary_sha256": "991fcc915370437653b53b8171eb08e863116bb887ead680bd0645ea8c4b2203"
+  },
+  "records": [
+    {
+      "config": "base_strict",
+      "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 7.86590669999714,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w03"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 7.232972099998733,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w03"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "c1cded87821b90b2ed64b2c6f2c346220aae91a0fcd820264f295f1ff7a4ad81",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 2.6015359000011813,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "w03"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 6.098881500016432,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w07"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 1.8773177999828476,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "w07"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "eddb328f5131c519a40af0d71754e9b67dc011328a85cd333b2e532d5456748c",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 6.491434199997457,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w07"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 10.755749599979026,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "regional3d"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 16.703083100001095,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "regional3d"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "0582bc50ec6ad788b2b22fcfbcfca2170312e92813beec87d6581111ce6c5bd6",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 11.982115599996177,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "regional3d"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 3.8112419999961276,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "i02_column"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 3.771767900005216,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "i02_column"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "9ad697d71a37a4164a3e08d4bfc5c5f0b71cde8c4f822d76c90dd0a1e213739b",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 5.922177500004182,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "i02_column"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "f79798ec1a44f178404f889f6ac718b8a3309c0000fb2e3d2deecd56c778f5c7",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 5.3036523000046145,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "new_world"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "1eb78ed487b1ee0c5383b04cd0dde6b38a631232f31a63f9b7f239ef15349532",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 4.835626699990826,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "new_world"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "fa50674aaddd91bb22aa3f381ad4804ec1854d674ccbcda23ef032a15f4c8d62",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 8.944700699998066,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "new_world"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "1956f876172c6f11dbeb0f2f362c8d3377b269f0baf25ef58deb4799afad2644",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 7.325674799998524,
+      "regional_child_mode": "release",
+      "regional_parent_mode": "release",
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "regional_job"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "177e7a4d4ca2d245174f20b01ea19107f30fa22ec7b7d3adc610c04adc6d5a6f",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 16.42545219999738,
+      "regional_child_mode": "strict",
+      "regional_parent_mode": "strict",
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "regional_job"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "1956f876172c6f11dbeb0f2f362c8d3377b269f0baf25ef58deb4799afad2644",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 12.60748340000282,
+      "regional_child_mode": "strict",
+      "regional_parent_mode": "strict",
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "regional_job"
+    },
+    {
+      "config": "base_strict",
+      "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 32.33239630001481,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w05_w06"
+    },
+    {
+      "config": "candidate_strict",
+      "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+      "diagnostic_private_state_bootstrap": false,
+      "observed_mode": "strict",
+      "process_wall_s": 31.23796460000449,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "strict",
+      "returncode": 0,
+      "workload": "w05_w06"
+    },
+    {
+      "config": "candidate_release_diagnostic",
+      "data_digest": "77bbeaf83dc51abb0fbe09b53a29c28963c6635218f00b8bbea120ecd53239c7",
+      "diagnostic_private_state_bootstrap": true,
+      "observed_mode": "release",
+      "process_wall_s": 11.013212000019848,
+      "regional_child_mode": null,
+      "regional_parent_mode": null,
+      "requested_mode": "release",
+      "returncode": 0,
+      "workload": "w05_w06"
+    }
+  ],
+  "schema": "atlas.optimisation-matched-evidence.v1",
+  "scope": "Seven bounded trusted-local workloads. One fresh process per driver/configuration, plus the original regional_job world child. No broad suites, repeats, full simulation or packaged EXE.",
+  "source_hash_sets": {
+    "baseline": {
+      "after_sha256": "5c13f73b442138cb020900ec2c2293a079072548b0ddf42a2dc5af5a28a2ef4b",
+      "before_sha256": "5c13f73b442138cb020900ec2c2293a079072548b0ddf42a2dc5af5a28a2ef4b",
+      "file_count": 295,
+      "unchanged": true
+    },
+    "candidate": {
+      "after_sha256": "f3f640bc95eeb48b25d24faf25d266b9171a39dc85ca01d5365ba5af095e7dea",
+      "before_sha256": "f3f640bc95eeb48b25d24faf25d266b9171a39dc85ca01d5365ba5af095e7dea",
+      "file_count": 295,
+      "unchanged": true
+    }
+  },
+  "source_unchanged": true,
+  "status": "WORKING NON-CANON",
+  "successful_executions": 21,
+  "supplemental_separated_digest_note": "Supplemental byte comparisons replace only the exact verified adapter-source/derived-request identities and remove only the two execution_mode provenance fields listed above. Original digests and every differing value remain retained; no unexplained differences are excluded.",
+  "supplemental_separated_digests_match": true,
+  "supplemental_separated_scientific_digests": {
+    "base_strict": {
+      "adapter_hashes_match_frozen_source": true,
+      "derived_candidate_request_verified": true,
+      "new_world": "60c25d12da01de120b3584e07ad58a531715a46ff593c23ae16da756267531c8",
+      "regional_job": "c1c2bbadf6a7f9ce6305a452b810038ad57d93bed8d50250c1c29e9ca00f2f58"
+    },
+    "candidate_release_diagnostic": {
+      "adapter_hashes_match_frozen_source": true,
+      "derived_candidate_request_verified": true,
+      "new_world": "60c25d12da01de120b3584e07ad58a531715a46ff593c23ae16da756267531c8",
+      "regional_job": "c1c2bbadf6a7f9ce6305a452b810038ad57d93bed8d50250c1c29e9ca00f2f58"
+    },
+    "candidate_strict": {
+      "adapter_hashes_match_frozen_source": true,
+      "derived_candidate_request_verified": true,
+      "new_world": "60c25d12da01de120b3584e07ad58a531715a46ff593c23ae16da756267531c8",
+      "regional_job": "c1c2bbadf6a7f9ce6305a452b810038ad57d93bed8d50250c1c29e9ca00f2f58"
+    }
+  }
+}

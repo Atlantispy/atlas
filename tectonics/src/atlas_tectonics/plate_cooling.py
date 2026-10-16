@@ -81,6 +81,37 @@ def _erfc_mean(a, b, erfc):
     return result
 
 
+def _erfc_edge_means(edges, erfc):
+    """_erfc_mean(edges[:-1], edges[1:]) for intervals along the first axis.
+
+    Elementwise the same arithmetic as _erfc_mean: Gauss4 for narrow intervals,
+    otherwise (F(hi)-F(lo))/width. Adjacent intervals share an edge, so the
+    analytic primitive F is evaluated once per edge that bounds a wide interval
+    instead of once per interval end.
+    """
+    lo = edges[:-1]
+    width = edges[1:]-lo
+    narrow = width <= .01
+    if not np.any(narrow):
+        z = np.minimum(edges, 28.)
+        primitive = z*erfc(z)-np.exp(-z*z)/_SQRT_PI
+        return (primitive[1:]-primitive[:-1])/width
+    result = np.empty_like(width)
+    a = lo[narrow]; w = width[narrow]
+    result[narrow] = 0.
+    for node, weight in zip(_GAUSS_NODES, _GAUSS_WEIGHTS):
+        result[narrow] += .5*weight*erfc(a + .5*(1+node)*w)
+    wide = ~narrow
+    if np.any(wide):
+        used = np.zeros(edges.shape, dtype=bool)
+        used[:-1] = wide; used[1:] |= wide
+        z = np.minimum(edges[used], 28.)
+        primitive = np.zeros_like(edges)
+        primitive[used] = z*erfc(z)-np.exp(-z*z)/_SQRT_PI
+        result[wide] = (primitive[1:][wide]-primitive[:-1][wide])/width[wide]
+    return result
+
+
 def _young_points(x, scale, erf, erfc):
     # Symmetric image pairs preserve zero at the surface, even for tiny x.
     return (erf(x/scale) + (erfc((2-x)/scale)-erfc((2+x)/scale))
@@ -104,11 +135,13 @@ def _fraction(x, age, bottom, erf, erfc):
             wide = ~narrow
             if np.any(wide):
                 lo = a[wide]; hi = b[wide]; s = scale[wide]
-                total[wide] = (1-_erfc_mean(lo/s, hi/s, erfc)
-                    + _erfc_mean((2-hi)/s, (2-lo)/s, erfc)
-                    - _erfc_mean((2+lo)/s, (2+hi)/s, erfc)
-                    + _erfc_mean((4-hi)/s, (4-lo)/s, erfc)
-                    - _erfc_mean((4+lo)/s, (4+hi)/s, erfc))
+                # _erfc_mean is elementwise: the five image terms in one call,
+                # then combined in the original order.
+                means = _erfc_mean(
+                    np.concatenate((lo/s, (2-hi)/s, (2+lo)/s, (4-hi)/s, (4+lo)/s)),
+                    np.concatenate((hi/s, (2-lo)/s, (2+hi)/s, (4-lo)/s, (4+hi)/s)),
+                    erfc).reshape(5, len(lo))
+                total[wide] = (1-means[0]+means[1]-means[2]+means[3]-means[4])
             if np.any(narrow):
                 lo = a[narrow]; width = b[narrow]-lo; s = scale[narrow]
                 total[narrow] = 0.

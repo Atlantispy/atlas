@@ -80,6 +80,12 @@ else {
     window.webContents.on('will-navigate', (event, url) => { if (!localURL(url, origin)) event.preventDefault(); });
     window.webContents.on('will-attach-webview', event => event.preventDefault());
     let rejectRenderer;
+    if (smokeRoot) window.webContents.on('console-message', detail => {
+      if (detail.level === 'error') {
+        window.atlasSmokeError = new Error(`Renderer: ${detail.message} (${detail.sourceId}:${detail.lineNumber})`);
+        void log(window.atlasSmokeError.message);
+      }
+    });
     const rendererFailure = new Promise((_resolve, reject) => { rejectRenderer = reject; });
     window.webContents.on('render-process-gone', (_event, detail) => {
       const error = new Error(`Atlas renderer stopped: ${detail.reason} (exit ${detail.exitCode}).`);

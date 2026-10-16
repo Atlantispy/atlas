@@ -101,6 +101,21 @@ def _vertices(value, dimensions, *, ring, limits):
     if len(shape) != 2 or shape[0] > limits.max_vertices:
         raise GeometryError('vertex matrix or vertex limit invalid')
     a = read_array(value, 'feature vertices')
+    # Bound the Python row/set scratch for large caller-supplied rings. Small
+    # finite binary64 rows have the same equality relation as np.unique,
+    # including signed zero, without its structured-sort setup.
+    if len(a) <= 4096:
+        rows = a.tolist()
+        if ring and len(rows) > 1 and rows[0] == rows[-1]:
+            a = a[:-1]
+            del rows[-1]
+        if len(rows) < (3 if ring else 2):
+            raise GeometryError('insufficient feature vertices')
+        if any(p == q for p, q in zip(rows[1:], rows)):
+            raise GeometryError('zero-length edge')
+        if ring and len(set(map(tuple, rows))) != len(rows):
+            raise GeometryError('polygon ring repeats a vertex')
+        return a
     # Accept the conventional repeated closing endpoint, but no other duplicates.
     if ring and len(a) > 1 and np.array_equal(a[0], a[-1]):
         a = a[:-1]
@@ -259,29 +274,42 @@ def _validate_shape(g, limits, *, allow_empty=True, _member=False):
     # GEOS validity does not reject an adjacent repeated coordinate. Apply the
     # same sequence rules to WKB/imported/overlay shapes as to direct builders;
     # otherwise restoration can bypass the no-zero-length-edge contract.
-    if g.geom_type == 'Polygon':
+    # Shapely shapes are immutable; read these properties once per check.
+    kind = g.geom_type
+    if kind == 'Polygon':
         _vertices(np.asarray(g.exterior.coords), 2, ring=True, limits=limits)
         for ring in g.interiors:
             _vertices(np.asarray(ring.coords), 2, ring=True, limits=limits)
-    elif g.geom_type in ('LineString', 'LinearRing'):
-        _vertices(xy, 2, ring=g.geom_type == 'LinearRing', limits=limits)
+    elif kind in ('LineString', 'LinearRing'):
+        _vertices(xy, 2, ring=kind == 'LinearRing', limits=limits)
     # A fault trace may not secretly self-cross. Explicitly node/split it instead.
-    if g.geom_type in ('LineString', 'MultiLineString') and not shapely.is_simple(g):
+    if kind in ('LineString', 'MultiLineString') and not shapely.is_simple(g):
         raise GeometryError('self-crossing/repeated trace; split the feature explicitly')
-    if not math.isfinite(g.area) or not math.isfinite(g.length):
+    area, length = g.area, g.length
+    if not math.isfinite(area) or not math.isfinite(length):
         raise GeometryError('geometry measure outside binary64 range')
-    if g.geom_type in ('Polygon', 'MultiPolygon') and g.area <= 0:
+    if kind in ('Polygon', 'MultiPolygon') and area <= 0:
         raise GeometryError('zero-area region')
-    if g.geom_type in ('LineString', 'MultiLineString') and g.length <= 0:
+    if kind in ('LineString', 'MultiLineString') and length <= 0:
         raise GeometryError('zero-length trace')
-    if g.geom_type in ('GeometryCollection', 'MultiLineString', 'MultiPolygon'):
+    if kind in ('GeometryCollection', 'MultiLineString', 'MultiPolygon'):
         for part in g.geoms:
             _validate_shape(part, limits, _member=True)
         # Members valid one by one can still overlap each other. The outermost
         # collection flattens its nested members, so they are not rechecked here.
-        if g.geom_type == 'GeometryCollection' and not _member:
+        if kind == 'GeometryCollection' and not _member:
             _validate_collection(g, limits)
 
+
+def _validate_once(g, limits, validated):
+    """Reuse a completed check only for the same immutable shape and limits.
+
+    The private pair is supplied by a builder immediately after its full
+    _validate_shape call. It never carries validation across reconstruction,
+    restoration, overlay, changed limits or an equal but different object.
+    """
+    if validated is None or validated[0] is not g or validated[1] is not limits:
+        _validate_shape(g, limits)
 
 
 def _measure_components(g):
@@ -372,9 +400,9 @@ class PlanarGeometry:
         raise GeometryError('use polygon(), polyline() or from_wkb()')
 
     @classmethod
-    def _from_shape(cls, shape, frame_id, *, limits=None):
+    def _from_shape(cls, shape, frame_id, *, limits=None, _validated=None):
         _label(frame_id, 'planar frame'); limits = _limits(limits)
-        _validate_shape(shape, limits)
+        _validate_once(shape, limits, _validated)
         # Keep ring order and trace direction in the identity. Reversing a trace
         # must remain observable when W01 stage 3 assigns its sides.
         raw = bytes(shapely.to_wkb(shape, byte_order=1, output_dimension=2))
@@ -421,7 +449,8 @@ class PlanarGeometry:
                         raise GeometryError('hole must be strictly inside the shell')
                     if any(int(j) != i for j in hole_tree.query(hp, predicate='intersects')):
                         raise GeometryError('holes touch, overlap or nest')
-            return cls._from_shape(shape, frame_id, limits=limits)
+            # The same immutable shape and limits passed the complete check.
+            return cls._from_shape(shape, frame_id, limits=limits, _validated=(shape, limits))
 
     @classmethod
     def polyline(cls, vertices, *, frame_id, limits=None, budget=None):
@@ -430,7 +459,7 @@ class PlanarGeometry:
         with select_budget(budget).reserve(512*count+8192, category='geometry-build'):
             a = _vertices(vertices, 2, ring=False, limits=limits)
             shape = LineString(a); _validate_shape(shape, limits, allow_empty=False)
-            return cls._from_shape(shape, frame_id, limits=limits)
+            return cls._from_shape(shape, frame_id, limits=limits, _validated=(shape, limits))
 
     @classmethod
     def from_wkb(cls, raw, *, frame_id, limits=None, budget=None):

@@ -219,8 +219,12 @@ def history_array(prep, kappa):
 
 # ----------------------------------------------------------------------------- constitutive response
 
-def _evaluate(prep, x, le, sign, cc, sp, inv, *, stress=None):
-    """Scaled total rate/e and its log-stress derivative at every point; no clipping."""
+def _evaluate(prep, x, le, sign, cc, sp, inv, *, stress=None, base=None, slope_min=False):
+    """Scaled total rate/e and its log-stress derivative at every point; no clipping.
+
+    ``base`` may carry the caller's already computed reference_pa-pore_pa (the same elementwise subtraction);
+    ``slope_min`` is computed only when the caller reads it.
+    """
     s = np.exp(x) if stress is None else stress
     expo = prep.log_c+prep.exponent*x[:, None]-le
     litho = prep.closure == LITHOSTATIC
@@ -232,7 +236,8 @@ def _evaluate(prep, x, le, sign, cc, sp, inv, *, stress=None):
     creep = scaled.sum(axis=1)
     slope = prep.exponent+sign*prep.volume_rt*s[:, None] if litho else prep.exponent
     dcreep = (scaled*slope).sum(axis=1)
-    base = prep.reference_pa-prep.pore_pa
+    if base is None:
+        base = prep.reference_pa-prep.pore_pa
     if litho:
         effective = base-sign*s
         y = cc+np.maximum(effective, 0.)*sp
@@ -245,10 +250,10 @@ def _evaluate(prep, x, le, sign, cc, sp, inv, *, stress=None):
     plastic = np.where(yielding, over*inv, 0.)
     dplastic = np.where(yielding, s*(1.-dy)*inv, 0.)
     return dict(s=s, creep=creep, plastic=plastic, total=creep+plastic, derivative=dcreep+dplastic,
-                yield_pa=y, slope_min=np.where(prep.active, slope, np.inf).min(axis=1))
+                yield_pa=y, slope_min=np.where(prep.active, slope, np.inf).min(axis=1) if slope_min else None)
 
 
-def _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv, remaining):
+def _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv, remaining, base=None):
     """Finish a stalled log root in stress, within the original bracket and iteration budget.
 
     Adjacent log-stress floats can map to stresses tens of stress ulps apart. Near a plastic yield surface that
@@ -272,7 +277,7 @@ def _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv, remaining):
             raise ValueError("stress resolution exhausted before convergence")
         stress = np.where(open_, candidate, stress)
         x = np.where(open_, np.log(stress), x)
-        out = _evaluate(prep, x, le, sign, cc, sp, inv, stress=stress)
+        out = _evaluate(prep, x, le, sign, cc, sp, inv, stress=stress, base=base)
         if np.all(np.abs(out["total"]-1.) <= TOL):
             return x, out, used
     raise ValueError("vectorised creep/plasticity solve did not converge")
@@ -291,7 +296,8 @@ def stresses(prep, factors, rate, guess=None):
     with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
         inv = np.where(prep.plastic, np.exp(-math.log(2)-np.log(prep.eta)-le), 0.)
         hi = np.where(prep.active, (le-prep.log_c)/prep.exponent, np.inf).min(axis=1)
-        y0 = cc+np.maximum(prep.reference_pa-prep.pore_pa, 0.)*sp
+        base = prep.reference_pa-prep.pore_pa
+        y0 = cc+np.maximum(base, 0.)*sp
         plastic_bound = np.logaddexp(math.log(2)+np.log(prep.eta)+le, np.log(y0))
         hi = np.where(prep.plastic, np.minimum(hi, plastic_bound), hi)
         lo = hi-np.log(prep.active.sum(axis=1)+prep.plastic)
@@ -299,7 +305,7 @@ def stresses(prep, factors, rate, guess=None):
             raise ValueError("stress outside bounded representable support")
         # Validate both bracket ends by evaluation; pressure feedback can move a branch root.
         for _ in range(64):
-            out = _evaluate(prep, hi, le, sign, cc, sp, inv)
+            out = _evaluate(prep, hi, le, sign, cc, sp, inv, base=base, slope_min=True)
             short = out["total"] < 1.
             if not short.any():
                 break
@@ -309,7 +315,7 @@ def stresses(prep, factors, rate, guess=None):
         if np.any(out["slope_min"] <= 0):
             raise ValueError("creep rate is not monotone in stress under the compressive pressure closure")
         for _ in range(64):
-            out = _evaluate(prep, lo, le, sign, cc, sp, inv)
+            out = _evaluate(prep, lo, le, sign, cc, sp, inv, base=base)
             long = out["total"] > 1.
             if not long.any():
                 break
@@ -319,7 +325,7 @@ def stresses(prep, factors, rate, guess=None):
         x = hi.copy() if guess is None else np.where((guess > lo) & (guess < hi), guess, hi)
         done = np.zeros(prep.size, dtype=bool)
         for iteration in range(column.POLICY["iterations"]):
-            out = _evaluate(prep, x, le, sign, cc, sp, inv)
+            out = _evaluate(prep, x, le, sign, cc, sp, inv, base=base)
             residual = out["total"]-1.
             done |= np.abs(residual) <= TOL
             if done.all():
@@ -331,7 +337,7 @@ def stresses(prep, factors, rate, guess=None):
             candidate = np.where((trial > lo) & (trial < hi), trial, (lo+hi)/2)
             if np.any(open_ & (candidate == x)):
                 x, out, extra = _refine_stress(prep, x, lo, hi, out, le, sign, cc, sp, inv,
-                                                column.POLICY["iterations"]-iteration-1)
+                                                column.POLICY["iterations"]-iteration-1, base=base)
                 iteration += extra
                 break
             x = np.where(open_, candidate, x)

@@ -251,6 +251,8 @@ def save_project(raw_path, plan, candidate, *, title='Untitled world', structure
         else:
             raise ContractError('FILE_EXISTS', 'The destination already exists; nothing was replaced.')
         Store, limits, save, _ = _native()
+        from atlas_tectonics.reuse import execution_mode, release_boundary
+        release_boundary()
         with _temporary_directory('atlas-project-') as temporary:
             database = temporary / 'arrays.sqlite'
             with _native_store(Store, database, limits) as store:
@@ -276,6 +278,8 @@ def save_project(raw_path, plan, candidate, *, title='Untitled world', structure
                         or any(char not in '0123456789abcdef' for char in motion_id)):
                     _fail('The native motion did not return a valid identity.')
                 manifest['motion_id'] = motion_id
+            if execution_mode() == 'release':
+                manifest['execution_mode'] = 'release'
             manifest['project_id'] = _digest(manifest)
             body = canonical_bytes(manifest)
             if len(body) > MAX_JSON:
@@ -293,6 +297,7 @@ def save_project(raw_path, plan, candidate, *, title='Untitled world', structure
                 info = directory.inspect(name)
                 if _unsafe(info) or _identity(info) != identity:
                     _fail('Temporary project ownership changed.')
+                release_boundary()
                 directory.publish(name, path.name)
             finally:
                 directory.remove_owned(name, identity)
@@ -335,6 +340,10 @@ def _read_archive(handle, database):
         raise ContractError('INVALID_PROJECT', 'Damaged project container.') from exc
     keys = {'schema', 'title', 'status', 'plan', 'report', 'atlas_id',
             'geometry_id', 'store_sha256', 'project_id'}
+    if type(manifest) is dict and 'execution_mode' in manifest:
+        keys.add('execution_mode')
+        if manifest['execution_mode'] not in ('strict', 'release'):
+            _fail('The project execution mode is invalid.')
     if type(manifest) is dict and manifest.get('schema') in (STRUCTURE_SCHEMA, MOTION_SCHEMA):
         keys.add('structure_id')
         identity = manifest.get('structure_id')

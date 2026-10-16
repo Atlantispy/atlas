@@ -52,6 +52,7 @@ import hashlib
 import json
 import math
 import re
+import sys
 
 import numpy as np
 
@@ -719,7 +720,7 @@ def _copy(array):
     return np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=array.dtype).reshape(array.shape)
 
 
-def _root_metadata(ledger_id, declaration, root, exchange, sphere=None):
+def _root_metadata(ledger_id, declaration, root, exchange, sphere=None, moving=None):
     """The complete root record of a ledger: what create() stores and open() must find exactly."""
     record = dict(schema=SCHEMA, kind='root', ledger_id=ledger_id, key=root_key(ledger_id), parent_key=None,
                   sequence=0, declaration=declaration, interval=None, path=[], transfers=[],
@@ -731,7 +732,19 @@ def _root_metadata(ledger_id, declaration, root, exchange, sphere=None):
                   exchange=None if exchange is None else exchange.descriptor())
     if sphere is not None:                   # I03: only a ledger with an attached network records one
         record['sphere'] = sphere.descriptor()
+    if moving is not None:                   # I05: likewise for an attached moving state
+        record['moving'] = moving.descriptor()
     return record
+
+
+def _bound_moving(sphere, moving):
+    """I05: the declared moving state attached beside the root network, bound to exactly that network state."""
+    from . import integration_material as _material
+    try:
+        _material.bound_moving(moving, sphere)
+    except TectonicsError as exc:
+        raise LedgerError('the moving state cannot be attached to this history: '+str(exc)) from exc
+    return dict(schema=_material.SCHEMA, moving_id=moving.moving_id)
 
 
 def _bound_sphere(root, sphere, exchange):
@@ -753,13 +766,33 @@ def _sphere_linked(metadata, parent):
     return _transfer.linked(metadata['sphere'], json.loads(parent._metadata)['sphere'], metadata['interval'])
 
 
+def _moving_linked(metadata, parent):
+    """I05: a successor's stored moving step continues its parent commit's moving state on its own network."""
+    from . import integration_material as _material
+    return _material.linked(metadata['moving'], json.loads(parent._metadata)['moving'], metadata['sphere']['state'])
+
+
+def _moving_advance(value):
+    """True for an I05 MovingAdvance. No MovingAdvance can exist unless integration_material is loaded, so a ledger
+    without a moving state never imports I05 for this check (review ledger-6)."""
+    material = sys.modules.get(__package__+'.integration_material')
+    return material is not None and type(value) is material.MovingAdvance
+
+
 def _proposal(value):
-    """A Transfer or (I03.2) the Motion of an attached spherical network: both declare the interval of whole global
-    steps they are committed over."""
-    if type(value) is Transfer:
+    """A Transfer, (I03.2) the Motion of an attached spherical network or (I05) the MovingAdvance of an attached
+    moving state: each declares the interval of whole global steps it is committed over."""
+    if type(value) is Transfer or _moving_advance(value):
         return True
     from . import integration_transfer as _transfer
     return type(value) is _transfer.Motion
+
+
+def _declared_content(value):
+    """How the clock names a proposed Motion or MovingAdvance, as _network_content names a stored one."""
+    if _moving_advance(value):
+        return ('moving', value.advance_id)
+    return ('motion', value.motion_id)
 
 
 def _network_content(metadata):
@@ -767,7 +800,11 @@ def _network_content(metadata):
     if 'sphere' not in metadata:
         return None, []
     from . import integration_transfer as _transfer
-    return _transfer.content(metadata)
+    producer, content = _transfer.content(metadata)
+    if 'moving' in metadata:
+        from . import integration_material as _material
+        content = content+_material.content(metadata)
+    return producer, sorted(content)
 
 
 class Ledger:
@@ -781,7 +818,7 @@ class Ledger:
     separate stores on one file.
     """
     __slots__ = ('_store', '_ledger_id', '_root', '_root_meta', '_budget', '_states', '_exchanges', '_applied',
-                 '_chain', '_token', '_spheres')
+                 '_chain', '_token', '_spheres', '_movings')
 
     def __init__(self, *args, **kwargs):
         raise TypeError('a Ledger is issued by Ledger.create() or Ledger.open() only')
@@ -794,11 +831,11 @@ class Ledger:
         ledger = object.__new__(cls)
         for name, value in dict(_store=store, _ledger_id=ledger_id, _root=None, _root_meta=None, _budget=budget,
                                 _states={}, _exchanges={}, _applied={}, _chain=None, _token=None,
-                                _spheres={}).items():
+                                _spheres={}, _movings={}).items():
             object.__setattr__(ledger, name, value)
         return ledger
 
-    def _rooted(self, metadata, state, exchange, sphere=None):
+    def _rooted(self, metadata, state, exchange, sphere=None, moving=None):
         commit = self._issued(metadata)
         object.__setattr__(self, '_root', commit)
         object.__setattr__(self, '_root_meta', json.loads(commit._metadata))
@@ -806,10 +843,11 @@ class Ledger:
         self._keep(self._exchanges, commit, exchange)
         self._keep(self._applied, commit, ())
         self._keep(self._spheres, commit, sphere)
+        self._keep(self._movings, commit, moving)
         return commit
 
     @classmethod
-    def create(cls, store, root, *, exteriors=(), calendar=(), sphere=None, budget=None):
+    def create(cls, store, root, *, exteriors=(), calendar=(), sphere=None, moving=None, budget=None):
         """Record the declared initial ``root`` state (and its attached stocks) as the root commit; idempotent.
 
         Attached W08 reservoirs of the root envelope become the initial stocks of the exchange accounts (a copy the
@@ -818,7 +856,8 @@ class Ledger:
         declared once here and bound into the ledger identity, so every later clock honours them. ``sphere`` (I03)
         attaches a declared spherical network (integration_sphere.initial_sphere) dated at the root's epoch and
         start: it is stored in the root commit beside the column state and bound into the ledger identity, and every
-        later commit then carries its successor.
+        later commit then carries its successor. ``moving`` (I05) attaches the declared I05 moving state of that
+        network (integration_material.declare_moving) in the same way.
         """
         if not isinstance(store, ArrayStore):
             raise LedgerError('a native ArrayStore is required')
@@ -839,16 +878,21 @@ class Ledger:
                                   'cannot be a root')
             sphere, declaration['sphere'] = _bound_sphere(root, sphere, exchange)
             arrays.update(sphere.arrays())
+        if moving is not None:
+            if sphere is None:
+                raise LedgerError('a moving state is attached only beside its spherical network')
+            declaration['moving'] = _bound_moving(sphere, moving)
+            arrays.update(moving.arrays())
         ledger_id = hashlib.sha256(_canonical(declaration, 'ledger declaration')).hexdigest()
         if exchange is not None:
             arrays.update(_exchange_arrays(exchange, _applied([])))
-        metadata = _root_metadata(ledger_id, declaration, root, exchange, sphere)
+        metadata = _root_metadata(ledger_id, declaration, root, exchange, sphere, moving)
         try:
             store.put(metadata['key'], arrays, metadata, budget=budget)
         except StoreConflict as exc:
             raise LedgerConflict('a different root was recorded under this ledger identity') from exc
         ledger = cls._new(store, ledger_id, budget)
-        return ledger, ledger._rooted(metadata, root, exchange, sphere)
+        return ledger, ledger._rooted(metadata, root, exchange, sphere, moving)
 
     @classmethod
     def open(cls, store, ledger_id, *, source_id, runtime_id, budget=None):
@@ -909,13 +953,23 @@ class Ledger:
             except TectonicsError as exc:
                 raise LedgerError('the stored spherical network is not restored: '+str(exc)) from exc
             sphere, rebuilt['sphere'] = _bound_sphere(root, sphere, exchange)
-        expected = _root_metadata(ledger_id, rebuilt, root, exchange, sphere)
+        moving = None
+        if 'moving' in declaration:              # I05: rebuild the attached moving state through its constructors
+            if sphere is None:
+                raise LedgerError('a moving state is attached only beside its spherical network: this root is foreign')
+            from . import integration_material as _material
+            try:
+                moving = _material.restore_moving(metadata.get('moving'), arrays, sphere)
+            except TectonicsError as exc:
+                raise LedgerError('the stored moving state is not restored: '+str(exc)) from exc
+            rebuilt['moving'] = _bound_moving(sphere, moving)
+        expected = _root_metadata(ledger_id, rebuilt, root, exchange, sphere, moving)
         if (_canonical(rebuilt, 'ledger declaration') != _canonical(declaration, 'ledger declaration')
                 or _canonical(expected, 'root record') != _canonical(metadata, 'root record')
                 or (exchange is not None and (ledger._stored_exchange(metadata, arrays).exchange_id
                                               != exchange.exchange_id or _digests(arrays['ledger.applied'])))):
             raise LedgerError('the stored root record is not the record of the rebuilt root: edited or foreign')
-        ledger._rooted(metadata, root, exchange, sphere)
+        ledger._rooted(metadata, root, exchange, sphere, moving)
         return ledger
 
     @property
@@ -1002,7 +1056,8 @@ class Ledger:
         steps, step_s, start = self._schedule()
         declared = self._root_meta['declaration']['exchange']
         sphered = 'sphere' in self._root_meta['declaration']          # I03: every successor then carries its step
-        keys = _SUCCESSOR_KEYS | {'sphere'} if sphered else _SUCCESSOR_KEYS
+        moved = 'moving' in self._root_meta['declaration']           # I05: likewise its moving step
+        keys = (_SUCCESSOR_KEYS | {'sphere'} if sphered else _SUCCESSOR_KEYS) | ({'moving'} if moved else set())
         try:
             state, interval, path, transfers = (metadata[k] for k in ('state', 'interval', 'path', 'transfers'))
             accepted, column, exchange = state['accepted_steps'], state['column'], metadata['exchange']
@@ -1033,7 +1088,8 @@ class Ledger:
                                             and exchange.get('exteriors') == declared['exteriors']
                                             and type(exchange.get('exact')) is dict))
                   and _crosses(self._root_meta['declaration']['calendar'], parent.time_s, state['time_s']) is None
-                  and (not sphered or _sphere_linked(metadata, parent)))
+                  and (not sphered or _sphere_linked(metadata, parent))
+                  and (not moved or _moving_linked(metadata, parent)))
         except (KeyError, TypeError, ValueError, TectonicsError):
             ok = False
         if not ok:
@@ -1043,6 +1099,12 @@ class Ledger:
                 if schema != _transfer.SCHEMA:
                     raise LedgerError('unsupported spherical step schema %r; this runtime requires %r; '
                                       'no implicit history migration' % (schema, _transfer.SCHEMA))
+            if moved and type(metadata) is dict and type(metadata.get('moving')) is dict:
+                from . import integration_material as _material
+                schema = metadata['moving'].get('schema')
+                if schema != _material.STEP_SCHEMA:
+                    raise LedgerError('unsupported moving step schema %r; this runtime requires %r; '
+                                      'no implicit history migration' % (schema, _material.STEP_SCHEMA))
             raise LedgerError('a stored commit is not a well-formed successor of its parent in this ledger')
         return self._issued(metadata)
 
@@ -1090,6 +1152,7 @@ class Ledger:
         self._restored(commit, metadata)
         self._restored_exchange(commit, metadata)
         self._restored_sphere(commit, metadata)
+        self._restored_moving(commit, metadata)
         return commit
 
     def verify_chain(self):
@@ -1104,6 +1167,7 @@ class Ledger:
             self._restored(commit, metadata)
             self._restored_exchange(commit, metadata)
             self._restored_sphere(commit, metadata)
+            self._restored_moving(commit, metadata)
         return chain[-1]
 
     # ------------------------------------------------------------------------- restoration (I02.5)
@@ -1346,6 +1410,44 @@ class Ledger:
         self._keep(self._spheres, commit, state)
         return state
 
+    def moving(self, commit):
+        """The I05 moving state at ``commit``, or None when this history has no moving state attached.
+
+        The commit must be on the accepted chain to the head. A successor is restored by replay: its parent's stored
+        moving state is rebuilt through its constructors, the commit's I03 step is rebuilt and verified, and the
+        recorded MovingAdvance is applied again; the stored record and arrays must equal the recomputed ones.
+        """
+        return self._restored_moving(*self._on_chain(commit))
+
+    def _restored_moving(self, commit, metadata):
+        state = self._cached(self._movings, commit)
+        if state is not _MISSING:
+            return state
+        if 'moving' not in self._root_meta['declaration']:
+            self._keep(self._movings, commit, None)
+            return None
+        from . import integration_material as _material
+        arrays = self._store.get(commit.key, budget=self._budget)
+        try:
+            if commit.parent_key is None:
+                state = _material.restore_moving(metadata['moving'], arrays, self._restored_sphere(commit, metadata))
+            else:
+                parent_meta = self._store.metadata(commit.parent_key)
+                parent_commit = self._issued(parent_meta)
+                parent = self._cached(self._movings, parent_commit)
+                if parent is _MISSING:
+                    parent = (parent_meta, self._store.get(commit.parent_key, budget=self._budget))
+                sphere = self._restored_sphere(parent_commit, parent_meta)
+                state = _material.restored(parent, metadata, arrays, sphere, budget=self._budget)
+        except LedgerError:
+            raise
+        except (KeyError, TypeError) as exc:
+            raise LedgerError('the stored moving state is incomplete') from exc
+        except TectonicsError as exc:
+            raise LedgerError('the stored moving state is not restored: '+str(exc)) from exc
+        self._keep(self._movings, commit, state)
+        return state
+
     # ------------------------------------------------------------------------- inspection (I02.5/I02.6)
 
     def describe(self, commit):
@@ -1471,6 +1573,10 @@ class Ledger:
         interval = (parent.time_s, end.time_s, parent.accepted_steps, end.column.accepted_steps)
         key = successor_key(self._ledger_id, parent.key)
         transfers = tuple(transfers) if type(transfers) in (tuple, list) else None
+        if transfers is not None and 'moving' not in self._root_meta['declaration']:
+            if any(_moving_advance(item) for item in transfers):
+                raise ExchangeRefused('a MovingAdvance is offered, but no I05 moving state is attached to this '
+                                      'history')
         step = None
         if transfers is not None and 'sphere' in self._root_meta['declaration']:
             # I03.2: the attached network moves over exactly this interval. Its step is computed from the parent
@@ -1478,6 +1584,12 @@ class Ledger:
             from . import integration_transfer as _transfer
             transfers, step = _transfer.proposed(self, parent, expected_parent, interval, transfers,
                                                  self._budget if budget is None else budget, cancel)
+        moved = None
+        if transfers is not None and 'moving' in self._root_meta['declaration']:
+            # I05: the attached moving state follows exactly this step (integration_material.proposed).
+            from . import integration_material as _material
+            transfers, moved = _material.proposed(self, parent, expected_parent, step, transfers,
+                                                  self._budget if budget is None else budget)
         if transfers is None or len(transfers) > MAX_TRANSFERS:
             raise ExchangeRefused('at most %d transfers per commit' % MAX_TRANSFERS)
         exchange = self._restored_exchange(parent, expected_parent)
@@ -1513,6 +1625,9 @@ class Ledger:
         if step is not None:
             arrays.update(step.arrays())
             metadata['sphere'] = step.record()
+        if moved is not None:
+            arrays.update(moved.state.arrays())
+            metadata['moving'] = _material.step_record(self._restored_moving(parent, expected_parent), moved)
         self._checked(json.loads(_canonical(metadata, 'commit metadata')), parent)   # exactly what head() accepts
         store = self._store
         parent_index = None if after is None else store.reference(parent.key, 'ledger.applied').descriptor_sha256
@@ -1546,4 +1661,5 @@ class Ledger:
         self._keep(self._exchanges, commit, after)
         self._keep(self._applied, commit, applied)
         self._keep(self._spheres, commit, None if step is None else step.state)
+        self._keep(self._movings, commit, None if moved is None else moved.state)
         return commit

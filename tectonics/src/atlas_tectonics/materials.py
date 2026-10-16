@@ -340,6 +340,9 @@ def _positive_total(values, backend='numba'):
     """Accurate nonnegative reduction; reuse the verified native exact accumulator."""
     if backend=='numba':
         from ._transport_native import positive_sum
+        if type(values) is np.ndarray and values.flags.writeable:
+            # One compiled signature: a read-only view (no copy) of a writable array.
+            values=values.view();values.flags.writeable=False
         return float(positive_sum(values))
     return math.fsum(values)
 

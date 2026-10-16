@@ -276,6 +276,20 @@ verification still streams every current source file; cheaper file-status work
 does not replace those reads with timestamps. The current inventory admits
 512 files while retaining a 2 MiB digest-record bound.
 
+The source checkout keeps these strict checks on each operation. A packaged
+desktop payload can use a separate release policy: capture each backend once,
+then check fully again before saves, on reopen and on cache reads. The calculation
+is identical; only the frequency of checking whether code changed is different.
+A packaging marker and matching interpreter/command paths select this policy,
+not a user environment setting. The scientific identity stays the same between
+modes; saves record the producer mode separately. Source changes still invalidate
+reuse, and evidence tools cannot turn a release run into a strict pass.
+
+Within strict checks, deeply immutable constants can reuse their normalised
+representation while mutable constants, defaults and function bindings are
+re-examined. This avoids repeated formatting, not source verification. Focused
+controls deliberately mutate sources and functions and require refusal.
+
 Data-format constants are part of that check too. Changing a NumPy data type can
 change how saved bytes are interpreted without changing a function: the same
 bytes could become different numbers. The identity records byte order, field
@@ -319,6 +333,13 @@ in `python312.dll`, which is not hashed, so there the interpreter is identified 
 its recorded version and build string and not by its bytes.
 
 ### Save losslessly, share unchanged chunks and publish atomically
+
+Repeated saves retain the exact stored-byte total only while SQLite's data,
+connection-change and schema versions match the last accepted publication.
+New rows add their exact sizes. A different writer, schema change, rollback or
+unrecognised schema forces the original full scan. The store and SQLite page
+limits still apply; direct file tampering outside SQLite is outside this existing
+local-store trust model. No approximate size estimate replaces the safety gate.
 
 [ArrayStore](../../src/atlas_tectonics/storage.py) keeps typed arrays in SQLite
 as independently identified chunks. Exact uniform values, packed categorical

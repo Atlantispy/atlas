@@ -293,6 +293,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     started = time.perf_counter()
     try:
+        if (args.root / 'tectonics' / '.desktop-runtime.json').exists():
+            raise CandidateError('packaged release runtime cannot produce strict commit evidence')
         with candidate(args.root, staged=args.staged) as snapshot:
             scope = 'the index only (--staged)' if args.staged else 'git add --all of the working tree'
             print(f'Candidate: {scope}; {len(snapshot.changed)} path(s) differ from HEAD.')

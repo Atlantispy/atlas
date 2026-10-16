@@ -1,6 +1,6 @@
 # Current evidence register
 
-3 October 2026. WORKING NON-CANON. Roadmap Phase A2.
+5 October 2026. WORKING NON-CANON. Roadmap Phase A2.
 
 Old receipts remain useful history, but documentation must not present one as
 evidence about the current checkout after the bytes it bound have changed. The
@@ -38,9 +38,9 @@ results remain observations of the original run. Nothing is re-executed.
 ## Coverage today
 
 The [current connected evidence chain](#successor-capture-after-i022a-and-the-writer-correction)
-retains the eight-control chain refreshed on 30 September 2026 after the I02
-cold-restart stress-resolution correction, with finite-admission renewed again
-as r8 on 3 October. The unchanged `i01-column-r2` receipt is reused from
+was refreshed as one optimisation batch on 5 October 2026. All eight affected
+controls pass with the same science and tolerances; finite-admission r11 includes
+the final backup-boundary guard. The unchanged `i01-column-r2` receipt is reused from
 29 September. All affected bounded captures passed. The five
 phase/receiver/separation writer-correction receipts and G25 receipt captured on
 29 September also remain current; their inputs were unaffected and were not rerun.
@@ -57,7 +57,7 @@ accepted clock and save/reopen workflow; it does not establish physical-event or
 whole-world acceptance.
 
 I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
-[i01-finite-admission-r8](../tectonics/evidence/i01-finite-admission-r8.json) now
+[i01-finite-admission-r11](../tectonics/evidence/i01-finite-admission-r11.json) now
 binds that tool, its method document, the restoration modules and the renewed
 upstream receipts. Its predecessors remain superseded, with recorded bytes intact.
 Restoration checks consistency in a trusted local store, not authorship of records.
@@ -79,15 +79,20 @@ Successor r8 was captured after the final I03 K1–K5 repairs on 3 October.
 All five controls passed in 1.9032870 s after imports. The unchanged finite-strain
 r5 and column-admission r3 prerequisites were reused; r7 retains its original bytes.
 
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r10.json)
-was captured on 3 October 2026 (evening) after the I03 N1 change to
-`integration_transfer.py`, which followed the K1–K5 repairs. It supersedes r9; r1-r9
-retain their original bytes and historical measurements. r10 records five
+Successor r9 was captured after I04/I05a integration and its reviewed repairs on
+4 October. All five controls passed in 1.9376287 s after imports, reusing the same
+unchanged prerequisites. Its 38 source bindings include the changed restoration
+modules; r8 retains its original bytes.
+
+The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r12.json)
+was captured on 5 October 2026 after the optimisation batch, after
+the other numerical checks had finished. It supersedes r11; r1-r11
+retain their original bytes and historical measurements. r12 records five
 repetitions on one Windows machine,
-unchanged sources and passing equality/parity comparisons. Its 156 source-file digests
+unchanged sources and all seven passing equality/parity comparisons. Its 166 source-file digests
 are checked by the register; its opaque package/native `execution_identity` is
 classified as an unchecked runtime observation. A further change to any package
-source makes r10 stale in turn. The column does not use spherical movement or the
+source makes r12 stale in turn. The column does not use spherical movement or the
 3-D solvers; this renews source bindings, not their speed measurement. This is operational timing, not scientific
 acceptance, a whole-generator speed claim or other-platform evidence.
 
@@ -464,7 +469,8 @@ All fifteen original successor captures completed successfully on 29 September
 2026 and were then registered as current. Nine covered the connected column
 chain after the reviewed package extraction. On 30 September the I02
 cold-restart stress-resolution correction required eight further successors;
-`i01-column-r2` remained valid and was reused. The current chain is below.
+`i01-column-r2` remained valid and was reused. The current chain below was renewed
+again on 5 October after bitwise kernel and persistence-guard integration.
 Each affected tool was retargeted before its run, so downstream captures bind
 the new upstream receipts and the package owners they execute. Every output was
 written as a new file; no old receipt or recorded measurement was rewritten.
@@ -472,14 +478,14 @@ written as a new file; no old receipt or recorded measurement was rewritten.
 | Order | Control in `tectonics/tools/` | Captured current receipt | Receipts it checks |
 | --- | --- | --- | --- |
 | 1 | `check_i01_column.py` | [i01-column-r2](../tectonics/evidence/i01-column-r2.json), reused from 29 September | none |
-| 2 | `check_i01_weakening.py` | [i01-weakening-r4](../tectonics/evidence/i01-weakening-r4.json) | column r2 |
-| 3 | `check_i01_column_heat.py` | [i01-column-heat-r5](../tectonics/evidence/i01-column-heat-r5.json) | weakening r4, column r2 |
-| 4 | `check_i01_motion_coupling.py` | [i01-motion-coupling-r3](../tectonics/evidence/i01-motion-coupling-r3.json) | weakening r4 |
-| 5 | `check_i01_column_admission.py` | [i01-column-admission-r3](../tectonics/evidence/i01-column-admission-r3.json) | motion coupling r3, decoupling r1 |
-| 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r4](../tectonics/evidence/i01-thermomechanical-motion-r4.json) | column heat r5, motion coupling r3 |
-| 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r5](../tectonics/evidence/i01-finite-strain-r5.json) | thermomechanical r4, column heat r5, motion coupling r3 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r8](../tectonics/evidence/i01-finite-admission-r8.json) | finite strain r5, column admission r3 |
-| 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r4](../tectonics/evidence/i01-breakup-closure-r4.json) | finite strain r5 |
+| 2 | `check_i01_weakening.py` | [i01-weakening-r5](../tectonics/evidence/i01-weakening-r5.json) | column r2 |
+| 3 | `check_i01_column_heat.py` | [i01-column-heat-r6](../tectonics/evidence/i01-column-heat-r6.json) | weakening r5, column r2 |
+| 4 | `check_i01_motion_coupling.py` | [i01-motion-coupling-r4](../tectonics/evidence/i01-motion-coupling-r4.json) | weakening r5 |
+| 5 | `check_i01_column_admission.py` | [i01-column-admission-r4](../tectonics/evidence/i01-column-admission-r4.json) | motion coupling r4, decoupling r1 |
+| 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r5](../tectonics/evidence/i01-thermomechanical-motion-r5.json) | column heat r6, motion coupling r4 |
+| 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r6](../tectonics/evidence/i01-finite-strain-r6.json) | thermomechanical r5, column heat r6, motion coupling r4 |
+| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r11](../tectonics/evidence/i01-finite-admission-r11.json) | finite strain r6, column admission r4 |
+| 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r5](../tectonics/evidence/i01-breakup-closure-r5.json) | finite strain r6 |
 
 The five phase/receiver/separation successors and the G25 successor passed on
 29 September and remain current without a new capture:
@@ -511,7 +517,93 @@ The separation-performance comparison used a harness outside the repository and
 has no successor route. Its older timings remain historical. Capture and
 registration are local evidence states; Git commit and publication are separate.
 
+## Optimisation integration, 5 October 2026
+
+This batch repairs four development-tool findings: incomplete candidate runs
+cannot report a pass, quick I02 partitions validate against complete discovery,
+impact maps retain the traced run's original source/runtime provenance, and
+fingerprints include effective inherited import paths. The standard full test
+selection remains unchanged. Quick and impact-selected runs are labelled as such.
+
+Strict execution now reuses normalised deeply immutable constants, never mutable
+defaults or source-check outcomes. Numerical changes reuse identical geometry,
+batch repeated special-function evaluations and preserve arithmetic order in
+NumPy/SciPy/Numba kernels. Retained multigrid work arrays and CSR transposes are
+fully budgeted. Default 256 MiB admits the closed 8-cube control but refuses the
+9-cube control; an explicit 512 MiB shared budget admits the latter. No physical
+tolerance, solver gate, fastmath option or step ceiling changed.
+
+Focused verification, with valid unchanged results reused:
+
+- Development tooling: 33 tests in 16.928 s; verification profiles: 29 in 2.238 s.
+- Affected numerical/geometry modules: 382 in 25.574 s; 13 new bitwise controls
+  in 0.838 s. Sixteen additional multigrid raw-byte comparisons matched baseline.
+- Multigrid: 8 new controls passed; 41 existing passes were reused after updating
+  the one honest resource-admission expectation. That control, including explicit
+  512 MiB admission, passed separately in 3.335 s.
+- Reuse, storage, project, bundle and job seams: 228 tests in 63.004 s, OK with
+  one existing host-conditional skip. Release policy, mutation refusal, concurrent
+  capture and exact retained-byte accounting: 12 tests in 1.922 s after adding the
+  raw-backup boundary check. Packaging helper: 6 tests; commit-policy helper: 4.
+- Eight final I01 successor captures passed. Finite-admission r10 is retained
+  as superseded by r11 after the final storage guard. Three receipt-binding checks
+  and the closure-mirror check passed. Strict workflow timing r12 passed all seven
+  equality/source checks over five repetitions after other test processes stopped.
+- The Git-normalised candidate guard passed 3/3 in 8.5 s: 464 registered digest
+  bindings, 3 line-ending checks and 33 optimisation controls in 4.481 s.
+  This explicitly selected the new controls, not the default full I01/I02 suite.
+  Later edits only add the performance record and status documentation.
+
+The [matched operational record](../tectonics/evidence/optimisation-20261005.json)
+uses one Windows machine, one fresh process per configuration and one pass of
+seven bounded workloads. Source bytes remained unchanged. Whole-process seconds
+include imports; the release configuration is an explicit diagnostic bootstrap,
+not an installed EXE test or strict scientific acceptance. Five original digests
+match exactly. For New World and the regional job, retained payload comparison
+separates only changed adapter hashes, their recomputed request ID and the new
+execution-mode provenance; the scientific payload bytes match as well.
+
+| Workload | Previous strict, s | New strict, s | Release diagnostic, s |
+| --- | ---: | ---: | ---: |
+| W03 columns | 7.866 | 7.233 | 2.602 |
+| W07 regional | 6.491 | 6.099 | 1.877 |
+| 3-D regional, n=10 | 16.703 | 11.982 | 10.756 |
+| I02 column save/reopen | 3.811 | 3.772 | 5.922 |
+| New World generate/reopen | 8.945 | 5.304 | 4.836 |
+| Regional job | 16.425 | 12.607 | 7.326 |
+| W05/W06 | 32.332 | 31.238 | 11.013 |
+| Sum of these workloads | 92.574 | 78.235 | 44.331 |
+
+Strict mode saves **14.339 s (15.49%)** in this pass; the release diagnostic saves
+**48.243 s (52.11%)** overall, but I02 is **2.111 s slower (55.39%)** in release
+in this diagnostic; required persistence checks remain enabled. This timing
+comparison does not isolate the cause. The 1.04% strict I02 difference
+is too small for a reliable speed claim from one pass. These results are neither
+whole-planet estimates nor statistical confidence intervals. The current checkout
+remains strict. Future packaged workloads must retain their own measured trade-off.
+
+Uncoordinated helper threads (PAR-2), removal of the defensive constructed-ring
+check (VAL-1), a persistent desktop worker and bytecode-cache packaging are not
+included. No physics paper or alternative physical model was used in this batch:
+the implementation basis is the reviewed existing NumPy/SciPy/Numba algorithms,
+Claude's byte-parity prototypes and the checks above. The paused fidelity
+candidate, installed EXE, Git index and commit history are not changed by this
+integration. No full Atlas suite, Linux run or whole-planet simulation is claimed.
+
 ## Integration checks
+
+On 4 October the I04 delivery, its I05a prerequisites and the reviewed result,
+sensitivity, staircase and one-sided coverage repairs were integrated locally.
+Focused checks reused adequate unchanged broad-suite evidence. The separately
+predeclared 42/84-row refinement passed all four fixed 3% comparisons; its largest
+change was 0.0556096%. The [I04 method](../tectonics/docs/I04_CAUSAL_START.md#reviewed-repairs-and-resolved-refinement-4-october-2026)
+and [observational report](../tectonics/evidence/i04-resolved-refinement-r1.json)
+state its source-reuse boundary: no complete launch manifest was captured, so it
+is not represented as a source-sealed run of the final tree. Finite-admission r9
+and workflow-timing r11 separately renew their own declared final-source bindings.
+The final Git-normalised guard passed all three checks in 26.2 s, including the
+register, three line-ending checks and eleven staircase tests (22.348 s). Valid
+unchanged broader test evidence was reused; this was not a new full-suite run.
 
 **I03 K1–K5 repairs, 3 October 2026: reviewed and integrated locally.**
 The candidate preserves junction paths through mesh/rename replay, covers all
