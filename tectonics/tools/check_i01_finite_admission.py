@@ -79,13 +79,14 @@ RETAINED += tuple(_PACKAGE_IMPORTS)
 # I02.5 restored() executes these package modules besides the retained owners above: the ledger, its store and the
 # common-state restorer, with the validation, material, work-budget and epoch-time helpers they call, and the stock
 # inventory (with its constitutive checks) when stocks are attached. mesh is executed by the Ledger.open or
-# Ledger.create whose rebuilt root restored() relies on. All are bound, and import-checked below.
+# Ledger.create whose rebuilt root restored() relies on. storage executes reuse (its release_boundary and
+# execution_mode) at its read and publication boundaries. All are bound, and import-checked below.
 RESTORATION = ("src/atlas_tectonics/integration_ledger.py", "src/atlas_tectonics/integration_state.py",
                "src/atlas_tectonics/storage.py", "src/atlas_tectonics/_validation.py",
                "src/atlas_tectonics/materials.py", "src/atlas_tectonics/resources.py",
                "src/atlas_tectonics/timebase.py", "src/atlas_tectonics/w08_inventory.py",
                "src/atlas_tectonics/constitutive.py", "src/atlas_tectonics/mesh.py",
-               "src/atlas_tectonics/integration_clock.py")
+               "src/atlas_tectonics/integration_clock.py", "src/atlas_tectonics/reuse.py")
 # The bound restoration test commits its history through the accepted clock.
 ACCEPTED_RECEIPTS = {
     "evidence/i01-finite-strain-r6.json": "3460e9df890a1cd8345b85d91e734e7caa111e223b8edadbf1257d05955c7b53",
