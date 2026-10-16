@@ -1,0 +1,589 @@
+"""W01 stage 2: immutable planar feature geometry with explicit frames and limits.
+
+GEOS supplies robust double-precision planar predicates/overlays through Shapely.
+No make_valid, snapping, buffering-to-repair or tolerance-driven deletion occurs.
+Polygons describe occupied area; polylines describe zero-width fault/feature traces.
+A distance query can describe a weak-zone corridor without polygonising a circle.
+Authored polygon holes must not touch. Overlays and WKB restoration retain valid
+point-touching holes produced by set operations, subject to structural validation.
+A mixed result (GeometryCollection) is held to one rule, so that no area or
+length is counted twice: its polygons must be valid together as a MultiPolygon,
+its traces simple together as a MultiLineString, and no trace may lie inside or
+along one of its polygons. Members may touch at points. Members that overlap,
+repeat or share an edge are refused, never unioned (see _validate_collection).
+
+Coordinates are metres in an identified Cartesian plane, NOT longitude/latitude.
+The geometry does not assign plate ownership or decide which overlapping feature
+wins: those are subsequent topology and geological-case responsibilities.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+import hashlib
+import json
+import math
+import struct
+import threading
+
+import numpy as np
+import shapely
+from shapely.errors import GEOSException
+from shapely.geometry import Polygon, LineString, GeometryCollection
+
+from ._validation import TectonicsError, input_shape, read_array, scalar
+from .coordinates import _label
+from .resources import elements, select_budget
+
+
+class GeometryError(TectonicsError):
+    """Invalid, incompatible, ambiguous or numerically unsupported geometry."""
+
+
+@dataclass(frozen=True, slots=True)
+class GeometryLimits:
+    """Overridable execution limits, not resolution or geological constants.
+
+    GEOS allocates internally. Reservations below are conservative admission
+    estimates, not enforcement of its heap or a process-wide memory limit.
+    """
+    max_vertices: int = 100_000
+    max_overlay_pairs: int = 1_000_000
+    max_hits: int = 1_000_000
+    batch_points: int = 4096
+
+    def __post_init__(self):
+        for key in ('max_vertices', 'max_overlay_pairs', 'max_hits', 'batch_points'):
+            value = getattr(self, key)
+            if type(value) is not int or value <= 0:
+                raise GeometryError(key+' must be a positive integer')
+
+
+DEFAULT_GEOMETRY_LIMITS = GeometryLimits()
+_SCHEMA = 'atlas.feature-geometry.v1'
+
+
+def _limits(value):
+    if value is None:
+        return DEFAULT_GEOMETRY_LIMITS
+    if type(value) is not GeometryLimits:
+        raise GeometryError('explicit GeometryLimits required')
+    return value
+
+
+def _json(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+
+
+def _typed_frozen(value, dtype):
+    a = np.asarray(value, dtype=dtype, order='C')
+    return np.frombuffer(a.tobytes(), dtype=dtype).reshape(a.shape)
+
+
+def _check_cancel(cancel):
+    from concurrent.futures import CancelledError
+    if cancel is not None:
+        if not callable(getattr(cancel, 'is_set', None)):
+            raise GeometryError('cancel must provide is_set()')
+        if cancel.is_set():
+            raise CancelledError('geometry operation cancelled')
+
+
+def _point_shape(value, dimensions):
+    shape = input_shape(value, 'query coordinates')
+    if not shape or shape[-1] != dimensions or elements(shape) == 0:
+        raise GeometryError(f'nonempty (...,{dimensions}) coordinates required')
+    return shape
+
+
+def _vertices(value, dimensions, *, ring, limits):
+    shape = _point_shape(value, dimensions)
+    if len(shape) != 2 or shape[0] > limits.max_vertices:
+        raise GeometryError('vertex matrix or vertex limit invalid')
+    a = read_array(value, 'feature vertices')
+    # Bound the Python row/set scratch for large caller-supplied rings. Small
+    # finite binary64 rows have the same equality relation as np.unique,
+    # including signed zero, without its structured-sort setup.
+    if len(a) <= 4096:
+        rows = a.tolist()
+        if ring and len(rows) > 1 and rows[0] == rows[-1]:
+            a = a[:-1]
+            del rows[-1]
+        if len(rows) < (3 if ring else 2):
+            raise GeometryError('insufficient feature vertices')
+        if any(p == q for p, q in zip(rows[1:], rows)):
+            raise GeometryError('zero-length edge')
+        if ring and len(set(map(tuple, rows))) != len(rows):
+            raise GeometryError('polygon ring repeats a vertex')
+        return a
+    # Accept the conventional repeated closing endpoint, but no other duplicates.
+    if ring and len(a) > 1 and np.array_equal(a[0], a[-1]):
+        a = a[:-1]
+    if len(a) < (3 if ring else 2):
+        raise GeometryError('insufficient feature vertices')
+    if np.any(np.all(a[1:] == a[:-1], axis=1)):
+        raise GeometryError('zero-length edge')
+    if ring and len(np.unique(a, axis=0)) != len(a):
+        raise GeometryError('polygon ring repeats a vertex')
+    return a
+
+
+def _preflight_vertices(values, dimensions, limits):
+    total = 0
+    for value in values:
+        shape = _point_shape(value, dimensions)
+        if len(shape) != 2:
+            raise GeometryError('vertices must be a two-dimensional matrix')
+        total += shape[0]
+    if total > limits.max_vertices:
+        raise GeometryError('geometry vertex limit exceeded')
+    return total
+
+
+def _inspect_wkb(raw, limits):
+    """Check type/count/length envelopes before GEOS sees a binary definition.
+
+    A tiny corrupt payload must not request billions of native points/rings. Only
+    standard 2D WKB types 1-7 are supported; EWKB/SRID/Z/M need an explicit importer.
+    This parser does not repair topology. _validate_shape then checks the actual
+    shape: GEOS validity, the vertex-sequence rules and, because GEOS validity
+    does not compare the members of a collection, the collection rule.
+    """
+    offset=0;vertices=0;parts=0;pending=[(None,0)]
+    def count_at(position,endian):
+        if position+4>len(raw):raise GeometryError('truncated WKB count')
+        return struct.unpack_from(endian+'I',raw,position)[0],position+4
+    while pending:
+        expected,depth=pending.pop();parts+=1
+        if depth>64 or parts>limits.max_vertices+1 or offset+5>len(raw):
+            raise GeometryError('WKB nesting/part/length envelope exceeded')
+        order=raw[offset]
+        if order not in (0,1):raise GeometryError('invalid WKB byte order')
+        endian='<' if order else '>'
+        kind=struct.unpack_from(endian+'I',raw,offset+1)[0];offset+=5
+        if kind not in range(1,8) or expected is not None and kind!=expected:
+            raise GeometryError('unsupported WKB type/dimensionality')
+        if kind==1:
+            vertices+=1;offset+=16
+        elif kind in (2,3):
+            rings=1
+            if kind==3:
+                rings,offset=count_at(offset,endian)
+                if rings>limits.max_vertices:raise GeometryError('WKB ring count exceeds limit')
+            for _ in range(rings):
+                count,offset=count_at(offset,endian)
+                vertices+=count
+                if vertices>limits.max_vertices or count>(len(raw)-offset)//16:
+                    raise GeometryError('WKB coordinate count exceeds payload or limit')
+                offset+=16*count
+        else:
+            count,offset=count_at(offset,endian)
+            if count>limits.max_vertices or count>(len(raw)-offset)//5:
+                raise GeometryError('WKB child count exceeds payload or limit')
+            expected_child={4:1,5:2,6:3,7:None}[kind]
+            pending.extend((expected_child,depth+1) for _ in range(count))
+        if offset>len(raw) or vertices>limits.max_vertices:
+            raise GeometryError('WKB coordinate envelope exceeded')
+    if offset!=len(raw):raise GeometryError('WKB trailing bytes are not part of geometry')
+
+
+def _collection_members(g, kind, out):
+    """Gather non-empty members of one kind through nested collections and Multi* parts."""
+    for part in g.geoms:
+        if part.is_empty: continue
+        if part.geom_type == kind: out.append(part)
+        elif part.geom_type in ('Multi'+kind, 'GeometryCollection'): _collection_members(part, kind, out)
+    return out
+
+
+def _trace_shares_length(traces, polygons, limits):
+    """Does any trace lie inside or along any polygon? Judged pair by pair.
+
+    DE-9IM entries 0 and 1 are the dimensions in which a trace's interior meets
+    a polygon's interior and boundary; 1 is shared length, 0 a point contact. The
+    relation is GEOS's robust predicate with no tolerance added here; it is not
+    exact arithmetic (see _validate_collection). A constructed intersection is
+    not used: its rounded nodes can collapse a rounding-size overlap to a point
+    and so admit it. Relating the two whole sets at once is quadratic in their
+    part counts, so only pairs whose bounding boxes meet are related. The overlay
+    pair limit bounds their number and the candidate indices held at once;
+    batch_points bounds the relation scratch.
+    """
+    from shapely.strtree import STRtree
+    areas = np.asarray(polygons, dtype=object); lines = np.asarray(traces, dtype=object)
+    tree = STRtree(areas); pairs = 0; step = limits.batch_points
+    batch = max(1, min(step, limits.max_overlay_pairs//len(areas)))
+    for start in range(0, len(lines), batch):
+        part = lines[start:start+batch]
+        trace, area = tree.query(part)
+        pairs += len(trace)
+        if pairs > limits.max_overlay_pairs:
+            raise GeometryError('collection trace/polygon comparison envelope exceeds limit; partition explicitly')
+        for at in range(0, len(trace), step):
+            related = shapely.relate(part[trace[at:at+step]], areas[area[at:at+step]])
+            if any('1' in matrix[:2] for matrix in related):
+                return True
+    return False
+
+
+def _validate_collection(g, limits):
+    """One rule for a GeometryCollection: no area or length may be counted twice.
+
+    GEOS validates a collection member by member only. Overlapping polygons,
+    overlapping traces or a trace lying along a polygon were therefore admitted
+    and their common area or length was summed twice (review s03-2). Taken at any
+    nesting depth, the polygons must be valid together as one MultiPolygon, the
+    traces simple together as one MultiLineString, and no trace may share positive
+    length with a polygon. Point contacts stay valid. Polygons sharing an edge
+    are refused as well, exactly as they are in a MultiPolygon. Two traces may
+    meet only where both end; a closed trace has no end, so no other trace may
+    touch it. The three tests are GEOS's robust predicates on the stored
+    coordinates, with no tolerance added here. They are not exact arithmetic: a
+    contact that is exactly collinear between full-precision coordinates is
+    occasionally refused, as it already is in a MultiPolygon. A failure is
+    refused, never unioned or repaired.
+    """
+    polygons = _collection_members(g, 'Polygon', [])
+    traces = _collection_members(g, 'LineString', [])
+    try:
+        if len(polygons) > 1 and not shapely.is_valid(shapely.multipolygons(polygons)):
+            raise GeometryError('collection polygons overlap, repeat or share an edge; occupied area is ambiguous')
+        if len(traces) > 1 and not shapely.is_simple(shapely.multilinestrings(traces)):
+            raise GeometryError('collection traces cross, repeat or overlap; split the feature explicitly')
+        if polygons and traces and _trace_shares_length(traces, polygons, limits):
+            raise GeometryError('collection trace lies inside or along a collection polygon')
+    except GEOSException as exc:
+        raise GeometryError('collection members could not be compared; no repair attempted') from exc
+
+
+def _validate_shape(g, limits, *, allow_empty=True, _member=False):
+    if g is None or shapely.has_z(g) or shapely.has_m(g):
+        raise GeometryError('only explicit two-dimensional geometry supported')
+    n = int(shapely.get_num_coordinates(g))
+    if n > limits.max_vertices:
+        raise GeometryError('result exceeds geometry vertex limit')
+    if g.is_empty:
+        if not allow_empty:
+            raise GeometryError('empty input feature')
+        return
+    xy = shapely.get_coordinates(g)
+    if not np.isfinite(xy).all():
+        raise GeometryError('nonfinite geometry coordinates')
+    if not shapely.is_valid(g):
+        raise GeometryError('invalid geometry: '+str(shapely.is_valid_reason(g)))
+    # GEOS validity does not reject an adjacent repeated coordinate. Apply the
+    # same sequence rules to WKB/imported/overlay shapes as to direct builders;
+    # otherwise restoration can bypass the no-zero-length-edge contract.
+    # Shapely shapes are immutable; read these properties once per check.
+    kind = g.geom_type
+    if kind == 'Polygon':
+        _vertices(np.asarray(g.exterior.coords), 2, ring=True, limits=limits)
+        for ring in g.interiors:
+            _vertices(np.asarray(ring.coords), 2, ring=True, limits=limits)
+    elif kind in ('LineString', 'LinearRing'):
+        _vertices(xy, 2, ring=kind == 'LinearRing', limits=limits)
+    # A fault trace may not secretly self-cross. Explicitly node/split it instead.
+    if kind in ('LineString', 'MultiLineString') and not shapely.is_simple(g):
+        raise GeometryError('self-crossing/repeated trace; split the feature explicitly')
+    area, length = g.area, g.length
+    if not math.isfinite(area) or not math.isfinite(length):
+        raise GeometryError('geometry measure outside binary64 range')
+    if kind in ('Polygon', 'MultiPolygon') and area <= 0:
+        raise GeometryError('zero-area region')
+    if kind in ('LineString', 'MultiLineString') and length <= 0:
+        raise GeometryError('zero-length trace')
+    if kind in ('GeometryCollection', 'MultiLineString', 'MultiPolygon'):
+        for part in g.geoms:
+            _validate_shape(part, limits, _member=True)
+        # Members valid one by one can still overlap each other. The outermost
+        # collection flattens its nested members, so they are not rechecked here.
+        if kind == 'GeometryCollection' and not _member:
+            _validate_collection(g, limits)
+
+
+def _validate_once(g, limits, validated):
+    """Reuse a completed check only for the same immutable shape and limits.
+
+    The private pair is supplied by a builder immediately after its full
+    _validate_shape call. It never carries validation across reconstruction,
+    restoration, overlay, changed limits or an equal but different object.
+    """
+    if validated is None or validated[0] is not g or validated[1] is not limits:
+        _validate_shape(g, limits)
+
+
+def _measure_components(g):
+    """Separate 2D interiors from lower-dimensional contacts without deleting either."""
+    areas=[];edges=[]
+    def visit(part):
+        if part.is_empty:return
+        if part.geom_type=='Polygon':
+            areas.append(part);edges.append(part.boundary)
+        elif part.geom_type in ('LineString','Point'):
+            edges.append(part)
+        else:
+            for child in part.geoms:visit(child)
+    visit(g)
+    area=GeometryCollection(areas) if len(areas)!=1 else areas[0]
+    boundary=GeometryCollection(edges) if len(edges)!=1 else edges[0]
+    return area,boundary
+
+
+class _PointPredicates:
+    """Private prepared copies of one immutable geometry, used under one lock.
+
+    GEOS builds a prepared geometry's locators and segment indexes lazily inside
+    predicate calls, and that build is not thread-safe: concurrent first use
+    crashed the process (review s03-1). Which call completes the build is internal
+    to GEOS, so no "initialised" flag can safely release the lock early. Published
+    shapely objects therefore stay unprepared (safe to share); point classification
+    uses these private copies, built on first use, and holds the lock for every
+    call that can touch their lazy state. Concurrent classifications of the SAME
+    geometry are serialised; different geometries still run in parallel.
+    """
+    __slots__ = ('_lock', '_wkb', '_area', '_shape')
+
+    def __init__(self, wkb):
+        self._lock = threading.Lock()
+        self._wkb = wkb
+        self._area = self._shape = None
+
+    # A copy is a fresh private cache (new lock, lazy rebuild), so dataclass
+    # asdict/astuple, copy, deepcopy and pickle never try to copy a lock.
+    def __copy__(self): return _PointPredicates(self._wkb)
+    def __deepcopy__(self, memo): return _PointPredicates(self._wkb)
+    def __reduce__(self): return (_PointPredicates, (self._wkb,))
+
+    def __call__(self, query):
+        """Return (strict-interior contains, closed intersects) for point geometries."""
+        with self._lock:
+            if self._shape is None:
+                shape = shapely.from_wkb(self._wkb)
+                area, _ = _measure_components(shape)
+                shapely.prepare(shape); shapely.prepare(area)
+                self._shape, self._area = shape, area
+            return shapely.contains(self._area, query), shapely.intersects(self._shape, query)
+
+
+def _overlay_budget(a, b, limits, budget):
+    n, m = int(shapely.get_num_coordinates(a)), int(shapely.get_num_coordinates(b))
+    # An overlay can produce O(n*m) intersections. Refuse before native allocation
+    # when that envelope exceeds the case's explicit limit; do not downsample.
+    separated = (not a.is_empty and not b.is_empty and
+        (a.bounds[2] < b.bounds[0] or b.bounds[2] < a.bounds[0] or
+         a.bounds[3] < b.bounds[1] or b.bounds[3] < a.bounds[1]))
+    potential = 0 if separated else n*m
+    if potential > limits.max_overlay_pairs:
+        raise GeometryError('overlay intersection envelope exceeds limit; partition explicitly')
+    return select_budget(budget).reserve(256*(n+m)+96*potential+16384,
+                                         category='geometry-overlay')
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class PlanarGeometry:
+    """Prepared immutable geometry; construction captures caller coordinates once.
+
+    WKB is the lossless retained definition. The cached GEOS representation and
+    prepared search data are reconstructible. IDs describe geometry and frame,
+    not material identity or a complete scientific execution receipt. The shared
+    shapely objects are never prepared, so any thread may use them; prepared
+    point-classification data are private and lock-guarded (_PointPredicates).
+    """
+    frame_id: str
+    geometry_id: str
+    _wkb: bytes = field(repr=False, compare=False)
+    _geom: Any = field(repr=False, compare=False)
+    _boundary_geom: Any = field(repr=False, compare=False)
+    _points: Any = field(repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        raise GeometryError('use polygon(), polyline() or from_wkb()')
+
+    @classmethod
+    def _from_shape(cls, shape, frame_id, *, limits=None, _validated=None):
+        _label(frame_id, 'planar frame'); limits = _limits(limits)
+        _validate_once(shape, limits, _validated)
+        # Keep ring order and trace direction in the identity. Reversing a trace
+        # must remain observable when W01 stage 3 assigns its sides.
+        raw = bytes(shapely.to_wkb(shape, byte_order=1, output_dimension=2))
+        obj = object.__new__(cls)
+        object.__setattr__(obj, 'frame_id', frame_id)
+        object.__setattr__(obj, '_wkb', raw)
+        object.__setattr__(obj, '_geom', shape)
+        _, boundary_g = _measure_components(shape)
+        object.__setattr__(obj, '_boundary_geom', boundary_g)
+        object.__setattr__(obj, '_points', _PointPredicates(raw))
+        object.__setattr__(obj, 'geometry_id', hashlib.sha256(
+            _json({'schema':_SCHEMA, 'space':'planar-metres', 'frame_id':frame_id})+b'\0'+raw).hexdigest())
+        return obj
+
+    @classmethod
+    def polygon(cls, exterior, *, holes=(), frame_id, limits=None, budget=None):
+        """Simple concave/convex polygon with optional non-touching interior holes.
+
+        Invalid holes, crossings, degeneracy and duplicate vertices are errors.
+        Closing a ring does not change its vertices or make invalid input valid.
+        Non-touching holes are an authoring restriction; overlays and WKB restore
+        may retain valid point contacts without repairing or removing them.
+        """
+        limits = _limits(limits)
+        if type(holes) not in (tuple, list):
+            raise GeometryError('holes must be an explicit sequence')
+        count = _preflight_vertices((exterior, *holes), 2, limits)
+        with select_budget(budget).reserve(512*count+8192, category='geometry-build'):
+            outer = _vertices(exterior, 2, ring=True, limits=limits)
+            inner = [_vertices(h, 2, ring=True, limits=limits) for h in holes]
+            shape = Polygon(outer, inner)
+            _validate_shape(shape, limits, allow_empty=False)
+            # GEOS allows point-touching holes in some valid configurations. This
+            # authoring constructor chooses strictly interior, disjoint holes.
+            shell = Polygon(outer)
+            hole_shapes = [Polygon(h) for h in inner]
+            if hole_shapes:
+                # Reuse each hole geometry and a spatial index; do not rebuild
+                # every preceding hole for an O(H^2) comparison loop.
+                from shapely.strtree import STRtree
+                hole_tree = STRtree(hole_shapes)
+                for i, hp in enumerate(hole_shapes):
+                    if not shell.contains(hp) or shell.boundary.intersects(hp):
+                        raise GeometryError('hole must be strictly inside the shell')
+                    if any(int(j) != i for j in hole_tree.query(hp, predicate='intersects')):
+                        raise GeometryError('holes touch, overlap or nest')
+            # The same immutable shape and limits passed the complete check.
+            return cls._from_shape(shape, frame_id, limits=limits, _validated=(shape, limits))
+
+    @classmethod
+    def polyline(cls, vertices, *, frame_id, limits=None, budget=None):
+        limits = _limits(limits)
+        count = _preflight_vertices((vertices,), 2, limits)
+        with select_budget(budget).reserve(512*count+8192, category='geometry-build'):
+            a = _vertices(vertices, 2, ring=False, limits=limits)
+            shape = LineString(a); _validate_shape(shape, limits, allow_empty=False)
+            return cls._from_shape(shape, frame_id, limits=limits, _validated=(shape, limits))
+
+    @classmethod
+    def from_wkb(cls, raw, *, frame_id, limits=None, budget=None):
+        """Restore validated geometry, including valid overlay point contacts.
+
+        Uses the overlay-output contract, not polygon()'s stricter authored-hole
+        rule, so storing an exact set operation does not change its admissibility.
+        A GeometryCollection must also meet the collection rule: polygons that
+        overlap, repeat or share an edge, traces that cross or overlap, and a
+        trace inside or along a polygon are refused, not unioned. A shape refused
+        after parsing raises 'invalid stored geometry'; the reason is its __cause__.
+        """
+        limits = _limits(limits)
+        if type(raw) is not bytes or len(raw) > 64*limits.max_vertices+4096:
+            raise GeometryError('bounded immutable WKB bytes required')
+        with select_budget(budget).reserve(32*len(raw)+8192, category='geometry-restore'):
+            _inspect_wkb(raw,limits)
+            try:
+                return cls._from_shape(shapely.from_wkb(raw, on_invalid='raise'), frame_id, limits=limits)
+            except (GEOSException, ValueError) as exc:
+                raise GeometryError('invalid stored geometry') from exc
+
+    @property
+    def kind(self): return self._geom.geom_type
+    @property
+    def is_empty(self): return self._geom.is_empty
+    @property
+    def area_m2(self): return float(self._geom.area)
+    @property
+    def length_m(self): return float(self._geom.length)
+    @property
+    def bounds(self): return None if self.is_empty else tuple(self._geom.bounds)
+    @property
+    def wkb(self): return self._wkb
+    @property
+    def vertex_count(self): return int(shapely.get_num_coordinates(self._geom))
+    @property
+    def retained_bytes(self):
+        """Definition bytes only; native GEOS/prepared-index memory is additional."""
+        return len(self._wkb)
+
+    def descriptor(self):
+        return {'schema':_SCHEMA, 'space':'planar-metres', 'frame_id':self.frame_id,
+                'kind':self.kind, 'geometry_id':self.geometry_id}
+
+    def classify(self, points_m, *, boundary_tolerance_m=0., limits=None, budget=None, cancel=None):
+        """Return int8 -1 outside, 0 boundary/boundary-band, +1 strict interior.
+
+        A nonzero explicitly requested tolerance reports uncertainty near a boundary;
+        it never snaps geometry or assigns a feature to one neighbouring plate.
+        Traces have no areal interior. Empty geometry classifies everything outside.
+        """
+        limits=_limits(limits);shape=_point_shape(points_m,2);n=elements(shape)//2
+        tol=scalar(boundary_tolerance_m,'boundary tolerance',nonnegative=True)
+        with select_budget(budget).reserve(32*n+512*min(n,limits.batch_points)+8192,category='geometry-query'):
+            points=read_array(points_m,'points').reshape(-1,2)
+            out=np.full(n,-1,dtype='i1')
+            boundary = self._boundary_geom
+            for start in range(0,n,limits.batch_points):
+                _check_cancel(cancel);a=points[start:start+limits.batch_points]
+                query=shapely.points(a)
+                inside,covered=self._points(query)
+                out[start:start+len(a)]=np.where(inside,1,np.where(covered,0,-1))
+                if tol:
+                    near=shapely.distance(boundary,query)<=tol
+                    out[start:start+len(a)][near]=0
+            _check_cancel(cancel)
+            return _typed_frozen(out.reshape(shape[:-1]),np.int8)
+
+    def distance_to(self, points_m, *, boundary=False, limits=None, budget=None, cancel=None):
+        """Euclidean distance in metres; region interiors have distance zero.
+
+        boundary=True measures to the perimeter instead. Empty distance is undefined
+        and refused rather than emitted as NaN or guessed as zero.
+        """
+        if type(boundary) is not bool: raise GeometryError('boundary must be bool')
+        if self.is_empty: raise GeometryError('distance to empty geometry is undefined')
+        limits=_limits(limits);shape=_point_shape(points_m,2);n=elements(shape)//2
+        g=self._boundary_geom if boundary else self._geom
+        with select_budget(budget).reserve(48*n+512*min(n,limits.batch_points)+8192,category='geometry-distance'):
+            p=read_array(points_m,'points').reshape(-1,2);out=np.empty(n)
+            for start in range(0,n,limits.batch_points):
+                _check_cancel(cancel);a=p[start:start+limits.batch_points]
+                out[start:start+len(a)]=shapely.distance(g,shapely.points(a))
+            if not np.isfinite(out).all():raise GeometryError('distance outside numerical range')
+            _check_cancel(cancel)
+            return _typed_frozen(out.reshape(shape[:-1]),np.float64)
+
+    def within_distance(self, points_m, half_width_m, **kwargs):
+        """Exact distance test for a trace corridor; no polygonal buffer approximation."""
+        width=scalar(half_width_m,'corridor half width',nonnegative=True)
+        return _typed_frozen(self.distance_to(points_m,**kwargs)<=width,np.bool_)
+
+    def overlay(self, other, operation='intersection', *, limits=None, budget=None, cancel=None):
+        """Double-precision set operation; retain point/line contacts and holes."""
+        if type(other) is not PlanarGeometry or self.frame_id!=other.frame_id:
+            raise GeometryError('overlay requires the same planar frame')
+        if operation not in ('intersection','union','difference','symmetric_difference'):
+            raise GeometryError('unsupported geometry operation')
+        limits=_limits(limits);_check_cancel(cancel)
+        if self.geometry_id == other.geometry_id:
+            if operation in ('intersection','union'):
+                _validate_shape(self._geom,limits)
+                return self
+            return self._from_shape(GeometryCollection(),self.frame_id,limits=limits)
+        with _overlay_budget(self._geom,other._geom,limits,budget):
+            try:
+                out=getattr(shapely,operation)(self._geom,other._geom,grid_size=0.)
+            except GEOSException as exc:raise GeometryError('native geometry overlay failed; no repair attempted') from exc
+            _check_cancel(cancel)
+            return self._from_shape(out,self.frame_id,limits=limits)
+
+    def __reduce__(self): return (_restore_planar,(self._wkb,self.frame_id,self.geometry_id))
+    def __deepcopy__(self,memo):memo[id(self)]=self;return self
+
+
+def _restore_planar(raw, frame_id, expected):
+    out=PlanarGeometry.from_wkb(raw,frame_id=frame_id)
+    if out.geometry_id!=expected:raise GeometryError('restored planar identity mismatch')
+    return out
+
+
+def geometry_runtime():
+    """Versions identify the numerical geometry backend, not a scientific approval."""
+    return {'shapely':shapely.__version__,'geos':shapely.geos_version_string,
+            'overlay_precision':'binary64, grid_size=0, no repair/snap',
+            'spherical_model':'minor great-circle arcs in an explicit open-hemisphere chart'}

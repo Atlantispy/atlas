@@ -1,0 +1,77 @@
+# Decision log: Step 9 (WP8 runner, reader, materialise), Steps 8-9 chat (16 Oct 2026)
+
+Each entry carries a later-step impact line, and for capacity or time figures an interval-3 line.
+Paths: R = resumability-r1, C = R/compact-geometry-r1.
+
+- 03:20 **Route decision (coordinator).**
+  - Route (1), fresh start, approved (`route-comparison.md`). D6 conversion becomes L1 archival.
+  - Michael's rule: no interval-1 rerun until the single Step 10 composition holds every approved pre-interval-2 change. Route (1) code, its synthetic run and a stop-before-advance smoke are allowed meanwhile.
+  - Later-step impact: one lineage, with no migration-only readers, through Steps 10-11 and the final recomposition.
+  - Interval 3: no figure changes. The measured rerun becomes the IV1 baseline.
+- 04:06 **Route (1) step 1: root-metadata references** in R/compact_restart_store.py (8374e3b9 -> 43498871; base copy `R/probes/step8/claude-20261015/before-src/compact_restart_store.py`).
+  - **Problem.** A workflow root carries its admission descriptors in metadata. r9's root is 337,074 B: funding 150,115, exterior_owner 94,901, collar_plan 61,799, exterior_remainder 26,972 (`root_metadata_sizes.py` on the r9 receipt). The facade refuses metadata over 64 KiB.
+  - **Change.**
+    - Applies only to a row whose kind is root or migrated-root, only when its metadata exceeds 64 KiB, and only to those four named fields when each is over 4 KiB.
+    - Each such field is published as a segment holding its canonical JSON bytes (profile `atlas.restart-metadata-bytes.v1`).
+    - The snapshot's bounded metadata keeps the references under the new profile `atlas.restart-native-arrays.v2`.
+    - `metadata()` and `_manifest()` rebuild the native manifest and require its sha256 to equal the snapshot identity. That identity is fixed at put time over the full native manifest.
+    - Everything else oversized is still refused with the original message. Roots under 64 KiB keep v1 byte for byte.
+    - Old readers refuse v2 (unknown profile).
+  - **Why byte segments, not records.** The first build stored the fields as record_tables records. Its write-time round-trip check validated them node by node on the unsealed candidate; each value read walks the page index, which took more than 650 CPU-s for 337 KB. I stopped my own process by PID. Byte segments need a few chunk reads and one hash.
+  - **Tests.** New R/test_root_metadata_refs.py, 8/8, 2.4 s, at r9's sizes:
+    - the rebuilt manifest equals the native ArrayStore manifest byte for byte;
+    - small root stays v1;
+    - other oversized metadata refused, store unchanged;
+    - idempotent reuse; a changed root conflicts;
+    - an altered external value fails the manifest identity;
+    - a reader without v2 refuses;
+    - a cancelled put leaves nothing (savepoint);
+    - a sealed root rebuilds in a fresh reader process.
+  - **Regression.** step8_store 5, step8_reader 10, run_prepared_restart 35, reopen_prepared_restart 14, step8_heat_migration 4, step8_materialise 5, step8_scope 2, bounded_preseal 17, heat_ledger_issuer_patch 7, all OK. Ruff 15 -> 15; test 0.
+  - **Protects:** a fresh root's full descriptors stay exact and identity-bound while stored metadata stays bounded.
+  - **Costs:** four small segments per oversized root, about 337 KB, plus one rebuild per root read (a few ms).
+  - **Later-step impact:** the migrated root (D6, archival) gets the same path; R2 rev2's bounded_preseal sees the field segments as ordinary segment roots.
+  - **Interval 3:** root metadata does not grow with intervals (the descriptors are fixed at admission), so this cost is constant.
+- 04:15 **Step 9(a) design** (`design-9a-promote-after-reader.md`). Option B recommended:
+  - the runner seals and exits;
+  - the launcher runs the reader on the pending file and then calls adopt_and_promote, bound to the file's sha256 and seal;
+  - a failed reader leaves the catalog untouched; a crash is never auto-adopted.
+  - It needs two WP10 primitives (pending read view, adopt_and_promote) from the storage owner.
+  - Later-step impact: every real interval run uses it.
+  - Interval 3: the runner and reader peaks no longer add up.
+- 04:45 **Coordinator approvals.** 9(a) option B approved; the storage chat builds the two primitives (pending read view, `adopt_and_promote`). The launcher always passes `reader_view_digest`. The interval-0 pending view with no catalog serves run A's root.
+  - Step 2a needs no code: `partition_workflow_transform.transform_v2` already makes fresh and migrated workflows publish compact partition v2, and the Step 8 runtime fixture composes `transform_v2(transform(...))`.
+  - The Step 10 composer (storage chat, WP9) must apply transform_v2 after transform and pin its output; WORKFLOW_OUTPUT_SHA256 stays the v1 pin.
+- 05:02 **Route (1) step 3a: the fresh-start driver.** New R/fresh_interval_driver.py bb003c5b and R/test_fresh_interval_driver.py 2828ebfa, 7/7.
+  - It ports r9's interval-1 flow (`run()`, 153-240), split at the root.
+    - `create_root` (run A): funded fixture -> initial partition/metrics -> spatial owner -> `Workflow.create` on the compact store. The root does not depend on the pressure/force check, so that check is skipped.
+    - `advance_first_interval` (run B): the same admission -> initial pressure/force check -> its prepared control runs `Workflow.open` on the sealed root (with the live spatial owner, so `open` compares every root field) -> the joined advance with r9's arguments and the completed-query owner -> `_check_reopened` -> the runner's `finish` inside the open workflow.
+  - Both runs refuse unless the interpreter was started with PYTHONHASHSEED=0. Coordinator rule: RC1 iterates sets, so work units differ otherwise.
+  - Run B refuses unless every ROOT_IDENTITY field (workflow_id, root_key, kind, sequence, root metadata sha256, execution provenance, preparation ids) of its re-derived, reopened root equals run A's recorded root. This holds on top of `open`'s own checks.
+  - The observer, selector gate and compact-aware coverage gate are the current composition's (`prepared_interval_driver`).
+  - Tests:
+    - every literal (fixture, partition, metrics, owner tracers, measurement cache and codec, pressure/force ceilings, parallel policy) equals r9's arguments, read from r9's source by AST;
+    - wiring with recording stand-ins: run A creates with the admission's objects and advances nothing; run B opens with them and advances once with r9's arguments; refusals for a non-root head, a double advance, each differing root field, and an unpinned seed (no work starts).
+  - Ruff: 0 findings.
+  - Not yet: the runner orchestration (`run_fresh_interval.py`), the fresh reader, and real-module end-to-end tests. Those need the composed package and the 9(a) primitives.
+- 05:00 **WP17 companion fix live** (storage chat: companion 5d96c05d, candidate-w19). The two suites it blocked now pass, one per process, PYTHONHASHSEED=0: test_partition_materialise 3/3; test_partition_workflow_fresh_process 1/1 (74.5 s). M16 is now verified on every suite that touches it.
+- 05:40 **Heat-ledger magnitude width** (coordinator question; `R/probes/step8/claude-20261015/heat-width/heat-magnitude-width-20261016.md`).
+  - The widest IV1 exact value is `exact_cell_storage_residual_j`: 2,054,539 bits, 24.5% of MAX_INTEGER_BYTES.
+  - **Mechanism.** Heat re-floats every input on every call, so nothing compounds across steps or intervals (WP7 holds in code). The exact metric enters through the LOW conductances, and the FCT sums multiply widths by one cell's stencil.
+  - **The metric.** It is the static partition's ORIGINAL cones, posed through the exact rotation history, which grows by one step per interval. The pose micro-test measured +833 bits per step for the quaternion, constant across steps. So the width grows linearly (about 1.8-2x at IV2, 2.5-3x at IV3), not 4x per interval.
+  - **Projection.** Heat: IV2 43-49%, IV3 62-73%, first refusal about IV5. The single whole-mesh deviation sum (614,116 bits) scales with the contributing cell count; watch it.
+  - **Coordinator decisions.** The pre-IV2 gate is approved: W2 = W1+(W1-W0), with 50%/100% thresholds. The r9-reproduction rule applies only where the difference ledger shows identical inputs. Identity-changing options (a)/(b)/(c) are parked for Michael before IV4.
+  - Later-step impact: Step 10 composes the width recorder (recording only).
+  - Interval 3: heat 62-73% on paper, no refusal.
+- 05:50 **Width-gate recorder** (`R/width_gate.py` f898c336, `R/test_width_gate.py` 6f466ba4 7/7; Ruff introduced 0).
+  - **How it works.** It scans each record's canonical JSON stream chunk by chunk. It records the widest numerator and denominator bits and the pair and integer counts per root field, plus the trajectory step count. No integer is parsed: bit length comes from the hex digit count. There are no writer hooks and nothing captured is touched.
+  - **gate()** implements the approved rule, with W0 = 0 for fields absent at the root. **compare()** lists every difference for the ledger to explain.
+  - **Tests.** 300 seeded random records, in 1-byte, random and whole chunking, against a decode-and-walk reference. Also a megabyte token split across chunks, the 50% boundary, and r9's 48.98% projection (W0 = 0).
+  - **Real-data check** (`heat-width/validate_width_gate.py`, query-only on the reviewed ORIGINAL; `validate-width-gate.json`): every census field matched exactly in widest bits and pair count, and is now named.
+    - heat:metadata_utf8 356,504,170 B in 5.1 s;
+    - spatial-record:mesh 190,778,119 B in 21.4 s;
+    - root mesh 19,018,351 B in 1.6 s.
+  - The 614,116-bit mesh scalar is confirmed as `geometry_volume_max_deviation_m3`. The two 1,724,160-bit fields are `exact_corrected_enthalpy_j` and `exact_stock_projection_residual_j`.
+  - Coordinator: keep the 50% gate as written. A narrow crossing stops the run and routes to the coordinator; it is an early warning.
+  - Later-step impact: Step 10 composes it; the route (1) runner calls it after run A's and run B's seals.
+  - Interval 3: scanning time is linear in record bytes (about 28 s for the three records here at IV1).

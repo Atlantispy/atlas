@@ -1,0 +1,81 @@
+**Basis.** I read C between 22:22 and 22:33 BST. Another writer was still editing during that window. These files changed after the 21:40 takeover snapshot (`probes/step8/claude-20261015/baseline-hashes-takeover.json`):
+- `live_spatial_patch` is now 49019d96 (was c7ca1adb)
+- `exchange_record_patch` is now c594d8a5 (was f0a7f799)
+- `spatial_records_patch` is now 389b3415 (was df704e79)
+- `live_finite_patch` is now 411513a9 (was bc140fe4)
+- `heat_ledger_issuer_patch` is now 67f79a15 (was 91d77395)
+- `private_heat_bundle` is now bf0ca2d5
+- `live_composite.py` (f84e5824) and `spatial_record_recipes.py` (b2895fce) are new
+
+### 1. Presence
+- **Rows present.** All 23 wp0a rows with an "8:" remaining_step are in the audit (`wp0a.json:214-481`).
+  - `workers` (`wp0a.json:462-471`) and `completed-queries` (`:482-491`) are correctly left out. Their "13/14" means plan Steps 13 (WP15-17) and 14 (WP18), not WP14 (`COMPACT_EVERYWHERE_PLAN.md:285-286`).
+  - Handoff `:128` still says enabled workers and query-store must be counted in whole-run capacity. The composed heat route ships parallel-functional workers (`C/private_heat_bundle.py:455-463`). Unlike diagnostics, no item says whether these are enabled in the representative run.
+- **Audit text is truncated.** It ends inside handoff-3 ("...:318-323 fills np.empty pro").
+  - handoff-3 has no remaining_work or final_status.
+  - handoff-4 to handoff-7 (`R/CLAUDE_STEP8_HANDOFF_20261015.md:123`, `:124`, `:125`, `:126`) are missing, so I cannot confirm them.
+  - Other rows cover their subjects in part:
+    - `:123` by heat-ledger and heat-reference. The retained MimeticGeometry metric tuples (`C/mimetic_patch.py:88-91`), which also pin the compact mesh view (`:81-82`), are never sized.
+    - `:124` by certification, geometry-publication and publication.
+    - `:125` by restore-migration.
+    - `:126` by transport (c) and state (b).
+- **Heat-parity blocker has no row.** The handoff's exact heat-account blocker (`:95-108`; five exact families differ by up to 1.94e-30 J) is not owned by any row. heat-ledger records only that the test is missing, yet `:176` requires exact stage outputs.
+
+### 2. Copies or retention that no row covers
+- **advance_spatial validation decodes.**
+  - `I/integration_regional_workflow.py:1451` (`differential_interval.record()`) and `:1455` (`differential_partition.record()`, the whole native successor) are unfunded. They coexist with the bounds decode at `:1442` until `:1483-1485`.
+  - At IV1 the successor partition is 114,107,489 canonical bytes (handoff-1 evidence).
+  - The wp0a bounds row names geometry, thermal, wall and part (`wp0a.json:325`), and the plan lists them as WP14 targets (`COMPACT_EVERYWHERE_PLAN.md:1081-1085`, `:1091`).
+  - The audit's bounds remaining_work wraps only the bounds decode. No partition row owns `:1455`; handoff-1 cites it only as the compact refusal. Only the parent grid_id read has a seam (`C/partition_workflow_transform.py:66-67`).
+- **Borrowed-composite lifetimes (new since 22:11).**
+  - `detach()` borrows the lending record's whole view (`C/live_composite.py:76-84`; `RecordRef` keeps `_view`, `C/record_views.py:976-980`).
+  - Where `LIVE.construction` is active, the graph composes over bounds fields (`C/live_spatial_patch.py:241-258`, `:591-595`). On the differential route it does so through clone_mutable's untouched RecordRef fields (`C/live_finite_patch.py:43-44`).
+  - The finite proposal composes over the graph (`C/live_finite_patch.py:71-80`). The exchange composes over graph, transport and proposal (`C/exchange_record_patch.py:38-65`).
+  - The escaped advance (`I/integration_regional_workflow.py:1580`) therefore pins all of those, and through the graph it pins the whole bounds view. That includes the bounds cells and face_intervals the graph excluded (`C/live_spatial_patch.py:592-593`).
+  - The bounds lifetime is now tied to the advance's lifetime. No row describes or measures this; the exchange and graph rows still describe the pre-22:11 re-import.
+- **Silent list imports.** live_composite still imports (copies) borrowed refs that sit in list positions (`C/live_composite.py:100-102`). `LiveRecord.imports` is read only by tests (`C/test_live_composite.py:99`, `:118`), never by producers (`C/live_spatial_patch.py:249-253`, `C/exchange_record_patch.py:58-62`, `C/live_finite_patch.py:76-80`).
+- **Recipe publication (new).**
+  - A row whose borrowed content is 4 MiB or less is still re-imported into the bundle DAG (`C/spatial_record_recipes.py:31`, `:71-73`; `C/spatial_records_patch.py:92-103`). There is no aggregate cap on plain rows; fragments are capped at 32 MiB (`C/spatial_record_recipes.py:32`, `:95-100`).
+  - At the fixture scale, the roughly 0.94 MB graph is still fully copied.
+  - `_direct` publishes the whole lending view (`C/spatial_record_recipes.py:102-111`, `:282-289`), for example the whole bounds view for a graph recipe.
+  - Reopen opens whole direct segments, and the rebuilt overlay pins them (`C/spatial_records_patch.py:224-252`, `:275-280`).
+  - The identity proof re-packs native parts (`C/spatial_record_recipes.py:266-279`).
+  - Neither the publication row nor the restore-migration row covers any of this.
+- **Finite stock state and proposal: no row.** This is a STAGES entry (`C/live_memory_composition.py:25`) and mandatory on the differential route (`I/integration_spatial_owner.py:533-535`). Per advance:
+  - Two restores (`I/integration_spatial_owner.py:537`, `:616`). Each hash-encodes and re-issues native JSON (`I/integration_spatial_reservoir.py:266-269`, `:72-97`).
+  - A full decode at `I/integration_differential_geometry.py:3788`.
+  - In finish, a `json.loads(_json(p['parent']))` copy (`I/integration_spatial_reservoir.py:375`), then a native `_state` issue (`:238-239`). The compact issue path skips FiniteStockState (`C/live_finite_patch.py:65-67`).
+  - A `.record()` decode into the state record (`H/private_heat_joined_consumer_r6.py:306`; `I/integration_spatial_owner.py:789`), which is then packed into the state DAG.
+  - In prepare, whole cells and transfers exports overlap the proposal pack (`C/live_finite_patch.py:24-45`, `:58-61`, `:71-80`).
+  - `stocks()` holds the hex export, the Fractions and a `json.dumps` sizing copy (`C/live_finite_patch.py:112-122`).
+  - Sizes are unmeasured, and no harness runs this route (`C/measure_live_owner.py:1` is common-rigid).
+- **Latent, dual measure-policy route only.** That route is not composed yet (`I/integration_spatial_owner.py:637`), and the i04 fixture defaults `measure_policy=None` (`H/source/tectonics/tests/i04_differential_spatial_fixture.py:41`).
+  - `originals = {...record['cells']}` (`I/integration_differential_geometry.py:3462`) keeps paid per-row `_Rows` exports (`C/live_spatial_patch.py:284-292`; `C/spatial_validation_patch.py:99-112`). Each costs 65536+192×len in the 256 MiB retained scope (`C/record_views.py:1447-1453`).
+  - These sit beside the dual_copy exports (`C/live_finite_patch.py:148-155` → `I/integration_dual_geometry.py:46`) and the select_geometry copies (`I/integration_dual_geometry.py:530-545`).
+- **Harnesses miss the new paths.**
+  - `measure_live_owner` is pinned to the 236-cell fixture (`C/measure_live_owner.py:28-29`), which only takes the v1 path. Its seal reads the v1 field `compact.segment` (`:224`), but v2 descriptors carry `segments` (`C/spatial_record_recipes.py:298-302`). `C/spatial_records_patch.py:144-151` already provides `primary_segment` for this.
+  - `measure_live_capacity` packs records directly (`C/measure_live_capacity.py:282`, `:473`, `:526`).
+
+### 3. Status and evidence inconsistencies
+- **partition-publication should be OPEN, not PARTIAL.**
+  - Its own evidence says the seams are byte-unchanged (c009d27c pin; pack_partition_v2 unchanged).
+  - Compact-produced partitions cannot reach payload: the initial one is refused at `I/integration_regional_workflow.py:928`, the successor at `:1455` (`C/partition_native_patch.py:291-294`).
+  - geometry-transfer and restore-migration were made OPEN on the same "no Step 8 change" basis.
+- **validation-caches should be OPEN, not PARTIAL.**
+  - Its own evidence says "No source change since WP0a".
+  - The verifier credits bounded-access work that predates Step 8; Step 8 only added caches (`C/live_spatial_patch.py:312-353`).
+  - diagnostics was made OPEN on the same basis.
+- **Partition rows understate the refusal.** partition-preparation, partition-supports, partition-body and parent-support-exports omit the `I:928` and `I:1455` refusal seams that the handoff-1 verifier proved.
+  - partition-supports (a) calls LP.transform's automatic activation (`C/live_memory_composition.py:18`; `C/live_partition_patch.py:19-28`) merely "slower". Composed with the compact-store workflow, the resulting successor is refused.
+- **The graph row contradicts itself.**
+  - Its evidence says "The differential route embeds the whole bounds ref (693-694)". That seam, now `C/live_spatial_patch.py:703-704`, rewrites only the failure reproducer `_circulation_failure` (`I/integration_differential_geometry.py:3746`), as the row's own Gap 1 says.
+  - The issued graph actually borrows bounds through `_close_record` (`I:3671`, `:3683`).
+- **mesh-inputs PARTIAL is borderline.** Its evidence says "no targeted early release". The only gain is a frame ending incidentally on the compact route, and the real joined control uses the no-context builder.
+- **Most statuses are unverified.** 19 of the 23 wp0a rows have `verified:null`, so their PARTIAL or OPEN is the auditor's own claim. Only the six OVERLAP-ONLY claims were checked adversarially.
+- **Evidence is stale after the 22:11-22:31 edits.** These rows need re-verification against the current sources:
+  - exchange: "retained duplicate" at `C/exchange_record_patch.py:51-52` is now composition at `:38-65`.
+  - graph: line references have shifted by +10.
+  - publication: the verifier's `:77-78` and `:245-258` are now the recipe code at `:73-141`.
+  - restore-migration: the claim that open_records and restore_records are identical to baseline is false. Baseline 7f50d333 has no `_split_refs` or `_Opened`; current code has them at `C/spatial_records_patch.py:186-287`.
+  - certification and geometry-publication: line references are now `:422-438` and `:463-477`.
+  - heat-ledger, heat-reference, bounds and state: the cited hashes are superseded, and the composed issuer 37f5d685 and joined cf46c218 no longer reproduce.
