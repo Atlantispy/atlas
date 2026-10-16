@@ -6,127 +6,8 @@
       "id": "optimisation-20261005",
       "path": "tectonics/evidence/optimisation-20261005.json",
       "sha256": "21774036c2d42fa3288e117c915065fac014042c1d9d830f79978ca067658167",
-      "status": "current",
-      "note": "Current operational performance evidence from one 5 October 2026 matched pass: 21 successful bounded executions, five original digest matches and two explicitly explained identity/provenance differences. Actual whole-process timings and the I02 diagnostic-release regression are retained. Release used an explicit private-state diagnostic bootstrap, not packaged admission or strict scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/candidate_source_hashes/{key}",
-          "file": "{key}"
-        }
-      ],
-      "not_checked": [
-        {
-          "pointer": "/adapted_driver_hashes/*",
-          "kind": "artefact",
-          "reason": "Hashes identify external diagnostic driver copies; their reviewed adaptations are recorded, but these are not repository source bindings."
-        },
-        {
-          "pointer": "/original_driver_hashes/*",
-          "kind": "historical",
-          "reason": "Hashes identify the earlier trusted-local prototype drivers used as adaptation inputs, not current repository files."
-        },
-        {
-          "pointer": "/harness_hashes/*",
-          "kind": "artefact",
-          "reason": "Hashes identify the external timing/bootstrap/analysis harness and its README; the register does not supply or execute those artefacts."
-        },
-        {
-          "pointer": "/records/*/data_digest",
-          "kind": "artefact",
-          "reason": "Captured workload-output digests, not source-file hashes; scientific byte comparison is documented separately from this register check."
-        },
-        {
-          "pointer": "/comparisons/*/configs/*/data_digest",
-          "kind": "artefact",
-          "reason": "Repeated captured workload-output digests in the timing comparison, not additional source bindings."
-        },
-        {
-          "pointer": "/candidate_request_derivation/configurations/*/observed_sha256",
-          "kind": "artefact",
-          "reason": "Captured content-derived request identity; the receipt records its exact derivation, not a file binding."
-        },
-        {
-          "pointer": "/candidate_request_derivation/configurations/*/recomputed_sha256",
-          "kind": "artefact",
-          "reason": "Recomputed request identity from the recorded canonical payload, not a repository file hash."
-        },
-        {
-          "pointer": "/candidate_request_derivation/configurations/*/payload/adapter_sha256",
-          "kind": "artefact",
-          "reason": "Captured adapter-hash input to each compared request artefact. Current candidate file bytes are checked under candidate_source_hashes; baseline bytes are not current claims."
-        },
-        {
-          "pointer": "/candidate_request_derivation/configurations/*/payload/scientific_id",
-          "kind": "artefact",
-          "reason": "Content-derived scientific-request identifier, not an opaque native runtime identity or a source-file hash."
-        },
-        {
-          "pointer": "/exact_retained_canonical_differences/new_world:base_strict:candidate_strict/*/left",
-          "kind": "historical",
-          "reason": "Retained baseline-side identity/source values explain the comparison; they do not bind current repository bytes."
-        },
-        {
-          "pointer": "/exact_retained_canonical_differences/new_world:base_strict:candidate_strict/*/right",
-          "kind": "artefact",
-          "reason": "Retained candidate-side identity/source values explain the comparison; current source bytes are bound separately and the derived request ID is not a file hash."
-        },
-        {
-          "pointer": "/exact_retained_canonical_differences/regional_job:base_strict:candidate_strict/*/left",
-          "kind": "historical",
-          "reason": "Retained baseline-side identity/source values explain the comparison; they do not bind current repository bytes."
-        },
-        {
-          "pointer": "/exact_retained_canonical_differences/regional_job:base_strict:candidate_strict/*/right",
-          "kind": "artefact",
-          "reason": "Retained candidate-side identity/source values explain the comparison; current source bytes are bound separately and the derived request ID is not a file hash."
-        },
-        {
-          "pointer": "/source_hash_sets/baseline/before_sha256",
-          "kind": "historical",
-          "reason": "Digest of the baseline source-hash map retained for the matched comparison, not an individual current source-file binding."
-        },
-        {
-          "pointer": "/source_hash_sets/candidate/before_sha256",
-          "kind": "artefact",
-          "reason": "Digest of the candidate source-hash map; its individual files are checked under candidate_source_hashes, not against this aggregate digest."
-        },
-        {
-          "pointer": "/source_hash_sets/baseline/after_sha256",
-          "kind": "historical",
-          "reason": "Digest of the baseline source-hash map retained for the matched comparison, not an individual current source-file binding."
-        },
-        {
-          "pointer": "/source_hash_sets/candidate/after_sha256",
-          "kind": "artefact",
-          "reason": "Digest of the candidate source-hash map; its individual files are checked under candidate_source_hashes, not against this aggregate digest."
-        },
-        {
-          "pointer": "/supplemental_separated_scientific_digests/*/new_world",
-          "kind": "artefact",
-          "reason": "Supplemental workload-output digest after only the receipt's explicitly traced identity/mode separations; not a repository file hash or an original raw digest."
-        },
-        {
-          "pointer": "/supplemental_separated_scientific_digests/*/regional_job",
-          "kind": "artefact",
-          "reason": "Supplemental workload-output digest after only the receipt's explicitly traced identity/mode separations; not a repository file hash or an original raw digest."
-        },
-        {
-          "pointer": "/raw_records/summary_sha256",
-          "kind": "artefact",
-          "reason": "Digest of the external raw timing and source-capture summary, retained by the coordinator but not shipped as a repository binding."
-        },
-        {
-          "pointer": "/raw_records/canonical_differences_sha256",
-          "kind": "artefact",
-          "reason": "Digest of the external exact canonical-difference report; its contents are represented in this receipt, not verified as a repository file."
-        }
-      ],
-      "limits": [
-        "Only the 295 declared candidate source-file bytes are checked here; the external baseline snapshot, harness, raw records and runtime are not supplied or executed by this register.",
-        "One Windows machine and interpreter, one pass per configuration, bounded n=10 multigrid and no whole-generator, other-platform or packaged EXE claim. Timing observations have no confidence intervals.",
-        "Checkout and evidence production remain strict. Private-state release diagnostics, including the non-packaged I02 entry point, are not strict scientific acceptance or packaged-release verification.",
-        "Five original digest matches and two explained differences are not an all-raw-digests-match claim. Supplemental separated digests preserve the explicitly stated exclusions; physical validation and generated-world acceptance remain separate."
-      ]
+      "status": "historical",
+      "note": "Historical since 16 October 2026: tools/check_i01_finite_admission.py, which this record binds, gained src/atlas_tectonics/reuse.py in its RESTORATION inventory (successor i01-finite-admission-r12). The timing harness, baseline snapshot and raw records are outside the repository, so rerunning a repository tool cannot produce a successor; the receipt remains an observation of the 5 October 2026 snapshot. Original result: one matched pass with 21 successful bounded executions, five original digest matches and two explicitly explained identity/provenance differences; whole-process timings and the I02 diagnostic-release regression retained. Scope of the original result: one Windows machine and interpreter, one pass per configuration, bounded n=10 multigrid, no confidence intervals and no whole-generator, other-platform or packaged EXE claim; private-state release diagnostics are not strict scientific acceptance. The inventory change alters no solver, workload or timed code path."
     },
     {
       "id": "i02-workflow-timing-r12",
@@ -690,11 +571,11 @@
       "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-pressure-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
     },
     {
-      "id": "i01-finite-admission-r11",
-      "path": "tectonics/evidence/i01-finite-admission-r11.json",
-      "sha256": "e1264ae2c1108eaa3a50c82702ebae23c4d346fb0d988c275f77c77c699d16a4",
+      "id": "i01-finite-admission-r12",
+      "path": "tectonics/evidence/i01-finite-admission-r12.json",
+      "sha256": "04173bff7448587c1de99115fcaed6c75719f09bf5a0c4b899e85d99707bd8ef",
       "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
+      "note": "Successor captured on 16 October 2026 after src/atlas_tectonics/reuse.py was added to the finite-admission RESTORATION inventory (storage executes reuse at its read and publication boundaries). All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
       "bindings": [
         {
           "pointer": "/source_sha256/{key}",
@@ -706,6 +587,14 @@
         "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance.",
         "States may be issued by this evolution or restored from a consistent accepted commit in its trusted local I02 ledger. Store checks establish consistency, not authorship. The derivation, not endpoint sampling, supports intermediate-stage bounds; runtime versions are recorded observations, not sealed binaries."
       ]
+    },
+    {
+      "id": "i01-finite-admission-r11",
+      "path": "tectonics/evidence/i01-finite-admission-r11.json",
+      "sha256": "e1264ae2c1108eaa3a50c82702ebae23c4d346fb0d988c275f77c77c699d16a4",
+      "status": "superseded",
+      "superseded_by": "i01-finite-admission-r12",
+      "note": "Retained receipt, superseded by i01-finite-admission-r12 after reuse.py was added to the restoration inventory on 16 October 2026. Preserved byte-intact; no receipt bytes or recorded digest were rewritten. No current source claim."
     },
     {
       "id": "i01-finite-admission-r10",
