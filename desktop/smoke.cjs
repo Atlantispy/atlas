@@ -8,6 +8,7 @@ const { createHash } = require('node:crypto');
 async function waitFor(window, expression, timeout = 60000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
+    if (window.atlasSmokeError) throw window.atlasSmokeError;
     if (await window.webContents.executeJavaScript(expression)) return;
     await new Promise(ok => setTimeout(ok, 250));
   }
@@ -15,9 +16,18 @@ async function waitFor(window, expression, timeout = 60000) {
 }
 
 async function run({ window, origin, token, smokeRoot, resources }) {
+  // The acceptance window stays hidden. Let its animation frames paint, and
+  // wait for actual canvas content before claiming a rendered screenshot.
+  window.webContents.setBackgroundThrottling(false);
   const start = performance.now();
   const report = { schema: 'atlas.desktop-smoke.v1', status: 'RUNNING', checks: [], resources_bundled: true };
   const note = value => report.checks.push(value);
+  const paintedWorld = async () => {
+    await waitFor(window, "(() => { const c = document.querySelector('canvas.world-canvas'); if (!c?.width || !c.height) return false; const p = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data; return p[3] && (p[0] !== 17 || p[1] !== 28 || p[2] !== 38); })()");
+    // Canvas content can precede the compositor's presentation by a frame.
+    await window.webContents.executeJavaScript("new Promise((resolve, reject) => { const timeout=setTimeout(() => reject(Error('Canvas presentation timed out')), 5000); requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(timeout); resolve(); })); })");
+    note('World canvas painted non-background content');
+  };
   await waitFor(window, "!!document.querySelector('[data-action=world-new]')");
   note('Renderer and New World control loaded');
   const globals = await window.webContents.executeJavaScript("({require:typeof require,process:typeof process})");
@@ -28,6 +38,10 @@ async function run({ window, origin, token, smokeRoot, resources }) {
     await waitFor(window, "document.querySelector('.world-name')?.textContent.includes('Desktop smoke')");
     assert.equal(origin, JSON.parse(previous).origin);
     note('Second process restored the same origin, profile and saved native world');
+    // Reopening intentionally starts on the start page. Open the retained world.
+    await window.webContents.executeJavaScript("document.querySelector('[data-action=show-world]').click()");
+    await paintedWorld();
+    await writeFile(join(smokeRoot, 'reopen-desktop.png'), (await window.webContents.capturePage()).toPNG(), { flag: 'wx' });
     report.origin = origin;
     report.status = 'PASS';
     report.elapsed_seconds = (performance.now() - start) / 1000;
@@ -90,7 +104,7 @@ async function run({ window, origin, token, smokeRoot, resources }) {
   assert.deepEqual(reopened.world, created.world);
   note('Save World button produced an archive; native reload preserved every world-view field');
   await window.webContents.executeJavaScript("document.querySelector('[data-action=show-world]')?.click()");
-  await new Promise(ok => setTimeout(ok, 300));
+  await paintedWorld();
   const screenshot = await window.webContents.capturePage();
   await writeFile(join(smokeRoot, 'desktop.png'), screenshot.toPNG(), { flag: 'wx' });
   report.screenshot_bytes = (await stat(join(smokeRoot, 'desktop.png'))).size;

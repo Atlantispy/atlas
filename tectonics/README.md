@@ -75,6 +75,17 @@ exact transfer of its material, with bridges to regional models and supplied pla
 splits, merges and ridge jumps. Supplied compatible junction paths generate curved
 ends; transient ridge-to-trench material is accounted for within the same interval.
 See [current status](../docs/CURRENT_STATE.md) for reviewed scope and checks.
+The [causal-start method](docs/I04_CAUSAL_START.md) describes I04 Part A (unreviewed):
+- a declared starting family on that network;
+- a plate force balance with GPE from the same columns and declared slab pull;
+- the [I04/I05 port record](docs/I04_I05_PORTS.md).
+
+It also describes I04 Part B (candidate, unreviewed):
+- [reduced belts](docs/I04_CAUSAL_START.md#r4-4-d2-on-the-sphere) whose rock strength resists plate motion;
+- the [first motion/property feedback](docs/I04_CAUSAL_START.md#r4-7-first-feedback-coupling), solved at each
+  interval's end, with replayed provenance and the boundary reaction port.
+The [moving-state method](docs/I05_MOVING_STATE.md) describes I05a (unreviewed): cohort histories and heat carried with
+that network, and current properties returned through the port record.
 The [3D regional solver](docs/REGIONAL_MECHANICS_3D.md) now supplies full-stress
 heterogeneous flow, explicit velocity/traction boundaries and finite-mode
 force feedback, with prepared sparse reuse. Its [connected fixed-box advance](docs/REGIONAL_EVOLUTION_3D.md)

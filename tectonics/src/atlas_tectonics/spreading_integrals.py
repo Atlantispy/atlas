@@ -12,7 +12,7 @@ import math
 import numpy as np
 
 from ._validation import TectonicsError, frozen, input_shape, read_array
-from .plate_cooling import (_IMAGE_LIMIT, _MODES, _cancel, _erfc_mean,
+from .plate_cooling import (_IMAGE_LIMIT, _MODES, _cancel, _erfc_edge_means,
                             _fourier_age, _parameters, plate_cooling_heat)
 from .resources import elements, select_budget
 from .stokes_execution import _factored_scale
@@ -37,14 +37,18 @@ def _young_values(fo, x, width, plate, budget, cancel, erfc):
     if not np.any(positive):
         return result
     scale = root[positive]
-    for j, (lo, hi) in enumerate(zip(x[:-1], x[1:])):
-        # Integrate the deficit directly: subtracting a temperature from Tb
-        # would erase very young, small but nonzero heat/deficit accounts.
-        value = _erfc_mean(lo/scale, hi/scale, erfc)
-        for shift in (2., 4.):
-            value -= _erfc_mean((shift-hi)/scale, (shift-lo)/scale, erfc)
-            value += _erfc_mean((shift+lo)/scale, (shift+hi)/scale, erfc)
-        result[positive, j] = value
+    # Integrate the deficit directly: subtracting a temperature from Tb
+    # would erase very young, small but nonzero heat/deficit accounts.
+    # The five image terms of every phase are evaluated in one elementwise
+    # call and then combined in the original order. Phase intervals share
+    # their edges; the (2-x) and (4-x) images list the edges in reverse depth
+    # order, so each interval runs from one edge row to the next.
+    e = x[:, None]; r = x[::-1, None]
+    edges = np.stack((e/scale, (2.-r)/scale, (2.+e)/scale, (4.-r)/scale, (4.+e)/scale), axis=1)
+    means = _erfc_edge_means(edges, erfc)
+    value = means[:, 0]
+    value -= means[::-1, 1]; value += means[:, 2]; value -= means[::-1, 3]; value += means[:, 4]
+    result[positive, :-2] = value.T
     ages = _factored_scale(fo[positive], (plate.thickness_m, plate.thickness_m),
                            (plate.thermal.diffusivity_m2_s,), 'quadrature age')
     heat = plate_cooling_heat(ages, plate, budget=budget, cancel=cancel)

@@ -240,6 +240,21 @@ def _source_bytes():
 
 _CAPTURED_TYPES = (str, int, float, bool, tuple, list, dict, set, frozenset, types.MappingProxyType,
                    re.Pattern)
+_IMMUTABLE_LEAVES = (type(None), bool, int, float, str, bytes)
+
+
+def _deeply_immutable(value):
+    """Exact None/bool/int/float/str/bytes, or exact tuples/frozensets of only these, recursively.
+
+    Such a value cannot change while the same object is held, so its normalised form is a pure function of
+    that object. Subclasses, lists, dicts, sets, mapping proxies, patterns, NumPy objects (dtype metadata
+    included) and dataclasses are never treated as immutable here."""
+    kind = type(value)
+    if kind in _IMMUTABLE_LEAVES:
+        return True
+    if kind is tuple or kind is frozenset:
+        return all(_deeply_immutable(item) for item in value)
+    return False
 
 
 def _captured(value):
@@ -392,7 +407,8 @@ def _callable_inventory(backend="reference", modules=None):
     return signatures, tuple(tokens), _json(constants)
 
 
-def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes, modules=None) -> None:
+def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes, modules=None,
+                               immutable=None) -> None:
     """Compare live bindings without constructing discarded signature/token tables.
 
     ``expected`` retains the original objects, codes and detached defaults. Every
@@ -401,8 +417,17 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
     call. There is no cached acceptance result or metadata-based source shortcut.
     Canonical key uniqueness is checked at preparation; ambiguous legacy keys use
     the unchanged full inventory comparison in ExecutionContext.verify instead.
+
+    ``immutable`` (the context's private table) keeps the normalised form of each
+    registered constant that is deeply immutable (_deeply_immutable), with a strong
+    reference to the object it was computed from. It is reused only while the module
+    still binds that same object; every other constant is normalised again, and the
+    complete constants record is still serialised and compared on every call. New
+    entries are kept only from a call that accepts, so a refused call (for example
+    one made while the classifier or normaliser was replaced) leaves the table as it
+    was.
     """
-    constants = {}
+    constants, fresh = {}, {}
     # Consuming a PRIVATE shallow table enforces exact membership, including
     # duplicate qualified names introduced after preparation. Tokens themselves
     # retain strong references and detached defaults and are not mutated here.
@@ -417,7 +442,13 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
                 '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
                 '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
             if not transient and label.isupper() and _captured(obj):
-                constants[prefix+label] = _constant(obj)
+                held = None if immutable is None else immutable.get(prefix+label)
+                if held is not None and held[0] is obj:
+                    constants[prefix+label] = held[1]
+                else:
+                    constants[prefix+label] = value = _constant(obj)
+                    if immutable is not None and _deeply_immutable(obj):
+                        fresh[prefix+label] = (obj, value)
             members = ((label, obj),)
             if isinstance(obj, type) and obj.__module__ == module.__name__:
                 members = vars(obj).items()
@@ -463,6 +494,8 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
                     raise TectonicsError("loaded implementation changed")
     if remaining or _json(constants) != constants_expected:
         raise TectonicsError("loaded implementation changed")
+    if fresh:
+        immutable.update(fresh)
 
 
 def _runtime_record(backend):
@@ -545,19 +578,106 @@ def _runtime_record(backend):
     return {"versions": versions, "binaries": binaries}
 
 
+_release_state = types.SimpleNamespace(mode=None, captures={}, lock=threading.RLock())
+
+
+def _packaged_mode():
+    """A packaging marker, not an environment switch, admits desktop release mode.
+
+    Both this package and the running interpreter must belong to the same plain
+    desktop payload. Evidence/check commands are never release entry points.
+    This is accidental-misconfiguration protection, not a hostile-code sandbox.
+    """
+    tectonics = Path(__file__).absolute().parents[2]
+    marker = tectonics / '.desktop-runtime.json'
+    if not marker.exists():
+        return 'strict'
+    resources = tectonics.parent.parent
+    executable = Path(sys.executable).absolute()
+    entry = Path(sys.argv[0]).absolute()
+    paths = (tectonics, marker, executable, entry, resources.parent / 'Atlas.exe')
+    if (tectonics.parent.name != 'atlas' or resources.name != 'resources'
+            or executable.parent != resources / 'python'
+            or executable.name.lower() not in ('python.exe', 'pythonw.exe')
+            or entry.parent != tectonics / 'tools'
+            or entry.name not in ('new_world.py', 'new_world_session.py', 'new_world_project.py',
+                                  'new_world_bundle.py', 'new_world_job.py', 'tectonics_job.py',
+                                  'read_tectonics.py', 'view_tectonics.py', 'w12_job_worker.py')):
+        raise TectonicsError('release mode is restricted to packaged desktop commands; evidence requires strict mode')
+    for path in paths:
+        for part in (path, *path.parents):
+            if part.is_symlink() or getattr(part, 'is_junction', lambda: False)():
+                raise TectonicsError('linked desktop runtime is unsupported')
+        if not path.exists():
+            raise TectonicsError('incomplete desktop runtime')
+    if marker.stat().st_size > 1024:
+        raise TectonicsError('invalid desktop runtime marker')
+    try:
+        record = json.loads(marker.read_text(encoding='utf-8'))
+    except (OSError, ValueError) as exc:
+        raise TectonicsError('invalid desktop runtime marker') from exc
+    if record != {'schema': 'atlas.desktop-runtime.v1', 'identity_mode': 'release'}:
+        raise TectonicsError('invalid desktop runtime marker')
+    return 'release'
+
+
+def execution_mode():
+    """Policy provenance, deliberately separate from scientific execution identity."""
+    with _release_state.lock:
+        if _release_state.mode is None:
+            _release_state.mode = _packaged_mode()
+        return _release_state.mode
+
+
+def require_strict_execution():
+    if execution_mode() != 'strict':
+        raise TectonicsError('scientific evidence requires strict execution mode')
+
+
+def release_boundary():
+    """Fully verify every captured backend before restore/reuse/publication.
+
+    Strict callers retain their existing per-operation checks. A release store
+    opened before the first solver still obtains a verified reference capture.
+    """
+    if execution_mode() == 'release':
+        with _release_state.lock:
+            if not _release_state.captures:
+                ExecutionContext('reference')
+            for snapshot in _release_state.captures.values():
+                context = object.__new__(ExecutionContext)
+                context.__dict__.update(snapshot)
+                context.verify_boundary()
+
+
 class ExecutionContext:
     """Reusable identity preparation, not a promise that live files cannot change.
 
-    Every use hashes the complete current source bytes, comparing the bounded
+    Strict use hashes the complete current source bytes, comparing the bounded
     digest inventory and callable/default inventory with the captured state.
     Identity preparation avoids repeated
     code SHA/marshal work; verification streams current bindings against captured
     tokens without rebuilding discarded signature inventories. Mutable defaults,
     constants and native options are normalised on every check. Timestamps are
     never used as evidence. Runtime binaries retain the
-    pre-existing process-lifetime immutability assumption. This is not a sandbox.
+    pre-existing process-lifetime immutability assumption. Packaged release use
+    shares the first capture and performs full checks at persistence/reuse
+    boundaries, not each inner call. This is not a sandbox.
     """
     def __init__(self, backend="reference"):
+        self._mode = execution_mode()
+        if self._mode == 'release':
+            with _release_state.lock:
+                snapshot = _release_state.captures.get(backend)
+                if snapshot is None:
+                    self._capture(backend)
+                    _release_state.captures[backend] = self.__dict__.copy()
+                else:
+                    self.__dict__.update(snapshot)
+            return
+        self._capture(backend)
+
+    def _capture(self, backend):
         self.backend = backend
         self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
         # The bound module set is captured once from the package membership; any
@@ -586,7 +706,12 @@ class ExecutionContext:
             "loaded_code": loaded, "constants": _digest(self._constants),
             "runtime": self._runtime}))
         self._closed = False
-        self.verify()
+        self._immutable = {}        # private: deeply immutable constants' normalised forms (see verify)
+        self.verify_boundary()
+
+    @property
+    def provenance(self):
+        return {'execution_identity': self.identity, 'execution_mode': self._mode}
 
     @property
     def identity(self):
@@ -594,6 +719,13 @@ class ExecutionContext:
         return self._identity
 
     def verify(self):
+        if self._closed:
+            raise TectonicsError("execution context is closed")
+        if self._mode == 'strict':
+            self.verify_boundary()
+
+    def verify_boundary(self):
+        """The unchanged full live-source/instruction/default check in both modes."""
         if self._closed:
             raise TectonicsError("execution context is closed")
         # Exact digest-record equality, including membership. All bytes reread.
@@ -607,7 +739,8 @@ class ExecutionContext:
             if (_verify_callable_inventory is not helper[1]
                     or _verify_callable_inventory.__code__ is not helper[2]):
                 raise TectonicsError("loaded implementation changed")
-            _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules)
+            _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules,
+                                       self._immutable)
             return
         _, tokens, constants = _callable_inventory(self.backend, self._modules)
         if constants != self._constants or len(tokens) != len(self._tokens):
@@ -1033,7 +1166,7 @@ def _evaluate(store, record, compute, shape, budget, *, context, controller,
     # Store path and key define the shared work. Different admission policies are
     # kept separate so an explicit always/off request does not inherit auto policy.
     flight_key = (str(store.path),key,cache_policy)
-    return _FLIGHTS.run(flight_key,produce,cancel=cancel,timeout=wait_timeout,validate=context.verify)
+    return _FLIGHTS.run(flight_key,produce,cancel=cancel,timeout=wait_timeout,validate=context.verify_boundary)
 
 
 def _policy(value):

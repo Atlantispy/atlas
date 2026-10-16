@@ -275,6 +275,8 @@ class ArrayStore:
     older implementations refuse new codec labels rather than misreading them.
     """
     def __init__(self, path, limits: StoreLimits, compression: Compression = Compression(), *, budget=None):
+        from .reuse import release_boundary
+        release_boundary()
         if not isinstance(limits, StoreLimits) or not isinstance(compression, Compression):
             raise StoreError('typed limits and compression required')
         self.path = Path(path).absolute()
@@ -297,6 +299,8 @@ class ArrayStore:
         self._cached_bytes = 0
         self._cache_version = None
         self._cache_changes = -1
+        # (pin, retained bytes) as of this connection's last successful publication, or None; see _retained_pin.
+        self._retained = None
         self._verified = OrderedDict()
         self._stats = dict(payload_reads=0, decoded_hits=0, verified_hits=0,
                            encodes=0, staged_bytes=0, prepare_seconds=0.,
@@ -438,6 +442,18 @@ class ArrayStore:
             raise StoreError('store is closed')
         _path(self.path)
 
+    def _retained_pin(self):
+        """Read inside a write transaction: what must stay equal for a running retained total to stay exact.
+
+        data_version changes when another connection commits; total_changes when this connection inserts, updates
+        or deletes rows (trigger programs included); schema_version when the schema changes, including through DDL
+        or a backup into this connection, which neither of the others counts. Any other change, a first use, a
+        refused or failed publication, or a schema that is not exactly the store's own leaves the full scan in use.
+        Out-of-band raw file changes are not covered, as for the store's caches; max_page_count still binds.
+        """
+        return (self._db.execute('PRAGMA data_version').fetchone()[0], self._db.total_changes,
+                self._db.execute('PRAGMA schema_version').fetchone()[0])
+
     @contextmanager
     def _read_scope(self, *, budget=None):
         """Pin one SQLite snapshot before trusting validated in-memory payloads.
@@ -450,6 +466,9 @@ class ArrayStore:
         with self._lock:
             self._live()
             owner = not self._db.in_transaction
+            if owner:
+                from .reuse import release_boundary
+                release_boundary()
             reservation = None
             if owner:
                 reservation = self._workspace(self._read_work_bytes(), budget,
@@ -691,8 +710,11 @@ class ArrayStore:
         if _hash(body) != digest:
             raise StoreError('manifest checksum mismatch')
         m = _parse(body)
-        if not isinstance(m, dict) or set(m) != {'schema','invocation','arrays','metadata'} or m['schema'] != _SCHEMA or m['invocation'] != key:
+        if not isinstance(m, dict) or set(m) not in ({'schema','invocation','arrays','metadata'},
+                {'schema','invocation','arrays','metadata','execution_mode'}) or m['schema'] != _SCHEMA or m['invocation'] != key:
             raise StoreError('incompatible manifest')
+        if 'execution_mode' in m and m['execution_mode'] not in ('strict', 'release'):
+            raise StoreError('invalid execution mode provenance')
         if not isinstance(m['arrays'], dict) or not m['arrays']:
             raise StoreError('invalid array inventory')
         chunks = 0
@@ -777,6 +799,8 @@ class ArrayStore:
         history migration, async background writes or silent dependency fallback.
         Mutable input arrays must stay unchanged until this call returns.
         """
+        from .reuse import execution_mode, release_boundary
+        release_boundary()
         _sha(invocation)
         if publication_check is not None and not callable(publication_check):
             raise StoreError('publication_check must be callable')
@@ -924,8 +948,13 @@ class ArrayStore:
                 descriptions[name] = {'dtype': dt.str, 'shape': list(shape), 'chunks': ids}
                 if len(meta_bytes) + projected * 68 + len(descriptions) * 256 > self.limits.max_manifest_bytes:
                     raise StoreError('projected manifest exceeds limit')
-            body = _json({'schema': _SCHEMA, 'invocation': invocation,
-                          'arrays': descriptions, 'metadata': metadata})
+            manifest = {'schema': _SCHEMA, 'invocation': invocation,
+                        'arrays': descriptions, 'metadata': metadata}
+            # Preserve strict-mode/legacy bytes. Policy is producer provenance,
+            # not part of the caller's scientific invocation or metadata.
+            if execution_mode() == 'release':
+                manifest['execution_mode'] = 'release'
+            body = _json(manifest)
             if len(body) > self.limits.max_manifest_bytes:
                 raise StoreError('manifest exceeds limit')
             self._stats['staged_bytes'] = staged_bytes
@@ -945,15 +974,25 @@ class ArrayStore:
                         if isinstance(value, (ArrayReference, _EditedReference)):
                             self._reference_description(value.reference if isinstance(value, _EditedReference) else value)
                     previous = self._manifest(invocation)
-                    if previous is not None and _json(previous) != body:
+                    if previous is not None and (
+                            {k: v for k, v in previous.items() if k != 'execution_mode'} !=
+                            {k: v for k, v in manifest.items() if k != 'execution_mode'}):
                         raise StoreConflict('same invocation produced different data or metadata')
+                    # The write lock is held and nothing is inserted yet: if the pin still equals the one recorded
+                    # at this connection's last publication, the tables hold exactly the total recorded with it.
+                    pin = self._retained_pin()
+                    known = self._retained
+                    base = known[1] if known is not None and known[0] == pin else None
+                    added, rows = 0, 0                # bytes and rows this transaction inserts, as the scan counts
                     batch, batch_bytes = [], 0
                     def flush():
-                        nonlocal batch, batch_bytes
+                        nonlocal batch, batch_bytes, added, rows
                         if batch:
                             self._db.executemany('INSERT INTO chunks VALUES(?,?,?,?,?)', batch)
-                            for key, desc, _, stored, _ in batch:
+                            for key, desc, _, stored, payload in batch:
                                 self._remember(key, desc, stored)
+                                added += len(payload) + len(desc) + 128
+                            rows += len(batch)
                             self._stats['insert_batches'] += 1
                             batch, batch_bytes = [], 0
                     while True:
@@ -988,19 +1027,34 @@ class ArrayStore:
                     flush()
                     if previous is None:
                         self._db.execute('INSERT INTO snapshots VALUES(?,?,?)', (invocation, body, _hash(body)))
-                    used = self._db.execute('SELECT COALESCE(sum(length(payload)+length(descriptor)+128),0) FROM chunks').fetchone()[0]
-                    used += self._db.execute('SELECT COALESCE(sum(length(body)+128),0) FROM snapshots').fetchone()[0]
+                        added += len(body) + 128
+                        rows += 1
+                    # Blobs are bound as bytes, so length() is len(); every counted row is one of ours.
+                    exact = base is not None and self._db.total_changes == pin[1] + rows
+                    if exact:
+                        used = base + added
+                    else:
+                        used = self._db.execute('SELECT COALESCE(sum(length(payload)+length(descriptor)+128),0) FROM chunks').fetchone()[0]
+                        used += self._db.execute('SELECT COALESCE(sum(length(body)+128),0) FROM snapshots').fetchone()[0]
+                        # A scanned total is kept only beside the store's own schema (no trigger or view).
+                        exact = set(self._db.execute('SELECT type, name, tbl_name, sql FROM sqlite_master')) == _SCHEMA_OBJECTS
                     if used > self.limits.max_store_bytes:
                         raise StoreError('retained records exceed store budget')
+                    inserted = self._db.total_changes
                     check_cancel()
                     if publication_check is not None:
                         publication_check()
+                    release_boundary()
                     self._db.execute('COMMIT')
                     # Our transaction added immutable rows only; retain validated
                     # attestations. data_version is NOT refreshed here: a writer
                     # committing immediately after ours must invalidate next read.
                     self._cache_changes = self._db.total_changes
+                    # Our own commit leaves data_version unchanged; a later commit by anyone else changes it.
+                    self._retained = (((pin[0], inserted, pin[2]), used)
+                                      if exact and self._db.total_changes == inserted else None)
                 except BaseException as exc:
+                    self._retained = None
                     if self._db.in_transaction:
                         self._db.execute('ROLLBACK')
                     self._clear_caches()
@@ -1031,6 +1085,12 @@ class ArrayStore:
         with self._read_scope():
             m = self._manifest(invocation)
             return None if m is None else m['metadata']
+
+    def execution_mode(self, invocation):
+        """Recorded producer policy; legacy records were authored in strict mode."""
+        with self._read_scope():
+            m = self._manifest(invocation)
+            return None if m is None else m.get('execution_mode', 'strict')
 
     def read_chunk(self, invocation, array_name, index, *, budget=None):
         """Random access to one decoded chunk, with its flat element offset."""
@@ -1109,10 +1169,12 @@ class ArrayStore:
     def backup_to(self, destination):
         """Consistent database backup to a new local file; no overwrite or cleanup."""
         import os
+        from .reuse import release_boundary
         target = Path(destination).absolute()
         _path(target)
         with self._lock:
             self._live()
+            release_boundary()
             fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             os.close(fd)
             other = sqlite3.connect(target)
@@ -1120,4 +1182,5 @@ class ArrayStore:
                 self._db.backup(other)
             finally:
                 other.close()
+            release_boundary()
         return target

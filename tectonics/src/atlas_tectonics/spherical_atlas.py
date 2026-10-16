@@ -128,7 +128,11 @@ def _capture_directions(a):
 
 
 def _angle(a, b):
-    return 2 * np.arctan2(np.linalg.norm(a-b, axis=-1), np.linalg.norm(a+b, axis=-1))
+    # np.linalg.norm(v, axis=-1) of real binary64 data is exactly
+    # sqrt(add.reduce(v*v, axis=-1)); calling those ufuncs directly skips only
+    # norm's argument normalisation.
+    d = a-b; s = a+b
+    return 2 * np.arctan2(np.sqrt(np.add.reduce(d*d, axis=-1)), np.sqrt(np.add.reduce(s*s, axis=-1)))
 
 
 def _measure_ring(u):
@@ -155,6 +159,49 @@ def _face_geometry(patch, points, lookup, limits, budget):
     return geometry, area
 
 
+def _face_source(source, sphere, names, points, ordered):
+    """The atlas whose faces may stand in for _face_geometry, or None.
+
+    _face_geometry reads only a patch's rings, its chart and the registered
+    vertex directions. Reuse therefore requires the same sphere, the same sorted
+    vertex IDs, byte-identical captured directions and the same patch count;
+    _same_face then compares each face. A mismatch here rebuilds every face, a
+    mismatch in _same_face rebuilds that face; neither is an error.
+    """
+    if source is None:
+        return None
+    if type(source) is not SphericalAtlas:
+        raise GeometryError('reuse_faces_from must be a SphericalAtlas')
+    if (source.sphere != sphere or source.vertex_ids != names or source._points != points.tobytes()
+            or len(source.patches) != len(ordered)):
+        return None
+    return source
+
+
+def _same_face(old, new):
+    """Same patch ID, same oriented rings and the SAME chart object (not merely equal)."""
+    return old.patch_id == new.patch_id and old.rings == new.rings and old.chart is new.chart
+
+
+def _reused_face(source, face, patch, limits, budget):
+    """What _face_geometry returns for this face, taken from an atlas built from identical inputs.
+
+    _face_geometry is a deterministic function of the rings, the chart object and
+    the vertex bytes, which _face_source and _same_face require to be identical,
+    so the stored geometry and area are its exact result. The rebuild's other
+    inputs are applied again unchanged: the two nested build reservations (same
+    sizes and categories), so budget refusals and statistics match a rebuild,
+    and its only limit-dependent check that the atlas envelope does not already
+    imply (closed-ring coordinates against max_vertices, in _validate_shape).
+    """
+    count = sum(len(ring) for ring in patch.rings)
+    with budget.reserve(1024*count+16384, category='spherical-build'):
+        with budget.reserve(512*count+8192, category='geometry-build'):
+            if count + len(patch.rings) > limits.max_vertices:
+                raise GeometryError('result exceeds geometry vertex limit')
+    return source.regions[face].geometry, float(source.patch_areas_sr[face])
+
+
 def _vertex_links(points, edge_array, sides, patch_count, resolution, cancel):
     """Check the geometric link, not just combinatorial edge pairing.
 
@@ -163,18 +210,28 @@ def _vertex_links(points, edge_array, sides, patch_count, resolution, cancel):
     a double winding, pinch, dangling fan or reversed local sheet is refused.
     """
     rays = [[] for _ in points]
-    for i, (a, b) in enumerate(edge_array):
-        if i % 4096 == 0:
+    # Row-wise batch of the former per-ray 3-vector code. Cross products,
+    # max/abs, division, the axis=-1 three-term sum and sqrt are elementwise or
+    # per-row with the same operation order, so every ray is bit-identical. The
+    # two dot products stay one 1-D matmul per row (same BLAS path as before).
+    _check_cancel(cancel)
+    count = len(edge_array)
+    source = np.empty(2*count, dtype=np.intp); target = np.empty(2*count, dtype=np.intp)
+    source[0::2] = edge_array[:, 0]; target[0::2] = edge_array[:, 1]
+    source[1::2] = edge_array[:, 1]; target[1::2] = edge_array[:, 0]
+    radial = points[source]; other = points[target]
+    axis = np.eye(3)[np.argmin(np.abs(radial), axis=1)]
+    east = _unit(np.cross(axis, radial))
+    north = np.cross(radial, east)
+    normal = _unit(np.cross(radial + other, other - radial))
+    tangent = _unit(np.cross(normal, radial))
+    _check_cancel(cancel)
+    for k in range(2*count):
+        if k % 8192 == 0:
             _check_cancel(cancel)
-        for source, target, sign in ((a, b, 1), (b, a, -1)):
-            radial = points[source]
-            axis = np.eye(3)[int(np.argmin(np.abs(radial)))]
-            east = _unit(np.cross(axis, radial))
-            north = np.cross(radial, east)
-            normal = _unit(np.cross(radial + points[target], points[target] - radial))
-            tangent = _unit(np.cross(normal, radial))
-            angle = math.atan2(float(tangent @ north), float(tangent @ east))
-            rays[source].append((angle, i, sign))
+        t = tangent[k]
+        rays[source[k]].append((math.atan2(float(t @ north[k]), float(t @ east[k])),
+                                k >> 1, 1 - 2*(k & 1)))
     offsets, incidence = [0], []
     for rows in rays:
         _check_cancel(cancel)
@@ -434,7 +491,7 @@ class SphericalAtlas:
 
 def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None, cancel=None,
                           angular_resolution_rad=_ANGULAR_RESOLUTION, source_bindings=None,
-                          _restored=False):
+                          reuse_faces_from=None, _restored=False):
     """Validate and join a complete conforming spherical partition.
 
     ``vertices`` maps globally shared IDs to directions in sphere.frame_id. Each
@@ -443,6 +500,13 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
     must be used; all face edges must match in opposite directions by exact IDs.
     ``angular_resolution_rad`` controls rejection of ambiguous geometry; it does
     not fill missing faces or move coordinates. No user-selected area tolerance.
+
+    ``reuse_faces_from`` optionally names an existing SphericalAtlas over the same
+    vertex registry, typically the same faces with new region/plate owners. A
+    face whose patch ID, rings and chart object match, with byte-identical vertex
+    directions, takes its local polygon and area from that atlas instead of
+    recomputing them from identical inputs. Every other check and identity is
+    computed as without it, so the result is the same atlas either way.
     """
     _check_cancel(cancel); limits = _limits(limits); policy = select_budget(budget)
     if type(sphere) is not SphericalFrame or not isinstance(vertices, Mapping):
@@ -477,6 +541,7 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
             raise GeometryError('duplicate geometric vertices must use one shared ID')
         ordered = tuple(sorted(patches, key=lambda p: p.patch_id))
         if len({p.patch_id for p in ordered}) != len(ordered): raise GeometryError('duplicate patch ID')
+        reused = _face_source(reuse_faces_from, sphere, names, points, ordered)
         registered = set(lookup)
         owners, edge_uses, used, geometry, areas = {}, {}, set(), [], []
         for face, p in enumerate(ordered):
@@ -489,8 +554,12 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
                 if not set(ring) <= registered: raise GeometryError('patch names an unregistered vertex')
                 used.update(ring)
                 ids = [lookup[v] for v in ring]
-                for a, b in zip(ids, ids[1:] + ids[:1]):
-                    theta = float(_angle(points[a], points[b]))
+                # One row-wise _angle per ring. Row i is the same elementwise IEEE
+                # arithmetic and length-3 reduction as _angle(points[a], points[b])
+                # for its pair, so every theta and the check order are unchanged.
+                index = np.asarray(ids, dtype=np.intp)
+                thetas = _angle(points[index], points[np.roll(index, -1)]).tolist()
+                for (a, b), theta in zip(zip(ids, ids[1:] + ids[:1]), thetas):
                     if theta <= resolution or theta >= math.pi-resolution:
                         raise GeometryError('zero, unresolved or antipodal spherical edge')
                     key = (min(a, b), max(a, b))
@@ -498,7 +567,10 @@ def build_spherical_atlas(sphere, vertices, patches, *, limits=None, budget=None
                     column = 0 if a < b else 1
                     if row[column] != -1: raise GeometryError('duplicate directed edge/same-side ownership')
                     row[column] = face
-            g, area = _face_geometry(p, points, lookup, limits, policy)
+            if reused is not None and _same_face(reused.patches[face], p):
+                g, area = _reused_face(reused, face, p, limits, policy)
+            else:
+                g, area = _face_geometry(p, points, lookup, limits, policy)
             geometry.append(BoundaryRegion(p.patch_id, p.plate_id, g)); areas.append(area)
         if used != set(names): raise GeometryError('unused registered vertex')
         if any(-1 in s or s[0] == s[1] for s in edge_uses.values()):

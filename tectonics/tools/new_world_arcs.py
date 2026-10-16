@@ -97,7 +97,22 @@ def _edge_partition(a, b, starts, ends, normals, tangents, lengths, owners):
         intersections = np.cross(normal, normals)
         magnitude = np.linalg.norm(intersections, axis=1)
         determinants = np.column_stack((normals@a, normals@b, starts@normal, ends@normal))
-        for i in range(len(starts)):
+        # Exact broad phase over the same values the loop below reads. A row
+        # can add an event only on the exact-predicate fallback (small cross
+        # magnitude or any determinant inside its band) or when its four signs
+        # are a strict crossing pattern. Every other row has four nonzero signs
+        # that satisfy neither orientation and adds nothing. The bands use the
+        # loop's own math.sin terms and the same binary64 add/multiply, so the
+        # comparisons are identical; the survivors run in ascending order.
+        inverse = 1/math.sin(angle)
+        bands = _ROUND*(inverse+np.asarray([1/math.sin(float(x)) for x in lengths], dtype=float))
+        signs_all = np.sign(determinants)
+        crossing = (((signs_all[:, 0] > 0) & (signs_all[:, 1] < 0) & (signs_all[:, 2] < 0) & (signs_all[:, 3] > 0))
+                    | ((signs_all[:, 0] < 0) & (signs_all[:, 1] > 0) & (signs_all[:, 2] > 0) & (signs_all[:, 3] < 0)))
+        fallback = ((magnitude <= math.sqrt(np.finfo(float).eps))
+                    | np.any(np.abs(determinants) <= bands[:, None], axis=1))
+        unusual = ~(np.isfinite(determinants).all(axis=1) & np.isfinite(magnitude) & np.isfinite(bands))
+        for i in np.flatnonzero(crossing | fallback | unusual).tolist():
             owner, c, d = owners[i], starts[i], ends[i]
             band = _ROUND*(1/math.sin(angle)+1/math.sin(float(lengths[i])))
             point = intersections[i]

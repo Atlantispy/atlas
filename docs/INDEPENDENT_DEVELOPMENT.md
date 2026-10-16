@@ -135,6 +135,13 @@ cleanup, automatic sync, background tasks or scientific acceptance. Test workers
 and all generated data are synthetic. Developer tests execute repository code;
 this is **not** a security sandbox for untrusted pull requests.
 
+## Faster development checks
+
+For the tectonics suites, [DEVELOPMENT_TOOLS.md](DEVELOPMENT_TOOLS.md) describes `verify.py --quick` (the measured
+slow tests omitted), a parallel test runner, a conservative test-impact selector and a one-command patch-candidate
+verifier. They shorten iteration only: the full gate is still required before reporting a pass, capturing evidence
+or accepting a change.
+
 ## Troubleshooting
 
 - **Windows path length.** The R12 cache refuses a record path of 260 UTF-16 units

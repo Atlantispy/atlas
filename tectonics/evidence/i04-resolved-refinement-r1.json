@@ -1,0 +1,111 @@
+{
+  "schema": "atlas.i04-resolved-refinement-report.v1",
+  "status": "PASS_REDUCED_MODEL_REFINEMENT",
+  "scientific_acceptance": false,
+  "provenance": {
+    "date": "2026-10-04",
+    "platform": "Windows, CPython 3.12.14",
+    "scope": "One predeclared 42/84-row full coupled interval per grid; fixed 3% criterion. Not a physical belt-width or generated-world acceptance.",
+    "complete_launch_source_manifest": false,
+    "execution": "The candidate interpreter started at 12:32:41 Europe/London. The test, case and fixture files were saved before launch and unchanged through completion.",
+    "reuse_assessment": "The converged D1/D2 numerical solve and twin-world inputs were unchanged. Later changes added an issued-result integrity guard, a two-record ridge/transform seam branch absent from this twin transform, and a geometric-side filter applied only to one-sided belts; this control uses both-sided belts. Their new paths were verified separately. These numerical results are reused on that assessed scope, not represented as a full run of the final package bytes.",
+    "inputs": [
+      "tests/test_i04_controls.py:ResolvedCaseB",
+      "tests/i04_strength_fixtures.py",
+      "cases/i04_controls_v1.json:part_b.controls.case_b_resolved_refinement"
+    ],
+    "registered_status": "Unclassified observational report; not a source-sealed current-evidence receipt."
+  },
+  "case_b_resolved_refinement": {
+    "declaration": {
+      "criteria": {
+        "max_cell_over_length": 0.25,
+        "quantities": [
+          "peak_resultant_n_m",
+          "v_rel_mm_yr",
+          "max_dkappa",
+          "raw_kappa_width_2sigma_m"
+        ],
+        "relative_change_bound": 0.03
+      },
+      "declared": "4 October 2026, before either successor run; a separate resolved successor to the retained failed 4-to-8-row control, not retrospective acceptance of that result",
+      "rows_per_side": [
+        42,
+        84
+      ],
+      "scope": "One actual coupled interval on each grid; reduced-model numerical convergence only. No physical belt-width, non-aligned-mesh, multi-interval or whole-I04 acceptance follows. Increment localisation width is also reported, not gated. The failed coarse expected-failure test remains unchanged.",
+      "selection_rule": "I01 requires max actual cross-belt cell length / ell <= 0.25. With unchanged 12 longitude sectors, a great-circle latitude edge bulges by at most sec(15 degrees); ceil((100000 / 2) / (0.25 * 5000) / cos(15 degrees)) = 42 rows per side. The second grid halves the nominal spacing. Actual cell lengths are checked on both start and endpoint belts.",
+      "unchanged": "the complete twin-world coupled_interval, 12 sectors, layered I01 column and depth order, Gaussian kappa0(y) = 1.5 + exp(-(y/20 km)^2) sampled at row centres, ell = 5000 m, width = 100000 m, torque, basal drag, 0.1 Myr interval, all solver tolerances and iteration caps"
+    },
+    "relative_changes": {
+      "max_dkappa": 0.0005560958039508028,
+      "peak_resultant_n_m": 0.000021320784850390773,
+      "raw_kappa_width_2sigma_m": 0.00010849372395996207,
+      "v_rel_mm_yr": 0.00005483033286533101
+    },
+    "runs": {
+      "42": {
+        "axis_tilt": 2.3801289472100086e-17,
+        "endpoint_max_cell_m": 1232.471642315457,
+        "increment_width_2sigma_m": 38431.873227801974,
+        "increments": {
+          "distinct": 972,
+          "sub_cohorts": 889
+        },
+        "iterations": 16,
+        "max_dkappa": 0.3175702755808601,
+        "nominal_cell_m": 1190.4761904761904,
+        "omega_rad_s": [
+          [
+            -2.091737316535529e-32,
+            -2.824515953437333e-32,
+            1.4837829094193168e-15
+          ],
+          [
+            -1.1391127187380199e-32,
+            -1.663769967697862e-32,
+            8.346842736834105e-16
+          ]
+        ],
+        "peak_resultant_n_m": 14116472921600.547,
+        "pieces_per_face": 1,
+        "plastic_share": 0.6957140997209059,
+        "raw_kappa_width_2sigma_m": 52967.906288822705,
+        "seconds": 934.6450810999959,
+        "start_max_cell_m": 1232.471642315457,
+        "v_rel_mm_yr": 130.5035328273305
+      },
+      "84": {
+        "axis_tilt": 2.328229654731559e-16,
+        "endpoint_max_cell_m": 616.2358215439336,
+        "increment_width_2sigma_m": 38450.5115171522,
+        "increments": {
+          "distinct": 1968,
+          "sub_cohorts": 1803
+        },
+        "iterations": 16,
+        "max_dkappa": 0.31774697333945223,
+        "nominal_cell_m": 595.2380952380952,
+        "omega_rad_s": [
+          [
+            -1.651872862554475e-31,
+            -2.583601274631396e-31,
+            1.483800705542216e-15
+          ],
+          [
+            -1.5909151059678866e-31,
+            -1.9432360149717185e-31,
+            8.3466647756051535e-16
+          ]
+        ],
+        "peak_resultant_n_m": 14116171947318.54,
+        "pieces_per_face": 1,
+        "plastic_share": 0.6957095783273093,
+        "raw_kappa_width_2sigma_m": 52973.65359777329,
+        "seconds": 1826.1009256000107,
+        "start_max_cell_m": 616.2358215439336,
+        "v_rel_mm_yr": 130.51068877183835
+      }
+    }
+  }
+}

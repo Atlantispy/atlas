@@ -6,6 +6,7 @@ historical source import. JSON goes to stdout; test detail goes to stderr.
 """
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
@@ -13,6 +14,7 @@ from pathlib import Path
 import platform
 import sys
 import time
+from types import MappingProxyType
 import unittest
 
 ROOT = Path(__file__).resolve().parent
@@ -33,6 +35,41 @@ I02_MEASUREMENT_TESTS = frozenset({
     'test_i02_measurement.MeasurementRegressionTests.test_source_drift_withholds_all_times',
     'test_i02_measurement.MeasurementRegressionTests.test_review_probe_with_cold_temperature_and_reopen_account_drift_withholds_times',
 })
+
+# Measured slow tests: exact test IDs, or class IDs where the class fixture dominates. They stay in full
+# discovery and in every focused profile; only --quick omits them, and a stale entry refuses the quick run.
+# Except the separately documented I04 control, seconds are wall times measured at remake 30a79e6 by
+# tools/run_tests_parallel.py (one class per worker
+# process, single-threaded BLAS, 14 workers on 16 logical CPUs, so under load); see docs/DEVELOPMENT_TOOLS.md.
+# Class entries are classes whose fixture alone took at least the threshold. Re-measure, don't guess.
+SLOW_TEST_THRESHOLD_SECONDS = 30
+SLOW_TESTS = MappingProxyType({
+    'test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_adaptive_inner_preserves_diagnostic_recovery': 33.2,
+    'test_convection_diagnostic_recovery_r4_4.EndpointDiagnosticRecoveryTests.test_cancelled_initial_intermediate_and_final_diagnostics_resume_exactly': 30.4,
+    'test_i02_workflow.InspectionTests.test_invalid_requests_change_nothing': 65.2,
+    'test_i02_workflow.LifecycleTests.test_create_advance_inspect_save_load_and_continue_the_real_route': 54.4,
+    # ED-7, 5 October 2026: one measured run of this single-test class, kept in full discovery.
+    'test_i04_controls.ResolvedCaseB': 2760.8,
+    'test_r3_delivery_contracts.VisualDataTests': 81.1,
+    'test_regional_evolution3d.DeclaredStartTests.test_force_driven_result_is_independent_of_earlier_solves': 35.1,
+    'test_regional_evolution3d.DeclaredStartTests.test_restarted_interval_on_a_new_plan_reproduces_the_continuous_run': 56.8,
+    'test_tectonic_history.TectonicHistoryTests.test_stopped_resumed_and_warm_histories_preserve_exact_ids_without_replay': 58.0,
+    'test_validation_gaps.FocusedGapChecks.test_postcommit_interruption_restores_exact_snapshot_without_repeating_physics': 61.0,
+    'test_w01_workflow.RegionalWorkflowTests.test_cold_restore_and_continuation_match_without_resampling': 30.7,
+    'test_w04_acceptance.W04CombinedAcceptance.test_rebased_sequence_is_additive_without_accumulating_previous_totals': 33.8,
+    'test_w04_acceptance.W04CombinedAcceptance.test_saved_evolved_state_continues_and_rebuilds_cached_projection_exactly': 42.4,
+    'test_w05_acceptance.W05AcceptanceTests': 49.6,
+    'test_w06_history_cooling.HistoryCoolingTests.test_64_128_partitions_and_direct_event_spanning_request_agree': 54.2,
+    'test_w06_history_cooling.HistoryCoolingTests.test_true_crop_means_centres_and_ages_on_three_grids_switch_and_stop': 33.9,
+    'test_w06_history_geometry.HistoryGeometryTests.test_semantic_and_requested_interval_caps': 35.4,
+    'test_w06_spreading.W06SpreadingTests.test_32_64_128_partitions_do_not_bin_history_or_duplicate_births': 30.7,
+    'test_w06_spreading.W06SpreadingTests.test_accepted_interval_ceiling_is_256': 34.9,
+    'test_w06_spreading_cooling.SpreadingCoolingTests.test_partition_32_64_128_preserves_final_fields_accounts_and_birth_history': 61.9,
+    'test_w07_verification_reuse.GeologyVerificationReuseTests.test_all_workflow_routes_match_complete_outputs_with_live_reuse': 50.2,
+    'test_w12_assembly.W12AssemblyTests.test_direct_clean_incremental_recovery_graph_and_full_fields': 86.2,
+    'test_w12_ports.WorkflowPortTests.test_every_packed_matrix_lists_its_columns_as_name_and_units_rows': 34.2,
+})
+FULL_PATTERNS = ('test_*.py', 'check_native_transport.py')
 
 # Stage 8 is a focused composition of existing gates, not all tectonics physics.
 # Keep exact selections reviewable; no implicit all-tests fallback on bad names.
@@ -261,7 +298,34 @@ def w06_suite():
     return _acceptance_suite(W06_GATES, 'W06')
 
 
-def focused_suite(name):
+def _test_leaves(group):
+    for item in group:
+        if isinstance(item, unittest.TestSuite):
+            yield from _test_leaves(item)
+        else:
+            yield item
+
+
+def quick_partition(tests, patterns, discovered=None):
+    """Omit the registered slow tests from a discovered selection. Every entry whose module the patterns cover
+    must name a discovered test or class exactly; a stale one refuses, never broadens or narrows silently."""
+    present = {test.id() for test in (tests if discovered is None else discovered)}
+    classes = {test_id.rsplit('.', 1)[0] for test_id in present}
+    for entry in SLOW_TESTS:
+        module = entry.split('.', 1)[0]
+        if (any(fnmatch.fnmatchcase(module + '.py', pattern) for pattern in patterns)
+                and entry not in present and entry not in classes):
+            raise ValueError('slow-test registry is stale (not discovered): ' + entry)
+    kept, omitted = [], []
+    for test in tests:
+        slow = test.id() in SLOW_TESTS or test.id().rsplit('.', 1)[0] in SLOW_TESTS
+        (omitted if slow else kept).append(test)
+    if not kept:
+        raise ValueError('empty quick verification partition')
+    return kept, [test.id() for test in omitted]
+
+
+def focused_suite(name, quick=False):
     """Select a bounded developer suite; stale partitions refuse, never broaden."""
     if name not in FOCUSED_PATTERNS:
         raise ValueError('unknown focused verification profile: ' + name)
@@ -278,6 +342,7 @@ def focused_suite(name):
                 yield item
 
     tests = list(leaves(discovered))
+    discovered_tests = tests
     ids = [test.id() for test in tests]
     if not ids or len(ids) != len(set(ids)):
         raise ValueError('empty or duplicated focused verification selection')
@@ -288,19 +353,38 @@ def focused_suite(name):
         tests = [test for test in tests if (test.id() in I02_MEASUREMENT_TESTS) == measurement]
         if not tests:
             raise ValueError('empty focused verification partition')
+    if quick:
+        tests, omitted = quick_partition(tests, (FOCUSED_PATTERNS[name],), discovered_tests)
+        return unittest.TestSuite(tests), {name: [test.id() for test in tests], 'omitted_slow': omitted}
     return unittest.TestSuite(tests), {name: [test.id() for test in tests]}
 
 
-def verification_suite(option):
-    """Retain the default full suite; focused profiles require an explicit flag."""
+def verification_suite(option, quick=False):
+    """Retain the default full suite; focused profiles require an explicit flag. --quick (alone or with a
+    focused profile) omits only the registered slow tests and is a developer selection, never the gate."""
+    if quick and option != '' and not (option.startswith('--') and option[2:] in FOCUSED_PATTERNS):
+        raise ValueError('--quick combines only with the full or a focused selection: ' + option)
     legacy = {'--w01': w01_suite, '--w04': w04_suite,
               '--w05': w05_suite, '--w06': w06_suite}
     if option in legacy:
         return legacy[option]()
     if option.startswith('--') and option[2:] in FOCUSED_PATTERNS:
-        return focused_suite(option[2:])
+        return focused_suite(option[2:], quick=True) if quick else focused_suite(option[2:])
     if option not in ('', '--core', '--native', '--acceptance'):
         raise ValueError('unknown verification option: ' + option)
+    if quick:
+        loader = unittest.defaultTestLoader
+        known = len(loader.errors)
+        tests = []
+        for pattern in FULL_PATTERNS:
+            tests += list(_test_leaves(loader.discover(str(ROOT / 'tests'), pattern=pattern)))
+        if len(loader.errors) > known:
+            raise ValueError('quick verification discovery failed: ' + '\n'.join(loader.errors[known:]))
+        ids = [test.id() for test in tests]
+        if not ids or len(ids) != len(set(ids)):
+            raise ValueError('empty or duplicated quick verification selection')
+        tests, omitted = quick_partition(tests, FULL_PATTERNS)
+        return unittest.TestSuite(tests), {'quick': [test.id() for test in tests], 'omitted_slow': omitted}
     core_only = option == '--core'
     suite = unittest.defaultTestLoader.discover(
         str(ROOT / 'tests'), pattern='test_foundations.py' if core_only else 'test_*.py')
@@ -313,6 +397,33 @@ def verification_suite(option):
 def _checks_passed(result, source_unchanged):
     return (result.wasSuccessful() and result.testsRun > 0 and not result.skipped
             and source_unchanged)
+
+
+def profile_name(base, quick=False):
+    """A quick run's profile is marked distinctly ('quick:i02' is not the existing 'i02-quick' profile)."""
+    return 'quick:' + base if quick else base
+
+
+def run_status(passed, quick=False):
+    """The generic status; a quick selection never reports the gate's."""
+    if not passed:
+        return 'FAIL_OR_INCOMPLETE'
+    return 'PASS_QUICK_SELECTION_ONLY' if quick else 'PASS_MATHEMATICAL_TESTS_ONLY'
+
+
+def parse_options(argv):
+    """(option, quick) for one selection plus an optional --quick, or None for a usage error. --quick
+    combines only with the full suite or a focused profile, never an acceptance, core or native profile."""
+    allowed = ('--core', '--native', '--acceptance', '--w01', '--w04', '--w05', '--w06',
+               *('--' + name for name in FOCUSED_PATTERNS))
+    quick = argv.count('--quick')
+    rest = [arg for arg in argv if arg != '--quick']
+    if quick > 1 or len(rest) > 1 or (rest and rest[0] not in allowed):
+        return None
+    option = rest[0] if rest else ''
+    if quick and option and option[2:] not in FOCUSED_PATTERNS:
+        return None
+    return option, bool(quick)
 
 
 def source_inventory(root: Path) -> dict[str, str]:
@@ -345,15 +456,25 @@ def source_inventory(root: Path) -> dict[str, str]:
 
 def main() -> int:
     if sys.argv[1:] == ['--w10']:
+        sys.dont_write_bytecode = True
+        source_inventory(ROOT)
+        sys.path.insert(0, str(ROOT / 'src'))
+        from atlas_tectonics import reuse
+        if Path(reuse.__file__).resolve() != ROOT / 'src/atlas_tectonics/reuse.py':
+            raise ValueError('imported tectonics package is not this checkout')
+        reuse.require_strict_execution()
         sys.path.insert(0,str(ROOT/'tools'))
         from check_w10 import main as w10_main
         return w10_main([])
     allowed = ('--core', '--native', '--acceptance', '--w01', '--w04', '--w05', '--w06',
                *('--' + name for name in FOCUSED_PATTERNS))
-    if len(sys.argv[1:]) > 1 or (sys.argv[1:] and sys.argv[1] not in allowed):
-        print('Usage: python -I -B tectonics/verify.py [' + ' | '.join((*allowed, '--w10')) + ']', file=sys.stderr)
+    parsed = parse_options(sys.argv[1:])
+    if parsed is None:
+        print('Usage: python -I -B tectonics/verify.py [' + ' | '.join((*allowed, '--w10')) + ']'
+              ' (or [--quick] alone or with one of: ' + ' '.join('--' + n for n in FOCUSED_PATTERNS) + ')',
+              file=sys.stderr)
         return 2
-    option = sys.argv[1] if sys.argv[1:] else ''
+    option, quick = parsed
     focused = option[2:] if option.startswith('--') and option[2:] in FOCUSED_PATTERNS else None
     w01 = sys.argv[1:] == ['--w01']
     w04 = sys.argv[1:] == ['--w04']
@@ -384,7 +505,8 @@ def main() -> int:
     from atlas_tectonics import reuse
     if Path(atlas_tectonics.__file__).resolve() != ROOT / 'src/atlas_tectonics/__init__.py':
         raise ValueError('imported tectonics package is not this checkout')
-    suite, selection = verification_suite(option)
+    reuse.require_strict_execution()
+    suite, selection = verification_suite(option, quick=quick)
     started = time.perf_counter()
     result = unittest.TextTestRunner(stream=sys.stderr, verbosity=2).run(suite)
     elapsed = time.perf_counter()-started
@@ -408,8 +530,8 @@ def main() -> int:
                    resource_record.get('status') == 'PASS_BOUNDED_CURRENT_PLATFORM')))
     print(json.dumps({
         'schema': 'atlas.tectonics.foundation-verification.v26' if w06 else 'atlas.tectonics.foundation-verification.v25' if w05 else 'atlas.tectonics.foundation-verification.v24' if w04 else 'atlas.tectonics.foundation-verification.v23',
-        'profile': focused if focused else 'w06-supported-workflow' if w06 else 'w05-supported-acceptance' if w05 else 'w04-supported-acceptance' if w04 else 'w01-supported-acceptance' if w01 else 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'),
-        'status': ('PASS_SUPPORTED_W06_WORKFLOW' if w06 else 'PASS_SUPPORTED_DRY_LISTRIC_1D_W05' if w05 else 'PASS_SUPPORTED_STATIONARY_PLANAR_1D_W04' if w04 else 'PASS_MATHEMATICAL_TESTS_ONLY') if passed else 'FAIL_OR_INCOMPLETE',
+        'profile': profile_name(focused if focused else 'w06-supported-workflow' if w06 else 'w05-supported-acceptance' if w05 else 'w04-supported-acceptance' if w04 else 'w01-supported-acceptance' if w01 else 'combined-resource-acceptance' if acceptance else 'core' if core_only else ('full-native-transport' if native else 'full-memory-storage'), quick),
+        'status': ('PASS_SUPPORTED_W06_WORKFLOW' if w06 else 'PASS_SUPPORTED_DRY_LISTRIC_1D_W05' if w05 else 'PASS_SUPPORTED_STATIONARY_PLANAR_1D_W04' if w04 else run_status(True, quick)) if passed else 'FAIL_OR_INCOMPLETE',
         'test_elapsed_seconds': elapsed,
         'w01_acceptance': w01_acceptance_record(passed) if w01 else None,
         'w04_acceptance': w04_acceptance_record(passed) if w04 else None,
@@ -419,6 +541,9 @@ def main() -> int:
         'selected_tests_by_gate': selection,
         'focused_profile_scope': ('Explicit developer selection, not additional scientific acceptance; '
                                   'i02-quick omits the four real measurement-harness workloads only.') if focused else None,
+        'quick_scope': ('Developer selection omitting only the measured slow tests registered in SLOW_TESTS; '
+                        'not the full gate and not additional scientific acceptance.') if quick else None,
+        'quick_omitted_slow_tests': selection.get('omitted_slow') if quick else None,
         'tests_run': result.testsRun,
         'failures': len(result.failures), 'errors': len(result.errors),
         'failure_details': [{'test': t.id(), 'traceback': detail} for t, detail in result.failures],

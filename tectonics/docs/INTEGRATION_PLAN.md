@@ -1189,8 +1189,11 @@ that route and its isolation rather than assuming an unrelated packager is in us
    sections, quantities, masks, units, time and method/source identities from the
    same saved result. Use lazy selected-field reads and display-only levels of
    detail; test that export, map and section values agree without a new solve.
+   Implement the motion-arrow reference-frame requirement below in the backend
+   view/export contract, not by inventing motion in the renderer.
 4. **I10.4 — Hand a stable contract to the UI owner.** Supply real small saved
    examples, valid/refused/partial responses and New/Save/Load/cancel semantics.
+   Include the labelled motion-frame selector and explicit reference-plate state.
    The UI owner implements controls and presentation separately; Codex checks
    the shared native route, not just mock responses. Do not run two writers on
    the UI or scientific files. A return must include actual UI/backend evidence.
@@ -1221,10 +1224,34 @@ It renders the backend's geometry/values, shows source/method/units/time and sup
 the existing "how this is made" explanation. Backend owns science and data-derived
 views; UI owns controls/presentation. No UI handoff is sent by this planning turn.
 
+**Motion-arrow reference frame (owner request, 10 October 2026):** the default
+world view must not silently hold one plate stationary merely because the solver
+uses it as an anchor. Default to a documented whole-lithosphere no-net-rotation
+display frame, derived using the represented spherical plate geometry. This is
+a coordinate convention, not a claim that the mantle is at rest. Keep an optional
+"relative to selected plate" view; clearly label its frame and mark its reference
+plate as such rather than implying that missing arrows mean physical immobility.
+Genuine zero velocity and unavailable motion remain distinct, explicitly shown
+states; never add artificial arrows merely to make every plate appear to move.
+Do not construct a whole-lithosphere frame by treating unknown motions as zero.
+
+The backend must transform all displayed velocities consistently while retaining
+the native physical frame, saved dynamics and continuation identity. A display
+change must not alter relative plate motion, boundary opening/shear, or rerun the
+physics. If a physical mantle-relative frame is supplied, retain and label it
+separately; no-net-rotation is not a replacement for physical basal coupling.
+I10.3 checks the declared net-rotation condition, relative-motion invariance and
+consistent map/section/export values. I10.4 checks frame labels, reference/zero/
+unknown presentation and persistence of the display choice after save/reopen.
+Use the existing anchor-invariance controls where adequate; add only the missing
+display-transform and real UI/consumer checks. This is planned work, not an
+implemented change to the current arrows.
+
 **Finish when:** the same generated world survives CLI→UI→save→load→continue→export,
 one dependent consumer receives the actual evolved arrays, and unchanged reruns
 reuse work while changed physics invalidates the correct descendants. Validate
-the real native route; fake API tests alone do not establish this.
+the real native route, including the motion-frame requirements above; fake API
+tests alone do not establish this.
 
 ### I11 — End-to-end realism, portability and resource acceptance
 
@@ -1265,6 +1292,28 @@ universal constraint on generated planets.
    regressions. Correct evidenced bottlenecks with matched quality; no automatic
    realism downgrade, bigger ceilings or multi-hour R4.4 substitute. Finish only
    when the required physical, lifecycle and practical gates below all pass.
+5. **I11.5 — Separate strict validation from release execution.** Apply the
+   existing [execution policy](../../docs/CODING_SAFETY.md#strict-checkout-and-packaged-release-execution).
+   Development/debug work, ordinary tests, scientific benchmarks and evidence
+   producers remain **strict**; debug instrumentation is not a lower-fidelity
+   physics mode. Use dedicated packaged-release checks to demonstrate equivalent
+   scientific results, conservation and refusal behaviour on a bounded matched
+   workload. Require exact equality where the deterministic calculation is
+   unchanged, otherwise the already-approved numerical comparison, never a new
+   relaxed tolerance. Check equivalent scientific identities/cache semantics and
+   separately recorded execution-mode provenance. Exercise full source/callable
+   checks at save/commit, reopen and cache-read boundaries, including changed
+   source refusal; a checkout environment variable must not enable release.
+   Verification/evidence commands must still refuse release mode.
+   Measure strict and packaged-release elapsed time separately with matched
+   inputs, physics, precision, resolution, solver settings, native threads and
+   declared cache state. Name diagnostic/profiling overhead separately. Report
+   the actual seconds saved and their denominator, not an assumed release
+   speedup. Release timings do not replace strict scientific acceptance.
+   Removing repeated integrity work must not remove exact geometry predicates,
+   volume/error certificates, conservation, convergence or other required
+   scientific checks. Reuse adequate controls; do not duplicate full campaigns
+   merely to exercise the execution policy.
 
 **Whole-planet requirement (owner reaffirmed 28 September 2026):** completion
 must include an evolving full sphere, not merely a global initial layout plus
@@ -1323,6 +1372,15 @@ references support release engineering, not tectonics realism.
    without the development checkout, preserving projects, cancellation and
    native identity checks. Include only authorised examples and required notices,
    not private data, caches or coordination files. No installer/download implied.
+   Confirm the actual packaged routes enter **release** only through the trusted
+   payload/interpreter/command gate, and refuse invalid trust metadata. Reuse
+   I11.5's cross-mode parity evidence; check boundary verification and mode
+   provenance on the shipped bytes. Normal generation must not launch development
+   test suites or optional profiling; scientific runtime checks remain enabled.
+   Keep strict verification tools distinct from release runtime and prevent the
+   packaged policy from silently weakening their checks. Record the policy in
+   release/runtime documentation. This is test/execution separation, not one of
+   the lower-accuracy simulation settings.
 3. **I12.3 — Deliver the accepted module and handoff.** Confirm all five user
    routes and the declared platform matrix against the release bytes, supply
    the example, method/evidence links and typed consumer contract, and identify

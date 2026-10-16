@@ -24,7 +24,7 @@ from ._validation import read_array, scalar
 from .coordinates import SphericalFrame
 from .resources import elements, select_budget
 from .geometry import (GeometryError, GeometryLimits, PlanarGeometry, _limits, _json,
-    _point_shape, _vertices, _preflight_vertices, _validate_shape, _typed_frozen,
+    _point_shape, _vertices, _preflight_vertices, _validate_shape, _validate_once, _typed_frozen,
     _overlay_budget, _check_cancel)
 
 _SCHEMA_SPHERE='atlas.spherical-feature.v1'
@@ -37,6 +37,23 @@ def _directions(value):
     if np.any(scale==0):raise GeometryError('zero direction has no spherical position')
     a=a/scale
     return a/np.sqrt(np.sum(a*a,axis=-1,keepdims=True))
+
+
+def _cross3(a,b):
+    """np.cross of two binary64 3-vectors without its broadcasting machinery.
+
+    np.cross evaluates each component as one rounded product minus another
+    rounded product (multiply, multiply, subtract); Python float arithmetic
+    applies the same IEEE operations in the same order, so the bits are equal.
+    """
+    a0,a1,a2=a.tolist();b0,b1,b2=b.tolist()
+    return np.array([a1*b2-a2*b1,a2*b0-a0*b2,a0*b1-a1*b0])
+
+
+def _chart_basis(c):
+    axis=np.eye(3)[int(np.argmin(np.abs(c)))]
+    e=_cross3(axis,c);e/=np.linalg.norm(e);n=_cross3(c,e)
+    return np.array([e,n,c]).tobytes()
 
 
 @dataclass(frozen=True,slots=True)
@@ -58,11 +75,9 @@ class SphericalChart:
         c=_directions(self.centre)
         margin=scalar(self.min_cosine,'min_cosine',positive=True)
         if margin>=1:raise GeometryError('chart min_cosine must be below one')
-        axis=np.eye(3)[int(np.argmin(np.abs(c)))]
-        e=np.cross(axis,c);e/=np.linalg.norm(e);n=np.cross(c,e)
         object.__setattr__(self,'centre',tuple(float(x) for x in c))
         object.__setattr__(self,'min_cosine',margin)
-        object.__setattr__(self,'_basis',np.array([e,n,c]).tobytes())
+        object.__setattr__(self,'_basis',_chart_basis(c))
 
     @classmethod
     def from_descriptor(cls, desc):
@@ -76,10 +91,12 @@ class SphericalChart:
             c=read_array(desc['centre'],'stored centre')
             if abs(math.hypot(*c)-1)>16*np.finfo(float).eps:raise GeometryError('stored centre is not a unit direction')
             out=cls(sphere,tuple(c),desc['min_cosine'])
-            axis=np.eye(3)[int(np.argmin(np.abs(c)))];e=np.cross(axis,c)
-            e/=np.linalg.norm(e);n=np.cross(c,e)
-            object.__setattr__(out,'centre',tuple(float(x) for x in c))
-            object.__setattr__(out,'_basis',np.array([e,n,c]).tobytes())
+            # __post_init__ built the basis from its renormalised centre. When that
+            # centre is bit-identical to the stored one, the basis is already the
+            # one computed from the stored centre (same function, same bits).
+            if np.array(out.centre).tobytes()!=c.tobytes():
+                object.__setattr__(out,'centre',tuple(float(x) for x in c))
+                object.__setattr__(out,'_basis',_chart_basis(c))
             if out.descriptor()!=desc:raise GeometryError('chart metadata mismatch')
             return out
         except (TypeError,KeyError) as exc:raise GeometryError('invalid chart metadata') from exc
@@ -126,11 +143,16 @@ def _rings(g):
 
 
 def _ring_area(unit, anchor):
+    # Translation inside the determinant avoids subtracting O(1) terms for
+    # tiny regions. Signed fans also work for concave rings and exterior anchors.
+    # One row-wise cross product for the ring: the same elementwise subtractions,
+    # products and differences as the former per-edge call, so every row is
+    # bit-identical. Each dot product stays a separate 1-D call per edge (the
+    # same BLAS path and summation order); do not vectorise those.
+    crosses=np.cross(unit[:-1]-anchor,unit[1:]-anchor)
     pieces=[]
-    for a,b in zip(unit[:-1],unit[1:]):
-        # Translation inside the determinant avoids subtracting O(1) terms for
-        # tiny regions. Signed fans also work for concave rings and exterior anchors.
-        numerator=float(np.dot(anchor,np.cross(a-anchor,b-anchor)))
+    for a,b,c in zip(unit[:-1],unit[1:],crosses):
+        numerator=float(np.dot(anchor,c))
         denominator=1+float(np.dot(anchor,a))+float(np.dot(a,b))+float(np.dot(b,anchor))
         pieces.append(2*math.atan2(numerator,denominator))
     return abs(math.fsum(pieces))
@@ -150,24 +172,32 @@ class SphericalGeometry:
         raise GeometryError('use polygon(), polyline() or from_projected_wkb()')
 
     @classmethod
-    def _from_shape(cls,g,chart,*,limits=None):
+    def _from_shape(cls,g,chart,*,limits=None,_validated=None,_frame_id=None):
         if type(chart) is not SphericalChart:raise GeometryError('SphericalChart required')
-        limits=_limits(limits);_validate_shape(g,limits)
+        limits=_limits(limits);_validate_once(g,limits,_validated)
         xy=shapely.get_coordinates(g)
+        unit=None
         if len(xy):
             unit=chart._unproject(xy)
             # A small rounding allowance applies to re-reading the declared chart,
             # not to moving its horizon or changing any feature coordinates.
             if np.any(unit@np.asarray(chart.centre)<chart.min_cosine*(1-32*np.finfo(float).eps)):
                 raise GeometryError('stored geometry exceeds chart conditioning limit')
+        # A hole-free Polygon has one ring whose coordinates are exactly xy (same
+        # values, same shape), so its unprojection is the array computed above.
+        single=unit is not None and g.geom_type=='Polygon' and not len(g.interiors)
         starts=[];ends=[];areas=[];lengths=[]
         for coords,role in _rings(g):
-            u=chart._unproject(coords)
+            u=unit if single else chart._unproject(coords)
             if len(u)==1:
                 starts.append(u[0]);ends.append(u[0])
             else:
-                for a,b in zip(u[:-1],u[1:]):
-                    theta=2*math.atan2(float(np.linalg.norm(a-b)),float(np.linalg.norm(a+b)))
+                # Elementwise differences/sums per edge are exact either way;
+                # each norm stays one 1-D dot per edge, as np.linalg.norm(v) is
+                # sqrt(v.dot(v)) for a 1-D binary64 vector.
+                dif=u[:-1]-u[1:];tot=u[:-1]+u[1:]
+                for a,b,d,s in zip(u[:-1],u[1:],dif,tot):
+                    theta=2*math.atan2(math.sqrt(d.dot(d)),math.sqrt(s.dot(s)))
                     if theta==0 or theta>=math.pi:
                         raise GeometryError('degenerate or antipodal spherical edge')
                     starts.append(a);ends.append(b);lengths.append(theta)
@@ -179,7 +209,9 @@ class SphericalGeometry:
             raise GeometryError('invalid spherical measure')
         if not math.isfinite((area*chart.sphere.radius_m)*chart.sphere.radius_m) or not math.isfinite(length*chart.sphere.radius_m):
             raise GeometryError('spherical metric exceeds binary64 range')
-        projected=PlanarGeometry._from_shape(g,chart.identity,limits=limits)
+        # g and limits passed _validate_once at the top of this method.
+        frame_id=chart.identity if _frame_id is None else _frame_id
+        projected=PlanarGeometry._from_shape(g,frame_id,limits=limits,_validated=(g,limits))
         obj=object.__new__(cls)
         for key,value in [('chart',chart),('_projected',projected),('_area_sr',area),('_length_rad',length),
                 ('_segments_start',np.asarray(starts,dtype=np.float64).reshape(-1,3).tobytes()),
@@ -202,8 +234,11 @@ class SphericalGeometry:
         with select_budget(budget).reserve(1024*count+16384,category='spherical-build'):
             outer=chart._project(_directions(_vertices(directions,3,ring=True,limits=limits)))
             inner=[chart._project(_directions(_vertices(h,3,ring=True,limits=limits))) for h in holes]
-            planar=PlanarGeometry.polygon(outer,holes=inner,frame_id=chart.identity,limits=limits,budget=budget)
-            return cls._from_shape(planar._geom,chart,limits=limits)
+            frame_id=chart.identity  # the chart is immutable: one identity for both uses
+            planar=PlanarGeometry.polygon(outer,holes=inner,frame_id=frame_id,limits=limits,budget=budget)
+            # polygon() validated this exact shape with these exact limits.
+            return cls._from_shape(planar._geom,chart,limits=limits,_validated=(planar._geom,limits),
+                                   _frame_id=frame_id)
 
     @classmethod
     def polyline(cls,directions,*,chart,limits=None,budget=None):
@@ -212,7 +247,8 @@ class SphericalGeometry:
         with select_budget(budget).reserve(1024*count+16384,category='spherical-build'):
             xy=chart._project(_directions(_vertices(directions,3,ring=False,limits=limits)))
             p=PlanarGeometry.polyline(xy,frame_id=chart.identity,limits=limits,budget=budget)
-            return cls._from_shape(p._geom,chart,limits=limits)
+            # polyline() validated this exact shape with these exact limits.
+            return cls._from_shape(p._geom,chart,limits=limits,_validated=(p._geom,limits))
 
     @classmethod
     def from_projected_wkb(cls,raw,*,chart,limits=None,budget=None):

@@ -110,6 +110,60 @@ establish consistent construction, not realistic continental morphology. Code:
 [starting structure](../../tools/new_world_structure.py); assumptions and material
 references: [initial lithosphere](../NEW_WORLD_STRUCTURE.md).
 
+**A declared successor family (I04.1; not yet wired into New World).** A
+package-owned producer
+([`integration_family.py`](../../src/atlas_tectonics/integration_family.py)) builds
+starting states directly on the shared spherical network
+([I04 starting family](../I04_CAUSAL_START.md#3-the-starting-family-i041)).
+- **Province layout.**
+  - The number of provinces varies, and they have unequal sizes.
+  - Shapes are elongated or lobed, and small fragments occur.
+  - Each outline is a continuous spherical polygon with an exact area, placed
+    without overlap.
+- **The plate layout consumes that structure.** Provinces of the minority crust type
+  anchor plates, and a continent with an inherited suture is split along it.
+- **Exact controls.** The initial plate count and continental fraction hold
+  exactly at the start, with no correction.
+- **Resolution independence.** The sampling resolution changes how finely plates
+  are sampled, not where their boundaries or continents lie.
+- **A safe default range.** A wider range for less Earth-like worlds is available
+  only when explicitly requested, and is recorded in the result.
+- **Labelled prior.** All of this remains an initial-condition prior with origins,
+  not mechanics.
+- **Anchors and sutures.** The largest provinces of the minority crust type anchor
+  plates: continents when continents are the minority. A continent with an inherited
+  suture is split along it only while two plate slots remain.
+- **The route above is unchanged.** It remains the New World recipe until I10
+  connects a successor.
+
+**What the checks establish, and their limits.**
+- **Geometry.** The declared geometry is bitwise identical at two sampling
+  resolutions.
+- **Exact controls.** Plate and continental areas agree within derived rounding
+  bounds, and the requested plate count and fraction hold exactly.
+- **Structure matters.** Changing only the continental fraction moves the plate
+  boundaries, so structure is an actual input.
+- **Diversity.** Initial diversity on development seeds is described, not accepted
+  (case H).
+- **Supported plate counts:** 4 to 52 in v1.
+- **Refusals.** The wide range can refuse when a continent does not fit the fixed
+  shape envelope.
+- **No evolution yet.** No family world is advanced with calculated motion: its
+  three-plate junctions need supplied junction paths.
+- **Inherited weakness now has a consumer (I04.3, candidate).** A declared belt
+  reads the raw weakening history of the rock it crosses, so a weaker inherited
+  zone lets the same force drive faster motion
+  ([belts on the shared network](06-physical-integration.md#belts-that-resist-plate-motion-on-the-shared-network-i043)).
+  The family is not yet that route's input: its controls use authored histories on
+  small fixture worlds.
+
+**Sources.**
+- The New World structure, thermal and seed tools are reproduced exactly and
+  compared bitwise.
+- ASPECT's continental-extension example informs only the separation of inherited
+  weakness from new strain.
+- Method: [I04 starting family](../I04_CAUSAL_START.md#3-the-starting-family-i041).
+
 ## 4. Assign initial temperature without inventing thermal history
 
 **Purpose and data.** Layer thicknesses, conductivity, heat production, boundary
@@ -145,6 +199,20 @@ age map requires an explicit spreading history; distance to the nearest current
 ridge is not a general substitute. This remains a realism gap, not a hidden
 capability of the existing W06 regional history solver.
 
+The I04.1 successor family makes that gap explicit instead of filling it.
+- **Unknown formation age.** Inherited ocean keeps an unknown formation age.
+- **Assumed thermal state.** Its thermal state is a separate, declared assumption:
+  one assumed thermal age per plate's ocean, never a single background age and
+  never a nearest-ridge age.
+- **Dependence is reported.** The family reports how much material rests on
+  assumed histories.
+- **Geotherms applied once.** Continental geotherms are applied once, at the start.
+
+**Temperature now changes resistance (I04.3, candidate).** A belt's strength is
+evaluated from the rock's own temperatures, so a warmer belt creeps more easily and
+the same force drives faster motion. The work the belt dissipates is not yet turned
+into heat: each interval reports a bound on the warming that was left out.
+
 ## 5. Fit initial plate motions to the crust and junctions
 
 **Purpose and data.** Plate geometry, shared geological spans and seeded proposed
@@ -176,6 +244,27 @@ augmented least-squares formulation and changes of anchor. The recorded correcti
 removes anchor-dependent relative motion, but its whole integration receipt is
 now classified historical. Code: [motion fit](../../tools/new_world_motion.py);
 method and evidence scope: [initial motion](../NEW_WORLD_MOTION.md).
+
+**A force balance instead of a fitted speed (I04.2; not yet wired into New World).**
+The [D1 balance on the shared network](06-physical-integration.md#balance-the-plates-of-the-shared-network)
+calculates each plate's rotation from declared forces and resistance:
+- gravitational driving from the same columns that set support;
+- slab pull from a declared slab, or an explicit omission;
+- basal drag.
+
+Speed is an output of those authored inputs; there is no target speed and no fitted
+rotation. Net rotation is reported and never removed. This does not replace the fit
+above until I10 connects it.
+
+**Resistance and feedback at declared belts (I04.3 and I04.4; candidate, not wired
+into New World).** A boundary may be declared to carry a deforming belt of a stated
+width. The belt's rock then resists the plates' relative motion through its own
+creep and yield strength, and that motion weakens the rock in turn. One interval is
+solved at its end, so the motion and the rock's state agree there
+([coupled interval](06-physical-integration.md#couple-motion-and-the-rocks-state-over-one-interval-i044)).
+So far coupled intervals run only on a two-hemisphere world with a sliding
+boundary. On a two-plate world, ridge belts run only the balance at the start of an
+interval, and trench belts refuse even that. New World's starting worlds are not yet supported.
 
 ## 6. Interpret complete boundaries, not just two plate arrows
 

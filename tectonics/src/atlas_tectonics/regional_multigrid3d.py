@@ -36,9 +36,14 @@ import hashlib
 from pathlib import Path
 
 import numpy as np
+import numba
+from numba import njit
 from scipy import sparse
 from scipy.linalg import eig, lstsq
 from scipy.sparse.linalg import splu
+
+if numba.__version__ != '0.65.1' or numba.config.DISABLE_JIT:
+    raise ImportError('3D multigrid requires enabled numba==0.65.1; no fallback')
 
 _LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 # Fixed numerical settings; the caller records them in its plan identity.
@@ -79,11 +84,97 @@ def _grid(shape):
     return np.indices(shape).reshape(3, -1).T
 
 
+# Element-local offsets retain the original lexicographic traversal.
+_LOCAL8 = tuple((a, int(i), int(j), int(k)) for a, (i, j, k) in enumerate(_grid((2, 2, 2))))
+_OFFSETS27 = _grid((3, 3, 3)).astype(np.int64)
+
+
+@njit(nogil=True, fastmath=False, cache=False)
+def _gather27(V, local, offsets):
+    """Copy node-major input directly into the component-major element buffer."""
+    nx, ny, nz = local.shape[2], local.shape[3], local.shape[4]
+    for a in range(27):
+        i, j, k = offsets[a, 0], offsets[a, 1], offsets[a, 2]
+        for x in range(nx):
+            for y in range(ny):
+                for z in range(nz):
+                    local[a, 0, x, y, z] = V[i+2*x, j+2*y, k+2*z, 0]
+                    local[a, 1, x, y, z] = V[i+2*x, j+2*y, k+2*z, 1]
+                    local[a, 2, x, y, z] = V[i+2*x, j+2*y, k+2*z, 2]
+
+
+@njit(nogil=True, fastmath=False, cache=False)
+def _symmetric_stress(G, etaw, pq, with_pressure, S):
+    """Same separate sum, multiplication and pressure subtraction as NumPy."""
+    nq, nc = G.shape[0], G.shape[3]
+    for q in range(nq):
+        for a in range(3):
+            for b in range(3):
+                if with_pressure and a == b:
+                    for e in range(nc):
+                        s = (G[q, a, b, e]+G[q, b, a, e])*etaw[q, e]
+                        S[q, a, b, e] = s-pq[q, e]
+                else:
+                    for e in range(nc):
+                        S[q, a, b, e] = (G[q, a, b, e]+G[q, b, a, e])*etaw[q, e]
+
+
+@njit(nogil=True, fastmath=False, cache=False)
+def _scatter27(values, offsets, out):
+    """Add to node-major output in exactly the original local-node order."""
+    for x in range(out.shape[0]):
+        for y in range(out.shape[1]):
+            for z in range(out.shape[2]):
+                out[x, y, z, 0] = 0.
+                out[x, y, z, 1] = 0.
+                out[x, y, z, 2] = 0.
+    nx, ny, nz = values.shape[2], values.shape[3], values.shape[4]
+    for a in range(27):
+        i, j, k = offsets[a, 0], offsets[a, 1], offsets[a, 2]
+        for x in range(nx):
+            for y in range(ny):
+                for z in range(nz):
+                    for c in range(3):
+                        out[i+2*x, j+2*y, k+2*z, c] += values[a, c, x, y, z]
+
+
+@njit(nogil=True, fastmath=False, cache=False)
+def _chebyshev_step(rhs, y, inverse, residual_scale, direction_scale, direction, x):
+    """Fuse passes without changing the rounding order of any entry."""
+    for t in range(x.shape[0]):
+        r = rhs[t]-y[t]
+        r = inverse[t]*r
+        r = r*residual_scale
+        d = direction[t]*direction_scale
+        d = d+r
+        direction[t] = d
+        x[t] = x[t]+d
+
+
+def _retained_extra_bytes(cells):
+    """Bounds for the retained gradient/gather and CSR transpose additions.
+
+    A pressure node reaches at most five Q2 nodes per axis (three at either
+    boundary), giving 3*prod(5*n+1) entries of B. Each Q1 interpolation row
+    has at most eight entries per component. A coarsening reduces node count
+    by at least 1/4, so the sum of fine grids is bounded by four initial grids;
+    1200 bytes per initial pressure node covers entries and CSR row pointers.
+    Counts assume float64 data and int32 CSR indices, as the admitted mesh does.
+    """
+    cells = tuple(int(n) for n in cells)
+    nc = int(np.prod(cells)); nv = int(np.prod([2*n+1 for n in cells]))
+    nq = int(np.prod([n+1 for n in cells]))
+    buffers = 8*(81*3+8)*nc
+    transposes = 36*int(np.prod([5*n+1 for n in cells]))+12*nv+4+1200*nq
+    return buffers, transposes
+
+
 def projected_bytes(cells):
     """Upper bounds (bytes) admitted before a multigrid plan is built.
 
-    ``structure``: mesh tables, divergence matrix, masks, the Q1 pattern,
-    transfers, viscosity-weighted tables, the Q1 and Galerkin level matrices
+    ``structure``: mesh tables, divergence matrix and its free CSR transpose,
+    masks, the Q1 pattern, transfers and their CSR transposes, retained element
+    buffers, viscosity-weighted tables, the Q1 and Galerkin level matrices
     (at most 27 coupled nodes per row) and the pressure mass. ``work``: the
     Krylov basis (2*restart+1 vectors), element and stencil-plane transients,
     level vectors, the right-hand side and the published result envelope.
@@ -98,6 +189,11 @@ def projected_bytes(cells):
     unknowns = 3*nv+nq+1
     structure = 12*1024**2+111*nv+20059*nq+1984*nc
     work = 56*1024**2+8*unknowns*(2*SETTINGS['restart']+31)+37592*nc+730*nv
+    buffers, transposes = _retained_extra_bytes(cells)
+    structure += buffers+transposes
+    # Conversion can hold the unsliced CSR transpose beside its retained free
+    # rows. Reserve this before allocation, as well as counting retained bytes.
+    work += transposes
     return dict(structure=structure, work=work)
 
 
@@ -216,6 +312,9 @@ class StructuredGeometry:
         self.pattern = {k: tuple(v) for k, v in pattern.items()}
         self.fixed, self.free = fixed, free
         self.B = B
+        # CSR retains the pressure-index summation order of the former CSC
+        # product, while avoiding a full velocity result before free-row gather.
+        self.Bt_free = B.T.tocsr()[free]
         self.weights = np.asarray(mesh.quadrature_weights)
         g = np.asarray(mesh._grad_v)                                       # (q, a, d)
         self.gmat = np.ascontiguousarray(g.transpose(0, 2, 1).reshape(81, 27))
@@ -264,7 +363,8 @@ class StructuredGeometry:
                 break
             nodes = sparse.kron(sparse.kron(lines[0], lines[1]), lines[2], format='csr')
             prolong = sparse.kron(nodes, sparse.identity(3), format='csr')[free_fine][:, free_coarse].tocsr()
-            self.levels.append(dict(shape=coarse_shape, free=free_coarse, prolong=prolong))
+            self.levels.append(dict(shape=coarse_shape, free=free_coarse, prolong=prolong,
+                                    restrict=prolong.T.tocsr()))
             shape, free_fine = coarse_shape, free_coarse
             coords = [c[k] for c, k in zip(coords, keeps)]
         # Pressure-mass pattern (element pressure nodes).
@@ -294,9 +394,9 @@ class StructuredGeometry:
 
     def nbytes(self):
         """Retained bytes, including the (shared) divergence matrix."""
-        levels = sum(_nbytes(level['prolong'], level['free']) for level in self.levels)
+        levels = sum(_nbytes(level['prolong'], level['restrict'], level['free']) for level in self.levels)
         tables = sum(t[2].nbytes+t[1].nbytes for t in self.q2_offsets+self.q1_offsets)
-        return (levels+tables+_nbytes(self.B, self.free1, self.q1_indptr, self.q1_indices, self.q1_entry,
+        return (levels+tables+_nbytes(self.B, self.Bt_free, self.free1, self.q1_indptr, self.q1_indices, self.q1_entry,
                                       self.mass_rows, self.mass_cols, self.gmat, self.gmat_t,
                                       self.kernel_diagonal, self.w))
 
@@ -316,6 +416,8 @@ class MultigridStokes:
         self._etaw_q = np.ascontiguousarray(self._etaw.T)                  # (27, nc)
         self._local = np.empty((27, 3, nx, ny, nz))                        # element buffers
         self._stress = np.empty((27, 3, 3, g.nc))
+        self._gradient = np.empty((81, 3*g.nc))
+        self._pgather = np.empty((8, nx, ny, nz))
         self._rowsum = None
         self.applications = 0
         # The fine level works on full-length vectors held at zero on constrained
@@ -369,10 +471,10 @@ class MultigridStokes:
 
     def structure_bytes(self):
         """Retained non-factor bytes of the geometry and these operators."""
-        smoother = self.smoothers[0][1]
         # The |A| row-sum cache is created on first use; count it now.
         return (self.geometry.nbytes()+_nbytes(self._etaw, self._etaw_q, self._local, self._stress, self._mask,
-                                               smoother, self._mass_matrix, self.Sw)
+                                               self._gradient, self._pgather, self._mass_matrix, self.Sw)
+                + sum(_nbytes(smoother[1]) for smoother in self.smoothers)
                 + 8*3*self.geometry.nv+sum(_nbytes(M) for M in self.matrices))
 
     def levels(self):
@@ -381,15 +483,15 @@ class MultigridStokes:
     # ------------------------------------------------------------ element kernels
     def _gather_p(self, P):
         nx, ny, nz = self.geometry.cells
-        out = np.empty((8, nx, ny, nz))
-        for a, (i, j, k) in enumerate(_grid((2, 2, 2))):
+        out = self._pgather
+        for a, i, j, k in _LOCAL8:
             out[a] = P[i:i+nx, j:j+ny, k:k+nz]
         return out.reshape(8, -1)
 
     def _scatter_p(self, local, P):
         nx, ny, nz = self.geometry.cells
         local = local.reshape(8, nx, ny, nz)
-        for a, (i, j, k) in enumerate(_grid((2, 2, 2))):
+        for a, i, j, k in _LOCAL8:
             P[i:i+nx, j:j+ny, k:k+nz] += local[a]
         return P
 
@@ -398,25 +500,20 @@ class MultigridStokes:
         g = self.geometry
         nc = g.nc
         nx, ny, nz = g.cells
-        # Component-major copies make every element gather/scatter a plain slice.
-        U = np.ascontiguousarray(velocity.reshape(*g.vshape, 3).transpose(3, 0, 1, 2))
         local = self._local
-        for a, (i, j, k) in enumerate(_grid((3, 3, 3))):
-            local[a] = U[:, i:i+2*nx:2, j:j+2*ny:2, k:k+2*nz:2]
-        gradient = (g.gmat@local.reshape(27, 3*nc)).reshape(27, 3, 3, nc)    # q, d, c, e = du_c/dx_d
+        _gather27(velocity.reshape(*g.vshape, 3), local, _OFFSETS27)
+        gradient = np.matmul(g.gmat, local.reshape(27, 3*nc), out=self._gradient).reshape(27, 3, 3, nc)
         stress = self._stress
-        np.add(gradient, gradient.transpose(0, 2, 1, 3), out=stress)
-        stress *= self._etaw_q[:, None, None, :]
         if pressure is not None:
             pq = g.shape_p@self._gather_p(pressure.reshape(g.pshape))       # (q, nc)
             pq *= g.weights[:, None]
-            for axis in range(3):
-                stress[:, axis, axis, :] -= pq
-        values = (g.gmat_t@stress.reshape(81, 3*nc)).reshape(27, 3, nx, ny, nz)
-        result = np.zeros((3, *g.vshape))
-        for a, (i, j, k) in enumerate(_grid((3, 3, 3))):
-            result[:, i:i+2*nx:2, j:j+2*ny:2, k:k+2*nz:2] += values[a]
-        out = result.transpose(1, 2, 3, 0).ravel()
+            _symmetric_stress(gradient, self._etaw_q, pq, True, stress)
+        else:
+            _symmetric_stress(gradient, self._etaw_q, self._etaw_q, False, stress)
+        # Gathered velocities are no longer needed; reuse their element buffer.
+        values = np.matmul(g.gmat_t, stress.reshape(81, 3*nc), out=local.reshape(27, 3*nc)).reshape(27, 3, nx, ny, nz)
+        out = np.empty(3*g.nv)
+        _scatter27(values, _OFFSETS27, out.reshape(*g.vshape, 3))
         if not divergence:
             return out
         div = np.einsum('qdde->qe', gradient)*g.weights[:, None]
@@ -497,7 +594,9 @@ class MultigridStokes:
     # ------------------------------------------------------------ multigrid
     def _apply_fine(self, x):
         """A_ff on a full-length vector that is zero on constrained components."""
-        return self.apply(x)*self._mask
+        y = self.apply(x)
+        y *= self._mask
+        return y
 
     def _chebyshev(self, apply, inverse, mask, cancel):
         n = len(inverse)
@@ -531,12 +630,16 @@ class MultigridStokes:
         theta, delta = (upper+lower)/2, (upper-lower)/2
         sigma = theta/delta
         rho = 1/sigma
-        direction = inverse*(rhs if x is None else rhs-apply(x))/theta
+        if x is None:
+            direction = inverse*rhs
+        else:
+            direction = rhs-apply(x)
+            np.multiply(inverse, direction, out=direction)
+        direction /= theta
         x = direction.copy() if x is None else x+direction
         for _ in range(SETTINGS['chebyshev_degree']-1):
             following = 1/(2*sigma-rho)
-            direction = (following*rho)*direction+(2*following/delta)*(inverse*(rhs-apply(x)))
-            x = x+direction
+            _chebyshev_step(rhs, apply(x), inverse, 2*following/delta, following*rho, direction, x)
             rho = following
         return x
 
@@ -560,7 +663,7 @@ class MultigridStokes:
     def _restrict(self, level, r):
         g = self.geometry
         if level > 0:
-            return g.levels[level-1]['prolong'].T@r
+            return g.levels[level-1]['restrict']@r
         R = r.reshape(*g.vshape, 3)
         for axis in range(3):
             R = np.moveaxis(R, axis, 0)
@@ -609,7 +712,7 @@ class MultigridStokes:
             zp = self.Sw*lam-zs
         else:
             zp = -zs
-        zv = self.vcycle(rv-(g.B.T@zp)[g.free])
+        zv = self.vcycle(rv-g.Bt_free@zp)
         self.applications += 1
         return np.concatenate((zv, zp, [lam])) if gauge else np.concatenate((zv, zp))
 

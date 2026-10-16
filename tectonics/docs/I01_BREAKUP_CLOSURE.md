@@ -590,7 +590,7 @@ binds:
 - the fault2d case (read for its length);
 - the package modules those tools execute;
 - the finite-strain receipt that the tool pins, at its accepted SHA-256. The
-  designated successor for the package-owned code is `i01-finite-strain-r4`,
+  designated successor for the package-owned code is `i01-finite-strain-r6`,
   evidence only once captured, reviewed and listed as current in the
   [evidence register](../../docs/CURRENT_EVIDENCE.md).
 

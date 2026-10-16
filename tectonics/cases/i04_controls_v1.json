@@ -1,0 +1,364 @@
+{
+  "schema": "atlas.i04-controls-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "I04 Part A controls: P0 ports, I04.1 declared starting family, I04.2 D1 on the I03 sphere. Fixed before running; every value is an authored control input or an existing tolerance, not Earth calibration.",
+  "units": {
+    "length": "m",
+    "time": "s_forward_from_epoch",
+    "mass": "kg",
+    "temperature": "K",
+    "torque": "N m",
+    "angular_velocity": "rad/s",
+    "myr_s": 31557600000000.0
+  },
+  "policy": {
+    "algebra_relative": 1e-11,
+    "finest_torque_relative": 0.001,
+    "refinement_ratio_window": [
+      3.8,
+      4.2
+    ],
+    "sinc_error_absolute": 1e-12,
+    "occupancy_relative": 1e-12,
+    "fraction_absolute": 2e-11,
+    "sources": {
+      "algebra_relative": "cases/i01_closures_v1.json control_policy and cases/i01_gpe_v1.json policy (existing)",
+      "finest_torque_relative": "cases/i01_gpe_v1.json policy (existing)",
+      "refinement_ratio_window": "docs/I01_GPE.md refinement window; applies because the trace discretisation has the same order and the same error formula 1 - sin(pi/N)/(pi/N) (decisions proposal C-4)",
+      "sinc_error_absolute": "declared tolerance for this control (tests/test_i01_gpe.py makes the same comparison to 12 places)",
+      "occupancy_relative": "integration_sphere RELATIVE_TOLERANCE, per-face occupancy closure (existing)",
+      "fraction_absolute": "tools/new_world_structure.py realised-fraction check (existing)",
+      "analytic_shapes_only": "rulings A1.4",
+      "per_face_moment_bound": "rulings A1.4; derivation in docs/I04_CAUSAL_START.md R4-1",
+      "c8_area_bound": "rulings B2",
+      "c9_fraction": "rulings B3",
+      "power_closure": "coordinator round-1 and round-2 verification (approved as a declared criterion)"
+    },
+    "analytic_shapes_only": "algebra_relative applies to moment comparisons only for the declared analytic shapes (octant, lunes whose arcs are all shorter than pi, a hemisphere of at least 3 arcs or 4 octants, the 8-octant sphere), each compared as a full matrix",
+    "per_face_moment_bound": "Per-face comparisons on I03 faces use the derived absolute elementwise bound |dS| <= C7(face)/3 + (eps/6)[sum_e (7/cos(theta_e/2) + 1.5/cos^2(theta_e/2) + 4)|b-a| + (n_e + 2) sum_e |b-a|], C7 being I03 _measure_bound (undefined fails closed); vertex perturbations add 3.4 n_e delta and a rotation of S adds 6 eps |S|. The edge part is verified against exact rational arithmetic in test_i04_driving.",
+    "c8_area_bound": "For each plate, |A(L1) - A(L2)| and the continental-area difference are bounded by the range-limited C7_f of every face at both levels (E below 1.1e-4, min(E, 2e-12 mu) up to 2.2e-4, 0 above; undefined fails closed), plus 1e-12 mu_f per face at both levels, plus the boundary term eps R^2 sum_e theta_e (2 + 1/cos(theta_e/2)) for slerp edges up to 120 degrees and the derived, exactly verified term for longer edges built by rotation about unit(s_i - s_j); an edge whose point bound would exceed the 64 eps attachment band refuses by name. Sums use math.fsum.",
+    "c9_fraction": "denominator exact 4 pi R^2; for f > 0.5, f_realised = 1 - minority area/denominator; |f_realised - f| <= 2e-11 + sum_f 1e-12 mu_f/(4 pi R^2)",
+    "power_closure": "closure = |lhs - rhs| / max(|omega . tau_known|, basal + interface + |to mantle| + |omega . M omega_m|) <= algebra_relative (identity ii); approved in round 1: the rounding scale of a summed identity grows with its term magnitudes; introduced after a failing run; round 2 added the omitted mantle-traction power term"
+  },
+  "sphere": {
+    "radius_m": 6371000.0,
+    "frame_id": "i04-control-frame",
+    "epoch_id": "i04-control-epoch"
+  },
+  "gpe_hemispheres": {
+    "source": "Copied unchanged from cases/i01_gpe_v1.json: authored dry two-hemisphere control, h(n)^2 = h0^2 + A n_x, giving an exactly degree-one GPE anomaly. Here the hemispheres are two I03 plates and the equator is one closed boundary record of N edges. The I01 control hard-codes alpha = 0 and a uniform 1000 K; they are recorded here so that the family alpha does not change this control (rulings A4).",
+    "datum": {
+      "pressure_pa": 6474600000,
+      "compensation_elevation_m": -200000,
+      "mantle_density_kg_m3": 3300,
+      "gravity_m_s2": 9.81,
+      "reference_temperature_k": 293.15
+    },
+    "reduction": 1,
+    "drag_pa_s_m": 600000000000000,
+    "mean_crust_m": 35000,
+    "thickness_squared_amplitude_m2": 400000000,
+    "crust_density_kg_m3": 2800,
+    "equator_edges": [
+      32,
+      64,
+      128
+    ],
+    "latitudes_deg": [
+      -60,
+      -30,
+      0,
+      30,
+      60
+    ],
+    "receipt_errors": [
+      0.0016056069643825065,
+      0.0004015468503241527,
+      0.00010039578385705926
+    ],
+    "alpha_per_k": 0.0,
+    "temperature_k": 1000.0
+  },
+  "d1_closures": {
+    "source": "Copied from the retained D1 analytical control (tools/check_i01_closures.py torque_control; cases/i01_closures_v1.json control_parameters.D1). Authored, not Earth calibration.",
+    "radius_m": 6371000.0,
+    "basal_drag_pa_s_m": 625000000000000.0,
+    "interface_k_pa_s": 1e+21,
+    "driving_torque_n_m": [
+      1e+25,
+      -2e+25,
+      3e+25
+    ]
+  },
+  "slab": {
+    "source": "Authored slab-pull control (decisions proposal R4-3): one declared attached slab, labelled test input; C = 1 is the no-reduction upper limit, not a fitted value. The linear challenge moves C from 1 to 0.5, not past its upper limit (rulings P6.4).",
+    "section_mass_anomaly_kg_m": 2000000000000.0,
+    "transmission": 1.0,
+    "transmission_challenge": 0.5
+  },
+  "mantle": {
+    "source": "Authored rigid mantle rotation for the mantle-traction and power controls (labelled test input).",
+    "omega_rad_s": [
+      1e-16,
+      -2e-16,
+      5e-16
+    ]
+  },
+  "water": {
+    "source": "Labelled test water depths for the zero-rigidity (Airy) control only; no D5 producer exists.",
+    "density_kg_m3": 1000.0,
+    "depth_m": 3000.0,
+    "source_label": "test: labelled water depths for the zero-rigidity control (no D5 producer exists)"
+  },
+  "frame_rotation": {
+    "axis": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "angle_rad": 0.713
+  },
+  "family": {
+    "schema": "atlas.i04-starting-family.v1",
+    "resolution_levels": [
+      1,
+      2
+    ],
+    "seed41": {
+      "seed": "00000000000000000000000000000029",
+      "plate_count": 6,
+      "continental_fraction": [
+        0.3,
+        0.4
+      ],
+      "support_level": 1
+    },
+    "development_seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "development_plate_count": 12,
+    "development_continental_fraction": 0.35,
+    "development_support_level": 1,
+    "ranges": [
+      "default",
+      "wide"
+    ],
+    "morphology_scales_m": [
+      100000.0,
+      250000.0,
+      500000.0
+    ],
+    "supported_plate_count": [
+      4,
+      52
+    ],
+    "kind_rule": "F6-prime (supersedes F6): n_a = floor(N s + 1/2) minority sites (s = f, or 1 - f under the swap), clamped to [1, N - 1] when 0 < f < 1; anchors first, then minority-drawn sites; kinds by site crust type: continental|oceanic trench (oceanic-site plate subducting), same type ridge (f = 1/2), mirrored-suture bisector transform",
+    "h_max_m": 150000.0,
+    "floor_k": {
+      "default": 1.0,
+      "wide": 0.5
+    },
+    "rd05_note": "k = 0.5 is aspect ratio 1 (equivalent diameter equals the declared deepest column). Lateral relaxation time over vertical is (pi k/2.405)^2: 0.43 at k = 0.5, 1.71 at k = 1; the centre keeps 1/I0(pi k) of the lateral contrast: 0.58 and 0.18. Every k < 1 province is labelled as one where the 1-D geotherm is not representative even at its centre.",
+    "suture_span_vertices": [
+      16,
+      48
+    ],
+    "suture_span_source": "round-1 ruling: declared scenario prior j - i in [K/4, 3K/4], K = 64, so neither side keeps less than a quarter of the outline (no sliver part)",
+    "suture_sites": "round-1 ruling: the area centroid of the larger side (the union of the province pieces on one side of the suture great circle), and its mirror across that circle (no offset number); round-2 ruling (option 1): both sites take the province crust type, wherever the mirror lands",
+    "minority_sites_evaluation": "floor(N s + 1/2) evaluated exactly with the rational value of the binary64 f, rounding half up, then clamped to [1, N - 1] when 0 < f < 1",
+    "datum_rule": "declared v1 limitation (round 2): families exist only on the 3300 kg/m3 / 293.15 K datum; family_columns requires both mantle_density_kg_m3 and reference_temperature_k to match exactly, else refuses (stale identity, datum_id); never rebuilt; adding a datum to the family request is a later follow-up",
+    "budget_rule": "a request beyond the resource budget refuses by name (LAYOUT_REFUSED, BUDGET_EXCEEDED)",
+    "containment_prefilter_margin": "1e-12: a conservative float prefilter that decides nothing; exact integer signs decide",
+    "review_worlds": {
+      "long_edge_worlds": "N = 4, seeds 1-8, f = 0.02 and 0.35, both ranges, level 1 (at least one with a rotation-built edge over 160 degrees is required)",
+      "size_worlds": "N = 52 (two worlds), N = 30 at f = 0.6, N = 12 at f = 0.65 (two worlds)",
+      "source": "declared fixed lists in tests/test_i04_family.py (LONG_EDGE_WORLDS, SIZE_WORLDS); not outcome-selected"
+    }
+  },
+  "rulings": "Coordinator rulings of 3 October 2026 on the I04a decisions proposal: approved with conditions; the boundary-kind rule replaced by F6 and then by F6-prime with its addendum. The conditions are written here and in docs/I04_CAUSAL_START.md and docs/I04_I05_PORTS.md before any approval-dependent run.",
+  "mantle_density_rule": {
+    "source": "rulings P6.1: no density jump at the base of the lithosphere",
+    "datum_mantle_density_kg_m3": 3300.0,
+    "reference_temperature_k": 293.15,
+    "base_temperature_k": 1573.15,
+    "alpha_per_k": 3e-05,
+    "lithospheric_mantle_reference_density": "derived: rho_m/(1 - alpha (T_base - T_ref)) = 3431.78 kg/m3",
+    "alpha_label": "scenario assumption; the library has no admissible instantaneous expansivity (inherited citation: cases/i01_transitions_v1.json attributes alpha = 3e-5 to Clennett et al. 2023 Table S1)"
+  },
+  "part_b": {
+    "scope": "I04b: I04.3 D2 reduced belts on the I03 sphere and I04.4 the first property/motion feedback, with the stage-finish controls. Fixed on 4 October 2026 after the coordinator's rulings and before any dependent control ran; sizing probes (one belt balance, kernel support) ran first and are recorded here.",
+    "rulings": "claude-i04b-strength-feedback-20261004-decisions-rulings.md (approved with conditions; 4, 7 and 12 replaced; mid-build ruling of 4 October 2026: a declared one-sided belt, Belt.side)",
+    "labels": {
+      "thin_sheet": "thin-sheet validity not established (I01_WEAKENING §8); reduced-model numerical claim only",
+      "every_belt_result_reports": [
+        "w/H",
+        "width_2sigma/H (closures metric)",
+        "within-belt GPE omission ratio",
+        "c range",
+        "beta range and its derived tolerance"
+      ],
+      "exactness_claimed_only_at_c": [
+        -1,
+        0,
+        1
+      ],
+      "end_member_band_for_labels_only": "64 eps (I03 attachment band)",
+      "one_sided": "declared one-sided shear-zone placement (I03 cannot carry history in sheared non-carrier rows): a modelling choice forced by the representation, not a physical finding"
+    },
+    "inputs": {
+      "column": "I01 weakening case layers (cases/i01_weakening_v1.json), sublayers 2/2/1/5 of 10 km, one I03 phase",
+      "single_layer_oracle_column": "the case's upper-crust wet quartzite, one 20 km sublayer at 453 K (creep negligible)",
+      "belt_width_m": 100000.0,
+      "belt_width_source": "I01 motion-coupling control's authored width",
+      "d2_length_m": 5000.0,
+      "d2_length_source": "I01 contract D2 length",
+      "yield_convention": "atlas.i01-plane-strain-drucker-prager.v1",
+      "gauss_order_per_layer": 8,
+      "depth_control_orders": [
+        8,
+        16
+      ],
+      "inherited_kappa": 1.5,
+      "inherited_kappa_reason": "inside the weakening interval [1, 3] from the start",
+      "basal_drag_pa_s_m": 625000000000000.0,
+      "authored_torque_n_m": 1e+28,
+      "torque_axis": "world axis, north plate",
+      "torque_reason": "sizing probe: at 3e27 the belt nearly locks and its rates leave the kernel's support (refused by name); 1e28 gives about 60-90 mm/yr relative motion",
+      "interval_myr": 0.1,
+      "omitted_terms": [
+        "gpe",
+        "slab_pull",
+        "mantle_traction"
+      ],
+      "heat_rule": "atlas.i04-dissipation-not-heated.v1",
+      "belt_side": "'both' (w/2 each side) for single-balance and single-interval controls; 'right' (the carrier, south) for the multi-interval controls (time refinement, reopen parity)"
+    },
+    "fixtures": {
+      "twin": "twin hemispheres, equatorial transform carried by the south plate, 12 x 30 deg longitudes, latitudes -60, -30, 30, 60 plus the belt rows at +-w/2R (rows 1, 2, 4, 8 per side for refinement)",
+      "lune": "I03 lune world (sector8): ridge m00 and trench m04, the plate opening the ridge driven",
+      "lune_zigzag": "lune_world(zigzag_deg=4): an oblique zigzag ridge (segments about +-11 deg); D1/D2 at the interval start only (coupled intervals refuse: see predeclared_refusals); it does not meet the staircase finish rule",
+      "staircase": "UNMET finish rule: no I03-supported ridge-transform staircase exists; owner decision",
+      "twin_one_sided": "the twin world with rows at -w/2R and -w/R on the carrier (south) side as well: the one-sided belt y in [0, w] lies in two carrier rows that move with the trace"
+    },
+    "tolerances": {
+      "kernel_rate": 2e-11,
+      "belt_resultant_on_s": 2e-11,
+      "inner_torque_residual": 1e-10,
+      "inner_omega_increment_or_condition": "relative increment <= 1e-10, or cond(M+J) 1e-10 <= 1e-9",
+      "power_closure": "derived per balance: inner residual + belt U residual + kernel partition 4e-11",
+      "outer_relative": 1e-08,
+      "outer_cap": 40,
+      "outer_stop_contracting": "two consecutive increases of the outer change after iterate 2",
+      "beta": "per face: (1/cos h - 1) + sum over the face's edges of L R x (the edge's great-circle excess beyond its endpoints' distance from the trace) / A + 1e-12 (I03 relative area tolerance); h = w/2R for 'both' and w/R one-sided. Re-derived on 4 October 2026 (geometry only: a row edge's curvature between its endpoints) after a 1.15% bulge of a south row inside the one-sided belt was found while checking that case, before any criterion test ran; the first form counted only the excess beyond w/2",
+      "small_strain_cumulative": 0.05,
+      "increment_bound": "0 <= dkappa <= sum (dy L/A) 2 dt e_k (1 + 2e-11)",
+      "frame_invariance": "omega and increments within cond(M+J) x 1e-10 + 2e-11 (the solve hierarchy)",
+      "p9_swap": "omega_swap = omega* - M^-1 r(omega*) to 1e-11; P9 torques = belt term to 1e-11; belt dissipation = -sum omega*.tau_regional to 1e-11",
+      "mesh_refinement": 0.03,
+      "mesh_refinement_source": "cases/i01_closures_v1.json d2_mesh_relative",
+      "time_step_halving": 0.03,
+      "time_step_halving_source": "D2 feasibility time_relative (fault2d, closures)",
+      "oracle_order_window": [
+        0.8,
+        1.2
+      ],
+      "oracle_order_source": "I01's +-0.2 transferred additively to order 1",
+      "coupling_resolution_factor": 10,
+      "coupling_resolution_source": "I01 coupling_resolution_factor",
+      "length_sensitivity_m": 50,
+      "length_sensitivity_source": "check_i01_closures: ell 2500 vs 5000 changes width > 50 m",
+      "depth_order_change": 0.003,
+      "depth_order_source": "I01 weakening layered control (force)"
+    },
+    "controls": {
+      "case_a": [
+        "zero forcing gives omega 0, zero increments and zero dissipation exactly",
+        "a tilted copy of the twin world (frame rotation) gives the rotated omega and the same increments within the frame_invariance tolerance"
+      ],
+      "case_b_direction": [
+        "cohesion x2: slower relative motion",
+        "belt +100 K: faster",
+        "inherited kappa 2.5 against 1.5: faster",
+        "torque x2: faster and a larger plastic share"
+      ],
+      "case_b_length": [
+        "rows 2, 4, 8 with a smooth inherited weakness kappa0(y) = 1.5 + exp(-(y/20 km)^2) (per row cohort at its centre): one coupled interval; the change between rows 4 and 8 <= 0.03 on peak resultant, relative speed, kappa gain and width_2sigma (reduced-model convergence only)",
+        "ell 2500 against 5000 m with cells < 2500 m: the increment profile's width_2sigma differs by > 50 m, wider for the larger ell",
+        "w against 2w: reported as dependence on an authored assumption, not acceptance"
+      ],
+      "case_b_resolved_refinement": {
+        "declared": "4 October 2026, before either successor run; a separate resolved successor to the retained failed 4-to-8-row control, not retrospective acceptance of that result",
+        "rows_per_side": [42, 84],
+        "selection_rule": "I01 requires max actual cross-belt cell length / ell <= 0.25. With unchanged 12 longitude sectors, a great-circle latitude edge bulges by at most sec(15 degrees); ceil((100000 / 2) / (0.25 * 5000) / cos(15 degrees)) = 42 rows per side. The second grid halves the nominal spacing. Actual cell lengths are checked on both start and endpoint belts.",
+        "unchanged": "the complete twin-world coupled_interval, 12 sectors, layered I01 column and depth order, Gaussian kappa0(y) = 1.5 + exp(-(y/20 km)^2) sampled at row centres, ell = 5000 m, width = 100000 m, torque, basal drag, 0.1 Myr interval, all solver tolerances and iteration caps",
+        "criteria": {
+          "max_cell_over_length": 0.25,
+          "relative_change_bound": 0.03,
+          "quantities": ["peak_resultant_n_m", "v_rel_mm_yr", "max_dkappa", "raw_kappa_width_2sigma_m"]
+        },
+        "scope": "One actual coupled interval on each grid; reduced-model numerical convergence only. No physical belt-width, non-aligned-mesh, multi-interval or whole-I04 acceptance follows. Increment localisation width is also reported, not gated. The failed coarse expected-failure test remains unchanged."
+      },
+      "orientation": "claimed only for the aligned belt (latitude rows, beta within tol); withdrawn on non-aligned production meshes (no exact piece-strip overlap deposit is implemented)",
+      "time_oracle": "the axisymmetric twin world with a uniform one-sided carrier belt of ONE row (one cell per line, the latitude row from -w/R to the equator) and the single-layer column; T = 0.2 Myr at N = 4, 8, 16. Errors of the kappa gain and the cumulative relative rotation against a DOP853 oracle (rtol 1e-10, atol 1e-14) of the same reduced ODE (the row kappa and the relative rotation; omega algebraic; the right-hand side is the package's start-of-state balance) at N, 2N, 4N; observed orders in [0.8, 1.2]; every oracle evaluation must keep every point yielding. Sizing probe (recorded before this run): rate 1.096e-13 /s at kappa0 = 1.5, lambda = 6.74e-15 /s, |lambda| dt = 0.011 at N = 4; DOP853 182 evaluations, all yielding, kappa in [1.5, 2.207] (inside [1, 3]); beta 0.977.",
+      "time_coupled": "the layered twin transform with the one-sided carrier belt over T = 0.4 Myr with N = 4, 8, 16: orders reported, not gated; step-halving change between 8 and 16 <= 0.03 on the peak kappa gain, the cumulative relative rotation and the final relative speed; the feedback effect (final minus start relative speed) >= 10 x its own step-halving change; iteration error estimate / time difference <= 1e-3",
+      "reopen_parity": "the twin transform with the one-sided carrier belt on an I02 ledger: 2 intervals, save, a fresh process reopens and continues 2 more; equal to the uninterrupted 4 field by field and on the head record sha256; every driving record replays",
+      "provenance": [
+        "a found record is only 'recorded, not replayed' until verify_driving replays it",
+        "a forged driving record committed through the plain ledger path refuses"
+      ],
+      "nonconvergence": "a forced outer cap of 1 refuses with byte-level non-commit (head, store, accounts, budget)",
+      "p9_swap": "the belt replaced by its own P9 tractions as regional reactions, checked algebraically",
+      "non_symmetric": "a tilted relative pole with an oblique belt (0 < |c| < 1): exact-tangent Newton converges and the tangent is non-symmetric",
+      "fv_cell_mean": "one coupled-balance evaluation with GPE on the I05a 's00-merged' face records its trace indices",
+      "events": "no event is admitted; template events, ridge jump, polarity reversal, slab breakoff and collision refuse by name; a fully yielded belt edits no network; a BROKEN belt cohort refuses",
+      "refusals": [
+        "re-crossing trace",
+        "depth below a crossed column",
+        "beta > 1 + tol",
+        "missed face",
+        "yield convention",
+        "U = 0 exact zero",
+        "P5 binding fields",
+        "template history splits"
+      ],
+      "side_disclosure": "required, not gated: on the one-sided twin mesh, one interval with 'both' and with side = carrier, reporting S, omega, v_rel and the maximum dkappa for each and their differences",
+      "w_disclosure": "w against 2w on the twin transform ('both'), one interval each: S, v_rel, max dkappa reported",
+      "axis_tilt": "every coupled interval records |omega_xy|/|omega|; on the twin transform it must stay within the I03 transform band (64 eps)",
+      "time_oracle_first_attempt": "AMENDMENT RECORD (4 October 2026, after the first controls run): the first oracle fixture had two belt rows (rows at -w/2R and -w/R). Its sizing probe checked yielding only at t = 0. In the run, the rows weakened at different rates (deposit coverage and smoothing differ), the weaker row localised the shear, and at t = 4.3e12 s (kappa about 2.00 and 1.96) the stronger row left yield; with creep negligible at 453 K its rate fell below the column kernel's support and the oracle's right-hand side refused 'unsupported' (kernel solve did not converge). That fixture violated ruling C3(1)'s precondition (no Gauss point changes yield state over [0, T]), so it measured nothing. It is replaced by the uniform one-row belt the ruling names (a uniform single-layer belt column cannot localise); T, N and the [0.8, 1.2] window are unchanged."
+    },
+    "predeclared_refusals": [
+      "normal (ridge/trench) belts in multi-interval feedback: the cumulative 0.05 guard or 'unresolved column'",
+      "convergent belts with the I01 weakening-case dry olivine: the inherited bracket monotonicity check (c = -1)",
+      "three_plates with belts: the uncarried B|C transform once D1 drags B and C unequally",
+      "a locked belt whose rates fall below the column kernel's support: refused by name",
+      "the symmetric belt ('both') on the twin transform at interval 2: 'unresolved column' (the non-carrier rows shear every interval because the trace moves with the carrier; partial rows then mix sub-cohorts with different kappa); found at the interval-2 feasibility check the rulings required, before any control ran",
+      "ridge belts (lune m00 and the zigzag) at the first coupled interval: 'unresolved belt' (beta = 1.0115 on a birth strip whose width varies along strike, so the midpoint-line deposit aliases); found in the fixture feasibility probe before any control ran. The exact piece-strip overlap deposit is not implemented, so it stands",
+      "the lune trench belt (c = -1) at the start balance: the inherited bracket check ('unsupported', creep not monotone in stress under the compressive pressure closure), as predeclared for convergent belts"
+    ],
+    "does_not_establish": [
+      "thin-sheet validity of the belt (w/H = 1 here)",
+      "a physical belt width",
+      "orientation independence on non-aligned meshes",
+      "realistic plate motions",
+      "generated events",
+      "I09 coupled convergence",
+      "heat from dissipation"
+    ],
+    "round1_amendments": {
+      "date": "4 October 2026, after the coordinator's round-1 verification; no criterion is changed",
+      "time_coupled_stiffness": "RECORDED AFTER THE RUN, not predeclared: lambda = 2.12e-14 /s is a uniform-kappa0 sensitivity (d of the largest increment rate by d kappa0 of the whole belt cohort, one-sided layered twin at kappa0 = 1.5, central difference 1e-3), giving |lambda| dt = 0.067 at N = 4, 0.033 at N = 8 and 0.017 at N = 16. It is not the coupled map's contraction factor: the observed outer contraction in the coupling histories rises to rho = 0.172 at N = 4 (about 2.6 |lambda| dt; the localising, nonlocal mode), still inside the 0.5 region. The handoff's earlier '0.08 at N = 4, measured before the run' was the first (two-row) oracle fixture's value, misattributed to this control",
+      "case_b_direction_plastic_share": "FAILED (0.676 against 0.702) and stays recorded; the expectation is withdrawn as an authored error (ruling b1). Measured by the coordinator's review: about -0.011 from the stress exponents (creep work grows as U^(1+1/n) at fixed history while the plastic layers' stress rises less: a factor of 1.38 against 1.45 for the creep layers at 4.5 times the speed) and about -0.014 from the localised weakening during the faster interval; the split depends on the path taken (43/57 or 22/78). I01 section 7 does not imply the expectation. The test is kept unchanged as an expected failure",
+      "case_b_refinement_peak_increment": "FAILED at 4 to 8 rows (7.8% against 3%) and stays recorded (ruling b2; not re-gated). Information only, the coordinator's 16-row run: 0.316000, 1.82% from 8 to 16, difference ratios 3.55 and 4.20, Richardson 0.3178. Causes: the inherited kappa0 is sampled at row centres (its peak moves 2.8% from 4 to 8 rows), and the cells are coarser than ell (h/ell = 5, 2.5, 1.25 at 2, 4, 8 rows) whereas I01's 0.03 was set for h/ell <= 0.25. A future refinement control should be predeclared at h/ell <= 0.25. The test is kept unchanged as an expected failure",
+      "width_names": "width_2sigma in the report and the refinement criterion is the raw-history width (inherited profile plus the interval's increment): mostly the authored input. The localisation width of the interval's increment is now reported (not gated) as increment_width_2sigma_m",
+      "iteration_error": "the a-posteriori error is reported for the committed iterate, delta/(1 - rho) (it was delta rho/(1 - rho), the bound for the next iterate), and the iteration/time check covers N = 8 and N = 16",
+      "u_support_floor": "declared: the column kernel's rate support sets a floor on the belt's relative speed; the layered belt refuses below about 0.06 mm/yr and the single-layer belt below about 6.3 mm/yr (coordinator's review)"
+    }
+  }
+}

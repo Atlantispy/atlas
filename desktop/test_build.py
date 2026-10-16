@@ -11,6 +11,18 @@ SPEC.loader.exec_module(build)
 
 
 class BuildTests(unittest.TestCase):
+    def test_release_marker_is_explicit_exclusive_and_lf(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'tectonics').mkdir()
+            build.release_marker(root)
+            marker = root / 'tectonics' / '.desktop-runtime.json'
+            self.assertEqual(json.loads(marker.read_bytes()),
+                {'schema': 'atlas.desktop-runtime.v1', 'identity_mode': 'release'})
+            self.assertNotIn(b'\r', marker.read_bytes())
+            with self.assertRaises(FileExistsError):
+                build.release_marker(root)
+
     def test_copy_preserves_scientific_source_bytes_and_refuses_overwrite(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

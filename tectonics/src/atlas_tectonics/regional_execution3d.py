@@ -274,7 +274,7 @@ class PreparedRegionalStokes3D:
                 if hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() != module._LOADED_SOURCE_SHA256:
                     raise TectonicsError('3D source changed since import; restart the process')
             self._tokens = tuple(_local_tokens(m) for m in self._modules)
-            self._context = ExecutionContext('scipy')
+            self._context = ExecutionContext('numba' if method == 'multigrid' else 'scipy')
             self._context_id = self._context.identity
             dimension = _factored_scale(np.asarray(lengths), (), (scales.length_m,), 'scaled box')
             key = (tuple(cells), tuple(float(x) for x in dimension),

@@ -266,8 +266,9 @@ class Motion:
     destination of every consuming trench. ``mesh`` optionally replaces the sampling faces after the motion.
     ``events`` holds the supplied topology events committed at the end of the interval, after the motion and any mesh
     change (I03.4, integration_events). ``regional_returns`` holds regional returns (integration_bridges.carried), applied at
-    the end of the interval after any mesh change and before the events. The proposal is committed only by the commit
-    spanning exactly its interval, on the accepted state at ``start_step``.
+    the end of the interval after any mesh change and before the events. ``history_splits`` holds history splits
+    (integration_splits.HistorySplit, I05-2), applied last, on the endpoint material. The proposal is committed only by
+    the commit spanning exactly its interval, on the accepted state at ``start_step``.
     """
     start_step: int
     end_step: int
@@ -278,6 +279,7 @@ class Motion:
     events: tuple = ()
     regional_returns: tuple = ()
     junction_paths: tuple = ()
+    history_splits: tuple = ()
     motion_id: str = field(init=False)
 
     def __post_init__(self):
@@ -338,6 +340,16 @@ class Motion:
         if len({p.junction_id for p in paths}) != len(paths) or len({p.reference_plate_id for p in paths}) > 1:
             raise LedgerError('junction paths are unique and share one common reference plate')
         object.__setattr__(self, 'junction_paths', paths)
+        if type(self.history_splits) not in (tuple, list):
+            raise LedgerError('history splits are a sequence of HistorySplit records')
+        if self.history_splits:
+            from . import integration_splits as _splits
+            try:
+                object.__setattr__(self, 'history_splits', _splits.checked(self.history_splits))
+            except _splits.SplitRefused as exc:
+                raise LedgerError(str(exc)) from exc
+        else:
+            object.__setattr__(self, 'history_splits', ())
         object.__setattr__(self, 'motion_id', hashlib.sha256(_json(self._declared())).hexdigest())
 
     def _declared(self):
@@ -353,6 +365,8 @@ class Motion:
         if self.junction_paths:
             declared['path_interpolation'] = _paths.CONVENTION
             declared['junction_paths'] = [path.record() for path in self.junction_paths]
+        if self.history_splits:            # recorded only when present, like events
+            declared['history_splits'] = [split.record() for split in self.history_splits]
         return declared
 
     def record(self):
@@ -381,10 +395,14 @@ def _motion(record):
         if 'regional_returns' in record:
             from . import integration_bridges as _bridges
             returns = tuple(_bridges.RegionalReturn.from_record(row) for row in record['regional_returns'])
+        splits = ()
+        if 'history_splits' in record:
+            from . import integration_splits as _splits
+            splits = tuple(_splits.HistorySplit.from_record(row) for row in record['history_splits'])
         motion = Motion(record['start_step'], record['end_step'],
                         tuple((plate, _restore_rotation(tuple(q))) for plate, q in record['rotations']), supplies,
                         sinks, mesh, events, returns,
-                        tuple(JunctionPath.from_record(row) for row in record.get('junction_paths', ())))
+                        tuple(JunctionPath.from_record(row) for row in record.get('junction_paths', ())), splits)
     except (KeyError, TypeError, ValueError, TectonicsError) as exc:
         raise LedgerError('the stored motion record is incomplete') from exc
     if _json(motion.record()) != _json(dict(record)):
@@ -568,10 +586,11 @@ def _moved(network, motion, cancel, limits=None, budget=None):
     frames_old = dict(layout.frames, **{}) | {(RIDGE, b): r for b, r in layout.ridges}
     frames_new = dict(frames) | ridge_frame
     seam_targets = _trench_material_seams(network, rule, carried, lookup, uses, cancel)
+    seam_targets.update(_transform_material_seams(network, rule, carried, lookup, uses, cancel))
     target, attached = {}, set()
     copies, corner, junctions, worst, pulled, sunk = {}, {}, [], 0., set(), set()
     advance, slides, placed_at, shared = {}, {}, {}, {}
-    transient, trench_corners = [], []
+    transient, trench_corners, transform_corners = [], [], []
     carrier_reshapes = set()
 
     def placement(name, index):
@@ -628,7 +647,7 @@ def _moved(network, motion, cancel, limits=None, budget=None):
             if name in seam_targets and plate == seam_targets[name][1]:
                 # Only a subdivision of this carrier's same straight edge moves. Its polygon and material do not.
                 continue
-            if name in advance and plate == advance[name][0]:
+            if name in advance and plate == advance[name][0] and len(advance[name][1]) > 1:
                 # The plate that carries the through line: its faces ride, and it keeps its old corner where it
                 # was, a vertex of the record behind; the junction slides along its edge to the new point.
                 if away <= ATTACHMENT_BAND_RAD:
@@ -660,14 +679,26 @@ def _moved(network, motion, cancel, limits=None, budget=None):
             # the trace are sheared and remapped among themselves (C6 has checked that the slip is along the trace).
             sliding = any(rule[b.boundary_id][0] == TRANSFORM and plate == (
                 b.left_plate_id if b.carrier_side == 'right' else b.right_plate_id) for b in mine)
-            if (sliding and not sinking and away > ATTACHMENT_BAND_RAD
-                    and any(rule[b.boundary_id][0] == RIDGE for b in mine)):
-                # Its old corner, between its new strip and its old crust, would have to slide along the line with
-                # it as a vertex of the line: option D1-c, deferred by the coordinator (3 October 2026). This holds
-                # whether or not the junction advances: pulled to it, the corner would leave its opening unbooked.
-                raise TransferRefused('plate %r opens a ridge at junction %r while it slides along the line there: its '
-                                      'old corner would have to slide along the line as a vertex of it (option D1-c, '
-                                      'deferred); refused' % (plate, name))
+            if (not sinking and away > ATTACHMENT_BAND_RAD
+                    and any(rule[b.boundary_id][0] == RIDGE for b in mine)
+                    and any(rule[b.boundary_id][0] == TRANSFORM for b in mine)):
+                ridges_here = [b for b in mine if rule[b.boundary_id][0] == RIDGE]
+                transforms_here = [b for b in mine if rule[b.boundary_id][0] == TRANSFORM]
+                if (len(ridges_here) != 1 or len(transforms_here) != 1 or name not in at_junction
+                        or len(at_junction[name].boundary_ends) != 2):
+                    raise TransferRefused('D1-c currently needs exactly one ridge and one slip-parallel transform '
+                                          'at a two-record corner; other material-seam construction remains refused')
+                transform = transforms_here[0]
+                # Keep inherited crust at its own carried corner. The ridge strip, not a transform source,
+                # fills the opening to J'. The corner may lie inside the active transform or behind its end.
+                copy = '%s|%s|%d' % (name, plate, motion.end_step)
+                if copy in used or len(copy) > 256:
+                    raise TransferRefused('the derived D1-c vertex identity is reserved or too long')
+                used.add(copy)
+                copies[copy] = (plate, network._local[order[plate]][index])
+                corner[name, plate] = copy
+                transform_corners.append((transform.boundary_id, name, copy))
+                continue
             if (sinking and away > ATTACHMENT_BAND_RAD
                     and any(rule[b.boundary_id][0] == RIDGE for b in mine)):
                 ridges_here = [b for b in mine if rule[b.boundary_id][0] == RIDGE]
@@ -798,7 +829,7 @@ def _moved(network, motion, cancel, limits=None, budget=None):
             original = _turned(rule[boundary.boundary_id][1], points[[lookup[a], lookup[b]]])
             if (float(_angle(target[a], target[b])) <= ATTACHMENT_BAND_RAD or
                     float(np.cross(target[a], target[b]) @ np.cross(original[0], original[1])) <= 0):
-                raise TransferRefused('a moving trench material seam would collide with or pass its neighbour; refused')
+                raise TransferRefused('a moving boundary material seam would collide with or pass its neighbour; refused')
 
     def coords(plate, name):
         """Where ``name`` is at the end of the interval, in ``plate``'s reference frame."""
@@ -924,6 +955,66 @@ def _moved(network, motion, cancel, limits=None, budget=None):
         extension = (copy, *retained)
         chains[behind_id] = (chain[:-1]+extension+(name,)) if behind_role == 'end' else (
             (name,)+extension[::-1]+chain[1:])
+    # A ridge/transform corner has no physical record behind it. Its two old material corners remain, but only
+    # those inside the active trace subdivide the transform. Shared face edges also retain the outside corner,
+    # with J' inserted where the newborn ridge strip meets its same-plate neighbour.
+    trace_subdivisions = []
+    for boundary_id in sorted({row[0] for row in transform_corners}):
+        boundary = record[boundary_id]
+        carrier = _sphere._carrier(boundary)
+        chain = chains.get(boundary_id, boundary.vertex_ids)
+        line = [_turned(frames_new[carrier], coords(carrier, vertex))[0] for vertex in chain]
+        pole = _line_pole(line)
+        if pole is None:
+            raise TransferRefused('D1-c requires one great-circle transform trace')
+        candidates = set(chain)
+        candidates.update(vertex for bid, name, copy in transform_corners if bid == boundary_id
+                          for vertex in (name, copy))
+        locations = {vertex: _turned(frames_new[carrier], coords(carrier, vertex))[0] for vertex in candidates}
+        if any(abs(float(point @ pole)) > ATTACHMENT_BAND_RAD for point in locations.values()):
+            raise TransferRefused('D1-c old material corner leaves the slip-parallel transform')
+        pairs = sorted(locations)
+        if any(float(_angle(locations[a], locations[b])) <= ATTACHMENT_BAND_RAD
+               for i, a in enumerate(pairs) for b in pairs[i+1:]):
+            raise TransferRefused('D1-c material corners collide with another trace vertex; refused')
+
+        def subdivided(ids, plate, pole, locations, closed=True):
+            out = []
+            edges = zip(ids, ids[1:]+ids[:1]) if closed else zip(ids[:-1], ids[1:])
+            for a, b in edges:
+                pa = _turned(frames_new[plate], coords(plate, a))[0]
+                pb = _turned(frames_new[plate], coords(plate, b))[0]
+                out.append(a)
+                if max(abs(float(pa @ pole)), abs(float(pb @ pole))) > ATTACHMENT_BAND_RAD:
+                    continue
+                normal = _pole(pa, pb)
+                between = [(float(_angle(pa, point)), vertex) for vertex, point in locations.items()
+                           if vertex not in (a, b) and float(np.cross(pa, point) @ normal) > 0
+                           and float(np.cross(point, pb) @ normal) > 0]
+                out.extend(vertex for _, vertex in sorted(between))
+            if not closed:
+                out.append(ids[-1])
+            return tuple(out)
+
+        chains[boundary_id] = subdivided(chain, carrier, pole, locations, False)
+        for bid, _, copy in transform_corners:
+            if bid != boundary_id or copy not in chains[boundary_id]:
+                continue
+            owner, local = copies[copy]
+            if owner != carrier:
+                shared[copy, owner] = local
+                copies[copy] = (carrier, _turned(back[carrier], locations[copy])[0])
+        for k, face in enumerate(faces):
+            if face.plate_id not in (boundary.left_plate_id, boundary.right_plate_id):
+                continue
+            rings = tuple(subdivided(ring, face.plate_id, pole, locations)
+                          for ring in (face.vertex_ids, *face.holes))
+            if rings != (face.vertex_ids, *face.holes):
+                faces[k] = Face(face.face_id, face.plate_id, rings[0], rings[1:], face.block_id)
+                if (face.face_id, face.plate_id) not in deformed:
+                    deformed.append((face.face_id, face.plate_id))
+                    reshaped.append(face.face_id)
+        trace_subdivisions.append((boundary.left_plate_id, boundary.right_plate_id, pole, locations))
     # The surviving old material ends at X; the new ridge strip fills X--J'. The overriding face uses the same
     # trench vertex. The original swept quadrilateral already includes the transient triangle exactly once.
     for boundary_id, role, copy, name, neighbour, keeper in trench_corners:
@@ -998,6 +1089,9 @@ def _moved(network, motion, cancel, limits=None, budget=None):
                     for (copy, junction), passed in traversed_edges.items():
                         if _adjacent(ids, copy, junction) is not None:
                             ids = _between_many(ids, copy, junction, passed)
+                    for left, right, pole, locations in trace_subdivisions:
+                        if plate in (left, right):
+                            ids = subdivided(ids, plate, pole, locations)
                     face_id = '%s|%s|%d|%04d' % (boundary.boundary_id, side, motion.end_step, k)
                     if face_id in taken or len(face_id) > 256:
                         raise TransferRefused('the derived face identity %r is reserved or too long' % face_id)
@@ -1081,6 +1175,38 @@ def _pole(a, b):
 def _line_pole(trace):
     """The pole of a trace that is one great circle, or None where it bends (integration_sphere._trace_pole)."""
     return _sphere._trace_pole(trace)
+
+
+def _transform_material_seams(network, rule, carried, lookup, uses, cancel):
+    """A far-side material seam on a straight transform rides with that plate; its carrier only changes an edge
+    subdivision. C6 already bounds total slip against the declared great circle. Seam/vertex crossing remains
+    refused by the common ordering check; no strip, source, sink or new material is introduced here."""
+    incident = {name: [] for name in uses}
+    for face in network.faces:
+        for ring in (face.vertex_ids, *face.holes):
+            for k, name in enumerate(ring):
+                if name in incident:
+                    incident[name].append((face, ring[k-1], ring[(k+1) % len(ring)]))
+    result = {}
+    for name, records in sorted(uses.items()):
+        _check_cancel(cancel)
+        if len(records) != 1 or rule[records[0].boundary_id][0] != TRANSFORM:
+            continue
+        boundary = records[0]
+        if not boundary.closed and name in (boundary.vertex_ids[0], boundary.vertex_ids[-1]):
+            continue
+        carrier = _sphere._carrier(boundary)
+        far = boundary.left_plate_id if boundary.right_plate_id == carrier else boundary.right_plate_id
+        near = [row for row in incident[name] if row[0].plate_id == carrier]
+        away = [row for row in incident[name] if row[0].plate_id == far]
+        if len(near) != 1 or len(away) != 2 or len(incident[name]) != 3:
+            continue
+        if len(set(away[0][1:]) & set(away[1][1:])) != 1:
+            continue
+        if (boundary.boundary_id, 'trace') not in dict(network._layout.poles):
+            raise TransferRefused('D1-c material seams require one great-circle transform trace')
+        result[name] = (carried[far][lookup[name]], carrier)
+    return result
 
 
 def _trench_material_seams(network, rule, carried, lookup, uses, cancel):
@@ -1285,6 +1411,15 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
     if float(moved @ _turned(rule[one_members[0][0]][1], here)[0]) < 0:      # nearest the carried junction
         moved = -moved
     through = [(carrier, members) for (carrier, _), members in lines.items() if len(members) > 1]
+    corner_transform = None
+    if not through and len(junction.boundary_ends) == 2:
+        members = [(end, record[end[0]]) for end in junction.boundary_ends]
+        if {b.kind for _, b in members} == {RIDGE, TRANSFORM}:
+            transform_end, transform = next((end, b) for end, b in members if b.kind == TRANSFORM)
+            if (transform.boundary_id, 'trace') not in poles:
+                raise TransferRefused('D1-c moving corners require one great-circle transform trace')
+            corner_transform = transform_end
+            through = [(_sphere._carrier(transform), [transform_end])]
     if len(through) != 1 or type(through[0][0]) is not str:
         raise TransferRefused('the records at junction %r lie on two lines of one record each (a corner): this version '
                               'advances such a junction only where they carry it to one point; refused' % name)
@@ -1307,7 +1442,7 @@ def _advanced_junction(network, junction, here, rule, stage, frames_old, frames_
             used = sum(1 for face in network.faces for ring in (face.vertex_ids, *face.holes) if ahead in ring)
             pole = _sphere._placed(frames_new[_sphere._carrier(record[boundary_id])],
                                    np.asarray(poles[boundary_id, role]))[0]
-            if ((boundary_id, role) in through_ends and used == 2
+            if (corner_transform is None and (boundary_id, role) in through_ends and used == 2
                     and abs(float(pole @ beside)) <= ATTACHMENT_BAND_RAD):
                 passed.append(ahead)
                 continue
@@ -2576,6 +2711,7 @@ class Step(_state._Immutable):
     map: OverlapMap
     stock_transfers: tuple
     _record: bytes = field(repr=False)
+    _lineage: object = field(repr=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('Step is issued by advance() only')
@@ -2589,8 +2725,11 @@ class Step(_state._Immutable):
         return json.loads(self._record)
 
     def arrays(self):
-        """Every array a commit stores for this step: the successor state and the overlap rows."""
-        return dict(self.state.arrays(), **self.map.arrays())
+        """Every array a commit stores for this step: the successor state, the overlap rows and any split lineage."""
+        out = dict(self.state.arrays(), **self.map.arrays())
+        if self._lineage is not None:      # I05-2: (parent, sub-cohort) indices into the successor's cohorts
+            out['sphere.split_parent'], out['sphere.split_child'] = self._lineage
+        return out
 
 
 def _before_events(moved, faces, mesh_rows):
@@ -2692,6 +2831,15 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
                                                        budget, cancel)
         except _events.EventRefused as exc:
             raise TransferRefused('a topology event of this interval is refused: '+str(exc)) from exc
+    lineage = None
+    if motion.history_splits:
+        # I05-2: the interval's history splits, last, on its endpoint material (integration_splits).
+        from . import integration_splits as _splits
+        try:
+            result, lineage = _splits.applied(endpoint, result, motion.history_splits, motion.end_step,
+                                              motion.regional_returns, budget)
+        except _splits.SplitRefused as exc:
+            raise TransferRefused('a history split of this interval is refused: '+str(exc)) from exc
     try:
         successor = _sphere._sphere(endpoint, result, state.state_id, state.root_state_id, _state.COMPUTED)
     except TectonicsError as exc:
@@ -2723,7 +2871,7 @@ def _stepped(state, motion, end_time_s, prepared, limits, budget, cancel, stored
         record['regional_returns'] = [item.extract_id for item in motion.regional_returns]
     record = _canonical(record, 'step record')
     return _state._issue(Step, parent_state_id=state.state_id, state=successor, motion=motion, map=overlap,
-                         stock_transfers=transfers, _record=record)
+                         stock_transfers=transfers, _record=record, _lineage=lineage)
 
 
 def advance(state, motion, *, end_time_s, prepared=None, limits=None, budget=None, cancel=None):
@@ -2835,6 +2983,14 @@ def _stored_rows(arrays, prefix, parties):
 def restored(parent, metadata, arrays, *, budget=None):
     """Rebuild the network state of a stored commit; ``parent`` is its parent's state or (metadata, arrays).
 
+    See _restored_step, which also returns the verified step.
+    """
+    return _restored_step(parent, metadata, arrays, budget=budget)[1]
+
+
+def _restored_step(parent, metadata, arrays, *, budget=None):
+    """(verified step, restored network state) of a stored commit; ``parent`` as for restored().
+
     The parent's stored state is rebuilt through its constructors. The recorded motion is applied to it again, which
     reproduces the moved geometry exactly; the stored overlap rows must describe and close on that geometry and are
     applied to the parent's material again in exact arithmetic. The stored record, every stored array and every
@@ -2895,5 +3051,5 @@ def restored(parent, metadata, arrays, *, budget=None):
                 or sorted(kept_transfer['component_mass_kg'].items())
                 != sorted(dict(transfer.component_mass_kg).items())):
             raise LedgerError("a stored finite-stock transfer differs from the network step's")
-    return _sphere._sphere(step.state.network, step.state.material, parent.state_id, parent.root_state_id,
-                           _state.RESTORED)
+    return step, _sphere._sphere(step.state.network, step.state.material, parent.state_id, parent.root_state_id,
+                                 _state.RESTORED)

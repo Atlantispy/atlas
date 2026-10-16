@@ -120,6 +120,15 @@ plate splits, merges and ridge jumps. Explicit compatible junction trajectories
 generate curved boundary ends, and material born and consumed within one interval
 is accounted for without inventing an endpoint cell. Current acceptance is recorded
 in [current state](docs/CURRENT_STATE.md).
+The [causal-start method](tectonics/docs/I04_CAUSAL_START.md) describes I04 Part A
+and the reviewed, repaired reduced-belt feedback route, accepted for its declared scope:
+
+- a declared starting family on that network;
+- a plate force balance driven by gravitational potential energy from the same columns and by declared slab pull;
+- the [port record](tectonics/docs/I04_I05_PORTS.md) shared with I05.
+
+The [moving-state method](tectonics/docs/I05_MOVING_STATE.md) describes the I05a prerequisite: each cohort's
+history and heat carried with that network, and the current properties returned to I04.
 This is a methods guide, not another progress log.
 
 ### 1. Bind the inputs before computing

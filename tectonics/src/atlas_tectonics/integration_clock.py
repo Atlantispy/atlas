@@ -415,8 +415,8 @@ class Clock:
     def _content(moves):
         """The declared content of proposed transfers, then of a proposed motion, comparable with _carried()."""
         return [(m.label, m.producer, m.donor, m.receiver, sorted(dict(m.component_mass_kg).items()), m.enthalpy_j,
-                 m.basis, m.start_step, m.end_step) for m in moves if type(m) is _ledger.Transfer]+[
-                     ('motion', m.motion_id) for m in moves if type(m) is not _ledger.Transfer]
+                 m.basis, m.start_step, m.end_step) for m in moves if type(m) is _ledger.Transfer]+sorted(
+                     _ledger._declared_content(m) for m in moves if type(m) is not _ledger.Transfer)
 
     def _commit(self, pending, moves):
         """One attempt to commit the pending steps after the head: (commit or None, refusal or None, overtaken).

@@ -82,6 +82,14 @@ def seal(output):
     return len(files)
 
 
+def release_marker(native):
+    """Only the assembler writes this marker; source checkouts remain strict."""
+    target = native / 'tectonics' / '.desktop-runtime.json'
+    with target.open('x', encoding='utf-8', newline='\n') as stream:
+        json.dump({'schema': 'atlas.desktop-runtime.v1', 'identity_mode': 'release'}, stream)
+        stream.write('\n')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ['electron', 'python', 'ui', 'output']:
@@ -138,6 +146,7 @@ def main():
     copy_file(ROOT / 'tectonics' / 'pyproject.toml', native / 'tectonics' / 'pyproject.toml')
     copy_file(ROOT / 'desktop' / 'README.md', args.output / 'README.md')
     copy_tree(args.python, args.output / 'resources' / 'python')
+    release_marker(native)
     # Bind this build's actual delivered bytes; no historical receipt is repinned.
     count = seal(args.output)
     print(json.dumps({'status': 'built', 'files': count,

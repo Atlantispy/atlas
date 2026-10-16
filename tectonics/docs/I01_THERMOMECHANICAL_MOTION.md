@@ -226,8 +226,8 @@ The exclusive-create receipt binds, before and after execution:
 - the four new files and the package module that now owns the stage;
 - the imported tools and loaded cases;
 - the column-heat and motion-coupling receipts that the tool pins. The designated
-  successors for the package-owned code are `i01-column-heat-r4` and
-  `i01-motion-coupling-r2`; each is evidence only once captured, reviewed and
+  successors for the package-owned code are `i01-column-heat-r6` and
+  `i01-motion-coupling-r4`; each is evidence only once captured, reviewed and
   listed as current in the [evidence register](../../docs/CURRENT_EVIDENCE.md).
 
 The receipts must equal their accepted SHA-256 values. Every retained tool and

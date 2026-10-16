@@ -4,7 +4,7 @@
 
 Tectonic processes affect one another. Temperature changes rock strength; strength affects motion; motion changes thickness, heating and the forces driving the next interval. I01 investigates the physical rules needed to connect these effects without losing material, inventing heat or counting a force twice.
 
-**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
+**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I04 Part A (reviewed and locally integrated) adds a declared starting family on the shared network ([New World chapter §3](04-new-worlds.md#3-supply-crust-materials-and-inherited-structure)) and a force balance, with reviewed reduced-belt feedback, that calculates plate rotations from gravitational driving, slab pull and resistance on it (sections 2 and 4 here). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
 
 The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
 
@@ -177,6 +177,44 @@ double loading and a second isostatic correction. The [reviewed controls](../../
 cover this periodic planar connection, not yet spherical torque or weak/broken
 plate-boundary assembly.
 
+### Gravitational driving on the shared network (I04)
+
+[I04's driving balance](../I04_CAUSAL_START.md#r4-2-gpe-on-the-sphere) evaluates
+the same column kernel on the shared spherical network. It uses one shared datum
+and adds no separate ridge push.
+
+**The boundary is all that matters for a rigid plate.** The sideways gravitational
+force pushes from high to low potential energy. Summed over a plate that moves as
+one rigid piece, its turning effect depends only on the potential energy along the
+plate's edge. Atlas therefore samples columns at the midpoint of every
+plate-boundary edge, on both sides, and integrates the edge geometry exactly.
+
+**A jump across a plate boundary is split evenly.** Where neighbouring plates' columns
+differ, each edge carries the mean of the two sides. That keeps the lithosphere's
+internal forces summing to zero. Atlas also reports how much turning force would move
+between the two plates if that split were different. The even split is a declared
+choice, not a measured interface law.
+
+**Checks.** On a two-plate sphere whose equator is cut into 32, 64 and 128 edges, the
+manufactured column field of the I01 control gives the I01 control's own error
+sequence, to rounding (within the existing 1e-12 tolerance; observed about 1e-15). So
+the existing accuracy and refinement gates apply unchanged.
+
+**Water.** Water loading is admitted only where rock bends without stiffness, as water
+added on top. Bending-plate cases wait for a declared load-bearing layer and a
+spherical bending solver.
+
+**Sources.** This builds on the column kernel of the [GPE control](../I01_GPE.md),
+which is reproduced exactly and compared bitwise. Its boundary form and
+error formula are derived in the [I04 method](../I04_CAUSAL_START.md#r4-2-gpe-on-the-sphere).
+
+**At the end of a coupled interval (I04.4, candidate).** When motion and the rock's
+state are solved together, the columns are read from the candidate end state of the
+interval rather than from its start. Where a cell holds several pieces of
+identical layering, I05 gives their enthalpy-consistent mean column, and the
+balance now records which boundary points used such a mean, so a reopened history
+can check them.
+
 ## 3. Calculate resistance and where deformation concentrates
 
 The [column law](../I01_COLUMN.md) calculates how each material creeps or yields, then integrates resistance through depth. Simultaneous creep mechanisms share stress and contribute different deformation rates. The [pressure/temperature control](../I01_STRENGTH.md) also recalculates frictional strength as deformation changes pressure: confinement strengthens the frictional response, while pore pressure reduces effective confinement.
@@ -184,6 +222,60 @@ The [column law](../I01_COLUMN.md) calculates how each material creeps or yields
 These choices use explicit stress conventions and material laws informed by [ASPECT's continental-extension example](https://aspect-documentation.readthedocs.io/en/latest/user/cookbooks/cookbooks/continental_extension/doc/continental_extension.html). Independent conversions and analytical stress solutions check that laboratory coefficients have not acquired the wrong units or numerical factors. Example parameters are not universal planetary defaults.
 
 The [weakening adapter](../I01_WEAKENING.md) carries accumulated plastic deformation and uses it to reduce cohesion and friction. A uniform column cannot locate a rift. The separate [two-dimensional localisation probe](../I01_FAULT2D.md) tests how deformation concentrates using a declared physical length, informed by [Duretz et al.'s regularisation study](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2022GC010675). Refining the grid should resolve that length rather than make a fault arbitrarily narrower. Spatial and timestep refinement, orientation controls and force/work balance support this numerical claim; they do not establish calibrated faults or rupture.
+
+### Belts that resist plate motion on the shared network (I04.3)
+
+**Candidate, not accepted.** [I04's reduced belt](../I04_CAUSAL_START.md#r4-4-d2-on-the-sphere)
+([`integration_strength.py`](../../src/atlas_tectonics/integration_strength.py))
+lets a declared plate boundary resist the plates' relative motion with the
+strength of the rock it crosses.
+
+**What happens.**
+1. **A line of rock across the boundary.** At each boundary edge, Atlas draws a
+   short line at right angles to the boundary, as wide as the declared belt (for
+   example 100 km), and splits it where it crosses the network's cells. Each piece
+   is a column of the rock occupying that cell, read from I05's strength state:
+   temperatures, the weight of the rock above, pore pressure, and the weakening
+   history.
+2. **The columns share the load.** The pieces lie side by side across the boundary,
+   so they carry one common force and one common direction of deformation; only
+   their deformation rates differ. Atlas finds the force at which the pieces'
+   combined deformation matches the plates' relative motion. Opening, closing and
+   sliding boundaries are exact cases; an oblique boundary is a labelled
+   approximation.
+3. **Weakening spreads over a physical length.** Accumulated deformation lowers
+   cohesion and friction. It is smoothed along the line over a declared length
+   (5 km here), so a finer grid resolves the zone rather than making it
+   arbitrarily narrow.
+4. **What it returns.** The force on each plate (for the plate balance below),
+   how fast that force changes with the motion, the increase of each piece's
+   weakening history, and the energy dissipated.
+
+**Labels and refusals.** Every result is labelled as a reduced-model claim: the
+thin-sheet assumption behind the belt is not established at these widths. Atlas
+refuses rather than guesses when a line crosses another boundary, when a depth lies
+below a crossed column's base, when a cell is counted more than once (or missed),
+when the rock's bond is broken, or when the declared yield rule is not the one I01
+supports. A belt too coarse for the cells is labelled, and the label is carried
+forward.
+
+**Checks.** The force solve reproduces the existing column solve bit for bit for
+opening and closing, and the supplied-pressure column for pure sliding. Its
+derivatives match finite differences. The smoothing step reproduces the existing
+second-order operator. Each increase stays within its bound, and the belt's power
+equals the work done inside its columns to the derived tolerance. Changing the
+declared length changes the width of the weakening profile. These checks establish
+the reduced belt's numerics, not a physical belt width or realistic faults.
+
+**Sources.** All inherited: the [weakening adapter](../I01_WEAKENING.md), the column
+kernel, the closures check's width metric and the package's nonlocal operator. No
+paper was newly read for this step.
+
+### Couple motion and the rock's state over one interval (I04.4)
+
+This is a feedback loop: motion weakens rock, and weakened rock changes the motion.
+It is closed with the plate balance of section 4 and the history carried in
+section 5.
 
 ## 4. Solve motion against the calculated resistance
 
@@ -208,7 +300,123 @@ stored-energy change in its internal-work account.
 
 The [motion connection](../I01_MOTION_COUPLING.md) balances external driving force against drag and the actual layered column's resistance. Speed is an output. As plastic history weakens the column, the same force can drive faster extension. The drag represents a separate process, so its resistance must not duplicate deformation already resolved inside the column.
 
-At each stage, driving work must equal drag dissipation plus column work. Exact linear examples and an independent [SciPy Brent root solver](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html) check the nonlinear solution; evolving cases then test time and depth refinement. The [implementation](../../tools/check_i01_motion_coupling.py), [focused tests](../../tests/test_i01_motion_coupling.py) and [recorded control result](../../evidence/i01-motion-coupling-r3.json) make that reasoning inspectable. This is a regional force balance with supplied drive, not an assembled moving sphere.
+At each stage, driving work must equal drag dissipation plus column work. Exact linear examples and an independent [SciPy Brent root solver](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html) check the nonlinear solution; evolving cases then test time and depth refinement. The [implementation](../../tools/check_i01_motion_coupling.py), [focused tests](../../tests/test_i01_motion_coupling.py) and [recorded control result](../../evidence/i01-motion-coupling-r4.json) make that reasoning inspectable. This is a regional force balance with supplied drive, not an assembled moving sphere.
+
+### Balance the plates of the shared network
+
+[I04's D1 balance](../I04_CAUSAL_START.md#r4-1-d1-on-changing-spherical-geometry)
+solves for every plate's rotation at once
+([`integration_driving.py`](../../src/atlas_tectonics/integration_driving.py)).
+
+**Inputs.** Each plate's resistance comes from basal drag over its cells, evaluated
+exactly for curved spherical cells with no sampling rule. The other inputs are:
+- the gravitational driving above;
+- slab pull from a declared slab, or an explicit declared omission;
+- a declared rigid mantle rotation;
+- labelled authored torques for controls.
+
+A missing force refuses; it is never read as zero.
+
+**Reporting.** Every term is reported separately, as are the torque residual and the
+power account, together with the net rotation. The power account is
+driving power = drag dissipation + interface dissipation + power delivered to the
+moving mantle.
+
+**Interfaces.** A boundary may carry a simple interface resistance or a regional
+model's reaction, never both.
+
+**Checks.** The retained I01 two-hemisphere control is repeated on the network's cells,
+covering:
+- the exact rotations;
+- rotated axes;
+- doubled drag;
+- zero drive;
+- power.
+
+Doubling a driving coefficient changes the rotation by the predicted amount, to rounding.
+A driven plate between fixed neighbours advances through the shared network. A general
+rotation at a triple junction is refused by I03, because Atlas has no junction law to
+invent. These checks verify the balance, not realistic Earth plate speeds.
+
+**Sources.** The torque law is the I01 contract's (`atlas.plate-torque-resistance.v1`),
+and its solver gates are reproduced from the retained I01 control. The slab-pull,
+GPE and mantle-drag methods of
+[Clennett et al. (2023)](https://www.nature.com/articles/s41598-023-37117-w) were
+consulted, but none of their fitted coefficients is adopted. Method:
+[I04 D1 on the sphere](../I04_CAUSAL_START.md#r4-1-d1-on-changing-spherical-geometry).
+
+**With belts (I04.3, candidate).** When boundaries carry belts, their forces depend
+on the motion, so the balance becomes nonlinear. Atlas solves it by Newton's method
+with the belts' exact rate of change, checks that the belts only ever resist
+motion, and records the work the belts dissipate on its own line of the power
+account. With no driving force, every plate stays exactly at rest.
+
+The reported sensitivity to how gravitational forcing is shared across a boundary
+also includes that belt resistance. It uses the same local response calculated by
+Newton, without another physical solve. This predicts a small change with the rock
+held fixed, not the result of a large change or later weakening. Where a stationary
+belt has no supported finite derivative, the sensitivity is marked unavailable,
+rather than treating its resistance as absent.
+
+**Over one interval (I04.4, candidate;
+[`integration_feedback.py`](../../src/atlas_tectonics/integration_feedback.py)).**
+Following the [method](../I04_CAUSAL_START.md#r4-7-first-feedback-coupling):
+1. Guess the motion from the start of the interval.
+2. Move the plates and carry the rock with that motion, adding the weakening it
+   caused (sections 5 and its history split).
+3. Re-read the rock at the end of the interval and solve the balance there.
+4. Repeat until the motion and the weakening both stop changing (to one part in
+   10^8), within 40 tries; otherwise refuse and commit nothing.
+
+The result is an ordinary saved step. It carries a record of the forces, the
+solution, its labels and the record of the interval before it. The next interval
+takes its starting motion, labels and running totals only from that saved record,
+never from whoever calls it. A reopened history solves each saved interval again
+from the one before and compares every part of the record before calling it
+provenance; a forged, altered or disconnected record is refused, and a step solved
+for another interval cannot be saved. That check costs one solve per saved interval:
+a reopened history is replayed once, from the start, before it continues. Atlas also reports the boundary's reaction
+force for a later regional model.
+
+Before saving, Atlas also checks that the result is the unchanged object its solver
+actually produced. Constructing a lookalike, replacing its heat-warning record, or
+editing a nested result cannot give it trusted provenance. This comparison happens
+before anything is written and does not rerun the simulation. Focused checks try
+those edits, alongside normal save and restart, so the fast in-process route and
+the stricter reopened route cannot disagree about an altered result.
+
+**Checks.** On a two-hemisphere world with a sliding equatorial belt:
+- the speed responds the predeclared way to stronger rock, warmer rock, more
+  inherited weakness and more force. Doubling the force, however, lowered the share
+  of work done by yielding, against the predeclared expectation, so that check
+  failed and the expectation was withdrawn as an authored error: the creeping rock's
+  work grows faster with speed, and the faster interval's localised weakening lowers
+  the yielding work further;
+- a tilted copy of the world gives the tilted motion;
+- refining the belt's rows changes the force and speed by less than 1%, but the
+  largest single increase of weakening by 7.8% between 4 and 8 rows, over the
+  predeclared 3%: that check failed. The rows were still coarser than the smoothing
+  length and the inherited weakness was sampled at row centres; a finer level,
+  reported only, changed it by 1.8%. A separate 42/84-row check was then fixed in
+  advance from the physical smoothing-length requirement. Its largest change was
+  0.0556%, passing the same 3% limit. The coarse failure remains recorded; no limit
+  was relaxed to make it pass;
+- on a uniform one-row, single-layer belt, the interval's time error falls at first
+  order against a high-order integration of the same reduced equations (the
+  package's own balance as the right-hand side); the layered belt's orders are
+  reported, not gated;
+- a history saved, reopened and continued in a fresh process reaches the same state.
+
+These checks establish the coupled numerics on fixture worlds, not realistic plate
+motion or a converged physical belt width.
+
+**Limits.** Coupled feedback runs only on the sliding fixture, with the belt placed
+on the side that carries the boundary (a declared assumption), until the owner
+decides how cells should keep their histories apart. Opening belts refuse at their
+first coupled interval (the belt over newly formed ridge cells is counted more than
+once); closing belts with these materials refuse already at the start balance.
+Dissipated work is not yet heat: each state after such an interval is labelled
+with a bound on the warming left out.
 
 ### Solve a three-dimensional region and return its resistance
 
@@ -458,6 +666,20 @@ A material seam is different: its endpoint must follow its carried interior edge
 intersection with the trench. Unconstructed seam changes still refuse. A real
 encounter with another junction needs an admitted reorganisation.
 
+The I04 staircase repair extends that accounting to a ridge ending on a sliding
+transform. The rock keeps its old ridge corner as it moves; the physical junction
+has a separate position, and the strip between them is explicitly new crust.
+Shared edges use the same subdivision on both sides. A later step carries the
+old corner with its rock instead of dragging it back with the fault. The first
+control uses an exact equatorial transform joining two offset meridian ridges,
+including half-and-half spreading and tilted axes. Material checks pass over three
+steps. A symmetric paired fixture also passes two genuinely coupled force/deformation
+steps, plain and tilted, without straightening either offset; only its transform
+belts supply deformation resistance. General small-circle boundaries remain separate.
+If the caller explicitly redraws the mesh, ordinary conservative remapping may mix
+material in a cell. Its age and inventory survive, but that is not an exact preserved
+sub-cell interface; the existing unresolved-column check still applies.
+
 Some crust can be born at a ridge and swallowed by the adjacent trench before the
 interval ends. Atlas now records both transfers from the actual swept geometry,
 preserving the new crust's formation interval, source and heat even though it has
@@ -518,6 +740,90 @@ that source supplies no tectonic path-selection law. The later review repairs
 reuse these sources and derivations, without a new literature or physical-validation
 claim. The [specialist source list](../I03_SPHERICAL_NETWORK.md#14-sources) records
 what was actually consulted.
+
+### Carry each cohort's history and heat with the shared network (I05)
+
+**What happens.** Every interval, the network's step carries the extensive amounts of each piece of rock. I05 carries
+everything else the rock holds, in a moving state beside the network. A candidate, not yet reviewed, does this in
+three parts:
+- **Transport.** What a cohort's rock carries travels with that cohort: its layering and original profile, its dates,
+  its raw plastic history, whether its bonds ever broke, and any compaction or elastic memory. Each piece's heat,
+  layer by layer, is divided along exactly the same overlaps the network uses for its mass.
+  - A piece that rides with its plate keeps every number unchanged.
+  - New crust at a ridge takes the heat its declared birth column gives it.
+  - Rock consumed at a trench takes its heat with it to the trench's destination.
+  - Two different cohorts in one cell stay two pieces, never one averaged one.
+- **Heat.** Each column conducts heat downwards exactly over the interval.
+  - **Lateral exchange.** Heat between neighbouring columns is used only where the geometry supports a simple two-point
+    flux across their whole shared boundary, and otherwise refused. It is taken in small explicit steps, each
+    followed by the exact downward conduction.
+  - **No new extremes.** Each of these two operations keeps every temperature between the coldest and hottest of the
+    starting and boundary temperatures, so together they do too. Without internal heat sources, a step that would
+    leave that range is refused.
+  - **Omission.** Lateral exchange can be declared omitted only under a certified error bound, while the geometry
+    stays fixed.
+    - The bound is computed on the state's own columns, with the contacts and conductances a solve would use.
+    - The declared limits on temperature differences may not contradict the state's own temperatures at the start
+      or end. Because only those two moments are sampled, a certificate covers its interval in exactly one window.
+    - The bound carries over from one interval to the next. After an interval with no conduction it is unknown, and
+      no omission may follow.
+- **Properties.** From the same state, at the same moment, I05 returns two things:
+  - the columns that the plate balance reads at plate boundaries;
+  - a strength state for each piece.
+
+  A boundary cell holding pieces of different cohorts gives one column only when the pieces share exactly the same
+  layering. The column is then their heat-weighted cell mean, and it is labelled as such. Their histories are never
+  averaged.
+
+  Heating rock makes it lighter and its surface higher, while its reference mass stays exactly the same.
+
+**Inputs and outputs.**
+- **In:**
+  - the network's accepted step, with its rows, births, consumption and splits;
+  - each cohort's declared record: its layers, their densities and thermal properties, and its original temperature
+    profile;
+  - a declared reference temperature for heat;
+  - for each interval, how heat is conducted. That means the column nodes for lateral exchange, or an omission
+    certificate.
+- **Out:**
+  - the next moving state, with exact heat accounts;
+  - the boundary columns and per-piece strength state;
+  - the carried elastic core.
+
+**One history per cohort.** Each cohort holds one raw history, so history is never averaged.
+- When the plastic strain added to a cohort differs from place to place, the cohort is first split, in the same
+  interval, into sub-cohorts that each have one history.
+- The split relabels pieces and changes no amount, so every account stays exact. It keeps every formation date.
+- The number of cohorts can grow at most to the number of pieces, but the pieces themselves can multiply.
+  - On a test world turned rigidly as a whole, with only five strain values per interval, cohorts reached nearly one
+    per piece (315 of 319) after four intervals and one per piece after six.
+  - Under real relative motion between plates, pieces of different history pile up in the faces near a trench: their
+    number per face grew quadratically with the number of intervals.
+  - Such mixed cells are refused by lateral conduction, and by the boundary columns unless their pieces share their
+    layering.
+  - Only trench consumption and the existing work and memory limits bound the growth, and later checks report it
+    every interval.
+  - The lasting fix is an open owner decision: tracking material points, adding geometry within a face, or faces that
+    follow material contacts.
+
+**Saved and continued.** The moving state is saved with each accepted commit. Reopening rebuilds it by running each
+step again; a stored state that does not reproduce is refused. A moving test world saved partway and continued by a
+fresh process ends with exactly the same state as the uninterrupted run.
+
+**What the checks establish, and what they do not.** The checks include:
+- exact accounts of heat and material;
+- unchanged rock under rigid motion;
+- conduction that closes its energy;
+- the mixture of two ocean ages averaged at each piece's own age, never at the mean age;
+- property changes in the expected direction;
+- refusal wherever the geometry or inputs are not supported.
+
+Adversarial verifications of the first build, and then the coordinator's review, found faults in the heat steps,
+certificates, saved records, property checks and basal transfers. Each was repaired with a test that failed first,
+and their claims were corrected.
+
+The checks do not show convergence over a whole world, coupled feedback with the plate balance, or melting; those are later
+work. The [method document](../I05_MOVING_STATE.md) records the equations, inputs, checks, limits and sources.
 
 ### Hand part of the network to a regional model and take it back
 
@@ -735,11 +1041,11 @@ Deformation produces heat, conduction redistributes it, and temperature changes 
 
 Heat must be deposited in the same rock whose work produced it. A corrected column check rejects thermal cells representing 101 km of rock inside a declared 100 km column: an apparently closed energy balance alone had not exposed the extra heat capacity. [ASPECT's heating conventions](https://aspect-documentation.readthedocs.io/en/latest/parameters/Heating_20model.html) inform once-only dissipation accounting, while [Kassam and Trefethen](https://people.maths.ox.ac.uk/trefethen/publication/PDF/2005_111.pdf) support the exponential treatment of conduction.
 
-The coupled column also compares actual reference densities, not just matching identity labels. Otherwise a denser thermal copy can change heat capacity and warming while its own energy account still closes. A preparation digest now checks derived capacities, conductances and reference temperatures before use, rejecting changed arrays carrying old identities. Deliberate property changes require a new preparation and compatible heat operator. Supplied-pressure analytical columns, which have no mechanical density, retain their separately declared thermal density. The [column-heat controls](../../evidence/i01-column-heat-r5.json) cover these guards without changing the supported physics or tolerances.
+The coupled column also compares actual reference densities, not just matching identity labels. Otherwise a denser thermal copy can change heat capacity and warming while its own energy account still closes. A preparation digest now checks derived capacities, conductances and reference temperatures before use, rejecting changed arrays carrying old identities. Deliberate property changes require a new preparation and compatible heat operator. Supplied-pressure analytical columns, which have no mechanical density, retain their separately declared thermal density. The [column-heat controls](../../evidence/i01-column-heat-r6.json) cover these guards without changing the supported physics or tolerances.
 
-The [thermomechanical motion connection](../I01_THERMOMECHANICAL_MOTION.md) solves force, temperature and weakening at shared integration stages, including the final accepted state. External drag dissipation is recorded separately from column heating. Feedback-on/off comparisons and independent high-accuracy solutions distinguish physical response from integration error; the [current controls](../../evidence/i01-thermomechanical-motion-r4.json) retain those checks with the corrected thermal admission.
+The [thermomechanical motion connection](../I01_THERMOMECHANICAL_MOTION.md) solves force, temperature and weakening at shared integration stages, including the final accepted state. External drag dissipation is recorded separately from column heating. Feedback-on/off comparisons and independent high-accuracy solutions distinguish physical response from integration error; the [current controls](../../evidence/i01-thermomechanical-motion-r5.json) retain those checks with the corrected thermal admission.
 
-The [finite-strain control](../I01_FINITE_STRAIN.md) also lets a closed strip widen and thin while material carries its temperature and history. Thickness changes pressure, resistance and conduction; total rock mass and whole-strip heat capacity stay fixed. [ASPECT's finite-strain formulation](https://aspect-documentation.readthedocs.io/en/latest/user/cookbooks/cookbooks/finite_strain/doc/finite_strain.html) helps distinguish changing geometry from accumulated plastic memory. Its [tests](../../tests/test_i01_finite_strain.py) and [reviewed controls](../../evidence/i01-finite-strain-r5.json) check material transport, geometry scaling, independent solutions and refusal of unsupported steps. The strip has no lateral necking, mantle inflow or rupture.
+The [finite-strain control](../I01_FINITE_STRAIN.md) also lets a closed strip widen and thin while material carries its temperature and history. Thickness changes pressure, resistance and conduction; total rock mass and whole-strip heat capacity stay fixed. [ASPECT's finite-strain formulation](https://aspect-documentation.readthedocs.io/en/latest/user/cookbooks/cookbooks/finite_strain/doc/finite_strain.html) helps distinguish changing geometry from accumulated plastic memory. Its [tests](../../tests/test_i01_finite_strain.py) and [reviewed controls](../../evidence/i01-finite-strain-r6.json) check material transport, geometry scaling, independent solutions and refusal of unsupported steps. The strip has no lateral necking, mantle inflow or rupture.
 
 These equations now have one owner. The finite-strain calculation and everything it
 runs—rock-strength laws, weakening response, heat conduction and deposition, the
@@ -877,7 +1183,7 @@ mechanical handoff remain conditions for physical reorganisation.
 
 The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](../../evidence/i01-finite-admission-r8.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
 
-The [breakup control](../I01_BREAKUP_CLOSURE.md) examines whether a narrowing neck can reach zero thickness in finite time, rather than declaring breakup at an arbitrary thickness. For its precisely stated creep law and quadratic weakness, an exact continuum solution shows when this is possible. The discrete columns agree at the first thinning level; they do not resolve every later, much narrower neck. The [reviewed checks](../../evidence/i01-breakup-closure-r4.json) therefore establish analytical feasibility, not a generated split. They also show why weak resistance alone does not prove separation and why a finite set of gentle slopes cannot justify a law whose limiting neck becomes too steep. The method documents the Hutchinson-Neale and Audoly-Hutchinson necking sources and the Brune/ASPECT rifting comparisons; no new geological calibration is implied. The mixed-creep/plastic lithosphere still needs resolved neck mechanics before an event can be issued.
+The [breakup control](../I01_BREAKUP_CLOSURE.md) examines whether a narrowing neck can reach zero thickness in finite time, rather than declaring breakup at an arbitrary thickness. For its precisely stated creep law and quadratic weakness, an exact continuum solution shows when this is possible. The discrete columns agree at the first thinning level; they do not resolve every later, much narrower neck. The [reviewed checks](../../evidence/i01-breakup-closure-r5.json) therefore establish analytical feasibility, not a generated split. They also show why weak resistance alone does not prove separation and why a finite set of gentle slopes cannot justify a law whose limiting neck becomes too steep. The method documents the Hutchinson-Neale and Audoly-Hutchinson necking sources and the Brune/ASPECT rifting comparisons; no new geological calibration is implied. The mixed-creep/plastic lithosphere still needs resolved neck mechanics before an event can be issued.
 
 The [separation decision](../I01_SEPARATION_DECISION.md) defines the checks the future resolved model must report. Crust breaking apart, deeper mantle rock disconnecting, and a simpler boundary reproducing the same motion are different questions. It tracks actual material, including bridges that pass from crust into mantle and back, rather than declaring a split when a coloured cell disappears. Motion must remain close over a declared interval, not just its endpoints. An exact worked example shows why an apparently converging sequence of thinning measurements can still leave unbroken rock. Brune's rift-migration results and ASPECT's material-tracking example inform the distinction; the norm and refusal rules are Atlas design choices, not a new simulated breakup result.
 
