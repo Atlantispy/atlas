@@ -6,6 +6,18 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 17 Oct 2026, item21 branch application
+
+- Applied the item21 interval-N chain, start-gate wiring in the fresh-run, reopen and launch drivers, and S1
+  query-stage changes to this branch. Working-copy checks matched seven Python driver/test files to
+  `ac/r/chain-r3`; Git-normalised publication bytes require their own runtime binding.
+  The retained source manifest is SHA-256 `8059c64914babe2fa7420561c1b16493338a69d71f4c7c8b7c8b53f9dea6e83b`,
+  step `item21-r3-verdict-pin`. Branch-authored method notes are in `drivers/INTERVAL_CHAIN.md`.
+- Reused the focused private evidence recorded in that manifest for the unchanged source bytes. This metadata
+  update does not report a new test run, a live runtime swap, a runtime-manifest re-pin or scientific acceptance.
+- The start gate's second route and final-composition pin remain pending. Finish-driver S1, geometry and S2
+  capture-writer work are unchanged. All existing run holds and numerical/resource limits remain in force.
+
 ## 16 Oct 2026, evening
 
 - Sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED): page and segment reuse merged into

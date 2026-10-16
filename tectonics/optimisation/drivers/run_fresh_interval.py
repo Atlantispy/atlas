@@ -22,6 +22,11 @@ IntervalStoreSet.adopt_and_promote. Nothing is adopted or promoted here.
     the batched columnar completed-query store (WP17);
   - with the workflow still open: the successor checks and bounded_preseal,
     then the durable runner record, then the seal of interval-0001.
+- Mode ``interval`` with ``interval`` N >= 2 (item 21): run B one interval further. The
+  sealed-lineage gate checks the records of intervals 0..N-1 from the explicit adopted(N-1)
+  pin before the catalog opens, and the opened catalog must hold exactly that head; then
+  fresh_interval_driver.advance_successor_interval advances once and interval N is sealed
+  the same way. Interval 1 keeps every path, label and record unchanged.
 
 The guard, gates, retained scope, storage points and successor checks are
 run_prepared_restart's. The launcher takes the head and both identities from
@@ -45,6 +50,7 @@ from hashlib import sha256
 from pathlib import Path
 
 import run_prepared_restart as RUN
+import start_gate as SG
 
 PROFILE_SCHEMA = 'atlas.fresh-interval-profile.v1'
 RESULT_SCHEMA = 'atlas.fresh-interval-result.v1'
@@ -108,6 +114,12 @@ SEED_ENVIRONMENT = 'ATLAS_INITIAL_MEASUREMENT_SEED'
 # reverse); test_run_fresh_interval checks both against the reader's own definitions.
 ADOPTED_SCHEMA = 'atlas.fresh-interval-adopted.v1'
 ADOPTED_STATUS = 'ADOPTED_AFTER_INDEPENDENT_READER'
+# Item 21. The review approval of a review-only interval moved here from reopen_fresh_restart,
+# which aliases it: the lineage gate re-runs it for every review-adopted parent.
+REVIEW_APPROVAL_SCHEMA = 'atlas.fresh-interval-review-approval.v1'
+REVIEW_APPROVERS = ('coordinator', 'Michael')
+# fresh_interval_driver's and prepared_interval_driver's; test_run_fresh_interval checks all three.
+LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
 MAX_RECEIPT = 64 << 20
 COPY_BLOCK = 1 << 20
 
@@ -145,9 +157,38 @@ def verdict_path(store_directory, interval):
     return Path(store_directory)/record_name('reader-verdict', interval)
 
 
-def mode_output(row, mode):
+def adopted_path(store_directory, interval):
+    return Path(store_directory)/record_name('adopted', interval)
+
+
+def approval_path(store_directory, interval):
+    return Path(store_directory)/record_name('review-approval', interval)
+
+
+def interval_number(mode, interval=None):
+    """The interval a run seals: the mode's own, or an explicit N >= 1 of the interval mode (item 21)."""
     require(mode in MODES, 'explicit route (1) mode required')
-    return Path(row['output_directory'])/('run-'+mode)
+    if interval is None:
+        return INTERVALS[mode]
+    require(mode == 'interval' and type(interval) is int and interval >= 1,
+            'an explicit interval is N >= 1 of the interval mode')
+    return interval
+
+
+def parent_pin(number, parent_adopted_sha256):
+    """The explicit adopted(N-1) file pin: required for interval N >= 2 and refused otherwise."""
+    require((number >= 2) == (parent_adopted_sha256 is not None),
+            'interval N >= 2 needs exactly the adopted(N-1) pin, and only it')
+    return None if parent_adopted_sha256 is None else RUN._sha(parent_adopted_sha256)
+
+
+def mode_output(row, mode, interval=None):
+    number = interval_number(mode, interval)
+    output = Path(row['output_directory'])/('run-'+mode+('' if number <= 1 else f'-{number:04d}'))
+    # The profile already keeps the store outside run-root and run-interval; it cannot name interval N's.
+    require(number <= 1 or not Path(row['store_directory']).is_relative_to(output),
+            'the interval store must outlive the interval N run output')
+    return output
 
 
 def write_durable(path, value):
@@ -405,6 +446,199 @@ def require_promoted_root(store, store_directory):
     return runner
 
 
+def review_approval(store_directory, interval, approval_sha256, *, entry, verdict_sha256):
+    """The coordinator's conditions for adopting a review-only interval (16 Oct 2026), all required.
+
+    (a) the reader PASS on this exact file (the verdict, checked by the caller);
+    (b) a written diagnosis showing a checker defect, not a data defect;
+    (c) a recorded approval by the coordinator or Michael naming the file SHA-256 and the verdict.
+    A data-integrity cause is quarantined and never adopted: the interval is rerun after the fix.
+    """
+    approval = read_record(approval_path(store_directory, interval), schema=REVIEW_APPROVAL_SCHEMA,
+                           expected_sha256=approval_sha256)
+    require(approval.get('interval') == interval and approval.get('file_sha256') == entry['file_sha256'] and
+            approval.get('verdict_sha256') == verdict_sha256 and approval.get('approver') in REVIEW_APPROVERS and
+            type(approval.get('approved_at')) is str and approval['approved_at'],
+            'review approval does not name this sealed file, its reader verdict and an approver')
+    require(approval.get('cause_class') == 'checker-defect',
+            'a data-integrity cause is quarantined, never adopted: rerun the interval after the fix')
+    diagnosis = approval.get('diagnosis')
+    require(type(diagnosis) is dict and set(diagnosis) == {'path', 'sha256'} and Path(diagnosis['path']).is_file() and
+            RUN.file_hash(diagnosis['path']) == diagnosis['sha256'], 'written diagnosis evidence required')
+    return approval
+
+
+def _record_sha(value):
+    return sha256(canonical(value)).hexdigest()
+
+
+WIDTH_GATE_V1, WIDTH_GATE_V2 = 'atlas.exact-width-gate.v1', 'atlas.exact-width-gate.v2'
+SEED_REUSED = ('FULL_REUSE', 'MISSES_MEASURED')
+
+
+def width_gate_passed(gate, k):
+    """Interval k >= 1's durable width gate passed before k+1: v1 at k = 1, v2 for k at k >= 2."""
+    require(type(k) is int and k >= 1, 'a width gate belongs to interval k >= 1')
+    return type(gate) is dict and gate.get('passed') is True and (
+        gate.get('schema') == WIDTH_GATE_V1 and 'interval' not in gate
+        if k == 1 else gate.get('schema') == WIDTH_GATE_V2 and gate.get('interval') == k and
+        gate.get('next_interval') == k+1)
+
+
+def interval_one_route(profile):
+    """Where interval 2's gate finds interval 1's producer receipt: this profile's interval-1 output."""
+    return {'output': mode_output(profile.record(), 'interval'), 'profile_sha256': profile.sha256}
+
+
+def _pin_sha(value):
+    return value.get('sha256') if type(value) is dict else None
+
+
+def root_anchor(chain, interval_one):
+    """Interval 2's gate: verdict(0) and adopted(0) as interval 1's seeded runner hashed them.
+
+    adopted(1) (explicitly pinned) -> verdict(1).producer_receipt_sha256 -> interval 1's run.json,
+    which must bind interval 1's runner and sealed records and be an ordinary completed producer
+    (seed FULL_REUSE or MISSES_MEASURED, counts agreeing) or an approved review producer (seed
+    still COPIED_BEFORE_ADMISSION). Its seed capture names run A's receipt and both root files'
+    canonical SHA-256s. Without that capture (an unseeded interval 1) interval 2 refuses: today's
+    root files are no anchor for themselves. The receipt is read again by every interval-2 gate,
+    the reader's and finalise's included, so it must outlive interval 2's adoption.
+    """
+    require(type(interval_one) is dict and set(interval_one) == {'output', 'profile_sha256'},
+            "interval 2's gate needs interval 1's output and profile")
+    root, first = chain[0], chain[1]
+    path = Path(interval_one['output'])/'run.json'
+    receipt = RUN.pinned_json(path, RUN._sha(first['verdict'].get('producer_receipt_sha256')), MAX_RECEIPT)
+    require(type(receipt) is dict and receipt.get('schema') == RESULT_SCHEMA and receipt.get('mode') == 'interval' and
+            receipt.get('interval') == 1 and receipt.get('profile_sha256') == interval_one['profile_sha256'] and
+            _pin_sha(receipt.get('runner_record')) == first['link']['runner_sha256'] and
+            _pin_sha(receipt.get('sealed_awaiting_reader')) == first['link']['sealed_sha256'] and
+            receipt.get('final_reserved_bytes') == 0 and receipt.get('production_acceptance') is False,
+            "interval 1's producer receipt does not bind interval 1 of this lineage")
+    reused, errors = receipt.get('reused_initial_cache'), receipt.get('errors')
+    require(type(reused) is dict and reused.get('schema') == SEED_SCHEMA,
+            'interval 1 recorded no seeded root capture: an unseeded interval 1 cannot continue to interval 2')
+    if 'review_approval_sha256' in first['adopted']:
+        state = receipt.get('review_only')
+        outcome = (receipt.get('status') == REVIEW_STATUS and type(errors) is list and
+                   [type(e) is dict and e.get('type') for e in errors] == ['PresealSealedForReview'] and
+                   type(state) is dict and state.get('state') == REVIEW_STATUS and
+                   reused.get('status') == 'COPIED_BEFORE_ADMISSION')
+    else:
+        outcome = (receipt.get('status') == SEALED_STATUS['interval'] and errors == [] and
+                   reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True)
+    require(outcome, 'interval 1 is neither a completed nor an approved review producer with a valid seed capture')
+    require(reused.get('composition_equal') is True and
+            _pin_sha(reused.get('receipt')) == root['verdict'].get('producer_receipt_sha256') and
+            reused.get('verdict_sha256') == root['link']['verdict_sha256'] and
+            reused.get('adopted_sha256') == root['link']['adopted_sha256'],
+            "run A's verdict or adoption differs from interval 1's seeded capture of them")
+
+
+def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval_one=None):
+    """Item 21's gate for interval N >= 2, on records only, before the catalog opens.
+
+    From the explicit adopted(N-1) pin down to the root, each interval k must have a runner
+    record, its sealed record, the reader's PASS for exactly that entry and its adoption from
+    exactly that verdict and runner record; a review-adopted k also needs its pinned approval,
+    checked again. For k >= 2, runner(k) pins runner(k-1) and the adopted(k-1) file. Forward
+    from the root, every k >= 1 extends k-1 of the same workflow and was sealed against the
+    catalog digest adopting k-1 left. The catalog file must be the one adopting N-1 left.
+    Every k >= 1 was read with its own width gate passed (v1 at k = 1, v2 for k at k >= 2),
+    review-adopted or not: a failed gate stops the chain and is no parent here.
+    verdict(0) and adopted(0) have no file pin in runner(1), which predates item 21. At N = 2
+    root_anchor authenticates both against interval 1's seeded receipt (``interval_one``, from
+    interval_one_route); from N = 3 the links 0..N-2 must equal runner(N-1)'s pinned lineage,
+    which carries that capture forward. Returns the lineage record and its parents.
+    """
+    require(type(interval) is int and interval >= 2, 'the sealed-lineage gate is for interval N >= 2 only')
+    require((interval == 2) == (interval_one is not None), "only interval 2's gate reads interval 1's receipt")
+    RUN._sha(parent_adopted_sha256)
+    directory, pin, chain = Path(store_directory), parent_adopted_sha256, []
+    for k in range(interval-1, -1, -1):
+        adopted = read_record(adopted_path(directory, k), schema=ADOPTED_SCHEMA, expected_sha256=pin)
+        runner = read_record(runner_record_path(directory, k), schema=RUNNER_RECORD_SCHEMA)
+        sealed = read_record(sealed_record_path(directory, k), schema=SEALED_SCHEMA)
+        verdict = read_record(verdict_path(directory, k), schema=VERDICT_SCHEMA)
+        runner_sha, verdict_sha, entry = _record_sha(runner), _record_sha(verdict), sealed['entry']
+        require(sealed['interval'] == runner['interval'] == k and sealed['runner_record_sha256'] == runner_sha and
+                type(entry) is dict and entry.get('interval') == k and entry.get('head') == runner['head'],
+                'interval %d sealed record does not bind its runner record' % k)
+        require(verdict['status'] == READER_PASS['root' if k == 0 else 'interval'] and verdict['interval'] == k and
+                verdict['runner_record_sha256'] == runner_sha and verdict['entry'] == entry,
+                'interval %d has no independent reader PASS for exactly its sealed entry' % k)
+        gate = verdict.get('width_gate')
+        require(gate is None if k == 0 else width_gate_passed(gate, k),
+                'interval %d width gate did not pass before interval %d' % (k, k+1))
+        require(adopted['status'] == ADOPTED_STATUS and adopted['interval'] == k and adopted['entry'] == entry and
+                adopted['verdict_sha256'] == verdict_sha and adopted['runner_record_sha256'] == runner_sha,
+                'interval %d is not adopted from exactly its reader PASS and runner record' % k)
+        review = 'review_approval_sha256' in adopted
+        flags = [value.get('review_only', None) for value in (runner, verdict)]
+        require(flags == ([True, True] if review and k >= 1 else [None, None]),
+                'interval %d review-only records and its adoption approval disagree' % k)
+        link = {'interval': k, 'runner_sha256': runner_sha, 'sealed_sha256': _record_sha(sealed),
+                'verdict_sha256': verdict_sha, 'adopted_sha256': _record_sha(adopted)}
+        if review:
+            approval = review_approval(directory, k, adopted['review_approval_sha256'], entry=entry,
+                                       verdict_sha256=verdict_sha)
+            link.update(review_approval_sha256=adopted['review_approval_sha256'],
+                        diagnosis_sha256=approval['diagnosis']['sha256'])
+        parents = [runner.get(name) for name in ('parent_runner_record_sha256', 'parent_adopted_sha256')]
+        require(all(type(value) is str for value in parents) if k >= 2 else parents == [None, None],
+                'interval %d runner record does not pin its parent records' % k)
+        pin = parents[1]
+        chain.append({'runner': runner, 'sealed': sealed, 'verdict': verdict, 'adopted': adopted, 'link': link})
+    chain.reverse()
+    root = chain[0]['runner']
+    require(type(root.get('root')) is dict and root['root'].get('workflow_id') == root['workflow_id'] and
+            type(root['root'].get('root_key')) is str, 'interval 0 runner record is not the root of this workflow')
+    require(chain[0]['sealed']['expected_catalog_digest'] is None,
+            'interval 0 was not sealed against the catalog it was created in')
+    head = root['root']['root_key']
+    for k in range(1, interval):
+        runner, parent = chain[k]['runner'], chain[k-1]
+        before, after = runner.get('previous_endpoint'), runner.get('advanced_endpoint')
+        require(runner['workflow_id'] == root['workflow_id'] and
+                runner.get('root_runner_record_sha256') == chain[0]['link']['runner_sha256'] and
+                type(before) is dict and type(after) is dict and before.get('head') == head and
+                before.get('intervals') == k-1 and after.get('intervals') == k and type(after.get('head')) is str and
+                after['head'] != head, 'interval %d does not extend interval %d of this workflow' % (k, k-1))
+        require(k < 2 or runner['parent_runner_record_sha256'] == parent['link']['runner_sha256'],
+                'interval %d runner record does not pin its parent records' % k)
+        require(chain[k]['sealed']['expected_catalog_digest'] == parent['adopted']['catalog_digest'],
+                'interval %d was not sealed against the catalog adopting interval %d left' % (k, k-1))
+        head = after['head']
+    last = chain[-1]
+    if interval == 2:
+        root_anchor(chain, interval_one)
+    else:
+        recorded = last['runner'].get('lineage')
+        require(type(recorded) is dict and recorded.get('records') == [item['link'] for item in chain[:-1]],
+                'intervals 0..%d differ from the lineage interval %d was admitted with' % (interval-2, interval-1))
+    require(RUN.file_hash(RUN.ordinary(directory/CATALOG)) == last['adopted']['catalog_sha256'],
+            'the catalog file differs from the one adopting interval N-1 left')
+    lineage = {'schema': LINEAGE_SCHEMA, 'interval': interval-1, 'workflow_id': root['workflow_id'],
+               'root_key': root['root']['root_key'], 'head_key': head,
+               'catalog_digest': last['adopted']['catalog_digest'], 'catalog_sha256': last['adopted']['catalog_sha256'],
+               'records': [item['link'] for item in chain]}
+    return {'lineage': lineage, 'root_runner': root, 'parent_runner': last['runner'], 'parent_sealed': last['sealed'],
+            'parent_verdict': last['verdict'], 'parent_adopted': last['adopted'],
+            'parent_adopted_sha256': parent_adopted_sha256}
+
+
+def require_lineage_head(store, lineage):
+    """After the catalog opens: it holds exactly the lineage's adopted interval N-1. Returns run A's runner record."""
+    accepted, sealed = store.store_set.head, lineage['parent_sealed']
+    require(store.store_set.catalog_digest == lineage['parent_adopted']['catalog_digest'] and accepted is not None and
+            accepted.interval == lineage['lineage']['interval'] and accepted.to_wire() == sealed['entry'] and
+            accepted.head.to_wire() == lineage['parent_runner']['head'] and
+            store.workflow_id == lineage['root_runner']['workflow_id'],
+            'interval N requires the accepted catalog to hold exactly the adopted interval N-1 of its lineage')
+    return lineage['root_runner']
+
+
 def measurement_composition(profile, sources, *, proof, interpreter_seed):
     """What a reusable initial measurement store is bound to (review condition 2).
 
@@ -550,9 +784,120 @@ def reuse_outcome(reused, measured):
                 chunk_reads=measured['statistics']['operations'].get('payload_reads'))
 
 
+QUERY_STAGE_FIELDS = ('hits', 'misses', 'written', 'incomplete')
+
+
+class QueryStages:
+    """S1 (WP17 instrumentation): completed-query counts per guard stage; observation only.
+
+    ContinuationGuard.phase() (private_heat_continuation_guard_r3.py) sets record['stage'],
+    runs _sync() and then calls the runner's save(), so save() normally sees each stage
+    change after that stage's last query. If _sync() raises, that save() is skipped; the
+    next observation (a save(), an owner open or finish()) closes the stage instead.
+
+    Each row holds, per counter, the sum over every completed-query owner open in the stage
+    of that owner's exact counter deltas (record['completed_queries'] holds the last owner's
+    totals only), ``unflushed`` as read when the row was last updated, and the owner opens
+    (query_checkpoints calls) in the stage. A stage with no live owner has null counts,
+    never 0. Nothing wraps the owner, the guard or a query; the guard's phase names and
+    order are unchanged.
+
+    An Exception here is recorded (status INCOMPLETE, error) and stops only this
+    observation; the rows keep the stages closed before it (recording failures stay
+    diagnostic, as in dev_stage_timing). A BaseException (KeyboardInterrupt, SystemExit)
+    is never swallowed: it may land between two updates of a row, so it is recorded the
+    same way (the rows are then not trusted as COMPLETE) and re-raised. Either way the
+    status is stored first, by a plain dict store with no call before it, so a second
+    interrupt arriving while the failure is recorded cannot leave the rows unmarked.
+    finish() closes the last row and sets status COMPLETE; observation stops there. A run
+    killed hard never reaches finish(): its run.json keeps the rows of the stages closed
+    by its last save(), with no status and no in-progress row.
+    """
+
+    def __init__(self, record):
+        self.record, self.owner, self.base, self.stage = record, None, None, record.get('stage')
+        self.value = record['completed_queries_by_stage'] = {
+            'schema': 'atlas.completed-queries-by-stage.v1', 'fields': list(QUERY_STAGE_FIELDS),
+            'scope': ("per stage, the sum over every completed-query owner open in it of that owner's counter "
+                      "deltas (completed_queries holds the last owner only); null outside an owner's life"),
+            'rows': [], 'opened_with': []}
+        self.row = self._new_row()
+
+    def _new_row(self):
+        return dict(stage=self.stage, opens=0, unflushed=None, **dict.fromkeys(QUERY_STAGE_FIELDS))
+
+    @staticmethod
+    def _counts(owner):
+        return {name: getattr(owner, name) for name in QUERY_STAGE_FIELDS}
+
+    def _accumulate(self):
+        # Every read and sum first, then one update: a failed read leaves the row as it was.
+        if self.owner is not None:
+            now, unflushed = self._counts(self.owner), getattr(self.owner, 'unflushed', 0)
+            sums = {name: (self.row[name] or 0)+now[name]-self.base[name] for name in QUERY_STAGE_FIELDS}
+            self.row.update(sums, unflushed=unflushed)
+            self.base = now
+
+    def _observe(self):
+        stage = self.record.get('stage')
+        if stage != self.stage:
+            self._accumulate()
+            self.value['rows'].append(self.row)
+            self.stage = stage
+            self.row = self._new_row()
+
+    def _stop(self, error):
+        self.owner = self.base = None
+        self.value.update(status='INCOMPLETE', error=type(error).__name__+': '+str(error)[:256])
+
+    def _safely(self, step):
+        if 'status' in self.value:  # finished (COMPLETE) or failed (INCOMPLETE): observation has stopped
+            return
+        try:
+            step()
+        except Exception as error:  # noqa: BLE001 - instrumentation never fails the run
+            self.value['status'] = 'INCOMPLETE'  # first, with no call before it: see the class docstring
+            self._stop(error)
+        except BaseException as error:
+            # An interrupt may have landed between two updates of a row: mark the rows, stop, re-raise.
+            self.value['status'] = 'INCOMPLETE'  # first, with no call before it: see the class docstring
+            self._stop(error)
+            raise
+
+    def observe(self):
+        self._safely(self._observe)
+
+    def opened(self, owner):
+        def step():
+            self._observe()
+            require(self.owner is None, 'one completed-query owner at a time')
+            base = self._counts(owner)
+            self.owner, self.base = owner, base
+            self.value['opened_with'].append(dict(stage=self.stage, **base))
+            self.row.update({name: self.row[name] or 0 for name in QUERY_STAGE_FIELDS}, opens=self.row['opens']+1)
+        self._safely(step)
+
+    def closed(self, owner):
+        def step():
+            require(owner is self.owner, 'a different completed-query owner closed')
+            self._accumulate()
+            self.owner = self.base = None
+        self._safely(step)
+
+    def finish(self):
+        def step():
+            self._observe()
+            self._accumulate()
+            self.owner = self.base = None
+            self.value['rows'].append(self.row)
+            self.row = None
+            self.value['status'] = 'COMPLETE'
+        self._safely(step)
+
+
 @contextmanager
 def completed_queries(owner_type, directory, *, declared, arguments, execution, budget, cancel, limits, record,
-                      save):
+                      save, query_stages=None):
     """The declared completed-query owner; flush() BEFORE its counts are recorded.
 
     Held queries are acknowledged in ``written`` only by their commit, so counts
@@ -569,6 +914,8 @@ def completed_queries(owner_type, directory, *, declared, arguments, execution, 
                 'completed-query owner differs from the declared store')
         flush = getattr(owner, 'flush', None)
         require(declared == 'files' or callable(flush), 'a batched completed-query store must flush')
+        if query_stages is not None:
+            query_stages.opened(owner)
         try:
             yield owner
         finally:
@@ -581,6 +928,8 @@ def completed_queries(owner_type, directory, *, declared, arguments, execution, 
                     raise
                 active.add_note('Completed-query flush also failed: '+repr(flush_error))
             finally:
+                if query_stages is not None:
+                    query_stages.closed(owner)
                 record['completed_queries'] = {
                     'directory': str(directory), 'store': declared, 'arguments': arguments,
                     'hits': owner.hits, 'misses': owner.misses, 'written': owner.written,
@@ -612,18 +961,25 @@ def _store_configuration(store):
             'compact runtime storage configuration differs from reviewed bounds')
 
 
-def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_before_advance=False, seed=None):
+def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_before_advance=False, seed=None,
+                       start_gate=None, query_stages=None, interval=None, parent_adopted_sha256=None):
     """Run A or run B under the selected pinned sources and the live external guard.
 
     ``stop_before_advance`` (run B only, the smoke): stop after the adopted root is
     reopened and compared; interval 1 is never begun. ``seed`` (run B only, item 7): run A's
-    receipt and measurement-store SHA-256s; see seed_initial_measurements.
+    receipt and measurement-store SHA-256s; see seed_initial_measurements. ``start_gate``: the launcher's
+    start_gate decision (encoded), admitted again here against this process's free memory.
+    ``interval`` and ``parent_adopted_sha256`` (item 21): run B of interval N >= 2 from exactly that
+    adopted(N-1) file; see sealed_lineage. Neither is derived here.
     """
     require(type(profile) is FreshProfile and type(sources) is FreshSources and sources.profile is profile and
             sources.selected_now and mode in MODES, 'actual selected pinned sources and a route (1) mode required')
     require(type(stop_before_advance) is bool and (mode == 'interval' or not stop_before_advance),
             'stop-before-advance applies to run B only')
     require(seed is None or mode == 'interval', 'a measurement seed applies to run B only')
+    number = interval_number(mode, interval)
+    parent_adopted_sha256 = parent_pin(number, parent_adopted_sha256)
+    require(not stop_before_advance or number == 1, 'interval N >= 2 runs no smoke: stop-before-advance is interval 1 only')
     require(SEED_ENVIRONMENT not in os.environ,
             'measurement seeds are explicit arguments only: '+SEED_ENVIRONMENT+' is refused')
     row = profile.record()
@@ -638,8 +994,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     record['completed_query_store'] = {'declared': declared, 'arguments': query_arguments}
     m = composition(sources)
     require_strict_execution()
-    record.update(RUN.interpreter_gate(), mode=mode, interval=INTERVALS[mode])
-    output = mode_output(row, mode)
+    record.update(RUN.interpreter_gate(), mode=mode, interval=number)
+    output = mode_output(row, mode, interval)
     store_directory = Path(row['store_directory'])
     require(RUN.ordinary(output, directory=True) == output and output.is_relative_to(sources.workspace) and
             guard.output == output/'run.json', 'guard and fresh run output directory differ')
@@ -647,15 +1003,14 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
     limits = row['completed_query_limits']
     import psutil
     available = psutil.virtual_memory().available
-    require(available >= RUN.START_BYTES, 'a route (1) run requires 10 GiB available at startup')
+    admitted = SG.child_admit(start_gate, available)
     guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
     RUN._guard_boundary(sources, guard, budget)
     check = lambda: guard.check(force=True)
     H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
     proof = sources.verify()
     identities = {'producer_identity': profile.sha256, 'runtime_identity': proof['native_source_digest']}
-    record.update(guard_limits={'rss_bytes': RUN.RSS_BYTES, 'free_floor_bytes': RUN.FREE_BYTES,
-                                'start_available_bytes': RUN.START_BYTES, 'logical_budget_bytes': RUN.LOGICAL_BYTES},
+    record.update(guard_limits=SG.guard_limits(admitted), start_gate=admitted,
                   memory_at_start={'available_bytes': available}, source_proof=proof, identities=identities,
                   completed_query_limits=dict(limits), production_acceptance=False)
     binding = measurement_composition(profile, sources, proof=proof, interpreter_seed=record['interpreter_seed'])
@@ -702,9 +1057,19 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                     not query_directory.is_relative_to(Path(row['output_directory'])),
                     'explicit reusable completed-query directory must be outside this attempt')
             query_directory.mkdir(exist_ok=True)
+            lineage = None
+            if number >= 2:
+                guard.phase('sealed-lineage-gate')
+                lineage = sealed_lineage(store_directory, number, parent_adopted_sha256,
+                                         interval_one=interval_one_route(profile) if number == 2 else None)
+                record['lineage'] = lineage['lineage']
+                save()
             with CRS.CompactRestartStore.open_catalog(catalog, scope=scope) as store:
                 _store_configuration(store)
-                root_runner = require_promoted_root(store, store_directory)
+                if lineage is None:
+                    root_runner = require_promoted_root(store, store_directory)
+                else:
+                    root_runner = require_lineage_head(store, lineage)
                 reused = None
                 if seed is not None:
                     guard.phase('seed-initial-measurements')
@@ -732,7 +1097,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                     record['sealed'] = _advance(record=record, save=save, guard=guard, store=store, m=m, FRESH=FRESH,
                         PRESEAL=PRESEAL, sources=sources, root_runner=root_runner, identities=identities,
                         budget=budget, output=output, catalog=catalog, query_directory=query_directory,
-                        store_directory=store_directory, check=check, query_store=(EndpointCheckpoints, declared,
+                        store_directory=store_directory, check=check, query_stages=query_stages,
+                        number=number, lineage=lineage, query_store=(EndpointCheckpoints, declared,
                         query_arguments, limits), measurements=measurements)
                     record['compact_operations'] = store.statistics()
                 record['initial_measurement_store'] = measurement_record(output, binding=binding,
@@ -749,15 +1115,20 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
 
 
 def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_runner, identities, budget, output,
-             catalog, query_directory, store_directory, check, query_store, measurements=None):
-    """Run B's interval: begin interval 1, advance once, then the post-advance protocol with the workflow open."""
+             catalog, query_directory, store_directory, check, query_store, measurements=None, query_stages=None,
+             number=1, lineage=None):
+    """Run B's interval: begin interval ``number``, advance once, then the post-advance protocol with the workflow open.
+
+    Interval 1 advances from the adopted root; interval N >= 2 from the adopted interval N-1 of
+    ``lineage`` (sealed_lineage's result), whose runner record and adoption its own record pins.
+    """
     owner_type, declared, query_arguments, limits = query_store
     store.start_next_interval(**identities)
 
     def query_checkpoints(execution):
         return completed_queries(owner_type, query_directory, declared=declared, arguments=query_arguments,
                                  execution=execution, budget=budget, cancel=check, limits=limits, record=record,
-                                 save=save)
+                                 save=save, query_stages=query_stages)
 
     def finish(workflow, *, before, after, parent, root_bytes):
         sources.check_imported()
@@ -776,12 +1147,15 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
                                  'end_mesh_supports': list(sources.module('publish_mesh_patch').END_MESH_SUPPORTS)}
         base = {'workflow_id': after['workflow_id'], 'advanced_endpoint': after, 'previous_endpoint': before,
                 'producer_pid': os.getpid(), 'root_runner_record_sha256': sha256(canonical(root_runner)).hexdigest()}
+        if lineage is not None:
+            base.update(parent_runner_record_sha256=lineage['lineage']['records'][-1]['runner_sha256'],
+                        parent_adopted_sha256=lineage['parent_adopted_sha256'], lineage=lineage['lineage'])
 
         def seal_for_review(cause):
             record['preseal_refused'] = cause
             save()
             guard.phase('seal-interval-for-review')
-            sealed = seal_with_records(store, after['head'], store_directory=store_directory, interval=1,
+            sealed = seal_with_records(store, after['head'], store_directory=store_directory, interval=number,
                 identities=identities, record=record, save=save,
                 extra=dict(base, preseal_refused=cause, review_only=True))
             entry = sealed['entry']
@@ -797,15 +1171,19 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
         RUN.storage_point(record, 'after-advance', checkpoint=catalog, query_directory=query_directory, store=store)
         save()
         guard.phase('seal-interval-awaiting-reader')
-        return seal_with_records(store, after['head'], store_directory=store_directory, interval=1,
+        return seal_with_records(store, after['head'], store_directory=store_directory, interval=number,
             identities=identities, record=record, save=save, extra=dict(base, record_identities=identities_record))
     RUN.storage_point(record, 'before-advance', checkpoint=catalog, query_directory=query_directory, store=store)
     save()
     guard.phase('advance-exactly-one-fresh-interval')
     with _focused_capture(output, sources.check_imported):
-        return FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
-            artifacts=output, phase=guard.phase, guard=guard, record=record, save=save,
-            query_checkpoints=query_checkpoints, finish=finish, measurements=measurements)
+        if lineage is None:
+            return FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
+                artifacts=output, phase=guard.phase, guard=guard, record=record, save=save,
+                query_checkpoints=query_checkpoints, finish=finish, measurements=measurements)
+        return FRESH.advance_successor_interval(m, store=store, expected_root=root_runner['root'],
+            lineage=lineage['lineage'], budget=budget, artifacts=output, phase=guard.phase, guard=guard, record=record,
+            save=save, query_checkpoints=query_checkpoints, finish=finish, measurements=measurements)
 
 
 def final_status(errors, mode, record=None):
@@ -826,16 +1204,20 @@ def _seed(seed, mode):
     return {name: RUN._sha(seed[name]) for name in sorted(SEED_FIELDS)}
 
 
-def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None):
-    """Inspectable guarded command only; never launches or reads a store."""
+def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
+            interval=None, parent_adopted_sha256=None):
+    """Inspectable guarded command only; never launches or reads a store. ``start_gate`` goes last."""
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
     require(type(stop_before_advance) is bool and (mode == 'interval' or not stop_before_advance),
             'stop-before-advance applies to run B only')
+    number = interval_number(mode, interval)
+    pin = parent_pin(number, parent_adopted_sha256)
+    require(not stop_before_advance or number == 1, 'interval N >= 2 runs no smoke: stop-before-advance is interval 1 only')
     seed = _seed(seed, mode)
     sources = FreshSources(profile)
     sources.verify()
     row = profile.record()
-    output = mode_output(row, mode)
+    output = mode_output(row, mode, interval)
     RUN.ordinary(output.parent, directory=True)
     require(output.is_relative_to(sources.workspace) and not output.exists(), 'exclusive new run output directory required')
     guard = sources.path(row['modules']['private_heat_continuation_guard_r3'])
@@ -845,7 +1227,9 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
             *(['--dev-timing'] if dev_timing else []),
             *(['--seed-receipt-sha256', seed['receipt_sha256'], '--seed-store-sha256', seed['store_sha256']]
               if seed else []),
-            *(['--stop-before-advance'] if stop_before_advance else [])]
+            *(['--stop-before-advance'] if stop_before_advance else []),
+            *(['--interval', str(number), '--parent-adopted-sha256', pin] if number >= 2 else []),
+            *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
 def _error(error):
@@ -854,12 +1238,15 @@ def _error(error):
             'first_raised': {'type': type(origin).__name__, 'message': str(origin)}}
 
 
-def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None):
+def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
+              interval=None, parent_adopted_sha256=None):
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     seed = _seed(seed, mode)
+    number = interval_number(mode, interval)
+    parent_adopted_sha256 = parent_pin(number, parent_adopted_sha256)
     sources = FreshSources(profile)
-    output = mode_output(profile.record(), mode)/'run.json'
+    output = mode_output(profile.record(), mode, interval)/'run.json'
     record: dict = {'schema': RESULT_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'mode': mode,
                     'profile_sha256': profile.sha256, 'errors': [], 'production_acceptance': False,
                     'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed}
@@ -871,13 +1258,19 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
         G = sources.module('private_heat_continuation_guard_r3')
         timing = sources.module('dev_stage_timing')
         dev_timing = timing.enabled(dev_timing)
-        save = lambda: G._write(output, record)
+        query_stages = QueryStages(record)
+
+        def save():
+            query_stages.observe()
+            G._write(output, record)
         try:
             guard = G.ContinuationGuard(output, record, save)
             with timing.collect(guard, output.parent, enabled=dev_timing, record=record,
                                 metadata={'profile_sha256': profile.sha256, 'mode': mode}):
                 budget = run_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save, mode=mode,
-                                            stop_before_advance=stop_before_advance, seed=seed)
+                                            stop_before_advance=stop_before_advance, seed=seed,
+                                            start_gate=start_gate, query_stages=query_stages,
+                                            interval=interval, parent_adopted_sha256=parent_adopted_sha256)
             record['status'] = 'VERIFYING_FINALISATION'
         except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded in run.json
             record['status'] = 'FAILED'
@@ -905,6 +1298,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
                     guard.close()
             except BaseException as error:  # noqa: BLE001 - a finalisation failure is recorded, never lost
                 record['errors'].append(_error(error))
+            query_stages.finish()
             record['status'] = final_status(record['errors'], mode, record)
             save()
     return 0 if not record['errors'] else 1
@@ -919,28 +1313,42 @@ def main(argv=None):
     parser.add_argument('--stop-before-advance', action='store_true', help='run B only: the smoke, never interval 1')
     parser.add_argument('--seed-receipt-sha256', help='run B only, with --seed-store-sha256: run A receipt (item 7)')
     parser.add_argument('--seed-store-sha256', help='run B only: the measurement store SHA-256 run A recorded')
+    parser.add_argument('--interval', type=int, help='run B only, item 21: the interval N >= 2 to seal')
+    parser.add_argument('--parent-adopted-sha256', help='with --interval N >= 2: the adopted(N-1) file SHA-256')
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--launch', action='store_true')
     action.add_argument('--workload', action='store_true')
+    parser.add_argument(SG.ARGUMENT, dest='start_gate', help='the launcher\'s start gate decision (--workload)')
+    SG.add_arguments(parser)
     args = parser.parse_args(argv)
     dev_timing = RUN._dev_timing_enabled(args.dev_timing)
     require((args.seed_receipt_sha256 is None) == (args.seed_store_sha256 is None),
             'a measurement seed needs both its receipt and store SHA-256')
     seed = (None if args.seed_receipt_sha256 is None else
             {'receipt_sha256': args.seed_receipt_sha256, 'store_sha256': args.seed_store_sha256})
+    gate_args = bool(args.peak_records) or args.booking_bytes is not None or args.booking_basis is not None
+    SG.require(args.start_gate is None or args.workload, SG.ARGUMENT+' is the guarded child\'s argument only')
+    SG.require(not (gate_args and args.workload), 'the start gate is decided by whoever launches, not the child')
+    # Decided before anything is read or made; a launch always needs one, a printed command only if asked.
+    gate = (SG.stage_decision(SG.stage_key(args.mode, interval_number(args.mode, args.interval)),
+                              records=args.peak_records,
+                              booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
+            if args.launch or gate_args else None)
     profile = FreshProfile.read(args.profile, args.profile_sha256)
     if args.workload:
         return _workload(profile, mode=args.mode, dev_timing=dev_timing, stop_before_advance=args.stop_before_advance,
-                         seed=seed)
+                         seed=seed, start_gate=args.start_gate, interval=args.interval,
+                         parent_adopted_sha256=args.parent_adopted_sha256)
     argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
-                   stop_before_advance=args.stop_before_advance, seed=seed)
+                   stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
+                   parent_adopted_sha256=args.parent_adopted_sha256)
     print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                       'production_acceptance': False}), flush=True)
     if not args.launch:
         return 0
     import psutil
-    require(psutil.virtual_memory().available >= RUN.START_BYTES, 'a route (1) run requires 10 GiB available')
-    output = mode_output(profile.record(), args.mode)
+    SG.admit(gate, psutil.virtual_memory().available)
+    output = mode_output(profile.record(), args.mode, args.interval)
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=RUN.launch_environment(), cwd=output)
 

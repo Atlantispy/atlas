@@ -4,7 +4,7 @@ Stage ``root`` (run A) or ``interval`` (run B). In order, each step only after
 the previous one passed:
 
 1. preflight, store-free: the pinned profile and the runner and reader bytes it
-   names, 10 GiB available (warning below 14 GiB), disk headroom, no
+   names, the by-need start gate (start_gate.py), disk headroom, no
    instrumentation or import-path environment, no pending Windows restart, no
    live process naming this attempt, fresh outputs, and for ``interval`` run A
    adopted after its own reader;
@@ -30,6 +30,12 @@ coordinator and Michael. Real runs above 2 GiB go under run_with_heavy_lock.py.
 from run A's closed initial measurement store. The launcher passes the receipt SHA-256 the
 root stage record holds and the store SHA-256 run A recorded in that receipt; it never hashes
 the store itself. The runner checks the whole chain and copies the store before its admission.
+
+``--interval N`` (interval stage, N >= 2; item 21): stage ``interval-NNNN`` starts from adopted
+interval N-1 exactly as its own stage record names it (ADOPTED, width gate passed); the
+launcher passes that adoption record's SHA-256 to the runner, which re-checks the whole
+sealed lineage before the catalog opens. N = 1 is the interval stage unchanged. A failed
+width gate at any N still adopts and reports GATE_STOP.
 """
 import argparse
 import json
@@ -45,6 +51,7 @@ import launch_monitored_interval as LM
 import reopen_fresh_restart as RF
 import run_fresh_interval as F
 import run_prepared_restart as RUN
+import start_gate as SG
 
 HERE = Path(__file__).resolve().parent
 _SELF_SHA = sha256(Path(__file__).read_bytes()).hexdigest()
@@ -53,7 +60,8 @@ STAGES = F.MODES
 ADOPTED = 'ADOPTED'
 GATE_STOP = 'ADOPTED_WIDTH_GATE_STOP_BEFORE_INTERVAL_2'
 # The orchestration this launcher itself loads; the children pin everything else.
-PINNED = ('run_fresh_interval.py', 'run_prepared_restart.py', 'reopen_fresh_restart.py', 'reopen_prepared_restart.py')
+PINNED = ('run_fresh_interval.py', 'run_prepared_restart.py', 'reopen_fresh_restart.py', 'reopen_prepared_restart.py',
+          'start_gate.py')
 ROOT_STEPS = ['runner', 'reader', 'finalise', 'adopt']
 REUSE_FIELDS = ('status', 'hits', 'misses', 'full_reuse', 'counts_agree_with_bytes', 'copy_seconds')
 
@@ -67,18 +75,20 @@ def require(condition, message):
         raise StageRefused(message)
 
 
-def paths(row, stage):
+def paths(row, stage, interval=None):
     attempt = Path(row['output_directory'])
-    run, reader = F.mode_output(row, stage), RF.reader_output(row, stage)
-    return {'attempt': attempt, 'record': attempt/f'stage-{stage}.json',
+    number = F.interval_number(stage, interval)
+    name = stage if number <= 1 else f'{stage}-{number:04d}'
+    run, reader = F.mode_output(row, stage, interval), RF.reader_output(row, stage, interval)
+    return {'attempt': attempt, 'record': attempt/f'stage-{name}.json',
             'run': {'out': run, 'receipt': run/'run.json', 'guard': run/'run.guard.json',
                     'control': run/'run.guard-control.json', 'abort': run/'run.guard-abort.json',
-                    'cancel': run/'run.cancel', 'tracking': attempt/f'run-{stage}.tracking.json',
-                    'log': attempt/f'run-{stage}.log'},
+                    'cancel': run/'run.cancel', 'tracking': attempt/f'run-{name}.tracking.json',
+                    'log': attempt/f'run-{name}.log'},
             'reader': {'out': reader, 'receipt': reader/'reopen.json', 'guard': reader/'reopen.guard.json',
                        'control': reader/'reopen.guard-control.json', 'abort': reader/'reopen.guard-abort.json',
-                       'cancel': reader/'reopen.cancel', 'tracking': attempt/f'reader-{stage}.tracking.json',
-                       'log': attempt/f'reader-{stage}.log'}}
+                       'cancel': reader/'reopen.cancel', 'tracking': attempt/f'reader-{name}.tracking.json',
+                       'log': attempt/f'reader-{name}.log'}}
 
 
 def _save(path, value):
@@ -102,7 +112,7 @@ def _pinned_sources(profile):
         pin = LM.file_hash(path)
         LM._bound_file(workspace, manifest, path, pin, name)
         found[name] = pin
-    loaded = {Path(str(module.__file__)).resolve() for module in (F, RF, RUN, RF.RO)}
+    loaded = {Path(str(module.__file__)).resolve() for module in (F, RF, RUN, RF.RO, SG)}
     require(loaded == {(HERE/name).resolve() for name in PINNED}, 'route (1) modules were loaded from elsewhere')
     return found
 
@@ -164,15 +174,89 @@ def initial_measurement_seed(row):
     return {'receipt_sha256': receipt_sha256, 'store_sha256': LM._sha(stored.get('sha256'))}
 
 
+def parent_adoption(row, number, parent_adopted_sha256=None):
+    """Item 21: adopted interval N-1 as its own stage recorded it; the adoption record's pin for the runner.
+
+    Ordinarily the parent stage must be ADOPTED after its runner, reader, finalise and adopt
+    steps, its finalise step must record the width gate passed, and adopted(N-1) must be adopted
+    from that step's verdict; no explicit pin is taken. A width-gate stop needs the coordinator
+    and Michael, so it is no parent here. A review-adopted N-1 is the separate branch
+    reviewed_parent, which needs ``parent_adopted_sha256``. The runner checks the durable
+    verdicts' gates again.
+    """
+    parent = paths(row, 'interval', None if number == 2 else number-1)
+    stage = LM._read(parent['record'])
+    if type(stage) is dict and stage.get('status') == F.REVIEW_STATUS:
+        return reviewed_parent(row, number, parent['record'], stage, parent_adopted_sha256)
+    require(parent_adopted_sha256 is None, 'an explicit parent adoption pin is for a review-adopted parent only')
+    steps = stage.get('steps') if type(stage) is dict else None
+    require(type(stage) is dict and stage.get('schema') == STAGE_SCHEMA and stage.get('stage') == 'interval' and
+            stage.get('interval') == number-1 and stage.get('status') == ADOPTED and type(steps) is list and
+            all(type(step) is dict for step in steps) and [step.get('name') for step in steps] == ROOT_STEPS and
+            all(step.get('ok') is True for step in steps) and steps[2].get('width_gate_passed') is True,
+            'interval N requires interval N-1 adopted by its own stage with its width gate passed')
+    pin = LM._sha(steps[3].get('adopted_sha256'))
+    path = RF.adopted_path(Path(row['store_directory']), number-1)
+    require(LM.file_hash(path) == pin, 'adopted interval N-1 differs from its stage record')
+    adopted = F.read_record(path, schema=RF.ADOPTED_SCHEMA, expected_sha256=pin)
+    require(adopted.get('interval') == number-1 and adopted.get('status') == RF.ADOPTED_STATUS and
+            adopted.get('verdict_sha256') == steps[2].get('verdict_sha256'),
+            'adopted interval N-1 differs from its stage record')
+    return {'stage_record': str(parent['record']), 'adopted_sha256': pin}
+
+
+def reviewed_parent(row, number, record_path, stage, pin):
+    """Interval N-1 sealed for review by its own stage, then adopted by the recorded approval route.
+
+    The old stage stays as it is (REVIEW_STATUS, failed at preseal). Its clean review evidence
+    (no postcheck failure, guard wrapper exit 2) must name the adoption at the explicit pin:
+    the stage's producer receipt is that verdict's, and its sealed file is the adopted entry's.
+    The adoption carries its approval; the verdict is review-only with its width gate passed.
+    The runner re-checks the approval, review flags, gate, lineage and catalog.
+    """
+    pin = LM._sha(pin) if pin is not None else None
+    require(pin is not None, 'a review-adopted parent needs its explicit adoption pin')
+    steps, review = stage.get('steps'), stage.get('review')
+    require(stage.get('schema') == STAGE_SCHEMA and stage.get('stage') == 'interval' and
+            stage.get('interval') == number-1 and stage.get('failed_step') == 'preseal' and
+            type(steps) is list and len(steps) == 1 and type(steps[0]) is dict and steps[0].get('name') == 'runner' and
+            type(steps[0].get('exit')) is int and steps[0]['exit'] == 2 and
+            type(review) is dict and review.get('guard_failures') == [],
+            'interval N-1 stage has no clean review evidence')
+    store = Path(row['store_directory'])
+    path = RF.adopted_path(store, number-1)
+    require(LM.file_hash(path) == pin, 'adopted interval N-1 differs from the explicit pin')
+    adopted = F.read_record(path, schema=RF.ADOPTED_SCHEMA, expected_sha256=pin)
+    entry = adopted.get('entry')
+    require(adopted.get('interval') == number-1 and adopted.get('status') == RF.ADOPTED_STATUS and
+            type(adopted.get('review_approval_sha256')) is str and type(entry) is dict,
+            'the explicit pin is no review-approved adoption of interval N-1')
+    # read_record treats a None pin as unpinned: the adoption's verdict pin must be a full SHA-256.
+    verdict = F.read_record(F.verdict_path(store, number-1), schema=F.VERDICT_SCHEMA,
+                            expected_sha256=LM._sha(adopted.get('verdict_sha256')))
+    require(verdict.get('review_only') is True and F.width_gate_passed(verdict.get('width_gate'), number-1),
+            'interval N requires review-adopted interval N-1 read with its width gate passed')
+    require(review.get('receipt_sha256') == verdict.get('producer_receipt_sha256') and
+            review.get('sealed_file') == {k: entry.get(k) for k in ('filename', 'file_sha256', 'logical_seal')},
+            'adopted interval N-1 differs from its review stage record')
+    return {'stage_record': str(record_path), 'adopted_sha256': pin, 'route': 'review-adopted',
+            'review_approval_sha256': adopted['review_approval_sha256']}
+
+
 def preflight(profile_path, profile_sha256, *, stage, python=None, environ=None, dev_timing=False,
-              stop_before_advance=False, reuse_initial_measurements=False):
-    """Store-free checks; writes and launches nothing."""
+              stop_before_advance=False, reuse_initial_measurements=False, peak_records=(), booking_bytes=None,
+              booking_basis=None, interval=None, parent_adopted_sha256=None):
+    """Store-free checks; writes and launches nothing. The start gate (start_gate.py) is decided from the
+    named stage records, or the declared booking when there is none, and admitted against this machine."""
     require(os.name == 'nt', 'Windows job-object launch required')
     require(stage in STAGES and type(dev_timing) is bool, 'explicit route (1) stage required')
     require(type(stop_before_advance) is bool and (stage == 'interval' or not stop_before_advance),
             'stop-before-advance applies to the interval stage only')
     require(type(reuse_initial_measurements) is bool and (stage == 'interval' or not reuse_initial_measurements),
             'measurement reuse applies to the interval stage only')
+    number = F.interval_number(stage, interval)
+    require(number < 2 or not stop_before_advance, 'interval N >= 2 runs no smoke: the smoke is interval 1 only')
+    require(number >= 2 or parent_adopted_sha256 is None, 'an explicit parent adoption pin is for interval N >= 2')
     environ = dict(os.environ if environ is None else environ)
     dev_timing = LM._dev_timing_enabled(dev_timing, environ)
     profile = F.FreshProfile.read(Path(profile_path), LM._sha(profile_sha256))
@@ -180,23 +264,27 @@ def preflight(profile_path, profile_sha256, *, stage, python=None, environ=None,
     pins = _pinned_sources(profile)
     composition = _composition_root(row, LM._pinned_manifest(row)[1])
     python = LM._ordinary(sys.executable if python is None else python)
-    p = paths(row, stage)
+    p = paths(row, stage, interval)
     RUN.ordinary(p['attempt'], directory=True)
     for item in (p['record'], p['run']['out'], p['reader']['out'], p['run']['tracking'], p['run']['log'],
                  p['reader']['tracking'], p['reader']['log']):
         require(not item.exists(), 'fresh stage outputs required: '+str(item))
     store = Path(row['store_directory'])
-    interval = F.INTERVALS[stage]
+    parent = None
     if stage == 'root':
         require(not store.exists(), 'run A requires a new store directory')
-    else:
+    elif number == 1:
         adopted = F.read_record(RF.adopted_path(store, 0), schema=RF.ADOPTED_SCHEMA)
-        require(adopted['status'] == RF.ADOPTED_STATUS and not F.runner_record_path(store, interval).exists(),
+        require(adopted['status'] == RF.ADOPTED_STATUS and not F.runner_record_path(store, number).exists(),
                 'interval 1 requires run A adopted and no earlier interval-1 record')
+    else:
+        parent = parent_adoption(row, number, parent_adopted_sha256)
+        require(not F.runner_record_path(store, number).exists(), 'interval N requires no earlier interval-N record')
     seed = initial_measurement_seed(row) if reuse_initial_measurements else None
+    gate = SG.stage_decision(SG.stage_key(stage, number), records=peak_records, booking_bytes=booking_bytes,
+                             booking_basis=booking_basis)
     available = LM._available_bytes()
-    require(type(available) is int and available >= RUN.START_BYTES,
-            f'a route (1) stage requires 10 GiB available at launch (have {available} bytes)')
+    admitted = SG.admit(gate, available)
     limits = row['completed_query_limits']
     required = (RUN.COMPACT_STORE_LIMITS['max_store_bytes'] + RUN.COMPACT_STORE_LIMITS['max_staging_bytes'] +
                 limits['max_store_bytes'])
@@ -214,11 +302,12 @@ def preflight(profile_path, profile_sha256, *, stage, python=None, environ=None,
     reboot = LM._pending_reboot()
     require(not reboot, 'pending Windows restart: '+'; '.join(reboot))
     argv = F.command(profile, python, mode=stage, dev_timing=dev_timing, stop_before_advance=stop_before_advance,
-                     seed=seed)
+                     seed=seed, start_gate=gate, interval=interval,
+                     parent_adopted_sha256=None if parent is None else parent['adopted_sha256'])
     require(argv[:2] == [str(python), '-B'] and argv[3:7] == ['--launch', '--output', str(p['run']['receipt']), '--'],
             'runner command differs from the guarded launch shape')
     env = dict(environ, **LM.LAUNCH_ENV)
-    record = {'schema': STAGE_SCHEMA, 'stage': stage, 'interval': interval, 'status': 'PREFLIGHT_PASSED',
+    record = {'schema': STAGE_SCHEMA, 'stage': stage, 'interval': number, 'status': 'PREFLIGHT_PASSED',
               'utc': datetime.now(timezone.utc).isoformat(), 'production_acceptance': False,
               'launcher': {'pid': os.getpid(), 'path': str(Path(__file__).resolve()), 'sha256': _SELF_SHA,
                            'monitored_helpers_sha256': LM._SELF_SHA},
@@ -226,12 +315,14 @@ def preflight(profile_path, profile_sha256, *, stage, python=None, environ=None,
               'composition_root': composition,
               'python': str(python), 'env': {name: env[name] for name in LM.LAUNCH_ENV}, 'dev_timing': dev_timing,
               'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed,
-              'memory': {'available_bytes': available, 'hard_gate_bytes': RUN.START_BYTES,
+              'memory': {'available_bytes': available, 'hard_gate_bytes': admitted['gate_bytes'],
                          'warning_bytes': LM.WARN_BYTES, 'warning': available < LM.WARN_BYTES},
+              'start_gate': admitted,
               'disk': {'free_bytes': free, 'required_bytes': required}, 'completed_queries': queries,
-              'pending_reboot': reboot, 'process_matches': matches, 'steps': []}
+              'pending_reboot': reboot, 'process_matches': matches, 'steps': [],
+              **({} if parent is None else {'parent': parent})}
     return {'profile': profile, 'row': row, 'paths': p, 'argv': argv, 'env': env, 'python': python, 'record': record,
-            'seed': seed}
+            'seed': seed, 'gate': gate, 'interval': interval}
 
 
 def _guarded(argv, env, p, emit):
@@ -275,7 +366,10 @@ def guard_postcheck(p, *, receipt_status, review=False):
 
     check('guard_stopped', lambda: guard['schema'] == LM.GUARD_SCHEMA and guard['status'] == 'STOPPED' and
           not guard.get('reason'))
-    check('guard_exit', lambda: guard['workload_exit_confirmed'] is True and guard['workload_exit_code'] == 0)
+    # A review producer exits 1 with its one review error (the receipt check below); nothing else does.
+    check('guard_exit', lambda: guard['workload_exit_confirmed'] is True and (
+        type(guard['workload_exit_code']) is int and guard['workload_exit_code'] == 1 if review
+        else guard['workload_exit_code'] == 0))
     check('guard_cleanup', lambda: guard['cleanup'] == LM.CLEAN and 'cleanup_error' not in guard)
     check('guard_limits', lambda: guard['limits'] == {'rss_bytes': RUN.RSS_BYTES, 'free_floor_bytes': RUN.FREE_BYTES})
     check('guard_parent', lambda: guard['parent']['pid'] == receipt['pid'] and control['parent'] == guard['parent']
@@ -322,8 +416,14 @@ def _tool(python, env, *arguments):
 
 
 def review_stop(record, p, step, emit, *, stage, code, seconds):
-    """The runner sealed its interval for review: report it plainly; no reader, no adoption."""
+    """The runner sealed its interval for review: report it plainly; no reader, no adoption.
+
+    Clean review evidence is guard wrapper exit 2 (its workload exited 1) with no postcheck
+    failure; anything else is recorded as it is and is no parent (reviewed_parent).
+    """
     failures, checks, resources = guard_postcheck(p['run'], receipt_status=F.REVIEW_STATUS, review=True)
+    if code != 2:
+        failures = [*failures, 'guard_wrapper_exit']
     receipt = LM._read(p['run']['receipt']) or {}
     review = receipt.get('review_only') or {}
     record.update(status=F.REVIEW_STATUS, failed_step='preseal', review={
@@ -347,16 +447,20 @@ def reuse_milestone(receipt, seed):
 
 
 def run_stage(profile_path, profile_sha256, *, stage, python=None, environ=None, dev_timing=False,
-              stop_before_advance=False, reuse_initial_measurements=False, emit=print):
+              stop_before_advance=False, reuse_initial_measurements=False, emit=print, peak_records=(),
+              booking_bytes=None, booking_basis=None, interval=None, parent_adopted_sha256=None):
     plan = preflight(profile_path, profile_sha256, stage=stage, python=python, environ=environ,
                      dev_timing=dev_timing, stop_before_advance=stop_before_advance,
-                     reuse_initial_measurements=reuse_initial_measurements)
+                     reuse_initial_measurements=reuse_initial_measurements, peak_records=peak_records,
+                     booking_bytes=booking_bytes, booking_basis=booking_basis, interval=interval,
+                     parent_adopted_sha256=parent_adopted_sha256)
     profile, row, p, env, record = plan['profile'], plan['row'], plan['paths'], plan['env'], plan['record']
     LM._write_exclusive(p['record'], record)
     emit(json.dumps({'status': 'PREFLIGHT_PASSED', 'stage': stage, 'record': str(p['record']),
                      'memory_warning': record['memory']['warning']}))
     store = Path(row['store_directory'])
-    common = ['--profile', str(profile.path), '--profile-sha256', profile.sha256, '--mode', stage]
+    common = ['--profile', str(profile.path), '--profile-sha256', profile.sha256, '--mode', stage,
+              *(['--interval', str(interval)] if interval is not None else [])]
 
     def step(name, **values):
         record['steps'].append({'name': name, 'utc': datetime.now(timezone.utc).isoformat(), **values})
@@ -395,7 +499,8 @@ def run_stage(profile_path, profile_sha256, *, stage, python=None, environ=None,
             _save(p['record'], record)
             emit(json.dumps({'status': F.STOPPED_STATUS, 'stage': stage, 'record': str(p['record'])}))
             return 0
-        argv = RF.command(profile, plan['python'], mode=stage, producer_receipt_sha256=run_sha)
+        argv = RF.command(profile, plan['python'], mode=stage, producer_receipt_sha256=run_sha, start_gate=plan['gate'],
+                          interval=interval)
         code, seconds = _guarded(argv, env, p['reader'], emit)
         failures, checks, resources = guard_postcheck(p['reader'], receipt_status=RF.WORKLOAD_STATUS[stage])
         if code != 0 or failures:
@@ -434,25 +539,35 @@ def main(argv=None):
     parser.add_argument('--profile', type=Path, required=True)
     parser.add_argument('--profile-sha256', required=True)
     parser.add_argument('--stage', choices=STAGES, required=True)
+    parser.add_argument('--interval', type=int, help='interval stage only (item 21): interval N >= 2')
+    parser.add_argument('--parent-adopted-sha256',
+                        help='interval N >= 2 after a review-adopted interval N-1: its adoption record SHA-256')
     parser.add_argument('--dev-timing', action='store_true')
     parser.add_argument('--preflight-only', action='store_true', help='checks only; writes and launches nothing')
     parser.add_argument('--stop-before-advance', action='store_true',
                         help='interval stage only: the smoke; reopen the adopted root and stop')
     parser.add_argument('--reuse-initial-measurements', action='store_true',
                         help="interval stage only: start from run A's closed initial measurement store")
+    SG.add_arguments(parser)
     args = parser.parse_args(argv)
     emit = lambda line: print(line, flush=True)
     try:
         if args.preflight_only:
             plan = preflight(args.profile, args.profile_sha256, stage=args.stage, dev_timing=args.dev_timing,
                              stop_before_advance=args.stop_before_advance,
-                             reuse_initial_measurements=args.reuse_initial_measurements)
+                             reuse_initial_measurements=args.reuse_initial_measurements, peak_records=args.peak_records,
+                             booking_bytes=args.booking_bytes, booking_basis=args.booking_basis, interval=args.interval,
+                             parent_adopted_sha256=args.parent_adopted_sha256)
             emit(json.dumps({'status': 'PREFLIGHT_PASSED', 'argv': plan['argv'], 'memory': plan['record']['memory'],
+                             'start_gate': plan['record']['start_gate'],
                              'disk': plan['record']['disk'], 'initial_measurement_seed': plan['seed']}))
             return 0
         return run_stage(args.profile, args.profile_sha256, stage=args.stage, dev_timing=args.dev_timing,
                          stop_before_advance=args.stop_before_advance,
-                         reuse_initial_measurements=args.reuse_initial_measurements, emit=emit)
+                         reuse_initial_measurements=args.reuse_initial_measurements, emit=emit,
+                         peak_records=args.peak_records, booking_bytes=args.booking_bytes,
+                         booking_basis=args.booking_basis, interval=args.interval,
+                         parent_adopted_sha256=args.parent_adopted_sha256)
     except (ValueError, OSError) as error:
         emit(json.dumps({'status': 'REFUSED', 'type': type(error).__name__, 'reason': str(error)}))
         return 2

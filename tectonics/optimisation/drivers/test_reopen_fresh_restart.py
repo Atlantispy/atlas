@@ -22,6 +22,7 @@ import reopen_fresh_restart as RF
 import reopen_prepared_restart as RO
 import run_fresh_interval as F
 import run_prepared_restart as RUN
+import start_gate as SG
 import width_gate as WG
 
 PRODUCER, READER, SUPERVISOR = 100, 200, 77
@@ -416,8 +417,10 @@ class ReviewTests(unittest.TestCase):
                                     'sealed_file': {k: entry[k] for k in ('filename', 'file_sha256', 'logical_seal')}})
         return receipt, runner, sealed, root_runner
 
-    def validate(self, receipt, runner, sealed, root_runner, *, review):
-        guard, control = guard_records(PRODUCER)
+    def validate(self, receipt, runner, sealed, root_runner, *, review, guard=None):
+        default, control = guard_records(PRODUCER)
+        # The real review producer exits 1 (PresealSealedForReview); every other producer exits 0.
+        guard = dict(default, workload_exit_code=1 if review else 0) if guard is None else guard
         return RF.validate_producer_receipt(receipt, profile=self.f.profile, receipt_sha256=key('receipt'),
             runner=runner, sealed=sealed, guard_receipt=guard, guard_control=control, consumer_pid=READER,
             mode='interval', root_runner=root_runner, review=review)
@@ -435,6 +438,35 @@ class ReviewTests(unittest.TestCase):
             self.validate(receipt, runner, sealed, root_runner, review=True)
         with self.assertRaisesRegex(ValueError, 'only an interval'):
             RF._producer_receipt({}, profile=self.f.profile, mode='root', consumer_pid=READER, review=True)
+
+    def test_a_review_producer_exits_one_and_every_other_guard_check_still_runs(self):
+        receipt, runner, sealed, root_runner = self.review_records()
+        guard = {**guard_records(PRODUCER)[0], 'workload_exit_code': 1}
+        self.assertTrue(self.validate(receipt, runner, sealed, root_runner, review=True, guard=guard)['review'])
+        self.assertEqual(guard['workload_exit_code'], 1, 'the guard evidence keeps its real exit')
+        exit_one, clean = 'a review producer exits 1, confirmed by its guardian', 'guardian did not stop cleanly'
+        for message, change in ((exit_one, {'workload_exit_code': 0}), (exit_one, {'workload_exit_code': 2}),
+                                (exit_one, {'workload_exit_code': True}), (exit_one, {'workload_exit_code': '1'}),
+                                (exit_one, {'workload_exit_code': 1.0}), (exit_one, {'workload_exit_code': None}),
+                                (exit_one, {'workload_exit_confirmed': False}),
+                                (clean, {'status': 'PARENT_EXITED'}),
+                                (clean, {'reason': 'parent_exited_without_guard_close'}),
+                                (clean, {'cleanup': {'remaining': [7], 'action_errors': []}}),
+                                (clean, {'schema': 'other'}),
+                                ('guardian parent differs', {'parent': {'pid': PRODUCER+1, 'created_ticks': 1}}),
+                                ('close handshake differs', {'nonce': 'another nonce'}),
+                                ('guardian process differs', {'guardian': {'pid': SUPERVISOR+1}}),
+                                ('12 GiB', {'limits': {'rss_bytes': 1, 'free_floor_bytes': 1}})):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, message):
+                self.validate(receipt, runner, sealed, root_runner, review=True,
+                              guard={**guard_records(PRODUCER)[0], 'workload_exit_code': 1, **change})
+        receipt['errors'].append({'type': 'X', 'message': 'another error'})
+        with self.assertRaisesRegex(ValueError, 'successful sealed producer'):
+            self.validate(receipt, runner, sealed, root_runner, review=True, guard=guard)
+        runner2, sealed2, root2 = self.f.records('interval')
+        with self.assertRaisesRegex(ValueError, clean):
+            self.validate(self.f.receipt('interval', runner2, sealed2), runner2, sealed2, root2, review=False,
+                          guard=guard)
 
     def test_adoption_requires_every_review_condition(self):
         with tempfile.TemporaryDirectory(prefix='rv-', dir=HERE) as temporary:
@@ -541,6 +573,288 @@ class FreshMeasurementStoreTests(unittest.TestCase):
         self.assertLess(source.index("record['measurement_store_new_before_admission'] = True"),
                         source.index('FRESH.admission(m, budget=budget, artifacts=output'))
         self.assertEqual(source.count('FRESH.admission('), 1)
+
+
+class StartGateArgumentTests(unittest.TestCase):
+    """The reader's guarded command carries the launcher's gate last; --launch refuses without one."""
+
+    def test_the_gate_goes_last(self):
+        gate = SG.stage_decision(SG.stage_key('root', 0), booking_bytes=1 << 30, booking_basis='test booking')
+        with tempfile.TemporaryDirectory(prefix='sg-', dir=HERE) as temporary:
+            folder = Path(temporary)
+            sources = SimpleNamespace(workspace=folder, path=lambda name: folder/'guard.py')
+            profile = SimpleNamespace(path=folder/'p.json', sha256=key('p'),
+                                      record=lambda: {'modules': {'private_heat_continuation_guard_r3': 'g.py'}})
+            with mock.patch.object(F, 'FreshSources', return_value=sources), \
+                    mock.patch.object(RF, 'producer_inputs'), \
+                    mock.patch.object(RF, 'reader_output', return_value=folder/'reader-root'), \
+                    mock.patch.object(RF, '_own_pin', return_value=folder/'own.py'):
+                argv = RF.command(profile, sys.executable, mode='root', producer_receipt_sha256=key('r'), review=True,
+                                  start_gate=gate)
+                plain = RF.command(profile, sys.executable, mode='root', producer_receipt_sha256=key('r'))
+        self.assertEqual(argv[-3:], ['--review', SG.ARGUMENT, SG.encode(gate)])
+        self.assertNotIn(SG.ARGUMENT, plain)
+
+    def test_launch_without_a_gate_refuses_before_anything_is_made(self):
+        with tempfile.TemporaryDirectory(prefix='sg-', dir=HERE) as temporary:
+            folder = Path(temporary)
+            base = ['--profile', str(folder/'missing.json'), '--profile-sha256', key('p'), '--mode', 'root',
+                    '--producer-receipt-sha256', key('r')]
+            with self.assertRaisesRegex(SG.StartGateRefused, 'no completed PASS record'):
+                RF.main([*base, '--launch'])
+            with self.assertRaisesRegex(SG.StartGateRefused, 'child'):
+                RF.main([*base, '--workload', '--booking-bytes', '1', '--booking-basis', 'x'])
+            self.assertEqual(list(folder.iterdir()), [])
+
+
+class IntervalNFixture(Fixture):
+    """Item 21: run B of interval 2 from a stand-in sealed-lineage gate on adopted interval 1."""
+
+    def gate(self):
+        root_runner = self.records('interval')[2]
+        lineage = {'schema': F.LINEAGE_SCHEMA, 'interval': 1, 'workflow_id': key('workflow'), 'root_key': key('root'),
+                   'head_key': key('head'), 'catalog_digest': key('catalog 1'), 'catalog_sha256': key('catalog file'),
+                   'records': [{'interval': 0, 'runner_sha256': digest(root_runner)},
+                               {'interval': 1, 'runner_sha256': key('runner 1')}]}
+        return {'lineage': lineage, 'root_runner': root_runner, 'parent_adopted_sha256': key('adopted 1')}
+
+    def records_n(self, gate):
+        runner, sealed, _ = self.records('interval')
+        runner.update(interval=2, head=head_wire('2'),
+                      previous_endpoint={**runner['advanced_endpoint']},
+                      advanced_endpoint={**runner['advanced_endpoint'], 'head': key('head 2'), 'intervals': 2,
+                                         'time_s': 3.0},
+                      parent_runner_record_sha256=key('runner 1'), parent_adopted_sha256=key('adopted 1'),
+                      lineage=copy.deepcopy(gate['lineage']))
+        sealed.update(interval=2, entry=self.entry(2), expected_catalog_digest=key('catalog 1'),
+                      runner_record_sha256=digest(runner))
+        return runner, sealed
+
+    def receipt_n(self, runner, sealed):
+        receipt = self.receipt('interval', runner, sealed)
+        receipt.update(interval=2, previous_endpoint=copy.deepcopy(runner['previous_endpoint']),
+                       advanced_endpoint=copy.deepcopy(runner['advanced_endpoint']))
+        receipt['completed_endpoint'].update(head_key=key('head 2'), sequence=2)
+        return receipt
+
+    def validate_n(self, receipt, runner, sealed, gate, **extra):
+        guard_receipt, control = guard_records(PRODUCER)
+        return RF.validate_producer_receipt(receipt, profile=self.profile, receipt_sha256=key('receipt'),
+            runner=runner, sealed=sealed, guard_receipt=guard_receipt, guard_control=control, consumer_pid=READER,
+            mode='interval', **{'root_runner': gate['root_runner'], 'interval': 2, 'lineage': gate, **extra})
+
+
+class IntervalNReaderTests(unittest.TestCase):
+    """Item 21 in the reader: interval N >= 2 reads, finalises and adopts from its own sealed lineage."""
+
+    def setUp(self):
+        self.f = IntervalNFixture()
+
+    def test_review_approval_and_record_paths_are_the_runners(self):
+        self.assertIs(RF.review_approval, F.review_approval)
+        self.assertIs(RF.approval_path, F.approval_path)
+        self.assertIs(RF.adopted_path, F.adopted_path)
+        self.assertEqual((RF.REVIEW_APPROVAL_SCHEMA, RF.REVIEW_APPROVERS),
+                         (F.REVIEW_APPROVAL_SCHEMA, F.REVIEW_APPROVERS))
+
+    def test_reader_output_of_interval_n(self):
+        row = {'output_directory': str(HERE/'attempt'), 'store_directory': str(HERE/'store')}
+        self.assertEqual(RF.reader_output(row, 'interval', 2), HERE/'attempt'/'reader-interval-0002')
+        self.assertEqual(RF.reader_output(row, 'interval', 1), HERE/'attempt'/'reader-interval')
+        self.assertEqual(RF.reader_output(row, 'root'), HERE/'attempt'/'reader-root')
+        for mode, interval in (('root', 1), ('interval', 0), ('interval', '2')):
+            with self.subTest(mode=mode, interval=interval), self.assertRaisesRegex(F.FreshRefused, 'N >= 1'):
+                RF.reader_output(row, mode, interval)
+        with self.assertRaisesRegex(F.FreshRefused, 'outlive'):
+            RF.reader_output(dict(row, store_directory=str(HERE/'attempt'/'reader-interval-0002'/'s')), 'interval', 2)
+
+    def test_an_interval_n_producer_extends_its_lineage_head(self):
+        gate = self.f.gate()
+        runner, sealed = self.f.records_n(gate)
+        found = self.f.validate_n(self.f.receipt_n(runner, sealed), runner, sealed, gate)
+        self.assertEqual((found['interval'], found['parent_key'], found['lineage']), (2, key('head'), gate['lineage']))
+        self.assertEqual(found['completed_endpoint']['sequence'], 2)
+        self.assertEqual(self.f.validate('interval')['parent_key'], key('root'))
+        for name in RF.LINEAGE_FIELDS:
+            with self.subTest(name=name):
+                runner, sealed, root_runner = self.f.records('interval')
+                runner[name] = key(name)
+                sealed['runner_record_sha256'] = digest(runner)
+                receipt = self.f.receipt('interval', runner, sealed)
+                with self.assertRaisesRegex(ValueError, 'do not extend run A'):
+                    self.f.validate('interval', receipt=receipt, runner=runner, sealed=sealed, root_runner=root_runner)
+
+    def test_interval_n_producer_refusals(self):
+        def rebind(c):
+            c.sealed['runner_record_sha256'] = digest(c.runner)
+            c.receipt.update(runner_record={'path': 'runner', 'sha256': digest(c.runner)},
+                             sealed=copy.deepcopy(c.sealed), previous_endpoint=copy.deepcopy(c.runner['previous_endpoint']),
+                             advanced_endpoint=copy.deepcopy(c.runner['advanced_endpoint']))
+        cases = (
+            ('successful sealed producer', lambda c: c.receipt.update(interval=1)),
+            ('advance its parent exactly once', lambda c: c.runner['previous_endpoint'].update(head=key('root'))),
+            ('advance its parent exactly once', lambda c: c.runner['previous_endpoint'].update(intervals=0)),
+            ('advance its parent exactly once', lambda c: c.runner['advanced_endpoint'].update(intervals=1)),
+            ('adopted interval N-1 of their lineage', lambda c: c.runner.update(parent_runner_record_sha256=key('x'))),
+            ('adopted interval N-1 of their lineage', lambda c: c.runner.update(parent_adopted_sha256=key('x'))),
+            ('adopted interval N-1 of their lineage', lambda c: c.runner['lineage'].update(head_key=key('x'))),
+            ('adopted interval N-1 of their lineage', lambda c: c.sealed.update(expected_catalog_digest=key('x'))),
+            ('does not extend run A root', lambda c: c.receipt['completed_endpoint'].update(sequence=1)),
+            ('sealed entry, runner record', lambda c: c.runner.update(interval=1)),
+        )
+        for message, change in cases:
+            with self.subTest(message=message):
+                gate = self.f.gate()
+                runner, sealed = self.f.records_n(gate)
+                receipt = self.f.receipt_n(runner, sealed)
+                c = SimpleNamespace(receipt=receipt, runner=runner, sealed=sealed)
+                change(c)
+                if 'sealed entry' not in message and 'successful' not in message:
+                    rebind(c)
+                with self.assertRaisesRegex(ValueError, message):
+                    self.f.validate_n(c.receipt, c.runner, c.sealed, gate)
+        gate = self.f.gate()
+        runner, sealed = self.f.records_n(gate)
+        receipt = self.f.receipt_n(runner, sealed)
+        with self.assertRaisesRegex(ValueError, 'sealed lineage gate'):
+            self.f.validate_n(receipt, runner, sealed, gate, lineage=None)
+        with self.assertRaisesRegex(ValueError, 'sealed lineage gate'):
+            self.f.validate_n(receipt, runner, sealed, gate, interval=None)
+        with self.assertRaisesRegex(ValueError, 'sealed lineage gate'):
+            self.f.validate_n(receipt, runner, sealed, gate, root_runner=dict(gate['root_runner'], producer_pid=1))
+
+    def test_producer_inputs_re_run_the_runners_lineage_gate(self):
+        import ast
+        tree = ast.parse(Path(RF.__file__).read_text(encoding='utf8'))
+        text = ast.unparse(next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'producer_inputs'))
+        self.assertIn("F.sealed_lineage(store_directory, number, runner.get('parent_adopted_sha256'), "
+                      "interval_one=F.interval_one_route(profile) if number == 2 else None)", text)
+        self.assertIn("gate['parent_verdict']['widths']", text)
+        self.assertIn('F.mode_output(row, mode, interval)', text)
+
+    def test_a_successor_of_an_adopted_head_is_checked_against_that_head(self):
+        def make(sequence=2, parent=key('head'), stored=key('head')):
+            parent_metadata = {'key': stored, 'kind': 'successor', 'state': {'fields': {'time_s': 1.5}}}
+            metadata = {key('root'): self.f.root_metadata, key('head'): parent_metadata}
+            W = SimpleNamespace(workflow_key=lambda kind, k: key(kind+k), digest=digest)
+            head = {'key': W.workflow_key('successor', key('head')), 'kind': 'successor', 'parent_key': parent,
+                    'parent_digest': digest(parent_metadata), 'sequence': sequence,
+                    'exterior_advance': {'joined_heat_id': 'heat'}}
+            completed = {'head_key': head['key'], 'root_metadata': self.f.root_metadata,
+                         'collar_result_id': 'collar', 'native_result_id': 'native', 'exterior_state_id': 'exterior',
+                         'source_audit_id': 'audit', 'joined_heat_id': 'heat', 'array_records': array_records(),
+                         'preparation_ids': {'spatial_owner': 'owner'}}
+            advanced = {'head': head['key'], 'intervals': 2}
+            workflow = SimpleNamespace(_head=head, inspect=lambda: advanced,
+                state=SimpleNamespace(result_id='collar', native_state=SimpleNamespace(result_id='native')),
+                exterior_state=SimpleNamespace(state_id='exterior'), source_audit=SimpleNamespace(result_id='audit'),
+                _exterior_owner=SimpleNamespace(owner_id='owner'))
+            store = SimpleNamespace(metadata=lambda k: metadata.get(k))
+            producer = {'completed_endpoint': completed, 'root': self.f.root, 'advanced_endpoint': advanced,
+                        'interval': 2, 'parent_key': key('head')}
+            return workflow, store, producer, W, parent_metadata
+        with mock.patch.object(RO, 'endpoint_array_records', return_value=array_records()), \
+                mock.patch.object(RO, 'observed_lineage', return_value={}), \
+                mock.patch.object(RF, 'validate_fresh_lineage', return_value={'parent_is_adopted_head': True}) as lineage:
+            workflow, store, producer, W, parent_metadata = make()
+            self.assertEqual(RF._successor(workflow, store, producer, D=None, W=W)['lineage'],
+                             {'parent_is_adopted_head': True})
+            self.assertEqual((lineage.call_args.kwargs['root'], lineage.call_args.kwargs['parent_interval']),
+                             (parent_metadata, 1))
+            for change in ({'sequence': 1}, {'parent': key('root')}, {'stored': key('other')}):
+                with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'successor identity differs'):
+                    workflow, store, producer, W, _ = make(**change)
+                    RF._successor(workflow, store, producer, D=None, W=W)
+
+    def test_an_adopted_head_parent_has_its_own_lineage_label(self):
+        root, head, observed = LineageAndWidthTests.heads(None)
+        found = RF.validate_fresh_lineage(root=root, head=head, observed=observed, parent_interval=1)
+        self.assertNotIn('root_is_parent', found)
+        self.assertEqual((found['parent_is_adopted_head'], found['parent_interval']), (True, 1))
+
+    def reopen_n(self, producer):
+        widths = WG.WidthTable(2)
+        widths.scan('heat', [F.canonical({'r': ['0xff', '0x1']})])
+        parent = WG.WidthTable(1)
+        parent.scan('heat', [F.canonical({'r': ['0xff', '0x1']})])
+        reopen = ReaderReceiptAndAdoptionTests.reopen(SimpleNamespace(f=self.f, producer=producer))
+        reopen.update(interval=2, widths=widths.wire(), width_gate=WG.gate_next(parent, widths))
+        return reopen
+
+    def test_an_interval_n_reader_receipt_carries_its_interval_and_the_next_gate(self):
+        gate = self.f.gate()
+        runner, sealed = self.f.records_n(gate)
+        producer = self.f.validate_n(self.f.receipt_n(runner, sealed), runner, sealed, gate)
+        guard, control = guard_records(READER)
+        validate = lambda reopen: RF.validate_reopen_receipt(reopen, guard_receipt=guard, guard_control=control,
+                                                             profile=self.f.profile, producer=producer, mode='interval')
+        validate(self.reopen_n(producer))
+        for message, change in (('successful independent reader', lambda r: r.update(interval=3)),
+                                ('successful independent reader', lambda r: r.pop('interval')),
+                                ('width gate', lambda r: r.update(width_gate=WG.gate(WG.WidthTable(0),
+                                                                                     WG.WidthTable(2)))),
+                                ('width gate', lambda r: r['width_gate'].update(interval=1))):
+            with self.subTest(message=message):
+                reopen = self.reopen_n(producer)
+                change(reopen)
+                with self.assertRaisesRegex(ValueError, message):
+                    validate(reopen)
+        reopen = ReaderReceiptAndAdoptionTests.reopen(SimpleNamespace(f=self.f, producer=self.f.validate('interval')))
+        reopen['interval'] = 1
+        with self.assertRaisesRegex(ValueError, 'successful independent reader'):
+            RF.validate_reopen_receipt(reopen, guard_receipt=guard, guard_control=control, profile=self.f.profile,
+                                       producer=self.f.validate('interval'), mode='interval')
+
+    def test_the_reader_core_gates_the_next_interval_from_its_parent(self):
+        import inspect
+        source = inspect.getsource(RF.reopen_fresh_interval)
+        self.assertIn("WG.gate_next(WG.WidthTable.from_wire(producer['parent_widths']), table)", source)
+        self.assertIn("table = WG.WidthTable(producer['interval'])", source)
+
+    def test_adoption_inputs_of_interval_n(self):
+        with tempfile.TemporaryDirectory(prefix='rn-', dir=HERE) as temporary:
+            store = Path(temporary)
+            runner, sealed = self.f.records_n(self.f.gate())
+            runner_sha = F.write_durable(F.runner_record_path(store, 2), runner)
+            F.write_durable(F.sealed_record_path(store, 2), sealed)
+            verdict = {'schema': F.VERDICT_SCHEMA, 'status': F.READER_PASS['interval'], 'interval': 2,
+                       'entry': sealed['entry'], 'runner_record_sha256': runner_sha, 'view_digest': key('view')}
+            pin = F.write_durable(F.verdict_path(store, 2), verdict)
+            self.assertEqual(RF.adoption_inputs(store, 2, pin), (verdict, runner, sealed))
+
+    def test_command_and_main_carry_the_interval(self):
+        gate = SG.stage_decision(SG.stage_key('interval', 2), booking_bytes=1 << 30, booking_basis='test booking')
+        with tempfile.TemporaryDirectory(prefix='sn-', dir=HERE) as temporary:
+            folder = Path(temporary)
+            sources = SimpleNamespace(workspace=folder, path=lambda name: folder/'guard.py')
+            row = {'modules': {'private_heat_continuation_guard_r3': 'g.py'}, 'output_directory': str(folder),
+                   'store_directory': str(folder.parent/'store')}
+            profile = SimpleNamespace(path=folder/'p.json', sha256=key('p'), record=lambda: row)
+            with mock.patch.object(F, 'FreshSources', return_value=sources), \
+                    mock.patch.object(RF, 'producer_inputs') as inputs, \
+                    mock.patch.object(RF, '_own_pin', return_value=folder/'own.py'):
+                argv = RF.command(profile, sys.executable, mode='interval', producer_receipt_sha256=key('r'),
+                                  start_gate=gate, interval=2)
+                plain = RF.command(profile, sys.executable, mode='interval', producer_receipt_sha256=key('r'))
+            self.assertEqual(inputs.call_args_list[0].kwargs['interval'], 2)
+            self.assertEqual(argv[-4:], ['--interval', '2', SG.ARGUMENT, SG.encode(gate)])
+            self.assertEqual(argv[argv.index('--output')+1], str(folder/'reader-interval-0002'/'reopen.json'))
+            self.assertNotIn('--interval', plain)
+            self.assertEqual(plain[plain.index('--output')+1], str(folder/'reader-interval'/'reopen.json'))
+            self.assertEqual(list(folder.iterdir()), [])
+        base = ['--profile', 'p.json', '--profile-sha256', key('p'), '--mode', 'interval', '--interval', '2']
+        with mock.patch.object(F.FreshProfile, 'read', return_value='profile'), \
+                mock.patch.object(RF, '_workload', return_value=0) as workload, \
+                mock.patch.object(RF, 'finalise', return_value=0) as final, \
+                mock.patch.object(RF, 'adopt', return_value=0) as adopt:
+            RF.main([*base, '--workload', '--producer-receipt-sha256', key('r')])
+            RF.main([*base, '--finalise', '--producer-receipt-sha256', key('r'), '--reopen-receipt-sha256', key('o')])
+            RF.main([*base, '--adopt', '--verdict-sha256', key('v')])
+        self.assertEqual([m.call_args.kwargs['interval'] for m in (workload, final, adopt)], [2, 2, 2])
+        with mock.patch.object(SG, 'stage_decision', side_effect=SG.StartGateRefused('stop')) as decision, \
+                self.assertRaises(SG.StartGateRefused):
+            RF.main([*base, '--launch', '--producer-receipt-sha256', key('r')])
+        self.assertEqual(decision.call_args.args[0], SG.stage_key('interval', 2))
 
 
 if __name__ == '__main__':

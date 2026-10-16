@@ -3,7 +3,7 @@
 The runner (run_fresh_interval.py) sealed its interval file without promoting it,
 after recording durably the head and identities it asserts (the runner record);
 the sealed record followed the seal. In a NEW guarded process with the same
-pinned sources and limits (10 GiB start gate, 12 GiB RSS / 1 GiB free guard,
+pinned sources and limits (the by-need start gate, 12 GiB RSS / 1 GiB free guard,
 16 GiB ledger) this reader:
 
 - validates the producer's run.json, guard records and both durable records
@@ -47,6 +47,7 @@ from pathlib import Path
 import reopen_prepared_restart as RO
 import run_fresh_interval as F
 import run_prepared_restart as RUN
+import start_gate as SG
 
 READER_SCHEMA = 'atlas.fresh-interval-reopen-result.v1'
 FINAL_SCHEMA = 'atlas.fresh-interval-reopen-final.v1'
@@ -65,13 +66,15 @@ CHECKS = {
 # A review-only interval (bounded pre-seal refused, file sealed for diagnosis) is read with
 # --review: its identities are recorded, not compared, since the refusal left none to compare.
 REVIEW_CHECKS = (CHECKS['interval']-{'compact_record_identities_identical'}) | {'compact_record_identities_recorded'}
-REVIEW_APPROVAL_SCHEMA = 'atlas.fresh-interval-review-approval.v1'
-REVIEW_APPROVERS = ('coordinator', 'Michael')
+# The review approval is checked by the runner's sealed-lineage gate as well, so it lives there (item 21).
+REVIEW_APPROVAL_SCHEMA, REVIEW_APPROVERS = F.REVIEW_APPROVAL_SCHEMA, F.REVIEW_APPROVERS
 REOPEN_REASON = {'root': F.ROOT_REOPEN_DEFERRED, 'interval': RUN.SAME_PROCESS_REOPEN_DROPPED}
 ROOT_FIELDS = frozenset(('workflow_id', 'root_key', 'kind', 'sequence', 'inspect', 'producer_pid',
                          'root_metadata_sha256', 'store_limits', 'store_compression', 'execution_provenance',
                          'preparation_ids'))
 ROOT_RECORDS = frozenset(('state', 'mesh'))
+# Item 21: what an interval N >= 2 runner record adds to bind its sealed lineage.
+LINEAGE_FIELDS = ('parent_runner_record_sha256', 'parent_adopted_sha256', 'lineage')
 
 
 class ReaderRefused(F.FreshRefused):
@@ -83,17 +86,16 @@ def require(condition, message):
         raise ReaderRefused(message)
 
 
-def reader_output(row, mode):
+def reader_output(row, mode, interval=None):
     require(mode in MODES, 'explicit route (1) reader mode required')
-    return Path(row['output_directory'])/('reader-'+mode)
+    number = F.interval_number(mode, interval)
+    output = Path(row['output_directory'])/('reader-'+mode+('' if number <= 1 else f'-{number:04d}'))
+    require(number <= 1 or not Path(row['store_directory']).is_relative_to(output),
+            'the interval store must outlive the interval N reader output')
+    return output
 
 
-def adopted_path(store_directory, interval):
-    return Path(store_directory)/F.record_name('adopted', interval)
-
-
-def approval_path(store_directory, interval):
-    return Path(store_directory)/F.record_name('review-approval', interval)
+adopted_path, approval_path, review_approval = F.adopted_path, F.approval_path, F.review_approval
 
 
 def _own_pin(sources):
@@ -139,8 +141,8 @@ def _root_record(root):
     return root
 
 
-def _completed(completed, *, root, pid, advanced):
-    """The driver's completed-endpoint record extends exactly run A's root, once."""
+def _completed(completed, *, root, pid, advanced, sequence=1):
+    """The driver's completed-endpoint record extends run A's root, at exactly ``sequence``."""
     require(type(completed) is dict and set(completed) == RO.COMPLETED_FIELDS,
             'complete advanced endpoint record required')
     for name in ('workflow_id', 'root_key', 'head_key', 'collar_result_id', 'native_result_id',
@@ -151,7 +153,7 @@ def _completed(completed, *, root, pid, advanced):
             completed['root_key'] == root['root_key'] and type(metadata) is dict and
             metadata.get('key') == root['root_key'] and
             sha256(F.canonical(metadata)).hexdigest() == root['root_metadata_sha256'] and
-            completed['head_key'] == advanced['head'] != root['root_key'] and completed['sequence'] == 1 and
+            completed['head_key'] == advanced['head'] != root['root_key'] and completed['sequence'] == sequence and
             completed['preparation_ids'] == root['preparation_ids'] and
             completed['execution_provenance'] == root['execution_provenance'] and
             completed['store_limits'] == root['store_limits'] and
@@ -161,7 +163,7 @@ def _completed(completed, *, root, pid, advanced):
     return completed
 
 
-def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False):
+def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False, interval=None):
     require(mode == 'interval' or not review, 'only an interval can be sealed for review')
     if review:
         errors = receipt.get('errors') if type(receipt) is dict else None
@@ -174,7 +176,7 @@ def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False):
             receipt.get('status') == (F.REVIEW_STATUS if review else F.SEALED_STATUS[mode]) and
             receipt.get('final_reserved_bytes') == 0 and receipt.get('production_acceptance') is False and
             receipt.get('profile_sha256') == profile.sha256 and receipt.get('mode') == mode and
-            receipt.get('interval') == F.INTERVALS[mode], 'successful sealed producer result of this profile and mode required')
+            receipt.get('interval') == F.interval_number(mode, interval), 'successful sealed producer result of this profile and mode required')
     pid = receipt.get('pid')
     require(type(pid) is int and pid > 0 and type(consumer_pid) is int and consumer_pid > 0 and pid != consumer_pid,
             'separate producer and reader processes required')
@@ -193,12 +195,22 @@ def _producer_receipt(receipt, *, profile, mode, consumer_pid, review=False):
 
 
 def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, sealed, guard_receipt, guard_control,
-                              consumer_pid, mode, root_runner=None, review=False):
-    """Pure closed checks of a sealed producer result; returns the validated expectation."""
+                              consumer_pid, mode, root_runner=None, review=False, interval=None, lineage=None):
+    """Pure closed checks of a sealed producer result; returns the validated expectation.
+
+    Interval N >= 2 (item 21) takes ``lineage``, the runner's sealed-lineage gate on adopted
+    interval N-1, re-run by this reader; its run A runner record is the gate's.
+    """
     require(mode in MODES and type(profile) is F.FreshProfile, 'typed profile and reader mode required')
     require(RO._digest(receipt_sha256), 'exact producer receipt pin required')
-    pid = _producer_receipt(receipt, profile=profile, mode=mode, consumer_pid=consumer_pid, review=review)
-    interval, entry, identities = F.INTERVALS[mode], sealed['entry'], receipt['identities']
+    number = F.interval_number(mode, interval)
+    require((number >= 2) == (lineage is not None) and
+            (lineage is None or type(lineage) is dict and lineage.get('root_runner') == root_runner and
+             type(lineage.get('lineage')) is dict and lineage['lineage'].get('interval') == number-1),
+            'interval N >= 2 is read from its own sealed lineage gate, and only it')
+    pid = _producer_receipt(receipt, profile=profile, mode=mode, consumer_pid=consumer_pid, review=review,
+                            interval=interval)
+    interval, entry, identities = number, sealed['entry'], receipt['identities']
     runner_sha = sha256(F.canonical(runner)).hexdigest()
     require(runner['interval'] == sealed['interval'] == entry['interval'] == interval and
             runner['head'] == entry['head'] and runner['producer_pid'] == pid and
@@ -222,6 +234,19 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
                 RO._digest(sealed['expected_catalog_digest']) and
                 receipt['advanced_endpoint'] == advanced and receipt['previous_endpoint'] == previous,
                 'run B records do not extend run A or differ from their receipt')
+        if lineage is None:
+            parent_key = root['root_key']
+            require(not any(name in runner for name in LINEAGE_FIELDS),
+                    'run B records do not extend run A or differ from their receipt')
+        else:
+            bound = lineage['lineage']
+            parent_key = bound['head_key']
+            require(runner.get('parent_runner_record_sha256') == bound['records'][-1]['runner_sha256'] and
+                    runner.get('parent_adopted_sha256') == lineage['parent_adopted_sha256'] and
+                    runner.get('lineage') == bound and bound['workflow_id'] == root['workflow_id'] and
+                    bound['root_key'] == root['root_key'] and
+                    sealed['expected_catalog_digest'] == bound['catalog_digest'],
+                    'run B records do not extend the adopted interval N-1 of their lineage')
         if review:
             state = receipt['review_only']
             require(runner.get('review_only') is True and 'record_identities' not in runner and
@@ -233,13 +258,14 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
             require('review_only' not in runner and receipt['record_identities'] == runner['record_identities'],
                     'run B record identities differ from their receipt')
             RO.canonical_record_identities(runner['record_identities'], successor=True)
-        require(type(previous) is dict and type(advanced) is dict and previous.get('head') == root['root_key'] and
-                previous.get('intervals') == 0 and advanced.get('intervals') == 1 and
+        require(type(previous) is dict and type(advanced) is dict and previous.get('head') == parent_key and
+                previous.get('intervals') == interval-1 and advanced.get('intervals') == interval and
                 advanced.get('head') != previous.get('head') and
                 advanced.get('funding_id') == previous.get('funding_id') == root['preparation_ids']['funding'] and
                 all(type(e.get('time_s')) in (int, float) for e in (previous, advanced)) and
                 advanced['time_s'] > previous['time_s'],
-                'run B must advance run A root exactly once with unchanged funding')
+                'run B must advance run A root exactly once with unchanged funding' if interval == 1 else
+                'interval N must advance its parent exactly once with unchanged funding')
         queries = receipt.get('completed_queries')
         declared = (receipt.get('completed_query_store') or {}).get('declared')
         require(type(queries) is dict and declared in F.QUERY_STORES and queries.get('store') == declared and
@@ -247,34 +273,55 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
                                                                               'incomplete', 'unflushed')),
                 'run B completed-query record is incomplete')
         expected = {'root': root, 'previous_endpoint': previous, 'advanced_endpoint': advanced,
+                    'parent_key': parent_key,
                     'completed_endpoint': _completed(receipt.get('completed_endpoint'), root=root, pid=pid,
-                                                     advanced=advanced)}
+                                                     advanced=advanced, sequence=interval)}
+        if lineage is not None:
+            expected['lineage'] = lineage['lineage']
     supervisor = receipt.get('supervisor')
     require(type(supervisor) is dict, 'producer supervisor record required')
-    RO.validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'))
+    guard = guard_receipt
+    if review:
+        # The review producer exits 1 with its one PresealSealedForReview error, which the receipt
+        # check above has already required. After checking that exact exit, an in-memory copy with
+        # only the exit set to 0 lets RO.validate_guard run its other checks unchanged. The copy is
+        # never written or returned; the guard file keeps the real exit.
+        require(type(guard_receipt) is dict and guard_receipt.get('workload_exit_confirmed') is True and
+                type(guard_receipt.get('workload_exit_code')) is int and guard_receipt['workload_exit_code'] == 1,
+                'a review producer exits 1, confirmed by its guardian')
+        guard = dict(guard_receipt, workload_exit_code=0)
+    RO.validate_guard(guard, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'))
     return dict(expected, mode=mode, interval=interval, receipt_sha256=receipt_sha256, producer_pid=pid,
                 runner=runner, runner_sha256=runner_sha, sealed=sealed, entry=entry, review=review)
 
 
-def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, review=False):
-    """Store-free preflight: pinned receipt, guard records, durable records, closed sealed file."""
+def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, review=False, interval=None):
+    """Store-free preflight: pinned receipt, guard records, durable records, closed sealed file.
+
+    Interval N >= 2 re-runs the runner's sealed-lineage gate from runner(N)'s own adopted(N-1)
+    pin; runner(N) itself is pinned by the producer receipt this reader was given.
+    """
     require(type(sources) is F.FreshSources and sources.profile is profile, 'selected profile sources required')
     row = profile.record()
-    output, store_directory = F.mode_output(row, mode), Path(row['store_directory'])
+    number = F.interval_number(mode, interval)
+    output, store_directory = F.mode_output(row, mode, interval), Path(row['store_directory'])
     receipt = RUN.pinned_json(output/'run.json', receipt_sha256, RO.MAX_RECEIPT)
     guard = RO._bounded_json(output/'run.guard.json')
     control = RO._bounded_json(output/'run.guard-control.json')
     require(not (output/'run.guard-abort.json').exists() and not (output/'run.cancel').exists(),
             'producer was aborted or cancelled')
-    interval = F.INTERVALS[mode]
     pins = (receipt.get('runner_record'), receipt.get('sealed_awaiting_reader'))
-    paths = (F.runner_record_path(store_directory, interval), F.sealed_record_path(store_directory, interval))
+    paths = (F.runner_record_path(store_directory, number), F.sealed_record_path(store_directory, number))
     require(all(type(pin) is dict and set(pin) == {'path', 'sha256'} and pin['path'] == str(path)
                 for pin, path in zip(pins, paths, strict=True)), 'producer durable record pins required')
     runner = F.read_record(paths[0], schema=F.RUNNER_RECORD_SCHEMA, expected_sha256=pins[0]['sha256'])
     sealed = F.read_record(paths[1], schema=F.SEALED_SCHEMA, expected_sha256=pins[1]['sha256'])
-    root_runner = root_widths = None
-    if mode == 'interval':
+    root_runner = parent_widths = gate = None
+    if number >= 2:
+        gate = F.sealed_lineage(store_directory, number, runner.get('parent_adopted_sha256'),
+                                interval_one=F.interval_one_route(profile) if number == 2 else None)
+        root_runner, parent_widths = gate['root_runner'], gate['parent_verdict']['widths']
+    elif mode == 'interval':
         root_runner = F.read_record(F.runner_record_path(store_directory, 0), schema=F.RUNNER_RECORD_SCHEMA)
         verdict = F.read_record(F.verdict_path(store_directory, 0), schema=F.VERDICT_SCHEMA)
         adopted = F.read_record(adopted_path(store_directory, 0), schema=ADOPTED_SCHEMA)
@@ -283,17 +330,17 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
                 adopted['status'] == ADOPTED_STATUS and adopted['entry'] == verdict['entry'] and
                 adopted['verdict_sha256'] == sha256(F.canonical(verdict)).hexdigest(),
                 'interval 1 requires run A adopted after its own reader PASS')
-        root_widths = verdict['widths']
+        parent_widths = verdict['widths']
     member = RUN.ordinary(store_directory/sealed['entry']['filename'])
     require(member.parent == store_directory and not os.access(member, os.W_OK) and
             not any(Path(str(member)+suffix).exists() for suffix in ('-wal', '-journal', '-shm')),
             'pending sealed interval file must be read-only and closed')
     expected = validate_producer_receipt(receipt, profile=profile, receipt_sha256=receipt_sha256, runner=runner,
         sealed=sealed, guard_receipt=guard, guard_control=control, consumer_pid=consumer_pid, mode=mode,
-        root_runner=root_runner, review=review)
+        root_runner=root_runner, review=review, interval=interval, lineage=gate)
     require(receipt.get('source_proof') == sources.verify(), 'producer source proof differs from the selected sources')
-    if root_widths is not None:
-        expected['root_widths'] = root_widths
+    if parent_widths is not None:
+        expected['parent_widths'] = parent_widths
     return expected
 
 
@@ -415,8 +462,11 @@ def successor_record_identities(workflow, table):
     return RO.canonical_record_identities(result, successor=True)
 
 
-def validate_fresh_lineage(*, root, head, observed):
-    """Root -> one successor: exact clocks, interval, partition and funding."""
+def validate_fresh_lineage(*, root, head, observed, parent_interval=0):
+    """Parent -> one successor: exact clocks, interval, partition and funding.
+
+    ``root`` is the parent's metadata: run A's root, or adopted interval ``parent_interval`` (item 21).
+    """
     require(type(root) is dict and type(head) is dict and type(observed) is dict and
             set(observed) == RO.OBSERVED_FIELDS, 'complete fresh lineage operands required')
     try:
@@ -435,18 +485,21 @@ def validate_fresh_lineage(*, root, head, observed):
                 observed['funding_id'], 'original funding identity changed across the interval')
     except (KeyError, TypeError) as error:
         raise ReaderRefused('fresh lineage header missing: '+repr(error)) from error
-    return {'root_is_parent': True, 'exactly_one_added_interval': True, 'exact_endpoint_clocks_identical': True,
+    parent = ({'root_is_parent': True} if parent_interval == 0 else
+              {'parent_is_adopted_head': True, 'parent_interval': parent_interval})
+    return {**parent, 'exactly_one_added_interval': True, 'exact_endpoint_clocks_identical': True,
             'funding_unchanged': True, 'interval_id': observed['interval_id']}
 
 
 def _successor(workflow, store, producer, *, D, W):
     completed, root, advanced = producer['completed_endpoint'], producer['root'], producer['advanced_endpoint']
     head = dict(workflow._head)
-    root_key = root['root_key']
-    root_metadata = store.metadata(root_key)
-    require(head.get('key') == completed['head_key'] == advanced['head'] and head.get('kind') == 'successor' and
-            head.get('key') == W.workflow_key('successor', root_key) and head.get('parent_key') == root_key and
-            head.get('parent_digest') == W.digest(root_metadata) and head.get('sequence') == 1 and
+    root_key, parent_key, number = root['root_key'], producer['parent_key'], producer['interval']
+    root_metadata, parent_metadata = store.metadata(root_key), store.metadata(parent_key)
+    require(type(parent_metadata) is dict and parent_metadata.get('key') == parent_key and
+            head.get('key') == completed['head_key'] == advanced['head'] and head.get('kind') == 'successor' and
+            head.get('key') == W.workflow_key('successor', parent_key) and head.get('parent_key') == parent_key and
+            head.get('parent_digest') == W.digest(parent_metadata) and head.get('sequence') == number and
             root_metadata == completed['root_metadata'] and workflow.inspect() == advanced and
             store.metadata(W.workflow_key('successor', head['key'])) is None,
             'independently reopened successor identity differs')
@@ -461,12 +514,14 @@ def _successor(workflow, store, producer, *, D, W):
     require(RO.canonical_records(groups) == RO.canonical_records(completed['array_records']),
             'independently reopened endpoint arrays differ')
     del groups
-    lineage = validate_fresh_lineage(root=root_metadata, head=head, observed=RO.observed_lineage(workflow))
+    lineage = validate_fresh_lineage(root=parent_metadata, head=head, observed=RO.observed_lineage(workflow),
+                                     parent_interval=number-1)
     return {'endpoint': found, 'lineage': lineage}
 
 
-def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mode):
-    """Fresh-process reader core; call under sources.selected() and the live guard."""
+def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mode, start_gate=None):
+    """Fresh-process reader core; call under sources.selected() and the live guard. ``start_gate``: the
+    launcher's start_gate decision (encoded), admitted again here against this process's free memory."""
     require(type(profile) is F.FreshProfile and type(sources) is F.FreshSources and sources.profile is profile and
             sources.selected_now, 'actual selected pinned sources required')
     require(mode in MODES and type(producer) is dict and producer.get('mode') == mode,
@@ -486,17 +541,17 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
     require_strict_execution()
     record.update(RUN.interpreter_gate())
     output = guard.output.parent
-    require(output == reader_output(row, mode) and RUN.ordinary(output, directory=True) == output,
+    require(output == reader_output(row, mode, _explicit(producer['interval'])) and
+            RUN.ordinary(output, directory=True) == output,
             'guard and reader output directory differ')
     import psutil
     available = psutil.virtual_memory().available
-    require(available >= RUN.START_BYTES, 'independent reopen requires 10 GiB available at startup')
+    admitted = SG.child_admit(start_gate, available)
     guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
     RUN._guard_boundary(sources, guard, budget)
     check = lambda: guard.check(force=True)
     H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
-    record.update(guard_limits={'rss_bytes': RUN.RSS_BYTES, 'free_floor_bytes': RUN.FREE_BYTES,
-                                'start_available_bytes': RUN.START_BYTES, 'logical_budget_bytes': RUN.LOGICAL_BYTES},
+    record.update(guard_limits=SG.guard_limits(admitted), start_gate=admitted,
                   memory_at_start={'available_bytes': available}, source_proof=sources.verify(),
                   launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
                   production_acceptance=False)
@@ -542,7 +597,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                             found['store_compression'] == root['store_compression'],
                             'reader store bounds differ from run A')
                     checks['root_identity'] = True
-                    table = WG.WidthTable(F.INTERVALS[mode])
+                    table = WG.WidthTable(producer['interval'])
                     guard.phase('independent-record-identities-and-widths')
                     if mode == 'root':
                         require(found['inspect'] == root['inspect'] and workflow._head.get('kind') == 'root',
@@ -567,7 +622,11 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                     record['widths'] = table.wire()
                     checks['widths_recorded'] = True
                     if mode == 'interval':
-                        record['width_gate'] = WG.gate(WG.WidthTable.from_wire(producer['root_widths']), table)
+                        # Interval 1 keeps gate() and its v1 record; N >= 2 gates N+1 from N-1's widths.
+                        record['width_gate'] = (
+                            WG.gate(WG.WidthTable.from_wire(producer['parent_widths']), table)
+                            if producer['interval'] == 1 else
+                            WG.gate_next(WG.WidthTable.from_wire(producer['parent_widths']), table))
                         checks['width_gate_evaluated'] = True
                     record['evidence'] = evidence
                     save()
@@ -596,13 +655,18 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
             active_error.add_note('Retained scope finalisation also failed: '+repr(release_error))
 
 
-def command(profile, python, *, mode, producer_receipt_sha256, review=False):
-    """Store-free preflight and the guarded argv; never launches."""
+def _explicit(number):
+    """The --interval argument naming ``number``: none for the root and interval 1."""
+    return None if number <= 1 else number
+
+
+def command(profile, python, *, mode, producer_receipt_sha256, review=False, start_gate=None, interval=None):
+    """Store-free preflight and the guarded argv; never launches. ``start_gate`` goes last."""
     sources = F.FreshSources(profile)
     producer_inputs(profile, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
-                    consumer_pid=os.getpid(), review=review)
+                    consumer_pid=os.getpid(), review=review, interval=interval)
     row = profile.record()
-    output = reader_output(row, mode)
+    output = reader_output(row, mode, interval)
     RUN.ordinary(output.parent, directory=True)
     require(output.is_relative_to(sources.workspace) and not output.exists(), 'exclusive new reader output directory required')
     own = _own_pin(sources)
@@ -610,16 +674,20 @@ def command(profile, python, *, mode, producer_receipt_sha256, review=False):
     python = str(RUN.ordinary(python))
     return [python, '-B', str(guard), '--launch', '--output', str(output/'reopen.json'), '--',
             python, '-B', str(own), '--workload', '--profile', str(profile.path), '--profile-sha256', profile.sha256,
-            '--mode', mode, '--producer-receipt-sha256', producer_receipt_sha256, *(['--review'] if review else [])]
+            '--mode', mode, '--producer-receipt-sha256', producer_receipt_sha256, *(['--review'] if review else []),
+            *(['--interval', str(interval)] if interval is not None else []),
+            *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
-def _workload(profile, *, mode, producer_receipt_sha256, review=False):
+def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gate=None, interval=None):
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     sources = F.FreshSources(profile)
-    output = reader_output(profile.record(), mode)/'reopen.json'
+    number = F.interval_number(mode, interval)
+    output = reader_output(profile.record(), mode, interval)/'reopen.json'
     record: dict = {'schema': READER_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'profile_sha256': profile.sha256,
                     'producer_receipt_sha256': producer_receipt_sha256, 'mode': mode, 'errors': [],
-                    'production_acceptance': False, 'independent_process_reopen': True, 'review_only': review}
+                    'production_acceptance': False, 'independent_process_reopen': True, 'review_only': review,
+                    **({'interval': number} if number >= 2 else {})}
     guard = budget = None
     # The supervisor has already claimed sidecars. Receipt creation is exclusive.
     with output.open('x', encoding='utf8') as stream:
@@ -630,9 +698,9 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False):
         try:
             guard = G.ContinuationGuard(output, record, save)
             producer = producer_inputs(profile, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
-                                       consumer_pid=os.getpid(), review=review)
+                                       consumer_pid=os.getpid(), review=review, interval=interval)
             budget = reopen_fresh_interval(profile, sources=sources, guard=guard, record=record, save=save,
-                                           producer=producer, mode=mode)
+                                           producer=producer, mode=mode, start_gate=start_gate)
             del producer
             record['status'] = 'VERIFYING_FINALISATION'
         except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded
@@ -680,7 +748,8 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
             reopen.get('independent_process_reopen') is True and reopen.get('mode') == mode and
             reopen.get('profile_sha256') == profile.sha256 and reopen.get('review_only') is review and
             reopen.get('producer_receipt_sha256') == producer['receipt_sha256'] and
-            reopen.get('remaining_children') == [],
+            reopen.get('remaining_children') == [] and
+            (reopen.get('interval') == producer['interval'] if producer['interval'] >= 2 else 'interval' not in reopen),
             'successful independent reader result of this producer, profile and mode required')
     pid = reopen.get('pid')
     require(type(pid) is int and pid > 0 and pid != producer['producer_pid'],
@@ -704,9 +773,12 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
         else:
             require(reopen.get('record_identities') == producer['runner']['record_identities'],
                     'independent compact logical records differ')
-        gate = reopen.get('width_gate')
-        require(type(gate) is dict and gate.get('schema') == 'atlas.exact-width-gate.v1' and
-                type(gate.get('passed')) is bool, 'evaluated pre-interval-2 width gate required')
+        gate, number = reopen.get('width_gate'), producer['interval']
+        require(type(gate) is dict and type(gate.get('passed')) is bool and
+                (gate.get('schema') == 'atlas.exact-width-gate.v1' if number == 1 else
+                 gate.get('schema') == 'atlas.exact-width-gate.v2' and gate.get('interval') == number and
+                 gate.get('next_interval') == number+1),
+                'evaluated width gate before the next interval required')
     retained = reopen.get('retained_scope')
     require(type(retained) is dict and set(retained) == {'before_close', 'after_close'} and
             retained['after_close'].get('retained_bytes') == 0 and
@@ -720,21 +792,21 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
     RO.validate_guard(guard_receipt, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'))
 
 
-def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, review=False):
+def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, review=False, interval=None):
     """Store-free acceptance of a completed guarded reader; the exclusive verdict on PASS.
 
     A review-only verdict says so: it is evidence for the review, never an adoption by itself.
     """
     sources = F.FreshSources(profile)
     row = profile.record()
-    output = reader_output(row, mode)
+    output = reader_output(row, mode, interval)
     final = output/'reopen-final.json'
     require(RUN.ordinary(output, directory=True) == output and not final.exists(), 'reader final record already exists')
     errors, verdict_sha256, gate = [], None, None
     try:
         proof = sources.verify()
         producer = producer_inputs(profile, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
-                                   consumer_pid=os.getpid(), review=review)
+                                   consumer_pid=os.getpid(), review=review, interval=interval)
         reopen = RUN.pinned_json(output/'reopen.json', reopen_receipt_sha256, RO.MAX_RECEIPT)
         require(not (output/'reopen.guard-abort.json').exists() and not (output/'reopen.cancel').exists(),
                 'reader was aborted or cancelled')
@@ -769,28 +841,6 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, r
     return 0 if not errors else 1
 
 
-def review_approval(store_directory, interval, approval_sha256, *, entry, verdict_sha256):
-    """The coordinator's conditions for adopting a review-only interval (16 Oct 2026), all required.
-
-    (a) the reader PASS on this exact file (the verdict, checked by the caller);
-    (b) a written diagnosis showing a checker defect, not a data defect;
-    (c) a recorded approval by the coordinator or Michael naming the file SHA-256 and the verdict.
-    A data-integrity cause is quarantined and never adopted: the interval is rerun after the fix.
-    """
-    approval = F.read_record(approval_path(store_directory, interval), schema=REVIEW_APPROVAL_SCHEMA,
-                             expected_sha256=approval_sha256)
-    require(approval.get('interval') == interval and approval.get('file_sha256') == entry['file_sha256'] and
-            approval.get('verdict_sha256') == verdict_sha256 and approval.get('approver') in REVIEW_APPROVERS and
-            type(approval.get('approved_at')) is str and approval['approved_at'],
-            'review approval does not name this sealed file, its reader verdict and an approver')
-    require(approval.get('cause_class') == 'checker-defect',
-            'a data-integrity cause is quarantined, never adopted: rerun the interval after the fix')
-    diagnosis = approval.get('diagnosis')
-    require(type(diagnosis) is dict and set(diagnosis) == {'path', 'sha256'} and Path(diagnosis['path']).is_file() and
-            RUN.file_hash(diagnosis['path']) == diagnosis['sha256'], 'written diagnosis evidence required')
-    return approval
-
-
 def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=None):
     """The records adopt_and_promote may use, and nothing else; refuses any inconsistency."""
     verdict = F.read_record(F.verdict_path(store_directory, interval), schema=F.VERDICT_SCHEMA,
@@ -799,7 +849,7 @@ def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=N
                            expected_sha256=verdict['runner_record_sha256'])
     sealed = F.read_record(F.sealed_record_path(store_directory, interval), schema=F.SEALED_SCHEMA)
     entry = sealed['entry']
-    mode = MODES[interval]
+    mode = 'root' if interval == 0 else 'interval'
     require(verdict['status'] == F.READER_PASS[mode] and verdict['interval'] == interval == entry['interval'] and
             verdict['entry'] == entry and sealed['runner_record_sha256'] == verdict['runner_record_sha256'] and
             runner['head'] == entry['head'] and runner['producer_identity'] == entry['producer_identity'] and
@@ -815,11 +865,11 @@ def adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256=N
     return verdict, runner, sealed
 
 
-def adopt(profile, *, mode, verdict_sha256, approval_sha256=None):
+def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None):
     """Promote the sealed interval after its reader PASS, from the durable records only."""
     sources = F.FreshSources(profile)
     row = profile.record()
-    store_directory, interval = Path(row['store_directory']), F.INTERVALS[mode]
+    store_directory, interval = Path(row['store_directory']), F.interval_number(mode, interval)
     path = adopted_path(store_directory, interval)
     require(not path.exists(), 'this interval was already adopted')
     verdict, runner, sealed = adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256)
@@ -872,6 +922,7 @@ def main(argv=None):
     parser.add_argument('--profile', type=Path, required=True)
     parser.add_argument('--profile-sha256', required=True)
     parser.add_argument('--mode', choices=MODES, required=True)
+    parser.add_argument('--interval', type=int, help='item 21: interval N >= 2 of the interval mode')
     parser.add_argument('--producer-receipt-sha256')
     parser.add_argument('--reopen-receipt-sha256')
     parser.add_argument('--verdict-sha256')
@@ -880,6 +931,8 @@ def main(argv=None):
     action = parser.add_mutually_exclusive_group()
     for name in ('--launch', '--workload', '--finalise', '--adopt'):
         action.add_argument(name, action='store_true')
+    parser.add_argument(SG.ARGUMENT, dest='start_gate', help='the launcher\'s start gate decision (--workload)')
+    SG.add_arguments(parser)
     args = parser.parse_args(argv)
     require((args.reopen_receipt_sha256 is not None) == args.finalise and
             (args.verdict_sha256 is not None) == args.adopt and
@@ -887,25 +940,34 @@ def main(argv=None):
             not (args.review and args.adopt) and (args.review_approval_sha256 is None or args.adopt),
             '--reopen-receipt-sha256 goes with --finalise, --verdict-sha256 and --review-approval-sha256 with '
             '--adopt, --review and --producer-receipt-sha256 with every other action')
+    gate_args = bool(args.peak_records) or args.booking_bytes is not None or args.booking_basis is not None
+    SG.require(args.start_gate is None or args.workload, SG.ARGUMENT+' is the guarded child\'s argument only')
+    SG.require(not (gate_args and (args.workload or args.finalise or args.adopt)), 'the start gate is decided by whoever launches, not the child')
+    # Decided before anything is read or made; a launch always needs one, a printed command only if asked.
+    gate = (SG.stage_decision(SG.stage_key(args.mode, F.interval_number(args.mode, args.interval)),
+                              records=args.peak_records,
+                              booking_bytes=args.booking_bytes, booking_basis=args.booking_basis)
+            if args.launch or gate_args else None)
     profile = F.FreshProfile.read(args.profile, args.profile_sha256)
     if args.adopt:
         return adopt(profile, mode=args.mode, verdict_sha256=args.verdict_sha256,
-                     approval_sha256=args.review_approval_sha256)
+                     approval_sha256=args.review_approval_sha256, interval=args.interval)
     if args.workload:
         return _workload(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                         review=args.review)
+                         review=args.review, start_gate=args.start_gate, interval=args.interval)
     if args.finalise:
         return finalise(profile, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                        reopen_receipt_sha256=args.reopen_receipt_sha256, review=args.review)
+                        reopen_receipt_sha256=args.reopen_receipt_sha256, review=args.review,
+                        interval=args.interval)
     argv = command(profile, sys.executable, mode=args.mode, producer_receipt_sha256=args.producer_receipt_sha256,
-                   review=args.review)
+                   review=args.review, start_gate=gate, interval=args.interval)
     print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                       'production_acceptance': False}), flush=True)
     if not args.launch:
         return 0
     import psutil
-    require(psutil.virtual_memory().available >= RUN.START_BYTES, 'independent reopen requires 10 GiB available')
-    output = reader_output(profile.record(), args.mode)
+    SG.admit(gate, psutil.virtual_memory().available)
+    output = reader_output(profile.record(), args.mode, args.interval)
     output.mkdir(exist_ok=False)
     return subprocess.call(argv, env=RUN.launch_environment(), cwd=output)
 

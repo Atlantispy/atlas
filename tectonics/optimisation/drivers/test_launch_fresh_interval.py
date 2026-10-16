@@ -19,6 +19,11 @@ import launch_monitored_interval as LM
 import reopen_fresh_restart as RF
 import run_fresh_interval as F
 import run_prepared_restart as RUN
+import start_gate as SG
+from types import SimpleNamespace
+
+BOOKING = 4 << 30
+GATE = {'booking_bytes': BOOKING, 'booking_basis': 'test booking'}
 
 
 def key(text):
@@ -75,7 +80,7 @@ class StageFixture(unittest.TestCase):
                 python, '-B', 'run_fresh_interval.py', '--workload']
 
     def preflight(self, stage='root', **kwargs):
-        return L.preflight(self.profile_path, self.pin, stage=stage, environ={}, **kwargs)
+        return L.preflight(self.profile_path, self.pin, stage=stage, environ={}, **{**GATE, **kwargs})
 
 
 class PreflightTests(StageFixture):
@@ -90,7 +95,7 @@ class PreflightTests(StageFixture):
         cases = (
             ('instrumentation', lambda: self.preflight_env({'PYTHONPATH': 'x'})),
             ('PYTHONHASHSEED', lambda: self.preflight_env({'PYTHONHASHSEED': '1'})),
-            ('10 GiB available', lambda: self.with_memory(9 << 30)),
+            ('start gate refused', lambda: self.with_memory(6 << 30)),
             ('fresh stage outputs', lambda: (self.attempt/'run-root').mkdir() or self.preflight()),
             ('new store directory', lambda: (self.folder/'store').mkdir() or self.preflight()),
         )
@@ -107,7 +112,7 @@ class PreflightTests(StageFixture):
             self.preflight('interval')
 
     def preflight_env(self, environ):
-        return L.preflight(self.profile_path, self.pin, stage='root', environ=environ)
+        return L.preflight(self.profile_path, self.pin, stage='root', environ=environ, **GATE)
 
     def with_memory(self, available):
         with mock.patch.object(LM, '_available_bytes', return_value=available):
@@ -159,6 +164,26 @@ class PostcheckTests(StageFixture):
                     failures, _, _ = L.guard_postcheck(p, receipt_status=F.SEALED_STATUS['root'])
                 self.assertIn(name, failures)
 
+    def test_a_review_producer_exits_one_and_nothing_else_does(self):
+        review_receipt = {'errors': [{'type': 'PresealSealedForReview'}], 'review_only': {'state': F.REVIEW_STATUS}}
+        cleanup = {'cleanup': {'remaining': [3], 'action_errors': []}}
+        cases = ((1, True, {}, []), (0, True, {}, ['guard_exit']), (2, True, {}, ['guard_exit']),
+                 (True, True, {}, ['guard_exit']), (1.0, True, {}, ['guard_exit']), (1, False, {}, ['guard_exit']),
+                 (1, True, cleanup, ['guard_cleanup']))
+        for index, (exit_code, review, change, expected) in enumerate(cases):
+            with self.subTest(exit=exit_code, review=review, change=change):
+                p = {k: (v.parent/('r%d-' % index+v.name) if isinstance(v, Path) else v)
+                     for k, v in L.paths(self.row, 'root')['run'].items()}
+                p['out'] = self.attempt/f'review-out-{index}'
+                for name_ in ('receipt', 'guard', 'control', 'abort', 'cancel'):
+                    p[name_] = p['out']/L.paths(self.row, 'root')['run'][name_].name
+                status = F.REVIEW_STATUS if review else F.SEALED_STATUS['root']
+                self.write(p, status=status, guard={'workload_exit_code': exit_code, **change},
+                           receipt=review_receipt if review else {})
+                with mock.patch.object(LM, '_alive', return_value=False):
+                    failures, _, _ = L.guard_postcheck(p, receipt_status=status, review=review)
+                self.assertEqual(failures, expected)
+
 
 class StageFlowTests(StageFixture):
     def run_stage(self, *, stage='root', runner=(0, []), reader=(0, []), finalise=None, adopt=None):
@@ -174,10 +199,10 @@ class StageFlowTests(StageFixture):
                 mock.patch.object(L, '_guarded', side_effect=lambda *a: next(guarded)), \
                 mock.patch.object(L, 'guard_postcheck', side_effect=lambda *a, **k: next(checks)), \
                 mock.patch.object(LM, 'file_hash', side_effect=lambda path: key(str(path))), \
-                mock.patch.object(RF, 'command', return_value=['reader']), \
+                mock.patch.object(RF, 'command', return_value=['reader']) as self.reader_command, \
                 mock.patch.object(L, '_tool', side_effect=lambda *a: next(tools)), \
                 mock.patch.object(RUN, '_tree', return_value={'files': 2, 'bytes': 9}):
-            code = L.run_stage(self.profile_path, self.pin, stage=stage, environ={}, emit=lines.append)
+            code = L.run_stage(self.profile_path, self.pin, stage=stage, environ={}, emit=lines.append, **GATE)
         record = json.loads((self.attempt/f'stage-{stage}.json').read_text(encoding='utf8'))
         return code, record, lines
 
@@ -216,22 +241,40 @@ class StageFlowTests(StageFixture):
                   'sealed_file': {'filename': 'interval-0001.sqlite', 'file_sha256': key('file'), 'logical_seal': key('s')}}
         lines, tools = [], []
 
-        def guarded(argv, env, p, emit):
-            p['out'].mkdir()
-            p['receipt'].write_text(json.dumps({'status': F.REVIEW_STATUS, 'review_only': review}), encoding='utf8')
-            return 1, 12.0
-        with mock.patch.object(L, '_pinned_sources', return_value={}), \
-                mock.patch.object(L, '_guarded', side_effect=guarded), \
-                mock.patch.object(L, 'guard_postcheck', return_value=([], [], {})) as postcheck, \
-                mock.patch.object(L, '_tool', side_effect=lambda *a: tools.append(a)):
-            code = L.run_stage(self.profile_path, self.pin, stage='root', environ={}, emit=lines.append)
-        record = json.loads((self.attempt/'stage-root.json').read_text(encoding='utf8'))
-        self.assertEqual((code, record['status'], record['failed_step']), (1, F.REVIEW_STATUS, 'preseal'))
-        self.assertEqual(record['review']['sealed_file'], review['sealed_file'])
-        self.assertEqual(record['review']['adoption'], F.REVIEW_ADOPTION)
-        self.assertEqual(postcheck.call_args.kwargs, {'receipt_status': F.REVIEW_STATUS, 'review': True})
-        self.assertEqual(tools, [])
-        self.assertIn(F.REVIEW_STATUS, lines[-1])
+        # The real guard returns 2 for its workload's exit 1; that pair is clean review evidence.
+        for wrapper, postcheck_failures, recorded in ((2, [], []), (1, [], ['guard_wrapper_exit']),
+                                                      (0, [], ['guard_wrapper_exit']),
+                                                      (2, ['guard_exit'], ['guard_exit'])):
+            with self.subTest(wrapper=wrapper, failures=postcheck_failures):
+                (self.attempt/'stage-root.json').unlink(missing_ok=True)
+                for name in ('run-root', 'run-root.tracking.json', 'run-root.log'):
+                    if (self.attempt/name).is_dir():
+                        for item in (self.attempt/name).iterdir():
+                            item.unlink()
+                        (self.attempt/name).rmdir()
+                    else:
+                        (self.attempt/name).unlink(missing_ok=True)
+
+                def guarded(argv, env, p, emit, wrapper=wrapper):
+                    p['out'].mkdir()
+                    p['receipt'].write_text(json.dumps({'status': F.REVIEW_STATUS, 'review_only': review}),
+                                            encoding='utf8')
+                    return wrapper, 12.0
+                with mock.patch.object(L, '_pinned_sources', return_value={}), \
+                        mock.patch.object(L, '_guarded', side_effect=guarded), \
+                        mock.patch.object(L, 'guard_postcheck', return_value=(postcheck_failures, [], {})) as postcheck, \
+                        mock.patch.object(L, '_tool', side_effect=lambda *a: tools.append(a)):
+                    code = L.run_stage(self.profile_path, self.pin, stage='root', environ={}, emit=lines.append, **GATE)
+                record = json.loads((self.attempt/'stage-root.json').read_text(encoding='utf8'))
+                self.assertEqual((code, record['status'], record['failed_step']), (1, F.REVIEW_STATUS, 'preseal'))
+                self.assertEqual(record['review']['sealed_file'], review['sealed_file'])
+                self.assertEqual(record['review']['adoption'], F.REVIEW_ADOPTION)
+                self.assertEqual(record['review']['guard_failures'], recorded)
+                self.assertEqual([(s['name'], s['exit'], s['failures']) for s in record['steps']],
+                                 [('runner', wrapper, recorded)])
+                self.assertEqual(postcheck.call_args.kwargs, {'receipt_status': F.REVIEW_STATUS, 'review': True})
+                self.assertEqual(tools, [])
+                self.assertIn(F.REVIEW_STATUS, lines[-1])
 
     def test_stop_before_advance_runs_the_runner_only(self):
         store = self.folder/'store'
@@ -250,7 +293,7 @@ class StageFlowTests(StageFixture):
                 mock.patch.object(LM, 'file_hash', side_effect=lambda path: key(str(path))), \
                 mock.patch.object(L, '_tool', side_effect=lambda *a: tools.append(a)):
             code = L.run_stage(self.profile_path, self.pin, stage='interval', environ={}, stop_before_advance=True,
-                               emit=lambda line: None)
+                               emit=lambda line: None, **GATE)
         record = json.loads((self.attempt/'stage-interval.json').read_text(encoding='utf8'))
         self.assertEqual((code, record['status'], statuses, tools), (0, F.STOPPED_STATUS, [F.STOPPED_STATUS], []))
         self.assertTrue(command.call_args.kwargs['stop_before_advance'])
@@ -418,7 +461,7 @@ class MeasurementReuseTests(StageFixture):
                 mock.patch.object(L, '_tool', side_effect=lambda *a: next(tools)), \
                 mock.patch.object(RUN, '_tree', return_value={'files': 2, 'bytes': 9}):
             code = L.run_stage(self.profile_path, self.pin, stage='interval', environ={},
-                               reuse_initial_measurements=True, emit=lines.append)
+                               reuse_initial_measurements=True, emit=lines.append, **GATE)
         record = json.loads((self.attempt/'stage-interval.json').read_text(encoding='utf8'))
         self.assertEqual(command.call_args.kwargs['seed'], seed)
         self.assertEqual(record['initial_measurement_seed'], seed)
@@ -462,6 +505,342 @@ class MeasurementReuseTests(StageFixture):
         self.assertIsNone(L.reuse_milestone(None, seed))
         self.assertIsNone(L.reuse_milestone({'reused_initial_cache': []}, seed))
         self.assertEqual(set(L.reuse_milestone({'reused_initial_cache': self.reuse(seed)}, seed)), set(L.REUSE_FIELDS))
+
+
+class StartGateTests(StageFixture):
+    """The by-need gate (start_gate.py) at the launcher: decided, admitted and handed to both children."""
+
+    def argv(self, *extra):
+        return ['--profile', str(self.profile_path), '--profile-sha256', self.pin, '--stage', 'root', *extra]
+
+    def main(self, *extra):
+        lines = []
+        with mock.patch('builtins.print', side_effect=lambda line, **kwargs: lines.append(line)):
+            code = L.main(self.argv(*extra))
+        return code, lines
+
+    def test_no_record_and_no_booking_refuses_before_any_output(self):
+        with self.assertRaisesRegex(SG.StartGateRefused, 'no completed PASS record'):
+            L.preflight(self.profile_path, self.pin, stage='root', environ={})
+        for extra in ((), ('--preflight-only',)):
+            with self.subTest(extra=extra):
+                code, lines = self.main(*extra)
+                self.assertEqual(code, 2)
+                self.assertIn('no completed PASS record', lines[-1])
+        self.assertEqual(list(self.attempt.iterdir()), [])
+
+    def test_a_measured_record_beats_a_lower_booking(self):
+        record = {'schema': L.STAGE_SCHEMA, 'status': L.ADOPTED, 'stage': 'root', 'interval': 0,
+                  'steps': [{'name': name, 'ok': True, **({'resources': {'sampled_peak_bytes': {
+                      SG.TREE_PEAK: 5 << 30}}} if name in SG.GUARDED_STEPS else {})} for name in L.ROOT_STEPS]}
+        path = self.folder/'earlier-stage-root.json'
+        path.write_text(json.dumps(record), encoding='utf8')
+        plan = self.preflight(peak_records=[path])
+        memory, gate = plan['record']['memory'], plan['record']['start_gate']
+        self.assertEqual(memory['hard_gate_bytes'], SG.gate_bytes(5 << 30))
+        self.assertEqual((gate['basis'], gate['predicted_peak_bytes'], gate['booking']['used']),
+                         (SG.MEASURED, 5 << 30, False))
+        self.assertEqual(gate['available_bytes'], 12 << 30)
+
+    def test_a_gate_above_free_memory_leaves_no_record_and_no_run(self):
+        with mock.patch.object(LM, '_available_bytes', return_value=SG.gate_bytes(BOOKING) - 1), \
+                mock.patch.object(L, '_guarded') as guarded, \
+                self.assertRaisesRegex(SG.StartGateRefused, 'start gate refused'):
+            L.run_stage(self.profile_path, self.pin, stage='root', environ={}, emit=lambda line: None, **GATE)
+        guarded.assert_not_called()
+        self.assertEqual(list(self.attempt.iterdir()), [])
+
+    def test_a_random_seed_refuses(self):
+        flags = SimpleNamespace(flags=SimpleNamespace(hash_randomization=1))
+        with mock.patch.object(SG, 'sys', flags), self.assertRaisesRegex(SG.StartGateRefused, 'seed 0'):
+            self.preflight()
+        self.assertEqual(list(self.attempt.iterdir()), [])
+
+    def test_both_children_get_the_launchers_decision(self):
+        flow = StageFlowTests('test_adopted_root_records_every_step_in_order')
+        flow.setUp()
+        self.addCleanup(flow.doCleanups)
+        self.addCleanup(flow.tearDown)
+        code, record, _ = flow.run_stage()
+        gate = SG.stage_decision(SG.stage_key('root', 0), booking_bytes=BOOKING, booking_basis='test booking')
+        self.assertEqual(code, 0)
+        runner = F.command
+        assert isinstance(runner, mock.Mock)
+        self.assertEqual(runner.call_args.kwargs['start_gate'], gate)
+        self.assertEqual(flow.reader_command.call_args.kwargs['start_gate'], gate)
+        self.assertEqual(record['start_gate'], dict(gate, available_bytes=12 << 30, hash_randomization=0))
+
+    def test_the_gate_reads_the_launchers_own_stage_records(self):
+        self.assertEqual(SG.STAGE_SCHEMA, L.STAGE_SCHEMA)
+        self.assertEqual(SG.STAGE_PASS, (L.ADOPTED, L.GATE_STOP))
+        self.assertEqual(list(SG.STAGE_STEPS), L.ROOT_STEPS)
+        self.assertEqual(SG.stage_key('interval', F.INTERVALS['interval'])['interval'], 1)
+
+
+class IntervalNStageTests(StageFixture):
+    """Item 21: stage interval N >= 2 starts from adopted(N-1) exactly as its own stage recorded it."""
+
+    def adopted_parent(self, number=1, **change):
+        store = self.folder/'store'
+        store.mkdir(exist_ok=True)
+        adopted = RF.adopted_path(store, number)
+        if not adopted.exists():
+            F.write_durable(adopted, {'schema': RF.ADOPTED_SCHEMA, 'status': RF.ADOPTED_STATUS, 'interval': number,
+                                      'verdict_sha256': key('verdict')})
+        steps = self.good_steps()
+        steps[3]['adopted_sha256'] = LM.file_hash(adopted)
+        record = {'schema': L.STAGE_SCHEMA, 'stage': 'interval', 'interval': number, 'status': L.ADOPTED,
+                  'steps': steps, **change}
+        path = L.paths(self.row, 'interval', None if number == 1 else number)['record']
+        path.unlink(missing_ok=True)
+        L._save(path, record)
+        return LM.file_hash(adopted)
+
+    @staticmethod
+    def good_steps():
+        steps = [{'name': name, 'ok': True} for name in L.ROOT_STEPS]
+        steps[2].update(verdict_sha256=key('verdict'), width_gate_passed=True)
+        return steps
+
+    def argv(self, number):
+        name = 'run-interval' if number == 1 else f'run-interval-{number:04d}'
+        return [*self.runner_argv()[:5], str(self.attempt/name/'run.json'),
+                *self.runner_argv()[6:]]
+
+    def reviewed_parent(self, number=1, *, stage_change=(), review_change=(), adopted_change=(), verdict_change=()):
+        """Interval ``number`` sealed for review by its own stage, then adopted by the approval route."""
+        store = self.folder/'store'
+        store.mkdir(exist_ok=True)
+        for path in (F.verdict_path(store, number), RF.adopted_path(store, number)):
+            if path.exists():
+                path.chmod(0o644)
+                path.unlink()
+        entry = {'interval': number, 'filename': f'interval-{number:04d}.sqlite', 'file_sha256': key('file'),
+                 'logical_seal': key('seal')}
+        gate = ({'schema': F.WIDTH_GATE_V1, 'passed': True} if number == 1 else
+                {'schema': F.WIDTH_GATE_V2, 'interval': number, 'next_interval': number+1, 'passed': True})
+        verdict = {'schema': F.VERDICT_SCHEMA, 'interval': number, 'review_only': True, 'width_gate': gate,
+                   'producer_receipt_sha256': key('review receipt'), **dict(verdict_change)}
+        verdict_sha = F.write_durable(F.verdict_path(store, number), verdict)
+        adopted = {'schema': RF.ADOPTED_SCHEMA, 'status': RF.ADOPTED_STATUS, 'interval': number, 'entry': entry,
+                   'verdict_sha256': verdict_sha, 'review_approval_sha256': key('approval')}
+        adopted = adopted_change(adopted) if callable(adopted_change) else {**adopted, **dict(adopted_change)}
+        pin = F.write_durable(RF.adopted_path(store, number), adopted)
+        review = {'cause': {'type': 'PresealRefused', 'message': 'checker defect'},
+                  'sealed_file': {k: entry[k] for k in ('filename', 'file_sha256', 'logical_seal')},
+                  'adoption': F.REVIEW_ADOPTION, 'receipt_sha256': key('review receipt'), 'guard_failures': [],
+                  'next': 'reopen_fresh_restart --launch --review', **dict(review_change)}
+        record = {'schema': L.STAGE_SCHEMA, 'stage': 'interval', 'interval': number, 'status': F.REVIEW_STATUS,
+                  'failed_step': 'preseal', 'steps': [{'name': 'runner', 'ok': False, 'exit': 2, 'failures': []}],
+                  'review': review, **dict(stage_change)}
+        path = L.paths(self.row, 'interval', None if number == 1 else number)['record']
+        path.unlink(missing_ok=True)
+        L._save(path, record)
+        return pin
+
+    def test_a_review_adopted_parent_starts_interval_n_from_its_explicit_pin(self):
+        for number in (2, 3):
+            with self.subTest(number=number):
+                pin = self.reviewed_parent(number-1)
+                parent = L.paths(self.row, 'interval', None if number == 2 else number-1)['record']
+                before = parent.read_bytes()
+                with mock.patch.object(F, 'command', return_value=self.argv(number)) as command:
+                    plan = self.preflight('interval', interval=number, parent_adopted_sha256=pin)
+                self.assertEqual(command.call_args.kwargs['parent_adopted_sha256'], pin)
+                self.assertEqual(plan['record']['parent'], {'stage_record': str(parent), 'adopted_sha256': pin,
+                                                            'route': 'review-adopted',
+                                                            'review_approval_sha256': key('approval')})
+                self.assertEqual(parent.read_bytes(), before, 'the old review stage is never relabelled')
+
+    def test_a_review_adopted_parent_refuses_unless_its_evidence_names_that_adoption(self):
+        evidence, differs = 'no clean review evidence', 'adopted interval N-1 differs from its review stage record'
+        approved, gate = 'no review-approved adoption of interval N-1', 'read with its width gate passed'
+        runner = lambda **new: {'steps': [{'name': 'runner', 'ok': False, 'exit': 2, 'failures': [], **new}]}
+        sealed = lambda **new: {'sealed_file': {'filename': 'interval-0001.sqlite', 'file_sha256': key('file'),
+                                                'logical_seal': key('seal'), **new}}
+        cases = (
+            ('needs its explicit adoption pin', {}, None),
+            ('lowercase SHA-256', {}, 'ABC'),
+            ('differs from the explicit pin', {}, key('another adoption')),
+            (evidence, {'stage_change': {'failed_step': 'runner'}}, 'PIN'),
+            (evidence, {'stage_change': {'interval': 2}}, 'PIN'),
+            (evidence, {'stage_change': {'stage': 'root'}}, 'PIN'),
+            (evidence, {'stage_change': {'schema': 'other'}}, 'PIN'),
+            (evidence, {'stage_change': runner(exit=1)}, 'PIN'),
+            (evidence, {'stage_change': runner(exit=True)}, 'PIN'),
+            (evidence, {'stage_change': runner(exit=2.0)}, 'PIN'),
+            (evidence, {'stage_change': runner(name='reader')}, 'PIN'),
+            (evidence, {'stage_change': {'steps': [*runner()['steps'], {'name': 'reader', 'ok': True}]}}, 'PIN'),
+            (evidence, {'stage_change': {'review': None}}, 'PIN'),
+            (evidence, {'review_change': {'guard_failures': ['guard_exit']}}, 'PIN'),
+            (evidence, {'review_change': {'guard_failures': ['guard_wrapper_exit']}}, 'PIN'),
+            (evidence, {'review_change': {'guard_failures': None}}, 'PIN'),
+            (differs, {'review_change': {'receipt_sha256': key('another receipt')}}, 'PIN'),
+            (differs, {'review_change': sealed(file_sha256=key('another file'))}, 'PIN'),
+            (differs, {'review_change': sealed(logical_seal=key('another seal'))}, 'PIN'),
+            (differs, {'review_change': sealed(filename='interval-0002.sqlite')}, 'PIN'),
+            (differs, {'review_change': sealed(extra=1)}, 'PIN'),
+            (approved, {'adopted_change': {'review_approval_sha256': None}}, 'PIN'),
+            (approved, {'adopted_change': {'status': 'QUARANTINED'}}, 'PIN'),
+            (approved, {'adopted_change': {'interval': 2}}, 'PIN'),
+            (approved, {'adopted_change': {'entry': None}}, 'PIN'),
+            ('recorded SHA-256', {'adopted_change': {'verdict_sha256': key('another verdict')}}, 'PIN'),
+            (gate, {'verdict_change': {'review_only': None}}, 'PIN'),
+            (gate, {'verdict_change': {'width_gate': {'schema': F.WIDTH_GATE_V1, 'passed': False}}}, 'PIN'),
+            (gate, {'verdict_change': {'width_gate': {'schema': F.WIDTH_GATE_V2, 'interval': 1, 'next_interval': 2,
+                                                      'passed': True}}}, 'PIN'),
+            (gate, {'verdict_change': {'width_gate': None}}, 'PIN'),
+        )
+        for index, (message, change, pin) in enumerate(cases):
+            with self.subTest(index=index, message=message), \
+                    mock.patch.object(F, 'command', return_value=self.argv(2)), \
+                    self.assertRaisesRegex(ValueError, message):
+                actual = self.reviewed_parent(**change)
+                self.preflight('interval', interval=2, parent_adopted_sha256=actual if pin == 'PIN' else pin)
+        with mock.patch.object(F, 'command', return_value=self.argv(2)):
+            pin = self.adopted_parent()
+            with self.assertRaisesRegex(ValueError, 'for a review-adopted parent only'):
+                self.preflight('interval', interval=2, parent_adopted_sha256=pin)
+            with self.assertRaisesRegex(ValueError, 'adoption pin is for interval N >= 2'):
+                self.preflight('interval', parent_adopted_sha256=pin)
+            self.adopted_parent(status=L.GATE_STOP)
+            with self.assertRaisesRegex(ValueError, 'for a review-adopted parent only'):
+                self.preflight('interval', interval=2, parent_adopted_sha256=pin)
+
+    def test_a_review_adopted_parents_verdict_is_read_only_at_its_full_pin(self):
+        with mock.patch.object(F, 'command', return_value=self.argv(2)):
+            pin = self.reviewed_parent()
+            self.assertEqual(self.preflight('interval', interval=2, parent_adopted_sha256=pin)['record']['parent']
+                             ['route'], 'review-adopted')
+            for change in (lambda a: {k: v for k, v in a.items() if k != 'verdict_sha256'},
+                           {'verdict_sha256': None}, {'verdict_sha256': ''}, {'verdict_sha256': 'ABC'},
+                           {'verdict_sha256': 1}, {'verdict_sha256': [key('x')]},
+                           lambda a: {**a, 'verdict_sha256': a['verdict_sha256'].upper()},
+                           lambda a: {**a, 'verdict_sha256': a['verdict_sha256'][:63]}):
+                with self.subTest(change=change):
+                    pin = self.reviewed_parent(adopted_change=change)
+                    with self.assertRaisesRegex(ValueError, 'exact lowercase SHA-256 required'):
+                        self.preflight('interval', interval=2, parent_adopted_sha256=pin)
+
+    def test_interval_n_paths_are_its_own(self):
+        p = L.paths(self.row, 'interval', 2)
+        self.assertEqual((p['record'], p['run']['out'], p['reader']['out']),
+                         (self.attempt/'stage-interval-0002.json', self.attempt/'run-interval-0002',
+                          self.attempt/'reader-interval-0002'))
+        self.assertEqual((p['run']['tracking'].name, p['reader']['log'].name),
+                         ('run-interval-0002.tracking.json', 'reader-interval-0002.log'))
+        self.assertEqual(L.paths(self.row, 'interval', 1), L.paths(self.row, 'interval'))
+        self.assertEqual(L.paths(self.row, 'interval')['record'], self.attempt/'stage-interval.json')
+
+    def test_preflight_passes_the_parent_stages_adoption_pin(self):
+        for number in (2, 3):
+            with self.subTest(number=number):
+                pin = self.adopted_parent(number-1)
+                with mock.patch.object(F, 'command', return_value=self.argv(number)) as command:
+                    plan = self.preflight('interval', interval=number)
+                self.assertEqual((command.call_args.kwargs['interval'],
+                                  command.call_args.kwargs['parent_adopted_sha256']), (number, pin))
+                parent = L.paths(self.row, 'interval', None if number == 2 else number-1)['record']
+                self.assertEqual(plan['record']['parent'], {'stage_record': str(parent), 'adopted_sha256': pin})
+                self.assertEqual(plan['record']['interval'], number)
+                self.assertEqual(plan['gate'], SG.stage_decision(SG.stage_key('interval', number), **GATE))
+                self.assertEqual(list(self.attempt.glob(f'stage-interval-{number:04d}*')), [])
+        L.paths(self.row, 'interval')['record'].unlink()
+        F.write_durable(RF.adopted_path(self.folder/'store', 0), {'schema': RF.ADOPTED_SCHEMA,
+                                                                  'status': RF.ADOPTED_STATUS})
+        with mock.patch.object(F, 'command', return_value=self.argv(1)) as command:
+            plan = self.preflight('interval')
+        self.assertEqual((command.call_args.kwargs['interval'], command.call_args.kwargs['parent_adopted_sha256'],
+                          'parent' in plan['record']), (None, None, False))
+
+    def test_interval_n_preflight_refusals(self):
+        message = 'interval N requires interval N-1 adopted by its own stage with its width gate passed'
+        good = self.good_steps()
+        finalise = lambda **new: [*good[:2], {**good[2], **new}, good[3]]
+        cases = ((message, {'status': L.GATE_STOP}), (message, {'status': 'FAILED'}), (message, {'interval': 2}),
+                 (message, {'steps': finalise(width_gate_passed=False)}),
+                 (message, {'steps': finalise(width_gate_passed=None)}),
+                 (message, {'stage': 'root'}), (message, {'schema': 'other'}), (message, {'steps': good[:3]}),
+                 ('adopted interval N-1 differs from its stage record',
+                  {'steps': [*good[:3], {'name': 'adopt', 'ok': True, 'adopted_sha256': key('x')}]}),
+                 ('lowercase SHA-256', {'steps': [*good[:3], {'name': 'adopt', 'ok': True}]}))
+        for text, change in cases:
+            with self.subTest(change=change), mock.patch.object(F, 'command', return_value=self.argv(2)), \
+                    self.assertRaisesRegex(ValueError, text):
+                self.adopted_parent(**change)
+                self.preflight('interval', interval=2)
+        with mock.patch.object(F, 'command', return_value=self.argv(2)):
+            self.adopted_parent()
+            with self.assertRaisesRegex(ValueError, message):
+                self.preflight('interval', interval=3)
+            adopted = RF.adopted_path(self.folder/'store', 1)
+            steps = self.good_steps()
+            steps[2]['verdict_sha256'], steps[3]['adopted_sha256'] = key('x'), LM.file_hash(adopted)
+            self.adopted_parent(steps=steps)
+            with self.assertRaisesRegex(L.StageRefused, 'adopted interval N-1 differs from its stage record'):
+                self.preflight('interval', interval=2)
+            self.adopted_parent()
+            raw = adopted.read_bytes()
+            adopted.chmod(0o644)
+            adopted.write_bytes(raw+b' ')
+            with self.assertRaisesRegex(L.StageRefused, 'adopted interval N-1 differs from its stage record'):
+                self.preflight('interval', interval=2)
+            adopted.write_bytes(raw)
+            F.write_durable(F.runner_record_path(self.folder/'store', 2), {'x': 1})
+            with self.assertRaisesRegex(L.StageRefused, 'no earlier interval-N record'):
+                self.preflight('interval', interval=2)
+            for kwargs, text in (({'stage': 'root', 'interval': 2}, 'N >= 1 of the interval mode'),
+                                 ({'interval': 2, 'stop_before_advance': True}, 'runs no smoke')):
+                with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, text):
+                    self.preflight(**{'stage': 'interval', **kwargs})
+        self.assertEqual(sorted(path.name for path in self.attempt.iterdir()), ['stage-interval.json'])
+
+    def test_an_interval_n_stage_hands_its_interval_to_every_step(self):
+        pin = self.adopted_parent()
+        tools = []
+        finalise = (0, {'status': F.READER_PASS['interval'], 'verdict_sha256': key('v'), 'width_gate_passed': False},
+                    1.0, '')
+        results = iter([finalise, (0, {'status': RF.ADOPTED_STATUS, 'sha256': key('a')}, 1.0, '')])
+        guarded = iter([(0, 10.0), (0, 20.0)])
+        with mock.patch.object(F, 'command', return_value=self.argv(2)) as command, \
+                mock.patch.object(L, '_pinned_sources', return_value={}), \
+                mock.patch.object(L, '_guarded', side_effect=lambda *a: next(guarded)), \
+                mock.patch.object(L, 'guard_postcheck', return_value=([], [], {})), \
+                mock.patch.object(RF, 'command', return_value=['reader']) as reader, \
+                mock.patch.object(L, '_tool', side_effect=lambda *a: tools.append(a) or next(results)),                 mock.patch.object(LM, 'file_hash', side_effect=lambda path, real=LM.file_hash:
+                                  real(path) if Path(path).exists() else key(str(path))), \
+                mock.patch.object(RUN, '_tree', return_value={'files': 2, 'bytes': 9}):
+            code = L.run_stage(self.profile_path, self.pin, stage='interval', interval=2, environ={},
+                               emit=lambda line: None, **GATE)
+        record = json.loads((self.attempt/'stage-interval-0002.json').read_text(encoding='utf8'))
+        self.assertEqual((code, record['status'], record['interval']), (0, L.GATE_STOP, 2))
+        self.assertEqual(command.call_args.kwargs['parent_adopted_sha256'], pin)
+        self.assertEqual(reader.call_args.kwargs['interval'], 2)
+        for arguments in tools:
+            self.assertEqual(arguments[arguments.index('--interval')+1], '2')
+
+    def test_run_stage_passes_the_explicit_pin_to_preflight(self):
+        with mock.patch.object(L, 'preflight', side_effect=RuntimeError('preflight reached')) as preflight,                 self.assertRaisesRegex(RuntimeError, 'preflight reached'):
+            L.run_stage(self.profile_path, self.pin, stage='interval', interval=2, environ={},
+                        emit=lambda line: None, parent_adopted_sha256=key('a'), **GATE)
+        self.assertEqual(preflight.call_args.kwargs['parent_adopted_sha256'], key('a'))
+
+    def test_main_passes_the_interval(self):
+        base = ['--profile', str(self.profile_path), '--profile-sha256', self.pin, '--stage', 'interval',
+                '--interval', '2']
+        with mock.patch.object(L, 'run_stage', return_value=0) as stage:
+            self.assertEqual(L.main(base), 0)
+        self.assertEqual((stage.call_args.kwargs['interval'], stage.call_args.kwargs['parent_adopted_sha256']),
+                         (2, None))
+        with mock.patch.object(L, 'run_stage', return_value=0) as stage:
+            self.assertEqual(L.main([*base, '--parent-adopted-sha256', key('a')]), 0)
+        self.assertEqual(stage.call_args.kwargs['parent_adopted_sha256'], key('a'))
+        plan = {'argv': [], 'record': {'memory': {}, 'start_gate': {}, 'disk': {}}, 'seed': None}
+        with mock.patch.object(L, 'preflight', return_value=plan) as preflight, \
+                mock.patch('builtins.print'):
+            self.assertEqual(L.main([*base, '--preflight-only', '--parent-adopted-sha256', key('a')]), 0)
+        self.assertEqual((preflight.call_args.kwargs['interval'], preflight.call_args.kwargs['parent_adopted_sha256']),
+                         (2, key('a')))
 
 
 if __name__ == '__main__':

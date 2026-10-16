@@ -3031,13 +3031,18 @@
    "kind": "doc"
   },
   {
+   "path": "drivers/INTERVAL_CHAIN.md",
+   "source": "<BRANCH_AUTHORED>/tectonics/optimisation/drivers/INTERVAL_CHAIN.md",
+   "kind": "doc"
+  },
+  {
    "path": "drivers/fresh_interval_driver.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/fresh_interval_driver.py",
    "kind": "drivers"
   },
   {
    "path": "drivers/launch_fresh_interval.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/launch_fresh_interval.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/launch_fresh_interval.py",
    "kind": "drivers"
   },
   {
@@ -3047,7 +3052,7 @@
   },
   {
    "path": "drivers/reopen_fresh_restart.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/reopen_fresh_restart.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/reopen_fresh_restart.py",
    "kind": "drivers"
   },
   {
@@ -3057,7 +3062,7 @@
   },
   {
    "path": "drivers/run_fresh_interval.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/run_fresh_interval.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/run_fresh_interval.py",
    "kind": "drivers"
   },
   {
@@ -3072,7 +3077,7 @@
   },
   {
    "path": "drivers/test_launch_fresh_interval.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_launch_fresh_interval.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/test_launch_fresh_interval.py",
    "kind": "drivers"
   },
   {
@@ -3082,12 +3087,17 @@
   },
   {
    "path": "drivers/test_reopen_fresh_restart.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_reopen_fresh_restart.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/test_reopen_fresh_restart.py",
    "kind": "drivers"
   },
   {
    "path": "drivers/test_run_fresh_interval.py",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/test_run_fresh_interval.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/test_run_fresh_interval.py",
+   "kind": "drivers"
+  },
+  {
+   "path": "drivers/test_s1_query_stages.py",
+   "source": "<TASK_ROOT>/ac/r/chain-r3/test_s1_query_stages.py",
    "kind": "drivers"
   },
   {

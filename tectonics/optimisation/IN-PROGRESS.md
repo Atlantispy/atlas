@@ -19,19 +19,21 @@ Rules that apply to every item below:
 
 - **State:** core built and verified (`drivers/start_gate.py`: 23 tests, 43/43 mutants caught, lint and type checks
   clean). It replaces the fixed 10 GiB free-memory start requirement with a check against each run's predicted peak.
-  The prepared-restart route's helpers are in place. Wiring into the fresh run, launch and reopen drivers is designed
-  line by line but not applied.
-- **Left:** apply that wiring (one chain with the interval-N driver changes below, gate first), the second route, and
-  the pin in the final composition manifest. This is a new runner identity. The interval-1 width replay and the fresh
-  full-interval runs depend on it.
+  The prepared-restart route's helpers are in place. Wiring is now applied in `drivers/run_fresh_interval.py`,
+  `drivers/reopen_fresh_restart.py` and `drivers/launch_fresh_interval.py` as part of the item21 chain.
+- **Left:** the second route and the pin in the final composition manifest. This is a new runner identity; branch
+  application does not swap the live runtime or re-pin its manifest. The interval-1 width replay and the fresh
+  full-interval runs retain their existing holds and dependencies.
 - **Gate:** refuses whenever predicted peak plus the free floor exceeds available memory; in-run guards are unchanged.
 
 ## Interval-N driver (continuation)
 
-- **State:** the ordinary branch of the driver that advances interval N from a sealed interval N-1, the finish-driver
-  successor and the width gate's `gate_next` hook are done, with mutation tests.
-- **Left:** in order, after the start gate: the S1 heat-finish change into the finish driver, geometry and launch for
-  interval N, then the S2 capture writers. All three change the same drivers, so they go in as one chain.
+- **State:** the interval-N chain and S1 query-stage changes are applied to this branch from `ac/r/chain-r3`, step
+  `item21-r3-verdict-pin`: fresh-run, reopen and launch drivers, their three tests, and `test_s1_query_stages.py`.
+  Focused private evidence is reused for those exact source bytes; method notes are in `drivers/INTERVAL_CHAIN.md`.
+  This is branch code application, not live runtime replacement, a manifest re-pin or scientific acceptance.
+- **Left:** finish-driver S1, geometry and S2 capture-writer work are unchanged and remain pending in the ordered
+  final composition. The S1 query-stage changes do not complete the separate S1 heat-finish work. All run holds remain.
 - **Gate:** a continued interval is bit-identical to one produced by the reference route from the same sealed start.
 
 ## Pose and heat-number width

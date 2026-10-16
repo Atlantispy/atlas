@@ -1,12 +1,22 @@
 # Atlas: current development state
 
-**Updated: 5 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 17 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
-working branch is `remake`; use `git status` and `git log`, not this page, for
+main development branch is `remake`; this source review is on
+`review/optimisation-20261016`. Use `git status` and `git log`, not this page, for
 commit and push state.
 
 ## Active checkpoint
+
+**Optimisation review branch:** item 21 now applies the fresh-interval chain,
+start-gate wiring and S1 query-stage observations in the review snapshot. See
+[the method and limits](../tectonics/optimisation/drivers/INTERVAL_CHAIN.md) and
+[remaining integration work](../tectonics/optimisation/IN-PROGRESS.md). This is
+source integration only: the live runtime and frozen composition are unchanged,
+profile repinning and post-swap checks remain pending, and scientific runs remain
+held. N9 remains incomplete and has been paused; no repaired N9 code is applied
+by this change. The product acceptance records below retain their existing scope.
 
 **The reviewed optimisation batch is integrated locally.** It repairs the four
 development-tool findings, adds bitwise numerical speed-ups, exact incremental
