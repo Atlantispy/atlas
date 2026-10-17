@@ -6,6 +6,13 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 17 Oct 2026, completion plans
+
+- Added `plans/`: the finalised completion Plans 01-25 and `plans/INDEX.md` (directory, shared contracts,
+  dependencies and status for all 39 plans). Plans 26-39 are still under correction and not included.
+- Planning documents only: no source, test, run, hold, repin or acceptance change. Local user paths replaced with
+  `LOCAL_USER`; links to unpublished reviews, discussions and local records do not resolve.
+
 ## 17 Oct 2026, item21 branch application
 
 - Applied the item21 interval-N chain, start-gate wiring in the fresh-run, reopen and launch drivers, and S1

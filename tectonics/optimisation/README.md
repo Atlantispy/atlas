@@ -21,6 +21,7 @@ or changes only digests under field parity. No tolerance is relaxed, and no reso
 | `SANITISED.md` | Files where local user paths or contact details were replaced. |
 | `CHANGELOG.md` | What changed, with MEASURED and PROJECTED results. |
 | `IN-PROGRESS.md` | Part-implemented work: state, location, what is left and the acceptance gate. |
+| `plans/` | Finalised completion plans (01-25) and `INDEX.md` with dependencies and status. |
 
 `pending/` and `workbench/` hold only files whose bytes differ from `composed-r2` and the repository package, and
 each unique file appears once.
