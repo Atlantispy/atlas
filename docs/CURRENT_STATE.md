@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 17 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 18 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -15,8 +15,13 @@ start-gate wiring and S1 query-stage observations in the review snapshot. See
 [remaining integration work](../tectonics/optimisation/IN-PROGRESS.md). This is
 source integration only: the live runtime and frozen composition are unchanged,
 profile repinning and post-swap checks remain pending, and scientific runs remain
-held. N9 remains incomplete and has been paused; no repaired N9 code is applied
-by this change. The product acceptance records below retain their existing scope.
+held. Plans 01 and 03 now add reviewed workbench successors for test isolation
+and the guarded child-launch wrapper, with their focused test sources. Their
+[completion records](../tectonics/optimisation/plans/INDEX.md) distinguish retained
+private-environment checks from public source publication. Frozen composition and
+live runtime bytes are unchanged; q21 retry remains a separate decision. N9 remains
+incomplete and no repaired N9 code is applied by this change. The product acceptance
+records below retain their existing scope.
 
 **The reviewed optimisation batch is integrated locally.** It repairs the four
 development-tool findings, adds bitwise numerical speed-ups, exact incremental

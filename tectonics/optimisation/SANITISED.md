@@ -5,7 +5,7 @@ with `<owner-email>`. Nothing else was changed. These files no longer match the 
 `composed-r2/composition.json` or in run records, so a pinned identity check refuses them without the private
 originals. Sanitised bytes do not authenticate historical runs.
 
-369 files.
+371 files.
 
 | File | Original SHA-256 | Staged SHA-256 | Replacements |
 |---|---|---|---|
@@ -378,3 +378,5 @@ originals. Sanitised bytes do not authenticate historical runs.
 | `workbench/probes/step9/claude-20261016/run_r2_arrays_then_h4.sh` | `a1a74c7d0a2574d9…` | `36cb0d5d38120c17…` | 1 |
 | `workbench/probes/step9/claude-20261016/run_s8_tests.sh` | `c8ae6986c5c6c011…` | `9c0d13fff0807ebb…` | 1 |
 | `workbench/probes/step9/claude-20261016/run_when_lock_free.sh` | `dd85c6e8369158b9…` | `036aba68ebd22718…` | 1 |
+| `workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh` | `329b0b3c76b55e473cc525fa267077cc92c8474f0fab1e200f0844bd8ea7a571` | `90b720f3729cf3f60ca6b41113049d2230f81abaf2335ce0c9cd02d229dd7f76` | 1 |
+| `workbench/geometry-growth-r1/scripts/test_summarise_dj_r5.py` | `2eb6dd0bdedfc525772e256e16272fa340ffcb2a3c11537c39cc675df27fa990` | `0a5fa81679f57b87ad74eb0bfbd67499a600788bc76f523be1666583aa1b14b1` | 1 |

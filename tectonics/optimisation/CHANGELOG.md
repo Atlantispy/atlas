@@ -6,6 +6,12 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 18 Oct 2026, Plans 01 and 03 source publication
+
+- Added the reviewed Plan 01 test-isolation successor and five-case fixture checker in the workbench; the frozen composed helper and its pin remain unchanged. Retained original-environment evidence: 235 tests OK, eight existing skips, plus 5/5 isolation checks.
+- Added Plan 03 r5 wrapper/test successors, preserving prior versions and the unchanged summariser. Child-only PATH/preflight, bounded cleanup, copy refusal and the exact invalid-orphan exception are reviewed; the final two diagnostic/evidence cases pass. Earlier 179/40/7-case evidence is reused within its unchanged scope, not relabelled as a new full run.
+- These are public review-snapshot sources. Local paths are sanitised with an original/public digest trail. No private receipts, logs or inputs are included. No live runtime installation, scientific acceptance, q21 retry or hold release is made.
+
 ## 17 Oct 2026, completion plans
 
 - Added `plans/`: the finalised completion Plans 01-25 and `plans/INDEX.md` (directory, shared contracts,

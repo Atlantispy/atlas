@@ -26,6 +26,8 @@ or changes only digests under field parity. No tolerance is relaxed, and no reso
 `pending/` and `workbench/` hold only files whose bytes differ from `composed-r2` and the repository package, and
 each unique file appears once.
 
+Plans 01 and 03 now include reviewed workbench successors and their focused test sources. The frozen composed-r2 helpers, live runtime and historical execution pins are unchanged. See the two plan completion sections for retained evidence and remaining launch/integration limits.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

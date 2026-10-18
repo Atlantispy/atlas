@@ -2,7 +2,7 @@
 
 **Item ID:** 01  
 **Retained owner:** Runner / Claude  
-**Status:** WORKING NON-CANON; plan amendments agreed in general392/395/398/399. Implementation and verification remain outstanding.  
+**Status:** WORKING NON-CANON. Reviewed test-only repair published as a workbench successor; frozen composed-r2 remains unchanged.
 **Scope:** Test-only repair of the import-time state leak in `C/test_wp10_integration.py`, followed by the existing named 17-module regression when authorised.  
 **Completion condition:** Candidate setup no longer contaminates test discovery; deliberately replaced module bindings, the parent-package attribute and `sys.path` are restored after successful or failed setup; the canonical suite has no failures or errors; the successor failure record reflects the actual result.
 
@@ -113,11 +113,10 @@ Here `-I` applies to the queue helper. Runtime-importing children must retain ap
 
 ## 6. Completion evidence and integration boundary
 
-- [ ] Before-copy and source identities retained in the existing owner record before implementation.
-- [ ] Candidate construction moved out of discovery; scoped restoration passes normal and failed-setup checks; the fresh-reader route remains valid.
-- [ ] Canonical named 17-module check completed with zero failures and errors; actual counts, skips, result and resource observations recorded. No new skip/xfail, expectation change or reordering workaround.
-- [ ] Unexpected failures retained honestly. Only after an actual passing result, write successor `S/known-failures-origin-r2.json` with an empty failure set, naming `r1b` as predecessor. Do not pre-write it. Preserve `B/known-failures-origin-r1.json` and `r1b` unchanged.
-- [ ] Applicability of the separate ram_context readiness issue resolved for the selected composition by its owner; record any remaining dependency.
-- [ ] Return implementation result and evidence to the coordinator for the remaining integration work.
+The [reviewed test successor](../workbench/compact-geometry-r1/test_wp10_integration.py) moves candidate construction out of discovery, registers scoped cleanup before mutation, restores state after normal and failed setup, and preserves the explicit fresh-reader cleanup route. The [five-case fixture checker](../workbench/probes/step8/claude-20261015/plan01/plan01_fixture_check.py) includes an omitted-restoration fault.
 
-Plan 01 is **not** a prerequisite for publishing Plan 02's route-1 start-gate wiring: that wiring is already published with item21 at `b0590819a6e9dfb205453fc1b0af5cf4c1e1b433`. Live runtime integration and final-composition pins remain outstanding. This repair supplies evidence for those remaining integration checks; it neither releases final assembly nor clears any interval, N9 or individual run hold.
+Retained original-environment evidence records 5/5 fixture checks and the canonical 17-module suite: 235 tests, zero failures/errors, eight existing skips, 263.896 seconds, queue tree peak 0.40 GiB. The successor failure set is empty; no skip, expectation, tolerance or order was changed. These are historical private-environment results, not new public-checkout runs. Original tested source SHA-256 is `7e5d6b7477def80f3cb968215a50d2cd832203be35e5118e08cc7277b36202b9`.
+
+The separate ram_context issue does not block this passing test-only repair; its applicability remains an owner decision for the eventual selected composition. The workbench source preserves the frozen composed-r2 helper and its original manifest pin. Publication does not change the live runtime, repin a composition or establish scientific acceptance.
+
+Plan 01 is not a prerequisite for the already published item21 Route 1 wiring. Plan 02's selected-generation integration and all scientific-run holds remain separate.

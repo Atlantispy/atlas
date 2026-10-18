@@ -10429,6 +10429,26 @@
    "path": "docs/release/reconcile/trees.py",
    "source": "<TASK_ROOT>/rm/reconcile/trees.py",
    "kind": "docs"
+  },
+  {
+   "path": "workbench/compact-geometry-r1/test_wp10_integration.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/test_wp10_integration.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/probes/step8/claude-20261015/plan01/plan01_fixture_check.py",
+   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step8/claude-20261015/plan01/plan01_fixture_check.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh",
+   "source": "<PLAN03_CANDIDATE>/run_dj_rearm_r5.sh",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/test_summarise_dj_r5.py",
+   "source": "<PLAN03_CANDIDATE>/test_summarise_dj_r5.py",
+   "kind": "workbench"
   }
  ]
 }

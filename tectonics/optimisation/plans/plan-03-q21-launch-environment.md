@@ -2,14 +2,14 @@
 
 **Item ID:** 03  
 **Retained owner:** Geometry / Runner; the coordinator retains queue ownership.  
-**Status:** WORKING NON-CANON; amendments from general412/415 synthesised and assigned for this document in general417. Repair, preflight and any successor proof remain outstanding.  
+**Status:** WORKING NON-CANON. Reviewed r5 launch-wrapper and test successors published; q21 retry and scientific parity remain separate.
 **Completion condition:** Preserve the invalid attempt, resolve its orphan disposition explicitly, prepare a bounded child-environment correction and copy-failure guard, and verify those boundaries before requesting a separately authorised successor proof.
 
 ## 1. Scope and authority
 
 This plan concerns the actual `G/scripts/run_dj_rearm.sh` launch boundary. Correct PATH only for that child launch. Do not change global PATH, shared `runq.py`, the scientific algorithm, worker acceptance criteria or source identities merely to make a retry start.
 
-The document grants no new implementation, preflight, queue or scientific-run authority. Preserve separately established authorisation, the retained owners, source freezes and all individual holds. An authorised successor proof requires the coordinator's explicit disposition and launch approval through the existing queue mechanism. N9 remains **PAUSED BY USER** and fresh full-interval runs remain held.
+The document grants no new implementation, preflight, queue or scientific-run authority. Preserve separately established authorisation, the retained owners, source freezes and all individual holds. An authorised successor proof requires the coordinator's explicit disposition and launch approval through the existing queue mechanism. N9 replay and fresh full-interval runs remain held.
 
 Path aliases:
 
@@ -54,9 +54,9 @@ Three identifiers have different roles:
 | `q21b` | Suffix of the outer launch log. |
 | `r3` | Generation used by the geometry harness and its evidence filenames. |
 
-Changing an outer log name or choosing a later generation does not clear the orphan. In the reviewed wrapper, `audit()` reports any log/store without its JSON; the pre-run audit at lines 95–102 refuses before a subsequent arm starts. The empty r3 log therefore requires the explicit evidence-preserving ruling already requested by the coordinator.
+The exact r3 attempt is ruled INVALID LAUNCH ENVIRONMENT. The r5 successor recognises only the preserved zero-byte `iv2-w6-r3.log` with SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` and the matching bound outer failure log; it refuses changed or additional orphans. It preserves the originals and carries their excluded provenance into the successor merge. See the r5 source for the complete size, timestamp, digest and absence checks. No fabricated scientific result or sentinel replaces the failed attempt.
 
-Before a retry, the retained owner must establish how an authorised, reviewed successor harness will honour that ruling while preserving refusal of other unruled orphans. A note outside the attempt records the decision but does not, by itself, change this script's audit behaviour. Do not bypass the audit, invent a PASS/VOID JSON result, or silently reinterpret the old evidence. Keep the ruling, selected source revision and necessary remaining dependency in the existing owner record.
+Changing a log name or selecting attempt generation r4 does not waive those checks. The r5 wrapper's source review and bounded tests are complete; an actual retry still needs its separate ticket/launch disposition and valid runtime admission.
 
 ## 4. Child environment and bounded preflight
 
@@ -65,7 +65,7 @@ Prepare the smallest correction at the actual child launch boundary. Use the ver
 The preflight must execute the required utilities in that same child environment. For the currently reviewed wrapper the external shell utilities are:
 
 ```text
-bash date seq cp sleep mkdir basename sha256sum cut cmp cat
+bash timeout date seq cp rm sleep mkdir basename sha256sum cut cmp cat
 ```
 
 The explicitly selected Python interpreter and any additional dependencies of the selected launch/helper chain also need their applicable readiness evidence. Derive that scope from the actual chain rather than inventing a generic POSIX list. `shutil.which`, `command -v` or a string-prefix comparison alone does not establish successful execution or trusted path identity.
@@ -92,10 +92,18 @@ REQUEST: what | why (backlog item) | runtime/composition | inputs | outputs fold
 
 The coordinator determines the ticket and permitted disposition. Do not create a guessed `q21c` ticket, write ticket JSON directly, or treat an existing queued entry as launch authority. Any authorised successor uses fresh log/output names and preserves the original attempt. The successful preflight and copy-failure check establish launch readiness only; the actual six-worker proof, parity criteria and integration handoff remain separate.
 
-- [ ] Invalid-launch disposition and the explicit orphan ruling recorded with the original evidence preserved.
-- [ ] Selected child PATH correction prepared without global PATH or shared queue changes; required utilities and synthetic copy checked in the exact child environment.
-- [ ] Actual-copy failure refuses before parity, with the disposable failure case retained.
-- [ ] Successor source identities, applicable review/refutation and handling of the ruled orphan established without bypassing unrelated orphan checks.
-- [ ] Readiness and proposed fresh output locations returned to the coordinator for a separate ticket/disposition and launch decision.
+- [x] Invalid-launch disposition and the explicit orphan ruling recorded with the original evidence preserved.
+- [x] Selected child PATH correction prepared without global PATH or shared queue changes; required utilities and synthetic copy checked in the exact child environment.
+- [x] Actual-copy failure refuses before parity, with the disposable failure case retained.
+- [x] Successor source identities, applicable review/refutation and handling of the ruled orphan established without bypassing unrelated orphan checks.
+- [x] Readiness and proposed fresh output locations returned to the coordinator for a separate ticket/disposition and launch decision.
 
 The existing owner record must retain outcome, evidence pointers, unresolved issues and next action. No new sentinel, ledger or automatic retry loop is introduced. Physical exactness, input identities, worker-adoption criteria and all run guards remain unchanged. Plan 16's worker proof and any wider integration still require their own actual evidence and authority; this documentation revision completes neither.
+
+## 7. Reviewed r5 successor
+
+The [r5 wrapper](../workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh) and [focused proof suite](../workbench/geometry-growth-r1/scripts/test_summarise_dj_r5.py) preserve the earlier published files. The wrapper confines PATH changes to its child, verifies required utilities and interpreter, bounds preflight and cleanup, refuses failed input copying before parity, and recognises only the exact ruled invalid-attempt orphan. Remaining scratch is reported for every failed probe. The proof checker treats inaccessible process identities as UNKNOWN, preventing a clean process-death result without alleging a survivor.
+
+Retained original-environment evidence covers 179 earlier cases, 40 focused successor cases, seven bounded cleanup cases and the final two diagnostic/evidence corrections. These were separate source-bound runs with accepted reuse, not one fresh r5 full-suite run. The final two cases pass; no scientific parity or public-checkout execution is claimed. Original r5 wrapper/test SHA-256 values are `329b0b3c76b55e473cc525fa267077cc92c8474f0fab1e200f0844bd8ea7a571` and `2eb6dd0bdedfc525772e256e16272fa340ffcb2a3c11537c39cc675df27fa990`; the publication transformation is recorded in [SANITISED.md](../SANITISED.md).
+
+Candidate review and readiness preparation are complete. The source snapshot still requires excluded private runtime/input/evidence dependencies. Keep wrapper revision r5 distinct from proposed fresh attempt generation r4. No live wrapper installation, q21 retry, worker-count proof or hold release follows from publication; Plan 16 retains the separate ticket/launch and parity decision.

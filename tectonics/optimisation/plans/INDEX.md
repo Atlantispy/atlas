@@ -49,9 +49,9 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 
 | Plan | Retained owner | Evidence / ticket | Actual work and current boundary |
 |---|---|---|---|
-| [01 — Runner test isolation](plan-01-runner-test-isolation.md) | Runner / Claude | Named 17-module check, pending | Repair import-time module/package/path contamination and the real binding-readiness issue; implementation and verification remain outstanding. |
+| [01 — Runner test isolation](plan-01-runner-test-isolation.md) | Runner / Claude | Reviewed workbench successor; retained 235-test pass | Test-only repair and fixture checker published; frozen composition and live runtime unchanged. |
 | [02 — By-need start gate](plan-02-start-gate.md) | Runner / Claude | Retained core and chain-r3 evidence | Preserve tested core/published Route 1 wiring; distinguish remaining Route 2 work and live integration. |
-| [03 — q21 launch environment](plan-03-q21-launch-environment.md) | Geometry / Runner; coordinator queue owner | q21 invalid attempt | Preserve partials, repair the actual child PATH and complete bounded preflight/orphan disposition before any separately authorised retry. |
+| [03 — q21 launch environment](plan-03-q21-launch-environment.md) | Geometry / Runner; coordinator queue owner | Reviewed r5 wrapper/test successors | Child launch, cleanup and copy guards reviewed; source publication does not authorise the separate q21 retry. |
 | [04 — N9 proof-tool repair](plan-04-n9-width-tools.md) | Codex, paused; Pressure domain source | Comparator r3, dump r2, 47 mapped cases | Complete independent source/adoption/observer/array/causal checks and required refutation; both readiness flags remain false and N9 paused. |
 | [05 — q10 correctness](plan-05-q10-heat-correctness.md) | Heat | q10 FAIL | Seek authentic arm-bound correspondence or decisive primary evidence. Do not presume a harmless permutation, reconstruct missing historical evidence or relax comparisons. |
 | [06 — D5 exact arithmetic](plan-06-d5-exact-arithmetic.md) | Kernels / Geometry; Pressure consumer | Refuted candidate | Repair the seven-defect contract and settle diagnostics/accounting questions; D5 remains excluded from final assembly until accepted proof. |
