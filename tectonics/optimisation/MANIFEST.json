@@ -10449,6 +10449,16 @@
    "path": "workbench/geometry-growth-r1/scripts/test_summarise_dj_r5.py",
    "source": "<PLAN03_CANDIDATE>/test_summarise_dj_r5.py",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/run_dj_rearm_r6.sh",
+   "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/geometry-growth-r1/scripts/run_dj_rearm_r6.sh",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/geometry-growth-r1/scripts/test_d08_preservation.py",
+   "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/geometry-growth-r1/scripts/test_d08_preservation.py",
+   "kind": "workbench"
   }
  ]
 }

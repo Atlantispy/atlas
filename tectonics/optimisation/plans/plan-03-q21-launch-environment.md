@@ -2,7 +2,7 @@
 
 **Item ID:** 03  
 **Retained owner:** Geometry / Runner; the coordinator retains queue ownership.  
-**Status:** WORKING NON-CANON. Reviewed r5 launch-wrapper and test successors published; q21 retry and scientific parity remain separate.
+**Status:** WORKING NON-CANON. Published r5 retained; r6 preservation-guard correction implemented and focused-tested as a workbench successor. q21 retry and scientific parity remain separate.
 **Completion condition:** Preserve the invalid attempt, resolve its orphan disposition explicitly, prepare a bounded child-environment correction and copy-failure guard, and verify those boundaries before requesting a separately authorised successor proof.
 
 ## 1. Scope and authority
@@ -54,9 +54,9 @@ Three identifiers have different roles:
 | `q21b` | Suffix of the outer launch log. |
 | `r3` | Generation used by the geometry harness and its evidence filenames. |
 
-The exact r3 attempt is ruled INVALID LAUNCH ENVIRONMENT. The r5 successor recognises only the preserved zero-byte `iv2-w6-r3.log` with SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` and the matching bound outer failure log; it refuses changed or additional orphans. It preserves the originals and carries their excluded provenance into the successor merge. See the r5 source for the complete size, timestamp, digest and absence checks. No fabricated scientific result or sentinel replaces the failed attempt.
+The exact r3 attempt is ruled INVALID LAUNCH ENVIRONMENT. The r6 successor recognises only the preserved zero-byte `iv2-w6-r3.log` with SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` and the matching bound outer failure log; it refuses changed or additional orphans. It preserves the originals and carries their excluded provenance into the successor merge. See the r6 source for the complete size, timestamp, digest and absence checks. No fabricated scientific result or sentinel replaces the failed attempt.
 
-Changing a log name or selecting attempt generation r4 does not waive those checks. The r5 wrapper's source review and bounded tests are complete; an actual retry still needs its separate ticket/launch disposition and valid runtime admission.
+Changing a log name or selecting attempt generation r4 does not waive those checks. The published r5 review found a preservation bypass: unexpected r3 JSON or a missing original log could skip the named check. The r6 correction requires that check before successor launch, before merge, and when validating copied excluded evidence. An actual retry still needs its separate ticket/launch disposition and valid runtime admission.
 
 ## 4. Child environment and bounded preflight
 
@@ -76,7 +76,7 @@ Record only relevant tool resolution and outcomes; a full environment dump is un
 
 ## 5. Refuse a failed actual input-store copy
 
-A successful preflight does not guarantee a later real copy succeeds. The reviewed wrapper uses `set -u` at line 22, invokes `cp -r` at line 124 without checking its status, then invokes `parallel_parity.py` at line 125. Its current control flow can proceed after a failed copy.
+A successful preflight does not guarantee a later real copy succeeds. The original failed-launch wrapper uses `set -u` at line 22, invokes `cp -r` at line 124 without checking its status, then invokes `parallel_parity.py` at line 125. That predecessor can proceed after a failed copy; the retained r5 and r6 successors explicitly refuse it.
 
 In the authorised successor wrapper revision, explicitly check the actual input-store copy result and refuse with a non-zero outcome before starting parity if copying fails. Preserve any new failed-attempt evidence under the applicable policy; never claim that refusal as scientific PASS. Do not replace this targeted check with an unreviewed blanket shell-policy change.
 
@@ -106,4 +106,24 @@ The [r5 wrapper](../workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh) and
 
 Retained original-environment evidence covers 179 earlier cases, 40 focused successor cases, seven bounded cleanup cases and the final two diagnostic/evidence corrections. These were separate source-bound runs with accepted reuse, not one fresh r5 full-suite run. The final two cases pass; no scientific parity or public-checkout execution is claimed. Original r5 wrapper/test SHA-256 values are `329b0b3c76b55e473cc525fa267077cc92c8474f0fab1e200f0844bd8ea7a571` and `2eb6dd0bdedfc525772e256e16272fa340ffcb2a3c11537c39cc675df27fa990`; the publication transformation is recorded in [SANITISED.md](../SANITISED.md).
 
-Candidate review and readiness preparation are complete. The source snapshot still requires excluded private runtime/input/evidence dependencies. Keep wrapper revision r5 distinct from proposed fresh attempt generation r4. No live wrapper installation, q21 retry, worker-count proof or hold release follows from publication; Plan 16 retains the separate ticket/launch and parity decision.
+The retained r5 review and readiness record predates the preservation finding in section 8. The source snapshot still requires excluded private runtime/input/evidence dependencies. Keep wrapper revision r5 distinct from proposed fresh attempt generation r4. No live wrapper installation, q21 retry, worker-count proof or hold release follows from publication; Plan 16 retains the separate ticket/launch and parity decision.
+
+## 8. r6 preservation-guard correction
+
+The [r6 wrapper](../workbench/geometry-growth-r1/scripts/run_dj_rearm_r6.sh) is a source successor to r5, whose bytes and historical digest trail remain unchanged. It moves the D08 validator into the parent shell and requires the exact preserved state before any generation-r4-or-later launch and before creating a merged folder. Excluded evidence is mandatory for those generations: the merge must copy both original logs, revalidate the originals, and verify the copied bytes before invoking the summary. An unexpected r3 JSON, missing log or altered bound evidence cannot silently disable that requirement. Other-orphan auditing and legacy r2/r3 behaviour remain unchanged.
+
+The [focused regression](../workbench/geometry-growth-r1/scripts/test_d08_preservation.py) executes disposable copies of the full wrapper with synthetic logs/stores and interpreter/parity/summary stand-ins. It exercises launch refusal, changes during the run, copied-evidence refusal and the valid merge path without loading scientific inputs or the private runtime. On 19 October 2026, all seven r6 cases passed with no skips. The same suite against retained r5 detected exactly the five expected launch/merge bypasses; its valid-path and unrelated-orphan controls passed. This establishes detection of the actual defect, not a scientific verdict. Both runs used the small queue lane; observed combined process-tree peak was 0.09 GiB.
+
+Commands run from the optimisation directory (through the small queue lane where applicable):
+
+```text
+python -B workbench/geometry-growth-r1/scripts/test_d08_preservation.py --wrapper workbench/geometry-growth-r1/scripts/run_dj_rearm_r6.sh -v
+python -B workbench/geometry-growth-r1/scripts/test_d08_preservation.py --wrapper workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh -v
+bash -n workbench/geometry-growth-r1/scripts/run_dj_rearm_r6.sh
+```
+
+The r5 command intentionally exits 1 with those five failures; the r6 command exits 0. Shell syntax and focused Ruff checks passed. Repository-root checks also passed: `python -B tools/check_coding_safety.py`; `python -B -m unittest discover -s tests -p test_coding_safety.py -v` (31 run, one platform skip); `python -B tools/check_public_paths.py`; `python -B -m unittest discover -s tests -p test_public_paths.py -v` (14 run); and `python -B tools/check_current_evidence.py` (37 current records, 465 recorded digests matched). These checks are static or synthetic; the earlier scientific/test-isolation results were reused within their unchanged scope.
+
+Tested r6 source SHA-256: `290240cee42ed20be23ae6114ddbd9f4e93bf061ec5e13031f4d4712ebc4bc1c`. Regression-source SHA-256: `f9b948680c36e7f3da0c6eafd0bfdb273d61c7c07f8ccece6d0eb979dff4d849`. The tests replace only fixture paths and the synthetic outer-log hash in disposable wrapper copies; preflight interpreter, parity and summary calls use explicit stand-ins. No historical source pin or receipt was rewritten.
+
+This is a review-snapshot correction, not installation into the live wrapper. Plan 16 still owns any retry and actual worker/parity proof. No held run, source binding or frozen composition is changed.

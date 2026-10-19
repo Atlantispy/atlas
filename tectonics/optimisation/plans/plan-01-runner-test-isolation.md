@@ -8,7 +8,7 @@
 
 ## 1. Authority, sources and paths
 
-This document grants no new implementation or execution authority. Preserve separately established authority, the retained owner, source freezes, queue requirements and individual holds. N9 remains **PAUSED BY USER** and fresh full-interval runs remain held. This repair is not scientific acceptance, final integration or publication.
+This document grants no new implementation or execution authority. Preserve separately established authority, the retained owner, source freezes, queue requirements and individual holds. N9 remains **PAUSED BY USER** and fresh full-interval runs remain held. The published workbench repair is not scientific acceptance or final integration.
 
 Path aliases follow the Runner handoff:
 
@@ -42,7 +42,7 @@ The Runner handoff identifies the resulting failure as:
 test_step7b_segments.Step7BSegmentTests.test_one_index_walk_exact_native_payloads_descriptors_and_empty_arrays
 ```
 
-The diagnosis is retained evidence; the repair has not yet been demonstrated. `C/test_step7b_segments.py` remains unmodified.
+The diagnosis is retained evidence; the repair is demonstrated by the completion evidence in section 6. `C/test_step7b_segments.py` remains unmodified.
 
 | Classification | Evidence and meaning |
 | --- | --- |

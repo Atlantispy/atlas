@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 18 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 19 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -19,7 +19,9 @@ held. Plans 01 and 03 now add reviewed workbench successors for test isolation
 and the guarded child-launch wrapper, with their focused test sources. Their
 [completion records](../tectonics/optimisation/plans/INDEX.md) distinguish retained
 private-environment checks from public source publication. Frozen composition and
-live runtime bytes are unchanged; q21 retry remains a separate decision. N9 remains
+live runtime bytes are unchanged. The Plan 03 r6 workbench successor fixes the reviewed
+preservation-check bypass; its focused checks and delivery boundary are recorded
+in that plan. The q21 retry remains a separate decision. N9 remains
 incomplete and no repaired N9 code is applied by this change. The product acceptance
 records below retain their existing scope.
 
