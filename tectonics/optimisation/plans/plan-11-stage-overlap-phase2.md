@@ -1,8 +1,10 @@
 # Plan 11: reader-admission overlap, backlog item 10 phase 2
 
-**Status:** WORKING NON-CANON. Phase 2 approved with conditions; implementation and final integration are not established. This replacement incorporates room consensus general519.  
-**Owner:** Runner. Codex's present assignment is this document correction only.  
-**Completion condition:** implement and prove the approved cross-process overlap of the independent reader's serial admission with its producer's work, preserving the complete gate, receipt, memory, failure and independence contracts below. Measure net end-to-end benefit on the selected composition. Document acceptance is not run or implementation clearance.
+**Status:** WORKING NON-CANON. Phase-2 implementation and selected private integration are complete, with exact parity and one q46 ROOT-only comparison. The combined successor passes focused qualification; its own eligible ROOT and actual interval evidence remain later work.
+
+**Owner:** Runner; bounded implementation/private-integration handoff complete.
+
+**Completion boundary:** preserve the complete gate, receipt, memory, failure and independence contracts below. ROOT-only measurements do not establish interval/ALE performance or enable deferred phases 1/3.
 
 ## 1. Approved mechanism, order and scope
 
@@ -121,8 +123,34 @@ Path aliases: `A = C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas`; `WT = A
 
 Exact review-time source hashes and read scope are retained in [Codex's Plan 11 discussion record](../discussions/atlas-plans-39-review-20261017/codex-plan-11-turn-02.md). Frozen initial assessments remain unchanged.
 
+The checklist below retains the original final-chain acceptance requirements.
+Section 8 records the completed implementation and bounded ROOT evidence; the new
+combined profile and actual intervals retain their separate evidence obligations.
+
 - [ ] Runner identifies the selected phase-2 implementation/composition and demonstrates admission-before-gate with complete producer checks and store access after it, without enabling phases 1/3.
 - [ ] Gate publication, liveness, receipt/finalise bindings, refusal handling and coordinator-decided fallback have adequate source-bound evidence and all required focused checks.
 - [ ] Same-input, source-frozen, authorised measurement reports net end-to-end benefit and worker decisions, with exact ALE worker-count evidence; projections are not substituted for results.
 - [ ] Concurrent TOTAL and both memory-gate observations are grounded in the applicable measurements, guards remain effective, and Runner has assessed the retained-scope finding and its implications.
 - [ ] Final integration has its own correct successor identities and required evidence, with historical records preserved and the owner record retaining remaining dependencies and holds.
+
+## 8. Completed implementation, private integration and scoped ROOT result
+
+The q46 original-profile ROOT pair passed exact parity. Wall time fell from
+1,701.781 to 1,172.375 seconds, a 31.11% reduction, while sampled arm-tree RAM
+rose 74.23%. This is one ROOT-only pair under the selected serial comparison
+scope. It is not interval/ALE evidence, a repeated-run estimate or a
+whole-programme performance claim. The earlier failed native-entry attempt and
+its evidence remain preserved.
+
+The [combined Plans10–12 source snapshot](../workbench/plans10-12/README.md)
+retains the overlap implementation, producer reuse and earlier enabled changes
+with selected lf3 heat. Its private qualification passed 27 orchestration tests,
+three native-entry cases and four heat cases. H5a, D5 and P4 stay disabled.
+The q46 ROOT pair and q47 reuse smoke belong to the original profile; their
+receipts cannot be reused to authenticate the new combined profile's ROOT.
+
+The new profile needs its own eligible ROOT. Actual interval proof, final
+assembly and full-workflow cold recovery remain later work under Plans31/38;
+final combined timing belongs to Plans34/35. Phases 1/3 remain deferred and all
+scientific and individual holds remain. Focused integration is complete without
+claiming full-interval execution, scientific acceptance or general net savings.

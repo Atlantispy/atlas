@@ -1348,3 +1348,37 @@ comparison records warm bare evolution at 0.06976490 s and the stored workflow a
 [method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead) gives the measured
 seconds. This reviewed, connected and restartable route completes I02 for its
 declared case. Whole-planet integration and Linux platform coverage remain separate.
+
+### Prepare an independent reader while a private producer runs
+
+The separate private fresh-interval route implements a scheduling change:
+an independent reader rebuilds its starting plans while the current producer
+computes. The reader uses its own fresh files, memory budget and pinned code.
+It receives no producer values during that preparation and cannot open the
+producer's stored result until the producer has stopped cleanly and an
+authenticated release record identifies the exact sealed result and processes.
+It then repeats its memory check and performs the same independent comparison,
+final verification and adoption. Preparing early cannot accept an unchecked state.
+
+Launcher loss, cancellation, a failed guard or an expired wait stops the reader.
+A specifically approved retry may use a new reader directory only when the
+failure is proven unrelated to data or identity, the original attempt remains
+inspectable and all relevant processes have stopped. There is at most one such
+fallback. The next producer is never started speculatively.
+
+The [fresh-interval method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)
+describes the gate, retained accounting and source boundaries. Implementation and
+private integration are complete for the selected route. In one original-profile
+ROOT pair, overlap reduced wall time from 1,701.781 to 1,172.375 seconds (31.11%)
+while sampled arm-tree RAM rose 74.23%. This is a ROOT-only observation, without an
+interval or whole-programme speed claim. Producer reuse is separate: its bounded
+producer-only smoke recorded 969 hits and zero misses; it did not run a reader.
+Independent reader recomputation remains required and has separate q46 evidence.
+
+The [combined source snapshot](../../optimisation/workbench/plans10-12/README.md)
+retains those mechanisms with the selected lf3 heat route. Its focused checks
+passed 27 orchestration tests, three native-entry cases and four heat cases.
+The earlier ROOT/reuse receipts belong to the earlier profile; the new profile
+needs its own eligible ROOT. Full intervals and full-workflow cold recovery remain
+later, held evidence. These changes do not alter the I02 scope and evidence above
+or establish new physical acceptance.

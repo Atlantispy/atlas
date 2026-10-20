@@ -1,0 +1,78 @@
+{
+  "schema": "atlas.public.plans10-12.retained-results.r1",
+  "kind": "NEW_SUMMARY_OF_ORIGINAL_PRIVATE_EVIDENCE_NOT_EXECUTION_RECEIPT",
+  "original_integration_result_sha256": "6bb55360ee2904642af5daaaf9bb63e540aa6044242f16eae37d8731b6d7b725",
+  "original_composition_sha256": "cb71df92d0ab2f3ab175c43a669d5b8ffc1d4d350cbdc49b68fd6f2cabfb74d5",
+  "original_profile_sha256": "5d1912888fff8271c8241ec6b10b961e9bb2acb7f6189b9d423b90f8235b0ad1",
+  "original_manifest_sha256": "4bab57bae18fc4f4e75f6b0d2ec1d03cdf6be4bae23c780f538ab8a159443304",
+  "original_bootstrap_sha256": "9df3df452bc39509ff7364ca0ef37ed8218228c5adca39b87a08869fc1b2c59c",
+  "integrated_delta_files": 18,
+  "inherited_source_files": 611,
+  "native_files": 239,
+  "helper_files": 390,
+  "enabled_heat": "lf3 (H1a/H1c, H2, L1 and physical-order repair)",
+  "disabled": [
+    "D5",
+    "P4",
+    "H5a"
+  ],
+  "qualification": {
+    "orchestration": {
+      "sha256": "46f6d327d5177a9aec542f013c453506593299e8635f119b74ec879342a6c319",
+      "seconds": 7.37583540007472,
+      "queue_sampled_peak_gib": 0.06,
+      "synthetic_tests": 27,
+      "native_entry_cases": 3
+    },
+    "heat": {
+      "sha256": "a2ad97fe9eb8ab5ee5224d7ef62e898c037abda4e6ab36b0685f6f7a1a218607",
+      "seconds": 21.61395710008219,
+      "queue_sampled_peak_gib": 0.19,
+      "cases": 4
+    }
+  },
+  "source_logical_bytes": {
+    "before": 15354163,
+    "after": 15393095,
+    "change": 38932,
+    "percent_change": 0.2535598977293718,
+    "runtime_disk_comparison": false
+  },
+  "full_interval_run": false,
+  "scientific_acceptance": false,
+  "historical_receipts_changed": false,
+  "holds_released": false,
+  "retained_original_measurements": {
+    "heat_q22": {
+      "lw_mean_seconds": 109.625,
+      "lf3_mean_seconds": 80.742,
+      "reduction_percent": 26.347,
+      "scope": "W4 supervised heat control; not full interval",
+      "h5a_regression_percent": 6.067,
+      "h5a_enabled": false,
+      "comparison_sha256": "fa9e599f5bb15f0e249bce9433d8433175120474b00ab18d9f06459e6cf20b6d"
+    },
+    "root_overlap_q46": {
+      "sequential_seconds": 1701.781,
+      "overlap_seconds": 1172.375,
+      "reduction_percent": 31.1089,
+      "sampled_arm_rss_increase_percent": 74.2286,
+      "scope": "One original-profile ROOT pair; no interval or parallel-ALE proof",
+      "result_sha256": "063f1083e189f271cb970bf12ca6f185fbfa98bc82d356297182685f8fc49185"
+    },
+    "producer_reuse_q47": {
+      "hits": 969,
+      "misses": 0,
+      "runner_seconds": 134.078,
+      "sampled_queue_peak_gib": 0.49,
+      "scope": "Original-profile stop-before-advance smoke; reader still independent",
+      "result_sha256": "3fb870084177c3cbaeab2a1bee5f447f0ff475148c23836e857593007d244d94"
+    }
+  },
+  "limits": [
+    "No new public native execution or whole-interval performance claim",
+    "New profile requires a new eligible ROOT; historical receipts are not repinned",
+    "Full-workflow cold recovery and interval validation remain later",
+    "Final combined timing and Release/Debug comparison remain unmeasured"
+  ]
+}

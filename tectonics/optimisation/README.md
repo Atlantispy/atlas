@@ -47,9 +47,14 @@ binding remain open; readiness guards stay false and collective review is deferr
 Plan05's observer ownership repair, complete correspondence verifier, native
 launcher, physical-order repair and integrated q22 consumer are in
 [workbench/plan05](workbench/plan05/README.md). The corrected private pair agrees
-exactly; collective correctness acceptance remains pending. Historical q10 FAIL,
-q32 NOT REPRODUCED and q22 HELD are preserved. This publication supplies source
+exactly; the coordinator subsequently accepted the corrected scope and q22 completed PASS. Historical q10 FAIL and
+q32 NOT REPRODUCED remain preserved; the later selected source and scoped measurements are recorded below. This publication supplies source
 and truthful scoped results, not a runnable private profile or main-package overlay.
+
+The selected complete Plans10–12 private integration is exported in
+[workbench/plans10-12](workbench/plans10-12/README.md), including its earlier
+enabled source closure, original/public digest map and scoped retained results.
+The new profile requires its own eligible ROOT; final interval testing remains held.
 
 ## Not included
 

@@ -1,6 +1,18 @@
-# Plan 12: held q22 mirrored heat timings and profile
+# Plan 12: q22 mirrored heat timings and profile
 
-**Integrated successor, 20 October 2026:** Plan05 now supplies the actual r13
+**Completed q22 and combined integration, 20 October 2026:** the released q22
+successor completed all 11 authentic arms with PASS. The scoped comparison selected
+lf3 (H1a/H1c, H2, L1 and the physical-order repair); H5a remains disabled.
+The [combined Plans10–12 source snapshot](../workbench/plans10-12/README.md)
+retains that selection and earlier enabled changes. Its private qualification
+passed 27 orchestration tests, three native-entry cases and four heat cases.
+The new combined profile needs its own eligible ROOT; original q22/q46/q47
+evidence does not supply that identity. Full intervals, full-workflow cold
+recovery and final combined timing remain later, held work. Section 9 records
+the completed scope; the pre-execution note and sections 1–8 below are retained
+as historical planning and source observations where superseded by it.
+
+**Earlier integrated-successor checkpoint, 20 October 2026:** Plan05 supplied the actual r13
 writer/verifier/launcher and consumer integration in
 [workbench/plan05](../workbench/plan05/README.md). Its corrected native pair agrees
 exactly under complete physical cell and face correspondence. Historical linkage
@@ -9,7 +21,7 @@ is NOT REPRODUCED after changed metadata; original q10 FAIL remains.
 The prepared consumer validates the actual proof, complete metadata dispositions,
 source bindings and original eleven-arm schedule, then refuses the absent
 collective correctness acceptance. Separate q22 run authority is also absent:
-**q22 remains HELD and has not run**. The old wrapper is preserved unchanged.
+**q22 was HELD and had not run at that checkpoint**. The old wrapper is preserved unchanged.
 Implementation and integration ownership were transferred; there is no remaining
 handback to a former owner. The older proposed-successor and ownership wording
 below is historical where superseded here. The schedule, exactness, resource
@@ -17,8 +29,9 @@ guards and separate run-release obligations remain binding.
 
 **Item ID:** 12  
 **Retained owner:** Heat; the existing coordinator controls queue release and the improvements table.  
-**Status:** WORKING NON-CANON; accepted with rework as a planning document. **q22 remains HELD on unresolved q10 correctness.**  
-**Completion condition:** After accepted correctness closure under Plan 05 and a reviewed successor job binding that proof, obtain the required release, complete the authentic ten timing arms plus one profile arm, and record their exactness, resource observations and scoped gain disposition. These are future conditions, not completed work.
+**Status:** WORKING NON-CANON. q22 benchmark/profile and owner/coordinator handoffs complete; selected lf3 integrated privately with focused checks PASS. Original q10 FAIL and the historical q22 hold remain preserved.
+
+**Completion boundary:** the ten timing arms and separate profile arm establish their original component comparison only. New-profile ROOT, final combined timing, the held full-interval chain and full-workflow cold recovery remain later work.
 
 `T` denotes the original `the-diadem-local-tasks-10` task root; `A` denotes the Atlas reference repository. Source paths below use those existing aliases. This plan grants no implementation, run, rerun, queue change, integration or publication authority. Preserve all individual and full-interval holds and N9's PAUSED BY USER state. Apply the agreed C1-C5 corrections throughout.
 
@@ -145,3 +158,29 @@ The following identities were read for this amendment; they pin the reviewed bas
 | `plans/plan-05-q10-heat-correctness.md` | `3a4e5daadb19c6a35170603670de2c9881579f7d9a60b2b670f68208a83eb74b` | Agreed preservation of original failure and successor disposition |
 
 Discussion: Gemini's synthesis/directive in #general531 and Claude's acceptance/retained qualifications in #general532, after the independent initial positions and ordered turns. [Codex turn 2](../discussions/atlas-plans-39-review-20261017/codex-plan-12-turn-02.md) records the detailed primary-source assessment. The frozen initial review remains unchanged.
+
+## 9. Completed component comparison and combined private integration
+
+The authentic q22 successor completed all 11 arms with PASS: ten mirrored timing
+samples and one separate profile. The observed run took 17 minutes 20 seconds,
+with sampled queue tree peak 1.12 GiB. On its W4 supervised comparison, the
+baseline-to-lf3 mean fell from 109.625 to 80.742 seconds (26.347% lower).
+H5a was 6.067% slower than lf3 and is not selected; its retry disposition remains
+with Plan35. These are component observations with original source/input/runtime
+bindings, not whole-interval or new combined-profile measurements. The profile
+arm is not averaged into the timing means.
+
+The selected lf3 route is integrated with current compact heat consumers and all
+earlier enabled changes. The combined composition contains 239 native and 390
+helper files: 18 changed files and 611 preserved source files. Its focused
+qualification passed 27 orchestration tests, three native-entry cases and four
+heat cases. D5, P4 and H5a remain disabled. The original q10 failure, historical
+NOT REPRODUCED observation and old receipts remain unchanged; the later scoped
+correctness disposition does not establish general causality.
+
+The new profile needs its own eligible ROOT; neither q22 nor the original-profile
+q46 ROOT pair or q47 reuse smoke authenticates it. Plans31/38 retain final assembly,
+the held full-interval chain and full-workflow cold recovery. Plans34/35 retain
+final combined timing. C14's H2 -> L1 -> H3 order and Plan13's independent q25
+boundary remain intact; H3 is not included by this integration. No whole-interval,
+RAM, disk or Release/Debug gain, scientific acceptance or hold release is inferred.

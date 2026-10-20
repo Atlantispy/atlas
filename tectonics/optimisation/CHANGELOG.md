@@ -6,6 +6,19 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plans10–12 combined source publication
+
+- Publish the selected239-native/390-helper closure using exact existing public
+  sources plus additive successors, including the earlier enabled optimisation fixes.
+- Integrate producer-only measurement reuse, serial independent-reader scheduling
+  and selected lf3 heat with current compact checkpoint and cold-reader bindings.
+  Fix the stale reuse test; retain D5/P4/H5a disabled and preserve historical receipts.
+- Retain27 synthetic, three native-entry and four heat qualification passes, plus
+  separately scoped q22/q46/q47 measurements; no combined full-interval gain inferred.
+- Record original/public source digests and new result summaries. Exclude private
+  manifests, runtime assets, execution receipts and coordination records. Final
+  assembly/interval validation remains later; publication releases no scientific hold.
+
 ## 20 Oct 2026, Plan05 integrated correctness repair
 
 - Publish explicit retained ownership, native capture and process finality,

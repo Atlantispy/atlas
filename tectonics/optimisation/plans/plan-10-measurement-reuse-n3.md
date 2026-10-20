@@ -1,8 +1,10 @@
 # Plan 10: initial measurement reuse N3 / backlog item 7
 
-**Status:** WORKING NON-CANON. q08 passed; final-chain integration remains pending. This plan incorporates the room consensus in general507-508; acceptance of this document is not implementation or run clearance.  
-**Owner:** Runner. Codex's assignment here is the plan correction only.  
-**Completion condition:** carry the existing producer-only, same-lineage reuse route through the selected final composition, retaining all eight Item 7 trust conditions, source-bound evidence and independent reader recomputation. q08 alone does not prove that integration.
+**Status:** WORKING NON-CANON. Implementation, selected private integration and the original-profile q47 bounded reuse smoke are complete. The combined successor passes focused qualification; its own eligible ROOT and held final-chain evidence remain later work.
+
+**Owner:** Runner; bounded implementation/private-integration handoff complete.
+
+**Completion boundary:** retain all eight producer-only, same-lineage trust conditions and independent reader recomputation. The completed bounded evidence below is distinct from final assembly, full intervals and full-workflow cold recovery.
 
 ## 1. Scope, status and measured benefit
 
@@ -124,10 +126,34 @@ Fresh full intervals remain held until the required optimisation, assembly and i
 
 ## 5. Completion evidence still required
 
-These boxes describe remaining integration evidence, not unfinished q08 measurements:
+These retained planning boxes describe the original final-chain obligations, not
+unfinished q08 measurements. The completed bounded scope is recorded in section 6;
+the combined successor still needs its own eligible ROOT and final-chain evidence.
 
 - [ ] Runner identifies the selected final composition and carries all eight trust conditions into it with current source/profile/receipt bindings; old s2 evidence remains unchanged.
 - [ ] Authenticated origin, exclusive copy and refusal behaviour are supported by adequate source-bound production checks, including reader isolation and the bounded Run-B smoke.
 - [ ] Reuse records correctly distinguish full reuse, measured misses, invalid seeds and count/byte inconsistencies; root identity and independent reader checks remain effective.
 - [ ] The final chain has its required integration evidence, with new profile/pins/receipt for actual driver changes; q08 and worktree code existence are not used as substitutes.
 - [ ] The owner record retains the once-per-lineage timing scope, remaining dependencies and run holds, with no separate quiet re-time or held scientific sequence added.
+
+## 6. Completed bounded implementation and private integration
+
+The original-profile q47 smoke passed all 34 checks: the producer reused all
+969 measurements with zero misses and reopened the adopted ROOT before advance.
+No reader ran in q47. Independent reader recomputation remains required and has
+separate q46 evidence. The smoke stopped before interval advance and is not an
+adopted interval parent. Runner time was 134.078
+seconds and sampled queue tree peak was 0.49 GiB; no matching unseeded smoke
+baseline exists, so these figures establish no new speed-up.
+
+The [combined Plans10–12 source snapshot](../workbench/plans10-12/README.md)
+preserves the producer-reuse route and earlier enabled changes with selected lf3
+heat. Its private qualification passed 27 orchestration tests, three native-entry
+cases and four heat cases. H5a, D5 and P4 remain disabled. q08, q47 and earlier
+failure evidence retain their original source/profile scopes and unchanged
+receipts; they do not authenticate the combined profile's ROOT.
+
+The new profile needs its own eligible ROOT. Plans31/38 retain final assembly,
+the held full-interval chain and full-workflow cold recovery; Plans34/35 retain
+final combined timing. No whole-interval time, RAM, disk or Release/Debug gain,
+scientific acceptance or hold release follows from this completed bounded work.

@@ -27,6 +27,18 @@ sources after their private live-tool installation; actual Plan31 composition
 and authenticated field-proof binding remain open. Collective review is deferred.
 The product acceptance records below retain their existing scope.
 
+**Plans 10–12 are implemented and integrated in the selected private combined
+composition.** Its focused qualification passed 27 orchestration tests, three
+native-entry cases and four heat cases. The selected heat route is lf3
+(H1a/H1c, H2, L1 and the physical-order repair); H5a, D5 and P4 remain disabled.
+The [additive source snapshot](../tectonics/optimisation/workbench/plans10-12/README.md)
+preserves the earlier enabled source closure. The retained q22 heat comparison,
+q46 ROOT pair and q47 producer-reuse smoke belong to their original profiles;
+they are not new combined-profile performance or interval evidence. The new
+profile needs its own eligible ROOT. The held full-interval chain, full-workflow
+cold recovery and final combined timing remain later work; scientific acceptance
+and hold release are not claimed.
+
 **The reviewed optimisation batch is integrated locally.** It repairs the four
 development-tool findings, adds bitwise numerical speed-ups, exact incremental
 store accounting and packaged release identity checking with full save/reopen/cache
@@ -115,7 +127,8 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
-| Plan05 heat correctness | Selected private observer/verifier/launcher and physical-order repair are integrated; the corrected pair agrees exactly under full physical correspondence. Additive public source and test export supplied. Collective correctness acceptance remains pending; original q10 FAIL, historical NOT REPRODUCED and q22 HELD are preserved. | [Method, sources and scoped results](../tectonics/optimisation/workbench/plan05/README.md), [remaining decision](../tectonics/optimisation/plans/plan-05-q10-heat-correctness.md) |
+| Plans10–12 producer reuse, reader overlap and heat | Implementation and selected private combined integration complete; 27 orchestration tests, three native-entry cases and four heat cases PASS. Original-profile q46 ROOT time fell 31.11% with sampled arm-tree RAM rising 74.23% in one pair; q47 recorded 969 producer hits and zero misses in a producer-only smoke. q22 passed 11/11 arms and selected lf3; H5a stays off. These scoped observations do not establish new-profile ROOT eligibility, interval performance or full-workflow cold recovery. | [Source scope and retained evidence](../tectonics/optimisation/workbench/plans10-12/README.md), [mechanism and limits](../tectonics/optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap), [reader explanation](../tectonics/docs/how-it-works/06-physical-integration.md#prepare-an-independent-reader-while-a-private-producer-runs) |
+| Plan05 heat correctness | Selected private observer/verifier/launcher and physical-order repair are integrated; the corrected pair agrees exactly under full physical correspondence. Additive public source and test export supplied. Original q10 FAIL and historical NOT REPRODUCED remain preserved. The later scoped correctness disposition and executed q22 successor are recorded in Plan12; they do not establish general causality or scientific acceptance. | [Method, sources and scoped results](../tectonics/optimisation/workbench/plan05/README.md), [later heat disposition](../tectonics/optimisation/plans/plan-12-heat-q22-abba.md) |
 | Plan04 N9 comparison and extraction | Comparator r24, dump r5, caller and assembly tools integrated privately; additive source export supplied. Actual Plan31 composition and authenticated producer/reader and Heat field proofs remain open; readiness guards stay false and collective review is deferred. | [Method, source pins and checks](../tectonics/optimisation/workbench/plan04/README.md), [final binding obligation](../tectonics/optimisation/plans/plan-04-n9-width-tools.md) |
 | Plan06 exact wall arithmetic | Repairs, scoped technical proof and retained-baseline construction completed privately. Additive source snapshot published; D5 disabled for measured regressions. Final selected Plan31/N9 binding and collective review remain open. No main-package overlay or scientific hold release. | [Source, method and measured limits](../tectonics/optimisation/workbench/plan06/README.md), [completion boundary](../tectonics/optimisation/plans/plan-06-d5-exact-arithmetic.md) |
 | Plan02 admission and transfer repair | Compatible fresh/prepared caller generation and evolved-state metadata repair installed in the private workspace. Additive source snapshot supplied for review; no overlay to the main package. Positive prepared publication/reopen and end review remain deferred. Plan31 integration is a separate later stage. | [Plan02 source scope and checks](../tectonics/optimisation/workbench/plan02/README.md), [completion conditions](../tectonics/optimisation/plans/plan-02-start-gate.md) |

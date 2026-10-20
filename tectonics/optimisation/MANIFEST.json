@@ -11174,6 +11174,221 @@
    "path": "workbench/plan05/RETAINED-RESULTS.json",
    "source": "<PUBLIC_PLAN05_PUBLICATION>/RETAINED-RESULTS.json",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/construction/bootstrap_native.py",
+   "source": "<PLANS10_12_PUBLICATION>/construction/bootstrap_native.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/construction/build_combined.py",
+   "source": "<PLANS10_12_PUBLICATION>/construction/build_combined.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/construction/build_heat_delta.py",
+   "source": "<PLANS10_12_PUBLICATION>/construction/build_heat_delta.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/fixtures/bootstrap_native.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/fixtures/bootstrap_native.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/fixtures/test_bootstrap_native.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/fixtures/test_bootstrap_native.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/qualify_combined.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/qualify_combined.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/qualify_heat_delta.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/qualify_heat_delta.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/run_measurement_reuse_controls.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/run_measurement_reuse_controls.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/controls/run_successor_bootstrap_controls.py",
+   "source": "<PLANS10_12_PUBLICATION>/controls/run_successor_bootstrap_controls.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/README.md",
+   "source": "<PLANS10_12_PUBLICATION>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/reporting/report_q22.py",
+   "source": "<PLANS10_12_PUBLICATION>/reporting/report_q22.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/reporting/test_report_q22.py",
+   "source": "<PLANS10_12_PUBLICATION>/reporting/test_report_q22.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/RETAINED-RESULTS.json",
+   "source": "<PLANS10_12_PUBLICATION>/RETAINED-RESULTS.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/fresh_interval_driver.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/fresh_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/launch_fresh_interval.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/launch_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/n9-tools-r21/compare_arms_r21.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/n9-tools-r21/compare_arms_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/n9-tools-r21/write_captures_map_r3.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/n9-tools-r21/write_captures_map_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/overlap_cohort.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/overlap_cohort.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/overlap_metrics.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/overlap_metrics.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/overlap_reader.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/overlap_reader.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/prepared_interval_driver.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/prepared_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/private_heat_checkpoint_consumer_r10.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/private_heat_checkpoint_consumer_r10.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/private_heat_joined_consumer_r6.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/private_heat_joined_consumer_r6.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/private_heat_restored_binding_r10.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/private_heat_restored_binding_r10.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/private_heat_restored_binding_ram_context_r1.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/private_heat_restored_binding_ram_context_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/private_heat_restored_binding_ram_recovery_r1.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/private_heat_restored_binding_ram_recovery_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/reader_overlap_gate.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/reader_overlap_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/reopen_fresh_restart.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/reopen_fresh_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/run_fresh_interval.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/run_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/run_prepared_restart.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/run_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/spatial_records_patch.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/spatial_records_patch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/test_cold_archive.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/test_cold_archive.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/test_launch_fresh_interval.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/test_launch_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/test_raw_sidecar_store.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/test_raw_sidecar_store.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/helpers/test_storage_codec_patch.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/helpers/test_storage_codec_patch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/coordinates.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/coordinates.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_component_volume_auto.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_component_volume_auto.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_binding.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_parallel_binding.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_dispatch.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_parallel_dispatch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_pressure_walls.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_pressure_walls.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_private_heat_cold.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_private_heat_cold.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/source/src/atlas_tectonics/integration_worker_bootstrap.py",
+   "source": "<PLANS10_12_PUBLICATION>/source/src/atlas_tectonics/integration_worker_bootstrap.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans10-12/SOURCE-MAP.json",
+   "source": "<PLANS10_12_PUBLICATION>/SOURCE-MAP.json",
+   "kind": "workbench"
   }
  ]
 }

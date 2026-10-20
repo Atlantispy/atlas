@@ -7,6 +7,17 @@
 **Status:** WORKING NON-CANON. Documentation corrected on 17 October 2026 under Michael's general901 assignment.  
 **Scope:** 39 planning documents. Publication, implementation, proof, integration, scientific acceptance and canon are separate states.
 
+**Plans10–12 update, 20 October:** implementation and selected private combined
+integration are complete. The [additive source snapshot](../workbench/plans10-12/README.md)
+retains earlier enabled changes with lf3 heat; H5a, D5 and P4 stay disabled.
+Focused qualification passed 27 orchestration tests, three native-entry cases
+and four heat cases. Retained q22 component, q46 ROOT-pair and q47 reuse-smoke
+evidence belongs to the original profiles. The new profile needs its own eligible
+ROOT; final assembly, the held full-interval chain, full-workflow cold recovery
+and final combined timing remain later work. This supersedes older pending and
+held wording for the completed bounded work, while preserving the historical
+failures, observations and other run holds.
+
 **Plan02 update, 20 October:** the selected caller/runner generation and loader
 repair are installed privately and available as an additive public source
 snapshot. Positive prepared publication/reopen and end review remain deferred.
@@ -24,13 +35,14 @@ review restrictions below; scientific and unrelated job holds remain. See
 **Plan05 update, 20 October:** implementation and integration are complete in
 the selected private route and published as an additive source snapshot.
 The corrected pair has complete physical correspondence and exact agreement;
-collective correctness acceptance remains pending. q10 FAIL, historical
-NOT REPRODUCED and q22 HELD remain. [Plan05](plan-05-q10-heat-correctness.md)
+the later scoped correctness disposition and executed q22 successor are recorded
+in [Plan12](plan-12-heat-q22-abba.md). q10 FAIL, historical NOT REPRODUCED and the
+original q22 hold remain preserved. [Plan05](plan-05-q10-heat-correctness.md)
 supersedes its older ownership and unresolved-correspondence wording below.
 
 ## 1. Authority and holds
 
-**Nothing is restarted by this document.** N9 is **PAUSED BY USER**. Fresh full intervals remain **HELD**. q10 records an H5a **FAIL**, with correspondence and causality unresolved; q22 remains held. q21 is an invalid launch environment, not a worker-count or numerical result. The recorded individual holds include q01, q09, q18 and q20. A queued ticket grants no launch authority. The earlier global weekly hold was released, but that did not release individual holds, owner freezes or the fresh-run hold.
+**Nothing is restarted by this document.** N9 scientific replay and fresh full intervals remain **HELD**. q10's historical H5a **FAIL** is preserved; the later scoped correctness disposition and executed q22 successor do not rewrite it or establish general causality. q21 is an invalid launch environment, not a worker-count or numerical result. The recorded individual holds include q01, q09, q18 and q20. A queued ticket grants no launch authority. The earlier global weekly hold was released, but that did not release individual holds, owner freezes or the fresh-run hold.
 
 The present assignment authorises these documentation edits only. It authorises no Atlas implementation, runs, hold releases, source repins, landings, commits or pushes. Existing owners retain responsibility. No Git commit is claimed.
 
@@ -77,9 +89,9 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | [07 — Pressure P1–P3](plan-07-pressure-p1-p3-assessment.md) | Pressure; Geometry/Runner integrate | q02 pending | Small-case changes exist; obtain the authorised profile and full-scale proof before the owner integration handoff. |
 | [08 — Pressure P4](plan-08-pressure-p4.md) | Pressure / Kernels | Not built | Design handover for the real P3 jet arithmetic and accepted shared mpq primitives; needs D5 readiness and an actual coordinator assignment. |
 | [09 — Parallel admission ip9](plan-09-parallel-admission-ip9.md) | Kernels; Geometry review; Runner integration | q19 not launched | Prove the selected ip9 tree through the existing two-worker route and shared pressure/admission schema; no invented work-stealing architecture. |
-| [10 — Initial measurement reuse](plan-10-measurement-reuse-n3.md) | Runner | q08 retained PASS | Preserve producer reuse and trust boundaries. The noisy 910.92→64.38 s result is indicative and once per lineage, not a per-interval gain. |
-| [11 — Reader-admission overlap](plan-11-stage-overlap-phase2.md) | Runner | Phase 2 approved, unbuilt | Run the independent reader's store-free initial admission alongside its own producer, then wait for the sealed store. Phases 1/3 remain deferred. |
-| [12 — Heat timings/profile](plan-12-heat-q22-abba.md) | Heat; coordinator queue owner | q22 HELD | Actual mirrored heat controls and timing/profile route, dependent on resolving q10 correctness. No fabricated ABBA result. |
+| [10 — Initial measurement reuse](plan-10-measurement-reuse-n3.md) | Runner | Bounded implementation/private integration and q47 smoke complete | Producer-only smoke: 969 hits/zero misses, no reader, stop before advance. Independent reader recomputation remains required. New combined profile needs its own eligible ROOT. Earlier q08 scope and failures remain preserved. |
+| [11 — Reader-admission overlap](plan-11-stage-overlap-phase2.md) | Runner | Implementation/private integration and q46 ROOT pair complete | Exact parity PASS; ROOT wall time 31.11% lower with sampled arm-tree RAM 74.23% higher in one original-profile pair. Actual interval/ALE evidence remains later; phases 1/3 stay deferred. |
+| [12 — Heat timings/profile](plan-12-heat-q22-abba.md) | Heat; coordinator queue owner | q22 11/11 PASS; lf3 integrated privately | Component W4 supervised mean 109.625→80.742 s (26.347% lower). H5a is not selected. Combined focused checks PASS; final combined timing, full intervals and full-workflow cold recovery remain later. |
 | [13 — H3 r3 proof](plan-13-heat-kernel-h3-q25.md) | Kernels | q25 not launched | Successor loaded-identity repair and component proof; retain H2→L1→H3 C14 composition/repin order. |
 | [14 — Heat finish markers](plan-14-heat-finish-closure-markers.md) | Runner driver writer / Heat | Build/integration pending | Source-bound closure ticks and markers; distinguish Heat S1 certificate reuse, Small S1 observations and conditional later Heat S2/S4. |
 | [15 — H4 worker sweep](plan-15-heat-worker-sweep-q01.md) | Runner; coordinator queue owner | q01 HELD | Resolve the actual harness, resource, seed, smoke/refuter and READY prerequisites before an authorised sweep. |

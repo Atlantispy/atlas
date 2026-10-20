@@ -1,5 +1,10 @@
 # Sanitised files
 
+The Plans10–12 complete selected source map and original/public digest trail are in
+[workbench/plans10-12/SOURCE-MAP.json](workbench/plans10-12/SOURCE-MAP.json).
+Existing identical public bytes are referenced, preserving one-copy source storage.
+The new result summary is not an execution receipt; historical runtime pins remain unchanged.
+
 The Plan05 export has its complete original/public digest trail in
 [workbench/plan05/SOURCE-MAP.json](workbench/plan05/SOURCE-MAP.json).
 Only the declared source/publication transformations are applied; original
