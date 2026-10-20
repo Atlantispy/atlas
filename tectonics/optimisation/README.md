@@ -39,6 +39,11 @@ assembly tools are in [workbench/plan06](workbench/plan06/README.md). Retained
 technical checks passed, but the measured candidate was slower: D5 remains
 disabled. Final selected Plan31/N9 binding and collective review remain open.
 
+Plan04's installed comparator r24, dump r5, launcher and selected assembly
+tooling are in [workbench/plan04](workbench/plan04/README.md), with original/public
+hashes and test sources. Final Plan31 composition and authenticated field-proof
+binding remain open; readiness guards stay false and collective review is deferred.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

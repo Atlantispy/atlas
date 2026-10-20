@@ -1,0 +1,76 @@
+Plan04 additive tool-payload assembly — WORKING NON-CANON
+
+assemble_r3_plan04.py extends, without modifying, the frozen Plan06 assembler:
+W/work/plan06/r3/integration/assemble_r3_plan06.py
+SHA256 c84f98bf62116553b92103bd16a2d6f0fbf5d027c8273f6f90ab8fadfa80f45d
+The inherited --check / --pin / --compose and optional D5 contract route remain.
+This is source construction only. It does not choose or certify a Plan31
+composition, apply N9 numerical transforms, launch science, or lift any hold.
+The actual selected Plan31 composition remains unavailable.
+
+Add both options to EACH mode to include Plan04 tools:
+  --plan04-contract ABSOLUTE_JSON_PATH --plan04-contract-sha256 LOWERCASE_SHA256
+With neither option the inherited route remains. One option alone is refused.
+
+Closed UTF-8 JSON contract (placeholder hashes must be replaced with real pins):
+{
+  "schema": "atlas.private.plan04-tool-payload.r1",
+  "selection": "Explicitly include these tool and launcher bytes only; this does not select a scientific composition.",
+  "assets": {
+    "launch_fresh_interval.py": "<64 lowercase hex>",
+    "n9-tools-r21/<actual relative file>": "<64 lowercase hex>"
+  }
+}
+
+The key set is exact. Duplicate JSON keys, absent/blank selection, missing
+launcher, empty payload, invalid hashes, noncanonical paths, case collisions,
+missing/extra/changed files and links/junctions are refused. Arbitrary nested
+assets inside n9-tools-r21 are supported, including non-Python data. Every file
+is included in inventory, including cache files; no hidden omission rule.
+Names use ASCII letters/digits/underscore/hyphen/dot, "/" separators, no empty,
+"." or ".." components, no component ending in dot. Directory entries alone
+are not assets. Do not put this external contract inside the payload it hashes.
+
+ROOT is the inherited NEW staged R-shaped root, never live R. Each asset path
+is relative to this ROOT. The launcher must appear in the pinned generation.
+Every asset must also be in the inherited selected set (generation and input
+binding). Use explicit input-binding pins/provenance for every payload asset.
+Their provenance must satisfy the inherited rules; the payload contract alone
+cannot nominate unselected bytes. --pin and --compose still require the
+inherited nonempty input-binding selection statement.
+
+Every mode validates the contract hash, exact payload inventory, source bytes
+and independent selected pins. The staged identity records the full contract,
+its path/hash, the assembler's own SHA256, and the tool-only scope. --pin adds
+all payload inputs to reviewed files and all payload outputs to reviewed
+helpers. The selected launcher must already be the exact inherited helper
+source: an emitted helper cannot override it.
+
+Output mapping:
+  ROOT/launch_fresh_interval.py -> TARGET/helpers/launch_fresh_interval.py
+  ROOT/n9-tools-r21/PATH       -> TARGET/helpers/n9-tools-r21/PATH
+No bytes or line endings are normalised. The selected launcher therefore sees
+the payload beside itself in the inherited helper layout.
+
+--compose compares the complete staged identity against the reviewed record,
+rechecks the contract, assembler, inventory and input bytes, checks exact
+payload helper/input rows, runs inherited construction, then rechecks before
+writing. Existing complete stage/output/helper checks are preserved. The final
+composition.json records all helper SHA256s and the full staged identity.
+The contract and assembler must remain at their original pinned bytes between
+--pin and --compose. A new revision requires a new reviewed record and target.
+Existing target/protected live root/link guards remain unchanged.
+
+Command shape, using the existing pinned generation, input-binding and dry data:
+  python -B assemble_r3_plan04.py --check --root ROOT --generation GENERATION
+    --generation-sha256 SHA --input-binding BINDING --input-binding-sha256 SHA
+    --target NEW_COMPOSED_RN --plan04-contract PAYLOAD --plan04-contract-sha256 SHA
+  python -B assemble_r3_plan04.py --pin [same bindings and payload options]
+    --reviewed NEW_REVIEWED_JSON --dry DRY_JSON --dry-sha256 SHA
+  python -B assemble_r3_plan04.py --compose [same bindings and payload options]
+    --reviewed REVIEWED_JSON --reviewed-sha256 SHA
+If D5 is explicitly selected, retain both D5 options in all modes as before.
+
+Use the existing queue and all actual owner/source/run controls. This document
+is an API contract, not permission to build from a stale/historical composition.
+The parent supplies the actual selected payload pins and owns live landing.

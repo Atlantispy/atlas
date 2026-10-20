@@ -1,5 +1,11 @@
 # Sanitised files
 
+The Plan04 successor export has its complete original/public digest and
+transformation trail in [workbench/plan04/SOURCE-MAP.json](workbench/plan04/SOURCE-MAP.json).
+It additionally replaces the private owner-name constant with `OWNER` and
+removes private room references. The 371-file table below describes the
+earlier snapshot only; original execution pins remain unchanged.
+
 Local user-profile paths had the user segment replaced with `LOCAL_USER`, and a contact email address was replaced
 with `<owner-email>`. Nothing else was changed. These files no longer match the hashes pinned in
 `composed-r2/composition.json` or in run records, so a pinned identity check refuses them without the private

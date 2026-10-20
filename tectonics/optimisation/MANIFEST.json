@@ -10759,6 +10759,226 @@
    "path": "workbench/plan06/SOURCE-MAP.json",
    "source": "<PLAN06_PUBLICATION>/SOURCE-MAP.json",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/launch_fresh_interval.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/launch_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/array_bindings_r5.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/array_bindings_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/array_compare_r21.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/array_compare_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/compare_arms_r21.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/compare_arms_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/dump_arm_r5.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/dump_arm_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/field_contracts.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/field_contracts.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/field_provenance.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/field_provenance.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/n9-tools-r21/write_captures_map_r3.py",
+   "source": "<PRIVATE_PLAN04_SELECTED>/n9-tools-r21/write_captures_map_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/integration/assemble_r3_plan04.py",
+   "source": "<PRIVATE_PLAN04_ASSEMBLY>/assemble_r3_plan04.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/integration/payload-contract.json",
+   "source": "<PRIVATE_PLAN04_ASSEMBLY>/payload-contract.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/assembly-r21/CONTRACT.txt",
+   "source": "<PRIVATE_PLAN04>/assembly-r21/CONTRACT.txt",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/assembly-r21/test_assembly_plan04.py",
+   "source": "<PRIVATE_PLAN04>/assembly-r21/test_assembly_plan04.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/assembly-r21/verify_inheritance.py",
+   "source": "<PRIVATE_PLAN04>/assembly-r21/verify_inheritance.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/assembly-r21/selection/select_assembler.py",
+   "source": "<PRIVATE_PLAN04>/assembly-r21/selection/select_assembler.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/live-r21/prepare_live.py",
+   "source": "<PRIVATE_PLAN04>/live-r21/prepare_live.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/live-r21/install_and_check.py",
+   "source": "<PRIVATE_PLAN04>/live-r21/install_and_check.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/live-r21/test_profile_delta.py",
+   "source": "<PRIVATE_PLAN04>/live-r21/test_profile_delta.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/field-contract-r2/test_field_contracts.py",
+   "source": "<PRIVATE_PLAN04>/field-contract-r2/test_field_contracts.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/field-provenance-r3/test_field_provenance.py",
+   "source": "<PRIVATE_PLAN04>/field-provenance-r3/test_field_provenance.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/dump-r5/test_bindings_r5.py",
+   "source": "<PRIVATE_PLAN04>/dump-r5/test_bindings_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/integrated-r21/test_array_compare_r21.py",
+   "source": "<PRIVATE_PLAN04>/integrated-r21/test_array_compare_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/integrated-r24/test_record_masks_r2.py",
+   "source": "<PRIVATE_PLAN04>/integrated-r24/test_record_masks_r2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/integrated-r24/verify_source_reuse.py",
+   "source": "<PRIVATE_PLAN04>/integrated-r24/verify_source_reuse.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/caller-controls-r21/test_callers.py",
+   "source": "<PRIVATE_PLAN04>/caller-controls-r21/test_callers.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/support.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/support.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/report.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/report.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/run_cases.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/run_cases.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/predicates.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/predicates.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/driver.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/test_reporting.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/test_reporting.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/analyse_historical.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/analyse_historical.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-adapter-r6/test_retained_r20.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-adapter-r6/test_retained_r20.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-adapter-r6/fixture_migration.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-adapter-r6/fixture_migration.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-adapter-r6/run_once.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-adapter-r6/run_once.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r3/driver.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r3/driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r3/cases_template.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r3/cases_template.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r3/prepare.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r3/prepare.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r3/launch.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r3/launch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r2/driver.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r2/driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r2/cases_template.py",
+   "source": "<PRIVATE_PLAN04>/controls-r21/integrated-focused-r2/cases_template.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/causal-r20/runs/mutants_r20.py",
+   "source": "<PRIVATE_PLAN04>/causal-r20/runs/mutants_r20.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/README.md",
+   "source": "<PUBLIC_PLAN04_PUBLICATION>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/RETAINED-RESULTS.json",
+   "source": "<PUBLIC_PLAN04_PUBLICATION>/RETAINED-RESULTS.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/SOURCE-MAP.json",
+   "source": "<PUBLIC_PLAN04_PUBLICATION>/SOURCE-MAP.json",
+   "kind": "workbench"
   }
  ]
 }

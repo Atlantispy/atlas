@@ -1,0 +1,14 @@
+{
+  "assets": {
+    "launch_fresh_interval.py": "1504e560fff09a78811501920f7fce31371666a16087eae15c5b5728c7ef0e0c",
+    "n9-tools-r21/array_bindings_r5.py": "943cde40e797fe566506d3d61121c9e253609699f7c9119c317ae92879d6baf1",
+    "n9-tools-r21/array_compare_r21.py": "2a3343e47caee415f131824b68c582d7182409e32ce27e07d1f053786ab515d5",
+    "n9-tools-r21/compare_arms_r21.py": "5f6d97aa222d7a06d12bf87a49d3c5a59a4d271301bb16dc887530e25d3c62cf",
+    "n9-tools-r21/dump_arm_r5.py": "b7b59ad57865af436625b7c31c9563b31d9d19433dbfc825ffff28d6e5c3337b",
+    "n9-tools-r21/field_contracts.py": "6da34d2f6a847f1e6e45e9b10695348354d1c2a8730adce5aa50822c60cc5bd6",
+    "n9-tools-r21/field_provenance.py": "02eef271744cc5e9f952cbcb0e167e181c078218c850f6c49e3e210db8e46a01",
+    "n9-tools-r21/write_captures_map_r3.py": "c7528f2629e37bb8a6a89356933a67f709da7a600593a13cdae17b68cf6db744"
+  },
+  "schema": "atlas.private.plan04-tool-payload.r1",
+  "selection": "Explicitly include the installed guarded Plan04 r21 launcher and seven tool assets through this frozen assembler. Tool-only selection; no scientific composition selected."
+}

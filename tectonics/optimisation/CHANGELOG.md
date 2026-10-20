@@ -6,6 +6,18 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plan04 source publication
+
+- Added the privately installed r24 comparator, r5 dump, caller/helpers and
+  selected additive assembly sources, with original/public digest mapping.
+- Retained the 71-case and six-case results, named mutation limitations,
+  measured resource scope and precise missing Plan31/field-proof binding.
+- Kept private profiles, receipts, logs, stores and coordination records local.
+  Original pins, frozen predecessors and technical guards are preserved.
+- Public inventory/privacy/syntax controls exercise sanitisation and refuse
+  corrupted publication metadata; they do not execute the scientific runtime.
+- Collective review is deferred. No scientific run or unrelated hold is released.
+
 ## 20 Oct 2026, Plan06 source publication
 
 - Added repaired D1/D2/D4/D8 wall twins, shared primitives, pinned hook,

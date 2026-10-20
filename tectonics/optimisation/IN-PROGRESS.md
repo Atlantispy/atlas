@@ -43,20 +43,19 @@ Rules that apply to every item below:
 
 ## Pose and heat-number width
 
-- **State:** design accepted (`pending/pressure/width/DESIGN.md`, rounding the pose and summing the outward deviation
-  bound). Conditions 1-3 pass. On the pose path the proven bound is under 0.049% of the actual certified radius,
-  and the measured end-pose change is 0.010-0.033% (up to 1,000 intervals, four histories), against a limit of 1%
-  cumulative over 1,000 intervals. Bounded heat values grow by at most a factor of (1 + 2^-11).
-- **Left:**
-  1. Condition 4, the interval-1 replay with both arms (about 5 h). `dump_arm` r1 is usable. `compare_arms` r1 was
-     refuted: it accepted any 64-hex change as an identity, matched geometric `radius_m` as a radius field, fixed a
-     field's kind by its first leaf, skipped the interval-1 partition, read `0x` exact integers as ids, and passed
-     identical arms. Write `compare_arms_r2` and `dump_arm_r2` as new files, with each reproducer as a planted
-     failure, then refute again. The replay job script is designed but not written. It waits for the start gate.
-  2. Open choice: whether a candidate arm that stops repeatably (memory limit, native crash) while the reference
-     completes is FAIL or VOID. Either must block acceptance.
-  3. Geometry integration after the rounding lands, then the width gate re-pin and an identity successor.
-- **Gate:** zero refusal flips, and the change stays under 1% of the certified error.
+- **State:** the approved pose rounding and Addendum E remain. Plan04's comparator
+  r24, dump r5, independent binding/field helpers, launcher and additive assembly
+  tools are installed privately; [sources and checks](workbench/plan04/README.md)
+  are published separately from private runtime evidence.
+- **Left:** actual selected Plan31 replay composition; authenticated producer/
+  reader invocation, units, norms, history, projection and same-quantity radius
+  correspondence; selected Heat schemas, correspondence and applicable error proof.
+  A final manifest alone cannot supply these. Then bind the selected assembly
+  route and affected consumers. Collective review is deferred.
+- **Gate:** exact unaffected fields, zero refusal flips, approved source-specific
+  pose/Addendum E contracts and all independent proof requirements. No generic
+  epsilon or assumed Heat allowance. Both technical readiness guards remain false.
+  Plan27 scientific replay and fresh full intervals remain held.
 
 ## Pressure stage speed
 

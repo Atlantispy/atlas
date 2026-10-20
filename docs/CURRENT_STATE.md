@@ -22,8 +22,10 @@ private-environment checks from public source publication. Frozen composition an
 live runtime bytes are unchanged. The Plan 03 r6 workbench successor fixes the reviewed
 preservation-check bypass; its focused checks and delivery boundary are recorded
 in that plan. The q21 retry remains a separate decision. N9 remains
-incomplete and no repaired N9 code is applied by this change. The product acceptance
-records below retain their existing scope.
+incomplete. Plan04 now publishes the repaired comparator/dump/caller and assembly
+sources after their private live-tool installation; actual Plan31 composition
+and authenticated field-proof binding remain open. Collective review is deferred.
+The product acceptance records below retain their existing scope.
 
 **The reviewed optimisation batch is integrated locally.** It repairs the four
 development-tool findings, adds bitwise numerical speed-ups, exact incremental
@@ -113,6 +115,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
+| Plan04 N9 comparison and extraction | Comparator r24, dump r5, caller and assembly tools integrated privately; additive source export supplied. Actual Plan31 composition and authenticated producer/reader and Heat field proofs remain open; readiness guards stay false and collective review is deferred. | [Method, source pins and checks](../tectonics/optimisation/workbench/plan04/README.md), [final binding obligation](../tectonics/optimisation/plans/plan-04-n9-width-tools.md) |
 | Plan06 exact wall arithmetic | Repairs, scoped technical proof and retained-baseline construction completed privately. Additive source snapshot published; D5 disabled for measured regressions. Final selected Plan31/N9 binding and collective review remain open. No main-package overlay or scientific hold release. | [Source, method and measured limits](../tectonics/optimisation/workbench/plan06/README.md), [completion boundary](../tectonics/optimisation/plans/plan-06-d5-exact-arithmetic.md) |
 | Plan02 admission and transfer repair | Compatible fresh/prepared caller generation and evolved-state metadata repair installed in the private workspace. Additive source snapshot supplied for review; no overlay to the main package. Positive prepared publication/reopen and end review remain deferred. Plan31 integration is a separate later stage. | [Plan02 source scope and checks](../tectonics/optimisation/workbench/plan02/README.md), [completion conditions](../tectonics/optimisation/plans/plan-02-start-gate.md) |
 | Development workflow | Fresh-process parallel tests, explicit quick selections, conservative impact maps and fail-closed candidate verification are integrated. The four review findings are repaired; full discovery and scientific tolerances remain unchanged. Quick or impact-selected passes are not whole-suite acceptance. | [Developer tools](DEVELOPMENT_TOOLS.md), [commit checks](CODING_SAFETY.md#before-every-commit) |

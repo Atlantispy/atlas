@@ -1,0 +1,48 @@
+{
+  "schema": "atlas.public.plan04-retained-results.v1",
+  "scope": "Summary of original private evidence; not public-clone execution receipts",
+  "status": "TOOLS_INTEGRATED_FINAL_SELECTED_COMPOSITION_BINDING_OPEN",
+  "verification": "Final r24 retained controls: 71/71 PASS, 63.094 seconds, sampled peak 0.11 GiB. Final focused baseline: 6/6 PASS; six exact faults detected with complete execution, zero errors/skips and final logs (2 behavioural, 1 provenance, 1 reader-boundary, 2 diagnostic); driver 26.062 seconds, sampled peak 0.12 GiB. Reused component evidence: field contracts 34/34, producer provenance 18/18, dump binding 12/12, bounded arrays 7/7, quantity masks 4/4, caller mechanics 6/6, assembly 24/24, profile delta 4/4. All eight live assets landed and actual selected caller closure passed; sampled caller-check peak 0.04 GiB. Earlier overlap-affected measurements are not isolated performance evidence.",
+  "historical_mutations": {
+    "executed": 36,
+    "behavioural_certified": "31/34",
+    "provenance_certified": "1/1",
+    "diagnostic_certified": "1/1",
+    "exceptions": [
+      "Unproved-stop mutation survived and is not credited",
+      "Observer-path failures are diagnostic; independent refusal remains",
+      "Whole peer mutation run non-certified due to unrelated ERROR; isolated proof separate"
+    ]
+  },
+  "r23_supplement": "12 baseline cases; 11 faults; original 9/11 certification retained; two corrected predicates identify earlier wrong-PASS assertions in unchanged traces",
+  "receipt_sha256": {
+    "final_retained_controls": "033c73967c387f0b3bb2c0dbb35c686db6a5de1d268e6f173beb8fec691739fa",
+    "final_focused_controls": "acfe544a7c61e5d05bc331f17bd98b7b6bf65f98ab1a5cd1a427d48dbf87eb74",
+    "historical_controls": "43fe170efd860a7ba033a24b85d0f057dbe4da82a5dcc5070d14ccfbe0a17b90",
+    "r23_supplement": "349b35d9f1cd2ff0cac5929ba912f72f20041a5b300900174b1c25d51f5ec199",
+    "field_contracts": "605464902381b7f47623acbb135364b99ab7a41a25ded79e89958948f5b3c66b",
+    "producer_provenance": "c1bce4da04619221cee61033d20abf5ee05df90896feb207a966550db9785d4d"
+  },
+  "installation_sha256": {
+    "landing_receipt": "7b7dd1a62c05bed4d2277a6c68366e965319884a150cf6ed8b470a194c7237b1",
+    "caller_check": "e17f0a1df91851294696b0ccebd7c9fd48987d3773dc5f947f8b2fad4540d627",
+    "live_selection": "421b0b7c928ed94d542966d38d8e2324bcfee2ed68a812ccbf08ed001278d38d",
+    "prepared": "fd7a5ae43635d719be9434419ca2dd1bcd35b270262ac1e526f655ee9a913b3b"
+  },
+  "selected_assembly_sha256": "5cbe5ca2c1678bc6e00487d27d5ebe7c707fe47c9bdfd94f5d0b059f41747757",
+  "remaining_dependency": [
+    "Actual selected Plan31 before/after replay composition",
+    "Authenticated producer/reader invocation schema and source-specific compiler mapping",
+    "Call-site/output/unit/norm/level/history/projection/same-quantity radius correspondence",
+    "Selected Heat quantity/array correspondence and propagated bound or independent verification",
+    "Final selected composition check/pin/compose and affected-consumer binding"
+  ],
+  "readiness_guards": {
+    "EXTRACTION_READY": false,
+    "REPAIRS_COMPLETE": false
+  },
+  "collective_review": "DEFERRED",
+  "scientific_replay_launched": false,
+  "holds_released": false,
+  "private_run_data_included": false
+}
