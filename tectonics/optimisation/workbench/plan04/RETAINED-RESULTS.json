@@ -44,5 +44,25 @@
   "collective_review": "DEFERRED",
   "scientific_replay_launched": false,
   "holds_released": false,
-  "private_run_data_included": false
+  "private_run_data_included": false,
+  "r24_mutation_closure": {
+    "status": "PASS_WITH_SEPARATE_BEHAVIOURAL_AND_API_DISPOSITIONS",
+    "comparator_sha256": "5f6d97aa222d7a06d12bf87a49d3c5a59a4d271301bb16dc887530e25d3c62cf",
+    "baseline_cases": 7,
+    "fault_runs": 3,
+    "tests_per_run": 7,
+    "errors": 0,
+    "skips": 0,
+    "active_processes_at_completion": 0,
+    "behavioural_faults_detected": 2,
+    "observer_path_predicates_detected": 4,
+    "api_defence_faults_detected": 1,
+    "driver_seconds": 10.297,
+    "queue_sampled_peak_gib": 0.12,
+    "receipt_sha256": "ea2c2ca51a68b05186c1eddec351527a36e57326b45093af6ee1d3b32b658733",
+    "detailed_result_sha256": "6636fb5b2694223dc095f1bd6972a006f0de99aef856bfa7cc08aee9be3bc4f0",
+    "selection_sha256": "7421fd95b84d8ef399525eacadb8d88913441bf85ae4de1583708bc8c99904cb",
+    "historical_31_of_34_unchanged": true,
+    "unproved_stop_disposition": "Bounded route redundancy for coherent unchanged inputs: stage_evidence sets the flag only after stop_cause reports a resource failure, requiring guard reason rss_limit or None; _unexplained permits explanation only for reason user_cancel. These conditions cannot coincide on the same stable guard record. Direct API inputs can combine them, so the retained defence is separately tested. No arbitrary-API, changing-file or whole-route behavioural kill is claimed."
+  }
 }

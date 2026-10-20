@@ -6,6 +6,16 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plan04 mutation coverage closure
+
+- Added isolated observer-path controls with coherent termination records:
+  all four invalid-path predicates now demonstrate wrong-verdict detection.
+- Rechecked the isolated peer-branch fault and direct unproved-stop API defence
+  against unchanged final r24 bytes; seven baseline checks and three fault runs
+  completed without errors or skips.
+- Preserved the historical 31/34 result and recorded the source-bound reason
+  for route redundancy of the unproved-stop mutation. No scientific hold changed.
+
 ## 20 Oct 2026, Plan04 source publication
 
 - Added the privately installed r24 comparator, r5 dump, caller/helpers and

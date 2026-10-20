@@ -101,6 +101,45 @@ but their last four overlapped another job after a queue liveness defect;
 those figures are not isolated performance evidence. The corrected queue
 was used subsequently. No whole-interval speed or memory benefit is claimed.
 
+
+## Mutation coverage closure — 20 October 2026
+
+The original 31/34 behavioural count is preserved. The missing observer-path
+isolation has now been completed against unchanged final comparator r24
+`5f6d97aa222d7a06d12bf87a49d3c5a59a4d271301bb16dc887530e25d3c62cf`.
+
+`retained-sources/controls-r21/integrated-focused-r4` passed all seven baseline checks. Each of three fault
+runs completed the same seven checks with zero errors/skips, final retained logs
+and no active Job processes. The driver requires every declared predicate, no
+unattributed failure and complete process finality:
+
+- Observer-path validation removed: four independently asserted bad paths
+  (None, empty, absent, wrong bytes), each with a matching re-sealed termination
+  record, incorrectly produce VOID-OBSERVER instead of FAIL. All four intended
+  wrong-verdict assertions detect the fault. The second check cannot mask it.
+- Peer-branch break: the isolated case incorrectly produces VOID-SUSPECT instead
+  of FAIL. Its exact behavioural assertion detects the fault on final r24.
+- Unproved-stop guard removed: the direct API case incorrectly produces
+  VOID-ENVIRONMENT instead of VOID-SUSPECT. This is API defence, not a whole-route
+  behavioural kill.
+
+The unproved-stop whole-route survivor has a bounded redundancy explanation:
+`stage_evidence` sets its flag only after `stop_cause` returns a resource FAIL.
+That requires the retained guard reason `rss_limit` or `None`. `_unexplained`
+requires `user_cancel` to explain the same stop. On coherent unchanged guard
+bytes these conditions cannot coincide. This reasoning does not cover arbitrary
+API inputs or changing files; the explicit guard stays in place and its API
+defence passes. It does not manufacture producer reachability or rewrite the
+historical survivor.
+
+Selection SHA-256 `7421fd95b84d8ef399525eacadb8d88913441bf85ae4de1583708bc8c99904cb`.
+Outer result SHA-256 `ea2c2ca51a68b05186c1eddec351527a36e57326b45093af6ee1d3b32b658733`.
+Detailed result SHA-256 `6636fb5b2694223dc095f1bd6972a006f0de99aef856bfa7cc08aee9be3bc4f0`.
+Driver 10.297 s; queue sampled process-tree peak 0.12 GiB (0.5 GiB booked).
+Existing 71-case and component evidence is reused because runtime sources are
+unchanged. Both technical guards remain false; Plan31/field-binding obligations,
+deferred collective review and scientific/unrelated holds remain unchanged.
+
 ## Public checks and precise remaining work
 
 The publication control checks this export's complete inventory, original/public

@@ -10979,6 +10979,26 @@
    "path": "workbench/plan04/SOURCE-MAP.json",
    "source": "<PUBLIC_PLAN04_PUBLICATION>/SOURCE-MAP.json",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r4/cases_template.py",
+   "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/cases_template.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r4/driver.py",
+   "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r4/launch.py",
+   "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/launch.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r4/prepare.py",
+   "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/prepare.py",
+   "kind": "workbench"
   }
  ]
 }

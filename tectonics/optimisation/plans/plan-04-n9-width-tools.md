@@ -81,6 +81,14 @@ The separate r23 supplement and isolated peer result retain their distinct
 scope and corrected-predicate trail. Public publication checks are not private
 runtime checks, collective review or scientific acceptance.
 
+The final r24 mutation supplement now passes seven baseline checks and three
+fault runs: isolated observer-path validation (four wrong-verdict predicates),
+isolated peer-branch behaviour and separately labelled unproved-stop API defence.
+The historical 31/34 count remains historical. The stop survivor is explained by
+mutually exclusive resource and cancellation triggers on coherent unchanged
+guard bytes; no whole-route detection is invented. See the
+[closure evidence and limits](../workbench/plan04/README.md#mutation-coverage-closure--20-october-2026).
+
 ## Precise final binding obligation
 
 1. Obtain the actual selected Plan31 before/after replay composition. Do not

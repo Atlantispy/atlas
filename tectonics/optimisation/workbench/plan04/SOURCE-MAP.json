@@ -11,15 +11,15 @@
     {
       "path": "README.md",
       "source": "<PUBLIC_PLAN04_PUBLICATION>/README.md",
-      "original_sha256": "5bd60d8425fa47417a25bb4382e76fbfa759064a18a411cb77953bad6496f2c8",
-      "public_sha256": "5bd60d8425fa47417a25bb4382e76fbfa759064a18a411cb77953bad6496f2c8",
+      "original_sha256": "833ab259f7686fbfc52fe9956d338bf0b4f0d1a344c710f82e5f2748c9efdbde",
+      "public_sha256": "833ab259f7686fbfc52fe9956d338bf0b4f0d1a344c710f82e5f2748c9efdbde",
       "transformations": []
     },
     {
       "path": "RETAINED-RESULTS.json",
       "source": "<PUBLIC_PLAN04_PUBLICATION>/RETAINED-RESULTS.json",
-      "original_sha256": "1ab65759a89b2e1528d446bb45f69508853ded28c9f07c2f27c696a6df7107a0",
-      "public_sha256": "1ab65759a89b2e1528d446bb45f69508853ded28c9f07c2f27c696a6df7107a0",
+      "original_sha256": "ba3ed0081d4d1cf070c3ea633a5f403ff763d8ff08530a5008866e6751b0b803",
+      "public_sha256": "ba3ed0081d4d1cf070c3ea633a5f403ff763d8ff08530a5008866e6751b0b803",
       "transformations": []
     },
     {
@@ -235,6 +235,36 @@
       "public_sha256": "70b0728f687eceb5913ad1f55ef759dbf08c361071494af421429eebcc15052f",
       "transformations": [
         "{\"count\": 1, \"kind\": \"home-path\", \"replacement\": \"Users/LOCAL_USER/\"}"
+      ]
+    },
+    {
+      "path": "retained-sources/controls-r21/integrated-focused-r4/cases_template.py",
+      "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/cases_template.py",
+      "original_sha256": "835a3c15f6277c06ffc25712eb0f271d02b748f327c09303ed1fba82c94733aa",
+      "public_sha256": "835a3c15f6277c06ffc25712eb0f271d02b748f327c09303ed1fba82c94733aa",
+      "transformations": []
+    },
+    {
+      "path": "retained-sources/controls-r21/integrated-focused-r4/driver.py",
+      "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/driver.py",
+      "original_sha256": "e3ead570b6b510129013263ea1885eea67be06530e39fddf188ce27c268512e2",
+      "public_sha256": "e3ead570b6b510129013263ea1885eea67be06530e39fddf188ce27c268512e2",
+      "transformations": []
+    },
+    {
+      "path": "retained-sources/controls-r21/integrated-focused-r4/launch.py",
+      "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/launch.py",
+      "original_sha256": "92776b8015c0788ca0eb868cccc23cfce6bd683a9be5330fa21826fcb0266d07",
+      "public_sha256": "92776b8015c0788ca0eb868cccc23cfce6bd683a9be5330fa21826fcb0266d07",
+      "transformations": []
+    },
+    {
+      "path": "retained-sources/controls-r21/integrated-focused-r4/prepare.py",
+      "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/prepare.py",
+      "original_sha256": "367b3409d97f1f7f075083160a6abc68706814583b06eac92c181fc44dccb24b",
+      "public_sha256": "3a393ac3beda6c0f495b7bd8ff448c49ee51a4b1ae35785529b662f0c6b9de26",
+      "transformations": [
+        "Replace private home path with LOCAL_USER (1 occurrences)"
       ]
     },
     {
