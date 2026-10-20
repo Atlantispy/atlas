@@ -1,25 +1,42 @@
 # Plan 02 — By-need start gate and memory admission
 
 **Item ID:** 02  
-**Retained owner:** Runner / Claude  
-**Status:** WORKING NON-CANON; amendments from general402/404 synthesised and assigned for this document in general406. Published Route 1 wiring, pending Route 2 work and live integration are distinct states.  
-**Completion condition:** The selected Route 2 adapter and callers implement the accepted admission contract with source-bound verification; the final composition pins the selected gate and runner identity; any live integration occurs only under its applicable authorisation and freeze clearance.
+**Owner:** Plan02 integration owner
+
+**Status:** WORKING NON-CANON; selected generation and known loader repair installed privately, short checks passed. Corrected positive publication/reopen and requested end review remain deferred.
+
+**Completion condition:** Complete Plan02's positive prepared-state publication/reopen validation and end review. Binding into Plan31's assembled candidate belongs to its separate later integration stage and does not block Plan02 completion.
 
 ## 1. Current scope and authority
 
-Route 1 wiring in fresh launch/run/reopen is source-integrated and published with item21 at `b0590819a6e9dfb205453fc1b0af5cf4c1e1b433`. The remaining work is:
+The [Plan02 source snapshot](../workbench/plan02/README.md) contains the selected
+Route1/Route2 callers, runner, adjacent launcher, gates and companion tests,
+together with the later native transfer metadata repair. Its
+[source map](../workbench/plan02/SOURCE-MAP.json) distinguishes original and
+public bytes. The original/public method difference is documented there.
 
-1. Decide and implement Route 2's evidence adapter and wire `run_prepared_restart.py`, `launch_monitored_interval.py` and `reopen_prepared_restart.py`.
-2. Pin the selected gate and runner sources in the final `composed-f1` composition manifest/profile.
-3. Complete authorised live integration and the required checks at that boundary.
+Route2's adapter is implemented: it consumes qualifying source-bound monitored
+producer or independent-reader completion evidence, and uses an explicit booking
+only when no measurements are supplied. Its complete role, command-key and
+failure rules are in [the admission contract](../workbench/plan02/ROUTE2_ADMISSION.md).
+It does not substitute Route1's stage-record schema.
 
-Runner STATE-NOTE section A explicitly leaves Route 2's adapter as a decision: **booking-only or a reader for LM records**. It has no Route 1 stage records to consume by default. Do not silently force the fresh-interval schema onto it or claim that the pending adapter is already built.
+Private live installation and the scoped source/profile/C18 checks are recorded.
+The loader now admits both initial and evolved collar metadata without dropping
+their heat/transport identifiers. Corrected positive prepared-state publication
+and independent reopen remain unrun after that repair, deferred by the owner.
+No fresh scientific interval or final-assembly integration is established.
 
-The former Route 1 origin hashes, line-number edits and staging recipe are historical. Do not rebuild the published chain from those obsolete origins. Live R and frozen `composed-r2` remain unchanged according to the current consolidated status; publication is not live integration or scientific acceptance.
+The public workbench snapshot preserves the frozen `composed-r2` and main package.
+It excludes private profiles, execution receipts and stores and is not runnable
+as a native installation. All scientific and individual holds remain. This
+document does not start or authorise a run.
 
-This plan grants no new implementation, execution, swap, repin, commit or hold-release authority. Preserve separately established authorisation and the retained owner. Live swaps and composition/profile pins require the applicable authorisation and explicit coordinator freeze clearance. N9 remains **PAUSED BY USER**, fresh full intervals remain held, and individual queue holds remain in force.
+## 2. Historical Route1 sources and identities
 
-## 2. Primary sources and selected identities
+The records in this section describe the earlier Route1 publication. For the
+current Plan02 source selection use the source map linked above; these historical
+paths and hashes are not a current public runtime profile.
 
 Path aliases:
 
@@ -98,17 +115,24 @@ Runtime-importing processes use the applicable clean environment, `PYTHONHASHSEE
 
 ## 4. Remaining implementation and integration
 
-The retained owner first resolves Route 2's adapter choice with the coordinator and records the decision in the existing owner record. Then wire all three prepared/monitored callers to the selected contract, including prediction before run-output creation, the child admission boundary where applicable, recorded basis/limits, and removal of obsolete duplicated admission constants without weakening the in-run guards.
+Route2's adapter and all three prepared/monitored callers are implemented and
+installed together with the compatible fresh-route generation. The known metadata
+repair is also installed. No duplicate adapter decision or caller rewrite remains.
+The remaining Plan02 runtime validation is corrected root publication followed
+by an independent reopen, without advancing a simulation interval.
 
 Use current source-bound edits and the existing before-copy/staging/rollback requirements. The earlier `S/gate_wiring_stage.py`, `S/gate_swap_apply.py` and `R/L/gs` recipe is historical planned work, not proof those artefacts exist or a mandate to repeat Route 1 changes. Check the current queue and source freeze before any authorised live replacement; never alter files imported by an active or protected queued run.
 
-The final composition/profile must pin the selected gate and runner sources as an explicit successor identity. Preserve old manifests, receipts and source pins. Coordinate that change with the outstanding final build and live integration rather than silently changing an interval's profile.
+At the separate later integration stage, the replay/final composition and profile
+must pin the selected gate and runner sources as an explicit successor identity.
+Preserve old manifests, receipts and source pins and verify the changed seams.
+This remains a downstream obligation, not a Plan02 completion prerequisite.
 
 ## 5. Evidence and proportionate verification
 
 **Retained core evidence:** 23 tests and 43/43 planted mutants caught, as recorded in the Runner handoff and `IN-PROGRESS.md`. These counts describe that core revision; they are not fixed future test counts or proof of every caller. Preserve the published chain-r3 evidence described in the consolidated status and reuse it only while its tested scope, code, inputs and configuration remain valid.
 
-Route 2 needs its selected-adapter and changed-caller checks, including the three existing mandatory refusal cases:
+The retained selected-adapter and changed-caller checks cover the mandatory refusal cases:
 
 1. No qualifying prediction and no declared booking: refuse before run-output creation.
 2. Where the selected adapter supports measured records, a lower booking cannot replace the measured peak. A 5-GiB measured peak with a 2-GiB booking still gives an 8-GiB gate. Do not fabricate a measured-record path for a booking-only adapter.
@@ -124,11 +148,17 @@ Label subsequent figures as MEASURED with source/scope, PROJECTED with basis, or
 
 ## 6. Outstanding completion conditions
 
-- [ ] Route 2 adapter choice recorded, with its evidence schema and no implicit reuse of the wrong route's records.
-- [ ] All three Route 2 callers wired and their applicable refusal/child-boundary checks completed, with actual evidence retained.
-- [ ] Focused static checks assessed against the unchanged baseline; required refutation and regressions satisfied for the changed scope.
-- [ ] Final composition/profile pin prepared and verified as a successor identity under the applicable authority and freeze clearance.
-- [ ] Authorised live integration outcome and required post-integration checks recorded separately from publication and scientific acceptance.
-- [ ] Result, unresolved dependencies and evidence returned to the coordinator.
+- [x] Route2 adapter and explicit evidence contract implemented.
+- [x] All three callers and compatible fresh-route dependencies installed together; scoped checks retained.
+- [x] Known metadata defect repaired; short controls and live source/profile checks passed privately.
+- [x] Private live integration and scoped C18 evidence recorded separately from publication and scientific acceptance.
+- [ ] Positive prepared-state publication and independent reopen on the repaired successor; deferred by the owner.
+- [ ] Requested end review.
 
-Start-gate readiness is a dependency of the selected replay/final-build routes; it is not permission to run them. N9's explicit resume, its separate tool/proof conditions, final composition and all fresh-interval and individual holds remain independent requirements. No implementation or execution is claimed complete by this plan edit.
+The later replay/final composition must still bind the selected generation and
+verify its changed seams before the relevant replay. Plan31 integration is a
+separate stage; it is not an unchecked item in Plan02's completion list.
+
+Start-gate readiness is an input to the selected replay/final-build routes; it is
+not permission to run them. N9's explicit resume, separate tool/proof conditions
+and all fresh-interval and individual holds remain independent requirements.

@@ -17,14 +17,19 @@ Rules that apply to every item below:
 
 ## Start gate sized by need
 
-- **State:** core built and verified (`drivers/start_gate.py`: 23 tests, 43/43 mutants caught, lint and type checks
-  clean). It replaces the fixed 10 GiB free-memory start requirement with a check against each run's predicted peak.
-  The prepared-restart route's helpers are in place. Wiring is now applied in `drivers/run_fresh_interval.py`,
-  `drivers/reopen_fresh_restart.py` and `drivers/launch_fresh_interval.py` as part of the item21 chain.
-- **Left:** the second route and the pin in the final composition manifest. This is a new runner identity; branch
-  application does not swap the live runtime or re-pin its manifest. The interval-1 width replay and the fresh
-  full-interval runs retain their existing holds and dependencies.
-- **Gate:** refuses whenever predicted peak plus the free floor exceeds available memory; in-run guards are unchanged.
+- **State:** Route1 and Route2 callers, runner and adjacent launcher are installed
+  together in the private workspace. The subsequent loader repair admits both
+  current producer metadata shapes. Source copies and exact export scope are in
+  [workbench/plan02](workbench/plan02/README.md); this public snapshot is not a
+  native installation. Retained private checks cover local integration and the
+  repair within their declared scopes.
+- **Left for Plan02:** corrected positive prepared-state publication and
+  independent reopen, then requested end review. Those runs remain deferred.
+- **Later integration:** bind the selected generation in the actual replay/final
+  assembly at its separate plan stage. That future stage does not block Plan02
+  completion. All interval and individual holds remain.
+- **Gate:** available memory must cover `P + ceil(P / 5) + 2 GiB` for the selected
+  predicted peak `P`; in-run guards are unchanged.
 
 ## Interval-N driver (continuation)
 

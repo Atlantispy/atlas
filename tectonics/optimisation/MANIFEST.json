@@ -10459,6 +10459,141 @@
    "path": "workbench/geometry-growth-r1/scripts/test_d08_preservation.py",
    "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/geometry-growth-r1/scripts/test_d08_preservation.py",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/fresh_interval_driver.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/fresh_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/launch_fresh_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/launch_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/launch_monitored_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/launch_monitored_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared_interval_driver.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/prepared_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/probe_execution_identity.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/probe_execution_identity.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/reopen_fresh_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/reopen_fresh_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/reopen_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/reopen_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/route2_gate.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/route2_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/run_fresh_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/run_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/run_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/run_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/start_gate.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/start_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_fresh_interval_driver.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_fresh_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_launch_fresh_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_launch_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_launch_monitored_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_launch_monitored_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_prepared_interval_driver.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_prepared_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_reopen_fresh_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_reopen_fresh_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_reopen_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_reopen_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_route2_gate.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_route2_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_run_fresh_interval.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_run_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_run_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_run_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_s1_query_stages.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_s1_query_stages.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_s8_producer.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_s8_producer.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/test_start_gate.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/test_start_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/ROUTE2_ADMISSION.md",
+   "source": "<PRIVATE_PLAN02_LIVE>/ROUTE2_ADMISSION.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/native_transfer.py",
+   "source": "<PRIVATE_PLAN02_LIVE>/native_transfer.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/README.md",
+   "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/plan02/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/SOURCE-MAP.json",
+   "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/plan02/SOURCE-MAP.json",
+   "kind": "workbench"
   }
  ]
 }

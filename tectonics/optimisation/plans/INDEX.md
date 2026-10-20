@@ -7,6 +7,12 @@
 **Status:** WORKING NON-CANON. Documentation corrected on 17 October 2026 under Michael's general901 assignment.  
 **Scope:** 39 planning documents. Publication, implementation, proof, integration, scientific acceptance and canon are separate states.
 
+**Plan02 update, 20 October:** the selected caller/runner generation and loader
+repair are installed privately and available as an additive public source
+snapshot. Positive prepared publication/reopen and end review remain deferred.
+Plan31 binding belongs to its separate later integration stage. See
+[Plan02](plan-02-start-gate.md); this supersedes older Plan02 status below.
+
 This index navigates the retained optimisation programme; it is not a production build, an acceptance certificate or a new assignment. The published N5 review snapshot is `b0590819a6e9dfb205453fc1b0af5cf4c1e1b433`; live runtime/final-composition integration remains outstanding. It is not the baseline of an already accepted combined build.
 
 ## 1. Authority and holds
@@ -50,7 +56,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | Plan | Retained owner | Evidence / ticket | Actual work and current boundary |
 |---|---|---|---|
 | [01 — Runner test isolation](plan-01-runner-test-isolation.md) | Runner / Claude | Reviewed workbench successor; retained 235-test pass | Test-only repair and fixture checker published; frozen composition and live runtime unchanged. |
-| [02 — By-need start gate](plan-02-start-gate.md) | Runner / Claude | Retained core and chain-r3 evidence | Preserve tested core/published Route 1 wiring; distinguish remaining Route 2 work and live integration. |
+| [02 — By-need start gate](plan-02-start-gate.md) | Plan02 integration owner | Selected generation and loader repair installed privately; source snapshot published | Positive prepared publication/reopen and final review deferred; Plan31 integration is a later stage. |
 | [03 — q21 launch environment](plan-03-q21-launch-environment.md) | Geometry / Runner; coordinator queue owner | r6 guard successor; r5 retained | Mandatory D08 preservation before launch and merge; focused checks recorded in Plan 03. The q21 retry requires separate authorisation. |
 | [04 — N9 proof-tool repair](plan-04-n9-width-tools.md) | Codex, paused; Pressure domain source | Comparator r3, dump r2, 47 mapped cases | Complete independent source/adoption/observer/array/causal checks and required refutation; both readiness flags remain false and N9 paused. |
 | [05 — q10 correctness](plan-05-q10-heat-correctness.md) | Heat | q10 FAIL | Seek authentic arm-bound correspondence or decisive primary evidence. Do not presume a harmless permutation, reconstruct missing historical evidence or relax comparisons. |

@@ -1,0 +1,213 @@
+{
+  "schema": "atlas.public.plan02-source-map.v1",
+  "status": "SOURCE_SNAPSHOT_NOT_A_RUNNABLE_PROFILE",
+  "scope": "Selected Plan02 live generation and subsequent collar metadata repair.",
+  "private_run_data_included": false,
+  "positive_prepared_publication_reopen": "DEFERRED_UNRUN",
+  "plan31_integration": "SEPARATE_LATER_STAGE",
+  "files": [
+    {
+      "path": "fresh_interval_driver.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/fresh_interval_driver.py",
+      "original_sha256": "5b288b60c99cb26cfc89c836aa6e6c77e6cb20769b54c998ac559e2b76ce25ae",
+      "public_sha256": "5b288b60c99cb26cfc89c836aa6e6c77e6cb20769b54c998ac559e2b76ce25ae",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "launch_fresh_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/launch_fresh_interval.py",
+      "original_sha256": "a4d335fd5fa58dffd0c3a0d9f92241f28d3a292ac567e748800e113ec3563717",
+      "public_sha256": "a4d335fd5fa58dffd0c3a0d9f92241f28d3a292ac567e748800e113ec3563717",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "launch_monitored_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/launch_monitored_interval.py",
+      "original_sha256": "8d30779e4bf08882ba6c064848cd7b1f4755d615f47e4c83606030943141ba53",
+      "public_sha256": "2078b8f84d0506f50162e1696b27fd8f27ce7c672c0cd30c91b94929101bd8ad",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "prepared_interval_driver.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/prepared_interval_driver.py",
+      "original_sha256": "4dcc0719784bc45b9dd2967c735e0f1c7ab93263935eb136638ae23b21f21351",
+      "public_sha256": "4dcc0719784bc45b9dd2967c735e0f1c7ab93263935eb136638ae23b21f21351",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "probe_execution_identity.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/probe_execution_identity.py",
+      "original_sha256": "5470acc64e3ded77784ef2b18662f885f95a36e1dad24d7bd9902af898a097bd",
+      "public_sha256": "5470acc64e3ded77784ef2b18662f885f95a36e1dad24d7bd9902af898a097bd",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "reopen_fresh_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/reopen_fresh_restart.py",
+      "original_sha256": "695c3495362de388bc1b994b7da3d98a082c16b38a2a68af5b8be99530623dd8",
+      "public_sha256": "695c3495362de388bc1b994b7da3d98a082c16b38a2a68af5b8be99530623dd8",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "reopen_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/reopen_prepared_restart.py",
+      "original_sha256": "d32d155dd1e14ccbfdeaa6e905a22dab71f5fa0d27d20a2e5abb4f5b0b387e9a",
+      "public_sha256": "30e7c7ef13ee75ec2a1b403a338f1b482da9f4bb2a71830fa39608e1b8280762",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "route2_gate.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/route2_gate.py",
+      "original_sha256": "235bf0450d73f205fe6a3879cc32bbede2e01a9a604f5e871b1c33080c0b3b86",
+      "public_sha256": "235bf0450d73f205fe6a3879cc32bbede2e01a9a604f5e871b1c33080c0b3b86",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "run_fresh_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/run_fresh_interval.py",
+      "original_sha256": "05c952897f8633557e3619715f009d5bedbd1e3d4b91c3da3a3b6c0649e4503a",
+      "public_sha256": "05c952897f8633557e3619715f009d5bedbd1e3d4b91c3da3a3b6c0649e4503a",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "run_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/run_prepared_restart.py",
+      "original_sha256": "355b06ad1402b4b6cca67dc331e3a7e6869ba64d8cc3ffa89e31fee9498754bc",
+      "public_sha256": "745a4d27be126f50c2593b65034af179e7b575d0a5504223976f37948b833068",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "start_gate.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/start_gate.py",
+      "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_fresh_interval_driver.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_fresh_interval_driver.py",
+      "original_sha256": "e5559b272a1cae88bf79c2fe9bbbfd46d759917047737085731226913006497d",
+      "public_sha256": "e5559b272a1cae88bf79c2fe9bbbfd46d759917047737085731226913006497d",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_launch_fresh_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_launch_fresh_interval.py",
+      "original_sha256": "a280803bf51ddcf1416e3582df24f2c1e313eee78a47eba78f94c9b5eb1566f8",
+      "public_sha256": "a280803bf51ddcf1416e3582df24f2c1e313eee78a47eba78f94c9b5eb1566f8",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_launch_monitored_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_launch_monitored_interval.py",
+      "original_sha256": "dd36f5c4a4105a83a85965d0391055d4d4399d9bb7a4103c2e0efa07356c6647",
+      "public_sha256": "dd36f5c4a4105a83a85965d0391055d4d4399d9bb7a4103c2e0efa07356c6647",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_prepared_interval_driver.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_prepared_interval_driver.py",
+      "original_sha256": "2fe8fea8ae38d2679017eed8d24e01b72730f9931f80033db4f20019d79af2b9",
+      "public_sha256": "2fe8fea8ae38d2679017eed8d24e01b72730f9931f80033db4f20019d79af2b9",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_reopen_fresh_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_reopen_fresh_restart.py",
+      "original_sha256": "cc72c541dd1e0715a07401f6177273d0a213f4ec2a8cf604d8a4f7fe8dcba9da",
+      "public_sha256": "cc72c541dd1e0715a07401f6177273d0a213f4ec2a8cf604d8a4f7fe8dcba9da",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_reopen_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_reopen_prepared_restart.py",
+      "original_sha256": "125f4d5e598fd418b2e434cf6641ee996e17bc161fca6f64d854cdefe058f6a7",
+      "public_sha256": "125f4d5e598fd418b2e434cf6641ee996e17bc161fca6f64d854cdefe058f6a7",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_route2_gate.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_route2_gate.py",
+      "original_sha256": "3411ab9dcd10e20695c3de4c3b3b590315a2df469e893d6151612e4890d8293e",
+      "public_sha256": "3411ab9dcd10e20695c3de4c3b3b590315a2df469e893d6151612e4890d8293e",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_run_fresh_interval.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_run_fresh_interval.py",
+      "original_sha256": "1295183d10c7117e90198fffd3b375ddb257b472b0dbb43000cb1495733eaac3",
+      "public_sha256": "1295183d10c7117e90198fffd3b375ddb257b472b0dbb43000cb1495733eaac3",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_run_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_run_prepared_restart.py",
+      "original_sha256": "6ee593497dd36abb4494e8393dcb1e304dcf6daff978316edd1268e745925f05",
+      "public_sha256": "6ee593497dd36abb4494e8393dcb1e304dcf6daff978316edd1268e745925f05",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_s1_query_stages.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_s1_query_stages.py",
+      "original_sha256": "d93ed6b7f4cbe60089b59cd07a5166708f936bf7c24356f827cfbf7cb6f379ee",
+      "public_sha256": "d93ed6b7f4cbe60089b59cd07a5166708f936bf7c24356f827cfbf7cb6f379ee",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_s8_producer.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_s8_producer.py",
+      "original_sha256": "50d7c9601b2bc7c1c0a84497ea0f5c9849d43cdd78537bd85c2a5e5dc78dd1a4",
+      "public_sha256": "50d7c9601b2bc7c1c0a84497ea0f5c9849d43cdd78537bd85c2a5e5dc78dd1a4",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "test_start_gate.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/test_start_gate.py",
+      "original_sha256": "bfd820f4b157aba87103293de04c1e11f0108f247459c59376fb93db1ad39e8c",
+      "public_sha256": "bfd820f4b157aba87103293de04c1e11f0108f247459c59376fb93db1ad39e8c",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    },
+    {
+      "path": "ROUTE2_ADMISSION.md",
+      "source": "<PRIVATE_PLAN02_LIVE>/ROUTE2_ADMISSION.md",
+      "original_sha256": "f262d2b4bc365e5591a70bca723e48e8130b055df83a5145fa49d94d230f81ba",
+      "public_sha256": "3d38ead14e051539646aaeeb3838c96d054a715e230191d9701d8a52aacff8b7",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "publication_changes": [
+        "Replace superseded private ownership and integration status with current public method scope."
+      ]
+    },
+    {
+      "path": "native_transfer.py",
+      "source": "<PRIVATE_PLAN02_LIVE>/native_transfer.py",
+      "original_sha256": "7588e9790ff4fe41475b467661e1122e308d0194d45586bc13c2ec080313c2d1",
+      "public_sha256": "7588e9790ff4fe41475b467661e1122e308d0194d45586bc13c2ec080313c2d1",
+      "user_path_replacements": 0,
+      "line_endings": "LF"
+    }
+  ]
+}

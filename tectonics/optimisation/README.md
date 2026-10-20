@@ -28,6 +28,12 @@ each unique file appears once.
 
 Plans 01 and 03 now include reviewed workbench successors and their focused test sources. The frozen composed-r2 helpers, live runtime and historical execution pins are unchanged. See the two plan completion sections for retained evidence and remaining launch/integration limits.
 
+Plan02's selected runner/caller generation and collar metadata repair are in
+[`workbench/plan02/`](workbench/plan02/README.md), with an original/public digest
+map and a synthetic public regression. The corresponding private repair is
+installed; positive publication/reopen validation and end review remain
+deferred. This snapshot does not apply an overlay to the main package.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

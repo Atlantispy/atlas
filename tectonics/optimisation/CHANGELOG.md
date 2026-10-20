@@ -6,6 +6,19 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plan02 source publication
+
+- Added the compatible selected runner/caller generation and subsequent native
+  transfer repair under `workbench/plan02`, preserving existing frozen sources.
+- The loader accepts the producer's initial and evolved metadata shapes while
+  validating and retaining the paired heat/transport identifiers.
+- Original/public digests identify all 25 exported files. The public method
+  document updates superseded ownership wording; scientific code is unchanged
+  by export. Private profiles, receipts, checkpoints and logs remain excluded.
+- Added synthetic metadata and source-map checks. Corrected positive native
+  publication/reopen and final review remain deferred. Plan31 integration is a
+  separate later stage; no scientific run or hold release is claimed.
+
 ## 18 Oct 2026, Plans 01 and 03 source publication
 
 - Added the reviewed Plan 01 test-isolation successor and five-case fixture checker in the workbench; the frozen composed helper and its pin remain unchanged. Retained original-environment evidence: 235 tests OK, eight existing skips, plus 5/5 isolation checks.
