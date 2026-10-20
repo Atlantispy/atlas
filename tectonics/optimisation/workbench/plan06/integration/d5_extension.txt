@@ -1,0 +1,72 @@
+# Plan06 D5 is opt-in and selected through the existing staged input binding.
+PLAN06_D5 = None
+PLAN06_D5_ASSETS = {}
+PLAN06_D5_BASE_SOURCES = None
+PLAN06_D5_NAMES = ('integration_exact_twin.py', 'integration_wall_measures_gmp.py')
+
+
+def plan06_select_d5(contract_path, contract_sha256):
+    global PLAN06_D5, PLAN06_D5_ASSETS
+    PLAN06_D5 = None
+    PLAN06_D5_ASSETS = {}
+    require(bool(contract_path) == bool(contract_sha256),
+            'D5 needs both --d5-contract and --d5-contract-sha256')
+    if not contract_path:
+        return None
+    path = Path(os.path.abspath(contract_path))
+    require(path.is_file() and not linked(path, path.anchor), 'D5 contract must be a real file')
+    raw = path.read_bytes()
+    require(sha256(raw).hexdigest() == contract_sha256, 'D5 contract differs from its pin')
+    # Reject duplicate keys rather than silently choosing a competing selection.
+    def unique(pairs):
+        out = {}
+        for key, value in pairs:
+            require(key not in out, 'D5 contract duplicate key: ' + key)
+            out[key] = value
+        return out
+    doc = json.loads(raw, object_pairs_hook=unique)
+    require(type(doc) is dict and set(doc) == {
+        'schema', 'selection', 'wall_input_sha256', 'wall_output_sha256', 'assets'},
+        'D5 contract fields differ')
+    require(doc['schema'] == 'atlas.private.plan06-d5-assembly.r1', 'D5 contract schema differs')
+    require(type(doc['selection']) is str and bool(doc['selection'].strip()), 'D5 selection absent')
+    for key in ('wall_input_sha256', 'wall_output_sha256'):
+        require(type(doc[key]) is str and re.fullmatch('[0-9a-f]{64}', doc[key]) is not None,
+                'D5 wall hash is invalid: ' + key)
+    names = ('hook',) + PLAN06_D5_NAMES
+    require(type(doc['assets']) is dict and set(doc['assets']) == set(names), 'D5 asset set differs')
+    paths = {'hook': G / 'transforms' / 'plan06_d5_wall_hooks.py'}
+    paths.update({name: R / 'plan06-d5' / name for name in PLAN06_D5_NAMES})
+    for name, candidate in paths.items():
+        want = doc['assets'][name]
+        require(type(want) is str and re.fullmatch('[0-9a-f]{64}', want) is not None,
+                'D5 asset hash is invalid: ' + name)
+        require(candidate.is_file() and not linked(candidate, R), 'D5 asset missing or linked: ' + name)
+        require(SELECTED.get(norm(candidate)) == want, 'D5 asset not selected at this pin: ' + name)
+        require(file_sha(candidate) == want, 'D5 asset bytes differ: ' + name)
+        PLAN06_D5_ASSETS[name] = (candidate, want)
+    PLAN06_D5 = doc
+    return {'contract': str(path), 'sha256': contract_sha256, 'selection': doc}
+
+
+def plan06_apply_d5(sources, stage, replace, load):
+    doc = PLAN06_D5
+    for name, (path, pin) in PLAN06_D5_ASSETS.items():
+        require(file_sha(path) == pin, 'D5 asset changed before composition: ' + name)
+    wall = 'integration_wall_measures.py'
+    require(text_sha(sources[PKG + '/' + wall]) == doc['wall_input_sha256'],
+            'D5 wall input differs from the selected contract')
+    for name in PLAN06_D5_NAMES:
+        require(PKG + '/' + name not in sources, 'D5 module already present: ' + name)
+    # No allow_unreviewed_input: the transform's own exact hash guard remains active.
+    stage(wall, 'plan06:d5_wall_hooks', load('plan06_d5_wall_hooks'))
+    require(text_sha(sources[PKG + '/' + wall]) == doc['wall_output_sha256'],
+            'D5 wall output differs from the selected contract')
+    for name in PLAN06_D5_NAMES:
+        path, pin = PLAN06_D5_ASSETS[name]
+        raw = path.read_bytes()
+        require(sha256(raw).hexdigest() == pin, 'D5 module changed during composition: ' + name)
+        # Preserve exact selected bytes, including line endings; no silent normalisation.
+        replace(name, 'plan06:new:' + name, raw.decode('utf8'))
+    for name, (path, pin) in PLAN06_D5_ASSETS.items():
+        require(file_sha(path) == pin, 'D5 asset changed during composition: ' + name)

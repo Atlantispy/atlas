@@ -34,6 +34,11 @@ map and a synthetic public regression. The corresponding private repair is
 installed; positive publication/reopen validation and end review remain
 deferred. This snapshot does not apply an overlay to the main package.
 
+Plan06's repaired exact wall twins, shared primitives, guarded hook and actual
+assembly tools are in [workbench/plan06](workbench/plan06/README.md). Retained
+technical checks passed, but the measured candidate was slower: D5 remains
+disabled. Final selected Plan31/N9 binding and collective review remain open.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

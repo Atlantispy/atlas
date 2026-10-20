@@ -1,0 +1,73 @@
+{
+  "schema": "atlas.public.plan06-retained-results.v1",
+  "status": "SUMMARY_OF_PRIVATE_EVIDENCE_NOT_A_PUBLIC_RUN_RECEIPT",
+  "enabled": false,
+  "collective_review": "DEFERRED",
+  "source_map": "SOURCE-MAP.json",
+  "private_evidence_sha256": {
+    "check-full.json": "62a9862e74437797f734438ea34cefae0a86b82bffc999b40b2126aafa3eeedf",
+    "c6-check.json": "51698c1e73ff042a61d0b6b4229f9aaf0c3f2e46575f99932e8e7c6f1c73e057",
+    "d6-diagnostics-f1.json": "03cd90253994474c3535ed13806e81ee3bca98421de63adcb1dbe3a699268794",
+    "measure-exclusive-r2.json": "8926690d95bbd34fd32cebd07737998208ccbd4cc0eabc22b5f52cf3707fb2ad",
+    "composed-r6/composition.json": "f3bb549b02eac2cb6b6faa0bdc4799b5cb3db69b2b4507eb8fdd1e26234f3991",
+    "implementation-report": "8dbb4c7a7c3756e562662aba237fbf2f6687f33257431e90f86f6339893c3552"
+  },
+  "captured_calls": 48170,
+  "fuzz_cases": 9020,
+  "mutants_caught": 16,
+  "dyadic_comparisons": 20000,
+  "focused_groups": 12,
+  "attributable_earlier_refusals": 15,
+  "iv1_exact": 40968,
+  "iv2_sample_exact": 894,
+  "iv2_sample_capped": 7,
+  "iv2_deep_exact": 216,
+  "capped_rows_covered_by_deep": 7,
+  "completed_diagnostic_histories": 16,
+  "incomparable_capped_sample_histories": 2,
+  "available_n9_pose_cases": 324,
+  "available_n9_rounding_calls": 536,
+  "composed_files": 616,
+  "component_measurement": {
+    "clip2": {
+      "base_wall_seconds": [
+        0.943908300017938,
+        0.9485324999550357
+      ],
+      "candidate_wall_seconds": [
+        1.0481916000135243,
+        1.0564768000040203
+      ],
+      "median_base_over_candidate": 0.8991634026325469
+    },
+    "rotated_normal": {
+      "base_wall_seconds": [
+        0.7938822000287473,
+        0.814753899932839
+      ],
+      "candidate_wall_seconds": [
+        0.8499851999804378,
+        0.8454749999800697
+      ],
+      "median_base_over_candidate": 0.9487902458571758
+    },
+    "line": {
+      "base_wall_seconds": [
+        0.39507649990264326,
+        0.39069319993723184
+      ],
+      "candidate_wall_seconds": [
+        0.6009178999811411,
+        0.5970868000295013
+      ],
+      "median_base_over_candidate": 0.6558986787221242
+    }
+  },
+  "memory_scope": "Process lifetime includes imports, capture loading and validation.",
+  "base_peak_working_set_bytes": 282750976,
+  "candidate_peak_working_set_bytes": 282673152,
+  "base_logical_package_bytes": 7276852,
+  "candidate_logical_package_bytes": 7292711,
+  "timing_scope": "Exclusive ABBA; 4096 original captured calls per kernel x3; no-op work arena; no interval claim.",
+  "remaining": "Actual selected Plan31/profile/N9 generation, its affected C6 parity and useful-benefit measurement."
+}

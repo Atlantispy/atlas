@@ -6,6 +6,20 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plan06 source publication
+
+- Added repaired D1/D2/D4/D8 wall twins, shared primitives, pinned hook,
+  build/check/measurement sources and actual additive assembly tooling.
+- Preserved original runtime pins and refuted predecessors; original/public
+  digests describe sanitisation and separate public synthetic fixture bindings.
+- Retained private rebuilt parity and accounting proof passed. MEASURED clean
+  component regressions of 11.21%, 5.40% and 52.46% leave D5 disabled; there is
+  no whole-interval speed claim or material demonstrated RAM improvement.
+- Included the Windows denied-process liveness safeguard and fixtures, with
+  no queue state, private run data or runtime installation in the export.
+- Actual selected Plan31/N9 binding remains a later dependency. Collective
+  review is deferred; all scientific and individual-job holds remain intact.
+
 ## 20 Oct 2026, Plan02 source publication
 
 - Added the compatible selected runner/caller generation and subsequent native

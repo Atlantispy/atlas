@@ -1,0 +1,58 @@
+Plan06 additive assembly adapter — WORKING NON-CANON
+
+This is a source-construction tool, not an actual selected Plan31 composition.
+Today's Plan02 live integration does not select a Plan31 final replay candidate.
+Prepared-r4 and fresh-r3 must not be relabelled as that candidate.
+
+build_assemble_d5.py accepts --source and --output. It requires the exact retained
+T/ac/plan02/assemble-r3-r3/assemble_r3.py SHA
+b9433b5a29946ecb0203599ab6a4a0ec06baef31cbd260c59193db5f9ba9ae80.
+It writes a new assembler exclusively; no imported Atlas code or workload.
+The generated assembler preserves the existing --check / --pin / --compose CLI.
+Do not execute it until source construction and queue admission are authorised.
+
+For D5 selection add both --d5-contract PATH and --d5-contract-sha256 SHA to every
+mode. With neither argument the original source route is retained.
+
+Contract JSON has exactly:
+{
+  "schema": "atlas.private.plan06-d5-assembly.r1",
+  "selection": "A concrete source-bound inclusion decision",
+  "wall_input_sha256": "<64 lowercase hex>",
+  "wall_output_sha256": "<64 lowercase hex>",
+  "assets": {
+    "hook": "<64 lowercase hex>",
+    "integration_exact_twin.py": "<64 lowercase hex>",
+    "integration_wall_measures_gmp.py": "<64 lowercase hex>"
+  }
+}
+
+Place real selected asset copies in the NEW staged root:
+G/transforms/plan06_d5_wall_hooks.py
+R/plan06-d5/integration_exact_twin.py
+R/plan06-d5/integration_wall_measures_gmp.py
+
+Here R/G are the assembler's staged roots, never the protected live root.
+Include all three assets in the existing input-binding pins/provenance and
+selection statement. This adapter refuses implicit selection or hash drift.
+The contract is explicitly included in the staged identity of the reviewed
+record and final composition; the assets also appear in reviewed input pins.
+The generated assembler itself must be recorded/pinned by its caller, as for
+the existing assembler route.
+
+The original complete d2 dry comparison is applied to all PRE-D5 sources,
+including the original cold-module exception and exact inventory equality.
+Only after preserving those bytes are the selected hook and two modules added.
+All three stages and every final output remain bound by --pin / --compose.
+This is construction evidence only: it does not establish D5 or C6 parity,
+resource/diagnostic correctness, measured benefit or N9 scientific acceptance.
+
+Current exact input d6b7d472... in fresh-r3 is a usable local hook base, not
+authority to select its stale helper generation for Plan31. A future N9-first
+source requires an explicitly repaired hook input pin and matching contract.
+The adapter adds no N9 transforms and must not imply that it does.
+
+This public copy retains original construction pins. It is not a runnable
+private profile. Synthetic fixture checks and retained original-environment
+results are described in ../README.md; collective review remains deferred.
+Keep predecessor outputs and holds intact.

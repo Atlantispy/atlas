@@ -62,16 +62,19 @@ Rules that apply to every item below:
 
 - **State:** the parallel wall routes (P1-P3) are built and verified on a small case (`pending/pressure/c/`). The
   measured small-case total is 108.3 → 45.9 s. The stage profile on real interval 1 has not run.
-- **Left:** the profile run, then the full-scale proof. P4 is not built; it waits for the shared exact-rational
-  primitives in `pending/kernels/d5/`.
+- **Left:** the profile run, then the full-scale proof. P4 is not built; its
+  separate integration can use the repaired shared primitives in `workbench/plan06/`.
 - **Gate:** byte-identical pressure records against the serial reference.
 
 ## Exact heat kernels
 
 - **H3 (heat certification kernel):** revision 3 accepted (cache names fixed so the identity guard sees the loaded
   implementation); its proof run has not run. Files: `pending/kernels/l3r3/` and `pending/kernels/h3/`.
-- **D5 (exact twin and GMP wall measures):** refuted with 7 defects; the fix list is written. Out of the final
-  assembly until a fix proof passes.
+- **D5 (exact twin and GMP wall measures):** repaired and privately integrated;
+  source snapshot in [workbench/plan06](workbench/plan06/README.md). Rebuilt
+  exactness/accounting checks passed. Measured kernel regressions justify
+  keeping it disabled. Final selected Plan31/N9 binding and collective review
+  remain open; the original refuted sources are retained.
 - **L4 (interpreter binaries in identity):** approved, not started. It touches the shared runtime record in `reuse`,
   so the change needs review before it starts.
 - **G-PY:** revision 3 passed parity. Revision 4 waits for the stacked geometry parity and replaces revision 3 at

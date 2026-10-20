@@ -10594,6 +10594,171 @@
    "path": "workbench/plan02/SOURCE-MAP.json",
    "source": "<REVIEW_CHECKOUT>/tectonics/optimisation/workbench/plan02/SOURCE-MAP.json",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/DESIGN.md",
+   "source": "<PRIVATE_PLAN06_R3>/DESIGN.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/README.md",
+   "source": "<PLAN06_PUBLICATION>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/RETAINED-RESULTS.json",
+   "source": "<PLAN06_PUBLICATION>/RETAINED-RESULTS.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/build_tree.py",
+   "source": "<PRIVATE_PLAN06_R3>/build_tree.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/c6.py",
+   "source": "<PRIVATE_PLAN06_R3>/c6.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/c6_build.py",
+   "source": "<PRIVATE_PLAN06_R3>/c6_build.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/c6_diagnostics.py",
+   "source": "<PRIVATE_PLAN06_R3>/c6_diagnostics.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/check.py",
+   "source": "<PRIVATE_PLAN06_R3>/check.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/d5_parity_r3.sh",
+   "source": "<PRIVATE_PLAN06_R3>/d5_parity_r3.sh",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/focused.py",
+   "source": "<PRIVATE_PLAN06_R3>/focused.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/CONTRACT.txt",
+   "source": "<PRIVATE_PLAN06_R3>/integration/CONTRACT.txt",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/assemble_r3_plan06.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/assemble_r3_plan06.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/build_assemble_d5.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/build_assemble_d5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/check_composed_import.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/check_composed_import.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/d5_extension.txt",
+   "source": "<PRIVATE_PLAN06_R3>/integration/d5_extension.txt",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/execute_source_stage_r2.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/execute_source_stage_r2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/fix_reference_names.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/fix_reference_names.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/postcheck.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/postcheck.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/prepare_stage_r2.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/prepare_stage_r2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/reference_assemble_r3.py",
+   "source": "<PRIVATE_ASSEMBLE_R3>/assemble_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/test_d5_adapter.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/test_d5_adapter.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/integration/test_disabled_equivalence.py",
+   "source": "<PRIVATE_PLAN06_R3>/integration/test_disabled_equivalence.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/measure.py",
+   "source": "<PRIVATE_PLAN06_R3>/measure.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/parity_measurements.py",
+   "source": "<PRIVATE_PLAN06_R3>/parity_measurements.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/queue-fix/runq.patch",
+   "source": "<PRIVATE_PLAN06_R3>/queue-fix/runq.patch",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/queue-fix/runq.py",
+   "source": "<PRIVATE_PLAN06_R3>/queue-fix/runq.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/queue-fix/test_pid_liveness.py",
+   "source": "<PRIVATE_PLAN06_R3>/queue-fix/test_pid_liveness.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/runtime_entry.py",
+   "source": "<PRIVATE_PLAN06_R3>/runtime_entry.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/src/integration_exact_twin.py",
+   "source": "<PRIVATE_PLAN06_R3>/src/integration_exact_twin.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/src/integration_wall_measures_gmp.py",
+   "source": "<PRIVATE_PLAN06_R3>/src/integration_wall_measures_gmp.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/test_runtime_entry.py",
+   "source": "<PRIVATE_PLAN06_R3>/test_runtime_entry.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/transforms/d5_wall_hooks.py",
+   "source": "<PRIVATE_PLAN06_R3>/transforms/d5_wall_hooks.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan06/SOURCE-MAP.json",
+   "source": "<PLAN06_PUBLICATION>/SOURCE-MAP.json",
+   "kind": "workbench"
   }
  ]
 }

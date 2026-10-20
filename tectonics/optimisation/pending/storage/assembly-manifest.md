@@ -1,5 +1,11 @@
 # N12 final-assembly manifest (draft r2, for the Step 21 freeze; ACCEPTED as the draft 17:3x, decisions in section 6)
 
+**Plan06 publication amendment, 20 October 2026:** only D5/C6 disposition is
+updated here. D5 is repaired, technically checked and privately constructed, but
+**disabled for measured regressions**. The original draft below is historical
+for other work. See [the published source and limits](../../workbench/plan06/README.md).
+This snapshot does not select a final Plan31 generation or record collective review.
+
 Amended 18:44: section 7 folds the section 4 answers. Amended 17:41: WP12 figures (q04smoke3) and the q04 v3b proof on B17/I14, from Storage.
 Written 16 Oct 2026, 17:30-17:37 BST, read-only (no runs). Sources: the owners' STATE/HANDOFF files, the optimisation
 backlog, the Step 10 freeze list (REVIEW/fixes/step10/FREEZE-LIST.md) and live sha256 read at 17:30. Anything not
@@ -84,7 +90,7 @@ S4 is under Geometry (G9).
 | H3 | r2, stacked on H2 | cert_kernel 3be44650 -> d94fb79b; certification_resources 8b451aa8 -> 1c557e98; new helper 62c100cf (gmpy2; MPFR DLL b81a548e) | refuter fixes applied; q06 CLEAN (q06p2 21/21) | ARMS 4, 100 min / 3.5 GiB, HELD | on | L + I |
 | GPY | G-PY r3 (transform f863d0e2) | MFM c5f2a123 -> 3e82a2be | refuter REFUTED, then fixed in r2/r3; q11 CLEAN (q11p4 41/41, smoke s5) | 25 min / 1.0 GiB, HELD | on | S + I |
 | I19 | item 19 ip8 r2.2: parallel start-up | new module integration_initial_parallel.py 5ffc7fb2. Transforms (ip3 values; ip8 differs only in the module): dual_geometry 520887ce, differential_geometry 436e170c, parallel_binding 70db056a (binding -> 4eb627dc), parallel_results 73091fd3 (input f48cda05), component_volume_parallel a4785573 | refuter D1 fixed; delta 0 DEFECT | q19 = job_initpar.sh r1 proof 2; status unknown | on | S. The freeze list puts it under Runner; the integrator is **unknown**. |
-| D5 | Fraction -> mpq in the W / volume_overlap fallback; T1 is the native _rotated_normal twin | output **not built**; design T/ck/d5/DESIGN.md 0cbff168 | bench1 PASS; ~42 s, about 3.9 % (PROJECTED); in progress | - | on | S |
+| D5 | Repaired exact wall twins and shared primitives | `workbench/plan06`; pinned hook and additive assemble_r3 route | Rebuilt scoped exactness/accounting proof passed; measured clipping/rotation/line regressions +11.21%/+5.40%/+52.46%; no useful demonstrated benefit | Retained proof only | **off** | S |
 | L4 | identity pins (approved) | In reuse.py `_runtime_record` (+ `_loaded_binary`, exact_arithmetic.runtime()), pin: `_decimal.pyd` with its libmpdec version (2.5.1 now, unrecorded); python312.dll (sys.dllhandle, unhashed today); the stdlib arithmetic sources (fractions.py, and decimal.py/_pydecimal.py as used). Spec: T/rm/LANGUAGES.md section 6 L4. | **not built; owner: Kernels** (decided 17:3x) | - | on | I: bundle it (section 2, X1) |
 
 ### Pressure (T/ps)
@@ -119,7 +125,7 @@ composed-r2/src reuse.py 7dfdf209 is 96e2092c plus source_handles r2 (172 diff l
 | C3 | integration_parallel_binding.py | I19 (-> 4eb627dc) -> P1 p1_binding (its docstring-line anchor pins both) -> 7300089c | stacked, anchored | fixed |
 | C4 | MFM | G4 jets (-> c5f2a123) -> D2 _rotated() -> G-PY (pinned on c5f2a123) | stacked; the G-PY pin goes stale once D2 lands | Geometry composes G-PY after D2: G-PY's anchor moves to D2's output, then parity |
 | C5 | MIM | D1 contains(); N9 relies on D._ray_box here | same call path | D1/D2 parity on one base before N9 |
-| C6 | W | D5 (mpq fallback) + N9 (b-ray, `_pose_vector`) | same file, text-disjoint | either order; one parity |
+| C6 | W | D5 (mpq fallback) + N9 (b-ray, `_pose_vector`) | Available test-only W composition passed 324 pose cases / 536 rounding calls | Actual selected Plan31/N9 source/profile binding and affected composed proof remain required; D5 stays off |
 | C7 | E or current_geometry_from_interval | N9 (b-quat) | single | confirm the file (see N9) |
 | C8 | M | N9 (c) l.675/954 | single | - |
 | C9 | integration_parallel_selection.py | workers_six -> endpoint_clamp -> S4 s4sel (base 7d4d4037) | stacked | confirm s4sel's base is the workers_six + clamp output; otherwise rebase |
@@ -153,7 +159,7 @@ composed-r2/src reuse.py 7dfdf209 is 96e2092c plus source_handles r2 (172 diff l
    - workers_six, clamp and rolling (q21), then WP18 r2 (q18);
    - S4: s4roll and s4sel, then s4auto after WP18;
    - I19 (q19), then P1 (q02 proof), then P2/P3 if their refuters clear;
-   - D5, then N9 (replay ticket after the P1 proof; Runner width-gate re-pin);
+   - D5 only if later selected with useful benefit and affected C6 proof; current disposition is off. N9 retains its own replay and source/profile requirements;
    - then d3 with geometry parity.
 4. Heat layout (L):
    - H1a -> H1c (q10a) -> H2 -> L1 -> H3 (C14 repin; q06) -> H5a (W4 D-b owed) -> N6;

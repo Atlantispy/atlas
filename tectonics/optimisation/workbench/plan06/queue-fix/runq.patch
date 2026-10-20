@@ -1,0 +1,73 @@
+--- q/runq.py
++++ q/runq.py
+@@ -135,9 +135,34 @@
+     _K32.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                                ctypes.c_void_p]
+     _K32.CloseHandle.argtypes = [wintypes.HANDLE]
++    _K32.OpenProcess.restype = wintypes.HANDLE
++    _K32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+ 
+     class _JobPids(ctypes.Structure):
+         _fields_ = [('assigned', wintypes.DWORD), ('listed', wintypes.DWORD), ('ids', ctypes.c_size_t * 4096)]
++
++
++def pid_exists(pid):
++    """Treat a Windows access-denied probe as possibly alive, never as a stale owner.
++
++    Restricted callers can receive False from psutil for an elevated live process.
++    Confirm a negative using limited-query access; only INVALID_PARAMETER proves
++    an absent Windows PID. Unexpected probe failures stop admission explicitly.
++    """
++    if psutil.pid_exists(pid):
++        return True
++    if _K32 is None or pid <= 0 or pid > 0xffffffff:
++        return False
++    handle = _K32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
++    if handle:
++        _K32.CloseHandle(handle)
++        return True
++    error = ctypes.get_last_error()
++    if error == 5:  # ERROR_ACCESS_DENIED: existence cannot safely be ruled out
++        return True
++    if error == 87:  # ERROR_INVALID_PARAMETER: no such PID
++        return False
++    raise ctypes.WinError(error)
+ 
+ 
+ def make_job(name):
+@@ -236,7 +261,7 @@
+ def reap(q):
+     """Mark tickets whose runner died as 'died' so they can't block the queue."""
+     for t in q['tickets']:
+-        if t['status'] == 'running' and t.get('runner_pid') and not psutil.pid_exists(t['runner_pid']):
++        if t['status'] == 'running' and t.get('runner_pid') and not pid_exists(t['runner_pid']):
+             t['status'] = 'died'
+             t['ended'] = now()
+ 
+@@ -248,7 +273,7 @@
+         return None
+     except (OSError, ValueError):
+         return {'unreadable': True}
+-    if psutil.pid_exists(int(held.get('pid', -1))):
++    if pid_exists(int(held.get('pid', -1))):
+         return held
+     return None  # stale
+ 
+@@ -305,7 +330,7 @@
+             busy = [x['id'] for x in q['tickets'] if x['status'] == 'running']
+             # Order applies among tickets whose runner is actually waiting, so a ticket that
+             # hasn't been launched yet can't block the ones behind it.
+-            ready = [x for x in pending(q) if x.get('waiting_pid') and psutil.pid_exists(x['waiting_pid'])]
++            ready = [x for x in pending(q) if x.get('waiting_pid') and pid_exists(x['waiting_pid'])]
+             head = ready[0]['id']
+             free = psutil.virtual_memory().available / GIB
+             why = None
+@@ -508,7 +533,7 @@
+         extra = t.get('note') or t.get('why', '')
+         if t['status'] == 'queued':
+             wp = t.get('waiting_pid')
+-            extra = ('[launched] ' if wp and psutil.pid_exists(wp) else '[not launched] ') + extra
++            extra = ('[launched] ' if wp and pid_exists(wp) else '[not launched] ') + extra
+         elif t['status'] == 'held' and t.get('ticket_hold'):
+             extra = '[HELD: %s] ' % t['ticket_hold'] + extra
+         print('%-5s %-9s %-36s %4.1fG %2sc%s ~%3smin  %s | %s' % (

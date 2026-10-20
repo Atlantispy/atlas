@@ -1,0 +1,304 @@
+{
+  "schema": "atlas.public.plan06-source-map.v1",
+  "status": "SOURCE_SNAPSHOT_NOT_A_RUNNABLE_PROFILE",
+  "enabled": false,
+  "collective_review": "DEFERRED",
+  "private_run_data_included": false,
+  "final_plan31_n9_binding": "DEPENDENT_ON_ACTUAL_SELECTED_GENERATION",
+  "runtime_pins": "Original private pins retained; no implicit rebinding to public bytes.",
+  "fixture_pins": "Only the two synthetic assembler fixture tests bind the public assembler copies.",
+  "files": [
+    {
+      "path": "DESIGN.md",
+      "source": "<PRIVATE_PLAN06_R3>/DESIGN.md",
+      "original_sha256": "9e0c5186919cc1ed4cc6b69587fbb7fc396b3112690190ef416ec9e50aaf2821",
+      "transformations": [
+        "replaced owner personal name in comments/documentation",
+        "removed private coordination identity and unavailable discussion path"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "f9070428893312d2d379f96adda68587367dac6d05637e2d0c7ac3d85b332e92"
+    },
+    {
+      "path": "README.md",
+      "source": "<PLAN06_PUBLICATION>/README.md",
+      "original_sha256": "04b688d66d6c9db860c0365ec33fd71091aeae03b715bbfa40c2f3569f30263f",
+      "public_sha256": "04b688d66d6c9db860c0365ec33fd71091aeae03b715bbfa40c2f3569f30263f",
+      "line_endings": "LF",
+      "transformations": [
+        "authored public summary; not an exported private run receipt"
+      ]
+    },
+    {
+      "path": "RETAINED-RESULTS.json",
+      "source": "<PLAN06_PUBLICATION>/RETAINED-RESULTS.json",
+      "original_sha256": "56150f8ebe08a0dbffaf61ba675b83b9d8aeac1aa4fc4e52c2b72f918dae3120",
+      "public_sha256": "56150f8ebe08a0dbffaf61ba675b83b9d8aeac1aa4fc4e52c2b72f918dae3120",
+      "line_endings": "LF",
+      "transformations": [
+        "authored public summary; not an exported private run receipt"
+      ]
+    },
+    {
+      "path": "build_tree.py",
+      "source": "<PRIVATE_PLAN06_R3>/build_tree.py",
+      "original_sha256": "a02089633f835505039c63c812016ef93a9451b75c0cdf4782399a3651e76bda",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "a02089633f835505039c63c812016ef93a9451b75c0cdf4782399a3651e76bda"
+    },
+    {
+      "path": "c6.py",
+      "source": "<PRIVATE_PLAN06_R3>/c6.py",
+      "original_sha256": "840c9933f7872343aacc1b2d1f00450f0919c601515715cd706fec978b6458ff",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "840c9933f7872343aacc1b2d1f00450f0919c601515715cd706fec978b6458ff"
+    },
+    {
+      "path": "c6_build.py",
+      "source": "<PRIVATE_PLAN06_R3>/c6_build.py",
+      "original_sha256": "1b8759dfd89402c049658b23d9a37f0ffb5eb38e20a4721efe2ea17fc3610278",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "1b8759dfd89402c049658b23d9a37f0ffb5eb38e20a4721efe2ea17fc3610278"
+    },
+    {
+      "path": "c6_diagnostics.py",
+      "source": "<PRIVATE_PLAN06_R3>/c6_diagnostics.py",
+      "original_sha256": "56f4c023a0170c8443e22b189232ef6c6ffc51174e0fc8d3860ce65eb5b00bbe",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "56f4c023a0170c8443e22b189232ef6c6ffc51174e0fc8d3860ce65eb5b00bbe"
+    },
+    {
+      "path": "check.py",
+      "source": "<PRIVATE_PLAN06_R3>/check.py",
+      "original_sha256": "93538fae8109183f29c8745aa81330ea40acee58b6ddc97252f47ad26e3bb1a2",
+      "transformations": [
+        "normalised CRLF to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "7471dcd067cb009647306e378f4be55bd5dfdbd8ddd878a5e5532a8c1c41edbf"
+    },
+    {
+      "path": "d5_parity_r3.sh",
+      "source": "<PRIVATE_PLAN06_R3>/d5_parity_r3.sh",
+      "original_sha256": "958b9aff2688dd8e039ebfda22e0d7d9bccb850e2a173acd321926bf6e396d88",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "958b9aff2688dd8e039ebfda22e0d7d9bccb850e2a173acd321926bf6e396d88"
+    },
+    {
+      "path": "focused.py",
+      "source": "<PRIVATE_PLAN06_R3>/focused.py",
+      "original_sha256": "06fe2774cb8657fc1cf8305b1beb4f223ad7d605aa0b6579c26466ccd5f488c3",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "06fe2774cb8657fc1cf8305b1beb4f223ad7d605aa0b6579c26466ccd5f488c3"
+    },
+    {
+      "path": "integration/CONTRACT.txt",
+      "source": "<PRIVATE_PLAN06_R3>/integration/CONTRACT.txt",
+      "original_sha256": "0a099954140bec3e1a18ff142b2e4585daac97eea5c49c09e01b205caa766f8b",
+      "transformations": [
+        "replaced obsolete private hand-off wording with publication and review limits"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "c7f330628a373bff1c48f806595d0894cea566ebfa0a4394e73cf1746c52ee28"
+    },
+    {
+      "path": "integration/assemble_r3_plan06.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/assemble_r3_plan06.py",
+      "original_sha256": "c84f98bf62116553b92103bd16a2d6f0fbf5d027c8273f6f90ab8fadfa80f45d",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "345d00311f8b7521ed63225054530c1aa2fe2391446d2c236871aa1dd47e4322"
+    },
+    {
+      "path": "integration/build_assemble_d5.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/build_assemble_d5.py",
+      "original_sha256": "388f6d37ce1c26b65888d62804b6a704c05b0a53d49e8d0a5fdbd0368f41dbdf",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "388f6d37ce1c26b65888d62804b6a704c05b0a53d49e8d0a5fdbd0368f41dbdf"
+    },
+    {
+      "path": "integration/check_composed_import.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/check_composed_import.py",
+      "original_sha256": "6d032cc8ee47f809228836bdda1cc2e20f27cba6767e0843945af9a0e3942bc0",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "6d032cc8ee47f809228836bdda1cc2e20f27cba6767e0843945af9a0e3942bc0"
+    },
+    {
+      "path": "integration/d5_extension.txt",
+      "source": "<PRIVATE_PLAN06_R3>/integration/d5_extension.txt",
+      "original_sha256": "5ab74f945358b3f94f9a304bc56d2959ba8985ac0233fc56f30b655b726189e5",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "5ab74f945358b3f94f9a304bc56d2959ba8985ac0233fc56f30b655b726189e5"
+    },
+    {
+      "path": "integration/execute_source_stage_r2.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/execute_source_stage_r2.py",
+      "original_sha256": "cc8802dda3220d9ef601212bf8d71501cab2856d24ef1c60e06936fee579094d",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "3d9a769c4a1dc9bf3b5a1a8c50caca61269a9cd14760999a2396bce1a81a1a78"
+    },
+    {
+      "path": "integration/fix_reference_names.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/fix_reference_names.py",
+      "original_sha256": "a8402693f4a5efda9504dc933dbbc35f8fa7ce8b19e5d947ace753360483a181",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "20ba328051c3229b3f43ecd851557be0c4730a3eec31e7c6cd87acb64c788e56"
+    },
+    {
+      "path": "integration/postcheck.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/postcheck.py",
+      "original_sha256": "69c3323065a00e9811d35afa6b1e7091e7a9a04d70f1d8907441c0282f7e3f1d",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "4b0d70d26e2d60b251266aab4762a55f1acbcbeac4f61af04320f0edb9d57048"
+    },
+    {
+      "path": "integration/prepare_stage_r2.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/prepare_stage_r2.py",
+      "original_sha256": "d6c365b6af586617cda62fa83bf937371ab4468014fba7a592db1b9917c09149",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "3b740111f3d98b964de1d95268246c5c14962e9fa971ec0c9d5ca10e54394ea9"
+    },
+    {
+      "path": "integration/reference_assemble_r3.py",
+      "source": "<PRIVATE_ASSEMBLE_R3>/assemble_r3.py",
+      "original_sha256": "b9433b5a29946ecb0203599ab6a4a0ec06baef31cbd260c59193db5f9ba9ae80",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "bd298b2b19b6a967a19345044d28e46c7daf40c6eee1eeebf79d43a2b5d3583a"
+    },
+    {
+      "path": "integration/test_d5_adapter.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/test_d5_adapter.py",
+      "original_sha256": "dfa81464367c74103e5a70c12635e5d2e03e7deeefae7c81dcfc6894364672ea",
+      "transformations": [
+        "explicit public synthetic-fixture assembler path/digest binding"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "564714ea8e7fec615595564a925c744fb253dea33ff1ed345efabb1cabdafb27"
+    },
+    {
+      "path": "integration/test_disabled_equivalence.py",
+      "source": "<PRIVATE_PLAN06_R3>/integration/test_disabled_equivalence.py",
+      "original_sha256": "944058c61422a9063865fd2f35f2e6dfa30057470cf6b24de92b39acce93ac77",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)",
+        "explicit public synthetic-fixture assembler path/digest binding"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "370ad47716a0fbc2526c22b3c4e2b566b5a2c9effd7f869508b683d9781d8394"
+    },
+    {
+      "path": "measure.py",
+      "source": "<PRIVATE_PLAN06_R3>/measure.py",
+      "original_sha256": "f887d2ad96053400e3531a14d8c0fdd191ba1ba7782a9d61f7c104b9692f2172",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "f887d2ad96053400e3531a14d8c0fdd191ba1ba7782a9d61f7c104b9692f2172"
+    },
+    {
+      "path": "parity_measurements.py",
+      "source": "<PRIVATE_PLAN06_R3>/parity_measurements.py",
+      "original_sha256": "157305cbc9202712bd8faad71a9ddf652a99191bba5a789e953d7e56d64bb8da",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "157305cbc9202712bd8faad71a9ddf652a99191bba5a789e953d7e56d64bb8da"
+    },
+    {
+      "path": "queue-fix/runq.patch",
+      "source": "<PRIVATE_PLAN06_R3>/queue-fix/runq.patch",
+      "original_sha256": "0e794437465d4e21acfb2b418d7a64f2561315646965621c3d65e0bb2d5c054b",
+      "transformations": [
+        "normalised CRLF to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "92da5176f44c5fec2418af8a82ddc018d7d6fdb6aaf72ac5da588b7b9c05ad06"
+    },
+    {
+      "path": "queue-fix/runq.py",
+      "source": "<PRIVATE_PLAN06_R3>/queue-fix/runq.py",
+      "original_sha256": "0bcffc6655e727adf46f0796f1a77916a64046c93244d2ed7f000b84d648eb5f",
+      "transformations": [
+        "sanitised 1 user-profile path occurrence(s)",
+        "replaced owner personal name in comments/documentation",
+        "normalised CRLF to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "ee6581bb5944ee7b37cb0c04d2bea2d89205721e699a7ebc855b43413af0f2b2"
+    },
+    {
+      "path": "queue-fix/test_pid_liveness.py",
+      "source": "<PRIVATE_PLAN06_R3>/queue-fix/test_pid_liveness.py",
+      "original_sha256": "3758f080ea120c768c02604b343ae4e998f6e16f1bc2203d3e0d02132e8cd142",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "3758f080ea120c768c02604b343ae4e998f6e16f1bc2203d3e0d02132e8cd142"
+    },
+    {
+      "path": "runtime_entry.py",
+      "source": "<PRIVATE_PLAN06_R3>/runtime_entry.py",
+      "original_sha256": "8065b6a0effbcbaa4d7c85b429ddf2febca114ad41f08b431d1c338bca0d0df9",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "8065b6a0effbcbaa4d7c85b429ddf2febca114ad41f08b431d1c338bca0d0df9"
+    },
+    {
+      "path": "src/integration_exact_twin.py",
+      "source": "<PRIVATE_PLAN06_R3>/src/integration_exact_twin.py",
+      "original_sha256": "8cb6e809af7154e1840acc8941e61712b76c21de4bc7ad2c87714b14e1da9839",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "8cb6e809af7154e1840acc8941e61712b76c21de4bc7ad2c87714b14e1da9839"
+    },
+    {
+      "path": "src/integration_wall_measures_gmp.py",
+      "source": "<PRIVATE_PLAN06_R3>/src/integration_wall_measures_gmp.py",
+      "original_sha256": "720b29e480f4fd3fe1dd842a99ad7e526cef6702b9645843b9455f494e435ffa",
+      "transformations": [
+        "normalised CRLF to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "4db94fae8955217a504cddda4aa250a38ad12a8ffda6537cd332e1bd09b07128"
+    },
+    {
+      "path": "test_runtime_entry.py",
+      "source": "<PRIVATE_PLAN06_R3>/test_runtime_entry.py",
+      "original_sha256": "8a0ace3da0da1da51c3e2230abc63d624c3db5a09e2b2ead6140ffa7d05bdf0f",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "8a0ace3da0da1da51c3e2230abc63d624c3db5a09e2b2ead6140ffa7d05bdf0f"
+    },
+    {
+      "path": "transforms/d5_wall_hooks.py",
+      "source": "<PRIVATE_PLAN06_R3>/transforms/d5_wall_hooks.py",
+      "original_sha256": "fc283890c38527531b7fbd2be0ab210003e76c7ce749db89bec4de943d032f66",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "fc283890c38527531b7fbd2be0ab210003e76c7ce749db89bec4de943d032f66"
+    }
+  ]
+}

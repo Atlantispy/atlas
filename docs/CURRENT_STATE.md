@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 19 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 20 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -113,6 +113,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
+| Plan06 exact wall arithmetic | Repairs, scoped technical proof and retained-baseline construction completed privately. Additive source snapshot published; D5 disabled for measured regressions. Final selected Plan31/N9 binding and collective review remain open. No main-package overlay or scientific hold release. | [Source, method and measured limits](../tectonics/optimisation/workbench/plan06/README.md), [completion boundary](../tectonics/optimisation/plans/plan-06-d5-exact-arithmetic.md) |
 | Plan02 admission and transfer repair | Compatible fresh/prepared caller generation and evolved-state metadata repair installed in the private workspace. Additive source snapshot supplied for review; no overlay to the main package. Positive prepared publication/reopen and end review remain deferred. Plan31 integration is a separate later stage. | [Plan02 source scope and checks](../tectonics/optimisation/workbench/plan02/README.md), [completion conditions](../tectonics/optimisation/plans/plan-02-start-gate.md) |
 | Development workflow | Fresh-process parallel tests, explicit quick selections, conservative impact maps and fail-closed candidate verification are integrated. The four review findings are repaired; full discovery and scientific tolerances remain unchanged. Quick or impact-selected passes are not whole-suite acceptance. | [Developer tools](DEVELOPMENT_TOOLS.md), [commit checks](CODING_SAFETY.md#before-every-commit) |
 | Evidence register | Each listed receipt is current, historical, superseded or invalid; `python -B tools/check_current_evidence.py` prints the live counts. Current means the declared byte bindings match, not physics, runtime or platform. Unlisted receipts, including all W01–W12 records, are unclassified. | [Evidence guide](CURRENT_EVIDENCE.md), [register](../tectonics/evidence/current-evidence.json) |
