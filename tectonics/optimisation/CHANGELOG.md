@@ -6,6 +6,21 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 20 Oct 2026, Plan05 integrated correctness repair
+
+- Publish explicit retained ownership, native capture and process finality,
+  complete cell/face correspondence verification and the bounded physical-order
+  repair, with the integrated Plan12 launcher/consumer and focused test sources.
+- The corrected private lf3/lh pair agrees exactly in physical inputs, all five
+  arrays, four cell-account families, paired-face energy and required scalars.
+  Preserve the original verifier exit, metadata disposition requirement,
+  historical NOT REPRODUCED and q10 FAIL.
+- Record comparable diagnostic pair time/RAM/disk without claiming a speed gain.
+  Private raw evidence remains local; original/public source hashes distinguish
+  publication from native execution.
+- Collective correctness acceptance remains pending. q22 and fresh full
+  intervals remain held; the prepared consumer refuses missing authority.
+
 ## 20 Oct 2026, Plan04 mutation coverage closure
 
 - Added isolated observer-path controls with coherent termination records:

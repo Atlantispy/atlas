@@ -388,6 +388,28 @@ first-write path alongside faster repeated reads: compression and staging do
 not guarantee every operation improves. Journals, spools and backups need space
 in addition to the database allowance; referenced histories are dependencies.
 
+### Keep physical correspondence separate from row names
+
+The separate optimisation review route found that provenance-dependent cell
+names could change row order while describing the same physical cells. Equal
+floating-point output arrays did not guarantee equal exact residual accounts:
+the private solver's finite-arithmetic work still depended on that order.
+The bounded repair gives arithmetic scratch a common physical-key order, then
+maps results back to public rows. It changes no equations or tolerances.
+
+The observer retains funded owners through callbacks, finalisation and escaped
+tracebacks. Its verifier first proves one complete cell correspondence and a
+separate face/incidence/orientation correspondence, compares physical inputs,
+then checks all arrays, exact cell accounts and paired-face energy. Remaining
+provenance/resource differences require explicit dispositions.
+
+[Plan05's method and implementation](../../optimisation/workbench/plan05/README.md)
+record the actual source, checks and limitations. The corrected private pair is
+exact; this is neither general physical validation nor a main-package overlay.
+Collective correctness acceptance and the held performance run remain separate.
+This explanation derives from the retained code and exact replay; no new
+external scientific literature was consulted for the repair.
+
 ### Bound parallel work and measure the complete workload
 
 [KernelExecutor](../../src/atlas_tectonics/execution.py) parallelises eligible

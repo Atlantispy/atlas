@@ -21,6 +21,13 @@ export is authorised. This supersedes the older Plan04 pause, owner and interim
 review restrictions below; scientific and unrelated job holds remain. See
 [Plan04](plan-04-n9-width-tools.md) for exact remaining technical prerequisites.
 
+**Plan05 update, 20 October:** implementation and integration are complete in
+the selected private route and published as an additive source snapshot.
+The corrected pair has complete physical correspondence and exact agreement;
+collective correctness acceptance remains pending. q10 FAIL, historical
+NOT REPRODUCED and q22 HELD remain. [Plan05](plan-05-q10-heat-correctness.md)
+supersedes its older ownership and unresolved-correspondence wording below.
+
 ## 1. Authority and holds
 
 **Nothing is restarted by this document.** N9 is **PAUSED BY USER**. Fresh full intervals remain **HELD**. q10 records an H5a **FAIL**, with correspondence and causality unresolved; q22 remains held. q21 is an invalid launch environment, not a worker-count or numerical result. The recorded individual holds include q01, q09, q18 and q20. A queued ticket grants no launch authority. The earlier global weekly hold was released, but that did not release individual holds, owner freezes or the fresh-run hold.
@@ -65,7 +72,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | [02 — By-need start gate](plan-02-start-gate.md) | Plan02 integration owner | Selected generation and loader repair installed privately; source snapshot published | Positive prepared publication/reopen and final review deferred; Plan31 integration is a later stage. |
 | [03 — q21 launch environment](plan-03-q21-launch-environment.md) | Geometry / Runner; coordinator queue owner | r6 guard successor; r5 retained | Mandatory D08 preservation before launch and merge; focused checks recorded in Plan 03. The q21 retry requires separate authorisation. |
 | [04 — N9 proof-tool repair](plan-04-n9-width-tools.md) | Plan04 implementation owner | r24/r5 tools installed privately; 71 retained + 6 focused cases passed | Actual Plan31 composition and authenticated producer/reader/Heat field binding open; both readiness guards false; collective review deferred. |
-| [05 — q10 correctness](plan-05-q10-heat-correctness.md) | Heat | q10 FAIL | Seek authentic arm-bound correspondence or decisive primary evidence. Do not presume a harmless permutation, reconstruct missing historical evidence or relax comparisons. |
+| [05 — q10 correctness](plan-05-q10-heat-correctness.md) | Transferred implementation owner | Integrated; corrected pair exact; acceptance pending | Complete physical correspondence, ownership repair and consumer integration published. Historical q10 FAIL / q32 NOT REPRODUCED and q22 HELD remain. |
 | [06 — D5 exact arithmetic](plan-06-d5-exact-arithmetic.md) | Plan06 implementation owner; Pressure consumer | Repaired source snapshot; scoped private proof passed | D5 disabled for measured regressions; actual selected Plan31/N9 binding and collective review remain open. |
 | [07 — Pressure P1–P3](plan-07-pressure-p1-p3-assessment.md) | Pressure; Geometry/Runner integrate | q02 pending | Small-case changes exist; obtain the authorised profile and full-scale proof before the owner integration handoff. |
 | [08 — Pressure P4](plan-08-pressure-p4.md) | Pressure / Kernels | Not built | Design handover for the real P3 jet arithmetic and accepted shared mpq primitives; needs D5 readiness and an actual coordinator assignment. |

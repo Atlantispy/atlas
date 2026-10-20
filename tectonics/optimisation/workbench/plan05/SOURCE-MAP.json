@@ -1,0 +1,319 @@
+{
+  "schema": "atlas.public.plan05-source-map.v1",
+  "status": "SOURCE_SNAPSHOT_NOT_A_RUNNABLE_PROFILE",
+  "private_run_data_included": false,
+  "private_execution_pins": "UNCHANGED; sanitised public bytes do not authenticate original runs",
+  "files": [
+    {
+      "path": "integrated-r13/CP2.md",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/CP2.md",
+      "original_sha256": "9b47aeeb55878ef410ae83215d1fa5046009d81a3d9ebb7de7e83df19a7527c5",
+      "transformations": [
+        "rewritten concise public contract preserving relevant implementation and authority limits; omitted private execution instructions and coordination history"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "fa0b981e2f0ed8013e21fd2690c7a2f836f21f7c2baf71924b2f8f36e1963368"
+    },
+    {
+      "path": "integrated-r13/OWNERSHIP.md",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/OWNERSHIP.md",
+      "original_sha256": "06f719a0ac7dad7084a248fc16c0443644f6a71f25d415678c041d3279852933",
+      "transformations": [
+        "rewritten concise public contract preserving relevant implementation and authority limits; omitted private execution instructions and coordination history"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "c390d74ce6d496d9588ffc31d32c21a200ee26648530c1d6c26371d041d0f89a"
+    },
+    {
+      "path": "integrated-r13/ab_heat_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/ab_heat_r13.py",
+      "original_sha256": "f8852fbfe3bcc5c43d332638f15cfd9838eaa0dea6eca507494642a70bf58d21",
+      "transformations": [
+        "normalised text line endings to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "c7091c45d2348d0df4da6e982782ecc21f1d0c120739c853e0c3f1b7f3c1048a"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/CONTRACT.md",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/CONTRACT.md",
+      "original_sha256": "9990c93523e4f2c2668518f21768531e182082934138fb17749225c127868b90",
+      "transformations": [
+        "rewritten concise public contract preserving relevant implementation and authority limits; omitted private execution instructions and coordination history"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "b2f5de9c6ac0110a6aa2719607e8ee513051a5bed12c20521b68d51e7f3d3523"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/launch_adapter.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/launch_adapter.py",
+      "original_sha256": "865d8374e99a53a2301fa9e2adc913129adcaaabfa66e15f1222853b20548131",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "865d8374e99a53a2301fa9e2adc913129adcaaabfa66e15f1222853b20548131"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/metrics.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/metrics.py",
+      "original_sha256": "83ed7d574e7caed9453ef90b589496faf192182be59730ec7a8e07b3abb17a42",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "9cd37b581b33789e300d165d19da8f150cc6b3c37e9c18f262ddf201c93dd108"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/proof_gate.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/proof_gate.py",
+      "original_sha256": "f3d44ce0463a099b2c4089ffce80ecc1fee3a033ba06fbde49c08e7f77db2fc3",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "1e26ad674755a723c960f1868453215dc8ba4af1b44aee3b6eb80266d92fcc3f"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/test_launcher_integration.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_launcher_integration.py",
+      "original_sha256": "dc3f565b53a36d3479f1f5c82b8138beb6246d9be4b9a1c16e70d9ff8072bfa3",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "8b6d72b871d59966874a7b8912cd1198557f24c1a1c14276a27f5f0329859be6"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/test_metrics.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_metrics.py",
+      "original_sha256": "5bb95103b327e468e52a6ec189f139be3abd5ed1678932c0555003284800522b",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "5bb95103b327e468e52a6ec189f139be3abd5ed1678932c0555003284800522b"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/test_proof_gate.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_proof_gate.py",
+      "original_sha256": "c48bf633468f64dfe5c978a774ba060c54567cccf2bedee55271923c73da63ff",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "c48bf633468f64dfe5c978a774ba060c54567cccf2bedee55271923c73da63ff"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/test_worker_runtime.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_worker_runtime.py",
+      "original_sha256": "c136d625b758d2f46ed64d31bfcd339ae33a3b42f9870c02c3b6e737077896c4",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "e0cf5f8e9eb59d4b94a4ba52983c19cca9c83e126dfd61634a5f39fda578fafd"
+    },
+    {
+      "path": "integrated-r13/consumer-repair/worker_runtime.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/worker_runtime.py",
+      "original_sha256": "24dd656221de34aacec2f689bfadfac7b6e3ff281acc9568c85cdd2442781019",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "b3da89318aa0d3edc8b73a9cfc9a29b63b9885c3dcc0cb5142c5047fd7de370e"
+    },
+    {
+      "path": "integrated-r13/launch_plan05_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/launch_plan05_r13.py",
+      "original_sha256": "5a0273f102175cd03f6798346b72ec847d50ec926e3c13ba1cc4df46aefa0c4f",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "221f39f88e83aa923fb341cb62ca5e1263397f321e3c2ac00708d48af88b1f3d"
+    },
+    {
+      "path": "integrated-r13/order-repair/REPAIR.md",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/REPAIR.md",
+      "original_sha256": "fa235824490c0ac90f0a9a22b30368cd53786d0ad5dc5fe21d3381a410ddd23e",
+      "transformations": [
+        "rewritten concise public contract preserving relevant implementation and authority limits; omitted private execution instructions and coordination history"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "399f363c081451b5240a3842e95ec0d295299ce99a1c8c68c4c8f971a721f8e5"
+    },
+    {
+      "path": "integrated-r13/order-repair/build_issuer_overlay.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/build_issuer_overlay.py",
+      "original_sha256": "b1ad4fa2cda72577a6dfe5c737bbd74d66b39db35c74d4bf787b72e01074fdb9",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "0ea005f9c497ccdbead9b8f790759a0458b174322caf80308d049d39d6ff9ee8"
+    },
+    {
+      "path": "integrated-r13/order-repair/build_sources.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/build_sources.py",
+      "original_sha256": "568ee10c57eec05c030078246d555f192bb4f547f0c08122bef9c9034df89de8",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "96261ac7dc246f4fec167d3cf09e4d86e0a66243b06694e4958ae91d12e8aa0d"
+    },
+    {
+      "path": "integrated-r13/order-repair/lf3/private_heat_forward_kernel_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lf3/private_heat_forward_kernel_r13.py",
+      "original_sha256": "70f4a8e4c59faa27144a4d8edf2840ef5e7308ccd4bc92e3b5ac014fc09c99e9",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "70f4a8e4c59faa27144a4d8edf2840ef5e7308ccd4bc92e3b5ac014fc09c99e9"
+    },
+    {
+      "path": "integrated-r13/order-repair/lf3/private_heat_native_issuer_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lf3/private_heat_native_issuer_r13.py",
+      "original_sha256": "ee6821b457370d131645a92de4ed94dc60128021557e006191e078c50d915d1b",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "ee6821b457370d131645a92de4ed94dc60128021557e006191e078c50d915d1b"
+    },
+    {
+      "path": "integrated-r13/order-repair/lh/private_heat_forward_kernel_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lh/private_heat_forward_kernel_r13.py",
+      "original_sha256": "3f201669a5e2a5f8e53b9a2e784b9e0002d605ffa2322e8d016026ab272ff280",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "3f201669a5e2a5f8e53b9a2e784b9e0002d605ffa2322e8d016026ab272ff280"
+    },
+    {
+      "path": "integrated-r13/order-repair/lh/private_heat_native_issuer_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lh/private_heat_native_issuer_r13.py",
+      "original_sha256": "ee6821b457370d131645a92de4ed94dc60128021557e006191e078c50d915d1b",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "ee6821b457370d131645a92de4ed94dc60128021557e006191e078c50d915d1b"
+    },
+    {
+      "path": "integrated-r13/order-repair/private_heat_physical_order_r1.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/private_heat_physical_order_r1.py",
+      "original_sha256": "3c5065dd7247b6198265f74b871bdef40b2ef8e5251ab404971261556900936f",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "3c5065dd7247b6198265f74b871bdef40b2ef8e5251ab404971261556900936f"
+    },
+    {
+      "path": "integrated-r13/order-repair/test_physical_order_r1.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/test_physical_order_r1.py",
+      "original_sha256": "c2dd52a4d962cd28f71f196932e1d3d08aa5026ee27eac3c029344831d2f6c6f",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "3478e21948ffc5128c0a248f3484ecaa1cae6edfe84085cd1b61115c59c7018c"
+    },
+    {
+      "path": "integrated-r13/run_tests_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/run_tests_r13.py",
+      "original_sha256": "3f489503bbb57fdc5758069362f48fcc2ab46893202b45d627e4a5801aa2cfa7",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "3f489503bbb57fdc5758069362f48fcc2ab46893202b45d627e4a5801aa2cfa7"
+    },
+    {
+      "path": "integrated-r13/test_launcher_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/test_launcher_r13.py",
+      "original_sha256": "45c929000d9bb56828e2068cc498341899ae0fe578186d29b20034c61d132538",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "45c929000d9bb56828e2068cc498341899ae0fe578186d29b20034c61d132538"
+    },
+    {
+      "path": "integrated-r13/test_ownership_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/test_ownership_r13.py",
+      "original_sha256": "5c8215a6733ef81b5f27c2fc969f3741b1b006ad9d7ad31cf1ef775555d18e9f",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER",
+        "normalised text line endings to LF"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "ef050b43a31a193635e384b88c1730a2cdb789d36ec5cfd779df55ef8e38d817"
+    },
+    {
+      "path": "integrated-r13/test_verifier_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/test_verifier_r13.py",
+      "original_sha256": "1f1b6c6b665c1a268d7fc41997aa9af9a6a96e0fd87a7811db732749b74096a9",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "1f1b6c6b665c1a268d7fc41997aa9af9a6a96e0fd87a7811db732749b74096a9"
+    },
+    {
+      "path": "integrated-r13/test_writer_verifier_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/test_writer_verifier_r13.py",
+      "original_sha256": "c84a39c58e106133541b87d40460e5215d7973543467a95648eb6702b77c4e29",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "c84a39c58e106133541b87d40460e5215d7973543467a95648eb6702b77c4e29"
+    },
+    {
+      "path": "integrated-r13/verify_d02_r13.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/verify_d02_r13.py",
+      "original_sha256": "5ad12999103affbc5aedbc6c5d2475a20eb76db031a420ea4120c4febf798f62",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "e8925f122b0e4ffeac93c0ebf2c79e1481e0c5e04bfb3a6424598b4326579f9a"
+    },
+    {
+      "path": "integrated-r13/worker-flags-repair/test_worker_flags_repair.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/worker-flags-repair/test_worker_flags_repair.py",
+      "original_sha256": "a004bb46952b4f61ccc22e2e3748b5b0a0a10ac4c7e624ef04280ad201617e65",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "1d7d5b7b991630e13d349d9dd7317880b84491348fe4dfdc87c27370d7f57c90"
+    },
+    {
+      "path": "integrated-r13/worker-flags-repair/worker_flags_repair.py",
+      "source": "<PRIVATE_PLAN05>/integrated-r13/worker-flags-repair/worker_flags_repair.py",
+      "original_sha256": "14591f6dc606e2e0e954f003018de77f3964ce9f8f50f20da5cf42d0e846687a",
+      "transformations": [
+        "replaced personal home username with LOCAL_USER"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "cef6c969e0a2071d843a436dfd142b8c8194bf8ad68ef6e97c687b41bc54dc73"
+    },
+    {
+      "path": "r9-launch-prep/LAUNCHER-NOTE.md",
+      "source": "<PRIVATE_PLAN05>/r9-launch-prep/LAUNCHER-NOTE.md",
+      "original_sha256": "d01accedec040e8378d5d7b63ad9ae38d0bbf4b90d1de2168805420f467629d1",
+      "transformations": [
+        "rewritten concise public contract preserving relevant implementation and authority limits; omitted private execution instructions and coordination history"
+      ],
+      "line_endings": "LF",
+      "public_sha256": "b3f0ceafce5f06f8f1a141bad4499b34ba111e424cf39961d24c104d53601bd0"
+    },
+    {
+      "path": "r9-launch-prep/owned_windows_job.py",
+      "source": "<PRIVATE_PLAN05>/r9-launch-prep/owned_windows_job.py",
+      "original_sha256": "132d53b54729c13193293ffa9b3eddd6c248f2c00e8f76aaa553f39a5f8146aa",
+      "transformations": [],
+      "line_endings": "LF",
+      "public_sha256": "132d53b54729c13193293ffa9b3eddd6c248f2c00e8f76aaa553f39a5f8146aa"
+    },
+    {
+      "path": "README.md",
+      "source": "<PUBLIC_PLAN05_PUBLICATION>/README.md",
+      "original_sha256": "46db0215d4c7024cf1c8b6423a6fb4ebb51e44a222449f629ae1ccfd58a5312b",
+      "public_sha256": "46db0215d4c7024cf1c8b6423a6fb4ebb51e44a222449f629ae1ccfd58a5312b",
+      "transformations": [],
+      "line_endings": "LF"
+    },
+    {
+      "path": "RETAINED-RESULTS.json",
+      "source": "<PUBLIC_PLAN05_PUBLICATION>/RETAINED-RESULTS.json",
+      "original_sha256": "77645b22c3ecad9a4df851a9980a45a3af07f640179d565468a130bf9c763456",
+      "public_sha256": "77645b22c3ecad9a4df851a9980a45a3af07f640179d565468a130bf9c763456",
+      "transformations": [],
+      "line_endings": "LF"
+    }
+  ]
+}

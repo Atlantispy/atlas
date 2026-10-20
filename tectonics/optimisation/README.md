@@ -44,6 +44,13 @@ tooling are in [workbench/plan04](workbench/plan04/README.md), with original/pub
 hashes and test sources. Final Plan31 composition and authenticated field-proof
 binding remain open; readiness guards stay false and collective review is deferred.
 
+Plan05's observer ownership repair, complete correspondence verifier, native
+launcher, physical-order repair and integrated q22 consumer are in
+[workbench/plan05](workbench/plan05/README.md). The corrected private pair agrees
+exactly; collective correctness acceptance remains pending. Historical q10 FAIL,
+q32 NOT REPRODUCED and q22 HELD are preserved. This publication supplies source
+and truthful scoped results, not a runnable private profile or main-package overlay.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

@@ -96,12 +96,20 @@ Rules that apply to every item below:
 
 ## Heat finish and reconstruction speed
 
-- **H1c:** the four-route heat proof has not run; the full ABBA timing runs only after it passes. Harness and job
-  scripts are in `pending/heat/scripts/` (latest revisions are the highest-numbered files).
-- **H5a:** kept; its comparison is part of the H1c proof.
-- **S1:** 30/30, not refuted; lands in the final assembly after H5a.
-- **Stage markers:** the seam is decided (a fail-closed closure seam); its test is red by design until the finish
-  driver is built. The S2 speed-up waits for the markers; S4 waits for the commit markers.
+- **Plan05 implementation/integration complete privately:** funded retained
+  ownership, capture/writer/verifier/launcher, physical-order repair and the
+  Plan12 consumer are published at [workbench/plan05](workbench/plan05/README.md).
+  q32's full physical correspondence establishes exact input, five-array,
+  four-cell-account and paired-face agreement. Metadata differences have bound
+  owner dispositions; collective correctness acceptance is still pending.
+- **Historical evidence:** q10 FAIL remains. q31 reproduced the exact-account
+  defect; q32's changed metadata gives NOT REPRODUCED for historical linkage.
+  Original failed attempts and reports are retained; none is rewritten as PASS.
+- **Plan12/q22:** integrated selection correctly refuses absent collective
+  acceptance and separate run authority. q22 remains HELD; no automatic rerun.
+- **Separate finish work:** N6/S1 endpoint certificate reuse and closure-marker
+  integration retain Plan14's obligations. H4 worker tuning remains Plan15.
+  The q22 comparison keeps its authentic six-worker configuration.
 
 ## Storage
 

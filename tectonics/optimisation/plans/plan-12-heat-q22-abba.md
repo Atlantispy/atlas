@@ -1,5 +1,20 @@
 # Plan 12: held q22 mirrored heat timings and profile
 
+**Integrated successor, 20 October 2026:** Plan05 now supplies the actual r13
+writer/verifier/launcher and consumer integration in
+[workbench/plan05](../workbench/plan05/README.md). Its corrected native pair agrees
+exactly under complete physical cell and face correspondence. Historical linkage
+is NOT REPRODUCED after changed metadata; original q10 FAIL remains.
+
+The prepared consumer validates the actual proof, complete metadata dispositions,
+source bindings and original eleven-arm schedule, then refuses the absent
+collective correctness acceptance. Separate q22 run authority is also absent:
+**q22 remains HELD and has not run**. The old wrapper is preserved unchanged.
+Implementation and integration ownership were transferred; there is no remaining
+handback to a former owner. The older proposed-successor and ownership wording
+below is historical where superseded here. The schedule, exactness, resource
+guards and separate run-release obligations remain binding.
+
 **Item ID:** 12  
 **Retained owner:** Heat; the existing coordinator controls queue release and the improvements table.  
 **Status:** WORKING NON-CANON; accepted with rework as a planning document. **q22 remains HELD on unresolved q10 correctness.**  

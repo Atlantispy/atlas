@@ -10999,6 +10999,181 @@
    "path": "workbench/plan04/retained-sources/controls-r21/integrated-focused-r4/prepare.py",
    "source": "<PRIVATE_PLAN04_WORK>/controls-r21/integrated-focused-r4/prepare.py",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/CP2.md",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/CP2.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/OWNERSHIP.md",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/OWNERSHIP.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/ab_heat_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/ab_heat_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/CONTRACT.md",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/CONTRACT.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/launch_adapter.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/launch_adapter.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/metrics.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/metrics.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/proof_gate.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/proof_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/test_launcher_integration.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_launcher_integration.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/test_metrics.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_metrics.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/test_proof_gate.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_proof_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/test_worker_runtime.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/test_worker_runtime.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/consumer-repair/worker_runtime.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/consumer-repair/worker_runtime.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/launch_plan05_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/launch_plan05_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/REPAIR.md",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/REPAIR.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/build_issuer_overlay.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/build_issuer_overlay.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/build_sources.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/build_sources.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/lf3/private_heat_forward_kernel_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lf3/private_heat_forward_kernel_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/lf3/private_heat_native_issuer_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lf3/private_heat_native_issuer_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/lh/private_heat_forward_kernel_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lh/private_heat_forward_kernel_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/lh/private_heat_native_issuer_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/lh/private_heat_native_issuer_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/private_heat_physical_order_r1.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/private_heat_physical_order_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/order-repair/test_physical_order_r1.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/order-repair/test_physical_order_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/run_tests_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/run_tests_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/test_launcher_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/test_launcher_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/test_ownership_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/test_ownership_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/test_verifier_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/test_verifier_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/test_writer_verifier_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/test_writer_verifier_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/verify_d02_r13.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/verify_d02_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/worker-flags-repair/test_worker_flags_repair.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/worker-flags-repair/test_worker_flags_repair.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/integrated-r13/worker-flags-repair/worker_flags_repair.py",
+   "source": "<PRIVATE_PLAN05>/integrated-r13/worker-flags-repair/worker_flags_repair.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/r9-launch-prep/LAUNCHER-NOTE.md",
+   "source": "<PRIVATE_PLAN05>/r9-launch-prep/LAUNCHER-NOTE.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/r9-launch-prep/owned_windows_job.py",
+   "source": "<PRIVATE_PLAN05>/r9-launch-prep/owned_windows_job.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/SOURCE-MAP.json",
+   "source": "<PUBLIC_PLAN05_PUBLICATION>/SOURCE-MAP.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/README.md",
+   "source": "<PUBLIC_PLAN05_PUBLICATION>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan05/RETAINED-RESULTS.json",
+   "source": "<PUBLIC_PLAN05_PUBLICATION>/RETAINED-RESULTS.json",
+   "kind": "workbench"
   }
  ]
 }

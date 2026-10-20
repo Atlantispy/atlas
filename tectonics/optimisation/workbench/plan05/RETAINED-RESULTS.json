@@ -1,0 +1,96 @@
+{
+  "schema": "atlas.public.plan05-retained-results.v1",
+  "status": "SUMMARY_OF_PRIVATE_EVIDENCE_NOT_A_PUBLIC_RUN_RECEIPT",
+  "implementation": "INTEGRATED_IN_PRIVATE_ROUTE",
+  "collective_correctness_acceptance": "PENDING",
+  "historical_q10": "FAIL",
+  "q22": "HELD",
+  "full_plan_scientific_acceptance": false,
+  "source_map": "SOURCE-MAP.json",
+  "private_evidence_sha256": {
+    "implementation-result-01.json": "d29a0699d847ea7b8676bffa4d149d03800e4869ae2c50dd444ec1874b2ce61b",
+    "d02-capture-02/verification.json": "275770035ab2c15d177edf053b55f3c122f9f146b6eb8085db48ddbf0e47481f",
+    "d02-capture-03/verification.json": "dc033bd5f15b79050bac3f315d786bb893ab29f457a661fae06589eb262e2f30",
+    "d02-capture-03/owner-dispositions.json": "4c43e0ac8d32824d7428a04b4cfafef4535c4adf26eca267daf5fd8cb13e0009",
+    "d02-capture-03/result.json": "00c30d70503fb60d5f0da93cf16dbf9a2dffbb94e2726b878835ca9f066018ec",
+    "consumer-qualification-01/result.json": "81fe255283b23f87fdd72b1df34488dd0fd16fd20d7c3b4a942551fa2cf2f2fd",
+    "consumer-qualification-03/result.json": "410c2631b51471ddc3e9dccf6ccecbf51c51af29505c45f8c859dd57c7482e27",
+    "consumer-selection-held-01-check.json": "e23d219b8c36ceeb0ffe5bf5b329ada102fd5d356281503c00941e14b5f35bd3",
+    "order-binding-qualification-01/result.json": "abbd6e3c42a4e5f6f1ea93fd9a1a5d0cf372a54d6d8c250ea44688e028fe6a45",
+    "order-binding-qualification-02/result.json": "2af8930f789fedddf515ca08fd03603de68be6d472bfb0662899dd298519dfd1",
+    "order-native-qualification-02/result.json": "781ab6c466147ed890c04b138d04b501a97eb18f773e0eb60691df62e7bbecf4"
+  },
+  "corrected_pair": {
+    "cells": 236,
+    "codec_proof_failures": 0,
+    "corresponding_physical_inputs": "EXACT_EQUAL",
+    "faces": 832,
+    "five_arrays": "BITWISE_EQUAL",
+    "four_cell_accounts": "EXACT_EQUAL",
+    "historical_differing_files": {
+      "arm_a": [
+        "legacy_metadata.json"
+      ],
+      "arm_b": [
+        "legacy_metadata.json"
+      ]
+    },
+    "historical_linkage": "NOT_REPRODUCED",
+    "metadata_invariant_differences": 0,
+    "metadata_leaves": 5122,
+    "owner_decisions": 208,
+    "paired_face_energy": "EXACT_EQUAL",
+    "queue_and_launcher_failure_retained": true,
+    "scalars": "EXACT_EQUAL",
+    "unchanged_verifier_new_run_verdict": "METADATA_DISPOSITION_REQUIRED",
+    "unchanged_verifier_verdict": "NOT_REPRODUCED",
+    "unresolved_required_metadata_evidence": 0,
+    "within_arm_ledgers": "PASS"
+  },
+  "retained_checks": {
+    "changed_consumer_controls": 38,
+    "consumer_native_bootstrap_controls": 8,
+    "final_native_identity_probes": 2,
+    "initial_observer_ownership_controls": 40,
+    "native_order_controls_each_layout": 11,
+    "real_writer_verifier_controls_reused": 2,
+    "scope": "Each retained receipt and its source pins define the exact tested boundary; synthetic checks are distinct from the authentic two-arm result.",
+    "verifier_controls_reused": 41
+  },
+  "measured": {
+    "d02-capture-02": {
+      "pair_arm_wall_seconds": 149.26599999994505,
+      "peak_sampled_controller_and_owned_job_rss_bytes": 1109262336,
+      "per_arm_wall_seconds": [
+        74.25,
+        75.01599999994505
+      ],
+      "retained_capture_and_source_snapshot_bytes": 17300771,
+      "scope": "single diagnostic pair; neither ABBA speed qualification nor a heap bound"
+    },
+    "d02-capture-03": {
+      "pair_arm_wall_seconds": 168.35899999993853,
+      "peak_sampled_controller_and_owned_job_rss_bytes": 1122922496,
+      "per_arm_wall_seconds": [
+        83.54700000002049,
+        84.81199999991804
+      ],
+      "retained_capture_and_source_snapshot_bytes": 29012400,
+      "scope": "single diagnostic pair; neither ABBA speed qualification nor a heap bound"
+    }
+  },
+  "retained_failures": [
+    "Original q10 FAIL",
+    "Earlier candidate and r9 aggregate failures",
+    "q29 predispatch decimal admission refusal",
+    "q30 serial-fallback incomplete pair",
+    "q31 historically reproduced exact-account defect",
+    "consumer-qualification-02 Windows temporary-directory fixture failure",
+    "q32 NOT_REPRODUCED/metadata-disposition verifier exit 1"
+  ],
+  "remaining": [
+    "Collective correctness acceptance of the actual integrated successor and retained proof.",
+    "Separate explicit q22 run authority and native queue release/admission."
+  ],
+  "publication_boundary": "Source and concise contract snapshot only. No execution pins changed; no scientific rerun, replay, performance gain, public runtime compatibility or hold release claimed."
+}

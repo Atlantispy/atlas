@@ -1,5 +1,11 @@
 # Sanitised files
 
+The Plan05 export has its complete original/public digest trail in
+[workbench/plan05/SOURCE-MAP.json](workbench/plan05/SOURCE-MAP.json).
+Only the declared source/publication transformations are applied; original
+execution pins and private evidence are unchanged. New public summaries are
+labelled summaries, not sanitised execution receipts.
+
 The Plan04 successor export has its complete original/public digest and
 transformation trail in [workbench/plan04/SOURCE-MAP.json](workbench/plan04/SOURCE-MAP.json).
 It additionally replaces the private owner-name constant with `OWNER` and
