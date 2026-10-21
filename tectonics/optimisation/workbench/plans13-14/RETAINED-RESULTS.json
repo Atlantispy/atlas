@@ -1,0 +1,225 @@
+{
+  "schema": "atlas.public.plans13-14.retained-results.r1",
+  "kind": "NEW_SUMMARY_OF_ORIGINAL_PRIVATE_EVIDENCE_NOT_EXECUTION_RECEIPT",
+  "original_integration_result_sha256": "e3a76e0945d17089007e1c0319360edd2c5da3e095675a930c09e3b1e20f0501",
+  "original_composition_sha256": "1f1ec38f2c9e0bcf51672876876a4083dafc42a9ccda31d9e6314ecd72dc1f26",
+  "original_profile_sha256": "630cb623d0b6de20c20ef17eeb480fc29db02ecc75d47ddf796568ad8a856322",
+  "original_manifest_sha256": "d11ab62b8a1054435942bcb192aa8f3648085c25bea2fdb6222d13bc44188098",
+  "earlier_selected_members_preserved": 618,
+  "changed_members": 11,
+  "added_members": 5,
+  "removed_members": 0,
+  "member_changes": [
+    {
+      "member": "source/src/atlas_tectonics/integration_private_heat_cold.py",
+      "kind": "changed",
+      "previous_sha256": "2fdd9e9495c0f18846a34c4ab700042e6fe6d2b63c32f97eb0938b2cc3aae69f",
+      "original_sha256": "791899ac358ca5174493bfe4aedaba2778f0f0aa6f856136b04c777287dd8b58",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/src/atlas_tectonics/integration_private_heat_cold.py"
+    },
+    {
+      "member": "source/helpers/fresh_interval_driver.py",
+      "kind": "changed",
+      "previous_sha256": "5b33873c2e088ae555ad3ed5427c1daee8f567654c1c6eb79ac32ccfa7cfa21c",
+      "original_sha256": "c6df7b959ec9309d7b7ab12f2e763c5e111138fbb2cf2d736b4c616d24132895",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/fresh_interval_driver.py"
+    },
+    {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "kind": "changed",
+      "previous_sha256": "3be44650802e629bedeaf20ce2b70cd88a14f12ee83571e8560e10a5b1157241",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py"
+    },
+    {
+      "member": "source/helpers/private_heat_certification_resources_r1.py",
+      "kind": "changed",
+      "previous_sha256": "fadac10d59e7a453b7940db1ba382b925e40ec6e894f62a56b1efe99c5a84591",
+      "original_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py"
+    },
+    {
+      "member": "source/helpers/private_heat_checkpoint_consumer_r10.py",
+      "kind": "changed",
+      "previous_sha256": "0384f0c6613bd930a22d0ec48784c1e3955de842cd3403a540c25481afd6dd79",
+      "original_sha256": "fa28074f3ec54339c7c20a0cb3b5a4a0e15f13dacba6ef6d4a1f7277f9c33fbe",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_checkpoint_consumer_r10.py"
+    },
+    {
+      "member": "source/helpers/private_heat_closed_owned_r5.py",
+      "kind": "added",
+      "previous_sha256": null,
+      "original_sha256": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079",
+      "public_path": "tectonics/optimisation/pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py"
+    },
+    {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "kind": "added",
+      "previous_sha256": null,
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py"
+    },
+    {
+      "member": "source/helpers/private_heat_finish_kernel_r11.py",
+      "kind": "added",
+      "previous_sha256": null,
+      "original_sha256": "e5a2409fb87695dc0151c7b256f27bea2e550d0fdaf5a66a44b516dde53f3e15",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_finish_kernel_r11.py"
+    },
+    {
+      "member": "source/helpers/private_heat_forward_kernel_r13.py",
+      "kind": "changed",
+      "previous_sha256": "70f4a8e4c59faa27144a4d8edf2840ef5e7308ccd4bc92e3b5ac014fc09c99e9",
+      "original_sha256": "de344f4796d712c1f543fe3380fdfaf23ec4a92ce41c926287a2212e2f00ad91",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_forward_kernel_r13.py"
+    },
+    {
+      "member": "source/helpers/private_heat_joined_consumer_r6.py",
+      "kind": "changed",
+      "previous_sha256": "e6035b4e79e0572f6aa17b06e30800774802c580d265a64e4b54308c9128ab58",
+      "original_sha256": "cdfdbd72864f1f13904dd068e48d7e143453968466d9373f4f654687e5dd5b89",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_joined_consumer_r6.py"
+    },
+    {
+      "member": "source/helpers/private_heat_native_issuer_r13.py",
+      "kind": "changed",
+      "previous_sha256": "ee6821b457370d131645a92de4ed94dc60128021557e006191e078c50d915d1b",
+      "original_sha256": "10c40a136bb193b93938f02e31c374e84857204716e988f81a2706be76a73681",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_native_issuer_r13.py"
+    },
+    {
+      "member": "source/helpers/private_heat_native_projection_r5.py",
+      "kind": "added",
+      "previous_sha256": null,
+      "original_sha256": "7fb40186f8b2e58426f269bef8fc034e42954d937b5a09331f903c50ce550616",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_native_projection_r5.py"
+    },
+    {
+      "member": "source/helpers/private_heat_projection_numerics_r4.py",
+      "kind": "added",
+      "previous_sha256": null,
+      "original_sha256": "5cfd192b89444b599a9625a6fccb5a83a890b23be26ec2904038743d91c99eb1",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_projection_numerics_r4.py"
+    },
+    {
+      "member": "source/helpers/private_heat_restored_binding_r10.py",
+      "kind": "changed",
+      "previous_sha256": "0dad0c2e3940e021c0dd78069b3eb545ea3a94ce1dfbc08c5a4a90537cb96399",
+      "original_sha256": "9e05ce0452606eb2914023699d8b9d2accd312e6fe9ed54a1749a3e9fbe5ee0e",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_restored_binding_r10.py"
+    },
+    {
+      "member": "source/helpers/private_heat_restored_binding_ram_context_r1.py",
+      "kind": "changed",
+      "previous_sha256": "1ac587c87337a3a0a5a05f48b35963ba5de2057046784b3059d438e184244f7a",
+      "original_sha256": "6cffa8ec6ba1f2fdf064b41da785c71636e1754c9054ed5de63549922e9864f8",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_restored_binding_ram_context_r1.py"
+    },
+    {
+      "member": "source/helpers/private_heat_restored_binding_ram_recovery_r1.py",
+      "kind": "changed",
+      "previous_sha256": "16f5575cee6ee3dba3d794d9a950b326d6eabc7962f283bcae744fc346a594d0",
+      "original_sha256": "d022cb3d046f0c2f3007f164ebc51c498f7b364dfc7546076720e341653845ea",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_restored_binding_ram_recovery_r1.py"
+    }
+  ],
+  "evidence": {
+    "q25": {
+      "sha256": "43437df5e6520f2a8a433c006fe14ec4a19d2f42e839ed2862ac03119b0fa570"
+    },
+    "genuine_heat_W4_result": {
+      "sha256": "9d2f9e1e935105a5d28f451355bc75ae5513191f06f2bd4e8f10d22d2e0998b0"
+    },
+    "genuine_heat_W4_comparison": {
+      "sha256": "e44430e4fb1212603c296694703d1386cfb940ef91a82c02f6b565a176168f21"
+    },
+    "actual_final_source_correspondence": {
+      "sha256": "072cf5d2d8b965c4cbe0d3ed9bfd4014e93b40e2f007e09fb4cfb0fb24e9ac36"
+    },
+    "separate_marker_controls": {
+      "sha256": "bef6e641a443ab85cb84ca032a1a2bcc04a64022cbdb3e92f7caa1953c80a5b1"
+    },
+    "final_construction": {
+      "sha256": "9d03eb8031ece1f0d674a030be9e9484bee5356b1af64da028b607e3f729db32"
+    }
+  },
+  "retained_qualification": {
+    "component": "q25 four arms, ARMS PASS, D-b PASS, compiled route confirmed",
+    "exact_comparison": "five arrays; four cell accounts; face account; three scalars; private records; no unresolved differences",
+    "source_correspondence": "87 captured Heat sources per arm, 174 total; drivers excluded",
+    "marker_controls": 9,
+    "original_marker_tests": {
+      "fresh": 37,
+      "prepared": 17,
+      "caught_mutants": 5
+    },
+    "witness_qualification": "six actual source cases; both cell orders and compact reopen/refusal",
+    "no_new_execution_claim": true
+  },
+  "q25_time_arms": {
+    "metric": "arm_wall_seconds",
+    "h2_arm": 3,
+    "h3_arm": 2,
+    "h2_seconds": 89.57,
+    "h3_seconds": 84.95,
+    "h2_over_h3": 1.0543849323131254,
+    "scope": "one unmirrored time sample per side, imports/compilation included; component only",
+    "wall_seconds_saved": 4.61999999999999,
+    "wall_reduction_percent": 5.157977001228076
+  },
+  "q25_timed_tree_mib": {
+    "baseline_H2": 1030,
+    "candidate_H3": 1376,
+    "change": 346
+  },
+  "q25_source_layout": {
+    "h2": {
+      "files": 369,
+      "logical_bytes": 9816635
+    },
+    "h3": {
+      "files": 370,
+      "logical_bytes": 9841837
+    },
+    "scope": "Logical non-pyc layout files, same source freeze scope; not runtime disk peak"
+  },
+  "observed_combined_heat": {
+    "base_control_seconds": 78.76772090001032,
+    "joint_control_seconds": 73.31811439990997,
+    "control_reduction_percent": 6.9185783692,
+    "base_stage_seconds": 92.844,
+    "joint_stage_seconds": 86.828,
+    "base_sampled_tree_bytes": 1144270848,
+    "joint_sampled_tree_bytes": 1505419264,
+    "scope": "one base-then-joint observation; original q52 FAIL preserved; separate saved-output exact proof passed; overlapping timings are not additive"
+  },
+  "states": {
+    "H3": "CANDIDATE_NOT_ENABLED",
+    "H5a": "DISABLED",
+    "D5": "DISABLED",
+    "P4": "DISABLED",
+    "default_production_build_changed": false,
+    "historical_receipts_changed": false,
+    "holds_released": false,
+    "scientific_acceptance": false,
+    "published": false
+  },
+  "review": {
+    "material_code_defects_found": 0,
+    "covered": [
+      "compiled dot fallback and exact arithmetic",
+      "resource witness and consumer pins",
+      "fresh/prepared marker binding",
+      "saved exact comparison",
+      "earlier selected source closure"
+    ],
+    "reused_runtime_evidence": true
+  },
+  "limits": [
+    "Exact final captured Heat source correspondence supports reused genuine q52-arm strict proof. Neither driver was captured; nine controls support changed observation binding separately. No claim of W4 exercising the changed driver or new full-driver runtime identity.",
+    "ABI-independent output components replayed. Native conversion work remains exact compared observation; its uncaptured object-size preimage equivalence is not asserted, with no field exemption or numerical/resource tolerance change.",
+    "Latest Plan04 r24 final producer/Heat binding remains a later Plan31 obligation; selected r21 predecessor is preserved",
+    "No full interval, eligible ROOT, recovery, default enablement or scientific acceptance",
+    "Source-only snapshot; private metadata, runtime and inputs are excluded"
+  ]
+}

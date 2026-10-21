@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 20 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 21 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -26,6 +26,16 @@ incomplete. Plan04 now publishes the repaired comparator/dump/caller and assembl
 sources after their private live-tool installation; actual Plan31 composition
 and authenticated field-proof binding remain open. Collective review is deferred.
 The product acceptance records below retain their existing scope.
+
+**Plans 13–14 are reviewed and integrated with the preceding selected source.**
+The [additive source snapshot](../tectonics/optimisation/workbench/plans13-14/README.md)
+preserves 618 earlier members, changes 11 and adds five. It connects compiled heat
+certificate batches, accepted finish reuse, exact projection witnesses and the
+fresh/prepared marker seam. Review found no material code defect; existing exact
+component/composed proof and focused marker checks were reused. H3 remains a
+candidate, with higher RAM accepted for measured speed within existing limits.
+Latest Plan04 final producer/Heat binding remains later Plan31 work. This is no
+full-driver/interval run, scientific acceptance, default switch or commit/push.
 
 **Plans 10–12 are implemented and integrated in the selected private combined
 composition.** Its focused qualification passed 27 orchestration tests, three
@@ -127,6 +137,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
+| Plans13–14 compiled heat and finish/marker integration | Requested private implementation/integration complete; branch source and docs reconciled. H3 candidate-only. Exact saved Heat comparison and separate marker controls pass; no current full-interval or default-enablement claim. | [Source, review and measurements](../tectonics/optimisation/workbench/plans13-14/README.md), [Plan13](../tectonics/optimisation/plans/plan-13-heat-kernel-h3-q25.md), [Plan14](../tectonics/optimisation/plans/plan-14-heat-finish-closure-markers.md) |
 | Plans10–12 producer reuse, reader overlap and heat | Implementation and selected private combined integration complete; 27 orchestration tests, three native-entry cases and four heat cases PASS. Original-profile q46 ROOT time fell 31.11% with sampled arm-tree RAM rising 74.23% in one pair; q47 recorded 969 producer hits and zero misses in a producer-only smoke. q22 passed 11/11 arms and selected lf3; H5a stays off. These scoped observations do not establish new-profile ROOT eligibility, interval performance or full-workflow cold recovery. | [Source scope and retained evidence](../tectonics/optimisation/workbench/plans10-12/README.md), [mechanism and limits](../tectonics/optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap), [reader explanation](../tectonics/docs/how-it-works/06-physical-integration.md#prepare-an-independent-reader-while-a-private-producer-runs) |
 | Plan05 heat correctness | Selected private observer/verifier/launcher and physical-order repair are integrated; the corrected pair agrees exactly under full physical correspondence. Additive public source and test export supplied. Original q10 FAIL and historical NOT REPRODUCED remain preserved. The later scoped correctness disposition and executed q22 successor are recorded in Plan12; they do not establish general causality or scientific acceptance. | [Method, sources and scoped results](../tectonics/optimisation/workbench/plan05/README.md), [later heat disposition](../tectonics/optimisation/plans/plan-12-heat-q22-abba.md) |
 | Plan04 N9 comparison and extraction | Comparator r24, dump r5, caller and assembly tools integrated privately; additive source export supplied. Actual Plan31 composition and authenticated producer/reader and Heat field proofs remain open; readiness guards stay false and collective review is deferred. | [Method, source pins and checks](../tectonics/optimisation/workbench/plan04/README.md), [final binding obligation](../tectonics/optimisation/plans/plan-04-n9-width-tools.md) |

@@ -6,6 +6,17 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 21 Oct 2026, Plans13–14 reviewed source integration
+
+- Integrate the complete 239-native/395-helper selected source closure with the
+  preceding Plans10–12 snapshot: 618 unchanged, 11 changed, five additions.
+- Retain reviewed H3 exact fallback, accepted Heat S1, projection witnesses and
+  fresh/prepared loaded-code markers; no material code defect found in review.
+- Add the shared profile builder, H3 transform and bounded construction/control
+  sources missing from the earlier export. Reconcile stale plan/status documents.
+- Preserve scoped measured speed/RAM trade-offs, original failures and exact proof
+  identities. No new scientific run, whole-interval gain, default switch or hold release.
+
 ## 20 Oct 2026, Plans10–12 combined source publication
 
 - Publish the selected239-native/390-helper closure using exact existing public

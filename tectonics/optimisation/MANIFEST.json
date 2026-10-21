@@ -11389,6 +11389,196 @@
    "path": "workbench/plans10-12/SOURCE-MAP.json",
    "source": "<PLANS10_12_PUBLICATION>/SOURCE-MAP.json",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/bootstrap_native.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/bootstrap_native.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/build_marker_successor.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/build_marker_successor.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/build_projection_witness.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/build_projection_witness.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/c14/build_combined.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/c14/build_combined.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/c14/qualify_heat.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/c14/qualify_heat.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/c14/test_builder.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/c14/test_builder.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/dependencies/build_profile.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/dependencies/build_profile.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/prepare_joint_delta.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/prepare_joint_delta.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/prepare_marker.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/prepare_marker.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/construction/prepare_s1_delta.py",
+   "source": "<PLANS13_14_INTEGRATION>/construction/prepare_s1_delta.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/c14/qualify_heat_r2.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/c14/qualify_heat_r2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/c14/test_timeout.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/c14/test_timeout.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/h3/q25_check_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/h3/q25_check_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/h3/test_q25_check_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/h3/test_q25_check_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/markers/marker_mutants.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/markers/marker_mutants.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/markers/test_fresh_interval_driver.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/markers/test_fresh_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/markers/test_prepared_interval_driver.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/markers/test_prepared_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/markers/test_projection_marker_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/markers/test_projection_marker_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/w4/qualify_saved_outputs_r2.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/w4/qualify_saved_outputs_r2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/w4/w4_verify.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/w4/w4_verify.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/controls/witness/test_projection_witness.py",
+   "source": "<PLANS13_14_INTEGRATION>/controls/witness/test_projection_witness.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/README.md",
+   "source": "<PLANS13_14_INTEGRATION>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/RETAINED-RESULTS.json",
+   "source": "<PLANS13_14_INTEGRATION>/RETAINED-RESULTS.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/fresh_interval_driver.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/fresh_interval_driver.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_certification_kernel_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_certification_resources_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_checkpoint_consumer_r10.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_checkpoint_consumer_r10.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_finish_kernel_r11.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_finish_kernel_r11.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_forward_kernel_r13.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_forward_kernel_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_joined_consumer_r6.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_joined_consumer_r6.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_native_issuer_r13.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_native_issuer_r13.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_native_projection_r5.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_native_projection_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_projection_numerics_r4.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_projection_numerics_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_restored_binding_r10.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_restored_binding_r10.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_restored_binding_ram_context_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_restored_binding_ram_context_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/helpers/private_heat_restored_binding_ram_recovery_r1.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/helpers/private_heat_restored_binding_ram_recovery_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/source/src/atlas_tectonics/integration_private_heat_cold.py",
+   "source": "<PLANS13_14_INTEGRATION>/source/src/atlas_tectonics/integration_private_heat_cold.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plans13-14/SOURCE-MAP.json",
+   "source": "<PLANS13_14_INTEGRATION>/SOURCE-MAP.json",
+   "kind": "workbench"
   }
  ]
 }

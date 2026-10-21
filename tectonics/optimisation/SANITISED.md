@@ -1,5 +1,13 @@
 # Sanitised files
 
+Plans13–14 have a complete original/public digest trail in
+[workbench/plans13-14/SOURCE-MAP.json](workbench/plans13-14/SOURCE-MAP.json).
+Existing exact public files are referenced. New files redact private home paths,
+room references and the retained owner-name constant, use LF and remove trailing
+empty lines. Scientific literals and historical identity pins are unchanged;
+public bytes do not authenticate private execution. Retained results are a new
+summary, not a modified execution receipt.
+
 The Plans10–12 complete selected source map and original/public digest trail are in
 [workbench/plans10-12/SOURCE-MAP.json](workbench/plans10-12/SOURCE-MAP.json).
 Existing identical public bytes are referenced, preserving one-copy source storage.

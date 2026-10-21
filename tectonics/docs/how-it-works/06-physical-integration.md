@@ -1382,3 +1382,27 @@ The earlier ROOT/reuse receipts belong to the earlier profile; the new profile
 needs its own eligible ROOT. Full intervals and full-workflow cold recovery remain
 later, held evidence. These changes do not alter the I02 scope and evidence above
 or establish new physical acceptance.
+
+### Compile heat certificates and observe the conservative finish
+
+The private interval route now has a candidate that batches the directed MPFR
+dot products used to certify heat reconstruction. It keeps the original Python
+expressions when the compiled route cannot support the active context or result.
+Rounding direction, precision, exact accounts and the physical heat equations
+remain unchanged. Accepted endpoint certificates are shared during the closed
+finish, and projection retains an actual peak-width witness with deterministic
+ties. Current checkpoint and restoration consumers bind this same generation.
+
+The fresh and ordinary prepared drivers observe the loaded finish/projection
+functions and unique nested closure code objects. They share six ticks and an
+eleven-stage heat prefix, followed by conditional commit stages. N5's exact
+calculation marker follows its numerical helper; historical N4 keeps its original
+target. Nested phase durations overlap and cannot be summed into an interval time.
+
+The [method and source map](../../optimisation/workbench/plans13-14/README.md)
+describe the retained MPFR/Numba implementation, fallbacks, original proof and
+measurements. No new physical model or research source was introduced by this
+integration. Exact saved Heat comparisons and separate marker controls passed;
+neither establishes a full-driver or full-interval run. The candidate traded more
+RAM for lower measured component time. Final programme performance, real-IV1
+marker observations, recovery and enablement remain later scoped work.

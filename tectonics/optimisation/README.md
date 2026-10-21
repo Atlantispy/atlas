@@ -56,6 +56,12 @@ The selected complete Plans10–12 private integration is exported in
 enabled source closure, original/public digest map and scoped retained results.
 The new profile requires its own eligible ROOT; final interval testing remains held.
 
+The successor [Plans13–14 source integration](workbench/plans13-14/README.md)
+extends that selected closure with H3 certificate batches, Heat S1 finish reuse,
+exact projection witnesses and fresh/prepared markers. It preserves earlier source
+members and historical receipts, and includes the missing shared construction
+dependencies. H3 remains candidate-only; final assembly and held runs remain later.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.
