@@ -1406,3 +1406,24 @@ integration. Exact saved Heat comparisons and separate marker controls passed;
 neither establishes a full-driver or full-interval run. The candidate traded more
 RAM for lower measured component time. Final programme performance, real-IV1
 marker observations, recovery and enablement remain later scoped work.
+
+
+### Choose rolling geometry workers from an authenticated parent
+
+The private source successor uses the adopted parent interval's producer receipt
+to choose the ordinary successor's worker ceiling. Its hash, profile, interval,
+runner and seal must agree with the existing lineage. Actual parent RSS and
+logical peaks feed the retained resource formula: four by default, six only
+when CPU, physical RAM and logical booking all fit. Missing measurements refuse.
+Native sessions still apply their own admission cuts. Pressure, interval-one
+serial execution, explicit serial comparisons and approved recovery retain their
+separate rules; changing the profile requires a newly eligible ROOT.
+
+The [Plan16 mechanism and source map](../../optimisation/workbench/plan16/README.md)
+describe the unchanged exact worker/rolling/endpoint-clamp implementation and
+the new driver bindings. One IV2 shard 0/20 proof used six actual workers and
+matched serial records/streams exactly. Its component elapsed time fell 55.45%
+against the retained serial observation, at a sampled guarded tree peak of
+1.34 GiB. Historical load metadata is incomplete; neither this result nor sums
+of separate component peaks establish whole-interval performance. Existing
+resource limits, source identities and scientific/interval holds remain.

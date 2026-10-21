@@ -90,8 +90,11 @@ Rules that apply to every item below:
 - **Done:** Step 10 parity on real intervals 1 and 2. Six stages, no violations, structure identical to the reference
   except 245 charts no longer started. Surface CPU time: interval 1 893 → 454 s, interval 2 885 → 620 s (MEASURED,
   serial shards). D1+D2 transforms 70/70.
-- **Left:** three proof runs: the six-worker interface rerun on interval 2, jets parity revision 2, and the stacked
-  D1+D2+G-PY parity. Then endpoint batching (WP18 revision 2: refutation, smoke, proof). Projected interval-2
+- **Plan16:** the sampled IV2 six-worker proof passed with actual session/peak six and exact records/streams.
+  The selected-source successor wires authenticated parent measurements through the drivers; five helper changes,
+  no native changes. Native-entry preflight is qualified; programme default/interval holds remain.
+  See [source and measured limits](workbench/plan16/README.md).
+- **Left:** jets parity revision 2 and the stacked D1+D2+G-PY parity. Then endpoint batching (WP18 revision 2: refutation, smoke, proof). Projected interval-2
   endpoints 402 → about 217 s.
 
 ## Heat finish and reconstruction speed

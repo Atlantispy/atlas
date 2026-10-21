@@ -62,6 +62,12 @@ exact projection witnesses and fresh/prepared markers. It preserves earlier sour
 members and historical receipts, and includes the missing shared construction
 dependencies. H3 remains candidate-only; final assembly and held runs remain later.
 
+The [Plan16 geometry successor](workbench/plan16/README.md) extends the same
+selected closure with authenticated parent measurements and conditional four/six
+worker ceilings. Its sampled six-worker proof and native-entry preflight passed;
+all native source is preserved. The public regression exercises the actual
+helper functions on synthetic receipts without loading the private runtime.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

@@ -1,0 +1,72 @@
+{
+  "schema": "atlas.public.plan16.retained-results.r1",
+  "kind": "summary of retained private evidence, not a public execution receipt",
+  "status": "SAMPLED_SIX_WORKER_PROOF_PASS_SOURCE_INTEGRATED",
+  "original_summary": "D-J PROOF PASSED",
+  "actual_interface_session_workers": 6,
+  "actual_peak_live": 6,
+  "exact_components": 1554,
+  "exact_records": 14355,
+  "exact_streams": 26816,
+  "record_sha256": "dd77548e76e9c5abc04fb1ded4b8ebf64ac45022800363b4b9fa9b931334d088",
+  "stream_sha256": "c2cb8c4014386cc92f388940762c0c9f8bd009d31e93481c8d5cac72c18cc101",
+  "assessment_runtime_package_sha256": "e92484e5a9d852c5b1d28f7b024acda0da4a238964db566aa8b7c461c642397e",
+  "comparisons": {
+    "serial_wall_s": 946.57,
+    "candidate_wall_s": 421.73,
+    "wall_change_percent": -55.44650686161615,
+    "prior_policy4_actual3_wall_s": 569.09,
+    "vs_prior_policy4_wall_change_percent": -25.893971076631118,
+    "serial_parent_peak_mib": 253,
+    "candidate_parent_peak_mib": 284,
+    "candidate_separate_child_peak_mib": 1033,
+    "candidate_component_peak_sum_mib": 1317,
+    "component_sum_change_percent": 420.55335968379444,
+    "measured_guarded_tree_peak_bytes": 1437147136,
+    "profile_bytes_before": 15314,
+    "profile_bytes_after": 16898,
+    "profile_byte_change_percent": 10.343476557398468
+  },
+  "new_evidence_logical_bytes": 82235898,
+  "queue_conditions": {
+    "free_cores_at_start": 7.04,
+    "free_gib_at_start": 15.0,
+    "small_jobs_max": 0,
+    "exclusive": true,
+    "quiet": true
+  },
+  "new_source": {
+    "composition_sha256": "723a90de28dc0861fca8d70aad2122d591a3e6ba03a1b15fbd6eceb2407d4491",
+    "profile_sha256": "9ef3219a2ac6d0b949b04b6c488a806c85c81fa0a018c074f38c2a9919abc759",
+    "preserved_files": 629,
+    "changed_helpers": 5,
+    "native_changes": 0,
+    "logical_bytes": {
+      "before": 15471006,
+      "after": 15476587
+    }
+  },
+  "checks": {
+    "guard_adapter": 4,
+    "stronger_assessment": 3,
+    "integration_boundary": 7,
+    "source_refutation": "PASS exact five-helper delta; native qualification separate"
+  },
+  "native_entry_qualification": {
+    "status": "PREFLIGHT_PASSED",
+    "process_sha256": "56f47474c41f0f5464a94d14e7a9445d24a3278f02a1e78efc78c6daf89ba41b",
+    "seconds": 2.75,
+    "sampled_tree_bytes": 73191424,
+    "exit": 0,
+    "owned_active_final": 0,
+    "scope": "actual native bootstrap/launcher preflight only; no ROOT/store/interval/workers",
+    "preserved_refusals": [
+      "r1 missing empty attempt parent",
+      "r2 missing explicit projected stage booking"
+    ]
+  },
+  "production_default_enabled": false,
+  "historical_failures_preserved": true,
+  "full_interval_performance": false,
+  "scientific_acceptance": false
+}

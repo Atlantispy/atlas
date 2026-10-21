@@ -2,7 +2,7 @@
 
 **Item ID:** 16  
 **Retained owner:** Geometry / Runner; Storage receives the transform handoff and the coordinator retains queue and disposition ownership.  
-**Status:** WORKING NON-CANON. Documentation replacement assigned in general584, incorporating general582/585. The current q21 row is `failed`, exit 15, INVALID LAUNCH ENVIRONMENT. A retry remains blocked and unauthorised pending Plan 03 readiness and the coordinator's explicit orphan disposition and launch decision.  
+**Status:** WORKING NON-CANON. Sampled six-worker proof, private implementation and source integration with Plans13–14 are qualified. The selected source and focused regression are included in this review-branch publication. q13 VOID-ENVIRONMENT and q21 INVALID LAUNCH ENVIRONMENT remain historical attempts; the separately authorised q53 successor passed. Production enablement, a new eligible ROOT and held interval work remain separate.
 **Completion condition:** Obtain the required, separately authorised sampled IV2 w6 proof on the existing three-transform runtime; preserve all attempt provenance; then deliver the bounded result and integration handoff to the retained owners. No new geometry algorithm is proposed.
 
 ## 1. Scope, authority and sources
@@ -116,8 +116,26 @@ The blanket claim that q21 gates all of Plans 31/35 is removed. The owner identi
 
 C1–C5 apply: exact numerical parity with only explicitly approved identity translations and the bounded N9 exception; the 1 MiB integer bound and projected-width gate without an invented fixed 25% ceiling; evidence-backed figures and honest status; no new authority; and current primary mechanisms/owners. N9 remains paused, and the 256 accepted-step value remains a ceiling rather than a demand to run that many steps.
 
-- [ ] Plan 03 readiness, preserved-orphan disposition, reviewed successor identity and coordinator-approved ticket/generation/output/log scope are established before any launch.
-- [ ] The separately authorised sampled assessment records the exact inputs, runtime/package identities, admission basis, actual resources and worker counts while preserving historical attempts.
-- [ ] The merged proof meets all exact arm, route, serial and superseded-attempt checks; any FAIL, refusal or VOID returns its literal outcome without automatic retry.
-- [ ] Geometry delivers the three-transform/hash/evidence/docstring-audit handoff to Storage, returns the result to Runner and supplies the coordinator's registry update under the agreed disposition.
-- [ ] The existing owner record states the outcome, remaining integration decisions, source/evidence pointers and next action; no scientific or production completion is claimed from this documentation revision.
+- [x] Plan 03 readiness, preserved-orphan disposition, reviewed successor identity and coordinator-approved ticket/generation/output/log scope are established before any launch.
+- [x] The separately authorised sampled assessment records the exact inputs, runtime/package identities, admission basis, actual resources and worker counts while preserving historical attempts.
+- [x] The merged proof meets all exact arm, route, serial and superseded-attempt checks; any FAIL, refusal or VOID returns its literal outcome without automatic retry.
+- [x] Geometry delivers the three-transform/hash/evidence/docstring-audit handoff to Storage, returns the result to Runner and supplies the coordinator's registry update under the agreed disposition.
+- [x] The existing owner record states the outcome, remaining integration decisions, source/evidence pointers and next action; no scientific or production completion is claimed from this documentation revision.
+
+
+## Implementation checkpoint - 21 October 2026
+
+The separately cleared q53 sampled assessment passed the original exact merged
+proof and the stronger actual-session/peak-six criterion. IV2 shard 0/20 elapsed
+time was 421.73 s versus retained serial 946.57 s; guarded invocation sampled
+1.34 GiB. q13 VOID and q21 invalid-launch history remain preserved.
+
+The [Plan16 source successor](../workbench/plan16/README.md) integrates five
+helper changes with the selected Plans13-14 closure, retaining all native bytes.
+It authenticates actual parent RSS/logical peaks, records and forwards the
+four/six worker ceiling, and preserves existing serial/recovery/source guards.
+New source/profile identities and a new eligible ROOT are required. Native-entry
+preflight passed separately. This publication supplies the integrated source,
+retained results and portable focused regression. It does not establish a full
+interval, production default switch or final assembly acceptance. Git history
+records commit and push state.
