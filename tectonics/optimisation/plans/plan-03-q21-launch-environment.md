@@ -24,9 +24,9 @@ Path aliases:
 | --- | --- |
 | `G/work/dj-rearm-r3-q21b.log` | Complete retained launch log. SHA-256 `3ba3da59468bb4db3bc3a3fffd2c4ed0f263aafd2589364e7804285674fc1e3f`. |
 | `G/scripts/run_dj_rearm.sh` | Actual wrapper, including orphan audit and copy/launch boundary. SHA-256 `24f3eb16249f2a766348a1c0d34e5109c8fd73ff4ca6259fa1c186da00234759`. |
-| [Coordinator handoff](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/coordinator-handoff-20261016.md), 21:32 and 21:59 checkpoints | Recorded environment diagnosis, verified-descendant stop, post-stop partial observations and explicit preservation ruling; lines 406–407 and 414. SHA-256 `e75652996f3f29e6c4b074f24bec561551c842c7b04a1ac49ccb8c411799ba15`. |
-| [Current consolidated status](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/plan-status-20261016.md), q21 rows and worker-cap row | Retained Geometry / Runner ownership, distinct q13/q21 outcomes and prerequisites for any authorised retry. SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`. |
-| [Current queue protocol](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/run-queue-protocol-20261016.md) | Coordinator assignment, source-bound readiness, queue notes and current run controls. Later amendments govern over earlier resource formulas. |
+| Coordinator handoff (private evidence unavailable in this public snapshot), 21:32 and 21:59 checkpoints | Recorded environment diagnosis, verified-descendant stop, post-stop partial observations and explicit preservation ruling; lines 406–407 and 414. SHA-256 `e75652996f3f29e6c4b074f24bec561551c842c7b04a1ac49ccb8c411799ba15`. |
+| Current consolidated status (private evidence unavailable in this public snapshot), q21 rows and worker-cap row | Retained Geometry / Runner ownership, distinct q13/q21 outcomes and prerequisites for any authorised retry. SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`. |
+| Current queue protocol (private evidence unavailable in this public snapshot) | Coordinator assignment, source-bound readiness, queue notes and current run controls. Later amendments govern over earlier resource formulas. |
 
 **MEASURED / retained launch record:** q21 started at 21:22:00 and exited at 21:28:48 on 16 October 2026, with exit 15 and a 0.26-GiB process-tree RSS peak. These figures describe the failed launch attempt, not geometry performance, required future resource limits or a scientific result.
 

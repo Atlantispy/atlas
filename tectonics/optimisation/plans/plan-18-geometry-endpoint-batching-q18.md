@@ -24,7 +24,7 @@ The selected work is WP18 part 1 **(a) endpoint clamp to the policy's reviewed g
 
 “Hardest first” occurs in the original backlog item and design sketch, but the later reassessment in `G/WP18-PART1-DESIGN-NOTE.md` explicitly abandons it: the available labels did not predict cost, and work units were known only afterwards. It is not part of the selected implementation. The old sketch's proposed ALE and ahead-of-router `project_compact` changes are also superseded by the actual auto-only implementation.
 
-The preserved [Codex initial assessment](reviews/codex/plan-18.md) and [Turn 2 source assessment](../discussions/atlas-plans-39-review-20261017/codex-plan-18-turn-02.md) record the review history. Initial assessments remain frozen; later decisions do not rewrite them.
+The preserved Codex initial assessment (private evidence unavailable in this public snapshot) and Turn 2 source assessment (private evidence unavailable in this public snapshot) record the review history. Initial assessments remain frozen; later decisions do not rewrite them.
 
 ## 2. Existing implementation and invariants
 

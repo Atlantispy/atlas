@@ -20,3 +20,6 @@ runtime_work/
 
 # Machine-local Claude Code settings
 .claude/settings.local.json
+
+# Private optimisation working records and coordination material
+/tectonics/optimisation/work/

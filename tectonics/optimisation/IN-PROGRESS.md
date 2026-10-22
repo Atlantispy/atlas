@@ -1,4 +1,4 @@
-# Part-implemented work (16 Oct 2026)
+# Part-implemented work (initial snapshot 16 Oct; reconciled 22 Oct 2026)
 
 Status: WORKING NON-CANON. Work stopped at a weekly usage limit. Each entry gives the state, where the files are in
 this snapshot, what is left and the acceptance gate. Paths are relative to `tectonics/optimisation/`. "Built" means
@@ -108,12 +108,16 @@ preserved; see [Plan17](workbench/plan17/README.md).
   Plan12 consumer are published at [workbench/plan05](workbench/plan05/README.md).
   q32's full physical correspondence establishes exact input, five-array,
   four-cell-account and paired-face agreement. Metadata differences have bound
-  owner dispositions; collective correctness acceptance is still pending.
+  owner dispositions. A later scoped decision accepted the repaired lf3/lh
+  comparison; the historical verifier result remains unchanged.
 - **Historical evidence:** q10 FAIL remains. q31 reproduced the exact-account
   defect; q32's changed metadata gives NOT REPRODUCED for historical linkage.
   Original failed attempts and reports are retained; none is rewritten as PASS.
-- **Plan12/q22:** integrated selection correctly refuses absent collective
-  acceptance and separate run authority. q22 remains HELD; no automatic rerun.
+- **Plan12/q22:** the successor execution on the same q22 ticket completed
+  all 11 arms with PASS on 20 October. The old held route and failed evidence
+  remain historical. See [Plan12](plans/plan-12-heat-q22-abba.md) for exact
+  scope and decision identities. New combined-profile and full-interval
+  validation remain separate, held work; no automatic rerun.
 - **Separate finish work:** N6/S1 endpoint certificate reuse and closure-marker
   integration retain Plan14's obligations. Plan15's measured eight-worker candidate is source-integrated; final live adoption remains later.
   The q22 comparison keeps its authentic six-worker configuration.

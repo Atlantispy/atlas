@@ -171,7 +171,7 @@ Aliases:
 - `T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`
 - `R = T/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1`
 
-The following are reviewed source identities, checked unchanged on 17 October 2026. They do not silently repin a runtime. Full read scopes, objections and the replacement checkpoint are in the [Codex turn record](../discussions/atlas-plans-39-review-20261017/codex-plan-20-turn-02.md). The [initial review](reviews/codex/plan-20.md) remains frozen; this is a post-reveal replacement.
+The following are reviewed source identities, checked unchanged on 17 October 2026. They do not silently repin a runtime. Full read scopes, objections and the replacement checkpoint are in the Codex turn record (private evidence unavailable in this public snapshot). The initial review (private evidence unavailable in this public snapshot) remains frozen; this is a post-reveal replacement.
 
 | Primary source | SHA-256 |
 | --- | --- |

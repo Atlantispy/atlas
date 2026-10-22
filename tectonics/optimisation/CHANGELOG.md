@@ -6,11 +6,23 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 22 Oct 2026, publication review repairs
+
+- Make missing optional test dependencies skip explicitly and document their scope.
+- Reconcile the completed q22 successor execution with its historical held route;
+  retain the scoped proof decision and all original failed results.
+- State private-plan authority and public projection rules, restore the Plan04
+  diagnostic-threshold explanation, and remove unavailable private/future links.
+- Correct joined numerical text, reuse exact existing Plan02 source exports,
+  and exclude private optimisation work records from ordinary Git staging.
+- Retain the eight-worker measured candidate and six-worker global default.
+  No numerical contract, runtime source, scientific result or hold is changed.
+
 ## 22 Oct 2026, Plans15 and17 integrated source
 
-- Preserve all634 selected members; change only the fresh heat driver and parallel
+- Preserve all 634 selected members; change only the fresh heat driver and parallel
   observation helper. Carry Plan16 geometry and earlier heat/marker behaviour forward.
-- Retain q60's six-arm PASS, selected8 and the measured1.3321% time/26.9974% RAM
+- Retain q60's six-arm PASS, selected 8 and the measured 1.3321% time/26.9974% RAM
   trade-off. Repair stale implementation status and obsolete Storage-blocker wording.
 - Publish Plan17's reviewed guarded preparation, exact admission and duplicate-key
   regression. Correct old direct-launch guidance and link the retained D1/D2 limits.
@@ -29,12 +41,12 @@ the 256 accepted-step ceiling. No tolerance is relaxed.
 
 ## 20 Oct 2026, Plans10–12 combined source publication
 
-- Publish the selected239-native/390-helper closure using exact existing public
+- Publish the selected 239-native/390-helper closure using exact existing public
   sources plus additive successors, including the earlier enabled optimisation fixes.
 - Integrate producer-only measurement reuse, serial independent-reader scheduling
   and selected lf3 heat with current compact checkpoint and cold-reader bindings.
   Fix the stale reuse test; retain D5/P4/H5a disabled and preserve historical receipts.
-- Retain27 synthetic, three native-entry and four heat qualification passes, plus
+- Retain 27 synthetic, three native-entry and four heat qualification passes, plus
   separately scoped q22/q46/q47 measurements; no combined full-interval gain inferred.
 - Record original/public source digests and new result summaries. Exclude private
   manifests, runtime assets, execution receipts and coordination records. Final

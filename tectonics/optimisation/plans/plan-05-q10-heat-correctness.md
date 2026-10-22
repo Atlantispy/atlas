@@ -2,8 +2,10 @@
 
 **Status:** WORKING NON-CANON. Implementation and integration are complete in the
 selected private execution route. The corrected bounded pair agrees exactly.
-Collective correctness acceptance remains pending; original **q10 FAIL** and
-**q22 HELD** remain.
+The later scoped decision accepted that pair and its evidence-bound dispositions;
+the successor execution on q22 completed PASS. Original **q10 FAIL** and q32's
+historical **NOT_REPRODUCED** remain. [Plan12](plan-12-heat-q22-abba.md) records
+the precise acceptance identities and execution boundary.
 
 The owner explicitly authorised publication on 20 October 2026. Implementation
 ownership and integration were transferred to the current implementer; earlier
@@ -104,7 +106,7 @@ estimate; the existing admission formula gives a 4.436 GiB free-memory gate.
 The extra amount is an estimate, not a measured bound. All independent resource
 guards and explicit scientific holds remain.
 
-## Integration and remaining decision
+## Integration and later scoped decision
 
 The actual launcher dispatches the integrated consumer; it binds the corrected
 proof, full source/input closure, process/log finality, metadata decisions, both
@@ -112,19 +114,22 @@ prediction histories and the authentic eleven-arm Plan12 schedule. It checks
 admission before producer import and before each child. It preserves actual
 worker flags, seed, profile outputs, the existing arm checker and failure stops.
 
-The prepared private consumer selection binds 2,431 files. Its real validation
-checked the proof and dispositions and then correctly refused missing collective
-correctness acceptance. A separate q22 run-authority record is also absent.
-The legacy wrapper still correctly refuses the preserved q10 FAIL.
+The earlier prepared private consumer selection bound 2,431 files. Its validation
+correctly refused the then-missing correctness acceptance and separate run
+authority. Those historical refusals remain valid. The final q22 successor bound
+the later scoped decision and separate authority; the legacy wrapper still
+correctly refuses the preserved q10 FAIL.
 
 - [x] Complete bounded evidence inquiry, capture ownership and evidence contract.
 - [x] Establish full physical correspondence and compare inputs, arrays, accounts,
   faces, scalars and metadata.
 - [x] Repair the demonstrated defect and integrate the affected consumer route.
 - [x] Retain exact outcomes, failed attempts and scoped time/RAM/disk measurements.
-- [ ] Obtain explicit collective correctness acceptance of the actual successor.
+- [x] Obtain the later explicit scoped acceptance of the actual repaired pair
+  and its evidence-bound dispositions, recorded in Plan12.
 
-The implementer retains responsibility for concrete review findings. q22 release
-is a separate Plan12 decision. Plan14's Heat S1/W4 integration depends on accepted
-correctness; its independent marker work does not. No automatic repeat capture,
-q22 run or fresh full interval is authorised by this publication.
+The implementer retains responsibility for concrete review findings. Plan12
+records the separate completed q22 release and execution. This scoped acceptance
+supplies Plan14's correctness prerequisite; it does not certify arbitrary inputs
+or final programme integration. No automatic repeat capture, q22 rerun or fresh
+full interval is authorised by this publication.

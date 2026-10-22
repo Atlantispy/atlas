@@ -34,7 +34,7 @@ Path aliases:
 - `BASH` = `C:/Program Files/Git/usr/bin/bash.exe`
 - `A` = `C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas`
 
-The [frozen initial review](reviews/codex/plan-17.md) remains unchanged. The [post-reveal source assessment and amendment checkpoint](../discussions/atlas-plans-39-review-20261017/codex-plan-17-turn-02.md) retain the detailed reconciliation and evidence identities. Current owner records govern future execution; this document grants no new run, test, source-edit, queue-release or landing authority.
+The frozen initial review (private evidence unavailable in this public snapshot) remains unchanged. The post-reveal source assessment and amendment checkpoint (private evidence unavailable in this public snapshot) retain the detailed reconciliation and evidence identities. Current owner records govern future execution; this document grants no new run, test, source-edit, queue-release or landing authority.
 
 ## 2. Preserve the distinct evidence states
 

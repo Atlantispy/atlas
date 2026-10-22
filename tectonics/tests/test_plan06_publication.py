@@ -183,6 +183,7 @@ class Plan06Publication(unittest.TestCase):
             ["assemble_r3_plan06.py", "reference_assemble_r3.py"], "Disabled", 1,
         )
 
+    @unittest.skipUnless(importlib.util.find_spec("psutil"), "queue-liveness fixtures require psutil")
     def test_queue_liveness_fixtures(self):
         self.fixture_suite(
             "queue-fix", "test_pid_liveness.py", ["runq.py"], "LivenessTests", 6

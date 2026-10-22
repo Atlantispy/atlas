@@ -7,7 +7,7 @@
 
 ## Authority and evidence
 
-`T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`; `S = T/fidelity-integration-20261005/claude-review-steps1-7-20261015`. The owner assessment is `S/fixes/backlog/item18-storage-assessment.md`, SHA-256 `be2e5987088760c324ad8c12bd7934e948e86db79440d760c451747017316de5`. The repository `.atlas-dev/plan-status-20261016.md` keeps backlog 18 conditional. The [accepted correction list](reviews/claude/consolidated-23-39-for-codex.md) replaces the earlier plan's invented timing, size and allocation cut-offs.
+`T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`; `S = T/fidelity-integration-20261005/claude-review-steps1-7-20261015`. The owner assessment is `S/fixes/backlog/item18-storage-assessment.md`, SHA-256 `be2e5987088760c324ad8c12bd7934e948e86db79440d760c451747017316de5`. The repository `.atlas-dev/plan-status-20261016.md` keeps backlog 18 conditional. The accepted correction list (private evidence unavailable in this public snapshot) replaces the earlier plan's invented timing, size and allocation cut-offs.
 
 The assessment's pre-B17 profile found payload allocation/copy work below its visible top costs and predicted little benefit. Those are historical observations and estimates; q04's post-B17 profile is the applicable successor evidence. Its non-zero opportunities for other Storage work do not establish a segment-summary or pool win. Reuse q04; no fresh IV1 run is assigned here.
 

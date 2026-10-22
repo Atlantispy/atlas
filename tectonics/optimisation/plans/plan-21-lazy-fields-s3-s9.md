@@ -183,7 +183,7 @@ Current next action is the existing Small owner's authorised continuation, with 
 
 ## 9. Evidence and identities
 
-The frozen [initial Codex assessment](reviews/codex/plan-21.md) remains unchanged. The [post-reveal review and replacement checkpoint](../discussions/atlas-plans-39-review-20261017/codex-plan-21-turn-02.md) records the primary read scopes, static findings and room return. This rewrite uses general676 and general679 without claiming a new blind first pass.
+The frozen initial Codex assessment (private evidence unavailable in this public snapshot) remains unchanged. The post-reveal review and replacement checkpoint (private evidence unavailable in this public snapshot) records the primary read scopes, static findings and room return. This rewrite uses general676 and general679 without claiming a new blind first pass.
 
 The 28 sources pinned by that review were identity-checked before replacement with no changes. Required current authority sections and the Small handoff/S9 integration note were reopened. The current base S3 files and additional backlog/queue-protocol identities are included below. Hashes bind evidence, not approval or proof of an unexecuted route.
 

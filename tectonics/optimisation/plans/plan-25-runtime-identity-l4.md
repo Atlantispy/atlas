@@ -7,7 +7,7 @@
 
 ## Authority and exact scope
 
-`T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`. Primary contracts are `T/ck/HANDOFF.md` §4, `T/rm/LANGUAGES.md` L4 and `T/so/assembly-manifest.md` C12/X1 and amendments. Full document identities are retained in [primary-source-pins.json](reviews/codex/primary-source-pins.json). This plan implements the [accepted Plan 25 corrections](reviews/claude/consolidated-23-39-for-codex.md).
+`T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`. Primary contracts are `T/ck/HANDOFF.md` §4, `T/rm/LANGUAGES.md` L4 and `T/so/assembly-manifest.md` C12/X1 and amendments. Full document identities are retained in primary-source-pins.json (private evidence unavailable in this public snapshot). This plan implements the accepted Plan 25 corrections (private evidence unavailable in this public snapshot).
 
 The seam is the function `reuse._runtime_record` in **`reuse.py`**, with `_loaded_binary` and `exact_arithmetic.runtime()` participating in the existing execution record. It is not a module called `_runtime_record.py`. The source to transform is the selected composition/package input named by C12, not an invented `T/ck/reuse` tree.
 

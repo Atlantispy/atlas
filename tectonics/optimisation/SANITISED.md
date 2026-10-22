@@ -1,5 +1,12 @@
 # Sanitised files
 
+The Plan02 map in
+[workbench/plan02/SOURCE-MAP.json](workbench/plan02/SOURCE-MAP.json) preserves all
+25 logical members and their original/public digests. Nine exact duplicate exports
+now reference existing driver bytes through repository-relative `public_path`
+values; no source bytes or identity hashes changed. The local `start_gate.py`
+copy remains because retained Plan02 modules import it as a sibling.
+
 Plans13–14 have a complete original/public digest trail in
 [workbench/plans13-14/SOURCE-MAP.json](workbench/plans13-14/SOURCE-MAP.json).
 Existing exact public files are referenced. New files redact private home paths,

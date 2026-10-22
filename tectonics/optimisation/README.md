@@ -21,10 +21,11 @@ or changes only digests under field parity. No tolerance is relaxed, and no reso
 | `SANITISED.md` | Files where local user paths or contact details were replaced. |
 | `CHANGELOG.md` | What changed, with MEASURED and PROJECTED results. |
 | `IN-PROGRESS.md` | Part-implemented work: state, location, what is left and the acceptance gate. |
-| `plans/` | Finalised completion plans (01-25) and `INDEX.md` with dependencies and status. |
+| `plans/` | Dated public projections (01-25) and `INDEX.md`; private execution plans retain authority. |
 
-`pending/` and `workbench/` hold only files whose bytes differ from `composed-r2` and the repository package, and
-each unique file appears once.
+Source exports reuse existing identical public files where their import layout permits.
+Plan02 retains a local `start_gate.py` copy because its preserved callers import it
+beside them; its source map records that deliberate dependency copy.
 
 Plans 01 and 03 now include reviewed workbench successors and their focused test sources. The frozen composed-r2 helpers, live runtime and historical execution pins are unchanged. See the two plan completion sections for retained evidence and remaining launch/integration limits.
 
@@ -47,7 +48,10 @@ binding remain open; readiness guards stay false and collective review is deferr
 Plan05's observer ownership repair, complete correspondence verifier, native
 launcher, physical-order repair and integrated q22 consumer are in
 [workbench/plan05](workbench/plan05/README.md). The corrected private pair agrees
-exactly; the coordinator subsequently accepted the corrected scope and q22 completed PASS. Historical q10 FAIL and
+exactly. The scoped successor proof was subsequently accepted, and the
+successor execution on the same q22 ticket completed all 11 arms with PASS.
+[Plan12](plans/plan-12-heat-q22-abba.md) records the decision identities,
+execution scope and retained historical failures. Historical q10 FAIL and
 q32 NOT REPRODUCED remain preserved; the later selected source and scoped measurements are recorded below. This publication supplies source
 and truthful scoped results, not a runnable private profile or main-package overlay.
 
@@ -86,3 +90,20 @@ already selected. Held long proofs and final programme acceptance remain separat
 Not applied. `composed-r2`'s package and the current `tectonics/src/atlas_tectonics/` differ in both directions.
 `remake` has lines that `composed-r2` lacks (`integration_ledger`, `integration_transfer`, `reuse`), and some
 I04/I05 modules differ. Reconcile them file by file before any landing.
+
+## Plan publication authority
+
+The private execution plans and their bound owner evidence govern implementation,
+run clearance and scientific acceptance. Public `plans/` files are dated,
+sanitised projections for readers; they are not a second execution ledger.
+Their differing bytes are expected after redaction, public explanation and
+explicitly dated result updates. Git history retains earlier public versions.
+
+Execution-contract or status corrections must first be reconciled against the
+private owner record, then reflected in the affected public summary. Public-only
+link, spelling and privacy repairs remain publication changes. A later export
+must merge those repairs and preserve newer scoped results; blindly copying a
+private plan over a public file is not a valid publication procedure. Compare
+the exact source and destination versions before replacement. Source maps bind
+exported implementation bytes; a public plan never substitutes for those maps
+or private execution evidence. Publication does not release run holds.

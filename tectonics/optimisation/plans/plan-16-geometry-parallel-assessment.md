@@ -34,7 +34,7 @@ Primary evidence at this revision:
 | `A/.atlas-dev/plan-status-20261016.md`, worker-cap row and acceptance boundaries | SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`. Current retained ownership, distinct outcomes and no automatic retry. |
 | `A/.atlas-dev/run-queue-protocol-20261016.md`, CPU, holds and memory amendments | SHA-256 `c0cf31fc54d4f302311037c2250c600c1ecd1429f5acf8940eac5dee9ac9a0b0`. Current queue rules; later amendments govern. |
 
-The [frozen initial review](reviews/codex/plan-16.md) is unchanged. The [post-reveal assessment and amendment checkpoint](../discussions/atlas-plans-39-review-20261017/codex-plan-16-turn-02.md) retain the detailed source reconciliation. Current primary records govern execution; these identities record the reviewed evidence, not permission to run it or silently repin it.
+The frozen initial review (private evidence unavailable in this public snapshot) is unchanged. The post-reveal assessment and amendment checkpoint (private evidence unavailable in this public snapshot) retain the detailed source reconciliation. Current primary records govern execution; these identities record the reviewed evidence, not permission to run it or silently repin it.
 
 ## 2. Existing mechanism and deliberate limits
 

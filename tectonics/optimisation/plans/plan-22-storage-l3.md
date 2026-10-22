@@ -184,7 +184,7 @@ Preserve exact numerical identities/fields except established explicit successor
 
 ## 8. Evidence and identities
 
-The [frozen initial assessment](reviews/codex/plan-22.md) remains unchanged. The [post-reveal review and replacement checkpoint](../discussions/atlas-plans-39-review-20261017/codex-plan-22-turn-02.md) records the actual source reads, discovered design, static accounting/exception questions and room return. No new blind assessment or executed candidate failure is claimed.
+The frozen initial assessment (private evidence unavailable in this public snapshot) remains unchanged. The post-reveal review and replacement checkpoint (private evidence unavailable in this public snapshot) records the actual source reads, discovered design, static accounting/exception questions and room return. No new blind assessment or executed candidate failure is claimed.
 
 All 27 review pins were freshly checked before replacement and were unchanged. The 25 primary-source identities below exclude the old plan and frozen initial. Static source inspection and historical results were reused within their scopes; no Atlas tests, fixtures, benchmarks or scientific runs were performed for this document.
 

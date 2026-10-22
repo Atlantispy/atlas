@@ -11,12 +11,19 @@ commit and push state.
 
 **Plans15 and17 implementation is reviewed and integrated for source publication.**
 The [Plan15 selection](../tectonics/optimisation/workbench/plan15/README.md) preserves
-632 prior files and updates two helpers, with all239 native files unchanged.
-Eight heat workers gave1.3321% less mean time at26.9974% higher maximum RAM on the
+632 prior files and updates two helpers, with all 239 native files unchanged.
+Eight heat workers gave 1.3321% less mean time at 26.9974% higher maximum RAM on the
 retained fixture. [Plan17](../tectonics/optimisation/workbench/plan17/README.md)
 adds qualified guarded preparation; its geometry bytes were already integrated.
 Long proofs, eligible ROOT, final combined runs and live/default adoption remain held.
 Publication completion is separate from those later validation outcomes.
+
+The publication review reconciles q22's completed successor with its historical
+held route, clarifies private-plan authority and Plan04 diagnostic thresholds,
+repairs unavailable links and test dependency skips, and deduplicates eligible
+Plan02 exports. Private optimisation work records are excluded from Git staging.
+These are publication and test-portability repairs; numerical/runtime sources,
+the six-worker global default and scientific holds are unchanged.
 
 **Optimisation review branch:** item 21 now applies the fresh-interval chain,
 start-gate wiring and S1 query-stage observations in the review snapshot. See

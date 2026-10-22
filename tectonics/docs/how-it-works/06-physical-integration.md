@@ -1433,7 +1433,7 @@ resource limits, source identities and scientific/interval holds remain.
 Independent face reconstruction uses the unchanged exact numerical method in
 worker processes. The [Plan15 candidate](../../optimisation/workbench/plan15/README.md)
 selects eight workers before fresh admission and records actual first-pass work.
-Two repeats per compared count gave1.3321% less mean time than six, at26.9974%
+Two repeats per compared count gave 1.3321% less mean time than six, at 26.9974%
 higher maximum RAM. This is a bounded component result, not whole-interval scaling.
 Actual native module/export binding distinguishes proved relocation from changed
 compiled code while preserving refusals and exact results. The global default stays six.

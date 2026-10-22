@@ -148,4 +148,4 @@ Source identities checked for this replacement on 17 October 2026. These pins do
 | `G/work/final-s10d2b.log` | `9a2090af9edf68ff901a34859d5eda221ea5554c8430e8608a8e2fbcff55df5a` |
 | `T/q/queue.json` | `0992c52d69b18268cf26f56282b36ce2922cac6928813afbe2fb4af12702cec6` |
 
-The [frozen initial review](reviews/codex/plan-19.md) remains unchanged. The [Codex turn and replacement checkpoint](../discussions/atlas-plans-39-review-20261017/codex-plan-19-turn-02.md) records the read scope, reasoning and focused document verification. This is a post-reveal replacement under the room ruling, not a new blind assessment.
+The frozen initial review (private evidence unavailable in this public snapshot) remains unchanged. The Codex turn and replacement checkpoint (private evidence unavailable in this public snapshot) records the read scope, reasoning and focused document verification. This is a post-reveal replacement under the room ruling, not a new blind assessment.

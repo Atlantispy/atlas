@@ -23,10 +23,27 @@ existing producer output; it does not change simulation calculations.
 
 ## Source identity and scope
 
-[SOURCE-MAP.json](SOURCE-MAP.json) maps the 25 selected source/document files
-to their original and public SHA-256 values. Text uses LF. Any publication
-change is explicit there; public copies never silently authenticate private
-execution receipts. The root optimisation manifest also lists these files.
+[SOURCE-MAP.json](SOURCE-MAP.json) maps all 25 logical source/document members
+to their original and public SHA-256 values. Each `public_path` is relative to
+the repository root. Nine byte-identical fresh-route source/test members refer
+to existing files in `optimisation/drivers/`; the other 16 remain here. Their
+original and public hashes are unchanged. The root optimisation manifest lists
+each physical exported file.
+
+`start_gate.py` is intentionally retained here despite matching the driver copy:
+the remaining prepared-route modules and tests import it as a local sibling.
+The fresh and prepared interval drivers differ from their driver-directory
+counterparts and remain distinct. No source body is rewritten for deduplication.
+
+The map's `path` preserves each member's name in the selected Plan02 layout.
+For source inspection or a separately authorised assembly, resolve `public_path`
+and materialise those exact bytes under their logical `path` names together.
+Do not use the shared file's physical directory as the selected Plan02 import
+root: neighbouring driver revisions can differ. This map preserves the source
+selection; it does not supply the excluded runtime dependencies or authorise a run.
+
+Text uses LF. Any publication change is explicit in the map; public copies never
+silently authenticate private execution receipts.
 
 Private source manifests, runtime profiles, checkpoints, receipts, logs and
 coordination records are excluded. Host-bound original test sources are

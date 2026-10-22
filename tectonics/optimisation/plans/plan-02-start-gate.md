@@ -60,10 +60,10 @@ Current private `R/start_gate.py` has the same full hash as the selected core ab
 
 Other authority and evidence:
 
-- [Current consolidated status](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/plan-status-20261016.md), “Drivers, admission and proof tools”, “Item21 publication completed” and “Order and unchanged acceptance boundaries”; SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`.
+- Current consolidated status (private evidence unavailable in this public snapshot), “Drivers, admission and proof tools”, “Item21 publication completed” and “Order and unchanged acceptance boundaries”; SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`.
 - `D/STATE-NOTE.md`, wind-down section A: core evidence, historical wiring plan, remaining Route 2 choice and freeze/before-copy rules; SHA-256 `3556ac777b8fd632a68c6204575ca767b0e46600944d4a6c8391ce557cd6d312`.
 - `RV/tectonics/optimisation/IN-PROGRESS.md`, “Start gate sized by need”: retained core evidence and published wiring status. Use actual core code for the complete formula; its short gate summary is not a replacement specification.
-- [Current queue protocol](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/run-queue-protocol-20261016.md): execution, source-freeze and resource rules for any authorised work.
+- Current queue protocol (private evidence unavailable in this public snapshot): execution, source-freeze and resource rules for any authorised work.
 
 Later authoritative decisions supersede historical status. Before implementation, verify the selected caller identities and dependencies rather than silently repinning changed files.
 

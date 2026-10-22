@@ -1,8 +1,8 @@
 # Plan05: exact heat correspondence and physical ordering
 
 WORKING NON-CANON. **The repaired implementation is integrated in the private
-route. This is a source snapshot; collective correctness acceptance is pending
-and q22 remains HELD.** It supplies no runnable scientific profile and applies no
+route. This is a source snapshot. The later scoped correctness decision and
+11-arm q22 successor execution are complete.** It supplies no runnable scientific profile and applies no
 overlay to the main package or frozen composition.
 
 The final authentic two-arm capture established a complete 236-cell map and
@@ -82,6 +82,10 @@ The repaired pair took 168.359 seconds across its two arms, with a sampled
 controller-plus-owned-job peak of 1,122,922,496 bytes. This is one diagnostic pair,
 not an ABBA speed comparison or a heap bound. No speed improvement is claimed.
 
-The successor consumer binds the actual proof and dispositions but correctly
-refuses missing collective correctness acceptance and separate q22 authority.
-Publication supplies neither decision, releases no hold and triggers no rerun.
+The retained results above describe the checkpoint before scoped acceptance
+and q22 release. Their PENDING/HELD fields are historical. The successor
+consumer subsequently bound the actual proof, dispositions and separate run
+authority. [Plan12](../../plans/plan-12-heat-q22-abba.md) records the accepted
+lf3/lh scope, decision identities and completed execution on the same q22
+ticket. This does not rewrite q10 FAIL, q32 NOT_REPRODUCED or the verifier
+exit 1, and supplies no general equivalence proof or permission to rerun.

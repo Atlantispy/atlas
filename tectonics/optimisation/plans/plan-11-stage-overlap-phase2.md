@@ -10,7 +10,7 @@
 
 Phase 2 starts the reader alongside its own producer. The reader performs its independent, store-free initial admission while the producer runs, then waits before accessing the pending sealed store. For interval 1, this overlaps the reader's initial metrics with the producer's advance; at the root it overlaps the reader with the root producer's work.
 
-The order is **Item 7 -> Item 21 / N5 -> Item 10 phase 2**. Preserve producer-only measurement reuse in [Plan 10](plan-10-measurement-reuse-n3.md) and the continuation boundary in [Plan 29](plan-29-runner-integration-n5.md). Readers still recompute independently; the producer's cache is not shared with them. Interval 2+ restores the spatial owner from sealed lineage without initial_metrics, so this admission saving applies once per lineage in the current route.
+The order is **Item 7 -> Item 21 / N5 -> Item 10 phase 2**. Preserve producer-only measurement reuse in [Plan 10](plan-10-measurement-reuse-n3.md) and the continuation boundary in Plan 29 (not included in this public snapshot). Readers still recompute independently; the producer's cache is not shared with them. Interval 2+ restores the spatial owner from sealed lineage without initial_metrics, so this admission saving applies once per lineage in the current route.
 
 Phases 1 and 3 remain deferred. After Item 7 their projected saving was about 60 seconds each, insufficient to justify the extra launcher complexity and relaxed preflight. They need separate consideration after a phase-2 smoke demonstrates a measured net gain. Phase 2 does not start the next producer speculatively, move the deferred phases' producer/store checks, or authorise those phases automatically.
 
@@ -104,7 +104,7 @@ Carry the accepted focused refusal coverage before any real overlap run:
 
 Use existing adequate source-bound checks where their assumptions remain valid. Changes or missing coverage require the relevant focused checks and required refutation under current queue rules, not an unrelated full suite. Failure evidence must remain visible and must not be converted into a successful scientific result.
 
-Runner retains integration ownership. Item 21/N5 is published on the review branch, but the current status does not establish a live R/frozen-composition swap. Phase 2 and its required final-chain checks remain unfinished until evidenced. [Final assembly](plan-31-final-assembly-n12.md) and [combined performance retests](plan-35-combined-performance-retests.md) are downstream boundaries, not authority to enable this route now.
+Runner retains integration ownership. Item 21/N5 is published on the review branch, but the current status does not establish a live R/frozen-composition swap. Phase 2 and its required final-chain checks remain unfinished until evidenced. Plan 31: final assembly (not included in this public snapshot) and Plan 35: combined performance retests (not included in this public snapshot) are downstream boundaries, not authority to enable this route now.
 
 Apply C1-C5: exact field/number parity with only explicitly approved identity translations and the bounded N9 exception; the real projected width gate and 1 MiB integer bound (8,388,608 bits), without a fixed 25% ceiling; measured/projected and built/integrated/accepted states distinguished; existing owners, authority and holds preserved; primary sources govern. Preserve the 256 accepted-step ceiling. N9 remains PAUSED BY USER; fresh full intervals and individual ticket holds remain in force. No numerical tolerance, source pin, environment or authority boundary changes here.
 
@@ -121,7 +121,7 @@ Path aliases: `A = C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas`; `WT = A
 | `WT/drivers/reopen_fresh_restart.py` | Existing producer preflight, receipt and pending-store/admission boundary; not proof of implemented phase 2 |
 | `R/run_prepared_restart.py`, `new_retained_scope` | Existing allowance/comment discrepancy for Runner's selected-composition assessment |
 
-Exact review-time source hashes and read scope are retained in [Codex's Plan 11 discussion record](../discussions/atlas-plans-39-review-20261017/codex-plan-11-turn-02.md). Frozen initial assessments remain unchanged.
+Exact review-time source hashes and read scope are retained in Codex's Plan 11 discussion record (private evidence unavailable in this public snapshot). Frozen initial assessments remain unchanged.
 
 The checklist below retains the original final-chain acceptance requirements.
 Section 8 records the completed implementation and bounded ROOT evidence; the new

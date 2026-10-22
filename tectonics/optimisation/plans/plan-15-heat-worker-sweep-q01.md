@@ -14,9 +14,9 @@ driver and native-binding observation are integrated with Plan16 and Plans13–1
 Candidate assembly and source/profile preflight passed. See the [source, exact
 measurements and limits](../workbench/plan15/README.md).
 
-Eight-worker mean73.4765s versus six-worker74.4685s is1.3321% less; maximum RSS
-is26.9974% higher. Two repeats/count support only this bounded candidate choice.
-Global default6 and H3 candidate-only remain. The legacy Storage notice belongs
+Eight-worker mean 73.4765 s versus six-worker 74.4685 s is 1.3321% less; maximum RSS
+is 26.9974% higher. Two repeats/count support only this bounded candidate choice.
+Global default 6 and H3 candidate-only remain. The legacy Storage notice belongs
 to later protected-driver adoption; it is not a separate implementation blocker.
 The earlier prerequisites below are historical contracts/attempts, superseded by
 the retained successor evidence. Existing receipts are unchanged. Final combined
@@ -63,7 +63,7 @@ The **six files** covered by the owner's final q09/q01 refuter obligation are:
 
 `S/seed_zero_check.py` is a **separate preflight, not one of those six files**: `dcc5412307598d1e7377af12dc89e8170ed7dd92a3e4aa1be6695e5468f3b34e`. The shared gate source is `R/start_gate.py`, `16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345`. These identities describe inspected current sources, not future corrected successors.
 
-The [saved turn and evidence record](../discussions/atlas-plans-39-review-20261017/codex-plan-15-turn-02.md) contains additional source identities and scoped findings. The [initial independent review](reviews/codex/plan-15.md) remains frozen. Reopen current owner records at implementation time; neither review grants run authority.
+The saved turn and evidence record (private evidence unavailable in this public snapshot) contains additional source identities and scoped findings. The initial independent review (private evidence unavailable in this public snapshot) remains frozen. Reopen current owner records at implementation time; neither review grants run authority.
 
 ## 3. Parity and actual worker acceptance
 

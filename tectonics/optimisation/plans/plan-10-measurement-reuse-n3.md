@@ -45,7 +45,7 @@ Path aliases:
 | `WT/drivers/launch_fresh_interval.py` | `initial_measurement_seed`: obtain recorded pins from the adopted root stage |
 | `WT/drivers/reopen_fresh_restart.py` | `require_fresh_measurement_store`: reject seed inputs and pre-existing store/sidecars before reader admission |
 
-The reviewed worktree has this plumbing. Its existence does not establish a live R or frozen-composition swap, completed final-chain integration, or unchanged code at a later deployment. Runner must identify the actual selected composition and its successor receipts. Review-time full source hashes and selected evidence scope are retained in [Codex's Plan 10 discussion record](../discussions/atlas-plans-39-review-20261017/codex-plan-10-turn-02.md); the frozen independent review stays unchanged.
+The reviewed worktree has this plumbing. Its existence does not establish a live R or frozen-composition swap, completed final-chain integration, or unchanged code at a later deployment. Runner must identify the actual selected composition and its successor receipts. Review-time full source hashes and selected evidence scope are retained in Codex's Plan 10 discussion record (private evidence unavailable in this public snapshot); the frozen independent review stays unchanged.
 
 ## 3. Preserve the eight accepted trust conditions
 
@@ -118,7 +118,7 @@ A hit checks stored-field consistency with the request and stored record. It doe
 
 ## 4. Integration boundary and holds
 
-Runner retains implementation and integration ownership. The selected final chain must preserve the contracts above alongside the continuation route in [Plan 29](plan-29-runner-integration-n5.md), with [Plan 09](plan-09-parallel-admission-ip9.md) coordinated where admission composition changes. Stage-overlap phase 2 follows Item 7 under [Plan 11](plan-11-stage-overlap-phase2.md); its approval does not extend to phases 1 or 3.
+Runner retains implementation and integration ownership. The selected final chain must preserve the contracts above alongside the continuation route in Plan 29 (not included in this public snapshot), with [Plan 09](plan-09-parallel-admission-ip9.md) coordinated where admission composition changes. Stage-overlap phase 2 follows Item 7 under [Plan 11](plan-11-stage-overlap-phase2.md); its approval does not extend to phases 1 or 3.
 
 Apply C1-C5: exact field/number parity with only explicitly approved identity translations and the bounded N9 exception; the real projected width gate with a 1 MiB integer bound (8,388,608 bits), without a fixed 25% ceiling; measured/projected and built/integrated/accepted status kept distinct; existing owners, authority and holds preserved; primary sources govern mechanisms and status. Keep the 12 GiB tree-RSS, 1 GiB free floor, 16 GiB logical, 256 MiB scope and 256 accepted-step limits. No numerical tolerance, loaded-code check, environment or historical pin is relaxed.
 

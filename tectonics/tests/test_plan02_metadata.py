@@ -7,6 +7,9 @@ from pathlib import Path
 import sys
 import unittest
 
+if importlib.util.find_spec("numpy") is None:
+    raise unittest.SkipTest("Plan02 metadata tests require NumPy")
+
 SOURCE = Path(__file__).resolve().parents[1] / "optimisation/workbench/plan02"
 SPEC = importlib.util.spec_from_file_location("public_plan02_transfer", SOURCE / "native_transfer.py")
 TRANSFER = importlib.util.module_from_spec(SPEC)
@@ -71,9 +74,10 @@ class Plan02MetadataTests(unittest.TestCase):
         self.assertEqual(record["status"], "SOURCE_SNAPSHOT_NOT_A_RUNNABLE_PROFILE")
         self.assertEqual(len(record["files"]), 25)
         self.assertEqual(len({row["path"] for row in record["files"]}), 25)
+        self.assertEqual(len({row["public_path"] for row in record["files"]}), 25)
         for row in record["files"]:
             with self.subTest(path=row["path"]):
-                raw = (SOURCE / row["path"]).read_bytes()
+                raw = (SOURCE.parents[3] / row["public_path"]).read_bytes()
                 self.assertEqual(hashlib.sha256(raw).hexdigest(), row["public_sha256"])
         self.assertFalse(any(name == "atlas_tectonics" or name.startswith("atlas_tectonics.")
                              for name in sys.modules))

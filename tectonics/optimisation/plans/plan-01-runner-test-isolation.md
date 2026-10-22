@@ -24,11 +24,11 @@ Primary evidence read for this revision:
 
 | Source | Relevant evidence |
 | --- | --- |
-| [Current consolidated status](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/plan-status-20261016.md), “Drivers, admission and proof tools” and “Order and unchanged acceptance boundaries” | Current ownership, outstanding isolation repair, conditional ram_context readiness issue, published start-gate wiring and holds. SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`. |
+| Current consolidated status (private evidence unavailable in this public snapshot), “Drivers, admission and proof tools” and “Order and unchanged acceptance boundaries” | Current ownership, outstanding isolation repair, conditional ram_context readiness issue, published start-gate wiring and holds. SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`. |
 | `D/STATE-NOTE.md`, wind-down section D, lines 128–144 | Diagnosed leak, before-copy rule, named test order, planned command and booking, successor failure-record requirements. SHA-256 `3556ac777b8fd632a68c6204575ca767b0e46600944d4a6c8391ce557cd6d312`. |
 | Same handoff, lines 249–251 and 477–478 | Historical post-merge result and peak; actual ram_context diagnosis and owner referral. |
 | `C/test_wp10_integration.py`, candidate construction and `--fresh` entry | Import-time path insertion, three module replacements, parent storage attribute and separate fresh-reader route. Handoff prefix `8d586e4635b4a58c`; prefixes are discovery references, not full acceptance pins. |
-| [Current queue protocol](C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/run-queue-protocol-20261016.md) | Execution and resource rules for any authorised run. |
+| Current queue protocol (private evidence unavailable in this public snapshot) | Execution and resource rules for any authorised run. |
 
 Later authoritative decisions take precedence over older handoff status. Recheck affected source identities before implementation and retain full pins in the existing owner evidence. Unsupported literature claims and invented implementation examples have been removed.
 

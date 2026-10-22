@@ -88,4 +88,4 @@ There is no substitute gate based on only non-degenerate comparisons, imagined f
 - [ ] Byte-identical records/arrays, any required D-b null control, focused checks/mutants, one refuter and the small A/B meet the stipulated bar.
 - [ ] The coordinator-requested timed proof and owner acceptance are recorded with scoped measurements; any subsequent integration/assembly disposition is explicit and does not release unrelated holds.
 
-Related work: [Plan 07: P1-P3 proof](plan-07-pressure-p1-p3-assessment.md), [Plan 04: paused N9 tools](plan-04-n9-width-tools.md), and [Codex's post-reveal source corrections](../discussions/atlas-plans-39-review-20261017/codex-plan-08-turn-02.md). The frozen independent reviews remain unchanged.
+Related work: [Plan 07: P1-P3 proof](plan-07-pressure-p1-p3-assessment.md), [Plan 04: paused N9 tools](plan-04-n9-width-tools.md), and Codex's post-reveal source corrections (private evidence unavailable in this public snapshot). The frozen independent reviews remain unchanged.

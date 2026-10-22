@@ -4,7 +4,7 @@
 final selected-composition binding remains open. Collective review is deferred.**
 
 The owner's implementation/integration transfer supersedes the former
-implementation-owner, coordinator-permission, source-only and interim review
+implementation-owner, permission, source-only and interim review
 restrictions. It does not release scientific runs or numerical, identity,
 resource and technical-readiness safeguards. Publication is explicitly authorised.
 
@@ -45,6 +45,12 @@ correctly associated same-quantity radius, with its actual source, units, norm,
 refinement/history and projection context. The quaternion L2 radius and its
 four-times operator error cannot be silently interchanged. No generic epsilon,
 Heat/energy allowance or width-derived accuracy bound is introduced.
+
+The historical ≤512 ULP and ≤2^-20 relative figures are diagnostics only,
+never generic automatic-PASS tolerances. The published comparator explicitly
+reports those diagnostics; changed arrays without an applicable independently
+proved field contract remain REVIEW. This matches the execution plan
+and does not tighten or relax the implemented acceptance contract.
 
 Addendum E keeps exact total-versus-width checking before storage rounding.
 Exact zero stays zero. Positive stored totals are outward, with excess strictly

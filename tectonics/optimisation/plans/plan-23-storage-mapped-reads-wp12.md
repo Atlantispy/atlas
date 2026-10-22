@@ -9,7 +9,7 @@
 
 `T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`. Storage's design/assessment root is `T/fidelity-integration-20261005/claude-review-steps1-7-20261015` (`S`). The controlling design is `S/fixes/backlog/wp12-design/DESIGN.md`, SHA-256 `99592b641eace6c425974e7345d4493b6810efc4ef63dc95cbcedbdceced9845`, especially §§0–6. Current order/owner status is in the repository `.atlas-dev/plan-status-20261016.md`, Storage row; q04 supersedes the older zero-read prediction.
 
-This plan applies the agreed [Plan 23 corrections](reviews/claude/consolidated-23-39-for-codex.md) and [Codex response](../discussions/atlas-plans-39-review-20261017/codex-consolidated-response-23-39.md). The filename retains the backlog's old “mapped reads” label. The approved successor uses **positioned reads into fresh immutable `bytes`, no mmap**.
+This plan applies the agreed Plan 23 corrections (private evidence unavailable in this public snapshot) and Codex response (private evidence unavailable in this public snapshot). The filename retains the backlog's old “mapped reads” label. The approved successor uses **positioned reads into fresh immutable `bytes`, no mmap**.
 
 q04's retained profile recorded 8,294 native misses, 5,760 re-misses and 99.2% of misses in `int.bytes`; `_bound_chunk` accounted for 3.03 s cumulative in that profile. These identify an opportunity, not a measured successor saving. The earlier raw-sidecar component performs an eager whole-array authentication and maps each read; it is not the approved wiring. No claim of zero allocation, doubled whole-file RSS or generic EOF exception equivalence is used here.
 
