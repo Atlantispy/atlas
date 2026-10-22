@@ -1,0 +1,102 @@
+{
+  "schema": "atlas.public.plan15.retained-results.r1",
+  "kind": "NEW_SUMMARY_OF_PRIVATE_EVIDENCE_NOT_EXECUTION_RECEIPT",
+  "sweep_sha256": "8fb63d9b99fb6630b59ac8e199703855f3ad89ae9d888279d6bc7f3c0174979e",
+  "reference_sha256": "4eb36c6cbc3c5f14e5b8c3bfa0cd034503f0ccf5f6d1f91472a79f8acf5bcc7a",
+  "arms": [
+    {
+      "workers": 6,
+      "owned_seconds": 74.968,
+      "peak_supervisor_and_job_rss_bytes": 1530257408,
+      "status": "PASS"
+    },
+    {
+      "workers": 8,
+      "owned_seconds": 73.719,
+      "peak_supervisor_and_job_rss_bytes": 1945915392,
+      "status": "PASS"
+    },
+    {
+      "workers": 10,
+      "owned_seconds": 73.75,
+      "peak_supervisor_and_job_rss_bytes": 2313015296,
+      "status": "PASS"
+    },
+    {
+      "workers": 12,
+      "owned_seconds": 75.016,
+      "peak_supervisor_and_job_rss_bytes": 2694537216,
+      "status": "PASS"
+    },
+    {
+      "workers": 8,
+      "owned_seconds": 73.234,
+      "peak_supervisor_and_job_rss_bytes": 1918410752,
+      "status": "PASS"
+    },
+    {
+      "workers": 6,
+      "owned_seconds": 73.969,
+      "peak_supervisor_and_job_rss_bytes": 1532248064,
+      "status": "PASS"
+    }
+  ],
+  "selected_candidate_workers": 8,
+  "global_parallel_default": 6,
+  "comparison": {
+    "baseline_workers": 6,
+    "baseline_mean_seconds": 74.4685,
+    "candidate_mean_seconds": 73.4765,
+    "saving_seconds": 0.992,
+    "saving_percent": 1.332106864,
+    "max_rss_increase_percent": 26.997412346,
+    "repetitions_per_compared_count": 2,
+    "whole_interval_saving": null
+  },
+  "checks": {
+    "exact_checks_per_arm": 9,
+    "arrays": 5,
+    "exact_accounts": 14,
+    "metadata_bytes": 1240999,
+    "requested_workers_observed": true,
+    "complete_calls": true,
+    "fallback_restart_reduction": false,
+    "source_finality": true,
+    "owned_job_finality": true,
+    "offline_methods_reused": 57,
+    "driver_methods": 7
+  },
+  "conditions": {
+    "exclusive": true,
+    "small_jobs_max": 0,
+    "free_cores_at_start": 7.232,
+    "cpu_warning": false,
+    "logical_budget_gib": 16,
+    "rss_guard_gib": 12,
+    "free_floor_gib": 1
+  },
+  "source_apply_and_preflight": {
+    "status": "PASS",
+    "result_sha256": "1bd676f4f062020e23ada27bffe50d3126b9c7e4c65cecee52b1eed86e0c2bb7",
+    "preflight_sha256": "087362da4e35cb57d4f064b2aaff8519901cb8f8d7ede70b71bac959a8cb6fcb",
+    "apply_seconds": 18.812,
+    "preflight_seconds": 10.532,
+    "maximum_stage_rss_bytes": 263208960,
+    "new_files": 647,
+    "logical_bytes": 19057704,
+    "scientific_calls": 0
+  },
+  "disk": {
+    "sweep_retained_files": 127,
+    "sweep_logical_bytes": 107015402,
+    "raw_observation_text_bytes": 12607004,
+    "allocated_peak_bytes": null,
+    "scope": "Evidence storage; not interval-store size"
+  },
+  "limits": [
+    "Two repeats for six/eight workers, one each for ten/twelve; no general optimum",
+    "H3 candidate-only; no live/default switch or full interval",
+    "Original reduced-worker, identity and launch failures retained",
+    "Preflight does not rewrite the historical PREPARED_SOURCE_NOT_QUALIFIED build receipt"
+  ]
+}

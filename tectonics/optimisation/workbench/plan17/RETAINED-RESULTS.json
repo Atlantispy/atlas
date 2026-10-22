@@ -1,0 +1,25 @@
+{
+  "schema": "atlas.public.plan17.retained-results.r1",
+  "kind": "SUMMARY_NOT_EXECUTION_RECEIPT",
+  "implementation_status": "REVIEWED_SOURCE_INTEGRATED",
+  "focused_methods": 15,
+  "validation_groups": [
+    6,
+    8,
+    1
+  ],
+  "duplicate_key_result_sha256": "214c467b82a05b66aa0b9e33011c0eee8eea6bd41454caa4de411ab30b541c51",
+  "duplicate_key_owned_seconds": 0.25,
+  "duplicate_key_phase_seconds": 1.625,
+  "duplicate_key_peak_tree_rss_bytes": 29298688,
+  "source_finality": true,
+  "owned_job_active": 0,
+  "q23": "HELD_UNRUN",
+  "q24": "HELD_UNRUN",
+  "scientific_performance_gain": null,
+  "projected_minutes_per_proof": 32,
+  "projected_total_bytes": 1288490189,
+  "fallback_free_gate_bytes": 3693671875,
+  "no_whole_interval_claim": true,
+  "original_msys_setup_failure_preserved": true
+}

@@ -1,0 +1,112 @@
+{
+  "schema": "atlas.public.plan17.source-map.r1",
+  "selected_closure_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
+  "selected_closure_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
+  "native_delta": [],
+  "selected_geometry": [
+    {
+      "member": "source/src/atlas_tectonics/integration_moving_face_moments.py",
+      "public_path": "tectonics/optimisation/pending/geometry/d12g-iv1/atlas_tectonics/integration_moving_face_moments.py",
+      "sha256": "52f8cc158657302e15f08e8fae8d3be5f1ec505f1fe311b176a58cdf24421f44",
+      "plan16_and_plan15_candidate_equal": true
+    },
+    {
+      "member": "source/src/atlas_tectonics/integration_moving_interface_moments.py",
+      "public_path": "tectonics/optimisation/pending/geometry/d12-r1/rb/atlas_tectonics/integration_moving_interface_moments.py",
+      "sha256": "4f7d224f03e224f4819c9f741f583fbc49f00c2d92186c9d2885203b96eff4da",
+      "plan16_and_plan15_candidate_equal": true
+    },
+    {
+      "member": "source/src/atlas_tectonics/integration_q2_directed.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_q2_directed.py",
+      "sha256": "cd77ac6a8186c297c383df9dda50338238e5d7fd8b3efe8cd7bf588dd2c0220e",
+      "plan16_and_plan15_candidate_equal": true
+    }
+  ],
+  "entries": [
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r3/admission_r3.py",
+      "original_sha256": "13b617d3b5c74cb51dd7f45c85d4156774e1e59fda78116c9d1d2ed74e11458e",
+      "public_sha256": "e177031705732ab684be1996dc94197ab69f6ab2b51c8e2ea4af704657846858",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 1
+        }
+      ],
+      "source": "<PRIVATE_PLAN17_SOURCE>/admission_r3.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r3/run_plan17.py",
+      "original_sha256": "3425a56387cb9a12201656a204c1c23960361bdea86722b9ded60bb09536527e",
+      "public_sha256": "3425a56387cb9a12201656a204c1c23960361bdea86722b9ded60bb09536527e",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/run_plan17.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r3/launch.ps1",
+      "original_sha256": "f97efce5a86fecaf750c8be37d6a76fd62762e3636910d7c09e26e8ad0937695",
+      "public_sha256": "4b582d466b54b505704d25ac5d56d87b307f23c93da315cea23b05de74667ca1",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 2
+        }
+      ],
+      "source": "<PRIVATE_PLAN17_SOURCE>/launch.ps1"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r3/test_duplicate_keys_r3.py",
+      "original_sha256": "a7197ec5028ea106f760b99426492c82967318b67f000e5974c5919c026cf231",
+      "public_sha256": "a7197ec5028ea106f760b99426492c82967318b67f000e5974c5919c026cf231",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/test_duplicate_keys_r3.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/transforms/incidence_constant_r2.py",
+      "original_sha256": "98c26f73d91c8c888b07cc5cef7621498a11ffb866f7503ed09e582bc255dae4",
+      "public_sha256": "98c26f73d91c8c888b07cc5cef7621498a11ffb866f7503ed09e582bc255dae4",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/incidence_constant_r2.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/transforms/rotated_hoist_r2.py",
+      "original_sha256": "52eeb837a0c4b41af0b7411d490b721c74b1a26bc8244ed15a9be78207998318",
+      "public_sha256": "52eeb837a0c4b41af0b7411d490b721c74b1a26bc8244ed15a9be78207998318",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/rotated_hoist_r2.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan15/r2/owned_run.py",
+      "original_sha256": "d796ce3c4f11b59c152a00d72de759ca587fd831919bb2dabf6e5a3e84f81e36",
+      "public_sha256": "d796ce3c4f11b59c152a00d72de759ca587fd831919bb2dabf6e5a3e84f81e36",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/owned_run.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan05/r9-launch-prep/owned_windows_job.py",
+      "original_sha256": "132d53b54729c13193293ffa9b3eddd6c248f2c00e8f76aaa553f39a5f8146aa",
+      "public_sha256": "132d53b54729c13193293ffa9b3eddd6c248f2c00e8f76aaa553f39a5f8146aa",
+      "transformations": [],
+      "source": "<PRIVATE_PLAN17_SOURCE>/owned_windows_job.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/dependencies/runq.py",
+      "original_sha256": "151c6a6bdb4f794ce26f3f99fc87fbe14e3c35cac9ee3ce7ed54288575b01e52",
+      "public_sha256": "1ec8188315920078b5a46feea1432c65023a10005e09201c5f4cd472dc69e1d1",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 1
+        },
+        {
+          "kind": "line-endings",
+          "replacement": "LF"
+        }
+      ],
+      "source": "<PRIVATE_RUN_QUEUE_SOURCE>/runq.py"
+    }
+  ],
+  "private_runtime_compatibility": false,
+  "private_request_and_queue_state_excluded": true
+}

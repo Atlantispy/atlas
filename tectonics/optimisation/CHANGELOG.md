@@ -6,6 +6,16 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 22 Oct 2026, Plans15 and17 integrated source
+
+- Preserve all634 selected members; change only the fresh heat driver and parallel
+  observation helper. Carry Plan16 geometry and earlier heat/marker behaviour forward.
+- Retain q60's six-arm PASS, selected8 and the measured1.3321% time/26.9974% RAM
+  trade-off. Repair stale implementation status and obsolete Storage-blocker wording.
+- Publish Plan17's reviewed guarded preparation, exact admission and duplicate-key
+  regression. Correct old direct-launch guidance and link the retained D1/D2 limits.
+- No long geometry proof, full interval, live adoption or scientific hold release.
+
 ## 21 Oct 2026, Plans13–14 reviewed source integration
 
 - Integrate the complete 239-native/395-helper selected source closure with the

@@ -87,6 +87,10 @@ Rules that apply to every item below:
 
 ## Geometry
 
+Plan17 guarded preparation is reviewed and source-integrated; q23/q24 long proofs
+and required comparisons remain held. Existing stacked native selections are
+preserved; see [Plan17](workbench/plan17/README.md).
+
 - **Done:** Step 10 parity on real intervals 1 and 2. Six stages, no violations, structure identical to the reference
   except 245 charts no longer started. Surface CPU time: interval 1 893 → 454 s, interval 2 885 → 620 s (MEASURED,
   serial shards). D1+D2 transforms 70/70.
@@ -111,7 +115,7 @@ Rules that apply to every item below:
 - **Plan12/q22:** integrated selection correctly refuses absent collective
   acceptance and separate run authority. q22 remains HELD; no automatic rerun.
 - **Separate finish work:** N6/S1 endpoint certificate reuse and closure-marker
-  integration retain Plan14's obligations. H4 worker tuning remains Plan15.
+  integration retain Plan14's obligations. Plan15's measured eight-worker candidate is source-integrated; final live adoption remains later.
   The q22 comparison keeps its authentic six-worker configuration.
 
 ## Storage

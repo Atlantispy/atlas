@@ -68,6 +68,12 @@ worker ceilings. Its sampled six-worker proof and native-entry preflight passed;
 all native source is preserved. The public regression exercises the actual
 helper functions on synthetic receipts without loading the private runtime.
 
+The [Plan15 heat-worker successor](workbench/plan15/README.md) extends Plan16's
+complete selection with the measured eight-worker candidate and independently
+bound native observation. The [Plan17 source](workbench/plan17/README.md) adds
+guarded proof preparation and corrected method notes; its geometry sources are
+already selected. Held long proofs and final programme acceptance remain separate.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

@@ -5,6 +5,23 @@
 **Owner:** Runner pipeline and final integration. The coordinator controls queue allocation, ticket/hold release and run authority; Storage must receive the later pin-change handoff.  
 **Completion condition:** Complete the named seed/gate/refuter/smoke prerequisites; reconcile the CPU booking; obtain the required release and authorisation; execute the authentic six-arm W4 sweep; report its exact verdict and measured behaviour; and land a winning configuration only through the existing owner/integration process. A failed, reduced-worker or held run does not satisfy this condition.
 
+## Current implementation and integration
+
+Implementation complete and reviewed; source prepared for the authorised optimisation
+publication. The original 6,8,10,12,8,6 sweep passed as q60. The selected eight-worker
+driver and native-binding observation are integrated with Plan16 and Plans13–14:
+632 of 634 selected source files preserved, two helper successors, no native change.
+Candidate assembly and source/profile preflight passed. See the [source, exact
+measurements and limits](../workbench/plan15/README.md).
+
+Eight-worker mean73.4765s versus six-worker74.4685s is1.3321% less; maximum RSS
+is26.9974% higher. Two repeats/count support only this bounded candidate choice.
+Global default6 and H3 candidate-only remain. The legacy Storage notice belongs
+to later protected-driver adoption; it is not a separate implementation blocker.
+The earlier prerequisites below are historical contracts/attempts, superseded by
+the retained successor evidence. Existing receipts are unchanged. Final combined
+assembly, eligible ROOT, interval validation and live adoption remain later work.
+
 ## 1. Physical mechanism and retained schedule
 
 This task measures **heat polygon-reconstruction worker counts** on the genuine W4 same-call control. It does not implement a new heat solver, partitioned finite-difference update or halo exchange.

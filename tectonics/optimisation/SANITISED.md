@@ -405,3 +405,14 @@ originals. Sanitised bytes do not authenticate historical runs.
 | `workbench/probes/step9/claude-20261016/run_when_lock_free.sh` | `dd85c6e8369158b9…` | `036aba68ebd22718…` | 1 |
 | `workbench/geometry-growth-r1/scripts/run_dj_rearm_r5.sh` | `329b0b3c76b55e473cc525fa267077cc92c8474f0fab1e200f0844bd8ea7a571` | `90b720f3729cf3f60ca6b41113049d2230f81abaf2335ce0c9cd02d229dd7f76` | 1 |
 | `workbench/geometry-growth-r1/scripts/test_summarise_dj_r5.py` | `2eb6dd0bdedfc525772e256e16272fa340ffcb2a3c11537c39cc675df27fa990` | `0a5fa81679f57b87ad74eb0bfbd67499a600788bc76f523be1666583aa1b14b1` | 1 |
+
+## Plans15/17 source publication
+
+The additive [Plan15](workbench/plan15/SOURCE-MAP.json) and
+[Plan17](workbench/plan17/SOURCE-MAP.json) maps record exact original/public
+digests and publication transformations. Personal home names become LOCAL_USER,
+including embedded source strings. The driver test's source lookup alone is
+adapted to this public layout. Private requests, queue state, profiles, run logs,
+runtime assets and science inputs are excluded. Summaries are not execution receipts.
+Sanitised dispatcher/native-binding files retain original private hash guards and
+are source for inspection, not a runnable native installation or permission to run.

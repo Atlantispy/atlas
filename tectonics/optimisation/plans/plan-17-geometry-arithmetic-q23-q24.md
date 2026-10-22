@@ -5,6 +5,22 @@
 **Status:** WORKING NON-CANON. Documentation replacement assigned in general605, incorporating general602/606. q23 and q24 are recorded as queued; neither scientific run has started. Queue state is not launch authority.  
 **Completion condition:** Obtain both separately authorised, source-bound parity outcomes and their required repeat comparisons, then return the evidence through the existing Geometry → Kernels/Small/coordinator handoffs. No production promotion is conferred by this plan.
 
+## Current implementation and integration
+
+Implementation/preparation reviewed and integrated for authorised source publication.
+Fifteen focused methods passed, including recursive duplicate-JSON-member refusal.
+The guarded r3 dispatcher replaces the historical direct-runq launch route below;
+the actual frozen request remains private. The existing Plan16 geometry selections
+are unchanged in the [combined Plan15 source](../workbench/plan15/SOURCE-MAP.json),
+so transforms must not be reapplied. See the [Plan17 source and method](../workbench/plan17/README.md).
+
+q23/q24 and their six/three repeat comparisons remain HELD and UNRUN until usage
+reset and a fresh specific coordinator GO. The D07 seven-core correction and
+source/output/host admission still precede launch. This implementation-complete
+status follows the owner's publication convention, not proof-dependent acceptance.
+No speedup, stacked scientific proof, default switch or protected-manifest adoption
+is inferred. The original queue and command snapshots below are historical.
+
 ## 1. Scope and authority
 
 The work is the existing q23 corrected jets proof and q24 stacked D1+D2+G-PY r4 proof. It does not invent a geometry algorithm, change numerical tolerances, create queue tickets or edit the assembly manifest. Preserve source freezes, existing owners, historical evidence, all applicable holds and N9 **PAUSED BY USER**. Fresh full intervals remain separately held; these surface-query comparisons are not full-interval or whole-planet acceptance.
@@ -61,7 +77,7 @@ Narrow the docstrings at the next authorised transform revision as the owner dir
 
 Geometry explicitly records **D3/D4 design not started**: D3 concerns rotation-series reuse; D4 concerns `_rigid_plane_path` memoisation. They are not completed higher-order metric smoothing awaiting review. This plan neither implements them nor infers their completion from D1/D2 or G-PY results.
 
-## 4. Authentic harnesses, arms and outputs
+## 4. Historical harnesses, arms and outputs
 
 These are recorded command shapes for the authorised owner after coordinator release, not instructions to launch now. Retain `run q23 -- "$BASH" "$G/scripts/run_jets_parity.sh" jets-r2` and `run q24 -- "$BASH" "$G/scripts/run_d12_parity.sh" d12-r1`, within the existing selected-interpreter/runq route. The evidence-folder argument is required.
 

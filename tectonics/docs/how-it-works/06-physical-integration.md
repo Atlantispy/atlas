@@ -1427,3 +1427,20 @@ against the retained serial observation, at a sampled guarded tree peak of
 1.34 GiB. Historical load metadata is incomplete; neither this result nor sums
 of separate component peaks establish whole-interval performance. Existing
 resource limits, source identities and scientific/interval holds remain.
+
+### Choose heat reconstruction workers and prepare exact geometry proofs
+
+Independent face reconstruction uses the unchanged exact numerical method in
+worker processes. The [Plan15 candidate](../../optimisation/workbench/plan15/README.md)
+selects eight workers before fresh admission and records actual first-pass work.
+Two repeats per compared count gave1.3321% less mean time than six, at26.9974%
+higher maximum RAM. This is a bounded component result, not whole-interval scaling.
+Actual native module/export binding distinguishes proved relocation from changed
+compiled code while preserving refusals and exact results. The global default stays six.
+
+[Plan17](../../optimisation/workbench/plan17/README.md) preserves the already-selected
+incidence-leading-coefficient, rotation-constant and directed-interval transforms.
+Its source-bound proof launcher enforces owned-process memory/finality and exact
+admission before replay. Duplicate JSON keys refuse before prediction/hold selection.
+Fifteen focused preparation checks passed; the long stacked proofs remain held.
+These changes introduce no new physical model, tolerance or research claim.
