@@ -423,3 +423,15 @@ adapted to this public layout. Private requests, queue state, profiles, run logs
 runtime assets and science inputs are excluded. Summaries are not execution receipts.
 Sanitised dispatcher/native-binding files retain original private hash guards and
 are source for inspection, not a runnable native installation or permission to run.
+
+## Plan17 operational r7 source integration
+
+The Plan17 source map retains every r3 entry and adds nine r4/r7 source files.
+Only the admission source, launcher and overrun worker require publication changes:
+personal home paths become LOCAL_USER and the launcher's two actual coordination
+recipients become invalid named placeholders. Original/private guards remain
+literal; no executable request or recipient binding is created. Synthetic test
+identifiers remain unchanged. All other bytes are preserved, with original/public
+digests and transformation counts in the source map. Private requests, fixtures,
+profiles, runtimes, queue state and the external completion launcher/CLI are excluded.
+The completed proof summaries describe retained private runs, not new public runs.

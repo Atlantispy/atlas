@@ -1442,5 +1442,13 @@ compiled code while preserving refusals and exact results. The global default st
 incidence-leading-coefficient, rotation-constant and directed-interval transforms.
 Its source-bound proof launcher enforces owned-process memory/finality and exact
 admission before replay. Duplicate JSON keys refuse before prediction/hold selection.
-Fifteen focused preparation checks passed; the long stacked proofs remain held.
-These changes introduce no new physical model, tolerance or research claim.
+The completed genuine jets and stacked proofs retain exact IV1/sample/deep
+coverage and all nine required repeat comparisons. Listed sample caps are paired
+with the exact uncapped deep proof; capped partial values are not claimed equal.
+Operational r7 additionally binds the actual Windows interpreter and separates
+queue ticket identity from the scientific phase. Its retained overrun worker has
+separate ownership and bounded delivery without adding a proof kill deadline.
+The proved geometry bytes already match the current selected composition, so
+integration preserves native sources and profiles. These checks introduce no new
+physical model, tolerance, research result or whole-interval speed claim. Final
+programme acceptance and held full intervals remain separate.

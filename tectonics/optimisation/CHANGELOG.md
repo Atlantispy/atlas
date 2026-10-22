@@ -6,6 +6,20 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23 Oct 2026, Plan17 completed proofs and source publication
+
+- Both genuine geometry proofs and all nine required comparisons qualify PASS;
+  capped sample equality remains key/multiplicity only, supported by exact deep parity.
+- Publish operational r7 and retained r4 overrun sources with original/public digest
+  correspondence, preserving r3 and excluding private execution material.
+- Reconcile the actual current Plan15 source/consumer boundary: the three proved
+  geometry modules and all 239 native sources are already selected. Preserve the
+  two later helper changes; no transform reapplication, profile repin or new science run.
+- Complete the bounded source confirmation and component integration; reconcile
+  the public plan, method and status summaries. Preserve historical proof limits.
+- Final programme review, protected identity/fold, enablement and full intervals
+  remain separate. This source publication releases no scientific hold.
+
 ## 22 Oct 2026, publication review repairs
 
 - Make missing optional test dependencies skip explicitly and document their scope.

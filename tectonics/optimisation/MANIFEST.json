@@ -11711,21 +11711,21 @@
   },
   {
    "path": "workbench/plan17/README.md",
-   "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/README.md",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/README.md",
    "kind": "workbench",
-   "sha256": "4667041658e8a0ca8fe36d269c17642f97fa276d84faadc041874e7876501f36"
+   "sha256": "ec7e9a473816ccb1b76d40e024b6c69a0d67ca2f21d98855deb2c0df6aba655d"
   },
   {
    "path": "workbench/plan17/RETAINED-RESULTS.json",
-   "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/RETAINED-RESULTS.json",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/RETAINED-RESULTS.json",
    "kind": "workbench",
-   "sha256": "cff97a29b2fc9deb3d9ee23d74561f1d30fbc2949ec38ac74392c6b1952ef692"
+   "sha256": "ea839b5da2fe40a5dd1579c8b1cc8ef7bf00b650a3d1be29a5db97231b7b3b94"
   },
   {
    "path": "workbench/plan17/SOURCE-MAP.json",
-   "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/SOURCE-MAP.json",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/SOURCE-MAP.json",
    "kind": "workbench",
-   "sha256": "dbce1cad24f4536c72ec79d94ff8007d3c20846d261c91a0beab44c915d1a923"
+   "sha256": "5b208d36d570bd136f9402965001b33e02f737712be96f91058886cd94cb142c"
   },
   {
    "path": "workbench/plan17/transforms/D1-D2-KNOWN.md",
@@ -11744,6 +11744,81 @@
    "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/transforms/rotated_hoist_r2.py",
    "kind": "workbench",
    "sha256": "52eeb837a0c4b41af0b7411d490b721c74b1a26bc8244ed15a9be78207998318"
+  },
+  {
+   "path": "plans/plan-17-geometry-arithmetic-q23-q24.md",
+   "source": "<PLAN17_R7_INTEGRATION>/plans/plan-17-geometry-arithmetic-q23-q24.md",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "IN-PROGRESS.md",
+   "source": "<PLAN17_R7_INTEGRATION>/IN-PROGRESS.md",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "README.md",
+   "source": "<PLAN17_R7_INTEGRATION>/README.md",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "plans/INDEX.md",
+   "source": "<PLAN17_R7_INTEGRATION>/plans/INDEX.md",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "CHANGELOG.md",
+   "source": "<PLAN17_R7_INTEGRATION>/CHANGELOG.md",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r7/admission_r7.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r7/admission_r7.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r7/run_plan17.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r7/run_plan17.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r7/launch.ps1",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r7/launch.ps1",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r7/test_ticket_binding_r7.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r7/test_ticket_binding_r7.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r7/test_launcher_ticket_r7.ps1",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r7/test_launcher_ticket_r7.ps1",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r4/overrun.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r4/overrun.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r4/run_plan17.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r4/run_plan17.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r4/test_overrun_guard.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r4/test_overrun_guard.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "workbench/plan17/r4/test_overrun_delivery.py",
+   "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/r4/test_overrun_delivery.py",
+   "kind": "workbench-source"
+  },
+  {
+   "path": "SANITISED.md",
+   "source": "<PLAN17_R7_INTEGRATION>/SANITISED.md",
+   "kind": "workbench-source"
   }
  ]
 }

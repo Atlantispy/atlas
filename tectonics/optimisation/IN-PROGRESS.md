@@ -76,8 +76,9 @@ Rules that apply to every item below:
   remain open; the original refuted sources are retained.
 - **L4 (interpreter binaries in identity):** approved, not started. It touches the shared runtime record in `reuse`,
   so the change needs review before it starts.
-- **G-PY:** revision 3 passed parity. Revision 4 waits for the stacked geometry parity and replaces revision 3 at
-  landing.
+- **G-PY:** the genuine stacked D1/D2/G-PY r4 proof and its three cross-checks
+  are qualified PASS. r4 source confirmation and Plan17 integration are complete
+  with a source export; the proved bytes were already selected. Final assembly remains separate.
 
 ## Parallel start-up (per-world admission)
 
@@ -87,9 +88,11 @@ Rules that apply to every item below:
 
 ## Geometry
 
-Plan17 guarded preparation is reviewed and source-integrated; q23/q24 long proofs
-and required comparisons remain held. Existing stacked native selections are
-preserved; see [Plan17](workbench/plan17/README.md).
+Plan17 component integration and source publication are complete. Genuine q23/q24 and all nine
+required comparisons are qualified PASS. Operational r7 is source-integrated with
+retained r4 dependencies; current selected geometry and later helper changes are
+preserved with no native/runtime delta. See [Plan17](workbench/plan17/README.md).
+Final programme acceptance and held full intervals remain separate.
 
 - **Done:** Step 10 parity on real intervals 1 and 2. Six stages, no violations, structure identical to the reference
   except 245 charts no longer started. Surface CPU time: interval 1 893 → 454 s, interval 2 885 → 620 s (MEASURED,
@@ -98,7 +101,7 @@ preserved; see [Plan17](workbench/plan17/README.md).
   The selected-source successor wires authenticated parent measurements through the drivers; five helper changes,
   no native changes. Native-entry preflight is qualified; programme default/interval holds remain.
   See [source and measured limits](workbench/plan16/README.md).
-- **Left:** jets parity revision 2 and the stacked D1+D2+G-PY parity. Then endpoint batching (WP18 revision 2: refutation, smoke, proof). Projected interval-2
+- **Left outside Plan17:** endpoint batching (WP18 revision 2: refutation, smoke, proof). Projected interval-2
   endpoints 402 → about 217 s.
 
 ## Heat finish and reconstruction speed

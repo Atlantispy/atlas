@@ -1,5 +1,5 @@
 {
-  "schema": "atlas.public.plan17.source-map.r1",
+  "schema": "atlas.public.plan17.source-map.r2",
   "selected_closure_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
   "selected_closure_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
   "native_delta": [],
@@ -105,8 +105,245 @@
         }
       ],
       "source": "<PRIVATE_RUN_QUEUE_SOURCE>/runq.py"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r7/admission_r7.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r7/admission_r7.py",
+      "original_sha256": "652c4447893691bb1b892bae450b57d86659ef971452eee40c16e40113e252d2",
+      "public_sha256": "0152390d75310581756d304cf99bd59bcefe0e07e5867a498a06d0048c7f9505",
+      "original_bytes": 15088,
+      "public_bytes": 15093,
+      "transformations": [
+        {
+          "kind": "home-path",
+          "replacement": "LOCAL_USER",
+          "count": 1
+        }
+      ],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r7/run_plan17.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r7/run_plan17.py",
+      "original_sha256": "f8a51a97f67966728d9a448e45b4a7e57293e95536049422508997bf2d538478",
+      "public_sha256": "f8a51a97f67966728d9a448e45b4a7e57293e95536049422508997bf2d538478",
+      "original_bytes": 11169,
+      "public_bytes": 11169,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r7/launch.ps1",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r7/launch.ps1",
+      "original_sha256": "29ae3b0ab85bdb779248652999a6bab2c1502f553adf0984e1bc629b242b7bf7",
+      "public_sha256": "1cc6ac0f5dd6cfd00ee542ca52a10145f74e2da5eb5080391ee0a74361df7e45",
+      "original_bytes": 3488,
+      "public_bytes": 3494,
+      "transformations": [
+        {
+          "kind": "home-path",
+          "replacement": "LOCAL_USER",
+          "count": 6
+        },
+        {
+          "kind": "coordination-thread",
+          "role": "owner",
+          "replacement": "<PLAN17_OWNER_THREAD>",
+          "count": 1
+        },
+        {
+          "kind": "coordination-thread",
+          "role": "coordinator",
+          "replacement": "<PLAN17_COORDINATOR_THREAD>",
+          "count": 1
+        }
+      ],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": null,
+      "powershell_parse": "PASS_PARSE_ONLY"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r7/test_ticket_binding_r7.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r7/test_ticket_binding_r7.py",
+      "original_sha256": "ed20122cac9a6bc266132d198a44c043b633e2b0f5a89214dab80ff9284312ba",
+      "public_sha256": "ed20122cac9a6bc266132d198a44c043b633e2b0f5a89214dab80ff9284312ba",
+      "original_bytes": 11936,
+      "public_bytes": 11936,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r7/test_launcher_ticket_r7.ps1",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r7/test_launcher_ticket_r7.ps1",
+      "original_sha256": "04d579b49904a2a35ca95eb5d990616f43025c5e854185a94c81702ecdf795ca",
+      "public_sha256": "04d579b49904a2a35ca95eb5d990616f43025c5e854185a94c81702ecdf795ca",
+      "original_bytes": 5057,
+      "public_bytes": 5057,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": null,
+      "powershell_parse": "PASS_PARSE_ONLY"
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r4/overrun.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r4/overrun.py",
+      "original_sha256": "760edc13439985e2b93b49a8582811e8aa0e2a3725bba54e62eab227a982fda4",
+      "public_sha256": "f7391e1ef696e80ad69b9484858123e12526a7ee3621ebc99472c1310e5fe844",
+      "original_bytes": 9445,
+      "public_bytes": 9450,
+      "transformations": [
+        {
+          "kind": "home-path",
+          "replacement": "LOCAL_USER",
+          "count": 1
+        }
+      ],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r4/run_plan17.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r4/run_plan17.py",
+      "original_sha256": "400f500e74d853995da7c951a4a5b813ded536b788fcbeba4c65fce691ad1d20",
+      "public_sha256": "400f500e74d853995da7c951a4a5b813ded536b788fcbeba4c65fce691ad1d20",
+      "original_bytes": 11169,
+      "public_bytes": 11169,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r4/test_overrun_guard.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r4/test_overrun_guard.py",
+      "original_sha256": "cc9bb534095e8091db315ea046509d4150f5f21641a582e3b7f72b056811f67c",
+      "public_sha256": "cc9bb534095e8091db315ea046509d4150f5f21641a582e3b7f72b056811f67c",
+      "original_bytes": 7855,
+      "public_bytes": 7855,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
+    },
+    {
+      "public_path": "tectonics/optimisation/workbench/plan17/r4/test_overrun_delivery.py",
+      "source": "<PRIVATE_PLAN17_SOURCE>/r4/test_overrun_delivery.py",
+      "original_sha256": "8a93b8522db8c6c493bdf70b7ac0edc36dbea95c1baf5f8a464c35cc66977116",
+      "public_sha256": "8a93b8522db8c6c493bdf70b7ac0edc36dbea95c1baf5f8a464c35cc66977116",
+      "original_bytes": 9051,
+      "public_bytes": 9051,
+      "transformations": [],
+      "unchanged_nonpublication_bytes": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "powershell_parse": null
     }
   ],
   "private_runtime_compatibility": false,
-  "private_request_and_queue_state_excluded": true
+  "private_request_and_queue_state_excluded": true,
+  "previous_source_map_sha256": "dbce1cad24f4536c72ec79d94ff8007d3c20846d261c91a0beab44c915d1a923",
+  "operational_revision": "r7 with retained r4 overrun dependency",
+  "selected_boundary": "Actual current Plan15 composition; existing three geometry pins unchanged",
+  "native_and_runtime_source_delta": [],
+  "selected_profile_replaced": false,
+  "current_boundary": {
+    "native_members_preserved": 239,
+    "helper_members": 395,
+    "later_helpers_preserved": 2,
+    "original_plan16_selection_preserved": true,
+    "composition_sha256": "0e0556ed36fcdf1d75d8dbb5f34274b9f9ff10f44b8c14f16aca80f5aa5d580b",
+    "prepared_profile_sha256": "81631d13d9ebd9e5c1f30f3d71e91d3196041b2587d7a39bf1530d4ec33900e2",
+    "prepared_manifest_sha256": "04e7d6873ffc0a317d2533d62053c2ecafc8720d96f5451aede37b0770d9e458",
+    "profile_and_native_generation_changed_by_plan17": false
+  },
+  "original_private_request_sha256": "f5614787146da4365f114d8edcf88c2d97919d2f5daab9c4a1bb19b975af44b3",
+  "source_only_dependencies": [
+    {
+      "consumer": "r7/run_plan17.py",
+      "dependency": "r7/admission_r7.py",
+      "disposition": "EXPORTED_SANITISED_SOURCE; original private SHA constant is retained, deliberately not rebound."
+    },
+    {
+      "consumer": "r7/run_plan17.py",
+      "dependency": "r4/overrun.py",
+      "disposition": "EXPORTED_SANITISED_SOURCE; original manifest pin contract retained."
+    },
+    {
+      "consumer": "r4/test_overrun_guard.py",
+      "dependency": "r4/run_plan17.py",
+      "disposition": "EXPORTED_SIBLING_SOURCE with its original relative layout."
+    },
+    {
+      "consumer": "r4/run_plan17.py",
+      "dependency": "r3/admission_r3.py",
+      "public_path": "tectonics/optimisation/workbench/plan17/r3/admission_r3.py",
+      "original_sha256": "13b617d3b5c74cb51dd7f45c85d4156774e1e59fda78116c9d1d2ed74e11458e",
+      "public_sha256": "e177031705732ab684be1996dc94197ab69f6ab2b51c8e2ea4af704657846858",
+      "disposition": "RETAINED_EXISTING_PUBLIC_SOURCE; no r3 overwrite or executable rebinding."
+    },
+    {
+      "consumer": "r7/run_plan17.py and r4/run_plan17.py",
+      "dependency": "plan15/r2/owned_run.py",
+      "public_path": "tectonics/optimisation/workbench/plan15/r2/owned_run.py",
+      "original_sha256": "d796ce3c4f11b59c152a00d72de759ca587fd831919bb2dabf6e5a3e84f81e36",
+      "disposition": "RETAINED_EXISTING_BYTE_IDENTICAL_PUBLIC_SOURCE; relative path unchanged."
+    },
+    {
+      "consumer": "plan15/r2/owned_run.py",
+      "dependency": "plan05/r9-launch-prep/owned_windows_job.py",
+      "public_path": "tectonics/optimisation/workbench/plan05/r9-launch-prep/owned_windows_job.py",
+      "original_sha256": "132d53b54729c13193293ffa9b3eddd6c248f2c00e8f76aaa553f39a5f8146aa",
+      "disposition": "RETAINED_EXISTING_BYTE_IDENTICAL_PUBLIC_SOURCE; backend path unchanged; Windows/psutil remain external runtime requirements."
+    },
+    {
+      "consumer": "r7/admission_r7.py",
+      "dependency": "<PRIVATE_RUN_ROOT>/start_gate.py",
+      "public_path": "tectonics/optimisation/drivers/start_gate.py",
+      "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "disposition": "RETAINED_EXISTING_BYTE_IDENTICAL_PUBLIC_SOURCE for inspection; private absolute binding remains redacted and is not rewritten to this path."
+    },
+    {
+      "consumer": "r7/admission_r7.py and r7/launch.ps1",
+      "dependency": "<PRIVATE_TASK_ROOT>/q/runq.py",
+      "public_path": "tectonics/optimisation/workbench/plan17/dependencies/runq.py",
+      "original_sha256": "151c6a6bdb4f794ce26f3f99fc87fbe14e3c35cac9ee3ce7ed54288575b01e52",
+      "public_sha256": "1ec8188315920078b5a46feea1432c65023a10005e09201c5f4cd472dc69e1d1",
+      "disposition": "RETAINED_EXISTING_SANITISED_PUBLIC_SOURCE; no live queue state or new binding."
+    },
+    {
+      "consumer": "r4/overrun.py",
+      "dependency": "r4/overrun.py --deliver",
+      "disposition": "SELF_WORKER_EXPORTED; exact retained source starts itself as the contained notification worker, rather than naming a separate notify_worker.py."
+    },
+    {
+      "consumer": "r4/overrun.py and r7/launch.ps1",
+      "dependency": "<PRIVATE_EVENT_TOOL_ROOT>/launch_notify.py",
+      "original_sha256": "e278d24176363c216be1610254934d257d334f0293d29f88329ef411c917ddad",
+      "disposition": "EXTERNAL_SOURCE_EXCLUDED; exact retained helper is source-read and hash-matched. run_contained self-spawns this same file with _bootstrap; tracked start self-spawns _supervise. No separate notify_worker.py is referenced by this exact closure. The public home path is inert and no launcher binding is installed."
+    },
+    {
+      "consumer": "r7/launch.ps1",
+      "dependency": "<PRIVATE_CODEX_CLI>",
+      "original_sha256": "e757246b4de87359e660647fa9514955a0971ff6a30affdd8c145d1d5ece7b84",
+      "disposition": "EXTERNAL_BINARY_EXCLUDED; owner/coordinator UUIDs replaced by invalid named placeholders, not newly executable recipients."
+    },
+    {
+      "consumer": "r7/launch.ps1, r7/test_ticket_binding_r7.py, r7/test_launcher_ticket_r7.ps1",
+      "dependency": "REQUEST-r7.json and pinned interpreter/metadata fixture",
+      "disposition": "PRIVATE_REQUEST_FIXTURE_READY_ENVIRONMENT_QUEUE_AND_PROOF_ARTIFACTS_EXCLUDED. No substitute request or new pin generated."
+    },
+    {
+      "consumer": "r4 controls",
+      "dependency": "REQUEST-r4.json and private native/control environment",
+      "disposition": "PRIVATE_REQUEST_AND_ENVIRONMENT_EXCLUDED; these controls are supplied for inspection, not a new portable passing test claim."
+    }
+  ],
+  "source_inspection_only": true,
+  "publication_transformations_do_not_rebind_guards": true
 }

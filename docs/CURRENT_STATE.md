@@ -14,8 +14,11 @@ The [Plan15 selection](../tectonics/optimisation/workbench/plan15/README.md) pre
 632 prior files and updates two helpers, with all 239 native files unchanged.
 Eight heat workers gave 1.3321% less mean time at 26.9974% higher maximum RAM on the
 retained fixture. [Plan17](../tectonics/optimisation/workbench/plan17/README.md)
-adds qualified guarded preparation; its geometry bytes were already integrated.
-Long proofs, eligible ROOT, final combined runs and live/default adoption remain held.
+now includes operational r7 and both qualified geometry proofs with all nine
+comparisons. Its bounded source confirmation/N12 action and component integration
+are complete, with the source export supplied; selected geometry bytes already match, so no native
+source/profile or later helper changes are replaced. Eligible ROOT, final combined
+runs, full intervals and live/default adoption remain held.
 Publication completion is separate from those later validation outcomes.
 
 The publication review reconciles q22's completed successor with its historical
@@ -155,7 +158,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
-| Plans15/17 heat selection and geometry proof preparation | Reviewed source integration complete; six-arm heat PASS and15 focused geometry-preparation methods retained. Long q23/q24 proofs remain held. | [Plan15](../tectonics/optimisation/workbench/plan15/README.md), [Plan17](../tectonics/optimisation/workbench/plan17/README.md) |
+| Plans15/17 heat selection and geometry parity | Source integration and publication complete; six-arm heat PASS, both genuine geometry proofs and all nine comparisons retained. Full intervals and default adoption remain held. | [Plan15](../tectonics/optimisation/workbench/plan15/README.md), [Plan17](../tectonics/optimisation/workbench/plan17/README.md) |
 | Plan16 geometry worker assessment | Sampled IV2 proof PASS: actual six-worker session/live peak, exact records and streams. Five-helper source/profile successor integrates authenticated parent-based four/six ceilings with Plans13–14; all native bytes preserved. Native-entry preflight qualified; no programme default switch or full interval claim. | [Mechanism, source and measurements](../tectonics/optimisation/workbench/plan16/README.md) |
 | Plans13–14 compiled heat and finish/marker integration | Requested private implementation/integration complete; branch source and docs reconciled. H3 candidate-only. Exact saved Heat comparison and separate marker controls pass; no current full-interval or default-enablement claim. | [Source, review and measurements](../tectonics/optimisation/workbench/plans13-14/README.md), [Plan13](../tectonics/optimisation/plans/plan-13-heat-kernel-h3-q25.md), [Plan14](../tectonics/optimisation/plans/plan-14-heat-finish-closure-markers.md) |
 | Plans10–12 producer reuse, reader overlap and heat | Implementation and selected private combined integration complete; 27 orchestration tests, three native-entry cases and four heat cases PASS. Original-profile q46 ROOT time fell 31.11% with sampled arm-tree RAM rising 74.23% in one pair; q47 recorded 969 producer hits and zero misses in a producer-only smoke. q22 passed 11/11 arms and selected lf3; H5a stays off. These scoped observations do not establish new-profile ROOT eligibility, interval performance or full-workflow cold recovery. | [Source scope and retained evidence](../tectonics/optimisation/workbench/plans10-12/README.md), [mechanism and limits](../tectonics/optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap), [reader explanation](../tectonics/docs/how-it-works/06-physical-integration.md#prepare-an-independent-reader-while-a-private-producer-runs) |
