@@ -1407,6 +1407,23 @@ neither establishes a full-driver or full-interval run. The candidate traded mor
 RAM for lower measured component time. Final programme performance, real-IV1
 marker observations, recovery and enablement remain later scoped work.
 
+The accepted [heat arithmetic examination](../../optimisation/workbench/plan40/heat/FINDINGS.md)
+identifies further exact reuse opportunities in the selected source. In particular,
+the cubic basis repeats exact products: a bounded prototype preserves its original
+admission sequence while reusing monomials. Other proposed changes reuse immutable
+preparation, specialise finite signed-zero products without removing their ordered
+additions, and remove an unused HIGH-solver matrix representation. They remain
+unimplemented and unmeasured. Equal real algebra is insufficient: the examination
+includes counterexamples for unrestricted Gram symmetry, deleting zero terms and
+postponing rounding. Source-bound feasibility controls do not replace the later
+resource, consumer, runtime or whole-interval checks.
+
+The accepted [additional heat examination](../../optimisation/workbench/plan40/heat/ADDITIONAL-FINDINGS.md)
+also identifies repeated flux/polygon arithmetic, observation enclosures shared
+across faces, unused earlier inverse columns and repeated exact/interval
+conversions. Each proposal retains its own validation, rounding and ownership
+conditions; none supplies a measured whole-interval improvement.
+
 
 ### Choose rolling geometry workers from an authenticated parent
 

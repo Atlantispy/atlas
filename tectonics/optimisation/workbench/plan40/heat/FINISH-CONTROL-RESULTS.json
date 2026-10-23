@@ -1,0 +1,91 @@
+{
+  "status": "PASS",
+  "scope": "Source-extracted Fraction logical controls only; no GMP, resource, runtime, performance or scientific qualification",
+  "selection": "dce2275046a2f8f9deb809bdb8a02e90bee65f777bb70919048e2c5ef583befb",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "control_sha256": "bbd0421961305c20fa3e0c60e0adbcef8abaaea77fb4c6533815c1ca548ec76c",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+    "tectonics/optimisation/pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r1.py": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r1.py": "df7fe40740b66f5678189064498fee2026e49b65c7b421c8c604163eaae15383",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r2.py": "9b0e58421935e71f53e9e845122f2e47642ab2275f49ad9de6df2391d0c04874",
+    "tectonics/optimisation/pending/heat/le3/helpers/private_heat_exact_growth_r1.py": "35e77650f92bab4eaae254d7b57597d39ce55bd663d8092c0d93f6136c3c7ec4"
+  },
+  "scalar_search": [
+    {
+      "case": "full",
+      "baseline_certificates": 2,
+      "candidate_certificates": 2,
+      "exact_logical_parity": true
+    },
+    {
+      "case": "interior_third",
+      "baseline_certificates": 67,
+      "candidate_certificates": 66,
+      "exact_logical_parity": true
+    },
+    {
+      "case": "zero_only",
+      "baseline_certificates": 66,
+      "candidate_certificates": 66,
+      "exact_logical_parity": true
+    },
+    {
+      "case": "refused",
+      "baseline_certificates": 2,
+      "candidate_certificates": 2,
+      "exact_logical_parity": true
+    },
+    {
+      "case": "nonmonotone",
+      "baseline_certificates": 67,
+      "candidate_certificates": 66,
+      "exact_logical_parity": true
+    }
+  ],
+  "stale_state_refusals": 5,
+  "load_reuse_cases": 3,
+  "cubic_point_reuse": [
+    {
+      "case": "zeros",
+      "exact_canonical_outputs": 20,
+      "baseline_exact_multiplications": 105,
+      "reused_exact_multiplications": 16,
+      "unchanged_multiply_admissions": 105,
+      "same_guard_operands_order_and_widths": true
+    },
+    {
+      "case": "mixed_signs",
+      "exact_canonical_outputs": 20,
+      "baseline_exact_multiplications": 105,
+      "reused_exact_multiplications": 16,
+      "unchanged_multiply_admissions": 105,
+      "same_guard_operands_order_and_widths": true
+    },
+    {
+      "case": "large_rationals",
+      "exact_canonical_outputs": 20,
+      "baseline_exact_multiplications": 105,
+      "reused_exact_multiplications": 16,
+      "unchanged_multiply_admissions": 105,
+      "same_guard_operands_order_and_widths": true
+    },
+    {
+      "case": "small_dyadics",
+      "exact_canonical_outputs": 20,
+      "baseline_exact_multiplications": 105,
+      "reused_exact_multiplications": 16,
+      "unchanged_multiply_admissions": 105,
+      "same_guard_operands_order_and_widths": true
+    }
+  ],
+  "implementation_limits": [
+    "Unimplemented and unmeasured; real GMP guard and resource policy are not exercised",
+    "Interior reuse retains one certificate/state; replacement may overlap the previous and new retained generations",
+    "Base load reuse extends one n-cell base array lifetime; the boundary-debited mutable array must be distinct",
+    "Source-drift refusal, cancellation, failure-frame custody, operation/resource diagnostics and consumer identity need implementation qualification",
+    "Cubic control compares exact value and guard operands/order/widths, not real WorkBudget, GMP getters or cancellation",
+    "Cubic reuse preserves 105 multiplication admission positions but performs 16 multiplications; actual and reused work must be reported honestly"
+  ]
+}

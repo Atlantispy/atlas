@@ -165,6 +165,16 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 ## Current status
 
+The [Plan40B heat arithmetic examination](../tectonics/optimisation/workbench/plan40/heat/FINDINGS.md)
+is accepted in its required final review. Source-bound controls
+support exact polynomial and preparation reuse, with explicit rounding, resource
+and consumer obligations. None of these proposals is implemented or timed; pressure
+40A and later native implementation remain separate work.
+The requested [additional heat search](../tectonics/optimisation/workbench/plan40/heat/ADDITIONAL-FINDINGS.md)
+adds bounded arithmetic/reuse candidates; the affected review accepts all 20
+candidate dispositions and the control-entry repair. The examination retains
+44 named source bindings and six control/result pairs.
+
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
 | Plans19/20 geometry and diagnostic captures | Integrated public source selection; Plan19 private validation accepted, Plan20 A/B accepted. Folded DLL binding and prepared-entry execution remain open. | [Combined selection](../tectonics/optimisation/workbench/plans19-20/README.md), [Plan19](../tectonics/optimisation/workbench/plan19/README.md), [Plan20](../tectonics/optimisation/workbench/plan20/README.md) |

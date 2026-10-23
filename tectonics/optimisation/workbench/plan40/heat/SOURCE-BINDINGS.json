@@ -1,0 +1,276 @@
+{
+  "schema": "atlas.plan40b.examined-source-bindings.r1",
+  "base_commit": "0a2855125b79abcb4e05cf090adf46dcc8b1c80b",
+  "selected_map": "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json",
+  "selected_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "public_selection_sha256": "dce2275046a2f8f9deb809bdb8a02e90bee65f777bb70919048e2c5ef583befb",
+  "scope": "Named numerical and consumer boundary sources; not all selected members are executed paths",
+  "entries": [
+    {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47"
+    },
+    {
+      "member": "source/helpers/private_heat_certification_kernel_r3.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_certification_kernel_r3.py",
+      "original_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "public_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7"
+    },
+    {
+      "member": "source/helpers/private_heat_certification_resources_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py",
+      "original_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "public_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3"
+    },
+    {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py",
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa"
+    },
+    {
+      "member": "source/helpers/private_heat_exact_growth_r1.py",
+      "public_path": "tectonics/optimisation/pending/heat/le3/helpers/private_heat_exact_growth_r1.py",
+      "original_sha256": "35e77650f92bab4eaae254d7b57597d39ce55bd663d8092c0d93f6136c3c7ec4",
+      "public_sha256": "35e77650f92bab4eaae254d7b57597d39ce55bd663d8092c0d93f6136c3c7ec4"
+    },
+    {
+      "member": "source/helpers/private_heat_low_ledger_inventory_r1.py",
+      "public_path": "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_low_ledger_inventory_r1.py",
+      "original_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "public_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596"
+    },
+    {
+      "member": "source/helpers/private_heat_gmp_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py",
+      "original_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "public_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca"
+    },
+    {
+      "member": "source/helpers/private_heat_low_solver_kernel_r5.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_low_solver_kernel_r5.py",
+      "original_sha256": "8dd668fe93c80abfa128a3eb766922e99b36d6bab00db17bad765e78a8a863b8",
+      "public_sha256": "87c82197ac5f845dd76a2a324a39cd1ce816e92cddde3d0441d4ca53047d8175"
+    },
+    {
+      "member": "source/helpers/private_heat_mpfr_lu_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_mpfr_lu_r1.py",
+      "original_sha256": "d1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e",
+      "public_sha256": "d1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e"
+    },
+    {
+      "member": "source/helpers/private_heat_mpfr_lu_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_mpfr_lu_resources_r1.py",
+      "original_sha256": "8ba39a3b47991315af8c2a368a6dd9d3fef4b0b906cec71a7aa57a9a9adb7b58",
+      "public_sha256": "8ba39a3b47991315af8c2a368a6dd9d3fef4b0b906cec71a7aa57a9a9adb7b58"
+    },
+    {
+      "member": "source/helpers/private_heat_decimal_sparse_core_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py",
+      "original_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "public_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f"
+    },
+    {
+      "member": "source/helpers/private_heat_decimal_sparse_core_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r2.py",
+      "original_sha256": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957",
+      "public_sha256": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957"
+    },
+    {
+      "member": "source/helpers/private_heat_exact_face_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_exact_face_kernel_r1.py",
+      "original_sha256": "aaf72bc9e96056d2a245aae185e034ce8955073459a87cd1de08c754465868ef",
+      "public_sha256": "aaf72bc9e96056d2a245aae185e034ce8955073459a87cd1de08c754465868ef"
+    },
+    {
+      "member": "source/helpers/private_heat_exact_functional_kernel_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_exact_functional_kernel_r2.py",
+      "original_sha256": "2a33b1b57daecb9b9c981c2c9c289866c3e2f2e143d27701d1ae76f518ea1f73",
+      "public_sha256": "2a33b1b57daecb9b9c981c2c9c289866c3e2f2e143d27701d1ae76f518ea1f73"
+    },
+    {
+      "member": "source/helpers/private_heat_rank_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rank_resources_r1.py",
+      "original_sha256": "6fceeb7a25bb06837509941499639ea90d4505a947230c822d5d38a2239c86ce",
+      "public_sha256": "6fceeb7a25bb06837509941499639ea90d4505a947230c822d5d38a2239c86ce"
+    },
+    {
+      "member": "source/helpers/private_heat_functional_bounds_kernel_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_functional_bounds_kernel_r2.py",
+      "original_sha256": "ecb9e36bc77fd970d896ba1b3cb5a08f6e15d800367d889d36f1a623abe701e3",
+      "public_sha256": "ecb9e36bc77fd970d896ba1b3cb5a08f6e15d800367d889d36f1a623abe701e3"
+    },
+    {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "original_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "public_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74"
+    },
+    {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r2.py",
+      "original_sha256": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e",
+      "public_sha256": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e"
+    },
+    {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r5.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r5.py",
+      "original_sha256": "b8d66d518a44a06ff7d607996cd528a179afbba6634c71e8dd89a358ac898ec1",
+      "public_sha256": "b8d66d518a44a06ff7d607996cd528a179afbba6634c71e8dd89a358ac898ec1"
+    },
+    {
+      "member": "source/helpers/private_heat_refinement_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_refinement_kernel_r1.py",
+      "original_sha256": "b953e82b8b7314bf2112f45632c510e440ab46f83b0423e800a87fa57bafb193",
+      "public_sha256": "b953e82b8b7314bf2112f45632c510e440ab46f83b0423e800a87fa57bafb193"
+    },
+    {
+      "member": "source/helpers/private_heat_functionals_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r1.py",
+      "original_sha256": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56",
+      "public_sha256": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56"
+    },
+    {
+      "member": "source/helpers/private_heat_functionals_kernel_r5.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r5.py",
+      "original_sha256": "85991687f0a6ba57c333cb1f1fc5904e2c21a5ab19f1f26c68a3c6b06ec577ca",
+      "public_sha256": "85991687f0a6ba57c333cb1f1fc5904e2c21a5ab19f1f26c68a3c6b06ec577ca"
+    },
+    {
+      "member": "source/helpers/private_heat_support_basis_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r1.py",
+      "original_sha256": "df7fe40740b66f5678189064498fee2026e49b65c7b421c8c604163eaae15383",
+      "public_sha256": "df7fe40740b66f5678189064498fee2026e49b65c7b421c8c604163eaae15383"
+    },
+    {
+      "member": "source/helpers/private_heat_support_basis_resources_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r2.py",
+      "original_sha256": "9b0e58421935e71f53e9e845122f2e47642ab2275f49ad9de6df2391d0c04874",
+      "public_sha256": "9b0e58421935e71f53e9e845122f2e47642ab2275f49ad9de6df2391d0c04874"
+    },
+    {
+      "member": "source/helpers/private_heat_polygon_moment_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r1.py",
+      "original_sha256": "3702ff5135b841929eb06d83204292531d10ff6b7dcbc2717f2c24f9660137fc",
+      "public_sha256": "3702ff5135b841929eb06d83204292531d10ff6b7dcbc2717f2c24f9660137fc"
+    },
+    {
+      "member": "source/helpers/private_heat_polygon_moment_inventory_r4.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r4.py",
+      "original_sha256": "ad0183ef0ba511d23c7810e6a9a4f8c37599f229fe19604e1f94bc3d3a892e2a",
+      "public_sha256": "ad0183ef0ba511d23c7810e6a9a4f8c37599f229fe19604e1f94bc3d3a892e2a"
+    },
+    {
+      "member": "source/helpers/private_heat_decimal_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_inventory_r1.py",
+      "original_sha256": "ded95d895acd84dc3d6e858054a7b21d5a58cb45c9f07790b676c2ad926a02b5",
+      "public_sha256": "395c9346cb4924bdf9867eb0111665533f2f786e3c8e09960f695a5bc36c01ed"
+    },
+    {
+      "member": "source/helpers/private_heat_functionals_parallel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plan15/source/helpers/private_heat_functionals_parallel_r1.py",
+      "original_sha256": "711928938eeb3dd032721f8c7159cdb91bddab9eb29fc8924cf72e6064bc8f60",
+      "public_sha256": "fea58b5fffa45ad4fd832e9b9ca87779ebf3098e04f02d91a6a4278804dc84b1"
+    },
+    {
+      "member": "source/helpers/private_heat_forward_kernel_r13.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_forward_kernel_r13.py",
+      "original_sha256": "de344f4796d712c1f543fe3380fdfaf23ec4a92ce41c926287a2212e2f00ad91",
+      "public_sha256": "de344f4796d712c1f543fe3380fdfaf23ec4a92ce41c926287a2212e2f00ad91"
+    },
+    {
+      "member": "source/helpers/private_heat_finish_kernel_r11.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_finish_kernel_r11.py",
+      "original_sha256": "e5a2409fb87695dc0151c7b256f27bea2e550d0fdaf5a66a44b516dde53f3e15",
+      "public_sha256": "46c4b132d08b26c09ca809b5d686935377bac089e529dbee67ae3147a91d4ea2"
+    },
+    {
+      "member": "source/helpers/private_heat_closed_owned_r5.py",
+      "public_path": "tectonics/optimisation/pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py",
+      "original_sha256": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079",
+      "public_sha256": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079"
+    },
+    {
+      "member": "source/helpers/private_heat_issuer_resources_r4.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_issuer_resources_r4.py",
+      "original_sha256": "f80d741c76586a41fa1a49415c19f72a0bb1eb3b0e1726e1d8cb52df2dcffdd6",
+      "public_sha256": "f80d741c76586a41fa1a49415c19f72a0bb1eb3b0e1726e1d8cb52df2dcffdd6"
+    },
+    {
+      "member": "source/helpers/private_heat_finish_issue_owned_r4.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_issue_owned_r4.py",
+      "original_sha256": "927a1ff49625182b1691301493e114395c68e96ca2237ed94648036f0603c22e",
+      "public_sha256": "927a1ff49625182b1691301493e114395c68e96ca2237ed94648036f0603c22e"
+    },
+    {
+      "member": "source/helpers/private_heat_finish_entry_owned_r2.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_entry_owned_r2.py",
+      "original_sha256": "d3e00555739653ec22085cad6436a5192883a4e7abf42995ad98af6af55c7098",
+      "public_sha256": "d3e00555739653ec22085cad6436a5192883a4e7abf42995ad98af6af55c7098"
+    },
+    {
+      "member": "source/helpers/private_heat_finish_arithmetic_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py",
+      "original_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "public_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78"
+    },
+    {
+      "member": "source/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "original_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "public_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f"
+    },
+    {
+      "member": "source/helpers/private_heat_rational_decimal_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_r1.py",
+      "original_sha256": "c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112",
+      "public_sha256": "c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112"
+    },
+    {
+      "member": "source/helpers/private_heat_checkpoint_consumer_r10.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_checkpoint_consumer_r10.py",
+      "original_sha256": "fa28074f3ec54339c7c20a0cb3b5a4a0e15f13dacba6ef6d4a1f7277f9c33fbe",
+      "public_sha256": "fa28074f3ec54339c7c20a0cb3b5a4a0e15f13dacba6ef6d4a1f7277f9c33fbe"
+    },
+    {
+      "member": "source/helpers/private_heat_joined_consumer_r6.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_joined_consumer_r6.py",
+      "original_sha256": "cdfdbd72864f1f13904dd068e48d7e143453968466d9373f4f654687e5dd5b89",
+      "public_sha256": "cdfdbd72864f1f13904dd068e48d7e143453968466d9373f4f654687e5dd5b89"
+    },
+    {
+      "member": "source/helpers/private_heat_restored_binding_r10.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_restored_binding_r10.py",
+      "original_sha256": "9e05ce0452606eb2914023699d8b9d2accd312e6fe9ed54a1749a3e9fbe5ee0e",
+      "public_sha256": "9e05ce0452606eb2914023699d8b9d2accd312e6fe9ed54a1749a3e9fbe5ee0e"
+    },
+    {
+      "member": "source/helpers/private_heat_restored_binding_ram_context_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_restored_binding_ram_context_r1.py",
+      "original_sha256": "6cffa8ec6ba1f2fdf064b41da785c71636e1754c9054ed5de63549922e9864f8",
+      "public_sha256": "6cffa8ec6ba1f2fdf064b41da785c71636e1754c9054ed5de63549922e9864f8"
+    },
+    {
+      "member": "source/src/atlas_tectonics/integration_private_heat_cold.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/src/atlas_tectonics/integration_private_heat_cold.py",
+      "original_sha256": "791899ac358ca5174493bfe4aedaba2778f0f0aa6f856136b04c777287dd8b58",
+      "public_sha256": "791899ac358ca5174493bfe4aedaba2778f0f0aa6f856136b04c777287dd8b58"
+    },
+    {
+      "member": "source/helpers/fresh_interval_driver.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/fresh_interval_driver.py",
+      "original_sha256": "d3d26416a3fe3126d61ee3faa8967245bdbd3635e1327d0f35dc3ba4e791fb37",
+      "public_sha256": "310d9848e35f124bd1ee94bf584cedbea8d2b514574b9315a44b98e1223764bd"
+    },
+    {
+      "member": "source/helpers/prepared_interval_driver.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/prepared_interval_driver.py",
+      "original_sha256": "21b5874cbab82138285582f895aeab27f7cb77db851f9050b0498dc5a5bdbf80",
+      "public_sha256": "21b5874cbab82138285582f895aeab27f7cb77db851f9050b0498dc5a5bdbf80"
+    }
+  ],
+  "production_changed": false,
+  "public_runtime_qualification": false
+}

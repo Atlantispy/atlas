@@ -1,0 +1,305 @@
+{
+  "candidate_cases": [
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 4,
+      "midpoint_calls_candidate": 6,
+      "midpoint_calls_reference": 8,
+      "observations": 3,
+      "precision": 53,
+      "rank": 2,
+      "rhs_midpoint_arithmetic_removed": 4,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 4,
+      "midpoint_calls_candidate": 6,
+      "midpoint_calls_reference": 8,
+      "observations": 3,
+      "precision": 80,
+      "rank": 2,
+      "rhs_midpoint_arithmetic_removed": 4,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 4,
+      "midpoint_calls_candidate": 6,
+      "midpoint_calls_reference": 8,
+      "observations": 3,
+      "precision": 320,
+      "rank": 2,
+      "rhs_midpoint_arithmetic_removed": 4,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 9,
+      "midpoint_calls_candidate": 12,
+      "midpoint_calls_reference": 18,
+      "observations": 4,
+      "precision": 53,
+      "rank": 3,
+      "rhs_midpoint_arithmetic_removed": 12,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 9,
+      "midpoint_calls_candidate": 12,
+      "midpoint_calls_reference": 18,
+      "observations": 4,
+      "precision": 80,
+      "rank": 3,
+      "rhs_midpoint_arithmetic_removed": 12,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 9,
+      "midpoint_calls_candidate": 12,
+      "midpoint_calls_reference": 18,
+      "observations": 4,
+      "precision": 320,
+      "rank": 3,
+      "rhs_midpoint_arithmetic_removed": 12,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 16,
+      "midpoint_calls_candidate": 20,
+      "midpoint_calls_reference": 32,
+      "observations": 5,
+      "precision": 53,
+      "rank": 4,
+      "rhs_midpoint_arithmetic_removed": 24,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 16,
+      "midpoint_calls_candidate": 20,
+      "midpoint_calls_reference": 32,
+      "observations": 5,
+      "precision": 80,
+      "rank": 4,
+      "rhs_midpoint_arithmetic_removed": 24,
+      "same_check_trace": true
+    },
+    {
+      "exact_output_and_flags": true,
+      "fallback_interval_tuple_constructions_removed": 16,
+      "midpoint_calls_candidate": 20,
+      "midpoint_calls_reference": 32,
+      "observations": 5,
+      "precision": 320,
+      "rank": 4,
+      "rhs_midpoint_arithmetic_removed": 24,
+      "same_check_trace": true
+    }
+  ],
+  "claims": {
+    "compiled_route_validated": false,
+    "performance_measured": false,
+    "production_changed": false,
+    "resource_policy_validated": false,
+    "scientific_acceptance": false,
+    "worker_dispatched": false
+  },
+  "gmpy2": "2.3.2",
+  "independent_refutations": {
+    "dropping_final_zero_changes_ternary": {
+      "full": [
+        [
+          "mpfr",
+          "04410000080000000100000000000000000000aa",
+          8,
+          0,
+          false
+        ],
+        [
+          "mpfr",
+          "04410000080000000100000000000000000000ab",
+          8,
+          0,
+          false
+        ]
+      ],
+      "skipped": [
+        [
+          "mpfr",
+          "04410200080000000100000000000000000000aa",
+          8,
+          -1,
+          false
+        ],
+        [
+          "mpfr",
+          "04410100080000000100000000000000000000ab",
+          8,
+          1,
+          false
+        ]
+      ]
+    },
+    "round_once_changes_enclosure": {
+      "exact_then_round": [
+        "213/128",
+        "107/64"
+      ],
+      "ordered_fold": [
+        "53/32",
+        "107/64"
+      ]
+    },
+    "unconditional_gram_symmetry_changes_zero_sign": [
+      [
+        [
+          "mpfr",
+          "0402000008000000",
+          8,
+          0,
+          true
+        ],
+        [
+          "mpfr",
+          "0441000008000000010000000000000000000080",
+          8,
+          0,
+          false
+        ]
+      ],
+      [
+        [
+          "mpfr",
+          "0400000008000000",
+          8,
+          0,
+          false
+        ],
+        [
+          "mpfr",
+          "0441000008000000010000000000000000000080",
+          8,
+          0,
+          false
+        ]
+      ]
+    ]
+  },
+  "mpfr": "MPFR 4.2.2",
+  "refusal_and_cancellation_cases": [
+    {
+      "cancel_at": null,
+      "outcome": {
+        "error": "ValueError",
+        "reason": "Nonempty rectangular observations and matching target required"
+      },
+      "same_check_trace": true
+    },
+    {
+      "cancel_at": null,
+      "outcome": {
+        "error": "Unresolved",
+        "reason": "Rounded proposal has zero pivot; no rank conclusion"
+      },
+      "same_check_trace": true
+    },
+    {
+      "cancel_at": 1,
+      "outcome": {
+        "error": "CancelledError",
+        "reason": "injected bounded cancellation"
+      },
+      "same_check_trace": true
+    },
+    {
+      "cancel_at": 10,
+      "outcome": {
+        "error": "CancelledError",
+        "reason": "injected bounded cancellation"
+      },
+      "same_check_trace": true
+    },
+    {
+      "cancel_at": 50,
+      "outcome": {
+        "error": "CancelledError",
+        "reason": "injected bounded cancellation"
+      },
+      "same_check_trace": true
+    }
+  ],
+  "same_precision_append_only_gram": {
+    "cases": [
+      {
+        "new_observations": 5,
+        "old_observations": 1,
+        "ordered_gram_dots_equal": 9,
+        "precision": 53
+      },
+      {
+        "new_observations": 5,
+        "old_observations": 3,
+        "ordered_gram_dots_equal": 9,
+        "precision": 53
+      },
+      {
+        "new_observations": 5,
+        "old_observations": 1,
+        "ordered_gram_dots_equal": 9,
+        "precision": 320
+      },
+      {
+        "new_observations": 5,
+        "old_observations": 3,
+        "ordered_gram_dots_equal": 9,
+        "precision": 320
+      }
+    ],
+    "invalidated_by": [
+      "precision/context change",
+      "changed/reordered prefix",
+      "basis/scale change",
+      "owner close",
+      "source/method change"
+    ],
+    "scope": "Exact existing rounded accumulator continued in original order; no inverse reuse; no native/resource qualification"
+  },
+  "schema": "atlas.plan40b.bounded-arithmetic-controls.r1",
+  "scope": "AST-selected reference arithmetic; no compiled H3 import or dispatch; no runtime proof or timing",
+  "selected_member": {
+    "member": "source/helpers/private_heat_certification_kernel_r1.py",
+    "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+    "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+    "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+    "selected_composition_member": true,
+    "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_kernel_r1.py",
+    "transformations": [
+      {
+        "kind": "trailing-empty-lines",
+        "replacement": "one final LF"
+      }
+    ]
+  },
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "status": "PASS",
+  "zero_product_specialisation": {
+    "exact_signature_cases": 216,
+    "nonfinite_reference_refusals": [
+      "InvalidOperationError",
+      "InvalidOperationError",
+      "InvalidOperationError"
+    ],
+    "per_eligible_term": {
+      "candidate_additions": 2,
+      "candidate_multiplications": 0,
+      "reference_additions": 2,
+      "reference_multiplications": 8
+    },
+    "production_zero_frequency_measured": false,
+    "scope": "finite MPFR endpoints; degenerate signed-zero interval; first-corner sign retained; every ordered addition retained"
+  }
+}

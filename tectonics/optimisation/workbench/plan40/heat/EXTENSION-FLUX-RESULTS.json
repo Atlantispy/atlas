@@ -1,0 +1,223 @@
+{
+  "status": "PASS",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "script_sha256": "58e705aaa69d49b4998a96c839f86f2234af16af19e3ae2305ed67d82d9b0ac9",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r1.py": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r1.py": "3702ff5135b841929eb06d83204292531d10ff6b7dcbc2717f2c24f9660137fc",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r4.py": "ad0183ef0ba511d23c7810e6a9a4f8c37599f229fe19604e1f94bc3d3a892e2a",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r1.py": "df7fe40740b66f5678189064498fee2026e49b65c7b421c8c604163eaae15383",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r2.py": "9b0e58421935e71f53e9e845122f2e47642ab2275f49ad9de6df2391d0c04874",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r5.py": "85991687f0a6ba57c333cb1f1fc5904e2c21a5ab19f1f26c68a3c6b06ec577ca",
+    "tectonics/optimisation/workbench/plan15/source/helpers/private_heat_functionals_parallel_r1.py": "fea58b5fffa45ad4fd832e9b9ca87779ebf3098e04f02d91a6a4278804dc84b1",
+    "tectonics/optimisation/pending/heat/le3/helpers/private_heat_exact_growth_r1.py": "35e77650f92bab4eaae254d7b57597d39ce55bd663d8092c0d93f6136c3c7ec4"
+  },
+  "cases": {
+    "triangle": {
+      "outcome": "accepted",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 163,
+        "add": 160,
+        "subtract": 99,
+        "divide": 16
+      },
+      "candidate_operations": {
+        "multiply": 145,
+        "add": 88,
+        "subtract": 81,
+        "divide": 13
+      },
+      "eliminated_operations": {
+        "multiply": 18,
+        "divide": 3,
+        "add": 72,
+        "subtract": 18
+      }
+    },
+    "rectangle": {
+      "outcome": "accepted",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 297,
+        "add": 305,
+        "subtract": 174,
+        "divide": 32
+      },
+      "candidate_operations": {
+        "multiply": 261,
+        "add": 161,
+        "subtract": 138,
+        "divide": 26
+      },
+      "eliminated_operations": {
+        "multiply": 36,
+        "divide": 6,
+        "add": 144,
+        "subtract": 36
+      }
+    },
+    "reverse_orientation": {
+      "outcome": "accepted",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 297,
+        "add": 305,
+        "subtract": 174,
+        "divide": 32,
+        "negate": 3
+      },
+      "candidate_operations": {
+        "multiply": 261,
+        "add": 161,
+        "subtract": 138,
+        "divide": 26,
+        "negate": 3
+      },
+      "eliminated_operations": {
+        "multiply": 36,
+        "divide": 6,
+        "add": 144,
+        "subtract": 36
+      }
+    },
+    "tiny_tilted_far_origin": {
+      "outcome": "accepted",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 163,
+        "add": 160,
+        "subtract": 99,
+        "divide": 16
+      },
+      "candidate_operations": {
+        "multiply": 145,
+        "add": 88,
+        "subtract": 81,
+        "divide": 13
+      },
+      "eliminated_operations": {
+        "multiply": 18,
+        "divide": 3,
+        "add": 72,
+        "subtract": 18
+      }
+    },
+    "missing_vertices": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {},
+      "candidate_operations": {},
+      "refusal": {
+        "error": "ValueError",
+        "message": "Exact face vertices required for second moments"
+      }
+    },
+    "duplicate_vertex": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {},
+      "candidate_operations": {},
+      "refusal": {
+        "error": "ValueError",
+        "message": "Nondegenerate face polygon required"
+      }
+    },
+    "too_few_vertices": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {},
+      "candidate_operations": {},
+      "refusal": {
+        "error": "ValueError",
+        "message": "Nondegenerate face polygon required"
+      }
+    },
+    "wrong_area": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 18,
+        "add": 15,
+        "subtract": 18,
+        "divide": 3,
+        "negate": 3
+      },
+      "candidate_operations": {
+        "multiply": 18,
+        "add": 15,
+        "subtract": 18,
+        "divide": 3,
+        "negate": 3
+      },
+      "refusal": {
+        "error": "ValueError",
+        "message": "Polygon area does not match declared face area"
+      }
+    },
+    "wrong_centroid": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 118,
+        "add": 61,
+        "subtract": 99,
+        "divide": 7
+      },
+      "candidate_operations": {
+        "multiply": 115,
+        "add": 58,
+        "subtract": 81,
+        "divide": 7
+      },
+      "refusal": {
+        "error": "ValueError",
+        "message": "Polygon centroid does not match declared face centroid"
+      }
+    },
+    "not_planar": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 6,
+        "add": 6,
+        "subtract": 9
+      },
+      "candidate_operations": {
+        "multiply": 6,
+        "add": 6,
+        "subtract": 9
+      },
+      "refusal": {
+        "error": "ValueError",
+        "message": "Face vertices are not on the declared centroid plane"
+      }
+    },
+    "concave_ring": {
+      "outcome": "refused",
+      "same_canonical_values_or_refusal": true,
+      "baseline_operations": {
+        "multiply": 107,
+        "add": 45,
+        "subtract": 102,
+        "divide": 6
+      },
+      "candidate_operations": {
+        "multiply": 107,
+        "add": 45,
+        "subtract": 84,
+        "divide": 6
+      },
+      "refusal": {
+        "error": "ValueError",
+        "message": "Convex non-crossing face ring required"
+      }
+    }
+  },
+  "scope": "Exact Fraction logical prototype; no Atlas imports, timing, GMP, WorkBudget, workers or production changes",
+  "limits": [
+    "Existing full polygon inventory and cancellation boundaries must remain in production",
+    "Temporary triangle-sum references/containers require a complete storage accounting argument",
+    "Source/runtime and consumer identities require successor binding"
+  ]
+}

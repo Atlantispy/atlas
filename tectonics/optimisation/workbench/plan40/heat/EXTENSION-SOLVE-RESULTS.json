@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_low_solver_kernel_r5.py": "87c82197ac5f845dd76a2a324a39cd1ce816e92cddde3d0441d4ca53047d8175",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r2.py": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74"
+  },
+  "low_public_audit_cases": [
+    {
+      "cells": 4,
+      "reference_Q_calls": 14,
+      "candidate_Q_calls": 6,
+      "cancel_calls": 8
+    },
+    {
+      "cells": 3,
+      "reference_Q_calls": 11,
+      "candidate_Q_calls": 5,
+      "cancel_calls": 7
+    }
+  ],
+  "decimal_sign_cases": 28,
+  "matrix_zero_constructor_calls": [
+    9,
+    1
+  ],
+  "guarded_boundary_reference_conversions": 6,
+  "guarded_boundary_candidate_conversions": 3,
+  "no_runtime_admission_or_performance_claim": true
+}

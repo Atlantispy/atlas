@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "scope": "SOURCE_BOUND_TINY_ARITHMETIC_ONLY_NOT_RUNTIME_QUALIFICATION",
+  "selected_source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_mpfr_lu_r1.py": "d1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+    "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r2.py": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957"
+  },
+  "runtime": {
+    "gmpy2": "2.3.2",
+    "gmp": "GMP 6.3.0",
+    "mpfr": "MPFR 4.2.2",
+    "scipy": "1.17.1"
+  },
+  "mpfr_rhs_cases": 3,
+  "mpfr_cancellation_positions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "mpfr_comparison": "to_binary, rc, exact ratio, sign, precision and local-context flags",
+  "csr_count_cases": 4,
+  "csr_expected_nnz": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "duplicate_columns_ineligible": true,
+  "unit_scale_cases": 6,
+  "canonical_unlucky_prime_fallback": {
+    "independent_columns": [
+      0
+    ],
+    "target_witness": "1",
+    "null_witness": [
+      "-1/2305843009213693951",
+      "1"
+    ]
+  },
+  "bareiss_solution": [
+    "7/25",
+    "11/25",
+    "17/25"
+  ],
+  "no_timing_or_resource_measurement": true
+}
