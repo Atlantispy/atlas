@@ -1,7 +1,9 @@
 # Plans19–20: integrated geometry and capture source selection
 
-WORKING NON-CANON. This is the current combined source selection on the optimisation
-review branch. [SOURCE-MAP.json](SOURCE-MAP.json) resolves every member to one existing
+WORKING NON-CANON. This is the predecessor combined source selection on the optimisation
+review branch. The [heat receiving successor](../plan40/heat/integration-r2/README.md)
+retains this selection and connects C3/C8 through their existing consumers.
+[SOURCE-MAP.json](SOURCE-MAP.json) resolves every member to one existing
 public file and pins its bytes. It replaces seven selected members and adds three
 over [Plan15](../plan15/README.md): 627 existing members remain unchanged, giving
 239 native files and 398 helpers. No duplicate package or unchanged source copy is made.

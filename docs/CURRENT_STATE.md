@@ -185,9 +185,12 @@ their additive source successors and a small C13 trial have completed actual
 receiver checks and [exact-version comparisons](../tectonics/optimisation/workbench/plan40/heat/implementation-r1/MEASUREMENTS.md).
 C3 is mixed by size, C8 saves about 1.34% in its owning-receiver fixture, and C13
 is 6.00% slower and is not adopted. Implementation review accepts the completed
-batch for its integrated additive, unenabled scope. C3's full certification
-inventory and worker-observer receiving bindings remain unqualified; attempt
-controls and bounds import checks are not full receiver proof. Prototype
+batch for its integrated additive, unenabled scope. The later
+[heat receiving integration](../tectonics/optimisation/workbench/plan40/heat/integration-r2/README.md)
+selects C3 through the full certification inventory and complete worker-observer
+bindings, and C8 through the forward/lifetime owner types. Checkpoint, joined
+and restoration source bindings follow the same new generation. This source
+integration does not qualify worker execution or migrate historical checkpoints. Prototype
 percentages are not inherited by changed source generations. No production
 enablement or whole-IV improvement is claimed.
 

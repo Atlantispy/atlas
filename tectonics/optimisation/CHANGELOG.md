@@ -6,6 +6,20 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23 Oct 2026, Plan40 heat receiving integration
+
+- Connect retained C3 and C8 arithmetic to the existing full certification,
+  forward/lifetime and source-bound checkpoint/joined/restoration consumers in
+  a new combined selection. Preserve the previous selections and receipts.
+- Keep one C8 owner/result type through assessment and lifetime transfer.
+  Complete all outer/embedded C3 MPFR observer exports and source pins.
+  Resolve public source and DLL locations from actual imported modules while
+  retaining exact hashes, runtime requirements and resource/refusal checks.
+- C13 remains excluded after its measured regression. Reuse the retained
+  component measurements without claiming a new integrated or whole-IV gain.
+  No worker/full-interval activation, historical checkpoint migration or
+  scientific acceptance follows from this integration.
+
 ## 23 Oct 2026, Plans19–20 accepted source integration
 
 - Integrate Plan19's selected single-boundary shell and alternate-axis geometry

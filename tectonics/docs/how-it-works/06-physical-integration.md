@@ -1442,6 +1442,17 @@ slower and not adopted. Its original full native inventory is preserved. No
 prototype percentage is silently assigned to a changed source generation, and
 no component result establishes a whole-IV or scientific claim.
 
+The [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
+connects those retained arithmetic changes to existing consumers. Certificate
+assessment and functional bounds use the new certified dot through an explicit
+inventory binding. The forward assembly and its lifetime manager use the same
+new C8 owner/result types, so transfer, refinement and cleanup remain consistent.
+The issuer captures that selected source closure, and checkpoint, joined and
+restored bindings carry its new identities. The worker observer includes the
+additional MPFR functions and resolves the exact pinned library in the loaded
+interpreter environment. Historical sources and saved identities are preserved;
+the new graph does not make old checkpoints interchangeable or release held runs.
+
 
 ### Choose rolling geometry workers from an authenticated parent
 
