@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 22 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 23 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -8,6 +8,15 @@ main development branch is `remake`; this source review is on
 commit and push state.
 
 ## Active checkpoint
+
+**Plans19–20 now have one integrated public source selection.**
+The [combined source map](../tectonics/optimisation/workbench/plans19-20/README.md)
+preserves Plans15–17 while selecting the two accepted geometry changes and S2 r9
+capture helpers. Plan19's private integration and bounded native validation are
+accepted. Plan20 A/B is accepted; its final folded DLL binding and prepared-entry
+execution remain outstanding. Original component measurements are retained with
+their limits. No new combined-runtime, main-package/default or scientific acceptance
+is claimed. Final assembly and fresh full intervals retain their existing gates.
 
 **Plans15 and17 implementation is reviewed and integrated for source publication.**
 The [Plan15 selection](../tectonics/optimisation/workbench/plan15/README.md) preserves
@@ -158,6 +167,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |
+| Plans19/20 geometry and diagnostic captures | Integrated public source selection; Plan19 private validation accepted, Plan20 A/B accepted. Folded DLL binding and prepared-entry execution remain open. | [Combined selection](../tectonics/optimisation/workbench/plans19-20/README.md), [Plan19](../tectonics/optimisation/workbench/plan19/README.md), [Plan20](../tectonics/optimisation/workbench/plan20/README.md) |
 | Plans15/17 heat selection and geometry parity | Source integration and publication complete; six-arm heat PASS, both genuine geometry proofs and all nine comparisons retained. Full intervals and default adoption remain held. | [Plan15](../tectonics/optimisation/workbench/plan15/README.md), [Plan17](../tectonics/optimisation/workbench/plan17/README.md) |
 | Plan16 geometry worker assessment | Sampled IV2 proof PASS: actual six-worker session/live peak, exact records and streams. Five-helper source/profile successor integrates authenticated parent-based four/six ceilings with Plans13–14; all native bytes preserved. Native-entry preflight qualified; no programme default switch or full interval claim. | [Mechanism, source and measurements](../tectonics/optimisation/workbench/plan16/README.md) |
 | Plans13–14 compiled heat and finish/marker integration | Requested private implementation/integration complete; branch source and docs reconciled. H3 candidate-only. Exact saved Heat comparison and separate marker controls pass; no current full-interval or default-enablement claim. | [Source, review and measurements](../tectonics/optimisation/workbench/plans13-14/README.md), [Plan13](../tectonics/optimisation/plans/plan-13-heat-kernel-h3-q25.md), [Plan14](../tectonics/optimisation/plans/plan-14-heat-finish-closure-markers.md) |

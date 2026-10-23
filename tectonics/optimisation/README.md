@@ -80,6 +80,14 @@ genuine geometry proofs and all nine comparisons are complete; the current selec
 geometry sources are preserved with no native/runtime delta. Final programme
 acceptance and held full intervals remain separate from this source publication.
 
+The current [Plans19–20 source selection](workbench/plans19-20/README.md)
+combines Plan19's two accepted geometry changes with Plan20's eight capture-helper
+members, preserving the later heat and worker selection. It references existing
+unchanged files instead of copying a second package. Plan19's declared private
+validation is accepted; Plan20 A/B is accepted with the folded DLL binding still
+pending. This is source integration on the review branch, not an executable
+release, a main-package overlay or a new combined-runtime validation result.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

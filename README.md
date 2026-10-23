@@ -167,6 +167,10 @@ Execution completion, numerical checks, scientific validation and fictional-worl
 
 ## What has been achieved
 
+The optimisation review branch now supplies a [combined geometry and capture source selection](tectonics/optimisation/workbench/plans19-20/README.md).
+Its accepted component results, source integration and remaining package/landing
+work are distinguished in [current state](docs/CURRENT_STATE.md).
+
 Progress below describes implemented work or explicitly recorded evidence, not a new test run triggered by this README.
 
 | Area | Demonstrated progress | Remaining boundary |

@@ -1,0 +1,38 @@
+{
+  "schema": "atlas.public.plan19.retained-results.r1",
+  "status": "ACCEPTED_PRIVATE_SELECTED_INTEGRATION_AND_BOUNDED_NATIVE_ENGINEERING_VALIDATION",
+  "publication_is_new_execution_evidence": false,
+  "validation": {
+    "native_aggregate_sha256": "92329daccc8f9339d6c6a62070e82e79673e34d3b81bb38579ba4b4a36cf73ae",
+    "guarded_result_sha256": "665314dbbac703f3b99aaf5d28042eb346a3968d60a4c658889365037dceb9f3",
+    "regression_groups": 4,
+    "endpoint_rows": 52,
+    "original_faults": 2,
+    "structural_consumer_checks": 16,
+    "additional_funded_shell_prefix_work_limit": 528,
+    "affected_graph_gcl_and_thermal_metric_cases": 4,
+    "native_one_shot_workers": 6,
+    "adopted_results": 12,
+    "fresh_process_stages": ["baseline", "successor", "resume"],
+    "successor_checkpoint_restore": {"hits": 2, "writes": 0},
+    "source_refusal_and_worker_finality": "PASS",
+    "final_owned_reservations": 0,
+    "guarded_wall_seconds": 142.594,
+    "sampled_owned_tree_peak_rss_bytes": 435167232,
+    "sample_period_ms": 250,
+    "telemetry_is_performance_comparison": false
+  },
+  "selected_complete_call_comparisons": [
+    {"case": "shell-refinement", "baseline_ms": 8.1484, "selected_ms": 7.5452, "percent_lower": 7.40},
+    {"case": "alternate-axis-refinement", "baseline_ms": 10.2294, "selected_ms": 8.3429, "percent_lower": 18.44}
+  ],
+  "selected_comparison_limits": "Two fresh samples per arm; overlapping gains cannot be summed or generalised to populations or full intervals.",
+  "excluded_candidates": ["D3", "D4", "paired-clipping"],
+  "exclusion_basis": "Completed comparisons and accepted variation assessment; higher memory was allowed and was not a rejection criterion.",
+  "combined_current_public_selection_native_validation": "NOT_CLAIMED",
+  "production_enablement": false,
+  "full_interval_acceptance": false,
+  "scientific_acceptance": false,
+  "private_runtime_compatibility": false,
+  "historical_failures_preserved": true
+}

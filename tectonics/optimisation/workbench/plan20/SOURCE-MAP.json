@@ -1,0 +1,151 @@
+{
+  "schema": "atlas.public.plan20.source-map.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_BINDING",
+  "public_overlay_identity_sha256": "a32d70e6db17538a54a3ec346185ab66c0c075fea954af84166545147e8912a6",
+  "public_overlay_identity_rule": "SHA-256 of UTF-8 json.dumps(list of member/public_sha256 records in entries order, indent=2, ensure_ascii=True) plus newline",
+  "selected_private_composition_sha256": "e14c05a8c1f81f91767cc5cd8f77a4c1119b30683998bddc5c8d777738f540b2",
+  "predecessor_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
+  "predecessor_source_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
+  "scope": "Eight-member overlay on the Plan15 selected source closure; unchanged members are referenced by the predecessor map, not duplicated here.",
+  "selected_native_files": 239,
+  "selected_helper_files": 398,
+  "preserved_selected_files": 629,
+  "changed_selected_files": 5,
+  "added_selected_files": 3,
+  "public_runtime_compatibility": false,
+  "runtime_policy_adopted": false,
+  "folded_dll_binding": "PENDING",
+  "prepared_driver_insertion_execution": "UNEXECUTED",
+  "capture_library": {
+    "public_placeholder": "C:/Users/LOCAL_USER/AtlasPrivateAssets/wp10_zstd.dll",
+    "sha256": "a40c24ad328da37a42c7f69e434c576254f11fde4097cd5de7416f8f78444f28",
+    "binary_included": false
+  },
+  "entries": [
+    {
+      "member": "source/helpers/capture_store.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/capture_store.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/capture_store.py",
+      "original_sha256": "4664b20599fa9b05d584328aa02d34478ae307a6204216497c637d6fa0804647",
+      "public_sha256": "4664b20599fa9b05d584328aa02d34478ae307a6204216497c637d6fa0804647",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    },
+    {
+      "member": "source/helpers/compact_restart_patch.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/compact_restart_patch.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/compact_restart_patch.py",
+      "original_sha256": "7afe82bfc22403097eaa4acb378f1799c8fd42e6aad502f911efcec0d04275e3",
+      "public_sha256": "5de7d101754f0beee3348ebd3810e8b9ea00acc463a125ee636191341a4e75df",
+      "transformations": [
+        {
+          "kind": "private-library-path-placeholder",
+          "count": 1,
+          "public_value": "C:/Users/LOCAL_USER/AtlasPrivateAssets/wp10_zstd.dll",
+          "binary_pin_unchanged": true
+        }
+      ],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    },
+    {
+      "member": "source/helpers/fresh_interval_driver.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/fresh_interval_driver.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/fresh_interval_driver.py",
+      "original_sha256": "d3d26416a3fe3126d61ee3faa8967245bdbd3635e1327d0f35dc3ba4e791fb37",
+      "public_sha256": "310d9848e35f124bd1ee94bf584cedbea8d2b514574b9315a44b98e1223764bd",
+      "transformations": [
+        {
+          "kind": "coordination-reference-redaction",
+          "count": 1,
+          "original_text_sha256": "33073eb012452c717569b490b7b91f678a03494df713dbc52512183d0ae653fc",
+          "replacement": "``measurements`` (item 7) observes only: when given, it"
+        },
+        {
+          "kind": "coordination-reference-redaction",
+          "count": 1,
+          "original_text_sha256": "2ca2dee19676c918f9740837c0081ef4bce3151bb158c5ec2fdc02ba2281cb48",
+          "replacement": "# Plan11 separates the selected ALE policy from Plan07 pressure."
+        },
+        {
+          "kind": "coordination-reference-redaction",
+          "count": 1,
+          "original_text_sha256": "4f3ca17109eab9338cfe84ed9e1b4b8563374946e67d09e6f9bec8c4f2b76f22",
+          "replacement": "# Item 11 pressure-stage instrumentation: r9's IV1 log has"
+        }
+      ],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    },
+    {
+      "member": "source/helpers/ledger_fresh_interval.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/ledger_fresh_interval.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/ledger_fresh_interval.py",
+      "original_sha256": "06040fd28c42f06210a32467a02f1d037f87c2cb8164888be46c745bd18349ef",
+      "public_sha256": "7ededbfe43baec57bec5b49771dbf3c215211ad666abbad28077c599aaa8d259",
+      "transformations": [
+        {
+          "kind": "private-library-path-placeholder",
+          "count": 1,
+          "public_value": "C:/Users/LOCAL_USER/AtlasPrivateAssets/wp10_zstd.dll",
+          "binary_pin_unchanged": true
+        },
+        {
+          "kind": "coordination-reference-redaction",
+          "count": 1,
+          "original_text_sha256": "d071b87bbf05b733bbb37558cc75681078326ff6124ce23ba28892038c023cdb",
+          "replacement": "Retained comparison contract, with items 11 and 15 disabled.\nThe rerun need not equal r9; this ledger must show that"
+        },
+        {
+          "kind": "coordination-reference-redaction",
+          "count": 1,
+          "original_text_sha256": "0be30b26ddad22af5e9556a0650ac291842de8820f5bc4f111d321e347725765",
+          "replacement": "Retained query semantics (16 Oct 2026): replay rows are keyed by"
+        }
+      ],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    },
+    {
+      "member": "source/helpers/prepared_interval_driver.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/prepared_interval_driver.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/prepared_interval_driver.py",
+      "original_sha256": "21b5874cbab82138285582f895aeab27f7cb77db851f9050b0498dc5a5bdbf80",
+      "public_sha256": "21b5874cbab82138285582f895aeab27f7cb77db851f9050b0498dc5a5bdbf80",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    },
+    {
+      "member": "source/helpers/test_s2_route_wiring.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/test_s2_route_wiring.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/test_s2_route_wiring.py",
+      "original_sha256": "d5f6837486d655bf30a15e855aeb22c5ea8e46b57b576fa66c6b88390289b912",
+      "public_sha256": "d5f6837486d655bf30a15e855aeb22c5ea8e46b57b576fa66c6b88390289b912",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "portable-source-check-with-selected-helpers-on-sys-path"
+    },
+    {
+      "member": "source/helpers/test_step8_coverage.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/test_step8_coverage.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/test_step8_coverage.py",
+      "original_sha256": "59adb1899df26f6002bc04457ec0d2e1cc26728a090ca38bb5ea305f4940da5a",
+      "public_sha256": "59adb1899df26f6002bc04457ec0d2e1cc26728a090ca38bb5ea305f4940da5a",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "owner-layout-dependent-test-source"
+    },
+    {
+      "member": "source/helpers/test_wp16_preadvance.py",
+      "public_path": "tectonics/optimisation/workbench/plan20/source/helpers/test_wp16_preadvance.py",
+      "source": "<PRIVATE_PLAN20_COMPOSITION>/helpers/test_wp16_preadvance.py",
+      "original_sha256": "25e9d8c60df91109101b29eaca83c8205f33ce143384ff8b5a9d44a3cdf54037",
+      "public_sha256": "25e9d8c60df91109101b29eaca83c8205f33ce143384ff8b5a9d44a3cdf54037",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "owner-layout-dependent-test-source"
+    }
+  ]
+}

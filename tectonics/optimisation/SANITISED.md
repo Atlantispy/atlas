@@ -1,5 +1,14 @@
 # Sanitised files
 
+Plans19–20 have explicit original/public digest maps in
+[Plan19](workbench/plan19/SOURCE-MAP.json), [Plan20](workbench/plan20/SOURCE-MAP.json)
+and the [combined selection](workbench/plans19-20/SOURCE-MAP.json).
+The two geometry modules are unchanged exports of accepted bytes. Capture exports
+redact private prose and substitute an explicit unavailable native-library path;
+the library hash stays unchanged and no binary is included. Existing guards are
+not repinned. These are new publication identities, not a runnable historical
+profile or evidence of the pending package fold.
+
 The Plan02 map in
 [workbench/plan02/SOURCE-MAP.json](workbench/plan02/SOURCE-MAP.json) preserves all
 25 logical members and their original/public digests. Nine exact duplicate exports

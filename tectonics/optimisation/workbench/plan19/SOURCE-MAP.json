@@ -1,0 +1,49 @@
+{
+  "schema": "atlas.public.plan19.source-overlay.r1",
+  "predecessor_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
+  "predecessor_source_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
+  "scope": "Two native source replacements over the current public selection; preserve all selected helpers.",
+  "selected_native_files": 239,
+  "changed_selected_members": 2,
+  "preserved_native_members": 237,
+  "selected_private_composition_sha256": "4397efb7c2820ff66d4f88ca4bb19a445921b087faffd442780e4d021a76ff76",
+  "later_native_preserved": [
+    {
+      "member": "atlas_tectonics/integration_private_heat_cold.py",
+      "current_original_sha256": "791899ac358ca5174493bfe4aedaba2778f0f0aa6f856136b04c777287dd8b58",
+      "current_public_sha256": "791899ac358ca5174493bfe4aedaba2778f0f0aa6f856136b04c777287dd8b58",
+      "older_plan19_sha256": "6dad6f067dc57c58f385f630b057bfac1c3c4757507cf9dc613c8b834c7d7751",
+      "disposition": "PRESERVE_CURRENT_PUBLIC_SELECTION"
+    }
+  ],
+  "private_runtime_compatibility": false,
+  "public_identity_is_new": true,
+  "entries": [
+    {
+      "member": "source/src/atlas_tectonics/integration_differential_geometry.py",
+      "public_path": "tectonics/optimisation/workbench/plan19/source/atlas_tectonics/integration_differential_geometry.py",
+      "source": "<PRIVATE_PLAN19_COMPOSITION>/src/atlas_tectonics/integration_differential_geometry.py",
+      "expected_parent_public_path": "tectonics/optimisation/pending/kernels/ip2/src/atlas_tectonics/integration_differential_geometry.py",
+      "expected_parent_sha256": "436e170c9d848ceaf86a4860e101ab32ffb2b55e745a8f8d7c9d2871fd11c8f0",
+      "original_sha256": "a680b479b9dcc8414b43bcf331c6b6d84bf7c20c6226e95e0f2df9806de56e7a",
+      "public_sha256": "a680b479b9dcc8414b43bcf331c6b6d84bf7c20c6226e95e0f2df9806de56e7a",
+      "transformations": [],
+      "selected_composition_member": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "imports_and_signatures_unchanged": true
+    },
+    {
+      "member": "source/src/atlas_tectonics/integration_sphere_quadrature.py",
+      "public_path": "tectonics/optimisation/workbench/plan19/source/atlas_tectonics/integration_sphere_quadrature.py",
+      "source": "<PRIVATE_PLAN19_COMPOSITION>/src/atlas_tectonics/integration_sphere_quadrature.py",
+      "expected_parent_public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_sphere_quadrature.py",
+      "expected_parent_sha256": "ba3d2f8dd64fc731bb885547c80083aecadf92531dd98e8fbc3ab0d6d2ad5495",
+      "original_sha256": "ed6d16d0ec9c39fb36ff885ea1a7c8782b0f764f4a0eee22abea9f5c3ee4c28f",
+      "public_sha256": "ed6d16d0ec9c39fb36ff885ea1a7c8782b0f764f4a0eee22abea9f5c3ee4c28f",
+      "transformations": [],
+      "selected_composition_member": true,
+      "python_ast_parse": "PASS_PARSE_ONLY",
+      "imports_and_signatures_unchanged": true
+    }
+  ]
+}

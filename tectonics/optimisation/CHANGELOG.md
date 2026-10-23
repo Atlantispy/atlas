@@ -6,6 +6,28 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23 Oct 2026, Plans19–20 accepted source integration
+
+- Integrate Plan19's selected single-boundary shell and alternate-axis geometry
+  changes with Plan20's accepted S2 r9 capture helpers in one explicit public
+  source selection. Preserve the later heat/worker changes from Plans15–17 and
+  all historical generations; do not replace them with Plan19's older base.
+- **MEASURED, retained component comparisons:** shell 8.1484 → 7.5452 ms
+  (7.40% lower), alternate-axis case 10.2294 → 8.3429 ms (18.44% lower).
+  The other three geometry candidates remain excluded on their completed evidence.
+  These gains overlap and are not added. The axis-lower-cap case uses more logical RAM.
+- **MEASURED, retained capture-only comparison:** median writes 2.30882755 →
+  1.17920190 s (48.9264% lower); disk 91,964,804 → 79,554,271 B (13.4949% lower).
+  Decode, block preparation and initial library loading are outside that timer.
+  No process-RAM saving or whole-interval speed-up is established.
+- Plan19's private native validation is accepted. Plan20 A/B is accepted with
+  existing consumer failures retained, fresh-entry probes 9/9 and native-library
+  tests 16 passing/one dictionary skip. Prepared-entry execution and the final
+  package-relative DLL binding remain unproved; Plan20 is not complete.
+- Publish original/public hashes and a combined source map. Public sanitisation
+  creates new publication identities, not replacements for historical runtime
+  pins. No default activation, main-package landing or scientific hold release.
+
 ## 23 Oct 2026, Plan17 completed proofs and source publication
 
 - Both genuine geometry proofs and all nine required comparisons qualify PASS;

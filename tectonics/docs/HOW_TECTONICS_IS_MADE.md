@@ -6,6 +6,9 @@ we check the result. It assumes curiosity, not specialist geophysics training.
 Status: **WORKING NON-CANON**. For delivery and next work, use
 [current status](../../docs/CURRENT_STATE.md); this guide explains methods rather
 than keeping another progress diary.
+The physical-integration chapter also explains
+[bounded geometry refinement](how-it-works/06-physical-integration.md#refine-only-the-geometric-bounds-that-need-it)
+and [exact diagnostic capture storage](how-it-works/06-physical-integration.md#save-diagnostic-operands-without-changing-their-logical-identity).
 
 For the remaining implementation sequence and its definition of completion, see
 the [complete tectonics integration plan](INTEGRATION_PLAN.md). The existing W12

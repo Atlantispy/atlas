@@ -1,5 +1,17 @@
 # Atlas optimisation reference
 
+## Selected geometry and diagnostic capture source integration — 23 October 2026
+
+The [Plans19–20 source selection](../optimisation/workbench/plans19-20/README.md)
+combines two accepted geometry changes and the accepted S2 r9 capture helpers,
+preserving later heat/worker choices. The reader chapter explains
+[bounded geometry refinement](how-it-works/06-physical-integration.md#refine-only-the-geometric-bounds-that-need-it)
+and [exact diagnostic operands](how-it-works/06-physical-integration.md#save-diagnostic-operands-without-changing-their-logical-identity).
+Component results and memory trade-offs are recorded in the linked method records.
+The public selection has new source identities; historical private results do not
+authenticate a new combined runtime. Release/Plan26 binding and main-package
+landing remain separate. No new research or scientific acceptance is claimed.
+
 ## R1 execution-identity coverage — 30 September 2026
 
 WORKING NON-CANON, unreviewed candidate. `ExecutionContext` now binds the loaded

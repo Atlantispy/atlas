@@ -1452,3 +1452,35 @@ The proved geometry bytes already match the current selected composition, so
 integration preserves native sources and profiles. These checks introduce no new
 physical model, tolerance, research result or whole-interval speed claim. Final
 programme acceptance and held full intervals remain separate.
+
+### Refine only the geometric bounds that need it
+
+The [selected geometry improvements](../../optimisation/workbench/plan19/README.md)
+tighten supported shell bounds and choose an alternate quadrature axis in proved
+cases. They preserve directed enclosures, refusal semantics, funded work and
+result ownership. Better bounds can avoid unnecessary subdivision; this does
+not change the represented physical model or permit an unbounded shortcut.
+Checks cover complete records, ordered resource refusals, affected graph/thermal
+consumers, real worker adoption and a fresh checkpoint restore. The two retained
+complete-call comparisons improved by 7.40% and 18.44%; these are overlapping
+component observations. Some cases use more memory, and three other tested
+ideas remain excluded. No new research or full-interval measurement is claimed.
+
+### Save diagnostic operands without changing their logical identity
+
+The [S2 capture route](../../optimisation/workbench/plan20/README.md) writes mesh,
+closed-graph and bounds operands as bounded exact-byte Zstandard level-3 captures.
+It retains raw byte count/hash as logical identity and authenticates each stored
+container separately. The ledger still reads supported legacy gzip records.
+Before allocating output it checks declared limits, container size/hash and the
+authenticated footer; it then consumes the bounded reader and verifies raw identity.
+Fresh/prepared entry points contain explicit capture-route admission calls.
+Private fresh-entry probes executed, but prepared-entry execution remains unproved.
+The final package-relative native-library binding and its refusal controls remain
+Release/Plan26 work. The measured write-time/disk savings exclude input decoding,
+block preparation and initial library load; streaming does not prove lower whole-reader RAM.
+
+These methods can serve another Atlas module only where its geometry, exact-byte
+data and resource/identity contracts match. The combined source selection keeps
+one implementation for compatible consumers. Wider adoption belongs to the
+receiving module's integration and checks; no universal speed-up is inferred.

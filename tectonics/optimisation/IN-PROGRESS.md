@@ -88,6 +88,13 @@ Rules that apply to every item below:
 
 ## Geometry
 
+[Plan19](workbench/plan19/README.md) completes the five-candidate implementation
+disposition: shell and alternate-axis changes are accepted and source-integrated;
+the other three remain excluded on completed measurements. Its bounded private
+native/worker/checkpoint checks passed. The [combined selection](workbench/plans19-20/README.md)
+preserves later heat changes. Final runtime assembly, main-package landing and
+scientific acceptance remain separate.
+
 Plan17 component integration and source publication are complete. Genuine q23/q24 and all nine
 required comparisons are qualified PASS. Operational r7 is source-integrated with
 retained r4 dependencies; current selected geometry and later helper changes are
@@ -127,6 +134,13 @@ Final programme acceptance and held full intervals remain separate.
 
 ## Storage
 
+[Plan20](workbench/plan20/README.md) A/B is accepted and source-integrated:
+S2 r9 capture-write timing passed and selected consumers were checked against
+their base. The remaining work is the actual Release/Plan26 folded DLL binding,
+including the module-lookup refusal controls, plus unproved prepared-entry execution.
+Existing base failures and the dictionary skip remain explicit; this is not an
+all-green consumer suite or a completed packaged route.
+
 - **Merged:** sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED), in `composed-r2/helpers/segment_store.py`.
 - **L3:** design accepted; build not started.
 - **WP12:** accepted on condition that a guard-equivalence section is written first.
@@ -141,6 +155,12 @@ Final programme acceptance and held full intervals remain separate.
 - **S9:** held until its harness smoke and mutants pass.
 
 ## Final assembly and landing
+
+The current public source choice is [Plans19–20](workbench/plans19-20/README.md),
+an explicit successor of Plan15 with Plan17's geometry retained. Historical
+`composed-r2` remains unchanged. This selection does not supply the final runtime,
+Release/Plan26 fold or Plan37 main-package landing. The earlier assembly notes
+below describe their historical preparation, not completed current delivery.
 
 - **Assembly:** the assembly manifest is accepted as a draft (`pending/storage/assembly-manifest.md`). Order: freeze
   the manifest, assemble with pins, build the frozen final composition, then write the acceptance record.
