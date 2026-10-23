@@ -10,3 +10,7 @@
 
 # Preserve pinned reference bytes; Git must not normalise their line endings.
 reference_data/** -text
+# Preserve exact new heat receipts/bound inputs, including Windows JSON newlines.
+# These rules live here so this package's general JSON rule cannot override them.
+optimisation/workbench/plan40/heat/testing/**/*.json -text whitespace=cr-at-eol
+optimisation/workbench/plan40/heat/implementation-r1/**/*.json -text whitespace=cr-at-eol

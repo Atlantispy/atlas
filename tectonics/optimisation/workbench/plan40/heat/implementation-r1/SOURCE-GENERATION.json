@@ -1,0 +1,87 @@
+{
+  "schema": "atlas.plan40b.additive-source-generation/v1",
+  "status": "IMPLEMENTED_CANDIDATE_NOT_SELECTED",
+  "generation_sha256": "27a229c9a9d641cfe8556a1939a060eceeb00d3a547d6db5b65f4729eb726a8e",
+  "selected_predecessor_map": {
+    "path": "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json",
+    "sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc"
+  },
+  "sources": [
+    {
+      "candidate": "C3",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/certificate/source/helpers/private_heat_certification_kernel_r1.py",
+      "sha256": "6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb"
+    },
+    {
+      "candidate": "C3",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/certificate/source/helpers/private_heat_compiled_dot_r1.py",
+      "sha256": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5"
+    },
+    {
+      "candidate": "C3",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/certificate/source/helpers/private_heat_functionals_parallel_r1.py",
+      "sha256": "107f804186e316ef2805e013271c89438a75a14fee5b1a6d53d50507cd050a7d"
+    },
+    {
+      "candidate": "C8",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/solve-finish/private_heat_interval_assembly_kernel_plan40b_c8_r1.py",
+      "sha256": "248afad46838af857c1170c3083b7a0558fb2c85921e54b9011f3b024816d7f5"
+    },
+    {
+      "candidate": "C8",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/solve-finish/private_heat_interval_inventory_plan40b_c8_r1.py",
+      "sha256": "28d3bf9c604309e402d4e979ef3bba07d5ff78900038af53bf862cbb0a1672a0"
+    },
+    {
+      "candidate": "C8",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/solve-finish/private_heat_interval_assessment_plan40b_c8_r1.py",
+      "sha256": "3347757f84789019b7b326de293be6617aa817c09efa6682c426f1876742af33"
+    },
+    {
+      "candidate": "C8",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/solve-finish/private_heat_interval_inventory_plan40b_reference_r1.py",
+      "sha256": "52ed881ae42706e506084f26ff281d3089327628d254b1308fe92b249b78da06"
+    },
+    {
+      "candidate": "C8",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/solve-finish/private_heat_interval_assessment_plan40b_reference_r1.py",
+      "sha256": "f9be5f96f5c374716bca1ff0ca08789e061e6217bb6dd4f0eb3504f96da07d91"
+    },
+    {
+      "candidate": "C13",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/functional/private_heat_polygon_numerics_40b_r1.py",
+      "sha256": "5991aca3ed26e65e2290be6c1ee4052f15b74a1e770b9606849263e25b12f00c"
+    },
+    {
+      "candidate": "C13",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/functional/private_heat_polygon_moment_40b_r1.py",
+      "sha256": "de56233d0272555e7998f1dc5418a65c017abcb7a51e3a48aaea62738ca4bfd0"
+    },
+    {
+      "candidate": "C13",
+      "path": "tectonics/optimisation/workbench/plan40/heat/implementation-r1/functional/private_heat_functionals_kernel_40b_r1.py",
+      "sha256": "0c9606475fb7e6576d94680c0d7b2757e8088c0d94bc20564e842ea45c3a1c59"
+    }
+  ],
+  "production_selected": false,
+  "worker_qualified": false,
+  "private_runtime_checkpoint_qualified": false,
+  "scientifically_accepted": false,
+  "limits": [
+    "Independent source successors, not a combined runtime selection or combined-gain measurement.",
+    "C3 normally imported r3 and functional-bounds callers share its new certificate; parallel caller changes only exact source pins and launches no workers.",
+    "C8 full inventory/owning wrapper has an explicit new public portability binding in both reference and candidate; original formulas and native ownership remain.",
+    "C13 uses real native prospective and retained owners; its test START fence is explicitly component-injected and non-power/full-forward/worker proof remains open.",
+    "Full-forward/issuer/checkpoint/restoration selection is not changed by this public source generation.",
+    "C3 full assess_weights/bounds requires an explicit successor certification-inventory r1 binding; current evidence is genuine r3._attempt plus bounds import/identity only.",
+    "C3 later parallel observer must additionally attest mpfr_zero_p, mpfr_number_p, mpfr_signbit and mpfr_set_zero; current pin-only successor does not qualify workers."
+  ],
+  "receipt_bytes": "The scoped .gitattributes rules preserve JSON execution/input bytes verbatim, including any CRLF. Code sources use LF.",
+  "dispositions": {
+    "C3": "SOURCE_CANDIDATE_MIXED_PERFORMANCE_NOT_ENABLED",
+    "C8": "SOURCE_IMPLEMENTED_FOR_REVIEW_NOT_ENABLED",
+    "C13": "NOT_ADOPTED_ACTUAL_SUCCESSOR_REGRESSION"
+  },
+  "actual_measurements": "MEASUREMENTS.md",
+  "review_status": "CODE_ACCEPTED_SOURCE_INTEGRATED_UNENABLED"
+}

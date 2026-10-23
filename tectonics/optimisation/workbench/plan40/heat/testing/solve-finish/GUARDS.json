@@ -1,0 +1,35 @@
+{
+  "script_sha256": "2f53a1970564e288b53e0dce2eda4dc92f80c4c3f07a48508d8d35050243e439",
+  "status": "PASS",
+  "checks": {
+    "-O": {
+      "exit": 1,
+      "early_guard": true,
+      "message": "Optimised execution is unsupported: control assertions are required"
+    },
+    "-OO": {
+      "exit": 1,
+      "early_guard": true,
+      "message": "Optimised execution is unsupported: control assertions are required"
+    },
+    "missing_queue": {
+      "exit": 2,
+      "message": "test_candidates.py: error: Benchmark execution requires external queue admission and --queue-id qNUMBER; this flag does not itself authorise a run"
+    },
+    "existing_output": {
+      "exit": 2,
+      "message": "test_candidates.py: error: --output must name a NEW_PATH"
+    },
+    "source_drift": {
+      "exit": 1,
+      "candidate_status": "FAIL",
+      "message": "ValueError: Selected source map drift"
+    }
+  },
+  "versions": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "gmpy2": "2.3.2"
+  },
+  "no_timing": true
+}

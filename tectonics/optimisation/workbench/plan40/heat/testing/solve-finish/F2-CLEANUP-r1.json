@@ -1,0 +1,116 @@
+{
+  "schema": "plan40b-f2-cleanup/v1",
+  "status": "PASS",
+  "timing_executed": false,
+  "script_sha256": "b25cc0bf30933927bbbeb5eed4621b75241fb1ddd7b89dd288deb577a3700c1a",
+  "control_sha256": "fb75739757e433e27950bc6c7979cdef83212499196afd1af12f1b620328c195",
+  "predecessor_script_sha256": "d953092ce21e6224844849b6c6d78d0cbc4972eaea04ccf866db81e94c20f01e",
+  "predecessor_smoke_sha256": "534d7cca3810331e77ab75e772b097c24bd6d83f4ffd50d229c3206a4c11df17",
+  "checks": [
+    {
+      "candidate": "C10",
+      "path": "success",
+      "reached": 1,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": false
+    },
+    {
+      "candidate": "C10",
+      "path": "MemoryError",
+      "reached": 1,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": true
+    },
+    {
+      "candidate": "C10",
+      "path": "CancelledError",
+      "reached": 1,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": true
+    },
+    {
+      "candidate": "C19",
+      "path": "success",
+      "reached": 3,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": false
+    },
+    {
+      "candidate": "C19",
+      "path": "MemoryError",
+      "reached": 1,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": true
+    },
+    {
+      "candidate": "C19",
+      "path": "CancelledError",
+      "reached": 1,
+      "cache_empty": true,
+      "namespace_empty": true,
+      "weak_references_dead": true,
+      "exception_traceback_retained": true
+    }
+  ],
+  "affected_untimed_smoke": {
+    "queue_id": null,
+    "candidates": {
+      "C10": {
+        "status": "PASS",
+        "samples_ns": {
+          "baseline": [],
+          "candidate": []
+        },
+        "batch": 1,
+        "output_digests": {
+          "baseline": [
+            "d01925146f630b51591a81f050d8c06e2581c6797f4e3fe535539c6e0d8895fc"
+          ],
+          "candidate": [
+            "d01925146f630b51591a81f050d8c06e2581c6797f4e3fe535539c6e0d8895fc"
+          ]
+        },
+        "limitations": "Deterministic tiny source-bound component/consumer adapters; cache/view construction and release plus adapter overhead included. Source validation/compilation outside timed samples. Synthetic owner seams; no full heat extrapolation."
+      },
+      "C19": {
+        "status": "PASS",
+        "samples_ns": {
+          "baseline": [],
+          "candidate": []
+        },
+        "batch": 1,
+        "output_digests": {
+          "baseline": [
+            "a0122a4d82f80420d81d22a08e7afd555626580371a69d5c8ab513c516b4463d"
+          ],
+          "candidate": [
+            "a0122a4d82f80420d81d22a08e7afd555626580371a69d5c8ab513c516b4463d"
+          ]
+        },
+        "limitations": "Deterministic tiny source-bound component/consumer adapters; cache/view construction and release plus adapter overhead included. Source validation/compilation outside timed samples. Synthetic owner seams; no full heat extrapolation."
+      }
+    }
+  },
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+    "tectonics/optimisation/pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079",
+    "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_finish_kernel_r11.py": "46c4b132d08b26c09ca809b5d686935377bac089e529dbee67ae3147a91d4ea2",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r2.py": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_mpfr_lu_r1.py": "d1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r2.py": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f"
+  },
+  "limitations": "Cache-specific retained values retire explicitly. Escaping source traceback locals may survive under caller custody; no native resource theorem. No GC collection invoked; automatic GC disabled only during ownership controls, restored before untimed smoke."
+}

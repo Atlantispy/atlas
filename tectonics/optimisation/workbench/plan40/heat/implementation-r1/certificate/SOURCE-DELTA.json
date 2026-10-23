@@ -1,0 +1,54 @@
+{
+  "schema": "plan40b.certificate-successor.r1",
+  "selected": [
+    "C3"
+  ],
+  "sources": {
+    "private_heat_compiled_dot_r1.py": {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_compiled_dot_r1.py",
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r1.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_kernel_r1.py",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+      "transformations": [
+        {
+          "kind": "trailing-empty-lines",
+          "replacement": "one final LF"
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_functionals_parallel_r1.py": {
+      "member": "source/helpers/private_heat_functionals_parallel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plan15/source/helpers/private_heat_functionals_parallel_r1.py",
+      "source": "<PRIVATE_PLAN15_SOURCE>/source/helpers/private_heat_functionals_parallel_r1.py",
+      "original_sha256": "711928938eeb3dd032721f8c7159cdb91bddab9eb29fc8924cf72e6064bc8f60",
+      "public_sha256": "fea58b5fffa45ad4fd832e9b9ca87779ebf3098e04f02d91a6a4278804dc84b1",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 2
+        }
+      ],
+      "selected_composition_member": true
+    }
+  },
+  "successors": {
+    "private_heat_certification_kernel_r1.py": "6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb",
+    "private_heat_compiled_dot_r1.py": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5",
+    "private_heat_functionals_parallel_r1.py": "107f804186e316ef2805e013271c89438a75a14fee5b1a6d53d50507cd050a7d"
+  },
+  "accepted_control_sha256": "ba7dda0d0565f2fee86d38b07e098e921253987b93da22003e85546a1449e392",
+  "production_selected": false,
+  "worker_enabled": false,
+  "worker_binding": "Pin-only successor supplied; no worker or observer contract activated."
+}

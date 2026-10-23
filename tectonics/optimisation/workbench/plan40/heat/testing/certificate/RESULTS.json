@@ -1,0 +1,2669 @@
+{
+  "schema": "plan40b.certificate-testing-r1",
+  "status": "PASS_WITH_DECLARED_LIMITS",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "mode": "correctness",
+  "retained_evidence": [
+    {
+      "script": "examine_controls.py",
+      "script_sha256": "106c44d3556bae1b5683f60c1b342778effc78d6a773a7a2ee1e72ff58c88cff",
+      "result": "CONTROL-RESULTS.json",
+      "result_sha256": "32a7defd0bcd4f8b6662077d78a783a713313861e2d7463a2063f356b18a44a5",
+      "status": "REUSED_NOT_RERUN",
+      "scope": "AST-selected reference arithmetic; no compiled H3 import or dispatch; no runtime proof or timing"
+    },
+    {
+      "script": "extension_certificate_controls.py",
+      "script_sha256": "b5a494934983b341740492369b81aa3b02b6ae94928361316faa0b5cfea989a4",
+      "result": "EXTENSION-CERTIFICATE-RESULTS.json",
+      "result_sha256": "ae59d5586127bffb734ed272bd1940cb3d55ac9028128951874c28ce75d81720",
+      "status": "REUSED_NOT_RERUN",
+      "scope": "Source-extracted arithmetic feasibility only; no production source edit, native/worker import, resource proof or timing"
+    }
+  ],
+  "candidates": {
+    "C3": {
+      "status": "PASS",
+      "scope": "source-bound integration fixture",
+      "cases": [
+        {
+          "native": false,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            61,
+            122
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": false,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            270,
+            540
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            25,
+            51
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            59,
+            119
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        }
+      ],
+      "attempts": [
+        {
+          "native": false,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 1980066,
+          "candidate_peak_accounted_bytes": 1980066,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "native": true,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        }
+      ],
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+          "baseline_peak_accounted_bytes": 2170880,
+          "candidate_peak_accounted_bytes": 2170880
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+          "baseline_peak_accounted_bytes": 21110784,
+          "candidate_peak_accounted_bytes": 21110784
+        }
+      ]
+    },
+    "C4": {
+      "status": "PASS",
+      "scope": "source-bound integration fixture",
+      "cases": [
+        {
+          "native": false,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            61,
+            122
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "7809e08dff083ba989fb0a1cc429865b0eb637cb49c5652cc3e181e27ac56391",
+          "handle_counts": null,
+          "peak_accounted_bytes": 77824
+        },
+        {
+          "native": false,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            270,
+            540
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "7809e08dff083ba989fb0a1cc429865b0eb637cb49c5652cc3e181e27ac56391",
+          "handle_counts": null,
+          "peak_accounted_bytes": 90112
+        },
+        {
+          "native": true,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            25,
+            51
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "7809e08dff083ba989fb0a1cc429865b0eb637cb49c5652cc3e181e27ac56391",
+          "handle_counts": null,
+          "peak_accounted_bytes": 77824
+        },
+        {
+          "native": true,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            59,
+            119
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "7809e08dff083ba989fb0a1cc429865b0eb637cb49c5652cc3e181e27ac56391",
+          "handle_counts": null,
+          "peak_accounted_bytes": 90112
+        }
+      ],
+      "attempts": [
+        {
+          "native": false,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "native": true,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "optional_admission_reference_fallback": true
+        }
+      ],
+      "escaping_optional_owner": {
+        "exception_held_bytes": 83968,
+        "traceback_only_held_bytes": 83968,
+        "after_drop_bytes": 0,
+        "escaping_frame_custody": "actual selected _preserve_workspace and WorkBudget"
+      },
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+          "baseline_peak_accounted_bytes": 2170880,
+          "candidate_peak_accounted_bytes": 2260992
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+          "baseline_peak_accounted_bytes": 21110784,
+          "candidate_peak_accounted_bytes": 21299200
+        }
+      ]
+    },
+    "C5": {
+      "status": "PASS",
+      "scope": "source-bound integration fixture",
+      "cases": [
+        {
+          "native": false,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            61,
+            122
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": {
+            "created": 0,
+            "borrowed": 0,
+            "fallback": 0,
+            "closed": 0
+          },
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": false,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            270,
+            540
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": {
+            "created": 0,
+            "borrowed": 0,
+            "fallback": 0,
+            "closed": 0
+          },
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            25,
+            51
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": {
+            "created": 3,
+            "borrowed": 6,
+            "fallback": 0,
+            "closed": 3
+          },
+          "peak_accounted_bytes": 163840
+        },
+        {
+          "native": true,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            59,
+            119
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": {
+            "created": 3,
+            "borrowed": 10,
+            "fallback": 0,
+            "closed": 3
+          },
+          "peak_accounted_bytes": 229376
+        }
+      ],
+      "attempts": [
+        {
+          "native": false,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "native": true,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        }
+      ],
+      "escaping_optional_owner": {
+        "exception_held_bytes": 192512,
+        "traceback_only_held_bytes": 192512,
+        "after_drop_bytes": 0,
+        "escaping_frame_custody": "actual selected _preserve_workspace and WorkBudget"
+      },
+      "native_handle": {
+        "status": "PASS_NATIVE_PREPARED_ROW_FIXTURE",
+        "refusals": [
+          "replacement",
+          "context-identity",
+          "context-settings",
+          "exceptional-native-flags",
+          "block-cancellation",
+          "owner-closed"
+        ],
+        "optional_admission_reference_fallback": true,
+        "strong_endpoint_custody": true,
+        "native_global_flags_restored": true,
+        "no_live_charge_after_close": true,
+        "prepared_transform_sha256": "93d08666bdaca57f5bd628aaa1cb678fbe07bf96bdce8069bd1b5d75460bfa5b",
+        "peak_accounted_bytes": 618496
+      },
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+          "baseline_peak_accounted_bytes": 2170880,
+          "candidate_peak_accounted_bytes": 2400256
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+          "baseline_peak_accounted_bytes": 21110784,
+          "candidate_peak_accounted_bytes": 23044096
+        }
+      ]
+    },
+    "C15": {
+      "status": "PASS",
+      "scope": "source-bound integration fixture",
+      "cases": [
+        {
+          "native": false,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            61,
+            122
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "6a6d5daf2773b1ca6d08d82382054078f334663c28c50873e90c990576acb770",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": false,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            270,
+            540
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "6a6d5daf2773b1ca6d08d82382054078f334663c28c50873e90c990576acb770",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            25,
+            51
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "6a6d5daf2773b1ca6d08d82382054078f334663c28c50873e90c990576acb770",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            59,
+            119
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "6a6d5daf2773b1ca6d08d82382054078f334663c28c50873e90c990576acb770",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        }
+      ],
+      "attempts": [
+        {
+          "native": false,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "native": true,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        }
+      ],
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+          "baseline_peak_accounted_bytes": 2170880,
+          "candidate_peak_accounted_bytes": 2170880
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+          "baseline_peak_accounted_bytes": 21110784,
+          "candidate_peak_accounted_bytes": 21110784
+        }
+      ]
+    },
+    "C17": {
+      "status": "PASS",
+      "scope": "source-bound integration fixture",
+      "cases": [
+        {
+          "native": false,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            61,
+            122
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": false,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            270,
+            540
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 2,
+          "precision": 80,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            25,
+            51
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 23,
+          "candidate_point_calls": 23,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        },
+        {
+          "native": true,
+          "rank": 4,
+          "precision": 320,
+          "full_solve_physical_equal": true,
+          "same_binary_flags_check_trace": true,
+          "cancellation_positions": [
+            1,
+            59,
+            119
+          ],
+          "singular_equal": true,
+          "reference_point_calls": 59,
+          "candidate_point_calls": 59,
+          "variant_sha256": "d97230d903131abc1932021a8e25832c07e0a9bbb0df38ff3fd7724e67bcd0f7",
+          "handle_counts": null,
+          "peak_accounted_bytes": 0
+        }
+      ],
+      "attempts": [
+        {
+          "native": false,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        },
+        {
+          "native": true,
+          "full_attempt_exact_export_equal": true,
+          "reference_peak_accounted_bytes": 2004642,
+          "candidate_peak_accounted_bytes": 2004642,
+          "unchanged_interval_export_reservations": true,
+          "actual_result_closed": true
+        }
+      ],
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+          "baseline_peak_accounted_bytes": 2170880,
+          "candidate_peak_accounted_bytes": 2170880
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+          "baseline_peak_accounted_bytes": 21110784,
+          "candidate_peak_accounted_bytes": 21110784
+        }
+      ]
+    },
+    "C11": {
+      "status": "PASS",
+      "scope": "source-bound lifetime fixture",
+      "cases": [
+        {
+          "case": "append",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 1,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "prefix-change",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "prefix-reorder",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "basis-change",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "precision-change",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 329984,
+          "charge_after_close": 0
+        },
+        {
+          "case": "closed",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 329984,
+          "charge_after_close": 0
+        },
+        {
+          "case": "no-funding",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 0,
+          "charged_after_failed_attempt": 0,
+          "replacement_overlap_peak_bytes": 0,
+          "charge_after_close": 0
+        },
+        {
+          "case": "native-replay",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 1,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "native-exception-replay",
+          "status": "PASS",
+          "full_solve_physical_signature_flags_trace_equal": true,
+          "hit_count": 0,
+          "full_native_replays": 1,
+          "charged_after_failed_attempt": 329984,
+          "replacement_overlap_peak_bytes": 676352,
+          "charge_after_close": 0
+        },
+        {
+          "case": "cancel-during-prefix-replay",
+          "status": "PASS",
+          "same_failure_flags_trace": true,
+          "prior_completed_cache_funded": true
+        },
+        {
+          "case": "inexact-prefix-cancel",
+          "position": 10,
+          "status": "PASS",
+          "same_failure_flags_trace": true
+        },
+        {
+          "case": "inexact-prefix-cancel",
+          "position": 14,
+          "status": "PASS",
+          "same_failure_flags_trace": true
+        },
+        {
+          "case": "inexact-prefix-cancel",
+          "position": 18,
+          "status": "PASS",
+          "same_failure_flags_trace": true
+        },
+        {
+          "case": "inexact-prefix-cancel",
+          "position": 24,
+          "status": "PASS",
+          "same_failure_flags_trace": true
+        },
+        {
+          "case": "inexact-prefix-cancel",
+          "position": 30,
+          "status": "PASS",
+          "same_failure_flags_trace": true
+        },
+        {
+          "case": "replacement-admission-refused",
+          "status": "PASS",
+          "old_cache_still_funded": true,
+          "no_new_numerical_refusal": true,
+          "baseline_candidate_equal": true
+        }
+      ],
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "append",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+          "baseline_peak_accounted_bytes": 2899362,
+          "candidate_peak_accounted_bytes": 3681792
+        },
+        {
+          "scenario": "mismatch",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+          "baseline_peak_accounted_bytes": 2899362,
+          "candidate_peak_accounted_bytes": 3681792
+        },
+        {
+          "scenario": "no-funding",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+          "baseline_peak_accounted_bytes": 2899362,
+          "candidate_peak_accounted_bytes": 2899362
+        },
+        {
+          "scenario": "append",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+          "baseline_peak_accounted_bytes": 22836642,
+          "candidate_peak_accounted_bytes": 49774080
+        },
+        {
+          "scenario": "mismatch",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+          "baseline_peak_accounted_bytes": 22836642,
+          "candidate_peak_accounted_bytes": 49774080
+        },
+        {
+          "scenario": "no-funding",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+          "baseline_peak_accounted_bytes": 22836642,
+          "candidate_peak_accounted_bytes": 22836642
+        }
+      ]
+    },
+    "C16": {
+      "status": "PASS",
+      "scope": "source-bound lifetime fixture",
+      "cases": [
+        {
+          "case": "success",
+          "native": false,
+          "reference": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 456,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 456,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": true,
+            "owner_hits": 4
+          }
+        },
+        {
+          "case": "normal-refusal",
+          "native": false,
+          "reference": {
+            "outcome": [
+              "refused",
+              "Rounded proposal has zero pivot; no rank conclusion"
+            ],
+            "checks": 25,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 1400832,
+                "status": "REFUSED_AND_DROPPED_BEFORE_NEXT_ATTEMPT"
+              }
+            ],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "refused",
+              "Rounded proposal has zero pivot; no rank conclusion"
+            ],
+            "checks": 25,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 1400832,
+                "status": "REFUSED_AND_DROPPED_BEFORE_NEXT_ATTEMPT"
+              }
+            ],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "cancellation",
+          "native": false,
+          "reference": {
+            "outcome": [
+              "raise",
+              "CancelledError",
+              "Interval functional cancelled at directed-input"
+            ],
+            "checks": 8,
+            "resource_evidence": [],
+            "held_bytes": 1400832,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": true,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "raise",
+              "CancelledError",
+              "Interval functional cancelled at directed-input"
+            ],
+            "checks": 8,
+            "resource_evidence": [],
+            "held_bytes": 1400832,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": true,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "entry-refusal",
+          "native": false,
+          "reference": {
+            "outcome": [
+              "raise",
+              "MemoryLimitError",
+              "projected combined workspace exceeds memory budget"
+            ],
+            "checks": 1,
+            "resource_evidence": [],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 0,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "raise",
+              "MemoryLimitError",
+              "projected combined workspace exceeds memory budget"
+            ],
+            "checks": 1,
+            "resource_evidence": [],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 0,
+            "owner_closed": false,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "mutable-fallback",
+          "native": false,
+          "reference": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 456,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 456,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "success",
+          "native": true,
+          "reference": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 409,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 409,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": true,
+            "owner_hits": 4
+          }
+        },
+        {
+          "case": "normal-refusal",
+          "native": true,
+          "reference": {
+            "outcome": [
+              "refused",
+              "Rounded proposal has zero pivot; no rank conclusion"
+            ],
+            "checks": 11,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 1400832,
+                "status": "REFUSED_AND_DROPPED_BEFORE_NEXT_ATTEMPT"
+              }
+            ],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "refused",
+              "Rounded proposal has zero pivot; no rank conclusion"
+            ],
+            "checks": 11,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 1400832,
+                "status": "REFUSED_AND_DROPPED_BEFORE_NEXT_ATTEMPT"
+              }
+            ],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "cancellation",
+          "native": true,
+          "reference": {
+            "outcome": [
+              "raise",
+              "CancelledError",
+              "Interval functional cancelled at directed-input"
+            ],
+            "checks": 8,
+            "resource_evidence": [],
+            "held_bytes": 1400832,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": true,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "raise",
+              "CancelledError",
+              "Interval functional cancelled at directed-input"
+            ],
+            "checks": 8,
+            "resource_evidence": [],
+            "held_bytes": 1400832,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": true,
+            "peak_accounted_bytes": 1400832,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "entry-refusal",
+          "native": true,
+          "reference": {
+            "outcome": [
+              "raise",
+              "MemoryLimitError",
+              "projected combined workspace exceeds memory budget"
+            ],
+            "checks": 1,
+            "resource_evidence": [],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 0,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "raise",
+              "MemoryLimitError",
+              "projected combined workspace exceeds memory budget"
+            ],
+            "checks": 1,
+            "resource_evidence": [],
+            "held_bytes": 0,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 0,
+            "owner_closed": false,
+            "owner_hits": 0
+          }
+        },
+        {
+          "case": "mutable-fallback",
+          "native": true,
+          "reference": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 409,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": null,
+            "owner_hits": null
+          },
+          "candidate": {
+            "outcome": [
+              "return",
+              [
+                [
+                  "'keys'",
+                  [
+                    [
+                      "cell",
+                      0
+                    ],
+                    [
+                      "cell",
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "'bounds'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        [
+                          "mpq",
+                          "1/8"
+                        ],
+                        [
+                          "mpq",
+                          "1/8"
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        [
+                          "mpq",
+                          "3/8"
+                        ],
+                        [
+                          "mpq",
+                          "3/8"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'decimal80'",
+                  [
+                    [
+                      "('cell', 0)",
+                      [
+                        "Decimal",
+                        "0.125",
+                        [
+                          0,
+                          [
+                            1,
+                            2,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ],
+                    [
+                      "('cell', 1)",
+                      [
+                        "Decimal",
+                        "0.375",
+                        [
+                          0,
+                          [
+                            3,
+                            7,
+                            5
+                          ],
+                          -3
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "'precision_bits'",
+                  320
+                ],
+                [
+                  "'proof'",
+                  [
+                    [
+                      "'precision_bits'",
+                      320
+                    ],
+                    [
+                      "'rank'",
+                      2
+                    ],
+                    [
+                      "'inverse_defect_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'dual_radius_upper'",
+                      [
+                        "mpfr",
+                        "040000ff40010000",
+                        320,
+                        0,
+                        false
+                      ]
+                    ],
+                    [
+                      "'exact_singleton_observation_coefficients'",
+                      0
+                    ]
+                  ]
+                ],
+                [
+                  "'dual_bounds'",
+                  [
+                    [
+                      [
+                        "mpq",
+                        "1/8"
+                      ],
+                      [
+                        "mpq",
+                        "1/8"
+                      ]
+                    ],
+                    [
+                      [
+                        "mpq",
+                        "3/8"
+                      ],
+                      [
+                        "mpq",
+                        "3/8"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "checks": 409,
+            "resource_evidence": [
+              {
+                "precision_bits": 320,
+                "admitted_bytes": 2004642,
+                "retained_bytes": 104737,
+                "export_largest_bits": 323,
+                "status": "CERTIFIED"
+              }
+            ],
+            "held_bytes": 104737,
+            "after_drop_bytes": 0,
+            "failure_frame_was_funded": false,
+            "peak_accounted_bytes": 2004642,
+            "owner_closed": true,
+            "owner_hits": 0
+          }
+        }
+      ],
+      "benchmark_component_untimed_smoke": [
+        {
+          "scenario": "ordinary",
+          "rank": 4,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+          "baseline_peak_accounted_bytes": 2899362,
+          "candidate_peak_accounted_bytes": 2899362
+        },
+        {
+          "scenario": "ordinary",
+          "rank": 20,
+          "precision": 320,
+          "baseline_candidate_equal": true,
+          "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+          "baseline_peak_accounted_bytes": 22836642,
+          "candidate_peak_accounted_bytes": 22836642
+        }
+      ]
+    }
+  },
+  "bounds": {
+    "one_core": true,
+    "projected_peak_rss_mib": 700,
+    "projected_runtime_seconds": 180
+  },
+  "claims": {
+    "production_changed": false,
+    "scientific_run": false,
+    "performance_measured": false,
+    "whole_runtime_qualified": false
+  },
+  "native_build": {
+    "module_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "gmpy2": "2.3.2",
+    "mpfr": "MPFR 4.2.2",
+    "mpfr_dll": "libmpfr-6.dll",
+    "mpfr_dll_sha256": "b81a548eb7a23d4e3acbe296f1eff077a0b284617a2c1cc53a1ccdb0637b52b8",
+    "fastmath": false,
+    "nogil": true,
+    "disk_jit_cache": false,
+    "signatures": 4,
+    "compiled_assembly_sha256": "019d0ce99cb81e0424df5b3ae9ae8ec9d9f51a7e7b39bd93437a5ceea0ad4802"
+  },
+  "C3_native_transform_sha256": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5",
+  "sources": {
+    "resources.py": {
+      "member": "source/src/atlas_tectonics/resources.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/resources.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/resources.py",
+      "original_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "public_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "integration_spatial_transport.py": {
+      "member": "source/src/atlas_tectonics/integration_spatial_transport.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_spatial_transport.py",
+      "original_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "public_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_gmp_resources_r1.py": {
+      "member": "source/helpers/private_heat_gmp_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_gmp_resources_r1.py",
+      "original_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "public_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_resources_r1.py": {
+      "member": "source/helpers/private_heat_certification_resources_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_resources_r1.py",
+      "original_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "public_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_low_ledger_inventory_r1.py": {
+      "member": "source/helpers/private_heat_low_ledger_inventory_r1.py",
+      "public_path": "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_low_ledger_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_low_ledger_inventory_r1.py",
+      "original_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "public_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_inventory_r1.py": {
+      "member": "source/helpers/private_heat_decimal_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_inventory_r1.py",
+      "original_sha256": "ded95d895acd84dc3d6e858054a7b21d5a58cb45c9f07790b676c2ad926a02b5",
+      "public_sha256": "395c9346cb4924bdf9867eb0111665533f2f786e3c8e09960f695a5bc36c01ed",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 1
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_sparse_core_r1.py": {
+      "member": "source/helpers/private_heat_decimal_sparse_core_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_sparse_core_r1.py",
+      "original_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "public_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_finish_arithmetic_r1.py": {
+      "member": "source/helpers/private_heat_finish_arithmetic_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_finish_arithmetic_r1.py",
+      "original_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "public_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_assembly_kernel_r1.py": {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "original_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "public_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_inventory_r1.py": {
+      "member": "source/helpers/private_heat_interval_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_inventory_r1.py",
+      "original_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "public_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_rational_decimal_kernel_r1.py": {
+      "member": "source/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "original_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "public_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_compiled_dot_r1.py": {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_compiled_dot_r1.py",
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r1.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_kernel_r1.py",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+      "transformations": [
+        {
+          "kind": "trailing-empty-lines",
+          "replacement": "one final LF"
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r3.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r3.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_certification_kernel_r3.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_certification_kernel_r3.py",
+      "original_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "public_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "exact_arithmetic.py": {
+      "member": "source/src/atlas_tectonics/exact_arithmetic.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/exact_arithmetic.py",
+      "original_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "public_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "_validation.py": {
+      "member": "source/src/atlas_tectonics/_validation.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/_validation.py",
+      "original_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "public_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "transformations": [],
+      "selected_composition_member": true
+    }
+  },
+  "script_sha256": "f7ddf0364e18527f4dc4864a836715363dd5978bae7b2f6c80be8e1fe1ace5e4",
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "gmpy2": "2.3.2",
+    "mpfr": "MPFR 4.2.2"
+  },
+  "process_peak_wset_bytes": 154558464,
+  "workload_sha256": "b7ae3c39b5fccf7ee70cd8e1feb0a9949af903b0f7c75addcde2b4f789b1636f"
+}

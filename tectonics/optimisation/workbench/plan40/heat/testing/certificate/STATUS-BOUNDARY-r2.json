@@ -1,0 +1,89 @@
+{
+  "status": "PASS",
+  "scope": "CLI/status boundary only; all numerical/native work and clock calls replaced by fixtures",
+  "script_sha256": "d3373468ed82816c26e29bf0631ea5ee05199fec0c6a31b35aa5c0831c93ee02",
+  "previous_script_sha256": "f7ddf0364e18527f4dc4864a836715363dd5978bae7b2f6c80be8e1fe1ace5e4",
+  "numerical_and_benchmark_definitions_unchanged": true,
+  "checks": [
+    {
+      "case": "exact-pass",
+      "status": "PASS"
+    },
+    {
+      "case": "empty",
+      "status": "PASS"
+    },
+    {
+      "case": "missing",
+      "status": "PASS"
+    },
+    {
+      "case": "extra",
+      "status": "PASS"
+    },
+    {
+      "case": "blocked",
+      "status": "PASS"
+    },
+    {
+      "case": "fail",
+      "status": "PASS"
+    },
+    {
+      "case": "unknown",
+      "status": "PASS"
+    },
+    {
+      "case": "missing-status",
+      "status": "PASS"
+    },
+    {
+      "case": "correctness-pass",
+      "status": "PASS",
+      "cli_status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "case": "correctness-fail",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "case": "benchmark-pass",
+      "status": "PASS",
+      "cli_status": "PASS",
+      "exit_code": 0
+    },
+    {
+      "case": "benchmark-blocked",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "case": "benchmark-missing",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "case": "benchmark-extra",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "case": "benchmark-failure",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    },
+    {
+      "case": "benchmark-native-blocked",
+      "status": "PASS",
+      "cli_status": "FAIL",
+      "exit_code": 1
+    }
+  ]
+}

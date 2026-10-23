@@ -168,12 +168,28 @@ locally from the accepted build but remains absent from a public clone. Work fol
 The [Plan40B heat arithmetic examination](../tectonics/optimisation/workbench/plan40/heat/FINDINGS.md)
 is accepted in its required final review. Source-bound controls
 support exact polynomial and preparation reuse, with explicit rounding, resource
-and consumer obligations. None of these proposals is implemented or timed; pressure
-40A and later native implementation remain separate work.
+and consumer obligations. Pressure 40A and whole-programme native selection
+remain separate work; no new production default is enabled here.
 The requested [additional heat search](../tectonics/optimisation/workbench/plan40/heat/ADDITIONAL-FINDINGS.md)
 adds bounded arithmetic/reuse candidates; the affected review accepts all 20
 candidate dispositions and the control-entry repair. The examination retains
 44 named source bindings and six control/result pairs.
+
+The [candidate testing follow-up](../tectonics/optimisation/workbench/plan40/heat/testing/README.md)
+has bounded executable PASS results for all 20 candidates, with explicit native,
+synthetic-owner and injected-consumer limits. The combined untimed entry point
+passes. [Controlled component measurements](../tectonics/optimisation/workbench/plan40/heat/testing/MEASUREMENTS.md)
+cover all 20 candidates and retain the regressions: large operation-count cuts
+often increased elapsed time. C3 and C8 provide modest bounded-component gains;
+their additive source successors and a small C13 trial have completed actual
+receiver checks and [exact-version comparisons](../tectonics/optimisation/workbench/plan40/heat/implementation-r1/MEASUREMENTS.md).
+C3 is mixed by size, C8 saves about 1.34% in its owning-receiver fixture, and C13
+is 6.00% slower and is not adopted. Implementation review accepts the completed
+batch for its integrated additive, unenabled scope. C3's full certification
+inventory and worker-observer receiving bindings remain unqualified; attempt
+controls and bounds import checks are not full receiver proof. Prototype
+percentages are not inherited by changed source generations. No production
+enablement or whole-IV improvement is claimed.
 
 | Area | Status | Owner document and evidence |
 | --- | --- | --- |

@@ -1,0 +1,224 @@
+{
+  "candidates": {
+    "C1": {
+      "baseline_median_seconds": 0.002474549983162433,
+      "baseline_over_candidate": 0.8467671459140875,
+      "block_mean_seconds": [
+        {
+          "baseline": 0.002452599990647286,
+          "block": 0,
+          "candidate": 0.002936100005172193
+        },
+        {
+          "baseline": 0.0025685999426059425,
+          "block": 1,
+          "candidate": 0.00291815004311502
+        },
+        {
+          "baseline": 0.0024865500163286924,
+          "block": 2,
+          "candidate": 0.002988849999383092
+        }
+      ],
+      "candidate_median_seconds": 0.002922350016888231,
+      "disposition": "NOT_IMPLEMENTED_MEASURED_REGRESSION",
+      "median_reduction_percent": -18.096221000697565,
+      "raw_seconds": {
+        "baseline": [
+          0.002499799942597747,
+          0.0024054000386968255,
+          0.002692299894988537,
+          0.002444899990223348,
+          0.002523800008930266,
+          0.002449300023727119
+        ],
+        "candidate": [
+          0.003014400019310415,
+          0.0028577999910339713,
+          0.0029694000259041786,
+          0.002866900060325861,
+          0.0031023999908939004,
+          0.0028753000078722835
+        ]
+      }
+    },
+    "C12": {
+      "baseline_median_seconds": 0.004340300045441836,
+      "baseline_over_candidate": 0.9254765815875979,
+      "block_mean_seconds": [
+        {
+          "baseline": 0.004363799933344126,
+          "block": 0,
+          "candidate": 0.004703000013250858
+        },
+        {
+          "baseline": 0.004340300045441836,
+          "block": 1,
+          "candidate": 0.004714549984782934
+        },
+        {
+          "baseline": 0.004371249990072101,
+          "block": 2,
+          "candidate": 0.004689799970947206
+        }
+      ],
+      "candidate_median_seconds": 0.004689799970947206,
+      "disposition": "NOT_IMPLEMENTED_MEASURED_REGRESSION",
+      "median_reduction_percent": -8.052436970859045,
+      "raw_seconds": {
+        "baseline": [
+          0.004408999928273261,
+          0.004318599938414991,
+          0.004331100033596158,
+          0.004349500057287514,
+          0.004425199935212731,
+          0.004317300044931471
+        ],
+        "candidate": [
+          0.00488500006031245,
+          0.004520999966189265,
+          0.00462389993481338,
+          0.004805200034752488,
+          0.0046458999859169126,
+          0.0047336999559774995
+        ]
+      }
+    },
+    "C13": {
+      "baseline_median_seconds": 0.004535250016488135,
+      "baseline_over_candidate": 1.0144384606413968,
+      "block_mean_seconds": [
+        {
+          "baseline": 0.00461970001924783,
+          "block": 0,
+          "candidate": 0.004462299984879792
+        },
+        {
+          "baseline": 0.004549799952656031,
+          "block": 1,
+          "candidate": 0.004507799982093275
+        },
+        {
+          "baseline": 0.004527500015683472,
+          "block": 2,
+          "candidate": 0.004522849980276078
+        }
+      ],
+      "candidate_median_seconds": 0.004470699990633875,
+      "disposition": "IMPLEMENTED_STATELESS_SUBSET_ADDITIVE_NOT_ENABLED",
+      "median_reduction_percent": 1.4232958628429437,
+      "raw_seconds": {
+        "baseline": [
+          0.004761100048199296,
+          0.004478299990296364,
+          0.004472499946132302,
+          0.004627099959179759,
+          0.004592200042679906,
+          0.004462799988687038
+        ],
+        "candidate": [
+          0.004504399956203997,
+          0.004420200013555586,
+          0.004437000025063753,
+          0.004578599939122796,
+          0.004627599962987006,
+          0.00441809999756515
+        ]
+      }
+    },
+    "C14": {
+      "baseline_median_seconds": 0.0021958999568596482,
+      "baseline_over_candidate": 0.9450624945435406,
+      "block_mean_seconds": [
+        {
+          "baseline": 0.002300799998920411,
+          "block": 0,
+          "candidate": 0.0023170000058598816
+        },
+        {
+          "baseline": 0.0021583500201813877,
+          "block": 1,
+          "candidate": 0.0023300499888136983
+        },
+        {
+          "baseline": 0.0022503999061882496,
+          "block": 2,
+          "candidate": 0.002436449925880879
+        }
+      ],
+      "candidate_median_seconds": 0.0023235499975271523,
+      "disposition": "NOT_IMPLEMENTED_MEASURED_REGRESSION",
+      "median_reduction_percent": -5.813108209631568,
+      "raw_seconds": {
+        "baseline": [
+          0.0024562999606132507,
+          0.002145300037227571,
+          0.002171600004658103,
+          0.0021451000357046723,
+          0.0022201999090611935,
+          0.0022805999033153057
+        ],
+        "candidate": [
+          0.002305499976500869,
+          0.0023285000352188945,
+          0.0023415000177919865,
+          0.00231859995983541,
+          0.0022834999253973365,
+          0.002589399926364422
+        ]
+      }
+    },
+    "C2": {
+      "baseline_median_seconds": 0.010408799978904426,
+      "baseline_over_candidate": 0.6224949316193744,
+      "block_mean_seconds": [
+        {
+          "baseline": 0.010446649976074696,
+          "block": 0,
+          "candidate": 0.016765000007580966
+        },
+        {
+          "baseline": 0.010267150006256998,
+          "block": 1,
+          "candidate": 0.016681050008628517
+        },
+        {
+          "baseline": 0.01043704996118322,
+          "block": 2,
+          "candidate": 0.016675749968271703
+        }
+      ],
+      "candidate_median_seconds": 0.01672109996434301,
+      "disposition": "NOT_IMPLEMENTED_MEASURED_REGRESSION",
+      "median_reduction_percent": -60.643878239871654,
+      "raw_seconds": {
+        "baseline": [
+          0.010286299977451563,
+          0.010606999974697828,
+          0.010412100004032254,
+          0.010122200008481741,
+          0.010405499953776598,
+          0.010468599968589842
+        ],
+        "candidate": [
+          0.016694099991582334,
+          0.016835900023579597,
+          0.01674809993710369,
+          0.016614000080153346,
+          0.016547299921512604,
+          0.0168042000150308
+        ]
+      }
+    }
+  },
+  "limits": [
+    "Six samples per arm, alternating ABBA/BAAB, small synthetic bounded components",
+    "C13 modest1.42% full-arm median reduction; last block approximately0.10% and ranges overlap",
+    "No statistical confidence, representative whole-heat gain or successor timing established",
+    "Successor preserves original native inventory and removes prototype optional fixture-only65KiB lease; successor bytes were not timed"
+  ],
+  "measurement_sha256": "9b825953f92e734dd5a42dd517e36ec72ad01ee1b52a1700b4eb2d9f8e97f294",
+  "measurement_source": "testing-r1/measurements-r2/functional.json",
+  "run_id": "364b539f-74df-4ee4-83ce-f4f1cb2370f8",
+  "status": "RECORDED"
+}

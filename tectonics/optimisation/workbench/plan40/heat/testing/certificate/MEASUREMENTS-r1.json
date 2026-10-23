@@ -1,0 +1,1450 @@
+{
+  "schema": "plan40b.certificate-testing-r1",
+  "status": "PASS",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "mode": "benchmark",
+  "retained_evidence": [
+    {
+      "script": "examine_controls.py",
+      "script_sha256": "106c44d3556bae1b5683f60c1b342778effc78d6a773a7a2ee1e72ff58c88cff",
+      "result": "CONTROL-RESULTS.json",
+      "result_sha256": "32a7defd0bcd4f8b6662077d78a783a713313861e2d7463a2063f356b18a44a5",
+      "status": "REUSED_NOT_RERUN",
+      "scope": "AST-selected reference arithmetic; no compiled H3 import or dispatch; no runtime proof or timing"
+    },
+    {
+      "script": "extension_certificate_controls.py",
+      "script_sha256": "b5a494934983b341740492369b81aa3b02b6ae94928361316faa0b5cfea989a4",
+      "result": "EXTENSION-CERTIFICATE-RESULTS.json",
+      "result_sha256": "ae59d5586127bffb734ed272bd1940cb3d55ac9028128951874c28ce75d81720",
+      "status": "REUSED_NOT_RERUN",
+      "scope": "Source-extracted arithmetic feasibility only; no production source edit, native/worker import, resource proof or timing"
+    }
+  ],
+  "candidates": {
+    "C3": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0015653000446036458,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0013183000264689326,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012416000245139003,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012663000961765647,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012236000038683414,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012388000031933188,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012514999834820628,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0014149999478831887,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0062151000602170825,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005860300036147237,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005784400040283799,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006043400033377111,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006294799968600273,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005786300054751337,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.006323999958112836,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006229800055734813,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C4": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0013877999735996127,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012929999502375722,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2260992
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012397000100463629,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2260992
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0011967000318691134,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0011981999268755317,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0014208999928086996,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2260992
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012496999697759748,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2260992
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012043999740853906,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.006403699982911348,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005983800045214593,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21299200
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0059643000131472945,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21299200
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006260700058192015,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006009200005792081,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.006044300040230155,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21299200
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0060032999608665705,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21299200
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006013800040818751,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C5": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.001588099985383451,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.00146100006531924,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2400256
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0014378000050783157,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2400256
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012389000039547682,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012299000518396497,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0013423999771475792,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2400256
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0016394000267609954,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2400256
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012665999820455909,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.006270899903029203,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0062333999667316675,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 23044096
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005095199914649129,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 23044096
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0061298999935388565,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006312899990007281,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0050566999707371,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 23044096
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0052643000381067395,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 23044096
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.005981800029985607,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C11": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "append",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.011046000057831407,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.004127399995923042,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0036560000153258443,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0022875999566167593,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.002276899991557002,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.003659999929368496,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0036296999314799905,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.002272500074468553,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": 3,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "mismatch",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0024681000504642725,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.003697899985127151,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0036395000061020255,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0022897999733686447,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0024027000181376934,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.003604399971663952,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.003600299940444529,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 3681792
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0023142999270930886,
+              "complete_calls": 4,
+              "result_sha256": "d496dd8b5e493974b26f4799da47e37ab2bbd053287d0dd8d9ca6f9560a55474",
+              "peak_accounted_bytes": 2899362
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": 3,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "no-funding",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0024753999896347523,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0024686999386176467,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0023949999595060945,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0028611000161617994,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.002276899991557002,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0023922999389469624,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0023723000194877386,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0022681000409647822,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": 3,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "append",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.023414799943566322,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.056930100079625845,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0566497000399977,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023079599952325225,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023501600022427738,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.057150700013153255,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.05913369997870177,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023662099963985384,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": 19,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "mismatch",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.023088300018571317,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.058137399959377944,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.057475400040857494,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.02336780005134642,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023114200099371374,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.058107799966819584,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.05696620000526309,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 49774080
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023261699941940606,
+              "complete_calls": 1,
+              "result_sha256": "d13d304f8888443b53171420bad403e6cebce4f9d1cc1ded178133b472f84ee9",
+              "peak_accounted_bytes": 22836642
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": 19,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "no-funding",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.02298270002938807,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.023023499990813434,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.02327310002874583,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023001199937425554,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.02308960002847016,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.023117900011129677,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.02323299995623529,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.023189100087620318,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": 19,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C15": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0016015999717637897,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0014184999745339155,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.001513600000180304,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0014326999662443995,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012158999452367425,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0012205000966787338,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.001218699966557324,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012032999657094479,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.006195700028911233,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005739100044593215,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.005958799971267581,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006021899986080825,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.00606709998100996,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.008600299945101142,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.008716299897059798,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006186399958096445,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C16": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0022013999987393618,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.002050700015388429,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0019796000560745597,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.001959799905307591,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.001959600020200014,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.001960800029337406,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0019589998992159963,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0020895000780001283,
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.006939699989743531,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.006685999920591712,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0068641999969258904,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006799999973736703,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006812300067394972,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.006541399983689189,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.006495899986475706,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.007010600063949823,
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    },
+    "C17": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0013777000131085515,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.002382199978455901,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0025677999947220087,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012390000047162175,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0012031999649479985,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0023412000155076385,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0023430000292137265,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0011996999382972717,
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880
+            }
+          ],
+          "rank": 4,
+          "precision": 320,
+          "observations": 4,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        },
+        {
+          "scenario": "ordinary",
+          "samples": [
+            {
+              "arm": "baseline",
+              "seconds": 0.0060989001067355275,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.011759200016967952,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.011566899949684739,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0061055999249219894,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.006129999994300306,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.011822600034065545,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "candidate",
+              "seconds": 0.0119581000180915,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            },
+            {
+              "arm": "baseline",
+              "seconds": 0.0061188999097794294,
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784
+            }
+          ],
+          "rank": 20,
+          "precision": 320,
+          "observations": 20,
+          "prefix_observations": null,
+          "scope": "full source-bound changed component including setup, guards, ownership and release; synthetic, not whole heat"
+        }
+      ]
+    }
+  },
+  "bounds": {
+    "one_core": true,
+    "projected_peak_rss_mib": 700,
+    "projected_runtime_seconds": 180
+  },
+  "claims": {
+    "production_changed": false,
+    "scientific_run": false,
+    "performance_measured": true,
+    "whole_runtime_qualified": false
+  },
+  "requested_candidates": [
+    "C3",
+    "C4",
+    "C5",
+    "C11",
+    "C15",
+    "C16",
+    "C17"
+  ],
+  "limitations": [
+    "Bounded source-bound fixtures only; no production or whole-runtime qualification.",
+    "No scientific acceptance or whole-heat performance projection.",
+    "C11 native prefix continuation is unsupported; the complete native reference route is retained.",
+    "C16 and C17 savings overlap and must not be summed."
+  ],
+  "native_build": {
+    "module_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+    "numba": "0.65.1",
+    "llvmlite": "0.47.0",
+    "gmpy2": "2.3.2",
+    "mpfr": "MPFR 4.2.2",
+    "mpfr_dll": "libmpfr-6.dll",
+    "mpfr_dll_sha256": "b81a548eb7a23d4e3acbe296f1eff077a0b284617a2c1cc53a1ccdb0637b52b8",
+    "fastmath": false,
+    "nogil": true,
+    "disk_jit_cache": false,
+    "signatures": 4,
+    "compiled_assembly_sha256": "381776d81f4f870e66a3a0b309fbda37f63c474e90959ea7aab6d6b5a26eaece"
+  },
+  "native_reference_import_compile_selftest_seconds": 1.344263800070621,
+  "C3_native_transform_sha256": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5",
+  "C3_native_candidate_import_compile_selftest_seconds": 0.43740399996750057,
+  "script_sha256": "ba7dda0d0565f2fee86d38b07e098e921253987b93da22003e85546a1449e392",
+  "sources": {
+    "resources.py": {
+      "member": "source/src/atlas_tectonics/resources.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/resources.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/resources.py",
+      "original_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "public_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "integration_spatial_transport.py": {
+      "member": "source/src/atlas_tectonics/integration_spatial_transport.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_spatial_transport.py",
+      "original_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "public_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_gmp_resources_r1.py": {
+      "member": "source/helpers/private_heat_gmp_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_gmp_resources_r1.py",
+      "original_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "public_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_resources_r1.py": {
+      "member": "source/helpers/private_heat_certification_resources_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_resources_r1.py",
+      "original_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "public_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_low_ledger_inventory_r1.py": {
+      "member": "source/helpers/private_heat_low_ledger_inventory_r1.py",
+      "public_path": "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_low_ledger_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_low_ledger_inventory_r1.py",
+      "original_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "public_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_inventory_r1.py": {
+      "member": "source/helpers/private_heat_decimal_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_inventory_r1.py",
+      "original_sha256": "ded95d895acd84dc3d6e858054a7b21d5a58cb45c9f07790b676c2ad926a02b5",
+      "public_sha256": "395c9346cb4924bdf9867eb0111665533f2f786e3c8e09960f695a5bc36c01ed",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 1
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_sparse_core_r1.py": {
+      "member": "source/helpers/private_heat_decimal_sparse_core_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_sparse_core_r1.py",
+      "original_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "public_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_finish_arithmetic_r1.py": {
+      "member": "source/helpers/private_heat_finish_arithmetic_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_finish_arithmetic_r1.py",
+      "original_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "public_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_assembly_kernel_r1.py": {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "original_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "public_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_inventory_r1.py": {
+      "member": "source/helpers/private_heat_interval_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_inventory_r1.py",
+      "original_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "public_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_rational_decimal_kernel_r1.py": {
+      "member": "source/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "original_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "public_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_compiled_dot_r1.py": {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_compiled_dot_r1.py",
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r1.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_kernel_r1.py",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+      "transformations": [
+        {
+          "kind": "trailing-empty-lines",
+          "replacement": "one final LF"
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r3.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r3.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_certification_kernel_r3.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_certification_kernel_r3.py",
+      "original_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "public_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "exact_arithmetic.py": {
+      "member": "source/src/atlas_tectonics/exact_arithmetic.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/exact_arithmetic.py",
+      "original_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "public_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "_validation.py": {
+      "member": "source/src/atlas_tectonics/_validation.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/_validation.py",
+      "original_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "public_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "transformations": [],
+      "selected_composition_member": true
+    }
+  },
+  "workload_sha256": "9b9f71d2fe038e1aac7db55bc094b77a23e3e87acd634cae9506a2f78abae042"
+}

@@ -1,0 +1,820 @@
+{
+  "schema": "plan40b-solve-finish-test-r1",
+  "mode": "correctness",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_mpfr_lu_r1.py": "d1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r2.py": "c052ef4b53bdbe260d08c410435826d579b43ad8071f36fc1141d35714814957",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r2.py": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_finish_issue_owned_r4.py": "927a1ff49625182b1691301493e114395c68e96ca2237ed94648036f0603c22e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+    "tectonics/optimisation/pending/heat/rf-s1/var_V0/private_heat_closed_owned_r5.py": "6da4964cad7a2553cce40ef53fd2a42f6c6f12bd605a92685b59652f7e74c079",
+    "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_finish_kernel_r11.py": "46c4b132d08b26c09ca809b5d686935377bac089e529dbee67ae3147a91d4ea2",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_low_solver_kernel_r5.py": "87c82197ac5f845dd76a2a324a39cd1ce816e92cddde3d0441d4ca53047d8175",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f"
+  },
+  "script_sha256": "2f53a1970564e288b53e0dce2eda4dc92f80c4c3f07a48508d8d35050243e439",
+  "runtime": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "gmpy2": "2.3.2",
+    "gmp": "GMP 6.3.0",
+    "mpfr": "MPFR 4.2.2"
+  },
+  "projected_bounds": {
+    "processes": 1,
+    "native_threads": 1,
+    "memory_limit_claim": "Not measured; tiny fixed fixtures projected below 1 GiB",
+    "duration": "few minutes maximum, not a timing result"
+  },
+  "workload": {
+    "high_cells": 3,
+    "high_operator_nnz": 7,
+    "high_face_rows": 4,
+    "assembly_cells": 2,
+    "lu_precision": 512,
+    "lu_rhs": 3,
+    "finish_cells": 2,
+    "finish_search_steps": 64,
+    "public_audit_cells": [
+      3,
+      4
+    ],
+    "source_width": "binary64 inputs plus exact tiny rationals; public audit includes 1e-300 and 1e300"
+  },
+  "workload_sha256": "0fe5b1d859c635f7e906c6de75da00b41b8b6481957035e35dce4851aacfbbbf",
+  "candidates": {
+    "C6": {
+      "status": "PASS",
+      "full_selected_high_solve_cases": [
+        {
+          "parameters": {},
+          "outcome": "OK",
+          "checkpoints": 26
+        },
+        {
+          "parameters": {
+            "support": 6
+          },
+          "outcome": "ERROR",
+          "checkpoints": 6
+        },
+        {
+          "parameters": {
+            "bad_solve": true
+          },
+          "outcome": "ERROR",
+          "checkpoints": 115
+        },
+        {
+          "parameters": {
+            "boundary": {}
+          },
+          "outcome": "ERROR",
+          "checkpoints": 22
+        },
+        {
+          "parameters": {
+            "stop": 2
+          },
+          "outcome": "ERROR",
+          "checkpoints": 2
+        },
+        {
+          "parameters": {
+            "stop": 8
+          },
+          "outcome": "ERROR",
+          "checkpoints": 8
+        },
+        {
+          "parameters": {
+            "stop": 17
+          },
+          "outcome": "ERROR",
+          "checkpoints": 17
+        },
+        {
+          "parameters": {
+            "dynamic_refusal": true
+          },
+          "outcome": "ERROR",
+          "checkpoints": 9
+        }
+      ],
+      "resource_seam": "Synthetic owner/dynamic lease; actual selected guard/sticky converter; original conservative inventory retained, no native admission claim",
+      "checks": {
+        "full_selected_high_solve_cases": [
+          {
+            "parameters": {},
+            "outcome": "OK",
+            "checkpoints": 26
+          },
+          {
+            "parameters": {
+              "support": 6
+            },
+            "outcome": "ERROR",
+            "checkpoints": 6
+          },
+          {
+            "parameters": {
+              "bad_solve": true
+            },
+            "outcome": "ERROR",
+            "checkpoints": 115
+          },
+          {
+            "parameters": {
+              "boundary": {}
+            },
+            "outcome": "ERROR",
+            "checkpoints": 22
+          },
+          {
+            "parameters": {
+              "stop": 2
+            },
+            "outcome": "ERROR",
+            "checkpoints": 2
+          },
+          {
+            "parameters": {
+              "stop": 8
+            },
+            "outcome": "ERROR",
+            "checkpoints": 8
+          },
+          {
+            "parameters": {
+              "stop": 17
+            },
+            "outcome": "ERROR",
+            "checkpoints": 17
+          },
+          {
+            "parameters": {
+              "dynamic_refusal": true
+            },
+            "outcome": "ERROR",
+            "checkpoints": 9
+          }
+        ]
+      },
+      "limitations": "Synthetic owner/dynamic lease; actual selected guard/sticky converter; original conservative inventory retained, no native admission claim"
+    },
+    "C7": {
+      "status": "PASS",
+      "rhs_cases": 3,
+      "cancellation_positions": 6,
+      "pivot_order": [
+        1,
+        2,
+        2
+      ],
+      "off_diagonal_entries_retained": 5,
+      "lifetime_mutation_checks": 7,
+      "optional_storage_fallback": true,
+      "resource_seam": "Views counted, not natively admitted. Synthetic view owner enforces expiry and factor/pivot/order identity, with optional-storage reference fallback; production private immutable factor owner still required.",
+      "checks": {
+        "rhs_cases": 3,
+        "cancellation_positions": 6,
+        "pivot_order": [
+          1,
+          2,
+          2
+        ],
+        "off_diagonal_entries_retained": 5,
+        "lifetime_mutation_checks": 7,
+        "optional_storage_fallback": true
+      },
+      "limitations": "Views counted, not natively admitted. Synthetic view owner enforces expiry and factor/pivot/order identity, with optional-storage reference fallback; production private immutable factor owner still required."
+    },
+    "C8": {
+      "status": "PASS",
+      "complete_assemble_cases": 6,
+      "aggregate_refinement_and_contributors": true,
+      "checkpoints": 42,
+      "resource_seam": "No retained cache; actual selected r2 rounding/converter and Contribution records/cell owners preserved. Native diagnostic inventory not changed or qualified.",
+      "checks": {
+        "complete_assemble_cases": 6,
+        "aggregate_refinement_and_contributors": true,
+        "checkpoints": 42
+      },
+      "limitations": "No retained cache; actual selected r2 rounding/converter and Contribution records/cell owners preserved. Native diagnostic inventory not changed or qualified."
+    },
+    "C9": {
+      "status": "PASS",
+      "actual_issue_audit_cases": [
+        {
+          "debit": "0",
+          "optional_storage": true,
+          "cancel_at": null,
+          "arena_slot_limit": 100000,
+          "peak_synthetic_slots": 12,
+          "optional_retained_references": 6,
+          "second_native_adds": 0
+        },
+        {
+          "debit": "1/4",
+          "optional_storage": true,
+          "cancel_at": null,
+          "arena_slot_limit": 100000,
+          "peak_synthetic_slots": 12,
+          "optional_retained_references": 6,
+          "second_native_adds": 0
+        },
+        {
+          "debit": "1/4",
+          "optional_storage": false,
+          "cancel_at": null,
+          "arena_slot_limit": 100000,
+          "peak_synthetic_slots": 12,
+          "optional_retained_references": 0,
+          "second_native_adds": 2
+        },
+        {
+          "debit": "1/4",
+          "optional_storage": true,
+          "cancel_at": 12,
+          "arena_slot_limit": 100000,
+          "peak_synthetic_slots": 4,
+          "optional_retained_references": 6,
+          "second_native_adds": 0
+        },
+        {
+          "debit": "1/4",
+          "optional_storage": true,
+          "cancel_at": null,
+          "arena_slot_limit": 5,
+          "peak_synthetic_slots": 4,
+          "optional_retained_references": 6,
+          "second_native_adds": 0
+        }
+      ],
+      "operand_replacement_fallback": true,
+      "rejected_variant": "Attempt-1/2 numerical pass moved source load allocation earlier; superseded by optional retained base at first original use with both original arrays/admissions kept.",
+      "resource_seam": "Synthetic separate pre-admitted 3n-reference cache, fallback if absent; native optional-owner integration remains unimplemented. Original array/check/operation-admission trace is now equal in fixtures.",
+      "checks": {
+        "actual_issue_audit_cases": [
+          {
+            "debit": "0",
+            "optional_storage": true,
+            "cancel_at": null,
+            "arena_slot_limit": 100000,
+            "peak_synthetic_slots": 12,
+            "optional_retained_references": 6,
+            "second_native_adds": 0
+          },
+          {
+            "debit": "1/4",
+            "optional_storage": true,
+            "cancel_at": null,
+            "arena_slot_limit": 100000,
+            "peak_synthetic_slots": 12,
+            "optional_retained_references": 6,
+            "second_native_adds": 0
+          },
+          {
+            "debit": "1/4",
+            "optional_storage": false,
+            "cancel_at": null,
+            "arena_slot_limit": 100000,
+            "peak_synthetic_slots": 12,
+            "optional_retained_references": 0,
+            "second_native_adds": 2
+          },
+          {
+            "debit": "1/4",
+            "optional_storage": true,
+            "cancel_at": 12,
+            "arena_slot_limit": 100000,
+            "peak_synthetic_slots": 4,
+            "optional_retained_references": 6,
+            "second_native_adds": 0
+          },
+          {
+            "debit": "1/4",
+            "optional_storage": true,
+            "cancel_at": null,
+            "arena_slot_limit": 5,
+            "peak_synthetic_slots": 4,
+            "optional_retained_references": 6,
+            "second_native_adds": 0
+          }
+        ],
+        "operand_replacement_fallback": true,
+        "rejected_variant": "Attempt-1/2 numerical pass moved source load allocation earlier; superseded by optional retained base at first original use with both original arrays/admissions kept."
+      },
+      "limitations": "Synthetic separate pre-admitted 3n-reference cache, fallback if absent; native optional-owner integration remains unimplemented. Original array/check/operation-admission trace is now equal in fixtures."
+    },
+    "C10": {
+      "status": "PASS",
+      "actual_finish_guard_cases": [
+        {
+          "case": "interior",
+          "optional_storage": true,
+          "quadratic_calls": [
+            201,
+            198
+          ],
+          "cache_replacement_slot_bound": 6
+        },
+        {
+          "case": "interior",
+          "optional_storage": false,
+          "quadratic_calls": [
+            201,
+            201
+          ],
+          "cache_replacement_slot_bound": 0
+        },
+        {
+          "case": "full",
+          "optional_storage": true,
+          "quadratic_calls": [
+            6,
+            6
+          ],
+          "cache_replacement_slot_bound": 0
+        },
+        {
+          "case": "full",
+          "optional_storage": false,
+          "quadratic_calls": [
+            6,
+            6
+          ],
+          "cache_replacement_slot_bound": 0
+        },
+        {
+          "case": "zero_only",
+          "optional_storage": true,
+          "quadratic_calls": [
+            198,
+            198
+          ],
+          "cache_replacement_slot_bound": 0
+        },
+        {
+          "case": "zero_only",
+          "optional_storage": false,
+          "quadratic_calls": [
+            198,
+            198
+          ],
+          "cache_replacement_slot_bound": 0
+        }
+      ],
+      "stale_state_refusals": 4,
+      "resource_seam": "Synthetic copied-state cache charges replacement overlap; actual quadratic proof, native arena, correction and issuer/codec owners injected. No production resource/cancellation qualification for removed certificate calls.",
+      "checks": {
+        "actual_finish_guard_cases": [
+          {
+            "case": "interior",
+            "optional_storage": true,
+            "quadratic_calls": [
+              201,
+              198
+            ],
+            "cache_replacement_slot_bound": 6
+          },
+          {
+            "case": "interior",
+            "optional_storage": false,
+            "quadratic_calls": [
+              201,
+              201
+            ],
+            "cache_replacement_slot_bound": 0
+          },
+          {
+            "case": "full",
+            "optional_storage": true,
+            "quadratic_calls": [
+              6,
+              6
+            ],
+            "cache_replacement_slot_bound": 0
+          },
+          {
+            "case": "full",
+            "optional_storage": false,
+            "quadratic_calls": [
+              6,
+              6
+            ],
+            "cache_replacement_slot_bound": 0
+          },
+          {
+            "case": "zero_only",
+            "optional_storage": true,
+            "quadratic_calls": [
+              198,
+              198
+            ],
+            "cache_replacement_slot_bound": 0
+          },
+          {
+            "case": "zero_only",
+            "optional_storage": false,
+            "quadratic_calls": [
+              198,
+              198
+            ],
+            "cache_replacement_slot_bound": 0
+          }
+        ],
+        "stale_state_refusals": 4
+      },
+      "limitations": "Synthetic copied-state cache charges replacement overlap; actual quadratic proof, native arena, correction and issuer/codec owners injected. No production resource/cancellation qualification for removed certificate calls."
+    },
+    "C18": {
+      "status": "PASS",
+      "actual_audit_cases": [
+        {
+          "cells": 4,
+          "cancel_at": null,
+          "q_calls": [
+            14,
+            6
+          ]
+        },
+        {
+          "cells": 4,
+          "cancel_at": 1,
+          "q_calls": [
+            8,
+            4
+          ]
+        },
+        {
+          "cells": 4,
+          "cancel_at": 3,
+          "q_calls": [
+            8,
+            4
+          ]
+        },
+        {
+          "cells": 4,
+          "cancel_at": 7,
+          "q_calls": [
+            8,
+            4
+          ]
+        },
+        {
+          "cells": 3,
+          "cancel_at": null,
+          "q_calls": [
+            11,
+            5
+          ]
+        },
+        {
+          "cells": 3,
+          "cancel_at": 1,
+          "q_calls": [
+            6,
+            3
+          ]
+        },
+        {
+          "cells": 3,
+          "cancel_at": 3,
+          "q_calls": [
+            6,
+            3
+          ]
+        },
+        {
+          "cells": 3,
+          "cancel_at": 6,
+          "q_calls": [
+            6,
+            3
+          ]
+        }
+      ],
+      "resource_seam": "One retained immutable Fraction vector n slots; selected ledger reserves 4n. Native owner layout/traceback charge not implemented.",
+      "checks": {
+        "actual_audit_cases": [
+          {
+            "cells": 4,
+            "cancel_at": null,
+            "q_calls": [
+              14,
+              6
+            ]
+          },
+          {
+            "cells": 4,
+            "cancel_at": 1,
+            "q_calls": [
+              8,
+              4
+            ]
+          },
+          {
+            "cells": 4,
+            "cancel_at": 3,
+            "q_calls": [
+              8,
+              4
+            ]
+          },
+          {
+            "cells": 4,
+            "cancel_at": 7,
+            "q_calls": [
+              8,
+              4
+            ]
+          },
+          {
+            "cells": 3,
+            "cancel_at": null,
+            "q_calls": [
+              11,
+              5
+            ]
+          },
+          {
+            "cells": 3,
+            "cancel_at": 1,
+            "q_calls": [
+              6,
+              3
+            ]
+          },
+          {
+            "cells": 3,
+            "cancel_at": 3,
+            "q_calls": [
+              6,
+              3
+            ]
+          },
+          {
+            "cells": 3,
+            "cancel_at": 6,
+            "q_calls": [
+              6,
+              3
+            ]
+          }
+        ]
+      },
+      "limitations": "One retained immutable Fraction vector n slots; selected ledger reserves 4n. Native owner layout/traceback charge not implemented."
+    },
+    "C19": {
+      "status": "PASS",
+      "actual_assembly_cases": [
+        {
+          "optional_storage": true,
+          "raw_type": "float",
+          "reads": 9,
+          "candidate_conversions": 1,
+          "retained_entries": 1
+        },
+        {
+          "optional_storage": true,
+          "raw_type": "float",
+          "reads": 9,
+          "candidate_conversions": 3,
+          "retained_entries": 1
+        },
+        {
+          "optional_storage": true,
+          "raw_type": "Decimal",
+          "reads": 9,
+          "candidate_conversions": 6,
+          "retained_entries": 0
+        },
+        {
+          "optional_storage": false,
+          "raw_type": "float",
+          "reads": 9,
+          "candidate_conversions": 6,
+          "retained_entries": 0
+        },
+        {
+          "optional_storage": false,
+          "raw_type": "float",
+          "reads": 9,
+          "candidate_conversions": 6,
+          "retained_entries": 0
+        },
+        {
+          "optional_storage": false,
+          "raw_type": "Decimal",
+          "reads": 9,
+          "candidate_conversions": 6,
+          "retained_entries": 0
+        }
+      ],
+      "full_sparse_cases": [
+        {
+          "low": false,
+          "raw_type": "float",
+          "reads": 3
+        },
+        {
+          "low": false,
+          "raw_type": "float",
+          "reads": 3
+        },
+        {
+          "low": false,
+          "raw_type": "Decimal",
+          "reads": 3
+        },
+        {
+          "low": true,
+          "raw_type": "float",
+          "reads": 3
+        },
+        {
+          "low": true,
+          "raw_type": "float",
+          "reads": 3
+        },
+        {
+          "low": true,
+          "raw_type": "Decimal",
+          "reads": 3
+        }
+      ],
+      "resource_seam": "Optional synthetic one-entry allowance; unavailable storage uses reference. No native entry/replacement-overlap admission claim. All original mapping reads retained.",
+      "checks": {
+        "actual_assembly_cases": [
+          {
+            "optional_storage": true,
+            "raw_type": "float",
+            "reads": 9,
+            "candidate_conversions": 1,
+            "retained_entries": 1
+          },
+          {
+            "optional_storage": true,
+            "raw_type": "float",
+            "reads": 9,
+            "candidate_conversions": 3,
+            "retained_entries": 1
+          },
+          {
+            "optional_storage": true,
+            "raw_type": "Decimal",
+            "reads": 9,
+            "candidate_conversions": 6,
+            "retained_entries": 0
+          },
+          {
+            "optional_storage": false,
+            "raw_type": "float",
+            "reads": 9,
+            "candidate_conversions": 6,
+            "retained_entries": 0
+          },
+          {
+            "optional_storage": false,
+            "raw_type": "float",
+            "reads": 9,
+            "candidate_conversions": 6,
+            "retained_entries": 0
+          },
+          {
+            "optional_storage": false,
+            "raw_type": "Decimal",
+            "reads": 9,
+            "candidate_conversions": 6,
+            "retained_entries": 0
+          }
+        ],
+        "full_sparse_cases": [
+          {
+            "low": false,
+            "raw_type": "float",
+            "reads": 3
+          },
+          {
+            "low": false,
+            "raw_type": "float",
+            "reads": 3
+          },
+          {
+            "low": false,
+            "raw_type": "Decimal",
+            "reads": 3
+          },
+          {
+            "low": true,
+            "raw_type": "float",
+            "reads": 3
+          },
+          {
+            "low": true,
+            "raw_type": "float",
+            "reads": 3
+          },
+          {
+            "low": true,
+            "raw_type": "Decimal",
+            "reads": 3
+          }
+        ]
+      },
+      "limitations": "Optional synthetic one-entry allowance; unavailable storage uses reference. No native entry/replacement-overlap admission claim. All original mapping reads retained."
+    },
+    "C20": {
+      "status": "PASS",
+      "full_selected_sparse_cases": [
+        {
+          "parameters": {},
+          "outcome": "OK"
+        },
+        {
+          "parameters": {
+            "bad_solve": true
+          },
+          "outcome": "ERROR"
+        },
+        {
+          "parameters": {
+            "stop": 17
+          },
+          "outcome": "ERROR"
+        },
+        {
+          "parameters": {
+            "low": true
+          },
+          "outcome": "OK"
+        },
+        {
+          "parameters": {
+            "low": true,
+            "target": "0"
+          },
+          "outcome": "OK"
+        },
+        {
+          "parameters": {
+            "low": true,
+            "stop": 17
+          },
+          "outcome": "ERROR"
+        }
+      ],
+      "sign_context_cases": 24,
+      "resource_seam": "Shared zero/target immutable local objects only. Exact str target fixture; unsupported target representations require reference. Actual LOW SuperLU and HIGH MPFR numerical consumers executed.",
+      "checks": {
+        "full_selected_sparse_cases": [
+          {
+            "parameters": {},
+            "outcome": "OK"
+          },
+          {
+            "parameters": {
+              "bad_solve": true
+            },
+            "outcome": "ERROR"
+          },
+          {
+            "parameters": {
+              "stop": 17
+            },
+            "outcome": "ERROR"
+          },
+          {
+            "parameters": {
+              "low": true
+            },
+            "outcome": "OK"
+          },
+          {
+            "parameters": {
+              "low": true,
+              "target": "0"
+            },
+            "outcome": "OK"
+          },
+          {
+            "parameters": {
+              "low": true,
+              "stop": 17
+            },
+            "outcome": "ERROR"
+          }
+        ],
+        "sign_context_cases": 24
+      },
+      "limitations": "Shared zero/target immutable local objects only. Exact str target fixture; unsupported target representations require reference. Actual LOW SuperLU and HIGH MPFR numerical consumers executed."
+    }
+  },
+  "production_qualification": false,
+  "timing_executed": false,
+  "queue_id": null
+}

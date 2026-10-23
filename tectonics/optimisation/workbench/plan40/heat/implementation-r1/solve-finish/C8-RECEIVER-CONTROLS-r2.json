@@ -1,0 +1,128 @@
+{
+  "schema": "plan40b-c8-receiver/v1",
+  "status": "PASS",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "successor_pins": {
+    "private_heat_interval_assembly_kernel_plan40b_c8_r1": "248afad46838af857c1170c3083b7a0558fb2c85921e54b9011f3b024816d7f5",
+    "private_heat_interval_inventory_plan40b_c8_r1": "28d3bf9c604309e402d4e979ef3bba07d5ff78900038af53bf862cbb0a1672a0",
+    "private_heat_interval_assessment_plan40b_c8_r1": "3347757f84789019b7b326de293be6617aa817c09efa6682c426f1876742af33"
+  },
+  "control_sha256": "83a71d38bb228a4098c9bef5266cb7798e99a8f409bd78d12c796dc7247b0f14",
+  "sources": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_endpoint_inventory_r3.py": "00ac1c88c8d6c61b82147349bda2c80f0442b2431271e83df87bb2661a373a1c",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_rounding_inventory_r1.py": "5db9dd5616c20907d627a915a457be5267dbda0baab0c4c1dcf2d5348bc3d500",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+    "tectonics/optimisation/composed-r2/helpers/live_spatial_patch.py": "b53445f80d49ab5812beba52866ad85220125dc97251c7f75d82ea5bcf0c629f",
+    "tectonics/optimisation/composed-r2/helpers/compact_contracts.py": "0aabad86c1ccffd79b79f8aa320c7406a0406c659105f21838beb37c5bc69f6e",
+    "tectonics/optimisation/composed-r2/helpers/content_cache.py": "de7d3e454b41e78916a2c98cf76efe531e981be9a232915d6d152d6ad61e05bb",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/resources.py": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+    "tectonics/optimisation/composed-r2/helpers/live_composite.py": "8ef80a9a276a5403bada049ee82403c8b6b39865a67e0b22d6388e70d8071e89",
+    "tectonics/optimisation/composed-r2/helpers/record_tables.py": "eef9795cbec817b394d9b1a7cb0dec9d5f303dcbbc9e8d62b0409a24585d4a65",
+    "tectonics/optimisation/workbench/compact-geometry-r1/record_views.py": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+    "tectonics/optimisation/composed-r2/helpers/spatial_validation_patch.py": "556f2242cd269b01538267222ff958a60fc1dce43478b656fcfb0177187cd674",
+    "tectonics/optimisation/composed-r2/helpers/live_finite_patch.py": "411513a999da23212e29cd99473a99e4448c86f6af14435218eb19094d8c3382",
+    "tectonics/optimisation/composed-r2/helpers/live_transport_result.py": "5289f216df642140dfb21243726ba8e487fcfbd4bbf6b2499107999ebfb5fb76",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_mimetic_heat.py": "7d020e15e49f686c64363b65956122fd1bfaa2cf4d512ca23729178b9574cb92",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_regional_inventory.py": "87f7a1c8f41c7ce3bb33efc627ccc228b887c8c468ac44bbfed992480bf62e1e",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_material.py": "b27ea4d9cf5e854733d7c42c33636ed70f986d6c537edbe9cae38a65d3aa868a",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_sphere.py": "1f037bddd7b20c78a8a7612be5af8a36ce2ac4b029bdc39e35989e6b747d066d",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_state.py": "3c287bee1121aebf181a88592c3fe11382658ef27016daa0620509442a342b8f",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_integration_column.py": "b0a1cf7510eab8b3910733d645fcd674b28703cd8279446168e3f4953240b113",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_integration_heat.py": "6eeef77cf8f4966354d3ba01d5909b61bf82dd4e2bfda412993ae9a12b3603aa",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_integration_weakening.py": "e7ce5634ce6a8ec8b41708617b607dc5923afa3a39345bd0900f53365d6f853c",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_integration_motion.py": "2adecb6e93a449e8035f0be989675d264572597676785b7ddf78e4bd232e9da3",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_evolution.py": "2f4bc94dd2f81b309840b36ae2637f308f4f4c043e5825e1111fc1b08c556905",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_integration_thermomechanical.py": "50bb419180e6716594b77abbd7a6a0f18bba614282ed53950593d4dc99123bb2",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/materials.py": "38fdd55040e5e6c48f946c0cde4eaa90cdaedc2429684706c31eac5e1c2de34b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional.py": "b3a85d578ef2efd06a4e386773480f33c9e30939a4e510637adfd431c0d49c4b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/mesh.py": "e3f62c8a8f93918ae01c1fadaf567f178f09dd8da38c3ac39ac88ac327c4e552",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/timebase.py": "540902acef2c6825356944982a18f2d320d676bd35650c923577f6a4985ef63a",
+    "tectonics/optimisation/workbench/plans10-12/source/src/atlas_tectonics/coordinates.py": "3aa017d3adcba6a400263a10264417288cb84c0959cc704ca6410c359160c579",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/kinematics.py": "36883e4c61ac00b184968c670a4edb235e8ab887448c99ada51c1e35478aea70",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/geometry.py": "c0873f2a198e974ae1650267895f28dd42f0d921cc94a19395784a57076a099e",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_ledger.py": "089944b4dccf6a753c02ac3d1b243c2350a0ac9801b742b37d1cacec76c5e676",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/storage.py": "181180bc5c90ca7c47ca8b13a82d1d352d9c23a32acff85f6f485eb8a953524d",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/spherical_atlas.py": "2fd40824da7355956b14518638f5dbbef8806ad22dbff891caf9272c2f0fbdf7",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/spherical_geometry.py": "b3a9271a5332be8e1075a332221bf75b4a4e35764ac12f2e3de8cf54f195df3f",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/geometry_index.py": "0f9c66d27be83d04fca13a4d6fd13d2d974ba800973266f7b355151f077c1746",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/boundaries.py": "95907036d92eba8bb862d311942de6ccf744d9013392fc69d5354ba979a71458",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_splits.py": "cc1ce6b15272f1ba89ba0d6ebef03ebfd853b25ec8c870d2cdec10b9c7c65fc4",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_transfer.py": "d09e181068539c9d2b786c32759e8b0f0f3a73acc1239b61372ec1f00fe2f8af",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_junction_paths.py": "bbf7498299def9af6c422134f0eceefe27242c7ab25d3c9f16ff92dfabe0d6be",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_support.py": "c45bdd4388e4fbafcdfdc1b85ab5ea98befacb0d1b6ebe499efd6a3d11df9e06",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_volume.py": "4f3a53b02baca2bbcd6dc4a2839988115905f3f2c91fb56e4b3e5c15a9c93a41",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_execution.py": "360c8bddeeb3a58a6153a3c3928ac53793255ad7fca75ea6b160b7a9b4771da8",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/reuse.py": "7dfdf209ef8227f6f17b62cb62d3e8f9b1a06a6423e469473428aac7d99e2e8f",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/thermal.py": "e25646c8c211ebea5dcd1cfed3bf9d60f8d16c28b188b9d14f218009519be411",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/parameters.py": "ffd8c2b37f54ac55b2369e50d57447a6c2fb37b0410656655a30bdca61699334",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/flexure.py": "0117168be6d39051a7a0f963bdf02583d0aff2ddfd558649ff55f34f1c2f1dba",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/finite_flexure.py": "b29bae72b5e587c846a5735e100fd2a5d5ada07e38cffcd3cc7005c6cacaba66",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/constitutive.py": "824fe454a9e9885c93f9fb77f8181d1e1cb83fbf6b0f95cc3472096817c35b5c",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/stokes_execution.py": "166bb1cfd483479069dc0d732c48ce162802fa015a0ab880626d8ab2a9007db4",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/execution.py": "6d0e27c903db119f37d818e943eaa9aec9d09ea200b4354bfefd7ac82328c40b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/stokes.py": "54d7084b4ecf0d15ee46c48a2ec2e6580dfdbdfab6ac71c3937696657043b082",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_execution3d.py": "e68f6e7e82ec3a104ed64662f98f7adeeaa424f294933d72cec14dc369663963",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_elements3d.py": "ba43a2739403a5146f3bf2ab775281bef9b1bee7f61615aa76ea2398a2ecabf8",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_multigrid3d.py": "f7fb72da129a4229b37e2bfd996b000f56eb17e17f576c6aaf53a41ab0da9887",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_solver_selection3d.py": "139050a964d66a1e7b662c498c348dfc1c40f1a326b334c98c0a78175933f614",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_transport3d.py": "d485e9a2b48a75c9bb2dc4ab60576fae98d2991a9da6df260bab6a7935bb81fe",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/regional_heat3d.py": "3d89be379bc912d741e5c3aaa7e451ba8c84240b3e06431cefb850dc609f8e53",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_exact_gmp.py": "5f3be654f70bd56c33df8c2c2f6f065347d7375b62c42bc840d3c496d61ab79f",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_volume_overlap.py": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_volume_bounds.py": "d48cf189e0d1ff5aabc1c0f6b8dc09de3d6728de96764d2c081ce3e6f76dc857",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_filtered_predicates.py": "8ab8684a506e34a44666296462cecad788b830e3051ab0b2b7f0d2571811b06f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r2.py": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_inventory_r4.py": "fd8950872e1ce4d00063c64edacd62dd46e9dcec8124abe57698ddadab719575",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r5.py": "b8d66d518a44a06ff7d607996cd528a179afbba6634c71e8dd89a358ac898ec1"
+  },
+  "checks": [
+    {
+      "name": "actual_owned_receiver_view_and_retained_generation",
+      "status": "PASS",
+      "first_bytes": 3621205,
+      "later_bytes": 7243138,
+      "peak_bytes": 10864343
+    },
+    {
+      "name": "actual_owned_refinement_refuses_numerical_view",
+      "status": "PASS"
+    },
+    {
+      "name": "budget_refusal",
+      "status": "PASS"
+    },
+    {
+      "name": "initial_cancellation",
+      "status": "PASS"
+    },
+    {
+      "name": "native_failure_exception_and_traceback_custody",
+      "status": "PASS",
+      "charged_bytes": 3620381
+    },
+    {
+      "name": "inventory_pin_drift_refusal",
+      "status": "PASS"
+    },
+    {
+      "name": "kernel_pin_drift_refusal",
+      "status": "PASS"
+    }
+  ],
+  "actual_native_WorkBudget_and_OwnedWorkspace": true,
+  "inventory_formulas_and_receiver_functions_unchanged": true,
+  "timing_executed": false,
+  "workers_launched": false,
+  "production_selected": false,
+  "limits": "New selected-public binding and additive owning receiver; not historical private replay, OS allocator proof, full heat dispatch or scientific acceptance.",
+  "preparation_failures": [
+    "First builder invocation refused because its literal map pin omitted one zero; corrected against unchanged selected map before any files were written.",
+    "First receiver import refused missing live_spatial_patch because the focused source loader did not cover selected top-level live helpers; loader extended to exact selected entries without modifying production modules."
+  ]
+}

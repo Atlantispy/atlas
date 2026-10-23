@@ -1,0 +1,240 @@
+{
+  "schema": "plan40b-solve-finish-implementation/v1",
+  "status": "C8_ADDITIVE_OWNING_RECEIVER_IMPLEMENTED_NOT_PRODUCTION_SELECTED",
+  "queue_ticket": "q76",
+  "process_run_id": "364b539f-74df-4ee4-83ce-f4f1cb2370f8",
+  "measurement_sha256": "6066340af5920727697fbbd7a0c1e1306af4c4e698dbe029866803cae991e918",
+  "candidates": {
+    "C6": {
+      "samples_ns": {
+        "baseline": [
+          970300,
+          763700,
+          742600
+        ],
+        "candidate": [
+          776300,
+          832100,
+          769900
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 763700,
+        "candidate": 776300
+      },
+      "median_per_component_ns": {
+        "baseline": 254566.66666666666,
+        "candidate": 258766.66666666666
+      },
+      "median_saved_ns_per_component": -4200.0,
+      "median_reduction_percent": -1.6498625114573786,
+      "paired_candidate_faster": 1,
+      "output_digests_equal": true,
+      "disposition": "Deferred: median regression and only one of three paired wins; no useful measured improvement established."
+    },
+    "C7": {
+      "samples_ns": {
+        "baseline": [
+          157500,
+          125600,
+          122500
+        ],
+        "candidate": [
+          160500,
+          130400,
+          129700
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 125600,
+        "candidate": 130400
+      },
+      "median_per_component_ns": {
+        "baseline": 41866.666666666664,
+        "candidate": 43466.666666666664
+      },
+      "median_saved_ns_per_component": -1600.0,
+      "median_reduction_percent": -3.821656050955414,
+      "paired_candidate_faster": 0,
+      "output_digests_equal": true,
+      "disposition": "Deferred: all three pairs slower; new factor-view lifetime/identity integration would add unjustified scope."
+    },
+    "C8": {
+      "samples_ns": {
+        "baseline": [
+          7072900,
+          7481200,
+          6638300
+        ],
+        "candidate": [
+          6702000,
+          6682700,
+          7131900
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 7072900,
+        "candidate": 6702000
+      },
+      "median_per_component_ns": {
+        "baseline": 2357633.3333333335,
+        "candidate": 2234000.0
+      },
+      "median_saved_ns_per_component": 123633.33333333333,
+      "median_reduction_percent": 5.243959337753962,
+      "paired_candidate_faster": 2,
+      "output_digests_equal": true,
+      "disposition": "Implemented additively: modest median benefit, two paired wins; exact arithmetic shortcut adds no cache or resource owner."
+    },
+    "C9": {
+      "samples_ns": {
+        "baseline": [
+          440700,
+          311100,
+          313100
+        ],
+        "candidate": [
+          371300,
+          319100,
+          308900
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 313100,
+        "candidate": 319100
+      },
+      "median_per_component_ns": {
+        "baseline": 104366.66666666667,
+        "candidate": 106366.66666666667
+      },
+      "median_saved_ns_per_component": -2000.0,
+      "median_reduction_percent": -1.916320664324497,
+      "paired_candidate_faster": 2,
+      "output_digests_equal": true,
+      "disposition": "Deferred: median regression; extra retained load vector still requires independent native admission/custody."
+    },
+    "C10": {
+      "samples_ns": {
+        "baseline": [
+          5046600,
+          4758800,
+          4851200
+        ],
+        "candidate": [
+          4984700,
+          4773600,
+          4757200
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 4851200,
+        "candidate": 4773600
+      },
+      "median_per_component_ns": {
+        "baseline": 1617066.6666666667,
+        "candidate": 1591200.0
+      },
+      "median_saved_ns_per_component": 25866.666666666668,
+      "median_reduction_percent": 1.599604221635884,
+      "paired_candidate_faster": 2,
+      "output_digests_equal": true,
+      "disposition": "Deferred: small median benefit, two paired wins; synthetic cache/issuer/cancellation/resource seams remain."
+    },
+    "C18": {
+      "samples_ns": {
+        "baseline": [
+          379500,
+          298500,
+          295900
+        ],
+        "candidate": [
+          297500,
+          280200,
+          287000
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 298500,
+        "candidate": 287000
+      },
+      "median_per_component_ns": {
+        "baseline": 99500.0,
+        "candidate": 95666.66666666667
+      },
+      "median_saved_ns_per_component": 3833.3333333333335,
+      "median_reduction_percent": 3.852596314907873,
+      "paired_candidate_faster": 3,
+      "output_digests_equal": true,
+      "disposition": "Deferred: all three pairs faster, but new retained exact vector needs real native owner/custody integration; no synthetic-owner transplant."
+    },
+    "C19": {
+      "samples_ns": {
+        "baseline": [
+          9160700,
+          9713200,
+          8949300
+        ],
+        "candidate": [
+          8940200,
+          10254900,
+          9205000
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 9160700,
+        "candidate": 9205000
+      },
+      "median_per_component_ns": {
+        "baseline": 3053566.6666666665,
+        "candidate": 3068333.3333333335
+      },
+      "median_saved_ns_per_component": -14766.666666666666,
+      "median_reduction_percent": -0.4835874987719279,
+      "paired_candidate_faster": 1,
+      "output_digests_equal": true,
+      "disposition": "Deferred: median regression; optional boundary-cache owner remains unqualified."
+    },
+    "C20": {
+      "samples_ns": {
+        "baseline": [
+          1552300,
+          1629700,
+          1497000
+        ],
+        "candidate": [
+          8452000,
+          1744900,
+          1704400
+        ]
+      },
+      "batch": 3,
+      "median_batch_ns": {
+        "baseline": 1552300,
+        "candidate": 1744900
+      },
+      "median_per_component_ns": {
+        "baseline": 517433.3333333333,
+        "candidate": 581633.3333333334
+      },
+      "median_saved_ns_per_component": -64200.0,
+      "median_reduction_percent": -12.407395477678284,
+      "paired_candidate_faster": 0,
+      "output_digests_equal": true,
+      "disposition": "Deferred: all three pairs slower, including one large candidate outlier; do not discard that observation."
+    }
+  },
+  "implementation_sha256": "248afad46838af857c1170c3083b7a0558fb2c85921e54b9011f3b024816d7f5",
+  "controls_sha256": "4160f3656331b2c48b90ca0578258bccddf0c4b827fc530d58723cd0d03e1f09",
+  "production_enabled": false,
+  "limits": "Three small serial component batches per arm, three component calls per batch. Descriptive medians only; no confidence interval, production hit rate, whole-heat projection or sum of overlapping gains. No new timing.",
+  "receiver_controls_sha256": "bab3211576a44c2564b2295c492cc739a28e6dc4a5eb6c180dce4ec2f830b746",
+  "actual_receiver_smoke_sha256": "db5043c2bdaa7000bbb768c5375020b3274fadaa736f634863361b38567d2d6d",
+  "actual_receiver_timing_executed": false
+}

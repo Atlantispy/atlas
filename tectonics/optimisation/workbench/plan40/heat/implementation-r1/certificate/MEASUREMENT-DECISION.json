@@ -1,0 +1,492 @@
+{
+  "source_sha256": "e2266ec5bea52e373e2f5058357c57b6fd4456f96a2fbdf1cba29be1d3fd1d5d",
+  "scope": "Observed synthetic complete calls; no whole heat inference",
+  "records": [
+    {
+      "candidate": "C3",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.00039132501115091145,
+          0.0003165750240441412,
+          0.00030590000096708536,
+          0.0003537499869707972
+        ],
+        "candidate": [
+          0.00032957500661723316,
+          0.00031040000612847507,
+          0.0003097000007983297,
+          0.0003128749958705157
+        ]
+      },
+      "baseline_median_ms": 0.3351625055074692,
+      "candidate_median_ms": 0.3116375009994954,
+      "change_percent": -7.018984558655994,
+      "paired_wins": 3,
+      "peak_accounted_bytes": {
+        "baseline": 2170880,
+        "candidate": 2170880
+      }
+    },
+    {
+      "candidate": "C3",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0062151000602170825,
+          0.006043400033377111,
+          0.006294799968600273,
+          0.006229800055734813
+        ],
+        "candidate": [
+          0.005860300036147237,
+          0.005784400040283799,
+          0.005786300054751337,
+          0.006323999958112836
+        ]
+      },
+      "baseline_median_ms": 6.222450057975948,
+      "candidate_median_ms": 5.823300045449287,
+      "change_percent": -6.414676032875988,
+      "paired_wins": 3,
+      "peak_accounted_bytes": {
+        "baseline": 21110784,
+        "candidate": 21110784
+      }
+    },
+    {
+      "candidate": "C4",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0003469499933999032,
+          0.00029917500796727836,
+          0.0002995499817188829,
+          0.00030109999352134764
+        ],
+        "candidate": [
+          0.00032324998755939305,
+          0.0003099250025115907,
+          0.0003552249982021749,
+          0.0003124249924439937
+        ]
+      },
+      "baseline_median_ms": 0.3003249876201153,
+      "candidate_median_ms": 0.31783749000169337,
+      "change_percent": 5.831183918578842,
+      "paired_wins": 1,
+      "peak_accounted_bytes": {
+        "baseline": 2170880,
+        "candidate": 2260992
+      }
+    },
+    {
+      "candidate": "C4",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.006403699982911348,
+          0.006260700058192015,
+          0.006009200005792081,
+          0.006013800040818751
+        ],
+        "candidate": [
+          0.005983800045214593,
+          0.0059643000131472945,
+          0.006044300040230155,
+          0.0060032999608665705
+        ]
+      },
+      "baseline_median_ms": 6.137250049505383,
+      "candidate_median_ms": 5.993550003040582,
+      "change_percent": -2.341440308047771,
+      "paired_wins": 3,
+      "peak_accounted_bytes": {
+        "baseline": 21110784,
+        "candidate": 21299200
+      }
+    },
+    {
+      "candidate": "C5",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.00039702499634586275,
+          0.00030972500098869205,
+          0.0003074750129599124,
+          0.0003166499955113977
+        ],
+        "candidate": [
+          0.00036525001632981,
+          0.00035945000126957893,
+          0.0003355999942868948,
+          0.00040985000669024885
+        ]
+      },
+      "baseline_median_ms": 0.3131874982500449,
+      "candidate_median_ms": 0.3623500087996945,
+      "change_percent": 15.69746903192122,
+      "paired_wins": 1,
+      "peak_accounted_bytes": {
+        "baseline": 2170880,
+        "candidate": 2400256
+      }
+    },
+    {
+      "candidate": "C5",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.006270899903029203,
+          0.0061298999935388565,
+          0.006312899990007281,
+          0.005981800029985607
+        ],
+        "candidate": [
+          0.0062333999667316675,
+          0.005095199914649129,
+          0.0050566999707371,
+          0.0052643000381067395
+        ]
+      },
+      "baseline_median_ms": 6.20039994828403,
+      "candidate_median_ms": 5.179749976377934,
+      "change_percent": -16.46103445614927,
+      "paired_wins": 4,
+      "peak_accounted_bytes": {
+        "baseline": 21110784,
+        "candidate": 23044096
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 4,
+      "scenario": "append",
+      "per_call_seconds": {
+        "baseline": [
+          0.0027615000144578516,
+          0.0005718999891541898,
+          0.0005692249978892505,
+          0.0005681250186171383
+        ],
+        "candidate": [
+          0.0010318499989807606,
+          0.0009140000038314611,
+          0.000914999982342124,
+          0.0009074249828699976
+        ]
+      },
+      "baseline_median_ms": 0.5705624935217202,
+      "candidate_median_ms": 0.9144999930867925,
+      "change_percent": 60.280425627377724,
+      "paired_wins": 1,
+      "peak_accounted_bytes": {
+        "baseline": 2899362,
+        "candidate": 3681792
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 4,
+      "scenario": "mismatch",
+      "per_call_seconds": {
+        "baseline": [
+          0.0006170250126160681,
+          0.0005724499933421612,
+          0.0006006750045344234,
+          0.0005785749817732722
+        ],
+        "candidate": [
+          0.0009244749962817878,
+          0.0009098750015255064,
+          0.000901099992915988,
+          0.0009000749851111323
+        ]
+      },
+      "baseline_median_ms": 0.5896249931538478,
+      "candidate_median_ms": 0.9054874972207472,
+      "change_percent": 53.57006703148404,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 2899362,
+        "candidate": 3681792
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 4,
+      "scenario": "no-funding",
+      "per_call_seconds": {
+        "baseline": [
+          0.0006188499974086881,
+          0.0007152750040404499,
+          0.0005692249978892505,
+          0.0005670250102411956
+        ],
+        "candidate": [
+          0.0006171749846544117,
+          0.0005987499898765236,
+          0.0005980749847367406,
+          0.0005930750048719347
+        ]
+      },
+      "baseline_median_ms": 0.5940374976489693,
+      "candidate_median_ms": 0.5984124873066321,
+      "change_percent": 0.7364837531263158,
+      "paired_wins": 2,
+      "peak_accounted_bytes": {
+        "baseline": 2899362,
+        "candidate": 2899362
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 20,
+      "scenario": "append",
+      "per_call_seconds": {
+        "baseline": [
+          0.023414799943566322,
+          0.023079599952325225,
+          0.023501600022427738,
+          0.023662099963985384
+        ],
+        "candidate": [
+          0.056930100079625845,
+          0.0566497000399977,
+          0.057150700013153255,
+          0.05913369997870177
+        ]
+      },
+      "baseline_median_ms": 23.45819998299703,
+      "candidate_median_ms": 57.04040004638955,
+      "change_percent": 143.15761690041677,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 22836642,
+        "candidate": 49774080
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 20,
+      "scenario": "mismatch",
+      "per_call_seconds": {
+        "baseline": [
+          0.023088300018571317,
+          0.02336780005134642,
+          0.023114200099371374,
+          0.023261699941940606
+        ],
+        "candidate": [
+          0.058137399959377944,
+          0.057475400040857494,
+          0.058107799966819584,
+          0.05696620000526309
+        ]
+      },
+      "baseline_median_ms": 23.18795002065599,
+      "candidate_median_ms": 57.79160000383854,
+      "change_percent": 149.2311737448001,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 22836642,
+        "candidate": 49774080
+      }
+    },
+    {
+      "candidate": "C11",
+      "rank": 20,
+      "scenario": "no-funding",
+      "per_call_seconds": {
+        "baseline": [
+          0.02298270002938807,
+          0.023001199937425554,
+          0.02308960002847016,
+          0.023189100087620318
+        ],
+        "candidate": [
+          0.023023499990813434,
+          0.02327310002874583,
+          0.023117900011129677,
+          0.02323299995623529
+        ]
+      },
+      "baseline_median_ms": 23.045399982947856,
+      "candidate_median_ms": 23.175449983682483,
+      "change_percent": 0.5643208659031895,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 22836642,
+        "candidate": 22836642
+      }
+    },
+    {
+      "candidate": "C15",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0004003999929409474,
+          0.0003581749915610999,
+          0.0003039749863091856,
+          0.00030082499142736197
+        ],
+        "candidate": [
+          0.0003546249936334789,
+          0.000378400000045076,
+          0.00030512502416968346,
+          0.000304674991639331
+        ]
+      },
+      "baseline_median_ms": 0.33107498893514276,
+      "candidate_median_ms": 0.32987500890158117,
+      "change_percent": -0.3624496182635717,
+      "paired_wins": 1,
+      "peak_accounted_bytes": {
+        "baseline": 2170880,
+        "candidate": 2170880
+      }
+    },
+    {
+      "candidate": "C15",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.006195700028911233,
+          0.006021899986080825,
+          0.00606709998100996,
+          0.006186399958096445
+        ],
+        "candidate": [
+          0.005739100044593215,
+          0.005958799971267581,
+          0.008600299945101142,
+          0.008716299897059798
+        ]
+      },
+      "baseline_median_ms": 6.126749969553202,
+      "candidate_median_ms": 7.2795499581843615,
+      "change_percent": 18.81584844101656,
+      "paired_wins": 2,
+      "peak_accounted_bytes": {
+        "baseline": 21110784,
+        "candidate": 21110784
+      }
+    },
+    {
+      "candidate": "C16",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0005503499996848404,
+          0.0004899499763268977,
+          0.0004899000050500035,
+          0.0005223750195000321
+        ],
+        "candidate": [
+          0.0005126750038471073,
+          0.0004949000140186399,
+          0.0004902000073343515,
+          0.0004897499748039991
+        ]
+      },
+      "baseline_median_ms": 0.5061624979134649,
+      "candidate_median_ms": 0.49255001067649573,
+      "change_percent": -2.6893512050148782,
+      "paired_wins": 2,
+      "peak_accounted_bytes": {
+        "baseline": 2899362,
+        "candidate": 2899362
+      }
+    },
+    {
+      "candidate": "C16",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.006939699989743531,
+          0.006799999973736703,
+          0.006812300067394972,
+          0.007010600063949823
+        ],
+        "candidate": [
+          0.006685999920591712,
+          0.0068641999969258904,
+          0.006541399983689189,
+          0.006495899986475706
+        ]
+      },
+      "baseline_median_ms": 6.876000028569251,
+      "candidate_median_ms": 6.6136999521404505,
+      "change_percent": -3.8147189549005867,
+      "paired_wins": 3,
+      "peak_accounted_bytes": {
+        "baseline": 22836642,
+        "candidate": 22836642
+      }
+    },
+    {
+      "candidate": "C17",
+      "rank": 4,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0003444250032771379,
+          0.0003097500011790544,
+          0.00030079999123699963,
+          0.00029992498457431793
+        ],
+        "candidate": [
+          0.0005955499946139753,
+          0.0006419499986805022,
+          0.0005853000038769096,
+          0.0005857500073034316
+        ]
+      },
+      "baseline_median_ms": 0.305274996208027,
+      "candidate_median_ms": 0.5906500009587035,
+      "change_percent": 93.4812900812257,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 2170880,
+        "candidate": 2170880
+      }
+    },
+    {
+      "candidate": "C17",
+      "rank": 20,
+      "scenario": "ordinary",
+      "per_call_seconds": {
+        "baseline": [
+          0.0060989001067355275,
+          0.0061055999249219894,
+          0.006129999994300306,
+          0.0061188999097794294
+        ],
+        "candidate": [
+          0.011759200016967952,
+          0.011566899949684739,
+          0.011822600034065545,
+          0.0119581000180915
+        ]
+      },
+      "baseline_median_ms": 6.112249917350709,
+      "candidate_median_ms": 11.790900025516748,
+      "change_percent": 92.90605235309799,
+      "paired_wins": 0,
+      "peak_accounted_bytes": {
+        "baseline": 21110784,
+        "candidate": 21110784
+      }
+    }
+  ]
+}

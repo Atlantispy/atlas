@@ -1,0 +1,631 @@
+{
+  "candidate": "C13",
+  "candidates": {
+    "C13": {
+      "component": "actual admitted polygon module",
+      "status": "PASS"
+    }
+  },
+  "component_load_setup_seconds": 0.21503690001554787,
+  "implementation_and_evidence_pins": {
+    "RESULTS-r1.json": "09bd1d47220b444a9768188f75eb9a7b7da7365b654deb93c9802b2c7ebb7427",
+    "check_functional.py": "bd05f15b48b5bdc757985fc223520e0f0a823239577c339f50676ed16972b091",
+    "private_heat_functionals_kernel_40b_r1.py": "0c9606475fb7e6576d94680c0d7b2757e8088c0d94bc20564e842ea45c3a1c59",
+    "private_heat_polygon_moment_40b_r1.py": "de56233d0272555e7998f1dc5418a65c017abcb7a51e3a48aaea62738ca4bfd0",
+    "private_heat_polygon_numerics_40b_r1.py": "5991aca3ed26e65e2290be6c1ee4052f15b74a1e770b9606849263e25b12f00c"
+  },
+  "limits": [
+    "Synthetic four-shape component workload; no whole-heat speed inference",
+    "Original START private fence explicitly injected with selected component hash checks in both arms",
+    "Candidate's additional source/callable checks execute unchanged inside every measured component call",
+    "Native plan, owner, retained transfer and close executed; whole-runtime/worker/issuer qualification absent",
+    "Diagnostic canonical export included symmetrically; comparison and hashing outside timing",
+    "One-time imports/fixture setup reported separately; per-call setup and retirement included",
+    "Existing four-case/thirteen-fault proof reused unchanged; no science or worker run"
+  ],
+  "mode": "benchmark",
+  "performance_clock_sentinel_active": false,
+  "predecessor_pins": {
+    "private_heat_functionals_kernel_r1.py": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56",
+    "private_heat_polygon_moment_inventory_r1.py": "3702ff5135b841929eb06d83204292531d10ff6b7dcbc2717f2c24f9660137fc",
+    "private_heat_polygon_moment_inventory_r4.py": "ad0183ef0ba511d23c7810e6a9a4f8c37599f229fe19604e1f94bc3d3a892e2a"
+  },
+  "preflight": {
+    "baseline": {
+      "component_calls": 4,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9955
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9890
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9842
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 10389
+        }
+      ]
+    },
+    "candidate": {
+      "component_calls": 4,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9729
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9664
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9616
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 10163
+        }
+      ]
+    }
+  },
+  "preflight_component_calls": 8,
+  "runtime": {
+    "gmpy2": "2.3.2",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "sampled_component_calls": 48,
+  "samples": [
+    {
+      "arm": "baseline",
+      "block": 0,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 0,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010198300005868077,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9503
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9438
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9390
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9945
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 0,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 1,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010804999968968332,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9317
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9284
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9284
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9879
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 0,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 2,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.011416799970902503,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9267
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9250
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9250
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "block": 0,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 3,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010299499961547554,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 1,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "BAAB",
+      "position": 0,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.011322400067001581,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "block": 1,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "BAAB",
+      "position": 1,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010334999999031425,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "block": 1,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "BAAB",
+      "position": 2,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010082999942824244,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 1,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "BAAB",
+      "position": 3,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010718799894675612,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "block": 2,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 0,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010134399984963238,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 2,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 1,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.01066739996895194,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "block": 2,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 2,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010747799999080598,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "block": 2,
+      "component_calls": 4,
+      "equal_outside_timing": true,
+      "order": "ABBA",
+      "position": 3,
+      "result_digest": "60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f",
+      "seconds": 0.010078500024974346,
+      "start_component_fence_calls": 4,
+      "work": [
+        {
+          "case": "triangle",
+          "peak_bytes": 2704352,
+          "plan_bytes": 2704352,
+          "polls": 530,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "rectangle",
+          "peak_bytes": 3783680,
+          "plan_bytes": 3783680,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "reverse",
+          "peak_bytes": 3783644,
+          "plan_bytes": 3783644,
+          "polls": 900,
+          "retained_bytes": 9233
+        },
+        {
+          "case": "far_tiny_tilted",
+          "peak_bytes": 9229868,
+          "plan_bytes": 9229868,
+          "polls": 530,
+          "retained_bytes": 9845
+        }
+      ]
+    }
+  ],
+  "schema": "plan40b.actual-c13-measurement.r1",
+  "script_sha256": "637e04c01d57faa50eacd6f725c86f56233a56a1f9ff8e3fa5332e903019efc5",
+  "source_bindings": {
+    "tectonics/optimisation/composed-r2/helpers/private_heat_counted_blocks_r2.py": "765b346698d865f4fab861e7bb99820b771af6b27ff79c64d372a0af38d9c4e3",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_inventory_r1.py": "395c9346cb4924bdf9867eb0111665533f2f786e3c8e09960f695a5bc36c01ed",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r1.py": "a48f115e8018b9c2d831ce1442cba1060a22d0a5fdbc39b6c8165674a0b0ab56",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_functionals_kernel_r5.py": "85991687f0a6ba57c333cb1f1fc5904e2c21a5ab19f1f26c68a3c6b06ec577ca",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_inventory_r1.py": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_owned_value_r4.py": "7b8be5108322c0a6a0d6f856ee5de0d40a98b4d454286ad4ce46119eda7ec7cb",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r1.py": "3702ff5135b841929eb06d83204292531d10ff6b7dcbc2717f2c24f9660137fc",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_polygon_moment_inventory_r4.py": "ad0183ef0ba511d23c7810e6a9a4f8c37599f229fe19604e1f94bc3d3a892e2a",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r1.py": "df7fe40740b66f5678189064498fee2026e49b65c7b421c8c604163eaae15383",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_support_basis_resources_r2.py": "9b0e58421935e71f53e9e845122f2e47642ab2275f49ad9de6df2391d0c04874",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/resources.py": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+    "tectonics/optimisation/pending/heat/le3/helpers/private_heat_exact_growth_r1.py": "35e77650f92bab4eaae254d7b57597d39ce55bd663d8092c0d93f6136c3c7ec4",
+    "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_geometry_inventory_r1.py": "641161ebd51f137d42976236178e17316edb7ddb280edfe0bd6975dd061adbb3",
+    "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_low_ledger_inventory_r1.py": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+    "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3"
+  },
+  "status": "PASS",
+  "workload_sha256": "1e0b74d2583a3f8feb7a32875a65a8bad4a8edca96d68ad64517a670baf6f034"
+}

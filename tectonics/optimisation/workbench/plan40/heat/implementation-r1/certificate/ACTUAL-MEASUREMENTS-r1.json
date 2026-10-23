@@ -1,0 +1,500 @@
+{
+  "schema": "plan40b.certificate-actual-module-measurement.r1",
+  "status": "PASS",
+  "candidate": "C3",
+  "mode": "benchmark",
+  "script_sha256": "9d1be5f19a2d4b18917ec4b320de677df9c8d3523186c879a5fde9a8102ecf5e",
+  "control_sha256": "ba7dda0d0565f2fee86d38b07e098e921253987b93da22003e85546a1449e392",
+  "source_delta_sha256": "673267ab8d11b9b591c4e430bf10d3917282faad68793b31c0f2c20f3c4757ee",
+  "candidates": {
+    "C3": {
+      "status": "PASS",
+      "benchmarks": [
+        {
+          "rank": 4,
+          "precision": 320,
+          "scenario": "solve_physical",
+          "samples": [
+            {
+              "pair": 0,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.001486400025896728
+            },
+            {
+              "pair": 0,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.001293300068937242
+            },
+            {
+              "pair": 1,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.0012229999992996454
+            },
+            {
+              "pair": 1,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.001236499985679984
+            },
+            {
+              "pair": 2,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.0012144999345764518
+            },
+            {
+              "pair": 2,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.0012741999235004187
+            },
+            {
+              "pair": 3,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.0013818999286741018
+            },
+            {
+              "pair": 3,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "fbbb89947d10b1dfb266e25f2ffa9efcdd4a99ea8ace59ca3a46d6f3f81fda6b",
+              "peak_accounted_bytes": 2170880,
+              "seconds": 0.0012169999536126852
+            }
+          ],
+          "workload_sha256": "0b6fa39d86b7985a537fd81bde7db338a028985f0df17795b8c68f4bb3d54699",
+          "scope": "Synthetic identity; complete actual module calls, source runtime guards, ownership and release"
+        },
+        {
+          "rank": 4,
+          "precision": 320,
+          "scenario": "r3_attempt_export",
+          "samples": [
+            {
+              "pair": 0,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0024655000306665897
+            },
+            {
+              "pair": 0,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0019736000103875995
+            },
+            {
+              "pair": 1,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0019586000125855207
+            },
+            {
+              "pair": 1,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0019725000020116568
+            },
+            {
+              "pair": 2,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0019757000263780355
+            },
+            {
+              "pair": 2,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.001936799963004887
+            },
+            {
+              "pair": 3,
+              "arm": "candidate",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.001999500091187656
+            },
+            {
+              "pair": 3,
+              "arm": "baseline",
+              "complete_calls": 4,
+              "result_sha256": "30c802d21857198ffcdfff45886b889ff58027a5e6688bf20b38c702b844819f",
+              "peak_accounted_bytes": 2899362,
+              "seconds": 0.0019684999715536833
+            }
+          ],
+          "workload_sha256": "0b6fa39d86b7985a537fd81bde7db338a028985f0df17795b8c68f4bb3d54699",
+          "scope": "Synthetic identity; complete actual module calls, source runtime guards, ownership and release"
+        },
+        {
+          "rank": 20,
+          "precision": 320,
+          "scenario": "solve_physical",
+          "samples": [
+            {
+              "pair": 0,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.006335600046440959
+            },
+            {
+              "pair": 0,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.0059486000100150704
+            },
+            {
+              "pair": 1,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.005709199933335185
+            },
+            {
+              "pair": 1,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.005964100011624396
+            },
+            {
+              "pair": 2,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.006034299964085221
+            },
+            {
+              "pair": 2,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.00565069995354861
+            },
+            {
+              "pair": 3,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.00573229999281466
+            },
+            {
+              "pair": 3,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "45222f0f1a9462fe4dc46861ba02b08421247cc4f64889805ebc576b484fb901",
+              "peak_accounted_bytes": 21110784,
+              "seconds": 0.00598409993108362
+            }
+          ],
+          "workload_sha256": "8b38ae1f198432189f948da7e611e4edc1dbff9917bb7cf4e7a59548b30d36b3",
+          "scope": "Synthetic identity; complete actual module calls, source runtime guards, ownership and release"
+        },
+        {
+          "rank": 20,
+          "precision": 320,
+          "scenario": "r3_attempt_export",
+          "samples": [
+            {
+              "pair": 0,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006769999978132546
+            },
+            {
+              "pair": 0,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006610599928535521
+            },
+            {
+              "pair": 1,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006512099993415177
+            },
+            {
+              "pair": 1,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006760200019925833
+            },
+            {
+              "pair": 2,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006752900080755353
+            },
+            {
+              "pair": 2,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.00638859998434782
+            },
+            {
+              "pair": 3,
+              "arm": "candidate",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006566200056113303
+            },
+            {
+              "pair": 3,
+              "arm": "baseline",
+              "complete_calls": 1,
+              "result_sha256": "2268d841f39afe14de27aeaff66169fbd0d7c3c6cddcd41b1ecda65198ee5b68",
+              "peak_accounted_bytes": 22836642,
+              "seconds": 0.006803399999625981
+            }
+          ],
+          "workload_sha256": "8b38ae1f198432189f948da7e611e4edc1dbff9917bb7cf4e7a59548b30d36b3",
+          "scope": "Synthetic identity; complete actual module calls, source runtime guards, ownership and release"
+        }
+      ]
+    }
+  },
+  "bounds": {
+    "one_core": true,
+    "projected_peak_rss_mib": 700,
+    "projected_runtime_seconds": 180
+  },
+  "limits": [
+    "Testing support needs no independent review; timed invocation still needs exact queue GO.",
+    "No workers, scientific run, private runtime binding or whole-heat gain.",
+    "Input creation, pinned source verification and import/build are outside arm clocks.",
+    "Actual arithmetic/runtime guards, plan creation, owned envelope, output encoding and release are inside.",
+    "Unchanged accepted source-bound dependency bootstrap includes extracted escaping-workspace support only.",
+    "Native module internal import self-test clocks remain in source, but smoke records no elapsed performance."
+  ],
+  "imports": {
+    "baseline": {
+      "kernel_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+      "r3_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "module_import_seconds": 0.08729299996048212,
+      "native_import_compile_selftest_seconds": 0.9803110000211746,
+      "native_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "compiled_signature_count": 4
+    },
+    "candidate": {
+      "kernel_sha256": "6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb",
+      "r3_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "module_import_seconds": 0.00795320002362132,
+      "native_import_compile_selftest_seconds": 0.44837760005611926,
+      "native_sha256": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5",
+      "compiled_signature_count": 4
+    }
+  },
+  "successors": {
+    "private_heat_certification_kernel_r1.py": "6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb",
+    "private_heat_compiled_dot_r1.py": "18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5",
+    "private_heat_functionals_parallel_r1.py": "107f804186e316ef2805e013271c89438a75a14fee5b1a6d53d50507cd050a7d"
+  },
+  "sources": {
+    "resources.py": {
+      "member": "source/src/atlas_tectonics/resources.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/resources.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/resources.py",
+      "original_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "public_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "integration_spatial_transport.py": {
+      "member": "source/src/atlas_tectonics/integration_spatial_transport.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_spatial_transport.py",
+      "original_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "public_sha256": "19426e0879f31af32f460e7c37759bc3fc1a12ae81be02b2d728d40a34d178a8",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_gmp_resources_r1.py": {
+      "member": "source/helpers/private_heat_gmp_resources_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_gmp_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_gmp_resources_r1.py",
+      "original_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "public_sha256": "5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_resources_r1.py": {
+      "member": "source/helpers/private_heat_certification_resources_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_resources_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_resources_r1.py",
+      "original_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "public_sha256": "40943b9c75f2d8d0c518f33b42a074db1a08fd2c4ae165053d68170bfcd0e6b3",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_low_ledger_inventory_r1.py": {
+      "member": "source/helpers/private_heat_low_ledger_inventory_r1.py",
+      "public_path": "tectonics/optimisation/pending/heat/lf3/helpers/private_heat_low_ledger_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_low_ledger_inventory_r1.py",
+      "original_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "public_sha256": "462bf6a2a63cd11983da8c16ea3889a8cd72bfb374b09b3729907cb7a2a66596",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_inventory_r1.py": {
+      "member": "source/helpers/private_heat_decimal_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_inventory_r1.py",
+      "original_sha256": "ded95d895acd84dc3d6e858054a7b21d5a58cb45c9f07790b676c2ad926a02b5",
+      "public_sha256": "395c9346cb4924bdf9867eb0111665533f2f786e3c8e09960f695a5bc36c01ed",
+      "transformations": [
+        {
+          "kind": "home-path",
+          "count": 1
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_decimal_sparse_core_r1.py": {
+      "member": "source/helpers/private_heat_decimal_sparse_core_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_decimal_sparse_core_r1.py",
+      "original_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "public_sha256": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_finish_arithmetic_r1.py": {
+      "member": "source/helpers/private_heat_finish_arithmetic_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_finish_arithmetic_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_finish_arithmetic_r1.py",
+      "original_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "public_sha256": "966b1ff020dbdd885a6f1c3898e1b644128c95a64f9442d3e6e7dcc26e238c78",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_assembly_kernel_r1.py": {
+      "member": "source/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_assembly_kernel_r1.py",
+      "original_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "public_sha256": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_interval_inventory_r1.py": {
+      "member": "source/helpers/private_heat_interval_inventory_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_interval_inventory_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_interval_inventory_r1.py",
+      "original_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "public_sha256": "6ee4bf826a84efb236abd7fd42dfc4960ec0b1fc040bcbb59d0183a2d4428623",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_rational_decimal_kernel_r1.py": {
+      "member": "source/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_rational_decimal_kernel_r1.py",
+      "original_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "public_sha256": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r1.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r1.py",
+      "public_path": "tectonics/optimisation/workbench/plans13-14/source/helpers/private_heat_certification_kernel_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_certification_kernel_r1.py",
+      "original_sha256": "4099a297a8423a6213761ab4f305d442dda647ec6c7a46ee4d4734d253041f71",
+      "public_sha256": "09ae26a28376dd36fc2ad9f01d6a8e8874f57689f3aa40611dbb462e01382e47",
+      "transformations": [
+        {
+          "kind": "trailing-empty-lines",
+          "replacement": "one final LF"
+        }
+      ],
+      "selected_composition_member": true
+    },
+    "private_heat_compiled_dot_r1.py": {
+      "member": "source/helpers/private_heat_compiled_dot_r1.py",
+      "public_path": "tectonics/optimisation/pending/kernels/h3/private_heat_compiled_dot_r1.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/source/helpers/private_heat_compiled_dot_r1.py",
+      "original_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "public_sha256": "e0be3a309c8ab9ccee3c1a36525f72da27e816b1ce984651dbd85a3c072a14aa",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "private_heat_certification_kernel_r3.py": {
+      "member": "source/helpers/private_heat_certification_kernel_r3.py",
+      "public_path": "tectonics/optimisation/composed-r2/helpers/private_heat_certification_kernel_r3.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/helpers/private_heat_certification_kernel_r3.py",
+      "original_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "public_sha256": "6136aec04d3a6a424ce98d522f4dbc680829c0a3aa5f0e0a4bd2d09fec4784a7",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "exact_arithmetic.py": {
+      "member": "source/src/atlas_tectonics/exact_arithmetic.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/exact_arithmetic.py",
+      "original_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "public_sha256": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+      "transformations": [],
+      "selected_composition_member": true
+    },
+    "_validation.py": {
+      "member": "source/src/atlas_tectonics/_validation.py",
+      "public_path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py",
+      "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/_validation.py",
+      "original_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "public_sha256": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+      "transformations": [],
+      "selected_composition_member": true
+    }
+  }
+}

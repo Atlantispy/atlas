@@ -1,0 +1,311 @@
+{
+  "schema": "plan40b-c8-implementation/v1",
+  "status": "PASS",
+  "successor_sha256": "248afad46838af857c1170c3083b7a0558fb2c85921e54b9011f3b024816d7f5",
+  "source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
+  "control_sha256": "ad9d09f99ab29ee9b8a576de7b9b40023f0373130730d9b39c719d86e9d1b8fa",
+  "sources": {
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/exact_arithmetic.py": "84fc2127a86cd707170a8c81b5a1dd557e4e334491ea3d2dce0b12e01f3ec01b",
+    "tectonics/optimisation/composed-r2/src/atlas_tectonics/_validation.py": "7d84d32f0a7e8b1d0d3e5292fc8b0080bc2282c249bcfda117c02139742cfb4c",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_decimal_sparse_core_r1.py": "e07a1230b0dcc586175ea989392d1a82304c5bcf0c79201ab0d4e033cb7ed81f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r1.py": "bdbd0f1e62668d48c958075ffb033e740ee147f163faa943893d01c24ae3de74",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_rational_decimal_kernel_r1.py": "1b6182c8a2b2dc8e7a051b8fd078b0cb58cec6f104f3b9587e2e4eab751f232f",
+    "tectonics/optimisation/composed-r2/helpers/private_heat_interval_assembly_kernel_r2.py": "6ac42cb45074daee24a74a04b0dec1d0a99a9c1e79f6c138bf6695bd264ebb7e"
+  },
+  "checks": [
+    {
+      "name": "valid",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "OK",
+      "checkpoints": 20,
+      "scale_calls": [
+        6,
+        1
+      ],
+      "digest": "52bd49748386ea3396c0322e584070189f6c138c8ace0e42ebd055791b538842"
+    },
+    {
+      "name": "wide",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "OK",
+      "checkpoints": 15,
+      "scale_calls": [
+        4,
+        0
+      ],
+      "digest": "c84217b4e787a1317bfd23d3050094814c6fe7eac8f647dd57c38edf9dd84243"
+    },
+    {
+      "name": "ambiguous",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 13,
+      "scale_calls": [
+        2,
+        0
+      ],
+      "digest": "a06119c24393e9c17dafa42953ee062595c0f66d0d25331b6a80aec9cd2daf6d"
+    },
+    {
+      "name": "bad_sign",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "bool_sign",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "same_sign",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "duplicate_owner",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "reversed_bounds",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 4,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "c82135431eccf3b914e86330b959dd87fc11b4f62ab3a1e70d46571d382a3c82"
+    },
+    {
+      "name": "cancel_1",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 1,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "878b5c8bace9c3540acc8cfb82d7ac01f2a05802ffc56784515526be73fa725d"
+    },
+    {
+      "name": "cancel_2",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 2,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "d4db97ef6909e89e82a0376a88bdc7c7604e41b7fb9a0bbb050eb6faf11611fa"
+    },
+    {
+      "name": "cancel_10",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 10,
+      "scale_calls": [
+        4,
+        0
+      ],
+      "digest": "90c08cfef05868d95f6e2fd27c2bdaf565e028b033f1fe5619e3fef9e232310e"
+    },
+    {
+      "name": "allocation_failure",
+      "collect": false,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 6,
+      "scale_calls": [
+        2,
+        0
+      ],
+      "digest": "62ec6d19e6bb8ba65ef7a8b5bc55e7c62729fde005951a43e125c1fcbe1318b0"
+    },
+    {
+      "name": "valid",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "OK",
+      "checkpoints": 20,
+      "scale_calls": [
+        6,
+        1
+      ],
+      "digest": "52bd49748386ea3396c0322e584070189f6c138c8ace0e42ebd055791b538842"
+    },
+    {
+      "name": "wide",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "OK",
+      "checkpoints": 15,
+      "scale_calls": [
+        4,
+        0
+      ],
+      "digest": "c84217b4e787a1317bfd23d3050094814c6fe7eac8f647dd57c38edf9dd84243"
+    },
+    {
+      "name": "ambiguous",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "OK",
+      "checkpoints": 15,
+      "scale_calls": [
+        2,
+        0
+      ],
+      "digest": "209540cc5942c2db4c4b2c327ec5a8b9bbf7eef6ee2a75b279ae9ba317cf1d04"
+    },
+    {
+      "name": "bad_sign",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "bool_sign",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "same_sign",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "duplicate_owner",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 3,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "64c6bcd2f6196e67cc8f5b50a73f030243af0dbbb5b3f39b10bfe50facfc2e75"
+    },
+    {
+      "name": "reversed_bounds",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 4,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "c82135431eccf3b914e86330b959dd87fc11b4f62ab3a1e70d46571d382a3c82"
+    },
+    {
+      "name": "cancel_1",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 1,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "878b5c8bace9c3540acc8cfb82d7ac01f2a05802ffc56784515526be73fa725d"
+    },
+    {
+      "name": "cancel_2",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 2,
+      "scale_calls": [
+        0,
+        0
+      ],
+      "digest": "d4db97ef6909e89e82a0376a88bdc7c7604e41b7fb9a0bbb050eb6faf11611fa"
+    },
+    {
+      "name": "cancel_10",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 10,
+      "scale_calls": [
+        4,
+        0
+      ],
+      "digest": "90c08cfef05868d95f6e2fd27c2bdaf565e028b033f1fe5619e3fef9e232310e"
+    },
+    {
+      "name": "allocation_failure",
+      "collect": true,
+      "status": "PASS",
+      "outcome": "ERROR",
+      "checkpoints": 6,
+      "scale_calls": [
+        2,
+        0
+      ],
+      "digest": "62ec6d19e6bb8ba65ef7a8b5bc55e7c62729fde005951a43e125c1fcbe1318b0"
+    }
+  ],
+  "full_module_import": true,
+  "real_selected_gmp_backend": true,
+  "unchanged_executable_ast_except_c8": true,
+  "production_enabled": false,
+  "timing_executed": false,
+  "limits": "Actual full assembler body and selected converter/backend tested. Unchanged owned public wrappers are source-identical, not newly qualified native resource integration; later owner/inventory/source closure wiring remains required."
+}

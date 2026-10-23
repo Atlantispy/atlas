@@ -1,0 +1,21 @@
+{
+  "control_sha256": "080a1f86c794e6d79752335c4cec06270c9ce2157eee5b39aa9fbee88a251793",
+  "failure_record": "status-control-r6-failure.json",
+  "failure_record_sha256": "582f318c67f5a66e39c9be7353564c176e0fb98aeadc63e5cf65f9ad48abb9e7",
+  "limits": [
+    "Injected sample exception with reused passing correctness; numerical algorithms not rerun",
+    "Actual source-bound successor entry and status/output/exit path executed; no timing or queue work"
+  ],
+  "observed_candidate_status": "FAIL",
+  "observed_exit_code": 1,
+  "observed_status": "FAIL_SAMPLE_LOOP",
+  "only_change_is_status_precedence": true,
+  "predecessor_script_sha256": "0240b5fefff19022756eaf99c5c1a6e26b7757df6e2c018baceb7aa5b3f66838",
+  "reused_correctness": {
+    "file": "correctness-frozen-r5.json",
+    "sha256": "0a3a5bd606fad571f40d76dce5ac1491f1d4fe06ecde82c469d98fa2d0553960"
+  },
+  "schema": "plan40b.functional-status-control.r6",
+  "status": "PASS",
+  "successor_script_sha256": "50b834caa8c5bf01156909ec96f49afdeace2df9e8f3fff30ff5cef879c20147"
+}

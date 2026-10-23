@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "script_sha256": "d953092ce21e6224844849b6c6d78d0cbc4972eaea04ccf866db81e94c20f01e",
+  "real_smoke_status": "PASS",
+  "failed_source_exit": 1,
+  "failed_source_status": "FAIL",
+  "dispatcher_fault_cases": 14
+}

@@ -1413,7 +1413,7 @@ the cubic basis repeats exact products: a bounded prototype preserves its origin
 admission sequence while reusing monomials. Other proposed changes reuse immutable
 preparation, specialise finite signed-zero products without removing their ordered
 additions, and remove an unused HIGH-solver matrix representation. They remain
-unimplemented and unmeasured. Equal real algebra is insufficient: the examination
+outside current production selection. Equal real algebra is insufficient: the examination
 includes counterexamples for unrestricted Gram symmetry, deleting zero terms and
 postponing rounding. Source-bound feasibility controls do not replace the later
 resource, consumer, runtime or whole-interval checks.
@@ -1423,6 +1423,24 @@ also identifies repeated flux/polygon arithmetic, observation enclosures shared
 across faces, unused earlier inverse columns and repeated exact/interval
 conversions. Each proposal retains its own validation, rounding and ownership
 conditions; none supplies a measured whole-interval improvement.
+
+The [component tests](../../optimisation/workbench/plan40/heat/testing/README.md)
+now exercise all 20 candidates against selected numerical bodies, including
+native interval kernels and real budget/cleanup objects where documented.
+Other tests retain explicit injected numerical or ownership seams. Exact output
+agreement, guard/refusal parity and ownership checks qualify those fixtures;
+production consumer integration remains separate. The
+[controlled comparisons](../../optimisation/workbench/plan40/heat/testing/MEASUREMENTS.md)
+include cache/view construction, reference fallback and retirement. Several
+large arithmetic-count reductions actually take longer; the small signed-zero
+dot and exact owner-unit scaling changes merit bounded source implementation.
+Their real successor imports, original resource guards and lifetime boundaries
+are checked explicitly. The [actual-version measurements](../../optimisation/workbench/plan40/heat/implementation-r1/MEASUREMENTS.md)
+include those costs: signed-zero dot is mixed by size, exact owner-unit scaling
+has a small positive fixture median, and the stateless polygon successor is
+slower and not adopted. Its original full native inventory is preserved. No
+prototype percentage is silently assigned to a changed source generation, and
+no component result establishes a whole-IV or scientific claim.
 
 
 ### Choose rolling geometry workers from an authenticated parent
