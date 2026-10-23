@@ -1,0 +1,221 @@
+{
+ "schema": "rm.fold.records-check.r1",
+ "status": "PASS",
+ "stats": {
+  "entries": {
+   "A": 20711,
+   "B": 20704
+  },
+  "seconds": {
+   "load": 0.4,
+   "records": 0.4,
+   "seeds": 5.5,
+   "index": 8.7,
+   "initial": 9.7,
+   "replay-mesh": 12.1,
+   "replay-record": 14.3,
+   "final": 14.3
+  },
+  "external_leaves": {
+   "A": 1422,
+   "B": 1422
+  },
+  "bookings": 15,
+  "private_sources": 91,
+  "task_keys": {
+   "fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/compact-geometry-r1/native/wp10_zstd.dll": "atlas_tectonics/_private/native/wp10_zstd.dll"
+  },
+  "harness_patched": [
+   "atlas_tectonics/_private/private_heat_native_issuer_r13.py"
+  ],
+  "file_rows": 367,
+  "declared_pairs": 302,
+  "seeds": {
+   "changed_modules": 133,
+   "code_pairs": 6096,
+   "code_changed": 605,
+   "string_pairs": 128,
+   "seeded": 6466
+  },
+  "kinds": {
+   "text": 802,
+   "bin": 15096,
+   "json": 4813
+  },
+  "always": 62,
+  "rounds": [
+   [
+    "initial",
+    0,
+    17839
+   ],
+   [
+    "initial",
+    1,
+    0
+   ],
+   [
+    "replay-mesh",
+    0,
+    0
+   ],
+   [
+    "replay-record",
+    0,
+    0
+   ]
+  ],
+  "classes": {
+   "token-exact-key": 17,
+   "replay-internal": 13,
+   "unchanged": 13401,
+   "seeded": 2873,
+   "translated": 1429,
+   "producer-mapped": 2978
+  },
+  "producer_sites": {
+   "mesh_tables:pack_mesh": {
+    "role:bin": 27,
+    "role:text": 5
+   },
+   "mesh_tables:pack_mesh.<locals>.support": {
+    "translated:json": 219
+   },
+   "record_tables:_Builder._integer_row": {
+    "translated:bin": 2637
+   },
+   "record_tables:_Builder._metadata": {
+    "replay-internal:text": 3,
+    "replay-internal:bin": 10,
+    "translated:text": 3,
+    "translated:bin": 4
+   },
+   "record_tables:_Builder._token_raw": {
+    "translated:json": 83,
+    "token-exact-key:json": 17
+   }
+  },
+  "b_only": {
+   "identity": 11,
+   "declared:atlas_tectonics/_private/compact_restart_patch.py": 1,
+   "declared:atlas_tectonics/_private/publish_mesh_patch.py": 1
+  },
+  "b_only_total": 13,
+  "rules_used": {
+   "sort-00": 2,
+   "sort-01": 2,
+   "sort-02": 1,
+   "sort-03": 1,
+   "sort-04": 1,
+   "sort-05": 1,
+   "sort-06": 1,
+   "sort-07": 1,
+   "sort-08": 1,
+   "sort-09": 3,
+   "sort-10": 1,
+   "sort-11": 1,
+   "sort-12": 1,
+   "sort-13": 1,
+   "sort-14": 1,
+   "sort-15": 1,
+   "sort-16": 1,
+   "sort-17": 1,
+   "sort-18": 1,
+   "sort-19": 1,
+   "sort-20": 3,
+   "sort-21": 1,
+   "sort-22": 1,
+   "sort-23": 1,
+   "sort-24": 1,
+   "items-25": 1,
+   "items-26": 1,
+   "items-27": 1,
+   "items-28": 1,
+   "items-29": 1,
+   "items-30": 1,
+   "items-31": 1,
+   "items-32": 1,
+   "items-33": 1,
+   "items-34": 1,
+   "items-35": 1,
+   "items-36": 1,
+   "items-37": 1,
+   "items-38": 1,
+   "items-39": 1,
+   "items-40": 1,
+   "items-41": 1,
+   "items-42": 1,
+   "items-43": 1,
+   "items-44": 1,
+   "items-45": 1,
+   "items-46": 1,
+   "items-47": 1,
+   "items-48": 1,
+   "items-49": 1,
+   "items-50": 1,
+   "items-51": 1,
+   "items-52": 1,
+   "items-53": 1,
+   "face_rows-54": 1,
+   "ordered_by-55": 1,
+   "cell_words-56": 15
+  },
+  "sort_ids": 2130,
+  "replay": [
+   {
+    "kind": "mesh",
+    "module": "atlas_tectonics._private.mesh_tables",
+    "input_a": "45951a50cdc3ae8ea5bedf2ab309d60be431a9cab09a8a993aac4ad83656608e",
+    "input_b": "6264c46fc8bacbeb69fb1901f5fa3b1cde7600e7ed657da394d6a6093bd927ea",
+    "roles": 35,
+    "a_sites": [
+     "mesh_tables:pack_mesh",
+     "mesh_tables:pack_mesh.<locals>.support"
+    ],
+    "sites": {
+     "pack_mesh": [
+      33,
+      33
+     ],
+     "pack_mesh.<locals>.support": [
+      219,
+      219
+     ]
+    }
+   },
+   {
+    "kind": "record",
+    "module": "atlas_tectonics._private.record_tables",
+    "input_a": "c18d9826738ed756501f67d9cb159abecf256380cf02b00f3538a9ec91b9944a",
+    "input_b": "990a8f025c64442b73b275aead0345a1a8e2a61af8c8f36b254eeb48b826863a",
+    "roles": 0,
+    "a_sites": [
+     "record_tables:_Builder._integer_row",
+     "record_tables:_Builder._metadata",
+     "record_tables:_Builder._token_raw",
+     "record_tables:_Builder.finish_record"
+    ],
+    "sites": {
+     "_Builder._token_raw": [
+      100,
+      83
+     ],
+     "_Builder._integer_row": [
+      2637,
+      2637
+     ],
+     "_Builder.finish_record": [
+      1,
+      1
+     ],
+     "_Builder._metadata": [
+      21,
+      21
+     ]
+    }
+   }
+  ],
+  "exact_key_bytes": 48
+ },
+ "overlay_sha256": "203a08ba42d7bd206f0ceb87e4a1427b72b575322a3e82142a83d815644ae0d8"
+}

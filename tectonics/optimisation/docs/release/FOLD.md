@@ -193,7 +193,7 @@ Notes on the table:
 2. Transform A's record:
    - Map F1, F2's inputs, F3, F5 and F8.
    - For F4, check that B's execution record differs from A's only in mapped keys and shas, then substitute it.
-   - For F6, require B ≤ A.
+   - For F6, require B ≤ A. (Superseded at R2 by the exact booking rule in v25/bookings.py; for rationals see §12.)
 3. Recompute every derived ID (F2, F7) bottom-up with the record's own `stream_hash`.
 4. Require the transformed A to equal B byte for byte in canonical JSON, arrays included.
 - Why this design: an allow-list by field name could hide a real numerical change inside an allowed ID. Recomputing each ID from
@@ -394,6 +394,9 @@ The mimetic_newton pin names identical bytes, so it only needs bookkeeping.
    rewrite is allowed at those sites. One W4 run on the folded tree covers it (Heat's H2/K4).
 2. **K5, cwd guard.** Arm B runs from a cwd that is not the package parent, so any read that misses `resolve` fails
    loudly instead of resolving against the cwd by luck.
+   The fold's K5 key-reader check (fold_r4, a separate static check) has a recorded limit (R2 decision 1): K5 traces key tables through module-level assignments and module aliases (`import M`, `from P import M`) to a fixpoint, but not through `from M import NAME` of a table; it sees readers only as `a / name`, `Path(name)`, `open(name)`, `os.path.*(name)` and `.joinpath(name)`, and a reader in any other form is skipped, not refused (a silent-miss class, not fail-closed).
+   The backstop is an equation, not a smoke observation: the records rule ties the private-source table A vs B
+   (91 = 91), and mutant M4 covers a dropped entry.
 3. **Full metadata capture.** Arms A and B save the full canonical metadata bytes of every issued record, the same way
    ab_heat_r5's proof observer does with sys.monitoring, and not just digests. That lets the checker recompute every ID
    instead of trusting it.
@@ -519,3 +522,282 @@ Scripts: rm/fold/refute/. All 13 confirmed findings were fixed in v2 and re-run 
   5. Write no bytecode into the folded tree (run everything with -B) and leave no helper importable at top level.
   6. Then run the gates in this order: the `ast` gate, G-PIN, and the K5 cwd guard in arm B. The fold refuses on any
      failure.
+
+### 11.2 parity.py v2.1 (23 Oct 00:02): two gate fixes reported by Plan 20, plus a stem rule
+Source: Plan 20's request W/work/plan20/requests/plan26-return-r1.md (e5dbde23), where W is the
+shared plan workspace. Both findings were reproduced here before the fix.
+- **Missing ctx (false FAIL, version-dependent).** v2 built `ast.Name('Path')` without ctx when it normalised folded
+  `<identity_name>.resolve(x)`. On Python 3.12 (.r44-env runs 3.12.14) that dumps unlike the original's parsed
+  `Path(x)`, so every correct resolve() site failed the `ast` gate. Python 3.13 fills in Load. Every synthesised
+  Name now carries `ast.Load()`.
+- **Imports inside source text (false PASS).** compact_restart_patch.workflow_source() injects
+  `import compact_restart_patch as _RESTART` as text into the workflow source it builds. v2 compared strings
+  verbatim, so a bare helper import left in folded text passed the gate. Now:
+  - on the folded side, any import statement inside a string (statement start = line start or `;`) that names a
+    declared helper bare is a violation;
+  - `import atlas_tectonics._private.X as Y` and `from atlas_tectonics._private.X import ...` normalise to the
+    original form, and only when X is a declared helper.
+  - `import P.X` without an alias binds P, not X, so it keeps its prefix and differs.
+  - The text form `from atlas_tectonics._private import X` is refused (fail-closed); the transformer must emit the
+    dotted `as` form.
+  - Concatenated or computed import text is out of the gate's sight. G-PIN's no-top-level-helper rule makes such an
+    import fail at run time instead. (This was not the only gap: v2.1 also missed literal text; see §11.3.)
+- **Stem rule (tightening).** A qualified name now drops its private prefix only when the remainder names a helper
+  the manifest declares: the stems of key_map and modules `.py` keys. v2 stripped any `atlas_tectonics._private.`
+  prefix. Consequence for the transformer: every helper that folded code imports from the private package must be
+  declared, which the closure in step 1 already gives.
+- **Tests.** selftest.py e73eee83: 58/58, with 10 new cases (2 positives, M9n–M9u). The positives and M9p, M9s and
+  M9t are wrong under v2, which is why they were added. Pyright 0 errors. Ruff check-only with v2's rules
+  (E,F,W,B, line 120): the same two findings as v2 (one E501, one guarded B905); nothing introduced.
+- **On Plan 20's capture fragment** (W/work/plan20/integration-r1/seam/r1, read only):
+  - v2 fails compact_restart_patch (CRP) and ledger_fresh_interval (LG) on the ctx pair.
+  - v2.1 passes LG, capture_store and storage_zstd_backend as given.
+  - v2.1 fails CRP only on the text import (line 217).
+  - With the two text sites rewritten to the `as` form, and its four imported helpers declared
+    (compact_restart_store, exterior_mesh_patch, native_transfer, workflow_transfer), CRP passes. That experiment
+    was in scratch; nothing in W was edited.
+- Files: parity.py 416a6da1 (v2 kept as rm/fold/v21/parity_v2_c0efe8a5.py.txt); diffs in rm/fold/v21/. Plan 20's
+  seam_checks.py pins c0efe8a5, so its harness refuses v2.1 until it re-pins.
+
+### 11.3 parity.py v2.2 (23 Oct 00:33): fixes for the v2.1 refuter's findings
+One refuter agent tested v2.1. Its cases are in rm/fold/v21/refute/ (r21–r28 plus three probe scripts), and each
+was reproduced here before the fix. The text gap was wider than §11.2 said.
+- **resolve() matched any Path (r21).** v2.1 normalised folded `<identity_name>.resolve(x)` to `Path(x)` for every x.
+  Now:
+  - A literal argument must be a key_map value. It becomes RESOLVE(key), and so do the original's
+    `Path(<literal that is a key_map key>)` and the folded `Path(<identity_name>.<constant>)`.
+  - A non-literal argument becomes `Path(expr)`. This is the read by key of §10.5.1, and resolve refuses non-keys
+    at run time.
+  - A starred argument, an extra keyword, or a folded `Path(<key literal>)` still differs. The last is cwd-relative.
+  - The Path rules apply only when, on both sides, Path is bound solely by `from pathlib import Path`. `Path = str`,
+    a star import or `pathlib.Path` switch them off (fail-closed).
+- **Identity name unchecked (r22).** The check now runs whenever folded code uses the identity name: when it imports
+  atlas_tectonics._identity, or when it calls `<identity_name>.resolve`, `.relkey` or `.<constant>`. The gate
+  refuses if that name is an identifier anywhere in the original. It also refuses if anything other than a
+  module-level import of the identity module binds the name. For the transformer, this means it must import the
+  identity module at module level, never inside a function.
+- **Literal text escapes (r23).** v2.1's line scan missed bare helper imports in literal text in these forms:
+  - after `if 1:`;
+  - across a backslash continuation;
+  - after a lone CR or a form feed;
+  - spelled with full-width letters (NFKC);
+  - in a `__import__` or importlib call inside text;
+  - in text nested inside text;
+  - in bytes literals.
+
+  Text that mentions import or find_spec, or that is not ASCII, is now dedented and parsed. The parse is walked for
+  import statements, importer calls and nested strings, to depth 4. Text that does not parse goes to a regex screen
+  over an NFKC copy, with CR, form feed and continuations normalised first.
+- **Text rewrite changed other strings (r24, r26).** The rewrite of `P.X` to `X` inside text is now accepted only if
+  the rewritten text reparses to the text's own tree with only the import names unqualified. Otherwise the text is
+  compared verbatim. A whole string is unqualified only when it is exactly `P.<helper>`, the import_module case.
+  `P.X.py` and `P.X.attr` still differ.
+- **Stem set (r25).** The private helpers are now the key_map and modules entries whose new key is a `.py` under
+  atlas_tectonics/_private/. Each maps to the name the original module had.
+  - A rename (old stem differs from new name) is honoured.
+  - Two helpers may not fold from the same original name.
+  - A module folded outside _private gets no mapping. Importing it from _private fails.
+  - If the original imports such a module bare, the fold must keep that import unchanged:
+    `from atlas_tectonics import X` against a bare `import X` is refused. This fails closed and is left for review
+    by hand.
+- **`import P.X` binds the package (r27).** Import markers now record what each name is bound to:
+  - `import P.X` binds atlas_tectonics, so it still differs from `import X as atlas_tectonics`;
+  - `import P.X.f as s` binds a module, so it differs from `from X import f as s`, which binds an attribute.
+- **False fails fixed (r28).** These correct text imports are now accepted: a helper that is not the first name in a
+  multi-name import; `from P.X.sub import ...`; and an alias equal to the helper name.
+- **Residuals, documented and not gated:**
+  - A data string that is itself a valid import statement naming a helper is normalised like source text. This is
+    low risk; v2 failed it.
+  - A key literal used indirectly as a cwd-relative path, for example passed to open() through a variable, is
+    compared verbatim on both sides. This is unchanged since v2.
+  - The gate cannot see computed or concatenated import text, or dynamic bindings (exec, globals(), setattr on
+    modules). G-PIN's no-top-level-helper rule makes such a bare import fail at run time.
+  - `resolve(expr)` against `Path(expr)` passes by design (§10.5.1), including `resolve(__file__)`. resolve refuses
+    any non-key at run time.
+- **Tests.**
+  - selftest.py bdb489bf: 89/89. The 31 new cases are M12a–M12v and 9 positives; a case can carry its own
+    manifest. It runs only with RR/composed-r2/src and RR/composed-r2/helpers on PYTHONPATH (and the helpers dir as
+    its argument): private_heat_issuer_resources_r1 imports a sibling by bare name, so without them the run stops at
+    that import, which is not a gate failure.
+  - All refuter scripts were re-run. The only false passes left are the residuals above. The only false fail left is
+    the fail-closed non-private case.
+  - Pyright CLI: 0 errors.
+  - Ruff check-only with v2's rules: parity.py has the same E501 and guarded B905 as v2, and selftest.py keeps its
+    one existing E501. Nothing was introduced.
+- **On Plan 20's seam r1** (read only, with the four extra helpers declared in a scratch manifest as in §11.2):
+  - v2.2 gives the same verdicts as v2.1. capture_store, ledger_fresh_interval and storage_zstd_backend pass.
+    compact_restart_patch fails only on the bare text import at line 217.
+  - With both text sites in the `as` form, all four modules pass.
+  - seam_checks.py's AST_DIFF diagnostic calls `_Normalise(ctx, False)`. v2.2's signature is
+    `_Normalise(ctx, folded, path_ok)`, so that diagnostic should call `parity.ast_diff` instead.
+- **Files.**
+  - parity.py c886c61b; selftest.py bdb489bf.
+  - v2.1 is kept as rm/fold/v22/parity_v21_416a6da1.py.txt and selftest_v21_e73eee83.py.txt.
+  - Diffs are rm/fold/v22/parity_v21_to_v22.diff and selftest_v21_to_v22.diff.
+  - **Accepted** by the coordinator on 23 Oct (message received 00:37), replacing v2 c0efe8a5 and v2.1 416a6da1.
+    The coordinator reproduced the selftest (89, 0 wrong), r21–r28 (only the r24 data-string residual) and the
+    refusal-message check. The residuals above are accepted by design. Plan 20 re-pins to c886c61b.
+
+## 12. Rational bookings: the limb rule (R3 ruling on decision 6, 23 Oct; message received 10:37)
+
+R3 of the R1 fold was ACCEPTED at coordinator level, on condition C1 below. The handoff is
+rm/fold/HANDOFF-R1-step5.md.
+
+- **The rule** is as v25/bookings.py lines 15-18 declare it:
+  - it applies to gmpy rows only;
+  - the (|numerator|, denominator) multiset digest must be equal;
+  - a size difference must be whole 8-byte limbs, at most one limb per eight values per row;
+  - any size difference on a non-gmpy row, or with unequal digests, is a problem.
+- **The cap is on the NET size difference per row, not on the limbs that move.** It is a memory-accounting bound.
+  Correctness rests on the digests, which fix the values exactly. Nobody should read the cap as absolute: the
+  mechanism probe (p6/limb-order-probe.json 02f76eec) moves 1,050 limbs over 2,856 values (0.37 per value) in
+  absolute terms, while its net is +24 limbs, inside the cap of 357.
+- **Decision 6 ruling:**
+  - The literal test (A vs A′ shows the same class of difference as A vs B) is withdrawn as the criterion. It
+    presupposed run-to-run allocation noise, and A′ byte-identical to A disproves that noise.
+  - The explanation is accepted: allocation is order-determined. gmpy2 reuses freed mpq objects with their limbs,
+    and the fold's new package bytes give new cell IDs and so a new sorted order (STATE 05:28). The probe shows
+    identical sizes in a repeated order and whole-limb moves on an equal multiset under a cell-ID sort.
+  - "B always smaller" (p6: six gmpy rows, 452 limbs, all with B smaller) is an observation, not a correctness signal.
+    No recomputation of the real rows' sign or size is required.
+- **Condition C1:** the ticketed parity run adds a second B arm, B′, from the same fold, run sequentially like the
+  others (rm/fold/run_parity_r7.sh). v25/limbs_r2.py must report A vs A′ and B vs B′ with rows_differing 0, and the
+  three booking reports (A vs B, A′ vs B, A vs B′) must be byte-identical. This makes "order-determined" a measured
+  property on both sides: a B whose sizes varied run to run would make the limb cap a flake risk for the gate.
+- The residual is recorded as RF3 in RELEASE-CHECKS.md §7.
+
+### 12.1 Correction to the decision 6 mechanism statement (coordinator, 23 Oct, after a cold review; verdict unchanged)
+
+The section above is kept as written. Two statements in it are corrected here.
+
+**The mechanism.** The limb differences are over-allocation on equal magnitudes, determined by order. Which mechanism
+causes it is unproven. There are three candidates:
+- free-list reuse, as in the explanation above. The probe shows reuse can happen, not that it did.
+- a different summation order or operand pairing. GMP never shrinks a limb buffer, so a different pre-gcd
+  intermediate size persists even on fresh objects.
+- mpq values that crossed a process boundary (pickle, from_binary) arrive tight, and both arms ran 12 workers.
+
+The real rows fit the last two better than reuse:
+- The probe's reuse is mixed-sign, with B larger. The real rows are one sign, at two derive sites only.
+- The endpoint row with 48,866 values moved 0 bytes.
+
+Benign either way. The real guard is that repeats are identical, and that is measured (C1).
+
+**Support from q74 (p20c-r2, 23 Oct 12:43).** In q74, B is larger: 3 gmpy rows, +96 limbs. In q72 (p20c-r1), B was
+smaller: 6 rows, 452 limbs. In both runs the repeats are identical. Plan 18's routing fix renumbers the cell ids, so
+the order changes. A sign that flips with the order, on equal values, is what a mixed-sign mechanism determined by
+order predicts. It is not something a fixed bias between A and B would produce.
+
+**"The digests fix the values exactly."** The value digest uses |numerator|. It proves equal magnitudes, not equal
+values. The sign is proven by the records and journal checks.
+
+**The cap.** It is fitted to the data it accepts (0.07 against 0.125). Over-allocation scales with value length, so a
+later interval with longer values may trip it. That fails closed: noise to expect, not a risk.
+
+## 13. Later fold items (p20c-r3 re-fold or the next fold revision, whichever comes first; recorded 23 Oct 12:40)
+
+None of these changes q74. They ride together with the next re-fold and its parity ticket.
+
+1. **bookings r3:** record gmpy2.version() and gmpy2.mp_version() in each arm's record. Today the build equality is
+   known only by reading.
+2. **bookings r3, tight limbs:** for each gmpy row, compute the tight limb count from (n, d) and require
+   getsizeof ≥ tight on both arms. Report each arm's gap as over-allocation, whatever its cause.
+3. **limbs r3, one-sided cap:** B − A ≤ cap per row. B smaller carries no memory risk. Keep the net form: an absolute
+   cap per value would fail the probe's benign reuse.
+4. **bookings r3, value digest:** use (n, d), or state the reason for keeping |n|. Until then, records say that the
+   sign is proven by the records and journal checks, not by the bookings digest.
+5. **Accounting question:** the low_ledger _admit row is exactly half the interval_inventory derive row at both
+   stages (1,428 vs 2,856 values; 104 vs 208; 800 vs 1,600). Does the interval row count the ledger's 1,428 values
+   twice? The answer goes in the step note before any change.
+6. **hcf_prepare r15, cross-composition cell key** (the coordinator's decision; no ID redesign):
+   - Match exterior cells by logical_cell_id (content-derived; integration_exterior_mesh.py:693/901).
+   - Match collar cells by physical_cell_id (geometric; integration_volume.py:358, row field :656).
+   - Together these match all 236 cells. cell_id renumbers with any package byte change, and the 64 collar logical
+     ids carry funding_id.
+   - r15 adds physical_cell_id to HCF's KEY_FIELDS (:102), as one value replaced, the same way r14 replaces
+     EXPECTED_R13. HCF itself stays unchanged.
+   - **Route changed in preparation (23 Oct):** KEY_FIELDS is read only by HCF's child, and that child fails
+     on any workspace module outside its frozen layout (HCF:268-272, 309), so a wrapper cannot replace it. The cell
+     key is saved instead by arms_r7's child at the same return point, with kind and physical_cell_id among its key
+     fields, and compared by v27/cells_keyed.py in run_parity_r9 (an r2 reference arm R; cells-ra, cells-ab, each
+     required to match 172 exterior and 64 collar cells). hcf_prepare_r15 is prepare only. R3-STEP-NOTE.md has
+     the detail.
+7. **Fold mutant, sibling helpers layout must refuse** (from the storage cold review):
+   - Under option (b), the retargeted key atlas_tectonics/_private/native/wp10_zstd.dll is found only when the folded
+     helper sits inside the package root that holds atlas_tectonics/. The r11 test test_wp16_preadvance.py:223
+     arranges exactly that.
+   - A fold that keeps a sibling helpers/ folder finds no ancestor and refuses at preflight, failing closed.
+   - Add a mutant proving that refusal.
+8. **RF2 owner change** (rm/fold/RF2-DESIGN.md): an environment-anchored MPFR path in the two embedded sources, in
+   p20c-r3. The fold then retires the two `carry` decisions by declaration.
+   - **Withdrawn from r3 (coordinator, 13:00):** the MPFR load pin goes to Michael as a backlog decision, and r3
+     changes neither compiled_dot, the certification kernel nor its resources. The two carries (FP:999, FP:1006)
+     stay, and the fold stays PRIVATE.
+
+**Status, 23 Oct 13:45:** items 1-7 are prepared as tools, and none has run on r3. Items 1-4 are arms_r7 and v27
+bookings/limbs_r3; item 5 is answered in R3-STEP-NOTE.md (each singleton is charged twice); item 6 is above; item 7
+is mutants_r4, which passes 14 of 14 on the r2 fold. The r3 run order is under "At staging" in R3-STEP-NOTE.md.
+
+## 14. r4 retarget and the RF2 decision (23 Oct, written 19:46)
+
+**Retarget (coordinator, 19:20 and r4 staged at about 19:40).** p20c-r3 (72fd75fa) was superseded before
+qualification, and its post-apply run is void. The fold's target is p20c-r4: Plan 20 r12 and RF2 on Plan 18 r5.
+- **Identities:** composition 21e666b8, run manifest 5cb8d0af, profile 338adae2, BUILD-RESULT 8c379fac,
+  constructor 057d8b19. Plan 20's bind check is integration-r4/bind/check_fold_r4.py b4d084af.
+- **Against p20c-r2:** 10 changed, 3 added, 628 kept. r3p/dry/compare.json is PASS with every sha as listed:
+  - r12: CRP 17abf869, LG 07154a51, test_wp16_preadvance 89a85a2a;
+  - RF2: the host private_heat_functionals_parallel_r1 554e68b7;
+  - Plan 18 r5: content_cache 85fe9a5f, partition_routing_patch ffb95381, test_retained_handle_check 8b3c8ed1, and
+    r4's bytes for the other six tests.
+- **Protected identities unchanged:** compiled_dot e0be3a30, certification kernel 4099a297, certification resources
+  40943b9c.
+- **The tools need no change for the retarget,** because the composition is an argument. hcf_prepare_r15 takes the r4
+  record (6bf1e79a).
+
+**Correction to §13 item 8.** Only the MPFR *load pin* was withdrawn from r3. RF2's path anchoring is in r3 and r4.
+- FP 554e68b7 rewrote both embedded sources with no machine path. The MPFR library path is now
+  `_ASSEMBLY_MPFR_PATH`, joined from sys.exec_prefix and injected.
+- So FP:999 and FP:1006 are no longer abs sites. Their two `carry` decisions retire by declaration
+  (r3p/mk_declared_r12.py 3566ad87 → declared-r12.json 2b1a0fa8).
+- With those two retired, every other decision moves along its line map: 460 decisions, 22 moved, 2 retired, 0
+  added. The routing site lands at line 598 on r4 (576 on r3).
+- The r4 dry fold (synthetic trace) is PASS with private [], and the literal scan finds 0.
+
+**RF2 decision (coordinator, 23 Oct about 19:40).** RF2 closes at the r4 fold if all three hold:
+- (a) the real r4 fold reports private: [] and the literal scan finds 0 private names;
+- (b) r9 parity passes on r4;
+- (c) the r4 arms record which MPFR library file actually loaded (resolved path and sha256), and it is the same file
+  in every arm.
+
+Once RF2 is closed, the fold is "ready to publish". Publishing is Michael's word: the targeted public copy is
+prepared but not pushed. (c) needs a tool change, because no arm records the DLL today: arms_r8, wobs r2, and an r9
+check. It was proposed at 19:42 and nothing is changed before the coordinator's yes.
+
+**Rehearsal on p20c-r3 (q87, 19:34-19:41, peak 0.92 GiB): FAIL at mutants.** The steps up to and including the
+fold passed.
+- **rows:** all 236 cells are bitwise equal to p20c-r2. This is the early answer that Plan 20's r3 changes keep the
+  W4 numbers.
+- **mutants:** the 8 r3 mutants are ok. The 6 data-key preflight cases ERROR, because r12's task_file calls a new
+  module-level `_holds`, and the mutants_r4 preflight executes only task_file, the CAPTURE_* assignments and
+  capture_backend.
+- **Fix, proposed and awaiting yes:** the preflight also takes the module-level functions those call, transitively.
+- Detail: rm/fold/R3-STEP-NOTE.md, "r4 retarget, rehearsal and the RF2 decision".
+- **Fix 1 approved and applied** (mutants_r4 d97ab0a4). The real prep q89 ran it: mutants 14/14.
+- **Fix 2 approved and applied:** the native library record (arms_r8 e234562e, wobs2 b51c8017, v27/mpfr_same
+  e442cd1e). The workers deviation is accepted: (c) closes on the five arms, and any uncovered worker makes the
+  worker line INCOMPLETE without blocking (c).
+- **q89 (prep on p20c-r4): PASS**, 7 min 22 s, 0.96 GiB. RF2 condition (a) is met: private [] and 0 literals.
+  MANIFEST is 1d6f7ea3 and rows are bitwise equal on 236 cells.
+- **Known cosmetic defect:** run_parity_r9.sh (8a89fa63), as generated, keeps r8's header lines 2 and 4 ("arms r7",
+  "runq small"). mk_r9 edits only declared lines, and these were not declared. The body runs arms_r8 as a normal
+  queue ticket (q90). The generated file is left as it is.
+- **Carried for final assembly** (not a fold item): p20c-r4 does not carry Plan 18's endpoint look-ahead (stage 77;
+  the volume auto module moves from 2b9d9fc5 to 96cbf772).
+- **q90 (r9 parity on p20c-r4): PASS**, 14 min 15 s, 1.01 GiB. All five children passed, and so did records,
+  noise, bookings, limbs, cells-ra, cells-ab and mpfr. Every arm loaded the same libmpfr (b81a548e), at FP's
+  exec_prefix path. Workers: 51 of 60 covered, all with the same file (INCOMPLETE by rule; this does not block (c)).
+- **RF2 CLOSED (23 Oct 20:30):** (a) q89, (b) q90, (c) q90. The fold is "ready to publish"; publishing is
+  Michael's word. Return: rm/fold/PLAN20-RETURN-R4.md (b68dbbc9).
+- **Worker-coverage correction:** the heat workers do load MPFR, through FP's native binding (not gmpy2, which is
+  why the q74 snapshots showed no gmpy2 module). The accepted rule (at most one, the same file) held for all 51
+  covered workers. The 9 uncovered workers are those the pool ends without an exit snapshot.

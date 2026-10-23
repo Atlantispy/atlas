@@ -1,0 +1,38 @@
+{
+ "status": "PASS",
+ "array_names_equal": true,
+ "mixed_key_match": {
+  "exterior": 172,
+  "collar": 64,
+  "total": 236,
+  "cells": [
+   236,
+   236
+  ],
+  "unmatched": [
+   0,
+   0
+  ]
+ },
+ "expected": {
+  "exterior": 172,
+  "collar": 64
+ },
+ "counts_as_expected": true,
+ "kinds": [
+  {
+   "exterior": 172,
+   "collar": 64
+  },
+  {
+   "exterior": 172,
+   "collar": 64
+  }
+ ],
+ "rows_mismatched": 0,
+ "mismatched": [],
+ "rows_multiset_equal": true,
+ "cell_order_equal": false,
+ "cell_ids_equal": false,
+ "logical_ids_equal": false
+}

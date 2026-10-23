@@ -1,0 +1,8 @@
+{
+ "add": {},
+ "retire": {
+  "private_heat_functionals_parallel_r1:1006:26:abs": "RF2 (Plan 20 r3/r4) rewrote this embedded source without its machine path: the MPFR library path is now _ASSEMBLY_MPFR_PATH, joined from sys.exec_prefix and injected. The line changed and is no longer an abs site, so the R2 carry of _ASSEMBLY_POLICY_SOURCE (FP:1006) retires",
+  "private_heat_functionals_parallel_r1:999:25:abs": "RF2 (Plan 20 r3/r4) rewrote this embedded source without its machine path: the MPFR library path is now _ASSEMBLY_MPFR_PATH, joined from sys.exec_prefix and injected. The line changed and is no longer an abs site, so the R2 carry of _NATIVE_BINDING_SOURCE (FP:999) retires"
+ },
+ "why": "Plan 20 RF2 (private_heat_functionals_parallel_r1 554e68b7), declared for the r4 fold"
+}
