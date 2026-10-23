@@ -9,6 +9,16 @@
 **Status:** WORKING NON-CANON. Documentation corrected on 17 October 2026 under Michael's general901 assignment.  
 **Scope:** 39 planning documents. Publication, implementation, proof, integration, scientific acceptance and canon are separate states.
 
+**Combined source update, 23 October:** the
+[completed 645-member source snapshot](../workbench/combined-runtime-r1/README.md)
+combines endpoint/retention, capture and selected geometry, pressure and heat
+sources, including runner/bootstrap authentication repairs. Focused checks cover
+receiving lifetimes, fake-session lookahead, source construction and bounded
+prepared capture entry. The qualified fold and installed-package delivery remain
+outstanding; full prepared execution, runtime admission and scientific acceptance
+are not claimed. The dated plan entries and q18 history below retain their
+original evidence/hold scope; this update grants no launch authority.
+
 **Plans10–12 update, 20 October:** implementation and selected private combined
 integration are complete. The [additive source snapshot](../workbench/plans10-12/README.md)
 retains earlier enabled changes with lf3 heat; H5a, D5 and P4 stay disabled.

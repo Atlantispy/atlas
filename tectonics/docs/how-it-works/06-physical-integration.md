@@ -1556,7 +1556,8 @@ size measured, rounded up to 64 B. The measurement used Python's
 [tracemalloc](https://docs.python.org/3/library/tracemalloc.html) in a synthetic
 sweep of 24,000 carriers on a cold retained scope: worst 1,674.8 B, mean 1,486.0 B.
 A focused test re-measures a carrier the same way and fails if it exceeds the
-booking. Every other charge keeps 4,096 B, and the 256 MiB cap is unchanged.
+booking. General owner charges keep their 4,096 B floor. The earlier selection
+kept all carriers within the fixed 256 MiB retained budget.
 Logical booking is not a physical-memory bound; the separate RSS guard covers
 real memory.
 
@@ -1592,10 +1593,25 @@ the diagnostic and tests. Its 50 focused tests pass, and its three real-reader
 cases fail on the previous successor, as intended.
 
 On interval 1, carriers book 12.8 MB. A projected 87,000-support interval would
-book 551.2 MB on carriers alone, over the 256 MiB cap; the carrier-only ceiling is
-about 42,400 supports. The cap or the retention design must change before such an
-interval can run on this route. No interval run of the accepted successor has
-been made.
+book 551.2 MB on carriers alone, over the earlier 256 MiB cap; its carrier-only
+ceiling was about 42,400 supports.
+
+The combined implementation gives each verified partition a separate allowance
+of its actual support count × three carriers × 2,112 B. Facades with the same
+complete record identity share that allowance. Different partitions held at the
+same time have separate allowances; the run's shared fixed budget remains
+256 MiB. Retaining a handle transfers only its actual reference ancestry to the
+partition allowance. A fourth live carrier for a support refuses, and temporary
+readers and exports continue to use the fixed budget. Transfer reserves the new
+charge before releasing the old one, with rollback if admission fails.
+
+The partition membership index also has a fixed-budget allowance of 8,192 B
+plus 1,024 B per support, including its owner charge. That conservative allowance
+is not a measured physical-memory result. Accounting reports the fixed portion,
+each live partition and their aggregate current and peak capacities. The existing
+whole-run logical budget and machine-memory guards still apply. This removes
+the earlier carrier-only capacity obstruction; it does not establish that an
+87,000-support interval will fit or complete. No new interval result is claimed.
 
 ### Choose heat reconstruction workers and prepare exact geometry proofs
 
@@ -1644,12 +1660,34 @@ container separately. The ledger still reads supported legacy gzip records.
 Before allocating output it checks declared limits, container size/hash and the
 authenticated footer; it then consumes the bounded reader and verifies raw identity.
 Fresh/prepared entry points contain explicit capture-route admission calls.
-Private fresh-entry probes executed, but prepared-entry execution remains unproved.
-The final package-relative native-library binding and its refusal controls remain
-Release/Plan26 work. The measured write-time/disk savings exclude input decoding,
+Private fresh-entry probes executed. Six bounded checks also execute the real
+prepared entry and capture gate for both successor branches with valid, missing
+and wrong backends. They stop before the following derivation, so they establish
+entry connectivity and refusal ordering, not a full prepared workload or native
+backend qualification.
+The folded route binds the packaged native library by a relative key and its
+unchanged content hash; a missing or ambiguous holder refuses. New combined
+source identities require a new fold and its receiving checks. The measured
+write-time/disk savings exclude input decoding,
 block preparation and initial library load; streaming does not prove lower whole-reader RAM.
+
+Most canonical items fit within the writer's existing header allowance. For a
+larger item, the combined route computes a conservative size bound without
+serialising it, reserves twice that bound, then creates the canonical text and
+bytes. The bytes retain their reservation through bounded output slices and
+through any error traceback that still holds them. Encoded keys and punctuation
+are yielded separately so concatenation cannot discard that ownership. The
+logical byte stream, capture format and existing limits are unchanged.
 
 These methods can serve another Atlas module only where its geometry, exact-byte
 data and resource/identity contracts match. The combined source selection keeps
 one implementation for compatible consumers. Wider adoption belongs to the
 receiving module's integration and checks; no universal speed-up is inferred.
+
+The published source selection includes the checked bootstrap and runner
+interfaces needed by an installed package. Actual package folding, installed
+CLI and desktop delivery, their new profile bindings and receiving checks
+remain separate work. Historical profiles, captures and checkpoints are not
+silently rebound: source-derived cell identities can change between compositions
+even when physical values remain equal. Current delivery status is recorded on
+the [development-state page](../../../docs/CURRENT_STATE.md).

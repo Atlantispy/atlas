@@ -6,6 +6,27 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23 Oct 2026, completed combined source snapshot
+
+- Complete the [645-member source selection](workbench/combined-runtime-r1/README.md):
+  240 native sources and 405 helpers, with 22 changed copies and 623 existing-source
+  references. Preserve historical maps; public identities do not renew prior receipts.
+- Keep the fixed 256 MiB retained pool and add three 2,112 B carriers per actual
+  support of each distinct retained partition. Deduplicate shared facades, refuse
+  a fourth carrier and keep temporary exports/readers in the fixed pool. Reserve
+  capture bytes before encoding and preserve their ownership through consumption.
+- Repair runner/bootstrap selected-source authentication and prepared capture
+  entry without changing executable approval policy or numerical semantics.
+- **FOCUSED CHECKS:** 59 lifecycle tests and 99 fake-session lookahead checks on
+  their receiving generation; 11 runner/bootstrap seam tests; six public source
+  construction checks; six inert prepared-entry subcases on the final source.
+  The last check stops immediately after the capture gate and is not a full
+  prepared workload or native-backend qualification. Unchanged checks retain
+  their original source scope.
+- Qualified fold and installed-package delivery remain separate outstanding work.
+  No installed application integration, runtime admission, new q18/whole-interval
+  measurement or scientific acceptance is claimed.
+
 ## 23 Oct 2026, Plan18 endpoint and retention source selection
 
 - Add accepted Plan18 endpoint lookahead, plain support-header retention,

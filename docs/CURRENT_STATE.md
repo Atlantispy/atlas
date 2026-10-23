@@ -9,21 +9,38 @@ commit and push state.
 
 ## Active checkpoint
 
-**Plan18 endpoint lookahead and compact retention have an explicit public source selection.**
-The [method record](../tectonics/optimisation/workbench/plan18/README.md) and
-[source map](../tectonics/optimisation/workbench/plan18/SOURCE-MAP.json) add the accepted
-implementation to the preceding review-branch selection, retaining historical
-mappings. Private receiving integration is accepted; public identities do not renew
-the original receipts. The detached endpoint replay remains component evidence.
-The 256 MiB retained cap and projected IV4 capacity excess remain, with no new
-combined-runtime, full-interval, default/main-package or physical acceptance.
+**The combined optimisation source snapshot is complete; qualified fold and installed delivery remain outstanding.**
+The [combined selection](../tectonics/optimisation/workbench/combined-runtime-r1/README.md)
+contains 645 members (240 native sources and 405 helpers), using 22 changed copies
+and 623 references to existing public sources. It combines the selected endpoint,
+capture, geometry, pressure and heat implementations, preserving historical maps.
+The shared retained scope keeps its fixed 256 MiB pool and adds three 2,112 B
+carriers per actual support of each distinct live partition. Shared facades
+deduplicate; a fourth carrier refuses; temporary readers/exports retain fixed-pool
+charging. Capture reservations precede encoding and stay owned through consumption.
+Runner and worker-bootstrap repairs authenticate selected package/source identities
+and reject unknown or replaced loaded modules without treating legitimate mutable
+runtime state as immutable.
+
+Focused evidence comprises 59 receiving lifecycle tests and 99 fake-session
+lookahead checks on the earlier receiving generation, 11 runner/bootstrap seam
+tests, six public materialiser checks, and a six-subcase prepared-driver capture
+entry check on the final source generation. The prepared check uses inert
+dependencies and stops immediately after the capture gate: it is not full prepared
+execution or native-backend qualification. Unchanged evidence retains its original
+source scope. No installed application integration, runtime admission, fresh full
+interval, whole-interval performance or scientific acceptance is claimed. The
+folded package and its installed-entry validation will be delivered separately
+after qualification. Historical q18 and detached endpoint replay evidence retain
+their original scope; this source snapshot neither reruns them nor releases holds.
 
 **Plans19–20 now have one integrated public source selection.**
 The [combined source map](../tectonics/optimisation/workbench/plans19-20/README.md)
 preserves Plans15–17 while selecting the two accepted geometry changes and S2 r9
 capture helpers. Plan19's private integration and bounded native validation are
-accepted. Plan20 A/B is accepted; its final folded DLL binding and prepared-entry
-execution remain outstanding. Original component measurements are retained with
+accepted. Plan20 A/B is accepted; its final folded DLL binding and full prepared
+execution remain outstanding. The bounded capture-entry check above covers only
+that seam. Original component measurements are retained with
 their limits. No new combined-runtime, main-package/default or scientific acceptance
 is claimed. Final assembly and fresh full intervals retain their existing gates.
 

@@ -167,13 +167,14 @@ Execution completion, numerical checks, scientific validation and fictional-worl
 
 ## What has been achieved
 
-The optimisation review branch now supplies a [combined source selection with connected heat arithmetic consumers](tectonics/optimisation/workbench/plan40/heat/integration-r2/README.md),
-retaining the preceding [geometry and capture selection](tectonics/optimisation/workbench/plans19-20/README.md).
-The [Plan18 endpoint and retention selection](tectonics/optimisation/workbench/plan18/README.md)
-extends the geometry and capture selection; the heat and pressure selections retain
-their separate runtime generations pending final assembly.
-Its accepted component results, source integration and remaining package/landing
-work are distinguished in [current state](docs/CURRENT_STATE.md).
+The optimisation review branch now supplies a completed
+[645-member combined source snapshot](tectonics/optimisation/workbench/combined-runtime-r1/README.md)
+covering endpoint lookahead, partition-sized retention, bounded captures and the
+selected geometry, pressure and heat consumers. It also includes runner and
+worker-bootstrap source-authentication repairs. Focused checks support these
+implementation seams; the qualified fold and installed-package delivery remain
+separate outstanding work. Component results, source integration and remaining
+delivery limits are distinguished in [current state](docs/CURRENT_STATE.md).
 
 Progress below describes implemented work or explicitly recorded evidence, not a new test run triggered by this README.
 

@@ -93,7 +93,8 @@ cross-support endpoint lookahead at one or two workers, plain support-header
 retention, a measured 2,112 B ownership-carrier booking and a retained-handle
 diagnostic to the compact route. Its exact endpoint-loop replay is a detached
 measurement, not a whole-interval or integrated-runtime result. Larger-interval
-retained capacity remains open.
+retained capacity was still open in that predecessor selection; the combined
+snapshot below supplies the subsequent partition-sized allowance.
 
 The additive [Plan40A pressure examination and source successor](workbench/plan40/pressure/FINDINGS.md)
 covers all ten arithmetic groups and selects the reviewed core plus G4.
@@ -105,6 +106,17 @@ is connected through an [opt-in runtime constructor and entry](workbench/plan40/
 to the existing fresh-profile loader and pressure worker. The constructor
 preserves the frozen predecessor, external dependencies and live defaults.
 Component measurements do not establish whole-IV performance or scientific acceptance.
+
+The completed [combined source snapshot](workbench/combined-runtime-r1/README.md)
+brings those selections together in 645 members, with 22 changed copies and 623
+references to existing public files. It adds per-partition retained-carrier pools,
+capture reservation/lifetime fixes and selected-source runner/bootstrap repairs.
+Focused receiving, bootstrap, materialiser and prepared-entry fixture checks
+support their stated seams. The prepared fixture does not execute a full prepared
+workload. The qualified fold and installed-package delivery remain separate;
+no application update, runtime admission, whole-interval performance or scientific
+acceptance follows from source snapshot completion. Historical maps and component
+measurements are retained unchanged.
 
 ## Not included
 
