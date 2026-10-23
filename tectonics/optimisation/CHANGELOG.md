@@ -6,6 +6,23 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 24 Oct 2026, retained outcomes with later-run acceptance pending
+
+- Keep WP17's file-store default. The query-store assessment is done, but the
+  decision awaits representative per-stage counts from the later fresh-interval
+  programme. Prepared-restart counts and declared-store handling remain missing;
+  the twelve-kill proof covers the serial store, not the batched route.
+- Preserve the existing B17/item14 source selection. Its three focused suites
+  pass on the selected combined source (14, 30 and 10 tests; one Windows skip).
+  Final-generation inclusion after the fold and final assembly remains outstanding.
+- Reconcile retained memory bookings and whole-ticket peaks without changing any
+  booking, prediction rule or guard. Proposed reductions remain conditional on
+  comparable source/workload evidence; later measurements are still required.
+- Keep [#57](https://github.com/Atlantispy/atlas/issues/57),
+  [#60](https://github.com/Atlantispy/atlas/issues/60) and
+  [#61](https://github.com/Atlantispy/atlas/issues/61) open. No default activation,
+  fresh interval, new performance measurement or scientific acceptance is claimed.
+
 ## 24 Oct 2026, segment-summary and buffer-pool assessment
 
 - Complete the [Plan 24 assessment](plans/plan-24-storage-segment-summaries.md)

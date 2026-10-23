@@ -163,9 +163,13 @@ all-green consumer suite or a completed packaged route.
   the central estimated net saving is −3.1% against the 5% gate (not a measured failure). The former N = 2,
   +0.1% figure is a sensitivity case. Revisit only after guard-equivalent freshness work under Plan 30; see
   [Plan23](plans/plan-23-storage-mapped-reads-wp12.md).
-- **Known test failure:** `test_wp10_integration` swaps `sys.modules` entries at module level, which leaks into the
-  step-7b tests. Fix: restore them in `setUpModule`/`tearDownModule`, then run the 17-module step-7b set. Do not mark
-  it as expected.
+- **Reopen preservation:** the selected combined source carries the retained B17/item14 files and the
+  module-isolation repair in `test_wp10_integration`. The B17, sealed-read and page-layer suites pass on that
+  source (14, 30 and 10 tests; one expected Windows skip). Final inclusion after the fold and assembly remains
+  outstanding under #57; this is not final-runtime or new performance evidence.
+- **Query store:** WP17 remains off. The assessment is done, but representative per-stage counts from the later
+  fresh intervals are absent. Prepared-restart counts/selection and batched-route kill evidence remain pending
+  under #61; the serial store's twelve-kill result does not cover the batched route.
 
 - **Summaries (043) and buffer pools (032):** assessment complete; neither build gate is
   established and both remain not built. The retained profile does not bound all allocation
