@@ -6,6 +6,15 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 24 Oct 2026, segment-summary and buffer-pool assessment
+
+- Complete the [Plan 24 assessment](plans/plan-24-storage-segment-summaries.md)
+  with both mechanisms not built: retained q04 evidence establishes neither build gate.
+- Correct the claims of exhaustive read attribution, no poolable transient buffers
+  and a complete allocation-cost ceiling. Preserve the selected-operation profile
+  totals and name the unresolved discard and removable-cost observations.
+- No source, format, runtime or default changes; no new profiling or scientific run.
+
 ## 23 Oct 2026, completed combined source snapshot
 
 - Complete the [645-member source selection](workbench/combined-runtime-r1/README.md):

@@ -167,6 +167,10 @@ all-green consumer suite or a completed packaged route.
   step-7b tests. Fix: restore them in `setUpModule`/`tearDownModule`, then run the 17-module step-7b set. Do not mark
   it as expected.
 
+- **Summaries (043) and buffer pools (032):** assessment complete; neither build gate is
+  established and both remain not built. The retained profile does not bound all allocation
+  costs or prove zero discard ([Plan 24](plans/plan-24-storage-segment-summaries.md)).
+
 ## Small optimisations
 
 - **S2 (capture writers):** revision 9 final for exactness (37/37 mutants killed). Its before/after timing has not run.

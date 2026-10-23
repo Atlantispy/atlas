@@ -2,8 +2,59 @@
 
 **Item ID:** 24  
 **Retained owner:** Storage; backlog 18, ideas 043 and 032.  
-**Status:** WORKING NON-CANON. Conditional scoping only; neither technique is established as built or tested/disabled.  
+**Status:** WORKING NON-CANON. Assessment complete, reviewed 24 October 2026: **neither build gate is established; both mechanisms remain NOT BUILT**. No source, format, runtime or default change.
 **Target completion condition:** Use the retained q04 evidence to give each technique an evidence-bound disposition, accounting for the current L3/WP12 reader. Identify only the missing observation or gated follow-up. Do not implement a new format or pool merely to complete this scoping item.
+
+## Disposition — reviewed 24 October 2026
+
+**Neither build gate is established; both mechanisms remain NOT BUILT.** This is a
+scoping outcome from the retained post-B17 q04 sealed-reopen profile, not a measured
+failure of either proposed optimisation. The reader files inspected in the selected
+combined source generation match the measured reader. No new profile, simulation,
+microbenchmark or interval-data read was performed. No L3 or WP12 saving is added.
+
+| Retained q04 accounting | Seconds | Denominator | Share |
+|---|---|---|---|
+| Ranged-read calls | 3.367 | Whole profiled reopen: 26.458 s | 12.7% |
+| Selected allocation/copy operations | 0.0808 | Whole profiled reopen: 26.458 s | 0.31% |
+| Broader selected operations, including wrapper bookkeeping | 0.3901 | Whole profiled reopen: 26.458 s | 1.47% |
+| Selected allocation/copy operations on the storage path | 0.0204 | Accounted storage path: 6.019 s | 0.34% |
+| Broader selected operations on the storage path | 0.2283 | Accounted storage path: 6.019 s | 3.79% |
+
+These are accounting totals from the instrumented profile. They are neither
+measured savings nor complete allocation-cost bounds. The plain reopen took
+15.670 s; whole-run profiling overhead does not establish each operation's
+uninstrumented cost. The approximately 5% gates concern relevant read time, so
+the whole-reopen percentages alone cannot decide them.
+
+- **043 summaries: gate not demonstrated.** All 8,294 native page-miss calls have
+  the expected immediate cache-reader caller. Source inspection supports canonical
+  whole-record identity rendering, structural validation and authenticated column
+  scans, with no demonstrated content-predicate storage pruning opportunity.
+  The retained trace nevertheless has one unexplained value-reader caller edge
+  and incomplete attribution through generator resumption. It contains no
+  per-read discard measurement, so it does not establish exhaustive attribution
+  or a measured zero discard cost. No summary footer is selected for the Step 12
+  format batch. Reconsider if a real predicate-applying storage consumer shows
+  discarded ranged reads reaching 5% of its read time.
+- **032 pools: material benefit unresolved; not built.** Transient mutable staging
+  buffers exist in the raw-reader and access helpers before their mandatory owned
+  copy-outs. Reusing staging could retain the existing escape copy without adding
+  one; the original claim that no poolable transient exists was incorrect.
+  The 0.3901 s accounting omits some allocating wrappers and does not isolate
+  constructors, backing allocation or first-touch cost. Reusing a stream's
+  bytearray object does not prove reuse of its backing capacity. Retained pages,
+  SQLite-owned blob results and immutable copy-outs remain distinct constraints.
+  No material removable allocation cost or approximately 5% gate is established,
+  so no pool trial is selected. Reconsider when the selected-build profile
+  attributes sufficient removable cost to specific buffers, or a reader/format
+  change creates a material new opportunity.
+
+The missing observations are named above; no new run is requested. A later
+candidate still requires authenticated exact values, unchanged refusal and
+copy-out behaviour or sound leases, booked idle/active capacity, cancellation and
+release, plus measured construction/read cost and any disk growth. All existing
+run and scientific-acceptance holds remain.
 
 ## Authority and evidence
 
@@ -16,7 +67,7 @@ The assessment's pre-B17 profile found payload allocation/copy work below its vi
 | Candidate | Work it could avoid | Existing overlap and boundary | Current disposition |
 | --- | --- | --- | --- |
 | 043 summaries | Reading ranges subsequently discarded by a consumer | Named/ranged readers already select data; geometric pruning sits above storage. B17's per-view directory already removes repeated named-lookup walks. | No format change now; revisit through the Step 12 format batch if the profile gate is met. |
-| 032 buffer pools | Allocation, first-touch and copying of read/decode buffers | Decoded chunks escape as owned values. L3 caches eligible data; WP12 supplies fresh verified bytes on misses. These are distinct lifetimes, not proof that a pool is redundant. | Defer pending profile; a gated microbenchmark may establish whether further work is worthwhile. |
+| 032 buffer pools | Allocation, first-touch and copying of read/decode buffers | Decoded chunks escape as owned values. L3 targets eligible retained data; WP12 remains unbuilt/off. These are distinct lifetimes, not proof that a pool is redundant. | Not built: removable allocation cost is unresolved; reconsider only with qualifying evidence. |
 
 WP12 activity does not automatically exclude a pool. Conversely, neither a cache label nor allocator activity establishes a benefit. Identify the actual buffers, ownership and copies in the selected reader before proposing reuse.
 
