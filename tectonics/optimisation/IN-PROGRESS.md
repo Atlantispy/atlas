@@ -159,7 +159,10 @@ all-green consumer suite or a completed packaged route.
 
 - **Merged:** sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED), in `composed-r2/helpers/segment_store.py`.
 - **L3:** design accepted; build not started.
-- **WP12:** accepted on condition that a guard-equivalence section is written first.
+- **WP12:** assessment complete; **UNBUILT/OFF**. Source review establishes one eligible sealed reopen;
+  the central estimated net saving is −3.1% against the 5% gate (not a measured failure). The former N = 2,
+  +0.1% figure is a sensitivity case. Revisit only after guard-equivalent freshness work under Plan 30; see
+  [Plan23](plans/plan-23-storage-mapped-reads-wp12.md).
 - **Known test failure:** `test_wp10_integration` swaps `sys.modules` entries at module level, which leaks into the
   step-7b tests. Fix: restore them in `setUpModule`/`tearDownModule`, then run the 17-module step-7b set. Do not mark
   it as expected.

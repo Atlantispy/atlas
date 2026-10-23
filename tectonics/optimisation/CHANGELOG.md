@@ -27,6 +27,16 @@ the 256 accepted-step ceiling. No tolerance is relaxed.
   No installed application integration, runtime admission, new q18/whole-interval
   measurement or scientific acceptance is claimed.
 
+## 23 Oct 2026, Plan23 WP12 sidecar-read assessment
+
+- Complete the conditional assessment with WP12 **UNBUILT/OFF**. Source review
+  establishes one eligible sealed reopen, correcting the proposed count of two.
+  The central estimated net saving is −3.1% at that count against the 5% gate;
+  this is a scoping estimate, not a measured failure. No source/runtime/default change.
+- Record the selected-source guard analysis, retained implementation prerequisites,
+  rejected per-read guard relaxation and Plan 30 reconsideration dependency in
+  [Plan23](plans/plan-23-storage-mapped-reads-wp12.md).
+
 ## 23 Oct 2026, Plan18 endpoint and retention source selection
 
 - Add accepted Plan18 endpoint lookahead, plain support-header retention,

@@ -156,6 +156,8 @@ Report plain before/after values and **measured net benefit**, all section-4 cou
 
 ## 6. WP12 relationship and sequencing
 
+**Current disposition:** [Plan 23](plan-23-storage-mapped-reads-wp12.md) completes its assessment as **UNBUILT/OFF**. No WP12 implementation or combined L3/WP12 timing arm is selected. The requirements below apply only if WP12 is reconsidered after the separate Plan 30 freshness work; they do not block L3-only integration.
+
 `B/wp12-design/DESIGN.md` (`99592b64`) records **D1 YES conditionally; B NOT TAKEN; L3 first, then WP12**. The latter's section-0 guard-equivalence argument is required before its build. Plan 23 owns that proof and its own acceptance gate.
 
 The existing raw_sidecar component used whole-file authentication and per-call mmap. The proposed WP12 wiring instead uses a **positioned read into bytes, explicitly no mmap**, on native page misses. Exact bytes are required by the page verifier, so mapping would not avoid the copy. L3 avoids repeating verification of existing hits; WP12 replaces SQLite read/checksum/decode work on misses. They compose through the same page-cache route. The former generic 'bypass L3 for mapped pages' rule has no basis in this design.

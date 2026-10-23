@@ -114,7 +114,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | [20 — S2 r9 captures](plan-20-diagnostic-captures-s2.md) | Capture / integration / Release | A/B accepted and source-integrated; C pending | Capture writes/disk measured; final folded DLL binding and prepared-entry execution remain outstanding. |
 | [21 — Small S3 and S9](plan-21-lazy-fields-s3-s9.md) | Small / Runner; coordinator | q20 HELD | Small S3 lazy D1-B rows is part-done; Heat S3's unscoped identity work is subsumed into S9. S10 remains withdrawn. |
 | [22 — Storage L3](plan-22-storage-l3.md) | Storage / Runner | Accepted design, unbuilt | Carry verified page pins across read batches under the exact caps/freshness/lifetime contract. This is not a new LRU chunk cache. |
-| [23 — WP12 sidecar reads](plan-23-storage-mapped-reads-wp12.md) | Storage | Conditional design, unbuilt | Positioned reads into fresh bytes with the same typed chunk authentication at use, guard-equivalence proof and net A/B gate. |
+| [23 — WP12 sidecar reads](plan-23-storage-mapped-reads-wp12.md) | Storage | Assessment complete: UNBUILT/OFF | One eligible sealed reopen established; central estimated net saving −3.1% against the 5% gate. No implementation. Guard-equivalent freshness under Plan 30 is a reconsideration prerequisite. |
 | [24 — Summaries and buffer pools](plan-24-storage-segment-summaries.md) | Storage | Conditional scoping | Use real q04 profile evidence. Summaries belong to the future format batch if justified; pools retain copy-out/lease/accounting obligations. |
 | [25 — Runtime identity L4](plan-25-runtime-identity-l4.md) | Kernels; coordinator shared seam | Approved, not started | Patch the real runtime record with actual loaded arithmetic binaries/sources and trusted full pins, coordinated through C12/X1. |
 | 26 — Helper fold R1 (not included in this public snapshot) | Release / Small | Transformer/arm harness unbuilt | Mandatory last-N12 fold into `atlas_tectonics._private`, exact span edits, parity-v2, G-PIN and carried DLL; before fresh runs. |
@@ -165,7 +165,7 @@ flowchart TD
     P20["20 S2 integration"] --> P31F
     P21["21 S3/S9 selected work"] --> P31F
     P22["22 L3 selected work"] --> P31F
-    P23["23 WP12 selected work"] --> P31F
+    P23["23 WP12 disposition: UNBUILT/OFF"] --> P31F
     P30["30 Preserve B17/item14"] --> P31F
 
     P31C --> P27
