@@ -11754,13 +11754,13 @@
    "path": "IN-PROGRESS.md",
    "source": "<PLAN17_R7_INTEGRATION>/IN-PROGRESS.md",
    "kind": "workbench-source",
-   "sha256": "223d49cbd66445ab20ee3c9fdf425dd9dc5c18b3257bacb06cbd60e6f581267b"
+   "sha256": "29acbad08f52fa7262b9967ce63db62483a7a14a3555bdaf19e83dc0ce2b2133"
   },
   {
    "path": "README.md",
    "source": "<PLAN17_R7_INTEGRATION>/README.md",
    "kind": "workbench-source",
-   "sha256": "5d046b6ed5d8ecbf0f954f6adad26c3eb4f009ee99e2207e93ef40bba1461bee"
+   "sha256": "43f2cd3c458c9cee3b33bcfdb70821ac59ffd76255f8284ca7f7db9565989a23"
   },
   {
    "path": "plans/INDEX.md",
@@ -11772,7 +11772,7 @@
    "path": "CHANGELOG.md",
    "source": "<PLAN17_R7_INTEGRATION>/CHANGELOG.md",
    "kind": "workbench-source",
-   "sha256": "8f705d8f71f56857fd2e8741a65bfb5df591fc2562ae6ef6912481219faf063c"
+   "sha256": "cfccac879faef784f804f3b05d9f30bc07150ad95be1e6e83159d7427c2eeef5"
   },
   {
    "path": "workbench/plan17/r7/admission_r7.py",
@@ -11944,6 +11944,102 @@
    "source": "<REVIEWED_PLANS19_20_PUBLICATION>/workbench/plan20/source/helpers/test_wp16_preadvance.py",
    "kind": "accepted-source-integration",
    "sha256": "25e9d8c60df91109101b29eaca83c8205f33ce143384ff8b5a9d44a3cdf54037"
+  },
+  {
+   "path": "workbench/plan18/CHECKS.json",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/CHECKS.json",
+   "kind": "accepted-source-integration",
+   "sha256": "b5197a6ac5ee73c955cc60d1596ee5be04f2f9b3dcc20b949b0c815165782961"
+  },
+  {
+   "path": "workbench/plan18/README.md",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/README.md",
+   "kind": "accepted-source-integration",
+   "sha256": "39e1d5eca4be1c484388db15affee19ad351d2206fe770ba7fd2cdf87c9e7839"
+  },
+  {
+   "path": "workbench/plan18/SOURCE-MAP.json",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/SOURCE-MAP.json",
+   "kind": "accepted-source-integration",
+   "sha256": "bb3373d14e3feb3df606d3dbb00fb5e51aecd57ad72fef1511d6116f9890a98e"
+  },
+  {
+   "path": "workbench/plan18/build_selection.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/build_selection.py",
+   "kind": "accepted-source-integration",
+   "sha256": "b537ce1c4da0be0fa2120fd2569a82c8af69c2e6a4ec8d3dc84ba519fe96c96b"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/content_cache.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/content_cache.py",
+   "kind": "accepted-source-integration",
+   "sha256": "5d5931fc6dd0d5307007c7059ce1d5ab16786b2ef3a181f70f56ce39013a8260"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/partition_routing_patch.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/partition_routing_patch.py",
+   "kind": "accepted-source-integration",
+   "sha256": "ffb95381a45643be191e49ce00f99afc36d0bf4de773f7686a3d9f01c50328a5"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_compact_header_retention.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_compact_header_retention.py",
+   "kind": "accepted-source-integration",
+   "sha256": "0f7e687fac10453634354a3ff5124f7d49f5f6b059636cfd0a93f1422ad4d20c"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_content_cache.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_content_cache.py",
+   "kind": "accepted-source-integration",
+   "sha256": "50f4f3e1a38d6e7763dd561c2bdf38d471cb5725e88fce43250fb722cd62474f"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_owner_carrier_booking.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_owner_carrier_booking.py",
+   "kind": "accepted-source-integration",
+   "sha256": "16034caef368ac5d72c2d350aada90544ce1b6de8f97f8718029d6274f4d501b"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_r1_views.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_r1_views.py",
+   "kind": "accepted-source-integration",
+   "sha256": "24e464092ba96d82e81f39d3b1f8fa0b51811861110a47080cddc2e350ecef3a"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_r1a_export_booking.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_r1a_export_booking.py",
+   "kind": "accepted-source-integration",
+   "sha256": "5160cacbc83f1afcab4bcb8e157d9abe32925f7aadb2877178925faa8d8fcc35"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_retained_handle_check.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_retained_handle_check.py",
+   "kind": "accepted-source-integration",
+   "sha256": "f83f850139c830339c7b4908d120da57ecdcdc92594b235fe5a982a446907859"
+  },
+  {
+   "path": "workbench/plan18/source/helpers/test_spatial_allocation_order.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/helpers/test_spatial_allocation_order.py",
+   "kind": "accepted-source-integration",
+   "sha256": "e7b9e8fa0a2fc5acba8da15218a39709439d11b3442df9e20696d9ba85a255d6"
+  },
+  {
+   "path": "workbench/plan18/source/src/atlas_tectonics/integration_component_volume_auto.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/source/src/atlas_tectonics/integration_component_volume_auto.py",
+   "kind": "accepted-source-integration",
+   "sha256": "96cbf772e7e68b361ffb46ef234087511a7b02bfca733e343cb5bde13e87f70b"
+  },
+  {
+   "path": "workbench/plan18/test_build_selection.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/test_build_selection.py",
+   "kind": "accepted-source-integration",
+   "sha256": "572c586224f2786d167c083b856ad5f62b0f05a18b7d09fd9b34c59936d49393"
+  },
+  {
+   "path": "workbench/plan18/test_wp18_lookahead_r3.py",
+   "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/test_wp18_lookahead_r3.py",
+   "kind": "accepted-source-integration",
+   "sha256": "bb2868d91ea92ad4a8ebd9e05b770590e5d236dc261842f14ce2365c0ae58ca3"
   }
  ]
 }

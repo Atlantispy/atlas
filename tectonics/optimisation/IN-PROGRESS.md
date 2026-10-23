@@ -121,8 +121,11 @@ Final programme acceptance and held full intervals remain separate.
   The selected-source successor wires authenticated parent measurements through the drivers; five helper changes,
   no native changes. Native-entry preflight is qualified; programme default/interval holds remain.
   See [source and measured limits](workbench/plan16/README.md).
-- **Left outside Plan17:** endpoint batching (WP18 revision 2: refutation, smoke, proof). Projected interval-2
-  endpoints 402 → about 217 s.
+- **Plan18:** endpoint lookahead with plain support-header retention now has an explicit public source selection.
+  A detached two-worker endpoint-loop replay measured interval 2 at 451.32 → 274.23 s (1.65×) and
+  interval 1 at 111.00 → 96.35 s, with identical ordered records. No whole interval was timed, and
+  the earlier 402 → 217 s figure was a projection. Larger-interval retained capacity remains open.
+  See [source and measured limits](workbench/plan18/README.md).
 
 ## Heat finish and reconstruction speed
 

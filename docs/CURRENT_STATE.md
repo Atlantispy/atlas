@@ -9,6 +9,15 @@ commit and push state.
 
 ## Active checkpoint
 
+**Plan18 endpoint lookahead and compact retention have an explicit public source selection.**
+The [method record](../tectonics/optimisation/workbench/plan18/README.md) and
+[source map](../tectonics/optimisation/workbench/plan18/SOURCE-MAP.json) add the accepted
+implementation to the preceding review-branch selection, retaining historical
+mappings. Private receiving integration is accepted; public identities do not renew
+the original receipts. The detached endpoint replay remains component evidence.
+The 256 MiB retained cap and projected IV4 capacity excess remain, with no new
+combined-runtime, full-interval, default/main-package or physical acceptance.
+
 **Plans19–20 now have one integrated public source selection.**
 The [combined source map](../tectonics/optimisation/workbench/plans19-20/README.md)
 preserves Plans15–17 while selecting the two accepted geometry changes and S2 r9

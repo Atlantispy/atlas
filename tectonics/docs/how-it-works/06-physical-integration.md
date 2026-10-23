@@ -1507,6 +1507,96 @@ against the retained serial observation, at a sampled guarded tree peak of
 of separate component peaks establish whole-interval performance. Existing
 resource limits, source identities and scientific/interval holds remain.
 
+### Look ahead across supports to keep endpoint workers busy
+
+Component-volume geometry adopts each support's endpoint results in a fixed
+router order. The earlier endpoint route clamped worker batches to 32 jobs and 64
+requests. The [Plan18 method record](../../optimisation/workbench/plan18/README.md)
+uses the scheduler's general bounds instead: 512 jobs per batch and a
+4,096-request horizon. It also lets one or two endpoint workers compute ahead
+across later supports. These are configurable policy defaults, not physical
+limits. The scheduler's existing capacity checks and batch-input limit still
+apply, and geometry, numerical and transport limits are unchanged.
+
+The parent still projects every routing row and adopts results strictly in
+serial router order. A support read ahead contributes only a small summary:
+logical cell id, parent flag, constraint count and partition-path length. Each
+ahead-read support is bound to its index and identifier. A mismatch stops the
+lookahead and leaves serial evaluation to continue, so a mismatched worker result
+is never adopted. Compact supports are never projected ahead of their router
+position. Workers engage only when the projected remaining endpoint time passes a
+gate, 120 s by default. The horizon bounds outstanding requests, not every
+projected support: empty-support tails may be read through and keep small index
+entries until they are bound.
+
+One exact five-arm comparison measured the endpoint loop alone. It replayed
+captured interval-2 and interval-1 supports through a dedicated endpoint runtime,
+and the ordered endpoint records were identical in every arm (27,004 and 7,181).
+With two workers, endpoint time fell from 451.32 to 274.23 s on interval 2 (1.65×)
+and from 111.00 to 96.35 s on interval 1 (13.2% less). A 30 s gate gave no
+observed further gain, so the default stays; one replay cannot show that a lower
+gate never helps. When the machine refuses workers, the replay runtime stops,
+whereas the integrated route defers. The replay did not run the integrated
+successor, and no whole interval was timed. The earlier figure of 402 → 217 s
+was a projection.
+
+### Retain only plain support headers on the compact route
+
+On the compact route, each projected support keeps a handle for the whole
+interval. Before this change, each handle's header kept live record-field
+exports. They were booked at about 0.2 MiB each against the scope's fixed 256 MiB
+retained budget, so a closure proof refused interval 1 after about 1,168 of its
+2,016 supports. Handles now keep deep-copied plain header values, charged at
+their measured size to the run budget, and release the exports. Records and
+routing order are unchanged.
+
+Each retained share also keeps an ownership carrier. Carriers book 2,112 B
+instead of the general 4,096 B owner floor. The figure is 1.25 times the worst
+size measured, rounded up to 64 B. The measurement used Python's
+[tracemalloc](https://docs.python.org/3/library/tracemalloc.html) in a synthetic
+sweep of 24,000 carriers on a cold retained scope: worst 1,674.8 B, mean 1,486.0 B.
+A focused test re-measures a carrier the same way and fails if it exceeds the
+booking. Every other charge keeps 4,096 B, and the 256 MiB cap is unchanged.
+Logical booking is not a physical-memory bound; the separate RSS guard covers
+real memory.
+
+Released carriers leave a residual. After release, about 142 B per peak carrier
+of holder-set and charge-table capacity stays allocated, unbooked, until the
+owning allocation's or scope's storage is released. The live carriers' booking
+margins cover it only while enough of the peak carriers remain live: about a
+quarter at the mean size, about a third at the worst. Nothing enforces that
+condition.
+
+A diagnostic compares a retained handle with a fresh read of its support record
+and walks its ownership graph. It checks that:
+- the carrier set is exact;
+- no record export or extra run-budget allocation is reachable;
+- both sides have exactly the header keys;
+- values match as canonical JSON bytes;
+- allocations are live and fully charged.
+
+Before reading, it confirms that the record reference is usable the way the real
+field reader will use it. A closed or incomplete reference is therefore reported
+as unavailable instead of raising, while an error inside the read itself still
+propagates. The diagnostic cannot prove that nothing else is retained.
+
+The successor that introduced header retention passed:
+- fake-handle and real-partition closure cases;
+- a probe;
+- compact and legacy reference runs, with identical records and all 2,016
+  retained headers clean;
+- seven real-worker cases that ended with no outstanding borrows.
+
+Against that successor, the accepted successor changes only the carrier booking,
+the diagnostic and tests. Its 50 focused tests pass, and its three real-reader
+cases fail on the previous successor, as intended.
+
+On interval 1, carriers book 12.8 MB. A projected 87,000-support interval would
+book 551.2 MB on carriers alone, over the 256 MiB cap; the carrier-only ceiling is
+about 42,400 supports. The cap or the retention design must change before such an
+interval can run on this route. No interval run of the accepted successor has
+been made.
+
 ### Choose heat reconstruction workers and prepare exact geometry proofs
 
 Independent face reconstruction uses the unchanged exact numerical method in

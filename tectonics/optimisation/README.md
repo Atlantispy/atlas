@@ -88,6 +88,13 @@ validation is accepted; Plan20 A/B is accepted with the folded DLL binding still
 pending. This is source integration on the review branch, not an executable
 release, a main-package overlay or a new combined-runtime validation result.
 
+The [Plan18 endpoint and retention source](workbench/plan18/README.md) adds
+cross-support endpoint lookahead at one or two workers, plain support-header
+retention, a measured 2,112 B ownership-carrier booking and a retained-handle
+diagnostic to the compact route. Its exact endpoint-loop replay is a detached
+measurement, not a whole-interval or integrated-runtime result. Larger-interval
+retained capacity remains open.
+
 The additive [Plan40A pressure examination and source successor](workbench/plan40/pressure/FINDINGS.md)
 covers all ten arithmetic groups and selects the reviewed core plus G4.
 Full-interval jets still supply curvature bounds; a separately funded midpoint

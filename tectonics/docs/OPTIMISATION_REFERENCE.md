@@ -1,5 +1,25 @@
 # Atlas optimisation reference
 
+## Geometry endpoint lookahead and compact header retention — 23 October 2026
+
+The [Plan18 method record](../optimisation/workbench/plan18/README.md) covers four
+changes:
+- one or two endpoint workers compute across supports, under the scheduler's
+  configurable defaults of 512 jobs and 4,096 requests;
+- the compact route keeps plain support headers;
+- retained ownership carriers are booked at a measured 2,112 B;
+- a retained-handle diagnostic is added.
+
+The reader chapter explains
+[endpoint lookahead](how-it-works/06-physical-integration.md#look-ahead-across-supports-to-keep-endpoint-workers-busy)
+and [header retention](how-it-works/06-physical-integration.md#retain-only-plain-support-headers-on-the-compact-route).
+
+The 1.65× interval-2 endpoint result comes from a detached endpoint-loop replay
+on captured supports. It is not a run of the integrated successor or of a whole
+interval. The integrated route's evidence is its closure proofs and focused
+tests. Larger-interval capacity under the 256 MiB retained cap remains open. No
+new research or scientific acceptance is claimed.
+
 ## Selected geometry and diagnostic capture source integration — 23 October 2026
 
 The [Plans19–20 source selection](../optimisation/workbench/plans19-20/README.md)

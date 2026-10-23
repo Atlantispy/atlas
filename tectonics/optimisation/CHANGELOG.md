@@ -6,6 +6,20 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23 Oct 2026, Plan18 endpoint and retention source selection
+
+- Add accepted Plan18 endpoint lookahead, plain support-header retention,
+  measured 2,112 B carrier booking and the retained-handle diagnostic to the
+  preceding public source selection. Preserve historical mappings and receipts;
+  the [new source map](workbench/plan18/SOURCE-MAP.json) records publication identities.
+- **MEASURED, detached endpoint replay:** interval 2 falls from 451.32 to 274.23 s
+  (39.2% less, 1.65×); interval 1 from 111.00 to 96.35 s (13.2% less), with identical
+  ordered records. These timings are neither integrated-runtime nor whole-interval evidence.
+- Retain the accepted private receiving integration and its scoped checks in the
+  [method record](workbench/plan18/README.md). The 256 MiB cap remains; projected IV4
+  carriers alone exceed it. No default/main-package adoption, fresh full interval
+  or physical acceptance follows from this publication.
+
 ## 23 Oct 2026, Plan40 heat receiving integration
 
 - Connect retained C3 and C8 arithmetic to the existing full certification,

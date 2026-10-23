@@ -1,0 +1,28 @@
+{
+  "schema": "atlas.public.plan18.publication-checks.r1",
+  "source_map_sha256": "bb3373d14e3feb3df606d3dbb00fb5e51aecd57ad72fef1511d6116f9890a98e",
+  "public_selection_sha256": "2f639e2e838af309ffd9fd781452bad0cc100c2aec788992c49451461cd79eba",
+  "builder_sha256": "b537ce1c4da0be0fa2120fd2569a82c8af69c2e6a4ec8d3dc84ba519fe96c96b",
+  "builder_tests_sha256": "572c586224f2786d167c083b856ad5f62b0f05a18b7d09fd9b34c59936d49393",
+  "lookahead_test_sha256": "bb2868d91ea92ad4a8ebd9e05b770590e5d236dc261842f14ce2365c0ae58ca3",
+  "source_files": 641,
+  "checks": {
+    "materialisation": "PASS; all 641 outputs match selected source",
+    "retention_and_accounting": "50 tests PASS on materialised public sources",
+    "endpoint_lookahead": {
+      "passed": true,
+      "checks": 99,
+      "scope": "Synthetic supports, fake sessions and clocks; actual selected endpoint controller and schedule"
+    },
+    "materialiser_controls": "11 tests: 10 PASS, one real-symlink fixture skipped because Windows denied symlink creation; injected reparse control PASS",
+    "coding_safety": "PASS",
+    "coding_safety_tests": "31 tests: 30 PASS, one platform skip",
+    "public_paths": "PASS",
+    "public_path_tests": "14 PASS",
+    "lint": "No F821/F841/B905 findings in exported sources or new materialiser"
+  },
+  "scientific_interval_runs": 0,
+  "real_workers_started": 0,
+  "performance_remeasurement": false,
+  "historical_receipts_rewritten": false
+}
