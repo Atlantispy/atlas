@@ -1,0 +1,1964 @@
+{
+  "schema": "plan40a-composition-probe-v1",
+  "verdict": "PASS",
+  "synthetic_fixture": true,
+  "probe_sha256": "ce2d1aa640b0dc66c3cda7b2c27a3ab46680a6c7704642b3e1c3a4267fb92416",
+  "midpoint_helper_sha256": "d08ad403068a7f5e8690c4e3959a038f584e50a67f836537ad356ef2e2f25f0a",
+  "cache_helper_sha256": "31b64320a5595caabc060cbb27924e1927616d666bbdc78263c790d436fcf198",
+  "coupling_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "spatial_sha256": "1f4f50ccb08eaeeab2a52c30dce033aa4b1fb07273a59ebd619d89f233c33712",
+  "differential_sha256": "e01a7af268de50560f631dce4ea3b69163e1a6bcc63c436bb18001bb579c4e4b",
+  "scope": "27 synthetic midpoint controls only; full original fallback; no interval-stage pair, timing, resource, cancellation or production acceptance",
+  "cases": [
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "same-bounds-different-physics",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 245,
+            "_scale": 130,
+            "_add": 133,
+            "_dyadic_outward": 219
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 73,
+            "_mul": 31,
+            "_scale": 23,
+            "_add": 10
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "signed-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "separated-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 14,
+            "_mul": 323,
+            "_scale": 178,
+            "_add": 173,
+            "_dyadic_outward": 294
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 215,
+            "_scale": 116,
+            "_add": 112,
+            "_dyadic_outward": 189
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 13,
+            "_dyadic_outward": 98,
+            "_mul": 40,
+            "_scale": 32,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 63,
+            "_mul": 26,
+            "_scale": 20,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "empty-repeated-support",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 239,
+            "_scale": 118,
+            "_add": 111,
+            "_dyadic_outward": 186
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 161,
+            "_scale": 76,
+            "_add": 74,
+            "_dyadic_outward": 120
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 62,
+            "_mul": 28,
+            "_scale": 18,
+            "_add": 5
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 40,
+            "_mul": 19,
+            "_scale": 11,
+            "_add": 3
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "single-profile-and-donor",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "general",
+      "fixture": "both-cache-capacities",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "exact-root-fallback",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 173,
+            "_scale": 102,
+            "_add": 95,
+            "_dyadic_outward": 165
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    },
+    {
+      "bits": 32,
+      "geometry": "origin-refusal",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": null,
+      "full_cached_jet_parity": null,
+      "refusal_parity": true,
+      "outcome": "refusal",
+      "arms": {
+        "original": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "value": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "same-bounds-different-physics",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 245,
+            "_scale": 130,
+            "_add": 133,
+            "_dyadic_outward": 219
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 73,
+            "_mul": 31,
+            "_scale": 23,
+            "_add": 10
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "signed-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "separated-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 14,
+            "_mul": 323,
+            "_scale": 178,
+            "_add": 173,
+            "_dyadic_outward": 294
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 215,
+            "_scale": 116,
+            "_add": 112,
+            "_dyadic_outward": 189
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 13,
+            "_dyadic_outward": 98,
+            "_mul": 40,
+            "_scale": 32,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 63,
+            "_mul": 26,
+            "_scale": 20,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "empty-repeated-support",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 239,
+            "_scale": 118,
+            "_add": 111,
+            "_dyadic_outward": 186
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 161,
+            "_scale": 76,
+            "_add": 74,
+            "_dyadic_outward": 120
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 62,
+            "_mul": 28,
+            "_scale": 18,
+            "_add": 5
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 40,
+            "_mul": 19,
+            "_scale": 11,
+            "_add": 3
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "single-profile-and-donor",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "general",
+      "fixture": "both-cache-capacities",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "exact-root-fallback",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 173,
+            "_scale": 102,
+            "_add": 95,
+            "_dyadic_outward": 165
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    },
+    {
+      "bits": 96,
+      "geometry": "origin-refusal",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": null,
+      "full_cached_jet_parity": null,
+      "refusal_parity": true,
+      "outcome": "refusal",
+      "arms": {
+        "original": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "value": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "same-bounds-different-physics",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 245,
+            "_scale": 130,
+            "_add": 133,
+            "_dyadic_outward": 219
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 73,
+            "_mul": 31,
+            "_scale": 23,
+            "_add": 10
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 2,
+            "peak_entries": 2
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "signed-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 299,
+            "_scale": 164,
+            "_add": 165,
+            "_dyadic_outward": 276
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 102,
+            "_add": 104,
+            "_dyadic_outward": 171
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 92,
+            "_mul": 38,
+            "_scale": 30,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 57,
+            "_mul": 24,
+            "_scale": 18,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "separated-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 14,
+            "_mul": 323,
+            "_scale": 178,
+            "_add": 173,
+            "_dyadic_outward": 294
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 10,
+            "_mul": 215,
+            "_scale": 116,
+            "_add": 112,
+            "_dyadic_outward": 189
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 13,
+            "_dyadic_outward": 98,
+            "_mul": 40,
+            "_scale": 32,
+            "_add": 13
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 9,
+            "_dyadic_outward": 63,
+            "_mul": 26,
+            "_scale": 20,
+            "_add": 8
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 2,
+            "peak_entries": 2,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "empty-repeated-support",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 239,
+            "_scale": 118,
+            "_add": 111,
+            "_dyadic_outward": 186
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 161,
+            "_scale": 76,
+            "_add": 74,
+            "_dyadic_outward": 120
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 11,
+            "_dyadic_outward": 62,
+            "_mul": 28,
+            "_scale": 18,
+            "_add": 5
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 40,
+            "_mul": 19,
+            "_scale": 11,
+            "_add": 3
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "single-profile-and-donor",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 191,
+            "_scale": 96,
+            "_add": 98,
+            "_dyadic_outward": 159
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 7,
+            "_dyadic_outward": 53,
+            "_mul": 24,
+            "_scale": 16,
+            "_add": 6
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "general",
+      "fixture": "both-cache-capacities",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 52,
+            "_mul": 809,
+            "_scale": 461,
+            "_add": 352,
+            "_dyadic_outward": 675
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 51,
+            "_dyadic_outward": 225,
+            "_mul": 83,
+            "_scale": 74,
+            "_add": 17
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          },
+          "profile_cache": {
+            "misses": 12,
+            "peak_entries": 8
+          }
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "exact-root-fallback",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": true,
+      "full_cached_jet_parity": true,
+      "refusal_parity": false,
+      "outcome": "value",
+      "arms": {
+        "original": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {
+            "_sqrt": 2,
+            "_divide": 8,
+            "_mul": 173,
+            "_scale": 102,
+            "_add": 95,
+            "_dyadic_outward": 165
+          },
+          "fallback": false,
+          "donor_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          },
+          "profile_cache": {
+            "misses": 1,
+            "peak_entries": 1,
+            "hits": 1
+          }
+        },
+        "value": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {
+            "_sqrt": 4,
+            "_divide": 12,
+            "_mul": 281,
+            "_scale": 164,
+            "_add": 156,
+            "_dyadic_outward": 270
+          },
+          "fallback": true,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    },
+    {
+      "bits": 160,
+      "geometry": "origin-refusal",
+      "fixture": "selected-duplicates",
+      "exact_values_and_fixed": null,
+      "full_cached_jet_parity": null,
+      "refusal_parity": true,
+      "outcome": "refusal",
+      "arms": {
+        "original": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "cache": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "value": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        },
+        "composed": {
+          "operations": {},
+          "fallback": false,
+          "donor_cache": {},
+          "profile_cache": {}
+        }
+      }
+    }
+  ],
+  "case_count": 27,
+  "inject_fault": false
+}

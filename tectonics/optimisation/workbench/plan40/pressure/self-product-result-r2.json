@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "kind": "synthetic-exactness-and-operation-counts",
+  "probe_sha256": "3f7bd7b9c9e1b575d4f784a963ee605c31809bc72e3f0de17a77656845cd0150",
+  "helper_sha256": "e154140c90af9b3d4d84fbe6b12a9fc8a517e6bb19ec870319dc306de1be94ba",
+  "sources": {
+    "coupling": {
+      "relative": "tectonics/optimisation/pending/pressure/c/full3/src/atlas_tectonics/integration_pressure_coupling.py",
+      "sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e"
+    },
+    "spatial": {
+      "relative": "tectonics/optimisation/pending/pressure/c/full3/src/atlas_tectonics/integration_spatial_pressure.py",
+      "sha256": "1f4f50ccb08eaeeab2a52c30dce033aa4b1fb07273a59ebd619d89f233c33712"
+    },
+    "overlap": {
+      "relative": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_volume_overlap.py",
+      "sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48"
+    }
+  },
+  "cases": {
+    "same_operand": 220,
+    "distinct_equal_operands": 220,
+    "power": 660,
+    "reciprocal": 220,
+    "scale_domain": 18,
+    "chart": 9,
+    "shell": 27
+  },
+  "consumer_counts": {
+    "baseline": {
+      "_add": 882,
+      "_dyadic_outward": 1161,
+      "_mul": 2160,
+      "_scale": 753
+    },
+    "candidate": {
+      "_add": 882,
+      "_dyadic_outward": 1161,
+      "_mul": 2064,
+      "_scale": 555,
+      "jet_fallback": 192,
+      "negation": 198,
+      "self_product": 48
+    }
+  },
+  "refutation": "[-1,1]*[-1,1] remains [-1,1], never replaced by [0,1]",
+  "limits": [
+    "No stage, workers, timings or whole-IV gain.",
+    "Not a production resource, admission or cancellation proof.",
+    "Do not add overlapping midpoint, power-prefix and self-product reductions."
+  ]
+}

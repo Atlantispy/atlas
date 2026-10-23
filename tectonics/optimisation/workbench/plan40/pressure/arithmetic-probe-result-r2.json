@@ -1,0 +1,132 @@
+{
+  "status": "PASS",
+  "scope": "pinned extracted helper feasibility; no whole-stage/runtime/performance claim",
+  "source_pins": {
+    "coupling": {
+      "path": "tectonics/optimisation/pending/pressure/c/full3/src/atlas_tectonics/integration_pressure_coupling.py",
+      "sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e"
+    },
+    "spatial": {
+      "path": "tectonics/optimisation/pending/pressure/c/full3/src/atlas_tectonics/integration_spatial_pressure.py",
+      "sha256": "1f4f50ccb08eaeeab2a52c30dce033aa4b1fb07273a59ebd619d89f233c33712"
+    },
+    "overlap": {
+      "path": "tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_volume_overlap.py",
+      "sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48"
+    }
+  },
+  "checks": {
+    "power_prefix": 416,
+    "dyadic_reuse": 2508,
+    "interval_zero": 2496,
+    "cone_hoist": 105,
+    "radial_consumers": 72,
+    "refusal": 8,
+    "triangle_vector": 66,
+    "radial_vector": 132
+  },
+  "reassociation_refutation": {
+    "precision": 8,
+    "jet": [
+      [
+        [
+          3,
+          10
+        ],
+        [
+          17,
+          2
+        ]
+      ],
+      [
+        [
+          -1,
+          3
+        ],
+        [
+          4,
+          1
+        ]
+      ],
+      [
+        [
+          -11,
+          5
+        ],
+        [
+          1,
+          3
+        ]
+      ]
+    ],
+    "reference": [
+      [
+        [
+          1,
+          256
+        ],
+        [
+          83521,
+          16
+        ]
+      ],
+      [
+        [
+          -209647,
+          256
+        ],
+        [
+          9826,
+          1
+        ]
+      ],
+      [
+        [
+          -839779,
+          128
+        ],
+        [
+          3760879,
+          256
+        ]
+      ]
+    ],
+    "regrouped": [
+      [
+        [
+          1,
+          128
+        ],
+        [
+          83521,
+          16
+        ]
+      ],
+      [
+        [
+          -104835,
+          128
+        ],
+        [
+          9826,
+          1
+        ]
+      ],
+      [
+        [
+          -1679617,
+          256
+        ],
+        [
+          1880451,
+          128
+        ]
+      ]
+    ]
+  },
+  "limits": [
+    "No performance timings or production-width survey.",
+    "No resource allocator, process cancellation or full-consumer integration proof.",
+    "Fixtures are bounded exact rational controls, not saved production operands."
+  ]
+}

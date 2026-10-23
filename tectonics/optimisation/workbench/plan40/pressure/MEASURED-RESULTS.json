@@ -1,0 +1,2764 @@
+{
+  "schema": "atlas.public.plan40a.measured-results.r1",
+  "status": "WORKING_NON_CANON_COMPONENT_EVIDENCE_NOT_IV_PROOF",
+  "publication": "Selected public-safe fields, not the private raw execution record. Raw digests identify retained originals; this is not a rerun or replacement receipt.",
+  "unit": "nanoseconds per call; raw sample elapsed_ns is per batch",
+  "selection": "core plus G4; no default or runtime enablement",
+  "limits": [
+    "Four samples per arm, balanced ABBAABBA; ranges are descriptive.",
+    "No production weights, significance, additive percentages or whole-IV gain.",
+    "Fresh-worker lifetime memory includes common setup and output encoding.",
+    "Complete receiving fixtures avoid adaptive subdivision; bulk has 32 profiles and donors.",
+    "Prototype results do not authenticate actual receiving performance."
+  ],
+  "prototype": {
+    "raw_result_sha256": "7eed0c530275bd66ffb8398d93eda6b7e29b48738319e595dfc6f474fa15bb31",
+    "manifest_sha256": "bb88743fa4a019cec43ae77757d5f9115152ef83f9f6f95a55807df6b7ef2057",
+    "case_count": 29,
+    "rows": [
+      {
+        "group": 1,
+        "name": "midpoint-value-general-96",
+        "iterations": 32,
+        "reference_ns_per_call": 1938184.375,
+        "candidate_ns_per_call": 555835.9375,
+        "reference_range_ns": [
+          1925462.5,
+          1957178.125
+        ],
+        "candidate_range_ns": [
+          552643.75,
+          573296.875
+        ],
+        "reduction_percent": 71.32182342043697,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "4ac4b13ad3207bb5ee4b1164ec40f692fe0b6b21c42a2b92d0b110433ccba7a1",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 61666100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 17856200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 17717300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 62629700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 62377700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 18345500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 17684600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 61614800
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357801984,
+          "B": 357429248
+        }
+      },
+      {
+        "group": 1,
+        "name": "midpoint-value-general-160",
+        "iterations": 32,
+        "reference_ns_per_call": 2292289.0625,
+        "candidate_ns_per_call": 602654.6875,
+        "reference_range_ns": [
+          2286881.25,
+          2407306.25
+        ],
+        "candidate_range_ns": [
+          600615.625,
+          607493.75
+        ],
+        "reduction_percent": 73.70948117499907,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "620e0bca64128f98a16f01f2eb9d2a13a182e2ba3ed6d010abe7f4764cccdfac",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 73237700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 19439800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 19219700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 73468800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 77033800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 19239600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 19330300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 73180200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357683200,
+          "B": 357515264
+        }
+      },
+      {
+        "group": 1,
+        "name": "midpoint-value-exact-root-fallback",
+        "iterations": 32,
+        "reference_ns_per_call": 1690520.3125,
+        "candidate_ns_per_call": 1724265.625,
+        "reference_range_ns": [
+          1665009.375,
+          1783643.75
+        ],
+        "candidate_range_ns": [
+          1712690.625,
+          1761462.5
+        ],
+        "reduction_percent": -1.9961494843026324,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "cfdaab0e7eda1783b6153cee2ee51c63c78e9338d4e09aee785fa9e33aae0200",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 57076600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55135600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55217400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 54502300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53280300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 56366800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 54806100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53691000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357875712,
+          "B": 358055936
+        }
+      },
+      {
+        "group": 2,
+        "name": "contribution-reuse-duplicates-96",
+        "iterations": 32,
+        "reference_ns_per_call": 1948725.0,
+        "candidate_ns_per_call": 1234807.8125,
+        "reference_range_ns": [
+          1915631.25,
+          1973156.25
+        ],
+        "candidate_range_ns": [
+          1225871.875,
+          1276625.0
+        ],
+        "reduction_percent": 36.635091534208264,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "78cea7a3722d36a861e7ff8001232b49528bfaebabc258d748f8612e12b874a8",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 62397200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 39227900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 39376000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 61300200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63141000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 40852000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 39651700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 62321200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358019072,
+          "B": 357945344
+        }
+      },
+      {
+        "group": 2,
+        "name": "contribution-reuse-duplicates-160",
+        "iterations": 32,
+        "reference_ns_per_call": 2539265.625,
+        "candidate_ns_per_call": 1566701.5625,
+        "reference_range_ns": [
+          2429265.625,
+          2600021.875
+        ],
+        "candidate_range_ns": [
+          1513787.5,
+          1608259.375
+        ],
+        "reduction_percent": 38.300997458664845,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "e7e01fef02954fe13389f115719b72afecf7b134c7bf1cc05f8e33f02701dce3",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 83177200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 49730300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 51464300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 83200700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 79335800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 48441200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 50538600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 77736500
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357785600,
+          "B": 357797888
+        }
+      },
+      {
+        "group": 2,
+        "name": "contribution-reuse-distinct-96",
+        "iterations": 32,
+        "reference_ns_per_call": 1674996.875,
+        "candidate_ns_per_call": 1696264.0625,
+        "reference_range_ns": [
+          1667528.125,
+          1702356.25
+        ],
+        "candidate_range_ns": [
+          1676450.0,
+          1723387.5
+        ],
+        "reduction_percent": -1.2696852046365759,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "47ca751f91bea45431d35b6e9a3311c30734be572ef738c6e85b78054ef8b2c3",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 54475400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 54314000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55148400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53774900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53424900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 54246900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 53646400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53360900
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357687296,
+          "B": 357801984
+        }
+      },
+      {
+        "group": 0,
+        "name": "leading-pair-combined-96",
+        "iterations": 32,
+        "reference_ns_per_call": 1937259.375,
+        "candidate_ns_per_call": 362837.5,
+        "reference_range_ns": [
+          1910087.5,
+          2031800.0
+        ],
+        "candidate_range_ns": [
+          359100.0,
+          364418.75
+        ],
+        "reduction_percent": 81.27057715232375,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "4ac4b13ad3207bb5ee4b1164ec40f692fe0b6b21c42a2b92d0b110433ccba7a1",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 62513200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11491200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11634300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 61471400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 61122800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11661400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11587300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 65017600
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357916672,
+          "B": 357941248
+        }
+      },
+      {
+        "group": 0,
+        "name": "leading-pair-combined-fallback",
+        "iterations": 32,
+        "reference_ns_per_call": 1690793.75,
+        "candidate_ns_per_call": 1725617.1875,
+        "reference_range_ns": [
+          1677450.0,
+          1707681.25
+        ],
+        "candidate_range_ns": [
+          1718621.875,
+          1736796.875
+        ],
+        "reduction_percent": -2.059591094419411,
+        "sample_disposition": "separated-regression",
+        "short_batch": false,
+        "exact_output_sha256": "cfdaab0e7eda1783b6153cee2ee51c63c78e9338d4e09aee785fa9e33aae0200",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 54112200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55577500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55064800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 54645800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 54098600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 55374700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 54995900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 53678400
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357605376,
+          "B": 357945344
+        }
+      },
+      {
+        "group": 3,
+        "name": "profile-power-prefix-nonconstant-96",
+        "iterations": 128,
+        "reference_ns_per_call": 120540.234375,
+        "candidate_ns_per_call": 86118.75,
+        "reference_range_ns": [
+          119710.9375,
+          121614.84375
+        ],
+        "candidate_range_ns": [
+          84987.5,
+          86978.125
+        ],
+        "reduction_percent": 28.556012482865224,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "67297a41e6be27e0823d79be7db572b3c95c39f10c0c112beaaf36241f5cdea4",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 15499300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11102300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 10878400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 15323000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 15566700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11133200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 10944100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 15359000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357588992,
+          "B": 357502976
+        }
+      },
+      {
+        "group": 3,
+        "name": "donor-middle-power-prefix-nonconstant-160",
+        "iterations": 128,
+        "reference_ns_per_call": 152050.390625,
+        "candidate_ns_per_call": 116035.9375,
+        "reference_range_ns": [
+          151217.96875,
+          153592.1875
+        ],
+        "candidate_range_ns": [
+          115264.84375,
+          116358.59375
+        ],
+        "reduction_percent": 23.685866887262396,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "c487474d25ba0a1e5fa714fb4fafa19fdb4b2d46481b3e59fbc371bdff2bcb22",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 19493500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 14857500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 14847700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 19431400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 19355900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 14893900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 14753900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 19659800
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357810176,
+          "B": 357543936
+        }
+      },
+      {
+        "group": 3,
+        "name": "profile-power-prefix-constant-96",
+        "iterations": 256,
+        "reference_ns_per_call": 7702.9296875,
+        "candidate_ns_per_call": 7989.2578125,
+        "reference_range_ns": [
+          7641.40625,
+          8078.90625
+        ],
+        "candidate_range_ns": [
+          7969.140625,
+          8152.34375
+        ],
+        "reduction_percent": -3.717132787342478,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "9a995d6c3057a56d14a5da5bdd4c2d659372c7fd7e6fc93e2ce8cad63eddafb5",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 1982000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2041600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2048900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1961900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1956200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2040100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2087000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2068200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358014976,
+          "B": 357797888
+        }
+      },
+      {
+        "group": 4,
+        "name": "repeated-operand-plus-negation-96",
+        "iterations": 128,
+        "reference_ns_per_call": 24306.640625,
+        "candidate_ns_per_call": 20879.296875,
+        "reference_range_ns": [
+          23782.8125,
+          25083.59375
+        ],
+        "candidate_range_ns": [
+          20713.28125,
+          20951.5625
+        ],
+        "reduction_percent": 14.100441944556046,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "871f79952f20bc61ac7ac5d7746d24224d6f384870c1896d130f8326bc3dab83",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 3073500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2678600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2666500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3210700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3149000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2681800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2651300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3044200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357449728,
+          "B": 357838848
+        }
+      },
+      {
+        "group": 4,
+        "name": "distinct-operand-plus-ordinary-scale-96",
+        "iterations": 128,
+        "reference_ns_per_call": 24240.234375,
+        "candidate_ns_per_call": 25081.25,
+        "reference_range_ns": [
+          23989.84375,
+          24426.5625
+        ],
+        "candidate_range_ns": [
+          24249.21875,
+          25575.78125
+        ],
+        "reduction_percent": -3.4695028603658047,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "5428aa863d179600959b44c19790e8398ec03705a39b7d03326f24a68bb5ae4a",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 3126600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3273700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3103900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3103600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3070700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3158500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3262300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3101900
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357646336,
+          "B": 357797888
+        }
+      },
+      {
+        "group": 4,
+        "name": "constant-product-precedence-96",
+        "iterations": 256,
+        "reference_ns_per_call": 2322.8515625,
+        "candidate_ns_per_call": 2243.5546875,
+        "reference_range_ns": [
+          2213.28125,
+          4340.234375
+        ],
+        "candidate_range_ns": [
+          2218.75,
+          2374.609375
+        ],
+        "reduction_percent": 3.4137728075338436,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "1a2fd5c742966c42d032f603d4fdd67e86b9597317cf6d6e0c939a6060aadad6",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 1111100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 607900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 580000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 568400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 566600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 568700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 568000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 620900
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357695488,
+          "B": 357593088
+        }
+      },
+      {
+        "group": 5,
+        "name": "dyadic-eligible-96",
+        "iterations": 2048,
+        "reference_ns_per_call": 1068.45703125,
+        "candidate_ns_per_call": 359.521484375,
+        "reference_range_ns": [
+          1061.5234375,
+          1085.888671875
+        ],
+        "candidate_range_ns": [
+          354.296875,
+          372.998046875
+        ],
+        "reduction_percent": 66.3513390000914,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "1196cf7b80acf5a2ea2c0be2794f5af47c8bdaef14b3d5f80c84c5d5f1b1b13b",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 2223900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 763900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 735300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2200800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2175600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 725600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 737300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2174000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358068224,
+          "B": 357511168
+        }
+      },
+      {
+        "group": 5,
+        "name": "dyadic-ineligible-96",
+        "iterations": 2048,
+        "reference_ns_per_call": 1121.7529296875,
+        "candidate_ns_per_call": 1650.6103515625,
+        "reference_range_ns": [
+          1116.259765625,
+          1127.587890625
+        ],
+        "candidate_range_ns": [
+          1630.46875,
+          1659.47265625
+        ],
+        "reduction_percent": -47.145624306265915,
+        "sample_disposition": "separated-regression",
+        "short_batch": true,
+        "exact_output_sha256": "2d4a0e8dc19a10a51a180555f546c227be14d49dabfadfee6e7e1b7f41039a54",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 2298400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3373400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3387500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2286100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2296300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3339200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 3398600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 2309300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357830656,
+          "B": 357830656
+        }
+      },
+      {
+        "group": 6,
+        "name": "interval-mul-eligible-zero",
+        "iterations": 2048,
+        "reference_ns_per_call": 893.212890625,
+        "candidate_ns_per_call": 903.8330078125,
+        "reference_range_ns": [
+          891.748046875,
+          967.626953125
+        ],
+        "candidate_range_ns": [
+          898.291015625,
+          919.091796875
+        ],
+        "reduction_percent": -1.1889793910238888,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "b7daeeeb11741e10c53e5f5c94abf5a1eeb092a1133cf4d2a6e5e2ec0dd16956",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 1981700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1882300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1839700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1830000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1826300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1852300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1849800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1828600
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357781504,
+          "B": 357584896
+        }
+      },
+      {
+        "group": 6,
+        "name": "interval-mul-ordinary",
+        "iterations": 2048,
+        "reference_ns_per_call": 1509.8876953125,
+        "candidate_ns_per_call": 2075.0732421875,
+        "reference_range_ns": [
+          1468.408203125,
+          1719.482421875
+        ],
+        "candidate_range_ns": [
+          2068.212890625,
+          2095.21484375
+        ],
+        "reduction_percent": -37.43229040342793,
+        "sample_disposition": "separated-regression",
+        "short_batch": true,
+        "exact_output_sha256": "a71f0a5a4d3fc60570ca491a092b097edbb1f710078a615fde3596bb6c5c8f40",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 3521500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4254000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4235700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3034200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3150300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4291000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4245500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 3007300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357502976,
+          "B": 357580800
+        }
+      },
+      {
+        "group": 7,
+        "name": "triangle-duplicate-projection-96",
+        "iterations": 128,
+        "reference_ns_per_call": 92191.40625,
+        "candidate_ns_per_call": 86660.15625,
+        "reference_range_ns": [
+          91321.875,
+          93188.28125
+        ],
+        "candidate_range_ns": [
+          84532.8125,
+          87061.71875
+        ],
+        "reduction_percent": 5.999745773484174,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "f16e16d7f24cd569c4fd10be68be7bd6b5b8589d631e2848dbe450c1287bc75e",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 11747500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11084200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11100800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11853500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11928100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 11143900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 10820200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11689200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358055936,
+          "B": 357502976
+        }
+      },
+      {
+        "group": 7,
+        "name": "radial-mean-duplicate-displacement-96",
+        "iterations": 128,
+        "reference_ns_per_call": 66222.265625,
+        "candidate_ns_per_call": 61601.171875,
+        "reference_range_ns": [
+          63980.46875,
+          69228.90625
+        ],
+        "candidate_range_ns": [
+          61175.0,
+          62067.96875
+        ],
+        "reduction_percent": 6.978157129458677,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "061145f0743d110a434532955c3e2e04bc22df125156ac69358204042e818c46",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 8861300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7944700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7927100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8376400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8576500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7830400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7842800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8189500
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358051840,
+          "B": 357838848
+        }
+      },
+      {
+        "group": 7,
+        "name": "cone-three-edges-three-points",
+        "iterations": 256,
+        "reference_ns_per_call": 45799.8046875,
+        "candidate_ns_per_call": 31111.9140625,
+        "reference_range_ns": [
+          45469.140625,
+          47066.796875
+        ],
+        "candidate_range_ns": [
+          30941.796875,
+          31358.984375
+        ],
+        "reduction_percent": 32.06976694599032,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 12049100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 8027900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7985500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11672400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11640100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7943800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7921100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 11777100
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358035456,
+          "B": 357855232
+        }
+      },
+      {
+        "group": 8,
+        "name": "preparation-96-reuse",
+        "iterations": 8,
+        "reference_ns_per_call": 2052275.0,
+        "candidate_ns_per_call": 2016000.0,
+        "reference_range_ns": [
+          2049600.0,
+          2078887.5
+        ],
+        "candidate_range_ns": [
+          1981400.0,
+          2048237.5
+        ],
+        "reduction_percent": 1.767550645015897,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "b845af0a84b07fe0313431028ae6ea6277c3818b156e56b49548a68a6365e5d3",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 16396800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 16385900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 16343000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 16399800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 16436600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 15851200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 15913000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 16631100
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357871616,
+          "B": 357863424
+        }
+      },
+      {
+        "group": 8,
+        "name": "preparation-160-reuse-wide",
+        "iterations": 8,
+        "reference_ns_per_call": 2918056.25,
+        "candidate_ns_per_call": 2818393.75,
+        "reference_range_ns": [
+          2890250.0,
+          2936562.5
+        ],
+        "candidate_range_ns": [
+          2796662.5,
+          2836600.0
+        ],
+        "reduction_percent": 3.4153728188070396,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "17b81065a2ad3e6100f3c8ad327ea9bb6db776432fd85e2fd3f84e94fd680f53",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 23396400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 22671400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 22373300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 23292500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 23492500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 22422900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 22692800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 23122000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357916672,
+          "B": 357912576
+        }
+      },
+      {
+        "group": 8,
+        "name": "preparation-96-one-chart-empty-profile",
+        "iterations": 8,
+        "reference_ns_per_call": 240662.5,
+        "candidate_ns_per_call": 246781.25,
+        "reference_range_ns": [
+          237775.0,
+          245975.0
+        ],
+        "candidate_range_ns": [
+          242450.0,
+          254212.5
+        ],
+        "reduction_percent": -2.5424609151820494,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "18e1879eba0f7d25f730e516b85f84a86f2a4cb25ab9a0ec411d0aef74d371a3",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 1967800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2033700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2001600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1936200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1914400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1939600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1946900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1902200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357924864,
+          "B": 357814272
+        }
+      },
+      {
+        "group": 9,
+        "name": "chart-point-inverse-midpoint",
+        "iterations": 32,
+        "reference_ns_per_call": 160604.6875,
+        "candidate_ns_per_call": 152667.1875,
+        "reference_range_ns": [
+          159593.75,
+          161853.125
+        ],
+        "candidate_range_ns": [
+          150196.875,
+          154071.875
+        ],
+        "reduction_percent": 4.942259235117281,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "692b1c143e268baa5116d9abcf01a8549d96735bcdbc527f1f4b255fcad4065b",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 5179300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4867400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4903300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 5166400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 5107000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4806300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4930300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 5112300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357818368,
+          "B": 357916672
+        }
+      },
+      {
+        "group": 9,
+        "name": "chart-point-inverse-interior-no-point-reuse",
+        "iterations": 32,
+        "reference_ns_per_call": 226634.375,
+        "candidate_ns_per_call": 230735.9375,
+        "reference_range_ns": [
+          223800.0,
+          239543.75
+        ],
+        "candidate_range_ns": [
+          228984.375,
+          237393.75
+        ],
+        "reduction_percent": -1.809770693435186,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "b10a0039fd157c115885618def4ddf615b168790fec026e5b31b272cac87d58f",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 7312300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7368800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7596600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 7161600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 7192300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7398300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 7327500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 7665400
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357871616,
+          "B": 358047744
+        }
+      },
+      {
+        "group": 9,
+        "name": "chart-point-inverse-constant-exact-no-inverse-reuse",
+        "iterations": 32,
+        "reference_ns_per_call": 53818.75,
+        "candidate_ns_per_call": 55907.8125,
+        "reference_range_ns": [
+          53228.125,
+          54471.875
+        ],
+        "candidate_range_ns": [
+          53628.125,
+          66600.0
+        ],
+        "reduction_percent": -3.8816629891998606,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "499e4966668096518229806ab82c4e37d61fb4e2424bbf9f859b0d9995211abc",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 1743100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1716100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1804400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1737500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1706900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 1773700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 2131200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 1703300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 358019072,
+          "B": 358080512
+        }
+      },
+      {
+        "group": 10,
+        "name": "partition-wedges-repeated-shape",
+        "iterations": 32,
+        "reference_ns_per_call": 259095.3125,
+        "candidate_ns_per_call": 132968.75,
+        "reference_range_ns": [
+          250137.5,
+          267150.0
+        ],
+        "candidate_range_ns": [
+          130490.625,
+          140012.5
+        ],
+        "reduction_percent": 48.679600291881,
+        "sample_disposition": "separated-improvement",
+        "short_batch": true,
+        "exact_output_sha256": "21add5b2c4caa041f71f99f8696a62c0dc21dc9af31bc807da795bb2fc9f0c38",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 8548800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4229500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4480400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8506600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8075500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4280500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 4175700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8004400
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357814272,
+          "B": 357736448
+        }
+      },
+      {
+        "group": 10,
+        "name": "partition-wedges-distinct-no-reuse",
+        "iterations": 32,
+        "reference_ns_per_call": 265912.5,
+        "candidate_ns_per_call": 271159.375,
+        "reference_range_ns": [
+          265275.0,
+          269831.25
+        ],
+        "candidate_range_ns": [
+          268621.875,
+          275009.375
+        ],
+        "reduction_percent": -1.973158463780379,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": true,
+        "exact_output_sha256": "69f94da1cb2a0462cc9efacd69405bb58689246a31d99bb50b5c3d02b6f4b965",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 8526300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 8595900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 8800300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8492100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8634600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 8695100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 8659100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 8488800
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357548032,
+          "B": 357888000
+        }
+      }
+    ]
+  },
+  "actual_receiving": {
+    "raw_result_sha256": "1fb344bfac49061ed0627ec69499652bd2d790b0ac5e11c953b1b7d358cf3dd8",
+    "manifest_sha256": "b35f8b05c35cde6fe74dac291deb016b075aa49f26e855105dc24eaaed0f2e71",
+    "case_count": 19,
+    "rows": [
+      {
+        "group": 0,
+        "name": "full-duplicate-original-to-core",
+        "iterations": 16,
+        "reference_ns_per_call": 5668681.25,
+        "candidate_ns_per_call": 2786946.875,
+        "reference_range_ns": [
+          5660668.75,
+          5672650.0
+        ],
+        "candidate_range_ns": [
+          2783468.75,
+          2794081.25
+        ],
+        "reduction_percent": 50.836063061404275,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "0f9e607efad0c386bd425f449611ab78fabd53335c2069d0704cf11fec41c56c",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 90762400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 44587900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 44535500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 90656800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 90570700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 44594400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 44705300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 90741000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357548032,
+          "B": 357740544
+        }
+      },
+      {
+        "group": 4,
+        "name": "full-duplicate-core-to-4",
+        "iterations": 16,
+        "reference_ns_per_call": 2765375.0,
+        "candidate_ns_per_call": 2737121.875,
+        "reference_range_ns": [
+          2756556.25,
+          2816775.0
+        ],
+        "candidate_range_ns": [
+          2726331.25,
+          2748462.5
+        ],
+        "reduction_percent": 1.021674275640736,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "0f9e607efad0c386bd425f449611ab78fabd53335c2069d0704cf11fec41c56c",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 44227500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43817000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43621300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45068400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 44104900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43770900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43975400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 44264500
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357535744,
+          "B": 357818368
+        }
+      },
+      {
+        "group": 5,
+        "name": "full-duplicate-core-to-5",
+        "iterations": 16,
+        "reference_ns_per_call": 2751368.75,
+        "candidate_ns_per_call": 2734921.875,
+        "reference_range_ns": [
+          2736693.75,
+          2803862.5
+        ],
+        "candidate_range_ns": [
+          2728762.5,
+          2741000.0
+        ],
+        "reduction_percent": 0.5977706550603222,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "0f9e607efad0c386bd425f449611ab78fabd53335c2069d0704cf11fec41c56c",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 44861800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43801700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43856000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 43787100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 43922300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43715800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43660200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 44121500
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357371904,
+          "B": 357670912
+        }
+      },
+      {
+        "group": 45,
+        "name": "full-duplicate-core-to-45",
+        "iterations": 16,
+        "reference_ns_per_call": 2726909.375,
+        "candidate_ns_per_call": 2713534.375,
+        "reference_range_ns": [
+          2720412.5,
+          2745618.75
+        ],
+        "candidate_range_ns": [
+          2706931.25,
+          2715550.0
+        ],
+        "reduction_percent": 0.49048201317654716,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "0f9e607efad0c386bd425f449611ab78fabd53335c2069d0704cf11fec41c56c",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 43526600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43448800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43310900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 43654000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 43929900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43438900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 43394200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 43607100
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357654528,
+          "B": 357498880
+        }
+      },
+      {
+        "group": 0,
+        "name": "full-distinct-original-to-core",
+        "iterations": 16,
+        "reference_ns_per_call": 3956871.875,
+        "candidate_ns_per_call": 2874490.625,
+        "reference_range_ns": [
+          3938712.5,
+          3967912.5
+        ],
+        "candidate_range_ns": [
+          2861493.75,
+          2886006.25
+        ],
+        "reduction_percent": 27.35446797857209,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "e870920f9560e1345ff0fe27a76e011a3876cd4a2719bc83c5b8a2f0dad932ce",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 63019400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46176100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45858500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63486600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63370600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45783900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46125200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63249300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357515264,
+          "B": 357867520
+        }
+      },
+      {
+        "group": 4,
+        "name": "full-distinct-core-to-4",
+        "iterations": 16,
+        "reference_ns_per_call": 2855956.25,
+        "candidate_ns_per_call": 2830284.375,
+        "reference_range_ns": [
+          2851587.5,
+          2874462.5
+        ],
+        "candidate_range_ns": [
+          2819018.75,
+          2845375.0
+        ],
+        "reduction_percent": 0.8988889448148935,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "e870920f9560e1345ff0fe27a76e011a3876cd4a2719bc83c5b8a2f0dad932ce",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 45758500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45153700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45104300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45625400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45632100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45415400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45526000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45991400
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357404672,
+          "B": 357904384
+        }
+      },
+      {
+        "group": 5,
+        "name": "full-distinct-core-to-5",
+        "iterations": 16,
+        "reference_ns_per_call": 2885668.75,
+        "candidate_ns_per_call": 2864781.25,
+        "reference_range_ns": [
+          2845331.25,
+          2934443.75
+        ],
+        "candidate_range_ns": [
+          2851418.75,
+          2924081.25
+        ],
+        "reduction_percent": 0.7238356793377618,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "e870920f9560e1345ff0fe27a76e011a3876cd4a2719bc83c5b8a2f0dad932ce",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 45549800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46785300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45633000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45525300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 46791600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45622700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46040000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 46951100
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357441536,
+          "B": 357797888
+        }
+      },
+      {
+        "group": 45,
+        "name": "full-distinct-core-to-45",
+        "iterations": 16,
+        "reference_ns_per_call": 2858112.5,
+        "candidate_ns_per_call": 2861562.5,
+        "reference_range_ns": [
+          2841287.5,
+          2867243.75
+        ],
+        "candidate_range_ns": [
+          2842593.75,
+          2902893.75
+        ],
+        "reduction_percent": -0.12070903437146019,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "e870920f9560e1345ff0fe27a76e011a3876cd4a2719bc83c5b8a2f0dad932ce",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 45694600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46049200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 46446300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45460600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45875900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45520800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 45481500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 45765000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357703680,
+          "B": 357691392
+        }
+      },
+      {
+        "group": 0,
+        "name": "full-mixed-support-original-to-core",
+        "iterations": 16,
+        "reference_ns_per_call": 6191525.0,
+        "candidate_ns_per_call": 3906087.5,
+        "reference_range_ns": [
+          6136506.25,
+          6224218.75
+        ],
+        "candidate_range_ns": [
+          3879081.25,
+          3944737.5
+        ],
+        "reduction_percent": 36.912351964984396,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "a725fd93df642becd27bc2ddf32feed2f5dd2e065b960904b831556609fa2380",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 99552600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62822100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63115800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 99587500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 98184100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62065300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62172700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 98576200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357978112,
+          "B": 357408768
+        }
+      },
+      {
+        "group": 4,
+        "name": "full-mixed-support-core-to-4",
+        "iterations": 16,
+        "reference_ns_per_call": 3986534.375,
+        "candidate_ns_per_call": 3979003.125,
+        "reference_range_ns": [
+          3926462.5,
+          3987700.0
+        ],
+        "candidate_range_ns": [
+          3965093.75,
+          4045406.25
+        ],
+        "reduction_percent": 0.18891722211726822,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "a725fd93df642becd27bc2ddf32feed2f5dd2e065b960904b831556609fa2380",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 62823400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64726500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63655000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63778200
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63790900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63673100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63441500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63803200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357941248,
+          "B": 357654528
+        }
+      },
+      {
+        "group": 5,
+        "name": "full-mixed-support-core-to-5",
+        "iterations": 16,
+        "reference_ns_per_call": 3968537.5,
+        "candidate_ns_per_call": 3965537.5,
+        "reference_range_ns": [
+          3965050.0,
+          3979600.0
+        ],
+        "candidate_range_ns": [
+          3949193.75,
+          4017812.5
+        ],
+        "reduction_percent": 0.07559459876591818,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "a725fd93df642becd27bc2ddf32feed2f5dd2e065b960904b831556609fa2380",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 63440800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64285000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63187100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63523100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63673600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63419200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63478000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63470100
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357654528,
+          "B": 357523456
+        }
+      },
+      {
+        "group": 45,
+        "name": "full-mixed-support-core-to-45",
+        "iterations": 16,
+        "reference_ns_per_call": 3936740.625,
+        "candidate_ns_per_call": 3980975.0,
+        "reference_range_ns": [
+          3924925.0,
+          4192687.5
+        ],
+        "candidate_range_ns": [
+          3933481.25,
+          4021118.75
+        ],
+        "reduction_percent": -1.123629398368098,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "a725fd93df642becd27bc2ddf32feed2f5dd2e065b960904b831556609fa2380",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 62798800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63531800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63859400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 62969100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63006600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62935700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64337900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 67083000
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357449728,
+          "B": 357797888
+        }
+      },
+      {
+        "group": 0,
+        "name": "full-bulk-mixed-support-original-to-core",
+        "iterations": 4,
+        "reference_ns_per_call": 42554887.5,
+        "candidate_ns_per_call": 16194950.0,
+        "reference_range_ns": [
+          42506200.0,
+          42656125.0
+        ],
+        "candidate_range_ns": [
+          16115550.0,
+          16518025.0
+        ],
+        "reduction_percent": 61.94338429398973,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "4a1ef5093e602f80f52e816f12fac0044dda7c3af3dad6d905199f60f7b1f774",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 170024800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64497800
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 66072100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 170065900
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 170624500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64462200
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 65061800
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 170373200
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357593088,
+          "B": 357756928
+        }
+      },
+      {
+        "group": 4,
+        "name": "full-bulk-mixed-support-core-to-4",
+        "iterations": 4,
+        "reference_ns_per_call": 16826325.0,
+        "candidate_ns_per_call": 16678175.0,
+        "reference_range_ns": [
+          16435275.0,
+          18359075.0
+        ],
+        "candidate_range_ns": [
+          15955325.0,
+          17865400.0
+        ],
+        "reduction_percent": 0.880465579976614,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "4a1ef5093e602f80f52e816f12fac0044dda7c3af3dad6d905199f60f7b1f774",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 68173300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 66619500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 71461600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 66437300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 65741100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 66805900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63821300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 73436300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357752832,
+          "B": 357883904
+        }
+      },
+      {
+        "group": 5,
+        "name": "full-bulk-mixed-support-core-to-5",
+        "iterations": 4,
+        "reference_ns_per_call": 15972400.0,
+        "candidate_ns_per_call": 15740975.0,
+        "reference_range_ns": [
+          15892500.0,
+          15985125.0
+        ],
+        "candidate_range_ns": [
+          15641000.0,
+          16068525.0
+        ],
+        "reduction_percent": 1.4489056121810122,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "4a1ef5093e602f80f52e816f12fac0044dda7c3af3dad6d905199f60f7b1f774",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 63570000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62564000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 64274100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63940500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63861500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62743700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63184100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63917700
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357892096,
+          "B": 357732352
+        }
+      },
+      {
+        "group": 45,
+        "name": "full-bulk-mixed-support-core-to-45",
+        "iterations": 4,
+        "reference_ns_per_call": 16059925.0,
+        "candidate_ns_per_call": 15753112.5,
+        "reference_range_ns": [
+          15960875.0,
+          16160525.0
+        ],
+        "candidate_range_ns": [
+          15652275.0,
+          15846100.0
+        ],
+        "reduction_percent": 1.9104229938807311,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "4a1ef5093e602f80f52e816f12fac0044dda7c3af3dad6d905199f60f7b1f774",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 63843500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62678900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 62609100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 64642100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 64056600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63346000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 63384400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 64422800
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357728256,
+          "B": 357507072
+        }
+      },
+      {
+        "group": 0,
+        "name": "midpoint-96-general-fast",
+        "iterations": 32,
+        "reference_ns_per_call": 1976037.5,
+        "candidate_ns_per_call": 849898.4375,
+        "reference_range_ns": [
+          1969918.75,
+          2034740.625
+        ],
+        "candidate_range_ns": [
+          845456.25,
+          852071.875
+        ],
+        "reduction_percent": 56.989761707457475,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "3109dced07d545fd159a27d45d6a28069b40570d6ec1dcd5fdbcc82da989a0cb",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 63322500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 27144400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 27249100
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 65111700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63037400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 27054600
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 27266300
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 63143900
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357777408,
+          "B": 357834752
+        }
+      },
+      {
+        "group": 0,
+        "name": "midpoint-160-general-fast",
+        "iterations": 32,
+        "reference_ns_per_call": 2333706.25,
+        "candidate_ns_per_call": 914350.0,
+        "reference_range_ns": [
+          2326465.625,
+          2341812.5
+        ],
+        "candidate_range_ns": [
+          907075.0,
+          932678.125
+        ],
+        "reduction_percent": 60.819833258791675,
+        "sample_disposition": "separated-improvement",
+        "short_batch": false,
+        "exact_output_sha256": "da1362e156e7cba97c91286b8eed2faa771594da715121c4fb002f1e9619169e",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 74458500
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 29269300
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 29845700
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 74938000
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 74446900
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 29249100
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 29026400
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 74898700
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357662720,
+          "B": 357679104
+        }
+      },
+      {
+        "group": 0,
+        "name": "midpoint-96-unknown-root-fallback",
+        "iterations": 32,
+        "reference_ns_per_call": 1764868.75,
+        "candidate_ns_per_call": 1806004.6875,
+        "reference_range_ns": [
+          1726853.125,
+          1819490.625
+        ],
+        "candidate_range_ns": [
+          1797390.625,
+          1815481.25
+        ],
+        "reduction_percent": -2.3308213429468907,
+        "sample_disposition": "overlapping-samples",
+        "short_batch": false,
+        "exact_output_sha256": "2d9e6abbdaef88409606d43613992520024c5e5488af8da0843b9fd54a93169d",
+        "samples": [
+          {
+            "arm": "A",
+            "elapsed_ns": 58223700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 58095400
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 57631600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 55392600
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 57559000
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 57952700
+          },
+          {
+            "arm": "B",
+            "elapsed_ns": 57516500
+          },
+          {
+            "arm": "A",
+            "elapsed_ns": 55259300
+          }
+        ],
+        "fresh_worker_peak_bytes": {
+          "A": 357543936,
+          "B": 357613568
+        }
+      }
+    ]
+  }
+}

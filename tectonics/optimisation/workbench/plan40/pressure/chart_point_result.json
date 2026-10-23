@@ -1,0 +1,253 @@
+{
+  "status": "PASS",
+  "scope": "synthetic per-invocation reuse only; no stage, timing or funded-runtime acceptance",
+  "adapter_sha256": "a5f6581e2dff3eff7a4d2ab7d3654414e84518cd7cd9bf1c4f49d1427566ea88",
+  "helper_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "comparisons": {
+    "full_chart_value": 14,
+    "value_norm_prefix_value": 14,
+    "full_chart_error": 4,
+    "value_norm_prefix_error": 4
+  },
+  "records": [
+    {
+      "case": "midpoint",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "midpoint",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "closest-left",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "closest-left",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "closest-right",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "closest-right",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "interior",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 3,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "interior",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 3,
+        "_sqrt": 2
+      }
+    },
+    {
+      "case": "stationary",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "stationary",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 2,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "nondyadic-midpoint",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "nondyadic-midpoint",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "wide-midpoint",
+      "bits": 32,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "wide-midpoint",
+      "bits": 96,
+      "result": "value",
+      "calls": {
+        "radius2": 3,
+        "_sqrt": 2
+      },
+      "misses": {
+        "radius2": 1,
+        "_sqrt": 1
+      }
+    },
+    {
+      "case": "origin-crossing",
+      "bits": 32,
+      "result": "error",
+      "calls": {
+        "radius2": 3
+      },
+      "misses": {
+        "radius2": 3
+      }
+    },
+    {
+      "case": "origin-crossing",
+      "bits": 96,
+      "result": "error",
+      "calls": {
+        "radius2": 3
+      },
+      "misses": {
+        "radius2": 3
+      }
+    },
+    {
+      "case": "origin-point",
+      "bits": 32,
+      "result": "error",
+      "calls": {
+        "radius2": 3
+      },
+      "misses": {
+        "radius2": 1
+      }
+    },
+    {
+      "case": "origin-point",
+      "bits": 96,
+      "result": "error",
+      "calls": {
+        "radius2": 3
+      },
+      "misses": {
+        "radius2": 1
+      }
+    }
+  ],
+  "controls": [
+    "AST expression order restored exactly",
+    "full jets and exact radial expression compared",
+    "fresh cache each invocation",
+    "origin refusal before any sqrt",
+    "first sqrt failure not cached",
+    "wrong reused sqrt detected",
+    "precision included in reuse identity"
+  ],
+  "actual_capture_replay": "NOT RUN",
+  "repeated_existing_arithmetic_suite": false
+}

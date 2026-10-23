@@ -1,0 +1,53 @@
+{
+  "identity_kind": "EXACT_CONSTRUCTION_INPUTS_NOT_AN_EXECUTION_GRANT",
+  "original_bootstrap_source_sha256": "d7699d11ff50e7933ffbd91e199b5bf377b2873dfce772429275bbafe2af8044",
+  "original_guard_source_sha256": "171915e6871740755afdd54528b9a9fc2dfd236a0b60ae427175ab70d3f7492e",
+  "predecessor": {
+    "composition": "e14c05a8c1f81f91767cc5cd8f77a4c1119b30683998bddc5c8d777738f540b2",
+    "derivation": "0253ab52f57f17a14a6a7992a15cd5cd353250db78c8b44c4be2aeab5f60e316",
+    "manifest": "6cc2146c7d7ae1581445a62f112c19a54218959501a279750ce17632e273afa8",
+    "profile": "f1765f8b384ae2927ccb4dcd7c135263f00f998f63dcb531bcf8184a4baefb17",
+    "reviewed_inputs": "aa01b45bb84a46a8980c89f2587f4fbf69098ef63ed11c15dc5d56f634fb6d13"
+  },
+  "predecessor_map": {
+    "path": "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json",
+    "sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc"
+  },
+  "runtime_contract": {
+    "default_changed": false,
+    "external_code_files": 14,
+    "external_data_files": 105,
+    "helper_members": 398,
+    "holds_released": false,
+    "interval_authority": false,
+    "native_members": 240,
+    "profile_helpers": 21
+  },
+  "schema": "atlas.public.plan40.pressure-runtime-inputs.r1",
+  "source_map": {
+    "path": "tectonics/optimisation/workbench/plan40/pressure/implementation/SOURCE-MAP.json",
+    "sha256": "94586ecd3cc872868660113301bf663d6f2317f909b26c81188e047d30cf3030"
+  },
+  "sources": {
+    "binder": {
+      "path": "bind_runtime.py",
+      "sha256": "ab71ff4257b4906f0caf2b8468a64e7d728e69ea94772641be19ee7e4c79121e"
+    },
+    "bootstrap": {
+      "path": "bootstrap_template.py",
+      "sha256": "8a31e4c5257b736ad683b6c6199b1bef6af536ed5885f3416b6a42482ce5f9b7"
+    },
+    "builder": {
+      "path": "build_profile.py",
+      "sha256": "0ddf6cba0862194e3cbe31db0eab729ae1de2baaa69c1d0a381cf1b7de00256a"
+    },
+    "entry": {
+      "path": "runtime_entry.py",
+      "sha256": "cd53c4b3599346a173b27cbc4b3c85094cfe9b46d6997494fddf7041d97e005d"
+    },
+    "guards": {
+      "path": "profile_guards.py",
+      "sha256": "01ea5d5e78e5d59de3f36f397813202128627f09a15b225a6889d8160f6652fd"
+    }
+  }
+}

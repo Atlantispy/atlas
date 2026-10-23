@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "scope": "bounded captured chart arithmetic replay only; no lifetime or performance acceptance",
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "adapter_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+  "actual_replay": {
+    "captures": 2,
+    "bindings": 1,
+    "synthetic_fixture": true,
+    "input_sha256": "10ce4ca451860f0f919c39f1a4c905b0fe69db3553cabb1b9729e8a6fabe519e"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "scope": "AST synthetic feasibility; no production/stage/timing/resource acceptance",
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "adapter_sha256": "04c72c14b1b3fe784fe18832ff5908485299f6e8c8f6b874edb4c37edfcebf30",
+  "comparisons": {
+    "chart_value": 180,
+    "interval": 108,
+    "midpoint": 108,
+    "chart_error": 36,
+    "corrupt_expression_detected": 1,
+    "binding_refusal": 1,
+    "profile_primitive": 36
+  },
+  "chart_preparation_misses": {
+    "0": 12,
+    "1": 12,
+    "2": 12,
+    "3": 12,
+    "4": 12,
+    "5": 12
+  },
+  "ast_roundtrip_expression_order": true,
+  "origin_refusal_lazy_prefix": true,
+  "empty_profile_no_preparation": true,
+  "failed_expression_not_cached": true,
+  "chart_per_complete_preparation": {
+    "rational_multiply": 21,
+    "rational_add": 9,
+    "rational_subtract": 9
+  },
+  "profile_per_pair": {
+    "rational_multiply": 3,
+    "rational_add": 1,
+    "rational_divide": 2,
+    "rational_negate": 1
+  },
+  "actual_replay": "NOT RUN: no actual survey captures supplied"
+}

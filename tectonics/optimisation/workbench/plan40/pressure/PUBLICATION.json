@@ -1,0 +1,221 @@
+{
+  "schema": "plan40-pressure-publication-v1",
+  "scope": "Examination documents and portable synthetic probes/results only; implementation and measured summary have separate owner bindings",
+  "historical_source_commit": "0a2855125b79abcb4e05cf090adf46dcc8b1c80b",
+  "integration_base_commit": "aef9804",
+  "historical_execution_reauthenticated": false,
+  "files": [
+    {
+      "path": "arithmetic_probe.py",
+      "source_sha256": "e154140c90af9b3d4d84fbe6b12a9fc8a517e6bb19ec870319dc306de1be94ba",
+      "public_sha256": "e154140c90af9b3d4d84fbe6b12a9fc8a517e6bb19ec870319dc306de1be94ba",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "self_product_probe.py",
+      "source_sha256": "3f7bd7b9c9e1b575d4f784a963ee605c31809bc72e3f0de17a77656845cd0150",
+      "public_sha256": "3f7bd7b9c9e1b575d4f784a963ee605c31809bc72e3f0de17a77656845cd0150",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "midpoint_value_probe.py",
+      "source_sha256": "d08ad403068a7f5e8690c4e3959a038f584e50a67f836537ad356ef2e2f25f0a",
+      "public_sha256": "d08ad403068a7f5e8690c4e3959a038f584e50a67f836537ad356ef2e2f25f0a",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "cross_evaluator_probe.py",
+      "source_sha256": "31b64320a5595caabc060cbb27924e1927616d666bbdc78263c790d436fcf198",
+      "public_sha256": "31b64320a5595caabc060cbb27924e1927616d666bbdc78263c790d436fcf198",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "chart_preparation_probe.py",
+      "source_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+      "public_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "chart_preparation_control.py",
+      "source_sha256": "089e47559a4db2a0bfa4f4a86502b71167ec6434e9ef16a3a5175d562437374c",
+      "public_sha256": "089e47559a4db2a0bfa4f4a86502b71167ec6434e9ef16a3a5175d562437374c",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "chart_point_probe.py",
+      "source_sha256": "a5f6581e2dff3eff7a4d2ab7d3654414e84518cd7cd9bf1c4f49d1427566ea88",
+      "public_sha256": "a5f6581e2dff3eff7a4d2ab7d3654414e84518cd7cd9bf1c4f49d1427566ea88",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "chart_point_reciprocal_probe.py",
+      "source_sha256": "09e17ad0078215868836d770bf561a9c5b92b2c1f23cf64e7f1b70dbe198aff3",
+      "public_sha256": "09e17ad0078215868836d770bf561a9c5b92b2c1f23cf64e7f1b70dbe198aff3",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "composition_probe.py",
+      "source_sha256": "ce2d1aa640b0dc66c3cda7b2c27a3ab46680a6c7704642b3e1c3a4267fb92416",
+      "public_sha256": "ce2d1aa640b0dc66c3cda7b2c27a3ab46680a6c7704642b3e1c3a4267fb92416",
+      "transform": "none; identical retained bytes",
+      "evidence_scope": "historical synthetic control; original embedded bindings unchanged"
+    },
+    {
+      "path": "arithmetic-probe-result-r2.json",
+      "source_sha256": "af6373e8ac9d79f5049566ae5f136a1feaada1d8914209b42f0ff09a535c1b6b",
+      "public_sha256": "1688ac2b550a59506c69082770087067575e1ae6a5a088024fa66dfd2b1cf099",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "af6373e8ac9d79f5049566ae5f136a1feaada1d8914209b42f0ff09a535c1b6b"
+    },
+    {
+      "path": "midpoint_value_probe-result.json",
+      "source_sha256": "c3dcfcb940498fafada12c8711b2e00eacc55f7532a5fe018305ac3415352a8f",
+      "public_sha256": "19d5e2a0af61a325a75e7d7b8decc600351a033f63a026cf6c95f4b16a645d95",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "c3dcfcb940498fafada12c8711b2e00eacc55f7532a5fe018305ac3415352a8f"
+    },
+    {
+      "path": "self-product-result-r2.json",
+      "source_sha256": "a6ae98da7f0205fa38aa9120e7bd1b4dc80ba8a6918a021d19199f71f0ae3c3d",
+      "public_sha256": "7cfbfa8078f3a54a5650e71512653436e05f16e7fc0166c104ec9e390fef2e93",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "a6ae98da7f0205fa38aa9120e7bd1b4dc80ba8a6918a021d19199f71f0ae3c3d"
+    },
+    {
+      "path": "cross_evaluator_result.json",
+      "source_sha256": "48eb50b5be639985d944af3106f22ac3b809d11c9806bbb11d30bfbeef342d4b",
+      "public_sha256": "4526243a8c7220fafba133b10d9c7f363911bb3bc0dd30a2bd4230d86afe4919",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "48eb50b5be639985d944af3106f22ac3b809d11c9806bbb11d30bfbeef342d4b"
+    },
+    {
+      "path": "cross_evaluator_selected_result.json",
+      "source_sha256": "41bd85d00d092ee878cf67f466fa8ea636aba436a1489bd4555768bf5025afcb",
+      "public_sha256": "6bef7396dd1e57dc34ad9b883923b070367eda54c4647625309695c130ac00cf",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "41bd85d00d092ee878cf67f466fa8ea636aba436a1489bd4555768bf5025afcb"
+    },
+    {
+      "path": "cross_evaluator_combined_result.json",
+      "source_sha256": "9c16c5520d600f8be7c754c2cdc6cd34696c505e3eefb1dadba6a4149cc28adf",
+      "public_sha256": "49234688542a0c19df4f733772283961ec016a69f9ca9dee9239d8a60eb93066",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "9c16c5520d600f8be7c754c2cdc6cd34696c505e3eefb1dadba6a4149cc28adf"
+    },
+    {
+      "path": "chart-preparation-result.json",
+      "source_sha256": "a0d16defde061de921d9d83e37cdee2d6b4c56f2a8e1f7b85c39cd1c11beffd4",
+      "public_sha256": "ad9aa05b42ec130f0246407fcafc4bf62a9c6411fa95f4790b9616a1629b432e",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "a0d16defde061de921d9d83e37cdee2d6b4c56f2a8e1f7b85c39cd1c11beffd4"
+    },
+    {
+      "path": "chart_point_result.json",
+      "source_sha256": "15c31daad7b5db1c429329bb7cad02f4226c352aa4139e82b51419048a82d892",
+      "public_sha256": "ce1a33400b58beaf003a78b797d453cc8133e66af64b18466b6c7807f2baa917",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "15c31daad7b5db1c429329bb7cad02f4226c352aa4139e82b51419048a82d892"
+    },
+    {
+      "path": "chart_point_reciprocal_result.json",
+      "source_sha256": "8df8c96426e6ff42fa6f3ba928a13a9d364f06a3eb64e9a545997d382cfb6420",
+      "public_sha256": "53665b77f837daa6c5b4931615af395ba53dd49b9d417cf3b9b60afdb3bdfece",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "8df8c96426e6ff42fa6f3ba928a13a9d364f06a3eb64e9a545997d382cfb6420"
+    },
+    {
+      "path": "chart-cli-controls-r1/result.json",
+      "source_sha256": "b2010499a40beb711041104c31061d1b26d8c785e0ebdebf1c7f041226c7bcc1",
+      "public_sha256": "ef1b7a22a889b3da2ca632fce0e85e71f47103a1f6b3245a60dbeb2e0b2bbde9",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "b2010499a40beb711041104c31061d1b26d8c785e0ebdebf1c7f041226c7bcc1"
+    },
+    {
+      "path": "chart-cli-controls-r1/synthetic-replay.json",
+      "source_sha256": "6033adc5711a3a560bc1c24ab8094a812786eb4e8300694250c65dacd700a80e",
+      "public_sha256": "da2ba3d398af31bf7ba8e0065733f813e521b512bfa2d217ec5e3b2db568420a",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "6033adc5711a3a560bc1c24ab8094a812786eb4e8300694250c65dacd700a80e"
+    },
+    {
+      "path": "composition-result-r1.json",
+      "source_sha256": "31ed0cb97ab2131b995729d79a8d473e74ce8bd662291c7f9c9dcd23f9301b90",
+      "public_sha256": "45edea72691fe96ecb31fa752c3c733e482e69227fe0b71dfea276e52c6760ec",
+      "transform": "publication-only CRLF to LF normalisation; parsed JSON records and every embedded source/evidence identity unchanged; private original bytes unchanged",
+      "evidence_scope": "historical synthetic control; embedded original execution bindings retained without rerun, repinning or reauthentication",
+      "public_sha256_before_line_ending_normalisation": "31ed0cb97ab2131b995729d79a8d473e74ce8bd662291c7f9c9dcd23f9301b90"
+    },
+    {
+      "path": "FINDINGS.md",
+      "source_sha256": "0d0f05216ffb668f06a9e0b8bc2afe3afdf4549e7b9f4197afc3d9d3ef6990dc",
+      "public_sha256": "887423fd767131d5ec4619cadef4062d0d3d53cb7fab8b095caa251036f0d883",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; narrow UTF-8 punctuation repair of confirmed mojibake only (en dash, minus, right arrow, multiplication sign as present); numerical tokens and embedded source hashes unchanged; clarify original retained JSON digests versus LF publication copies without changing any quoted identity; document the actual opt-in existing-loader/profile/worker connection without changing historical evidence; clarify that reused completed review applies to the selected numerical sources",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning",
+      "public_sha256_before_encoding_repair": "2cb326092fd12cf142f8207966dea9222dbeeb2725136146ce00c88d35427bbb",
+      "public_sha256_before_runtime_integration": "714638e57110243ad250a0030f05a892661a273afe2000ed0e7c23f71392cc24",
+      "public_sha256_before_guard_clarification": "c8b0b14bfd859b100c073c8c272e18da35e9a49b5cb957d01b7e9f2f653e906a"
+    },
+    {
+      "path": "wall-constraint-analysis.md",
+      "source_sha256": "f805dfee462c648c98cdf74b349a3cd0a99c7b1ea32704dadd5fdbe39c5adcfa",
+      "public_sha256": "56d886a100dc5991aaaabb06c9d3febd0336ca9211db94c578990b0efc008fe8",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
+    },
+    {
+      "path": "midpoint-value-analysis.md",
+      "source_sha256": "f3d058b4213d3838638cd7fcf0f003c061ae7dcd1dfad289e7f07f22886726a7",
+      "public_sha256": "b90c14e2e5649f4bf275cd38b61090297745812d53fdfa88a1c6af19d87a0f34",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; narrow UTF-8 punctuation repair of confirmed mojibake only (en dash, minus, right arrow, multiplication sign as present); numerical tokens and embedded source hashes unchanged",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning",
+      "public_sha256_before_encoding_repair": "126e735db528e72433d00fab72175634149515a1ad386556e610f8d732f8ee30"
+    },
+    {
+      "path": "cross-evaluator-analysis.md",
+      "source_sha256": "9a5e4ee652d9d1b851ec9534c0583a726098f2e66fe127442876903f14284026",
+      "public_sha256": "c6bebc5a7cfd64aee1c759b69e4c570ec1265fff01febb1b9ddf859b7278ee10",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
+    },
+    {
+      "path": "self-product-analysis.md",
+      "source_sha256": "288779b53b485fdfea62f077b879d35796f335cc60954f3552fae1e356c76fd2",
+      "public_sha256": "e4a447f5a92c4ffe111607d5176066cd5791801e3ba941577f8d5507a7f6a5ec",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
+    },
+    {
+      "path": "chart-preparation-analysis.md",
+      "source_sha256": "eae25dedb7a764cb4223287e582a657c459b668b5c16c5c4865b2b16bc121f82",
+      "public_sha256": "0575faf08dc90f903b7a71a328c60ede49b94a84ebad2137700d33927b8b3a7d",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; clarify original retained JSON digests versus LF publication copies without changing any quoted identity",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
+    },
+    {
+      "path": "chart-point-analysis.md",
+      "source_sha256": "38e7f66cb12e5fbf4896abf1c69df2ed4b32c024b8aebbcb79b17d7d1edf00ae",
+      "public_sha256": "7af422d967e1024345a0b1a318cb9dc86fd9f627aff092c5e0d616fda9deac2a",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; clarify original retained JSON digests versus LF publication copies without changing any quoted identity",
+      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
+    }
+  ]
+}

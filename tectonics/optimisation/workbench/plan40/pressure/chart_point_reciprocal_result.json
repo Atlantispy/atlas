@@ -1,0 +1,83 @@
+{
+  "status": "PASS",
+  "scope": "chart-local inverse AST feasibility only; no production, stage or timing",
+  "adapter_sha256": "09e17ad0078215868836d770bf561a9c5b92b2c1f23cf64e7f1b70dbe198aff3",
+  "helper_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "records": [
+    {
+      "case": "midpoint",
+      "bits": 32,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "midpoint",
+      "bits": 96,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "interval",
+      "bits": 32,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "interval",
+      "bits": 96,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "constant-exact",
+      "bits": 32,
+      "result": "value",
+      "original_divides": 1,
+      "candidate_divides": 1
+    },
+    {
+      "case": "constant-exact",
+      "bits": 96,
+      "result": "value",
+      "original_divides": 1,
+      "candidate_divides": 1
+    },
+    {
+      "case": "stationary-irrational",
+      "bits": 32,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "stationary-irrational",
+      "bits": 96,
+      "result": "value",
+      "original_divides": 2,
+      "candidate_divides": 1
+    },
+    {
+      "case": "origin-refusal",
+      "bits": 32,
+      "result": "error",
+      "original_divides": 0,
+      "candidate_divides": 0
+    },
+    {
+      "case": "origin-refusal",
+      "bits": 96,
+      "result": "error",
+      "original_divides": 0,
+      "candidate_divides": 0
+    }
+  ],
+  "constant_fast_branch_ignores_supplied_inverse": true,
+  "initial_divide_refusal_preserved": true,
+  "reversible_AST_expression_replacement": true
+}

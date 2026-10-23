@@ -1,0 +1,65 @@
+{
+  "schema": "plan40a-cross-evaluator-selected-v1",
+  "verdict": "PASS",
+  "synthetic_fixture": true,
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "spatial_source_sha256": "1f4f50ccb08eaeeab2a52c30dce033aa4b1fb07273a59ebd619d89f233c33712",
+  "differential_source_sha256": "e01a7af268de50560f631dce4ea3b69163e1a6bcc63c436bb18001bb579c4e4b",
+  "support_probe_sha256": "d08ad403068a7f5e8690c4e3959a038f584e50a67f836537ad356ef2e2f25f0a",
+  "scope": "two exact donor callback controls only; no timing, stage or resource acceptance",
+  "cases": [
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true,
+      "baseline_operations": {
+        "_sqrt": 2,
+        "_divide": 12,
+        "_mul": 511,
+        "_scale": 234,
+        "_add": 291,
+        "_dyadic_outward": 438
+      },
+      "candidate_operations": {
+        "_sqrt": 2,
+        "_divide": 10,
+        "_mul": 382,
+        "_scale": 176,
+        "_add": 214,
+        "_dyadic_outward": 324
+      }
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true,
+      "baseline_operations": {
+        "_sqrt": 2,
+        "_divide": 12,
+        "_mul": 299,
+        "_scale": 164,
+        "_add": 165,
+        "_dyadic_outward": 276
+      },
+      "candidate_operations": {
+        "_sqrt": 2,
+        "_divide": 10,
+        "_mul": 245,
+        "_scale": 130,
+        "_add": 133,
+        "_dyadic_outward": 219
+      }
+    }
+  ],
+  "bounded_donor_cache": {
+    "misses": 2,
+    "peak_entries": 1,
+    "hits": 2
+  }
+}

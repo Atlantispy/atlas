@@ -59,11 +59,24 @@ Rules that apply to every item below:
 
 ## Pressure stage speed
 
-- **State:** the parallel wall routes (P1-P3) are built and verified on a small case (`pending/pressure/c/`). The
-  measured small-case total is 108.3 → 45.9 s. The stage profile on real interval 1 has not run.
-- **Left:** the profile run, then the full-scale proof. P4 is not built; its
-  separate integration can use the repaired shared primitives in `workbench/plan06/`.
-- **Gate:** byte-identical pressure records against the serial reference.
+- **State:** P1-P3 have retained small-stage exactness, serial/worker and fallback
+  evidence; full-scale/current combined-runtime proof remains separate. P4 is
+  implemented and disabled: its retained small-stage comparison rose from
+  57.12 to 123.025 s (+115.38%). That predates the later lifetime correction.
+- **Arithmetic successor:** [Plan40A](workbench/plan40/pressure/FINDINGS.md)
+  covers all ten groups. Its additive [core plus G4 source selection](workbench/plan40/pressure/implementation/README.md)
+  removes midpoint derivatives and repeated contributions, powers, vectors and
+  partition wedges. The measured core saves 27.35–61.94% on four complete
+  synthetic calls; G4 adds a small marginal gain. These are component results,
+  with real setup/accounting/fallback costs, not pressure-stage or IV savings.
+- **Receiving route:** the [explicit runtime construction and entry](workbench/plan40/pressure/implementation/runtime/README.md)
+  binds the selected sources to the existing profile loader and pressure-worker
+  interfaces. No earlier profile or default is rewritten.
+- **Left:** separately cleared actual-stage/applicability, spawned-worker and
+  whole-interval performance/scientific proof on the selected successor.
+  Existing frozen selections/defaults remain unchanged; P4/D5 remain off.
+- **Gate:** exact pressure records, bounds, ordered rounding, refusal,
+  cancellation and funded lifetimes. Dedicated-rerun IV and other holds remain.
 
 ## Exact heat kernels
 

@@ -1454,6 +1454,39 @@ interpreter environment. Historical sources and saved identities are preserved;
 the new graph does not make old checkpoints interchangeable or release held runs.
 
 
+### Reduce repeated pressure arithmetic while preserving certified bounds
+
+The [Plan40A pressure successor](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
+keeps the full interval derivatives used to certify curvature. At each admitted
+midpoint it can calculate just the value bounds instead. Unsupported predicates
+or exhausted optional scratch leave that attempt before the original full
+calculation runs. Precision, ordered outward rounding, constant shortcuts,
+refinement and the leaf ceiling are unchanged.
+
+Within one worker invocation, bounded caches reuse completed unweighted
+profile/donor integrals and donor polygon wedges. Every original coefficient
+scale, addition, fixed-flag update and donor order remains. Exact local powers
+and vectors are reused without reassociating interval arithmetic. Only the
+selected synchronous pressure worker can assert custody on its fresh ledger;
+other callers decline optional work. The 64 KiB wedge and contribution epochs
+and 256 KiB midpoint epoch clear in sequence, before later mandatory admissions
+or fallback, including cancellation unwinding.
+
+The [explicit additive source selection](../../optimisation/workbench/plan40/pressure/implementation/README.md)
+carries the changed coupling, spatial pressure, worker and midpoint-value
+modules together. Its [runtime constructor and explicit entry](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
+bind those sources into the existing fresh-profile loader and pressure-worker
+interfaces, preserving external dependencies and prior profiles. No alternate
+numerical caller or package stub is required. Exact-output/resource controls and implementation review
+support this bounded source change. Complete synthetic core calculations save
+27.35–61.94%; G4's guarded exact products add a small marginal gain. Unknown-root
+midpoint fallback is 2.33% slower in its fixture, with overlapping sample ranges;
+net complete-call benefit determines selection. All ten groups, negative and
+uncertain results are retained. No new physical method or research source is
+introduced. These measurements avoid subdivision and establish neither a
+production workload mix nor whole-IV savings. Frozen defaults and run holds
+remain unchanged.
+
 ### Choose rolling geometry workers from an authenticated parent
 
 The private source successor uses the adopted parent interval's producer receipt

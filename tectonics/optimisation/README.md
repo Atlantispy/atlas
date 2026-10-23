@@ -88,6 +88,17 @@ validation is accepted; Plan20 A/B is accepted with the folded DLL binding still
 pending. This is source integration on the review branch, not an executable
 release, a main-package overlay or a new combined-runtime validation result.
 
+The additive [Plan40A pressure examination and source successor](workbench/plan40/pressure/FINDINGS.md)
+covers all ten arithmetic groups and selects the reviewed core plus G4.
+Full-interval jets still supply curvature bounds; a separately funded midpoint
+value calculation keeps the original rounding/constant semantics and full
+fallback. Complete synthetic core calls save 27.35–61.94%, with a further small
+marginal G4 gain. The [new explicit source map](workbench/plan40/pressure/implementation/SOURCE-MAP.json)
+is connected through an [opt-in runtime constructor and entry](workbench/plan40/pressure/implementation/runtime/README.md)
+to the existing fresh-profile loader and pressure worker. The constructor
+preserves the frozen predecessor, external dependencies and live defaults.
+Component measurements do not establish whole-IV performance or scientific acceptance.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

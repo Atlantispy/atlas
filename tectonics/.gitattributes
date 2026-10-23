@@ -10,6 +10,9 @@
 
 # Preserve pinned reference bytes; Git must not normalise their line endings.
 reference_data/** -text
+
+# Preserve the exact new pressure runtime input-selection bytes and their pin.
+optimisation/workbench/plan40/pressure/implementation/runtime/selection.json -text whitespace=cr-at-eol
 # Preserve exact new heat receipts/bound inputs, including Windows JSON newlines.
 # These rules live here so this package's general JSON rule cannot override them.
 optimisation/workbench/plan40/heat/testing/**/*.json -text whitespace=cr-at-eol

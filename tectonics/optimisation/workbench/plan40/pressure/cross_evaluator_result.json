@@ -1,0 +1,530 @@
+{
+  "schema": "plan40a-cross-evaluator-probe-v1",
+  "verdict": "PASS",
+  "synthetic_fixture": true,
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_source_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "support_probe_sha256": "d08ad403068a7f5e8690c4e3959a038f584e50a67f836537ad356ef2e2f25f0a",
+  "spatial_source_sha256": "1f4f50ccb08eaeeab2a52c30dce033aa4b1fb07273a59ebd619d89f233c33712",
+  "differential_source_sha256": "e01a7af268de50560f631dce4ea3b69163e1a6bcc63c436bb18001bb579c4e4b",
+  "selected_source_construction": {
+    "donor_rows": 2,
+    "equal_rows": true,
+    "coefficient": "7/10",
+    "scenario": "native crossing voxel with nonzero anomaly and two identical mantle profiles"
+  },
+  "scope": "full-jet donor callback and ordered partition exactness only; no timing, stage, resource or cancellation acceptance",
+  "cases": 60,
+  "cases_detail": [
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 0,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 1,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 96,
+      "wedge": 2,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 0,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 1,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "selected-native-two-sides",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "selected-native-two-sides",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "duplicate-opposite-coefficients",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "separated-duplicate",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "separated-duplicate",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "bounded-overflow",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "bounded-overflow",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "empty-repeated",
+      "midpoint": false,
+      "fixed": false,
+      "exact_full_jets": true
+    },
+    {
+      "bits": 160,
+      "wedge": 2,
+      "case": "empty-repeated",
+      "midpoint": true,
+      "fixed": true,
+      "exact_full_jets": true
+    }
+  ],
+  "bounded_donor_cache": {
+    "misses": 192,
+    "peak_entries": 8,
+    "hits": 48
+  },
+  "baseline_operations": {
+    "_sqrt": 120,
+    "_divide": 960,
+    "_mul": 22550,
+    "_scale": 11870,
+    "_add": 11706,
+    "_dyadic_outward": 19656
+  },
+  "candidate_operations": {
+    "_sqrt": 120,
+    "_divide": 864,
+    "_mul": 19670,
+    "_scale": 10250,
+    "_add": 10062,
+    "_dyadic_outward": 16866
+  },
+  "deliberately_incomplete_edges_only_key_rejected": true,
+  "paired_partition_exact": true,
+  "original_wedge_calls": {
+    "evaluations": 10
+  },
+  "cached_wedge_calls": {
+    "evaluations": 2,
+    "hits": 8
+  }
+}

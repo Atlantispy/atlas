@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "scope": "synthetic CLI and decoder only; no actual pressure capture or stage",
+  "probe_sha256": "bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a",
+  "control_sha256": "089e47559a4db2a0bfa4f4a86502b71167ec6434e9ef16a3a5175d562437374c",
+  "controls": [
+    "exact numeric types preserved",
+    "decoder rejected malformed input 0",
+    "decoder rejected malformed input 1",
+    "decoder rejected malformed input 2",
+    "decoder rejected malformed input 3",
+    "decoder rejected malformed input 4",
+    "decoder rejected malformed input 5",
+    "decoder rejected malformed input 6",
+    "decoder rejected malformed input 7",
+    "decoder rejected malformed input 8",
+    "decoder rejected malformed input 9",
+    "decoder rejected malformed input 10",
+    "decoder rejected malformed input 11",
+    "decoder rejected malformed input 12",
+    "decoder rejected malformed input 13",
+    "changed CLI two synthetic captures, one binding, full output witness equality",
+    "malformed CLI nonzero, exact refusal, no success artifact",
+    "-O nonzero refusal before acceptance, no success artifact"
+  ],
+  "cli_exit_codes": {
+    "replay": 0,
+    "malformed": 1,
+    "optimised": 1
+  },
+  "source_sha256": "7c2c3b992d7e0267ed4da70dc5f6ba1bc557f3a2105369ca2b2abefa4e52d05e",
+  "vector_sha256": "96f3921c2b7a8369f230dd362a28552d1f21179a5605fb183f01cfc075e68f48",
+  "full_arithmetic_suite_repeated": false
+}
