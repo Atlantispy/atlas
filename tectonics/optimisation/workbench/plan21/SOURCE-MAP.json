@@ -1,0 +1,66 @@
+{
+  "schema": "atlas.public.plan21.source-map.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_BINDING",
+  "public_overlay_identity_sha256": "ef1e4379dbd3f42123a6589f40900f90b4ea5f33f07df10844bce375621bc3bc",
+  "public_overlay_identity_rule": "SHA-256 of UTF-8 json.dumps(list of member/public_sha256 records in entries order, indent=2, ensure_ascii=True) plus newline",
+  "selected_private_base_composition_sha256": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+  "selected_private_composition_sha256": "a4abaf48e2deb54fa1b3d654ff03f98d7c166c6c4215de3526a24ce84162478b",
+  "selected_private_composition_state": "PREPARED_SOURCE_NOT_QUALIFIED",
+  "scope": "Three-member corrected S3 overlay on the Plan20 r4 private selection. build_selection.py also composes these public bytes with the complete 645-member combined source selection, producing a distinct 646-member public source selection. Neither selection is runtime admission or final private assembly.",
+  "selected_native_files": 239,
+  "selected_helper_files": 403,
+  "preserved_selected_files": 639,
+  "changed_selected_files": 2,
+  "added_selected_files": 1,
+  "public_runtime_compatibility": false,
+  "runtime_policy_adopted": false,
+  "s9_selected": false,
+  "entries": [
+    {
+      "member": "source/helpers/spatial_validation_patch.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/source/helpers/spatial_validation_patch.py",
+      "source": "<PRIVATE_PLAN21_COMPOSITION>/helpers/spatial_validation_patch.py",
+      "original_sha256": "beb695322b5d184a71e537a1a3092090487c731e721d82439c1e57f94f589cab",
+      "public_sha256": "3da661f710cad7af0c8e8e8b70e4ed348979a34c02fea139520eddcb97c62444",
+      "base_sha256": "556f2242cd269b01538267222ff958a60fc1dce43478b656fcfb0177187cd674",
+      "base_public_path": "tectonics/optimisation/workbench/combined-runtime-r1/source/helpers/spatial_validation_patch.py",
+      "transformations": [
+        {
+          "kind": "coordination-reference-removed-from-comment",
+          "count": 1,
+          "note": "the same one-line comment change the final-assembly selection carries"
+        }
+      ],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required",
+      "base_public_sha256": "45a992b8bb685c1c3938e6e769754fb4993b99baeac348df92a790358dc4a3c3"
+    },
+    {
+      "member": "source/helpers/test_d1b_carried_start.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/source/helpers/test_d1b_carried_start.py",
+      "source": "<PRIVATE_PLAN21_COMPOSITION>/helpers/test_d1b_carried_start.py",
+      "original_sha256": "bb3ec46e0bd03c5f2d52e832bbaae8e8b1e276e062df096a6b83bcc43a2ce8ea",
+      "public_sha256": "bb3ec46e0bd03c5f2d52e832bbaae8e8b1e276e062df096a6b83bcc43a2ce8ea",
+      "base_sha256": "aef680d2b7d6a69723930c1e3ded0b90ea5951793fdb4b434f98ed92d8d6978a",
+      "base_public_path": "tectonics/optimisation/composed-r2/helpers/test_d1b_carried_start.py",
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required",
+      "base_public_sha256": "aef680d2b7d6a69723930c1e3ded0b90ea5951793fdb4b434f98ed92d8d6978a"
+    },
+    {
+      "member": "source/helpers/test_s3_lazy_rows.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/source/helpers/test_s3_lazy_rows.py",
+      "source": "<PRIVATE_PLAN21_COMPOSITION>/helpers/test_s3_lazy_rows.py",
+      "original_sha256": "69492c3bef071d0769520ddcfa37cfaca2a54d135a3ddc8e4297cf51241adb13",
+      "public_sha256": "69492c3bef071d0769520ddcfa37cfaca2a54d135a3ddc8e4297cf51241adb13",
+      "base_sha256": null,
+      "base_public_path": null,
+      "transformations": [],
+      "selected_composition_member": true,
+      "portability": "source-only-private-runtime-required"
+    }
+  ],
+  "historical_r4_private_composition_sha256": "192f6d4d9d7764eadf74863663d9b3980201c1f97ebe5d89d226e4ed37ae9241",
+  "source_revision": "S3 r5: funded admission workspace"
+}

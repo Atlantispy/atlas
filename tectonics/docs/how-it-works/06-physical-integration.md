@@ -1692,6 +1692,24 @@ silently rebound: source-derived cell identities can change between compositions
 even when physical values remain equal. Current delivery status is recorded on
 the [development-state page](../../../docs/CURRENT_STATE.md).
 
+### Read only the carried-start fields a spatial operation needs
+
+The [Plan21 lazy-row selection](../../optimisation/workbench/plan21/README.md)
+serves the spatial owner's carried-start mappings without decoding an entire row
+for every volume, geometry-error or exact-quantity read. Other operations use one
+bounded whole-row export cached on that row. Renamed children retain their
+booked copy and cell identity; the physical values and tolerances are unchanged.
+
+An admission walk first checks the whole-row bounds and reserves the same
+temporary traversal workspace as the original exporter. A field-path memory
+refusal falls back to the whole row after collecting unreachable failed-read
+leases. The required contract is that a field answers wherever the whole row
+answers, with the same value. The field can also answer when only unrelated
+whole-row decoding or its larger allocation would refuse. Synthetic caller and
+resource controls exercise these boundaries; real interval parity and an
+integrated timing benefit remain unproved. This is a storage-access change,
+derived from the existing reader/exporter contracts, with no new physical method.
+
 ### Check identity at publication and worker boundaries
 
 The [Plan39 source selection](../../optimisation/workbench/plan39/README.md)

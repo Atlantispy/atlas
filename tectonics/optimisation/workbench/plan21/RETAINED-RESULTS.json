@@ -1,0 +1,168 @@
+{
+  "schema": "atlas.public.plan21.retained-results.r1",
+  "record_kind": "SUMMARY_OF_RETAINED_PRIVATE_EVIDENCE_NOT_PUBLIC_EXECUTION_RECEIPT",
+  "status": "WORKING NON-CANON",
+  "acceptance": {
+    "s3_selected": true,
+    "s3_real_data_parity": "NOT_RUN_R5_SUCCESSOR_REQUEST_REQUIRED",
+    "s3_real_data_request_scope": "The earlier prepared request targets r4 and remains held. Corrected r5 requires a new request bound to its sources and an applicable admission decision.",
+    "s9_selected": false,
+    "s9_reason": "gain unmeasured: the measurement and the real-data identity comparison are approved and prepared but have not run; two owner test modules are a coverage gap on both arms",
+    "issue": "https://github.com/Atlantispy/atlas/issues/47",
+    "issue_state": "OPEN",
+    "default_enablement": false,
+    "runtime_admission": false,
+    "scientific_acceptance": false
+  },
+  "s3": {
+    "selected_candidate": {
+      "revision": "r5",
+      "private_composition": "CORRECTED_R5_SOURCE_SUCCESSOR",
+      "repair": "_admits funds the same 262144-byte scratch as the exporter. Successful walks release it; propagated failure frames retain the booking until their traceback is released. A caught ContractError triggers collection after its handler while the scratch remains funded.",
+      "public_selection": {
+        "members": 646,
+        "native_files": 240,
+        "helper_files": 406,
+        "construction": "build_selection.py authenticates the 645-member combined source selection and the three-member overlay, preserving src and helpers together in a new layout",
+        "sha256": "680348d14707be0273f6930cfd5fcf21acc946f39f6e956c8dac6304c0a8d221"
+      },
+      "private_selection": {
+        "native_files": 239,
+        "helper_files": 403,
+        "final_assembly": "SEPARATE_NOT_ESTABLISHED_BY_PUBLIC_SOURCE_CONSTRUCTION"
+      },
+      "private_source_sha256": {
+        "spatial_validation_patch.py": "beb695322b5d184a71e537a1a3092090487c731e721d82439c1e57f94f589cab",
+        "test_s3_lazy_rows.py": "69492c3bef071d0769520ddcfa37cfaca2a54d135a3ddc8e4297cf51241adb13"
+      },
+      "public_source_sha256": {
+        "spatial_validation_patch.py": "3da661f710cad7af0c8e8e8b70e4ed348979a34c02fea139520eddcb97c62444",
+        "test_d1b_carried_start.py": "bb3ec46e0bd03c5f2d52e832bbaae8e8b1e276e062df096a6b83bcc43a2ce8ea",
+        "test_s3_lazy_rows.py": "69492c3bef071d0769520ddcfa37cfaca2a54d135a3ddc8e4297cf51241adb13"
+      },
+      "private_composition_sha256": "a4abaf48e2deb54fa1b3d654ff03f98d7c166c6c4215de3526a24ce84162478b"
+    },
+    "focused_r5": {
+      "status": "PASS_ACROSS_TWO_RUNS",
+      "lazy_row_tests_run": 19,
+      "lazy_row_tests_passed": 19,
+      "consumer_tests_run": 17,
+      "consumer_tests_passed": 17,
+      "total_checks_passed": 36,
+      "run_count": 2,
+      "initial_other_suite_setup_errors": 2,
+      "full_selection_pass": true,
+      "scope": "Combined coverage from 19 lazy-row checks and 17 consumer checks in two runs, not a single-run 36-test result. The initial two setup failures remain recorded: fixtures expected an untransformed native owner. The reviewed adapter corrected fixture loading without changing assertions.",
+      "consumer_methods_from_actual_selected_owner": [
+        "_issue",
+        "_bound",
+        "restore",
+        "_carried_start_cells"
+      ],
+      "legacy_owner_scope": "FROZEN_REFERENCE_SIDE_ONLY",
+      "selected_owner_sha256": "74caa12601416e2058a307afc8b72b288b8a17e5d7ce45cd03048fad90def85f",
+      "adapter_sha256": "1bd1d64d1881e013581d15678c2bc43a8a1645d2a9962e9ee31ea5a4f4f107d6",
+      "consumer_result_sha256": "2906779825b7b3d77508de73078dbdf71e6b515ee0a1e13eda6d53cfc97b1bdb",
+      "negative_control": {
+        "scope": "Only r4's _admits method was substituted in memory; the remaining selected source and assertions were unchanged.",
+        "tests_run": 3,
+        "expected_rejections": 3,
+        "assertion_failures": 2,
+        "errors": 1,
+        "result_sha256": "77347ac6850a57cf7e0ab2858c050fa603b4f715bdc2927b6a81503451194dfb"
+      },
+      "ruff": {
+        "findings": 0,
+        "changed_files_checked": 4,
+        "rules": [
+          "F821",
+          "F841",
+          "B905"
+        ],
+        "result_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "source_builder": {
+      "standard_library_fixture_tests": 12,
+      "fixture_tests_passed": 12,
+      "actual_public_materialisation_claimed": true,
+      "actual_public_members_verified": 646
+    },
+    "retained_evidence_scope": "HISTORICAL_PRIVATE_R4_NOT_R5_EXECUTION_EVIDENCE",
+    "base_vs_candidate": {
+      "revision": "r4",
+      "modules_on_both_arms": 14,
+      "identical_outcome_sets": 14,
+      "focused_three_suites_combined": "33/33 on r4; this was the combined count across three suites, not the new lazy-row module alone"
+    },
+    "synthetic_parity": {
+      "revision": "r4",
+      "evidence_scope": "HISTORICAL_NOT_RERUN_ON_R5",
+      "rows": 40,
+      "status": "PASS",
+      "families": 2,
+      "base": {
+        "whole_row_exports": 226,
+        "field_exports": 0,
+        "copy_row_differential": 226
+      },
+      "candidate": {
+        "whole_row_exports": 82,
+        "admission_walks": 40,
+        "volume": 71,
+        "geometry_volume_error": 34,
+        "exact_entry": 39,
+        "answered_by_whole_row": 2,
+        "copy_row_differential": 82
+      }
+    },
+    "mutants": "HISTORICAL r4: control PASS; 27 of 28 killed; m24 classified equivalent. That equivalence cannot automatically carry through r5's scratch-funding change.",
+    "refuter": "HISTORICAL r4: three rounds; round-three reproducers found no remaining field refusal where the whole row answers; fault injection 3,608 trials, 0 bad. These results have not been rerun on r5.",
+    "lint": "HISTORICAL r4: no introduced finding; the retained comparison does not cover r5",
+    "public_source_check": {
+      "kind": "SYNTHETIC_SELECTED_SOURCE_CHECK_NOT_RUNTIME_QUALIFICATION",
+      "tests_passed": 19,
+      "manifest_members_verified": 646,
+      "selection_sha256": "680348d14707be0273f6930cfd5fcf21acc946f39f6e956c8dac6304c0a8d221",
+      "manifest_sha256": "6d1efc22442e4fc9f38161727a85fcaa97f1daf1304e1fdbf0b33b3e1723b6e6",
+      "result_sha256": "140fe4cccabbd7fa82f13344fe17173e49d2433dec5422ab5436e762f4ce7a6b",
+      "harness_sha256": "5bca658f5ff2479f585c7e85fa182cec88a073662d1205bbe8a1e8d39e69c5a6",
+      "owner_sha256": "74caa12601416e2058a307afc8b72b288b8a17e5d7ce45cd03048fad90def85f",
+      "svp_sha256": "3da661f710cad7af0c8e8e8b70e4ed348979a34c02fea139520eddcb97c62444",
+      "scope": "All 19 lazy-row checks also pass using only the complete public selection and scientific interpreter libraries. Test loader paths were adapted; shipped test assertions were unchanged."
+    }
+  },
+  "s9": {
+    "selected": false,
+    "unit_tests": {
+      "seal_reuse_candidate": "12/12",
+      "base_expected_failures": 4,
+      "differential_mesh": "2/2 both arms",
+      "coverage_gap_modules": 2
+    },
+    "checker_known_faults": {
+      "controls_pass": 2,
+      "faults_killed": 24
+    },
+    "measurement": "NOT_RUN_GAIN_UNMEASURED"
+  },
+  "evidence_sha256_scope": "S3 and lint entries in evidence_sha256 below identify retained private r4 records; S9 records retain their separate disabled-candidate scope. Current r5 results have their own pins under focused_r5. No historical result is relabelled as r5 evidence.",
+  "evidence_sha256": {
+    "s3 base-vs-candidate summary": "b9a98bc0d3a94c4baa6ce122d1002386cee03b64830c3e9787e0032516272059",
+    "s3 synthetic parity compare": "e62ba4f4b5ff2914f2f1fbe3e62ddea45852dd983ec15b216912cef60a51288c",
+    "s3 mutants record": "04ba0db799bf4dff37d8b9331f29037881e8ca4082e710529c9530b4f28df019",
+    "s3 refuter reproducers record": "eff503c9e7cfd3cf23ffd3021e4227d3ffb3f27a861540daf8ddb94519ea1b57",
+    "s9 unit tests summary": "be9f09aee4c2a6eb0a934125b3c057682da60cf35c926941eac4c3787b53c20f",
+    "s9 checker faults": "783fde2e26d37e818e8a90046254bbc3689b3d785651ff4a240710aeef46cfa6",
+    "lint record": "e7daa9d1e7989118023123499e916864bd6ab44b2708797ef43631c4ded453de"
+  },
+  "gain": {
+    "kind": "PROJECTED",
+    "per_row_ms": {
+      "before": 1.27,
+      "after": 0.82
+    },
+    "interval_2_seconds": "4-6",
+    "note": "historical projection from an interval-1 profile; neither r5's scratch-funding change nor the integrated route has been timed"
+  }
+}

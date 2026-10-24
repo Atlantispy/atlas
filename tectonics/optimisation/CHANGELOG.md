@@ -6,6 +6,34 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 23-24 Oct 2026, Plan21 lazy carried-start rows
+
+- Add S3 to the accepted Plan20 source selection: carried-start rows are served as
+  per-row lazy mappings that export only the field read (`volume_m3`,
+  `geometry_volume_error_m3`, one `exact` entry) and fall back to one bounded,
+  row-local whole-row export for any other access. A single field answers only
+  while every row passes the whole-row export's own pre-decode bounds, and any
+  budget refusal of the field path is answered by the whole row, after one
+  collection that releases a failed segment read's leases. A single field
+  answers wherever the whole row answers, with the same value; it may answer where
+  only the whole row's own work refuses. Bounds and copy booking are unchanged;
+  the [method record](workbench/plan21/README.md)
+  and [source map](workbench/plan21/SOURCE-MAP.json) record the three-member overlay.
+- Fund the admission statistics walk with the whole-row exporter's 262,144 B
+  scratch reservation and retain that booking while failure frames need it.
+  The corrected source passes 19 lazy-row checks and 17 existing consumer checks;
+  three negative controls detect the original missing reservation.
+- Connect the overlay to the existing combined source constructor, producing a
+  complete 646-member public selection. Its 12 constructor fixture checks pass.
+  The private source successor remains unqualified; final assembly and the fold
+  remain separate. Issue #47 stays open.
+- **PROJECTED:** about 1.27 to 0.82 ms per row per close-graph and transport pair,
+  roughly 4-6 s at interval 2. Real-data parity and field-access counts are
+  pending; the retained 40-row synthetic parity result belongs to the earlier
+  revision. The corrected revision needs its own admitted real-data request.
+- S9 (sealed-mesh identity reuse) is not selected: no comparable measured gain
+  yet, and two owner test modules remain a coverage gap on both arms.
+
 ## 24 Oct 2026, partial Release-policy source integration
 
 - Add a complete 692-member Plan39 source selection, including the existing

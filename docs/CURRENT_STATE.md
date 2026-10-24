@@ -9,6 +9,16 @@ commit and push state.
 
 ## Active checkpoint
 
+**Plan21's lazy carried-start rows have a source integration; real-data qualification is pending.**
+The [S3 selection](../tectonics/optimisation/workbench/plan21/README.md) connects
+single-field reads to the existing spatial owner and preserves bounded whole-row
+fallback. Review found an unbooked admission workspace and added its matching
+reservation. The public builder combines the overlay with the existing combined
+source selection; final private assembly remains separate. S3 gain is projected,
+S9 remains disabled with unmeasured gain, and issue #47 stays open. The approved
+real-data comparison has not run; the frozen earlier request does not qualify
+the corrected successor.
+
 **Plan39 has reviewed source integration; Release qualification is incomplete.**
 The [complete policy selection](../tectonics/optimisation/workbench/plan39/README.md)
 contains 692 members and connects publication checks, lifetime source holds and
