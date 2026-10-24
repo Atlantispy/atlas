@@ -388,6 +388,31 @@ first-write path alongside faster repeated reads: compression and staging do
 not guarantee every operation improves. Journals, spools and backups need space
 in addition to the database allowance; referenced histories are dependencies.
 
+### Carry verified pages between read batches
+
+The optional [L3 candidate](../../optimisation/workbench/plan22/README.md) addresses
+repeated reads of the same immutable pages. A view can retain at most 128 verified
+pages between its batches, trimming to 10 MiB of booked memory per view and
+refusing a carry above 32 MiB across the process. The page cache remains 64 MiB.
+The registry and page holders keep their existing charges; raw and booked bytes
+are reported separately.
+
+The next batch must enter its verified read before adopting carry. Optional carry
+remains reclaimable while that entry acquires its required reservation, so it
+cannot hide memory needed for admission. Every served access still checks the
+segment, and carry is created only after the closing freshness check succeeds.
+Outside-batch reads use the ordinary verification path. Idle carry yields after
+unpinned pages cannot meet pressure; record and mesh close release it. Failed
+frames keep their own data funded. Evicted pages also leave the bounded touched
+set, preventing a long scan from retaining an unbounded list of closed wrappers.
+
+The receiving port preserves the mesh's streaming encoder used by diagnostic
+captures and its repeated-close behaviour. Synthetic exactness, lifetime,
+pressure and refusal controls exercise these boundaries. The profile-based
+opportunity is not a speed measurement: the real interval-1 ABBA comparison has
+not run, and L3 remains **UNCERTAIN / NOT ENABLED**. These observations do not
+qualify a final runtime or change the admission hold.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell

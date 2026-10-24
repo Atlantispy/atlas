@@ -105,6 +105,23 @@ the 256 accepted-step ceiling. No tolerance is relaxed.
   rejected per-read guard relaxation and Plan 30 reconsideration dependency in
   [Plan23](plans/plan-23-storage-mapped-reads-wp12.md).
 
+## 24 Oct 2026, Plan22 bounded page carry receiving repairs
+
+- Add the optional L3 source candidate with unchanged 128-page, 10 MiB per-view,
+  32 MiB process and 64 MiB page-cache bounds. It preserves verified-read entry,
+  closing checks, per-access freshness and paid exception lifetimes.
+- Fix unbounded retention of closed touched-page wrappers and required-entry
+  admission while optional carry is reclaimable. Preserve repeated mesh close.
+- Port the mesh cleanup onto the current streaming encoder, preserving the
+  capture-writing interface. The explicit candidate constructor includes the
+  complete combined source and Plan21 rows without changing the selected default.
+- Keep historical equal-suite failures and lint limits explicit. Focused repair,
+  receiver and refusal controls are recorded with their exact source scope in
+  [Plan22's results](workbench/plan22/RETAINED-RESULTS.json).
+- L3 remains **UNCERTAIN / NOT ENABLED**. Real interval-1 ABBA selection is pending
+  the existing run hold; issue #48 and final-generation inclusion remain open.
+  [Source and integration](workbench/plan22/README.md).
+
 ## 23 Oct 2026, Plan18 endpoint and retention source selection
 
 - Add accepted Plan18 endpoint lookahead, plain support-header retention,

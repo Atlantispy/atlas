@@ -9,6 +9,12 @@ commit and push state.
 
 ## Active checkpoint
 
+**Plan22 L3 is an integrated source candidate, UNCERTAIN / NOT ENABLED.**
+Receiving review repaired wrapper retention, entry-pressure admission and mesh close,
+and preserved the current capture encoder. The real interval-1 comparison remains unrun;
+issue #48 and final-generation selection stay open.
+[Source, checks and limits](../tectonics/optimisation/workbench/plan22/README.md).
+
 **Plan21's lazy carried-start rows have a source integration; real-data qualification is pending.**
 The [S3 selection](../tectonics/optimisation/workbench/plan21/README.md) connects
 single-field reads to the existing spatial owner and preserves bounded whole-row

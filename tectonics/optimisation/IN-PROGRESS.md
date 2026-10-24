@@ -169,7 +169,10 @@ Existing base failures and the dictionary skip remain explicit; this is not an
 all-green consumer suite or a completed packaged route.
 
 - **Merged:** sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED), in `composed-r2/helpers/segment_store.py`.
-- **L3:** design accepted; build not started.
+- **L3:** reviewed and source-integrated as an optional candidate, with bounded touched-page
+  retention, reclaimable entry and record/mesh cleanup. **UNCERTAIN / NOT ENABLED**; the real
+  interval-1 A/B comparison and final selection remain pending. Issue #48 stays open. See
+  [Plan22](plans/plan-22-storage-l3.md) and [source/checks](workbench/plan22/README.md).
 - **WP12:** assessment complete; **UNBUILT/OFF**. Source review establishes one eligible sealed reopen;
   the central estimated net saving is −3.1% against the 5% gate (not a measured failure). The former N = 2,
   +0.1% figure is a sensitivity case. Revisit only after guard-equivalent freshness work under Plan 30; see

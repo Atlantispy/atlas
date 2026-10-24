@@ -1,0 +1,87 @@
+{
+  "schema": "atlas.public.plan22.retained-results.r1",
+  "status": "UNCERTAIN / NOT ENABLED",
+  "source_map_sha256": "f6f8d7092be525a085bd7fb928bbf4aeca0b0af1aee5e80fdb21133dbdaff2ab",
+  "public_overlay_identity_sha256": "597236962e6cf19c631ecab0eba01d4c2654206775ab447d2131cce55e72119d",
+  "private_corrected_composition_sha256": "93ec7636811900a205a8f0d1abe17015a7f53ea1e75e66621a876457c47ac71d",
+  "corrected_reader": {
+    "sha256": "e31a3a7397f1b936c2c3ee27edb11302501188682101e4c49d9ab9b3337317f4",
+    "test_sha256": "a88b0f7504b69f12478d5d6fc1d0e7eebe356c5d81057c6e197f8da3c71a6ddf",
+    "tests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "residue": false,
+    "scope": "Declared-member private-base mirror with corrected record reader and tests; synthetic fixtures."
+  },
+  "receiving_repairs": [
+    "Bound touched wrappers and release closed pages",
+    "Keep optional carry reclaimable during required verified entry",
+    "Preserve repeated mesh close",
+    "Preserve current mesh capture encoder when integrating L3"
+  ],
+  "negative_controls": {
+    "touched_r2_rejections": 2,
+    "no_discard_mutant_rejections": 2,
+    "entry_pressure_r2_rejections": 1,
+    "pre_entry_adoption_mutant_rejections": 1,
+    "note": "Touched-only controls precede the independent entry repair; these are not a new full mutation campaign."
+  },
+  "mesh_method_checks": {
+    "passed": 11,
+    "negative_controls_rejected": 3,
+    "scope": "Exact extracted close/encoder methods with inert ownership fixtures across three mesh variants; not full mesh-v3 runtime proof."
+  },
+  "public_builder_fixture_checks": {
+    "passed": 8,
+    "scope": "Standard-library dependency fixtures; actual source materialisation recorded separately."
+  },
+  "historical_r2": {
+    "record_views_sha256": "25f3165375c928e509b74d84e12eb9fd36148fc09c32a41d80485dd57cbc6db8",
+    "controls": 15,
+    "planted_faults_rejected": 13,
+    "focused_modules": 11,
+    "result": "Same outcomes as base, including shared failures",
+    "failure_modules": [
+      "test_compact_store",
+      "test_segment_store",
+      "test_step9a_pending",
+      "test_mesh_v3"
+    ],
+    "long_suites": {
+      "test_r1_views": "9/9 pass",
+      "test_r1a_export_booking": "10/10 pass"
+    },
+    "lint": "No introduced product-source findings; two SIM117 findings in the new test; original Pyright messages equal.",
+    "synthetic_harness": "Original A/B entry exact; B page-cache rehash hits 0 vs A 74, native misses 22 each.",
+    "qualifications": "Historical evidence only; neither a corrected-source timing nor real-interval qualification."
+  },
+  "public_receiving_checks": {
+    "candidate_selection_sha256": "067ada4fddf2744ca14079ac728c77ac7f577c51c669a7dac5ed97ecda621476",
+    "source_manifest_sha256": "eb38b7b060869814dd61a7357b5b52c3613e30fce429761943c4a7a5dbcdb1cb",
+    "source_files_verified": 647,
+    "tests": 37,
+    "l3_tests": 18,
+    "s3_tests": 19,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_residue": false,
+    "scope": "Explicit complete public candidate; only authenticated src/helpers and interpreter libraries on the import route. Synthetic sealed fixtures, not real interval data or a general runtime qualification.",
+    "result_sha256": "ff5ceb539d6482d98b78ac68a279a7523a53857a40850537d1f8fe13f4456af2",
+    "checker_sha256": "f80b5ca3524e496663e00b6d897361c2355e0d1ad475b037b871c3465fcf4576"
+  },
+  "d10": {
+    "run": false,
+    "comparison": "A/B ABBA",
+    "data_use_approved": true,
+    "admission_hold": true,
+    "corrected_source_request_required": true
+  },
+  "issue_48": "OPEN",
+  "plan30_final_generation_inclusion": "OPEN",
+  "measured_l3_speed_gain": null,
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false
+}
