@@ -117,7 +117,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | [23 — WP12 sidecar reads](plan-23-storage-mapped-reads-wp12.md) | Storage | Assessment complete: UNBUILT/OFF | One eligible sealed reopen established; central estimated net saving −3.1% against the 5% gate. No implementation. Guard-equivalent freshness under Plan 30 is a reconsideration prerequisite. |
 | [24 — Summaries and buffer pools](plan-24-storage-segment-summaries.md) | Storage | Assessment complete: not built | Retained q04 evidence establishes neither build gate. No predicate-based storage pruning benefit is demonstrated; poolable staging exists, but its removable cost is unresolved. See the plan for limits and reconsideration triggers. |
 | [25 — Runtime identity L4](plan-25-runtime-identity-l4.md) | Kernels; coordinator shared seam | Approved, not started | Patch the real runtime record with actual loaded arithmetic binaries/sources and trusted full pins, coordinated through C12/X1. |
-| 26 — Helper fold R1 (not included in this public snapshot) | Release / Small | Transformer/arm harness unbuilt | Mandatory last-N12 fold into `atlas_tectonics._private`, exact span edits, parity-v2, G-PIN and carried DLL; before fresh runs. |
+| [26 — Helper fold R1](../docs/release/FOLD.md) | Release / Small | Fold tools published; proof retained for p20c-r4 | Retained parity matches 236/236 cells by key; all five arms load the same single MPFR library file. Worker coverage is 51/60 (INCOMPLETE: nine missing exit records). The final-generation fold and parity remain outstanding; the folded package is not published. |
 | 27 — N9 condition-4 replay (not included in this public snapshot) | Pressure / Geometry / Runner; Codex tools paused | No replay run; PAUSED | Both sequential arms use candidate composed-f1 with approved source differences and policy v2; successful replay precedes condition-5 integration. |
 | 28 — Shared identity X1 (not included in this public snapshot) | Coordinator / existing component owners | Generation pending | Coordinate H3/G-PY/N9/L4 and mandatory final R1; preserve the L4 fallback and bottom-up pins, without a replacement identity registry. |
 | 29 — N5 live integration (not included in this public snapshot) | Runner / Claude | chain-r3 published at b059081 | Live composition swap/profile pin remains. Preserve one selected profile per lineage and the I1→I2 profile-change refusal. |
@@ -127,7 +127,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | 33 — WP17 query store (not included in this public snapshot) | Storage / Runner | Assessment done; OFF retained; decision pending later-run counts | Issue #61 remains open: representative per-stage writes, hits and reopens await Plan 38. Prepared-restart counts/selection and batched-route kill evidence remain outstanding; the twelve-kill PASS covers the tested serial store only. |
 | 34 — Remaining hotspots (not included in this public snapshot) | Kernels / Release | Final reprofile not done | Reprofile after Python changes; retain both compiler and group gates with their distinct denominators, plus K4's capacity/packaging route. |
 | 35 — Combined-build retests (not included in this public snapshot) | Final coordinator / owners | AM §5 conditional list | Existing harnesses at IV2 scale where justified, absolute seconds and exact status. Structural zeros and safety exclusions remain separate. |
-| 36 — Evidence/dispositions (not included in this public snapshot) | N12 Small/coordinator; final runner/coordinator | Records pending | Separate build acceptance from programme dispositions; authentic backlog identities, source-bound proof and honest unresolved/not-built states. |
+| 36 — Evidence/dispositions (final record not included in this public snapshot) | Evidence / final integration | Interim reconciliation recorded; final record pending; #64 OPEN | Complete the final record after the Plan31 source freeze, Plan26 final fold, Plan35 applicable retests and separately authorised Plan38 outcomes, before Plan37 landing. Preserve authentic identities, source-bound proof and unresolved/not-built states. |
 | 37 — Landing on remake (not included in this public snapshot) | Release / coordinator | Landing pending | Actual U0–U6 import tranches, EXPECTATIONS A–D, source-bound chapters, full DLL pin and final successor captures; explicit publication authority required. |
 | 38 — Fresh full intervals (not included in this public snapshot) | Final Runner / coordinator | HELD | Real chain-r3, solver/lineage/source/width/resource contracts and genuine sealed outputs, only after separate launch authorisation. |
 | [39 — Release policy](../workbench/plan39/README.md) | Release | Partial source integration; #67 OPEN | Publication, lifetime hold, worker and sizing helpers integrated; failed-close and closure-checker defects repaired. Release remains non-default. Dependency promotion, runner/build wiring, folded helper pins, measured peaks and packaged parity remain open. |
@@ -136,7 +136,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 
 Edges below describe selected execution dependencies, not permission or a demand to run every optional candidate. An item's source contract can require additional owner-specific gates. Unmeasured conditional candidates may remain unresolved; a recorded exclusion must retain its actual reason and scope.
 
-The main completion order is **final Plan 31 assembly → Plan 34 reprofile → Plan 35 applicable retests → Plan 36 dispositions → Plan 37 landing → separately authorised Plan 38 fresh runs**. Plan 32 follows the relevant measurements, not a speculative foundation calibration. Plan 39 is later/separate and gates none of Plans 31/35/37/38.
+The main completion order is **Plan 31 source freeze → Plan 26 final fold/parity and Plan 31 build acceptance → Plan 34 authorised reprofile → Plan 35 applicable retests → separately authorised Plan 38 outcomes → Plan 36 final dispositions → Plan 37 authorised landing**. Plan 32 follows the relevant measurements, including later interval peaks. Plan 39 remains later/separate and gates none of Plans 31/35/37/38. This order releases no execution or landing hold.
 
 Plan 31 has two distinct states: a source-bound candidate needed for replay, and the final accepted freeze/fold. A candidate is not accepted by naming it composed-f1. The owner-approved replay candidate may contain the required test-only route before final component integration; arrows into the final freeze do not make that freeze a prerequisite of the replay. R1 development/smoke uses the approved read-only composed-r2 input; its ticketed parity uses composed-f1 when ready. X1 coordination spans the process; its final selected generation must satisfy the N9 and mandatory-fold contracts.
 
@@ -171,14 +171,17 @@ flowchart TD
     P31C --> P27
     P27 --> C5["Geometry condition 5 and successor widths"]
     C5 --> P28
-    P28 --> P26["26 Mandatory final R1 fold/proof"]
+    P28 --> P31S["31 Selected source freeze"]
+    P31S --> P26["26 Mandatory final R1 fold/proof"]
     P20 --> P26
-    P26 --> P31F["31 Final freeze and accepted build"]
+    P26 --> P31F["31 Final accepted build"]
     P31F --> P34["34 Authorised final reprofile"]
     P34 --> P35["35 Applicable conditional retests"]
     P34 --> P32["32 Comparable booking reconciliation"]
     P32 --> P36["36 Programme dispositions"]
-    P35 --> P36
+    P35 --> P38["38 Separately authorised fresh-run outcomes"]
+    P38 --> P32
+    P38 --> P36
     P24["24 Conditional storage scoping"] -. "actual disposition" .-> P36
     P33["33 WP17 remains off unless justified"] -. "actual disposition" .-> P36
     P07["07 Pressure proof"] --> P31F
@@ -187,13 +190,12 @@ flowchart TD
     P15["15 H4 selected result"] --> P31F
     P02["02 Start admission/integration"] --> P31F
     P36 --> P37["37 Authorised landing"]
-    P37 --> P38["38 Separately authorised fresh runs"]
     P39["39 Release policy: later/separate, no prerequisite edge"]
 ```
 
 The graph's “selected work/result” nodes mean a justified, source-bound disposition and integration of anything enabled. They do not require every unbuilt or conditionally deferred candidate to be enabled. In particular, WP17 can remain off; later fresh-run counts can motivate a separately authorised reassessment without making those future counts a prerequisite for the first held run.
 
-**Evidence coverage is broader than dependency edges:** every Plan 01–39 reports its actual outcome, blocker or residual status into the existing Plan 36 record under its authentic backlog/PS identity. Plans 37–39 contribute later lifecycle status, not future “accepted” prerequisites of the pre-landing record. Process items, assembly and the record itself are not additional enabled optimisations. This evidence mapping is not a cyclic execution dependency.
+**Evidence coverage is broader than dependency edges:** every Plan 01–39 reports its actual outcome, blocker or residual status into the existing Plan 36 record under its authentic backlog/PS identity. Plan 38 supplies outcomes required for the final pre-landing record; until then, reconciliation remains interim. Plan 37 landing and Plan 39 later Release work are not already-accepted prerequisites of that record. Process items, assembly and the record itself are not additional enabled optimisations. This evidence mapping is not a cyclic execution dependency.
 
 ## 5. Decisions that must survive composition
 

@@ -6,6 +6,19 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 24 Oct 2026, interim evidence and disposition reconciliation
+
+- Correct the helper-fold index: r4 tools and retained parity evidence are
+  published for the tested p20c-r4 generation. All 236 cells match by key, and
+  all five arms load the same single MPFR library file. Worker coverage is
+  51 of 60 (INCOMPLETE: nine workers have no exit record).
+- Keep the final-generation fold and parity outstanding. The tools and evidence
+  are public; the folded package is not published.
+- Keep the evidence/disposition record interim and issue #64 open. Its final
+  record follows the Plan31 source freeze, Plan26 final fold, Plan35 applicable
+  retests and separately authorised Plan38 outcomes, before Plan37 landing.
+  Reconcile that order in the dependency text and graph; existing run holds stand.
+
 ## 23-24 Oct 2026, Plan21 lazy carried-start rows
 
 - Add S3 to the accepted Plan20 source selection: carried-start rows are served as
