@@ -6,6 +6,19 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 24 Oct 2026, Plan04 producer and reader bindings
+
+- Add the reviewed W/E producer, caller and reader catalogue and source-specific
+  quantity contracts as a complete successor toolset. Preserve the predecessor
+  bytes required by 20 bindings in ten existing composition source maps.
+- Withdraw proof to REVIEW when a selected caller is absent from either arm or
+  E pose dependencies differ. Count arithmetic-check refusals as failures and
+  report case coverage. Retain the original failed controls and historical evidence.
+- Explain source binding and numerical proof in the reader guide. Keep the
+  successor unqualified, both readiness guards false and issues #58/#53 open:
+  propagated-bound designs, root-route conditions, final composition binding and
+  replay clearance remain outstanding. No replay or fresh interval ran.
+
 ## 24 Oct 2026, interim evidence and disposition reconciliation
 
 - Correct the helper-fold index: r4 tools and retained parity evidence are

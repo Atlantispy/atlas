@@ -209,6 +209,43 @@ mesh exchange or planet-scale feasibility. Visual review helps expose missing
 regions and misleading axes, but supplies neither numerical error estimates nor
 geological acceptance.
 
+### Compare optimised outputs under their actual source contracts
+
+An optimisation comparison needs independently corresponding physical records
+and the sources that produced and read them. Equal-looking numbers alone cannot
+establish that the two records describe the same quantity, units, norm, time or
+mesh. The N9 tools accept authenticated source inventories and reader-bound
+records, catalogue wall-measure and exterior-mesh producer calls, and return
+source-binding receipts plus field verdicts. A source slot marked BOUND supplies
+one part of the proof; it is not numerical or scientific acceptance.
+
+The catalogue follows the reviewed direct calls, module relays and consequence
+routes through the package. A reviewed caller must exist in both arms. Missing
+or unresolved context gives REVIEW; malformed inventories fail integrity. The
+scan has explicit limits for computed names, container or argument relays and
+dynamic mutation. Helpers outside the package must therefore remain identical.
+
+Field comparison is exact unless a source-specific proof applies. For the
+reviewed exterior-mesh pose transform, exact rational checks establish an
+outward operator-error radius, growth strictly below 2^-11 of the original
+radius, and a quaternion L2 displacement bounded by that growth. The internal
+quaternion error and the stored four-times operator error remain distinct.
+Changing the supporting dependencies withdraws this proof even when the
+producer itself is unchanged. It does not provide an error allowance for
+downstream geometry, current forces or Heat; those quantities need their own
+propagated-bound designs. Diagnostic ULP or relative differences are not
+automatic acceptance tolerances.
+
+The arithmetic checker reports evaluated and refused cases and fails if any
+required case is refused. Synthetic controls exercise missing callers, changed
+dependencies and refusal reporting; they do not qualify a replay generation.
+The complete successor lives beside the predecessor so existing compositions
+keep their byte-bound tools. No scientific replay is implied by source
+publication. The [specialist method and limits](../../optimisation/workbench/plan04/README.md)
+identify the consulted implementation, pinned producer bodies, exact claims and
+remaining root-route and field-proof requirements; no external method or
+benchmark is newly claimed here.
+
 ## W11: spend work on changed science
 
 ### Prepare geometry, evaluate lazily and use suitable kernels

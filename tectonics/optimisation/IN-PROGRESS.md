@@ -54,15 +54,15 @@ Rules that apply to every item below:
 
 ## Pose and heat-number width
 
-- **State:** the approved pose rounding and Addendum E remain. Plan04's comparator
-  r24, dump r5, independent binding/field helpers, launcher and additive assembly
-  tools are installed privately; [sources and checks](workbench/plan04/README.md)
-  are published separately from private runtime evidence.
-- **Left:** actual selected Plan31 replay composition; authenticated producer/
-  reader invocation, units, norms, history, projection and same-quantity radius
-  correspondence; selected Heat schemas, correspondence and applicable error proof.
-  A final manifest alone cannot supply these. Then bind the selected assembly
-  route and affected consumers. Collective review is deferred.
+- **State:** the approved pose rounding and Addendum E remain. Plan04's W/E
+  producer/reader bindings-r4 tools are reviewed as an additive source successor;
+  [sources and checks](workbench/plan04/README.md) preserve the earlier toolset
+  used by existing compositions. The successor is staged and unqualified.
+- **Left:** propagated-bound designs for differential geometry, current-force
+  pose, W consequence routes, W enclosure magnitudes, E downstream mesh metrics
+  and Heat; the conditions on both compact root routes; actual selected Plan31
+  composition and affected-consumer binding; explicit replay clearance.
+  A final manifest alone cannot supply field proof. Issues #58 and #53 stay open.
 - **Gate:** exact unaffected fields, zero refusal flips, approved source-specific
   pose/Addendum E contracts and all independent proof requirements. No generic
   epsilon or assumed Heat allowance. Both technical readiness guards remain false.

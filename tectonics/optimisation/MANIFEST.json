@@ -12196,6 +12196,61 @@
    "source": "<COMBINED_SOURCE_PUBLICATION>/workbench/combined-runtime-r1/test_build_selection.py",
    "kind": "accepted-source-integration",
    "sha256": "b6271431867cb4eabadc8f9332fd3f18e1941dbc414f02a1bb49a6964a2dc98c"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/check_equat_bound.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/check_equat_bound.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/array_bindings_r5.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/array_bindings_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/array_compare_r21.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/array_compare_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/compare_arms_r21.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/compare_arms_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/dump_arm_r5.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/dump_arm_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/field_contracts.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/field_contracts.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/field_provenance.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/field_provenance.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/n9-tools-r21/write_captures_map_r3.py",
+   "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/write_captures_map_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/tests/test_contracts_r4.py",
+   "source": "<PRIVATE_PLAN04_BINDINGS_R4>/tests/test_contracts_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/tests/test_provenance_r4.py",
+   "source": "<PRIVATE_PLAN04_BINDINGS_R4>/tests/test_provenance_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r4/tests/test_receiving_boundaries.py",
+   "source": "<PUBLIC_PLAN04_PUBLICATION>/bindings-r4/tests/test_receiving_boundaries.py",
+   "kind": "workbench"
   }
  ]
 }

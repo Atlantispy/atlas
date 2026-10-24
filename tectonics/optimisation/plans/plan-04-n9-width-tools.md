@@ -1,18 +1,41 @@
 # Plan 04: N9 comparator, dump and caller integration
 
-**20 October 2026. WORKING NON-CANON. Tooling integrated privately;
-final selected-composition binding remains open. Collective review is deferred.**
+**24 October 2026. WORKING NON-CANON. Bindings-r4 source integration reviewed;
+decision pending propagated-bound designs, root-route conditions and replay clearance.
+Issues #58 and #53 remain open; no acceptance checkbox is completed.**
 
 The owner's implementation/integration transfer supersedes the former
 implementation-owner, permission, source-only and interim review
 restrictions. It does not release scientific runs or numerical, identity,
 resource and technical-readiness safeguards. Publication is explicitly authorised.
 
-## Selected implementation and integration
+## Bindings-r4 source integration
+
+The [reviewed successor](../workbench/plan04/README.md#producerreader-bindings-r4--24-october-2026)
+catalogues W/E producer calls, readers, relays, writes and consequence routes,
+and applies source-specific quantity contracts. Receiving fixes withdraw proof
+when a reviewed caller is missing from one arm or E pose dependencies differ,
+and prevent refused arithmetic checks from reporting PASS.
+
+The complete seven-file successor is additive under `bindings-r4/n9-tools-r21/`.
+The predecessor's seven files and all consuming maps retain their original bytes;
+existing compositions therefore keep their authenticated tool bindings. The
+successor is staged and unqualified, not selected into a replay runtime. Its
+[method explanation](../../docs/how-it-works/03-coupling-and-reliability.md#compare-optimised-outputs-under-their-actual-source-contracts)
+separates source binding from numerical and downstream proof.
+
+Six pose-affected families still need propagated-bound designs: differential
+geometry, current-force pose, W consequence routes, W enclosure magnitudes,
+E downstream mesh metrics and Heat. The two compact root routes require their
+corruption controls and decoded-producer binding conditions before use. Final
+composition binding and explicit replay clearance remain outstanding.
+
+## Retained 20 October implementation and integration
 
 The current source snapshot is [workbench/plan04](../workbench/plan04/README.md).
 Its [source map](../workbench/plan04/SOURCE-MAP.json) contains full original and
-public hashes; the comparator's r21 filename now carries the r24 implementation.
+public hashes. In the preserved `n9-tools-r21/` directory, the comparator's r21
+filename carries the r24 implementation. The table below identifies that predecessor.
 
 | Selected tool | Original private SHA-256 |
 |---|---|

@@ -11,8 +11,8 @@
     {
       "path": "README.md",
       "source": "<PUBLIC_PLAN04_PUBLICATION>/README.md",
-      "original_sha256": "833ab259f7686fbfc52fe9956d338bf0b4f0d1a344c710f82e5f2748c9efdbde",
-      "public_sha256": "833ab259f7686fbfc52fe9956d338bf0b4f0d1a344c710f82e5f2748c9efdbde",
+      "original_sha256": "bf52f972d713c531276fc9ba3f24176b73798199fe47bd77ef3c90ce28e59492",
+      "public_sha256": "bf52f972d713c531276fc9ba3f24176b73798199fe47bd77ef3c90ce28e59492",
       "transformations": []
     },
     {
@@ -20,6 +20,94 @@
       "source": "<PUBLIC_PLAN04_PUBLICATION>/RETAINED-RESULTS.json",
       "original_sha256": "ba3ed0081d4d1cf070c3ea633a5f403ff763d8ff08530a5008866e6751b0b803",
       "public_sha256": "ba3ed0081d4d1cf070c3ea633a5f403ff763d8ff08530a5008866e6751b0b803",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/check_equat_bound.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/check_equat_bound.py",
+      "original_sha256": "b36f249febc3328599eca1ea221800c89f7167098021824e6906da625225588a",
+      "public_sha256": "b36f249febc3328599eca1ea221800c89f7167098021824e6906da625225588a",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/array_bindings_r5.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/array_bindings_r5.py",
+      "original_sha256": "943cde40e797fe566506d3d61121c9e253609699f7c9119c317ae92879d6baf1",
+      "public_sha256": "943cde40e797fe566506d3d61121c9e253609699f7c9119c317ae92879d6baf1",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/array_compare_r21.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/array_compare_r21.py",
+      "original_sha256": "2a3343e47caee415f131824b68c582d7182409e32ce27e07d1f053786ab515d5",
+      "public_sha256": "2a3343e47caee415f131824b68c582d7182409e32ce27e07d1f053786ab515d5",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/compare_arms_r21.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/compare_arms_r21.py",
+      "original_sha256": "27564bc912ad25b53aa70b0bc15598f4ab6c8a1b80218bd98db1bd67d34cd432",
+      "public_sha256": "00de031a442464cb642e96cc2a369470968469d230bd08ef46fbeaf719c8e495",
+      "transformations": [
+        "{\"count\": 1, \"kind\": \"owner-name\", \"replacement\": \"REPEAT_REQUIRED_APPROVER = 'OWNER'\"}",
+        "Private owner names and private room references: 5; replaced with generic labels",
+        "{\"kind\": \"line-endings\", \"replacement\": \"LF\"}",
+        "Remove private review references from comments and docstrings; executable AST unchanged"
+      ]
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/dump_arm_r5.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/dump_arm_r5.py",
+      "original_sha256": "b7b59ad57865af436625b7c31c9563b31d9d19433dbfc825ffff28d6e5c3337b",
+      "public_sha256": "b7b59ad57865af436625b7c31c9563b31d9d19433dbfc825ffff28d6e5c3337b",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/field_contracts.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/field_contracts.py",
+      "original_sha256": "d0fbf9c778f522843654e7ab911b2bafebbed3ec0ee7aa282e1be02b9dd0f496",
+      "public_sha256": "d0fbf9c778f522843654e7ab911b2bafebbed3ec0ee7aa282e1be02b9dd0f496",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/field_provenance.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/field_provenance.py",
+      "original_sha256": "0ff433996c37a8d2fbed28275c38e1a919db581b9293ab1d519ed9e638a00456",
+      "public_sha256": "0ff433996c37a8d2fbed28275c38e1a919db581b9293ab1d519ed9e638a00456",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r4/n9-tools-r21/write_captures_map_r3.py",
+      "source": "<PRIVATE_PLAN04_RECEIVING_R1>/n9-tools-r21/write_captures_map_r3.py",
+      "original_sha256": "8237f3210e9f11a30b9b909535b859d5a45b42c3225795f92c0bd20ef4ff9898",
+      "public_sha256": "d7dc5fbc3aa77a6ba9481360f78bd987fe529aa7eca94f85d469d3f98cb02798",
+      "transformations": [
+        "{\"kind\": \"line-endings\", \"replacement\": \"LF\"}"
+      ]
+    },
+    {
+      "path": "bindings-r4/tests/test_contracts_r4.py",
+      "source": "<PRIVATE_PLAN04_BINDINGS_R4>/tests/test_contracts_r4.py",
+      "original_sha256": "56cb9b03e61cd841ce6e16ee71d29307d58f1395229fd34a4a6fd7b51867dc30",
+      "public_sha256": "445e58971479a65f05b34d38006166a2d6cd2647ee4a19efe9c58ffef5208a25",
+      "transformations": [
+        "Public additive successor tool path and portable source-root default"
+      ]
+    },
+    {
+      "path": "bindings-r4/tests/test_provenance_r4.py",
+      "source": "<PRIVATE_PLAN04_BINDINGS_R4>/tests/test_provenance_r4.py",
+      "original_sha256": "b0a65cc154f5f2274b8593382a52389bbe5f41bde13ea42de4737a8d684848ac",
+      "public_sha256": "bbddcb6d41d90492a26d4965768087795bdaceb0513932caea58fbb756e14577",
+      "transformations": [
+        "Public additive successor tool path and portable source-root default"
+      ]
+    },
+    {
+      "path": "bindings-r4/tests/test_receiving_boundaries.py",
+      "source": "<PUBLIC_PLAN04_PUBLICATION>/bindings-r4/tests/test_receiving_boundaries.py",
+      "original_sha256": "9fb4bf5e7ded95f29f77334ec3d636eee2d4ad3fd07fb7150fe1122639f6dc47",
+      "public_sha256": "9fb4bf5e7ded95f29f77334ec3d636eee2d4ad3fd07fb7150fe1122639f6dc47",
       "transformations": []
     },
     {

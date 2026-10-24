@@ -69,6 +69,9 @@ experiment. The [I01 physical integration chapter](docs/how-it-works/06-physical
 explains how strength, motion, heat, material history and changing geometry interact,
 alongside gravitational driving, water loading, melt and transition controls.
 These bounded connections do not yet form the complete evolved-world route.
+The [optimisation comparison method](docs/how-it-works/03-coupling-and-reliability.md#compare-optimised-outputs-under-their-actual-source-contracts)
+explains source and caller binding, quantity-specific error proofs and the
+remaining limits of the N9 tools.
 The [spherical network method](docs/I03_SPHERICAL_NETWORK.md) describes I03: one
 closed network beside the accepted state, moved under supplied plate rotations with
 exact transfer of its material, with bridges to regional models and supplied plate
