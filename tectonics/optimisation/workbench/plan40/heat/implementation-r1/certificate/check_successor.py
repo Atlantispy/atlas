@@ -23,7 +23,7 @@ process=psutil.Process()
 process.cpu_affinity(process.cpu_affinity()[:1])
 root=Path(__file__).resolve().parent
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
-if sha(args.controls)!='ba7dda0d0565f2fee86d38b07e098e921253987b93da22003e85546a1449e392':
+if sha(args.controls)!='0b68ec4a49bbac0d36504271a2eae30e4f753ee2fe28b60b33828ab0f30f3b84':
     raise RuntimeError('control source changed')
 spec=importlib.util.spec_from_file_location('accepted_controls',args.controls)
 H=importlib.util.module_from_spec(spec)

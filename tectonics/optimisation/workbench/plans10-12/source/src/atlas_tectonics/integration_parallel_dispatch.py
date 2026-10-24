@@ -243,7 +243,7 @@ def _batch_worker(directory, process, binding_bytes):
     from .reuse import ExecutionContext
     requests = BatchBinding(binding_bytes).record()['requests']
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
-        # T/ps P1: pressure walls load and answer their own digest-checked inputs.
+        # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from .integration_pressure_walls import batch_worker
         return batch_worker(directory, process, binding_bytes, requests)
     wall = requests[0].get('kind') == WALL_KIND

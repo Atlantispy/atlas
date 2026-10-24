@@ -24,7 +24,7 @@ if args.output.exists():
     parser.error("Output must be new")
 HERE = Path(__file__).resolve().parent
 old_harness = args.testing / "functional_tests.py"
-if sha256(old_harness.read_bytes()).hexdigest() != "50b834caa8c5bf01156909ec96f49afdeace2df9e8f3fff30ff5cef879c20147":
+if sha256(old_harness.read_bytes()).hexdigest() != "a9ea95b4f2971ed606716a019d4c7bec5a98dc7f9ad4075fca4a99e09596b013":
     raise ValueError("Frozen source loader changed")
 # Loading the old entry establishes its pinned selected dependency modules; it
 # does not call main, its correctness suite, sample loop or any clock.

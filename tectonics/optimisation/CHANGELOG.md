@@ -6,6 +6,20 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 24 Oct 2026, partial Release-policy source integration
+
+- Add a complete 692-member Plan39 source selection, including the existing
+  publication/store/worker consumers and every A7 pin-propagation member.
+- Repair the failed-close publication race and static closure false passes.
+  The private successor passes 24 focused checks; eight inert race controls
+  distinguish the fix. No Release speedup or scientific acceptance is claimed.
+- Keep Release non-default and #67 open. Dependency promotion, runner/build
+  wiring, folded helper pins, measured peaks and packaged parity remain pending;
+  five fixture imports and ten unresolved imports currently block closure.
+- Remove flagged coordination wording from retained public copies and update
+  their exact public-map consumers. Private original identities and historical
+  receipts remain unchanged; no published Git history is rewritten.
+
 ## 24 Oct 2026, retained outcomes with later-run acceptance pending
 
 - Keep WP17's file-store default. The query-store assessment is done, but the

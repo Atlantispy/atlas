@@ -2,8 +2,8 @@
   "schema": "atlas.plan40b.receiving-source-map/v1",
   "identity_kind": "NEW_PUBLIC_SOURCE_BINDING_NOT_HISTORICAL_AUTHENTICATION",
   "predecessor_map": "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json",
-  "predecessor_source_map_sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc",
-  "public_selection_sha256": "4d782549cfbbba43e821905af4cb8b7ba102522ba9b9ad9dede48474a6438672",
+  "predecessor_source_map_sha256": "1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf",
+  "public_selection_sha256": "a5c9487012f458b272321025f80c6f9430e8f248dc707f613fda03ca5a4c13bd",
   "receiving_bindings_complete": true,
   "selected_candidates": [
     "C3",
@@ -410,8 +410,10 @@
       "public_path": "tectonics/optimisation/composed-r2/helpers/interval_store_set.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/interval_store_set.py",
       "original_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "public_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "transformations": [],
+      "public_sha256": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -2158,8 +2160,10 @@
       "public_path": "tectonics/optimisation/drivers/start_gate.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/start_gate.py",
       "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "transformations": [],
+      "public_sha256": "9a6ee89be6a3736cb396a2c8ec5435dcd128a1cbd00fc2f8ab0aba24a636e0a7",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -4759,8 +4763,10 @@
       "public_path": "tectonics/optimisation/workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_dispatch.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_parallel_dispatch.py",
       "original_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "public_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "transformations": [],
+      "public_sha256": "f635defecafbeb5daa0b0db0bd0f352db03fdd84d72783e53e990200c0950793",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {

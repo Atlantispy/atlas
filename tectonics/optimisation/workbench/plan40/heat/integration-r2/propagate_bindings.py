@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 BASE = 'tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json'
-BASE_SHA = 'ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+BASE_SHA = '1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 OUTPUT = 'tectonics/optimisation/workbench/plan40/heat/integration-r2/source/helpers'
 PREFIX = 'source/helpers/'
 OLD = {

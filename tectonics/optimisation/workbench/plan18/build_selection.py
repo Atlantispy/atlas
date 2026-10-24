@@ -15,7 +15,7 @@ import tempfile
 
 
 PARENT = 'tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json'
-PARENT_SHA = 'ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+PARENT_SHA = '1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 PREFIX = 'tectonics/optimisation/workbench/plan18/'
 SCHEMA = 'atlas.public.plan18.source-selection.r1'
 IDENTITY_KIND = 'NEW_PUBLIC_SOURCE_SELECTION_NOT_RUNTIME_ADMISSION'

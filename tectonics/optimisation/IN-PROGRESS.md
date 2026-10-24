@@ -15,6 +15,17 @@ Rules that apply to every item below:
 - New revisions are new files. Earlier revisions and old run records are never edited.
 - A harness or comparison tool gets an independent refutation pass, with planted failures, before its proof run.
 
+## Release policy
+
+- **State:** [Plan39's complete source selection](workbench/plan39/README.md)
+  integrates publication checks, process-lifetime holds and worker acceptance.
+  Review repaired the close-race and closure-checker defects. Release remains
+  non-default; #67 stays open.
+- **Remaining:** E2 functional-dependency promotion and runner entry/sizing
+  wiring; folded helper pins; desktop closure/manifest integration; source-bound
+  resolution of ten computed imports; authentic strict peaks and real packaged
+  parity. Five fixture imports also prevent closure. No held run is authorised.
+
 ## Start gate sized by need
 
 - **State:** Route1 and Route2 callers, runner and adjacent launcher are installed

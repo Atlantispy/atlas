@@ -12,7 +12,7 @@ import gmpy2 as G
 HERE = Path(__file__).resolve().parent
 ROOT = Path(__file__).resolve().parents[5]
 MAP = ROOT / 'tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json'
-MAP_SHA = 'ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+MAP_SHA = '1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 NAMES = {'Arithmetic', 'Unresolved', '_require_gmp', 'approximate_inverse', 'solve_enclosure', 'physical_bounds'}
 FLAGS = ('inexact', 'underflow', 'overflow', 'invalid', 'divzero', 'erange')
 SETTINGS = ('precision', 'real_prec', 'imag_prec', 'round', 'real_round', 'imag_round', 'emax', 'emin',

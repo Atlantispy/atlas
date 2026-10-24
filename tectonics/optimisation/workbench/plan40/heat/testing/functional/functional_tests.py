@@ -32,7 +32,7 @@ bootstrap.add_argument("--repo", required=True, type=Path)
 bootstrap.add_argument("--private-helpers", type=Path)
 bootstrap_args, _ = bootstrap.parse_known_args()
 ROOT = bootstrap_args.repo.resolve()
-MAP_SHA = "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc"
+MAP_SHA = "1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf"
 raw = (ROOT / "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json").read_bytes()
 if sha256(raw).hexdigest() != MAP_SHA:
     raise ValueError("Selected map changed")

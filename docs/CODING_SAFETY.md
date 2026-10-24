@@ -113,6 +113,15 @@ verification retains the full suite; a selected pass is not a full-suite pass.
 
 ### Strict checkout and packaged release execution
 
+The reviewed [Plan39 source selection](../tectonics/optimisation/workbench/plan39/README.md)
+extends this policy in a separate combined source generation. It connects full
+publication/worker boundaries and lifetime holds, with open-verified store sessions.
+Its stricter closure checker still refuses the generation; dependency promotion,
+runner wiring, folded helper pins, desktop build integration, measured peaks and
+real packaged parity remain pending. Release is not made the default. The focused
+Windows payload and sizing tests require the compatible scientific interpreter;
+the closure and source-builder controls use only the standard library.
+
 The checkout, tests, scientific benchmarks and evidence producers stay in
 **strict** mode. Every existing per-operation check still reads all package
 source bytes and checks loaded functions, defaults and constants. Only normalised

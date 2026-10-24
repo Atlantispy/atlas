@@ -5,7 +5,7 @@
   "public_overlay_identity_rule": "SHA-256 of UTF-8 json.dumps(list of member/public_sha256 records in entries order, indent=2, ensure_ascii=True) plus newline",
   "selected_private_composition_sha256": "e14c05a8c1f81f91767cc5cd8f77a4c1119b30683998bddc5c8d777738f540b2",
   "predecessor_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
-  "predecessor_source_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
+  "predecessor_source_map_sha256": "ea772055b2082e520ac60b5d658d6e9e590626d6bab72a7d23ee467f90068308",
   "scope": "Eight-member overlay on the Plan15 selected source closure; unchanged members are referenced by the predecessor map, not duplicated here.",
   "selected_native_files": 239,
   "selected_helper_files": 398,

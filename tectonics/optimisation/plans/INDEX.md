@@ -130,7 +130,7 @@ Ticket labels below refer to retained evidence or outstanding work, not permissi
 | 36 — Evidence/dispositions (not included in this public snapshot) | N12 Small/coordinator; final runner/coordinator | Records pending | Separate build acceptance from programme dispositions; authentic backlog identities, source-bound proof and honest unresolved/not-built states. |
 | 37 — Landing on remake (not included in this public snapshot) | Release / coordinator | Landing pending | Actual U0–U6 import tranches, EXPECTATIONS A–D, source-bound chapters, full DLL pin and final successor captures; explicit publication authority required. |
 | 38 — Fresh full intervals (not included in this public snapshot) | Final Runner / coordinator | HELD | Real chain-r3, solver/lineage/source/width/resource contracts and genuine sealed outputs, only after separate launch authorisation. |
-| 39 — Release policy (not included in this public snapshot) | Release / coordinator | Later/separate | Implement RC §5 decisions 1–6, B13 and R1–R6 at I11.5/I12.2; retain functional instrumentation and refuse `-O`. |
+| [39 — Release policy](../workbench/plan39/README.md) | Release | Partial source integration; #67 OPEN | Publication, lifetime hold, worker and sizing helpers integrated; failed-close and closure-checker defects repaired. Release remains non-default. Dependency promotion, runner/build wiring, folded helper pins, measured peaks and packaged parity remain open. |
 
 ## 4. Dependencies and staging
 

@@ -8,7 +8,7 @@ import importlib.util
 import json
 from pathlib import Path
 
-CONTROL_SHA = 'ba7dda0d0565f2fee86d38b07e098e921253987b93da22003e85546a1449e392'
+CONTROL_SHA = '0b68ec4a49bbac0d36504271a2eae30e4f753ee2fe28b60b33828ab0f30f3b84'
 DELTA_SHA = '673267ab8d11b9b591c4e430bf10d3917282faad68793b31c0f2c20f3c4757ee'
 ORDERS = (('baseline', 'candidate'), ('candidate', 'baseline')) * 2
 

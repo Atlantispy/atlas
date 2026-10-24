@@ -3,7 +3,7 @@
   "selected_private_composition_sha256": "1f1ec38f2c9e0bcf51672876876a4083dafc42a9ccda31d9e6314ecd72dc1f26",
   "selected_native_files": 239,
   "selected_helper_files": 395,
-  "predecessor_source_map_sha256": "7ce8d7d711d06d938737995ffc22faa3da58f729698716e496e020f26667351f",
+  "predecessor_source_map_sha256": "d8007ffaa511b221ff7ffc6b505764bffb9a810df65045af3f8d69f7f95b43fe",
   "predecessor_map": "tectonics/optimisation/workbench/plans10-12/SOURCE-MAP.json",
   "public_runtime_compatibility": false,
   "entries": [
@@ -899,8 +899,10 @@
       "public_path": "tectonics/optimisation/workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_dispatch.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_parallel_dispatch.py",
       "original_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "public_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "transformations": [],
+      "public_sha256": "f635defecafbeb5daa0b0db0bd0f352db03fdd84d72783e53e990200c0950793",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -2519,8 +2521,10 @@
       "public_path": "tectonics/optimisation/composed-r2/helpers/interval_store_set.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/interval_store_set.py",
       "original_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "public_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "transformations": [],
+      "public_sha256": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -4184,8 +4188,10 @@
       "public_path": "tectonics/optimisation/drivers/start_gate.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/start_gate.py",
       "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "transformations": [],
+      "public_sha256": "9a6ee89be6a3736cb396a2c8ec5435dcd128a1cbd00fc2f8ab0aba24a636e0a7",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {

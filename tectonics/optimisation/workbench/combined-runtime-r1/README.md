@@ -7,13 +7,15 @@ pressure and heat implementations used by their existing consumers.
 The completed source snapshot contains 645 members: 240 native sources and 405
 helpers. It supplies 22 changed copies and references 623 existing public files.
 Its source map SHA-256 is
-`93ddf7a0fdc2c58d4f45e73d6f2615d37879411bc443534582c10f5d8c4ea2c2`.
+`568079ecb375aea52a9a5e5cdebaa4017b0e07f237d398c8f041f15b8ea2ee0a`.
 The qualified helper fold and installed-package delivery remain outstanding;
 this source layout is not an installed application update or runtime admission.
 
 `SOURCE-MAP.json` names every selected member and its exact public bytes. Most
 members refer to existing published sources; only changed members are copied
-here. Earlier source maps remain historical records. Public source identities
+here. Public map identities and their exact consumers have been updated to remove
+private coordination wording from four retained public sources. Original source
+digests and private historical receipts remain unchanged. Public source identities
 do not authenticate measurements made on private predecessors.
 
 To construct a separate source layout, run from the repository root:

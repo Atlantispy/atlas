@@ -47,7 +47,7 @@ LIMITS = native.StoreLimits(chunk_bytes=65536, max_array_bytes=512 << 20,
 CATALOG_CHARGE = 12 * (1 << 20) + 16384
 VERIFIED_TOKEN_ENTRIES = CATALOG_BYTES // 512
 TOKEN_ENTRY_CHARGE = 768
-# Measured (W1, 16 Oct): sqlite3_memory_used per read-only handle after a full
+# Measured (W1): sqlite3_memory_used per read-only handle after a full
 # seal scan is the 2 MiB page cache plus about 132-153 KB of fixed connection
 # state (lookaside, schema, statements). 192 KiB covers it (review M6/S4W-2).
 HANDLE_CHARGE = LIMITS.sqlite_cache_bytes + (192 << 10)
@@ -1361,7 +1361,7 @@ class IntervalStoreSet:
         the two identities are the caller's assertion, as in seal(), and any
         root of the file that binds a valid SegmentRef passes the head check.
         They must come from the runner's durable record (written before the
-        seal). ``reader_view_digest`` is mandatory (coordinator, 16 Oct): the
+        seal). ``reader_view_digest`` is mandatory: the
         reader's pending view catalog_digest, recorded in its verdict, binds
         the adoption to exactly the entry the reader read (file SHA-256,
         seal, head, identities, references). Refuses on any mismatch and

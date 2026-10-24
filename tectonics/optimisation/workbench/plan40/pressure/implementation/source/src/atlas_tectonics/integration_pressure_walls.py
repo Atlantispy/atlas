@@ -457,7 +457,7 @@ def _plain_planes(region):
     parity test holds the two equal. Only the encoded copy for the workers becomes that
     plain tuple: the parent's regions keep their owner, and each worker books the decoded
     copy with the shared inputs (r3). moving_wall_integrals uses only truth, len and
-    iteration (zip) of it; T/ps/scripts/contract_planes.py enforces that. Any other type
+    iteration (zip) of it; the contract-plane proof script enforces that. Any other type
     is left as it is, and _enc refuses it as before.
     """
     planes = region.get('_physical_planes') if type(region) is dict else None
@@ -572,10 +572,10 @@ def batch_worker(directory, process, binding_bytes, requests):
             ledger = shared = baseline = None
             for request in requests:
                 if request['test'] == 'crash':
-                    os._exit(3)    # T/ps proofs only: a worker that ends without a completion
+                    os._exit(3)    # proof scripts only: a worker that ends without a completion
                 try:
                     if request['test'] == 'decline':
-                        raise ValueError('T/ps proof: declined wall')
+                        raise ValueError('Pressure proof: declined wall')
                     if ledger is None or ledger.reserved_bytes != baseline:
                         if ledger is not None:
                             observed['peak'] = max(observed['peak'], ledger.statistics()['peak_reserved_bytes'])

@@ -15,9 +15,9 @@ import tempfile
 HERE = Path(__file__).resolve().parent
 PREFIX = 'tectonics/optimisation/workbench/combined-runtime-r1/'
 SHARED = 'tectonics/optimisation/workbench/plan18/build_selection.py'
-SHARED_SHA = 'b537ce1c4da0be0fa2120fd2569a82c8af69c2e6a4ec8d3dc84ba519fe96c96b'
+SHARED_SHA = 'e2d6838b31c0c0ac73d739c2cb88da61ad246da7d635ecaf9c919fdbf6e1f08f'
 SCHEMA = 'atlas.public.combined-runtime.source-selection.r1'
-MAP_SHA = '93ddf7a0fdc2c58d4f45e73d6f2615d37879411bc443534582c10f5d8c4ea2c2'
+MAP_SHA = '568079ecb375aea52a9a5e5cdebaa4017b0e07f237d398c8f041f15b8ea2ee0a'
 FLAGS = ('runtime_admission', 'default_changed', 'scientific_acceptance', 'interval_authority')
 
 

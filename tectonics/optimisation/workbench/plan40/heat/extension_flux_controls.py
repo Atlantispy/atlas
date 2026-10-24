@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[5]
-MAP_SHA = "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc"
+MAP_SHA = "1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf"
 raw_map = (ROOT / "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json").read_bytes()
 if hashlib.sha256(raw_map).hexdigest() != MAP_SHA:
     raise ValueError("Different selected source generation")

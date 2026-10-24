@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 from types import ModuleType
 
-MAP_SHA='ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+MAP_SHA='1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 SUCCESSOR_SHA='248afad46838af857c1170c3083b7a0558fb2c85921e54b9011f3b024816d7f5'
 
 

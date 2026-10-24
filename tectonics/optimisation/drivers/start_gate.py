@@ -1,14 +1,14 @@
 """By-need start gate: the one source of the guarded runner's memory limits and its start gate.
 
-Michael, 16 Oct 2026: start gates by need (~14:05), and "I don't trust the 10GB amount" (~18:3x). With his
-applications open the machine idles at about 8-9 GB available, so the blanket 10 GiB start gate refused every
-route (1) stage at preflight. It is replaced by the queue's own rule (runq mem_need):
+Start gates are set by need. With other applications open, a development machine can idle at about 8-9 GB
+available, so a blanket 10 GiB start gate refused every route (1) stage at preflight. It is replaced by the
+rule used for queued runs:
 
     gate = predicted peak + ceil(predicted peak / 5) + 1 GiB free floor + 1 GiB allowance
 
 The allowance leaves room for small jobs that start after this one. The predicted peak is the largest
 guard-sampled tree peak of a completed PASS of the same step, stage and interval, from the run records the
-caller names. Only when there is no such record does an explicit declared booking stand in, as in runq; with
+caller names. Only when there is no such record does an explicit declared booking stand in; with
 neither, the gate refuses. Nothing is defaulted, and a record that is not a completed PASS of that step, stage
 and interval is refused rather than skipped (the caller reads its own records and passes their peaks here).
 

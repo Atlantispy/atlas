@@ -9,6 +9,17 @@ commit and push state.
 
 ## Active checkpoint
 
+**Plan39 has reviewed source integration; Release qualification is incomplete.**
+The [complete policy selection](../tectonics/optimisation/workbench/plan39/README.md)
+contains 692 members and connects publication checks, lifetime source holds and
+worker acceptance to their existing consumers. Review repaired a failed-close
+publication race and false passes in the static closure checker. The repaired
+private successor passed 24 focused checks; this is not installed-package or
+whole-interval acceptance. Release remains non-default and issue #67 stays open.
+Dependency promotion, runner wiring, folded helper pins, the desktop hook,
+measured peak tables and real packaged parity remain outstanding. Five fixture
+imports and ten unresolved computed imports currently block release closure.
+
 **The combined optimisation source snapshot is complete; qualified fold and installed delivery remain outstanding.**
 The [combined selection](../tectonics/optimisation/workbench/combined-runtime-r1/README.md)
 contains 645 members (240 native sources and 405 helpers), using 22 changed copies

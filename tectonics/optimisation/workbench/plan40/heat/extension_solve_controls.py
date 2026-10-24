@@ -14,7 +14,7 @@ import gmpy2 as G
 
 ROOT = Path(__file__).resolve().parents[5]
 selection = ROOT / 'tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json'
-assert sha256(selection.read_bytes()).hexdigest() == 'ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+assert sha256(selection.read_bytes()).hexdigest() == '1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 entries = json.loads(selection.read_text(encoding='utf-8'))['entries']
 sources = {}
 def tree(name):

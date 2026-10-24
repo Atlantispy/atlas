@@ -7,23 +7,23 @@
   "source_maps": [
     {
       "path": "tectonics/optimisation/workbench/plan18/SOURCE-MAP.json",
-      "sha256": "bb3373d14e3feb3df606d3dbb00fb5e51aecd57ad72fef1511d6116f9890a98e"
+      "sha256": "7aa60a23f39a23ecd3d3777f21faad0b0c3a0da84b4d4b3a5c241707e35a0cda"
     },
     {
       "path": "tectonics/optimisation/workbench/plan40/pressure/implementation/SOURCE-MAP.json",
-      "sha256": "94586ecd3cc872868660113301bf663d6f2317f909b26c81188e047d30cf3030"
+      "sha256": "8e656bc4e29e3f58132656f1d34d5d23bbe85315974fb4122a2a1d4be5d20023"
     },
     {
       "path": "tectonics/optimisation/workbench/plan40/heat/integration-r2/SOURCE-MAP.json",
-      "sha256": "5f7fd64ed5ccf0927a84ee7872ecbe1f6595a2fe1a52381b8c86e34f141441c4"
+      "sha256": "4d0e7774600596a033a40b10a805de2ed745835f76850cbba2d685112bad1595"
     },
     {
       "path": "tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json",
-      "sha256": "ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc"
+      "sha256": "1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf"
     }
   ],
   "source_selection_sha256": "bc4eaad0908f26aab0de2cdeb439b5f81b0c4021d70f9513da10b5ddfb51c4af",
-  "public_selection_sha256": "50cd16f7db9a1ae908c7c71f79657c9338de5c3218dccd1608a7b4633fbb5349",
+  "public_selection_sha256": "284c8ad71296a92462161925687ed93317a8f401ba20af18711da08ab8ae71b5",
   "publication_repins": [],
   "runtime_admission": false,
   "default_changed": false,
@@ -273,8 +273,11 @@
     {
       "member": "source/helpers/interval_store_set.py",
       "public_path": "tectonics/optimisation/composed-r2/helpers/interval_store_set.py",
-      "public_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "original_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7"
+      "public_sha256": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+      "original_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ]
     },
     {
       "member": "source/helpers/item14_origin_record_views.py",
@@ -1329,8 +1332,11 @@
     {
       "member": "source/helpers/start_gate.py",
       "public_path": "tectonics/optimisation/drivers/start_gate.py",
-      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345"
+      "public_sha256": "9a6ee89be6a3736cb396a2c8ec5435dcd128a1cbd00fc2f8ab0aba24a636e0a7",
+      "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ]
     },
     {
       "member": "source/helpers/step7_owner_heat_check.py",
@@ -3051,8 +3057,11 @@
     {
       "member": "source/src/atlas_tectonics/integration_parallel_dispatch.py",
       "public_path": "tectonics/optimisation/workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_dispatch.py",
-      "public_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "original_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d"
+      "public_sha256": "f635defecafbeb5daa0b0db0bd0f352db03fdd84d72783e53e990200c0950793",
+      "original_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ]
     },
     {
       "member": "source/src/atlas_tectonics/integration_parallel_owner.py",
@@ -3123,8 +3132,11 @@
     {
       "member": "source/src/atlas_tectonics/integration_pressure_walls.py",
       "public_path": "tectonics/optimisation/workbench/plan40/pressure/implementation/source/src/atlas_tectonics/integration_pressure_walls.py",
-      "public_sha256": "c755e8c75bfd0014020c8cc3cafbc607106a856dd64e3abd56c4c2af74f29e77",
-      "original_sha256": "c755e8c75bfd0014020c8cc3cafbc607106a856dd64e3abd56c4c2af74f29e77"
+      "public_sha256": "efe7f44977d6073ebfcf7951507816feae2c32201d40e319dc8bf225650d094b",
+      "original_sha256": "c755e8c75bfd0014020c8cc3cafbc607106a856dd64e3abd56c4c2af74f29e77",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ]
     },
     {
       "member": "source/src/atlas_tectonics/integration_private_heat_cold.py",

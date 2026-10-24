@@ -1691,3 +1691,20 @@ remain separate work. Historical profiles, captures and checkpoints are not
 silently rebound: source-derived cell identities can change between compositions
 even when physical values remain equal. Current delivery status is recorded on
 the [development-state page](../../../docs/CURRENT_STATE.md).
+
+### Check identity at publication and worker boundaries
+
+The [Plan39 source selection](../../optimisation/workbench/plan39/README.md)
+connects a guarded Release policy to the existing storage and worker interfaces.
+Opening a store establishes its verified read session; committing, sealing,
+promoting or adopting data requires a full publication check. A context that
+failed its closing verification cannot stand in for a successful check. Release
+keeps source handles for the process lifetime, and the parent verifies the
+worker binding before accepting its identity. Scientific evidence stays strict.
+
+This policy changes when integrity work is repeated, not physical equations or
+numerical tolerances. The sizing helpers need a composition-bound table of
+strict-measured peaks and refuse a missing estimate. The current generation has
+no such table and still fails its release-closure check. Dependency promotion,
+runner and desktop integration, folded helper pins and real packaged parity
+remain pending; the source selection does not activate Release or claim speed.

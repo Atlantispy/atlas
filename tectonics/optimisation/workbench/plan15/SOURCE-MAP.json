@@ -8,7 +8,7 @@
     "source/helpers/fresh_interval_driver.py",
     "source/helpers/private_heat_functionals_parallel_r1.py"
   ],
-  "predecessor_source_map_sha256": "5e71a61807923b0d83d50c5abb116855ccf61f08a1677d35e577b674ba094d78",
+  "predecessor_source_map_sha256": "624a7fa510c763437c99e3249afd041fe3179c6db3014a9e8848e2b72885c880",
   "predecessor_map": "tectonics/optimisation/workbench/plan16/SOURCE-MAP.json",
   "public_runtime_compatibility": false,
   "entries": [
@@ -368,8 +368,10 @@
       "public_path": "tectonics/optimisation/composed-r2/helpers/interval_store_set.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/interval_store_set.py",
       "original_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "public_sha256": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
-      "transformations": [],
+      "public_sha256": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -2038,8 +2040,10 @@
       "public_path": "tectonics/optimisation/drivers/start_gate.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/helpers/start_gate.py",
       "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
-      "transformations": [],
+      "public_sha256": "9a6ee89be6a3736cb396a2c8ec5435dcd128a1cbd00fc2f8ab0aba24a636e0a7",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {
@@ -4614,8 +4618,10 @@
       "public_path": "tectonics/optimisation/workbench/plans10-12/source/src/atlas_tectonics/integration_parallel_dispatch.py",
       "source": "<PRIVATE_COMBINED_SOURCE>/src/atlas_tectonics/integration_parallel_dispatch.py",
       "original_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "public_sha256": "a114bb6a124923cab1610b9d2225d1a94d29b2c8f7f26413ab11f22ecd58714d",
-      "transformations": [],
+      "public_sha256": "f635defecafbeb5daa0b0db0bd0f352db03fdd84d72783e53e990200c0950793",
+      "transformations": [
+        "Public sanitisation of private coordination wording; original source identity remains historical provenance"
+      ],
       "selected_composition_member": true
     },
     {

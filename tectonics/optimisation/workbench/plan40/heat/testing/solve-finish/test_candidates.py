@@ -24,7 +24,7 @@ for _key in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUME
 BASE = Path(__file__).resolve().parents[2]
 ROOT = BASE / 'repo'
 MAP = ROOT / 'tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json'
-MAP_HASH = 'ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc'
+MAP_HASH = '1d1e2c79fe7825e276e2a33f2d5c18fe3157da8ef4b41ab0c3c347bca9295fcf'
 SOURCES = {}
 ENTRIES = None
 SOURCE_TEXT = {}

@@ -1,7 +1,7 @@
 {
   "schema": "atlas.public.plan19.source-overlay.r1",
   "predecessor_map": "tectonics/optimisation/workbench/plan15/SOURCE-MAP.json",
-  "predecessor_source_map_sha256": "1ab8cc1a29518538da1c8b742524bf8ed7666d04b1d54b5606d4b3edb0edec4a",
+  "predecessor_source_map_sha256": "ea772055b2082e520ac60b5d658d6e9e590626d6bab72a7d23ee467f90068308",
   "scope": "Two native source replacements over the current public selection; preserve all selected helpers.",
   "selected_native_files": 239,
   "changed_selected_members": 2,
