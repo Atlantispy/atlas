@@ -437,18 +437,24 @@ are reported separately.
 The next batch must enter its verified read before adopting carry. Optional carry
 remains reclaimable while that entry acquires its required reservation, so it
 cannot hide memory needed for admission. Every served access still checks the
-segment, and carry is created only after the closing freshness check succeeds.
-Outside-batch reads use the ordinary verification path. Idle carry yields after
+segment. In an outermost store-set read, carry follows the closing freshness
+check. A view batch nested inside another verified read can carry before that
+enclosing check; if it refuses, the next verified-read entry must refuse before
+adopting those pages. Outside-batch reads use the ordinary verification path. Idle carry yields after
 unpinned pages cannot meet pressure; record and mesh close release it. Failed
 frames keep their own data funded. Evicted pages also leave the bounded touched
 set, preventing a long scan from retaining an unbounded list of closed wrappers.
 
 The receiving port preserves the mesh's streaming encoder used by diagnostic
 captures and its repeated-close behaviour. Synthetic exactness, lifetime,
-pressure and refusal controls exercise these boundaries. The profile-based
-opportunity is not a speed measurement: the real interval-1 ABBA comparison has
-not run, and L3 remains **UNCERTAIN / NOT ENABLED**. These observations do not
-qualify a final runtime or change the admission hold.
+pressure and refusal controls exercise these boundaries. The corrected-reader
+[controlled comparison and additive source selection](../../optimisation/workbench/plan22/README-r4.md)
+now meet the recorded selection rule: 15.4381 s to 12.2384 s mean sealed-ledger
+reopen (3.1997 s / 20.73%) on the private comparison stack. The public/final stack
+was not timed. Component integration is finally accepted. Individual L3
+verification after assembly, including final L1 checks, was cancelled by the
+owner; this is not a PASS and does not enable runtime/default use or release
+other run/scientific holds.
 
 ### Keep physical correspondence separate from row names
 

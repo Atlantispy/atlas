@@ -1,0 +1,1193 @@
+{
+  "schema": "atlas.public.plan22.retained-results.r1",
+  "status": "SELECTED BY CORRECTED-READER D22r; selected public source recorded; runtime and final-stack acceptance withheld",
+  "source_map_sha256": "b90e5eecc707cc9b5ee6370e57604fc81b2a02c56cfd0119aab22413aa5304bb",
+  "public_overlay_identity_sha256": "7a95b560476d27e8849a06d5857d8a3c4bd98630dbbc8474977af7fa42433551",
+  "private_corrected_composition_sha256": "2f56ccad6d5bc0d491199f9972ec910027a7e678241f093d9865a293b844fdbd",
+  "corrected_reader": {
+    "sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+    "test_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+    "evidence": "Source-identical corrected reader selected by the current D22r comparison; historical reader-r3 checks remain historical.",
+    "raw_result_file_sha256": "dd82486095732faddb3d1edd03dd44ae249afdb7d6284a29faef8bb799038ada"
+  },
+  "historical_reader_r3": {
+    "schema": "atlas.public.plan22.retained-results.r1",
+    "status": "UNCERTAIN / NOT ENABLED",
+    "source_map_sha256": "f6f8d7092be525a085bd7fb928bbf4aeca0b0af1aee5e80fdb21133dbdaff2ab",
+    "public_overlay_identity_sha256": "597236962e6cf19c631ecab0eba01d4c2654206775ab447d2131cce55e72119d",
+    "private_corrected_composition_sha256": "93ec7636811900a205a8f0d1abe17015a7f53ea1e75e66621a876457c47ac71d",
+    "corrected_reader": {
+      "sha256": "e31a3a7397f1b936c2c3ee27edb11302501188682101e4c49d9ab9b3337317f4",
+      "test_sha256": "a88b0f7504b69f12478d5d6fc1d0e7eebe356c5d81057c6e197f8da3c71a6ddf",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "residue": false,
+      "scope": "Declared-member private-base mirror with corrected record reader and tests; synthetic fixtures."
+    },
+    "receiving_repairs": [
+      "Bound touched wrappers and release closed pages",
+      "Keep optional carry reclaimable during required verified entry",
+      "Preserve repeated mesh close",
+      "Preserve current mesh capture encoder when integrating L3"
+    ],
+    "negative_controls": {
+      "touched_r2_rejections": 2,
+      "no_discard_mutant_rejections": 2,
+      "entry_pressure_r2_rejections": 1,
+      "pre_entry_adoption_mutant_rejections": 1,
+      "note": "Touched-only controls precede the independent entry repair; these are not a new full mutation campaign."
+    },
+    "mesh_method_checks": {
+      "passed": 11,
+      "negative_controls_rejected": 3,
+      "scope": "Exact extracted close/encoder methods with inert ownership fixtures across three mesh variants; not full mesh-v3 runtime proof."
+    },
+    "public_builder_fixture_checks": {
+      "passed": 8,
+      "scope": "Standard-library dependency fixtures; actual source materialisation recorded separately."
+    },
+    "historical_r2": {
+      "record_views_sha256": "25f3165375c928e509b74d84e12eb9fd36148fc09c32a41d80485dd57cbc6db8",
+      "controls": 15,
+      "planted_faults_rejected": 13,
+      "focused_modules": 11,
+      "result": "Same outcomes as base, including shared failures",
+      "failure_modules": [
+        "test_compact_store",
+        "test_segment_store",
+        "test_step9a_pending",
+        "test_mesh_v3"
+      ],
+      "long_suites": {
+        "test_r1_views": "9/9 pass",
+        "test_r1a_export_booking": "10/10 pass"
+      },
+      "lint": "No introduced product-source findings; two SIM117 findings in the new test; original Pyright messages equal.",
+      "synthetic_harness": "Original A/B entry exact; B page-cache rehash hits 0 vs A 74, native misses 22 each.",
+      "qualifications": "Historical evidence only; neither a corrected-source timing nor real-interval qualification."
+    },
+    "public_receiving_checks": {
+      "candidate_selection_sha256": "067ada4fddf2744ca14079ac728c77ac7f577c51c669a7dac5ed97ecda621476",
+      "source_manifest_sha256": "eb38b7b060869814dd61a7357b5b52c3613e30fce429761943c4a7a5dbcdb1cb",
+      "source_files_verified": 647,
+      "tests": 37,
+      "l3_tests": 18,
+      "s3_tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "source_residue": false,
+      "scope": "Explicit complete public candidate; only authenticated src/helpers and interpreter libraries on the import route. Synthetic sealed fixtures, not real interval data or a general runtime qualification.",
+      "result_sha256": "ff5ceb539d6482d98b78ac68a279a7523a53857a40850537d1f8fe13f4456af2",
+      "checker_sha256": "f80b5ca3524e496663e00b6d897361c2355e0d1ad475b037b871c3465fcf4576"
+    },
+    "d10": {
+      "run": false,
+      "comparison": "A/B ABBA",
+      "data_use_approved": true,
+      "admission_hold": true,
+      "corrected_source_request_required": true
+    },
+    "issue_48": "OPEN",
+    "plan30_final_generation_inclusion": "OPEN",
+    "measured_l3_speed_gain": null,
+    "runtime_admission": false,
+    "default_changed": false,
+    "scientific_acceptance": false
+  },
+  "historical_reader_r3_source_sha256": "2b90f50476d9bbd13ed1f13b01345ff5012a5719bc60f92cc98e75430c5a061a",
+  "historical_reader_r3_scope": "Complete earlier public retained record, preserved as historical provenance only; its status, checks and source identities do not describe the corrected reader or current selection.",
+  "historical_d10": {
+    "run": true,
+    "comparison": "A/B ABBA",
+    "cores": 1,
+    "date": "2026-10-24",
+    "label": "MEASURED",
+    "verdict": "SELECTED",
+    "baseline_private_composition_sha256": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+    "candidate_private_composition_sha256": "93ec7636811900a205a8f0d1abe17015a7f53ea1e75e66621a876457c47ac71d",
+    "baseline_reader_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+    "candidate_reader_sha256": "e31a3a7397f1b936c2c3ee27edb11302501188682101e4c49d9ab9b3337317f4",
+    "reopen_seconds": {
+      "A": [
+        16.1983,
+        16.3328
+      ],
+      "B": [
+        12.8539,
+        12.873
+      ]
+    },
+    "means_seconds": {
+      "A": 16.2655,
+      "B": 12.8635
+    },
+    "ranges_seconds": {
+      "A": 0.1345,
+      "B": 0.0191
+    },
+    "improvement_seconds": 3.4021,
+    "improvement_fraction": 0.2092,
+    "reopen_cpu_seconds": {
+      "A": [
+        16.7969,
+        16.9219
+      ],
+      "B": [
+        13.5469,
+        13.5156
+      ]
+    },
+    "page_misses": {
+      "A": [
+        8322,
+        8322
+      ],
+      "B": [
+        8321,
+        8321
+      ]
+    },
+    "page_hits": {
+      "A": [
+        57673,
+        57673
+      ],
+      "B": [
+        247,
+        247
+      ]
+    },
+    "required_refusals": {
+      "A": [
+        0,
+        0
+      ],
+      "B": [
+        0,
+        0
+      ]
+    },
+    "carry_refusals": [
+      0,
+      0
+    ],
+    "peak_rss_bytes": {
+      "A": [
+        206635008,
+        206909440
+      ],
+      "B": [
+        206721024,
+        206925824
+      ]
+    },
+    "carry_per_b_sample": {
+      "carried": 7183,
+      "adopted": 7182,
+      "trimmed": 0,
+      "dropped_pressure": 0,
+      "peak_booked_bytes": 10133655,
+      "booked_after_close": 0,
+      "raw_after_close": 0,
+      "carried_pages": 919424,
+      "peak_raw_bytes": 8141346,
+      "booked_at_end_of_open": 9518651,
+      "raw_at_end_of_open": 7570352,
+      "drops_by_reason": {
+        "close": 1,
+        "entry": 0,
+        "exception": 0,
+        "fallback": 0,
+        "refused": 0,
+        "collected": 0,
+        "pressure": 0,
+        "scope_close": 0
+      }
+    },
+    "pinned_bytes_after_open": {
+      "A": [
+        0,
+        0
+      ],
+      "B": [
+        9854011,
+        9854011
+      ]
+    },
+    "process_tree_peak_rss_gib": 0.22,
+    "timed_stack": {
+      "description": "private comparison stack of the candidate arm",
+      "modules": {
+        "record_views": "e31a3a7397f1b936c2c3ee27edb11302501188682101e4c49d9ab9b3337317f4",
+        "content_cache": "85fe9a5f421d8c693d44f23ca4c5189f2696d89cb2dcffd16a06c52ce90850f5",
+        "interval_store_set": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
+        "record_tables": "eef9795cbec817b394d9b1a7cb0dec9d5f303dcbbc9e8d62b0409a24585d4a65",
+        "segment_store": "a90ef8f3e519ee77ea4332380428ce2694c16134ec69603ccaf93ce95cea6cd9",
+        "private_heat_snapshot_store_r4": "8d2069737d55533f352a566b7b83fb46ea415a5fb58d57f10f66d14ec9aa1d49",
+        "heat_ledger_tables": "d2738a40e2c4378901bdb803fd8e4ad6c6e8f48755e26625dc96392d1ac72d77"
+      }
+    },
+    "selected_stack": {
+      "description": "public source selection",
+      "modules": {
+        "record_views": "e31a3a7397f1b936c2c3ee27edb11302501188682101e4c49d9ab9b3337317f4",
+        "content_cache": "75ac34b279b0167aec6d09cba0fc3dc605ea0f9eb93d073fa3f9490ea56cdaca",
+        "interval_store_set": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+        "record_tables": "56f18e8fb1403238ac73fa4f238f60c3aaf844936d11a652c24d6aa3d95701c7",
+        "segment_store": "a90ef8f3e519ee77ea4332380428ce2694c16134ec69603ccaf93ce95cea6cd9",
+        "private_heat_snapshot_store_r4": "8d2069737d55533f352a566b7b83fb46ea415a5fb58d57f10f66d14ec9aa1d49",
+        "heat_ledger_tables": "d2738a40e2c4378901bdb803fd8e4ad6c6e8f48755e26625dc96392d1ac72d77"
+      }
+    },
+    "evidence_scope": "D10 timed the selected reader bytes on the private comparison stack. The public selection's content_cache, interval_store_set and record_tables differ and were not timed, so the 20.9% is not a measurement of the public composition.",
+    "arm_compositions": {
+      "A": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+      "B": "93ec7636811900a205a8f0d1abe17015a7f53ea1e75e66621a876457c47ac71d"
+    },
+    "valid_run": {
+      "result_id_equal": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "fields": {
+        "A": [
+          5,
+          5
+        ],
+        "B": [
+          5,
+          5
+        ]
+      },
+      "strict_source": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "scope_closed": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "budget_reserved_after_close": {
+        "A": [
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0
+        ]
+      },
+      "carry_after_close_b": {
+        "booked": [
+          0,
+          0
+        ],
+        "raw": [
+          0,
+          0
+        ]
+      }
+    },
+    "child_peak_rss_mib": [
+      197.06,
+      197.34
+    ],
+    "process_tree_peak_source": "job-object tracker of the queue runner over the whole four-sample run (driver and its four children)",
+    "all_conditions_true": true,
+    "inputs_unchanged": true,
+    "first_attempt": "Stopped at the first baseline sample: a runtime relocation placed the interpreter standard library inside the workspace and the strict-source check refused. Environment corrected; harness unchanged.",
+    "profile_estimate_exceeded": true
+  },
+  "historical_d10_record_sha256": "b356a14545ad0b6a39d4cbde0aa878d971511b63a8f211b3c7520b88ae70411c",
+  "historical_d10_source_sha256": "fcefb3c2404a33359b6a01b8d1728bb703dd0799fcc5372ea9421a101e2fec71",
+  "historical_d10_scope": "Complete earlier-reader comparison, including original qualifiers and the historical 0.22 GiB process-tree observation; no gain or memory attribution to the current reader.",
+  "historical_selection_r3": {
+    "constructor": "build_selection.py",
+    "constructor_sha256": "3aea8fa63cf0c1f839751c9ad149bc4cbf78ae55cdee4aae9ba6ab8bec8dafc5",
+    "selection_map": "SELECTION-MAP.json",
+    "selection_map_sha256": "672f380fe93a11b1d0b6dc9785ebbd94c4318098058ba42a1c4a878e177f9ae1",
+    "d10_record_sha256": "b356a14545ad0b6a39d4cbde0aa878d971511b63a8f211b3c7520b88ae70411c",
+    "frozen_rule_recomputed_from_rows": true,
+    "valid_run_recomputed_from_rows": true,
+    "arms_bound_to_compositions": true,
+    "timed_and_selected_stacks_checked": true,
+    "candidate_source_map_sha256": "f6f8d7092be525a085bd7fb928bbf4aeca0b0af1aee5e80fdb21133dbdaff2ab",
+    "source_members": 647,
+    "selected": true,
+    "enablement": true,
+    "runtime_admission": false,
+    "default_changed": false,
+    "constructor_controls": 23,
+    "planted_mutants_killed": 47,
+    "composed_controls": 37
+  },
+  "d10": {
+    "run": true,
+    "comparison": "A/B ABBA",
+    "cores": 1,
+    "date": "2026-10-25",
+    "label": "MEASURED",
+    "verdict": "SELECTED",
+    "raw_result_file_sha256": "dd82486095732faddb3d1edd03dd44ae249afdb7d6284a29faef8bb799038ada",
+    "baseline_private_composition_sha256": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+    "candidate_private_composition_sha256": "2f56ccad6d5bc0d491199f9972ec910027a7e678241f093d9865a293b844fdbd",
+    "baseline_reader_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+    "candidate_reader_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+    "reopen_seconds": {
+      "A": [
+        15.4461,
+        15.4301
+      ],
+      "B": [
+        12.1238,
+        12.353
+      ]
+    },
+    "means_seconds": {
+      "A": 15.4381,
+      "B": 12.2384
+    },
+    "ranges_seconds": {
+      "A": 0.016,
+      "B": 0.2292
+    },
+    "improvement_seconds": 3.1997,
+    "improvement_fraction": 0.2073,
+    "reopen_cpu_seconds": {
+      "A": [
+        16.4531,
+        16.4375
+      ],
+      "B": [
+        13.1719,
+        13.2188
+      ]
+    },
+    "page_misses": {
+      "A": [
+        8322,
+        8322
+      ],
+      "B": [
+        8321,
+        8321
+      ]
+    },
+    "page_hits": {
+      "A": [
+        57673,
+        57673
+      ],
+      "B": [
+        247,
+        247
+      ]
+    },
+    "required_refusals": {
+      "A": [
+        0,
+        0
+      ],
+      "B": [
+        0,
+        0
+      ]
+    },
+    "carry_refusals": [
+      0,
+      0
+    ],
+    "peak_rss_bytes": {
+      "A": [
+        206868480,
+        207155200
+      ],
+      "B": [
+        206815232,
+        206876672
+      ]
+    },
+    "carry_per_b_sample": {
+      "carried": 7183,
+      "adopted": 7182,
+      "trimmed": 0,
+      "dropped_pressure": 0,
+      "peak_booked_bytes": 10133655,
+      "booked_after_close": 0,
+      "raw_after_close": 0,
+      "carried_pages": 919424,
+      "peak_raw_bytes": 8141346,
+      "booked_at_end_of_open": 9518651,
+      "raw_at_end_of_open": 7570352,
+      "drops_by_reason": {
+        "close": 1,
+        "entry": 0,
+        "exception": 0,
+        "fallback": 0,
+        "refused": 0,
+        "collected": 0,
+        "pressure": 0,
+        "scope_close": 0
+      }
+    },
+    "carry_after_open_b": [
+      {
+        "carried": 7183,
+        "carried_pages": 919424,
+        "adopted": 7182,
+        "refused": 0,
+        "trimmed": 0,
+        "booked": 9518651,
+        "raw": 7570352,
+        "peak_booked": 10133655,
+        "peak_raw": 8141346,
+        "view_peak_booked": 10133655,
+        "view_peak_raw": 8141346,
+        "dropped_close": 0,
+        "dropped_entry": 0,
+        "dropped_exception": 0,
+        "dropped_fallback": 0,
+        "dropped_refused": 0,
+        "dropped_collected": 0,
+        "dropped_pressure": 0,
+        "dropped_scope_close": 0
+      },
+      {
+        "carried": 7183,
+        "carried_pages": 919424,
+        "adopted": 7182,
+        "refused": 0,
+        "trimmed": 0,
+        "booked": 9518651,
+        "raw": 7570352,
+        "peak_booked": 10133655,
+        "peak_raw": 8141346,
+        "view_peak_booked": 10133655,
+        "view_peak_raw": 8141346,
+        "dropped_close": 0,
+        "dropped_entry": 0,
+        "dropped_exception": 0,
+        "dropped_fallback": 0,
+        "dropped_refused": 0,
+        "dropped_collected": 0,
+        "dropped_pressure": 0,
+        "dropped_scope_close": 0
+      }
+    ],
+    "carry_after_close_b": [
+      {
+        "carried": 7183,
+        "carried_pages": 919424,
+        "adopted": 7182,
+        "refused": 0,
+        "trimmed": 0,
+        "booked": 0,
+        "raw": 0,
+        "peak_booked": 10133655,
+        "peak_raw": 8141346,
+        "view_peak_booked": 10133655,
+        "view_peak_raw": 8141346,
+        "dropped_close": 1,
+        "dropped_entry": 0,
+        "dropped_exception": 0,
+        "dropped_fallback": 0,
+        "dropped_refused": 0,
+        "dropped_collected": 0,
+        "dropped_pressure": 0,
+        "dropped_scope_close": 0
+      },
+      {
+        "carried": 7183,
+        "carried_pages": 919424,
+        "adopted": 7182,
+        "refused": 0,
+        "trimmed": 0,
+        "booked": 0,
+        "raw": 0,
+        "peak_booked": 10133655,
+        "peak_raw": 8141346,
+        "view_peak_booked": 10133655,
+        "view_peak_raw": 8141346,
+        "dropped_close": 1,
+        "dropped_entry": 0,
+        "dropped_exception": 0,
+        "dropped_fallback": 0,
+        "dropped_refused": 0,
+        "dropped_collected": 0,
+        "dropped_pressure": 0,
+        "dropped_scope_close": 0
+      }
+    ],
+    "pinned_bytes_after_open": {
+      "A": [
+        0,
+        0
+      ],
+      "B": [
+        9854011,
+        9854011
+      ]
+    },
+    "process_tree_peak_rss_bytes": 339099648,
+    "process_tree_peak_rss_gib": 0.3158111572265625,
+    "process_tree_peak_source": "Owned payload job inside the external supervisor, sampled every 250 ms. Includes inner driver/guard/bootstrap/reopen descendants; excludes the outer supervisor, queue runner and launcher/notification processes. Sampled peak, not an OS high-water counter.",
+    "process_tree_measurement": {
+      "label": "MEASURED_SAMPLED_PEAK",
+      "sample_interval_seconds": 0.25,
+      "peak_rss_bytes": 339099648,
+      "wall_seconds": 67.98399999999674,
+      "result_sha256": "d049305f917138253ede1a7cd084f03acd47fc1c892f27e7b00c270fd3529886",
+      "status": "PASS",
+      "finality": "COMPLETE",
+      "exit_code": 0,
+      "active_members": 0,
+      "errors": [],
+      "deadline_seconds": 900,
+      "booking": {
+        "ram_gib": 0.5,
+        "minutes": 10,
+        "cores": 1,
+        "quiet": true
+      },
+      "may_miss_between_sample_peaks": true,
+      "scope": "Owned payload job inside the external supervisor; excludes its outer supervisor, queue runner and launcher/notification processes."
+    },
+    "timed_stack": {
+      "description": "Corrected-reader private sealed interval-1 comparison stack of the B arm.",
+      "modules": {
+        "record_views": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+        "content_cache": "85fe9a5f421d8c693d44f23ca4c5189f2696d89cb2dcffd16a06c52ce90850f5",
+        "interval_store_set": "699ae4438c7ab05e71994d30533096eb2d404d74315637c08181ea94536b1af7",
+        "record_tables": "eef9795cbec817b394d9b1a7cb0dec9d5f303dcbbc9e8d62b0409a24585d4a65",
+        "segment_store": "a90ef8f3e519ee77ea4332380428ce2694c16134ec69603ccaf93ce95cea6cd9",
+        "private_heat_snapshot_store_r4": "8d2069737d55533f352a566b7b83fb46ea415a5fb58d57f10f66d14ec9aa1d49",
+        "heat_ledger_tables": "d2738a40e2c4378901bdb803fd8e4ad6c6e8f48755e26625dc96392d1ac72d77"
+      }
+    },
+    "selected_stack": {
+      "description": "Current 647-member public source candidate; these complete stack bytes were not timed.",
+      "modules": {
+        "record_views": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+        "content_cache": "75ac34b279b0167aec6d09cba0fc3dc605ea0f9eb93d073fa3f9490ea56cdaca",
+        "interval_store_set": "c14af744319b4cf3617bb4fda6c18db0e91bbbea6452fdaefc93235ce462ad7a",
+        "record_tables": "56f18e8fb1403238ac73fa4f238f60c3aaf844936d11a652c24d6aa3d95701c7",
+        "segment_store": "a90ef8f3e519ee77ea4332380428ce2694c16134ec69603ccaf93ce95cea6cd9",
+        "private_heat_snapshot_store_r4": "8d2069737d55533f352a566b7b83fb46ea415a5fb58d57f10f66d14ec9aa1d49",
+        "heat_ledger_tables": "d2738a40e2c4378901bdb803fd8e4ad6c6e8f48755e26625dc96392d1ac72d77"
+      }
+    },
+    "differing_modules": [
+      "content_cache",
+      "interval_store_set",
+      "record_tables"
+    ],
+    "evidence_scope": "D22r measured the corrected reader bytes on the private comparison stack. The public source selection uses different content_cache, interval_store_set and record_tables bytes and was not timed. This is not a measured gain for the public composition, the final assembled or folded stack, or a whole scientific interval.",
+    "arm_compositions": {
+      "A": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+      "B": "2f56ccad6d5bc0d491199f9972ec910027a7e678241f093d9865a293b844fdbd"
+    },
+    "valid_run": {
+      "result_id_equal": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "fields": {
+        "A": [
+          5,
+          5
+        ],
+        "B": [
+          5,
+          5
+        ]
+      },
+      "strict_source": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "scope_closed": {
+        "A": [
+          true,
+          true
+        ],
+        "B": [
+          true,
+          true
+        ]
+      },
+      "budget_reserved_after_close": {
+        "A": [
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0
+        ]
+      },
+      "carry_after_close_b": {
+        "booked": [
+          0,
+          0
+        ],
+        "raw": [
+          0,
+          0
+        ]
+      }
+    },
+    "child_peak_rss_mib": [
+      197.23,
+      197.56
+    ],
+    "conditions": {
+      "exact_and_accounted": true,
+      "both_B_beat_both_A": true,
+      "mean_improvement_exceeds_larger_range": true,
+      "page_misses_not_above_A": true,
+      "no_new_required_refusals": true,
+      "no_carry_refusal": true,
+      "rss_within_carry_cap": true
+    },
+    "all_conditions_true": true,
+    "inputs_unchanged": true,
+    "failed_checks": [],
+    "d22r_condition5": {
+      "a3": {
+        "improvement_seconds": 3.4021,
+        "improvement_fraction": 0.2092,
+        "mean_a": 16.2655,
+        "larger_range": 0.1345
+      },
+      "floor_fraction": 0.2009,
+      "a4_fraction": 0.2073,
+      "a4_seconds": 3.1997,
+      "holds": true,
+      "outcome": "HOLDS"
+    },
+    "provenance": {
+      "driver_sha256": "98ba4710acd2f0fc766c62894838368f1a22568352257c4747652f5869214799",
+      "child_sha256": "c872e07553e4281e6fc8bfbdd444be24eff90919c2b88ad0869fb53197ba9b8f",
+      "input_sha256": {
+        "interval-0000.sqlite": "3b7a8c978b8942e662103c65626774e93d5260184a719e7ef8d2935fc9e306bf",
+        "catalog.json": "fc12cc1cf0f01ccb1b5477b0652dd5f01bef825ea0a8ec1cd84f08b8ce4b3706",
+        "saved.json": "932f22dc92edf5652b0d89d3db5678e3c79252cd14e6e0e01073b02635377556"
+      },
+      "b_source_trees": {
+        "helpers": [
+          "c2b56220bcedd64c9a5a1e081a05306c7871f0c6d250bd35c8153e5dc970007e",
+          403
+        ],
+        "src": [
+          "64fe349c4c21d76e7a31ee8e98e9c256f2a6ca43353bab15c89a70641ff880fa",
+          239
+        ]
+      },
+      "tracked_process_result_sha256": "656850ba23bcd99e36fd7f5cfecec76fe9f5269484da374f0f3a512c691ccfc7"
+    },
+    "samples": [
+      {
+        "status": "DONE",
+        "core": 3,
+        "import_seconds": 1.3017,
+        "catalog_open_seconds": 0.0481,
+        "heat_reopen_seconds": 15.4461,
+        "reopen_cpu_seconds": 16.4531,
+        "result_id_equal": true,
+        "fields": 5,
+        "page_hits": 57673,
+        "page_misses": 8322,
+        "page_evictions": 7510,
+        "optional_declines": 0,
+        "required_refusals": 0,
+        "retained_bytes": 72644064,
+        "peak_retained_bytes": 75391901,
+        "pinned_bytes_after_open": 0,
+        "hits": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 57673,
+          "hashes": 0,
+          "handles": 0
+        },
+        "misses": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 8322,
+          "hashes": 0,
+          "handles": 0
+        },
+        "category_peak_bytes": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 67133145,
+          "hashes": 0,
+          "handles": 0
+        },
+        "purpose_peak_bytes": {
+          "retained:scope-control": 5120,
+          "retained:interval-owned": 1076722,
+          "retained:interval-handle": 2297856,
+          "retained:heat-receipt": 1052672,
+          "retained:interval-manifest-memo": 946176,
+          "retained:owner-carrier": 57024,
+          "retained:segment-metadata": 504664,
+          "retained:segment-binding-directory-build": 1373696,
+          "retained:segment-binding-directory": 792080,
+          "retained:segment-user-metadata": 69632,
+          "retained:stream-state": 4096,
+          "retained:segment-scan-block": 73728,
+          "retained:record-segment-view": 91224,
+          "retained:cache-control": 6144,
+          "retained:record-page-keys": 614400,
+          "retained:record-page-cursors": 270336,
+          "retained:record-batch-page-borrows": 270336,
+          "retained:record-native-page": 63284366,
+          "retained:cache-pages": 3851848,
+          "retained:record-column-page": 306244,
+          "retained:segment-read": 47260,
+          "retained:record-canonical-reuse": 1052672,
+          "retained:record-column-slice": 73728,
+          "retained:segment-array-info": 8192,
+          "retained:heat-field-restore": 76472,
+          "retained:heat-field": 386635,
+          "retained:record-output": 69760,
+          "retained:heat-snapshot-handle": 69632
+        },
+        "carry_after_open": null,
+        "scope_closed": true,
+        "budget_reserved_after_close": 0,
+        "carry_after_close": null,
+        "total_seconds": 16.7789,
+        "process_peak_rss_bytes": 206868480,
+        "load_percent_before": 5.0,
+        "load_percent_after": 2.1,
+        "strict_source": true,
+        "sample": 1,
+        "arm": "A",
+        "child_wall_seconds": 18.2445,
+        "free_bytes_before": 11315314688
+      },
+      {
+        "status": "DONE",
+        "core": 3,
+        "import_seconds": 1.2342,
+        "catalog_open_seconds": 0.0477,
+        "heat_reopen_seconds": 12.1238,
+        "reopen_cpu_seconds": 13.1719,
+        "result_id_equal": true,
+        "fields": 5,
+        "page_hits": 247,
+        "page_misses": 8321,
+        "page_evictions": 7509,
+        "optional_declines": 0,
+        "required_refusals": 0,
+        "retained_bytes": 72931306,
+        "peak_retained_bytes": 75406677,
+        "pinned_bytes_after_open": 9854011,
+        "hits": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 247,
+          "hashes": 0,
+          "handles": 0
+        },
+        "misses": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 8321,
+          "hashes": 0,
+          "handles": 0
+        },
+        "category_peak_bytes": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 67142980,
+          "hashes": 0,
+          "handles": 0
+        },
+        "purpose_peak_bytes": {
+          "retained:scope-control": 5120,
+          "retained:interval-owned": 1076722,
+          "retained:interval-handle": 2297856,
+          "retained:heat-receipt": 1052672,
+          "retained:interval-manifest-memo": 946176,
+          "retained:owner-carrier": 69696,
+          "retained:segment-metadata": 504664,
+          "retained:segment-binding-directory-build": 1373696,
+          "retained:segment-binding-directory": 792080,
+          "retained:segment-user-metadata": 69632,
+          "retained:stream-state": 4096,
+          "retained:segment-scan-block": 73728,
+          "retained:record-segment-view": 91224,
+          "retained:cache-control": 6144,
+          "retained:record-page-keys": 614400,
+          "retained:record-page-cursors": 270336,
+          "retained:record-batch-page-borrows": 270336,
+          "retained:record-native-page": 63284366,
+          "retained:cache-pages": 3851848,
+          "retained:record-column-page": 306244,
+          "retained:segment-read": 47260,
+          "retained:record-canonical-reuse": 1052672,
+          "retained:record-column-slice": 73728,
+          "retained:segment-array-info": 8192,
+          "retained:heat-field-restore": 76472,
+          "retained:heat-field": 386635,
+          "retained:record-output": 69760,
+          "retained:heat-snapshot-handle": 69632
+        },
+        "carry_after_open": {
+          "carried": 7183,
+          "carried_pages": 919424,
+          "adopted": 7182,
+          "refused": 0,
+          "trimmed": 0,
+          "booked": 9518651,
+          "raw": 7570352,
+          "peak_booked": 10133655,
+          "peak_raw": 8141346,
+          "view_peak_booked": 10133655,
+          "view_peak_raw": 8141346,
+          "dropped_close": 0,
+          "dropped_entry": 0,
+          "dropped_exception": 0,
+          "dropped_fallback": 0,
+          "dropped_refused": 0,
+          "dropped_collected": 0,
+          "dropped_pressure": 0,
+          "dropped_scope_close": 0
+        },
+        "scope_closed": true,
+        "budget_reserved_after_close": 0,
+        "carry_after_close": {
+          "carried": 7183,
+          "carried_pages": 919424,
+          "adopted": 7182,
+          "refused": 0,
+          "trimmed": 0,
+          "booked": 0,
+          "raw": 0,
+          "peak_booked": 10133655,
+          "peak_raw": 8141346,
+          "view_peak_booked": 10133655,
+          "view_peak_raw": 8141346,
+          "dropped_close": 1,
+          "dropped_entry": 0,
+          "dropped_exception": 0,
+          "dropped_fallback": 0,
+          "dropped_refused": 0,
+          "dropped_collected": 0,
+          "dropped_pressure": 0,
+          "dropped_scope_close": 0
+        },
+        "total_seconds": 13.3902,
+        "process_peak_rss_bytes": 206815232,
+        "load_percent_before": 5.0,
+        "load_percent_after": 2.3,
+        "strict_source": true,
+        "sample": 2,
+        "arm": "B",
+        "child_wall_seconds": 14.8405,
+        "free_bytes_before": 11304493056
+      },
+      {
+        "status": "DONE",
+        "core": 3,
+        "import_seconds": 1.253,
+        "catalog_open_seconds": 0.0474,
+        "heat_reopen_seconds": 12.353,
+        "reopen_cpu_seconds": 13.2188,
+        "result_id_equal": true,
+        "fields": 5,
+        "page_hits": 247,
+        "page_misses": 8321,
+        "page_evictions": 7509,
+        "optional_declines": 0,
+        "required_refusals": 0,
+        "retained_bytes": 72931306,
+        "peak_retained_bytes": 75406677,
+        "pinned_bytes_after_open": 9854011,
+        "hits": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 247,
+          "hashes": 0,
+          "handles": 0
+        },
+        "misses": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 8321,
+          "hashes": 0,
+          "handles": 0
+        },
+        "category_peak_bytes": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 67142980,
+          "hashes": 0,
+          "handles": 0
+        },
+        "purpose_peak_bytes": {
+          "retained:scope-control": 5120,
+          "retained:interval-owned": 1076722,
+          "retained:interval-handle": 2297856,
+          "retained:heat-receipt": 1052672,
+          "retained:interval-manifest-memo": 946176,
+          "retained:owner-carrier": 69696,
+          "retained:segment-metadata": 504664,
+          "retained:segment-binding-directory-build": 1373696,
+          "retained:segment-binding-directory": 792080,
+          "retained:segment-user-metadata": 69632,
+          "retained:stream-state": 4096,
+          "retained:segment-scan-block": 73728,
+          "retained:record-segment-view": 91224,
+          "retained:cache-control": 6144,
+          "retained:record-page-keys": 614400,
+          "retained:record-page-cursors": 270336,
+          "retained:record-batch-page-borrows": 270336,
+          "retained:record-native-page": 63284366,
+          "retained:cache-pages": 3851848,
+          "retained:record-column-page": 306244,
+          "retained:segment-read": 47260,
+          "retained:record-canonical-reuse": 1052672,
+          "retained:record-column-slice": 73728,
+          "retained:segment-array-info": 8192,
+          "retained:heat-field-restore": 76472,
+          "retained:heat-field": 386635,
+          "retained:record-output": 69760,
+          "retained:heat-snapshot-handle": 69632
+        },
+        "carry_after_open": {
+          "carried": 7183,
+          "carried_pages": 919424,
+          "adopted": 7182,
+          "refused": 0,
+          "trimmed": 0,
+          "booked": 9518651,
+          "raw": 7570352,
+          "peak_booked": 10133655,
+          "peak_raw": 8141346,
+          "view_peak_booked": 10133655,
+          "view_peak_raw": 8141346,
+          "dropped_close": 0,
+          "dropped_entry": 0,
+          "dropped_exception": 0,
+          "dropped_fallback": 0,
+          "dropped_refused": 0,
+          "dropped_collected": 0,
+          "dropped_pressure": 0,
+          "dropped_scope_close": 0
+        },
+        "scope_closed": true,
+        "budget_reserved_after_close": 0,
+        "carry_after_close": {
+          "carried": 7183,
+          "carried_pages": 919424,
+          "adopted": 7182,
+          "refused": 0,
+          "trimmed": 0,
+          "booked": 0,
+          "raw": 0,
+          "peak_booked": 10133655,
+          "peak_raw": 8141346,
+          "view_peak_booked": 10133655,
+          "view_peak_raw": 8141346,
+          "dropped_close": 1,
+          "dropped_entry": 0,
+          "dropped_exception": 0,
+          "dropped_fallback": 0,
+          "dropped_refused": 0,
+          "dropped_collected": 0,
+          "dropped_pressure": 0,
+          "dropped_scope_close": 0
+        },
+        "total_seconds": 13.6381,
+        "process_peak_rss_bytes": 206876672,
+        "load_percent_before": 1.0,
+        "load_percent_after": 0.8,
+        "strict_source": true,
+        "sample": 3,
+        "arm": "B",
+        "child_wall_seconds": 15.0909,
+        "free_bytes_before": 11269758976
+      },
+      {
+        "status": "DONE",
+        "core": 3,
+        "import_seconds": 1.2506,
+        "catalog_open_seconds": 0.0475,
+        "heat_reopen_seconds": 15.4301,
+        "reopen_cpu_seconds": 16.4375,
+        "result_id_equal": true,
+        "fields": 5,
+        "page_hits": 57673,
+        "page_misses": 8322,
+        "page_evictions": 7510,
+        "optional_declines": 0,
+        "required_refusals": 0,
+        "retained_bytes": 72644064,
+        "peak_retained_bytes": 75391901,
+        "pinned_bytes_after_open": 0,
+        "hits": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 57673,
+          "hashes": 0,
+          "handles": 0
+        },
+        "misses": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 8322,
+          "hashes": 0,
+          "handles": 0
+        },
+        "category_peak_bytes": {
+          "supports": 0,
+          "facts": 0,
+          "pages": 67133145,
+          "hashes": 0,
+          "handles": 0
+        },
+        "purpose_peak_bytes": {
+          "retained:scope-control": 5120,
+          "retained:interval-owned": 1076722,
+          "retained:interval-handle": 2297856,
+          "retained:heat-receipt": 1052672,
+          "retained:interval-manifest-memo": 946176,
+          "retained:owner-carrier": 57024,
+          "retained:segment-metadata": 504664,
+          "retained:segment-binding-directory-build": 1373696,
+          "retained:segment-binding-directory": 792080,
+          "retained:segment-user-metadata": 69632,
+          "retained:stream-state": 4096,
+          "retained:segment-scan-block": 73728,
+          "retained:record-segment-view": 91224,
+          "retained:cache-control": 6144,
+          "retained:record-page-keys": 614400,
+          "retained:record-page-cursors": 270336,
+          "retained:record-batch-page-borrows": 270336,
+          "retained:record-native-page": 63284366,
+          "retained:cache-pages": 3851848,
+          "retained:record-column-page": 306244,
+          "retained:segment-read": 47260,
+          "retained:record-canonical-reuse": 1052672,
+          "retained:record-column-slice": 73728,
+          "retained:segment-array-info": 8192,
+          "retained:heat-field-restore": 76472,
+          "retained:heat-field": 386635,
+          "retained:record-output": 69760,
+          "retained:heat-snapshot-handle": 69632
+        },
+        "carry_after_open": null,
+        "scope_closed": true,
+        "budget_reserved_after_close": 0,
+        "carry_after_close": null,
+        "total_seconds": 16.7124,
+        "process_peak_rss_bytes": 207155200,
+        "load_percent_before": 4.3,
+        "load_percent_after": 0.4,
+        "strict_source": true,
+        "sample": 4,
+        "arm": "A",
+        "child_wall_seconds": 18.1794,
+        "free_bytes_before": 11301543936
+      }
+    ],
+    "queue_command_observation": {
+      "sampled_peak_gib_rounded": 0.36,
+      "rounding_decimal_places": 2,
+      "sample_interval_about_seconds": 2,
+      "includes": "Outer guard adapter and its payload descendants",
+      "excludes": "Queue runner and launcher/notification processes",
+      "observation_sha256": "6e2daf5445e6ba1b6bf54a288f2194fa3ac4c040b2edd25f4985498d7c6bed1b",
+      "os_high_water_counter": false,
+      "exact_byte_peak": false
+    }
+  },
+  "issue_48": "OPEN",
+  "plan30_final_generation_inclusion": "OPEN",
+  "measured_l3_speed_gain": {
+    "metric": "sealed interval-1 heat reopen on the corrected-reader private comparison stack",
+    "seconds": 3.1997,
+    "fraction": 0.2073,
+    "label": "MEASURED"
+  },
+  "candidate_materialisation": {
+    "selection_sha256": "b272ce75dc8e87b19bb05b05b24022d8f09e338a3f09195c60738717f8bd4d1b",
+    "source_manifest_sha256": "b84bc444434f794c0d7839cc3f92a9086e1b309cd0cb50a0138d27e90729b5e2",
+    "source_members": 647,
+    "scope": "Valid earlier prepared candidate materialisation, preserved distinctly from selected manifest 86c71a2b and later metadata-correction outputs; complete public/final stacks remain untimed.",
+    "candidate_source_map_sha256": "e798315d9305d58383a39762b53b990eeab82a9f1cdf5f2ca7a9d3864dde51ef"
+  },
+  "selection": {
+    "constructor": "build_selection.py",
+    "selection_map": "SELECTION-MAP.json",
+    "selection_map_sha256": "ae3735066df5830d996bdd33e9f65ded614a5b6e618d1283f48378563ddd363b",
+    "d10_record_sha256": "fcda2b4efcaff4d50900a732682b145c18715124f7278ee1b47aadef0ba2390d",
+    "candidate_source_map_sha256": "b90e5eecc707cc9b5ee6370e57604fc81b2a02c56cfd0119aab22413aa5304bb",
+    "source_members": 647,
+    "selected": true,
+    "enablement": true,
+    "runtime_admission": false,
+    "default_changed": false,
+    "scientific_acceptance": false,
+    "interval_authority": false,
+    "installed_package_changed": false,
+    "public_runtime_compatibility": false,
+    "runtime_policy_adopted": false,
+    "s9_selected": false,
+    "binding_status": "Actual current map/evidence/tool identities reconciled bottom-up; receiving entry-point verification recorded separately. Source selection only; runtime/final-stack acceptance withheld."
+  },
+  "selected": true,
+  "enablement": true,
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "installed_package_changed": false,
+  "public_runtime_compatibility": false,
+  "runtime_policy_adopted": false,
+  "s9_selected": false,
+  "previous_reviewed_selected_materialisation": {
+    "manifest_sha256": "86c71a2b34af33f8e31a659609584d2f0d4fff3169e09d4cc1014c682c673fbb",
+    "selection_map_sha256": "3bd9acf6fed41b1684ac09eb465d970b002dff47388cb474921310917358f775",
+    "candidate_source_map_sha256": "9deeb9a9197dd25df44782adf6f62e383523d76906f0584ed2c90d5947a7bb15",
+    "d10_record_sha256": "4499b476d2c9b62a7c78d5c636b43bd305c9ddbfe4575f375e06f699e6a8a255",
+    "scope": "Valid immutable reviewed selection before F1/F2 record-only corrections; executable source member bytes unchanged."
+  }
+}

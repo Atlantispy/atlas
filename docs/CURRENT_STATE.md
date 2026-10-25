@@ -20,13 +20,7 @@ passes the declared combined S3/L3/S1A scope. Final private-generation
 qualification, installed delivery and run admission remain separate.
 Historical selections and evidence retain their original bytes.
 
-**Plan22 L3 meets its private corrected-reader selection rule.**
-Receiving review repaired wrapper retention, entry-pressure admission and mesh close,
-and preserved the current capture encoder. An earlier reader measured a 20.9% mean
-reopen reduction on the real interval-1 store. The newer port has passed q120's
-combined S3/L3/S1A qualification and the corrected-reader private selection rule;
-actual final-generation receiving remains outstanding. Issue #48 stays open.
-[Source, checks and limits](../tectonics/optimisation/workbench/plan22/README.md).
+**Plan22 corrected-reader L3 meets its controlled selection rule.** The authenticated interval-1 ABBA comparison measures 15.4381 s to 12.2384 s (3.1997 s / 20.73%) on its private reopen stack, preserving exact results and accounting. The additive 647-member current-reader source selection passes 41 selected-source controls and retains the combined qualification's equal baseline debt/skips. Component integration is finally accepted. Individual L3 verification after full assembly, including final L1 checks, was cancelled by the owner; this is not a verification pass or scientific acceptance. No runtime/default or whole-interval gain is claimed. Issue #48 closure follows verification of the accepted publication. [Current source selection and limits](../tectonics/optimisation/workbench/plan22/README-r4.md).
 
 **Plan21 S3/A1/B source integration is accepted; final private qualification remains pending.**
 The [source and receiving details](../tectonics/optimisation/workbench/plan21/README.md)

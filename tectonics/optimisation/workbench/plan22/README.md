@@ -1,6 +1,6 @@
 # Plan22: optional bounded page carry
 
-**WORKING NON-CANON. The current reader meets its private selection rule; final-runtime receiving remains open. Issue #48 remains open.** An earlier reader measured a 20.9% mean reopen reduction in a real interval-1 A/B ABBA comparison. That measurement does not qualify the newer port or final/public composition. The current receiving port has passed q120's declared combined S3/L3/S1A qualification and its separate admitted private corrected-reader comparison. Actual selected private final-generation/IV qualification and final integrated-outcome acceptance remain outstanding. The private result does not establish a measured public/final stack or promote a runtime default.
+**WORKING NON-CANON. Corrected-reader timing SELECTED; component integration finally accepted. Individual post-assembly L3 verification is CANCELLED BY THE OWNER.** The source-bound corrected-reader ABBA comparison reduced mean reopen time from 15.4381 s to 12.2384 s (3.1997 s / 20.73%) and meets the retained selection threshold. Its [additive selection-r4 constructor, current evidence and limits](README-r4.md) preserve the historical candidate below. The combined S3/L3/S1A qualification retains matched baseline debt/skips. These results do not enable the runtime/default or establish a measured public/final stack.
 
 L3 keeps verified immutable page pins between outer read batches of the same view. Adoption happens only after the next verified read has entered; per-access freshness and cancellation and the closing check remain. Carry is bounded to 128 pages and 10 MiB booked per view, with a 32 MiB process bound. The existing 64 MiB page-cache quota remains. Unpinned pages are evicted first; idle carry yields when those pages are insufficient. Close, failed entry, fallback and exceptional exit release reusable carry without leaving traceback-owned data unfunded.
 
@@ -29,7 +29,7 @@ The constructor authenticates the existing Plan21 and combined-source chain, che
 
 The L3 test imports the selected `test_item14_page_layer` and `test_record_tables` helpers and requires the compatible science environment. It belongs in an explicit synthetic fixture with both selected import roots and temporary files outside the source tree. It is not ordinary public-suite discovery. The source-only builder tests use the standard library.
 
-## Corrected-source checks
+## Historical corrected-source checks (earlier reader)
 
 - The corrected reader passes 18/18 private-base L3 controls; targeted negative controls reject the two reader defects and pre-entry adoption.
 - Mesh close/encoder methods pass 11 bounded cases across the private and combined ports; three negative controls reject the old defects. These use inert ownership fixtures.
@@ -40,7 +40,7 @@ The L3 test imports the selected `test_item14_page_layer` and `test_record_table
 
 The original 11-module comparison had equal base/candidate results, including shared failures in compact-store, segment-store, pending/recovery and mesh-v3 tests. It was not an all-green run. The two long suites passed 9/9 and 10/10 on the earlier private candidate; that evidence remains attached to those bytes. Historical lint introduced no findings in the two product modules, while the new test file had two SIM117 findings. The public results record distinguishes those observations from corrected-source checks.
 
-The profile-based 6.25% opportunity is an estimate. The later measured comparison reduced mean reopen time from 16.266 s to 12.864 s for its tested earlier reader, with exact result identity preserved; the cause of the larger gain remains unproven. The prior B17/item14 speed measurements are separate. A corrected-reader comparison must use an authenticated request for the exact candidate tested; an older request is not rebound to a successor. Final-generation B17/item14 inclusion and final runtime selection remain open with their respective work. WP12 remains UNBUILT/OFF.
+The profile-based 6.25% opportunity is an estimate. The later measured comparison reduced mean reopen time from 16.266 s to 12.864 s for its tested earlier reader, with exact result identity preserved; the cause of the larger gain remains unproven. The prior B17/item14 speed measurements are separate. The corrected-reader comparison has now run under its own authenticated request; see README-r4.md. Any later changed reader needs its own source-bound result; an older request is never rebound. Assembly and fold owners still deliver their assigned outputs; no separate L3 verification afterwards is required. Runtime/default selection and scientific acceptance are unchanged. WP12 remains UNBUILT/OFF.
 
 ## Qualification-gate repair
 
@@ -52,7 +52,4 @@ gate functions. The retained q120 result documented there is PASS for the declar
 S3/L3/S1A scope. The historical public builder, [SOURCE-MAP.json](SOURCE-MAP.json)
 and `record_views.py` (`e31a3a73`) above remain unchanged. The [current receiving
 rows](../plan21/L3-SOURCE-MAP-r3.json) separately bind `record_views.py` `e86e9882`
-and its companion rows. The separate source-bound private timing condition is
-now met. Actual selected private final-generation/IV qualification and final
-integrated-outcome acceptance remain outstanding; gate PASS alone does not
-select a runtime default or establish a timing gain.
+and its companion rows. The corrected-reader retiming is separately recorded in [selection-r4](README-r4.md). Individual post-assembly L3 receiving and final L1 verification were cancelled by the owner, without being marked PASS. Component integration has final acceptance; combined-gate PASS alone does not select a runtime default or establish a timing gain.

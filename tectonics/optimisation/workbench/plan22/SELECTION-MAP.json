@@ -1,0 +1,63 @@
+{
+  "schema": "atlas.public.plan22.selection-map.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_SELECTION_NOT_RUNTIME_ADMISSION",
+  "status": "SELECTED_SOURCE_L3_ENABLED",
+  "scope": "Selects only L3 in the complete 647-member corrected-reader public source candidate, using the source-identical reader measured by D22r on the private sealed interval-1 comparison stack. The three declared public storage-module differences were not timed. This grants neither runtime/default activation nor final-generation, folded-stack or whole-interval acceptance.",
+  "candidate_source_map": {
+    "path": "tectonics/optimisation/workbench/plan22/SOURCE-MAP-r4.json",
+    "sha256": "b90e5eecc707cc9b5ee6370e57604fc81b2a02c56cfd0119aab22413aa5304bb"
+  },
+  "candidate_overlay_identity_sha256": "7a95b560476d27e8849a06d5857d8a3c4bd98630dbbc8474977af7fa42433551",
+  "candidate_selection_sha256": "b272ce75dc8e87b19bb05b05b24022d8f09e338a3f09195c60738717f8bd4d1b",
+  "base_selection_sha256": "680348d14707be0273f6930cfd5fcf21acc946f39f6e956c8dac6304c0a8d221",
+  "members": [
+    {
+      "member": "source/helpers/record_views.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/record_views.py",
+      "public_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "public_base": "tectonics/optimisation/workbench/compact-geometry-r1/record_views.py",
+      "public_base_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd"
+    },
+    {
+      "member": "source/helpers/mesh_tables.py",
+      "public_path": "tectonics/optimisation/workbench/plan22/source/helpers/mesh_tables.py",
+      "public_sha256": "75a3e282ad2e5c376572275d27810ce116fa59a50c5cf85f874745646d15eeb2",
+      "public_base": "tectonics/optimisation/workbench/combined-runtime-r1/source/helpers/mesh_tables.py",
+      "public_base_sha256": "076f691085aa0e15bf3851d9a21b259421f6e9ba719f2ce4f26985caab12b181"
+    },
+    {
+      "member": "source/helpers/test_l3_carried_pages.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/test_l3_carried_pages.py",
+      "public_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+      "public_base": null,
+      "public_base_sha256": null
+    }
+  ],
+  "evidence": {
+    "d10": {
+      "record": "tectonics/optimisation/workbench/plan22/RETAINED-RESULTS-r4.json",
+      "d10_record_sha256": "fcda2b4efcaff4d50900a732682b145c18715124f7278ee1b47aadef0ba2390d",
+      "verdict": "SELECTED",
+      "comparison": "A/B ABBA",
+      "label": "MEASURED",
+      "date": "2026-10-25",
+      "baseline_reader_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+      "candidate_reader_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "baseline_private_composition_sha256": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+      "candidate_private_composition_sha256": "2f56ccad6d5bc0d491199f9972ec910027a7e678241f093d9865a293b844fdbd",
+      "improvement_seconds": 3.1997,
+      "improvement_fraction": 0.2073
+    },
+    "mesh_tables": "Not exercised by D22r. Historical method evidence retained with its original scope: Not exercised by the D10 reopen. Its only change, the repeated-close guard on the L3 release hook, rests on the mesh method check: 11 cases across three source variants, with three planted or predecessor defects rejected."
+  },
+  "selected": true,
+  "enablement": true,
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "installed_package_changed": false,
+  "public_runtime_compatibility": false,
+  "runtime_policy_adopted": false,
+  "s9_selected": false
+}

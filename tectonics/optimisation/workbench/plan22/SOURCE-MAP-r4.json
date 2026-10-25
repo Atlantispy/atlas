@@ -1,0 +1,72 @@
+{
+  "schema": "atlas.public.plan22.source-map.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_BINDING",
+  "public_overlay_identity_sha256": "7a95b560476d27e8849a06d5857d8a3c4bd98630dbbc8474977af7fa42433551",
+  "public_overlay_identity_rule": "SHA-256 of UTF-8 json.dumps(list of member/public_sha256 records in entries order, indent=2, ensure_ascii=True) plus newline",
+  "candidate_private_composition_sha256": "2f56ccad6d5bc0d491199f9972ec910027a7e678241f093d9865a293b844fdbd",
+  "base_private_composition_sha256": "21e666b83bd213bb97878b32a69081887eaea0dbc305fe02b18f64cfe8cc0950",
+  "selected": false,
+  "enablement": false,
+  "scope": "Corrected L3 optional public candidate on the complete combined and Plan21 source selection. Two replacements and one test addition; the newer public mesh encoder is preserved. The private D10 comparison successor retains its older comparison base; its identities and mesh differ.",
+  "changed_selected_files": 0,
+  "changed_candidate_files": 2,
+  "added_candidate_files": 1,
+  "public_runtime_compatibility": false,
+  "runtime_policy_adopted": false,
+  "entries": [
+    {
+      "member": "source/helpers/record_views.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/record_views.py",
+      "source": "<PRIVATE_PLAN22_CORRECTED_SOURCE>/helpers/record_views.py",
+      "original_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "public_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "transformations": [],
+      "public_base": "tectonics/optimisation/workbench/compact-geometry-r1/record_views.py",
+      "public_base_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+      "selected_composition_member": false,
+      "portability": "explicit-compatible-science-fixture-required",
+      "private_comparison_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85"
+    },
+    {
+      "member": "source/helpers/mesh_tables.py",
+      "public_path": "tectonics/optimisation/workbench/plan22/source/helpers/mesh_tables.py",
+      "source": "<PRIVATE_CURRENT_COMBINED_MESH_L3_PORT>/helpers/mesh_tables.py",
+      "original_sha256": "437dd4cf2d9744882bea8d64d2c1191019c6d24b447c4368a374673651e21b29",
+      "public_sha256": "75a3e282ad2e5c376572275d27810ce116fa59a50c5cf85f874745646d15eeb2",
+      "transformations": [
+        "Normalise CRLF to LF; AST and all non-line-ending bytes unchanged."
+      ],
+      "public_base": "tectonics/optimisation/workbench/combined-runtime-r1/source/helpers/mesh_tables.py",
+      "public_base_sha256": "076f691085aa0e15bf3851d9a21b259421f6e9ba719f2ce4f26985caab12b181",
+      "selected_composition_member": false,
+      "portability": "explicit-compatible-science-fixture-required",
+      "private_comparison_sha256": "027665e9878a188af2ebbfd035dacbda1e9c6cb6c142f66efa280fbd5beba858",
+      "integration": "Corrected L3 close hook ported onto the current mesh encoder. Do not substitute the older private comparison mesh for this member."
+    },
+    {
+      "member": "source/helpers/test_l3_carried_pages.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/test_l3_carried_pages.py",
+      "source": "<PRIVATE_PLAN22_CORRECTED_SOURCE>/helpers/test_l3_carried_pages.py",
+      "original_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+      "public_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+      "transformations": [],
+      "public_base": null,
+      "public_base_sha256": null,
+      "selected_composition_member": false,
+      "portability": "explicit-compatible-science-fixture-required",
+      "private_comparison_sha256": "a88b0f7504b69f12478d5d6fc1d0e7eebe356c5d81057c6e197f8da3c71a6ddf"
+    }
+  ],
+  "private_comparison_member_count": 642,
+  "public_parent_member_count": 646,
+  "public_candidate_member_count": 647,
+  "public_parent_selection_sha256": "680348d14707be0273f6930cfd5fcf21acc946f39f6e956c8dac6304c0a8d221",
+  "status": "PREPARED_SOURCE_NOT_QUALIFIED",
+  "enablement_note": "Corrected-reader D22r met the source-selection rule (0.2073 >= 0.2009). This candidate intentionally remains unselected; the separate selection constructor authenticates the evidence and grants only source selection, with runtime/default/final-stack authority withheld.",
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "installed_package_changed": false,
+  "s9_selected": false
+}
