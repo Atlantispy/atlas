@@ -1706,8 +1706,10 @@ refusal falls back to the whole row after collecting unreachable failed-read
 leases. The required contract is that a field answers wherever the whole row
 answers, with the same value. The field can also answer when only unrelated
 whole-row decoding or its larger allocation would refuse. Synthetic caller and
-resource controls exercise these boundaries; real interval parity and an
-integrated timing benefit remain unproved. This is a storage-access change,
+resource controls exercise these boundaries. A retained interval-1 comparison
+found equal values for the owner read expressions on r4, with source-analysis
+carry to the private r5 successor. It did not execute the complete owner functions;
+final combined-runtime parity and a timing benefit remain unproved. This is a storage-access change,
 derived from the existing reader/exporter contracts, with no new physical method.
 
 ### Check identity at publication and worker boundaries

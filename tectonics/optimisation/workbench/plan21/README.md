@@ -2,8 +2,8 @@
 
 WORKING NON-CANON.
 
-- S3 r5 supplies the corrected source for the public and private successor compositions; real-data qualification is pending.
-- S9 is **not selected**; it stays disabled until a comparable measurement shows a gain.
+- S3 r5 supplies the corrected source. Real interval-1 read parity was measured on r4 and carried to the private r5 successor by source analysis; final combined-runtime qualification remains pending.
+- S9 is **not selected**: real interval-1 identity passed, but the synthetic timing checks did not demonstrate the required gain. It stays disabled; this gain assessment is closed.
 - This source publication does not enable a programme default, admit a runtime or establish scientific acceptance.
 - [Issue #47](https://github.com/Atlantispy/atlas/issues/47) remains open.
 
@@ -43,7 +43,7 @@ The constructor's **12 standard-library fixture checks pass**. A separate comple
 
 The focused r5 selection passes **36/36 checks across two runs**: 19 lazy-row tests, including the new scratch-funding and failure-frame checks, followed by 17 consumer tests. The initial run's two setup failures remain recorded: those fixtures expected an untransformed native owner, while the selected composition already carries that transformation. A reviewed adapter corrected fixture loading without changing the assertions. The 17 consumer tests call the actual selected owner's `_issue`, `_bound`, `restore` and `_carried_start_cells`; the frozen legacy owner supplies only the reference side. This is combined coverage from two runs, not a new single-run 36-test result.
 
-The negative control substituted only r4's `_admits` method in memory. All three new funding tests rejected it as expected: two assertion failures and one error. Ruff reported no findings across four changed files under `F821`, `F841` and `B905`. No r4 result below is promoted to r5 evidence.
+The negative control substituted only r4's `_admits` method in memory. All three new funding tests rejected it as expected: two assertion failures and one error. Ruff reported no findings across four changed files under `F821`, `F841` and `B905`. The separately described interval-1 read-parity carry is source analysis; the historical mutant and fault-injection results remain r4 evidence.
 
 The checked private source identities are `beb695322b5d184a71e537a1a3092090487c731e721d82439c1e57f94f589cab` for `spatial_validation_patch.py` and `69492c3bef071d0769520ddcfa37cfaca2a54d135a3ddc8e4297cf51241adb13` for `test_s3_lazy_rows.py`.
 
@@ -88,7 +88,7 @@ The checked private source identities are `beb695322b5d184a71e537a1a3092090487c7
 
 ### Not yet established
 
-- **Real-data parity.** The earlier prepared request targets r4; it has not run and remains held. Corrected r5 needs a new request bound to its own sources and an applicable admission decision. Real-data qualification remains pending.
+- **Final-generation parity.** The retained real interval-1 comparison passed on r4: the values read by the `close_graph` and `transport` expressions were byte-identical over 847 rows. It did not execute those complete owner functions. Whole-row exports fell from 5,082 to 1,694 per pass (66.7%); both families together made 10,164 versus 3,388 exports. Review accepts carry of those read values to the private r5 successor: r5 funds the admission walk and collects unreachable failure frames after a refused walk; the downstream read logic is unchanged. This replaces the earlier requirement for a new request only for that bounded read-parity claim. It is not an r5 rerun, an admission-rate measurement or qualification of the public selection. The final combined generation still needs its own dependency checks and interval-1 parity run.
 - **Gain is PROJECTED.** The retained interval-1 profile suggested roughly 1.27 → 0.82 ms per row per `close_graph` + `transport` pair, about 4–6 s at interval 2, less the admission walk's unmeasured cost. This historical projection does not measure r5's funding change or the integrated route.
 - **Diagnostic meaning.** The capacity probe samples before each single-field read, and that read releases its export inside the read. Its `peak_retained_delta_bytes` therefore now equals the index size and records no export peak. It is a diagnostic; no scientific value or acceptance limit reads it.
 
@@ -106,9 +106,11 @@ The checked private source identities are `beb695322b5d184a71e537a1a3092090487c7
 **What is kept.** Every support-blob read with its type, length and SHA-256 refusal, and every cancellation check. Only the row re-encoding is skipped.
 
 **Status.**
-- **Checks so far.** Its unit tests pass on the selected base, and a fail-closed four-arm measurement harness and checker are prepared. The checker has two clean controls and 24 known faults.
+- **Controls.** Its unit tests pass on the selected base. The four-arm measurement checker has two clean controls and 24 known faults; the separate launcher limitations below remain.
 - **Coverage gap.** Two owner test modules could not run on either arm: one fixture predates the current heat issuer, and one import closure lacks a lazily imported helper. Their repairs belong to final assembly and are a condition of any later selection.
-- **Missing evidence.** The measurement and the interval-1 identity comparison are approved and prepared but have not run, so the gain is unmeasured. Without a comparable measured gain and a real-data identity comparison, S9 stays disabled, and its source is not part of this publication.
+- **Real-data identity.** The interval-1 mesh comparison passed: all 2,024 support reads retained their order and digest, one repeated row stream was removed, and the injected corrupt support blob produced the same refusal. This establishes identity for that tested mesh.
+- **Synthetic timing.** Two valid, predeclared comparisons did not meet the gain rule. The decisive repeat saved 2.6807521 s on average (2.4032896%), against a base-arm spread of 6.9315675 s. The rule required every candidate sample to beat every base sample, a mean saving at least twice the largest within-arm spread, and at least 0.5% saving. The first two conditions failed; the third passed. These are synthetic component timings, separate from the real-data identity result. S9 stays disabled, the gain assessment is closed, and no further repeat is selected.
+- **Harness limits.** Recorded resource peaks remained within the bookings, but the supervisor enforced a 12 GiB tree cap rather than the smaller booking. The known launcher-control and import-coverage gaps are not closed by these results; repair them before any future reuse or enablement.
 
 ## Limits
 

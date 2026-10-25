@@ -15,15 +15,16 @@ and preserved the current capture encoder. The real interval-1 comparison remain
 issue #48 and final-generation selection stay open.
 [Source, checks and limits](../tectonics/optimisation/workbench/plan22/README.md).
 
-**Plan21's lazy carried-start rows have a source integration; real-data qualification is pending.**
+**Plan21's lazy carried-start rows have source integration and bounded read-parity evidence; final runtime qualification remains pending.**
 The [S3 selection](../tectonics/optimisation/workbench/plan21/README.md) connects
 single-field reads to the existing spatial owner and preserves bounded whole-row
 fallback. Review found an unbooked admission workspace and added its matching
 reservation. The public builder combines the overlay with the existing combined
-source selection; final private assembly remains separate. S3 gain is projected,
-S9 remains disabled with unmeasured gain, and issue #47 stays open. The approved
-real-data comparison has not run; the frozen earlier request does not qualify
-the corrected successor.
+source selection; final private assembly remains separate. Real interval-1 read
+values matched on r4, with 66.7% fewer whole-row exports; source-analysis carry to
+the private r5 successor is accepted. S3 timing remains projected. S9 real-data
+identity passed, but its synthetic timing criterion was not met: it remains
+disabled. Issue #47 stays open for final integration and import coverage.
 
 **Plan39 has reviewed source integration; Release qualification is incomplete.**
 The [complete policy selection](../tectonics/optimisation/workbench/plan39/README.md)

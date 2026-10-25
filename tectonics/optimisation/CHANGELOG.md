@@ -6,6 +6,18 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 25 Oct 2026, Plan21 retained evidence review
+
+- Accept the bounded source-analysis carry of interval-1 S3 read values from r4
+  to the private r5 successor. Whole-row exports fell by 66.7%; timing remains
+  projected. The complete owner functions and final combined runtime are not
+  qualified by that read comparison.
+- Record S9's real-data identity pass separately from its synthetic timing:
+  the predeclared gain rule was not met. Keep it disabled, close the gain
+  assessment without another repeat, and retain the import-coverage gap.
+- Reconcile the source guide, plan, index and current status. Keep issue #47
+  open for final integration; no source bytes, default or run hold changed.
+
 ## 24 Oct 2026, Plan04 producer and reader bindings
 
 - Add the reviewed W/E producer, caller and reader catalogue and source-specific

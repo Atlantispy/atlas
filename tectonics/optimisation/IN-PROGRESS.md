@@ -193,7 +193,8 @@ all-green consumer suite or a completed packaged route.
 
 - **S2 (capture writers):** revision 9 final for exactness (37/37 mutants killed). Its before/after timing has not run.
   The capture library path must become package-relative, with the native library carried in the package and pinned.
-- **S9:** held until its harness smoke and mutants pass.
+- **S3:** real interval-1 read values match on r4; source-analysis carry to the private r5 successor is accepted. Timing remains projected; final combined-runtime checks remain pending.
+- **S9:** real-data identity passed, but both predeclared synthetic timing checks missed the gain rule. Disabled; this gain assessment is closed. Final assembly retains the import-coverage repair; #47 stays open.
 
 ## Final assembly and landing
 

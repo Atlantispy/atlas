@@ -4,10 +4,10 @@
   "status": "WORKING NON-CANON",
   "acceptance": {
     "s3_selected": true,
-    "s3_real_data_parity": "NOT_RUN_R5_SUCCESSOR_REQUEST_REQUIRED",
-    "s3_real_data_request_scope": "The earlier prepared request targets r4 and remains held. Corrected r5 requires a new request bound to its sources and an applicable admission decision.",
+    "s3_real_data_parity": "PASS_R4_READ_VALUES_CARRIED_TO_PRIVATE_R5_BY_SOURCE_ANALYSIS",
+    "s3_real_data_request_scope": "The retained comparison executed owner read expressions, not complete owner functions. Source-analysis carry is accepted only to the private r5 successor. Final combined-generation parity and dependency qualification remain required.",
     "s9_selected": false,
-    "s9_reason": "gain unmeasured: the measurement and the real-data identity comparison are approved and prepared but have not run; two owner test modules are a coverage gap on both arms",
+    "s9_reason": "Real interval-1 identity passed. Both predeclared synthetic timing checks failed the gain rule; S9 remains disabled and this gain assessment is closed. Two owner import-coverage gaps remain for final assembly and any future enablement.",
     "issue": "https://github.com/Atlantispy/atlas/issues/47",
     "issue_state": "OPEN",
     "default_enablement": false,
@@ -130,6 +130,24 @@
       "owner_sha256": "74caa12601416e2058a307afc8b72b288b8a17e5d7ce45cd03048fad90def85f",
       "svp_sha256": "3da661f710cad7af0c8e8e8b70e4ed348979a34c02fea139520eddcb97c62444",
       "scope": "All 19 lazy-row checks also pass using only the complete public selection and scientific interpreter libraries. Test loader paths were adapted; shipped test assertions were unchanged."
+    },
+    "real_data_read_parity": {
+      "revision_measured": "r4",
+      "rows": 847,
+      "status": "PASS",
+      "scope": "Values read by close_graph and transport expressions; complete owner functions were not executed",
+      "whole_row_exports_per_pass": {
+        "base": 5082,
+        "candidate": 1694
+      },
+      "whole_row_exports_both_families": {
+        "base": 10164,
+        "candidate": 3388
+      },
+      "compare_sha256": "3f5d5eb8bbc38a7b7471699793e84316254e24140d87412e5584b70f046c3792",
+      "r5_carry": "ACCEPTED_SOURCE_ANALYSIS_NOT_RERUN",
+      "r5_delta": "Admission scratch funding and collection of unreachable failure frames; downstream lazy reads unchanged",
+      "final_combined_generation": "NEW_PARITY_AND_DEPENDENCY_QUALIFICATION_REQUIRED"
     }
   },
   "s9": {
@@ -144,7 +162,42 @@
       "controls_pass": 2,
       "faults_killed": 24
     },
-    "measurement": "NOT_RUN_GAIN_UNMEASURED"
+    "measurement": "VALID_SYNTHETIC_CHECKS_GAIN_NOT_DEMONSTRATED",
+    "real_data_identity": {
+      "status": "PASS",
+      "support_reads": 2024,
+      "stream_count_base": 1,
+      "stream_count_candidate": 0,
+      "read_order_and_digest_equal": true,
+      "corrupt_blob_refusal_equal": true,
+      "result_sha256": "c6c849e073f3740b2a8c1e967f8142add9f851bc20b71e9ca72712cb53183333"
+    },
+    "synthetic_timing": {
+      "scope": "SYNTHETIC_COMPONENT_NOT_REAL_INTERVAL_TIMING",
+      "first_check": {
+        "mean_saving_seconds": 6.5230844,
+        "percent": 5.7538397,
+        "C1": true,
+        "C2": false,
+        "C3": true
+      },
+      "decisive_repeat": {
+        "mean_saving_seconds": 2.6807521,
+        "percent": 2.4032896,
+        "base_spread_seconds": 6.9315675,
+        "C1": false,
+        "C2": false,
+        "C3": true,
+        "summary_sha256": "4de049295e08b56b8057b8211baf3b5d33b2064ea8385cc10d63a035361cb49b"
+      },
+      "rules": {
+        "C1": "max(candidate) < min(base)",
+        "C2": "mean saving >= 2 * max(within-arm spreads)",
+        "C3": "mean saving >= 0.5% of base mean"
+      },
+      "disposition": "DISABLED_GAIN_ASSESSMENT_CLOSED_NO_FURTHER_REPEAT",
+      "harness_limit": "Measured peaks within booking; supervisor tree cap 12 GiB, not the smaller booking. Launcher-control gaps remain for any future reuse."
+    }
   },
   "evidence_sha256_scope": "S3 and lint entries in evidence_sha256 below identify retained private r4 records; S9 records retain their separate disabled-candidate scope. Current r5 results have their own pins under focused_r5. No historical result is relabelled as r5 evidence.",
   "evidence_sha256": {
