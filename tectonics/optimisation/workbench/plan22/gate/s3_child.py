@@ -4,11 +4,12 @@ PYTHONHASHSEED=0 python -B s3_child.py SPEC.json      (never -I: the suites impo
 
 The spec names the fixture helpers and runtime-src folders, the pinned files (path -> sha256, all checked before any
 import), the mode and the output path (must not exist). Modes:
-  lazy        test_s3_lazy_rows: all 19 must pass
+  lazy        test_s3_lazy_rows: all 20 must pass
   consumers   test_d1b_carried_start + test_spatial_compact_cells through the reviewer's loader seams: all 17 must pass
+  carry       test_s3_l3_fallback: both stored-segment fallback cases must pass
   own         test_l3_carried_pages: all must pass (the spec's expected_runs: 22 for port-r3), with record_views
               loaded from the fixture
-  negative    test_s3_lazy_rows on a fixture without the S3 runtime change: all 19 must run, and at least one but not
+  negative    test_s3_lazy_rows on a fixture without the S3 runtime change: all 20 must run, and at least one but not
               all must fail or error (a fixture that cannot run is not a detection)
 Every mode also requires that no module was loaded from outside the fixture and the interpreter.
 Adapted from Plan 21's unit_n12f_r2.py 4cdee5e9 (fixture paths and pins now come from the spec); the consumers
@@ -23,7 +24,7 @@ from pathlib import Path
 import sys
 import unittest
 
-EXPECTED_RUNS = {'lazy': 19, 'consumers': 17, 'own': 22, 'negative': 19}  # a spec's expected_runs overrides
+EXPECTED_RUNS = {'lazy': 20, 'consumers': 17, 'own': 22, 'carry': 2, 'negative': 20}  # a spec's expected_runs overrides
 
 
 class Results(unittest.TextTestResult):
@@ -92,7 +93,7 @@ def main():
     try:
         lazy = importlib.import_module('test_s3_lazy_rows')
         loaded['test_s3_lazy_rows'] = str(lazy.__file__)
-    except Exception as error:  # recorded; the negative mode still requires all 19 to run
+    except Exception as error:  # recorded; the negative mode still requires all 20 to run
         if mode != 'negative':
             raise
         lazy, extra['import_error'] = None, type(error).__name__ + ': ' + str(error)[:200]
@@ -106,6 +107,17 @@ def main():
         loaded['test_l3_carried_pages'] = str(own.__file__)
         extra['defined_tests'] = test_count(helpers / 'test_l3_carried_pages.py')
         suite = loader.loadTestsFromModule(own)
+    elif mode == 'carry':
+        carry = importlib.import_module('test_s3_l3_fallback')
+        for module, name in ((carry, 'test_s3_l3_fallback.py'),
+                             (carry.RV, 'record_views.py'),
+                             (carry.V, 'spatial_validation_patch.py')):
+            if Path(str(module.__file__)).resolve() != (helpers / name).resolve():
+                raise SystemExit('the carry case or its runtime was not loaded from the fixture')
+        loaded['test_s3_l3_fallback'] = str(carry.__file__)
+        extra['defined_tests'] = test_count(helpers / 'test_s3_l3_fallback.py')
+        extra['carry_evidence'] = carry.EVIDENCE
+        suite = loader.loadTestsFromModule(carry)
     else:
         compact = importlib.import_module('test_spatial_compact_cells')
         d1b = importlib.import_module('test_d1b_carried_start')
@@ -156,7 +168,7 @@ def main():
         expected = result.testsRun == runs and len(outcomes) == runs and 0 < failed < runs
     else:
         expected = result.wasSuccessful() and result.testsRun == runs and len(outcomes) == runs
-        if mode == 'own':
+        if mode in ('own', 'carry'):
             expected = expected and extra['defined_tests'] == runs
     foreign = loaded_outside(root)
     expected = expected and not foreign

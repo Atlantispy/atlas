@@ -1,0 +1,46 @@
+{
+  "schema": "atlas.public.plan21.receiving-l3-overlay.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_BINDING",
+  "status": "SOURCE_RECEIVING_PROPOSED_NOT_SELECTED",
+  "source_port_sha256": "fb2636dbd1f70dd6042f65a1efe235fd6249e6337a3aba4fe4b67f1acab59230",
+  "parent_source_map_sha256": "b7887aef4e2fae64c6170306277c5a15b7e2e276b2588aa00aa4e1f3545f1c6b",
+  "entries": [
+    {
+      "member": "source/helpers/record_views.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/record_views.py",
+      "public_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "before_public_sha256": "a6bbb81dcc88c7f4b84272929922a8e4f702694163b18d18c26d3b76a86f89bd",
+      "original_sha256": "e86e98825bcbdf0e0d65683f2517a147bb17b3245ed031d13af45fb63762ae85",
+      "transformations": []
+    },
+    {
+      "member": "source/helpers/mesh_tables.py",
+      "public_path": "tectonics/optimisation/workbench/plan22/source/helpers/mesh_tables.py",
+      "public_sha256": "75a3e282ad2e5c376572275d27810ce116fa59a50c5cf85f874745646d15eeb2",
+      "before_public_sha256": "076f691085aa0e15bf3851d9a21b259421f6e9ba719f2ce4f26985caab12b181",
+      "original_sha256": "437dd4cf2d9744882bea8d64d2c1191019c6d24b447c4368a374673651e21b29",
+      "transformations": [
+        {
+          "kind": "CRLF-to-LF-public-source",
+          "count": 1440,
+          "ast_equal": true,
+          "reuse": "Exact existing published LF source; no new mesh implementation"
+        }
+      ]
+    },
+    {
+      "member": "source/helpers/test_l3_carried_pages.py",
+      "public_path": "tectonics/optimisation/workbench/plan21/receiving-l3-r3/helpers/test_l3_carried_pages.py",
+      "public_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+      "before_public_sha256": null,
+      "original_sha256": "5ea587458b004ca63cfa8c349d463ac714931ba578f1bf705ad259fa648e387a",
+      "transformations": []
+    }
+  ],
+  "selected": false,
+  "enablement": false,
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false
+}

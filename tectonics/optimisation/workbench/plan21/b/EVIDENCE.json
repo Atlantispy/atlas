@@ -1,0 +1,77 @@
+{
+  "schema": "atlas.public.plan21.combined-receiving-evidence.r4",
+  "status": "STAGED_SOURCE_RECEIVING_PASS_NOT_FINAL_SELECTION",
+  "base_commit": "c4410911fcece5dfc61122ba3cdc082bb38d28a2",
+  "historical_entrypoint_preserved": "704d73ad5caa35ea8630cd0db918d03243ff8d7a11f85f709f7e4e89428b877d",
+  "source_tools": {
+    "s3": "595e026cf0a67664b654a651aec273cc607969cc3ac0874b547b13ff5970348b",
+    "b": "c344d6b76566b158c1362d30e93ce5c062fbdbb27ee620ed0e6e0dda2015a796",
+    "a1": "b05c9c7643c3e3aee590088925e9454574a703477b95525525c97315993d7292"
+  },
+  "source_maps": {
+    "s3": "5bfb6e17c3479d57abbe053f2df6764fdee17aa92627c667413accfe31d585b1",
+    "current_l3": "0f6fa03a6af98df2d3446868520a965a2c41d046c2b8bada6228a843683e5930",
+    "b": "2212cd1f96b52b463635259e3afdb5c6868a3727e768e1fd371589c43d9fe2e6",
+    "a1": "ea700d55d1ec46c54261d7b708b04a0c0d1a38a1b38cce53001ac6e53075463a"
+  },
+  "construction": {
+    "B3": {
+      "manifest_sha256": "e0c8832492e297319428bb9da17b0ef72fe48ff261843c9f9b0062e9eafdb3ea",
+      "selection_sha256": "882822f552454df965e524f1ec671cd7c62f8f0421ba697e6d89161cc0b97315",
+      "files": 697
+    },
+    "B3_A1": {
+      "manifest_sha256": "a54af97c11a790f0f6f170c5034b0b2eaae915460781f2353865b1af61694eaf",
+      "selection_sha256": "8c85ed6f2419911d7d47cb801501b9e0b42b9e20d87fac4a0f968d3c1ad08ef5",
+      "files": 697,
+      "a1_changed_files": 22,
+      "b_preserved": true
+    },
+    "counts": {
+      "native": 287,
+      "helpers": 410
+    }
+  },
+  "receiving_checks": {
+    "lazy": {
+      "run": 20,
+      "pass": 20
+    },
+    "selected_owner_consumers": {
+      "run": 17,
+      "pass": 17
+    },
+    "stored_fallback_current_l3_s1a_b3_a1": {
+      "run": 2,
+      "pass": 2
+    },
+    "temporary_residue": [],
+    "manifest_files_verified": 697,
+    "project_imports": "only_selected_source_roots",
+    "source_pin_bypass": false
+  },
+  "caller_controls": {
+    "run": 15,
+    "failures": 0,
+    "errors": 0
+  },
+  "historical_loader_controls": {
+    "actual_plan22_old_entrypoint": "PASS",
+    "changed_old_entrypoint": "REFUSED"
+  },
+  "source_harness_sha256": "d5eed17c6b2b87bd0283986c86863f5396bf8717cd110805c0950505bf27a7c4",
+  "scope": "Actual complete staged public source combination; no final private generation, D31r/D31s choice, IV1 run, timing gain or runtime/scientific acceptance",
+  "selected": false,
+  "runtime_admission": false,
+  "default_changed": false,
+  "enablement": false,
+  "scientific_acceptance": false,
+  "public_l3_mesh_binding": {
+    "private_original_sha256": "437dd4cf2d9744882bea8d64d2c1191019c6d24b447c4368a374673651e21b29",
+    "published_lf_sha256": "75a3e282ad2e5c376572275d27810ce116fa59a50c5cf85f874745646d15eeb2",
+    "crlf_lines": 1440,
+    "ast_equal": true,
+    "reuse_existing_published_source": true,
+    "private_gate_unchanged": true
+  }
+}

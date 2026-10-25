@@ -1712,6 +1712,13 @@ carry to the private r5 successor. It did not execute the complete owner functio
 final combined-runtime parity and a timing benefit remain unproved. This is a storage-access change,
 derived from the existing reader/exporter contracts, with no new physical method.
 
+The receiving successor additionally binds the copied private exporter preflight
+and falls back to the current whole-row route if its callable/code changes.
+A stored-segment test with current carried pages checks paid-registry adoption,
+failure-workspace release and exact settled accounting before and after fallback.
+Faults that remove collection or fallback are detected. This is separate from
+the in-memory S3 read-parity check and does not replace final-generation qualification.
+
 ### Keep read ownership and incomplete diagnostics correct
 
 The [guarded-read component](../../optimisation/workbench/plan30/s1a/README.md)
@@ -1734,6 +1741,28 @@ execute their expected tests, and comparisons preserve declared skip coverage.
 A zero-test or all-skipped result cannot supply the missing proof. Bounded fault
 controls exercise these repairs; source construction and those controls do not
 replace the final combined run. No numerical tolerance changes.
+
+The [B receiving arms](../../optimisation/workbench/plan21/b/README.md) retain
+the reader's path/publication hooks while reusing descriptor parsing, hashing
+stored content in parts, and optionally returning contents through one
+lazy-CASE query. All eight SQL metadata predicates and the original Python
+refusal order remain. [SQLite's expression reference](https://sqlite.org/lang_expr.html#the_case_expression)
+documents lazy CASE evaluation; if any predicate fails, all four content columns
+are NULL. [SQLite's length reference](https://sqlite.org/lang_corefunc.html#length)
+states that `length(TEXT)` stops at the first U+0000, so passing these predicates
+does not impose absolute bounds on complete returned TEXT or allocation. This
+limitation is inherited from the baseline predicates; B3 introduces no new
+refusal regression.
+The [A1 receiver](../../optimisation/workbench/plan21/a1/README.md) preserves
+requested reservation bytes/category when unexpected fast admission failures
+reach the existing geometry, trace and capture consumers. Its short ledger path
+keeps the same generator/frame, locking, refusal and accounting contracts.
+The controlled private reopen chain selects repaired S1A and full B, while
+A1 remains UNCERTAIN / NOT ENABLED after a two-block PASS/FAIL result. Its
+repaired public receiver stays explicit opt-in; final private receiving omits
+the five-row A1 overlay. These private measurements retain the preceding S3
+source and do not establish final S3/n12f or whole-interval performance.
+Actual final integration and qualification remain separate.
 
 ### Check identity at publication and worker boundaries
 

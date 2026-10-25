@@ -1,0 +1,92 @@
+{
+  "schema": "atlas.public.plan21.b.source-overlay.r3",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_ADMISSION",
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan30/s1a/build_candidate.py",
+    "sha256": "7618b5cf6d6f3210d36a882bf34429aba0318a9cb0f8ba32af5fc4b1f9640b59"
+  },
+  "base_source_map": {
+    "path": "tectonics/optimisation/workbench/plan30/s1a/SOURCE-MAP.json",
+    "sha256": "878ae56c72fcb47cea97f5d74cb42b737a1680dfe0e2e3ec8f1217d54650bf45"
+  },
+  "source_members": 697,
+  "arms": {
+    "b1b2": {
+      "rows": {
+        "helpers/test_interval_store_set.py": {
+          "before": "10c47f2932bda169fd841165bb5fd1b0a471f0e96ea2e33cc351eb593880d92a",
+          "after": "24ce9f8229055dab5e37b94bd4832fc89a8ad764afa254a4a5395c534fca70bc",
+          "package_path": "source/common/helpers/test_interval_store_set.py"
+        },
+        "helpers/storage_codec_integration_patch.py": {
+          "before": "39d71ed0ec7c0ba3f2d65169b3642308e57cc0a8436b27d330cf18d3e6bfbe0f",
+          "after": "37e411d704e2ec7dae10eb89fe674ad00e595e33b0129e094f1cc799ae320b04",
+          "package_path": "source/common/helpers/storage_codec_integration_patch.py"
+        },
+        "helpers/interval_store_set.py": {
+          "before": "9b00661d4a14c1b8181689f3823e6b1b1cb8c448cff3b2e31056095670cdc192",
+          "after": "7b0893f0875f322dc079bbc1a7fc04f8a822c166a69746bf4b3ef81bdbf4abde",
+          "package_path": "source/b1b2/helpers/interval_store_set.py"
+        }
+      }
+    },
+    "b3": {
+      "rows": {
+        "helpers/test_interval_store_set.py": {
+          "before": "10c47f2932bda169fd841165bb5fd1b0a471f0e96ea2e33cc351eb593880d92a",
+          "after": "24ce9f8229055dab5e37b94bd4832fc89a8ad764afa254a4a5395c534fca70bc",
+          "package_path": "source/common/helpers/test_interval_store_set.py"
+        },
+        "helpers/storage_codec_integration_patch.py": {
+          "before": "39d71ed0ec7c0ba3f2d65169b3642308e57cc0a8436b27d330cf18d3e6bfbe0f",
+          "after": "37e411d704e2ec7dae10eb89fe674ad00e595e33b0129e094f1cc799ae320b04",
+          "package_path": "source/common/helpers/storage_codec_integration_patch.py"
+        },
+        "helpers/interval_store_set.py": {
+          "before": "9b00661d4a14c1b8181689f3823e6b1b1cb8c448cff3b2e31056095670cdc192",
+          "after": "61f7851199f861d4cf844e191f9d69feab857c335f545ee2063b46debe34c977",
+          "package_path": "source/b3/helpers/interval_store_set.py"
+        }
+      }
+    }
+  },
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "selected": false,
+  "enablement": false,
+  "parent_source_members": 694,
+  "s3_upgrade": {
+    "tool": {
+      "path": "tectonics/optimisation/workbench/plan21/build_selection_r4.py",
+      "sha256": "595e026cf0a67664b654a651aec273cc607969cc3ac0874b547b13ff5970348b"
+    },
+    "historical_source_map": {
+      "path": "tectonics/optimisation/workbench/plan21/SOURCE-MAP.json",
+      "sha256": "715fbf95dadb0264f1b9500d3932394ad825ced131ea11605d003b8fe44ad10f"
+    },
+    "source_map": {
+      "path": "tectonics/optimisation/workbench/plan21/SOURCE-MAP-r4.json",
+      "sha256": "5bfb6e17c3479d57abbe053f2df6764fdee17aa92627c667413accfe31d585b1"
+    },
+    "parent_source_members": 694,
+    "result_source_members": 697,
+    "parent_source_map": {
+      "path": "tectonics/optimisation/workbench/plan39/SOURCE-MAP.json",
+      "sha256": "b7887aef4e2fae64c6170306277c5a15b7e2e276b2588aa00aa4e1f3545f1c6b"
+    },
+    "l3_source_map": {
+      "path": "tectonics/optimisation/workbench/plan21/L3-SOURCE-MAP-r3.json",
+      "sha256": "0f6fa03a6af98df2d3446868520a965a2c41d046c2b8bada6228a843683e5930"
+    },
+    "parent_counts": {
+      "src": 287,
+      "helpers": 407
+    },
+    "result_counts": {
+      "src": 287,
+      "helpers": 410
+    }
+  }
+}

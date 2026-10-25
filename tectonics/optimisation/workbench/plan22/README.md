@@ -1,6 +1,6 @@
 # Plan22: optional bounded page carry
 
-**WORKING NON-CANON. Built, reviewed and source-integrated as a candidate. UNCERTAIN / NOT ENABLED; issue #48 remains open.** An earlier reader measured a 20.9% mean reopen reduction in a real interval-1 A/B ABBA comparison. That measurement does not qualify the newer port or final/public composition. The newer reader still needs combined qualification and retiming; no runtime default is selected here.
+**WORKING NON-CANON. The current reader meets its private selection rule; final-runtime receiving remains open. Issue #48 remains open.** An earlier reader measured a 20.9% mean reopen reduction in a real interval-1 A/B ABBA comparison. That measurement does not qualify the newer port or final/public composition. The current receiving port has passed q120's declared combined S3/L3/S1A qualification and its separate admitted private corrected-reader comparison. Actual selected private final-generation/IV qualification and final integrated-outcome acceptance remain outstanding. The private result does not establish a measured public/final stack or promote a runtime default.
 
 L3 keeps verified immutable page pins between outer read batches of the same view. Adoption happens only after the next verified read has entered; per-access freshness and cancellation and the closing check remain. Carry is bounded to 128 pages and 10 MiB booked per view, with a 32 MiB process bound. The existing 64 MiB page-cache quota remains. Unpinned pages are evicted first; idle carry yields when those pages are insufficient. Close, failed entry, fallback and exceptional exit release reusable carry without leaving traceback-owned data unfunded.
 
@@ -48,5 +48,11 @@ The [combined gate successor](gate/README.md) integrates the receiving repairs
 for failed child exits, skipped coverage and an empty changed suite. Its explicit
 location configuration retains code-owned source and port pins, including the
 corrected guarded-read component. Its portable fault controls test the actual
-gate functions. A repaired gate is not itself a passing combined qualification;
-the full run and final source selection remain outstanding.
+gate functions. The retained q120 result documented there is PASS for the declared
+S3/L3/S1A scope. The historical public builder, [SOURCE-MAP.json](SOURCE-MAP.json)
+and `record_views.py` (`e31a3a73`) above remain unchanged. The [current receiving
+rows](../plan21/L3-SOURCE-MAP-r3.json) separately bind `record_views.py` `e86e9882`
+and its companion rows. The separate source-bound private timing condition is
+now met. Actual selected private final-generation/IV qualification and final
+integrated-outcome acceptance remain outstanding; gate PASS alone does not
+select a runtime default or establish a timing gain.

@@ -1,0 +1,44 @@
+{
+  "errors": 0,
+  "failures": 0,
+  "full_gate": "NOT_RUN_BY_THIS_CONTROL_COMMAND",
+  "gate_sha256": "584eb1e13421fcff083041648c07202338915ee0c183edd026223eb40d35e040",
+  "schema": "plan22.gate.public-controls.r4",
+  "scope": "Synthetic result acceptance and path configuration only; no gate construction or IV run",
+  "skipped": 0,
+  "successful": true,
+  "test_sha256": "1ad0798123a75e62735e878653f824e865d719a4b033f17a96a70bad206dcf15",
+  "tests_run": 18,
+  "predecessor_result": {
+    "file": "CONTROL-RESULT.json",
+    "sha256": "b4d603e4306f3313963e7b401a319ec30258ce972d56b7063a99919b9a67a9c0"
+  },
+  "source_sha256": {
+    "gate_s3l3.py": "584eb1e13421fcff083041648c07202338915ee0c183edd026223eb40d35e040",
+    "s3_child.py": "2feed5f448063ea4de6d07a660f646359177687b1e3abd8724a540b4b160f280",
+    "test_gate_results.py": "1ad0798123a75e62735e878653f824e865d719a4b033f17a96a70bad206dcf15",
+    "gate_child.py": "db3c5e799b28c4695fb647f4a4eb98e866b751d62e313c5ab0362d002b1dd079",
+    "test_gate_l3_store.py": "17294a3a3e2afe18223cd31ba5f68bccfac80e2818676b86f79cfbf4414a5e5d"
+  },
+  "source_identity_unchanged": true,
+  "execution": {
+    "command": [
+      "python.exe",
+      "-B",
+      "test_gate_results.py"
+    ],
+    "working_directory_role": "directory containing the checked gate and control-test sources",
+    "executable_basename": "python.exe",
+    "interpreter_sha256": "946012d7762f6a16d16e0a79af48aec2916cfe134aa9fedc09efef4998bec805",
+    "exit_code": 0,
+    "stdout": "{\"errors\": 0, \"failures\": 0, \"full_gate\": \"NOT_RUN\", \"gate_sha256\": \"584eb1e13421fcff083041648c07202338915ee0c183edd026223eb40d35e040\", \"schema\": \"plan22.gate.public-controls.r1\", \"scope\": \"Synthetic result acceptance and path configuration only; no gate construction or IV run\", \"skipped\": 0, \"successful\": true, \"test_sha256\": \"1ad0798123a75e62735e878653f824e865d719a4b033f17a96a70bad206dcf15\", \"tests_run\": 18}\n",
+    "stderr": "test_added_identity_skip_is_rejected (__main__.ResultBoundaryTests.test_added_identity_skip_is_rejected) ... ok\ntest_all_skipped_or_zero_baseline_coverage_is_rejected (__main__.ResultBoundaryTests.test_all_skipped_or_zero_baseline_coverage_is_rejected) ... ok\ntest_carry_count_and_skip_are_not_coverage (__main__.ResultBoundaryTests.test_carry_count_and_skip_are_not_coverage) ... ok\ntest_changed_s1_suite_cannot_drop_coverage_or_add_skips (__main__.ResultBoundaryTests.test_changed_s1_suite_cannot_drop_coverage_or_add_skips) ... ok\ntest_changed_s1_suite_may_fix_existing_failure_without_dropping_tests (__main__.ResultBoundaryTests.test_changed_s1_suite_may_fix_existing_failure_without_dropping_tests) ... ok\ntest_missing_carry_result_is_reported_as_failed_validation (__main__.ResultBoundaryTests.test_missing_carry_result_is_reported_as_failed_validation) ... ok\ntest_negative_exit_must_be_the_expected_failure (__main__.ResultBoundaryTests.test_negative_exit_must_be_the_expected_failure) ... ok\ntest_nonzero_exit_and_timeout_rejected_for_every_positive_kind (__main__.ResultBoundaryTests.test_nonzero_exit_and_timeout_rejected_for_every_positive_kind) ... ok\ntest_required_l3_s1_and_gate_cases_cannot_skip (__main__.ResultBoundaryTests.test_required_l3_s1_and_gate_cases_cannot_skip) ... ok\ntest_s3_outcomes_cannot_hide_skip_or_missing_coverage (__main__.ResultBoundaryTests.test_s3_outcomes_cannot_hide_skip_or_missing_coverage) ... ok\ntest_unchanged_partial_skip_and_known_failure_remain_allowed (__main__.ResultBoundaryTests.test_unchanged_partial_skip_and_known_failure_remain_allowed) ... ok\ntest_valid_control_including_expected_mutant_exit (__main__.ResultBoundaryTests.test_valid_control_including_expected_mutant_exit) ... ok\ntest_different_existing_python_refuses (__main__.PathConfigurationTests.test_different_existing_python_refuses) ... ok\ntest_explicit_locations_preserve_fixed_identity_pins (__main__.PathConfigurationTests.test_explicit_locations_preserve_fixed_identity_pins) ... ok\ntest_missing_and_identity_override_keys_refuse (__main__.PathConfigurationTests.test_missing_and_identity_override_keys_refuse) ... ok\ntest_moved_input_pin_refuses_before_creating_output_or_launching_children (__main__.PathConfigurationTests.test_moved_input_pin_refuses_before_creating_output_or_launching_children) ... ok\ntest_port_directory_refuses_instead_of_guessing_a_file (__main__.PathConfigurationTests.test_port_directory_refuses_instead_of_guessing_a_file) ... ok\ntest_relative_and_missing_paths_refuse (__main__.PathConfigurationTests.test_relative_and_missing_paths_refuse) ... ok\n\n----------------------------------------------------------------------\nRan 18 tests in 0.078s\n\nOK\n"
+  },
+  "historical_full_gate": {
+    "result_sha256": "aefc072290be8865f21297f10c45783eb61acba129286deec5a42170c18fab76",
+    "verdict": "PASS",
+    "gate_checks": 359,
+    "unique_jobs": 96,
+    "scope": "Separate retained private combined-gate execution; not performed by this control command"
+  }
+}

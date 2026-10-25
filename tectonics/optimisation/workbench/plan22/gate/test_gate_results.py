@@ -33,11 +33,11 @@ for arm in ('b', 'c3', 'c4'):
         records.append(record(f'w-{arm}-{module}', 'suite', arm, module, 10))
 for arm in ('c3', 'c4'):
     records.append(record(f'w-{arm}-test_l3_carried_pages', 'suite', arm, 'test_l3_carried_pages', 22))
-    for mode in ('lazy', 'consumers', 'own'):
+    for mode in ('lazy', 'consumers', 'own', 'carry'):
         records.append(record(f's-{arm}-{mode}', 's3', arm, mode, gate.EXPECTED[mode]))
     records.append(record(f'g-{arm}', 'gate', arm, 'gate_cases', 3))
 records.append(record('w-c4-test_s1a_guarded_read', 'suite', 'c4', 'test_s1a_guarded_read', gate.EXPECTED['test_s1a_guarded_read']))
-records.append(record('s-n-negative', 's3', 'n', 'negative', 19))
+records.append(record('s-n-negative', 's3', 'n', 'negative', gate.EXPECTED['negative']))
 records.append(record('g-m', 'gate', 'm', 'gate_cases', 3, failed=True))
 
 
@@ -50,6 +50,17 @@ class ResultBoundaryTests(unittest.TestCase):
 
     def accepted(self):
         return all(check['ok'] for check in gate.evaluate(self.records, {'test_s1_sealed_read'}, []))
+
+    def test_missing_carry_result_is_reported_as_failed_validation(self):
+        self.records = [r for r in self.records if r['id'] != 's-c4-carry']
+        checks = gate.evaluate(self.records, {'test_s1_sealed_read'}, [])
+        self.assertTrue(any(not c['ok'] and c['detail'] == 'required suite result missing' for c in checks))
+
+    def test_carry_count_and_skip_are_not_coverage(self):
+        for update in ({'testsRun': 1}, {'outcomes': {'a': 'skip', 'b': 'ok'}}):
+            self.setUp()
+            self.result('s-c3-carry').update(update)
+            self.assertFalse(self.accepted())
 
     def test_valid_control_including_expected_mutant_exit(self):
         self.assertTrue(self.accepted())

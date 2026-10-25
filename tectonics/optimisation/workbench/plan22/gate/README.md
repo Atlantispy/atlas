@@ -1,9 +1,11 @@
 # Plan22 composed gate
 
-**WORKING NON-CANON. Source integration and bounded control checks only. The full
-gate has not been constructed or run for this successor.** This directory supplies
-the complete gate, its three child sources and a portable standard-library control
-test. It is not a detached patch or a passing composed-runtime result.
+**WORKING NON-CANON. Current source successor, 18 bounded controls and a retained
+private combined-gate PASS.** This directory supplies the complete gate, its three
+child sources and a portable standard-library control test. The retained private
+combined gate used these exact gate/child bytes and passed 359 checks across 96
+unique jobs; its exact private inputs and Windows science environment are not
+supplied by this directory.
 
 The gate composes the pinned p1820c-r4 base with S3, L3 and S1 Stage A ports into
 new folders. It compares base and candidate identity suites in both composition
@@ -39,8 +41,12 @@ The controls exercise the real `evaluate`, `outcome`, path configuration and
 early CLI refusal code with disposable inputs. They do not construct the five
 composition arms, import the scientific stack, open an interval store, run IV or
 measure timing. To retain a new result, add `--report NEW_FILE.json`.
-[CONTROL-RESULT.json](CONTROL-RESULT.json) identifies the exact checked public
-gate and test bytes. Its successful control result is not a full-gate PASS.
+[CONTROL-RESULT-r4.json](CONTROL-RESULT-r4.json) identifies the exact current gate,
+S3 child, control-test and unchanged child-source bytes, the pinned interpreter,
+the executed command and its 18 passing controls with no failures, errors or skips.
+The command checks result acceptance and path refusal only; it does not run the
+full gate. [CONTROL-RESULT.json](CONTROL-RESULT.json) remains the unchanged
+historical 16-control result for the earlier gate and test sources.
 
 ## Supply the exact inputs for full verification
 
@@ -90,5 +96,18 @@ Neither status selects L3 by default, qualifies a combined IV run, measures a
 speed gain, releases an execution hold or establishes scientific acceptance.
 The S1A integration, D-22r timing and final enabling selection retain their own
 requirements. Historical gate results are not rebound to these changed bytes.
-[SOURCE-MAP.json](SOURCE-MAP.json) records predecessor/public identities and the
-limited adaptations; the three child sources retain their exact original bytes.
+[SOURCE-MAP-r4.json](SOURCE-MAP-r4.json) is the current source map. It records the
+changed gate, S3 child and control-test identities, the new control result, and the
+complete expected public membership excluding only its own self-hash.
+[SOURCE-MAP.json](SOURCE-MAP.json) remains unchanged as the historical predecessor.
+`gate_child.py` and `test_gate_l3_store.py` still retain their exact original bytes.
+`s3_child.py` is the reviewed successor that adds the two carried-page cases and
+uses the current lazy/negative counts; it is no longer the historical exact copy.
+
+The retained private combined-gate result has SHA-256
+`aefc072290be8865f21297f10c45783eb61acba129286deec5a42170c18fab76`:
+PASS, 359/359 checks, 96 unique jobs and no failed checks. Its gate and all three
+child-source identities match this successor. This is retained execution evidence,
+not a new run by the portable-control command or qualification of IV, timing,
+default selection or scientific acceptance. The result itself contains private
+machine paths and is not included here.

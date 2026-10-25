@@ -1,0 +1,128 @@
+{
+  "schema": "atlas.plan21.a1.source-overlay.r1",
+  "parent_manifest_sha256": "79dd7890d882575fe1bc280eefb553f9b3f9f2371d748ff223514cc03ca557de",
+  "parent_selection_sha256": "8a754a838852aaead5c50b1b106fb71785dc4e0dec51b69f042c8993378298e8",
+  "rows": [
+    {
+      "path": "src/atlas_tectonics/resources.py",
+      "base_sha256": "fc81fd874dfe5f5ef9fc7e1f235a0d63f1126973a3e5ae22c6ee6b9dd15ff63c",
+      "candidate_sha256": "c1a747c0f159e788022918211c0c7062d1ea8889d26ce08537c804004023a7ad",
+      "source": "<PUBLIC_S1A_SELECTION>/src/atlas_tectonics/resources.py"
+    },
+    {
+      "path": "src/atlas_tectonics/integration_differential_geometry.py",
+      "base_sha256": "a680b479b9dcc8414b43bcf331c6b6d84bf7c20c6226e95e0f2df9806de56e7a",
+      "candidate_sha256": "19928121f9a49f38e2d72fc2696380c53f34c3528971b20fde1922186e0c21d0",
+      "source": "<PUBLIC_S1A_SELECTION>/src/atlas_tectonics/integration_differential_geometry.py"
+    },
+    {
+      "path": "src/atlas_tectonics/integration_differential_trace.py",
+      "base_sha256": "4519d95cdbcc3afa7053ac8813190f1987e4db64a19519eda620c512dd6fb545",
+      "candidate_sha256": "78fa19f07e3b351cf48a48136112ae47c306081c4f40ab37ce141875c418a156",
+      "source": "<PUBLIC_S1A_SELECTION>/src/atlas_tectonics/integration_differential_trace.py"
+    },
+    {
+      "path": "helpers/private_heat_native_failure_capture_r1.py",
+      "base_sha256": "f34b115b32c88361c10f536b26acfe025d1908dc70b89432642456697256108c",
+      "candidate_sha256": "aa869d5b71a2c63215f0f3fe88208479b19c45faa17ae537c35810f246b39841",
+      "source": "<PUBLIC_S1A_SELECTION>/helpers/private_heat_native_failure_capture_r1.py"
+    },
+    {
+      "path": "helpers/private_heat_native_failure_capture_r6.py",
+      "base_sha256": "964ada4dc1d406f575a3c2ad6565c7304297c2ef046f9a0244928d3b7bc5f376",
+      "candidate_sha256": "fdd4119947aba72da16cecb494bded7c838b0e126cc60676727682574687107f",
+      "source": "<PUBLIC_S1A_SELECTION>/helpers/private_heat_native_failure_capture_r6.py"
+    },
+    {
+      "path": "helpers/private_heat_checkpoint_consumer_r10.py",
+      "base_sha256": "adb64a74feb18056e1ae512359b01d66aec900105a7b6dc74a390e68214f394c",
+      "candidate_sha256": "8e177fcf14e9395d2ecdb3d13f58580a6d09684b44aa37e8bad887243d13512a"
+    },
+    {
+      "path": "helpers/private_heat_checkpoint_consumer_r9.py",
+      "base_sha256": "f03a64522cd1f907d69ea6c84eefb0365d5e103710dbd286290195fddd21238e",
+      "candidate_sha256": "8acdc187c8a0d3081b72c36fd0218461264b7bcc39cb8b206db135862ea28928"
+    },
+    {
+      "path": "helpers/private_heat_correction_owned_r1.py",
+      "base_sha256": "446945e8a0e411102e177412dc7ac32c7dafabe043e9f4ab0ab7af4447cfdae4",
+      "candidate_sha256": "298850b0cb9ddb4736438fe4f1f825ba870c459f2b05e98c09713b52e249ba80"
+    },
+    {
+      "path": "helpers/private_heat_finish_inventory_r1.py",
+      "base_sha256": "16b659e953ad658201263172e662c3112e730db59216ff4fed9a3d3eacc7f052",
+      "candidate_sha256": "0c02e0dcfae89d186913e50f878d3d0b3a402173c1942b06bdfea9a3fa974ea4"
+    },
+    {
+      "path": "helpers/private_heat_finish_inventory_r2.py",
+      "base_sha256": "be26b0267c4ab37a7592aaac306bd9a227e0fd1ec0168403ee3f68d3bee10125",
+      "candidate_sha256": "76f3243c3ad234b192891505541b8d5457417961a84fd35fd226fa7787b86a75"
+    },
+    {
+      "path": "helpers/private_heat_finish_issue_owned_r4.py",
+      "base_sha256": "b59a95354ce89cbbc291398cbca06cf396ed83306fc970e943ac344e314e733e",
+      "candidate_sha256": "584d4881b2f04e7c865c811d5e23a1dda493e27734b6c86fb79307f27b0548a0"
+    },
+    {
+      "path": "helpers/private_heat_geometry_inventory_r3.py",
+      "base_sha256": "4e15e722060497abdd2c6e2f5fb2da48b8cec08bf776e9d77ef8ce57c140bec6",
+      "candidate_sha256": "131c614f88bba83ecaa17f8935ae61346d6219fd99e7535cb5fec176fb2d76f1"
+    },
+    {
+      "path": "helpers/private_heat_grouped_account_r1.py",
+      "base_sha256": "f8d6df2059b79b0b9b79fc74b14fd2d06c4ea458b9b7b62717c8bd6afd7f2eba",
+      "candidate_sha256": "8e41d8a675831fbc81c961f30d8bbbe53daf788c92cc719a55081c2ecce2229a"
+    },
+    {
+      "path": "helpers/private_heat_issuer_resources_r3.py",
+      "base_sha256": "8f186f02a70f5fd7fa136dcf78a300c6047894f5b3f9a4ab466c754e98cc677c",
+      "candidate_sha256": "ee7aef6c02066923becc810291e93104cbee3f48dbe5fddac1381c244ebfb744"
+    },
+    {
+      "path": "helpers/private_heat_issuer_resources_r4.py",
+      "base_sha256": "cceb680c2a0003ad2a8c3066d5f0c555d41ec791a22e1a5ca719d11e8001af12",
+      "candidate_sha256": "a936639437dbbe535d46cdd0f38463f3343e437ead5c68cbfe69ee318511a8c1"
+    },
+    {
+      "path": "helpers/private_heat_joined_consumer_r6.py",
+      "base_sha256": "24dc66d50dea8234a5feca795a06734b3a175322e762125f465cb8de73fd49e9",
+      "candidate_sha256": "f542ea7c91c66d54b342a9bef20ca0a402853aef58b1cd0a192117f5408998d8"
+    },
+    {
+      "path": "helpers/private_heat_original_coverage_r3.py",
+      "base_sha256": "a9303db60e6e4b1a4c4b193e31037b5edb556af51831bcec9b6a283493a3fd7e",
+      "candidate_sha256": "04fe7ef59c502e1b032ef2903f77f0b106459439acd4e6be6182f8778f2877e5"
+    },
+    {
+      "path": "helpers/private_heat_projection_numerics_r4.py",
+      "base_sha256": "09fa01956a6abe203a4d1b4bc4a016d965a79e2a26bf392c6052c5f7489ed912",
+      "candidate_sha256": "751030361739d639c7684914a972fd1e1446a9eb3492e833f7bb7753f33b4236"
+    },
+    {
+      "path": "helpers/private_heat_restored_binding_r10.py",
+      "base_sha256": "eec36db7857806397dbfb9d2f5ec04e0c2b0b0808d743093850e0e8ccb755c90",
+      "candidate_sha256": "e0e0a00c1b5b48fa2e3bde20abb5351f71b46176a3570e190db615b925732869"
+    },
+    {
+      "path": "helpers/private_heat_restored_binding_r9.py",
+      "base_sha256": "0536c3b4007a878f7b4886a10f11c6b220ad99bb75ec1004de5f7a2713acf35b",
+      "candidate_sha256": "18a7308f9b31f7aaf7df41b590ae95b92912eb5f47b773af26a1597f53822939"
+    },
+    {
+      "path": "helpers/private_heat_restored_binding_ram_context_r1.py",
+      "base_sha256": "e86a8899f2cf6d081d13062df53099c521445a78c38c728c03cb8a2efc31f54b",
+      "candidate_sha256": "9b92e5f2704ee233533a61d6c97832f6f6d9ecfe564aae1d8cd1d0b4c5642fe6"
+    },
+    {
+      "path": "helpers/private_heat_restored_binding_ram_recovery_r1.py",
+      "base_sha256": "c765af6e05808c19a97a544111e7fd52fbcce8b0fd993e3ab4fb01243dc1fee2",
+      "candidate_sha256": "e26f4374bfc91f07bc3c7e24d83b10d5631b72dc0743ccae3e2a4e30b32f06db"
+    }
+  ],
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "selected": false,
+  "enablement": false
+}

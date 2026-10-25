@@ -21,7 +21,7 @@ Suites (children use the configured interpreter with PYTHONHASHSEED=0 and -B -P;
 - composition layout W/<arm>/ac/c (suite_check.py): the 15-module identity set plus test_interval_store_set on
   b, c3, c4; test_l3_carried_pages on c3, c4; test_s1a_guarded_read on c4 (its L3S1ContractTests are the S1 side
   of contract C-L3S1);
-- S3 layout S/<arm> (s3_child.py): lazy 19, consumers 17, own (L3) 22 on c3, c4; negative on n;
+- S3 layout S/<arm> (s3_child.py): lazy 20, consumers 17, own (L3) 22, carry 2 on c3, c4; negative on n;
   Composition-layout suites get PYTHONPATH = suite_check's own three import roots, so their real-process children
   (the interval crash cases) import what the parent imports;
 - owner layout O/<arm> (suite_check.py): the identity modules whose source names runtime-integration-r1, in the
@@ -59,7 +59,7 @@ APPLIER = None
 APPLIER_FILE = '1d7fdcb3b4d1d20274a01364d3068cdee77e996b23de1c73f6423d3f055f1110'
 APPLIER_TEXT = '29d6810c99a5c95f8886f5bb21dade46be90fc1d15f3a96565886f6389579483'
 PORT_PINS = {  # name: (PORT.json sha256, row format); locations cannot override these pins
-    's3': ('f4ddf752c517be423b18335c3e3bc7fc51b10fb939fbbffa62d18d3ea628081f', 's3'),
+    's3': ('5e3f81744fad9f73bb0f360a41dfb96afe0fab608e32ac44c893ad430cb837e1', 's3'),
     'l3': ('fb2636dbd1f70dd6042f65a1efe235fd6249e6337a3aba4fe4b67f1acab59230', 'l3'),
     's1a': ('5d3f37263468bf9ccfeebadaeec13c4c2a1397081865b3e3088719d144f52ad3', 's1a'),
 }
@@ -74,7 +74,7 @@ S3_DEPENDENCIES = {  # S3 PORT.json closure.after.helper, at their r4 bytes (gat
     'helpers/spatial_records_patch.py': '77abd1a2e9a76071f4997ee5ff2237b3af13db6b9d12da0eaa60e6b4fb23a1b7',
 }
 # (port, dependency) -> the port whose row may replace it, and why that is re-proved here.
-DEPENDENCY_EXCEPTIONS = {('s3', 'helpers/record_views.py'): ('l3', 'S3 lazy/consumers suites on c3 and c4')}
+DEPENDENCY_EXCEPTIONS = {('s3', 'helpers/record_views.py'): ('l3', 'S3 lazy/consumers/carry suites on c3 and c4')}
 OWNER_RUNTIME = None
 OWNER_RUNTIME_TREE = ('d04577399bec9a62b71cafadf9415351520e4cc5dd22b96d5c386f3a032ebab1', 234)
 OWNER_ENDPOINT = None
@@ -86,7 +86,7 @@ HEAT_TREE = ('d1f4edf9ed967f931fe57e1418297fb1897774e6e21fe90b4197555ec0af6b5b',
 HARNESS = {  # gate children, pinned like every other input
     'suite_check': (None,
                     '03ea7acdb491774bb34ee6cb7b6e6b689d849a5b93629a6975b5e73379ac69ea'),
-    's3_child': (HERE / 's3_child.py', '78549f5a694c657db1b40491d57ce8b2736b10f1e6b3ae61edee176c567b20ac'),
+    's3_child': (HERE / 's3_child.py', '2feed5f448063ea4de6d07a660f646359177687b1e3abd8724a540b4b160f280'),
     'gate_child': (HERE / 'gate_child.py', 'db3c5e799b28c4695fb647f4a4eb98e866b751d62e313c5ab0362d002b1dd079'),
     'gate_cases': (HERE / 'test_gate_l3_store.py', '17294a3a3e2afe18223cd31ba5f68bccfac80e2818676b86f79cfbf4414a5e5d'),
 }
@@ -95,8 +95,8 @@ IDENTITY = ('test_record_views', 'test_mesh_tables', 'test_record_tables', 'test
             'test_compact_header_retention', 'test_compact_store', 'test_private_heat_snapshot_store_r4',
             'test_s1_sealed_read', 'test_segment_store', 'test_step7b_record_reuse', 'test_step9a_pending')
 LONGEST_PATH = 230  # leaves the suites' temporary names under MAX_PATH (260)
-EXPECTED = {'test_l3_carried_pages': 22, 'test_s1a_guarded_read': 26, 'lazy': 19, 'consumers': 17, 'own': 22,
-            'negative': 19, 'gate_cases': 3}
+EXPECTED = {'test_l3_carried_pages': 22, 'test_s1a_guarded_read': 26, 'lazy': 20, 'consumers': 17, 'own': 22, 'carry': 2,
+            'negative': 20, 'gate_cases': 3}
 # m arm: the carry adopted before the verified read is entered (the gate cases must catch it).
 MUTANT = ('            registry = None\n            try:\n                with self.segment.verified_read():\n'
           '                    if outer:\n                        registry = self._take_carried()\n',
@@ -397,7 +397,7 @@ def jobs(root, owner_mods):
                      helpers=comp / 'helpers', pythonpath=roots) for m in mods]
         out += [dict(id=f'o-{arm}-{m}', kind='suite', arm=arm, layout='owner', module=m,
                      helpers=o / arm / OWNER_REL / 'resumability-r1/helpers') for m in owner_mods]
-    s3_modes = ('lazy', 'consumers', 'own')
+    s3_modes = ('lazy', 'consumers', 'own', 'carry')
     for arm, modes in (('c3', s3_modes), ('c4', s3_modes), ('n', ('negative',))):
         out +=[dict(id=f's-{arm}-{mode}', kind='s3', arm=arm, layout='s3', module=mode, fixture=s / arm)
                 for mode in modes]
@@ -419,7 +419,8 @@ def command(job, root):
     helpers, native = job['fixture'] / 'res/helpers', job['fixture'] / 'runtime-integration-r1/runtime-src'
     legacy = OWNER_RUNTIME / 'atlas_tectonics/integration_spatial_owner.py'
     names = ('test_s3_lazy_rows.py', 'test_d1b_carried_start.py', 'test_spatial_compact_cells.py',
-             'spatial_validation_patch.py', 'record_views.py', 'test_l3_carried_pages.py')
+             'spatial_validation_patch.py', 'record_views.py', 'test_l3_carried_pages.py',
+             'test_s3_l3_fallback.py', 'interval_store_set.py')
     pins = {str(helpers / n): sha(helpers / n) for n in names}
     pins[str(native / 'atlas_tectonics/integration_spatial_owner.py')] = COMPOSED_SPATIAL_OWNER
     pins[str(legacy)] = LEGACY_SPATIAL_OWNER
@@ -516,7 +517,10 @@ def evaluate(records, s1a_changed, owner_mods):
     for arm in ('c3', 'c4'):
         o = outcome(by[f'w-{arm}-test_l3_carried_pages'])
         check(f'{arm} test_l3_carried_pages all pass', o['ok'] and o['run'] == EXPECTED['test_l3_carried_pages'], o)
-        for mode in ('lazy', 'consumers', 'own'):
+        for mode in ('lazy', 'consumers', 'own', 'carry'):
+            if f's-{arm}-{mode}' not in by:
+                check(f'{arm} S3 layout {mode}', False, 'required suite result missing')
+                continue
             o = outcome(by[f's-{arm}-{mode}'])
             check(f'{arm} S3 layout {mode}', o['ok'] and o['run'] == EXPECTED[mode], o)
         o = outcome(by[f'g-{arm}'])

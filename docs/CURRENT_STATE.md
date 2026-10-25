@@ -15,27 +15,36 @@ extends the existing policy selection without dropping its publication checks.
 The [query-stage successor](../tectonics/optimisation/workbench/plan31/tier1/README.md)
 then applies the corrected reporting to both fresh and restart consumers.
 The [combined gate](../tectonics/optimisation/workbench/plan22/gate/README.md)
-refuses failed child exits and missing test coverage. These are explicit source
-constructions; installed delivery, final combined qualification and run admission
-remain separate. Historical selections and evidence retain their original bytes.
+refuses failed child exits and missing test coverage. Its retained q120 result
+passes the declared combined S3/L3/S1A scope. Final private-generation
+qualification, installed delivery and run admission remain separate.
+Historical selections and evidence retain their original bytes.
 
-**Plan22 L3 is an integrated source candidate, UNCERTAIN / NOT ENABLED.**
+**Plan22 L3 meets its private corrected-reader selection rule.**
 Receiving review repaired wrapper retention, entry-pressure admission and mesh close,
 and preserved the current capture encoder. An earlier reader measured a 20.9% mean
-reopen reduction on the real interval-1 store. The newer port still needs combined
-qualification and retiming; issue #48 and final-generation selection stay open.
+reopen reduction on the real interval-1 store. The newer port has passed q120's
+combined S3/L3/S1A qualification and the corrected-reader private selection rule;
+actual final-generation receiving remains outstanding. Issue #48 stays open.
 [Source, checks and limits](../tectonics/optimisation/workbench/plan22/README.md).
 
-**Plan21's lazy carried-start rows have source integration and bounded read-parity evidence; final runtime qualification remains pending.**
-The [S3 selection](../tectonics/optimisation/workbench/plan21/README.md) connects
-single-field reads to the existing spatial owner and preserves bounded whole-row
-fallback. Review found an unbooked admission workspace and added its matching
-reservation. The public builder combines the overlay with the existing combined
-source selection; final private assembly remains separate. Real interval-1 read
-values matched on r4, with 66.7% fewer whole-row exports; source-analysis carry to
-the private r5 successor is accepted. S3 timing remains projected. S9 real-data
-identity passed, but its synthetic timing criterion was not met: it remains
-disabled. Issue #47 stays open for final integration and import coverage.
+**Plan21 S3/A1/B source integration is accepted; final private qualification remains pending.**
+The [source and receiving details](../tectonics/optimisation/workbench/plan21/README.md)
+record passing lazy-row, actual-owner consumer and stored-fallback checks on the
+complete public receiving layouts. The retained real interval-1 read-value
+comparison covers 847 rows on r4; its accepted carry to private r5 is source
+analysis, not r5 execution. Current-stack timing remains unmeasured.
+The controlled private chain selects repaired S1A and full B with its WP10 helper;
+private A1 is UNCERTAIN / NOT ENABLED and its overlay is omitted from final receiving.
+These gains do not qualify final S3/n12f. Plan31's actual final shared
+source/profile/manifest return, Plan26 fold/rekey, final-source IV1 parity,
+and final-generation acceptance remain outstanding. This component snapshot
+retains those separate receiving obligations.
+S9's gain assessment is closed; it stays disabled with no a7, and its import
+coverage debt belongs to final assembly. S10 is withdrawn and Plan40 is paused.
+Issue #47 stays open.
+
+**Plan26 receiving source is reviewed and integrated locally; final fold remains pending.** The prepared/fresh accounting and protected-helper source ports preserve the authenticated parent. The distinct fresh-v1/prepared-v2 receiver is source-reviewed; actual generated profiles/configuration, final selected-parent recomposition, corrected trace, receiving/fold qualification, integrated acceptance and verified publication remain outstanding. No new runtime/default or scientific acceptance is implied; issue #52 stays open.
 
 **Plan39 has reviewed source integration; Release qualification is incomplete.**
 The [complete policy selection](../tectonics/optimisation/workbench/plan39/README.md)
