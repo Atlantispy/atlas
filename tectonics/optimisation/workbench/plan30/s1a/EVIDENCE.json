@@ -1,0 +1,94 @@
+{
+  "schema": "atlas.public.plan30.s1a.evidence.r3",
+  "status": "COMPONENT_RECEIVER_CHECKED_NOT_SELECTED",
+  "source_map_sha256": "878ae56c72fcb47cea97f5d74cb42b737a1680dfe0e2e3ec8f1217d54650bf45",
+  "builder_sha256": "7618b5cf6d6f3210d36a882bf34429aba0318a9cb0f8ba32af5fc4b1f9640b59",
+  "port_sha256": "c29e786444885521dd161b13a903a4275bac325ed55f6abc71be7621300b9c9c",
+  "selection_sha256": "8a754a838852aaead5c50b1b106fb71785dc4e0dec51b69f042c8993378298e8",
+  "materialised_members": 694,
+  "receiver": {
+    "passed": true,
+    "tests": 36,
+    "failures": 0,
+    "errors": 0,
+    "skipped": [],
+    "guard_observations": {
+      "test_failed_batch_body_refuses_only_if_identity_changed": 2,
+      "test_seal_inventory_failure_gets_its_closing_identity_check": 4,
+      "test_verified_read_fallback_without_read_batch_checks_on_failure": 2
+    },
+    "sources": {
+      "sealed_guard_set": {
+        "member": "helpers/sealed_guard_set.py",
+        "sha256": "5f68b934e5886d2df69c1d7fc1ea3fa804d7a5f0c5d10dc6896a4b882ecebfe8"
+      },
+      "interval_store_set": {
+        "member": "helpers/interval_store_set.py",
+        "sha256": "9b00661d4a14c1b8181689f3823e6b1b1cb8c448cff3b2e31056095670cdc192"
+      },
+      "interval_catalog": {
+        "member": "helpers/interval_catalog.py",
+        "sha256": "51a5010e2a92aa325a0cc7f34fc9af27e86a3c12e5f69e35bf4a5197601d31e0"
+      },
+      "test_s1a_guarded_read": {
+        "member": "helpers/test_s1a_guarded_read.py",
+        "sha256": "14d3b6dd4eac271490ab0a2274306b81f979e5c11568468ae1acbb2ff6bfd645"
+      },
+      "test_s1_sealed_read": {
+        "member": "helpers/test_s1_sealed_read.py",
+        "sha256": "e73ccc73e51c4e0eda58bf9ddd9d2ecbdbafa30c0661cf043e8607102ba990d7"
+      },
+      "atlas_tectonics.reuse": {
+        "member": "src/atlas_tectonics/reuse.py",
+        "sha256": "68cc7d096417b1d69e1c1bc4f688c6bb7bf0163d5ec0e69c5b68923e602978de"
+      }
+    },
+    "bad": [],
+    "scope": "Synthetic receiver checks only; no performance, IV data or scientific acceptance"
+  },
+  "construction_refusals": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "scope": [
+      "changed base builder refused before output",
+      "changed packaged guard refused through actual strict port derive",
+      "CLI injected refusal reports nonzero exit"
+    ]
+  },
+  "static_integration": {
+    "all_694_manifest_members_verified": true,
+    "seven_E2_method_patches": [
+      "test_info_array_on_rewritten_file_refuses",
+      "test_has_array_idiom_on_rewritten_file_refuses",
+      "test_read_on_rewritten_file_refuses",
+      "test_view_open_validation_on_rewritten_file_refuses",
+      "test_record_field_presence_on_rewritten_file_refuses",
+      "test_record_get_default_on_rewritten_file_refuses",
+      "test_nested_batch_suspended_past_its_outer_batch_refuses"
+    ],
+    "default_and_authority_flags_false": true,
+    "ruff_F821_F841_B905_findings": 0
+  },
+  "reused_guard_evidence": {
+    "source_sha256": "5f68b934e5886d2df69c1d7fc1ea3fa804d7a5f0c5d10dc6896a4b882ecebfe8",
+    "focused_tests": 7,
+    "focused_test_sha256": "c1c28d7ff423ffa4defad3f90241c22786ca15487d747f1600bf18d7b43049db",
+    "original_native_tests": 26,
+    "original_native_result_sha256": "f808726e9a8d52a6256d72b11cce2b0c9f59b245837dc709e20f797a9d6a84d3",
+    "scope": "same guard bytes; private evidence reused, not a second run or public historical binding"
+  },
+  "skip_policy": {
+    "E2_tests_run": 10,
+    "E2_skips": 0,
+    "full_S1_expected_tests": 30,
+    "full_S1_expected_skips": 1,
+    "unchanged_skip_test": "S1SealedReadTests.test_replacement_by_identical_bytes_is_refused",
+    "basis": "unchanged sole skip clause and retained base/r2 evidence; no complete S1 gate rerun"
+  },
+  "limits": [
+    "No IV data, timing, full gate, chain/replay qualification or scientific acceptance",
+    "Historical mutant results not relabelled as repair results",
+    "No arbitrary async interruption guarantee at every OS close instruction"
+  ]
+}

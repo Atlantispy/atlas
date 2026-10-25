@@ -1712,6 +1712,29 @@ carry to the private r5 successor. It did not execute the complete owner functio
 final combined-runtime parity and a timing benefit remain unproved. This is a storage-access change,
 derived from the existing reader/exporter contracts, with no new physical method.
 
+### Keep read ownership and incomplete diagnostics correct
+
+The [guarded-read component](../../optimisation/workbench/plan30/s1a/README.md)
+can hold the file and directory handles needed to bind a sealed reader to its
+path. Acquisition cleanup, explicit close and finalisation share one lifetime
+and the token-query lock. An interruption after registering a finaliser therefore
+cannot make two cleanup paths close the same descriptor number. Closing waits
+for an active token query, and later queries refuse a closed lifetime. Existing
+publication checks, path binding and fallback remain in the selected source.
+
+The [query-stage integration](../../optimisation/workbench/plan31/tier1/README.md)
+keeps a stage's diagnostic counts marked truncated after any contributing reader
+loses complete classification. A later complete reader cannot relabel that same
+stage complete; a new stage starts its own status. Both fresh and restart runners
+use this rule. These counts describe observation coverage, not physical accuracy.
+
+The [combined qualification gate](../../optimisation/workbench/plan22/gate/README.md)
+checks child exit status as well as its reported result. Required suites must
+execute their expected tests, and comparisons preserve declared skip coverage.
+A zero-test or all-skipped result cannot supply the missing proof. Bounded fault
+controls exercise these repairs; source construction and those controls do not
+replace the final combined run. No numerical tolerance changes.
+
 ### Check identity at publication and worker boundaries
 
 The [Plan39 source selection](../../optimisation/workbench/plan39/README.md)

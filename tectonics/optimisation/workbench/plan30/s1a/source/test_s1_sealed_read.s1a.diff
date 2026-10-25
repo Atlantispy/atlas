@@ -1,0 +1,69 @@
+--- a/helpers/test_s1_sealed_read.py
++++ b/helpers/test_s1_sealed_read.py
+@@ -133,6 +133,7 @@
+         finally:
+             self.restore_read_only(path)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_modified_file_mid_read_refuses_and_memo_never_serves_it(self):
+         view, _, handle = self.sealed()
+         path = handle.path
+@@ -404,10 +405,12 @@
+         with self.assertRaisesRegex(ContractError, 'identity changed'):
+             view.read('payload', 0, 9, max_owned_bytes=9)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_info_array_on_rewritten_file_refuses(self):
+         view, _, _ = self.sealed()
+         self.assert_refused_like_origin(lambda: view.info.array('payload').close(), view)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_has_array_idiom_on_rewritten_file_refuses(self):
+         view, _, _ = self.sealed()
+ 
+@@ -423,11 +426,13 @@
+         self.assertFalse(has_array('absent-name'))
+         self.assert_refused_like_origin(lambda: has_array('payload'), view)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_read_on_rewritten_file_refuses(self):
+         view, _, _ = self.sealed()
+         self.assert_refused_like_origin(
+             lambda: view.read('payload', 30 * CHUNK, 30 * CHUNK + 9, max_owned_bytes=9).close(), view)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_view_open_validation_on_rewritten_file_refuses(self):
+         view, _, handle = self.sealed()
+         handle._release_memo()
+@@ -479,6 +484,7 @@
+             root.close()
+             record.close()
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_record_field_presence_on_rewritten_file_refuses(self):
+         def present(root, name):
+             # spatial_validation_patch._CompactMapping.__contains__ idiom.
+@@ -490,6 +496,7 @@
+             return True
+         self.assert_record_lookup_refuses(present)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_record_get_default_on_rewritten_file_refuses(self):
+         marker = 'absent-default'
+ 
+@@ -570,6 +577,7 @@
+         finally:
+             os.chmod(path, stat.S_IREAD)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_nested_batch_suspended_past_its_outer_batch_refuses(self):
+         # The refuter's probe_depth_generator.py as a test: a generator suspended
+         # inside a NESTED batch and finished after the outer batch closed must
+@@ -612,6 +620,7 @@
+             stores.resolve_manifest(0, view.ref.root_key)
+ 
+ 
++@patch('sealed_guard_set.ENABLED', False)
+ class B17DirectoryFreshnessTests(unittest.TestCase):
+     """B17: named lookups answer from the binding directory that the opening walk
+     authenticated, so they load no index page and the page-level hooks above never

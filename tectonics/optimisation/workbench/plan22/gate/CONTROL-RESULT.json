@@ -1,0 +1,12 @@
+{
+  "schema": "plan22.gate.public-controls.r1",
+  "gate_sha256": "38c6045395ff0a50590021d9e190971da276ae6b14360d317971776320f72a6f",
+  "test_sha256": "78bb3ec383ce0a43f1152a4d4b7498b806849009a3c6e9cb2ea6ae5824f9bfe9",
+  "tests_run": 16,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "successful": true,
+  "scope": "Synthetic result acceptance and path configuration only; no gate construction or IV run",
+  "full_gate": "NOT_RUN"
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "atlas.public.plan31.tier1.source-transform.r2",
+  "identity_kind": "NEW_PUBLIC_SOURCE_TRANSFORM_NOT_RUNTIME_ADMISSION",
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan30/s1a/build_candidate.py",
+    "sha256": "7618b5cf6d6f3210d36a882bf34429aba0318a9cb0f8ba32af5fc4b1f9640b59"
+  },
+  "base_source_map": {
+    "path": "tectonics/optimisation/workbench/plan30/s1a/SOURCE-MAP.json",
+    "sha256": "878ae56c72fcb47cea97f5d74cb42b737a1680dfe0e2e3ec8f1217d54650bf45"
+  },
+  "base_selection_sha256": "8a754a838852aaead5c50b1b106fb71785dc4e0dec51b69f042c8993378298e8",
+  "transforms": {
+    "apply_t1.py": "501bfb3002a45870128d89cb1395ba883a43eeea33402415ccdf081c873e74c4",
+    "query_store_prerequisite.py": "cd289b35c8c95ab03f67caeb8e66de0863af408b0e40393f731ab715ff3eae18"
+  },
+  "rows": [
+    {
+      "member": "src/atlas_tectonics/integration_endpoint_checkpoints.py",
+      "public_base": "tectonics/optimisation/workbench/plan39/source/src/atlas_tectonics/integration_endpoint_checkpoints.py",
+      "public_base_sha256": "a9c6291c499a86b3976eed47753417868a54c2b5684c53d011dff36724ed6b9f",
+      "public_output_sha256": "bbd501ff35ae586ce7be006fee282c5fd31c6861d28771599be5b31129a19db5",
+      "private_output_sha256": "2f4ad424e4a2d7d6ce9a73b5c85e1ff4bc412d564994c2eaf01332902d73f176"
+    },
+    {
+      "member": "helpers/run_fresh_interval.py",
+      "public_base": "tectonics/optimisation/workbench/plan39/source/helpers/run_fresh_interval.py",
+      "public_base_sha256": "c03f5740ee81ab273d65a9bbf08ec063bda3532ef52b4694ad29ed2a23be69eb",
+      "public_output_sha256": "4598c9998955deec0a77b07475e30fec9ea4d272b67fa1272f91b4545ee6d3c2",
+      "private_output_sha256": "8efc3a8cb76195cff5d4c637291b1d1eeb5b89122ea36b0bb9bca2c092d67466"
+    },
+    {
+      "member": "helpers/run_prepared_restart.py",
+      "public_base": "tectonics/optimisation/workbench/plan39/source/helpers/run_prepared_restart.py",
+      "public_base_sha256": "7a4b08f008541d9c58cf3157cdc6a1a98f6bb5e8a63668156414565fc0eda418",
+      "public_output_sha256": "e3177ee9e1ad7ec44182b0c757ede2615966fc569ae879121b705edd3e30dd78",
+      "private_output_sha256": "051008ad29fc56d42393c33b7dfcde622a39b5e9cce03a4900b91934ee066ce9"
+    }
+  ],
+  "selected_source_members": 694,
+  "semantic_mapping": "Preserve the complete Plan39 plus S1A selection; port only the retained G1 completed-query wiring to restart, then apply the corrected Tier1 observation edits to owner and both runners. Public profile, historical-root and timing behaviour remain unchanged.",
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "selected": false,
+  "enablement": false
+}

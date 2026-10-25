@@ -170,8 +170,9 @@ all-green consumer suite or a completed packaged route.
 
 - **Merged:** sealed interval-1 heat reopen 46.1 → 15.7 s (MEASURED), in `composed-r2/helpers/segment_store.py`.
 - **L3:** reviewed and source-integrated as an optional candidate, with bounded touched-page
-  retention, reclaimable entry and record/mesh cleanup. **UNCERTAIN / NOT ENABLED**; the real
-  interval-1 A/B comparison and final selection remain pending. Issue #48 stays open. See
+  retention, reclaimable entry and record/mesh cleanup. **UNCERTAIN / NOT ENABLED** for the
+  current selection. An earlier reader measured a 20.9% mean real interval-1 reopen gain;
+  the newer port's combined qualification, retiming and final selection remain pending. Issue #48 stays open. See
   [Plan22](plans/plan-22-storage-l3.md) and [source/checks](workbench/plan22/README.md).
 - **WP12:** assessment complete; **UNBUILT/OFF**. Source review establishes one eligible sealed reopen;
   the central estimated net saving is −3.1% against the 5% gate (not a measured failure). The former N = 2,
@@ -184,6 +185,13 @@ all-green consumer suite or a completed packaged route.
 - **Query store:** WP17 remains off. The assessment is done, but representative per-stage counts from the later
   fresh intervals are absent. Prepared-restart counts/selection and batched-route kill evidence remain pending
   under #61; the serial store's twelve-kill result does not cover the batched route.
+
+- **Receiving repairs:** the [guarded-read source](workbench/plan30/s1a/README.md)
+  and [fresh/restart query reporting](workbench/plan31/tier1/README.md) form an explicit
+  successor of the policy selection. Handle cleanup shares one lifetime, and
+  truncated observation stays truncated within its stage. The
+  [combined gate](workbench/plan22/gate/README.md) rejects failed child exits and
+  missing coverage. Final qualification and runtime/default selection remain open.
 
 - **Summaries (043) and buffer pools (032):** assessment complete; neither build gate is
   established and both remain not built. The retained profile does not bound all allocation

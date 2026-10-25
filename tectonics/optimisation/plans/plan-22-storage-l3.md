@@ -1,6 +1,6 @@
 # Plan 22 - bounded verified-page carry between read batches
 
-**Status: WORKING NON-CANON. Implementation reviewed and source-integrated as an optional candidate; measured selection pending. L3 is UNCERTAIN / NOT ENABLED. Issue #48 remains open.**
+**Status: WORKING NON-CANON. Implementation reviewed and source-integrated as an optional candidate. An earlier reader measured a 20.9% mean real interval-1 reopen gain; the newer port's qualification, retiming and final selection remain pending. L3 is UNCERTAIN / NOT ENABLED in the current selection. Issue #48 remains open.**
 
 The [source overlay and receiving checks](../workbench/plan22/README.md) record the exact implementation revisions and their evidence. This plan defines the mechanism and acceptance contract. Publication does not replace the selected runtime, change an execution hold or qualify a real interval.
 
@@ -44,7 +44,7 @@ The registry requests 266,240 bytes before its owner overhead. At 65,536 bytes p
 
 The focused controls cover exact keys and values; per-view trim and process refusal; close with surviving references; entry/body/closing refusal; outside-batch reads; fallback; pressure reclamation; scope close; and the repaired wrapper-lifetime and repeated-close cases. Planted faults must fail their intended controls. Preserve unchanged-suite failures and skips explicitly rather than describing equal results as an all-pass suite.
 
-The pending comparison is **A/B ABBA**, one core, on the interval-1 sealed heat store, with fresh process/input copies and authenticated source bindings. Use of the data is approved; execution still needs release of the existing admission hold. A frozen request for an older candidate does not qualify a corrected successor.
+The earlier **A/B ABBA** comparison on the interval-1 sealed heat store selected its tested reader: mean reopen time fell from 16.266 s to 12.864 s with exact result identity preserved. The gain's mechanism remains unproven. The newer reader requires its own combined qualification and retiming with authenticated source bindings and ordinary run admission. A request or result for an older candidate does not qualify a corrected successor.
 
 Select L3 only when every condition holds:
 

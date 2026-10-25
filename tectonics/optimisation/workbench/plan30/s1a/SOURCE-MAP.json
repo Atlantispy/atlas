@@ -1,0 +1,106 @@
+{
+  "schema": "atlas.public.plan30.s1a.source-overlay.r3",
+  "identity_kind": "NEW_PUBLIC_SOURCE_OVERLAY_NOT_RUNTIME_ADMISSION",
+  "base_source_map": {
+    "path": "tectonics/optimisation/workbench/plan39/SOURCE-MAP.json",
+    "sha256": "b7887aef4e2fae64c6170306277c5a15b7e2e276b2588aa00aa4e1f3545f1c6b"
+  },
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan39/build_selection.py",
+    "sha256": "c993edceedfd3002fa50655a799de16519f8d960e9717b232c8e16f4516bd892"
+  },
+  "port_sha256": "c29e786444885521dd161b13a903a4275bac325ed55f6abc71be7621300b9c9c",
+  "rows": {
+    "helpers/interval_store_set.py": {
+      "kind": "diff",
+      "before": "b2b7a1aec9f3257410f078cf16a0dedf0535e6bf8d14fc18127bb84673dab274",
+      "after": "9b00661d4a14c1b8181689f3823e6b1b1cb8c448cff3b2e31056095670cdc192",
+      "diff": "interval_store_set.s1a.diff",
+      "diff_sha256": "3191cf6daf0cca04c477c8dd6f3e744d9d511a39d1ec16dfc7213642e276c953"
+    },
+    "helpers/test_s1_sealed_read.py": {
+      "kind": "diff",
+      "before": "54edda3ff75629f466ae5e9619102771e7d9e9176f1f907b0e3aae75318e95c6",
+      "after": "e73ccc73e51c4e0eda58bf9ddd9d2ecbdbafa30c0661cf043e8607102ba990d7",
+      "diff": "test_s1_sealed_read.s1a.diff",
+      "diff_sha256": "f7a4a9bf89123e3af58511509184a6c280e73f087660732da9bb38bbecc793e1"
+    },
+    "helpers/test_interval_store_set.py": {
+      "kind": "diff",
+      "before": "a9e89b3a5c0b68a3646f59194f7b7213128539a7d42c55c8ecaf1614ef202ec5",
+      "after": "10c47f2932bda169fd841165bb5fd1b0a471f0e96ea2e33cc351eb593880d92a",
+      "diff": "test_interval_store_set.s1a.diff",
+      "diff_sha256": "3d42736f712ecef9f8db055fbc20f7086fd1e4593e2a8949b76312c277f9fe4b"
+    },
+    "helpers/sealed_guard_set.py": {
+      "kind": "add",
+      "before": null,
+      "after": "5f68b934e5886d2df69c1d7fc1ea3fa804d7a5f0c5d10dc6896a4b882ecebfe8",
+      "diff": null,
+      "diff_sha256": null
+    },
+    "helpers/test_s1a_guarded_read.py": {
+      "kind": "add",
+      "before": null,
+      "after": "14d3b6dd4eac271490ab0a2274306b81f979e5c11568468ae1acbb2ff6bfd645",
+      "diff": null,
+      "diff_sha256": null
+    }
+  },
+  "dependencies": {
+    "helpers/interval_catalog.py": "51a5010e2a92aa325a0cc7f34fc9af27e86a3c12e5f69e35bf4a5197601d31e0",
+    "helpers/compact_contracts.py": "0aabad86c1ccffd79b79f8aa320c7406a0406c659105f21838beb37c5bc69f6e",
+    "helpers/segment_store.py": "a90ef8f3e519ee77ea4332380428ce2694c16134ec69603ccaf93ce95cea6cd9",
+    "helpers/test_segment_store.py": "2a15702bcf35073bd57ab5e371f3dc7131647d60e4d5e53838a6abb413f5c093"
+  },
+  "entries": [
+    {
+      "member": "source/helpers/interval_store_set.py",
+      "public_path": "tectonics/optimisation/workbench/plan30/s1a/source/helpers/interval_store_set.py",
+      "public_sha256": "9b00661d4a14c1b8181689f3823e6b1b1cb8c448cff3b2e31056095670cdc192",
+      "original_sha256": "011593b4c9efe165bce6f0997da99c2c82cbedc99126a7c80bfd713345d76a71",
+      "public_base": "tectonics/optimisation/workbench/plan39/source/helpers/interval_store_set.py",
+      "public_base_sha256": "b2b7a1aec9f3257410f078cf16a0dedf0535e6bf8d14fc18127bb84673dab274"
+    },
+    {
+      "member": "source/helpers/test_s1_sealed_read.py",
+      "public_path": "tectonics/optimisation/workbench/plan30/s1a/source/helpers/test_s1_sealed_read.py",
+      "public_sha256": "e73ccc73e51c4e0eda58bf9ddd9d2ecbdbafa30c0661cf043e8607102ba990d7",
+      "original_sha256": "e73ccc73e51c4e0eda58bf9ddd9d2ecbdbafa30c0661cf043e8607102ba990d7",
+      "public_base": "tectonics/optimisation/workbench/compact-geometry-r1/test_s1_sealed_read.py",
+      "public_base_sha256": "54edda3ff75629f466ae5e9619102771e7d9e9176f1f907b0e3aae75318e95c6"
+    },
+    {
+      "member": "source/helpers/test_interval_store_set.py",
+      "public_path": "tectonics/optimisation/workbench/plan30/s1a/source/helpers/test_interval_store_set.py",
+      "public_sha256": "10c47f2932bda169fd841165bb5fd1b0a471f0e96ea2e33cc351eb593880d92a",
+      "original_sha256": "10c47f2932bda169fd841165bb5fd1b0a471f0e96ea2e33cc351eb593880d92a",
+      "public_base": "tectonics/optimisation/composed-r2/helpers/test_interval_store_set.py",
+      "public_base_sha256": "a9e89b3a5c0b68a3646f59194f7b7213128539a7d42c55c8ecaf1614ef202ec5"
+    },
+    {
+      "member": "source/helpers/sealed_guard_set.py",
+      "public_path": "tectonics/optimisation/workbench/plan30/s1a/source/helpers/sealed_guard_set.py",
+      "public_sha256": "5f68b934e5886d2df69c1d7fc1ea3fa804d7a5f0c5d10dc6896a4b882ecebfe8",
+      "original_sha256": "5f68b934e5886d2df69c1d7fc1ea3fa804d7a5f0c5d10dc6896a4b882ecebfe8",
+      "public_base": null,
+      "public_base_sha256": null
+    },
+    {
+      "member": "source/helpers/test_s1a_guarded_read.py",
+      "public_path": "tectonics/optimisation/workbench/plan30/s1a/source/helpers/test_s1a_guarded_read.py",
+      "public_sha256": "14d3b6dd4eac271490ab0a2274306b81f979e5c11568468ae1acbb2ff6bfd645",
+      "original_sha256": "14d3b6dd4eac271490ab0a2274306b81f979e5c11568468ae1acbb2ff6bfd645",
+      "public_base": null,
+      "public_base_sha256": null
+    }
+  ],
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "selected": false,
+  "enablement": false,
+  "semantic_mapping": "Plan39 open/publication boundaries preserved; S1A edits only module import and ReadOnlyNative",
+  "private_successor_port_sha256": "5d3f37263468bf9ccfeebadaeec13c4c2a1397081865b3e3088719d144f52ad3"
+}

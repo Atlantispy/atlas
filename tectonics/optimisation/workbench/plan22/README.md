@@ -1,6 +1,6 @@
 # Plan22: optional bounded page carry
 
-**WORKING NON-CANON. Built, reviewed and source-integrated as a candidate. UNCERTAIN / NOT ENABLED; issue #48 remains open.** The real interval-1 A/B ABBA comparison has not run. Data use is approved, but the execution hold remains. Publication and synthetic checks do not establish a speed gain or select a runtime default.
+**WORKING NON-CANON. Built, reviewed and source-integrated as a candidate. UNCERTAIN / NOT ENABLED; issue #48 remains open.** An earlier reader measured a 20.9% mean reopen reduction in a real interval-1 A/B ABBA comparison. That measurement does not qualify the newer port or final/public composition. The newer reader still needs combined qualification and retiming; no runtime default is selected here.
 
 L3 keeps verified immutable page pins between outer read batches of the same view. Adoption happens only after the next verified read has entered; per-access freshness and cancellation and the closing check remain. Carry is bounded to 128 pages and 10 MiB booked per view, with a 32 MiB process bound. The existing 64 MiB page-cache quota remains. Unpinned pages are evicted first; idle carry yields when those pages are insufficient. Close, failed entry, fallback and exceptional exit release reusable carry without leaving traceback-owned data unfunded.
 
@@ -40,4 +40,13 @@ The L3 test imports the selected `test_item14_page_layer` and `test_record_table
 
 The original 11-module comparison had equal base/candidate results, including shared failures in compact-store, segment-store, pending/recovery and mesh-v3 tests. It was not an all-green run. The two long suites passed 9/9 and 10/10 on the earlier private candidate; that evidence remains attached to those bytes. Historical lint introduced no findings in the two product modules, while the new test file had two SIM117 findings. The public results record distinguishes those observations from corrected-source checks.
 
-The profile-based 6.25% opportunity is an estimate, not measured L3 benefit. The prior B17/item14 speed measurements are separate. D10 must use an authenticated request for the exact candidate tested; an older frozen request is not rebound to a successor. Final-generation B17/item14 inclusion and final runtime selection remain open with their respective work. WP12 remains UNBUILT/OFF.
+The profile-based 6.25% opportunity is an estimate. The later measured comparison reduced mean reopen time from 16.266 s to 12.864 s for its tested earlier reader, with exact result identity preserved; the cause of the larger gain remains unproven. The prior B17/item14 speed measurements are separate. A corrected-reader comparison must use an authenticated request for the exact candidate tested; an older request is not rebound to a successor. Final-generation B17/item14 inclusion and final runtime selection remain open with their respective work. WP12 remains UNBUILT/OFF.
+
+## Qualification-gate repair
+
+The [combined gate successor](gate/README.md) integrates the receiving repairs
+for failed child exits, skipped coverage and an empty changed suite. Its explicit
+location configuration retains code-owned source and port pins, including the
+corrected guarded-read component. Its portable fault controls test the actual
+gate functions. A repaired gate is not itself a passing combined qualification;
+the full run and final source selection remain outstanding.

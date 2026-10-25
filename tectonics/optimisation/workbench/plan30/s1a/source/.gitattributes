@@ -1,0 +1,3 @@
+# A single space is the required unified-diff marker for an empty context line.
+# The constructor separately authenticates each complete patch and its output.
+*.diff whitespace=-blank-at-eol

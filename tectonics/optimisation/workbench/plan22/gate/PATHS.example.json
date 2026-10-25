@@ -1,0 +1,12 @@
+{
+  "base": "D:/atlas-inputs/ac/p1820c-r4",
+  "applier": "D:/atlas-inputs/work/plan31/constructor/construct_n12c.py",
+  "s3_port": "D:/atlas-inputs/work/plan21/n12f/port-r3/PORT.json",
+  "l3_port": "D:/atlas-inputs/work/plan22/n12f/r3/PORT.json",
+  "s1a_port": "D:/atlas-inputs/work/plan30/s1a/review-r3/PORT.json",
+  "owner_runtime": "D:/atlas-inputs/owner/runtime-integration-r1/runtime-src",
+  "owner_endpoint": "D:/atlas-inputs/owner/resumability-r1/test_materialise_endpoint.py",
+  "heat_tests": "D:/atlas-inputs/heat-repair/source/tectonics/tests",
+  "suite_check": "D:/atlas-inputs/work/plan20/integration-r1/postapply-r1/suite_check.py",
+  "python": "D:/atlas-science-env/Scripts/python.exe"
+}

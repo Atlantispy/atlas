@@ -118,6 +118,15 @@ no application update, runtime admission, whole-interval performance or scientif
 acceptance follows from source snapshot completion. Historical maps and component
 measurements are retained unchanged.
 
+The [guarded-read component](workbench/plan30/s1a/README.md) extends the policy
+selection while preserving its open and publication boundaries. The
+[query-stage source constructor](workbench/plan31/tier1/README.md) then adds complete
+fresh/restart reporting with sticky truncation. These constructors authenticate
+their predecessors and write new layouts; they do not replace historical maps
+or select an installed runtime. The [combined storage gate](workbench/plan22/gate/README.md)
+uses explicit input locations and fixed source pins, and refuses false success
+from failed child exits, skipped coverage or an empty changed suite.
+
 ## Not included
 
 - Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.

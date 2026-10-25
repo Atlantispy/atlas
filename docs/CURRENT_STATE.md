@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 23 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 25 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 main development branch is `remake`; this source review is on
@@ -9,10 +9,21 @@ commit and push state.
 
 ## Active checkpoint
 
+**Storage lifetime, query completeness and qualification-gate repairs have a connected source route.**
+The [guarded-read successor](../tectonics/optimisation/workbench/plan30/s1a/README.md)
+extends the existing policy selection without dropping its publication checks.
+The [query-stage successor](../tectonics/optimisation/workbench/plan31/tier1/README.md)
+then applies the corrected reporting to both fresh and restart consumers.
+The [combined gate](../tectonics/optimisation/workbench/plan22/gate/README.md)
+refuses failed child exits and missing test coverage. These are explicit source
+constructions; installed delivery, final combined qualification and run admission
+remain separate. Historical selections and evidence retain their original bytes.
+
 **Plan22 L3 is an integrated source candidate, UNCERTAIN / NOT ENABLED.**
 Receiving review repaired wrapper retention, entry-pressure admission and mesh close,
-and preserved the current capture encoder. The real interval-1 comparison remains unrun;
-issue #48 and final-generation selection stay open.
+and preserved the current capture encoder. An earlier reader measured a 20.9% mean
+reopen reduction on the real interval-1 store. The newer port still needs combined
+qualification and retiming; issue #48 and final-generation selection stay open.
 [Source, checks and limits](../tectonics/optimisation/workbench/plan22/README.md).
 
 **Plan21's lazy carried-start rows have source integration and bounded read-parity evidence; final runtime qualification remains pending.**

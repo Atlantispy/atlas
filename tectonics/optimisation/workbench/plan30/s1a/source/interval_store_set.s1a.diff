@@ -1,0 +1,71 @@
+--- a/helpers/interval_store_set.py
++++ b/helpers/interval_store_set.py
+@@ -35,6 +35,7 @@
+ from interval_catalog import (Catalog, CatalogEntry, _checked_path, canonical, check_cancel,
+                               digest, file_token, flush_file, publication_lock,
+                               publish_catalog, read_catalog, relative_file, safe_path, tagged)
++import sealed_guard_set
+ 
+ 
+ LIMITS = native.StoreLimits(chunk_bytes=65536, max_array_bytes=512 << 20,
+@@ -341,6 +342,8 @@
+ class ReadOnlyNative:
+     """Genuine mode=ro SQLite reader; constructor performs no writable operation."""
+ 
++    _guards = None
++
+     def __init__(self, path, *, scope, require_immutable=True):
+         self.path = safe_path(path, existing=True)
+         self.scope, self.limits = scope, LIMITS
+@@ -351,6 +354,16 @@
+         self._memo_used = self._memo_funded = 0
+         self._memo_slabs = []
+         self.memo_hits = self.memo_misses = self.memo_invalidations = 0
++        # S1 Stage A: a sealed file's held guard set answers each identity check
++        # (sealed_guard_set); without one, every check walks the path as before.
++        self._guards = sealed_guard_set.acquire(self.path) if require_immutable else None
++        try:
++            self._open_checked(require_immutable)
++        except BaseException:
++            self._release_guards()
++            raise
++
++    def _open_checked(self, require_immutable):
+         self.token = file_token(self.path, reject_sidecars=True)
+         if self.token[2] > self.limits.max_store_bytes:
+             raise ContractError('interval exceeds native file bound')
+@@ -398,7 +411,7 @@
+     def _check_identity(self):
+         self._usable()
+         try:
+-            unchanged = file_token(self.path, reject_sidecars=True) == self.token
++            unchanged = self._current_token() == self.token
+         except (ContractError, OSError):
+             # Missing file, sidecar, link or unreadable path: also a mismatch.
+             self._invalidate_memo()
+@@ -406,6 +419,17 @@
+         if not unchanged:
+             self._invalidate_memo()
+             raise ContractError('immutable interval file identity changed')
++
++    def _current_token(self):
++        guards = self._guards
++        if guards is None:
++            return file_token(self.path, reject_sidecars=True)
++        return guards.token()
++
++    def _release_guards(self):
++        guards, self._guards = self._guards, None
++        if guards is not None:
++            guards.close()
+ 
+     def _release_memo(self):
+         with self._memo_lock:
+@@ -555,6 +579,7 @@
+             self._db.close()
+             self._closed = True
+         self._release_memo()
++        self._release_guards()
+ 
+ 
+ def _seal_digest(reader, *, workflow_id, interval, parent_seal, references, cancel=None):

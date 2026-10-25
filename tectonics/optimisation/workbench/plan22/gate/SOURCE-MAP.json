@@ -1,0 +1,63 @@
+{
+  "schema": "plan22.gate.source-map.r1",
+  "status": "SOURCE_INTEGRATED_CONTROL_CHECKED_FULL_GATE_NOT_RUN",
+  "public_source": "tectonics/optimisation/workbench/plan22/gate",
+  "upstream_gate_sha256": "280ce7652283ff49cb7f93fd5efeb17b1ec9d1996a43175c24216f49fae545a0",
+  "repaired_predecessor_sha256": "27fac57053bb14545ef4d1dbade3ae27681eb757df24a8db0c0cef807eac7dc0",
+  "source_files": [
+    {
+      "file": "gate_s3l3.py",
+      "reviewed_predecessor_sha256": "27fac57053bb14545ef4d1dbade3ae27681eb757df24a8db0c0cef807eac7dc0",
+      "public_sha256": "38c6045395ff0a50590021d9e190971da276ae6b14360d317971776320f72a6f",
+      "adaptation": "Explicit CLI path configuration, matching interpreter selection, settled S1A port pin, r3 result schema and usage text; repaired evaluate/outcome bodies unchanged"
+    },
+    {
+      "file": "gate_child.py",
+      "reviewed_predecessor_sha256": "db3c5e799b28c4695fb647f4a4eb98e866b751d62e313c5ab0362d002b1dd079",
+      "public_sha256": "db3c5e799b28c4695fb647f4a4eb98e866b751d62e313c5ab0362d002b1dd079",
+      "adaptation": "None; exact byte copy"
+    },
+    {
+      "file": "s3_child.py",
+      "reviewed_predecessor_sha256": "78549f5a694c657db1b40491d57ce8b2736b10f1e6b3ae61edee176c567b20ac",
+      "public_sha256": "78549f5a694c657db1b40491d57ce8b2736b10f1e6b3ae61edee176c567b20ac",
+      "adaptation": "None; exact byte copy"
+    },
+    {
+      "file": "test_gate_l3_store.py",
+      "reviewed_predecessor_sha256": "17294a3a3e2afe18223cd31ba5f68bccfac80e2818676b86f79cfbf4414a5e5d",
+      "public_sha256": "17294a3a3e2afe18223cd31ba5f68bccfac80e2818676b86f79cfbf4414a5e5d",
+      "adaptation": "None; exact byte copy"
+    },
+    {
+      "file": "test_gate_results.py",
+      "reviewed_test_sha256": "b247fa1b5d1e8d72dd0ff5d3f243d4e04b3b1339594599b201103502497a0efd",
+      "reviewed_fixture_sha256": "96df7ae72d85583532974ac027faf10eb805eab420a3935ef32449a8d80c0d55",
+      "public_sha256": "78bb3ec383ce0a43f1152a4d4b7498b806849009a3c6e9cb2ea6ae5824f9bfe9",
+      "adaptation": "Self-contained synthetic fixture, sibling public gate import, six CLI/path controls, optional explicit report output; ten repaired-evaluator controls retained"
+    }
+  ],
+  "s1a": {
+    "previous_port_sha256": "baab215c35d690316f1ccdfc39d3fd40c30c0cba75f9eb75a7711cdf9cbb67c4",
+    "current_port_sha256": "5d3f37263468bf9ccfeebadaeec13c4c2a1397081865b3e3088719d144f52ad3",
+    "guarded_test_sha256": "14d3b6dd4eac271490ab0a2274306b81f979e5c11568468ae1acbb2ff6bfd645",
+    "expected_guarded_tests": 26
+  },
+  "public_members": {
+    "CONTROL-RESULT.json": "b4d603e4306f3313963e7b401a319ec30258ce972d56b7063a99919b9a67a9c0",
+    "gate_child.py": "db3c5e799b28c4695fb647f4a4eb98e866b751d62e313c5ab0362d002b1dd079",
+    "gate_s3l3.py": "38c6045395ff0a50590021d9e190971da276ae6b14360d317971776320f72a6f",
+    "PATHS.example.json": "2f14eb44651a62ecbf2a7f890f89bb668c81cba3d1b6b5057f04ea166d287a13",
+    "README.md": "cdb16b477c35d0e55a18e40660de3c496e95f51964722f202884ab3184204c04",
+    "s3_child.py": "78549f5a694c657db1b40491d57ce8b2736b10f1e6b3ae61edee176c567b20ac",
+    "test_gate_l3_store.py": "17294a3a3e2afe18223cd31ba5f68bccfac80e2818676b86f79cfbf4414a5e5d",
+    "test_gate_results.py": "78bb3ec383ce0a43f1152a4d4b7498b806849009a3c6e9cb2ea6ae5824f9bfe9"
+  },
+  "validation": {
+    "control_result": "CONTROL-RESULT.json",
+    "full_gate": "NOT_RUN",
+    "iv": "NOT_RUN",
+    "timing": "NOT_RUN",
+    "limits": "Portable controls and source identity only; no runtime or scientific acceptance"
+  }
+}

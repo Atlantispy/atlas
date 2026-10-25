@@ -1,0 +1,10 @@
+--- a/helpers/test_interval_store_set.py
++++ b/helpers/test_interval_store_set.py
+@@ -476,6 +476,7 @@
+         self.assertEqual(len(calls), 1)
+         self.assertEqual(candidate.local_statistics()['encodes'], 0)
+ 
++    @patch('sealed_guard_set.ENABLED', False)
+     def test_each_read_checks_path_and_sidecars_exactly_twice(self):
+         _, ref, chunks = self.root_interval()
+         reader = self.stores._handle(0).value

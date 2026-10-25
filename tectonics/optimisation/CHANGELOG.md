@@ -6,6 +6,23 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 25 Oct 2026, storage and query-stage receiving repairs
+
+- Connect guarded sealed reads to one shared handle lifetime so interrupted
+  finaliser registration cannot double-close descriptors and cleanup waits for
+  active token queries. Preserve the existing store-open and publication checks.
+- Extend that complete source selection with corrected fresh/restart query
+  reporting. A truncated contribution keeps its stage truncated; later stages
+  start independently. The restart path gains the matching completed-query wiring.
+- Integrate the combined gate's exit-status, skipped-coverage and empty-suite
+  refusals, with explicit locations and fixed source/port pins. Publish the
+  actual private gate implementation and its bounded controls.
+- Check the 694-member constructed source, 36 native receiving cases, three
+  guarded-reader constructor controls, ten query-stage controls and 16 gate
+  controls. These checks do not qualify the final combined runtime or an IV run.
+  Keep the source selections additive, all runtime/default authority flags false
+  and incomplete issues open. No physical value or tolerance changes.
+
 ## 25 Oct 2026, Plan21 retained evidence review
 
 - Accept the bounded source-analysis carry of interval-1 S3 read values from r4
