@@ -64,7 +64,13 @@ and partial extensions, metadata preservation, identity sensitivity and the
 source map. It imports no Atlas native runtime, opens no store and performs
 no simulation. It requires NumPy, as does the helper.
 
-Positive prepared-state publication and independent reopening remain unrun
-after the repair, deferred by the owner; final review is also outstanding.
-Plan31 assembly integration is a separate later stage and does not block
-Plan02's own completion. All scientific and individual run holds remain.
+The additive [prepared-construction v2 component](prepared-construction-v2-r3/README.md)
+now emits the actual closed v2 profile and declared files query store. Its
+operational public API is connected to the real Plan31 loader; this retains the
+historical25-member map above and does not overlay the main native package.
+
+Positive native prepared-state publication and independent cold reopening remain
+separately held after the repair. Individual Plan02 verification after full assembly
+and its former return requests are cancelled by the owner, not marked passed.
+Plan31/Plan26 deliver their own assembly/fold outputs without a separate Plan02
+sign-off. All scientific and individual run holds remain.

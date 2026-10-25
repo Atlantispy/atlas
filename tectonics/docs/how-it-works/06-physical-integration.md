@@ -1238,6 +1238,28 @@ within an interval. This section follows one history of the finite-strain column
 section 5 through the loop that accepts, stores and continues it. The method detail,
 its design choices and its checks are in the [I02 workflow method](../I02_WORKFLOW.md).
 
+**Bind a restart to its source generation.** Before constructing a restart
+profile, the retained assembler authenticates the selected source copies and
+transform outputs, then emits an immutable source manifest. The prepared writer
+binds that manifest, the policy, complete native/helper identities and an explicit
+historical root. Missing store declarations, foreign or linked roots and changed
+pins refuse before output; the selected completed-query store remains `files`.
+
+The [prepared-construction method](../../optimisation/workbench/plan02/prepared-construction-v2-r3/PREPARED_CONSTRUCTION_V2.md)
+keeps a fresh-v1 primary profile and a separate prepared-v2 companion when both
+entry points are needed. Profiles precede their downstream receipts, avoiding a
+hash cycle. Both construction records bind the companion explicitly; the producer
+and independent reader use the same prepared profile. The operational receiving
+API checks those actual records, complete source/module maps, driver differences
+and per-leg destinations before any exclusive output. A rehearsal or any purpose
+key refuses even if an otherwise permitted status is present.
+
+These source/profile/API checks establish construction compatibility at their
+declared boundary. The component does not require a duplicate per-plan check after
+full assembly. Separately held native publication and cold reopening are not
+supplied by source checks, nor does publication of the completed component
+authorise an interval or accept its science.
+
 **Start from the declared record.** The starting record of section 1 becomes the first
 entry, the root, of a ledger kept in Atlas's existing storage file. The unstretched
 reference, the starting temperatures and plastic history, and the rock records are

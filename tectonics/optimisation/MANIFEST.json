@@ -12251,6 +12251,111 @@
    "path": "workbench/plan04/bindings-r4/tests/test_receiving_boundaries.py",
    "source": "<PUBLIC_PLAN04_PUBLICATION>/bindings-r4/tests/test_receiving_boundaries.py",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/PREPARED_CONSTRUCTION_V2.md",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/PREPARED_CONSTRUCTION_V2.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/README.md",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/README.md",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/SOURCE-MAP.json",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/SOURCE-MAP.json",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/assemble_resumable.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/assemble_resumable.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/prepare_generation.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/prepare_generation.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/historical_admission.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/historical_admission.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/initial_workload.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/initial_workload.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/launch_monitored_interval.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/launch_monitored_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/reopen_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/reopen_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/route2_gate.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/route2_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/run_fresh_interval.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/run_fresh_interval.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/run_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/run_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/start_gate.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/start_gate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/receivers/test_run_prepared_restart.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/test_run_prepared_restart.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/stage_prepared_sources.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/stage_prepared_sources.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/test_composed_import_fence.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_composed_import_fence.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/test_composed_manifest.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_composed_manifest.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/test_prepared_candidate.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_prepared_candidate.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/test_prepared_v2.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_prepared_v2.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/test_stage_prepared_sources.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_stage_prepared_sources.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan02/prepared-construction-v2-r3/write_prepared_profile.py",
+   "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/write_prepared_profile.py",
+   "kind": "workbench"
   }
  ]
 }

@@ -115,6 +115,15 @@ Runtime-importing processes use the applicable clean environment, `PYTHONHASHSEE
 
 ## 4. Remaining implementation and integration
 
+The reviewed [prepared-construction v2 component](../workbench/plan02/prepared-construction-v2-r3/README.md)
+now uses the actual retained constructor and writer to emit the closed v2 profile,
+explicit historical root and declared files query store. Its operational public
+build_restart_profile and selected_restart_profile APIs are connected to Plan31's
+real authenticated loader. Paired receiving retains its fresh-v1 primary and
+separate prepared-v2 companion, with exact shared source and explicit per-leg
+bindings. Bounded actual source/profile/API checks support this completed component.
+
+
 Route2's adapter and all three prepared/monitored callers are implemented and
 installed together with the compatible fresh-route generation. The known metadata
 repair is also installed. No duplicate adapter decision or caller rewrite remains.
@@ -153,11 +162,18 @@ Label subsequent figures as MEASURED with source/scope, PROJECTED with basis, or
 - [x] Known metadata defect repaired; short controls and live source/profile checks passed privately.
 - [x] Private live integration and scoped C18 evidence recorded separately from publication and scientific acceptance.
 - [ ] Positive prepared-state publication and independent reopen on the repaired successor; deferred by the owner.
-- [ ] Requested end review.
+- [x] Reviewed v2/store implementation and operational public receiving API integrated.
 
-The later replay/final composition must still bind the selected generation and
-verify its changed seams before the relevant replay. Plan31 integration is a
-separate stage; it is not an unchecked item in Plan02's completion list.
+The held native proof above remains open under its own declared scope.
+Individual-plan verification after full assembly, including Plan02's former
+final-generation restart/profile/store verification and return requests, is
+CANCELLED BY OWNER, not passed or reassigned. Plan31/Plan26 still deliver their own
+assembly/fold outputs and required checks without a separate Plan02 sign-off.
+This assigned component completes on its actual implementation/integration,
+necessary checks, required acceptance and verified publication.
+
+The assembly owner binds its selected generation as part of its own actual
+output. No later individual Plan02 verification or return gate is retained.
 
 Start-gate readiness is an input to the selected replay/final-build routes; it is
 not permission to run them. N9's explicit resume, separate tool/proof conditions

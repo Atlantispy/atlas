@@ -29,11 +29,14 @@ beside them; its source map records that deliberate dependency copy.
 
 Plans 01 and 03 now include reviewed workbench successors and their focused test sources. The frozen composed-r2 helpers, live runtime and historical execution pins are unchanged. See the two plan completion sections for retained evidence and remaining launch/integration limits.
 
-Plan02's selected runner/caller generation and collar metadata repair are in
-[`workbench/plan02/`](workbench/plan02/README.md), with an original/public digest
-map and a synthetic public regression. The corresponding private repair is
-installed; positive publication/reopen validation and end review remain
-deferred. This snapshot does not apply an overlay to the main package.
+Plan02's selected callers and collar metadata repair are retained in
+[`workbench/plan02/`](workbench/plan02/README.md). Its additive
+[prepared-construction v2 component](workbench/plan02/prepared-construction-v2-r3/README.md)
+emits the explicit historical-root/files-store bindings and supplies the operational
+public API used by Plan31. Bounded actual source/profile/API checks support this
+component integration. Individual-plan post-assembly re-verification is cancelled;
+the separately held native publication/cold reopen is not claimed. No main-package
+overlay, default enablement or run permission is applied.
 
 Plan06's repaired exact wall twins, shared primitives, guarded hook and actual
 assembly tools are in [workbench/plan06](workbench/plan06/README.md). Retained

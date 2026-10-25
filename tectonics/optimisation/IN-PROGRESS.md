@@ -34,11 +34,17 @@ Rules that apply to every item below:
   [workbench/plan02](workbench/plan02/README.md); this public snapshot is not a
   native installation. Retained private checks cover local integration and the
   repair within their declared scopes.
-- **Left for Plan02:** corrected positive prepared-state publication and
-  independent reopen, then requested end review. Those runs remain deferred.
-- **Later integration:** bind the selected generation in the actual replay/final
-  assembly at its separate plan stage. That future stage does not block Plan02
-  completion. All interval and individual holds remain.
+- **Completed component:** the additive
+  [prepared-construction v2 route](workbench/plan02/prepared-construction-v2-r3/README.md)
+  emits explicit historical-root and files-store bindings, and its real public
+  receiving API is authenticated and exercised through Plan31's loader.
+- **Separate held proof:** corrected native prepared-state publication and
+  independent cold reopen remain deferred; source/configuration controls do not
+  supply those results.
+- **Cancelled:** individual Plan02 post-assembly re-verification and its return
+  requests are cancelled by the owner, not reported as passing. Plan31/Plan26 still
+  own their assembly/fold outputs without a separate Plan02 sign-off. All interval,
+  scientific, default and individual holds remain.
 - **Gate:** available memory must cover `P + ceil(P / 5) + 2 GiB` for the selected
   predicted peak `P`; in-run guards are unchanged.
 

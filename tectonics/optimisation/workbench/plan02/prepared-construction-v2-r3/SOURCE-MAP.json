@@ -1,0 +1,189 @@
+{
+  "schema": "atlas.public.plan02-prepared-source-map.v1",
+  "status": "SOURCE_SNAPSHOT_NOT_A_RUNNABLE_PROFILE",
+  "scope": "Prepared-construction v2 accepted component and exact receiving control source inputs.",
+  "private_run_data_included": false,
+  "positive_prepared_publication_reopen": "HELD_UNRUN",
+  "implementation": "ACCEPTED",
+  "final_receiving": "INDIVIDUAL_POST_ASSEMBLY_VERIFICATION_CANCELLED_BY_OWNER",
+  "files": [
+    {
+      "path": "assemble_resumable.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/assemble_resumable.py",
+      "original_sha256": "509936760484459ce1f41aca15965d33dab5e2be26a2eae18df63bf5c7d44f60",
+      "public_sha256": "509936760484459ce1f41aca15965d33dab5e2be26a2eae18df63bf5c7d44f60",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/assemble_resumable.py"
+    },
+    {
+      "path": "write_prepared_profile.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/write_prepared_profile.py",
+      "original_sha256": "7d8c0e707ef963e0336e7fa36492d69d9e5a187dd006b3bce528ce9eb3ac587f",
+      "public_sha256": "7d8c0e707ef963e0336e7fa36492d69d9e5a187dd006b3bce528ce9eb3ac587f",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/write_prepared_profile.py"
+    },
+    {
+      "path": "prepare_generation.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/prepare_generation.py",
+      "original_sha256": "b3bb9c11c69ec24b432c889e8aa7907da9f04c9855ee0b434acf3c00e8ba2366",
+      "public_sha256": "b3bb9c11c69ec24b432c889e8aa7907da9f04c9855ee0b434acf3c00e8ba2366",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/prepare_generation.py"
+    },
+    {
+      "path": "stage_prepared_sources.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/stage_prepared_sources.py",
+      "original_sha256": "600f0c98254d5caf7e6071512f94970f45c4c06ce0e30b90b16151224aa6c648",
+      "public_sha256": "9bcf76f8e674b368365a84fb29173eace566ef4a9967c04a89f47fe5c6a90997",
+      "user_path_replacements": 12,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/stage_prepared_sources.py"
+    },
+    {
+      "path": "test_prepared_candidate.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_prepared_candidate.py",
+      "original_sha256": "aa1ea398503cab7e26a98d313d659401ee13a0ce05b9b7cb6ff99ff64724a8aa",
+      "public_sha256": "aa1ea398503cab7e26a98d313d659401ee13a0ce05b9b7cb6ff99ff64724a8aa",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/test_prepared_candidate.py"
+    },
+    {
+      "path": "test_stage_prepared_sources.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_stage_prepared_sources.py",
+      "original_sha256": "107c4bb119aa362c3eb9be0f011ef1fcaefc186fd4dba8ee737699c562e526ec",
+      "public_sha256": "107c4bb119aa362c3eb9be0f011ef1fcaefc186fd4dba8ee737699c562e526ec",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/test_stage_prepared_sources.py"
+    },
+    {
+      "path": "test_composed_manifest.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_composed_manifest.py",
+      "original_sha256": "b55052e229d2cb8d24edd85896cb98647e0917b8d068120ef9cffa69d07bb92b",
+      "public_sha256": "b55052e229d2cb8d24edd85896cb98647e0917b8d068120ef9cffa69d07bb92b",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/test_composed_manifest.py"
+    },
+    {
+      "path": "test_composed_import_fence.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_composed_import_fence.py",
+      "original_sha256": "9e7de7c098f981240f248fed0abf832324bcfd97096c58545bc93b794ff58484",
+      "public_sha256": "9e7de7c098f981240f248fed0abf832324bcfd97096c58545bc93b794ff58484",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/test_composed_import_fence.py"
+    },
+    {
+      "path": "test_prepared_v2.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/test_prepared_v2.py",
+      "original_sha256": "d41db4ff6f22017b67efcd75162995cb31e7275ef81e951a1526781fb03acfe7",
+      "public_sha256": "e5aada2afb4c82cfd79f88a980bb49a16bdd34d78931283550dca64a478f533f",
+      "user_path_replacements": 1,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/test_prepared_v2.py"
+    },
+    {
+      "path": "receivers/historical_admission.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/historical_admission.py",
+      "original_sha256": "614d1ceab3d04d33bb791e494383f710b24a5e4901fff36e6de89cf0826f4710",
+      "public_sha256": "614d1ceab3d04d33bb791e494383f710b24a5e4901fff36e6de89cf0826f4710",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/historical_admission.py"
+    },
+    {
+      "path": "receivers/initial_workload.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/initial_workload.py",
+      "original_sha256": "9ca14a156149ba45080c8ff1dbbd5b044a6c8cdabc6368b51dbb80e66922c528",
+      "public_sha256": "9ca14a156149ba45080c8ff1dbbd5b044a6c8cdabc6368b51dbb80e66922c528",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/initial_workload.py"
+    },
+    {
+      "path": "receivers/launch_monitored_interval.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/launch_monitored_interval.py",
+      "original_sha256": "8d30779e4bf08882ba6c064848cd7b1f4755d615f47e4c83606030943141ba53",
+      "public_sha256": "2078b8f84d0506f50162e1696b27fd8f27ce7c672c0cd30c91b94929101bd8ad",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/launch_monitored_interval.py"
+    },
+    {
+      "path": "receivers/reopen_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/reopen_prepared_restart.py",
+      "original_sha256": "c203542faaa000f0e40d54665a5ec7ea70a0fa8c9a259b846bce846d41408864",
+      "public_sha256": "adee8a06fa47b27723223936084e1710de4500fe450795ed711a21574ca482eb",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/reopen_prepared_restart.py"
+    },
+    {
+      "path": "receivers/route2_gate.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/route2_gate.py",
+      "original_sha256": "235bf0450d73f205fe6a3879cc32bbede2e01a9a604f5e871b1c33080c0b3b86",
+      "public_sha256": "235bf0450d73f205fe6a3879cc32bbede2e01a9a604f5e871b1c33080c0b3b86",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/route2_gate.py"
+    },
+    {
+      "path": "receivers/run_fresh_interval.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/run_fresh_interval.py",
+      "original_sha256": "8efc3a8cb76195cff5d4c637291b1d1eeb5b89122ea36b0bb9bca2c092d67466",
+      "public_sha256": "dc8767db42e1d3afad5d91d031165842ed8c3ea1c78e615cb6494d3d4ce05820",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/run_fresh_interval.py"
+    },
+    {
+      "path": "receivers/run_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/run_prepared_restart.py",
+      "original_sha256": "051008ad29fc56d42393c33b7dfcde622a39b5e9cce03a4900b91934ee066ce9",
+      "public_sha256": "d6e05ec5cc46d656c7504f8a5d624f7c1e66c9a51f8a21100310f7551b06061c",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/run_prepared_restart.py"
+    },
+    {
+      "path": "receivers/start_gate.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/start_gate.py",
+      "original_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "public_sha256": "16e448d60556acabc337c4ff7b39649d7ab8110aa5585ec6a82262e1838f6345",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/start_gate.py"
+    },
+    {
+      "path": "receivers/test_run_prepared_restart.py",
+      "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/receivers/test_run_prepared_restart.py",
+      "original_sha256": "f4bacb234b87af387747028a0e880dc911754fcbe851cc3ce1598893b4158486",
+      "public_sha256": "f4bacb234b87af387747028a0e880dc911754fcbe851cc3ce1598893b4158486",
+      "user_path_replacements": 0,
+      "line_endings": "LF",
+      "public_path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/receivers/test_run_prepared_restart.py"
+    }
+  ],
+  "publication_changes": [
+    "Personal home names replaced with LOCAL_USER; LF text.",
+    "Private execution/selection pins retained; public identities are separate.",
+    "Method native-only/paired wording reconciled; no source behaviour rewrite."
+  ],
+  "supported_receiving_api": {
+    "component": "assemble_resumable.py",
+    "sha256": "509936760484459ce1f41aca15965d33dab5e2be26a2eae18df63bf5c7d44f60",
+    "public_bytes_identical_to_accepted_component": true,
+    "python_dependencies": "standard library only",
+    "build_restart_profile": "Explicit keyword-only bindings and actual policy bytes; no receipt dependency.",
+    "selected_restart_profile": "Exact generated paired config after actual profiles and records exist.",
+    "path_rule": "Caller explicitly resolves the one repository-relative component path and authenticates its bytes; no private path fallback.",
+    "native_execution_authority": false
+  },
+  "actual_public_api_receiving": "VERIFIED_AT_MAPPED_RECEIVING_CHECKOUT"
+}

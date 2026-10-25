@@ -444,3 +444,15 @@ identifiers remain unchanged. All other bytes are preserved, with original/publi
 digests and transformation counts in the source map. Private requests, fixtures,
 profiles, runtimes, queue state and the external completion launcher/CLI are excluded.
 The completed proof summaries describe retained private runs, not new public runs.
+
+## Plan02 prepared-construction v2 component
+
+The additive [18-member source map](workbench/plan02/prepared-construction-v2-r3/SOURCE-MAP.json)
+retains original/public digests, exact destinations and13 personal-home-name
+replacements with LOCAL_USER. The complete accepted assembler, writer and preparer
+are byte-identical; host-bound stager/control strings are sanitised without
+repinning private execution identities. The receiving APIs are operational at
+their explicit mapped public path. Private selections, inputs, profiles, receipts,
+stores and logs remain excluded. The method/status prose distinguishes the
+completed component from cancelled per-plan post-assembly verification and
+independently held native proof. Cancellation is not a passing test.
