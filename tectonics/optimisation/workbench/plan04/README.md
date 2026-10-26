@@ -1,7 +1,9 @@
 # Plan04: N9 comparator, extraction and caller integration
 
-WORKING NON-CANON. **Source snapshots; final selected-composition binding is open.
-Both readiness guards remain false.** The retained comparator r24, dump r5, captures map r3,
+WORKING NON-CANON. **The width implementation is selected for guarded source
+integration using bounded native and retained evidence, without another IV.
+Actual guarded receiving integration is complete. The guarded outcome is accepted; this export supplies the current tool sources.
+Both public guards remain False.** The retained comparator r24, dump r5, captures map r3,
 the launcher and their helpers were installed together in the private live
 tool route. The additive assembly tool was selected there. This export supplies
 their sources, not a runnable profile or a scientific replay.
@@ -50,6 +52,28 @@ VOID classes. Each VOID and REVIEW blocks acceptance. Assertions, diagnostic
 differences and a zero process exit are not interchangeable with a behavioural
 fault detection; test completion, intended predicate, errors, final process state
 and retained streams must agree.
+
+## Current guarded integration route
+
+The actual [guarded width composer](../plan31/final/width/README.md) now
+materialises all 697 members (287 native/410 helpers), replacing exactly the three
+reviewed native width modules and seven existing N9 helper slots. Its source
+selection is 7e7c972a7a0e3077081c89018e1c9c611d005f3f442f90112ed16a7b0d48648b;
+all output members were checked by the construction owner. Six immediate
+composition/refusal checks pass, with no skips. No later individual-plan
+verification after full assembly is required; that obligation is cancelled.
+
+The composer retains its immutable87fa86ed N9 source-map snapshot. The seven
+selected tool bytes still match exactly; current export documentation updates
+do not change that source proof or repin its snapshot.
+
+The [bounded method, measurements and limits](BOUNDED-WIDTH.md) distinguish
+implementation integration from full scientific C4 acceptance. Existing Plan31
+assembly is the single final-composition writer. It carries the accepted wall,
+exterior-pose and outward mesh-header outputs through its actual source composition and manifest. The profile API is implemented;
+this public source route does not emit or qualify a private final runtime profile. The unchanged reader/runner gate consumes independently measured
+actual tables; no historical r9 identity or width is repinned. All scientific,
+IV and default/installed holds remain.
 
 ## Sources and integration
 
@@ -233,6 +257,242 @@ to their byte check; for the state record, the reader-side state identity and
 the mesh identity hash cover it in part. `REPAIRS_COMPLETE=False` and
 `EXTRACTION_READY=False` remain. No replay or fresh interval is authorised.
 
+## Producer/reader bindings r5 — 24 October 2026
+
+`bindings-r5/` is the next complete additive source successor. It is prepared
+from the private source successor of the staged payload behind `bindings-r4/`.
+
+- `bindings-r4/` and the preserved `n9-tools-r21/` keep their bytes, and existing
+  compositions keep their tool bindings.
+- The r5 tools carry the bindings-r4 receiving fixes forward unchanged.
+  `bindings-r5/tests/test_receiving_boundaries.py` checks them against r5.
+- No launcher, composition or runtime selection changes.
+- **Readiness guards.** The staged private payload sets `REPAIRS_COMPLETE` and
+  `EXTRACTION_READY` to True for the two-arm width replay. The publication check
+  requires exported guards to be False, so this export keeps both False and
+  SOURCE-MAP records the difference. No replay has run.
+
+**Compact root routes.** The selected base's own publishers write a sealed
+compact root: a v2 partition with segment references and no alias arrays, a v3
+thermal mesh and compact state records. `tests/test_routes_r3.py` reopens it
+read-only and reads it through the dump's own route functions. Each fault below
+is refused by its own guard:
+- in a state record: chunk corruption, a dropped mesh join, a substituted mesh
+  record and one changed logical field;
+- in a partition: chunk corruption, one changed logical field and a substituted
+  segment reference.
+
+Further checks complete the route conditions:
+- `dump_arm_r5.DECODER_MODULES` names a closed set of decoder modules.
+  `array_bindings_r5.check_decoders` binds each module's path and SHA-256 both to
+  the arm's pinned source manifest and to its bytes on disk, so a changed decoder
+  refuses.
+- A helper decoder (`helpers/*.py`) that differs across the arms gives REVIEW.
+  A differing `atlas_tectonics` decoder is only recorded, because the width arm
+  legitimately transforms those modules.
+- A dumped v2 partition descriptor is bound to its own arm's header. When the two
+  arms' descriptors differ, the result is REVIEW.
+- A legacy root keeps its alias names exact, and its targets are REVIEW.
+- Negative controls cover each structural guard of the comparator on both root
+  routes.
+
+Together these meet both conditions on both root routes. One limit remains: the
+byte check cannot see a fault shared by a segment writer and its reader. The
+fresh lineage root is probably native, so interval one reads its state through
+the state-record route.
+
+**Defects fixed.** Three defects in the bindings-r4 tools are fixed. All three fail
+closed: none can produce PASS.
+- The comparator FAILed every v2 partition and v3 mesh root reference.
+- The dump raised a type error on every compact state-record store.
+- The dump's scope closure could replace the first refusal cause with a later one.
+  It now keeps the first cause for a close failure of any exception type.
+
+The two dump defects are also present in the preserved
+`n9-tools-r21/dump_arm_r5.py`, which has the same bytes.
+
+**Observer entry alias.** The observer verifies its profile, source manifest
+and entry-file pin before normalising the standard multiprocessing alias. It
+removes `__mp_main__` only when that name refers to the exact `__main__` object.
+A foreign object at the same path, a wrong observer pin and another alias of the
+entry object still refuse. The sole observer-file exemption remains `__main__`.
+Four added controls cover these cases; the remaining receiving controls stay
+unchanged.
+
+**Design rows.** The retained design review returned rules for parts of all six
+pose-affected families:
+
+| Family | Subject | Encoded in |
+|---|---|---|
+| 1 | Differential geometry | `field_contracts.DesignRows` |
+| 1b | W consequence routes | `field_contracts.DesignRows` |
+| 2 | E pose consumers (differential-geometry and current-force pose) | `field_contracts.DesignRows` |
+| 3 | W enclosure magnitudes | `field_provenance` |
+| 4 | E downstream mesh metrics | `field_contracts.DesignRows` |
+| 5 | Heat | `field_contracts.DesignRows` |
+
+The rows are of three kinds:
+- 25 rule rows, in their binding-correction forms;
+- 4 refusal-only rows, covering 16 producer refusal sites;
+- 27 rows without a rule. They never PASS: they are REVIEW, or FAIL on the
+  contradiction controls of rows 1-D and 1-E.
+
+A row decides PASS or FAIL only when it can check every precondition it states.
+Otherwise the field stays REVIEW in the ordinary walk. On current dumps, only
+these rows can decide:
+- the band or exact rule on the differential interval;
+- the FAIL-only contradiction checks on the dual-closure graph and on the
+  certification force, each bound to its own arm's interval;
+- the zero-source heat audit array;
+- the joined heat plan's targets and their reference;
+- the exact differential-mesh header formula.
+
+The heat audit and the cross-arm target rule need the selected heat route in
+both arms: the same method and identical consumer sources. Family 3 rows 3.2 and
+3.6 compare the arms only on their proved route; off it they are notes, while
+each arm's own writer contradictions still FAIL.
+
+Every row check is type-strict. An equality PASS needs the same encoding as well
+as the same value: 5 and 5.0, or 0.0 and -0.0, give REVIEW and stay in the
+type-strict field walk. A row method that raises keeps its FAIL and REVIEW items
+but gives no PASS and consumes no field.
+
+The exterior-mesh volume rows pass only when the computed enclosure radius S_c is
+strictly below the smallest cell volume. At production pose errors that bound can
+be vacuous. The mesh header stores no rotation, so its pose radius also needs each
+arm's quaternion to lie in the norm band the pose routine guarantees; a quaternion
+outside it fails.
+
+The reviewed rows need `integration_differential_geometry.py` to be
+byte-identical in both arms, with SHA-256
+`a680b479b9dcc8414b43bcf331c6b6d84bf7c20c6226e95e0f2df9806de56e7a`. Package
+parity, a missing or ambiguous module pin and the reviewed W/E transform pair are
+checked the same way. When any of these fails, every cross-arm rule that reads it
+is REVIEW; each arm's own consistency checks still apply.
+
+**Contract addendum rows.** `field_contracts.AddendumRows` settles each row left
+REVIEW above, plus identity, heat-copy and module rows, for the two-arm width
+replay route. It holds 46 rows:
+
+| Disposition | Rows |
+|---|---|
+| REVIEW (17) | 1-D, 1-E, 1-F, 5.1, 5.2, 5.3, 5.5, G-M, G-ALE, G-TRANSPORT, G-TRACE, G-HEATCOPY and five module rows |
+| Dropped: the route never writes the record (15) | 1b-B, 1b-C, 1b-E, 1b-F, 3.3, 3.4, 3.5, 3.7, 3.9, 3.10, 3.11, 4.5, 4.8, G-DR253, G-DR716 |
+| Derived from another row (5) | 2.4, 4.9, G-ID and two module rows |
+| Rule (2) | 2.5, 5.4 |
+| Not reached on the route (4) | 2.9, 5.7b, G-EPOSE and one module row |
+| Excluded by a recorded decision (2) | 5.12 (the projection resource policy), G-WU (work-unit values) |
+| Refusal-only (1) | G-REF |
+
+A dropped or not-reached row is never silent. Each arm's records are scanned, and
+a place the route never writes gives REVIEW: a W record, a wall-measure or
+exterior-cell field, exterior rows with inward or outward fields, a rigid motion,
+exterior-mesh pose fields, a thermal mesh, ALE bounds or graph outside the
+differential family, prior ray history, a posed support, a late
+snapshot offset, a current force pose or background, a boundary pose record, or a
+temperature heat face. There is one item per guard and arm. A nested copy without
+a family field is not itself checked; the record that carries the family is.
+
+- Row 5.4 checks every stored heat value exactly, in each arm: its retained part
+  stays within the target, the stored value is the retained part plus the
+  projection, and the projection is exactly the rounding of the new value to the
+  stored float. It also recomputes R = new - old + out - source exactly,
+  joining the arm's independent mesh by geometry identity and summing its signed
+  face energies. Old stocks and zero sources come from the heat metadata's
+  sibling captured arrays. Zero total alone cannot prove zero cell sources.
+  Missing geometry, axes or source evidence is REVIEW. Equal violations in both
+  arms FAIL. Only after both pass are the retained, projection and storage
+  residuals excluded; corrected/face energy and cumulative heat stay compared.
+- Row 2.5 attributes interval-one forcing differences. It needs row 2.4 (every
+  boundary pose is the arm's geometry), identical forcing inputs and a reader-proved
+  spatial-state pair. It never grants a PASS: equality stays with the field walk.
+- Identity rows stay REVIEW unless the reader proved the pair. An unchanged
+  interval identity at interval one, and an identity whose source is not dumped,
+  are REVIEW.
+- Work-unit values are excluded only while both arms have equal refusal counts;
+  per-arm totals are recorded, never compared.
+- At interval zero the comparison also lists, by name, each change outside the
+  header cascade of the initial parallel module.
+
+An exclusion applies only at one concrete place in both arms, and only where the
+two values have the same encoding (the values themselves may differ); otherwise
+the field stays in the walk as REVIEW. The two
+exclusion labels in `field_contracts.py` quote the settled rows verbatim, and the
+SHA-256 digests in `DESIGN_RETURN` and `CONTRACT_ADDENDUM` identify the private
+design-row and addendum-row records as reproducibility provenance.
+
+**Magnitude tables.** For each physical field the comparator reports the largest
+absolute change between the arms, the certified radius it is judged against and
+that radius's source, their ratio, and the change in units in the last place. A
+field without a certified radius is reported as having none; no substitute
+tolerance is used. The tables are diagnostics: every verdict, review line and
+field entry is the same with or without them.
+
+**Expected disposition.** The result is REVIEW at most, and no pose-affected
+family PASSes automatically. These stay REVIEW by design:
+- adaptive enclosure magnitudes;
+- multi-step pose routes and the exterior-mesh prerequisites;
+- the other Heat quantities and the ledger-only rows;
+- module-level identities;
+- producer provenance, because the W consequence routes and the
+  differential-geometry and current-force pose consumers still have no
+  propagated bound.
+
+Refusals are judged at two levels. At field level a refusal flip is REVIEW, as
+design row 1-G asks; `refusal_result` has no caller until proved per-site
+outcomes exist. The comparator's stage rule is stricter and departs from 1-G on
+purpose: an attributed resource stop of the unchanged workload in the width arm
+after an adopted reference (an rss guard trip, or a byte or predicate ledger
+refusal) FAILs, and so does any width-gate flip.
+
+**Submitted evidence.** These checks use static inputs and synthetic stores.
+The original qualification batch remains failed: two route mutations survived.
+Its successful stages are retained under their exact source and evidence pins:
+- 207 private controls, 2 regression tests and all 75 retained adapter tests
+  passed.
+- The exact equatorial checker passed all 18 cases normally and all 18 under
+  optimised Python.
+- Design mutation coverage killed 112 mutations; five documented redundant
+  survivors remain recorded.
+- Route mutation coverage originally killed 34 of 36 mutations. An isolated
+  follow-up reports PASS and kills the two formerly surviving mutations, for
+  36 route kills across the retained runs. The original failed batch is kept.
+- The follow-up adds two route controls and completes the requested adapter
+  receipt comparison. The owner interprets its detailed observations separately.
+- Retained required Ruff comparisons reported no introduced findings.
+
+The qualified predecessor combines 207 retained controls with two added route
+controls. Its applied export passed all 168 controls in eight suites, including
+21 route methods, and all 16 publication checks. That evidence is retained for
+unchanged behaviour.
+
+The receiving successor adds four observer-alias controls to the 12 existing
+receiving controls. All 16 targeted receiving controls passed on the receiving
+candidate. The complete export inventory now contains 172 distinct controls;
+no whole 172-control execution is claimed. The owner checks the affected public
+receiving suite and publication rules on the applied successor, preserving the
+other 14 exported Python files exactly.
+No full 209-control private rerun is claimed. The original failed batch and the
+successful targeted successors remain separate evidence.
+
+`tests/test_magnitudes_r1.py` is private only: its no-change reference is the
+staged predecessor's tools and the private regression adapter.
+
+**Remaining.**
+- Rows without a surviving rule need propagated-bound designs, and stay REVIEW
+  until then.
+- Actual guarded receiving integration is complete; the guarded outcome is accepted and supplied here.
+  No IV is authorised and no later per-plan assembly verification is required.
+- No replay or fresh interval has run.
+
+Diagnostic per-arm scales include all finite compared numeric values, including unchanged ones.
+An array absolute change beyond binary64 range is labelled `overflow`, with its exact rational
+maximum and worst location retained; the report never substitutes a finite display cap for that
+measured change. Relative changes are normalised without the overflowing subtraction.
+Common-cell float64 ULPs remain available in a birth/death comparison, but its cell-ID join is
+diagnostic and supplies no correspondence proof or numerical allowance. Missing radius remains
+explicit.
+
 ## Public checks and precise remaining work
 
 The publication control checks this export's complete inventory, original/public
@@ -244,18 +504,13 @@ the native scientific runtime, open a queue or rerun private controls:
 python -B -m unittest discover -s tectonics/tests -p test_plan04_publication.py -v
 ```
 
-The actual selected Plan31 replay composition is unavailable. The final producer
-and reader must emit authenticated call-site/output/unit/norm/level/history/
-projection/radius context, joined through independent correspondence, with
-source-specific compiler support. Heat additionally needs selected quantity and
-array schemas, independent row/cell/mesh correspondence and a quantity-specific
-propagated error argument or independent verification. A final manifest alone
-cannot provide this evidence, and an older composition is not a substitute.
+The guarded integration selection and actual final receiving identities are tracked
+through the existing final composer. Source integration does not supply complete
+producer/reader scientific data. Full coupled fields, physical correspondence and
+quantity-specific propagation remain unproved wherever their original REVIEW
+contract requires them. Historical evidence is reused within its own bindings.
 
-On actual selection, stage the exact payload in a new R-shaped root, bind all
-assets through independently selected generation/input pins and run the
-assembler's check/pin/compose sequence into a new target. Complete the affected
-consumer and field-proof checks against the actual emitted identities.
-`REPAIRS_COMPLETE=False` and `EXTRACTION_READY=False` remain justified technical
-guards. Collective review is deferred. No Plan27 replay, fresh full interval,
-protected-composition rewrite or unrelated hold release is authorised by publication.
+The public toolset is the byte-mapped complete successor; its two False guards
+remain an export contract. No new IV, root/adoption/advance, protected-generation
+rewrite, default activation or unrelated hold release follows. See
+[bounded evidence and residual scope](BOUNDED-WIDTH.md).

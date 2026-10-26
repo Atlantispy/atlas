@@ -6,6 +6,56 @@ with its proof run still pending. Nothing here is scientific acceptance.
 Limits held throughout: 12 GiB RSS, 1 GiB free-memory floor, 16 GiB logical, 256 MiB caps, the 1 MiB integer limit and
 the 256 accepted-step ceiling. No tolerance is relaxed.
 
+## 25 Oct 2026, guarded width receiving integration
+
+- Connect the exact reviewed width outputs and seven current N9 tools into the
+  existing source composer: 697 members, 287 native/410 helpers, with all ten changed
+  slots authenticated. Six immediate composition/refusal checks pass.
+- Reuse the 298.672 second bounded native campaign and retained baseline/component
+  evidence, without another IV. Local widths decrease; sampled RSS increases.
+  No controlled speedup, full C4 or default/scientific acceptance is claimed.
+- Cancel later individual-plan verification after full assembly outright; finish
+  this guarded implementation through acceptance and verified publication.
+  Preserve historical evidence, public False guards and all run/landing holds.
+
+## 25 Oct 2026, Plan04 bindings-r5 successor: design and addendum rows
+
+- Add bindings-r5 as an additive complete successor. It provides corruption
+  controls for both compact root routes, a pinned closed decoder set, the v2
+  compact partition route and the retained design rows as source-specific field
+  rules. Carry the bindings-r4 receiving fixes forward unchanged.
+- Fix three fail-closed defects: compact root references FAILed, compact
+  state-record reads raised a type error, and scope closure could replace the
+  first refusal cause.
+- Decide a design row only on its proved route: the reviewed
+  differential-geometry source, package parity and the reviewed W/E pair in both
+  arms, the dual-closure graph bound to its own interval, the selected heat route,
+  and quaternions inside the pose routine's norm band. Make every row equality
+  type-strict.
+- Settle the remaining rows for the two-arm width replay route as addendum rows:
+  REVIEW, dropped with a REVIEW guard, derived, excluded by a recorded decision,
+  or a rule (exact per-arm checks of the stored heat values; interval-one forcing attribution).
+- Report each field's largest change beside its certified radius, or state that
+  it has none.
+- Give REVIEW for a helper decoder that differs between the arms; keep the
+  stage-level refusal FAIL as a recorded departure from design row 1-G.
+- Keep both readiness guards False in this export (True in the staged private
+  payload) and issues #58/#53 open. No replay or fresh interval ran.
+
+- Add two route controls for dump-written partition bytes and entry-reference
+  identity. Preserve the original failed batch and the isolated follow-up that
+  kills its two formerly surviving route mutations.
+- Preserve exact rational array overflow diagnostics, scales over all finite
+  compared values and common-cell float64 ULP diagnostics; verdicts and numerical
+  allowances are unchanged.
+
+- Normalise the standard multiprocessing entry alias only after the observer
+  verifies its inputs and only when it is the exact main object. Preserve wrong-pin,
+  foreign-object and other-alias refusals and the single main-file exemption.
+- Add four alias controls beside the 12 existing receiving controls. Retain the
+  predecessor's 168 exported-control results; the 172-control inventory is not
+  claimed as a whole executed suite.
+
 ## 25 Oct 2026, storage and query-stage receiving repairs
 
 - Connect guarded sealed reads to one shared handle lifetime so interrupted

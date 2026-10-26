@@ -60,19 +60,18 @@ Rules that apply to every item below:
 
 ## Pose and heat-number width
 
-- **State:** the approved pose rounding and Addendum E remain. Plan04's W/E
-  producer/reader bindings-r4 tools are reviewed as an additive source successor;
-  [sources and checks](workbench/plan04/README.md) preserve the earlier toolset
-  used by existing compositions. The successor is staged and unqualified.
-- **Left:** propagated-bound designs for differential geometry, current-force
-  pose, W consequence routes, W enclosure magnitudes, E downstream mesh metrics
-  and Heat; the conditions on both compact root routes; actual selected Plan31
-  composition and affected-consumer binding; explicit replay clearance.
-  A final manifest alone cannot supply field proof. Issues #58 and #53 stay open.
-- **Gate:** exact unaffected fields, zero refusal flips, approved source-specific
-  pose/Addendum E contracts and all independent proof requirements. No generic
-  epsilon or assumed Heat allowance. Both technical readiness guards remain false.
-  Plan27 scientific replay and fresh full intervals remain held.
+- **State:** accepted bindings-r5 tools are additive; previous byte-bound toolsets
+  remain. Guarded width integration is selected on the completed bounded native
+  test and retained baseline/component evidence, with no further IV. See the
+  [method, measurements and limits](workbench/plan04/BOUNDED-WIDTH.md).
+- **Completion:** the guarded outcome is accepted. The source export, actual
+  receiving integration and its immediate checks complete this implementation. Separate individual-plan checks
+  after full assembly are cancelled, with no replacement or issue-closure gate.
+  Full C4, real successor tables and physical propagation remain unproved.
+- **Gate:** retain authenticated actual reader tables, exact unaffected fields,
+  source-specific pose/header bounds, zero refusal flips and the existing width
+  projections, without override. Historical r9 tests stay historical. Public tool
+  guards stay False; no IV, installed/default or remake activation is authorised.
 
 ## Pressure stage speed
 

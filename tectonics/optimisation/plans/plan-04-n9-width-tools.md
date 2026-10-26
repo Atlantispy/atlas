@@ -1,17 +1,56 @@
 # Plan 04: N9 comparator, dump and caller integration
 
-**24 October 2026. WORKING NON-CANON. Bindings-r4 source integration reviewed;
-decision pending propagated-bound designs, root-route conditions and replay clearance.
-Issues #58 and #53 remain open; no acceptance checkbox is completed.**
+**25 October 2026. WORKING NON-CANON. Bindings-r5 is the accepted additive tool
+successor. Guarded width source integration is selected using the bounded native
+test and retained baseline/component evidence, without another IV. Actual guarded
+receiving source composition is complete and accepted; this export supplies the tools. Full coupled C4 science and authentic
+successor reader/width tables remain unproved. Public guards stay False.**
 
 The owner's implementation/integration transfer supersedes the former
 implementation-owner, permission, source-only and interim review
 restrictions. It does not release scientific runs or numerical, identity,
 resource and technical-readiness safeguards. Publication is explicitly authorised.
 
+## Bounded guarded integration
+
+The [connected public composer](../workbench/plan31/final/width/README.md)
+constructs the complete 697-member source and receives all three native width
+outputs plus seven existing N9 tool slots. Its six immediate positive/refusal
+checks pass. Later individual-plan verification after full assembly is cancelled;
+the accepted source and export complete this guarded implementation scope.
+
+The [method and evidence](../workbench/plan04/BOUNDED-WIDTH.md) give actual
+consumer coverage, cause-specific bounds and time/memory/width comparisons.
+Plan31 alone materialises the selected wall/exterior/differential width outputs
+through the actual source composition and manifest. No private final runtime profile
+is claimed as emitted by this source route. The unchanged width gate
+requires authentic measured tables; old r9 fixtures and receipts remain unchanged.
+No IV, default/installed activation or full scientific acceptance follows.
+
+## Bindings-r5 source successor
+
+The [r5 successor](../workbench/plan04/README.md#producerreader-bindings-r5--24-october-2026)
+is additive under `bindings-r5/`, beside `bindings-r4/` and the preserved
+`n9-tools-r21/`. It carries the receiving fixes forward. It adds:
+- corruption controls for both compact root routes, including dump-written
+  partition bytes and entry-reference identity;
+- a pinned, closed decoder set, with REVIEW for a differing helper decoder;
+- the v2 compact partition route;
+- the retained design rows, as type-strict source-specific field rules;
+- contract addendum rows that settle the remaining rows for the two-arm width
+  replay route, with REVIEW guards for records that route never writes;
+- per-field magnitude tables beside each certified radius.
+- exact-object handling of the standard multiprocessing entry alias, with four
+  new controls beside the existing 12 receiving controls.
+
+Both compact root-route conditions are met. Rows without a surviving design rule
+never PASS, so no pose-affected family can PASS automatically. The staged private
+payload releases both readiness guards for the two-arm width replay; this export
+keeps them False, as the publication check requires. Complete scientific producer/reader binding remains unproved; no IV is authorised.
+
 ## Bindings-r4 source integration
 
-The [reviewed successor](../workbench/plan04/README.md#producerreader-bindings-r4--24-october-2026)
+The [reviewed successor](../workbench/plan04/README.md#sources-and-integration)
 catalogues W/E producer calls, readers, relays, writes and consequence routes,
 and applies source-specific quantity contracts. Receiving fixes withdraw proof
 when a reviewed caller is missing from one arm or E pose dependencies differ,
@@ -49,7 +88,7 @@ monitored caller route were installed and checked together. The selected
 assembly route includes the exact payload through independent generation/input
 bindings. Its original selection digest is
 `5cbe5ca2c1678bc6e00487d27d5ebe7c707fe47c9bdfd94f5d0b059f41747757`.
-The actual Plan31 replay composition has not yet been selected.
+Historical tool selection is preserved; the current guarded width source route is described above.
 
 This is an additive public source export. It does not overlay the main package,
 replace frozen compositions, supply private profiles or authenticate historical
@@ -118,22 +157,16 @@ mutually exclusive resource and cancellation triggers on coherent unchanged
 guard bytes; no whole-route detection is invented. See the
 [closure evidence and limits](../workbench/plan04/README.md#mutation-coverage-closure--20-october-2026).
 
-## Precise final binding obligation
+## Scientific limits and cancelled later verification
 
-1. Obtain the actual selected Plan31 before/after replay composition. Do not
-   substitute an older or private Plan06 composition.
-2. Bind authenticated producer/reader invocation context: call-site, persisted
-   output, actual units/norm, refinement level, chronological history, binary64
-   projection and applicable same-quantity radius/error. Add source-specific
-   compiler support for that emitted schema. A final manifest alone is insufficient.
-3. Establish selected Heat quantities and independently proven row/cell/mesh
-   correspondence, with a quantity-specific propagated error argument or
-   independent verification. The pose factor and width forecast do not supply it.
-4. Stage all selected tools in a new R-shaped root. Bind launcher and payload
-   through independent generation/input pins, then run the selected assembler's
-   check/pin/compose sequence into a new target and check affected consumers.
+Full coupled C4, authentic current producer/reader/width records, physical
+correspondence and downstream pressure/heat propagation remain unproved wherever
+the original field contract lacks evidence. The bounded integration does not
+turn those unknowns, REVIEW rows or failed attempts into PASS.
 
-`REPAIRS_COMPLETE=False` and `EXTRACTION_READY=False` remain technical guards.
-Independent reviewer/refuter participation and collective acceptance are deferred
-by the owner; none is fabricated. Plan27 scientific replay, fresh full intervals
-and unrelated job holds remain outside this implementation and publication.
+Separate individual-plan verification after full assembly is CANCELLED. It is
+not a pending N9 task, replacement campaign, return-message duty or issue gate.
+N9 completes its actual guarded implementation/integration, necessary checks of
+that change, acceptance and verified publication. Assembly/fold owners deliver
+their own outputs without another N9 verification afterwards. No IV or default,
+installed or landing authority follows.

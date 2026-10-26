@@ -12356,6 +12356,91 @@
    "path": "workbench/plan02/prepared-construction-v2-r3/write_prepared_profile.py",
    "source": "<PRIVATE_PLAN02_PREPARED_V2_R3>/write_prepared_profile.py",
    "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/check_equat_bound.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/check_equat_bound_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/array_bindings_r5.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/array_bindings_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/array_compare_r21.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/array_compare_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/compare_arms_r21.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/compare_arms_r21.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/dump_arm_r5.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/dump_arm_r5.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/field_contracts.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/field_contracts.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/field_provenance.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/field_provenance.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/n9-tools-r21/write_captures_map_r3.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/write_captures_map_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_contract_rows_r1.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_contract_rows_r1.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_contracts_r4.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_contracts_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_design_rows_r3.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_design_rows_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_provenance_r4.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_provenance_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_receiving_boundaries.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_receiving_boundaries.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_review_fixes_r4.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_review_fixes_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_routes_r3.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_routes_r3.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/bindings-r5/tests/test_settled_energy_r4.py",
+   "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_settled_energy_r4.py",
+   "kind": "workbench"
+  },
+  {
+   "path": "workbench/plan04/BOUNDED-WIDTH.md",
+   "source": "<PUBLIC_PLAN04_PUBLICATION>/BOUNDED-WIDTH.md",
+   "kind": "workbench"
   }
  ]
 }

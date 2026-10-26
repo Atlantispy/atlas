@@ -236,15 +236,94 @@ downstream geometry, current forces or Heat; those quantities need their own
 propagated-bound designs. Diagnostic ULP or relative differences are not
 automatic acceptance tolerances.
 
+Compact saved roots are read through the producer's own segment decoders.
+
+- Each decoder module is pinned by SHA-256 to the arm's source manifest and also
+  checked on disk, so a changed decoder refuses.
+- A helper decoder that differs between the arms gives REVIEW. A differing
+  `atlas_tectonics` decoder is only recorded, because the width arm transforms
+  those modules.
+- Synthetic controls, written by the selected producers, corrupt a chunk, drop
+  or substitute a joined record, or change one logical field. Each fault is
+  refused by its own guard.
+- A fault shared by a segment writer and its reader is invisible to this byte
+  check.
+
+A few downstream records also have source-specific design rules. A rule decides
+only where its record is dumped and only when it can check every precondition it
+states. Its equality checks are type-strict: 5 and 5.0, or 0.0 and -0.0, are not
+the same. The current rules cover:
+- a band or exact identity on the differential interval;
+- contradiction checks on the dual-closure graph and on the certification
+  force, which can only fail;
+- a zero-source heat audit;
+- the consistency of the joined heat plan's targets;
+- an exact differential-mesh header formula;
+- each stored heat value, which must equal its retained part plus the exact
+  rounding of the new value to the stored float.
+
+The heat rows compare arms only on the selected heat route, with the same method
+and identical consumer sources. Every cross-arm rule also needs the reviewed
+differential-geometry source in both arms; without it the rule is REVIEW, while
+each arm's own consistency checks still apply.
+
+An exterior-mesh volume bound passes only when its computed enclosure radius is
+strictly smaller than the smallest cell volume. At production pose errors that
+bound can be vacuous. Because the mesh header stores no rotation, the radius also
+needs each arm's quaternion to lie in the norm band its pose routine guarantees.
+
+Rows whose records the replay route never writes are dropped, but not silently:
+such a record, if present, makes the comparison REVIEW. Adaptive enclosure
+magnitudes, multi-step pose routes, most Heat quantities, ledger-only rows,
+module-level identities and per-site outcomes stay REVIEW.
+
+Refusals are judged at two levels. A field-level refusal flip is REVIEW, as the
+design asks. The stage rule is stricter, by a recorded departure from the design:
+an attributed resource stop of the unchanged workload in the width arm, after an
+adopted reference, still FAILs, and so does any width-gate flip.
+
+For each physical field the comparator also reports the largest change between
+the arms, the certified radius it is judged against and that radius's source,
+their ratio, and the change in units in the last place. A field without a
+certified radius is reported as having none; no substitute tolerance is used.
+These tables are diagnostics and change no verdict.
+
+The rules come from a retained design review. Static and synthetic qualification
+evidence is recorded with the source successor. No external method or benchmark
+is claimed.
+
+Diagnostic per-arm scales include all finite compared numeric values, including unchanged ones.
+An array absolute change beyond binary64 range is labelled `overflow`, with its exact rational
+maximum and worst location retained; the report never substitutes a finite display cap for that
+measured change. Relative changes are normalised without the overflowing subtraction.
+Common-cell float64 ULPs remain available in a birth/death comparison, but its cell-ID join is
+diagnostic and supplies no correspondence proof or numerical allowance. Missing radius remains
+explicit.
+
+The observer verifies its pinned inputs before discarding the standard
+multiprocessing alias of the exact main object. A separate object at the same
+path, a wrong pin or another entry-object alias still refuses; the main-file
+exemption remains singular.
+
 The arithmetic checker reports evaluated and refused cases and fails if any
 required case is refused. Synthetic controls exercise missing callers, changed
 dependencies and refusal reporting; they do not qualify a replay generation.
-The complete successor lives beside the predecessor so existing compositions
+Each complete successor lives beside its predecessor, so existing compositions
 keep their byte-bound tools. No scientific replay is implied by source
 publication. The [specialist method and limits](../../optimisation/workbench/plan04/README.md)
 identify the consulted implementation, pinned producer bodies, exact claims and
 remaining root-route and field-proof requirements; no external method or
 benchmark is newly claimed here.
+
+The width implementation can be integrated as a guarded source successor using
+its bounded actual-native test and retained component evidence. Wall rays keep
+outward radii; coaxial quaternion rounding preserves the exact axis certificate;
+mesh header rounding follows the exact budget decision. Existing authenticated
+reader tables and the unchanged continuation gate remain required at runtime.
+The [bounded result and limits](../../optimisation/workbench/plan04/BOUNDED-WIDTH.md)
+show local integer-width reductions, increased sampled RSS and unchanged fixed
+heat inputs. They do not establish a heat solution, full coupled C4 or a whole-run
+speedup. No new IV is part of this guarded integration route.
 
 ## W11: spend work on changed science
 

@@ -11,9 +11,14 @@
     {
       "path": "README.md",
       "source": "<PUBLIC_PLAN04_PUBLICATION>/README.md",
-      "original_sha256": "bf52f972d713c531276fc9ba3f24176b73798199fe47bd77ef3c90ce28e59492",
-      "public_sha256": "bf52f972d713c531276fc9ba3f24176b73798199fe47bd77ef3c90ce28e59492",
-      "transformations": []
+      "original_sha256": "3deba57d04e55ef785576c609850109ceed994768e88f74401c0de58339c8229",
+      "public_sha256": "83c8008e3be3c8983d57cc4e592a498abcb3c6702eba4ae84f30152cd7e159ed",
+      "transformations": [
+        "Current guarded width integration scope and bounded evidence; no scientific receipt relabelled.",
+        "Record completed guarded source integration and cancellation of later individual-plan verification; original evidence and selected tool bytes unchanged.",
+        "Final reviewer accepted guarded source composition; ordinary spacing and source-versus-emitted-runtime-profile clarification. Immutable receiving snapshot and source bytes unchanged.",
+        "Current export supplies accepted guarded implementation; no retained publication or post-assembly verification tail. Source/payload bytes unchanged."
+      ]
     },
     {
       "path": "RETAINED-RESULTS.json",
@@ -109,6 +114,148 @@
       "original_sha256": "9fb4bf5e7ded95f29f77334ec3d636eee2d4ad3fd07fb7150fe1122639f6dc47",
       "public_sha256": "9fb4bf5e7ded95f29f77334ec3d636eee2d4ad3fd07fb7150fe1122639f6dc47",
       "transformations": []
+    },
+    {
+      "path": "bindings-r5/check_equat_bound.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/check_equat_bound_r3.py",
+      "original_sha256": "0e5befb3dd4599e7454705179dd810f376486be865caf6de53f73d543290f036",
+      "public_sha256": "0e5befb3dd4599e7454705179dd810f376486be865caf6de53f73d543290f036",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/array_bindings_r5.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/array_bindings_r5.py",
+      "original_sha256": "a46c43d7bceae99df2f6a5b61e5a0f30fb1fc8efcace07aff8a71c0bc7f2222c",
+      "public_sha256": "a46c43d7bceae99df2f6a5b61e5a0f30fb1fc8efcace07aff8a71c0bc7f2222c",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/array_compare_r21.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/array_compare_r21.py",
+      "original_sha256": "a010a0cd2cc9f4796f90b824041d2e52d834f555948d6e6ffac908bf876679b0",
+      "public_sha256": "a010a0cd2cc9f4796f90b824041d2e52d834f555948d6e6ffac908bf876679b0",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/compare_arms_r21.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/compare_arms_r21.py",
+      "original_sha256": "a1d08f46c67d5ecf9ad75d8ee20ef97eff23043d7e161e070e0c15375a453e0a",
+      "public_sha256": "231f5996ace92fef9b612aacf5fe7b35cb559dcde17b66702c65ff1d4c28c027",
+      "transformations": [
+        "{\"count\": 1, \"kind\": \"owner-name\", \"replacement\": \"REPEAT_REQUIRED_APPROVER = 'OWNER'\"}",
+        "Private owner names and private room references: 5; replaced with generic labels",
+        "Readiness guard REPAIRS_COMPLETE exported False, as the publication check requires; the staged private payload sets it True",
+        "Private review references removed from comments and docstrings by the published bindings-r4 comment edits (three-way merge)"
+      ]
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/dump_arm_r5.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/dump_arm_r5.py",
+      "original_sha256": "0913f74f74303f80e9e7cb2f19d95dd9311602bb5a30bb4d9d4d70871e7ef635",
+      "public_sha256": "6c4ced8a08d6051cf0041fcd6d5360f635aa38d211758c6d07336271d276e771",
+      "transformations": [
+        "Readiness guard EXTRACTION_READY exported False, as the publication check requires; the staged private payload sets it True"
+      ]
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/field_contracts.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/field_contracts.py",
+      "original_sha256": "70f94541ca00d71990461207356cd7435f6171745ad2e9fa7c422c467a13689c",
+      "public_sha256": "70f94541ca00d71990461207356cd7435f6171745ad2e9fa7c422c467a13689c",
+      "transformations": [],
+      "retained_references": [
+        "Two exclusion labels quote the settled addendum rows verbatim; DESIGN_RETURN and CONTRACT_ADDENDUM keep the SHA-256 digests of the private design-row and addendum-row records as reproducibility provenance"
+      ]
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/field_provenance.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/field_provenance.py",
+      "original_sha256": "6fed5ec20b9a7facac22b1afe80305cb1f838765ebb056709e7edd54f61d1071",
+      "public_sha256": "6fed5ec20b9a7facac22b1afe80305cb1f838765ebb056709e7edd54f61d1071",
+      "transformations": []
+    },
+    {
+      "path": "bindings-r5/n9-tools-r21/write_captures_map_r3.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/n9-tools-r21/write_captures_map_r3.py",
+      "original_sha256": "968df7846efa7d53b1c9319dd44f78350a93b21686a1300e306695652b8fe09c",
+      "public_sha256": "71339d7a73ab3298b861846b7acb45abfaa86fec4428c0a19a9a91f24c68678d",
+      "transformations": [
+        "{\"kind\": \"line-endings\", \"replacement\": \"LF\"}"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_contract_rows_r1.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_contract_rows_r1.py",
+      "original_sha256": "237a5735e61f95ab5a2b62ec0348c30affd1a08b3a23b79e24ff85e0570bde38",
+      "public_sha256": "397e117e145ffc7a5cdf20566711ed801c861d1ab4164116e3caece8a11555fb",
+      "transformations": [
+        "Public additive successor tool path",
+        "Private record locations and revision labels replaced with public descriptions"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_contracts_r4.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_contracts_r4.py",
+      "original_sha256": "56cb9b03e61cd841ce6e16ee71d29307d58f1395229fd34a4a6fd7b51867dc30",
+      "public_sha256": "445e58971479a65f05b34d38006166a2d6cd2647ee4a19efe9c58ffef5208a25",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_design_rows_r3.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_design_rows_r3.py",
+      "original_sha256": "e1e083ac5dd46f8f859d8bdb8eb26d8868579c66422c302181b5c94c76c80670",
+      "public_sha256": "746be92570325e28ab66f00f8999a3a2f07a08e4a9413b6c123a3912b29066a2",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_provenance_r4.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_provenance_r4.py",
+      "original_sha256": "b0a65cc154f5f2274b8593382a52389bbe5f41bde13ea42de4737a8d684848ac",
+      "public_sha256": "bbddcb6d41d90492a26d4965768087795bdaceb0513932caea58fbb756e14577",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_receiving_boundaries.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_receiving_boundaries.py",
+      "original_sha256": "4ef2575aa71ed94ca69e6035b6ae935aa31a0316b106bde6cf91c753098df61b",
+      "public_sha256": "833104882d84b9f04fd0b903131d6579f30223155ad7329f1c45d13326302d24",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_review_fixes_r4.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_review_fixes_r4.py",
+      "original_sha256": "51e375307d350b0df8d0f018d40c5bd19abed51021337bd52394aff62eae1761",
+      "public_sha256": "dfe7d8eaa2b0000808abb88e3aac47a225ed77c7019bcab36b7166501cb7db3c",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_routes_r3.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_routes_r3.py",
+      "original_sha256": "c45f682b1e493f7ad968826e3e9b565b36ef4e9694548ced75e2fa23ffbc1c4c",
+      "public_sha256": "4c28849a2001d34247b5ddeed0dc9d61a87393dcc79bc5713f9096e2d330f118",
+      "transformations": [
+        "Public additive successor tool path",
+        "Portable temporary-root default"
+      ]
+    },
+    {
+      "path": "bindings-r5/tests/test_settled_energy_r4.py",
+      "source": "<PRIVATE_PLAN04_PAYLOAD_R4>/tests/test_settled_energy_r4.py",
+      "original_sha256": "c57b9d3d649521cf44c5de05d16c3d918fdaa261042ddc2722940502ccad0f59",
+      "public_sha256": "7564cac75415cd67bd3adb1ce33727768e10d699d3d908a0d7e31ddb452ba44a",
+      "transformations": [
+        "Public additive successor tool path"
+      ]
     },
     {
       "path": "integration/assemble_r3_plan04.py",
@@ -461,6 +608,16 @@
       "original_sha256": "e25fa84fd8f74b61b9592da07d7a525b1470cfcfe108f29db2d3f1d4effc30df",
       "public_sha256": "e25fa84fd8f74b61b9592da07d7a525b1470cfcfe108f29db2d3f1d4effc30df",
       "transformations": []
+    },
+    {
+      "path": "BOUNDED-WIDTH.md",
+      "original_sha256": "5e53a9a1f0be98dcb9aecff62806e989a60d59f2ea53bbf4cf9e4c2259f03745",
+      "public_sha256": "519a66300539c8f0297a9744fe762573010a62deb09e3d1d9a94e7632df879a0",
+      "transformations": [
+        "Record completed guarded source integration and cancellation of later individual-plan verification; original evidence and selected tool bytes unchanged.",
+        "Final reviewer accepted guarded source composition; ordinary spacing and source-versus-emitted-runtime-profile clarification. Immutable receiving snapshot and source bytes unchanged.",
+        "Current export supplies accepted guarded implementation; no retained publication or post-assembly verification tail. Source/payload bytes unchanged."
+      ]
     }
   ]
 }
