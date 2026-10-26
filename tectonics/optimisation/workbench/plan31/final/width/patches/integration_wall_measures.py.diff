@@ -1,0 +1,59 @@
+--- a/src/atlas_tectonics/integration_wall_measures.py
++++ b/src/atlas_tectonics/integration_wall_measures.py
+@@ -103,6 +103,37 @@
+     return tuple(total), 3*tail+half*sum(map(abs, derivative))
+ 
+ 
++# Pose width (b-ray): a posed vector is rounded after every step with a nonzero
++# radius to a dyadic quantum <= 2**-POSE_ROUND_GUARD_RAY of that step's own radius
++# and of its Taylor target; the radius is raised outward by at least the quantum.
++POSE_ROUND_GUARD_RAY = 12
++
++
++def _floor_log2(x):
++    """floor(log2 x) for a positive int or Fraction, exactly."""
++    if type(x) not in (int, Q) or x <= 0:
++        raise V.VolumeError('positive exact rational required')
++    x = Q(x)
++    e = x.numerator.bit_length()-x.denominator.bit_length()
++    return e-1 if Q(2)**e > x else e
++
++
++def _ceil_log2(x):
++    """ceil(log2 x) for a positive int or Fraction, exactly."""
++    e = _floor_log2(x)
++    return e if Q(2)**e == x else e+1
++
++
++def _round_to(values, quantum):
++    """Each value to the nearest multiple of quantum (ties to even): a tuple of Fractions."""
++    return tuple(round(v/quantum)*quantum for v in values)
++
++
++def _round_up(value, quantum):
++    """The least multiple of quantum not below value."""
++    return -((-value)//quantum)*quantum
++
++
+ def _pose_vector(vector, omega, t0, t1, level, arena, prior=(), *, inverse=False):
+     steps = tuple((w, duration, duration) for w, duration in prior)+((omega, t0, t1),)
+     if inverse:
+@@ -111,8 +142,18 @@
+     for w, a, b in steps:
+         # Prior segments are endpoint rotations; only the current segment's
+         # interval is time-dependent, even when applying the inverse product.
++        before = vector
+         vector, delta = _rotated_normal(vector, w, a, b, level, arena)
+         error += delta
++        if delta:
++            # Round to nearest moves the vector by <= sqrt(3)/2*quantum in the
++            # 2-norm and round_up adds >= quantum: the radius still encloses the
++            # true pose, and both stay on a short dyadic grid. delta == 0 is an
++            # exact step and is never rounded.
++            target = max(map(abs, before))/Q(2**(32+2*level))
++            quantum = Q(2)**(_floor_log2(min(delta, target))-POSE_ROUND_GUARD_RAY)
++            vector = _round_to(vector, quantum)
++            error = _round_up(error+quantum, quantum)
+     return vector, error
+ 
+ 

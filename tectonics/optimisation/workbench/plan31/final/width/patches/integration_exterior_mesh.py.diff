@@ -1,0 +1,98 @@
+--- a/src/atlas_tectonics/integration_exterior_mesh.py
++++ b/src/atlas_tectonics/integration_exterior_mesh.py
+@@ -20,6 +20,23 @@
+ from . import integration_wall_measures as W
+ from . import integration_collar_geometry as F
+ from .resources import WorkBudget
++
++# Pose width (c): the stored deviation sum is an outward bound with a short dyadic
++# denominator, at most 2**-DEVIATION_STORED_BITS above the exact sum relative.
++DEVIATION_STORED_BITS = 64
++
++
++def _stored_deviation(total, width):
++    """Outward short bound of an exact nonnegative sum already checked against width."""
++    if type(total) is not Q or type(width) is not Q or not 0 <= total <= width:
++        raise V.VolumeError('checked exact deviation sum required')
++    if total == 0:
++        return total
++    e = total.numerator.bit_length()-total.denominator.bit_length()
++    if Q(2)**e > total:
++        e -= 1
++    quantum = Q(2)**(e-DEVIATION_STORED_BITS)
++    return min(-((-total)//quantum)*quantum, width)
+ 
+ 
+ METHOD = 'continuous-cartesian-quadratic-interpolant-exact-mortar-v1'
+@@ -388,11 +405,46 @@
+         n += 1
+ 
+ 
++# Pose width (b-quat): the product is rounded after every segment with a nonzero
++# error to a dyadic quantum <= 2**-POSE_ROUND_GUARD_QUAT of that segment's error.
++POSE_ROUND_GUARD_QUAT = 12
++
++
++def _pose_round_axis(rates):
++    """The first nonzero rate if every nonzero rate is exactly parallel to it, else None."""
++    moving = [w for w in rates if any(w)]
++    if not moving or any(len(w) != 3 or any(type(q) not in (int, Q) for q in w) for w in moving):
++        return None
++    if any(any(O._cross(w, moving[0])) for w in moving[1:]):
++        return None
++    return moving[0]
++
++
++def _pose_round(quaternion, error, delta, axis):
++    """The rounded product and its outward error (exact; delta > 0)."""
++    quantum = Q(2)**(W._floor_log2(delta)-POSE_ROUND_GUARD_QUAT)
++    if axis is None:
++        quaternion = W._round_to(quaternion, quantum)
++    else:
++        # (c1, s1 k)(c2, s2 k) = (c1 c2 - s1 s2 |k|^2, (c1 s2 + c2 s1) k): the
++        # product of coaxial factors is (w, s k) exactly. Rounding w and s keeps
++        # it so; |ds k|_2 <= q_s/2*|k|_1 <= quantum/2.
++        j = max(range(3), key=lambda i: abs(axis[i]))
++        s = quaternion[1+j]/axis[j]
++        if any(quaternion[1+i] != s*axis[i] for i in range(3)):
++            raise V.VolumeError('coaxial pose product left its exact axis')
++        step = Q(2)**(W._floor_log2(quantum)-W._ceil_log2(sum(map(abs, axis))))
++        s = round(s/step)*step
++        quaternion = (round(quaternion[0]/quantum)*quantum, *(s*k for k in axis))
++    return quaternion, W._round_up(error+quantum, quantum)
++
++
+ def _representative_pose(segments, operator_goal, arena):
+     quaternion, error = (Q(1), Q(0), Q(0), Q(0)), Q(0)
+     if not segments:
+         return quaternion, error
+     goal = operator_goal/(8*len(segments))
++    axis = _pose_round_axis([tuple(map(W._decode, record['angular_velocity_rad_s'])) for record in segments])
+     for record in segments:
+         omega = tuple(map(W._decode, record['angular_velocity_rad_s']))
+         duration = W._decode(record['end_time_s'])-W._decode(record['start_time_s'])
+@@ -400,6 +452,8 @@
+         with V._work((*quaternion, *q, error, delta), arena.resource):
+             quaternion = _qmul(q, quaternion)
+             error = (1+delta)*error+delta
++            if delta:
++                quaternion, error = _pose_round(quaternion, error, delta, axis)
+     # Normalising an approximate unit quaternion changes its distance by at
+     # most another error. Rotation operator distance is at most twice the unit
+     # quaternion distance, hence <=4*error. No square root or float pose is used.
+@@ -700,6 +754,7 @@
+                             physical_support=support_refs(box, physical_layer, actual_cone))))
+         if total_error > width:
+             raise V.VolumeError('declared spatial grid exceeds the predeclared physical geometry volume-error budget')
++        total_error = _stored_deviation(total_error, width)
+         cells, faces = _assemble(candidates, arena)
+         # All collar faces must have a real neighbour. No missing exterior
+         # support can become an accidental insulating/free boundary.
+@@ -908,6 +963,7 @@
+                             physical_support=support_refs(box, physical_layer, actual_cone))))
+         if total_error > width:
+             raise V.VolumeError('declared spatial grid exceeds the predeclared physical geometry volume-error budget')
++        total_error = _stored_deviation(total_error, width)
+         import live_mesh_patch as _LIVE_MESH
+         if _LIVE_MESH.EARLY_RELEASE:
+             # Charts, poses, layers and collar cells end with the candidate loop.

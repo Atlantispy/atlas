@@ -1,0 +1,72 @@
+{
+  "IV_permitted": false,
+  "N9_width_selected": false,
+  "changed_row_count_from_s1a": 15,
+  "component_maps": {
+    "b": {
+      "path": "tectonics/optimisation/workbench/plan21/b/SOURCE-MAP.json",
+      "sha256": "2212cd1f96b52b463635259e3afdb5c6868a3727e768e1fd371589c43d9fe2e6"
+    },
+    "receiving": {
+      "path": "tectonics/optimisation/workbench/plan26/SOURCE-MAP.json",
+      "sha256": "99457ac140c986bfa71edf8cc1254a9bba822a6f3d641261cc3728475e3336bd"
+    },
+    "tier1": {
+      "path": "tectonics/optimisation/workbench/plan31/tier1/SOURCE-MAP.json",
+      "sha256": "1591b434c4bdba6159e1c4405df7b6936e95e4f0df01abdd493868700ba315ac"
+    }
+  },
+  "components": {
+    "b": {
+      "path": "tectonics/optimisation/workbench/plan21/b/build_candidate.py",
+      "sha256": "c344d6b76566b158c1362d30e93ce5c062fbdbb27ee620ed0e6e0dda2015a796"
+    },
+    "receiving": {
+      "path": "tectonics/optimisation/workbench/plan26/build_candidate.py",
+      "sha256": "0939a2f56dca66543b8b3c7a4ff403351b8750ce86d5a0f4d175f87dfc925fdc"
+    },
+    "tier1": {
+      "path": "tectonics/optimisation/workbench/plan31/tier1/build_candidate.py",
+      "sha256": "8d93c1ba72646b218f76e18df394115442258a1715341da5056b17d4811a961c"
+    }
+  },
+  "condition5_selected": false,
+  "default_changed": false,
+  "emitter_api": {
+    "profile_support.py": "0e4e6d1a8b31076ba77ec71a7a8bddd56d8fc275eb0ab99589b134b32c7e7ea3",
+    "source_emitter.py": "a1d647d795d31ff83339019a22a309b2c1c812281e7f8950321d5e16cc43ab10"
+  },
+  "enablement": false,
+  "identity_kind": "PUBLIC_SOURCE_ONLY",
+  "interval_authority": false,
+  "native_runtime_outputs": {
+    "helpers/reopen_fresh_restart.py": "1c6b4bcec04b40921fb8b0ed661332383b4903257ea4d4d40358279cc9f0ec54",
+    "helpers/reopen_prepared_restart.py": "f9ee85fc9af0f4726ab70dac18f2af59fd51905bbb423e245bc203d9800dedd4",
+    "helpers/run_fresh_interval.py": "4598c9998955deec0a77b07475e30fec9ea4d272b67fa1272f91b4545ee6d3c2",
+    "helpers/run_prepared_restart.py": "48c1f3336d5e351da52aa218e235234486a0f46a3f39050b5ef81ea465f00d15",
+    "src/atlas_tectonics/integration_endpoint_checkpoints.py": "bbd501ff35ae586ce7be006fee282c5fd31c6861d28771599be5b31129a19db5"
+  },
+  "parent_arm": "b3",
+  "prepared_component": {
+    "path": "tectonics/optimisation/workbench/plan02/prepared-construction-v2-r3/assemble_resumable.py",
+    "sha256": "509936760484459ce1f41aca15965d33dab5e2be26a2eae18df63bf5c7d44f60"
+  },
+  "private_A1_selected": false,
+  "private_correspondence": {
+    "component_members": 704,
+    "controls_shipped": false,
+    "fresh_runner_sha256": "8efc3a8cb76195cff5d4c637291b1d1eeb5b89122ea36b0bb9bca2c092d67466",
+    "helper_members": 417,
+    "identity_equality_claimed": false,
+    "native_members": 287,
+    "prepared_reader_sha256": "c203542faaa000f0e40d54665a5ec7ea70a0fa8c9a259b846bce846d41408864",
+    "prepared_runner_sha256": "051008ad29fc56d42393c33b7dfcde622a39b5e9cce03a4900b91934ee066ce9"
+  },
+  "runtime_admission": false,
+  "schema": "atlas.public.plan31.final.source-composition.r1",
+  "scientific_acceptance": false,
+  "selected": false,
+  "selected_helper_files": 410,
+  "selected_native_files": 287,
+  "selected_source_members": 697
+}

@@ -1,0 +1,151 @@
+{
+  "IV_permitted": false,
+  "N9_width_selected": true,
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan31/final/build_candidate.py",
+    "sha256": "ce33a92999775cb74b4d9829b7f6c88da6f6c1e596248b904709ef0cd1ed53ae"
+  },
+  "base_source_map_sha256": "416ce0835e98a991a76e4c8715f590ccdb33359ffc0e14092451b02f6964a292",
+  "captures_pin_rule": "Retain the original private comparator pin in the source-only captures export; this does not authenticate the sanitised public comparator.",
+  "condition5_source_selected": true,
+  "default_changed": false,
+  "full_C4_accepted": false,
+  "helper_members": 410,
+  "identity_kind": "PUBLIC_SOURCE_ONLY",
+  "interval_authority": false,
+  "n9_public_source_map": {
+    "path": "N9-SOURCE-MAP.json",
+    "sha256": "87fa86ed064c449bcab8704fd613045ffc6b2f436b8f7829856092abaa529a28"
+  },
+  "n9_tool_members": [
+    "helpers/n9-tools-r21/array_bindings_r5.py",
+    "helpers/n9-tools-r21/array_compare_r21.py",
+    "helpers/n9-tools-r21/compare_arms_r21.py",
+    "helpers/n9-tools-r21/dump_arm_r5.py",
+    "helpers/n9-tools-r21/field_contracts.py",
+    "helpers/n9-tools-r21/field_provenance.py",
+    "helpers/n9-tools-r21/write_captures_map_r3.py"
+  ],
+  "native_members": 287,
+  "native_width_members": [
+    "src/atlas_tectonics/integration_differential_mesh.py",
+    "src/atlas_tectonics/integration_exterior_mesh.py",
+    "src/atlas_tectonics/integration_wall_measures.py"
+  ],
+  "public_guards": {
+    "EXTRACTION_READY": false,
+    "REPAIRS_COMPLETE": false
+  },
+  "public_private_runnable_identity_equal": false,
+  "reader_width_tables_accepted": false,
+  "rows": {
+    "helpers/n9-tools-r21/array_bindings_r5.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/array_bindings_r5.py",
+      "private_output_sha256": "a46c43d7bceae99df2f6a5b61e5a0f30fb1fc8efcace07aff8a71c0bc7f2222c",
+      "public_base_sha256": "943cde40e797fe566506d3d61121c9e253609699f7c9119c317ae92879d6baf1",
+      "public_output_sha256": "a46c43d7bceae99df2f6a5b61e5a0f30fb1fc8efcace07aff8a71c0bc7f2222c",
+      "publication_transformations": []
+    },
+    "helpers/n9-tools-r21/array_compare_r21.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/array_compare_r21.py",
+      "private_output_sha256": "a010a0cd2cc9f4796f90b824041d2e52d834f555948d6e6ffac908bf876679b0",
+      "public_base_sha256": "2a3343e47caee415f131824b68c582d7182409e32ce27e07d1f053786ab515d5",
+      "public_output_sha256": "a010a0cd2cc9f4796f90b824041d2e52d834f555948d6e6ffac908bf876679b0",
+      "publication_transformations": []
+    },
+    "helpers/n9-tools-r21/compare_arms_r21.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/compare_arms_r21.py",
+      "private_output_sha256": "a1d08f46c67d5ecf9ad75d8ee20ef97eff23043d7e161e070e0c15375a453e0a",
+      "public_base_sha256": "dc99b64826d9bf675cdfc348a639241b0c7a23f860793ee59486932cc7190993",
+      "public_output_sha256": "231f5996ace92fef9b612aacf5fe7b35cb559dcde17b66702c65ff1d4c28c027",
+      "publication_transformations": [
+        "{\"count\": 1, \"kind\": \"owner-name\", \"replacement\": \"REPEAT_REQUIRED_APPROVER = 'OWNER'\"}",
+        "Private owner names and private room references: 5; replaced with generic labels",
+        "Readiness guard REPAIRS_COMPLETE exported False, as the publication check requires; the staged private payload sets it True",
+        "Private review references removed from comments and docstrings by the published bindings-r4 comment edits (three-way merge)"
+      ]
+    },
+    "helpers/n9-tools-r21/dump_arm_r5.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/dump_arm_r5.py",
+      "private_output_sha256": "0913f74f74303f80e9e7cb2f19d95dd9311602bb5a30bb4d9d4d70871e7ef635",
+      "public_base_sha256": "b7b59ad57865af436625b7c31c9563b31d9d19433dbfc825ffff28d6e5c3337b",
+      "public_output_sha256": "6c4ced8a08d6051cf0041fcd6d5360f635aa38d211758c6d07336271d276e771",
+      "publication_transformations": [
+        "Readiness guard EXTRACTION_READY exported False, as the publication check requires; the staged private payload sets it True"
+      ]
+    },
+    "helpers/n9-tools-r21/field_contracts.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/field_contracts.py",
+      "private_output_sha256": "70f94541ca00d71990461207356cd7435f6171745ad2e9fa7c422c467a13689c",
+      "public_base_sha256": "6da34d2f6a847f1e6e45e9b10695348354d1c2a8730adce5aa50822c60cc5bd6",
+      "public_output_sha256": "70f94541ca00d71990461207356cd7435f6171745ad2e9fa7c422c467a13689c",
+      "publication_transformations": []
+    },
+    "helpers/n9-tools-r21/field_provenance.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/field_provenance.py",
+      "private_output_sha256": "6fed5ec20b9a7facac22b1afe80305cb1f838765ebb056709e7edd54f61d1071",
+      "public_base_sha256": "02eef271744cc5e9f952cbcb0e167e181c078218c850f6c49e3e210db8e46a01",
+      "public_output_sha256": "6fed5ec20b9a7facac22b1afe80305cb1f838765ebb056709e7edd54f61d1071",
+      "publication_transformations": []
+    },
+    "helpers/n9-tools-r21/write_captures_map_r3.py": {
+      "diff": null,
+      "diff_sha256": null,
+      "payload": "source/helpers/n9-tools-r21/write_captures_map_r3.py",
+      "private_output_sha256": "968df7846efa7d53b1c9319dd44f78350a93b21686a1300e306695652b8fe09c",
+      "public_base_sha256": "683c80cd54b60cbc296fa351ae29d1cbb85f7ad26980138650a895e9ad9c12b7",
+      "public_output_sha256": "71339d7a73ab3298b861846b7acb45abfaa86fec4428c0a19a9a91f24c68678d",
+      "publication_transformations": [
+        "{\"kind\": \"line-endings\", \"replacement\": \"LF\"}"
+      ]
+    },
+    "src/atlas_tectonics/integration_differential_mesh.py": {
+      "caller_scope": "Existing actual native W/E/M functions and their selected producer/reader/width gates. No helper/table repin.",
+      "diff": "patches/integration_differential_mesh.py.diff",
+      "diff_sha256": "c4fea46be76c14ef53c63e7c5ca2053f0a27893cc6510b6464de5879c06f2514",
+      "payload": "source/src/atlas_tectonics/integration_differential_mesh.py",
+      "private_output_sha256": "bfe89a0e5f9cfcc3135f2f6910c5f22526d2eb462f88bc034dbdcc9c1eea241e",
+      "public_base_sha256": "ab0f31f8231a792df45c0016c090496180abe4847ab0194491f6910125dd8138",
+      "public_output_sha256": "bfe89a0e5f9cfcc3135f2f6910c5f22526d2eb462f88bc034dbdcc9c1eea241e",
+      "publication_sanitisation": "NONE_REQUIRED_EXACT_BYTES"
+    },
+    "src/atlas_tectonics/integration_exterior_mesh.py": {
+      "caller_scope": "Existing actual native W/E/M functions and their selected producer/reader/width gates. No helper/table repin.",
+      "diff": "patches/integration_exterior_mesh.py.diff",
+      "diff_sha256": "fbf0bb125d72850792dbccc1c9eebb7b0943a66a77e80898ea75a19444b85fe2",
+      "payload": "source/src/atlas_tectonics/integration_exterior_mesh.py",
+      "private_output_sha256": "4b5b11c46d5602ab20ad46a2401ef3c34f64e281d86cdf9c1efd127e3f22840d",
+      "public_base_sha256": "d338238e1abe11db8e01a4b4ee91f99443727fb082f9d9cb6799344e82d445f4",
+      "public_output_sha256": "4b5b11c46d5602ab20ad46a2401ef3c34f64e281d86cdf9c1efd127e3f22840d",
+      "publication_sanitisation": "NONE_REQUIRED_EXACT_BYTES"
+    },
+    "src/atlas_tectonics/integration_wall_measures.py": {
+      "caller_scope": "Existing actual native W/E/M functions and their selected producer/reader/width gates. No helper/table repin.",
+      "diff": "patches/integration_wall_measures.py.diff",
+      "diff_sha256": "2f7da1249b96be00d512f21f3c34a93725619f5c1e414d293faf0bad50805068",
+      "payload": "source/src/atlas_tectonics/integration_wall_measures.py",
+      "private_output_sha256": "a7a7dc432a45439aa47d912fd6d1424be7f7c1081d03bd079aa075be6550ebef",
+      "public_base_sha256": "d6b7d472246af0e8a9415b01465f035c0c860c7b358126fd1bba5c0025e671e0",
+      "public_output_sha256": "a7a7dc432a45439aa47d912fd6d1424be7f7c1081d03bd079aa075be6550ebef",
+      "publication_sanitisation": "NONE_REQUIRED_EXACT_BYTES"
+    }
+  },
+  "runtime_admission": false,
+  "schema": "atlas.public.plan31.guarded-width.source-composition.r1",
+  "scientific_acceptance": false,
+  "selected_source_members": 697,
+  "source_integration_selected": true,
+  "width_gate_sha256": "4c31a92f6880c6df17a12f7781c3dd60df2d25abd955bd147e48bf9d70f18c73"
+}
