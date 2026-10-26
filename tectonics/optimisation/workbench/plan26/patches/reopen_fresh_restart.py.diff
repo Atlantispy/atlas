@@ -1,0 +1,21 @@
+--- a/helpers/reopen_fresh_restart.py
++++ b/helpers/reopen_fresh_restart.py
+@@ -190,8 +190,7 @@
+             'producer reopen scope differs: this reader is the mandatory cold reopen')
+     before = RO.validate_retained_accounting(receipt.get('compact_retained_before_close'), pid=pid)
+     after = RO.validate_retained_accounting(receipt.get('compact_retained_after_close'), pid=pid)
+-    require(after['retained_bytes'] == 0 and before['scope_id'] == after['scope_id'],
+-            'producer compact retained scope was not released')
++    require(RO.retained_release_agrees(before, after), 'producer compact retained scope was not released')
+     proof = receipt.get('source_proof')
+     require(type(proof) is dict and receipt.get('identities') == {
+             'producer_identity': profile.sha256, 'runtime_identity': proof.get('native_source_digest')},
+@@ -897,6 +896,8 @@
+             'independent compact retained scope release evidence is incomplete')
+     for value in retained.values():
+         RO.validate_retained_accounting(value, pid=pid)
++    require(RO.retained_release_agrees(retained['before_close'], retained['after_close']),
++            'independent compact retained scope release evidence is incomplete')
+     RO.validate_retained_producer(reopen, retained)
+     supervisor = reopen.get('supervisor')
+     require(type(supervisor) is dict, 'reader supervisor record required')

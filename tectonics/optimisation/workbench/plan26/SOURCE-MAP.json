@@ -1,0 +1,101 @@
+{
+  "schema": "atlas.public.plan26.source-transform.r1",
+  "identity_kind": "NEW_PUBLIC_SOURCE_TRANSFORM_NOT_RUNTIME_ADMISSION",
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan31/tier1/build_candidate.py",
+    "sha256": "8d93c1ba72646b218f76e18df394115442258a1715341da5056b17d4811a961c"
+  },
+  "base_source_map": {
+    "path": "tectonics/optimisation/workbench/plan31/tier1/SOURCE-MAP.json",
+    "sha256": "1591b434c4bdba6159e1c4405df7b6936e95e4f0df01abdd493868700ba315ac"
+  },
+  "base_selection_sha256": "653f7b7f18049e1a33530927c8b366e8b21199be3f1dd22282efd9662e63e431",
+  "strict_diff_applier": {
+    "path": "tectonics/optimisation/workbench/plan30/s1a/port_s1a.py",
+    "sha256": "c29e786444885521dd161b13a903a4275bac325ed55f6abc71be7621300b9c9c"
+  },
+  "rows": [
+    {
+      "member": "helpers/reopen_prepared_restart.py",
+      "public_base_sha256": "78af876733567284fd7fa0e8ba0d884dffa07fadf6abfd75880fc0ff5b554eaa",
+      "public_output_sha256": "f9ee85fc9af0f4726ab70dac18f2af59fd51905bbb423e245bc203d9800dedd4",
+      "payload": "source/helpers/reopen_prepared_restart.py",
+      "diff": "patches/reopen_prepared_restart.py.diff",
+      "diff_sha256": "a9c592a4b19ebeee3983d38a017a5dd50afe400265b5b66b8fa076414801746a",
+      "private_candidate_sha256": "c203542faaa000f0e40d54665a5ec7ea70a0fa8c9a259b846bce846d41408864",
+      "private_base_sha256": "9be849574185c7dcc5ae6b88322e25275deada36a82b9e316b5ff9faafc743a7",
+      "changed_units": [
+        "validate_producer_receipt",
+        "validate_reopen_receipt"
+      ],
+      "added_units": [
+        "retained_peak_limit",
+        "retained_index_peak",
+        "retained_lease_bound",
+        "retained_release_agrees"
+      ],
+      "unchanged_public_top_level_units": 40
+    },
+    {
+      "member": "helpers/reopen_fresh_restart.py",
+      "public_base_sha256": "27338cc6c9e0da0c821d8de93e493e159444908d28c0bf3736c70df8e23f9259",
+      "public_output_sha256": "1c6b4bcec04b40921fb8b0ed661332383b4903257ea4d4d40358279cc9f0ec54",
+      "payload": "source/helpers/reopen_fresh_restart.py",
+      "diff": "patches/reopen_fresh_restart.py.diff",
+      "diff_sha256": "ff54d321dd55c80ac7011e6a4d4a3fa8db99a99ce7f8461601f10cd5938c9583",
+      "private_candidate_sha256": "1c6b4bcec04b40921fb8b0ed661332383b4903257ea4d4d40358279cc9f0ec54",
+      "private_base_sha256": "27338cc6c9e0da0c821d8de93e493e159444908d28c0bf3736c70df8e23f9259",
+      "changed_units": [
+        "_producer_receipt",
+        "validate_reopen_receipt"
+      ],
+      "added_units": [],
+      "unchanged_public_top_level_units": 29
+    },
+    {
+      "member": "helpers/run_prepared_restart.py",
+      "public_base_sha256": "e3177ee9e1ad7ec44182b0c757ede2615966fc569ae879121b705edd3e30dd78",
+      "public_output_sha256": "48c1f3336d5e351da52aa218e235234486a0f46a3f39050b5ef81ea465f00d15",
+      "payload": "source/helpers/run_prepared_restart.py",
+      "diff": "patches/run_prepared_restart.py.diff",
+      "diff_sha256": "63b5cba0a489392a65e7abad4b1c77b3c2c678b69d8752eebea29260615f1e5b",
+      "private_candidate_sha256": "6898a35c1a81fca8e4e5979ead6b359e5c34d59112c85ae8c37c49f5f0a6e34a",
+      "private_base_sha256": "73d9b2d9849f9c6d2dd0cb94e3f5af4ae425dbe4c6bfb6aa4c4de759fbc06fdf",
+      "changed_units": [
+        "RestartSources.check_imported"
+      ],
+      "added_units": [
+        "H3_NAME",
+        "H3_SHA256",
+        "H3_KERNEL",
+        "H3_KERNEL_SHA256",
+        "RestartSources._sealed_h3"
+      ],
+      "unchanged_public_class_methods": 10,
+      "unchanged_public_top_level_units": 39
+    }
+  ],
+  "selected_source_members": 694,
+  "changed_members": 3,
+  "unchanged_members": 691,
+  "publication_transformations": [
+    "Keep the authenticated public Tier1/S1A/Plan39 parent and all unrelated source bytes.",
+    "Port only the accepted validator functions/caller changes and H3 constants/two methods onto their exact public receiving predecessors.",
+    "Use LF for new public payloads and record distinct public/private identities; do not rewrite historical private pins or receipts.",
+    "Replace two newly added coordinator/date docstring labels with descriptive route/constraint labels; numerical conditions are unchanged."
+  ],
+  "semantic_mapping": "Shared retained-release validator on all four prepared/fresh producer/reader routes; narrow protected-H3 acceptance, preserving query/Tier1/S1A behavior.",
+  "limitations": [
+    "Source construction only; no runtime admission, interval, science, installed package or final selected generation.",
+    "Retained multi-pool slack remains 50688 bytes per extra simultaneously funded pool.",
+    "H3 generic-participation and self-declared-seal limitations remain; public source does not authenticate historical private H3 proof.",
+    "Candidate parent is exactly the published 694-member Tier1 selection; later selected Plan21/B/A1 recomposition belongs to its named owners.",
+    "Fold/parity publication is deferred: preserve the accepted private gate/layout pins; this component invents no portable fold contract."
+  ],
+  "runtime_admission": false,
+  "default_changed": false,
+  "scientific_acceptance": false,
+  "interval_authority": false,
+  "selected": false,
+  "enablement": false
+}

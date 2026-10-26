@@ -1,0 +1,100 @@
+--- a/helpers/run_prepared_restart.py
++++ b/helpers/run_prepared_restart.py
+@@ -340,6 +340,12 @@
+                 'in-memory profile differs from the pinned reviewed record')
+ 
+ 
++H3_NAME = 'private_heat_compiled_dot_r1'
++H3_SHA256 = '18317500e239fbd9c6359c0abe110969495bdd356f88d38b92b3c1f2510cd0d5'
++H3_KERNEL = 'private_heat_certification_kernel_r1'
++H3_KERNEL_SHA256 = '6ae1a0ab413dd36f4544a147aedc0f58e3347bf52501a7f205a25e9c09b62eeb'
++
++
+ class RestartSources:
+     """Parameterised I/runtime.py fence; complete package and helper membership.
+ 
+@@ -466,7 +472,7 @@
+         self.check_paths()
+         native = self.native_root/'atlas_tectonics'
+         roots = (self.native_root, *self.import_roots)
+-        found = {}
++        found, h3 = {}, None
+         for name, module in tuple(sys.modules.items()):
+             filename = getattr(module, '__file__', None)
+             if name == 'atlas_tectonics' or name.startswith('atlas_tectonics.'):
+@@ -493,9 +499,16 @@
+                 first = next((candidate for root in roots
+                               for candidate in (root/name/'__init__.py', root/(name+'.py'))
+                               if candidate.is_file()), None)
+-                require(first is not None and first.resolve() == path,
+-                        'top-level module is not its first resolution over selected roots: '+name)
++                if first is None and name == H3_NAME:
++                    require(type(name) is str,  # one key a dict holds; a str subclass may equal it and come first
++                            'sealed H3 registration refused: a loaded name that is not a str equals its bare name')
++                    h3 = module, path  # proved below, once every loaded module is checked
++                else:
++                    require(first is not None and first.resolve() == path,
++                            'top-level module is not its first resolution over selected roots: '+name)
+             found[relative] = pins[relative]
++        if h3 is not None:
++            self._sealed_h3(*h3, roots, pins)
+         return found
+ 
+     def module(self, name):
+@@ -578,6 +591,56 @@
+             sys.meta_path.remove(finder)
+             sys.path[:] = before
+             self.verify()
++
++    def _sealed_h3(self, module, path, roots, pins):
++        """The bare H3 name, with no selected-root resolution: exactly the module the kernel sealed.
++
++        Only on the installed route, with the protected kernel proven by the checked
++        loader's registry and the helper the pinned file beside it. The kernel's own
++        route entry must be this object, under this one name: no import of the same
++        file (a path entry or another spelling included) and no other registration passes.
++        """
++        def sealed(condition, what):
++            require(condition, 'sealed H3 registration refused: '+what)
++        sealed(__package__ == 'atlas_tectonics._private', 'outside the installed package route')
++        # Python's own finder too: no .pyw, bytecode, extension module or namespace folder at a selected root.
++        sealed(importlib.machinery.PathFinder.find_spec(H3_NAME, [str(root) for root in roots]) is None,
++               'a selected root resolves its name')
++        kernel = __package__ + '.' + H3_KERNEL
++        # verify_installed_modules (above) has proved every row: its object, file and pin.
++        from atlas_tectonics.integration_worker_bootstrap import _INSTALLED_REGISTRY
++        row = getattr(sys.modules.get(_INSTALLED_REGISTRY), 'records', {}).get(kernel)
++        sealed(row is not None and row[0] is sys.modules.get(kernel),
++               'its kernel is not loaded through the checked loader')
++        sealed(row[2] == H3_KERNEL_SHA256, 'its kernel is not the protected identity')
++        route = row[0].__dict__.get('_h3_route')
++        sealed(type(route) is list and route and route[0][0] is module, 'not the module its kernel registered')
++        # As the kernel seals it (_h3_module), from the kernel file the registry proved.
++        seal = (str(row[1].parent/(H3_NAME+'.py')), H3_SHA256)
++        state = module.__dict__
++        given = state.get('_H3_SEAL')
++        sealed(type(given) is tuple and all(type(part) is str for part in given) and given == seal and
++               Path(seal[0]) == path, 'seal differs')
++        sealed(state.get('__spec__') is None and state.get('__loader__') is None,
++               'imported, not registered by its kernel')
++        sealed(pins.get(path.relative_to(self.workspace).as_posix()) == H3_SHA256, 'not the pinned helper')
++
++        mine = os.stat(path)
++
++        def twin(other):  # its file by any spelling: a \\?\ or UNC prefix, a short name, a hard link, a case change
++            if Path(other).name.casefold().split('.')[0] == H3_NAME.casefold():
++                return True
++            try:
++                return os.path.samestat(os.stat(other), mine)
++            except (OSError, ValueError):
++                return False
++        others = [(str(name), getattr(other, '__file__', None)) for name, other in tuple(sys.modules.items())
++                  if not (type(name) is str and name == H3_NAME)]
++        # a __file__ that is not an exact str (a path object, bytes, a str subclass) is refused, not interpreted
++        odd = sorted(name for name, other in others if other is not None and type(other) is not str)
++        sealed(not odd, 'a loaded module has a __file__ that is not a str: ' + ', '.join(odd))
++        twins = sorted(name for name, other in others if other is not None and twin(other))
++        sealed(not twins, 'another loaded module has its file: ' + ', '.join(twins))
+ 
+ 
+ def interpreter_gate():

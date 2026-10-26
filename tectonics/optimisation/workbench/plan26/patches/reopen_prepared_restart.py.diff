@@ -1,0 +1,103 @@
+--- a/helpers/reopen_prepared_restart.py
++++ b/helpers/reopen_prepared_restart.py
+@@ -399,8 +399,7 @@
+         canonical_record_identities(receipt.get('record_identities'), successor=mode == 'successor')
+         before = validate_retained_accounting(receipt.get('compact_retained_before_close'), pid=pid)
+         after = validate_retained_accounting(receipt.get('compact_retained_after_close'), pid=pid)
+-        require(after['retained_bytes'] == 0 and before['scope_id'] == after['scope_id'],
+-                'producer compact retained scope was not released')
++        require(retained_release_agrees(before, after), 'producer compact retained scope was not released')
+     else:
+         require(receipt.get('checkpoint') == str(output/'checkpoint.sqlite') and
+                 receipt.get('checkpoint_sha256') == checkpoint_sha_now, 'producer checkpoint path or bytes differ')
+@@ -653,6 +652,68 @@
+     require(sum(value['purpose_bytes'].values()) == value['retained_bytes'],
+             'retained purpose accounting does not reconcile')
+     return value
++
++
++def retained_peak_limit(value):
++    """The IV4 peak bound of one snapshot: 256 MiB plus the carrier capacity peak it records (a legacy snapshot
++    records none: 256 MiB).
++
++    The capacity peak is the scope's lifetime maximum (content_cache _partition_capacity_peak, raised only when a
++    pool opens, which a closed scope refuses). Between a scope's two snapshots its owner runs only
++    producer_accounting and scope.close() (the readers) or scope.close() alone (run_prepared_restart.retained_run);
++    neither close's cache.close() nor owner retirement opens a pool, so both snapshots record one value."""
++    return value.get('peak_limit_bytes', 256 << 20)
++
++def retained_index_peak(value):
++    """The carrier index purpose's peak in one validated snapshot; 0 when no pool ever opened."""
++    return value['purpose_peak_bytes'].get('retained:partition-carrier-index', 0)
++
++def retained_lease_bound(value):
++    """Whether one validated snapshot's carrier capacity peak C is funded by the carrier index leases it records.
++
++    Each pool, while it lives, holds a fixed-child charge ChargeSpec('partition-carrier-index', 4096 + 1024 x
++    supports) with OWNER_BYTES 4,096 more (content_cache _PartitionCarrierPool), and C counts only live pools. So at
++    that peak the index purpose holds at least 8,192 + 1,024 x supports for each pool counted:
++    C x 1,024 <= 6,336 x (index purpose peak - 8,192) when C > 0. The index purpose is a fixed-child charge held
++    while the scope-control charge (1,024 + OWNER_BYTES 4,096 = 5,120 B, released only by close(), which a live pool
++    refuses) is too, so its peak plus 5,120 B is at most fixed_peak_bytes (<= 256 MiB).
++
++    Carrier peak constraints: C is whole supports, a multiple of 3 x 2,112 = 6,336 B, and the index peak sits on its
++    1,024 B grid above 8,192 B; and peak_retained_bytes is at most fixed_peak_bytes + C, because the retained bytes
++    are the fixed child's plus the live carriers', which never exceed C. A legacy snapshot has neither carrier
++    capacity nor a fixed peak; validate_retained_accounting bounds its peak by 256 MiB."""
++    capacity = retained_peak_limit(value) - (256 << 20)
++    if 'fixed_peak_bytes' in value and value['peak_retained_bytes'] > value['fixed_peak_bytes'] + capacity:
++        return False
++    if capacity == 0:
++        return True
++    index = retained_index_peak(value)
++    return (capacity % 6336 == 0 and (index - 8192) % 1024 == 0 and index + 5120 <= value['fixed_peak_bytes'] and
++            capacity * 1024 <= 3 * 2112 * (index - 8192))
++
++def retained_release_agrees(before, after):
++    """Prepared and fresh routes: whether two snapshots of one retained scope, each validated by
++    validate_retained_accounting, are its complete release evidence under the IV4 limit. Every route calls this one
++    check, so the readers cannot drift: the prepared and fresh readers' retained_scope (validate_reopen_receipt here
++    and in reopen_fresh_restart) and both producer receipts' compact_retained_before_close and _after_close
++    (validate_producer_receipt here, reopen_fresh_restart._producer_receipt).
++
++    Both limits are ints (validate_retained_accounting compares a legacy limit by ==, which 268,435,456.0 meets).
++    Both snapshots come from one retained_accounting shape and one scope; after_close holds nothing and lists no
++    pool, because scope.close() refuses while a pool lives and a closed scope opens none. The scope's lifetime peaks
++    agree: one capacity peak and one carrier index peak (no pool opens between the snapshots), and the fixed and
++    retained peaks never fall (before <= after; H3). Each snapshot's capacity peak is funded by the index leases it
++    records (retained_lease_bound). validate_retained_accounting proves the rest of the IV4 limit: each limit is
++    exactly 256 MiB plus its own live pools' capacity and at most its peak bound, which bounds its peak retained
++    bytes."""
++    return (type(before['limit_bytes']) is int and type(after['limit_bytes']) is int and set(before) == set(after) and
++            before['scope_id'] == after['scope_id'] and after['retained_bytes'] == 0 and
++            after.get('partition_carrier_pools', []) == [] and
++            retained_peak_limit(before) == retained_peak_limit(after) and
++            retained_index_peak(before) == retained_index_peak(after) and
++            before.get('fixed_peak_bytes', 0) <= after.get('fixed_peak_bytes', 0) and
++            before['peak_retained_bytes'] <= after['peak_retained_bytes'] and
++            retained_lease_bound(before) and retained_lease_bound(after))
+ 
+ 
+ # S8 (observation only): a reader scope from RUN.new_retained_scope carries the named
+@@ -1150,15 +1211,19 @@
+                 'independent compact inventory or logical records differ')
+         retained = reopen.get('retained_scope')
+         require(type(retained) is dict and set(retained) == {'before_close', 'after_close'} and
+-                all(type(retained[name]) is dict and retained[name].get('limit_bytes') == 256 << 20
++                all(type(retained[name]) is dict
+                     for name in retained) and retained['after_close'].get('retained_bytes') == 0 and
+                 retained['before_close'].get('scope_id') == retained['after_close'].get('scope_id') and
+                 _identity(retained['after_close'].get('scope_id')) and
+                 all(type(retained[name].get('peak_retained_bytes')) is int and
+-                    0 <= retained[name]['peak_retained_bytes'] <= 256 << 20 for name in retained),
++                    type(retained_peak_limit(retained[name])) is int and
++                    0 <= retained[name]['peak_retained_bytes'] <= retained_peak_limit(retained[name])
++                    for name in retained),
+                 'independent compact retained scope release evidence is incomplete')
+         for value in retained.values():
+             validate_retained_accounting(value, pid=pid)
++        require(retained_release_agrees(retained['before_close'], retained['after_close']),
++                'independent compact retained scope release evidence is incomplete')
+         validate_retained_producer(reopen, retained)
+     supervisor = reopen.get('supervisor')
+     require(type(supervisor) is dict, 'reader supervisor record required')
