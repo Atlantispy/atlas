@@ -93,6 +93,12 @@ The following list follows the exact category order in the [snapshot contract](e
 
 ## How Atlas works
 
+For a geological review, use the [scientific reading route](tectonics/docs/HOW_TECTONICS_IS_MADE.md#scientific-review-reading-route).
+It connects the equations, physical assumptions, W/I methods, former B outcomes
+and dated evidence, including the later transport and thermal limitations.
+[Current state](docs/CURRENT_STATE.md) distinguishes the retained method package
+from the separate optimisation assembly and outstanding planetary acceptance.
+
 For the detailed stage-by-stage scientific explanation, start with
 [How Atlas tectonics is made](tectonics/docs/HOW_TECTONICS_IS_MADE.md). It breaks
 W01–W12 into individual methods, including research/software references, code,

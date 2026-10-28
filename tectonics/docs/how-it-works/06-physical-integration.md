@@ -1035,6 +1035,49 @@ without retaining every previous interval. The
 [retained bounded record](../../evidence/regional-evolution3d-r1.json), now historical after the package
 membership changed, measured that reuse separately from physical accuracy; it is not a whole-world speed forecast.
 
+### Moving geometry, transport and heat limitations
+
+The later published optimisation source contains a moving-control-volume route
+alongside the fixed-box and W07 methods described above. The following statements
+refer to that named source snapshot. They do not silently change the method of
+every Atlas solver or assert that the final installed runtime is qualified.
+
+- **Exact geometry does not make transported fields exact.** The
+  [space-time transport operator](https://github.com/Atlantispy/atlas/blob/8dcff0167877439f8dffefad3b1f86dc7d1d210d/tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_spatial_transport.py)
+  checks exact discrete geometric conservation but advances the fields with
+  backward-Euler upwinding, a first-order method. Conservation of totals can
+  coexist with numerical smoothing of sharp material, thermal and history fronts.
+  W07's separate higher-order thermal route must not be used as evidence that
+  this operator is already higher order. A sharper replacement needs matched
+  spatial/time-error and cost evidence; none is adopted by this documentation.
+- **The regional heat closure shares a cell temperature.** The
+  [mechanical-heat attribution](https://github.com/Atlantispy/atlas/blob/8dcff0167877439f8dffefad3b1f86dc7d1d210d/tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_mechanical_heat.py)
+  assumes common density and caloric law. It assigns each component the same
+  specific heat increment, so its energy share follows its mass fraction. It
+  does not resolve separate constituent temperatures inside one cell. This is a
+  declared model limitation, not permission to discard resolved material history.
+- **Heating depends on the route.** The newer regional advance requires viscous
+  heating and the material-labelled heat records account for heat already added.
+  The legacy [I04 feedback](https://github.com/Atlantispy/atlas/blob/8dcff0167877439f8dffefad3b1f86dc7d1d210d/tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_feedback.py) still labels its
+  dissipation `HEAT_NOT_CONVERTED`. The [regional exchange](https://github.com/Atlantispy/atlas/blob/8dcff0167877439f8dffefad3b1f86dc7d1d210d/tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_regional_exchange.py)
+  is a different representation and does not book that heat again. I09 must
+  reconcile any still-applicable legacy return once; it must not heat the newer
+  regional work a second time. It is incorrect to say all Atlas dissipation
+  heating is missing.
+- **Resolved material traces are the default.** The
+  [property interface](https://github.com/Atlantispy/atlas/blob/8dcff0167877439f8dffefad3b1f86dc7d1d210d/tectonics/optimisation/composed-r2/src/atlas_tectonics/integration_properties.py) defaults to
+  `allow_cell_mean=False`; coupled feedback uses positioned material traces.
+  The explicitly selected cell-mean test control does not describe the normal
+  physical interface.
+
+These limitations require local as well as global balance checks, front-shape
+and position checks, and mesh/time/coupling convergence for the claimed setting.
+The [coupled-model research mapping](../INTEGRATION_PLAN.md#coupled-simulation-research-carried-into-the-remaining-stages-20-october-2026)
+explains relevant external precedents and their limits. Research comparisons
+and source inspection are not an Atlas physical-validation result. Current
+integration and installed-runtime status remain in
+[CURRENT_STATE.md](../../../docs/CURRENT_STATE.md).
+
 ### Other supported thermal and moving-column connections
 
 Deformation produces heat, conduction redistributes it, and temperature changes creep resistance. The [thermal cell](../I01_THERMAL.md) tests that feedback in a periodic material cell; the [column-heat model](../I01_COLUMN_HEAT.md) uses layered depth geometry with surface and basal temperatures. Their different spatial assumptions prevent simply stacking the two solvers.

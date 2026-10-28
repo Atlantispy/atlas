@@ -22,6 +22,41 @@ I03/I04/I07/I09 and its whole-world acceptance to I11, including measured time,
 memory and storage. The new three-dimensional regional solver is a component of
 that route, not completion of the whole-planet requirement.
 
+## Scientific review reading route
+
+The public reader documentation was reconciled on **28 October 2026**. Start
+with the generation sequence below, then follow the physical processes relevant
+to the case being assessed. The [I01 physical contract](I01_PHYSICAL_CONTRACT.md)
+remains the version-1 statement of the chosen equations and closures; its date
+does not describe the completion status of later implementations.
+
+| Review question | Source |
+| --- | --- |
+| What equations and physical assumptions are used? | [Foundations](how-it-works/01-foundations.md), [tectonic processes](how-it-works/02-tectonic-processes.md), [physical contract](I01_PHYSICAL_CONTRACT.md) and their linked specialist derivations |
+| Which processes exchange motion, material and heat? | [Physical integration](how-it-works/06-physical-integration.md), including the [transport and heat limitations](how-it-works/06-physical-integration.md#moving-geometry-transport-and-heat-limitations) |
+| What remains to connect or establish? | [I01-I12 integration plan](INTEGRATION_PLAN.md) and [current checkpoint](../../docs/CURRENT_STATE.md) |
+| What has actually been tested? | [W10 assessment](W10_VALIDATION.md), its dated controls and the [evidence register](../../docs/CURRENT_EVIDENCE.md); a matching source digest is not physical validation |
+| Which external coupled-model methods informed the plan? | [Research mapping and limits](INTEGRATION_PLAN.md#coupled-simulation-research-carried-into-the-remaining-stages-20-october-2026) |
+
+The former B outcomes are covered by the I programme as follows. These are scope
+cross-references, not completion claims or a second list of work to run.
+
+| Earlier outcome | Where it belongs |
+| --- | --- |
+| B1: boundary realism and independent comparisons | I11, reusing the existing B1 diagnostics and W10 evidence |
+| B2: causal boundary generation and evolution | I03-I07 and I09, with delivery and acceptance in I10-I12 |
+| B3: varied starting crust with physical consequences | I04, connected to I05's material state and I11's generated-world checks |
+| B4: inherited ages and finite ocean-crust history | I03, I05 and I06; independent age-depth and heat-flow assessment in I11 |
+| B5: consistent tectonic elevation and bathymetry | I08, supplied to consumers through I10 |
+| B6: usable standalone tectonics | I02 lifecycle infrastructure and I09-I12 completion |
+
+For a scientific review, the open questions include whether the selected
+constitutive laws and boundary conditions suit the claimed settings, whether
+missing feedbacks change the result, and whether resolution and independent
+observations adequately challenge the model. Exact geometry and closed material
+accounts do not by themselves answer those questions. Neither component tests
+nor the optimisation work establish a completed evolving planet.
+
 ## Follow a world through the generator
 
 Read down this table in execution order. It follows the existing New World and

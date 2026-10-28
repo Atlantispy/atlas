@@ -1,5 +1,22 @@
 # W10: independent realism challenge and uncertainty
 
+## Reading the evidence as at 28 October 2026
+
+The assessments below retain their original dates, inputs and limits. Updating
+this explanation does not rerun them or turn a historical result into current
+scientific acceptance. Use the [evidence register](../../docs/CURRENT_EVIDENCE.md)
+for source-binding status and the [current checkpoint](../../docs/CURRENT_STATE.md)
+for later implementation and integration.
+
+Subsequent optimisation and receiving checks establish only their named
+engineering properties. The completed coupled generator still needs I11's
+physical, resolution, lifecycle and planetary-resource acceptance. In particular,
+exact accounts do not establish field accuracy: the later moving-geometry route
+retains [first-order transport and a shared-cell thermal closure](how-it-works/06-physical-integration.md#moving-geometry-transport-and-heat-limitations).
+Reuse adequate unchanged controls and add missing front, coupling and independent
+physical comparisons where the actual selected route requires them. This is not
+a request to repeat every historical campaign.
+
 ## Comprehensive review, 24 September 2026
 
 This successor inspects all implemented capability families at four levels:
@@ -279,9 +296,11 @@ it does not close all withheld-geological tests. T12 incision/diffusion and T13
 sediment/lake routing remain with their downstream owners, per the module boundary
 decision. W09's unfinished downstream work is not silently included in tectonics.
 
-Next is W11 performance and scale within supported envelopes. W12 assembly must
-retain these distinctions and cannot turn unresolved field evidence into release
-acceptance. No whole-world, production-ready or calibrated-uncertainty flag is set.
+The later optimisation and I01-I12 integration programme now carries performance,
+assembly and remaining physical acceptance. The [current checkpoint](../../docs/CURRENT_STATE.md)
+replaces the former instruction to start W11 next. Retain the distinctions above:
+assembly cannot turn unresolved field evidence into release acceptance. No
+whole-world, production-ready or calibrated-uncertainty flag is set.
 
 ## Time, resources and focused verification
 

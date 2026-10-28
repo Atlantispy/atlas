@@ -1,12 +1,47 @@
 # Atlas: current development state
 
-**Updated: 5 October 2026. WORKING NON-CANON.** This is the single current
+**Updated: 28 October 2026. WORKING NON-CANON.** This is the single current
 checkpoint: what is current now, with links to the owner documents and evidence.
 It is not a progress log, scientific acceptance or a finished world dataset. The
 working branch is `remake`; use `git status` and `git log`, not this page, for
 commit and push state.
 
 ## Active checkpoint
+
+**The final integrated tectonics runtime is not yet qualified or released.**
+Implemented regional, moving-state and optimisation components go beyond the
+5 October checkpoint retained below. Later source acceptance and bounded checks
+do not establish a successful fresh full interval, geological-duration evolution
+or whole-planet physical acceptance.
+
+The public `remake` branch retains the method implementation and its dated
+evidence. The separate
+[optimisation review snapshot](https://github.com/Atlantispy/atlas/tree/review/optimisation-20261016/tectonics/optimisation)
+publishes later component selections and source constructors. It is not an
+installed package or an automatic overlay onto `tectonics/src`. Private execution
+inputs and historical runtime bindings are not supplied by those source exports.
+
+**Next action:** finish the current source receiving/assembly, final fold,
+installed qualification and publication, then perform the conditionally
+authorised fresh interval and its comparison under the actual run gates. The
+[programme issue](https://github.com/Atlantispy/atlas/issues/3) records the current
+delivery order and separate holds. This page does not issue run clearance.
+The remaining I01-I12 scope includes evolving full-sphere and regional feedback,
+physical transitions, connected delivery and I11 acceptance; it is not all
+unstarted, and it is not complete merely because components have been published.
+
+For scientific review, start with the
+[reading route](../tectonics/docs/HOW_TECTONICS_IS_MADE.md#scientific-review-reading-route)
+and its explicit [transport/heat limitations](../tectonics/docs/how-it-works/06-physical-integration.md#moving-geometry-transport-and-heat-limitations).
+The former B1-B6 outcomes map into the I programme. No new scientific benchmark,
+full-suite pass, final interval speedup or planetary-throughput result is claimed
+by this documentation reconciliation. The source-bound I01 version-1 physical
+contract and historical receipts remain unchanged.
+
+## Retained method checkpoints through 5 October 2026
+
+The following paragraphs describe their dated supported cases. Their acceptance
+does not extend to later source combinations or the complete planetary system.
 
 **The reviewed optimisation batch is integrated locally.** It repairs the four
 development-tool findings, adds bitwise numerical speed-ups, exact incremental
@@ -33,7 +68,9 @@ Adequate unchanged broader results were reused, not rerun or relabelled current
 full-suite evidence. The method records the refinement's assessed reuse boundary.
 The installed EXE is unchanged and still contains the accepted I03 build below.
 See the [I04 method](../tectonics/docs/I04_CAUSAL_START.md) for the supported route
-and its explicit limitations. No I05b or later stage has started.
+and its explicit limitations. Later moving-state and regional work must be
+read with the active checkpoint above; this dated acceptance does not classify
+all of I05b or the later programme as unstarted.
 
 **I03 K1–K5 repairs are reviewed and integrated locally.**
 They cover the documented prescribed-history scope,
@@ -85,12 +122,11 @@ passing focused checks is not a new full-suite or cross-platform pass. The
 [before-commit guard](CODING_SAFETY.md#before-every-commit) checks Git-normalised
 candidate bytes, not only the working copy.
 
-**Next action:** await the owner's instruction to resume the paused fidelity
-repair or rebuild the desktop app. No I05b or later implementation was started. The
-Saturday review hold was released on 30 September. The desktop package now
-includes accepted I01/I02, R7 and I03 sources at `30a79e6`; its UI snapshot is available
-locally from the accepted build but remains absent from a public clone. Work follows the
-[completion roadmap](ATLAS_ROADMAP.md); planning is not execution authority.
+The retained desktop checkpoint contains accepted I01/I02, R7 and I03 sources
+at `30a79e6`. It does not establish that the later optimisation runtime has been
+installed. The UI snapshot remains outside the public clone. Current work and
+run holds follow the active checkpoint above, not an old instruction to stop
+before I05b or to restart the earlier repair sequence.
 
 ## Current status
 
@@ -104,7 +140,7 @@ locally from the accepted build but remains absent from a public clone. Work fol
 | I02 common state, exchanges, clock and restart | I02.1–I02.8 reviewed, corrected, integrated locally and accepted for the declared coupled-column workflow. Atomic state/exchange commits, one accepted clock, save/reopen/fresh-process continuation, cancellation, inspection and measured overhead are connected. Linux coverage remains open. The new execution identity intentionally makes earlier W12/New World jobs refuse continuation or verification; saved bundles remain inspectable, without rebinding ([compatibility effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects)). | [I02 contract](../tectonics/docs/I02_COMMON_STATE.md), [I02 workflow](../tectonics/docs/I02_WORKFLOW.md), [integration plan](../tectonics/docs/INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller) |
 | I03 evolving spherical history | K1–K5 repairs and the N1 follow-up are integrated locally. A clean full run passes 325 I03 tests, with two historical expected failures; the default Git-normalised guard, including 759 I01/I02 tests, passes. Paths survive mesh/rename replay, supported vertex traversals and bounded exact overlay recovery are covered, C7 ranges are corrected, and all three bridge representations bind fresh-admission replay. D1-b passes that would subdivide a D5 triangle are refused by name; a pass outside it is admitted. Current scope remains explicit: no automatic physical direction/event law, generic junction collision or general seam reorganisation; the constant-rate regional velocity port refuses every motion with junction paths. Older step/map schemas are explicitly refused. | [I03 method, checks and limits](../tectonics/docs/I03_SPHERICAL_NETWORK.md), [reader chapter](../tectonics/docs/how-it-works/06-physical-integration.md), [integration checks](CURRENT_EVIDENCE.md#integration-checks) |
 | I04 starting family and reduced driving feedback | Reviewed, repaired, integrated locally and accepted for its declared reduced-model scope. Continuous starting families, D1 torque/GPE balance, reduced D2 resistance and first property/motion feedback are connected on supported controls. Issued-result integrity, nonlinear sensitivity and one-sided coverage are repaired. Genuine staircase coupling and the predeclared resolved-refinement successor pass. Generated-family evolution, general small-circle transforms and the recorded unsupported belt/event classes are not claimed. | [I04 method and controls](../tectonics/docs/I04_CAUSAL_START.md) |
-| I05 moving-state prerequisites | I05a (I05.1–I05.3) accompanies the I04 delivery: material-following properties and thermal/history state consumed by the supported coupled route. This is not completion or authorisation of I05b or the whole I05 stage. | [Moving-state method](../tectonics/docs/I05_MOVING_STATE.md), [shared ports](../tectonics/docs/I04_I05_PORTS.md) |
+| I05 moving-state and later regional work | The retained I05a (I05.1–I05.3) delivery supplies material-following properties and thermal/history state to the supported I04 route. Later moving-control-volume transport, regional heat ownership and optimisation source are available in the separate review snapshot. Final assembly and whole-I05 physical acceptance remain open; do not describe all work after I05a as unstarted. | [Moving-state method](../tectonics/docs/I05_MOVING_STATE.md), [shared ports](../tectonics/docs/I04_I05_PORTS.md) |
 | 3D regional mechanics and evolution | Fixed-box Q2/Q1 full-stress Stokes with first-order donor-cell transport and conduction. The reviewed matrix-free multigrid method (I07.2 solver scaling) and corrected automatic `auto` choice between it and assembled GMRES are integrated locally; `auto` is the default for new runs. Resource admission and memory accounting are repaired. Auto restart binds the admitted solver set; temporary memory pressure refuses rather than rerouting. Same equations, gates and outputs; explicit methods are retained. First-order transport remains strongly diffusive at these resolutions. Workflow-timing r12 renews the shared package bindings, not a 3-D speed measurement. | [Mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse), [multigrid](../tectonics/docs/REGIONAL_MECHANICS_3D.md#matrix-free-multigrid-candidate-i072-solver-scaling), [automatic choice](../tectonics/docs/REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto), [evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) |
 | Repair batch R1 (output integrity) | Integrated locally: scale-invariant 3D Stokes acceptance gates, a free-surface relaxation timestep gate and shared interval ends, thread-safe prepared geometry, a New World column envelope, no fabricated case 1a pressure, membership-derived execution identity including dtype layouts/metadata, and gauge-aware plate torques and port masks. Its workflow-timing r2 and finite-admission r5 captures are retained as superseded records after later integration. No tolerance was relaxed and the step ceiling is unchanged. | [3D mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse), [W07 surface](../tectonics/docs/W07_SURFACE_STRENGTH.md), [New World evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md) |
 | Repair batch R4 (reliability and bounded resources) | Integrated locally with follow-up fixes: checkpoint corruption and concurrent restore guards, retryable never-started jobs without resampling, resource/cache accounting and locking, and structured ZIP/input refusals. Focused regressions passed; finite-admission r6 and workflow-timing r6 supersede their r5 records. Final Git-normalised verification passed all three guards, including 759 I01/I02 tests. | [Evidence and focused checks](CURRENT_EVIDENCE.md#integration-checks), [workflow effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects), [job recovery](../tectonics/docs/NEW_WORLD_EVOLUTION.md), [bundle guards](../tectonics/docs/NEW_WORLD_BUNDLE.md) |

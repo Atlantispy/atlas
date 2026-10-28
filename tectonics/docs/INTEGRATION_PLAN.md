@@ -1,6 +1,8 @@
 # Complete tectonics integration plan
 
-28 September 2026. **WORKING NON-CANON — plan, not implemented capability.**
+Scope and reader-status reconciliation: 28 October 2026. **WORKING NON-CANON.**
+This plan contains completed component work as well as unfinished integration;
+its requirements are not evidence that the full generator is implemented.
 
 This is the forward integration scope for finishing the tectonics generator.
 It replaces the narrower interpretation of W12 completion and the provisional
@@ -8,16 +10,15 @@ B2 implementation order. [W12_ASSEMBLY.md](W12_ASSEMBLY.md) remains the record o
 what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains the
 single progress summary; do not maintain another competing status ledger here.
 
-This is the complete planning scope, not blanket execution authority. The latest
-owner instruction (3 October 2026) authorised closing the I03 review findings,
-including the larger supplied-junction geometry and transient-accounting extension.
-I02.3–I02.8 remain accepted for their declared workflow; stop before I04. Preparing the later
-briefs does not start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
-live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
-current-state record. No installations, reopening R4.4, broad/full-world runs,
-commits, pushes or paid overage are implied. The I01-only automatic timeout
-continuation permission has expired. Do not change an in-flight brief or its
-editable files when updating this plan; use the revised plan for its successor.
+Execution follows the current owner records and applicable holds. The old
+instruction to stop before I04 is superseded: I04/I05 components and subsequent
+regional integration and optimisation work exist. Completion still requires the
+joins and physical acceptance described below. Use the
+[current checkpoint](../../docs/CURRENT_STATE.md) and
+[programme issue](https://github.com/Atlantispy/atlas/issues/3) for the remaining
+work; do not infer that every numbered assignment is unstarted or complete.
+This documentation update authorises no simulation, changes no numerical gate
+and does not alter in-flight source or run ownership.
 
 ## 1. The outcome we must deliver
 
@@ -1552,20 +1553,74 @@ reference from the prior diagnosis (abstract-level review), not scientific
 validation of the proposed force/localisation closures. Do not silently replace
 those closures with a graphics recipe.
 
+### Coupled-simulation research carried into the remaining stages (20 October 2026)
+
+**Planning evidence, WORKING NON-CANON.** The research reviewed primary methods
+and official documentation, not external executables. It establishes applicable
+precedents, not an Atlas benchmark, implementation decision or scientific pass.
+Scientific equations still require declared constitutive assumptions, forcing,
+spatial/time discretisation and coupling error controls. This review did not
+establish that optimisation generally reduced Atlas accuracy, nor quantify a
+whole-world accuracy percentage. Findings about one retained route must not be
+applied to a newer owner implementation without checking its actual source.
+
+| Research inspected | Application to Atlas | Limits to preserve |
+| --- | --- | --- |
+| [Neuharth et al. (2022), ASPECT–FastScape](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021TC007166), methods §§2.3–2.5; [ASPECT mesh-deformation parameters](https://aspect-documentation.readthedocs.io/en/stable/parameters/Mesh_20deformation.html) and [eroding-box example](https://aspect-documentation.readthedocs.io/en/latest/user/cookbooks/cookbooks/fastscape_eroding_box/doc/README.html) | I07–I09 regional comparator: retain landscape state between exchanges; send horizontal/vertical motion to surface processes; return erosion/deposition and surface change to mechanics. Evaluate subcycling against coupling error rather than repeatedly reconstructing fine terrain from coarse state. | The paper couples a vertical mechanical section to a horizontal landscape, replicating motion and averaging return topography along strike. It is not a full 3-D or spherical demonstration. Default substep counts are not accuracy evidence; the eroding-box example is a smoke case. Full downstream landscape process ownership remains outside standalone Tectonics. |
+| [Bahadori et al. (2022), mantle–lithosphere–landscape coupling](https://pmc.ncbi.nlm.nih.gov/articles/PMC9343645/), methods; [Underworld surface-coupling correction (2025)](https://www.underworldcode.org/new-features-of-the-surface-coupling-framework-in-underworld-2/) | I07–I09 reference for regional motion, surface redistribution and loading feedback. Include an evolving high-relief surface case that samples velocity at the current surface, synchronises exchange times and checks that surface height and material accounts agree. | Global ASPECT mantle forcing is one-way into regional Underworld; surface feedback does not make the entire chain two-way. Climate forcing and soil assumptions are prescribed. The developer correction documents a failure mode, not independent convergence or Atlas speed evidence. |
+| [Braun & Deal (2023), FastScape algorithm](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2023JF007140), including §8 Algorithm Accuracy | I05 transport accuracy and later terrain/W09 method selection: compare sharp-front/knickpoint preservation, conservation, spatial/time error and complete runtime at matched accuracy. Include first-order upwind/implicit and a justified limited higher-order candidate where the supported equation warrants it. | Linear-cost implicit solving does not remove discretisation error. The paper documents first-order numerical smoothing and a TVD comparison for stream-power incision; that is not a drop-in method for Atlas's other equations. An explicit TVD route carries a CFL restriction. This is a relevant failure mode, not a diagnosis of Atlas's earlier smooth mountains or proof that higher order always wins. |
+
+Carry these into the existing assignments, without creating another programme:
+
+- **I05.1–I05.5:** distinguish exact geometry/accounts from field accuracy; use a
+  sharp material/thermal-history front as well as integral conservation. Declare
+  any common-density, common-caloric-law or shared-cell-temperature restriction
+  in the active heat route. Do not silently homogenise positioned material traces.
+- **I08.3–I08.4:** retain actual evolving surface state and return supported
+  removal/deposition/water loads exactly once. Audit inventory changes when area,
+  elevation, wet/dry masks or material support change, not just per-area fields.
+- **I09.2–I09.5:** separate instantaneous state, rates and interval-integrated
+  exchanges; define subcycling, lag/iteration limits and conservative returns.
+  Close any still-unbooked legacy dissipation without heating work already booked
+  by a regional owner twice. Check local as well as global balances: globally
+  cancelling errors are not a local conservation pass.
+- **I11.1–I11.4:** reuse adequate bounded references and add only missing coverage.
+  Record mesh/time/coupling convergence separately from agreement with independent
+  observations. Compare matched-error cost, not an implicit coarse calculation
+  against a finer higher-accuracy one. No multi-hour R4.4 or planetary run follows
+  from this literature entry.
+
+The [wider roadmap's coupled-model precedents](../../docs/ATLAS_ROADMAP.md#coupled-model-precedents-and-fidelity-choices)
+cover CESM exchange accounting, CSDMS/BMI/Landlab interfaces, CLIMBER-X fidelity
+levels and AdaScape ecology. Those are cross-module candidates, not extra
+Tectonics scope. Before selecting an external runtime, assess licence, dependency
+cost and real Windows/Linux deployment: ASPECT–FastScape needs its C/C++/Fortran
+and numerical/MPI environment; Underworld recommends containers on Windows
+([ASPECT prerequisites](https://aspect-documentation.readthedocs.io/en/latest/user/install/local-installation/system-prereqs.html),
+[FastScape integration](https://aspect-documentation.readthedocs.io/en/latest/user/install/local-installation/fastscape.html),
+[Underworld installation](https://underworld2.readthedocs.io/en/latest/Installation.html)).
+No installation, consumer-runtime promise, adoption or hold release is implied.
+
 ## 10. Completion and next action
 
 Integration is complete only at **I12**, when the section-1 outcome and required
 matrix are met. A new shared-state class, connected graph, green unit suite,
 regional demo, export table or visually attractive world is not a substitute.
 
-**I01 is complete as a model-choice, contract and bounded-feasibility stage.**
-I02.1–I02.8 are accepted for the declared connected and restartable column workflow
-(see its method and current-state record). I03 is under the separately authorised
-review-and-repair scope described above; stop before I04. I04–I12 remain planned,
-not newly started or authorised by this document. Preserve
-the physical-event gates assigned to their later implementation stages. Do not
-repeat completed reading or bounded controls without changed inputs, a failure
-or missing required coverage.
+I01's model-choice and bounded-feasibility work, I02's supported column workflow,
+I03's prescribed spherical-history controls and the bounded I04/I05 connections
+are retained starting points. Later moving-state, regional and optimisation
+implementation must be assessed against its actual source and supported cases.
+It is incorrect to describe all work after I03 as unstarted.
 
-The later-stage briefs are planning only. Acceptance recorded above is supported
-by the linked I01/I02 method and evidence records, not by the existence of this plan.
+The current sequence is completion of the selected runtime's receiving and final
+assembly, installed qualification and publication, then the authorised fresh
+interval and its comparison. Subsequent tectonics work follows the dependencies
+in this plan and the current programme decision; a single successful interval
+does not close I11's geological-duration or whole-planet requirements. The
+[programme issue](https://github.com/Atlantispy/atlas/issues/3) records the active
+order, including separate optimisation work and holds.
+
+Reuse adequate unchanged evidence. Preserve the physical-event gates, historical
+failures and original receipts. No new physical acceptance, full-suite pass,
+platform qualification or planetary performance result follows from this update.

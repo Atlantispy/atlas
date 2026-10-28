@@ -4,6 +4,14 @@
 **Planning baseline:** `remake`, commit `6285d4a`  
 **Status:** WORKING NON-CANON. A development plan, not a claim of completed implementation or scientific acceptance.
 
+**Reader reconciliation: 28 October 2026.** Phase B's B1-B6 labels retain the
+historical outcome map; their implementation and acceptance are now assigned to
+I01-I12, not a second parallel completion programme. See the
+[reviewer's cross-reference](../tectonics/docs/HOW_TECTONICS_IS_MADE.md#scientific-review-reading-route),
+the [current checkpoint](CURRENT_STATE.md) and the
+[programme issue](https://github.com/Atlantispy/atlas/issues/3). Source publication,
+enabled implementation and scientific acceptance remain different states.
+
 ## 1. What we are building
 
 Atlas is a science-informed world generator. It should produce varied, coherent worlds in which tectonics, rocks, terrain, water, climate, ecology and human geography affect one another. It must do more than draw a plausible-looking map or connect individually passing components.
@@ -125,9 +133,11 @@ Matching an explicitly imposed speed scale is a scaling check, not independent r
 
 **Owner clarification, 26 September 2026:** fix why initial generation produces
 unrealistic boundaries; post-generation fairing is not an acceptable realism fix,
-even if downstream physics uses the adjusted geometry. The planned integration
-below is paused before implementation. The retained prototype and B1 measurements
-are diagnostic evidence only, not the chosen production method.
+even if downstream physics uses the adjusted geometry. The retained fairing
+prototype and B1 measurements are diagnostic evidence, not the chosen production
+method. Integration has since progressed through bounded I04/I05 work and later
+regional/optimisation components; the complete causal New World producer remains
+unaccepted. Follow the current checkpoint rather than the former pre-I04 pause.
 
 Next establish a scientifically justified generative formulation in which declared
 geological and motion assumptions influence boundary creation itself. Compare
@@ -292,6 +302,66 @@ Reuse and complete the existing shared machinery rather than building a separate
 - Report regressions as regressions. Do not add percentages from unrelated stages or claim whole-world savings from tiny fixtures.
 - Processing time is the priority over reducing RAM or disk alone, within safe budgets. Report RAM and stored bytes separately. Do not spend effort estimating token savings.
 - Choose representative bounded scale cases before long runs. A toy case can exaggerate parallel overhead; that does not establish the correct whole-world policy.
+
+**Planetary resource evidence.** The Ecliptic comparison reinforces the
+[scale contract's distinction](PRODUCT_AND_SCALE_CONTRACT.md#3-spatial-contract-four-different-resolutions)
+between the evolving physical state, reference samples and delivered views.
+Output-cell or snapshot counts do not establish live solver size or accepted-step
+count. Exact arithmetic and conservation accounting do not establish physical
+realism. A five-minute small fixture would establish that fixture's performance,
+not planetary capability; do not extrapolate geological runtime from a synthetic
+timestep.
+
+Carry this into the existing
+[I11.4 resource acceptance](../tectonics/docs/INTEGRATION_PLAN.md#i11--end-to-end-realism-portability-and-resource-acceptance).
+After selected optimisations have fresh complete-interval evidence, use only the
+next needed, increasingly representative bounded scale case when authorised.
+Reuse the existing case definitions, receipts and execution queue. Record actual
+physical extent, process/exchange/output resolution, live cells and faces, spatial
+query counts, accepted steps, physical horizon, output cadence, required physics
+and hardware/configuration. Report complete wall time, CPU time, peak RAM and
+logical versus physical stored bytes separately, including setup, checks and
+output costs. Preserve the distinction between measured cases and projections.
+
+If the measured scaling is inadequate, assess algorithms, data layout and reuse;
+separate active simulation state, retained history and sampled/view outputs; and
+assess adaptive global/regional refinement within the existing multiresolution
+design. These remain proposals to evaluate against required accuracy,
+conservation, two-way coupling, identity and restart behaviour, not permission to
+simplify the physical model. I11 still requires an evolving full sphere with
+interacting regions. This adds no broad comparison matrix, matched Ecliptic
+benchmark or approval gate, and changes no hold or retained 256-step ceiling.
+
+### Coupled-model precedents and fidelity choices
+
+**Recorded 20 October 2026; WORKING NON-CANON, planning evidence only.** Real
+equations do not imply complete physics or an exact numerical solution. Keep
+model assumptions, forcing, resolution, time integration and coupling errors
+separate from implementation defects and lossless engineering optimisations.
+The research found no basis for a single Atlas accuracy-loss percentage or a
+claim that recent optimisations generally sacrificed accuracy.
+
+The [Tectonics research mapping](../tectonics/docs/INTEGRATION_PLAN.md#coupled-simulation-research-carried-into-the-remaining-stages-20-october-2026)
+records ASPECT–FastScape, Underworld–Badlands and FastScape transport-accuracy
+findings for I05/I07–I09/I11 and later terrain/sediment work. Use bounded regional
+comparators before proposing a new coupled framework; their planar/sectional
+assumptions do not establish planetary validity.
+
+| Precedent and inspected sources | Relevant category work | Applicability and limitations |
+| --- | --- | --- |
+| [CESM CLM–CISM coupling documentation](https://escomp.github.io/cism-docs/cism-in-cesm/versions/master/html/clm-cism-coupling.html), exchange/remapping §§6.2–6.5 | Climate, precipitation, hydrology, soils, coasts and changing-surface interfaces | Separate fast component updates from slower exchanges; distinguish instantaneous state from integrated flux. Account for changing area/elevation and transferred inventories. Global surface-mass-balance renormalisation can sacrifice local conservation; correction fluxes, finite ice and incomplete heat coupling are documented limitations, not compromises to copy silently. Check both local and global water, energy and mass budgets. |
+| [CSDMS framework/BMI](https://gmd.copernicus.org/articles/15/1413/2022/), §§6.1–6.3/6.5; [Landlab 2.0](https://esurf.copernicus.org/articles/8/379/2020/), §§3/6.1 | Shared interfaces; terrain, hydrology, erosion/sediment and downstream consumers | Reuse reference components and explicit units, grids, update times and remapping. Build on Atlas's existing ports; adopt another framework only for a demonstrated missing function. A compatible interface or numerical control does not establish physical validity of the coupled model. |
+| [CLIMBER-X](https://gmd.copernicus.org/articles/15/5905/2022/), model description and limitations | A separately chosen intermediate-complexity climate/ocean/land option | Demonstrates a coupled reduced model, not lossless acceleration: parameterised weather/eddies, no resolved synoptic variability or ENSO, no momentum conservation, and present-Earth-derived parameterisation limits. Published approximately 10,000 model years/day on 16 CPUs at 5° resolution is specific to its HPC configuration, not an Atlas or consumer estimate. Any such fidelity level requires explicit assumptions, purpose and acceptance; never select it automatically after a timeout. |
+| [AdaScape](https://gmd.copernicus.org/articles/16/6921/2023/), §§2/5/7 | Terrain–climate–biome/species-range connections | Compare environmental response, trait ecology, dispersal and speciation under prescribed uplift and rainfall. Coupling is mainly environment-to-biota; vegetation feedback is not complete. Strong time rescaling (an example uses 10,000 landscape years per generation) prevents literal transfer of ecological rates. This is neither validation of real species ranges nor a source of ready-made Diadem biological coefficients. |
+
+Apply the lessons through the existing Phase C increments: establish conservative
+exchange and moving-area inventories, then use the smallest missing reference
+case and matched-accuracy timing. Explicitly name one-way versus two-way links
+and unresolved feedbacks. Preserve numerical species inputs and their uncertainty;
+obtain missing Diadem coefficients through the species coordinator. Check licence,
+dependencies and actual Windows/Linux use when selecting an external component.
+Research review did not install or benchmark these systems. It starts no module,
+changes no run hold and does not justify rerunning a whole world or seasonal year.
 
 ## 8. UI and explainability
 
