@@ -1,0 +1,2055 @@
+"""Optional persistent reuse for known pure kernels, never inside their equations.
+
+Inputs are detached before hashing and use. Identity includes typed input bytes,
+resolved parameters, current package source, loaded Python instructions and the
+selected runtime. This is provenance/invalidation, not a hostile-runtime sandbox.
+No parameter-only hash is treated as a complete scientific result identity.
+"""
+from __future__ import annotations
+from dataclasses import asdict, dataclass, is_dataclass
+from functools import lru_cache
+import hashlib
+import inspect
+import json
+import marshal
+import math
+from pathlib import Path
+import platform
+import re
+import sys
+import types
+import importlib
+import os
+import stat
+import errno
+import time
+import threading
+import weakref
+from collections import OrderedDict
+from contextlib import contextmanager
+from concurrent.futures import Future, CancelledError, TimeoutError as FutureTimeout
+
+import numpy as np
+
+from ._validation import snapshot as array, frozen, input_shape, TectonicsError
+from .resources import elements, select_budget, MemoryLimitError
+from .storage import ArrayStore
+from .thermal import half_space_temperature, cooling_work_bytes
+from .flexure import PeriodicFlexure
+from .finite_flexure import FiniteRegionFlexure
+from .parameters import ThermalParameters
+
+
+def _digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def _json(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':'),
+                      allow_nan=False).encode('utf-8')
+
+
+def _file_hash(path):
+    p = Path(path)
+    if p.is_symlink() or not p.is_file():
+        raise TectonicsError('runtime/source file unavailable or linked')
+    h = hashlib.sha256()
+    with p.open('rb') as f:
+        for block in iter(lambda: f.read(1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+
+@lru_cache(maxsize=None)
+def _loaded_binary(path):
+    # Binary modules are assumed immutable for a process lifetime. Python source
+    # and loaded instructions are re-examined per invocation. Paths are not IDs.
+    # Unbounded: the keys are the fixed paths of _runtime_record (about 20). A
+    # 16-entry bound was smaller than the scipy and numba sets, so every new
+    # context of those backends re-read its binaries from disk (R7, s01-3).
+    return _file_hash(path)
+
+
+def _interpreter_binary():
+    """Resolve the interpreter path to the regular file that is hashed.
+
+    Python virtual environments may legitimately link their interpreter. Resolve
+    only this interpreter path; source, data and extension-module paths still
+    pass through the unchanged strict hashing rules. The resolved file's bytes,
+    not the installation path, enter the runtime identity. Loaded binaries retain
+    the existing process-lifetime immutability assumption; this is not protection
+    against a hostile process replacing its executable while it runs.
+
+    That file need not contain the interpreter. On Windows it is only a launcher
+    or stub. A virtual environment's ``python.exe`` is normally a copied
+    redirector (a regular file, so resolving changes nothing) that starts the
+    base ``python.exe``; the base executable, which is the hashed file outside
+    a virtual environment, merely loads ``pythonXY.dll``. That DLL (the module at
+    ``sys.dllhandle``) is never hashed, and built-in ``math`` has no file of its
+    own, so the record's 'math' entry repeats the same hash. There the
+    interpreter's identity rests on the recorded ``sys.version`` string: two
+    builds reporting the same string, or an edited DLL, share one runtime
+    identity. Only Windows was examined; the same holds wherever the interpreter
+    lives in a shared library and not in the resolved executable.
+    """
+    if not isinstance(sys.executable, str) or not sys.executable:
+        raise TectonicsError('Python interpreter path is unavailable')
+    try:
+        target = Path(sys.executable).resolve(strict=True)
+        if not target.is_file():
+            raise TectonicsError('Python interpreter target is not a regular file')
+    except (OSError, RuntimeError) as exc:
+        raise TectonicsError('Python interpreter target cannot be resolved') from exc
+    return str(target)
+
+
+def _normal_code(code):
+    return code.replace(co_filename='<atlas>', co_consts=tuple(
+        _normal_code(c) if isinstance(c, types.CodeType) else c for c in code.co_consts))
+
+
+# Minimum kernel dependency set, retained as an explicit guard: every name here
+# must exist in the package source membership. The bound set itself is derived
+# from that membership (_identity_modules), not from sys.modules, so it is
+# deterministic across processes and unrelated later imports cannot change a key.
+_IDENTITY_MODULES = ("regional_thermomechanical", "regional_rheology", "regional_transport", "regional_execution", "regional_stokes", "w06_workflow", "spreading_checkpoint", "spreading_history", "spreading_history_cooling", "margin_cooling", "spreading_integrals", "spreading_cooling", "spreading", "extension_workflow", "extension_support", "extension", "variable_flexure", "finite_flexure", "w04_workflow", "column_loads", "w03_workflow", "compaction", "compaction_columns", "plate_integrals", "thermal_support", "regional_workflow", "regional_workflow_geometry", "regional_forcing", "_velocity_multigrid", "_validation", "resources", "parameters", "kinematics",
+                     "thermal", "plate_cooling", "flexure", "transport", "storage", "reuse", "regional", "materials", "mesh", "remapping", "topology", "markers", "coordinates", "timebase", "geometry", "spherical_geometry", "geometry_index", "boundaries", "spherical_atlas", "planetary_generation", "geological_records", "geological_case", "material_library", "plate_reference", "plate_layout", "geological_domain", "precursor", "precursor_sampling", "_spherical_candidates", "precursor_execution", "execution", "constitutive", "constitutive_execution", "damage_regularisation", "stokes", "stokes_execution", "thermochemical", "thermochemical_execution", "variable_stokes", "variable_stokes_execution", "anderson", "preconditioner_reuse", "adaptive_inner", "convection_benchmark")
+
+
+_IDENTITY_MODULES += ("regional_strength", "regional_surface_stokes", "surface_geometry", "free_surface")
+_IDENTITY_MODULES += ("regional_geology", "regional_checkpoint", "w07_workflow")
+_IDENTITY_MODULES += ("shortening", "shortening_support")
+_IDENTITY_MODULES += ("transform", "deformation_network", "planar_projection", "planar_exchange", "fault_slip")
+_IDENTITY_MODULES += ("subduction", "subduction_mesh", "subduction_materials", "subduction_linear", "subduction_transport", "subduction_refinement")
+_IDENTITY_MODULES += ("magmatic_thermodynamics", "magmatic_emplacement", "magmatic_transfer")
+_IDENTITY_MODULES += ("w08_inventory", "w08_region", "w08_workflow")
+_IDENTITY_MODULES += ("w09_drainage", "w09_water", "w09_erosion", "w09_hillslope")
+_IDENTITY_MODULES += ("underthrust",)
+_IDENTITY_MODULES += ("evolving_mechanics", "evolving_flexure")
+_IDENTITY_MODULES += ("tectonic_history_codec", "tectonic_history")
+
+
+_NATIVE_SUFFIX = '_native'
+
+
+# Executable fixture assets are source members, but their import names are the
+# manifest's declared logical names, never atlas_tectonics._fixtures.* names.
+@dataclass(frozen=True)
+class _FixtureIdentitySources:
+    manifest: Path
+    manifest_sha256: str
+    root: Path
+    bindings: tuple
+    by_path: tuple
+    finder: object
+
+
+_fixture_identity_state = threading.local()
+
+
+def _fixture_identity_sources(check_sources=False):
+    selected = getattr(_fixture_identity_state, 'selected', None)
+    if selected is None:
+        return None
+    if not any(finder is selected.finder for finder in sys.meta_path):
+        raise TectonicsError('declared fixture identity finder is no longer installed')
+    from .integration_worker_bootstrap import _ordinary
+    _ordinary(selected.manifest)
+    if (not selected.manifest.is_file() or selected.manifest.stat().st_size > 8*1024**2
+            or _file_hash(selected.manifest) != selected.manifest_sha256):
+        raise TectonicsError('declared fixture identity manifest changed')
+    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in selected.finder.modules.items()))
+    if (selected.root != Path(__file__).resolve().parent or bindings != selected.bindings
+            or tuple(sorted(selected.finder.by_path.items())) != selected.by_path):
+        raise TectonicsError('declared fixture identity selection changed')
+    if check_sources:
+        selected.finder.verify()
+    return selected
+
+
+def _fixture_identity_binding():
+    selected = _fixture_identity_sources()
+    return (() if selected is None else tuple((name, path.relative_to(selected.root).as_posix(), pin,
+                                               'by_path' if name in selected.finder.by_path else 'module')
+                                              for name, path, pin in selected.bindings))
+
+
+@contextmanager
+def fixture_identity_context(manifest_path, manifest_sha256, workspace):
+    """Bind all package fixture assets through the pinned manifest's logical imports.
+
+    Enter after selecting the native/import roots, before ExecutionContext, and
+    retain this context until every such ExecutionContext is closed. This uses
+    the existing FixtureSources finder. It changes no path, source, fence, stage
+    or worker selection. A different declaration requires a fresh interpreter.
+    """
+    if getattr(_fixture_identity_state, 'selected', None) is not None:
+        raise TectonicsError('nested fixture identity contexts are not supported')
+    from .integration_worker_bootstrap import FixtureSources, _ordinary, _pairs, _path, _raw
+    manifest_path, workspace = Path(manifest_path), Path(workspace)
+    if not manifest_path.is_absolute() or not workspace.is_absolute():
+        raise TectonicsError('fixture identity requires explicit absolute paths')
+    _ordinary(manifest_path)
+    _ordinary(workspace)
+    manifest_path, workspace = _path(str(manifest_path)), _path(str(workspace))
+    if manifest_path.stat().st_size > 8*1024**2:
+        raise TectonicsError('fixture identity manifest is too large')
+    def nonfinite(value):
+        raise TectonicsError('nonfinite fixture identity manifest value: '+value)
+    manifest = json.loads(_raw(manifest_path, manifest_sha256), object_pairs_hook=_pairs, parse_constant=nonfinite)
+    finder = FixtureSources(manifest, workspace)
+    root = Path(__file__).resolve().parent
+    _ordinary(root)
+    assets = {path.resolve() for path in (root/'_fixtures').rglob('*.py')}
+    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in finder.modules.items()))
+    if not assets or {path for _, path, _ in bindings} != assets:
+        raise TectonicsError('declared fixture identity must cover every package fixture source exactly')
+    inventory = manifest.get('source_hashes')
+    if type(inventory) is not dict or any(inventory.get(root.name+'/'+path.relative_to(root).as_posix()) != pin
+                                         for _, path, pin in bindings):
+        raise TectonicsError('fixture identity differs from the native source inventory')
+    native = {'.'.join(path.relative_to(root).with_suffix('').parts) for path in root.rglob('*.py')
+              if path.relative_to(root).parts[0] != '_fixtures' and path.name != '__init__.py'}
+    if native.intersection(name for name, _, _ in bindings):
+        raise TectonicsError('fixture logical name collides with a native package module')
+    selected_names = {name: (path, pin) for name, path, pin in bindings}
+    for name, module in tuple(sys.modules.items()):
+        filename = getattr(module, '__file__', None)
+        if type(filename) is str and Path(filename).resolve() in assets:
+            if name not in selected_names or Path(filename).resolve() != selected_names[name][0]:
+                raise TectonicsError('undeclared loaded package fixture: '+name)
+    selected = _FixtureIdentitySources(manifest_path, manifest_sha256, root, bindings,
+                                       tuple(sorted(finder.by_path.items())), finder)
+    sys.meta_path.insert(0, finder)
+    _fixture_identity_state.selected = selected
+    try:
+        _fixture_identity_sources(check_sources=True)
+        yield
+    finally:
+        try:
+            _fixture_identity_sources(check_sources=True)
+        finally:
+            _fixture_identity_state.selected = None
+            sys.meta_path[:] = [item for item in sys.meta_path if item is not finder]
+
+
+def _identity_module(name, fixtures):
+    binding = None if fixtures is None else next(((path, pin) for logical, path, pin in fixtures.bindings
+                                                 if logical == name), None)
+    if binding is None:
+        return importlib.import_module('atlas_tectonics.'+name)
+    module = importlib.import_module(name)
+    registry = sys.modules.get('_atlas_checked_fixture_modules')
+    path, pin = binding
+    if (registry is None or registry.records.get(name) != (module, path, pin)
+            or type(getattr(module, '__file__', None)) is not str or Path(module.__file__).resolve() != path):
+        raise TectonicsError('loaded fixture identity binding changed: '+name)
+    return module
+
+
+def _identity_modules(backend):
+    """Native package modules plus every explicitly declared logical fixture.
+
+    Membership is the same ``*.py`` set that _source_bytes digests, read from the
+    package directory itself. Before R1 a fixed list omitted 25 modules (3D,
+    integration, assembly, ports, plate reference and, outside numba, the native
+    kernels), so a process running stale in-memory code of those modules received
+    the fresh-source identity (review s01-1). Native (numba) modules are bound
+    whenever they import; only a missing optional dependency may skip one, and
+    never for the numba backend. A membership change after capture is refused by
+    ExecutionContext.verify through the source inventory.
+    """
+    root = Path(importlib.import_module(__package__).__file__).parent
+    names, assets = [], set()
+    for path in root.rglob('*.py'):
+        parts = path.relative_to(root).with_suffix('').parts
+        if parts[0] == '_fixtures':
+            assets.add(path.resolve())
+        elif parts[-1] != '__init__':
+            names.append('.'.join(parts))
+    fixtures = _fixture_identity_sources(check_sources=True)
+    if assets:
+        if fixtures is None or {path for _, path, _ in fixtures.bindings} != assets:
+            raise TectonicsError('package fixture sources require an explicit complete fixture identity context')
+    elif fixtures is not None:
+        raise TectonicsError('fixture identity context does not belong to this package')
+    missing = set(_IDENTITY_MODULES)-set(names)
+    if missing:
+        raise TectonicsError('declared identity module missing from source membership: '+min(missing))
+    out = []
+    for name in sorted(names):
+        try:
+            importlib.import_module('atlas_tectonics.'+name)
+        except (ImportError, OSError) as exc:
+            # A native kernel whose optional runtime is missing or broken has no
+            # loaded code to bind (its source bytes stay bound); the numba backend
+            # needs it, and every other package module must import.
+            if name.endswith(_NATIVE_SUFFIX) and backend != 'numba':
+                continue
+            raise TectonicsError('package module cannot be imported for the execution identity: '+name) from exc
+        except Exception as exc:
+            raise TectonicsError('package module cannot be imported for the execution identity: '+name) from exc
+        out.append(name)
+    if fixtures is not None:
+        # Ordinary declared modules may perform their one authenticated by-path
+        # import. Do not pre-import that alias ahead of its actual caller.
+        for name, _, _ in sorted(fixtures.bindings, key=lambda row: (row[0] in fixtures.finder.by_path, row[0])):
+            _identity_module(name, fixtures)
+            out.append(name)
+    return tuple(out)
+
+
+_SOURCE_INVENTORY_SCHEMA = 'atlas.package-source-digests.v1'
+_SOURCE_CONTEXT_BYTES = 2*1024**2
+_SOURCE_FILES = 512
+_SOURCE_BLOCK_BYTES = 64*1024
+
+
+def _source_bytes():
+    """Read every current source byte, retaining bounded digest records.
+
+    The 512-file/2 MiB limits cap file membership and the canonical
+    JSON inventory (schema, relative names, byte counts and SHA-256), not the raw
+    package text. A 64 KiB buffer streams each complete file on EVERY call; no
+    metadata result is cached. Values remain bytes for retained-context accounting.
+    Source text may exceed 2 MiB, with proportional I/O but no retained text copy.
+    Concurrent detected mutation refuses; this is not an atomic filesystem snapshot.
+    """
+    root = Path(__file__).parent
+    paths = []
+    for p in root.rglob("*.py"):
+        if len(paths) >= _SOURCE_FILES:
+            raise TectonicsError("execution source inventory exceeds context budget")
+        paths.append(p)
+    out = {}
+    encoded_bytes = len(_json({'schema': _SOURCE_INVENTORY_SCHEMA, 'files': {}}))
+    buffer = memoryview(bytearray(_SOURCE_BLOCK_BYTES))
+    root_parts = len(root.parts)
+    for p in sorted(paths):
+        # rglob yields descendants of this root. Reuse their parsed components
+        # rather than repeatedly walking all absolute-path ancestors.
+        name = '/'.join(p.parts[root_parts:])
+        digest, size = hashlib.sha256(), 0
+        try:
+            # One non-following stat answers both regular-file and link checks.
+            # These are fresh per capture, never an mtime-based digest cache.
+            entry = p.lstat()
+            if not stat.S_ISREG(entry.st_mode):
+                raise TectonicsError("runtime/source file unavailable or linked")
+            with p.open("rb") as stream:
+                before = os.fstat(stream.fileno())
+                while True:
+                    # One excess byte detects growth without an unbounded read
+                    # from a file continuously appended by another process.
+                    count = stream.readinto(buffer[:min(_SOURCE_BLOCK_BYTES, before.st_size-size+1)])
+                    if not count:
+                        break
+                    size += count
+                    if size > before.st_size:
+                        raise TectonicsError("source changed during inventory capture")
+                    digest.update(buffer[:count])
+                after = os.fstat(stream.fileno())
+            current = p.lstat()
+        except OSError as exc:
+            raise TectonicsError("runtime/source file unavailable during capture") from exc
+        stamp = lambda stat: (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
+        if (not stat.S_ISREG(current.st_mode) or size != before.st_size
+                or stamp(entry) != stamp(before) or stamp(before) != stamp(after)
+                or stamp(before) != stamp(current)):
+            raise TectonicsError("source changed during inventory capture")
+        # Both fields have fixed JSON spelling: a non-negative byte count and
+        # hashlib's lowercase ASCII hex. Preserve canonical bytes without a
+        # generic encoder; every source byte and consistency check stays live.
+        record = (b'{"bytes":' + str(size).encode('ascii') + b',"sha256":"'
+                  + digest.hexdigest().encode('ascii') + b'"}')
+        encoded_bytes += len(_json(name)) + 1 + len(record) + bool(out)
+        if encoded_bytes > _SOURCE_CONTEXT_BYTES:
+            raise TectonicsError("execution source inventory exceeds context budget")
+        out[name] = record
+    if encoded_bytes > _SOURCE_CONTEXT_BYTES:
+        raise TectonicsError("execution source inventory exceeds context budget")
+    return out
+
+
+_CAPTURED_TYPES = (str, int, float, bool, tuple, list, dict, set, frozenset, types.MappingProxyType,
+                   re.Pattern)
+_IMMUTABLE_LEAVES = (type(None), bool, int, float, str, bytes)
+
+
+def _deeply_immutable(value):
+    """Exact None/bool/int/float/str/bytes, or exact tuples/frozensets of only these, recursively.
+
+    Such a value cannot change while the same object is held, so its normalised form is a pure function of
+    that object. Subclasses, lists, dicts, sets, mapping proxies, patterns, NumPy objects (dtype metadata
+    included) and dataclasses are never treated as immutable here."""
+    kind = type(value)
+    if kind in _IMMUTABLE_LEAVES:
+        return True
+    if kind is tuple or kind is frozenset:
+        return all(_deeply_immutable(item) for item in value)
+    return False
+
+
+def _captured(value):
+    """Upper-case module values bound by the identity (R1: data, not just scalars)."""
+    return (type(value) in _CAPTURED_TYPES or isinstance(value, (np.dtype, np.generic, np.ndarray))
+            or (is_dataclass(value) and not isinstance(value, type)))
+
+
+@lru_cache(maxsize=None)
+def _code_digest(code):
+    """Digest of a code object held in a data table (code objects hash by content)."""
+    return _digest(marshal.dumps(_normal_code(code), 2))
+
+
+def _key(value):
+    """Distinct, ordered text for a dict key; str keys keep their text."""
+    return value if type(value) is str else type(value).__qualname__+':'+repr(value)
+
+
+def _dtype_constant(value, active=None):
+    """Detach dtype layout and metadata; dtype equality ignores metadata.
+
+    Field order, overlapping offsets and subarrays cannot be represented by
+    dtype.str alone. Metadata must be inspectable data, never a type-only token.
+    Revisit it on every verification: metadata can contain mutable containers.
+    """
+    if value is None or type(value) in (bool, int, float, str):
+        return _constant(value)
+    if type(value) is bytes:
+        return {"bytes": value.hex()}
+    if type(value) is complex:
+        return {"complex": [_constant(value.real), _constant(value.imag)]}
+    active = set() if active is None else active
+    if id(value) in active:
+        raise TectonicsError('cyclic dtype metadata cannot be bound')
+    active.add(id(value))
+    try:
+        if isinstance(value, np.dtype):
+            fields = None if value.names is None else [
+                [name, _dtype_constant(value.fields[name][0], active), value.fields[name][1],
+                 _dtype_constant(value.fields[name][2:], active)] for name in value.names]
+            sub = None if value.subdtype is None else [
+                _dtype_constant(value.subdtype[0], active), list(value.subdtype[1])]
+            return {"dtype": dict(str=value.str, byteorder=value.byteorder,
+                itemsize=value.itemsize, alignment=value.alignment,
+                isalignedstruct=value.isalignedstruct, fields=fields, subdtype=sub,
+                metadata=_dtype_constant(value.metadata, active))}
+        if type(value) in (list, tuple):
+            return {type(value).__name__: [_dtype_constant(x, active) for x in value]}
+        if type(value) in (dict, types.MappingProxyType):
+            items = [[_dtype_constant(k, active), _dtype_constant(v, active)]
+                     for k, v in value.items()]
+            return {"mapping": sorted(items, key=lambda item: _json(item[0]))}
+        if isinstance(value, np.generic):
+            item = value.item()
+            if isinstance(item, np.generic):
+                raise TectonicsError('unsupported dtype metadata scalar: '+type(value).__qualname__)
+            return {"numpy": _dtype_constant(value.dtype, active),
+                    "value": _dtype_constant(item, active)}
+        raise TectonicsError('unsupported dtype metadata: '+type(value).__qualname__)
+    finally:
+        active.remove(id(value))
+
+
+def _constant(value):
+    if isinstance(value, np.dtype):
+        return _dtype_constant(value)
+    if type(value) is float and not math.isfinite(value):
+        return {"float": repr(value)}
+    if value is None or type(value) in (bool, int, float, str):
+        return value
+    if type(value) in (tuple, list):
+        return [_constant(x) for x in value]
+    if type(value) in (dict, types.MappingProxyType):
+        # Keys may be non-comparable (types); a typed text key keeps them distinct and ordered.
+        items = [(_key(k), v) for k, v in value.items()]
+        if len({k for k, _ in items}) != len(items):
+            raise TectonicsError('identity constant has ambiguous dictionary keys')
+        return {k: _constant(v) for k, v in sorted(items)}
+    if isinstance(value, types.FunctionType):
+        # Functions held in tables are bound by their code, not by their type.
+        return {"function": value.__qualname__, "code": _code_digest(value.__code__),
+                "defaults": _constant(value.__defaults__), "kwdefaults": _constant(value.__kwdefaults__)}
+    if isinstance(value, re.Pattern):
+        return {"pattern": _constant(value.pattern), "flags": value.flags}
+    if type(value) in (set, frozenset):
+        return {"set": sorted((_constant(x) for x in value), key=_json)}
+    if isinstance(value, np.generic):
+        # Exact value; repr keeps non-finite values out of strict JSON.
+        return {"numpy": value.dtype.str, "repr": repr(value.item())}
+    if isinstance(value, np.ndarray):
+        array = np.ascontiguousarray(value)
+        out = {"ndarray": array.dtype.str, "shape": list(array.shape)}
+        if array.dtype.kind == 'O':
+            out["items"] = [_constant(x) for x in array.ravel()]
+        else:
+            out["sha256"] = _digest(array.tobytes())
+        if isinstance(value, np.ma.MaskedArray):
+            out["mask"] = _digest(np.ascontiguousarray(np.ma.getmaskarray(value)).tobytes())
+        return out
+    if is_dataclass(value) and not isinstance(value, type):
+        return {"type": type(value).__qualname__, "values": _constant(asdict(value))}
+    # Runtime objects (locks/budgets/modules) are not arbitrary serialised graphs.
+    return {"type": type(value).__module__+"."+type(value).__qualname__}
+
+
+def _callable_inventory(backend="reference", modules=None):
+    signatures, tokens, constants = {}, [], {}
+    fixtures = _fixture_identity_sources(check_sources=True)
+    if modules is None:
+        modules = _identity_modules(backend)
+    for name in modules:
+        module = _identity_module(name, fixtures)
+        for label, obj in sorted(vars(module).items()):
+            # These are process-wide resource leases, not scientific constants.
+            # Their changes are guarded by the executor, not source invalidation.
+            transient = name == 'execution' and label in (
+                '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
+                '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
+            if not transient and label.isupper() and _captured(obj):
+                constants[module.__name__+"."+label] = _constant(obj)
+            members = [(label, obj)]
+            if isinstance(obj, type) and obj.__module__ == module.__name__:
+                members = []
+                for member, method in sorted(vars(obj).items()):
+                    if isinstance(method, (staticmethod, classmethod)):
+                        method = method.__func__
+                    elif isinstance(method, property):
+                        method = method.fget
+                    members.append((label+"."+member, method))
+            for label2, fn in members:
+                if hasattr(fn, "py_func") and inspect.isfunction(fn.py_func):
+                    # Inspect the Python definition AND selected JIT options; a
+                    # dispatcher object's address alone is not code provenance.
+                    key = module.__name__+"."+label2
+                    origin = fn.py_func
+                    defaults = (_constant(origin.__defaults__), _constant(origin.__kwdefaults__),
+                                _constant(fn.targetoptions))
+                    tokens.append((key, fn, origin.__code__, defaults))
+                    signatures[key] = (origin.__code__, defaults)
+                elif inspect.isfunction(fn):
+                    key = module.__name__+"."+label2
+                    defaults = (_constant(fn.__defaults__), _constant(fn.__kwdefaults__))
+                    # Keep actual objects alive; identity checks cannot suffer id reuse.
+                    tokens.append((key, fn, fn.__code__, defaults))
+                    signatures[key] = (fn.__code__, defaults)
+                elif callable(fn) and not isinstance(fn, type):
+                    # Ufunc/builtin/callable aliases are runtime identity guards.
+                    key = module.__name__+"."+label2
+                    tokens.append((key, fn, None, b""))
+    return signatures, tuple(tokens), _json(constants)
+
+
+def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes, modules=None,
+                               immutable=None) -> None:
+    """Compare live bindings without constructing discarded signature/token tables.
+
+    ``expected`` retains the original objects, codes and detached defaults. Every
+    current module/class member is still visited, including added aliases. Mutable
+    defaults, JIT options and registered constants are normalised again on EVERY
+    call. There is no cached acceptance result or metadata-based source shortcut.
+    Canonical key uniqueness is checked at preparation; ambiguous legacy keys use
+    the unchanged full inventory comparison in ExecutionContext.verify instead.
+
+    ``immutable`` (the context's private table) keeps the normalised form of each
+    registered constant that is deeply immutable (_deeply_immutable), with a strong
+    reference to the object it was computed from. It is reused only while the module
+    still binds that same object; every other constant is normalised again, and the
+    complete constants record is still serialised and compared on every call. New
+    entries are kept only from a call that accepts, so a refused call (for example
+    one made while the classifier or normaliser was replaced) leaves the table as it
+    was.
+    """
+    constants, fresh = {}, {}
+    fixtures = _fixture_identity_sources()
+    # Consuming a PRIVATE shallow table enforces exact membership, including
+    # duplicate qualified names introduced after preparation. Tokens themselves
+    # retain strong references and detached defaults and are not mutated here.
+    remaining = expected.copy()
+    if modules is None:
+        modules = _identity_modules(backend)
+    for name in modules:
+        module = _identity_module(name, fixtures)
+        prefix = module.__name__+"."
+        for label, obj in vars(module).items():
+            transient = name == 'execution' and label in (
+                '_LIMIT_USERS', '_LIMIT_VALUE', '_LIMIT_OWNER', '_LIMIT_HANDLE',
+                '_POOL_SLOTS', '_PROCESS_LIMIT_HANDLE')
+            if not transient and label.isupper() and _captured(obj):
+                held = None if immutable is None else immutable.get(prefix+label)
+                if held is not None and held[0] is obj:
+                    constants[prefix+label] = held[1]
+                else:
+                    constants[prefix+label] = value = _constant(obj)
+                    if immutable is not None and _deeply_immutable(obj):
+                        fresh[prefix+label] = (obj, value)
+            members = ((label, obj),)
+            if isinstance(obj, type) and obj.__module__ == module.__name__:
+                members = vars(obj).items()
+                member_prefix = prefix+label+"."
+            else:
+                member_prefix = prefix
+            for member, fn in members:
+                # Descriptors are unwrapped ONLY for locally defined classes,
+                # exactly as in the capture/oracle path.
+                if member_prefix != prefix:
+                    if isinstance(fn, (staticmethod, classmethod)):
+                        fn = fn.__func__
+                    elif isinstance(fn, property):
+                        fn = fn.fget
+                if hasattr(fn, "py_func") and inspect.isfunction(fn.py_func):
+                    origin = fn.py_func
+                    defaults = (_constant(origin.__defaults__), _constant(origin.__kwdefaults__),
+                                _constant(fn.targetoptions))
+                    code = origin.__code__
+                elif inspect.isfunction(fn):
+                    # None has no mutable contents; the common no-defaults path
+                    # needs no recursive normaliser calls or tuple allocation.
+                    key = member_prefix+member
+                    old = remaining.pop(key, None)
+                    if old is None or fn is not old[1] or fn.__code__ is not old[2]:
+                        raise TectonicsError("loaded implementation changed")
+                    values = old[3]
+                    if len(values) != 2 or (
+                        (fn.__defaults__ is not None or values[0] is not None)
+                        and _constant(fn.__defaults__) != values[0]
+                    ) or (
+                        (fn.__kwdefaults__ is not None or values[1] is not None)
+                        and _constant(fn.__kwdefaults__) != values[1]
+                    ):
+                        raise TectonicsError("loaded implementation changed")
+                    continue
+                elif callable(fn) and not isinstance(fn, type):
+                    code, defaults = None, b""
+                else:
+                    continue
+                old = remaining.pop(member_prefix+member, None)
+                if old is None or fn is not old[1] or code is not old[2] or defaults != old[3]:
+                    raise TectonicsError("loaded implementation changed")
+    if remaining or _json(constants) != constants_expected:
+        raise TectonicsError("loaded implementation changed")
+    if fresh:
+        immutable.update(fresh)
+
+
+def _runtime_record(backend):
+    if backend not in ("reference", "scipy", "numba"):
+        raise TectonicsError("unknown execution backend")
+    import numpy._core._multiarray_umath as core
+    import numpy.fft._pocketfft_umath as fft
+    interpreter = _interpreter_binary()
+    binaries = {"python": _loaded_binary(interpreter),
+                "numpy_core": _loaded_binary(core.__file__),
+                "numpy_fft": _loaded_binary(fft.__file__),
+                "math": _loaded_binary(getattr(math, "__file__", interpreter))}
+    versions = {"python": sys.version, "numpy": np.__version__, "machine": platform.machine(),
+                "platform": platform.system(), "byteorder": sys.byteorder}
+    if backend in ("scipy", "numba"):
+        try:
+            import scipy
+            import scipy.special._ufuncs as sf
+            import scipy.linalg._flapack as lapack
+        except ImportError as exc:
+            raise TectonicsError("requested scipy runtime unavailable") from exc
+        versions["scipy"] = scipy.__version__
+        binaries["scipy_special"] = _loaded_binary(sf.__file__)
+        binaries["scipy_lapack"] = _loaded_binary(lapack.__file__)
+        # W08 finite affine flow uses this selected matrix-exponential backend.
+        import scipy.linalg._matfuncs_expm as matrix_exponential
+        binaries["scipy_expm"] = _loaded_binary(matrix_exponential.__file__)
+        import scipy.spatial._qhull as qhull
+        binaries["scipy_qhull"] = _loaded_binary(qhull.__file__)
+        # W08 sparse-factor graph ordering participates in reproducible solves.
+        import scipy.sparse.csgraph._reordering as reordering
+        binaries["scipy_reordering"] = _loaded_binary(reordering.__file__)
+        # R4.1 native sparse LU and separable FFT preconditioner. These identities
+        # are explicit dependencies, not a claim to seal every linked system lib.
+        import scipy.sparse.linalg._dsolve._superlu as superlu
+        import scipy.fft._pocketfft.pypocketfft as pocketfft
+        binaries["scipy_superlu"] = _loaded_binary(superlu.__file__)
+        binaries["scipy_fft"] = _loaded_binary(pocketfft.__file__)
+    if backend == "numba":
+        import numba, llvmlite
+        import numba._helperlib as helper
+        versions.update(numba=numba.__version__, llvmlite=llvmlite.__version__,
+                        cpu_name=numba.config.CPU_NAME, cpu_features=numba.config.CPU_FEATURES,
+                        disable_jit=numba.config.DISABLE_JIT, fastmath=False, disk_jit_cache=False)
+        binaries["numba_helper"] = _loaded_binary(helper.__file__)
+        candidates = [p for p in (Path(llvmlite.__file__).parent / "binding").glob("*llvmlite*")
+                      if p.suffix in (".so", ".dll", ".dylib")]
+        if len(candidates) != 1:
+            raise TectonicsError("cannot identify the selected LLVM native library")
+        binaries["llvmlite"] = _loaded_binary(candidates[0])
+    # Global atlas broad-phase queries use SciPy's native spatial tree. Record
+    # that executable dependency even when the requested physical kernel is the
+    # reference backend; ordinary reference calls without a context stay minimal.
+    import scipy
+    import scipy.spatial._ckdtree as spatial_tree
+    versions['scipy_spatial'] = scipy.__version__
+    binaries['scipy_ckdtree'] = _loaded_binary(spatial_tree.__file__)
+    # Stage 3C's native convex hull also participates in execution identity.
+    import scipy.spatial._qhull as qhull
+    binaries['scipy_qhull'] = _loaded_binary(qhull.__file__)
+    # The reference-conditioned layout uses these native sparse-graph routines.
+    # Identify selected implementations; this is not a recursively sealed runtime.
+    import scipy.sparse.csgraph._shortest_path as shortest_path
+    import scipy.sparse.csgraph._traversal as traversal
+    import scipy.sparse._sparsetools as sparse_tools
+    for label, module in (('shortest_path',shortest_path),('traversal',traversal),('sparse_tools',sparse_tools)):
+        binaries['scipy_'+label] = _loaded_binary(module.__file__)
+    import shapely
+    import shapely.lib as geometry_lib
+    versions.update(shapely=shapely.__version__, geos=shapely.geos_version_string)
+    binaries['shapely_extension'] = _loaded_binary(geometry_lib.__file__)
+    # Official wheels place the linked GEOS libraries in a sibling .libs folder.
+    # Non-wheel/system installations need an explicitly supplied deployment audit;
+    # never label a version string alone a sealed native dependency closure.
+    geos_dir = Path(shapely.__file__).parent.parent / 'shapely.libs'
+    geos_files = sorted(p for p in geos_dir.glob('*') if p.is_file() and 'geos' in p.name.lower())
+    versions['geos_binary_scope'] = 'wheel-libraries' if geos_files else 'extension-only; external GEOS unsealed'
+    for p in geos_files:
+        binaries['geos:'+p.name] = _loaded_binary(p)
+    # Exact geometry computes the same rationals on either arithmetic route,
+    # but the route is still an executable dependency: a worker must match its
+    # parent, and a cached or resumed result must name what produced it. The
+    # choice is a constant of the process (exact_arithmetic), read here once
+    # per context like every other entry. Same wheel-library rule as GEOS.
+    from . import exact_arithmetic
+    exact = exact_arithmetic.runtime()
+    versions.update(exact['versions'])
+    for label, path in exact['binaries'].items():
+        binaries[label] = _loaded_binary(path)
+    return {"versions": versions, "binaries": binaries}
+
+
+# handles: release's one process-lifetime source hold (decision 2), taken at the first capture.
+_release_state = types.SimpleNamespace(mode=None, captures={}, handles=None, lock=threading.RLock())
+# Strict contexts inside an active ``with`` block, with their nesting depth (see publication_boundary).
+_entered = weakref.WeakKeyDictionary()
+_PACKAGED_COMMANDS = ('new_world.py', 'new_world_session.py', 'new_world_project.py',
+                      'new_world_bundle.py', 'new_world_job.py', 'tectonics_job.py',
+                      'read_tectonics.py', 'view_tectonics.py', 'w12_job_worker.py')
+
+
+def _packaged_mode():
+    """A packaging marker, not an environment switch, admits desktop release mode.
+
+    Both this package and the running interpreter must belong to the same plain
+    desktop payload. Evidence/check commands are never release entry points.
+    The package's own one-shot parallel worker module is the one non-tools entry:
+    a worker's mode is decided by the same payload, and its first capture is its
+    own boundary (decision 3). Optimised Python (-O, PYTHONOPTIMIZE) is refused:
+    it strips assert statements and __debug__ branches (decision 6).
+    This is accidental-misconfiguration protection, not a hostile-code sandbox.
+    """
+    tectonics = Path(__file__).absolute().parents[2]
+    marker = tectonics / '.desktop-runtime.json'
+    if not marker.exists():
+        return 'strict'
+    if sys.flags.optimize:
+        raise TectonicsError('release mode refuses optimised Python (-O or PYTHONOPTIMIZE)')
+    resources = tectonics.parent.parent
+    executable = Path(sys.executable).absolute()
+    entry = Path(sys.argv[0]).absolute()
+    worker = Path(__file__).absolute().parent / 'integration_parallel_worker.py'
+    paths = (tectonics, marker, executable, entry, resources.parent / 'Atlas.exe')
+    if (tectonics.parent.name != 'atlas' or resources.name != 'resources'
+            or executable.parent != resources / 'python'
+            or executable.name.lower() not in ('python.exe', 'pythonw.exe')
+            or not (entry == worker or (entry.parent == tectonics / 'tools'
+                                        and entry.name in _PACKAGED_COMMANDS))):
+        raise TectonicsError('release mode is restricted to packaged desktop commands; evidence requires strict mode')
+    for path in paths:
+        for part in (path, *path.parents):
+            if part.is_symlink() or getattr(part, 'is_junction', lambda: False)():
+                raise TectonicsError('linked desktop runtime is unsupported')
+        if not path.exists():
+            raise TectonicsError('incomplete desktop runtime')
+    if marker.stat().st_size > 1024:
+        raise TectonicsError('invalid desktop runtime marker')
+    try:
+        record = json.loads(marker.read_text(encoding='utf-8'))
+    except (OSError, ValueError) as exc:
+        raise TectonicsError('invalid desktop runtime marker') from exc
+    if record != {'schema': 'atlas.desktop-runtime.v1', 'identity_mode': 'release'}:
+        raise TectonicsError('invalid desktop runtime marker')
+    return 'release'
+
+
+def execution_mode():
+    """Policy provenance, deliberately separate from scientific execution identity."""
+    with _release_state.lock:
+        if _release_state.mode is None:
+            _release_state.mode = _packaged_mode()
+        return _release_state.mode
+
+
+def require_strict_execution():
+    if execution_mode() != 'strict':
+        raise TectonicsError('scientific evidence requires strict execution mode')
+
+
+def release_boundary():
+    """Fully verify every captured backend before restore/reuse/publication.
+
+    Strict callers retain their existing per-operation checks. A release store
+    opened before the first solver still obtains a verified reference capture.
+    """
+    if execution_mode() == 'release':
+        with _release_state.lock:
+            if not _release_state.captures:
+                ExecutionContext('reference')
+            for snapshot in _release_state.captures.values():
+                context = object.__new__(ExecutionContext)
+                context.__dict__.update(snapshot)
+                context.verify_boundary()
+
+
+def publication_boundary():
+    """The full identity check immediately before anything becomes visible to another process (B13).
+
+    Compact seal, promote and adopt call this. Release verifies every captured backend
+    (release_boundary). Strict verifies every context currently inside an active ``with``
+    block: the contexts the running computation uses, which their own exit verifies anyway,
+    so this refuses before the publication instead of after it. It refuses only on a real
+    source or binding drift (including one that would have been reverted before that exit,
+    or in a context whose owner is never closed). A context another thread closes meanwhile
+    is skipped only if its close verified it successfully and released its hold.
+    A failed or in-progress close refuses publication.
+    """
+    if execution_mode() == 'release':
+        release_boundary()
+        return
+    with _release_state.lock:
+        contexts = [context for context, depth in _entered.items() if depth]
+    for context in contexts:
+        # Never wait for another thread's close or check, and never hold the registry
+        # lock while taking a context lock. A failed close is not proof of identity.
+        if not context._close_lock.acquire(blocking=False):
+            raise TectonicsError("execution context close or publication check is in progress")
+        try:
+            if context._closed:
+                if not context._close_verified:
+                    raise TectonicsError("execution context closed without successful verification")
+                continue
+            try:
+                context.verify_boundary()
+            except TectonicsError:
+                if not (context._closed and context._close_verified):
+                    raise
+        finally:
+            context._close_lock.release()
+
+
+def _source_walk():
+    """Package *.py membership by a non-following walk, and whether any reparse point was met.
+
+    For a tree without reparse points these are exactly _source_bytes' rglob("*.py") names
+    (files and directories, case-insensitive on Windows, the same 512-entry budget); capture
+    checks the two agree. Any junction, symbolic link or other reparse point inside the
+    package sets the flag, and every caller refuses on it. Windows only.
+    """
+    root = Path(__file__).parent
+    names, linked, pending = [], False, [('', str(root))]
+    while pending:
+        prefix, directory = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                # Find-data attributes: no extra system call per entry.
+                if entry.stat(follow_symlinks=False).st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+                    linked = True
+                    continue
+                name = prefix + entry.name
+                if entry.name.lower().endswith('.py'):
+                    if len(names) >= _SOURCE_FILES:
+                        raise TectonicsError("execution source inventory exceeds context budget")
+                    names.append(name)
+                if entry.is_dir(follow_symlinks=False):
+                    pending.append((name + '/', entry.path))
+    return tuple(sorted(names)), linked
+
+
+def _directory_id(path):
+    """Volume and file ID of the directory a path names now (following any junction or remap)."""
+    found = os.stat(path)
+    return found.st_dev, found.st_ino
+
+
+def _close_source_handles(kernel32, box):
+    handles = box[:]
+    box.clear()
+    for handle in handles:
+        kernel32.CloseHandle(handle)
+
+
+class _SourceHandles:
+    """Share-deny-write handles on every package source (Windows), released exactly once.
+
+    check() is the per-call test that replaces the byte re-hash (see verify_boundary).
+    """
+
+    def __init__(self):
+        import ctypes
+        from ctypes import wintypes
+
+        class _Info(ctypes.Structure):          # BY_HANDLE_FILE_INFORMATION
+            _fields_ = [('attributes', wintypes.DWORD), ('created', wintypes.FILETIME),
+                        ('accessed', wintypes.FILETIME), ('written', wintypes.FILETIME),
+                        ('volume', wintypes.DWORD), ('size_high', wintypes.DWORD),
+                        ('size_low', wintypes.DWORD), ('links', wintypes.DWORD),
+                        ('index_high', wintypes.DWORD), ('index_low', wintypes.DWORD)]
+        self._kernel32 = kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        create = kernel32.CreateFileW
+        create.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                           wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE)
+        create.restype = wintypes.HANDLE
+        kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        info = kernel32.GetFileInformationByHandle
+        info.argtypes = (wintypes.HANDLE, ctypes.POINTER(_Info))
+        info.restype = wintypes.BOOL
+        self._info, self._info_type, self._byref = info, _Info, ctypes.byref
+        invalid = wintypes.HANDLE(-1).value
+        self._box = box = []
+        self._ids, self.names = (), ()
+        self.held = True
+        # Registered before the first handle is taken: a failure anywhere after this point,
+        # or a holder dropped without release(), still closes every handle.
+        self._finalizer = weakref.finalize(self, _close_source_handles, kernel32, box)
+        self._root = root = Path(__file__).parent
+        try:
+            self._root_id = _directory_id(root)
+            names, linked = _source_walk()
+            if linked:
+                raise TectonicsError("package sources contain a link or junction; they cannot be held")
+            ids = []
+            for name in names:
+                # GENERIC_READ, FILE_SHARE_READ only, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL.
+                handle = create(str(root.joinpath(*name.split('/'))), 0x80000000, 0x00000001, None, 3, 0x80, None)
+                if handle is None or handle == invalid:
+                    raise TectonicsError("a package source cannot be held against writes: " + name)
+                box.append(handle)
+                found = self._file_id(handle, _Info())
+                if found is None:
+                    raise TectonicsError("a package source is not a plain file: " + name)
+                ids.append(found)
+            self._ids, self.names = tuple(ids), names
+            # Nothing moved while locking: the import path still names the locked directory
+            # and the membership is the one locked.
+            if not self.check():
+                raise TectonicsError("source changed during inventory capture")
+        except BaseException:
+            self.release()
+            raise
+
+    def _file_id(self, handle, info):
+        if not self._info(handle, self._byref(info)):
+            return None
+        if info.attributes & (stat.FILE_ATTRIBUTE_DIRECTORY | stat.FILE_ATTRIBUTE_REPARSE_POINT):
+            return None
+        return info.volume, info.index_high, info.index_low
+
+    def check(self):
+        """True only while every condition that makes a byte re-hash unnecessary holds."""
+        handles = tuple(self._box)
+        if not self.held or not handles or len(handles) != len(self._ids):
+            return False
+        try:
+            if _directory_id(self._root) != self._root_id or _source_walk() != (self.names, False):
+                return False
+        except OSError:
+            return False
+        info = self._info_type()
+        for handle, expected in zip(handles, self._ids):
+            if self._file_id(handle, info) != expected:
+                return False
+        return self.held
+
+    def release(self):
+        self.held = False
+        _close_source_handles(self._kernel32, self._box)
+
+
+class ExecutionContext:
+    """Reusable identity preparation, not a promise that live files cannot change.
+
+    Strict use hashes the complete current source bytes (on Windows outside
+    release mode: once at capture, with every source then held against writes
+    and the hold confirmed on each check; see _SourceHandles), comparing the bounded
+    digest inventory and callable/default inventory with the captured state.
+    Identity preparation avoids repeated
+    code SHA/marshal work; verification streams current bindings against captured
+    tokens without rebuilding discarded signature inventories. Mutable defaults,
+    constants and native options are normalised on every check. Timestamps are
+    never used as evidence. Runtime binaries retain the
+    pre-existing process-lifetime immutability assumption. Packaged release use
+    shares the first capture and performs full checks at persistence/reuse
+    boundaries, not each inner call. On Windows release holds every package
+    source share-deny-write from its first capture for the rest of the process
+    (decision 2), so each boundary checks the held handles instead of rereading
+    every byte; a hold that cannot be taken refuses the capture. This is not a sandbox.
+    """
+    def __init__(self, backend="reference"):
+        self._mode = execution_mode()
+        if self._mode == 'release':
+            with _release_state.lock:
+                snapshot = _release_state.captures.get(backend)
+                if snapshot is None:
+                    self._capture(backend)
+                    _release_state.captures[backend] = self.__dict__.copy()
+                else:
+                    self.__dict__.update(snapshot)
+            return
+        self._capture(backend)
+
+    def _capture(self, backend):
+        self._source_handles = None
+        if os.name == 'nt':
+            if getattr(self, '_mode', None) == 'release':
+                # One hold for the process, taken before the first capture and never released
+                # by a context: every later capture and boundary of this process checks it.
+                with _release_state.lock:
+                    if _release_state.handles is None:
+                        _release_state.handles = _SourceHandles()
+                    self._source_handles = _release_state.handles
+            else:
+                # Taken BEFORE anything is captured: from here no process can write, rename or
+                # delete a package source until this context releases the handles.
+                self._source_handles = _SourceHandles()
+        try:
+            self._capture_sources(backend)
+        except BaseException:
+            # Any failure after locking releases now, not at garbage collection.
+            if self._source_handles is not None and self._source_handles is not _release_state.handles:
+                self._source_handles.release()
+            raise
+
+    def _capture_sources(self, backend):
+        self.backend = backend
+        self._runtime = _runtime_record(backend)  # resolve lazy runtime imports first
+        # The bound module set is captured once from the package membership; any
+        # later membership change is refused by verify() through _source_bytes().
+        self._modules = _identity_modules(backend)
+        self._fixture_binding = _fixture_identity_binding()
+        signatures, self._tokens, self._constants = _callable_inventory(backend, self._modules)
+        self._expected = {token[0]: token for token in self._tokens}
+        # Preserve the full legacy check for deliberately ambiguous dotted aliases.
+        if len(self._expected) != len(self._tokens):
+            self._expected = None
+        self._comparison_token = (None if self._expected is None else
+                                  self._expected[__name__+"._verify_callable_inventory"])
+        self._sources = _source_bytes()
+        if self._source_handles is not None and tuple(sorted(self._sources)) != self._source_handles.names:
+            raise TectonicsError("source changed during inventory capture")
+        # Protocol >=3 records object-sharing/reference state. Holding a constant
+        # tuple returned by a profile factory can therefore change its code hash
+        # without changing code or values. Protocol 2 encodes this acyclic code
+        # inventory without object-instance references. Exact source, methods,
+        # defaults/constants and runtime still participate; this is not a claim
+        # of cross-Python-version code compatibility, nor untrusted unmarshalling.
+        loaded = {k: {"code": _digest(marshal.dumps(_normal_code(code), 2)),
+                      "defaults": _digest(_json(defaults))}
+                  for k, (code, defaults) in signatures.items()}
+        self._identity = _digest(_json({"schema": "atlas.kernel-execution.v4", "code_marshal_format": 2,
+            "source_inventory_schema": _SOURCE_INVENTORY_SCHEMA,
+            "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()},
+            "loaded_code": loaded, "constants": _digest(self._constants),
+            "executable_fixtures": self._fixture_binding,
+            "runtime": self._runtime}))
+        self._closed = False
+        self._close_verified = False
+        self._close_lock = threading.RLock()
+        self._immutable = {}        # private: deeply immutable constants' normalised forms (see verify)
+        self.verify_boundary()
+
+    @property
+    def provenance(self):
+        return {'execution_identity': self.identity, 'execution_mode': self._mode}
+
+    @property
+    def identity(self):
+        self.verify()
+        return self._identity
+
+    def verify(self):
+        if self._closed:
+            raise TectonicsError("execution context is closed")
+        if self._mode == 'strict':
+            self.verify_boundary()
+
+    def verify_boundary(self):
+        """The unchanged full live-source/instruction/default check in both modes."""
+        if self._closed:
+            raise TectonicsError("execution context is closed")
+        handles = getattr(self, '_source_handles', None)
+        if handles is not None:
+            # The share-deny-write handles taken before capture are still this context's, on
+            # the same files, under the same package directory, with unchanged membership and
+            # no link inside: no package source byte can have changed (_SourceHandles.check).
+            if not handles.check():
+                raise TectonicsError("source changed; create a new execution context")
+        # Hosts without a held source set (not Windows): exact digest-record equality,
+        # including membership. All bytes reread.
+        elif _source_bytes() != self._sources:
+            raise TectonicsError("source changed; create a new execution context")
+        if _fixture_identity_binding() != self._fixture_binding:
+            raise TectonicsError("executable fixture identity selection changed")
+        if self._expected is not None:
+            # Check the new comparison function before entering it as well as
+            # through its ordinary live-inventory entry. A replaced/no-op helper
+            # must not turn the verification call itself into an acceptance.
+            helper = self._comparison_token
+            if (_verify_callable_inventory is not helper[1]
+                    or _verify_callable_inventory.__code__ is not helper[2]):
+                raise TectonicsError("loaded implementation changed")
+            _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules,
+                                       self._immutable)
+            return
+        _, tokens, constants = _callable_inventory(self.backend, self._modules)
+        if constants != self._constants or len(tokens) != len(self._tokens):
+            raise TectonicsError("loaded implementation changed")
+        for now, old in zip(tokens, self._tokens):
+            if now[0] != old[0] or now[1] is not old[1] or now[2] is not old[2] or now[3] != old[3]:
+                raise TectonicsError("loaded implementation changed")
+
+    def close(self):
+        with self._close_lock:
+            if not self._closed:
+                verified = False
+                try:
+                    self.verify()
+                    verified = True
+                finally:
+                    self._closed = True
+                    handles = getattr(self, '_source_handles', None)
+                    # Release's process-lifetime hold is never released by one context.
+                    if handles is not None and handles is not _release_state.handles:
+                        handles.release()
+                    self._close_verified = verified
+
+    def __enter__(self):
+        self.verify()
+        with _release_state.lock:
+            _entered[self] = _entered.get(self, 0) + 1
+        return self
+
+    def __exit__(self, *args):
+        try:
+            self.close()
+        finally:
+            with _release_state.lock:
+                depth = _entered.get(self, 0) - 1
+                if depth > 0:
+                    _entered[self] = depth
+                else:
+                    _entered.pop(self, None)
+
+
+def execution_identity(backend="reference"):
+    return ExecutionContext(backend).identity
+
+
+def _array_identity(a):
+    h = hashlib.sha256(_json({'dtype': a.dtype.str, 'shape': a.shape}))
+    view = memoryview(a).cast('B')
+    for offset in range(0, len(view), 1024 * 1024):
+        h.update(view[offset:offset+1024*1024])
+    return h.hexdigest()
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class PreparedInput:
+    """Compact immutable numerical bytes plus their precomputed typed digest.
+
+    Each .array access creates private metadata. Never cache hashes by the identity
+    of an arbitrary mutable NumPy object. Caller owns the prepared payload lifetime.
+    """
+    _payload: bytes
+    shape: tuple[int, ...]
+    digest: str
+    nonnegative: bool
+
+    def __init__(self, value, *, budget=None):
+        shape = input_shape(value, "prepared input")
+        with select_budget(budget).reserve(24 * elements(shape)):
+            captured = array(value, "prepared input")
+            owner = captured
+            while type(owner) is np.ndarray:
+                owner = owner.base
+            # snapshot compacts slices and guarantees a bytes-backed C-order f64.
+            if type(owner) is not bytes or len(owner) != captured.nbytes:
+                raise TectonicsError("prepared input requires compact immutable backing")
+            object.__setattr__(self, "_payload", owner)
+            object.__setattr__(self, "shape", captured.shape)
+            object.__setattr__(self, "digest", _array_identity(captured))
+            object.__setattr__(self, "nonnegative", bool(np.all(captured >= 0)))
+
+    @property
+    def array(self):
+        return np.frombuffer(self._payload, dtype=np.float64).reshape(self.shape)
+
+    @property
+    def nbytes(self):
+        return len(self._payload)
+
+    def __reduce__(self):
+        return (type(self), (self.array,))
+
+
+def _shape(value):
+    return value.shape if type(value) is PreparedInput else input_shape(value)
+
+
+def _capture(value, name, *, nonnegative=False):
+    if type(value) is PreparedInput:
+        if nonnegative and not value.nonnegative:
+            raise TectonicsError(name+": nonnegative data required")
+        return value.array, value.digest
+    captured = array(value, name, nonnegative=nonnegative)
+    return captured, None
+
+
+def _invocation_record(operation, inputs, parameters, backend, *, context=None, digests=None):
+    execution = execution_identity(backend) if context is None else context.identity
+    if context is not None and context.backend != backend:
+        raise TectonicsError("context/backend mismatch")
+    return {"schema": "atlas.kernel-invocation.v2", "operation": operation,
+        "backend": backend, "execution": execution,
+        "inputs": {k: {"identity": (digests or {}).get(k) or _array_identity(v),
+                       "shape": list(v.shape), "dtype": v.dtype.str}
+                   for k,v in sorted(inputs.items())}, "parameters": parameters}
+
+
+def invocation_identity(operation, inputs, parameters, *, backend="reference"):
+    return _digest(_json(_invocation_record(operation, inputs, parameters, backend)))
+
+
+@dataclass(frozen=True, slots=True)
+class CachePolicy:
+    """Execution policy only. auto admits expensive, likely reusable results.
+
+    Timing thresholds affect reuse, never the numerical answer. 'always' is the
+    explicit reproducibility/storage-test override; 'off' performs no store I/O.
+    Defaults are conservative local policy, not universal performance predictions.
+    """
+    mode: str = "auto"
+    min_result_bytes: int = 256 * 1024
+    max_result_bytes: int = 64 * 1024 * 1024
+    min_compute_seconds: float = 0.01
+    expected_reuses: int = 3
+
+    def __post_init__(self):
+        if self.mode not in ("auto", "always", "off"):
+            raise TectonicsError("cache mode must be auto/always/off")
+        for name in ("min_result_bytes", "max_result_bytes", "expected_reuses"):
+            value = getattr(self, name)
+            if type(value) is not int or value < (1 if name != "min_result_bytes" else 0):
+                raise TectonicsError("invalid cache admission bound")
+        if self.min_result_bytes > self.max_result_bytes:
+            raise TectonicsError("invalid cache size interval")
+        if (type(self.min_compute_seconds) not in (int,float)
+                or not math.isfinite(self.min_compute_seconds) or self.min_compute_seconds < 0):
+            raise TectonicsError("invalid cache timing threshold")
+
+
+def _cancelled(cancel):
+    if cancel is not None and cancel.is_set():
+        raise CancelledError("caller cancelled; completed publications are not rolled back")
+
+
+_FLIGHT_RETRIES = 3
+
+
+class _Flights:
+    """Bounded process-local single-flight. Completed results are not a new cache."""
+    def __init__(self, max_entries=32, max_waiters=128):
+        self._lock = threading.Lock()
+        self._entries = {}
+        self._waiters = 0
+        self.max_entries, self.max_waiters = max_entries, max_waiters
+
+    def run(self, key, produce, *, cancel=None, timeout=30., validate=None):
+        _cancelled(cancel)
+        ident = threading.get_ident()
+        deadline = time.monotonic()+timeout
+        # An owner's own cancellation is not a waiter's: a waiter whose event is unset registers again (becoming
+        # the owner, or waiting for a newer one) within its first deadline. Other failures are shared as before.
+        # An owner resolves its future before it removes its entry, so a retry skips the future it already saw.
+        seen = None
+        for attempt in range(_FLIGHT_RETRIES+1):
+            with self._lock:
+                entry = self._entries.get(key)
+                if entry is not None and entry[1] is seen:
+                    entry = None
+                if entry is None:
+                    if attempt and time.monotonic() >= deadline:
+                        raise TimeoutError("waiting for identical cache request timed out")
+                    if len(self._entries) >= self.max_entries and key not in self._entries:
+                        raise MemoryLimitError("too many active cache computations")
+                    future = Future()
+                    self._entries[key] = (ident, future)
+                    leader = True
+                else:
+                    owner, future = entry
+                    if owner == ident:
+                        raise TectonicsError("recursive same-key cache request")
+                    if self._waiters >= self.max_waiters:
+                        raise MemoryLimitError("too many waiting cache consumers")
+                    self._waiters += 1
+                    leader = False
+            if leader:
+                try:
+                    result = produce()
+                    # The future owns private array metadata; each consumer gets a view.
+                    result = frozen(result)
+                    future.set_result(result)
+                except BaseException as exc:
+                    future.set_exception(exc)
+                    raise
+                finally:
+                    with self._lock:
+                        if self._entries.get(key, (None, None))[1] is future:
+                            del self._entries[key]
+                break
+            try:
+                while True:
+                    _cancelled(cancel)
+                    remaining = deadline-time.monotonic()
+                    if remaining <= 0:
+                        raise TimeoutError("waiting for identical cache request timed out")
+                    try:
+                        result = future.result(timeout=min(.05,remaining))
+                        break
+                    except FutureTimeout:
+                        if future.done():
+                            raise  # a producer's own TimeoutError is not a wait timeout
+            except CancelledError as exc:
+                _cancelled(cancel)               # this caller's own cancellation stays its own
+                seen = future
+                if attempt == _FLIGHT_RETRIES:
+                    raise TectonicsError("identical cache computation was cancelled by its other callers "
+                                         "%d times; nothing was cancelled here, retry" % (attempt+1)) from exc
+                continue
+            finally:
+                with self._lock:
+                    self._waiters -= 1
+            break
+        _cancelled(cancel)
+        if not leader and validate is not None:
+            validate()
+        return result.view()
+
+
+_FLIGHTS = _Flights()
+
+
+@contextmanager
+def _process_claim(store, key, cancel, timeout):
+    """Crash-released local OS lock; 16 fixed stripes, no stale lease takeover.
+
+    Same-process requests first use _FLIGHTS. Separate connections/processes
+    recheck the database after taking this lock. Different keys can share a stripe:
+    the holder records its key after the locked byte, and a request for another key
+    proceeds without the claim instead of waiting behind unrelated work (its lookup
+    and publication are still rechecked and idempotent). A request for the key the
+    holder is computing waits, up to its timeout. While an unrelated key holds the
+    stripe, requests for one key in several processes therefore each compute (a
+    duplicate, never a wrong result). Yields whether the claim is held. The key is a
+    cache identity, not scientific data; a stale or partly written record only
+    decides whether to wait (never correctness).
+    """
+    from .storage import _path, _SHA
+    import stat
+    stripe = int(key[:8],16) % 16
+    path = store.path.with_name(store.path.name+f".compute-{stripe:02d}.lock")
+    _path(path)
+    flags = os.O_RDWR | os.O_CREAT | getattr(os,"O_BINARY",0) | getattr(os,"O_NOFOLLOW",0)
+    fd = os.open(path, flags, 0o600)
+    acquired = False
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1:
+            raise TectonicsError("cache lock must be a local regular file")
+        deadline = time.monotonic()+timeout
+        if os.name == "nt":
+            import msvcrt
+            def take():
+                # A rival may initialise and lock the byte after our size check.
+                # Keep initialisation inside the same bounded contention loop.
+                if os.fstat(fd).st_size == 0:
+                    os.lseek(fd,0,os.SEEK_SET)
+                    os.write(fd,b"0")
+                os.lseek(fd,0,os.SEEK_SET)
+                msvcrt.locking(fd,msvcrt.LK_NBLCK,1)
+            def release():
+                os.lseek(fd,0,os.SEEK_SET)
+                msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
+        elif os.name == "posix":
+            import fcntl
+            def take(): fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            def release(): fcntl.flock(fd,fcntl.LOCK_UN)
+        else:
+            raise TectonicsError("local process cache locks unsupported on this platform")
+        def holder():
+            # Bytes 1-64 lie outside the one locked byte, so they stay readable on Windows as well.
+            os.lseek(fd,1,os.SEEK_SET)
+            text = os.read(fd,64).decode("ascii","replace")
+            return text if _SHA.fullmatch(text) else None
+        while not acquired:
+            _cancelled(cancel)
+            try:
+                take(); acquired = True
+            except OSError as exc:
+                if exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK): raise
+                other = holder()
+                if other is not None and other != key:
+                    break            # an unrelated computation holds this stripe: do not wait behind it
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("cache compute lock timed out") from exc
+                time.sleep(.01)
+        if acquired:
+            try:
+                os.lseek(fd,1,os.SEEK_SET)
+                os.write(fd,key.encode("ascii"))
+            except OSError:
+                pass                 # only a hint; a stale one decides at most whether another key waits
+        yield acquired
+    finally:
+        if acquired: release()
+        os.close(fd)
+
+
+class ReuseController:
+    """Finite per-store identity/cost state. No retained scientific result arrays."""
+    def __init__(self, *, max_cost_records=128):
+        if type(max_cost_records) is not int or max_cost_records < 1:
+            raise TectonicsError("positive cost record bound required")
+        self._lock = threading.RLock()
+        self._contexts = {}
+        self._costs = OrderedDict()
+        self._profiles = OrderedDict()
+        self._max_cost_records = max_cost_records
+        self._counts = {name:0 for name in ("hits","misses","writes","bypasses","recomputes")}
+
+    def context(self, backend):
+        with self._lock:
+            old = self._contexts.get(backend)
+            if old is None:
+                old = ExecutionContext(backend)
+                self._contexts[backend] = old
+            # A changed context fails; it is never silently re-pinned.
+            return old
+
+    def count(self, name):
+        with self._lock: self._counts[name] += 1
+
+    def cost(self, key, **updates):
+        with self._lock:
+            value = dict(self._costs.get(key, {}))
+            if updates:
+                value.update(updates)
+                self._costs[key] = value
+                self._costs.move_to_end(key)
+                while len(self._costs) > self._max_cost_records:
+                    self._costs.popitem(last=False)
+            return value
+
+    def profile(self, key, **updates):
+        with self._lock:
+            value = dict(self._profiles.get(key, {}))
+            if updates:
+                value.update(updates)
+                self._profiles[key] = value
+                self._profiles.move_to_end(key)
+                while len(self._profiles)>self._max_cost_records:
+                    self._profiles.popitem(last=False)
+            return value
+
+    def statistics(self):
+        with self._lock:
+            return dict(self._counts, cost_records=len(self._costs),
+                        admission_profiles=len(self._profiles), contexts=len(self._contexts))
+
+
+_CONTROLLERS = weakref.WeakKeyDictionary()
+_CONTROLLER_LOCK = threading.Lock()
+
+
+def _controller(store):
+    with _CONTROLLER_LOCK:
+        controller = _CONTROLLERS.get(store)
+        if controller is None:
+            controller = ReuseController()
+            _CONTROLLERS[store] = controller
+        return controller
+
+
+def _evaluate(store, record, compute, shape, budget, *, context, controller,
+              cache_policy, cancel=None, wait_timeout=30., admission_key=None):
+    key = _digest(_json(record))
+    count = elements(shape)
+    def check_result(result):
+        if type(result) is not np.ndarray or result.shape != shape or result.dtype != np.dtype("float64"):
+            raise TectonicsError("cached result contract mismatch")
+        return result
+    # One deadline covers this caller's waiting: for an identical in-process flight, then, if it becomes the
+    # owner (also after another owner's cancellation), for the process claim.
+    deadline = time.monotonic()+wait_timeout
+    def produce():
+        # Kernel/get workspace ends at return, but its result remains resident
+        # through validation, compression and publication. Reserve that lifetime
+        # before execution so a concurrent producer cannot consume its capacity.
+        with budget.reserve(8 * elements(shape), category="pending-result"), \
+                _process_claim(store,key,cancel,max(0.,deadline-time.monotonic())):
+            _cancelled(cancel)
+            costs = controller.cost(key)
+            recompute = cache_policy.mode == "auto" and costs.get("restore",0) > costs.get("compute",float("inf"))
+            start = time.perf_counter()
+            restored = None if recompute else store.get(key,budget=budget)
+            restore_time = time.perf_counter()-start
+            if restored is not None:
+                if set(restored) != {"result"} or store.metadata(key) != record:
+                    raise TectonicsError("cached result contract mismatch")
+                result = check_result(restored["result"])
+                context.verify()
+                _cancelled(cancel)
+                controller.count("hits")
+                controller.cost(key,restore=restore_time)
+                if admission_key is not None:
+                    controller.profile(admission_key, restore=restore_time)
+                return result
+            controller.count("recomputes" if recompute else "misses")
+            _cancelled(cancel)
+            start = time.perf_counter(); result = check_result(compute())
+            compute_time = time.perf_counter()-start
+            context.verify(); _cancelled(cancel)
+            controller.cost(key,compute=compute_time)
+            if admission_key is not None:
+                controller.profile(admission_key,compute=compute_time)
+            admit = cache_policy.mode == "always" or (not recompute and
+                compute_time >= cache_policy.min_compute_seconds and
+                cache_policy.expected_reuses*(compute_time-costs.get("restore",0)) > costs.get("write",0))
+            if admit:
+                start = time.perf_counter()
+                def publication_check():
+                    context.verify()
+                    _cancelled(cancel)
+                store.put(key,{"result":result},record,publication_check=publication_check,
+                          cancel=cancel,budget=budget)
+                write_time = time.perf_counter()-start
+                controller.cost(key,write=write_time)
+                if admission_key is not None:
+                    controller.profile(admission_key,write=write_time)
+                controller.count("writes")
+            else:
+                controller.count("bypasses")
+            return result
+    # Store path and key define the shared work. Different admission policies are
+    # kept separate so an explicit always/off request does not inherit auto policy.
+    flight_key = (str(store.path),key,cache_policy)
+    return _FLIGHTS.run(flight_key,produce,cancel=cancel,timeout=wait_timeout,validate=context.verify_boundary)
+
+
+def _policy(value):
+    if value is None: return CachePolicy()
+    if not isinstance(value,CachePolicy): raise TectonicsError("typed CachePolicy required")
+    return value
+
+
+def _prepare_reuse(store, cache_policy, nbytes, controller, operation, backend):
+    policy = _policy(cache_policy)
+    if store is None: return policy, None, False, None
+    if not isinstance(store,ArrayStore): raise TectonicsError("store must be an ArrayStore")
+    control = _controller(store) if controller is None else controller
+    if not isinstance(control,ReuseController): raise TectonicsError("typed ReuseController required")
+    admission_key = (operation,backend,nbytes.bit_length(),store.limits.chunk_bytes,
+                     store.compression,policy)
+    use = policy.mode == "always"
+    if policy.mode == "auto" and policy.min_result_bytes <= nbytes <= policy.max_result_bytes:
+        profile = control.profile(admission_key)
+        # First observation computes directly. Avoid hashing/copying/locking a
+        # cheap result merely to discover that persistence cannot repay its cost.
+        # These timings choose execution only; they never authenticate data.
+        compute = profile.get("compute",0.)
+        restore = profile.get("restore",0.)
+        use = (compute >= policy.min_compute_seconds and "compute" in profile and
+               policy.expected_reuses*(compute-restore)>profile.get("write",0.))
+    if not use: control.count("bypasses")
+    return policy, control, use, admission_key
+
+
+def _direct(compute, control, admission_key, policy, cancel, context=None, backend=None):
+    _cancelled(cancel)
+    if context is not None:
+        if not isinstance(context,ExecutionContext) or context.backend != backend:
+            raise TectonicsError("context/backend mismatch")
+        context.verify()
+    start=time.perf_counter()
+    result=compute()
+    duration=time.perf_counter()-start
+    if context is not None:
+        context.verify()
+    _cancelled(cancel)
+    if control is not None and policy.mode == "auto":
+        control.profile(admission_key,compute=duration)
+    return result
+
+
+def _timeout(value):
+    if type(value) not in (int,float) or not math.isfinite(value) or value <= 0:
+        raise TectonicsError("positive finite wait_timeout required")
+    return float(value)
+
+
+def cached_temperature(depth_m, age_s, parameters: ThermalParameters, *,
+                       store: ArrayStore | None = None, backend="scipy", budget=None,
+                       context=None, controller=None, cache_policy=None, cancel=None,
+                       wait_timeout=30.):
+    """Optimised cooling; auto admission skips cheap results, never physics."""
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    # A store-bound wrapper joins its run envelope even when auto bypasses disk.
+    # The caller may still supply an explicitly related per-call child budget.
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    ds,ts = _shape(depth_m),_shape(age_s)
+    bs = np.broadcast_shapes(ds,ts)
+    policy,control,use,admission_key = _prepare_reuse(store,cache_policy,8*elements(bs),controller,"cooling",backend)
+    if not use:
+        d = depth_m.array if type(depth_m) is PreparedInput else depth_m
+        a = age_s.array if type(age_s) is PreparedInput else age_s
+        return _direct(lambda:half_space_temperature(d,a,parameters,backend=backend,budget=budget),
+                       control,admission_key,policy,cancel,context,backend)
+    resource = select_budget(budget)
+    with resource.reserve(16*(elements(ds)+elements(ts))):
+        depth,dh = _capture(depth_m,"depth",nonnegative=True)
+        age,ah = _capture(age_s,"age",nonnegative=True)
+        if not isinstance(parameters,ThermalParameters):
+            raise TectonicsError("explicit ThermalParameters required")
+        ctx = control.context(backend) if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend != backend:
+            raise TectonicsError("context/backend mismatch")
+        with resource.reserve(cooling_work_bytes(ds,ts)):
+            record = _invocation_record("half-space-temperature-v2",{"depth":depth,"age":age},
+                asdict(parameters),backend,context=ctx,digests={"depth":dh,"age":ah})
+        return _evaluate(store,record,lambda:half_space_temperature(depth,age,parameters,
+            backend=backend,budget=resource),bs,resource,context=ctx,controller=control,
+            cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
+
+
+def cached_plate_temperature(depth_m, age_s, parameters, *, cell_bottom_m=None,
+                             store=None, budget=None, context=None, controller=None,
+                             cache_policy=None, cancel=None, wait_timeout=30.):
+    """Same verified auto-reuse policy as half-space cooling, including cell means."""
+    from .plate_cooling import finite_plate_temperature, plate_cooling_work_bytes
+    from .parameters import PlateCoolingParameters
+    if type(parameters) is not PlateCoolingParameters:
+        raise TectonicsError('explicit PlateCoolingParameters required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    raw = {'depth': depth_m, 'age': age_s}
+    if cell_bottom_m is not None:
+        raw['bottom'] = cell_bottom_m
+    shapes = {key: _shape(value) for key, value in raw.items()}
+    try:
+        shape = np.broadcast_shapes(*shapes.values())
+    except ValueError as exc:
+        raise TectonicsError('plate cooling inputs cannot broadcast') from exc
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'plate-cooling', 'scipy')
+    def compute(values, resource):
+        return finite_plate_temperature(values['depth'], values['age'], parameters,
+            cell_bottom_m=values.get('bottom'), budget=resource, cancel=cancel)
+    if not use:
+        values = {k: v.array if type(v) is PreparedInput else v for k, v in raw.items()}
+        return _direct(lambda: compute(values, budget), control, key, policy, cancel, context, 'scipy')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes.values())):
+        captured = {k: _capture(v, k, nonnegative=True) for k, v in raw.items()}
+        values = {k: v[0] for k, v in captured.items()}
+        ctx = control.context('scipy') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'scipy':
+            raise TectonicsError('context/backend mismatch')
+        with resource.reserve(plate_cooling_work_bytes(shapes['depth'], shapes['age'], shapes.get('bottom'))):
+            record = _invocation_record('finite-plate-temperature-v1', values, asdict(parameters),
+                'scipy', context=ctx, digests={k: v[1] for k, v in captured.items()})
+        return _evaluate(store, record, lambda: compute(values, resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_plate_thermal_response(age_s, reference_age_s, plate, material, parameters, *,
+                                  store=None, budget=None, context=None, controller=None,
+                                  cache_policy=None, cancel=None, wait_timeout=30.):
+    """Source-bound whole-column thermal load/support; auto skips cheap persistence."""
+    from .thermal_support import plate_thermal_response, _plate_material
+    _plate_material(plate, material, parameters)
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shapes = (_shape(age_s), _shape(reference_age_s))
+    try:
+        age_shape = np.broadcast_shapes(*shapes)
+    except ValueError as exc:
+        raise TectonicsError('cooling/reference ages cannot broadcast') from exc
+    shape = age_shape+(3,)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'plate-thermal-support', 'scipy')
+    def compute(age, reference, resource):
+        return plate_thermal_response(age, reference, plate, material, parameters,
+            budget=resource, cancel=cancel)
+    if not use:
+        age = age_s.array if type(age_s) is PreparedInput else age_s
+        reference = reference_age_s.array if type(reference_age_s) is PreparedInput else reference_age_s
+        return _direct(lambda: compute(age, reference, budget), control, key, policy, cancel, context, 'scipy')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes)+128*elements(age_shape)+8192):
+        age, ah = _capture(age_s, 'cooling age', nonnegative=True)
+        reference, rh = _capture(reference_age_s, 'reference cooling age', nonnegative=True)
+        ctx = control.context('scipy') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'scipy':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('plate-thermal-support-v1', {'age': age, 'reference_age': reference},
+            {'plate': asdict(plate), 'material': asdict(material), 'support': asdict(parameters),
+             'layout': 'buoyancy-sheet-kg/m2,downward-Pa,total-reference-downward-m'},
+            'scipy', context=ctx, digests={'age': ah, 'reference_age': rh})
+        # BoussinesqMaterial carries a tuple validity interval; persisted JSON
+        # represents it as a list. Preserve strict equality using canonical form.
+        record = json.loads(_json(record))
+        return _evaluate(store, record, lambda: compute(age, reference, resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_compaction_response(void_ratio, stress_pa, maximum_stress_pa, new_stress_pa, parameters, *,
+        store=None, budget=None, context=None, controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """History-aware constitutive reuse; cheap calculations auto-bypass persistence."""
+    from .compaction import CompactionParameters, compaction_response
+    if type(parameters) is not CompactionParameters:
+        raise TectonicsError('explicit CompactionParameters required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    inputs = (void_ratio, stress_pa, maximum_stress_pa, new_stress_pa)
+    shapes = tuple(_shape(a) for a in inputs)
+    try:
+        shape = np.broadcast_shapes(*shapes)+(2,)
+    except ValueError as exc:
+        raise TectonicsError('compaction fields cannot broadcast') from exc
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'drained-compaction', 'reference')
+    def compute(arrays, resource):
+        return compaction_response(*arrays, parameters, budget=resource, cancel=cancel)
+    if not use:
+        arrays = tuple(a.array if type(a) is PreparedInput else a for a in inputs)
+        return _direct(lambda: compute(arrays, budget), control, key, policy, cancel, context, 'reference')
+    resource = select_budget(budget)
+    with resource.reserve(16*sum(elements(s) for s in shapes)+64*elements(shape)+8192):
+        names = ('void_ratio', 'stress_pa', 'maximum_stress_pa', 'new_stress_pa')
+        captures = [_capture(a, name, nonnegative=True) for name, a in zip(names, inputs)]
+        arrays = dict(zip(names, (a for a, _ in captures)))
+        digests = dict(zip(names, (h for _, h in captures)))
+        ctx = control.context('reference') if context is None else context
+        if not isinstance(ctx, ExecutionContext) or ctx.backend != 'reference':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('drained-compaction-v1', arrays,
+            {'parameters': asdict(parameters), 'layout': 'void-ratio,maximum-effective-stress-Pa'},
+            'reference', context=ctx, digests=digests)
+        return _evaluate(store, record, lambda: compute(tuple(arrays.values()), resource), shape, resource,
+            context=ctx, controller=control, cache_policy=policy, cancel=cancel,
+            wait_timeout=wait_timeout, admission_key=key)
+
+
+def cached_column_load_change(reference, current, gravity_m_s2, *, store=None,
+        budget=None, context=None, controller=None, cache_policy=None, cancel=None,
+        batch_columns=32768, wait_timeout=30.):
+    """Reuse immutable source-bound load states through the existing cache policy.
+
+    State identities cover captured bytes, catalogue, fixed geometry, source and
+    epoch. No duplicate captures/hashes of those immutable arrays are needed.
+    Execution/source/runtime identity is still verified by the normal machinery.
+    Cheap loads default to direct computation, not mandatory persistence.
+    """
+    from .column_loads import column_load_change, _compatible
+    g = _compatible(reference, current, gravity_m_s2, batch_columns)
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shape = (len(reference.support.column_ids), 4)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(shape),
+        controller, 'fixed-column-loads', 'reference')
+    def compute():
+        return column_load_change(reference, current, g, budget=budget,
+                                  cancel=cancel, batch_columns=batch_columns)
+    if not use:
+        return _direct(compute, control, key, policy, cancel, context, 'reference')
+    resource = select_budget(budget)
+    ctx = control.context('reference') if context is None else context
+    if not isinstance(ctx, ExecutionContext) or ctx.backend != 'reference':
+        raise TectonicsError('context/backend mismatch')
+    record = _invocation_record('fixed-column-loads-v1', {},
+        {'reference_state': reference.state_id, 'current_state': current.state_id,
+         'gravity_m_s2': g, 'support': reference.support.support_id,
+         'layout': 'inventory-kg/m2,replacement-kg/m2,thermal-buoyancy-kg/m2,total-downward-Pa'},
+        'reference', context=ctx)
+    return _evaluate(store, record, compute, shape, resource, context=ctx,
+        controller=control, cache_policy=policy, cancel=cancel, wait_timeout=wait_timeout,
+        admission_key=key)
+
+
+def cached_flexure(operator: PeriodicFlexure, load_pa, *, store: ArrayStore | None = None,
+                   budget=None, context=None, controller=None, cache_policy=None,
+                   cancel=None, wait_timeout=30.):
+    if not isinstance(operator,PeriodicFlexure): raise TectonicsError("explicit PeriodicFlexure required")
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shape = _shape(load_pa)
+    if not shape or shape[-1] != operator.grid.cells:
+        raise TectonicsError("load final dimension must equal grid cells")
+    policy,control,use,admission_key = _prepare_reuse(store,cache_policy,8*elements(shape),controller,"flexure","fft")
+    if not use:
+        load = load_pa.array if type(load_pa) is PreparedInput else load_pa
+        return _direct(lambda:operator.solve(load,budget=budget),control,admission_key,policy,cancel,context,"reference")
+    resource = select_budget(budget)
+    with resource.reserve(16*elements(shape)):
+        load,digest = _capture(load_pa,"load")
+        ctx = control.context("reference") if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend != "reference":
+            raise TectonicsError("context/backend mismatch")
+        with resource.reserve(operator.work_bytes(shape)):
+            record = _invocation_record("periodic-flexure-v2",{"load":load},
+                {"grid":asdict(operator.grid),"material":asdict(operator.parameters),
+                 "operator_id":operator.operator_id},"reference",context=ctx,digests={"load":digest})
+        return _evaluate(store,record,lambda:operator.solve(load,budget=resource),shape,resource,
+            context=ctx,controller=control,cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
+
+
+def cached_finite_flexure(operator, load_pa, *, store=None, budget=None, context=None,
+                         controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """Verified reuse of the distinct continuous regional operator and derivatives."""
+    if type(operator) is not FiniteRegionFlexure:
+        raise TectonicsError('explicit FiniteRegionFlexure required')
+    wait_timeout = _timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store, ArrayStore):
+        budget = store._budget
+    shape = _shape(load_pa)
+    operator.work_bytes(shape)
+    output_shape = (2*operator.grid.cells+1, 4)
+    policy, control, use, key = _prepare_reuse(store, cache_policy, 8*elements(output_shape),
+        controller, 'finite-region-flexure', 'fft')
+    if not use:
+        load = load_pa.array if type(load_pa) is PreparedInput else load_pa
+        return _direct(lambda: operator.solve(load,budget=budget), control,key,policy,cancel,context,'reference')
+    resource = select_budget(budget)
+    with resource.reserve(16*elements(shape)):
+        load, digest = _capture(load_pa,'regional_load')
+        ctx = control.context('reference') if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend != 'reference':
+            raise TectonicsError('context/backend mismatch')
+        record = _invocation_record('continuous-regional-flexure-v1',{'regional_load':load},
+            {'grid':asdict(operator.grid),'material':asdict(operator.parameters),
+             'boundary':asdict(operator.boundary),'operator_id':operator.operator_id},
+            'reference',context=ctx,digests={'regional_load':digest})
+        return _evaluate(store,record,lambda:operator.solve(load,budget=resource),output_shape,resource,
+            context=ctx,controller=control,cache_policy=policy,cancel=cancel,
+            wait_timeout=wait_timeout,admission_key=key)
+
+
+def cached_variable_flexure(operator, load_pa, *, store=None, budget=None, context=None,
+                           controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """Source-bound adaptive Hermite response; SciPy/LAPACK identity is required."""
+    from .variable_flexure import VariableRigidityFlexure
+    if type(operator) is not VariableRigidityFlexure or operator._closed:
+        raise TectonicsError('live explicit variable-rigidity operator required')
+    wait_timeout=_timeout(wait_timeout);_cancelled(cancel)
+    if budget is None and isinstance(store,ArrayStore): budget=store._budget
+    shape=_shape(load_pa);operator.work_bytes(shape)
+    output_shape=(operator.grid.cells,5,4)
+    policy,control,use,key=_prepare_reuse(store,cache_policy,8*elements(output_shape),controller,
+                                         'variable-rigidity-flexure','scipy')
+    if not use:
+        load=load_pa.array if type(load_pa) is PreparedInput else load_pa
+        return _direct(lambda:operator.solve(load,budget=budget,cancel=cancel),control,key,policy,cancel,context,'scipy')
+    resource=select_budget(budget)
+    with resource.reserve(16*elements(shape)):
+        load,digest=_capture(load_pa,'regional_load')
+        ctx=control.context('scipy') if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend!='scipy':
+            raise TectonicsError('context/backend mismatch')
+        record=_invocation_record('hermite-variable-rigidity-refined-v1',{'regional_load':load},
+            {'operator_id':operator.operator_id,'profile_id':operator.profile.profile_id,
+             'accuracy':asdict(operator.accuracy)},'scipy',context=ctx,digests={'regional_load':digest})
+        return _evaluate(store,record,lambda:operator.solve(load,budget=resource,cancel=cancel),output_shape,resource,
+            context=ctx,controller=control,cache_policy=policy,cancel=cancel,
+            wait_timeout=wait_timeout,admission_key=key)
+
+
+def cached_regional_transport(thickness_m, face_velocity_m_s, grid, duration_s, *,
+        left, right, scheme="muscl", backend="numba", store=None, budget=None,
+        context=None, controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """W02 persistence through existing admission/claims/store, never a new cache.
+
+    Cheap evolving steps normally bypass persistence. On admission, capture the
+    same immutable inputs for identity and execution; key the external states,
+    frame/grid, interval, scheme and compiler as well as interior data. The packed
+    result is a versioned transfer format, not a lower-precision representation.
+    """
+    from .regional import (advect_regional, regional_work_bytes, _validate_definition,
+                           pack_regional_result, unpack_regional_result)
+    from ._validation import scalar
+    _validate_definition(grid,left,right,scheme,backend)
+    dt=scalar(duration_s,"duration_s",nonnegative=True)
+    wait_timeout=_timeout(wait_timeout); _cancelled(cancel)
+    if budget is None and isinstance(store,ArrayStore): budget=store._budget
+    shapes=(_shape(thickness_m),_shape(face_velocity_m_s))
+    if shapes != ((grid.cells,),(grid.cells+1,)):
+        raise TectonicsError("expected N thicknesses and N+1 face velocities")
+    size=2*grid.cells+9
+    policy,control,use,admission_key=_prepare_reuse(store,cache_policy,8*size,controller,
+                                                  "regional-"+scheme,backend)
+    if not use:
+        h=thickness_m.array if type(thickness_m) is PreparedInput else thickness_m
+        u=face_velocity_m_s.array if type(face_velocity_m_s) is PreparedInput else face_velocity_m_s
+        return _direct(lambda:advect_regional(h,u,grid,dt,left=left,right=right,scheme=scheme,
+            backend=backend,budget=budget,cancel=cancel),control,admission_key,policy,cancel,context,backend)
+    resource=select_budget(budget)
+    with resource.reserve(16*(2*grid.cells+1),category="regional-cache-input"):
+        h,hd=_capture(thickness_m,"thickness",nonnegative=True)
+        u,ud=_capture(face_velocity_m_s,"face velocities")
+        ctx=control.context(backend) if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend != backend:
+            raise TectonicsError("context/backend mismatch")
+        with resource.reserve(regional_work_bytes(grid.cells,scheme=scheme)):
+            record=_invocation_record("regional-transport-packed-v1",{"thickness":h,"velocity":u},
+                {"grid":asdict(grid),"duration_s":dt,"left":asdict(left),"right":asdict(right),
+                 "scheme":scheme,"flux":"interval-mean-m2/s","inventory":"volume-per-width-m2",
+                 "layout":"H[N];F[N+1];before,after,in,out,residual,C,left-in,right-in"},
+                backend,context=ctx,digests={"thickness":hd,"velocity":ud})
+        def compute():
+            # Candidate fields survive while the transfer payload is packed.
+            with resource.reserve(32*size,category="regional-result-packing"):
+                return pack_regional_result(advect_regional(h,u,grid,dt,left=left,right=right,
+                    scheme=scheme,backend=backend,budget=resource,cancel=cancel))
+        packed=_evaluate(store,record,compute,(size,),resource,context=ctx,controller=control,
+            cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
+        return unpack_regional_result(packed,grid.cells,scheme,backend)
+
+
+def cached_material_transport(state, face_velocity_m_s, duration_s, *, left, right,
+        scheme='muscl', backend='numba', store=None, budget=None, context=None,
+        controller=None, cache_policy=None, cancel=None, wait_timeout=30.):
+    """Cohort data and histories participate in the existing result-cache contract.
+
+    An immutable state's payload digest can be reused; state_id also binds cohort
+    formation, origin, epoch and lineage. A changed composition is not the same
+    invocation even when total thickness is identical. Store/controller admission
+    may change reuse behaviour only, never downgrade the selected accuracy scheme.
+    """
+    from .materials import (advect_materials, material_work_bytes, _definition,
+        _end_time, _exterior, _hash_array, pack_material_result, unpack_material_result)
+    from ._validation import scalar
+    _definition(state,left,right,scheme,backend)
+    dt=scalar(duration_s,'duration',nonnegative=True);_end_time(state,dt)
+    wait_timeout=_timeout(wait_timeout);_cancelled(cancel)
+    if budget is None and isinstance(store,ArrayStore):budget=store._budget
+    n=state.grid.cells;c=len(state.cohorts)
+    if _shape(face_velocity_m_s)!=(n+1,):raise TectonicsError('N+1 velocities required')
+    shape=(c,2*n+9);size=elements(shape)
+    policy,control,use,admission_key=_prepare_reuse(store,cache_policy,8*size,controller,
+                                                   'material-'+scheme,backend)
+    if not use:
+        velocity=face_velocity_m_s.array if type(face_velocity_m_s) is PreparedInput else face_velocity_m_s
+        return _direct(lambda:advect_materials(state,velocity,dt,left=left,right=right,
+            scheme=scheme,backend=backend,budget=budget,cancel=cancel),control,admission_key,
+            policy,cancel,context,backend)
+    resource=select_budget(budget)
+    with resource.reserve(16*(n+1),category='material-cache-input'):
+        u,ud=_capture(face_velocity_m_s,'face velocities')
+        _exterior(state,u,left,True);_exterior(state,u,right,False)
+        ctx=control.context(backend) if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend!=backend:
+            raise TectonicsError('context/backend mismatch')
+        record=_invocation_record('material-transport-packed-v1',{'velocity':u},
+            {'state_id':state.state_id,'state':state.descriptor(),'duration_s':dt,
+             'left':asdict(left),'right':asdict(right),'scheme':scheme,
+             'layout':'cohorts x [H[N],F[N+1],eight regional metrics]'},
+            backend,context=ctx,digests={'velocity':ud})
+        # JSON persistence represents tuples as lists. Compare the same canonical
+        # metadata representation on hits; do not relax the metadata equality check.
+        record=json.loads(_json(record))
+        def compute():
+            with resource.reserve(32*size,category='material-result-packing'):
+                return pack_material_result(advect_materials(state,u,dt,left=left,right=right,
+                    scheme=scheme,backend=backend,budget=resource,cancel=cancel))
+        packed=_evaluate(store,record,compute,shape,resource,context=ctx,controller=control,
+            cache_policy=policy,cancel=cancel,wait_timeout=wait_timeout,admission_key=admission_key)
+        # Captured velocity has the same typed identity as direct execution.
+        return unpack_material_result(packed,state,dt,left,right,scheme,backend,
+                                      _hash_array(u),budget=resource)
+
+
+def cached_material_remap(state,target,*,plan=None,scheme='linear',backend='numba',
+        store=None,budget=None,context=None,controller=None,cache_policy=None,cancel=None,wait_timeout=30.):
+    """Reuse remap results through existing policy; mesh-only setup is separately reusable."""
+    from .remapping import remap_materials,RemapPlan,restore_remap_result,_mesh_state
+    from .mesh import ColumnGrid1D
+    _mesh_state(state)
+    if type(target) is not ColumnGrid1D or scheme not in ('linear','constant') or backend not in ('numba','reference'):
+        raise TectonicsError('invalid remap definition')
+    if budget is None and isinstance(store,ArrayStore):budget=store._budget
+    shape=(len(state.cohorts),target.cells);size=elements(shape)
+    policy,control,use,key=_prepare_reuse(store,cache_policy,8*size,controller,'material-remap-'+scheme,backend)
+    if not use:return _direct(lambda:remap_materials(state,target,plan=plan,scheme=scheme,backend=backend,budget=budget,cancel=cancel),
+                              control,key,policy,cancel,context,backend)
+    resource=select_budget(budget)
+    with resource.reserve(48*size+128*(state.grid.cells+target.cells)+8192,category='remap-cache'):
+        op=RemapPlan(state.grid,target,backend=backend,budget=resource) if plan is None else plan
+        if type(op) is not RemapPlan or op.source!=state.grid or op.target!=target:raise TectonicsError('stale remap plan')
+        ctx=control.context(backend) if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend!=backend:raise TectonicsError('context/backend mismatch')
+        record=_invocation_record('material-remap-v2',{}, {'state_id':state.state_id,'state':state.descriptor(),
+                       'target':target.descriptor(),'plan_id':op.plan_id,'scheme':scheme},backend,context=ctx)
+        record=json.loads(_json(record))
+        packed=_evaluate(store,record,lambda:remap_materials(state,target,plan=op,scheme=scheme,backend=backend,
+                         budget=resource,cancel=cancel).thickness_m,shape,resource,context=ctx,controller=control,
+                         cache_policy=policy,cancel=cancel,wait_timeout=_timeout(wait_timeout),admission_key=key)
+        return restore_remap_result(state,target,packed,plan=op,scheme=scheme,backend=backend,budget=resource)
+
+
+def cached_ale_transport(state,face_velocity_m_s,mesh_velocity_m_s,duration_s,*,left,right,
+        scheme='muscl',backend='numba',event_times_s=(),store=None,budget=None,context=None,
+        controller=None,cache_policy=None,cancel=None,wait_timeout=30.):
+    """Relative motion, geometry, cohort history, boundaries and time all bind reuse."""
+    from .remapping import advect_ale,restore_ale_result,_mesh_state,_boundary_values
+    from .materials import pack_material_result,_end_time
+    from ._validation import scalar
+    _mesh_state(state);dt=scalar(duration_s,'duration',nonnegative=True);end=_end_time(state,dt)
+    if scheme not in ('muscl','upwind') or backend not in ('numba','reference'):raise TectonicsError('invalid ALE method')
+    for t in event_times_s:
+        if state.time_s<scalar(t,'event time')<end:raise TectonicsError('interval crosses known event')
+    n=state.grid.cells;c=len(state.cohorts)
+    if _shape(face_velocity_m_s)!=(n+1,) or _shape(mesh_velocity_m_s)!=(n+1,):raise TectonicsError('N+1 physical/mesh velocities required')
+    if budget is None and isinstance(store,ArrayStore):budget=store._budget
+    shape=(c,2*n+9);size=elements(shape)
+    policy,control,use,key=_prepare_reuse(store,cache_policy,8*size,controller,'ale-'+scheme,backend)
+    if not use:
+        u=face_velocity_m_s.array if type(face_velocity_m_s) is PreparedInput else face_velocity_m_s
+        w=mesh_velocity_m_s.array if type(mesh_velocity_m_s) is PreparedInput else mesh_velocity_m_s
+        return _direct(lambda:advect_ale(state,u,w,dt,left=left,right=right,scheme=scheme,backend=backend,
+             event_times_s=event_times_s,budget=budget,cancel=cancel),control,key,policy,cancel,context,backend)
+    resource=select_budget(budget)
+    with resource.reserve(48*size+128*n+8192,category='ale-cache'):
+        u,ud=_capture(face_velocity_m_s,'physical velocity');w,wd=_capture(mesh_velocity_m_s,'mesh velocity')
+        _boundary_values(state,u-w,left,True);_boundary_values(state,u-w,right,False)
+        ctx=control.context(backend) if context is None else context
+        if not isinstance(ctx,ExecutionContext) or ctx.backend!=backend:raise TectonicsError('context/backend mismatch')
+        record=_invocation_record('ale-packed-v2',{'u':u,'w':w},{'state_id':state.state_id,
+             'state':state.descriptor(),'duration_s':dt,'left':asdict(left),'right':asdict(right),'scheme':scheme},
+             backend,context=ctx,digests={'u':ud,'w':wd})
+        record=json.loads(_json(record))
+        packed=_evaluate(store,record,lambda:pack_material_result(advect_ale(state,u,w,dt,left=left,right=right,
+               scheme=scheme,backend=backend,budget=resource,cancel=cancel)),shape,resource,context=ctx,
+               controller=control,cache_policy=policy,cancel=cancel,wait_timeout=_timeout(wait_timeout),admission_key=key)
+        return restore_ale_result(state,u,w,dt,left,right,scheme,backend,packed,budget=resource)

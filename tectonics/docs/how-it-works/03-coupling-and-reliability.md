@@ -406,6 +406,24 @@ representation while mutable constants, defaults and function bindings are
 re-examined. This avoids repeated formatting, not source verification. Focused
 controls deliberately mutate sources and functions and require refusal.
 
+The [explicit final source constructor](../../optimisation/workbench/plan31/final/r3/README.md)
+can select a manifest-bound fixture route. It authenticates the selected manifest
+with its SHA-256 at context entry, then retains those exact immutable bytes. Each
+subsequent fixture-identity lookup opens the manifest afresh and compares all its
+bytes against that authenticated reference. Changed, truncated or appended data
+refuses, even when the file size or modification time has been restored. Declared
+fixture bindings, source checks and finder/root ownership keep their existing
+checks, including verification when the context closes.
+
+The retained reference is limited to 8 MiB per active fixture context. A lookup
+reads at most the retained length plus one byte, in blocks of at most 1 MiB, so
+late file growth cannot make that comparison unbounded. Focused disposable
+controls exercise mutation, growth, binding changes and cleanup; an unavailable
+OS symlink-creation control is recorded as skipped. These checks establish the
+method's refusal and lifecycle behaviour. A changed implementation still needs
+new source/profile identities and actual receiving and folded qualification;
+earlier recordings do not prove the changed source. No speed gain is established.
+
 Data-format constants are part of that check too. Changing a NumPy data type can
 change how saved bytes are interpreted without changing a function: the same
 bytes could become different numbers. The identity records byte order, field
@@ -447,6 +465,133 @@ The interpreter is a weaker entry than the extension modules. On Windows the
 hashed file is only the small `python.exe` launcher; the interpreter itself lives
 in `python312.dll`, which is not hashed, so there the interpreter is identified by
 its recorded version and build string and not by its bytes.
+
+### Check retained state before reopening
+
+The [release-accounting source component](../../optimisation/workbench/plan26/README.md)
+connects one retained-state validator to both prepared and fresh producer/reader
+paths. Each snapshot must declare a retained limit equal to the fixed 256 MiB
+pool plus its own carrier allowance. Capacity and index peaks follow exact integer
+grids and lease bounds; an active compact scope also funds its 5,120-byte control
+charge. Both snapshots are checked independently. Their scope, shape and lifetime
+peaks must agree, peaks cannot fall, and the after-close snapshot retains no bytes
+or pools. A record that balances only in aggregate is insufficient.
+
+These constraints retain a conservative 50,688-byte slack per extra simultaneously
+funded pool. The one-pool capacity ceiling and total retained limit are different
+quantities; the checks do not establish exact multi-pool accounting or increase
+the allowed resource budget.
+
+The restart source port also preserves a narrow exception for the registered
+compiled heat helper. Its exact helper and kernel source pins and loaded-source
+bindings must agree. This remains a cooperative check of participating modules;
+it does not authenticate every preplanted self-declared module or arbitrary
+runtime rewriting. The public port preserves the existing query-stage behaviour
+and all unrelated source members.
+
+The [source constructor](../../optimisation/workbench/plan26/build_candidate.py)
+authenticates its complete parent, applies exact declared diffs and creates a new
+source tree. It refuses output overlap with its inputs before writing, linked
+members and undeclared files, including nested manifests. Focused controls cover
+these boundaries and the four validator callers. The
+[fold and parity source](../../optimisation/docs/release/fold/r6/README.md)
+separately retains native, source and AST guards with explicit publication hashes.
+The [pre-fold receiving guards](../../optimisation/workbench/plan26/receiving/README.md)
+also distinguish the fresh profile from its prepared companion and bind both to
+the selected source manifest. Selected-generation checks bind the independently
+reviewed constructor, its complete construction plan and the delivered files.
+They account for every changed, added and omitted member while preserving the
+full parent history. An isolated runtime facade remains in the complete file
+inventory; the native-package source digest covers the package itself.
+Their authentic producer contract and runtime bindings are supplied separately;
+the exported code does not qualify existing private packets or a public runtime.
+A source manifest from either component is not a prepared runtime receipt.
+Actual selected profiles, loaded bytes, compiled execution, folded/unfolded
+parity and interval admission require their own source-bound qualification.
+
+The [closed-payload receiver](../../optimisation/workbench/plan39/README.md#canonical-closure-and-payload-receiver)
+uses the canonical source-bound closure checker, its authenticated base and fixed
+policy. It checks complete delivered code coverage, finite native/helper import
+domains, explicit fixture aliases and pinned Python-environment proofs before a
+package can pass. The desktop builder connects this receiver for explicit release
+builds; ordinary builds remain strict. It authenticates the complete source and
+Python inventories before output creation, then verifies delivered bytes before
+writing the release marker and build seal. Its qualified source-frame set remains
+empty until authentic folded records are supplied, so packaged qualification is
+still pending. The checker parses source without importing the scientific payload.
+
+The [selected-generation receiver](../../optimisation/workbench/plan26/receiving/README.md)
+checks the constructor and complete source membership before invoking its
+prepared-base guard. It also authenticates the original paired-profile
+configuration and exact namespace authority. The explicit public receiving caller
+connects that source boundary to its selected transformer and parity tools. It
+binds the public constructor context, source graph, construction-return roles and
+paired API intake, retaining exact status checks and recursive purpose/rehearsal
+refusal. Unbound public tool or authority projections refuse before dispatch.
+Local execution and public counterpart identities are recorded separately;
+actual public observations, fold gates and runtime qualification retain their own
+evidence. The [selected public fold source](../../optimisation/docs/release/fold/r10/README.md)
+provides the separately bound transformer and checker counterparts. Prepared policy
+data and predecessor recordings do not supply missing
+actual fold bindings.
+
+After a completed fold, the [runtime metadata constructor](../../optimisation/workbench/plan31/final/folded-runtime-r1/README.md)
+binds the actual source, manifest, report and fixed tool identities before deriving
+new paired profiles. The report must explicitly declare an empty rehearsal list;
+a missing declaration, null, boolean false or a nonempty list is refused. The
+actual fold caller requires all seven gates to pass. Constructed metadata and
+strict identity capture still require the subsequent receiving qualification.
+
+The [complete original-record consumer](../../optimisation/workbench/plan26/receiving/final-records-r2/README.md)
+checks the original producer and reader sources, collected records and completed
+process evidence before comparing a source arm with its folded counterpart.
+The parent creates each leg's authority only after that independent evidence
+has passed. A collection envelope or a fixture-created authority cannot supply
+missing process finality. Source identities are rederived from their full
+original preimages. Differences are permitted only in named source-defined
+identity slots with the corresponding typed proof; physical values and unknown
+containers remain exact.
+
+The comparison consumes complete private heat results, original checkpoint
+arrays, force and geometry records, retained accounting and historical storage
+records. It checks native manifests, page and chunk bindings and the complete
+logical records decoded from their original carriers. Indexed binary64 values
+are read in source order without float re-encoding. Prepared migration preserves
+historical funding and its full native, collar and spatial records. Logical
+resource reservations, limits and release obligations remain distinct from the
+explicitly identified measurements; an equal total does not excuse a missing
+accounting field.
+
+The selected ordinary fresh route compares two completed intervals; prepared
+receiving follows the actual migrated-root successor. This is separate from the
+six first-freeze source/fold arms, which stop before numerical advance. A complete
+synthetic pair can test record handling and physical-change refusal without
+proving that the native generator produced its geometry or that an actual reader
+and process qualified. Those runtime and scientific claims require their own
+source-bound results. Source/fold qualification can precede installation; the
+installed consumers still require their separately qualified delivery.
+
+Installing that same folded source has a separate
+[profile relocation route](../../tools/materialise_profile.py). It authenticates
+the completed constructor result, selected profile and exact fold before moving
+their references to the qualified installation. The original policy, manifest
+and evidence remain pinned external dependencies. A separate installation policy
+names the new manifest and rebases all evidence references together. Source
+inventories, constraints and measured execution identities remain unchanged;
+the existing prepared runner and independent reader still require the selected
+manifest to match that policy. The profile pins the policy after the manifest
+is written, avoiding a circular hash dependency. This does not change preparation
+bytes, native source identity or historical acceptance. A different fold
+requires its own construction and evidence. Actual source and installed consumer
+checks remain necessary after the real artefacts arrive.
+
+Wheel and strict-desktop packaging read fixture membership from the same
+authenticated application declaration. Executable aliases must cover every
+declared fixture exactly once, while case JSON and documentation remain data.
+The build checks the complete source before copying and checks the copies again;
+an older fixed fixture list cannot silently substitute another generation.
+These checks preserve the selected bytes. They do not establish runtime or
+scientific qualification.
 
 ### Save losslessly, share unchanged chunks and publish atomically
 

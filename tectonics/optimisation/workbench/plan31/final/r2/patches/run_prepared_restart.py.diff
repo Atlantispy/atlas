@@ -1,0 +1,25 @@
+--- a/helpers/run_prepared_restart.py
++++ b/helpers/run_prepared_restart.py
+@@ -583,9 +583,19 @@
+         sys.meta_path.insert(0, finder)
+         object.__setattr__(self, 'selected_now', True)
+         try:
+-            self.check_imported()
+-            yield self
+-            self.check_imported()
++            fixture_scope = nullcontext()
++            if fixtures is not None:
++                from atlas_tectonics.reuse import fixture_identity_context
++                fixture_scope = fixture_identity_context(self.manifest_path, self.manifest_pin, self.workspace)
++            with fixture_scope:
++                if fixtures is not None:
++                    # Worker startup still requires the authenticated Runner finder first.
++                    # Keep the fixture identity finder installed beneath that boundary.
++                    sys.meta_path.remove(finder)
++                    sys.meta_path.insert(0, finder)
++                self.check_imported()
++                yield self
++                self.check_imported()
+         finally:
+             object.__setattr__(self, 'selected_now', False)
+             sys.meta_path.remove(finder)

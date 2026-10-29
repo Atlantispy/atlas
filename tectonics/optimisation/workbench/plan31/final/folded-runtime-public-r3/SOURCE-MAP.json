@@ -1,0 +1,88 @@
+{
+  "actual_generation_qualified": false,
+  "all_function_class_ASTs_preserved": true,
+  "authority_records_shipped": false,
+  "capture_adapter_sha256": "15051b9ef7d0def850d0f8528b6b9bca268dc24f3cf276195f4139a1eca7ac5f",
+  "documentation": {
+    "README.md": "0053243c77a747715bc529cbf39816570d9808ae7ca075f54c8e8f44e65334f3"
+  },
+  "enablement": false,
+  "existing_final_source_map": {
+    "path": "tectonics/optimisation/workbench/plan31/final/SOURCE-MAP.json",
+    "scope": "Existing generic final source map; no existing folded-constructor row was altered.",
+    "sha256": "416ce0835e98a991a76e4c8715f590ccdb33359ffc0e14092451b02f6964a292"
+  },
+  "fixed_fold_report_roles": {
+    "facade_binding_sha256": "c62fc8b76f7ffa2beef2f61fed58b4ee09a7e3a3e717e8b1bb65e8978319295d",
+    "fold_r6_sha256": "857a2eec72a65f5add0fe799a30bab1813e9d2c7e3287351c5a94252e395cec1",
+    "fold_r7_sha256": "31867454e090fe510673c55308e49c9ab95daed6ce895d97de0ec523511b3d5b",
+    "parity_fixture_sha256": "48e982c97f54ccc43ed283ffd55cd0c1f1d58c57163fe4692c36ae6610592eaa",
+    "parity_sha256": "a6256d32b9118acaa1643acc41e32cce23da0ffb07bf8f2445733d9e73c9974a"
+  },
+  "other_required_authorities_unshipped": [
+    "B selected fa\u00e7ade authority records",
+    "actual source construction receipt and original source inputs",
+    "native/historical payload and source manifests",
+    "actual completed fold manifest/report/proof and complete native review",
+    "source profiles/current policy/preparation and original source-stage observation",
+    "selected destination authority and closed caller context",
+    "independent accepted apply binding"
+  ],
+  "predecessor_public_counterpart": {
+    "path": "tectonics/optimisation/workbench/plan31/final/folded-runtime-public-r2/build_folded_runtime.py",
+    "sha256": "cd5e710653b7cc645581e1f83f0b37e1f74659f0b4f66bdfb434c885727df025"
+  },
+  "predecessor_public_source_map": {
+    "path": "tectonics/optimisation/workbench/plan31/final/folded-runtime-public-r2/SOURCE-MAP.json",
+    "sha256": "b815c89c8ef0c758234713753e611f5b90836d17d1b88176930d1e227273ea07"
+  },
+  "private_runtime_data_included": false,
+  "public_directory": "tectonics/optimisation/workbench/plan31/final/folded-runtime-public-r3",
+  "publication_fold_source_map": {
+    "path": "tectonics/optimisation/docs/release/fold/r10/SOURCE-MAP.json",
+    "sha256": "62aa5bde7682de7c07b4054ca039d34eec630cd63e044bc5eef67ec5bfe7757e"
+  },
+  "publication_performed": false,
+  "required_exact_external_components_not_supplied_by_this_export": {
+    "interpreter": "Caller-supplied exact pinned binary; no environment shipped",
+    "prepared_component": "c69731f55dcda5dc5984ef0ca15d9f78b8a4f44acb7a1bb652af03cabab72b83",
+    "prepared_historical_input_sibling": "e0c2879dc1290cabb4e9c86e0bed21113851988ad21fc81f51e88e7b84886f86",
+    "utility": "171915e6871740755afdd54528b9a9fc2dfd236a0b60ae427175ab70d3f7492e"
+  },
+  "rows": [
+    {
+      "original_sha256": "cb5eba9e8d31044b3525246f17c206d4671291ab38e8b8a085b7a319b4799f5c",
+      "public_path": "build_folded_runtime.py",
+      "public_sha256": "120e51ef3165daf2ea9c3090cf34292d1629681e77fe2285bff4b8eb698268d4",
+      "source": "<LOCAL_PUBLIC_POSTFOLD_CANDIDATE_R4>/build_folded_runtime.py",
+      "transformation": "Four exact local/public fold-tool pin substitutions only"
+    },
+    {
+      "original_sha256": "15051b9ef7d0def850d0f8528b6b9bca268dc24f3cf276195f4139a1eca7ac5f",
+      "public_path": "capture_folded_identity.py",
+      "public_sha256": "15051b9ef7d0def850d0f8528b6b9bca268dc24f3cf276195f4139a1eca7ac5f",
+      "source": "<LOCAL_PUBLIC_POSTFOLD_CANDIDATE_R4>/capture_folded_identity.py",
+      "transformation": "Byte-equal accepted capture adapter"
+    }
+  ],
+  "runtime_admission": false,
+  "schema": "atlas.public.plan31.folded-runtime-source-export.r2",
+  "scientific_acceptance": false,
+  "source_port_provenance": {
+    "actual_fold_manifest_sha256": "98ea40114c0398fcd522525bb342aa20b5552aa18c7d78ca1d9566fcf2982817",
+    "current_r5_binding_delta_proof_sha256": "45acdd184ae4f56b828bcaf001e331dd94838b791cd2c025bc58933d5ba3530c",
+    "identity_equality_claimed": false,
+    "local_source_consumer_candidate_sha256": "cb5eba9e8d31044b3525246f17c206d4671291ab38e8b8a085b7a319b4799f5c",
+    "predecessor": {
+      "identity_equality_claimed": false,
+      "local_B_preparation_sha256": "b6148a7e72bd1c4b353e7be176a5517ae3b739fa8d34e495230a939698401494",
+      "local_source_consumer_candidate_sha256": "6d9118be56630f57ebf07a4f7bca33485cace9dd40247fa4e333b19b9edc711b",
+      "public_B_role_return_sha256": "c38f9d719a4bdd99fd50b611b752148d9d9c91e0ba1d66d3ea1d991dfea2d9a5",
+      "public_B_source_equivalence_sha256": "4c0773724dc003d663665bcabe06eef2588b37b5c0517851992be3fa1827f996",
+      "public_B_targets_sha256": "cbeca6916635badbb3e279cc654564a5dbb17ffedd66fe82571e3e06f8184679",
+      "scope": "Exact current source-role derivation only; no actual fold/runtime qualification"
+    },
+    "scope": "Exact two-role binding successor for actual operational/public r5 tool identities; predecessor provenance retained separately. No runtime qualification or admission."
+  },
+  "status": "SOURCE_EXPORT_NOT_A_RUNNABLE_CONTEXT_OR_QUALIFIED_RUNTIME"
+}

@@ -1,0 +1,28 @@
+--- a/helpers/probe_execution_identity.py
++++ b/helpers/probe_execution_identity.py
+@@ -120,13 +120,18 @@
+             'fresh interpreter required before native selection')
+     manifest, inventory = _verify(config)
+     sys.path[:0] = [str(root) for root in config['roots']]
+-    from atlas_tectonics.reuse import ExecutionContext, require_strict_execution
+-    require_strict_execution()
+-    with ExecutionContext(config['backend']) as execution:
+-        provenance = dict(execution.provenance)
+-        execution.verify_boundary()
+-    loaded = _loaded(config, manifest)
+-    require(_verify(config) == (manifest, inventory), 'sources changed during the identity measurement')
++    try:
++        from atlas_tectonics.reuse import (
++            ExecutionContext, require_strict_execution, fixture_identity_context)
++        require_strict_execution()
++        with fixture_identity_context(config['manifest'], config['manifest_sha256'], config['workspace']):
++            with ExecutionContext(config['backend']) as execution:
++                provenance = dict(execution.provenance)
++                execution.verify_boundary()
++            loaded = _loaded(config, manifest)
++    finally:
++        require(_verify(config) == (manifest, inventory),
++                'sources changed during the identity measurement')
+     return dict(schema=SCHEMA, status='MEASURED_NOT_REVIEWED', backend=config['backend'],
+         execution_provenance=provenance, source_manifest_sha256=config['manifest_sha256'],
+         native_source_digest=sha256(json.dumps(inventory, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),

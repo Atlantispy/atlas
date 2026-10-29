@@ -17,3 +17,7 @@ optimisation/workbench/plan40/pressure/implementation/runtime/selection.json -te
 # These rules live here so this package's general JSON rule cannot override them.
 optimisation/workbench/plan40/heat/testing/**/*.json -text whitespace=cr-at-eol
 optimisation/workbench/plan40/heat/implementation-r1/**/*.json -text whitespace=cr-at-eol
+
+# Preserve exact Plan31 constructor bytes pinned by immutable source receipts.
+optimisation/workbench/plan31/final/r3/constructor_core.py -text whitespace=cr-at-eol
+optimisation/workbench/plan31/final/r4/constructor_core.py -text whitespace=cr-at-eol

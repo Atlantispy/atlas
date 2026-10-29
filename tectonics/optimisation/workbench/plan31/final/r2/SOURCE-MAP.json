@@ -1,0 +1,42 @@
+{
+  "IV_permitted": false,
+  "base_builder": {
+    "path": "tectonics/optimisation/workbench/plan31/final/width/build_candidate.py",
+    "sha256": "b478279828fd7cc69f059197b345f92f9a0c5adebb45ee6c1c01dae756738f41"
+  },
+  "base_source_map_sha256": "897ae80675b84ba801803b98837df3dec44158bda02eefad2e93f4e9c52261fc",
+  "default_changed": false,
+  "implementation_sources": {
+    "profile_support.py": "b44ddb97cbe298ce89b364821c5f3eb7f4de4bde8d6f4d5e70bec972318c3a48",
+    "source_emitter-r3.py": "9b5b0ed1e8b59ccf55dd78a0337ac5029d3300b9322944765f8d9724cba2ec29"
+  },
+  "private_native_accepted_sha256": "9788143e65e2086f7a69e2889301a8b26fc52d6456ef8f980028eb7ed71fb79f",
+  "private_public_identity_equal": false,
+  "rows": {
+    "helpers/probe_execution_identity.py": {
+      "after_sha256": "14f236ad6ced69cb09ebf5284ef9d6b41cc9cd1ae2d6b5cff213540e01890fba",
+      "before_sha256": "5470acc64e3ded77784ef2b18662f885f95a36e1dad24d7bd9902af898a097bd",
+      "diff": "patches/probe_execution_identity.py.diff",
+      "diff_sha256": "e597b275db3fc351d556875c41f9e826fb40b58b82184ce063f6091cb33268ab",
+      "payload": "source/helpers/probe_execution_identity.py"
+    },
+    "helpers/run_prepared_restart.py": {
+      "after_sha256": "1fdf130c9510be4ef576c2936d38ca5dd54dbb67bbd22fc352aa488e4adbdf21",
+      "before_sha256": "48c1f3336d5e351da52aa218e235234486a0f46a3f39050b5ef81ea465f00d15",
+      "diff": "patches/run_prepared_restart.py.diff",
+      "diff_sha256": "e7c81d35296c7ea2b41390ec28cb467c0aae646710e1f4139d507b233263cd6a",
+      "payload": "source/helpers/run_prepared_restart.py"
+    },
+    "src/atlas_tectonics/reuse.py": {
+      "after_sha256": "a0dd33fe4ee9c3770cf66fbc4953fb08ac3efc80f6728158ccce406783507b94",
+      "before_sha256": "68cc7d096417b1d69e1c1bc4f688c6bb7bf0163d5ec0e69c5b68923e602978de",
+      "diff": "patches/reuse.py.diff",
+      "diff_sha256": "565080349bb5eeba27b0b2ab23ad8c25846e3aaae2f549e7faba4e75fe0e3c8b",
+      "payload": "source/src/atlas_tectonics/reuse.py"
+    }
+  },
+  "runtime_admission": false,
+  "schema": "atlas.public.plan31.fixture-identity.source-composition.r1",
+  "scientific_acceptance": false,
+  "source_members": 697
+}

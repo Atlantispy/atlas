@@ -1,0 +1,217 @@
+--- a/src/atlas_tectonics/reuse.py
++++ b/src/atlas_tectonics/reuse.py
+@@ -132,8 +132,123 @@
+ _NATIVE_SUFFIX = '_native'
+ 
+ 
++# Executable fixture assets are source members, but their import names are the
++# manifest's declared logical names, never atlas_tectonics._fixtures.* names.
++@dataclass(frozen=True)
++class _FixtureIdentitySources:
++    manifest: Path
++    manifest_sha256: str
++    root: Path
++    bindings: tuple
++    by_path: tuple
++    finder: object
++
++
++_fixture_identity_state = threading.local()
++
++
++def _fixture_identity_sources(check_sources=False):
++    selected = getattr(_fixture_identity_state, 'selected', None)
++    if selected is None:
++        return None
++    if not any(finder is selected.finder for finder in sys.meta_path):
++        raise TectonicsError('declared fixture identity finder is no longer installed')
++    from .integration_worker_bootstrap import _ordinary
++    _ordinary(selected.manifest)
++    if (not selected.manifest.is_file() or selected.manifest.stat().st_size > 8*1024**2
++            or _file_hash(selected.manifest) != selected.manifest_sha256):
++        raise TectonicsError('declared fixture identity manifest changed')
++    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in selected.finder.modules.items()))
++    if (selected.root != Path(__file__).resolve().parent or bindings != selected.bindings
++            or tuple(sorted(selected.finder.by_path.items())) != selected.by_path):
++        raise TectonicsError('declared fixture identity selection changed')
++    if check_sources:
++        selected.finder.verify()
++    return selected
++
++
++def _fixture_identity_binding():
++    selected = _fixture_identity_sources()
++    return (() if selected is None else tuple((name, path.relative_to(selected.root).as_posix(), pin,
++                                               'by_path' if name in selected.finder.by_path else 'module')
++                                              for name, path, pin in selected.bindings))
++
++
++@contextmanager
++def fixture_identity_context(manifest_path, manifest_sha256, workspace):
++    """Bind all package fixture assets through the pinned manifest's logical imports.
++
++    Enter after selecting the native/import roots, before ExecutionContext, and
++    retain this context until every such ExecutionContext is closed. This uses
++    the existing FixtureSources finder. It changes no path, source, fence, stage
++    or worker selection. A different declaration requires a fresh interpreter.
++    """
++    if getattr(_fixture_identity_state, 'selected', None) is not None:
++        raise TectonicsError('nested fixture identity contexts are not supported')
++    from .integration_worker_bootstrap import FixtureSources, _ordinary, _pairs, _path, _raw
++    manifest_path, workspace = Path(manifest_path), Path(workspace)
++    if not manifest_path.is_absolute() or not workspace.is_absolute():
++        raise TectonicsError('fixture identity requires explicit absolute paths')
++    _ordinary(manifest_path)
++    _ordinary(workspace)
++    manifest_path, workspace = _path(str(manifest_path)), _path(str(workspace))
++    if manifest_path.stat().st_size > 8*1024**2:
++        raise TectonicsError('fixture identity manifest is too large')
++    def nonfinite(value):
++        raise TectonicsError('nonfinite fixture identity manifest value: '+value)
++    manifest = json.loads(_raw(manifest_path, manifest_sha256), object_pairs_hook=_pairs, parse_constant=nonfinite)
++    finder = FixtureSources(manifest, workspace)
++    root = Path(__file__).resolve().parent
++    _ordinary(root)
++    assets = {path.resolve() for path in (root/'_fixtures').rglob('*.py')}
++    bindings = tuple(sorted((name, path, pin) for name, (path, pin) in finder.modules.items()))
++    if not assets or {path for _, path, _ in bindings} != assets:
++        raise TectonicsError('declared fixture identity must cover every package fixture source exactly')
++    inventory = manifest.get('source_hashes')
++    if type(inventory) is not dict or any(inventory.get(root.name+'/'+path.relative_to(root).as_posix()) != pin
++                                         for _, path, pin in bindings):
++        raise TectonicsError('fixture identity differs from the native source inventory')
++    native = {'.'.join(path.relative_to(root).with_suffix('').parts) for path in root.rglob('*.py')
++              if path.relative_to(root).parts[0] != '_fixtures' and path.name != '__init__.py'}
++    if native.intersection(name for name, _, _ in bindings):
++        raise TectonicsError('fixture logical name collides with a native package module')
++    selected_names = {name: (path, pin) for name, path, pin in bindings}
++    for name, module in tuple(sys.modules.items()):
++        filename = getattr(module, '__file__', None)
++        if type(filename) is str and Path(filename).resolve() in assets:
++            if name not in selected_names or Path(filename).resolve() != selected_names[name][0]:
++                raise TectonicsError('undeclared loaded package fixture: '+name)
++    selected = _FixtureIdentitySources(manifest_path, manifest_sha256, root, bindings,
++                                       tuple(sorted(finder.by_path.items())), finder)
++    sys.meta_path.insert(0, finder)
++    _fixture_identity_state.selected = selected
++    try:
++        _fixture_identity_sources(check_sources=True)
++        yield
++    finally:
++        try:
++            _fixture_identity_sources(check_sources=True)
++        finally:
++            _fixture_identity_state.selected = None
++            sys.meta_path[:] = [item for item in sys.meta_path if item is not finder]
++
++
++def _identity_module(name, fixtures):
++    binding = None if fixtures is None else next(((path, pin) for logical, path, pin in fixtures.bindings
++                                                 if logical == name), None)
++    if binding is None:
++        return importlib.import_module('atlas_tectonics.'+name)
++    module = importlib.import_module(name)
++    registry = sys.modules.get('_atlas_checked_fixture_modules')
++    path, pin = binding
++    if (registry is None or registry.records.get(name) != (module, path, pin)
++            or type(getattr(module, '__file__', None)) is not str or Path(module.__file__).resolve() != path):
++        raise TectonicsError('loaded fixture identity binding changed: '+name)
++    return module
++
++
+ def _identity_modules(backend):
+-    """Every module in the package's source membership, sorted.
++    """Native package modules plus every explicitly declared logical fixture.
+ 
+     Membership is the same ``*.py`` set that _source_bytes digests, read from the
+     package directory itself. Before R1 a fixed list omitted 25 modules (3D,
+@@ -145,11 +260,19 @@
+     ExecutionContext.verify through the source inventory.
+     """
+     root = Path(importlib.import_module(__package__).__file__).parent
+-    names = []
++    names, assets = [], set()
+     for path in root.rglob('*.py'):
+         parts = path.relative_to(root).with_suffix('').parts
+-        if parts[-1] != '__init__':
++        if parts[0] == '_fixtures':
++            assets.add(path.resolve())
++        elif parts[-1] != '__init__':
+             names.append('.'.join(parts))
++    fixtures = _fixture_identity_sources(check_sources=True)
++    if assets:
++        if fixtures is None or {path for _, path, _ in fixtures.bindings} != assets:
++            raise TectonicsError('package fixture sources require an explicit complete fixture identity context')
++    elif fixtures is not None:
++        raise TectonicsError('fixture identity context does not belong to this package')
+     missing = set(_IDENTITY_MODULES)-set(names)
+     if missing:
+         raise TectonicsError('declared identity module missing from source membership: '+min(missing))
+@@ -167,6 +290,12 @@
+         except Exception as exc:
+             raise TectonicsError('package module cannot be imported for the execution identity: '+name) from exc
+         out.append(name)
++    if fixtures is not None:
++        # Ordinary declared modules may perform their one authenticated by-path
++        # import. Do not pre-import that alias ahead of its actual caller.
++        for name, _, _ in sorted(fixtures.bindings, key=lambda row: (row[0] in fixtures.finder.by_path, row[0])):
++            _identity_module(name, fixtures)
++            out.append(name)
+     return tuple(out)
+ 
+ 
+@@ -367,10 +496,11 @@
+ 
+ def _callable_inventory(backend="reference", modules=None):
+     signatures, tokens, constants = {}, [], {}
++    fixtures = _fixture_identity_sources(check_sources=True)
+     if modules is None:
+         modules = _identity_modules(backend)
+     for name in modules:
+-        module = importlib.import_module("atlas_tectonics."+name)
++        module = _identity_module(name, fixtures)
+         for label, obj in sorted(vars(module).items()):
+             # These are process-wide resource leases, not scientific constants.
+             # Their changes are guarded by the executor, not source invalidation.
+@@ -432,6 +562,7 @@
+     was.
+     """
+     constants, fresh = {}, {}
++    fixtures = _fixture_identity_sources()
+     # Consuming a PRIVATE shallow table enforces exact membership, including
+     # duplicate qualified names introduced after preparation. Tokens themselves
+     # retain strong references and detached defaults and are not mutated here.
+@@ -439,7 +570,7 @@
+     if modules is None:
+         modules = _identity_modules(backend)
+     for name in modules:
+-        module = importlib.import_module("atlas_tectonics."+name)
++        module = _identity_module(name, fixtures)
+         prefix = module.__name__+"."
+         for label, obj in vars(module).items():
+             transient = name == 'execution' and label in (
+@@ -900,6 +1031,7 @@
+         # The bound module set is captured once from the package membership; any
+         # later membership change is refused by verify() through _source_bytes().
+         self._modules = _identity_modules(backend)
++        self._fixture_binding = _fixture_identity_binding()
+         signatures, self._tokens, self._constants = _callable_inventory(backend, self._modules)
+         self._expected = {token[0]: token for token in self._tokens}
+         # Preserve the full legacy check for deliberately ambiguous dotted aliases.
+@@ -923,6 +1055,7 @@
+             "source_inventory_schema": _SOURCE_INVENTORY_SCHEMA,
+             "backend": backend, "sources": {k:_digest(v) for k,v in self._sources.items()},
+             "loaded_code": loaded, "constants": _digest(self._constants),
++            "executable_fixtures": self._fixture_binding,
+             "runtime": self._runtime}))
+         self._closed = False
+         self._close_verified = False
+@@ -960,6 +1093,8 @@
+         # including membership. All bytes reread.
+         elif _source_bytes() != self._sources:
+             raise TectonicsError("source changed; create a new execution context")
++        if _fixture_identity_binding() != self._fixture_binding:
++            raise TectonicsError("executable fixture identity selection changed")
+         if self._expected is not None:
+             # Check the new comparison function before entering it as well as
+             # through its ordinary live-inventory entry. A replaced/no-op helper
