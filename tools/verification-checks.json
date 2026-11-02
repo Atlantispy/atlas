@@ -120,7 +120,7 @@
     },
     {
       "id": "atlas.docs.content-and-consumers",
-      "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when consolidating or retiring documentation.",
+      "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when revising instructions or consolidating/retiring documentation.",
       "module": "Changed documentation, process instructions, migrated links and retired prose-only qualification assertions",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "Manual complete-content review; explicit changed-scope path/anchor comparison; AST comparison of each retired prose assertion against its parent Git blob",
@@ -152,7 +152,8 @@
         "Actual source/evidence authority",
         "Consumer and privacy requirements",
         "Retired qualification-test methods and retained test/case contracts",
-        "Client profile registration/model/effort, explicit review/bridge limits and PR policy links"
+        "Client profile registration/model/effort, explicit review/bridge limits and PR policy links",
+        "Retention rules must not grant current-run/store access, lift holds or weaken required checks."
       ],
       "evidence": [
         "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
@@ -164,7 +165,8 @@
         "tectonics/tests/test_thermochemical_delivery_r4_2.py",
         ".claude/agents/atlas-lead.md",
         ".github/PULL_REQUEST_TEMPLATE.md",
-        "tectonics/optimisation/drivers/INTERVAL_CHAIN.md"
+        "tectonics/optimisation/drivers/INTERVAL_CHAIN.md",
+        "AGENTS.md"
       ]
     },
     {

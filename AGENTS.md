@@ -50,6 +50,46 @@ focused content/link and required static checks, not scientific reruns.
 - Do not publish personal information, credentials, private paths or coordination
   records. Preserve the approved public worldbuilding material and AI disclosure.
 
+## Keep documentation, experiments and checks bounded
+
+- Maintain one current home for each status, method and decision. Update existing
+  owner documents in place, link to detail and use Git history for ordinary prior
+  versions. Add a Markdown file only for a distinct required purpose or consumer
+  that cannot fit an existing section; name that purpose in the existing brief.
+  Routine progress does not need dated update files or parallel ledgers.
+- Retain files for an actual selected import/constructor, useful regression or
+  negative control, supported claim or recovery need. Age, revision number, an old
+  reference, inventory membership or historical hash alone proves neither need nor
+  disposability. When replacing material, migrate useful content and consumers,
+  repair links/current inventories and remove authorised obsolete members together.
+  Protected exclusions must name their dependency, owner and unresolved question.
+- Keep disposable probes, invocation logs and trial copies outside tracked or
+  source-bound packages unless a selected consumer requires them. At completion,
+  remove owned disposable material after retaining the minimal useful result,
+  failure cause or regression in its existing home. Do not preserve whole failed
+  attempt trees, one report per retry, default second backups or extra archives.
+- Share source and fixtures only when import, constructor, frozen-source and
+  qualification contracts permit it. Identical bytes do not make contexts
+  interchangeable. Preserve required originals until an authorised successor
+  migrates their consumers; preserve current integrity/recovery identities. Do not
+  create historical hash catalogues or require obsolete files merely because a
+  test asserts their presence or old progress wording.
+- Historical archives must have no current-run input, selection, dispatch,
+  recovery or runtime role. Current-run storage has its own database, code,
+  configuration and lifecycle. Archive cleanup must not access or alter current
+  runs/stores; an extra copy needs a concrete recovery purpose.
+- Reuse adequate checks while candidate, inputs, tools and configuration remain
+  valid. Rerun for relevant changes, unresolved failure, missing coverage or
+  mandatory freshness/independence. Combine demonstrated same-context duplication;
+  retain distinct fixtures/trust boundaries and required numerical, integrity,
+  identity, privacy, resource and recovery checks. Maintain one structured
+  definition per distinct check in [the existing inventory](tools/verification-checks.json),
+  with results at their existing owner; classification never disables a check.
+  Follow the [focused check procedure](docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure).
+- Close the existing owner record and resolve obsolete pending-removal references
+  in the same change. These rules create no recurring audit, cleanup service,
+  monitor, approval chain or authority to touch another owner's work or lift holds.
+
 ## Public development route
 
 For independent component development, read `docs/INDEPENDENT_DEVELOPMENT.md`.
