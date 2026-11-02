@@ -71,7 +71,7 @@ and underflowing nonzero accounts refuse rather than disappear. The unchanged
 128-file source limit now covers 120 production files. Live identity includes
 the new defining classes and methods; existing source-bound evidence/checkpoints
 are not silently rebound to changed code.
-The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+The later [A3 capacity repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
 raised the source limit to 512 files; the count above is this checkpoint's.
 
 ## Focused evidence and measured optimisation

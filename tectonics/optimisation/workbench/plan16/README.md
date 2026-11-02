@@ -20,7 +20,67 @@ it needs its own eligible ROOT. Historical profiles and checkpoints stay intact.
 new files have the same bytes as their private sources; other entries retain
 their existing publication transformations. The private runtime, inputs and
 receipts remain excluded, so this is source for inspection, not a public native
-installation. OpenAI Codex implemented and checked this change.
+installation.
+
+## Scheduling and proof contract
+
+The three-transform item is workers6 + workers6rolling + workers6clamp:
+- workers6 permits policy 1..6, retaining single-contact min(workers,2), existing
+  CPU/memory/booking/predicate cuts, workers+1 lanes, at most workers running and
+  twice workers batches outstanding. It is not a 32-chunk guarantee.
+- rolling interfaces own the pass only for workers>2, batch_seconds not None and
+  minimum_job_seconds None; otherwise single-contact remains. Do not lose a
+  per-contact floor by migrating to a route that does not apply it.
+- automatic endpoints clamp to 2 after machine gates; ComponentParallelSession
+  remains1..2. The superseded workers_six_endpoints transform is not selected.
+
+Exact record/stream digests must match each same-runtime serial, with nonmissing
+consistent package/profile binding, no errors and serial cross-check against the
+retained r2 view. Preserve the IV1 encoding correction's actual package identity.
+All required current/retained/superseded arms remain visible: IV2 serial/w2/w4/w6
+and IV1 serial/w4/w6. A genuine failed/unknown attempt cannot disappear behind a
+successor.
+
+IV2 w2 requires the interface-route gate and single-contact selection. IV2 w4/w6
+require that gate refusing single-contact and interface-batch peak live workers>2;
+IV1 w4/w6 use the recognised interface/wall controllers. A peak above 2 alone does
+not prove six; the accepted q53 evidence separately meets actual-session/peak-six.
+The proof uses IV2 shard 0/20, not full IV2 or a whole planet.
+
+VOID-ENVIRONMENT is narrow: concurrency peak must be the only failed check for a
+request above 2. Sessions/gates must exist, and the first trim to<=2 must be CPU or
+memory with a reading proving three could not fit:
+- CPU: free_cores<4<=physical_cores; rounded ambiguity refuses.
+- RAM: available<3*per_worker+reserve<=physical_RAM, with the actual 768-MiB
+  (805306368-byte) worker booking and 2-GiB (2147483648-byte) reserve.
+These are gate-classification terms, not per-worker buffers or replacement RSS caps.
+A positive trimmed count must run normally; zero must be refused by that gate alone.
+Gate-less companions need the recognised below-threshold reason without error.
+Budget/predicate trims, missing sessions, binding/funding/worker errors and the
+deliberate endpoint cap are not VOID excuses.
+
+| Outcome | Meaning |
+| --- | --- |
+| Summary 0 PASSED | Required exact/route/session/current and retained checks pass |
+| Summary 1 FAILED | Genuine failed/missing check or unacceptable old attempt |
+| Summary 3 VOID-ENVIRONMENT | Mechanical environment predicate only; not proof completion |
+| Wrapper 2 refused start | Existing output, invalid generation or unresolved start/attempt condition |
+| Historical launch15 | q21 invalid-launch failure, not a summary verdict |
+
+q13 was VOID despite identical records; q21 had an earlier held waiter that never
+started science and a later invalid launch (exit 15; date/seq/cp unavailable). These
+are different events, not fabricated ticket suffixes. Preserve old partials and
+orphan rulings, original exits and finality; a fresh log name cannot clear them.
+The later reviewed/cleared q53 proof and completed handoff supersede the old
+pending rearm instructions. There is no automatic retry, new algorithm, blanket
+Plan31/35 prerequisite or newly retained coordinator-return task.
+
+Queue prediction, runtime selection and tree protection remain distinct. The
+historical wrapper did not call SG.decide/admit; do not claim an exact-byte gate
+was already wired there. Runtime imports require seed 0, fail-closed checking and
+the named plain -B or -s -P route, no -I; pure queue/JSON/summary helpers may isolate.
+Record actual load/cores/workers; bounded quiet waits do not guarantee quiet.
+The original 144/144 summariser controls remain scoped evidence, not a new run.
 
 [RETAINED-RESULTS.json](RETAINED-RESULTS.json) summarises private evidence; it is
 not an execution receipt. The original exact merged proof passes, with six

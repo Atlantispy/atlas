@@ -11,13 +11,10 @@ window cancels active calculations and closes the owned backend; saved exports
 are not deleted. The existing browser-based Atlas workspace is separate.
 
 This is an unsigned development build: Windows may display a publisher warning.
-The 3 October 2026 refresh packages commit `30a79e6`: the I01/I02 backend,
-R7 repairs, newer 3-D solver and reviewed I03 spherical network, bridges and events,
-including K1-K5 and the N1 follow-up. It retains the existing UI. I02's
-coupled-column workflow and I03's supplied-motion spherical history are included
-in the backend; the existing evolution controls still run the regional route,
-not whole-planet I03 evolution. Native source and runtime compatibility checks remain active when opening
-or continuing old work; an older job is not silently rebound to the new code.
+The [current delivery summary](../docs/CURRENT_STATE.md) records the accepted
+build and its backend scope. The regional UI does not supply whole-planet
+advancement. Native source and runtime checks remain active when opening or
+continuing old work; an older job is not silently rebound to new code.
 
 ## Rebuild
 
@@ -71,44 +68,25 @@ authorised rebuild and installed-app check are still required.
 
 None of these is a full scientific test suite.
 
-## Current Windows acceptance (3 October build)
+## Obtained Windows qualification
 
-The refresh contains all 389 native payload files from `30a79e6`, with matching
-hashes, and the unchanged pinned UI and CPython runtime. Two targeted I03
-path/mesh/event save-reopen-continue regressions passed using the bundled Python
-and packaged source (4.858 s). Existing scientific acceptance was reused.
+The recorded 3 October build packaged all 389 native files from `30a79e6`, with
+the unchanged pinned UI and CPython runtime. Two I03 path/mesh/event
+save-reopen-continue regressions passed using that packaged source/interpreter
+(4.858 s). The executable created, exported, loaded and saved a six-plate,
+192-cell world with identical reloaded fields (20.837 s); the installed reopen
+check passed in 4.676 s and the globe screenshot was inspected. The hidden-window
+check waits for painted globe content and opens the saved world from the start
+page. These checks used an isolated profile and preserved the normal user data.
 
-The real executable created, exported, loaded and saved a six-plate, 192-cell
-world with identical reloaded fields (20.837 s). The hidden-window test now waits
-for painted globe content rather than a fixed delay. Its reopen check explicitly
-opens Your world from the intentional start page. After installation, that check
-passed in 4.676 s, preserving the isolated profile, origin and saved world.
-The globe screenshot was inspected. The user's normal profile and projects were
-not opened or modified; the 2 October application is retained as a recovery copy.
-
-## Earlier Windows acceptance (2 October build)
-
-The 2 October refresh passed its real executable check in an isolated profile:
-six plates and 192 support cells were generated, exported, loaded through the UI
-file input, saved with Save World and reloaded with identical world-view fields.
-This took 20.397 s after the initial window load. After installation, a fresh
-process restored the same origin, profile and saved native world in 2.524 s.
-The globe/interface screenshot was inspected and both processes exited normally.
-The user's normal profile and saved projects were not opened or changed.
-
-All 380 delivered native payload files matched the committed source snapshot,
-including all 280 Python files. The retained CPython 3.12.14 runtime matched all
-39 dependency pins; five build guards and three launcher/security tests passed.
-The packaged I02 command workflow separately created and inspected its initial
-state with zero accepted advancement steps. The first invocation correctly
-refused an absent test root; creating that root resolved the invocation error.
-Existing scientific evidence was reused, not replaced by this packaging check.
-
-That application was approximately 801 MB, with Electron 44.4.5, the relocatable
-Python runtime and the unchanged UI snapshot. The previous 26 September build
-was retained as a recovery copy; the existing Start-menu shortcut targets the
-updated application. This is Windows packaging/lifecycle coverage, not new
-whole-world scientific acceptance or native Linux coverage.
+The preceding 2 October build supplied the 39-dependency runtime-pin and
+copy/launcher/security qualification at its own bindings. Its packaged I02
+workflow reached initial state only, with zero accepted advances. Old timing and
+delivery chronology remain in
+[Git history](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/desktop/README.md).
+Packaging/lifecycle coverage does not replace scientific evidence, qualify Linux,
+or establish that later source edits are installed. A new build needs its own
+actual affected packaging and installed-route checks.
 
 ## Design and security
 

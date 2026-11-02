@@ -63,8 +63,5 @@ class Delivery(unittest.TestCase):
     def test_states_not_declared_physical_acceptance(self):
         s,_,_=example.build_initial_state(4)
         self.assertFalse(s.descriptor()['physical_validation'])
-    def test_maintained_stage_is_not_one_and_done(self):
-        d=(ROOT/'docs/TECTONICS_PLAN.md').read_text()
-        self.assertIn('R4.2',d);self.assertIn('R4.3',d);self.assertIn('R4.4',d)
 
 if __name__=='__main__':unittest.main()

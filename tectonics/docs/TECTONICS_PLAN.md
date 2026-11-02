@@ -1,1979 +1,56 @@
-# Atlas tectonics simulation plan
+# Atlas tectonics component plan
 
-## Reading this plan now
+**WORKING NON-CANON.** This plan defines scientific responsibilities, component
+contracts and capability gates. Use [CURRENT_STATE](../../docs/CURRENT_STATE.md)
+for the active checkpoint and holds, the [roadmap](../../docs/ATLAS_ROADMAP.md) for
+programme direction and the [integration plan](INTEGRATION_PLAN.md) for coupled
+integration order and finish rules. I01–I12 are integration increments, not new
+W-packages. Limited W12 technical assembly does not complete the generator.
 
-Use [the current Atlas summary](../../docs/CURRENT_STATE.md) for the active
-checkpoint and [the roadmap](../../docs/ATLAS_ROADMAP.md) for the next authorised
-development sequence. This plan retains dated designs, implementation accounts
-and evidence; headings saying "Current" describe their recorded date, not a
-fresh validation of today's checkout. Keep applicable method specifications and
-ownership rules here, removing superseded status as the affected sections are
-revised. Do not add another competing current-status section or archive copy.
+The scientific-fidelity repair remains paused at the owner's request. R4.4 and
+full-interval scientific work remain held; this plan lifts no hold or execution
+gate. Independent authorised work retains its own scope. Generated tectonics,
+mountain/terrain realism and complete world execution remain unaccepted.
 
-For the remaining end-to-end tectonics work, follow the
-[complete integration plan](INTEGRATION_PLAN.md). It supersedes the narrow W12
-completion interpretation, while retaining the applicable method and ownership
-contracts below. Its I01–I12 are integration increments, not new W-packages.
+Read [How Atlas tectonics is made](HOW_TECTONICS_IS_MADE.md) for the accessible
+explanation. Specialist methods retain their detailed contracts and obtained
+results; [OPTIMISATION_REFERENCE](OPTIMISATION_REFERENCE.md) owns execution,
+cache/storage/language decisions and matched-error measurements. Case contracts
+and tests remain beside implementation. Reading editions are not extra authorities.
+The [evidence register](../../docs/CURRENT_EVIDENCE.md) classifies only declared
+byte bindings; unlisted W01–W12 receipts keep their original source/runtime scope.
+Git history retains superseded progress prose. Moving an explanation neither
+repins historical results nor makes them current.
 
-The module-ownership decision below still governs where future scientific
-expansion belongs. Delivery claims elsewhere in this plan keep their original
-source/runtime scope; [the bounded evidence register](../../docs/CURRENT_EVIDENCE.md)
-does not yet classify all W01-W12 records. Consult the affected method and
-original receipt when needed, without treating every historical "next" as an
-instruction to resume work.
+<a id="current-module-boundaries-and-continuation-23-september-2026"></a>
 
-## Current module boundaries and continuation (23 September 2026)
+## Scientific ownership
 
-Owner decision: retain the existing mixed package layout to avoid unnecessary
-import, cache and checkpoint migration. File placement does not assign scientific
-ownership. Preserve and use the implemented components; defer their non-tectonic
-expansion to the relevant individual module. This section governs continuation
-where older W-package ordering would otherwise imply expanding all of W09 here.
+Retain the mixed package layout unless a separately scoped change warrants
+migration. File placement does not assign scientific ownership. Preserve existing
+components/dependencies and defer non-tectonic expansion to the receiving module.
+Every physical contribution has one owner and is applied once.
 
-| Responsibility already present here | Owner of further scientific development |
+| Responsibility | Owner of further scientific development |
 | --- | --- |
-| Plate/block motion, fault deformation, extension, spreading, shortening, subduction and the associated mechanical response | Tectonics |
-| Geological descriptions, material properties, magmatic melting/transfer/emplacement and resulting rock history | Geology; tectonics consumes the required properties and accounts |
-| Sediment layers, compaction and pore-fluid effects | Geology / erosion and sediment transport; soil-specific extensions belong to soils and ground conditions |
-| Drainage, runoff, lake storage and water exchange | Hydrology |
-| River incision, hillslope transport, sediment routing and deposition | Erosion and sediment transport; topography/topology owns the resulting terrain representation |
-| General heat/material accounting, load construction, caching, storage and resource control | Shared services or explicit cross-module interfaces; no second implementation merely to change ownership |
-
-Tectonics retains the thermal/mechanical response needed by its own calculations,
-including cooling-related response and applicable isostasy/flexure. A receiving
-module owns how tectonic outputs affect its own state. Conversely, tectonics owns
-its response to supplied loads, properties and forcing. Each physical contribution
-must still be applied once. Existing W03/W04/W08 adapters remain usable in place;
-this boundary decision does not remove their dependencies or implemented results.
-
-The supplied ramp-flat [collision/underthrust structural closure](UNDERTHRUST.md)
-is now implemented and checked (continuation Step 2).
-[Step 3 evolving-input mechanics](EVOLVING_MECHANICS.md) also now connects
-state-bound rigidity and physical load changes to elastic support, and coincident
-material/force/boundary snapshots to regional mechanics.
-[Step 4 supported histories](TECTONIC_HISTORIES.md) now supplies dated, atomic
-recovery for these newly supported routes, preserving the existing W05-W08 history
-owners and refusing implicit transfers between incompatible representations.
-W09 Steps 4-5 remain
-unfinished cross-module surface-process work, to
-continue with their individual owners, not the next tectonics expansion.
-
-[W10's bounded assessment](W10_VALIDATION.md) is implemented: selected numerical
-checks, current free-surface convergence, exact-bound recovery reuse, authenticated
-historical subduction evidence and an unfitted 50-bin observational heat-flow
-screen. The report distinguishes a completed assessment from unresolved physical
-claims; it does not close all V3/V4 evidence.
-[W11's module-wide pass](OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026)
-now assesses all existing families and implemented workflow links, with measured
-source-check, geological-verifier and storage improvements, matched scientific
-outputs, explicit PF decisions and focused PT safeguards. The earlier three-grid
-study remains historical evidence, not a new current-source pass. Adaptive/distributed and
-general physical scale transfer remain outside that evidence.
-[W12 supported assembly/release acceptance](W12_ASSEMBLY.md) is now implemented:
-the public W01-W04 column route uses the retained Atlas graph/cache and native
-recovery, while typed exports cover the other supported native workflow forms.
-It reuses shared machinery and checks the tectonics integration boundary without
-implementing downstream science. Generated-plate R5-R9 remains a separate future route, and R4.4 remains
-held/incomplete. No benchmark, acceptance criterion or hold is changed.
-
-The ownership decision itself is documentation-only. Source locations, public imports,
-package version, numerical laws, frozen designs/registers, execution identities,
-historical evidence and saved checkpoints are unchanged. Physical package
-separation can accompany a later module change if it is then worthwhile.
-
-The subsequent Step 2 implementation adds `underthrust.py` and its loaded-code
-identity coverage, without moving existing code or changing frozen contracts.
-Its [implementation/evidence record](UNDERTHRUST.md) governs the supplied geometry,
-host-space, material, work and reuse claims. Step 3 adds explicit absolute reference
-loads and state-bound elastic profiles, plus compatible regional input contracts;
-its numerical laws remain the existing W04/W07 solvers. Step 4 adds the missing
-history/recovery layer. W10's assessment now follows as documented above;
-W11's bounded assessment and W12's supported assembly are recorded above.
-
-## Local implementation update: W01 Stage 8 (22 September 2026)
-
-The [combined acceptance profile](W01_COMBINED_ACCEPTANCE.md) assesses original
-W01 representation gates together with the supported S5/S6/S7 workflow, resources,
-cache invalidation and cold continuation. It runs via `tectonics/verify.py --w01`.
-Technical acceptance and whole-package scientific acceptance are separate recorded
-results. Earth-like S3C acceptance remains REOPENED and R4.4 remains held/incomplete;
-passing this profile cannot close either gate or establish whole-W01 completion.
-
-Subsequent [bounded validation](../evidence/w01-bounded-validation.md) compares
-fixed generated plate shapes with pinned reference outlines at declared scales.
-The described-state S5-S7 route is accepted within its tested limits and does not
-depend on completing R4.4. R5-R9 also contain future implementation, not merely
-unrun checks of that route. Full PB2002 motion consistency was checked previously;
-independently generated geological dynamics remain a different open claim.
-
-## Local implementation update: W01 Stage 7 (22 September 2026)
-
-The [W01-to-W02 regional workflow](W01_REGIONAL_WORKFLOW.md) connects supported
-S5 intersection inventories and S6 prescribed motion to W02 cohort transport,
-retaining thermal/history provenance and bounded source-bound restoration/reuse.
-This local unreleased addition does not change the package version or retrospectively
-alter the dated milestones below. Supported reductions are explicit planar strips
-and axial-motion hemispheric wedges; unrestricted spherical dynamics are not claimed.
-Stage 8 combined W01 acceptance and reopened S3C scientific acceptance remain;
-R4.4 is not resumed. See the linked scope and focused evidence before scaling.
-
-## Current: dev40 thermal boundary accuracy and assessment completeness
-
-**Package `0.1.0.dev40`, maintained plan revision 44, 21 September 2026.
-Local review candidate; R4.4/R4 remain IN_PROGRESS, WORKING NON-CANON.**
-
-The fixed-temperature advection boundary now uses reflected-wall MC slopes capped
-by the wall jump. This restores exact reconstruction for linear wall-normal
-temperature profiles without permitting the reflected ghost to introduce an
-overshoot. Both RK stages and the independent NumPy formulation use it. Insulating
-walls and composition keep their previous reconstruction. Mechanical equations,
-material wall fluxes, diffusion, timestep and acceptance limits are not relaxed.
-Independent ODE fixtures were updated algebraically for the corrected boundary
-discretisation, not regenerated by the production solver.
-
-Assessment corrections: periodic evidence must reach the endpoint; periodic
-adequacy requires final-complete-cycle phase-matched temperature arrays, bound to
-the same source/configuration/receipt as each analysed run. Nested mesh cell averages
-are restricted to common coarse cells; timestep/nonlinear studies keep identical
-support. Existing axis tolerances and unresolved non-monotonicity rules apply.
-Missing or undersampled evidence is INCOMPLETE, never scalar-only acceptance.
-Only final-cycle sidecars are retained (64 MiB/run, at most three in a study);
-they do not duplicate the archive. This is not a process RSS limit.
-
-The campaign assessor supports configuration-only `--preflight`. It lists known
-reference blockers, missing/mismatched study controls, necessary duration/cadence
-conditions and repeated planned run use before archive analysis or numerical work.
-Runner schedule warnings do not forbid intentional short probes. An immutable
-maximum-step count incompatible with the sampling cadence is refused before output.
-Courant failures now report the RK stage and measured same-velocity timestep ceiling;
-the latter is advisory, not a safe future-step guarantee or automatic retry.
-
-Bounded measurements and exact limitations are in
-[dev40 evidence](../evidence/r4-4-dev40-numerical-assessment.md). The frozen-field
-32/64/128 study strongly implicates spatial error in the dev39 surface velocities.
-A short three-timestep corrected comparison changes its most sensitive registered
-diagnostic by only 0.0003113%. Neither exercise is mature coupled adequacy. The
-corrected 64-grid transient still misses the domain-RMS reference envelope, so no
-all-metric pass is claimed. A stress-support reconstruction experiment was not
-promoted: its small surface benefit did not justify changing the constitutive route.
-
-Next numerical work is source-bound re-equilibration followed by the registered
-mature mesh, timestep and nonlinear studies, using schedules checked beforehand.
-Do not extend a failed coarse-grid result merely by adding steps, silently rebind
-dev39 states, or run the whole campaign while known reference questions remain.
-Complete case coverage, combined recovery/resource/regression/visual evidence and
-reference resolution are still required. The new SciPy upper bound preserves the
-current authenticated pocketfft route; future FFT backend support is separate work.
-
-<a id="3cr4-4-preconditioner-reuse"></a>
-
-## Current: dev39 guarded request-local preconditioner reuse
-
-**Package `0.1.0.dev39`, maintained plan revision 43, 20 September 2026.
-Preconditioner integration only. R4.4/R4 remain IN_PROGRESS.**
-
-`PreconditionerReusePolicy(max_uses=4)` is an explicit production option on
-standalone/coupled variable mechanics. New runs can select
-`--nonlinear-solver anderson --nonlinear-start previous-stage1 --preconditioner-max-uses 4`.
-The existing defaults remain unchanged. Only the Tosi plastic law activates
-approximate velocity-ILU reuse. Strain-independent constant/Tosi-linear laws bypass
-its history and guard work. Prescribed-viscosity, direct and BF/damage uses refuse
-an unused/unsupported reuse policy rather than silently changing their contracts.
-
-The full physical stress/pressure/divergence operator and cheap pressure
-approximation use CURRENT viscosity on every linear call. The velocity factor may
-serve up to four calls inside one nonlinear request, subject to origin-relative
-maximum log-viscosity change <= log(2), and a previous linear iteration count <=
-max(40, 1.5 times its factor-origin solve's count). A guard requests a current factor
-before the next solve; a failed linear solve is not retried. The first linear call
-of each request obtains a current factor; exact-coefficient cache reuse is still
-valid. No changed-coefficient reuse crosses requests, RK stages or timesteps.
-The preconditioner stays fixed INSIDE each GMRES call.
-
-This extends the older rebuild-on-every-change contract ONLY under the explicit
-policy. The original no-policy branch, true updated-law checks, fresh final Picard
-image, binary64, residual thresholds, timestep, physics and ILU parameters remain.
-No adaptive tolerances, Krylov recycling, Newton or multigrid are integrated here.
-Those are separate assessment tracks, not accepted production capabilities.
-
-Mechanical results retain coefficient-origin/current hashes, deterministic rebuild/
-reuse decisions and policy. Coupled records retain policy and validated summaries;
-runner, analyser and visual endpoint solves use the same recorded policy. Cache-hit
-counters and timings are telemetry, not inputs to scientific identities. Request
-history is released after success or failure and is not checkpoint state.
-Source/policy changes still refuse continuation; no old trajectory is rebound.
-Historical evidence and all later R4.4 acceptance requirements remain in force.
-
-<a id="3cr4-4-cross-step-start"></a>
-
-## Current: dev38 explicit cross-timestep starting guesses
-
-**Package `0.1.0.dev38`, maintained plan revision 42, 20 September 2026.
-Cross-step starting data is integrated as an explicit option. R4.4/R4 remain IN_PROGRESS.**
-
-`PreparedThermochemical2D(..., nonlinear_start='previous-stage1')`, or the runner's
-`--nonlinear-start previous-stage1`, keeps the preceding accepted timestep's second
-RK-stage SI velocity and pressure as explicit starting data for the next first-stage
-mechanical solve. The first step of a newly initialised run starts cold. The current
-first stage still seeds the current second stage. `--nonlinear-solver anderson` is
-independent and is used for the measured nonlinear configuration; Picard, zero-rate
-and the earlier intra-step `rk-stage0` options remain available and unchanged.
-
-The seed is the solved **operator-split second stage before the final diffusion half**,
-not simultaneous endpoint flow. Every new solve re-evaluates its own temperature,
-forces, viscosity and residuals. Current force/scales normalise the stored SI guess.
-The existing zero-current-force convention remains exact. Independent endpoint
-sampling stays cold and never replaces the seed. No cross-step Anderson history,
-preconditioner lagging, inexact inner tolerance or automatic solver retry is added.
-
-Only a step that passes both mechanical stages, Courant limits, final transport,
-thermal/material balances and cancellation checks publishes a successor state with
-new starting data. Caller-owned accepted states and seeds are immutable; the prepared
-plan holds no hidden seed. Repeating or interleaving requests does not change their
-result. Failed, cancelled or refused steps leave the last accepted state/seed intact.
-
-New cross-step endpoints use `atlas.thermochemical-state.v2`: the complete two
-physical fields plus an immutable, source-bound u/w/p seed are captured in the same
-state identity and stored atomically in one ArrayStore snapshot. The next guess is
-bound to the generating step's second-stage result, exact epoch/time, problem,
-geometry, scales and mechanical plan. Every step records its input state/guess/result
-and output guess IDs. There is no recursive result chain and no missing-field fill.
-V1 initial/intra-step/cold snapshots remain exactly decodable. Readability does not
-authorise old-source or changed-policy continuation; no automatic migration occurs.
-
-The independent numerical acceptance requirements and full symmetric-stress model
-remain unchanged. The registered contract is `cases/cross_step_start_r4_4.json`.
-Obtained final-source tests and measurements are retained in separate dev38 evidence.
-Short comparisons and recovery tests are not mature published convection, mesh/time/
-nonlinear adequacy or whole-campaign acceptance. R5 is not part of this increment.
-
-<a id="3cr4-4-anderson"></a>
-
-## Current: dev37 explicit safeguarded Anderson integration
-
-**Package `0.1.0.dev37`, maintained plan revision 41, 20 September 2026.
-The isolated Anderson integration is implemented. R4.4/R4 remain IN_PROGRESS.**
-
-`PreparedVariableStokes2D(..., anderson_policy=AndersonPolicy())` and
-`PreparedThermochemical2D(..., anderson_policy=AndersonPolicy())` explicitly enable the
-previously assessed type-II Anderson algorithm. The runner selects it with
-`--nonlinear-solver anderson`. Picard remains the default. The existing independent
-`--nonlinear-start rk-stage0` option is unchanged; it does not carry a guess between
-steps. Endpoint diagnostics remain cold-started at their own accepted temperature,
-using the selected nonlinear algorithm, not an earlier integration-stage answer.
-
-The unchanged Picard map freezes viscosity at the current flow and solves the full
-symmetric-stress equations. Anderson fits recent velocity fixed-point differences
-with SVD-based least squares and applies the resulting affine coefficients to the
-entire velocity/pressure/gauge vector. Default depth five, rank cutoff 1e-10,
-coefficient L1 bound ten and two-map warmup are explicit. Rank-deficient history is
-reduced oldest-first; unsupported proposals are rejected. Every mixed candidate is
-re-evaluated with current viscosity and actual physical residuals. It is retained
-only when the maximum normalised momentum, continuity, gauge and work merit is no
-worse than the current ordinary Picard image. Otherwise that already-computed
-image is used and history cleared. This is a declared solver safeguard, not a
-change to the physical equations or a hidden direct/cold fallback.
-
-**Final acceptance still requires a newly computed ordinary Picard image**, the
-original momentum and log-viscosity-change tests, then the independent returned-SI
-checks with rheology re-evaluated on the rounded fields. No update-size-only gate,
-viscosity floor, precision change, new strain regularisation, inexact inner solve
-or stale-viscosity factor reuse is introduced. Failed linear solves, cancellation
-and memory errors propagate without an accepted endpoint. General BF/damage
-acceleration and nonunit Picard relaxation are explicitly refused, not ignored.
-
-Policy, per-request safeguard counts and algorithm identity are included in saved
-mechanical results and the two stage records. The optional policy enters prepared
-plan, coupled-state and frozen-run identities. Old fields remain decodable, but
-changed-source or changed-algorithm continuation is refused. This is **not** the
-separate proposed cross-step starting-guess extension: mixing history lives only
-inside one nonlinear request and never needs to be restored across timesteps.
-
-The retained scientific requirements remain unchanged: applicable mature published
-convection diagnostics, reference resolution, mesh/time/nonlinear adequacy and
-assembled acceptance. Component, short-path and recovery tests do not close R4.4.
-Final obtained evidence for this source is in the dev37 test/measurement records;
-historical dev36 records below are not fresh verification of dev37.
-
-
-<a id="3cr4-4-sparse-template"></a>
-
-## Current: dev36 exact sparse velocity-template reuse
-
-**Package `0.1.0.dev36`, maintained plan revision 40, 20 September 2026.
-Optimisation item 4 only; R4.4 and R4 remain IN_PROGRESS.**
-
-The variable-Stokes velocity block now retains a geometry-only CSC template for the normal
-and shear stress contributions used by the GMRES route. The template contains fixed output
-indices/indptr and the ordered derivative-pair contributions needed to reproduce the existing
-SciPy expression. Numerical matrix data are still regenerated from the CURRENT cell/vertex
-viscosity for every requested coefficient field. No viscosity-dependent matrix value, ILU
-factor or nonlinear state is cached by this change. The existing factor identity/rebuild rule
-therefore remains authoritative.
-
-The first algebraically equivalent prototype was rejected because round-off-order changes in
-the sparse coefficients amplified through the yielding nonlinear iteration. The retained
-implementation preserves the predecessor component grouping and floating-operation ordering;
-all tested sparse entries and matched evolved physical arrays are exact versus dev35. The
-explicit small sparse-direct reference deliberately retains the predecessor SciPy assembly,
-so it remains independent of the compiled template path.
-
-The template is immutable and viscosity-independent after preparation. A fresh numerical data
-array and CSC matrix are produced per assembly; current viscosity is read on every call. Its
-retained and transient construction memory is admitted only for the GMRES route. The declared
-retained-template bound is 768 bytes per cell plus eight bytes; direct solves retain no
-template. Current physics, precision, ILU fill 17 R4.4 policy, convergence gates, source
-verification and explicit `rk-stage0` starting policy are unchanged.
-
-### Obtained dev36 evidence
-
-Isolated matrix assembly medians improve from dev35 by **14.6x at 16x16**, **4.70x at
-64x64** and **5.34x at 128x128**, while the saved CSC matrices have zero differing entries.
-The one-time prepared-operator cost increases because the fixed contribution map is built and
-retained; this trade-off is recorded separately.
-
-For complete prepared steps, the strongest relevant result is developed case-2 16x16: cold
-mode improves by **3.6%** and opt-in `rk-stage0` by **7.5%**, with non-overlapping repetition
-ranges and byte-identical physical arrays. Initial 64/128-grid measurements have overlapping
-ranges and include medians that are slightly slower; they are retained rather than described
-as gains. The optimisation is therefore retained for repeated nonlinear assembly, not claimed
-as a universal step-speedup.
-
-Final regression/resource/recovery and delivery evidence are recorded in the associated
-source-bound dev36 evidence files. This optimisation does not complete the outstanding mature
-published convection, mesh/time/nonlinear adequacy, reference resolution or combined R4.4
-campaign acceptance.
-
-### Previous dev35 implementation and retained history
-
-<a id="3cr4-4-exact-source-verification"></a>
-
-## Current: dev35 exact source-verification optimisation
-
-**Package `0.1.0.dev35`, maintained plan revision 39, 20 September 2026.
-Optimisation item 3 only; R4.4 and R4 remain IN_PROGRESS.**
-
-The physical/numerical model is unchanged. This increment makes the existing
-`ExecutionContext.verify()` calls cheaper without removing any call site or
-reducing the source, callable/default, constant or native-option checks. The
-capture path and v3 execution identity with marshal format 2 are retained.
-The new comparison path visits every current registered module/class member,
-checks current function/code identities against held strong references, and
-normalises mutable defaults, registered constants and JIT options anew. It does
-not cache a successful verification or use file metadata instead of file bytes.
-
-Source reading and source-membership limits are unchanged. A private temporary
-key table detects added, removed, replaced and colliding qualified bindings;
-ambiguously named inventories captured at preparation use the retained complete
-legacy comparison. The full capture remains an independent verification oracle.
-Ordinary untracked runtime state and native-binary process-lifetime assumptions
-are unchanged; this is provenance/invalidation, not a hostile-runtime sandbox.
-
-Rheology, floating-point precision, operators, matrix factors, thermal transport,
-timesteps, convergence checks, cold defaults and opt-in `rk-stage0` policy are
-unchanged. Binary64 field equality against dev34 is the matched numerical
-requirement for this nonnumerical change. Same-source saved recovery and changed-
-source refusal still apply; new executable bytes cannot rebind dev34 trajectories.
-The comparison/verification specification is
-[`source_verification_r4_4.json`](../cases/source_verification_r4_4.json).
-
-No new matrix-layout reuse, cross-step starting data, timestep policy, parallel
-campaign or R5 work is included. Mature convection, mesh/time/nonlinear adequacy,
-reference resolution and combined campaign acceptance remain R4.4 requirements.
-
-### Obtained dev35 evidence
-
-The canonical [dev35 evidence account](OPTIMISATION_REFERENCE.md#obtained-dev35-evidence)
-retains the matched timing table, raw receipt links, verification/restart checks,
-memory accounting and measured limitations. It describes that frozen source and
-runtime, not today's checkout or completed R4.4 campaign acceptance.
-
-### Previous dev34 implementation and retained history
-
-<a id="3cr4-4-intra-step-guess"></a>
-
-## Current: dev34 explicit intra-step nonlinear starting guesses
-
-**Package `0.1.0.dev34`, maintained plan revision 38, 20 September 2026. R4.4 and R4 remain IN_PROGRESS.**
-
-Selected optimisation item 2 introduces an **opt-in** `nonlinear_start='rk-stage0'`
-for the existing variable-r4.3 thermal/compositional solver. Stage 0 still starts
-from the declared zero-rate control. Its converged SI velocity and pressure form
-an explicit immutable `NonlinearStokesGuess` for stage 1 of the SAME step. Stage 1
-re-evaluates viscosity at its own new temperature, strain rate and forcing, rebuilds
-changed-viscosity factors, and satisfies the unchanged linear, true nonlinear,
-continuity, gauge, work and viscosity-change gates. The previous stage is only an
-initial iterate, never the answer to the new equations. The default remains
-`zero-rate` for both general coupling and the R4.4 runner; enabling the new route
-is an explicit recorded numerical-policy choice, not a changed physical law.
-
-`PreparedVariableStokes2D.solve_rheology(..., initial_guess=guess)` supports explicit
-constant/Tosi snapshot guesses. SI velocities/pressure are renormalised using the
-CURRENT force amplitude and reference scales; a zero current force uses the exact
-zero start. Source/plan, geometry/scales, rheology, epoch and nonfuture time must
-match. BF/damage warm starts are outside this increment and are refused. An accepted
-result records the guess descriptor, its identity, original result identity and
-all three starting fields, so decoding/reproducing the input needs no recursive
-parent-result chain. Historical cold records remain decodable without inventing
-an initial guess. Immutable result identities include the new starting input.
-
-The coupling plan identity includes the opt-in policy. Records explicitly link
-stage 1 to this step's stage-0 result; stage 0 cannot inherit a cross-step guess.
-No solver iterate is stored in persistent mutable warm state. Recovery starts a
-new whole step from the saved physical state and deterministically reconstructs
-both stages. Switching starting policy on continuation is refused. Endpoint
-mechanical snapshots remain freshly cold-solved and cannot seed the next step.
-Prescribed velocities cannot silently ignore an explicitly selected warm policy.
-
-The existing binary64/native operator, rheology, Strang/SSPRK2 integrator,
-timesteps, ILU settings, convergence tolerances and independent residual/physical
-reference checks are unchanged. A failed warm solve raises its error; it does not
-restart silently with zero, clip values, weaken a gate or publish a partial step.
-New source bytes change execution identity: do not rebind dev33 trajectories.
-Matched use of old saved physical arrays is a new explicit experiment.
-
-The verification contract is `../cases/nonlinear_start_r4_4.json`. Independent
-scalar-root and coupled ODE/time-refinement checks complement cold/warm field
-comparisons, current-source regression, ownership/resource checks and actual
-fresh-process restart. Short comparisons cannot prove unique nonlinear roots or
-mature steady/periodic regime agreement for every case. Published convection,
-mesh/time/nonlinear adequacy and unresolved reference questions remain R4.4 work.
-No source-check optimisation, cross-step warm cache, timestep change or campaign
-parallelism is included in this isolated task.
-
-### Obtained dev34 verification and measured limits
-
-The canonical [dev34 verification and measured limits](OPTIMISATION_REFERENCE.md#obtained-dev34-verification-and-measured-limits)
-retain the cold/explicit-start comparison, source-bound receipts, numerical and
-restart checks, memory limits and pilot/correction history. Those bounded results
-support the opt-in explicit-start optimisation, not mature convection or complete
-R4.4 acceptance.
-
-### Previous dev33 implementation and retained history
-
-<a id="3cr4-4-native-mechanics"></a>
-
-## Current: dev33 fused mechanical operator — isolated R4.4 optimisation
-
-**Package `0.1.0.dev33`, maintained plan revision 37, 19 September 2026. R4.4 and R4 remain IN_PROGRESS.**
-
-Only the implementation of the existing GMRES matrix-vector action changes. The
-uniform staggered Cartesian box, eliminated zero normal wall velocities, zero
-shear traction, variable symmetric stress, pressure-gradient/divergence adjoint,
-and mean-pressure gauge are unchanged. A private Numba binary64 kernel combines
-normal/shear stress formation, stress divergence, pressure gradient and continuity.
-The final pressure sum uses the existing NumPy reduction. No physical coefficient,
-constitutive law, discretisation order, timestep, convergence tolerance, ILU fill
-policy, or nonlinear starting guess is changed. R4.4 still uses explicit fill 17;
-the R4.3 general default remains 12.
-
-The NumPy stress action and separately written `_stress_residuals` remain available
-as independent checks. The explicit small sparse-direct route remains independent;
-it is not an automatic fallback. Every nonlinear iterate and returned SI field
-must still satisfy the original updated-law, force, divergence, pressure-gauge,
-work and viscosity-change requirements. Operator equality on finite test inputs
-is numerical verification, not a proof for every supported floating-point input
-or a completed physical convection benchmark.
-
-New GMRES mechanics now binds the existing `numba` execution context (including
-SciPy, Numba and LLVM dependencies) and the new native callable/JIT options.
-Real source, dispatcher, option or callable-membership changes remain detectable.
-Dev32 snapshots remain readable evidence; source-changing continuation is not
-silently rebound. Explicitly reconstructed identical physical fields in matched
-performance probes are new experiments, not continuations of an old trajectory.
-
-The isolated completion boundary is compiled-kernel implementation, independent
-operator/ownership/provenance checks, full current-source regression, and matched
-short-workload performance measurements. Long convection, mesh/time/nonlinear
-adequacy and unresolved published reference conventions remain R4.4 requirements.
-Nonlinear warm starts, source-check efficiency, further sparse assembly work,
-parallel campaign scheduling and timestep policy are not implemented by this task.
-
-### Obtained dev33 verification and matched measurements
-
-The canonical [dev33 verification and matched measurements](OPTIMISATION_REFERENCE.md#obtained-dev33-verification-and-matched-measurements)
-retain the timing table, raw receipt link, exercised bit-identity scope,
-preparation/compilation costs and superseded-pass correction. Prepared-operation
-measurements are not startup-inclusive campaign forecasts or universal speedups.
-
-### Previous dev32 contract and retained history
-
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 36 | 19 September 2026**
-
-## Current: R4.4 benchmark execution optimisation and explicit unclosed acceptance
-
-**Package `0.1.0.dev32`. R4.4 and R4 remain IN_PROGRESS.** The published-case,
-endpoint-diagnostic, finite-trajectory, refinement-audit and campaign machinery
-from dev31 is retained. This increment optimises the measured R4.4 mechanical
-execution bottlenecks without changing the governing equations, physical laws,
-floating-point precision or convergence gates. It does not turn a short or coarse
-simulation into a completed convection benchmark. The current reference contract
-is [`convection_r4_4.json`](../cases/convection_r4_4.json). R5 is not started or
-authorised by this package.
-
-<a id="3cr4-4-convection"></a>
-
-### Accuracy-preserving R4.4 execution optimisation
-
-Profiling of dev31 separated initial/developed states and 16/32/64/128 grids.
-The expensive mature/nonlinear and 128-grid workloads were dominated by variable
-Stokes matrix/factor/GMRES work, not by source verification. The R4.3 general
-`NonlinearStokesPolicy` default therefore remains unchanged at ILU fill factor 12,
-while new R4.4 benchmark runs explicitly register fill factor **17**. On the
-measured 128x128 initial workload this moved both stage solves from roughly
-750 GMRES iterations to 35 while retaining the same `1e-12` linear request and
-all true residual/conservation gates. The larger fill is an execution policy,
-not a viscosity, rheology, timestep or tolerance change.
-
-The symmetric-stress matrix-free stencil now forms eliminated zero-wall
-differences directly rather than allocating padded temporary arrays at every
-operator application. Sparse velocity assembly row-scales the fixed derivative
-operators instead of materialising temporary diagonal sparse matrices; this is
-algebraically the same `B.T @ diag(weight) @ B` operator. Endpoint diagnostic
-flow now reuses the coupled plan's owned mechanics object, rather than retaining
-a second equivalent ILU plan solely for sampling. That ownership change is needed
-for the stronger R4.4 preconditioner to remain within the declared 1 GiB runner
-WorkBudget at 128x128. It does not reuse a stale RK-stage velocity: every sampled
-accepted endpoint is still solved anew.
-
-Matched measurements and exact/equivalent-field checks are evidence for these
-execution changes only. They are not benchmark acceptance, mesh adequacy or a
-whole-world performance forecast. Existing dev31 trajectories are changed-source
-artefacts and must not be rebound automatically to dev32.
-
-### Published cases, conventions and source limits
-
-The primary reference remains **Tosi et al. (2015), A community benchmark for
-viscoplastic thermal convection in a 2-D square box**, DOI
-`10.1002/2015GC005807`, equations 1–21 and Tables 1–2. Case definitions include
-1–4, periodic case 5a and **all 21 separately identified case-5b yield values
-3.0 through 5.0 at spacing 0.1**. These are 26 configurations, not 26 completed
-runs. Case 5b remains applicable, and its exact supplementary data was supplied
-and integrated on 22 September 2026 (details below). The main reference file contains 490 numerical entries for ten codes solving the
-full two-dimensional viscosity problem: 470 individually transcribed Table 2
-cells, plus 20 case-1 viscosity-limit entries obtained by applying the two exact
-boundary values in its footnote to each code.
-MC3D is explicitly excluded from this particular comparison envelope because
-its viscosity is laterally averaged, a different equation system discussed in
-the paper; the exclusion is not based on Atlas output.
-
-Reference policy **v2 (22 September 2026)** explicitly adopts `Phi/Ra` for the
-case-5a extrema, while preserving Table 2's printed `Phi` labels and numbers.
-This is a derived project interpretation, **not an author-confirmed erratum**:
-the periodic heat/work identity rules out a raw-Phi reading in all ten columns,
-and ASPECT 3.0.0 explicitly compares raw dissipation divided by 100 with work.
-The analyser now feeds both raw and already-scaled extrema through its periodic
-report and compares the scaled channel without dividing it a second time.
-No tolerances or maturity gates changed; the derivation and source links are in
-the case contract and [bounded evidence](../evidence/w01-bounded-validation.md).
-
-The case-5b source-data blocker is now resolved. The owner supplied Supporting
-Information S1; the source-bound `cases/tosi_case5b_reference.json` retains all
-626 reported numerical pairs in Tables S14-S23, their printed decimal precision,
-code, yield, mesh, source page, upright/italic steady/periodic classification and
-explicit dashes. Two independent text extractors agreed on every pair and dash;
-the introduction and all ten table pages were also visually checked. No source
-figures or article prose are redistributed. The original separate rights remain.
-
-Comparison selects each same-equation code's finest published column at the exact
-yield **before examining Atlas output**, with no coarser-column fallback for a
-dash or unreported yield. All selected rows are retained and partitioned by their
-printed regime; unlike regimes are never pooled. The diagnosed Atlas regime must
-have published support, and any disagreement remains explicit in the report.
-At yield 3.8, for example, GAIA's finest entry is steady while eight others are
-periodic. This is a **finest-published envelope, not an exact-grid error bound**:
-source methods and meshes differ. Independent Atlas mesh/time/nonlinear adequacy
-is still mandatory, and all three studies' finest representatives must agree on
-the physical regime. Both ten-cycle mean Nu extrema enter periodic comparison
-and adequacy; global extrema alone cannot substitute for those means.
-
-Tables S14-S22 supply nine same-equation contributors, not necessarily a result
-at every mesh/yield. ELEFANT is absent. MC3D's different-law S23 is retained for
-provenance but excluded from comparison. Cases 1-5a still require all ten named
-Table 2 contributors. Neither absent values nor source deletion can silently
-shrink the requirements: genuine source absences remain visible, and changed
-reference bytes fail the pinned identity check. Runner identities bind both the
-reference data and comparator; old trajectories are not automatically repinned.
-Runtime analysis reads the small JSON, not the PDF, and has no PDF-library
-dependency. No tolerance was widened and no mature R4.4 trajectory was completed
-by this source integration. The held campaign remains incomplete.
-
-The unit square is embedded in positive SI-valued controls with dimensionless
-`theta = T_K - 1`, unit diffusivity, and `Ra=100`. This is a numerical embedding,
-not Earth calibration. Initial temperatures are exact cell averages of equation
-11, including both trigonometric integration factors. Bottom/top theta are 1/0;
-sidewalls are insulating and velocity walls are impermeable/free-slip. Zero
-composition and zero additional heating are explicit. The retained R3 warm-upward
-force convention remains unchanged; no new erratum is asserted for the printed
-momentum-sign issue. Changing source cannot rebind an old trajectory automatically.
-
-### Independent, simultaneous endpoint diagnostics
-
-`convection_benchmark.py` re-solves each sampled **accepted endpoint** before
-reporting its flow. The two stored RK-stage velocities are not relabelled as that
-endpoint. State, force, temperature, rheology, box, time, scaling and clipping
-checks bind the new diagnostic to the actual endpoint result.
-
-The diagnostic set includes mean temperature, instantaneous top/bottom Nusselt
-numbers, domain and surface RMS velocity, **signed** maximum horizontal surface
-velocity, boundary-inclusive sampled viscosity extrema, work, raw dissipation,
-`Phi/Ra`, percentage work/dissipation discrepancy, divergence and temperature
-bounds. Surface absolute speed and stress-support-only viscosity extrema remain
-separate additional channels. The half-cell wall flux is instantaneous, not the
-interval-integrated boundary heat in the transport ledger.
-
-MAC dual-volume quadrature is used for RMS velocity. Normal-strain dissipation
-is reconstructed at cell centres and shear dissipation at vertices, independently
-of the solver's acceptance scalar. The work quadrature uses cell temperature and
-centred vertical face velocity. Surface tangential velocity and normal strains
-use the nearest interior row; free-slip wall shear is zero. Wall rheology uses
-exact fixed-wall temperatures and depth, not adjacent cell temperatures mislabeled
-as boundary values. These are declared smooth-field, second-order reconstructions;
-they do not find unobserved subcell extrema or prove shear-band resolution.
-
-### Predeclared gates, not fitted tolerances
-
-The JSON contract was saved before the new long trajectories. Its multi-code
-reference envelope for Table 2 is the minimum/maximum of all ten applicable
-reported values, expanded by 0.5% for rounding/discretisation. The explicit v2
-case-specific contributor and normalisation correction above does not change
-that margin. This is not a statistical confidence
-interval and is only one necessary gate. The published paper does not supply all
-of the following universal stopping tolerances; they are Atlas's explicit
-numerical acceptance choices, not quotations from the paper.
-
-For steady flow: minimum dimensionless time 0.1, a final window of 0.05 with at
-least 101 samples, all ten diagnostic ranges no greater than `1e-4` relative
-(with a separate `1e-8` absolute scale), saved temperature-field change no greater
-than `1e-4`, and top/bottom heat-flux imbalance no greater than `1e-3`. A finite
-sample series cannot prove absence of all between-sample oscillations. A sampled
-endpoint must actually match the saved final state for the mature-regime gate.
-
-For periodic flow: ten complete cycles, at least 100 diagnostic samples per
-period, stable periods and extrema within 1%, and temperature fields compared
-phase-by-phase over the complete cycles with a 1% absolute dimensionless-field
-tolerance. Field archives must themselves resolve each period; densely sampled
-scalar diagnostics cannot hide sparse stored fields. Case 5b reports **both**
-mean cycle minima and maxima, averaged over ten complete cycles, as requested by
-the paper. Phase interpolation is a diagnostic only, never an evolved state.
-
-Matched mature-regime adequacy uses meshes 32/64/128, timestep factors 1/0.5/0.25,
-and nonlinear tolerance factors 1/0.1/0.01. Finest-pair relative diagnostic-change
-gates are respectively 1%, 0.5% and 0.1%, with decreasing, monotone changes or an
-explicit unresolved result. Roundoff-level identical values are not assigned an
-invented convergence order. Small-grid/transient studies are explicitly exploratory
-and cannot satisfy these full-run gates. Tightening includes linear, true momentum
-and viscosity-change tolerances together. Non-varied controls and regime/source
-identity must match; one endpoint comparison cannot establish adequacy.
-
-`analyse_convection_r4_4.py` verifies actual saved trajectories and reports these
-separate gates. `assess_convection_suite_r4_4.py` requires actual three-run studies
-for every applicable configuration, reference agreement, conservation/work and
-mature-regime checks, actual-code visual inspection, plus a full regression and
-bounded resource record bound to the exact current source inventory. Missing or
-ambiguous evidence cannot become PASS. The campaign example deliberately has
-empty study lists and therefore reports INCOMPLETE_R4_4. Passing these numerical
-gates would still not establish Earth/Diadem validity or global tectonic realism.
-
-### Evolved execution and acceptance boundary
-
-The fixed future timestep and finite total-step envelope are recorded before
-execution. The runner selects an explicit maximum of 400 Picard iterations by
-default, rather than R4.3's 100; this increases the iteration allowance **without
-weakening any convergence tolerance or changing the law**. There is no automatic
-timestep shrinkage, tolerance relaxation, viscosity floor, alternate-solver fallback
-or promotion of an unconverged mechanical state. Both transport stages retain
-their independent current-law acceptance and whole-step heat/inventory controls.
-
-Accepted states, exact input/source/runtime identities, two-stage mechanical
-records, complete per-step balance summaries and diagnostic samples are retained.
-Store transactions precede exclusive atomic receipt publication. Fresh-process,
-relocated-source and store-copy continuation reuse the same existing core. A
-changed source, case specification, future schedule or loaded runtime is refused.
-A leftover hard-kill claim is not automatically removed. A failed or cancelled
-stage does not publish a partial physical endpoint; only the last accepted state
-may be checkpointed. Additional operational details and resource limits are in
-the maintained optimisation reference, not a new competing roadmap.
-
-New independent checks cover analytic quadratures, second-order diagnostic
-refinement, boundary rheology, signed surface velocity, periodic extrema/phase
-alias refusal, complete-source recovery, and controlled cancellation inside the
-second RK mechanical stage. The latter uses the supported cancellation protocol,
-not a modified production solver. Its next uncancelled step must match a clean
-run exactly. Tests and an existing bounded resource drill are supporting evidence,
-not replacements for the uncompleted mature benchmark campaign.
-
-The delivered evidence distinguishes original dev30 validation, interrupted or
-source-changing test attempts, final-source regression, actual long trajectories,
-reference/adequacy reports and visual inspection. Only an unchanged final-source
-verification record counts as the new pass. Exact obtained counts and run endpoints
-are recorded in the delivery's verification/report, not inferred from this plan.
-
-**Still open:** mature published-case reproduction at adequate resolution;
-mesh/time/nonlinear adequacy; the case-5b source-data requirement above;
-the complete case-5b regime/reference comparison; and all campaign-level gates
-that depend on those results. No passing unit test, finite run completion, attractive
-plot or historical R4.3 result closes R4.4 by itself.
-
----
-
-## Retained revision-34 history (not the current task status)
-
-# Atlas tectonics simulation plan
-
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 34 | 19 September 2026**
-
-## Current: R4.3 variable-viscosity and yielding mechanics
-
-**Package `0.1.0.dev30`. R4 remains IN_PROGRESS.** R4.3 adds the registered
-variable-stress mechanical component and explicit two-stage thermal/compositional
-coupling in [`variable_stokes_r4_3.json`](../cases/variable_stokes_r4_3.json).
-R4.1 and R4.2's existing constant-property routes remain supported, not silently
-redefined. **R4.4 is next: full applicable published convection diagnostics,
-nonlinear/time/mesh adequacy and combined workflow/recovery acceptance.** Local
-Tosi response tests and a short evolved example do not complete that benchmark.
-No R5, full mantle/plate model or Diadem explanation is delivered here.
-
-<a id="3cr4-3-variable-mechanics"></a>
-
-### Full stress divergence, not viscosity times the old Laplacian
-
-The existing uniform staggered rectangle, zero normal wall velocity, zero wall
-shear traction and zero-domain-mean dynamic-pressure gauge are retained. Normal
-strains/stresses are cell-centred; engineering shear `gamma=du/dz+dw/dx` and
-`tau_xz=eta_vertex*gamma` are at interior vertices. Normal stresses are
-`tau_xx=2*eta_cell*du/dx`, `tau_zz=2*eta_cell*dw/dz`. The discretised equation is
-`-grad(p)+div(2*eta*e)+f=0`, `div(v)=0`. No reference density/gravity is counted
-twice and dynamic pressure is not sent to an absolute-pressure material law.
-
-The positive velocity block is
-`A=2*Bx.T*eta_cell*Bx+2*Bz.T*eta_cell*Bz+S.T*eta_vertex*S`.
-The independent padded stress-divergence stencil and this native sparse derivative
-assembly are separately tested. The pressure gradient is the negative divergence
-adjoint; the existing gauge augmentation preserves every continuity equation.
-For constant viscosity the divergence-free solution agrees with R4.1, while
-variable viscosity includes the coefficient-gradient and cross-derivative terms
-that an `eta*laplacian(v)` substitution would lose.
-
-`PreparedVariableStokes2D.solve` accepts explicit positive SI viscosity at both
-stress supports; it does not invent an average for a discontinuous supplied field.
-`solve_rheology` evaluates the unchanged R3 constant/Tosi profiles. Cell temperature
-is supplied; interior-vertex temperature is the arithmetic mean of four adjacent
-cells. At each stress support, missing strain tensor components are reconstructed
-with symmetric local arithmetic averages, then `eII=sqrt(e:e/2)` is evaluated.
-This is a named second-order collocation rule for resolved smooth fields, not a
-proof of interface, subcell shear-band or mesh-independent localisation accuracy.
-Depth is measured down from the top using the separate R3 depth normalisation.
-
-### True nonlinear convergence and returned-field acceptance
-
-Picard iterations solve with lagged viscosity, evaluate viscosity again from the
-new velocity and check the **true updated-law** force residual and maximum
-log-viscosity change. Default full relaxation is explicit; any alternative fixed
-relaxation enters the policy/identity. Tosi's factor-two harmonic combination and
-Frobenius plastic denominator remain unchanged, including their zero-rate limits.
-No minimum strain rate, hidden yield cap or new viscosity floor is introduced.
-Optional existing R3 viscosity bounds remain explicit and return clipping masks.
-
-Default linear GMRES tolerance is `1e-12`; the true normalised momentum gate is
-`1e-9`, continuity `1e-10`, pressure-mean gauge `1e-12`, work balance `1e-9`, and
-log-viscosity change `1e-8`. These are registered R4.3 numerical policies, not
-relaxations of R4.1/R4.2 controls. Maximum iteration counts and a finite contrast
-admission envelope do not guarantee convergence for every allowed input. Failure
-raises an error; it neither publishes a lagged solution nor changes the law,
-mesh, tolerances or solver route. The final test uses the actual rounded returned
-SI velocity, pressure and viscosity with the rheology re-evaluated at that velocity.
-Independent stress, divergence, gauge and mechanical-work checks remain distinct.
-
-The selected BF model is available for a separate mechanical snapshot **only with
-explicit frozen damage**. This neither clips the raw history nor advances/heals
-it. The two-field evolving state has no damage field, so BF coupling is refused,
-not filled by implicit zeroes. General damage advection, 2D/3D physical-length
-regularisation and coupled localisation still need their own selected extension.
-
-### Existing heat/composition evolution, explicit new mechanical mode
-
-`ThermochemicalProblem(..., mechanical_mode='variable-r4.3')` explicitly enables
-constant/Tosi mechanical feedback through `PreparedThermochemical2D`, which accepts
-`nonlinear_policy=NonlinearStokesPolicy(...)`. Both RK transport stages must
-converge their own current temperature-dependent/yielding mechanics before the
-shared-face transfers are accepted. A nonlinear failure or failed second-stage
-Courant check publishes no endpoint. The existing Strang split, discrete thermal
-exponential, MC/SSPRK2 transport, clock, source/boundary heat and binary-inventory
-checks are unchanged. Composition affects buoyancy, not an invented strength law.
-Thermal conductivity/capacity are still constant and the domain is still closed.
-
-The default `constant-r4.2` contract deliberately retains its old variable-law
-refusal and canonical descriptor. New records retain both stage solution IDs,
-true diagnostics, policy and iteration counts, while the accepted endpoint has
-its own time and identity. Stored stage velocities are not relabelled as the final
-simultaneous flow; visualisation re-solves the endpoint when it displays that flow.
-Snapshots decode without a chain of parent deltas, but are not complete archived
-trajectories or future forcing schedules. Restart requires the same recorded
-source and policy; old source states do not silently rebind.
-
-### Independent evidence and continuing acceptance
-
-The new checks reuse **T08 mechanics**, **T09 strength** (not free-surface or
-localisation completion), applicable T05/T14/T15 and the existing PT families.
-An independent rectangular streamfunction/pressure with analytically differentiated
-exponential viscosity verifies second-order space refinement. A 2x2 continuity
-reduction gives an independently written scalar Tosi root; an eight-variable ODE
-combines that root with independent transport/heat matrices to check nonlinear
-coupled time refinement. Sharp coefficient, hydrostatic, axis-transposition,
-pressure-checkerboard, work, constant-limit and refusal tests complement them.
-
-Primary corroboration uses PETSc's DMStag variable-coefficient example and official
-SciPy solver documentation; no external implementation is copied. The unchanged
-R3 source register remains authoritative for rheological formulas. The benchmark
-and visual controls are synthetic, not tuned to PB2002 holdouts or Diadem output.
-Bounded direct/iterative and repeated-preparation measurements report actual costs,
-not a universal performance claim. Details belong in the
-[maintained execution reference](OPTIMISATION_REFERENCE.md#3cr4-3-execution).
-
-Post-stage actual-code visual QA is required. This increment renders solved flow,
-viscosity, continuous reduction relative to the zero-rate law, pressure, nonlinear
-residuals, independent refinement and short coupled evolution. It retains raw
-arrays and source identities. A continuous viscosity reduction is not falsely
-labelled as a discrete yielded-region map. Rendering and assistant inspection
-remain separate from Michael's visual review and physical acceptance.
-
-| R4 increment | Current status |
-|---|---|
-| R4.1 constant-viscosity mechanics | Retained and reviewed within its registered scope. |
-| R4.2 heat/binary composition | Retained and reviewed within its constant-property rectangular scope. |
-| R4.3 variable stress/yielding | Delivered as registered component and explicit two-stage coupling. |
-| **R4.4 full convection and combined acceptance** | **Next; outstanding.** Published diagnostics, applicable regimes, mesh/time/nonlinear sensitivity and complete supported workflow/recovery need verification. |
-
-A new source-identity regression exposed reference-count-sensitive code hashing
-when a live profile retained a constant tuple. Execution identity now uses
-explicit marshal format 2 within the pinned runtime rather than object-sharing
-format 4. Complete source, code, defaults/constants and native-library identities
-remain checked; no historical record is repinned or given new acceptance.
-See the retained initial failed test and the subsequent fresh-process tests.
-
-## Historical revision 33 and earlier deliveries
-
-
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 33 | 19 September 2026**
-
-## Current: R4.2 corrective accuracy/optimisation review
-
-**Package `0.1.0.dev29`, revision 33.** The registered constant-property
-rectangular heat/binary-composition equations remain unchanged. R4.2 is delivered
-within that scope; **R4 stays IN_PROGRESS, R4.3 is next and R4.4 is outstanding**.
-This review fixes in-stage arithmetic and publication defects, not new physics.
-
-<a id="3cr4-2-review"></a>
-
-### Conditioned thermal evolution, not an arbitrary-temperature boundary
-
-The insulated diffusion operator no longer uses the material's buoyancy reference
-as its numerical temperature offset. With zero thermal expansivity, changing that
-reference cannot change this physical experiment, but the old subtraction/FFT/
-addition could lose resolved field differences or fail heat accounting. Each
-insulated call now uses the midpoint of the supplied field range as an offset.
-The physical reference remains unchanged in the density law. These are deliberate
-conditioning probes, not claims of realistic 10^16 K mantle reference values.
-
-For short spectral intervals (maximum rate*dt <= 0.5), compute the field change
-with `expm1(-rate*dt)` and add it to the original field. The fixed-wall time-mean
-increment uses `phi1-1=-x*phi2` rather than subtracting near-ones. For larger
-attenuation retain the absolute decayed-field form to avoid cancellation of
-nearly all the original temperature. Both forms evaluate the same discrete
-exponential/source equation with the original spatial/time order. No rates,
-source, boundary values, physical durations or accepted tolerances are changed.
-The independent dense exponential and heated steady-parabola refinement checks
-cover both forms. Fixed-wall integrated heat remains independently evaluated.
-
-The weighted modal-source helper now combines exponents whenever the intermediate
-weight*dt is NONZERO subnormal as well as zero/overflowed. Rounding such a factor
-before multiplication by a large mode could otherwise change the final normal
-response by 33.3% in the registered arithmetic counterexample. The finite
-representable response agrees with direct Decimal products after correction.
-
-### Published time must describe the integrated interval
-
-A merely increasing binary64 endpoint is insufficient: at epoch 10^16 s,
-requesting 3 s produces a representable clock increase of 4 s. Integration must
-not use 3 s while recording that it covered 4. New steps require the represented
-endpoint difference AND twice the represented thermal half-step to agree with
-the requested duration within `min(inventory_rtol,2e-11)` relative precision.
-Inadequate intervals fail BEFORE any evolution, not by altering dt silently.
-This is a numerical precision guard, not a finest temporal resolution or an
-inferred geological timestep. An explicit suitable epoch/interval is the caller's
-choice. Ordinary 4096-step non-bit-exact clock sequences remain supported.
-
-`publication_contract=atlas.thermochemical-conditioned-diffusion-and-clock.v1`
-labels new records. Earlier snapshots still decode with exactly their original
-identity, metadata and arrays, without acquiring the new guarantee. Changed
-source/execution identity still prevents an unrequested restart rebind.
-The method's finite-volume/Strang equations retain their existing identifier;
-source/version and the publication contract identify these arithmetic changes.
-
-### Independent review and ongoing work
-
-New tests cover reference invariance, short fixed-wall intervals, both conditioning
-forms, source products, epoch/half-interval precision, recovery, exact historical
-restoration, source mutation, axis transpose, complement covariance, insulated
-variance decay and source/heated-conduction controls. The last physical checks
-verify the declared PDE components; they are not a full convection benchmark.
-The earlier tests/cases and all acquired PB2002 data stay byte-identical.
-
-Normal execution removes the unused inverse-transform/time-average calculation
-under insulation. This changes no boundary heat (exactly zero there). Fixed walls
-retain their time-average evaluation. Matrix-free mechanics, native fused
-transport, existing WorkBudget/leases and lossless storage remain the normal path.
-See [the execution review](OPTIMISATION_REFERENCE.md#3cr4-2-review-execution),
-[registered review](../cases/thermochemical_review_r4_2.json) and the new
-`evidence/3cr4-2-review-tests.json` / `evidence/3cr4-2-review-measurements.json`.
-Actual-code visual inspection, source-bound tests, uncertainty and a response
-changelog remain required. No R4.3/R4.4, Windows/macOS or planetary acceptance
-is advanced by this review.
-
-## Historical revision 32: R4.2 first delivery
-
-### Historical R4.2 heat and composition evolution — R4 remains IN PROGRESS
-
-**Package `0.1.0.dev28`.** R4.2 now evolves the registered constant-property,
-binary-composition Boussinesq problem on the reviewed R4.1 uniform MAC rectangle.
-**R4 as a whole is NOT complete. R4.3 is next; R4.4 remains outstanding.**
-The [progress table](#3cr4-progress) is authoritative over dated delivery prose.
-No old reference source, tolerance, test or historical evidence is replaced.
-
-<a id="3cr4-2-thermochemical"></a>
-
-### Equations, physical ownership and supported boundaries
-
-The [registered case](../cases/thermochemical_r4_2.json) specifies
-
-    rho0 cp [dT/dt + div(u T)] = k lap(T) + H,
-    dC/dt + div(u C) = 0,
-    rho' = -rho0 alpha (T-Tref) + delta_rho C,  f = rho' g.
-
-T is a cell-average absolute temperature; C is the volume fraction of ONE named
-constituent and 1-C is its complement. C is not a plate, material-cohort identity
-or formation age. The constant rho0 cp is the selected Boussinesq reference heat
-capacity, not an in-situ variable-density mass or latent enthalpy. All quantities
-are SI in an explicit x-right/z-up frame and named epoch. Extensive budgets are
-for one metre out-of-plane thickness. R2 inward depth is not renamed to z-up, and
-no full R2-to-W02 world/history conversion is implied.
-
-Constant positive k, rho0, cp and viscosity are required. The retained R3 thermal/
-compositional density anomaly feeds the reviewed mechanical solver once. Mechanical
-walls remain closed/free-slip. Thermal sides are insulating; top and bottom are
-either both fixed spatially uniform face temperatures or both insulating. A fixed
-face is half a cell width from its boundary-cell centre. No hidden periodicity,
-open material reservoir, compressibility, phase reaction or moving mesh is added.
-
-H is material internal heating plus an explicit nonnegative scalar/cell source,
-held constant for the supplied interval. It is integrated once over that interval.
-Dissipation, adiabatic heating and latent heat are not inferred or double-counted.
-Missing temperature, invalid composition, excessive density anomaly and unsupported
-rheology fail explicitly rather than acquiring arbitrary laws or zero defaults.
-
-### Numerical method and demonstrated meaning
-
-The normal step is Strang **D(dt/2)–A(dt)–D(dt/2)**. D is the exact time evolution
-of the **second-order discrete finite-volume** diffusion/source operator, not exact
-continuum diffusion. A reusable DCT-II in x and DST-II (fixed walls) or DCT-II
-(insulated) in z diagonalise this specific constant-coefficient rectangle. The
-nonnegative discrete eigenvalues are `4 kappa sin(pi*j/(2*n))^2 / h^2`, with j from
-0 to n-1 for insulation and 1 to n for fixed face values. A linear stationary
-thermal lift handles the fixed walls. Stable exponential/phi coefficients also
-integrate the source and time-mean boundary heat. This avoids an explicit parabolic
-CFL restriction and large-step Crank–Nicolson oscillations without changing the
-spatial stencil. Splitting error still needs time refinement: a stable large
-thermal step is NOT automatically an accurate coupled step.
-
-A is unsplit multidimensional MC-limited finite-volume transport with SSPRK2.
-Each shared face has one oriented transfer, used with opposite signs by neighbours.
-The two RK stages each solve the constant-viscosity buoyancy response from their
-own T/C fields; start-of-full-step velocity is not frozen by default. An explicitly
-supplied frozen MAC velocity is a separate kinematic reference experiment. RK
-velocities are labelled operator-split intermediates, not simultaneous final-state
-mechanics. The demonstration solves endpoint mechanics again before plotting it.
-
-The sufficient multidimensional outgoing-Courant bound is 1/2 (default 0.45),
-checked at BOTH Euler stages. Summing outgoing directions matters; taking only a
-maximum over axes would be unsafe. Divergence is checked on the actual velocities.
-A failure publishes no partial state and requires an explicitly smaller interval;
-there is no automatic substep, reduced-order route or material clipping. MC
-limiting is formally second order in smooth monotone regions and loses order near
-extrema/contacts. The compact-rotation test records observed errors/peak diffusion;
-it is not misreported as exact shape preservation or uniform second order.
-
-Raw C excursions within 64 binary64 epsilon are retained and reported, never
-renormalised or clipped; larger excursions reject the step. The primary constituent
-inventory residual is relative to its own amount, so a trace constituent is not
-hidden behind total domain volume. Because only C is independently stored, the
-relative precision of a vanishing 1-C is limited by subtraction near unity; both
-inventories and the raw bound excursions remain visible. No general multi-material
-cohort-advection completion is claimed by this binary pilot.
-
-Every accepted step checks returned endpoint heat against signed integrated outward
-boundary heat and source input. Composition and cell-local advective ledgers are
-checked independently of the update loop. Zero normal material flux is exact.
-Closed-to-material does not mean thermally insulated. Source/field/gauge/validity
-checks from the R4.1/R3 components are retained. Subnormal source products are
-combined before rounding where possible, and representable attenuated modal tails
-are not lost merely because an exponential coefficient underflows first.
-
-### Verification, restart and remaining acceptance
-
-Tests use an independent face-balance dense exponential, a separate boundary-heat
-integral, analytical diffusion modes, independent transport matrices, rotating
-Gauss-averaged compact data, and an independently derived 2x2 circulation mode
-coupled to high-accuracy DOP853 integration. The latter is an independent temporal
-reference, not a second Earth model. Timestep and spatial refinements remain
-separate. Test failures are not fixed by changing retained reference answers.
-
-Endpoint snapshots use the existing lossless ArrayStore and contain both fields,
-complete problem/epoch/source definitions, latest-step balances and parent IDs.
-A prior parent snapshot is not needed to decode or continue that state. Future
-forcing is still explicit caller input; this is not a stored future schedule or
-complete past flux/trajectory catalogue. Step objects expose both stage velocities
-and shared-face transfers for callers needing those records. Reopen/fresh-process
-continuation with the same source, policy and next forcing must reproduce exactly;
-changed source/policy is refused rather than silently rebinding a checkpoint.
-
-The real-output visual tool draws authored initial and genuinely evolved final
-T/C fields, their difference, separately solved endpoint velocity and conservation
-residuals. It retains numerical arrays, case/source identities and output hashes.
-Assistant visual inspection and user review are separate from numerical or physical
-acceptance. The 48-by-48, 40-step example is illustrative, not a calibrated Earth,
-Diadem or full Tosi convection case. No new plate geometry needs a globe render here.
-
-**Next is R4.3:** variable-viscosity stress divergence, yielding and nonlinear
-mechanical coupling using retained R3 laws. **R4.4 remains:** applicable complete
-published convection diagnostics plus combined time/space/nonlinear, evolving-
-workflow, resource/recovery and platform acceptance. Neither R4 nor W03/W07 is
-closed by this component. No R5, global mantle spin-up or localisation claim follows.
-The [execution reference](OPTIMISATION_REFERENCE.md#3cr4-2-execution) governs normal
-optimisation, source handling and evidence. Changelogs and corrective reviews remain
-mandatory; this stage does not postpone optimisation to a separate general pass.
-
-## Historical revision 31: reviewed first mechanical increment
-
-**Package `0.1.0.dev27`. R4.1 is implemented for the registered constant-viscosity
-2D mechanical scope. R4 as a whole is NOT complete.** Starting R4 is not a
-one-delivery closure: its remaining increments must continue explicitly. The
-previous R3 numerical hardening, scientific laws, R2 inputs and R1 scoped source
-uses remain intact. The current `remake` baseline was `c0a097be…`.
-
-<a id="3cr4-1-publication-review"></a>
-
-### Revision 31 — review of physical equations and published-output accuracy
-
-The R4.1 review retains its constant-viscosity incompressible/free-slip model;
-it does not establish realistic plate formation or finish R4. New independent
-quartic-streamfunction, axis-transposition, hydrostatic and stress/work tests
-supplement the original trigonometric/reference checks.
-
-Extreme arithmetic probes exposed a gap: the internal normalised solution
-could pass while the returned SI fields failed the same equations. A 2x2
-circulation with force `20 * smallest_positive_binary64` rounded to a nonzero
-velocity with a 20% force residual but reported zero. An arbitrary diffusivity
-reference of 1e22 with force 1e-200 and physical viscosity 1e100 also changed a
-normal, representable velocity by about 1.19%; diffusivity is not a parameter
-of this steady mechanical problem. Neither probe is an Earth-like mantle case. A related density-to-face-force
-probe found that rounding an unequal subnormal endpoint mean before multiplying
-gravity could introduce a 33% error in a normal final force. Shared-exponent
-interpolation now preserves the original half weights without that intermediate
-rounding; genuinely unrepresentable final forces still fail explicitly.
-
-The correction normalises original SI forces directly. It evaluates conversions
-with `U0 = F L^2/eta` and `P0 = F L` using binary mantissas/exponents, not rounded
-intermediate subnormal scale products. Every independent residual/work gate now
-checks the returned SI velocity and pressure, re-expressed against the original
-force. Accurate nonzero subnormals remain supported; inadequate final rounding
-is refused. No original residual or physical tolerance is raised. New records
-identify this publication contract; old snapshots retain their historical checks,
-source identities and bytes without being relabelled as newly validated.
-
-The exact numerical correction is registered in
-[`stokes_r4_1_review.json`](../cases/stokes_r4_1_review.json). Review evidence and
-actual-output visuals have new names; original case/tests/evidence are preserved.
-The final [1,854-test regression](../evidence/3cr4-1-review-tests.json) includes
-38 new tests, with no failures, errors or skips. The
-[bounded numerical/performance record](../evidence/3cr4-1-review-measurements.json)
-preserves both failures in the old code and results after correction. This is
-implementation verification, not independent geological validation.
-**R4.2 heat and conservative composition evolution remains next and unstarted.**
-
-<a id="3cr4-progress"></a>
-
-| Increment | Current scope/status | Required next acceptance |
-|---|---|---|
-| **R4.1 — constant-viscosity mechanics** | Delivered numerical component in `stokes_r4_1.json`: steady uniform 2D rectangle, closed free-slip walls, zero-mean dynamic pressure, prescribed body force. | Manufactured velocity/pressure, nullspace, hydrostatic sign, divergence, work balance, independent direct/iterative comparison, reuse/storage/resource checks. Not a convection result. |
-| **R4.2 — thermal/composition evolution** | Delivered constant-property heat/binary composition in revision 32; see `thermochemical_r4_2.json`. | Heat/material accounts, boundary/source terms, space/time convergence, no double-counted heating or forcing. |
-| **R4.3 — nonlinear mechanics** | **Next; not started.** Connect retained R3 temperature/depth-dependent viscosity and yielding with an actual nonlinear solve. | Full stress divergence, convergence of nonlinear iterations and coupled accuracy; do not reuse the constant-viscosity vector Laplacian for variable eta. |
-| **R4.4 — reference and combined acceptance** | Not started. Applicable Tosi convection cases and the complete selected R4 workflow. | Published diagnostics, assembled sign/tensor/gauge conventions, evolving-state restart, combined resource/platform and accuracy checks. |
-
-These subdivisions track the existing R4 scope; they do not replace W03/W07,
-start R5, or silently add all mantle physics. No full R4 claim follows from the
-R4.1 test count. Any later extension of boundary conditions, geometry or material
-laws must state which parts of this verified component still apply. Spherical
-tectonics, localisation and the Diadem's landforms remain separate later gates.
-
-<a id="3cr4-1-mechanical-core"></a>
-
-### R4.1 equations, units and declared boundaries
-
-The solver implements `-grad(p)+eta*laplacian(v)+f=0`, `div(v)=0`, with **constant**
-positive viscosity. For this constant-coefficient incompressible case the vector
-Laplacian equals `div(2 eta e)`; for variable eta it does not. `StokesBox2D` uses
-x right and **z upward from the bottom** in metres, a uniform rectangular grid,
-and a named frame. It is not R2's inward depth or a transformed global patch.
-All four walls have zero normal velocity and zero normal derivative of tangential
-velocity (impermeable/free slip). No no-slip wall, traction, free surface, inflow
-or prescribed plate motion is silently approximated by this boundary selection.
-
-`PreparedStokes2D` requires the existing `DiffusiveScales` and an unclipped
-constant `RheologyProfile`. Dynamic pressure has a zero-domain-mean gauge; it is
-not absolute/lithostatic pressure and is not fed into a pressure-sensitive law.
-The force snapshot is explicitly supplied on the interior velocity faces in
-N/m^3. It is used once. The optional `face_force_from_density` helper declares
-arithmetic interpolation of a cell anomaly to those faces and constant Cartesian
-gravity; it does not insert reference density, infer gravity, remap arbitrary
-meshes or add a second slab traction. R3's Boussinesq response can provide that
-anomaly. Snapshot time/epoch/source describe the input; no time advance occurs.
-
-### Spatial discretisation and pressure compatibility
-
-Pressure occupies cell centres, u vertical faces and w horizontal faces. The
-zero normal boundary DOFs are eliminated. Face-centred finite-volume balances
-and centred differences produce `A=-laplacian`, `G=-D.T`. A constant pressure
-has zero gradient. It is fixed by a symmetric Lagrange-multiplier augmentation
-`[A,G,0;G.T,0,c;0,c.T,0]`, where `c=ones/sqrt(Np)`. **Every continuity equation is
-retained**; a pinned pressure is not used to discard a cell's divergence check.
-The multiplier is checked for compatibility and cannot conceal a mass source.
-
-The default uses native array stencils with MINRES, without storing the saddle
-matrix. In this special uniform/free-slip constant-viscosity geometry,
-orthonormal sine/cosine transforms invert the velocity blocks; the mean-zero
-pressure Schur complement is identity after viscosity normalisation. The
-preconditioner retains O(N) spectral data and uses O(N log N) native transforms,
-not a dense inverse or independently solved physical tiles. An explicitly
-selected small sparse LU route assembles Kronecker Laplacians and signed face
-incidence independently as a numerical cross-check. Its dense-fill allowance
-is admitted before factorisation and no failed iterative solve falls back to it.
-See the [execution reference](OPTIMISATION_REFERENCE.md#3cr4-1-execution).
-
-### Verification, scope and visual QA
-
-The registered case is [`stokes_r4_1.json`](../cases/stokes_r4_1.json). Analytical
-forcing is differentiated from a continuous trigonometric streamfunction and
-independent pressure field, not computed by the discrete operator being tested.
-Square and unequal-spacing rectangular refinement, zero force, hydrostatics,
-checkerboard-pressure exclusion, sign reversal, superposition, SI scale
-invariance and warm-upward buoyancy are covered. Separate ghost/central-stencil
-momentum residuals, all-cell uncorrected divergence, pressure gauge and discrete
-work balance are checked even when MINRES returns success. The force-normalised
-residual tolerances are new R4.1 choices; no historical tolerance is changed.
-
-`tools/visual_stokes_r4_1.py` renders actual solved velocity/pressure/divergence,
-the explicitly **authored** temperature used to construct buoyancy, and continuous
-solution refinement. Face-to-centre averaging is display interpolation only;
-raw staggered arrays and provenance are retained. No temperature evolution or
-terrain is fabricated. Numerical acceptance, assistant visual inspection and
-Michael's visual review remain distinct.
-
-The existing lossless ArrayStore stores complete steady problem/result records
-with source/runtime, frame, epoch, time, units, force provenance, scales and law.
-Restore does not run a solver or rebind an old record. **This is not yet an
-evolving thermal/material checkpoint**; that responsibility remains R4.2/R4.4.
-The recorded result explicitly carries `R4_complete=false`.
-
-## Historical revision 29 — unchanged R3 scope and evidence
-
-**Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 29 | 19 September 2026**
-
-<a id="3cr3-stress-hardening"></a>
-
-## Current R3 numerical hardening and review workflow
-
-**19 September 2026, version `0.1.0.dev25`, revision 29.** A review found that
-`stress_and_dissipation()` could return zero heat after squaring a tiny strain
-rate even when the final heat rate was representable. For viscosity 1e100 and
-strain diag(1e-170, -1e-170), the previous zero is replaced by approximately
-4e-240 in the caller's consistent units. This is an extreme arithmetic test,
-not an observed failure of a mantle-scale simulation.
-
-The equations remain `tau = 2*eta*e`, `Q = tau:e = 2*eta*sum(e_ij^2)`.
-Mantissa/exponent evaluation avoids premature overflow/underflow in `2*eta`,
-`e^2` and the strain invariant. Each component of tau is evaluated independently;
-Q is summed at a power-of-two-normalised scale before final range conversion.
-Finite subnormal results are retained. A non-zero physical result that rounds to
-zero, or a result outside finite binary64 range, is refused explicitly. Zero
-strain is still a valid zero response. Symmetry and tracelessness use the existing
-64-epsilon relative criterion in normalised coordinates; no physical tolerance,
-source data, constitutive parameter or original test is changed.
-
-New tests independently contract exact input floats using Decimal, including
-ordinary scales, underflow/overflow counterexamples, subnormal outputs, 3D
-invariants, broadcasting, detached arrays and memory refusal/release. Numerical
-identities depend on the changed source, so historical records are not repinned.
-**R4 remains unstarted.** The current R3 laws and registered physical scope below
-are unchanged, and no new mantle model or PDE solver is added.
-
-**Owner review convention:** a request to check whether the current stage is
-accurate/optimised authorises fixing verified defects in that stage, not only
-listing them. Diagnose, repair, test and report the change without another
-approval loop for a scoped correction. It does not authorise a new stage,
-scientific-model substitution, tolerance relaxation, publishing, dependency
-installation or destruction of historical evidence. Include a copy-ready Git
-changelog in each delivery response, and perform meaningful actual-code visual QA.
-
-<a id="3cr3-physical-closure"></a>
-
-## Current: R3 local physical closure
-
-**Package `0.1.0.dev25`.** The selected local constitutive laws, material-point
-memory update and an explicit fixed-length regularisation primitive are delivered
-in [`physical_closure_r3.json`](../cases/physical_closure_r3.json). These are actual
-array kernels and independent numerical tests, not a Stokes/convection solution.
-**R4 is next and has not started.** R1's registered source-use approval and strict
-source discrepancies remain unchanged. R2's accepted static-input/sampling scope
-is retained; W01, W03 and W07 are not declared complete. Historical statuses below
-must be read in their dated context.
-
-### Selected models, not a universal mantle law
-
-The order is the constant-viscosity analytical control, the Tosi et al. (2015)
-local-law benchmark family, then the Becker & Fuchs (2023) strain-memory family
-with a damage-free control. The full published methods and relevant parameter
-tables were read before implementation. The exact locations, access limits and
-primary-repository corroboration are recorded in the case file. No publication
-PDF, ASPECT/CitcomS source, new PB2002 data or new dependency is bundled.
-
-For the Tosi reference, `e = (grad(u) + grad(u).T)/2`,
-`eII = sqrt(e:e/2)` and `q = sqrt(2)*eII`. The implemented local formulae are
-
-```
-L = exp(-log(contrast_T)*T + log(contrast_z)*z)
-P = eta_star + sigma_Y/q
-eta = 2/(1/L + 1/P)
-```
-
-The Frobenius norm in `P` and factor **two** in the harmonic mean follow the
-source; neither is silently replaced by a conventional yield cap. Table-1 cases
-1 and 3 use `L` directly. Cases 2, 4 and 5a use the harmonic law, with the named
-source values. At zero strain rate and positive sigma_Y its viscosity tends to
-`2*L`; zero-stress variants have their separate analytical limit. Case 5b's
-periodic-regime survey and all Nusselt/velocity convection comparisons are **not**
-run or accepted here. Sources: [Tosi et al., equations 6–10 and Table 1](https://doi.org/10.1002/2015GC005807).
-
-For the selected BF2023 **model-19 local-law subset**, define
-
-```
-eta_T = eta0*exp(E/(T+1) - E/2)
-f = 1 - Gamma*min(d,dcrit)/dcrit
-sigma_y = (a+b*z)*f
-eta = min(eta_T, sigma_y/(2*eII))
-h(T) = B*exp(-Ed/(T+1) + Ed/2)
-D_t d = eII - h*d
-```
-
-The registered values are E=40, eta0=1, a=1e6, b=1.51e7, dcrit=10, Gamma=0.9,
-Ed=46.1 and B=2.44e9. Gamma=0 supplies the damage-free control. This reproduces
-local equations 6–8 and their table values, **not** the paper's full spherical
-experiment. Asthenospheric/melt multipliers, continental rafts, empirical 0.1
-time rescaling and unspecified absolute viscosity-clipping bounds are absent,
-not hidden defaults. This family is not relabelled microphysical grain damage.
-Source: [Becker & Fuchs, section 2.3, equations 6–8 and Table 1](https://doi.org/10.1029/2023GC011179).
-
-Damage is an unbounded strain-like history within an explicit computational
-limit. Only its **strength effect** saturates; stored damage above dcrit is not
-clipped away. Initial damage must be supplied explicitly, including a deliberate
-zero. For constant strain rate and temperature over one supplied interval,
-`d_new = d*exp(-h*dt) + eII/h*(1-exp(-h*dt))` is evaluated with stable small-h
-limits. This is not a spatial advection method or exact integration for varying
-thermal/mechanical fields. Existing W02 histories are not silently converted.
-
-### Units, force ownership and R4 boundary choices
-
-Local rheology inputs use T,z in [0,1], with finite parameter/rate/history
-limits and binary64 arithmetic. SI conversion requires a named `DiffusiveScales`:
-`t0=L^2/kappa`, `u0=kappa/L`, `stress0=eta_ref/t0` and `rate0=1/t0`.
-The **diffusive length and depth normalisation are separate required quantities**
-(radius versus layer thickness must not be conflated). The 20°C material library
-is unchanged and is never extrapolated into these phenomenological laws.
-Optional viscosity bounds are explicit numerical choices; every clipped point
-is reported, and no floor is treated as measured strength or localisation length.
-
-The local thermochemical reference is the selected constant-property Boussinesq
-approximation, with `rho'=-rho0*alpha*(T-Tref)+delta_rho*C`, `f=rho'*g`,
-`q=-k*grad(T)` and reference heat capacity `rho0*cp`. Each SI material profile
-names its source and validity interval. C is a supplied volume fraction in
-[0,1], not a renamed plate or provenance ID. The R4 Tosi control has C=0, no
-compositional strength multiplier and H=0. A future continental-strength model
-requires its own explicit profile; the BF continental-raft extension is not
-silently selected. The viscous stress/dissipation helper takes a traceless
-symmetric strain tensor; it refuses compressible input rather than inventing a
-bulk law or hiding divergence by automatic trace removal.
-
-The pressure variable for the initial R4 box is dynamic pressure with an
-Atlas-selected zero-domain-mean gauge. It is **not** fed into the depth-only
-BF yield law, a high-pressure EOS or a tensile/friction law. Free-slip, impermeable
-walls, fixed top/bottom temperatures and insulated sides are selected for the
-Tosi unit box. These are recorded boundary choices, not an implemented boundary
-assembler. Body-force density owns thermal/compositional buoyancy once; no extra
-slab-pull traction, prescribed plate motion, latent heat or adiabatic work is
-added. Viscous dissipation can be computed separately and included only through
-the explicit heat-source argument when that approximation is selected.
-
-**Source-convention issue retained:** the printed Tosi momentum equation's
-right-hand-side sign with its stated upward unit vector does not directly match
-Atlas's `-grad(p)+div(tau)+rho'*g=0` body-force convention. The density/gravity
-implementation in the tagged ASPECT benchmark was checked and supports warm
-upward buoyancy. This is not an author-confirmed erratum. The case records the
-three exact ASPECT file identities. R4 must verify assembly signs, tensor factors,
-pressure normalisation and the full numerical benchmark before claiming its
-convection solution reproduces the paper. R3 local-law tests do not settle a
-future PDE comparison by omission.
-
-### Fixed length and what remains unaccepted
-
-An **explicit Atlas-selected extension**, separate from both published local
-controls, solves `d_bar - ell^2*d_bar_xx = d` on a 1D cell-centred uniform support
-with zero normal gradient at its ends. The positive physical ell does not change
-with mesh size. The banded SPD operator is tested against independent dense and
-analytic modal solutions, including second-order refinement at fixed ell,
-constant preservation, integral preservation and non-negativity. Its linear
-factorisation is reused; no dense inverse, numerical viscosity floor or repeated
-mutation of raw history is used as a substitute for a physical length.
-
-**This operator verification is not a mesh-independent coupled localisation
-result.** The primitive is optional and never silently alters the BF reference
-input. Raw history and a strength-driving filtered field must remain distinct.
-A 2D/3D coupled shear-band model, its boundary behaviour and a physically justified
-length require R4/R5 verification before localisation is claimed. The first R4
-control is constant viscosity, followed by the unchanged Tosi local laws; it does
-not depend on pretending this later gate is already passed.
-
-### Evidence and stage completion
-
-The existing verification runner discovers the new law, execution/storage and
-case/visual tests. Obtained results are retained in `evidence/3cr3-tests.json`;
-finite matched-work comparisons and length-refinement evidence are in
-`evidence/3cr3-measurements.json`. `tools/visual_r3.py` generates actual temperature,
-yield, healing, length-response and buoyancy curves with source/result identities.
-Visual review is a separate recorded step; plots are not physics acceptance.
-
-The existing [execution reference](OPTIMISATION_REFERENCE.md#3cr3-execution)
-specifies native batching, measured serial/thread selection, resource admission,
-source-sensitive reuse and exact lossless persistence. **Every implementation
-delivery now includes a copy-ready changelog in the accompanying response**,
-as well as precise before/after hashes and grouped diffs. Historical case/test/
-reference/evidence bytes remain unchanged. AGPL-3.0-only is the selected code
-licence; the PB2002 licence and notices remain separate.
-
-## Retained cleanup decisions — revision 27
-
-Package `0.1.0.dev23` fixes interpreter-link portability and clarifies the working
-documentation, evidence delivery and visual QA. R1 remains complete only for its
-registered uses. R2's static-state/sampling and engineering envelope is unchanged;
-R3 has not started. The historical revision 26/25 delivery descriptions below
-retain their original scope and evidence. W01 as a whole remains incomplete.
-
-**The Diadem is an explanatory test case, not a generation target.** Atlas should
-investigate whether and through what plausible initial conditions, geological
-processes and history the authored geography could arise. Different conditions
-may produce different worlds; a failure to explain the Diadem is a valid result.
-Do not tune global defaults against the target outline, hide a special collapse
-or other event in a general law, or treat a fitted history as independent evidence.
-Report alternative explanations, unresolved mechanisms and any necessary
-non-Earth-like assumptions explicitly. This does not introduce an inverse solver,
-start W05, change the R3–R9 ordering or bypass scientific acceptance.
-
-**The current infrastructure/physics ratio is intentional.** Do not optimise line
-counts or impose a physics-versus-contract quota. Implement the authorised physical
-stage with the correctness, provenance and resource machinery it actually needs.
-Optimisation is a tested implementation baseline, not postponed cleanup.
-
-**Post-stage visual QA is required where meaningful.** Generate from the actual
-case and current code; record source identities, units and display transformations.
-Check geometry, slivers, field discontinuities, unknowns, material/age joins,
-antimeridian continuity and both poles. Distinguish renderer bugs from model bugs,
-authored inputs from predictions, and observational approval from numerical or
-physical acceptance. Never use plausible-looking illustrations as code evidence.
-A stage with no meaningful visual observable records that limitation explicitly.
-See the [execution and delivery rules](OPTIMISATION_REFERENCE.md#cleanup-execution).
-
-**Licence update (revision 28):** the owner selected AGPL-3.0-only after the
-cleanup. It now applies to Atlas-owned code. The pinned reference-data attribution
-and licence remain unchanged and separate.
-
-## Historical revision 26 delivery
-
-**Revision 26 — R2 bounded scheduling and spherical candidate indexing.**
-The current package is `0.1.0.dev22`. This increment completes the authorised
-R2 engineering follow-up without adding geological or thermal/mechanical laws.
-The initial-state and sampling scope of revision 25 remains unchanged. **R3 is
-next and has not started.** The original R2 case, all earlier tests/evidence and
-all original PB2002 bytes, strict discrepancies and scoped-use restrictions are
-preserved. The current execution contract takes precedence over historical
-statements below that no worker-pool adapter was present.
-
-<a id="3cr2-scaling"></a>
-
-## R2 execution/indexing follow-up: scientific invariants
-
-The new spherical broad phase computes one conservative hemispherical cap for
-each unique footprint, indexes enclosing Cartesian boxes on the unit sphere,
-and retains exact spherical intersections for uncertain candidates. Caps contain
-minor-arc edges and polygon interiors, not only vertices. No longitude seam or
-polar shortcut is introduced. Footprints sharing a chart no longer receive the
-same ineffective chart-centred enclosure. Repeated footprints reuse one cap and
-sweep their disjoint depth intervals. Contacts remain zero-volume; even tiny
-positive-area intersections still cause rejection when depths overlap.
-
-This is **not** an arbitrary cross-chart polygon repair or global-mesh certificate.
-Where candidate intersection cannot be certified in the existing compatible
-conditioned charts, the same explicit refusal remains. Dense mutually overlapping
-caps can still require quadratic work; sparse indexing is not a universal
-linear-time promise, and the original explicit work/memory envelope still applies.
-
-`PreparedPrecursor` now adapts independent static queries to the existing
-`KernelExecutor`. Complete-request frame, ID, geometry and overlap checks precede
-cell batching. A global ledger preserves hit/row/work ceilings across batches;
-workers cannot multiply them or hide cross-batch material double counting.
-Results retain original query order, with translated sparse row/phase offsets.
-Serial and threaded routes produce the same numerical arrays and current sample
-identity. Changes in actual source/numerical method still correctly invalidate
-prepared identities; historical stored arrays can be restored without regeneration.
-
-Automatic execution selects bounded threading for indexed point requests of at
-least 262,144 points. Smaller and unindexed point requests remain bulk serial.
-Cell threading is implemented and verified, but **the automatic cell default
-remains serial because the bounded matched-work comparisons were slower with
-threads**. An explicit execution policy can select threaded cell work or a
-workload-specific cell threshold; no fictional speed advantage is claimed.
-Full state/geometry, capture, in-flight work, retained batch results and final
-assembly are admitted. Cancellation drains active jobs before releasing admission.
-Binary64, exact unsnapped geometry, fixed per-cell summation and all scientific
-error tolerances are unchanged. No new scheduling or persistence subsystem exists.
-
-The focused registration is [`precursor_r2_scaling.json`](../cases/precursor_r2_scaling.json).
-Fresh evidence belongs to `evidence/3cr2-scaling-tests.json` and
-`evidence/3cr2-scaling-measurements.json`, not to overwritten historical reports.
-Timing is descriptive, not a scientific pass criterion. Linux execution does not
-establish Windows, whole-planet resources, production readiness or physical realism.
-The existing limitations on arbitrary dipping 3D structures, spherical Cartesian-
-prior cell means and full W01-to-W02 evolution remain. W01 as a whole is incomplete.
-
-## Historical revision 25 delivery and unchanged R2 scientific contract
-
-**Revision 25 — 3C-R2 initial geological precursor and bounded sampler, 18 September 2026.**
-R2 is delivered for the registered **static-input and initial-sampling envelope**
-in [`precursor_r2.json`](../cases/precursor_r2.json). **R3 is next and has not
-started.** R1's scoped source-use approval, strict discrepancy failure, source
-pins, exclusions and holdouts are unchanged. W01 as a whole remains incomplete;
-no W03 evolution, rheology or causal plate-generation acceptance is claimed.
-Earlier dated status paragraphs below describe their own revisions, not the
-current next action. The current package is `0.1.0.dev21` on `remake`.
-
-<a id="3cr2-initial-state"></a>
-
-## 3C-R2 delivered scope and scientific contract
-
-**Plate-independent substrate.** `GeologicalDomain` is a bounded planar area,
-conditioned spherical patch, or an entire named reference sphere. It has no
-physical plate or region owners. Existing `GeologicalCase` validates its original
-materials, formation cohorts, ordered columns, thermal profiles, provinces,
-faults and weak zones against this support. Old `BoundaryNetwork`/`SphericalAtlas`
-cases and their serialised definitions remain supported. A pre-partition case
-refuses selectors that require final plate/region IDs; its computational sampling
-cells cannot determine the later physical plate partition.
-
-`PrecursorState` adds one explicit origin assignment per source (observed,
-authored, sampled named prior or model-evolved import), separate known/unknown
-cooling histories, density/volume bases, optional initial scalar fields and
-explicit mantle/slab inputs. An observed label requires a cited record but is not
-independent verification; model-evolved input requires its parent-state identity
-but does not run that model. Formation times are never replaced by cooling dates.
-All times are SI seconds in the case's named epoch; a frame, epoch or depth-datum
-mismatch requires explicit conversion, not a renamed array.
-
-**Inherited and deeper structure.** Existing faults/sutures and weak zones remain
-independent of plate labels. Exact finite-trace corridor membership is available
-at points; overlapping weakness follows the existing explicit precedence without
-invented multiplication, averaging or a damage law. Optional slab/mantle records
-use named footprints and constant surface-relative depth bands with explicit
-body precedence. They can replace column material or extend support below the
-lithosphere base. These are supplied initial structures, not dynamically formed,
-dipping/curved 3D slabs or inferred slab-pull forces.
-
-**Material knowledge and property conditions.** Exact bindings to the existing
-offline Earth-material library retain its full source/condition dependency and
-automatically obtain volume bases. Partial records remain partial; source-bound
-values cannot be silently rebound or extrapolated. Grain volume, reference
-aggregate/matrix volume, explicit pore volume, bulk volume and mass are distinct.
-Additional porosity on an already-bulk reference rock is refused. A bulk-reference
-row does not assert its unknown intrinsic solid/pore split. Optional
-`reference_mass_temperature_k` computes only source-reference-density inventory,
-not in-situ mass of hot/pressurised lithosphere or a common pressure assumption.
-No new hot/high-pressure or constitutive law is selected by R2.
-
-**Sampling added to W01 stage 5.** `PreparedPrecursor` supplies immutable point
-samples and conservative initial inventories for polygon-prism or minor-arc
-shell-sector cells. Province overlap is resolved by subtracting higher-priority
-footprints before integrating lower-priority material; body bands similarly
-replace rather than double-count it. All province candidates are retained at
-points. Layer/body intervals are top-inclusive and bottom-exclusive; cell faces
-have zero extensive volume. A winning centre point is never substituted for a
-mixed-cell average. Unsupported depths, missing required porosity/temperature or
-unresolved property requests fail explicitly. Optional unresolved scalar fields
-and reference masses carry known masks; convenience accessors refuse unknown
-values rather than treating numeric placeholders as physical zeroes.
-
-For planar area A and positive downward depths a,b, V=A(b-a). For a spherical
-footprint whose reference-surface area is A on radius R,
-
-    V = A/(3 R²) * [(R-a)³ - (R-b)³]
-      = A*(b-a)/3 * [((R-a)/R)² + ((R-a)/R)*((R-b)/R) + ((R-b)/R)²].
-
-The factored form avoids subtraction of nearly equal radius cubes. For explicit
-porosity phi, matrix volume is V(1-phi), explicit pore volume is V phi, and each
-constituent receives its declared fraction of matrix volume. Existing fractional
-round-off allowances are not renormalised: bulk-coverage and phase-volume
-residuals are reported separately. Cohort/material indices refer to shared
-immutable records, preserving origins and formation dates without rich objects
-copied into every cell. Crust and lithosphere thickness remain the existing
-separate column quantities.
-
-**Initial thermal/other fields.** Constant and piecewise-linear profiles integrate
-analytically with the appropriate radial metric. The existing E04 half-space
-initial reference uses bounded quadrature for cell means, with an explicit error
-estimate and refusal rather than midpoint fallback. Mean temperature is
-volume-weighted temperature, not heat/enthalpy; this adds no thermal evolution.
-Temperature offsets must also have a non-negative envelope on requested cell
-support; a positive mean cannot conceal potentially sub-zero temperatures.
-Stress, damage and prescribed forcing can be explicitly supplied/unresolved
-scalar components with units and interpretation, not an inferred mechanical state.
-
-A named prior is the bounded Cartesian cosine field
-
-    f(r) = mean + amplitude/N * sum_i cos(k_i dot (r-origin) + phase_i).
-
-SHA256(name, unsigned-64-bit seed, mode index) supplies fixed per-mode streams.
-Amplitude means maximum deviation, not standard deviation; wavelengths are named
-feature scales, not an asserted fitted correlation length. Domain/frame/origin
-and seed belong to the identity. Planar coordinates are (x,y,depth) metres;
-spherical coordinates are geocentric Cartesian metres, without a longitude seam.
-Changing support resolution/order does not redraw the field. Planar polygon-prism
-prior means are analytic Fourier integrals including holes. Statistical inputs
-remain assumptions, not simulated geological events.
-
-**Explicit remaining limits.** General dipping/curved 3D structure and arbitrary
-volumetric interpolation remain unimplemented. Spherical point priors and radial
-base-profile means work, but spherical cell means of Cartesian spectral priors
-are refused. Positive-volume overlap between query cells is refused by default;
-when charts cannot certify disjointness, no snapping or blanket sliver tolerance
-is substituted. Compatible patches are required, or the caller must explicitly
-request non-additive overlapping queries. A set of individually queried spherical
-volumes is not thereby certified as a global disjoint mesh. R2 does not close all
-W01 stage-5 interpolation, stages 6–7 forcing/evolution integration, the combined
-stage-8 gate, or any R3–R9 physics/acceptance work.
-
-**Evidence and acceptance.** Existing T04/T05/T06/T14/T15 and relevant PT families
-are credited only for their static age/thermal/volume/restart and execution
-obligations, not their whole dynamic scopes. New focused tests include analytical
-mixed inventories, shell metrics, formation/cooling distinction, prior
-batch/refinement invariance, retained inherited structure, property conditions,
-immutable ownership, resource refusal/cancellation, changed-input/source
-invalidation, corruption and cold self-contained restoration. The finite
-execution card checks 672 points against exhaustive membership and 1/4/16-cell
-inventories without source tuning. See [`3cr2-tests.json`](../evidence/3cr2-tests.json)
-and [`3cr2-sampling-evidence.json`](../evidence/3cr2-sampling-evidence.json) for
-actual runs, commands, source hashes and platform. Passing these checks is
-implementation/numerical evidence, not physical plate-formation validation.
-
-Execution/storage details and measured costs are maintained only in the
-[optimisation reference](OPTIMISATION_REFERENCE.md#3cr2-initial-execution).
-Michael retains local application/commit/push ownership; this delivery does not
-modify his PC or publish to GitHub.
-
----
-
-### Retained revision-24 status and R1 decisions
-
-
-**Revision 24 — 3C-R1 bounded reference-use sign-off, 18 September 2026.**
-Source acquisition, full offline processing and the reference-quality/use review
-are complete **for the scopes below**. R2 has not started. No new thermal,
-mechanical, sampling or plate-generation implementation is included.
-
-The original strict source-consistency gate remains
-`REFERENCE_DISCREPANCIES_REQUIRE_REVIEW` (exit 1). The separate source-use result
-is `ACCEPTED_FOR_SCOPED_REFERENCE_USE`: it approves only enumerated observations
-from the exact source/protocol and exact audited findings. It does not alter the
-strict report, accept a whole-planet mesh or validate any generated world.
-
-- **ON area:** original publication Table 1 confirms 0.00802 sr, so Atlas's
-  transcription is correct. Retain table and outline-derived values separately;
-  no equivalence, averaging, source replacement or retrospective tolerance change.
-  The origin of their difference is not established.
-- **MS coincident geometry:** Bird paragraphs 44 and 65 support deliberate
-  subsurface representation; paragraph 65 uses the archived BH-side label.
-  Retain both source traces and their kinematics. MS ordinary simple-ring
-  morphology is unavailable at every scale/phase, even where a diagnostic looks
-  plausible. No fictitious two-owner surface edge is created.
-- **Polygon-only connectors:** the three exact spans absent from boundary data
-  remain unresolved source-representation differences. Neither source is snapped
-  and no new motion step is invented. All five incidence-affected edges are
-  refused for local two-owner surface use. Nine touching owners are conservatively
-  excluded from surface-neighbour-count comparisons.
-- **Peru:** no documented closure exception justifies inventing an edge. Retain
-  the original open trace and exclude only closed-polygon uses; a derived complete
-  global deformation mask is unavailable. The other 12 outlines remain usable.
-
-**Executable acceptance:** the versioned, pinned
-[`plate_reference_use_policy.json`](../cases/plate_reference_use_policy.json)
-records decisions, source locators, exact finding identities and restrictions.
-[`plate_reference_use.py`](../src/atlas_tectonics/plate_reference_use.py)
-checks that nothing unreviewed has changed; it prepares shared immutable indexes,
-enforces uses, and reports every omission plus remaining coverage. A scoped result
-requires all original numerical checks apart from the specifically recorded
-non-equivalence finding to remain satisfied; the original strict gate still fails.
-
-The retained inventory is 52 separately labelled areas/native formula checks,
-51 ordinary-morphology eligible plates before scale limits, 12 closed orogens,
-229 original boundary segments and 5,819 original motion records. Surface-neighbour
-counts retain 43 plates. These are different qualified populations, not a 51-plate
-world or a complete deformation mask. Ten morphology holdouts remain reserved;
-all 52 areas remain exposed calibration. Known source exclusions are never chosen
-from candidate errors and must not be hidden in model comparisons.
-
-**R1's finite reference-use review is closed; unrestricted PB2002 source consistency
-is not accepted.** Historical/external-model challenges remain explicitly unavailable
-for R9. W01 stages 5–8, R2–R9 and W03 do not advance through this review. The next
-separately authorised task remains R2. Michael retains local commit/push ownership.
-See the [assessment](../evidence/3cr1-reference-use-assessment.json),
-[scale coverage](../evidence/3cr1-reference-use-coverage.json),
-[regression](../evidence/3cr1-reference-use-tests.json), and the
-[maintained optimisation contract](OPTIMISATION_REFERENCE.md#3cr1-reference-tools).
-
-*Revision 23 repair is historical:* baseline/import repair and source-preserving
-processing are recorded in `evidence/3cr1-tooling-repair.json`; its strict findings
-and original test record remain unchanged. Revision 24 supplies the source-use
-decision that was still outstanding at that point.
-
-**Retained historical report header: Report 05 | ATLAS-TECTONICS-PLAN-1 | Revision 24 | 18 September 2026**
-**Status: development plan with a delivered foundation; remaining capabilities are proposed, not physically accepted.**
-
-Atlas is vibe-coded, with OpenAI ChatGPT/Codex doing the coding under Michael’s direction. The owner has selected Earth-like mobile-plate tectonics for the intended 1.0 release. Atlas remains world-agnostic; the Diadem is the principal development case, not the definition of the underlying physics.
-
-**Revision 21 — plate-formation implementation plan.** A nine-stage, accuracy-first
-sequence now connects observed reference tests, pre-boundary geological state,
-selected physical closures, verified regional thermomechanics, process experiments,
-spherical dynamics, boundary extraction/history and independent acceptance.
-This is a proposed sequence, not a new completed implementation. The named subset
-of W03/W07 must be brought forward explicitly to make causal formation claims;
-statistical layouts remain priors/controls. No out-of-scope coding is started.
-The implemented layout revision and subsequent 15-study literature update are both
-preserved in the maintained reference. The
-[implementation sequence](#plate-formation-implementation-plan) and
-[execution contract](OPTIMISATION_REFERENCE.md#plate-formation-execution-plan)
-take precedence over older next-step statements. Current default/source/tests and
-historic evidence are unchanged. Michael retains manual commit/push ownership.
-
-**Revision 20 — stage 3C scientific acceptance reopened.** A gap-free spherical
-Voronoi partition is not an accepted Earth-like plate-layout model. A separate
-PB2002 area-conditioned, connected-layout candidate and independent outline/
-Euler-motion checks now exist, with recorded limitations. Size fit is calibration;
-full boundary morphology and geological history remain unaccepted. Do not claim
-W01's Earth-like generation requirement is satisfied or silently promote this
-candidate to a validated default. The original Voronoi API remains an explicitly
-limited fixture, not discarded source. The geometry, material library and regional
-physics remain useful and unchanged. See the [single optimisation reference](OPTIMISATION_REFERENCE.md#plate-layout-science-correction).
-**Current blocker before scientific stage-3C sign-off:** scale-matched multi-plate
-outline and kinematic/geological evidence, not merely additional boundary wiggles.
-W01 stages 5–8 and W03 remain unimplemented in this correction. The dated summaries
-below describe the earlier delivery claims and must be read with this correction.
-
-
-**Revision 19 — W01 stage 4B, sourced reference materials.** The existing case
-schema now has a versioned offline library covering 67 principal rock/mineral/fluid
-profiles and seven declared sediment/regolith recipes. Original units, source
-locations, ranges, reference coordinates and interval-mean expansion semantics are
-preserved. Prepared native property tables, per-capability preflight, exact
-stage-4 layer bindings, mixture/assay rules and self-contained library storage are
-implemented. This is reference knowledge, not a general high-temperature/pressure
-law or a W03 solver. Some profiles are deliberately partial; 44 have density,
-specific heat and conductivity together at nominal 293.15 K. The original
-instantaneous expansion/heat-source gaps are not hidden by zeroes or secant values.
-See [the existing optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage4b-delivery).
-**Next is W01 stage 5; W03 remains paused.** No new scientific evolution,
-publication or Windows acceptance is claimed.
-
-**Revision 18 — W01 stage 4, geological descriptions.** Typed, immutable initial
-material/cohort/layer/thermal/fault/weak-zone records now attach to the validated
-regional or planetary geometry. Explicit precedence, complete catalogue references,
-unknown-value reporting and self-contained definition restoration are implemented.
-The supported stack is surface-relative and piecewise constant by province; the
-records specify initial geology, not sampled cell fields or validated constitutive
-laws. **Stages 5–8 remain outstanding; W03 implementation remains paused.** See
-[the single optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage4-delivery).
-Older revision summaries below describe the status at their respective deliveries.
-
-**Revision 17 — W01 stage 3C, generated initial partitions.** The initial world
-partition can now be constructed from an explicit sphere, plate count and seed,
-with shared topology and working patches generated together. Its unweighted
-nearest-site prior and bounded, recorded candidate conditioning are assumptions,
-not an observed plate distribution. Authored site inputs and the existing authored
-atlas route remain separate and are never randomly replaced. Alternate working
-patch layouts preserve intrinsic ownership and boundary geometry. This closes the
-explicit 3C subdivision, not stages 4–8 or W01 as a whole. W03 remains paused.
-See the [single optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage3c-delivery).
-
-**Revision 16 — W01 stage 3B, closed spherical geometry.** The static world can now
-be a closed, conforming atlas of local charts with shared canonical vertices and
-edges, globally reconciled ownership/junctions, and plate identities spanning any
-number of patches. Stage-3 networks can be joined using explicit shared-vertex
-bindings; mismatches are rejected, not automatically welded. This is not an
-unrestricted polygon-soup repair algorithm, spherical W02 dynamics or a generated
-planet. **W01 stages 4–8 remain outstanding; W03 implementation remains paused.**
-See the [stage-3B contract and evidence](OPTIMISATION_REFERENCE.md#w01-stage3b-delivery).
-The following revision summaries describe their historical delivery scopes.
-
-**Revision 15 — W01 stage-3 shared boundaries.** A verified static network now
-connects the supported planar/spherical-patch regions through single shared edges,
-left/right owners, direction-reversal checks, adjacency, cyclic junction sectors
-and point-contact distinctions. Same-plate seams stay separate from interplate
-boundaries. Batch frame/motion diagnostics and existing snapshot/resource systems
-are connected; no velocity, force, subduction polarity or geological sampler is
-invented. Spherical networks remain within an explicit common conditioned domain
-chart; unresolved reprojection joins and whole-sphere stitching are not silently
-accepted. **W01 stages 4–8 remain outstanding; W03 has not started.** See the
-[stage-3 entry](OPTIMISATION_REFERENCE.md#w01-stage3-delivery) for evidence and scope.
-
-**Revision 14 — targeted stage-2 correctness corrections.** The independent
-recheck identified short-arc cancellation, inconsistent zero-edge validation on
-import, nonfinite metre-distance publication and empty-query cancellation. The
-corrected delivery adds regression tests for those cases without changing the
-original geometric tolerance or broadening hemisphere support. Fresh obtained
-evidence is recorded separately from the original stage-2 result. No W03 work,
-new physical mechanism or repository publication is part of this change. See the
-[existing correction entry](OPTIMISATION_REFERENCE.md#w01-stage2-corrections).
-At revision 14, W01 stages 3–8 remained; revision 15 above supplies supported stage 3.
-
-**Revision 13 — W01 stage-2 supported geometry delivered.** The implementation
-adds native planar regions/traces, minor-arc spherical patches with conditioned
-hemisphere charts, metrics/set operations, shared immutable spatial indexing,
-explicit static coverage diagnostics and verified definition persistence. No invalid
-shape is repaired or ambiguity resolved by deleting coverage. **W01 remains partial:
-stages 3–8 are outstanding.** Stage 3 must construct shared boundaries, orientation,
-side ownership and appropriate patch/junction reconciliation. Arbitrary full-sphere
-Boolean topology, geological sampling, plate-history forcing and spherical W02
-transport are not inferred from this primitive layer. See the existing
-[optimisation reference](OPTIMISATION_REFERENCE.md#w01-stage2-delivery).
-
-**Revision 12 — W01 coordinate/time stage delivered.** Stage 1 supplies explicit
-spherical/geocentric, planet-centred and regional Cartesian conventions; static and
-instantaneous moving-frame transformations; legacy handedness/unit conversion; and
-named forward/before time axes with explicit inter-epoch offsets. Cases and tests
-are added beside the existing source, with shared resource and identity checks.
-**At revision 12, stages 2–8 remained. W03 starts after the required W01
-initialisation and supported W01-to-W02 link are complete.** This supersedes the
-older W04-first sequencing suggestion. No whole-work-package completion, physical
-acceptance, Windows pass or remote publication is implied. The optimisation
-reference remains the sole performance reference.
-
-**Revision 11 — regional W02 implementation complete.** The local delivery adds
-conservative nonuniform remapping, ALE moving volumes with u-w fluxes, explicit
-1D plate/block ownership, split/merge/reassignment/activity events, material marker
-maps and self-contained cold restoration. Together with regional/cohort transport
-and prescribed transfers, all named W02 responsibilities now have an executable
-**1D regional, constant-density, prescribed-kinematics** implementation and tests.
-This is not arbitrary-dimensional/planetary topology or physical/geological acceptance.
-Future spherical polygons/junctions and force/productivity laws remain W01/W06–W08
-extensions; they are not silently claimed by a 1D pass. The earlier W04-first sequencing suggestion is
-superseded by revision 12 above. The [existing optimisation reference](OPTIMISATION_REFERENCE.md#w02-completion-delivery)
-records measured methods, memory and remaining validity boundaries. Accuracy-first
-compiled defaults, W00–W12 dependencies and prior acceptance tolerances are retained.
-
-**Revision 10 — material cohorts and formation history.** The second W02 increment
-adds nonnegative partial-thickness transport by cohort, explicit known/unknown
-formation times, immutable lineage receipts, and prescribed birth/addition/removal
-transactions with per-cohort regional accounts. Higher-accuracy MUSCL/SSP-RK2 is
-the default even when upwind is faster. Runtime, memory pressure and cache policy
-must not silently lower accuracy; optimise execution of the selected equations.
-The existing snapshot store, cache controls and executor are reused. This is
-fixed-grid, common-velocity, constant-density volume accounting, not a variable-
-density or multi-velocity model. Remapping, moving topology and plate-membership
-events remain future W02 work. Physical production/recycling rates, mechanical
-closure and W05 terrain acceptance are not supplied by bookkeeping events.
-See [cohort implementation and checks](OPTIMISATION_REFERENCE.md#w02-materials-delivery).
-
-**Revision 9 — W02 regional transport delivered.** Open/closed fixed-grid transport,
-explicit external accounts, timestep advice, compiled upwind/MUSCL profiles, existing
-executor/cache integration and independent refinement checks are now implemented.
-This is one W02 increment, not all material/event history or a W05 geological pass.
-No prior numerical kernel, fixture or tolerance was altered. Current tests and
-selection limits are recorded in the existing optimisation reference's
-[W02 section](OPTIMISATION_REFERENCE.md#w02-regional-delivery).
-
-**Revision 8 — combined resource acceptance.** Item 12 now adds shared parent/component
-byte admission, retained-state lifetimes, pooled CPU/worker allowances and a combined
-resource/platform acceptance route. The local Linux run passes the regression suite
-and bounded compute/cache/compression/incremental-recovery combinations. **Windows
-acceptance is still pending an actual local run.** Item 1 remains skipped; items
-2–11 and the scientific K/M modes, equations, parameters, W00–W12 and T01–T16 remain
-intact. See the [existing optimisation reference](OPTIMISATION_REFERENCE.md#combined-acceptance)
-for evidence and limits. These are engineering foundations, not geological acceptance
-or completion of the coupled tectonic model. Two maintained documents remain the
-policy: this plan and the optimisation reference, with case/tests beside code.
-No new general roadmap or publication is part of this delivery.
-
-**Navigation:** [Scope](#recommended-architecture-and-10-scope) · [State and interfaces](#scientific-state-and-interface-contracts) · [Equations](#equation-plan-and-gaps-to-close) · [Work packages](#work-packages-and-dependency-gates) · [Coupling](#coupling-timestep-and-state-acceptance-policy) · [Execution and optimisation](#numerical-and-computational-design) · [Validation](#verification-physical-validation-and-decision-rules) · [Milestones](#milestones-decision-ownership-and-risk-control)
-
-<a id="plate-formation-implementation-plan"></a>
-
-## Plate formation correction: implementation sequence (18 September 2026)
-
-**Status: proposed implementation plan; no new solver, scientific pass or default
-change is delivered here.** This section governs the reopened stage-3C scientific
-work and supersedes conflicting older next-step sentences. It preserves the
-existing geometry, material library, regional W02 work, the PB2002-conditioned
-candidate and its obtained evidence. Neither Voronoi nor the area-conditioned
-candidate is promoted from a prior/control to accepted dynamics.
-
-### Objective and scope boundary
-
-Build an initialisation and evolution path in which material/thermal structure,
-inherited weakness, forcing, deformation and plate geometry are consistent. The
-normal accuracy policy is unchanged: choose the scientifically appropriate model
-and numerical error requirements first, then its fastest verified implementation.
-No exact universal plate count, Earth-outline copying, random-wiggle score, or fit
-to the Diadem's desired mountains is an acceptance criterion.
-
-Separate origin from execution: a **reference/statistical initial state**, a
-**prescribed-kinematic history**, and a **dynamically produced state** make different
-scientific claims. They are not fast/slow backends of the same equation. Preserve
-the existing K/M model modes. Record origin independently; an M-mode calculation
-may start from an explicitly statistical prior. Selecting a mature starting epoch
-does not require simulating a planet from a magma ocean.
-
-**Sequencing consequence:** causal boundary formation requires thermal and
-mechanical capabilities that belong to W03 and W07. The proposal is to bring
-forward only their named benchmarkable subset below, credit it to those work
-packages, and reuse it later. This does not mark W03, W07 or planetary W02 complete.
-No W03/W07 coding or large simulation is authorised by this planning-only update.
-W01's remaining sampler and integration responsibilities are not silently erased.
-
-### Scientific responsibilities and numerical baseline
-
-Use an explicitly scaled, incompressible, inertia-free thermochemical reference:
-
-\[
-\nabla\cdot\mathbf u=0,\qquad
--\nabla p+\nabla\cdot(2\eta\dot{\boldsymbol\epsilon})+\rho'\mathbf g=0,
-\]
-\[
-\rho_0c_p(\partial_tT+\mathbf u\cdot\nabla T)=\nabla\cdot(k\nabla T)+Q,
-\qquad
-\partial_t C+\mathbf u\cdot\nabla C=0.
-\]
-
-Here \(\mathbf u\) is velocity, \(p\) the selected pressure variable,
-\(\dot{\boldsymbol\epsilon}\) symmetric strain rate, \(\eta\) viscosity,
-\(\rho'\) buoyancy density contrast, \(T\) temperature, and \(C\) composition.
-\(Q\) is the heating included in the selected approximation, in W/m³. Declare
-Boussinesq/reference-density assumptions, pressure reference, boundary tractions,
-thermal boundaries and nondimensionalisation. Do not present this reference as a
-compressible, phase-changing, elastic or full free-surface model.
-
-Start with constant-viscosity verification, then reproduce one published
-viscoplastic specification before adding memory. The revision-28 local implementation now selects the BF2023 model-19 subset
-described [above](#3cr3-physical-closure). The original design direction was
-strain-weakening with temperature-dependent healing in the Fuchs/Becker family
-(PF-C03/C04), with a damage-free control. In general form,
-\(D_t d=S_d-\mathcal H_d\); this is an interface, **not an already selected
-constitutive law**. Its exact published source/saturation/healing and strength
-coupling, units, numerical regularisation and supported parameter ranges must be
-transcribed and independently checked in 3C-R3. Do not relabel it the distinct
-microphysical grain-damage theory in PF-C02.
-
-### Nine implementation stages
-
-| Stage | Implementation and deliverable | Acceptance before its dependent claim |
-| --- | --- | --- |
-| **3C-R1 — Reference data and success criteria (scoped reference uses delivered)** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
-| **3C-R2 — Initial state before final plate labels (bounded static delivery in revision 25)** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
-| **3C-R3 — Freeze the physical closure (local laws and 1D length primitive delivered)** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
-| **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
-| **3C-R5 — Process experiments, not decorative contours** | Test weak-zone reactivation against healed/undamaged controls; inherited-structure rifting; segmented spreading and transform development; one-sided subduction with an appropriate surface/interface treatment; curved-trench fragmentation and small-block formation. Use 3D regional geometry when the claimed feature varies along strike. Run paired cases that change one causal ingredient rather than fitting every output. | Each process reproduces its selected independent benchmark/analogue constraints and remains stable under refinement and rotated mesh orientation. Do not require damage to have one universal effect, place a plume beneath every ridge, infer polarity from convergence, or count a 2D cross-section as an along-trench fragmentation test. A failed family remains unsupported. |
-| **3C-R6 — Spherical dynamics and plate identification** | Extend the verified formulation to a coupled 3D spherical shell, using globally consistent metric terms and pressure/interface treatment. Existing surface patches are output geometry, not a ready volume mesh. Recover coherent surface regions from independently calculated velocity/strain/damage fields, and fit Euler rotations to candidate interiors. Keep distributed deformation explicitly represented. | Spherical benchmark and rotation/seam tests, conservation, parameter and resolution sensitivity, declared spin-up and sample-selection rules, rigidity residuals and stable segmentation thresholds. A warm-up ends by registered diagnostics, not because one image looks Earth-like. Never prescribe Euler poles then claim recovering them proves independent rigidity. |
-| **3C-R7 — Shared geometry and causal event history** | Convert supported field-derived boundaries into the existing shared-edge atlas; maintain one edge, two sides and consistent junctions. Fit boundary/junction velocities subject to the selected kinematic rules. Track persistent material, weakness, plates and events separately; record splits, merges, reactivation, accretion/export and candidate rejection. Use conservative multidimensional transfers where needed; reuse W02 contracts, not its 1D equations under a spherical name. | Underlying surface coverage remains complete without forcing every cell into a perfectly rigid plate; deformation zones do not vanish as polygon gaps. Boundary extraction has a spatial error budget and does not move material. Junction compatibility is stricter than the telescoping sum of relative velocities. Preserve origin/energy/history through events and cold restoration. |
-| **3C-R8 — Initialisation and W01 integration** | Supply a named starting-epoch workflow: load an authored/reconstructed state, use a declared statistical candidate, or evolve an accepted dynamic precursor and select its state by the recorded rule. Any faster reduced generator must be calibrated on process results and checked independently before adoption. Map the resulting geology, supported motion and fields through W01 sampling into appropriate regional W02 scenarios. | No manual stitching, unknown-as-zero state or regenerated world on restore. Identical provenance yields the agreed reproducibility. Exact plate-count requests are only supported where the selected origin model warrants them; dynamic mode does not forcibly merge bodies to hit a UI number. An initialisation pass is not complete global material/thermal evolution. |
-| **3C-R9 — Independent acceptance and selected default** | Run predeclared ensembles, holdout-data challenges, mesh/time/parameter sensitivity, controls and ablations, then combined execution/cache/storage/restoration/platform checks. Record accepted regimes and unresolved failures in the two maintained documents and obtained case records. | Keep calibration, numerical verification, physical validation and fictional compatibility separate. No universal percentage realism score; no pass from a lone attractive map or small global-average error hiding lost microplates. Promote the appropriate accuracy-first optimised recipe only for supported regimes. Report platform/resource limits and retain explicit verification/control paths. |
-
-The R1 delivery is limited to the reviewed present-day PB2002 uses described in
-revision 24. It does not satisfy the independent-model or historical challenges
-reserved for R9. Those unavailable observations cannot be filled from modern Euler
-poles or another reformat of PB2002.
-
-### Required observations and failure tests
-
-Use multi-scale area distribution, compactness, elongation/concavity, turning and
-segmentation by boundary type, topology and adjacency, small-plate position relative
-to margins, intraplate deformation, relative motion, weak-zone persistence,
-reorganisation and heat/material accounts. Plates and broad deformation zones are
-not interchangeable labels (PF-C15). Total perimeter must ignore computational
-seams. Sampling density must not improve a morphology score by adding vertices.
-A plate population is temporally variable; do not fit exactly one modern spectrum
-(PF-C10). Held-out observables must not have already selected the same parameters.
-
-Numerical thresholds come from the declared equations, source precision and
-refinement study, not convenient post-hoc tolerance changes. Use at least three
-resolutions for appropriate convergence cases, vary time step independently, and
-keep geometric tolerances distinct from physical uncertainty. Model ensembles and
-steady/transient sampling windows are registered before scoring, including failed
-seeds and error bars. Data versions with shared ancestry are sensitivity challenges,
-not additional independent samples.
-
-### Stop points and package accounting
-
-* **After R1–R3:** scientific specification and test inputs ready; no claim of
-  simulated boundary formation. These are the immediate next coding increments.
-* **After R4–R5:** verified solver and individually supported process behaviours;
-  no whole-planet acceptance from regional results.
-* **After R6–R9:** a bounded planetary formation/initialisation route can be accepted
-  only for the regimes, material laws, resolution and data challenges it passed.
-
-R2/R8 close relevant portions of W01 stages 5–7; their unimplemented responsibilities
-remain visible. R3–R6 credit the actual W03/W07 subset and relevant W06/W08 process
-work rather than duplicate those modules. W03 sediment compaction, full W04 loading,
-other W08 regimes, W09 surface processes and production integration remain separate.
-W11's relevant work is performed within every stage; there is no later blanket
-optimisation pass. The existing one-dimensional W02 completion boundary is retained.
-The proposed sequence is larger than a polygon patch because causal formation is
-larger than geometry; progress reports must not disguise that fact.
-
-### Execution and delivery
-
-The [formation execution contract](OPTIMISATION_REFERENCE.md#plate-formation-execution-plan)
-assigns optimisations and checks to each stage. No new general cache, scheduler,
-compression format or report is required. Comments beside code must cover equations,
-units, assumptions, ownership, invalidation and failure cases. Case contracts/tests
-stay next to implementation. Deliver one copy-ready update relative to the known
-remake baseline, preserving unrelated files; Michael commits and pushes manually.
-
-This document update changes no numerical source or tests, installs nothing,
-executes no geological case and makes no claim to access the PC or update origin.
-
-
-## Executive decision
-
-Develop a **physically tested, multiscale tectonics system**, not a mountain-placement algorithm and not a collection of seventeen integrated software packages. Use a shared description of the world, plate history and material accounts, with two explicitly different ways to calculate deformation: prescribed kinematic experiments and regional mechanical calculations. Couple only the surface and thermal processes required to interpret each experiment. Design for efficient execution from the outset. Verify any enabling acceleration against an appropriate numerical reference while the physical investigation proceeds; later optimise and scale accepted behaviour at matched error. Build production interfaces only after the relevant scientific and resource gates.
-
-The first delivered foundation contains restricted versions of the **small mathematical reference suite**: rotations and boundary signs, periodic conservative thickness transport, analytical cooling and uniform periodic load response. Continue from those kernels rather than rebuilding them; they do not complete W01–W04. The first coupled mechanism should be prescribed regional extension plus a separately checked vertical response. This is a recommendation for an informative test, not a claim that extension explains the Diadem. Shortening, shear and subduction must receive their own subsequent tests.
-
-**What this plan selects:** architecture direction, scientific responsibilities, candidate equation families, work order, required evidence, optimisation priorities and release gates. **What it does not select:** calibrated Earth/Diadem parameters, a complete mechanical closure for every regime, a production machine, runtime budgets, an external solver dependency, or permission to execute any case. Parameters and unresolved constitutive choices have named decision gates rather than hidden defaults.
-
-The full 1.0 tectonics scope below is deliberately broader than the first prototype. If a required regime remains unsupported, the deliverable must be a labelled research preview or an explicitly narrower capability release—not an unqualified claim of complete Earth-like tectonics.
+| Plate/block motion, fault deformation, extension, spreading, shortening, subduction and associated mechanics | Tectonics |
+| Geological descriptions, properties, melting/transfer/emplacement and rock history | Geology; tectonics consumes required properties and accounts |
+| Sediment layers, compaction and pore fluids | Geology / erosion and sediment transport; soil-specific work belongs to soils and ground conditions |
+| Drainage, runoff, lakes and water exchange | Hydrology |
+| Incision, hillslopes, sediment routing and deposition | Erosion and sediment transport; topography/topology owns resulting terrain representation |
+| General heat/material accounts, load construction, caching, storage and resources | Shared services or explicit interfaces; no second implementation merely to change ownership |
+
+Tectonics retains its necessary thermal/mechanical response, including cooling,
+isostasy and flexure. A receiver owns its response to tectonic outputs; tectonics
+owns its response to supplied loads/properties/forcing. Existing W03/W04/W08
+adapters remain usable in place. W09 Steps 4–5 remain unfinished cross-module
+surface work for their individual owners, not the next tectonics expansion.
+
+[Underthrusting](UNDERTHRUST.md), [evolving-input mechanics](EVOLVING_MECHANICS.md)
+and [supported histories](TECTONIC_HISTORIES.md) retain their supplied geometry,
+host-space, absolute-reference, coincident force/material and recovery contracts.
+Uniform thickening does not replace structural collision; a regime label cannot
+transfer state between incompatible representations.
 
 ## 1. Basis, constraints and intended result
 
@@ -1983,9 +60,11 @@ Reports 01–03 supply the modelling, optimisation and implementation assessment
 
 The repository baseline described in those studies is `7d0e707a576fe08b9bcb816466a0a8fb5f115808`. This is **not a fresh audit of GitHub or the Windows workspace**. The studies identify an active tectonic snapshot adapter, existing geometry/route reuse, a native 256-cell domain and a fixed-quantum material ledger. Preserve them as historical implementations with their own meanings; new experiments must not silently alter their bindings or relax their limits. [[R03](#research-basis); [A01][url-001]; [A02][url-002]; [A04][url-003]; [A06][url-004]; [A07][url-005]]
 
-The original consolidation changed documentation only. Later numbered implementation increments above record their own source changes and obtained checks; they do not repin historical evidence or imply Windows integration. Any companion repository-documentation publication is recorded separately; checking documents is not running the model. Execution references PS01–PS08 and language references LS01–LS05 are retained with the optimisation reference; no scientific-software re-audit was performed.
-
-**Implementation status supplement:** the historical pre-study baseline above is preserved. The subsequent remake foundation at `11317165b7e2aeab7201a1fe3e3f646cb640d51e` provides the restricted kernels listed in the optimisation reference’s current-baseline section. This does not complete W01–W04 or validate real terrain. The current update changes documents, not that implementation.
+The remake foundation at `11317165b7e2aeab7201a1fe3e3f646cb640d51e`
+provides restricted reference kernels, not completion of W01–W04 or real-terrain
+validation. Later evidence keeps its source/runtime identities. Execution sources
+PS01–PS08 and language sources LS01–LS05 remain with the optimisation reference;
+consolidation is not a fresh scientific-software audit.
 
 ### 1.2 Owner requirements retained
 
@@ -2006,36 +85,19 @@ The tectonics product should provide evolving plate/block geometry; deformation 
 
 A successful numerical run is not necessarily geologically plausible. A geologically plausible unconstrained case is not automatically compatible with the Diadem. Code correctness, numerical accuracy, physical adequacy, world-design compatibility and canon approval remain distinct judgements.
 
-<a id="current-implementation"></a>
 
-### 1.4 Current implementation and document maintenance
+### 1.4 Document and evidence ownership
 
-**Status lives in [current status](../../docs/CURRENT_STATE.md).** This table records
-which work packages have implemented components and where their methods are
-described. Implemented does not mean physically accepted: the
-[evidence register](../../docs/CURRENT_EVIDENCE.md) says which receipts are current,
-and W01–W12 receipts it does not list are dated records of their own runs. Nothing
-here records a remote commit or a passed physical acceptance.
+Keep scope, scientific contracts, dependencies and acceptance obligations here.
+Update current status in place in CURRENT_STATE; retain detailed methods, receipts,
+original failures, identities and scope at their specialist owner links. Case/test
+records are evidence, not additional roadmaps. No historical evidence is repinned.
 
-| Work package | Implemented components (method records) | Still outstanding |
-| --- | --- | --- |
-| W00 | Synthetic foundation case and verification rules. | The next physical case’s complete inputs, observations and acceptance decisions. |
-| W01 | Geometric/declarative stages 1–4B (coordinates/time, geometry, shared/global boundaries, seeded partitions, geological descriptions, material library and mixtures) and stages 5–8: [initial sampling](W01_INITIAL_SAMPLING.md), [motion forcing](W01_MOTION_FORCING.md), the [regional workflow](W01_REGIONAL_WORKFLOW.md) and the [combined technical assessment](W01_COMBINED_ACCEPTANCE.md). | Stage-3C Earth-like scientific acceptance is reopened, so whole W01 stays incomplete; the reference-conditioned candidate's morphology/history is not accepted. Static geometry/descriptions do not supply evolving spherical material physics. |
-| W02 | Regional implementation complete: cohorts/history, prescribed transfers, conservative nonuniform remap, ALE u-w motion, complete interval ownership, split/merge/reassignment/activity, marker maps, direct snapshot restoration and existing executor/cache integration. | Physical/geological acceptance is not implied. General 2D/spherical junctions and predictive source/force laws require W01/W06–W08 extensions. |
-| W03 | Analytical half-space reference plus [thermal columns](W03_THERMAL_COLUMNS.md), [thermal support](W03_THERMAL_SUPPORT.md), [compaction](W03_COMPACTION.md) and their [workflow](W03_WORKFLOW.md). | Coupled thermal evolution with moving material in the evolving-world route, and physical calibration. |
-| W04 | Periodic flexure plus [column loads](W04_COLUMN_LOADS.md), [finite regions](W04_FINITE_REGIONS.md), [variable rigidity](W04_VARIABLE_RIGIDITY.md), the [workflow](W04_WORKFLOW.md) and [combined acceptance](W04_COMBINED_ACCEPTANCE.md). | Spherical and weak/broken-boundary support and moving-world integration. |
-| W05 | [Regional extension](W05_REGIONAL_EXTENSION.md) and its [combined acceptance](W05_COMBINED_ACCEPTANCE.md) for specified stretching and fault histories. | Predictive fault and source laws and independent physical validation. |
-| W06 | Oceanic [birth](W06_BIRTH.md), [spreading](W06_SPREADING.md), [cooling](W06_COOLING.md), staged [histories](W06_HISTORIES.md) and the [workflow](W06_WORKFLOW.md). | Generated rather than prescribed ridge histories and global ocean-age evolution. |
-| W07 | [Regional mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_HETEROGENEOUS_THERMAL.md) and [surface-strength](W07_SURFACE_STRENGTH.md) connections and the [workflow](W07_WORKFLOW.md); the fixed-box 3D [mechanics](REGIONAL_MECHANICS_3D.md) and [evolution](REGIONAL_EVOLUTION_3D.md) branch. | Calibrated rheology, moving surfaces, elastic/finite-strain tensor history and global coupling. |
-| W08 | Supported [regimes](W08_REGIMES.md): [shortening](W08_SHORTENING.md), [transform](W08_TRANSFORM.md), [subduction](W08_SUBDUCTION.md), [underthrusting](UNDERTHRUST.md), [magmatism](W08_MAGMATISM.md) and [joined regimes](W08_JOINED.md). | Generated regime transitions and physical-event acceptance. |
-| W09 | Retained [water](W09_WATER.md), [erosion](W09_EROSION.md) and [surface-process](W09_SURFACE_PROCESSES.md) interfaces. | Completed global feedback with the downstream modules. |
-| W10 | Scoped [validation](W10_VALIDATION.md) that keeps implementation, resolution, physical observations and assembly separate. | Independent physical validation of the coupled mechanisms. |
-| W11 | Local items 2–12, W02-specific checks and the module-wide measured optimisation pass ([reference](OPTIMISATION_REFERENCE.md)). Item 1 explicitly skipped. | Physical scale-transfer and world-scale resource evidence for future mechanisms. |
-| W12 | [Supported column assembly](W12_ASSEMBLY.md): a runnable W01–W04 example, graph/cache connection, exports, jobs and recovery. | Production integration and release acceptance after the scientific and scale gates. |
-
-**Two maintained documents:** update this plan for scope, equations, dependencies and acceptance; update `OPTIMISATION_REFERENCE.md` for execution, storage, language and method detail. Word files are reading editions of the same Markdown content, not extra authorities. Keep change history inside these documents/Git history; do not create another supplement, general review guide, source-register file or performance-plan copy for routine findings. Case specifications and obtained test evidence stay next to code and are not competing roadmaps.
-
-Previous versions and scientific pre-studies remain historical evidence. They are not deleted from prior chat attachments or restated as newly verified. Retired optimisation pages are superseded by the reference; no numerical source or historical evidence bytes are rewritten by consolidation.
+The Diadem is an explanatory compatibility case, not an answer key. A failure to
+explain it is valid. Do not tune global defaults to its outline, hide a special
+collapse/event in a general law, or treat a fitted history as independent proof.
+Report alternative explanations, unresolved mechanisms and necessary non-Earth-like
+assumptions. No physics/infrastructure line-count quota applies.
 
 <a id="recommended-architecture-and-10-scope"></a>
 
@@ -2058,7 +120,7 @@ Previous versions and scientific pre-studies remain historical evidence. They ar
 
 Mode M may take boundary velocities from Mode K. In that configuration K supplies boundary forcing, not a second displacement to add to M’s solution. Likewise, flexure may supply a missing load response only when that response is not already represented by the mechanical calculation. Every contribution has one physical owner.
 
-**Candidate numerical baseline for M:** a two-dimensional, inertia-free viscous/Stokes calculation on a structured staggered grid, with explicit material fields and conservative transfers; compare it with a compatible mixed finite-element alternative at the design gate. Start at constant viscosity before adding thermal coupling and pressure-sensitive yielding. This is a proposed small reference formulation, not a decision to recreate LaMEM, approve all its laws or restrict eventual three-dimensional modelling. [[S08][url-012]; [S10][url-013]; [S16][url-015]]
+**Reference numerical baseline for M:** a two-dimensional, inertia-free viscous/Stokes calculation on a structured staggered grid, with explicit material fields and conservative transfers; compare it with a compatible mixed finite-element alternative at the design gate. Start at constant viscosity before adding thermal coupling and pressure-sensitive yielding. This is a bounded reference formulation, not a decision to recreate LaMEM, approve all its laws or restrict eventual three-dimensional modelling. [[S08][url-012]; [S10][url-013]; [S16][url-015]]
 
 ### 2.3 Release scope: required, conditional and deferred
 
@@ -2214,11 +276,896 @@ All right-hand rates are vertical thickness rates in m/s; $h$ is upward-positive
 
 These are bounded scientific decisions attached to later packages, not permission to fill missing science with defaults. The plan remains usable because each capability has a deliverable and stopping condition; it does not pretend the pre-studies already provide a complete closure set.
 
+### 4.4 Reference use and bounded initial state
+
+The force-driven R1–R4 experiment is separate from the seeded world creator and
+W08's prescribed-slab benchmark. Their results cannot inherit one another's
+scientific acceptance. [Experimental dynamics](how-it-works/05-experimental-dynamics.md)
+explains the route; exact registered cases govern reproduction.
+
+R1's [reference-use contract](FOUNDATIONS.md#3c-r1-reviewed-source-use-contract-18-september-2026)
+and [policy](../cases/plate_reference_use_policy.json) distinguish
+ACCEPTED_FOR_SCOPED_REFERENCE_USE from strict
+REFERENCE_DISCREPANCIES_REQUIRE_REVIEW (exit 1). Keep ON's table/outline areas
+separate; MS coincident subsurface traces are not ordinary simple rings. Three
+unresolved connectors affect five refused surface edges and nine excluded neighbour
+owners; Peru's trace remains open. Source populations are 52 labelled areas, 51
+ordinary-shape candidates before scale limits, 43 neighbour counts, 12 closed
+orogens, 229 boundary segments and 5,819 motion records. Ten morphology holdouts
+remain reserved; all 52 areas are calibration. Neither a complete deformation mask
+nor an unrestricted two-owner planetary mesh is accepted. Exact findings, source
+identities, omissions and rights remain in the policy and original evidence;
+unavailable historical/external-model R9 challenges cannot be made from a derivative
+of the same PB2002 data.
+
+<a id="3cr2-initial-state"></a>
+<a id="3cr2-scaling"></a>
+
+#### R2: geological substrate and static sampling
+
+[precursor_r2.json](../cases/precursor_r2.json) registers the static contract.
+[W01 sampling](W01_INITIAL_SAMPLING.md) owns the supported initial-condition
+interface; [execution/indexing](OPTIMISATION_REFERENCE.md#3cr2-initial-execution)
+owns scheduling, reuse, resource admission and measured costs.
+
+**Plate-independent substrate.** `GeologicalDomain` is a bounded planar area,
+conditioned spherical patch, or an entire named reference sphere. It has no
+physical plate or region owners. Existing `GeologicalCase` validates its original
+materials, formation cohorts, ordered columns, thermal profiles, provinces,
+faults and weak zones against this support. Old `BoundaryNetwork`/`SphericalAtlas`
+cases and their serialised definitions remain supported. A pre-partition case
+refuses selectors that require final plate/region IDs; its computational sampling
+cells cannot determine the later physical plate partition.
+
+`PrecursorState` adds one explicit origin assignment per source (observed,
+authored, sampled named prior or model-evolved import), separate known/unknown
+cooling histories, density/volume bases, optional initial scalar fields and
+explicit mantle/slab inputs. An observed label requires a cited record but is not
+independent verification; model-evolved input requires its parent-state identity
+but does not run that model. Formation times are never replaced by cooling dates.
+All times are SI seconds in the case's named epoch; a frame, epoch or depth-datum
+mismatch requires explicit conversion, not a renamed array.
+
+**Inherited and deeper structure.** Existing faults/sutures and weak zones remain
+independent of plate labels. Exact finite-trace corridor membership is available
+at points; overlapping weakness follows the existing explicit precedence without
+invented multiplication, averaging or a damage law. Optional slab/mantle records
+use named footprints and constant surface-relative depth bands with explicit
+body precedence. They can replace column material or extend support below the
+lithosphere base. These are supplied initial structures, not dynamically formed,
+dipping/curved 3D slabs or inferred slab-pull forces.
+
+**Material knowledge and property conditions.** Exact bindings to the existing
+offline Earth-material library retain its full source/condition dependency and
+automatically obtain volume bases. Partial records remain partial; source-bound
+values cannot be silently rebound or extrapolated. Grain volume, reference
+aggregate/matrix volume, explicit pore volume, bulk volume and mass are distinct.
+Additional porosity on an already-bulk reference rock is refused. A bulk-reference
+row does not assert its unknown intrinsic solid/pore split. Optional
+`reference_mass_temperature_k` computes only source-reference-density inventory,
+not in-situ mass of hot/pressurised lithosphere or a common pressure assumption.
+No new hot/high-pressure or constitutive law is selected by R2.
+
+**Sampling added to W01 stage 5.** `PreparedPrecursor` supplies immutable point
+samples and conservative initial inventories for polygon-prism or minor-arc
+shell-sector cells. Province overlap is resolved by subtracting higher-priority
+footprints before integrating lower-priority material; body bands similarly
+replace rather than double-count it. All province candidates are retained at
+points. Layer/body intervals are top-inclusive and bottom-exclusive; cell faces
+have zero extensive volume. A winning centre point is never substituted for a
+mixed-cell average. Unsupported depths, missing required porosity/temperature or
+unresolved property requests fail explicitly. Optional unresolved scalar fields
+and reference masses carry known masks; convenience accessors refuse unknown
+values rather than treating numeric placeholders as physical zeroes.
+
+For planar area A and positive downward depths a,b, V=A(b-a). For a spherical
+footprint whose reference-surface area is A on radius R,
+
+    V = A/(3 R²) * [(R-a)³ - (R-b)³]
+      = A*(b-a)/3 * [((R-a)/R)² + ((R-a)/R)*((R-b)/R) + ((R-b)/R)²].
+
+The factored form avoids subtraction of nearly equal radius cubes. For explicit
+porosity phi, matrix volume is V(1-phi), explicit pore volume is V phi, and each
+constituent receives its declared fraction of matrix volume. Existing fractional
+round-off allowances are not renormalised: bulk-coverage and phase-volume
+residuals are reported separately. Cohort/material indices refer to shared
+immutable records, preserving origins and formation dates without rich objects
+copied into every cell. Crust and lithosphere thickness remain the existing
+separate column quantities.
+
+**Initial thermal/other fields.** Constant and piecewise-linear profiles integrate
+analytically with the appropriate radial metric. The existing E04 half-space
+initial reference uses bounded quadrature for cell means, with an explicit error
+estimate and refusal rather than midpoint fallback. Mean temperature is
+volume-weighted temperature, not heat/enthalpy; this adds no thermal evolution.
+Temperature offsets must also have a non-negative envelope on requested cell
+support; a positive mean cannot conceal potentially sub-zero temperatures.
+Stress, damage and prescribed forcing can be explicitly supplied/unresolved
+scalar components with units and interpretation, not an inferred mechanical state.
+
+A named prior is the bounded Cartesian cosine field
+
+    f(r) = mean + amplitude/N * sum_i cos(k_i dot (r-origin) + phase_i).
+
+SHA256(name, unsigned-64-bit seed, mode index) supplies fixed per-mode streams.
+Amplitude means maximum deviation, not standard deviation; wavelengths are named
+feature scales, not an asserted fitted correlation length. Domain/frame/origin
+and seed belong to the identity. Planar coordinates are (x,y,depth) metres;
+spherical coordinates are geocentric Cartesian metres, without a longitude seam.
+Changing support resolution/order does not redraw the field. Planar polygon-prism
+prior means are analytic Fourier integrals including holes. Statistical inputs
+remain assumptions, not simulated geological events.
+
+**Explicit remaining limits.** General dipping/curved 3D structure and arbitrary
+volumetric interpolation remain unimplemented. Spherical point priors and radial
+base-profile means work, but spherical cell means of Cartesian spectral priors
+are refused. Positive-volume overlap between query cells is refused by default;
+when charts cannot certify disjointness, no snapping or blanket sliver tolerance
+is substituted. Compatible patches are required, or the caller must explicitly
+request non-additive overlapping queries. A set of individually queried spherical
+volumes is not thereby certified as a global disjoint mesh. Static sampling does not itself close broader W01 interpolation, forcing/evolution,
+combined scientific acceptance or R3–R9 physics.
+
+Broad-phase caps include minor-arc edges/interiors, retain exact intersections
+for uncertain candidates and preserve tiny positive-volume overlaps. Dense cap
+overlap can still require quadratic work; indexing is not arbitrary cross-chart
+repair or a global disjoint-mesh certificate. Batching must preserve complete
+request checks, global hit/row/work ceilings, original order and fixed per-cell
+summation. Threading cannot multiply admission or change numerical arrays.
+[The scaling case](../cases/precursor_r2_scaling.json) and original tests/measurements
+retain these limits. Static T04/T05/T06/T14/T15 credit does not qualify their dynamic
+scopes. Existing limitations on dipping structures and spherical-prior means remain.
+
+<a id="3cr3-physical-closure"></a>
+<a id="3cr3-stress-hardening"></a>
+
+### 4.5 Local rheology, memory and physical length
+
+[physical_closure_r3.json](../cases/physical_closure_r3.json) registers the selected
+local laws and 1D length primitive. These are array kernels with independent
+numerical tests, not a Stokes/convection solution. Exact access limits and source
+identities remain in that case; [execution](OPTIMISATION_REFERENCE.md#3cr3-execution)
+owns batching, resources, source-sensitive reuse, storage and obtained measurements.
+
+#### Selected local models
+
+The order is the constant-viscosity analytical control, the Tosi et al. (2015)
+local-law benchmark family, then the Becker & Fuchs (2023) strain-memory family
+with a damage-free control. The full published methods and relevant parameter
+tables were read before implementation. The exact locations, access limits and
+primary-repository corroboration are recorded in the case file. No publication
+PDF, ASPECT/CitcomS source, new PB2002 data or new dependency is bundled.
+
+For the Tosi reference, `e = (grad(u) + grad(u).T)/2`,
+`eII = sqrt(e:e/2)` and `q = sqrt(2)*eII`. The implemented local formulae are
+
+```
+L = exp(-log(contrast_T)*T + log(contrast_z)*z)
+P = eta_star + sigma_Y/q
+eta = 2/(1/L + 1/P)
+```
+
+The Frobenius norm in `P` and factor **two** in the harmonic mean follow the
+source; neither is silently replaced by a conventional yield cap. Table-1 cases
+1 and 3 use `L` directly. Cases 2, 4 and 5a use the harmonic law, with the named
+source values. At zero strain rate and positive sigma_Y its viscosity tends to
+`2*L`; zero-stress variants have their separate analytical limit. Case 5b's
+periodic-regime survey and all Nusselt/velocity convection comparisons are **not**
+run or accepted here. Sources: [Tosi et al., equations 6–10 and Table 1](https://doi.org/10.1002/2015GC005807).
+
+For the selected BF2023 **model-19 local-law subset**, define
+
+```
+eta_T = eta0*exp(E/(T+1) - E/2)
+f = 1 - Gamma*min(d,dcrit)/dcrit
+sigma_y = (a+b*z)*f
+eta = min(eta_T, sigma_y/(2*eII))
+h(T) = B*exp(-Ed/(T+1) + Ed/2)
+D_t d = eII - h*d
+```
+
+The registered values are E=40, eta0=1, a=1e6, b=1.51e7, dcrit=10, Gamma=0.9,
+Ed=46.1 and B=2.44e9. Gamma=0 supplies the damage-free control. This reproduces
+local equations 6–8 and their table values, **not** the paper's full spherical
+experiment. Asthenospheric/melt multipliers, continental rafts, empirical 0.1
+time rescaling and unspecified absolute viscosity-clipping bounds are absent,
+not hidden defaults. This family is not relabelled microphysical grain damage.
+Source: [Becker & Fuchs, section 2.3, equations 6–8 and Table 1](https://doi.org/10.1029/2023GC011179).
+
+Damage is an unbounded strain-like history within an explicit computational
+limit. Only its **strength effect** saturates; stored damage above dcrit is not
+clipped away. Initial damage must be supplied explicitly, including a deliberate
+zero. For constant strain rate and temperature over one supplied interval,
+`d_new = d*exp(-h*dt) + eII/h*(1-exp(-h*dt))` is evaluated with stable small-h
+limits. This is not a spatial advection method or exact integration for varying
+thermal/mechanical fields. Existing W02 histories are not silently converted.
+
+#### Units, force ownership and boundary conventions
+
+Local rheology inputs use T,z in [0,1], with finite parameter/rate/history
+limits and binary64 arithmetic. SI conversion requires a named `DiffusiveScales`:
+`t0=L^2/kappa`, `u0=kappa/L`, `stress0=eta_ref/t0` and `rate0=1/t0`.
+The **diffusive length and depth normalisation are separate required quantities**
+(radius versus layer thickness must not be conflated). The 20°C material library
+is unchanged and is never extrapolated into these phenomenological laws.
+Optional viscosity bounds are explicit numerical choices; every clipped point
+is reported, and no floor is treated as measured strength or localisation length.
+
+The local thermochemical reference is the selected constant-property Boussinesq
+approximation, with `rho'=-rho0*alpha*(T-Tref)+delta_rho*C`, `f=rho'*g`,
+`q=-k*grad(T)` and reference heat capacity `rho0*cp`. Each SI material profile
+names its source and validity interval. C is a supplied volume fraction in
+[0,1], not a renamed plate or provenance ID. The R4 Tosi control has C=0, no
+compositional strength multiplier and H=0. A future continental-strength model
+requires its own explicit profile; the BF continental-raft extension is not
+silently selected. The viscous stress/dissipation helper takes a traceless
+symmetric strain tensor; it refuses compressible input rather than inventing a
+bulk law or hiding divergence by automatic trace removal.
+
+The pressure variable for the initial R4 box is dynamic pressure with an
+Atlas-selected zero-domain-mean gauge. It is **not** fed into the depth-only
+BF yield law, a high-pressure EOS or a tensile/friction law. Free-slip, impermeable
+walls, fixed top/bottom temperatures and insulated sides are selected for the
+Tosi unit box. These choices apply to the named rectangular reference. Body-force density owns thermal/compositional buoyancy once; no extra
+slab-pull traction, prescribed plate motion, latent heat or adiabatic work is
+added. Viscous dissipation can be computed separately and included only through
+the explicit heat-source argument when that approximation is selected.
+
+**Source-convention issue retained:** the printed Tosi momentum equation's
+right-hand-side sign with its stated upward unit vector does not directly match
+Atlas's `-grad(p)+div(tau)+rho'*g=0` body-force convention. The density/gravity
+implementation in the tagged ASPECT benchmark was checked and supports warm
+upward buoyancy. This is not an author-confirmed erratum. The case records the
+three exact ASPECT file identities. Full R4 acceptance must verify assembly signs, tensor factors,
+pressure normalisation and the full numerical benchmark before claiming its
+convection solution reproduces the paper. R3 local-law tests do not settle a
+future PDE comparison by omission.
+
+#### Fixed length and localisation limits
+
+An **explicit Atlas-selected extension**, separate from both published local
+controls, solves `d_bar - ell^2*d_bar_xx = d` on a 1D cell-centred uniform support
+with zero normal gradient at its ends. The positive physical ell does not change
+with mesh size. The banded SPD operator is tested against independent dense and
+analytic modal solutions, including second-order refinement at fixed ell,
+constant preservation, integral preservation and non-negativity. Its linear
+factorisation is reused; no dense inverse, numerical viscosity floor or repeated
+mutation of raw history is used as a substitute for a physical length.
+
+**This operator verification is not a mesh-independent coupled localisation
+result.** The primitive is optional and never silently alters the BF reference
+input. Raw history and a strength-driving filtered field must remain distinct.
+A 2D/3D coupled shear-band model, its boundary behaviour and a physically justified
+length require R4/R5 verification before localisation is claimed. The first R4
+control is constant viscosity, followed by the unchanged Tosi local laws; it does
+not depend on pretending this later gate is already passed.
+
+#### Returned arithmetic is part of the contract
+
+The numerical-hardening review found that
+`stress_and_dissipation()` could return zero heat after squaring a tiny strain
+rate even when the final heat rate was representable. For viscosity 1e100 and
+strain diag(1e-170, -1e-170), the previous zero is replaced by approximately
+4e-240 in the caller's consistent units. This is an extreme arithmetic test,
+not an observed failure of a mantle-scale simulation.
+
+The equations remain `tau = 2*eta*e`, `Q = tau:e = 2*eta*sum(e_ij^2)`.
+Mantissa/exponent evaluation avoids premature overflow/underflow in `2*eta`,
+`e^2` and the strain invariant. Each component of tau is evaluated independently;
+Q is summed at a power-of-two-normalised scale before final range conversion.
+Finite subnormal results are retained. A non-zero physical result that rounds to
+zero, or a result outside finite binary64 range, is refused explicitly. Zero
+strain is still a valid zero response. Symmetry and tracelessness use the existing
+64-epsilon relative criterion in normalised coordinates; no physical tolerance,
+source data, constitutive parameter or original test is changed.
+
+
+Independent exact-float Decimal contraction, subnormal/overflow cases, 3D
+invariants, broadcasting, detached ownership and resource refusals support the
+arithmetic checks; they do not calibrate a mantle model. Historical results are
+not repinned. Zero strain remains a valid zero response.
+
+<a id="3cr4-progress"></a>
+
+### 4.6 Rectangular thermomechanics: component obligations
+
+R4 is incomplete. R4.1 constant mechanics, R4.2 heat/binary transport, R4.3
+nonlinear mechanics and R4.4 mature-reference/combined acceptance have distinct
+obligations. CURRENT_STATE owns delivery and hold status. No component test count
+or short evolved example closes R4/W03/W07, starts R5, supplies planetary topology
+or explains Diadem landforms. Constant-property routes retain their original
+descriptors and scope when nonlinear modes are added.
+
+<a id="3cr4-1-mechanical-core"></a>
+
+#### R4.1: equations, units and declared boundaries
+
+The solver implements `-grad(p)+eta*laplacian(v)+f=0`, `div(v)=0`, with **constant**
+positive viscosity. For this constant-coefficient incompressible case the vector
+Laplacian equals `div(2 eta e)`; for variable eta it does not. `StokesBox2D` uses
+x right and **z upward from the bottom** in metres, a uniform rectangular grid,
+and a named frame. It is not R2's inward depth or a transformed global patch.
+All four walls have zero normal velocity and zero normal derivative of tangential
+velocity (impermeable/free slip). No no-slip wall, traction, free surface, inflow
+or prescribed plate motion is silently approximated by this boundary selection.
+
+`PreparedStokes2D` requires the existing `DiffusiveScales` and an unclipped
+constant `RheologyProfile`. Dynamic pressure has a zero-domain-mean gauge; it is
+not absolute/lithostatic pressure and is not fed into a pressure-sensitive law.
+The force snapshot is explicitly supplied on the interior velocity faces in
+N/m^3. It is used once. The optional `face_force_from_density` helper declares
+arithmetic interpolation of a cell anomaly to those faces and constant Cartesian
+gravity; it does not insert reference density, infer gravity, remap arbitrary
+meshes or add a second slab traction. R3's Boussinesq response can provide that
+anomaly. Snapshot time/epoch/source describe the input; no time advance occurs.
+
+#### Spatial discretisation and pressure compatibility
+
+Pressure occupies cell centres, u vertical faces and w horizontal faces. The
+zero normal boundary DOFs are eliminated. Face-centred finite-volume balances
+and centred differences produce `A=-laplacian`, `G=-D.T`. A constant pressure
+has zero gradient. It is fixed by a symmetric Lagrange-multiplier augmentation
+`[A,G,0;G.T,0,c;0,c.T,0]`, where `c=ones/sqrt(Np)`. **Every continuity equation is
+retained**; a pinned pressure is not used to discard a cell's divergence check.
+The multiplier is checked for compatibility and cannot conceal a mass source.
+
+The independent small sparse-direct and native iterative routes solve this same
+boundary problem; no dense inverse, independently solved physical tiles or silent
+fallback may replace it. Detailed solver/preconditioner construction, admission
+and measured costs belong to the
+[execution reference](OPTIMISATION_REFERENCE.md#3cr4-1-execution).
+
+<a id="3cr4-1-publication-review"></a>
+
+#### R4.1: returned-SI acceptance
+
+Extreme arithmetic probes exposed a gap: the internal normalised solution
+could pass while the returned SI fields failed the same equations. A 2x2
+circulation with force `20 * smallest_positive_binary64` rounded to a nonzero
+velocity with a 20% force residual but reported zero. An arbitrary diffusivity
+reference of 1e22 with force 1e-200 and physical viscosity 1e100 also changed a
+normal, representable velocity by about 1.19%; diffusivity is not a parameter
+of this steady mechanical problem. Neither probe is an Earth-like mantle case. A related density-to-face-force
+probe found that rounding an unequal subnormal endpoint mean before multiplying
+gravity could introduce a 33% error in a normal final force. Shared-exponent
+interpolation now preserves the original half weights without that intermediate
+rounding; genuinely unrepresentable final forces still fail explicitly.
+
+The correction normalises original SI forces directly. It evaluates conversions
+with `U0 = F L^2/eta` and `P0 = F L` using binary mantissas/exponents, not rounded
+intermediate subnormal scale products. Every independent residual/work gate now
+checks the returned SI velocity and pressure, re-expressed against the original
+force. Accurate nonzero subnormals remain supported; inadequate final rounding
+is refused. No original residual or physical tolerance is raised. New records
+identify this publication contract; old snapshots retain their historical checks,
+source identities and bytes without being relabelled as newly validated.
+
+The correction is registered in [stokes_r4_1_review.json](../cases/stokes_r4_1_review.json).
+[Original review tests](../evidence/3cr4-1-review-tests.json) and
+[measurements](../evidence/3cr4-1-review-measurements.json) retain the old failures
+and corrected scope; this is implementation evidence, not geological validation.
+
+#### R4.1: verification and visual scope
+
+The registered case is [`stokes_r4_1.json`](../cases/stokes_r4_1.json). Analytical
+forcing is differentiated from a continuous trigonometric streamfunction and
+independent pressure field, not computed by the discrete operator being tested.
+Square and unequal-spacing rectangular refinement, zero force, hydrostatics,
+checkerboard-pressure exclusion, sign reversal, superposition, SI scale
+invariance and warm-upward buoyancy are covered. Separate ghost/central-stencil
+momentum residuals, all-cell uncorrected divergence, pressure gauge and discrete
+work balance are checked even when MINRES returns success. The force-normalised
+residual tolerances are new R4.1 choices; no historical tolerance is changed.
+
+`tools/visual_stokes_r4_1.py` renders actual solved velocity/pressure/divergence,
+the explicitly **authored** temperature used to construct buoyancy, and continuous
+solution refinement. Face-to-centre averaging is display interpolation only;
+raw staggered arrays and provenance are retained. No temperature evolution or
+terrain is fabricated. Numerical acceptance, assistant visual inspection and
+Michael's visual review remain distinct.
+
+The existing lossless ArrayStore stores complete steady problem/result records
+with source/runtime, frame, epoch, time, units, force provenance, scales and law.
+Restore does not run a solver or rebind an old record. **This steady result is not an evolving thermal/material checkpoint**; use the
+separate R4.2/R4.4 contracts for that claim.
+The recorded result explicitly carries `R4_complete=false`.
+
+<a id="3cr4-2-thermochemical"></a>
+
+#### R4.2: equations, physical ownership and boundaries
+
+The [registered case](../cases/thermochemical_r4_2.json) specifies
+
+    rho0 cp [dT/dt + div(u T)] = k lap(T) + H,
+    dC/dt + div(u C) = 0,
+    rho' = -rho0 alpha (T-Tref) + delta_rho C,  f = rho' g.
+
+T is a cell-average absolute temperature; C is the volume fraction of ONE named
+constituent and 1-C is its complement. C is not a plate, material-cohort identity
+or formation age. The constant rho0 cp is the selected Boussinesq reference heat
+capacity, not an in-situ variable-density mass or latent enthalpy. All quantities
+are SI in an explicit x-right/z-up frame and named epoch. Extensive budgets are
+for one metre out-of-plane thickness. R2 inward depth is not renamed to z-up, and
+no full R2-to-W02 world/history conversion is implied.
+
+Constant positive k, rho0, cp and viscosity are required. The retained R3 thermal/
+compositional density anomaly feeds the reviewed mechanical solver once. Mechanical
+walls remain closed/free-slip. Thermal sides are insulating; top and bottom are
+either both fixed spatially uniform face temperatures or both insulating. A fixed
+face is half a cell width from its boundary-cell centre. No hidden periodicity,
+open material reservoir, compressibility, phase reaction or moving mesh is added.
+
+H is material internal heating plus an explicit nonnegative scalar/cell source,
+held constant for the supplied interval. It is integrated once over that interval.
+Dissipation, adiabatic heating and latent heat are not inferred or double-counted.
+Missing temperature, invalid composition, excessive density anomaly and unsupported
+rheology fail explicitly rather than acquiring arbitrary laws or zero defaults.
+
+#### R4.2: numerical meaning and acceptance limits
+
+The normal step is Strang **D(dt/2)–A(dt)–D(dt/2)**. D is the exact time evolution
+of the **second-order discrete finite-volume** diffusion/source operator, not exact
+continuum diffusion. A reusable DCT-II in x and DST-II (fixed walls) or DCT-II
+(insulated) in z diagonalise this specific constant-coefficient rectangle. The
+nonnegative discrete eigenvalues are `4 kappa sin(pi*j/(2*n))^2 / h^2`, with j from
+0 to n-1 for insulation and 1 to n for fixed face values. A linear stationary
+thermal lift handles the fixed walls. Stable exponential/phi coefficients also
+integrate the source and time-mean boundary heat. This avoids an explicit parabolic
+CFL restriction and large-step Crank–Nicolson oscillations without changing the
+spatial stencil. Splitting error still needs time refinement: a stable large
+thermal step is NOT automatically an accurate coupled step.
+
+A is unsplit multidimensional MC-limited finite-volume transport with SSPRK2.
+Each shared face has one oriented transfer, used with opposite signs by neighbours.
+The two RK stages each solve the constant-viscosity buoyancy response from their
+own T/C fields; start-of-full-step velocity is not frozen by default. An explicitly
+supplied frozen MAC velocity is a separate kinematic reference experiment. RK
+velocities are labelled operator-split intermediates, not simultaneous final-state
+mechanics. The demonstration solves endpoint mechanics again before plotting it.
+
+The sufficient multidimensional outgoing-Courant bound is 1/2 (default 0.45),
+checked at BOTH Euler stages. Summing outgoing directions matters; taking only a
+maximum over axes would be unsafe. Divergence is checked on the actual velocities.
+A failure publishes no partial state and requires an explicitly smaller interval;
+there is no automatic substep, reduced-order route or material clipping. MC
+limiting is formally second order in smooth monotone regions and loses order near
+extrema/contacts. The compact-rotation test records observed errors/peak diffusion;
+it is not misreported as exact shape preservation or uniform second order.
+
+Raw C excursions within 64 binary64 epsilon are retained and reported, never
+renormalised or clipped; larger excursions reject the step. The primary constituent
+inventory residual is relative to its own amount, so a trace constituent is not
+hidden behind total domain volume. Because only C is independently stored, the
+relative precision of a vanishing 1-C is limited by subtraction near unity; both
+inventories and the raw bound excursions remain visible. No general multi-material
+cohort-advection completion is claimed by this binary pilot.
+
+Every accepted step checks returned endpoint heat against signed integrated outward
+boundary heat and source input. Composition and cell-local advective ledgers are
+checked independently of the update loop. Zero normal material flux is exact.
+Closed-to-material does not mean thermally insulated. Source/field/gauge/validity
+checks from the R4.1/R3 components are retained. Subnormal source products are
+combined before rounding where possible, and representable attenuated modal tails
+are not lost merely because an exponential coefficient underflows first.
+
+#### R4.2: independent checks and restart
+
+Tests use an independent face-balance dense exponential, a separate boundary-heat
+integral, analytical diffusion modes, independent transport matrices, rotating
+Gauss-averaged compact data, and an independently derived 2x2 circulation mode
+coupled to high-accuracy DOP853 integration. The latter is an independent temporal
+reference, not a second Earth model. Timestep and spatial refinements remain
+separate. Test failures are not fixed by changing retained reference answers.
+
+Endpoint snapshots use the existing lossless ArrayStore and contain both fields,
+complete problem/epoch/source definitions, latest-step balances and parent IDs.
+A prior parent snapshot is not needed to decode or continue that state. Future
+forcing is still explicit caller input; this is not a stored future schedule or
+complete past flux/trajectory catalogue. Step objects expose both stage velocities
+and shared-face transfers for callers needing those records. Reopen/fresh-process
+continuation with the same source, policy and next forcing must reproduce exactly;
+changed source/policy is refused rather than silently rebinding a checkpoint.
+
+The real-output visual tool draws authored initial and genuinely evolved final
+T/C fields, their difference, separately solved endpoint velocity and conservation
+residuals. It retains numerical arrays, case/source identities and output hashes.
+Assistant visual inspection and user review are separate from numerical or physical
+acceptance. The 48-by-48, 40-step example is illustrative, not a calibrated Earth,
+Diadem or full Tosi convection case. No new plate geometry needs a globe render here.
+
+<a id="3cr4-2-review"></a>
+
+#### R4.2: conditioned thermal arithmetic
+
+The insulated diffusion operator no longer uses the material's buoyancy reference
+as its numerical temperature offset. With zero thermal expansivity, changing that
+reference cannot change this physical experiment, but the old subtraction/FFT/
+addition could lose resolved field differences or fail heat accounting. Each
+insulated call now uses the midpoint of the supplied field range as an offset.
+The physical reference remains unchanged in the density law. These are deliberate
+conditioning probes, not claims of realistic 10^16 K mantle reference values.
+
+For short spectral intervals (maximum rate*dt <= 0.5), compute the field change
+with `expm1(-rate*dt)` and add it to the original field. The fixed-wall time-mean
+increment uses `phi1-1=-x*phi2` rather than subtracting near-ones. For larger
+attenuation retain the absolute decayed-field form to avoid cancellation of
+nearly all the original temperature. Both forms evaluate the same discrete
+exponential/source equation with the original spatial/time order. No rates,
+source, boundary values, physical durations or accepted tolerances are changed.
+The independent dense exponential and heated steady-parabola refinement checks
+cover both forms. Fixed-wall integrated heat remains independently evaluated.
+
+The weighted modal-source helper now combines exponents whenever the intermediate
+weight*dt is NONZERO subnormal as well as zero/overflowed. Rounding such a factor
+before multiplication by a large mode could otherwise change the final normal
+response by 33.3% in the registered arithmetic counterexample. The finite
+representable response agrees with direct Decimal products after correction.
+
+#### R4.2: represented clock and integrated interval
+
+A merely increasing binary64 endpoint is insufficient: at epoch 10^16 s,
+requesting 3 s produces a representable clock increase of 4 s. Integration must
+not use 3 s while recording that it covered 4. New steps require the represented
+endpoint difference AND twice the represented thermal half-step to agree with
+the requested duration within `min(inventory_rtol,2e-11)` relative precision.
+Inadequate intervals fail BEFORE any evolution, not by altering dt silently.
+This is a numerical precision guard, not a finest temporal resolution or an
+inferred geological timestep. An explicit suitable epoch/interval is the caller's
+choice. Ordinary 4096-step non-bit-exact clock sequences remain supported.
+
+`publication_contract=atlas.thermochemical-conditioned-diffusion-and-clock.v1`
+labels new records. Earlier snapshots still decode with exactly their original
+identity, metadata and arrays, without acquiring the new guarantee. Changed
+source/execution identity still prevents an unrequested restart rebind.
+The method's finite-volume/Strang equations retain their existing identifier;
+source/version and the publication contract identify these arithmetic changes.
+
+[thermochemical_review_r4_2.json](../cases/thermochemical_review_r4_2.json)
+retains reference-invariance, short fixed-wall/source/epoch probes, historical
+restoration and changed-source refusal. Insulated variance decay, transpose and
+complement covariance, source and heated-conduction controls verify the declared
+PDE, not mature convection. [Execution and original review evidence](OPTIMISATION_REFERENCE.md#3cr4-2-review-execution)
+retain exact scope and costs; no old reference answer or PB2002 record is replaced.
+
+<a id="3cr4-3-variable-mechanics"></a>
+
+#### R4.3: full symmetric stress
+
+The existing uniform staggered rectangle, zero normal wall velocity, zero wall
+shear traction and zero-domain-mean dynamic-pressure gauge are retained. Normal
+strains/stresses are cell-centred; engineering shear `gamma=du/dz+dw/dx` and
+`tau_xz=eta_vertex*gamma` are at interior vertices. Normal stresses are
+`tau_xx=2*eta_cell*du/dx`, `tau_zz=2*eta_cell*dw/dz`. The discretised equation is
+`-grad(p)+div(2*eta*e)+f=0`, `div(v)=0`. No reference density/gravity is counted
+twice and dynamic pressure is not sent to an absolute-pressure material law.
+
+The positive velocity block is
+`A=2*Bx.T*eta_cell*Bx+2*Bz.T*eta_cell*Bz+S.T*eta_vertex*S`.
+The independent padded stress-divergence stencil and this native sparse derivative
+assembly are separately tested. The pressure gradient is the negative divergence
+adjoint; the existing gauge augmentation preserves every continuity equation.
+For constant viscosity the divergence-free solution agrees with R4.1, while
+variable viscosity includes the coefficient-gradient and cross-derivative terms
+that an `eta*laplacian(v)` substitution would lose.
+
+`PreparedVariableStokes2D.solve` accepts explicit positive SI viscosity at both
+stress supports; it does not invent an average for a discontinuous supplied field.
+`solve_rheology` evaluates the unchanged R3 constant/Tosi profiles. Cell temperature
+is supplied; interior-vertex temperature is the arithmetic mean of four adjacent
+cells. At each stress support, missing strain tensor components are reconstructed
+with symmetric local arithmetic averages, then `eII=sqrt(e:e/2)` is evaluated.
+This is a named second-order collocation rule for resolved smooth fields, not a
+proof of interface, subcell shear-band or mesh-independent localisation accuracy.
+Depth is measured down from the top using the separate R3 depth normalisation.
+
+#### R4.3: current-law and returned-field acceptance
+
+Picard iterations solve with lagged viscosity, evaluate viscosity again from the
+new velocity and check the **true updated-law** force residual and maximum
+log-viscosity change. Default full relaxation is explicit; any alternative fixed
+relaxation enters the policy/identity. Tosi's factor-two harmonic combination and
+Frobenius plastic denominator remain unchanged, including their zero-rate limits.
+No minimum strain rate, hidden yield cap or new viscosity floor is introduced.
+Optional existing R3 viscosity bounds remain explicit and return clipping masks.
+
+Default linear GMRES tolerance is `1e-12`; the true normalised momentum gate is
+`1e-9`, continuity `1e-10`, pressure-mean gauge `1e-12`, work balance `1e-9`, and
+log-viscosity change `1e-8`. These are registered R4.3 numerical policies, not
+relaxations of R4.1/R4.2 controls. Maximum iteration counts and a finite contrast
+admission envelope do not guarantee convergence for every allowed input. Failure
+raises an error; it neither publishes a lagged solution nor changes the law,
+mesh, tolerances or solver route. The final test uses the actual rounded returned
+SI velocity, pressure and viscosity with the rheology re-evaluated at that velocity.
+Independent stress, divergence, gauge and mechanical-work checks remain distinct.
+
+The selected BF model is available for a separate mechanical snapshot **only with
+explicit frozen damage**. This neither clips the raw history nor advances/heals
+it. The two-field evolving state has no damage field, so BF coupling is refused,
+not filled by implicit zeroes. General damage advection, 2D/3D physical-length
+regularisation and coupled localisation still need their own selected extension.
+
+#### R4.3: explicit thermochemical coupling
+
+`ThermochemicalProblem(..., mechanical_mode='variable-r4.3')` explicitly enables
+constant/Tosi mechanical feedback through `PreparedThermochemical2D`, which accepts
+`nonlinear_policy=NonlinearStokesPolicy(...)`. Both RK transport stages must
+converge their own current temperature-dependent/yielding mechanics before the
+shared-face transfers are accepted. A nonlinear failure or failed second-stage
+Courant check publishes no endpoint. The existing Strang split, discrete thermal
+exponential, MC/SSPRK2 transport, clock, source/boundary heat and binary-inventory
+checks are unchanged. Composition affects buoyancy, not an invented strength law.
+Thermal conductivity/capacity are still constant and the domain is still closed.
+
+The default `constant-r4.2` contract deliberately retains its old variable-law
+refusal and canonical descriptor. New records retain both stage solution IDs,
+true diagnostics, policy and iteration counts, while the accepted endpoint has
+its own time and identity. Stored stage velocities are not relabelled as the final
+simultaneous flow; visualisation re-solves the endpoint when it displays that flow.
+Snapshots decode without a chain of parent deltas, but are not complete archived
+trajectories or future forcing schedules. Restart requires the same recorded
+source and policy; old source states do not silently rebind.
+
+#### R4.3: independent evidence and limits
+
+The new checks reuse **T08 mechanics**, **T09 strength** (not free-surface or
+localisation completion), applicable T05/T14/T15 and the existing PT families.
+An independent rectangular streamfunction/pressure with analytically differentiated
+exponential viscosity verifies second-order space refinement. A 2x2 continuity
+reduction gives an independently written scalar Tosi root; an eight-variable ODE
+combines that root with independent transport/heat matrices to check nonlinear
+coupled time refinement. Sharp coefficient, hydrostatic, axis-transposition,
+pressure-checkerboard, work, constant-limit and refusal tests complement them.
+
+Primary corroboration uses PETSc's DMStag variable-coefficient example and official
+SciPy solver documentation; no external implementation is copied. The unchanged
+R3 source register remains authoritative for rheological formulas. The benchmark
+and visual controls are synthetic, not tuned to PB2002 holdouts or Diadem output.
+Bounded direct/iterative and repeated-preparation measurements report actual costs,
+not a universal performance claim. Details belong in the
+[maintained execution reference](OPTIMISATION_REFERENCE.md#3cr4-3-execution).
+
+Post-stage actual-code visual QA is required. This increment renders solved flow,
+viscosity, continuous reduction relative to the zero-rate law, pressure, nonlinear
+residuals, independent refinement and short coupled evolution. It retains raw
+arrays and source identities. A continuous viscosity reduction is not falsely
+labelled as a discrete yielded-region map. Rendering and assistant inspection
+remain separate from Michael's visual review and physical acceptance.
+
+<a id="3cr4-4-convection"></a>
+
+### 4.7 Mature convection and combined R4 acceptance
+
+The [registered convection contract](../cases/convection_r4_4.json) defines the
+applicable reference, maturity and independent adequacy gates. R4.4 remains held
+and incomplete. Component verification and bounded probes cannot satisfy the
+following campaign requirements.
+
+#### Reference cases, conventions and source scope
+
+The primary reference remains **Tosi et al. (2015), A community benchmark for
+viscoplastic thermal convection in a 2-D square box**, DOI
+`10.1002/2015GC005807`, equations 1–21 and Tables 1–2. Case definitions include
+1–4, periodic case 5a and **all 21 separately identified case-5b yield values
+3.0 through 5.0 at spacing 0.1**. These are 26 configurations, not 26 completed
+runs. Case 5b remains applicable, and its exact supplementary data was supplied
+and integrated on 22 September 2026. The main reference file contains 490 numerical entries for ten codes solving the
+full two-dimensional viscosity problem: 470 individually transcribed Table 2
+cells, plus 20 case-1 viscosity-limit entries obtained by applying the two exact
+boundary values in its footnote to each code.
+MC3D is explicitly excluded from this particular comparison envelope because
+its viscosity is laterally averaged, a different equation system discussed in
+the paper; the exclusion is not based on Atlas output.
+
+Reference policy **v2 (22 September 2026)** explicitly adopts `Phi/Ra` for the
+case-5a extrema, while preserving Table 2's printed `Phi` labels and numbers.
+This is a derived project interpretation, **not an author-confirmed erratum**:
+the periodic heat/work identity rules out a raw-Phi reading in all ten columns,
+and ASPECT 3.0.0 explicitly compares raw dissipation divided by 100 with work.
+The analyser now feeds both raw and already-scaled extrema through its periodic
+report and compares the scaled channel without dividing it a second time.
+No tolerances or maturity gates changed; the derivation and source links are in
+the case contract and [bounded evidence](W01_REGIONAL_WORKFLOW.md#bounded-shape-validation-and-limits).
+
+The case-5b source-data blocker is now resolved. The owner supplied Supporting
+Information S1; the source-bound `cases/tosi_case5b_reference.json` retains all
+626 reported numerical pairs in Tables S14-S23, their printed decimal precision,
+code, yield, mesh, source page, upright/italic steady/periodic classification and
+explicit dashes. Two independent text extractors agreed on every pair and dash;
+the introduction and all ten table pages were also visually checked. No source
+figures or article prose are redistributed. The original separate rights remain.
+
+Comparison selects each same-equation code's finest published column at the exact
+yield **before examining Atlas output**, with no coarser-column fallback for a
+dash or unreported yield. All selected rows are retained and partitioned by their
+printed regime; unlike regimes are never pooled. The diagnosed Atlas regime must
+have published support, and any disagreement remains explicit in the report.
+At yield 3.8, for example, GAIA's finest entry is steady while eight others are
+periodic. This is a **finest-published envelope, not an exact-grid error bound**:
+source methods and meshes differ. Independent Atlas mesh/time/nonlinear adequacy
+is still mandatory, and all three studies' finest representatives must agree on
+the physical regime. Both ten-cycle mean Nu extrema enter periodic comparison
+and adequacy; global extrema alone cannot substitute for those means.
+
+Tables S14-S22 supply nine same-equation contributors, not necessarily a result
+at every mesh/yield. ELEFANT is absent. MC3D's different-law S23 is retained for
+provenance but excluded from comparison. Cases 1-5a still require all ten named
+Table 2 contributors. Neither absent values nor source deletion can silently
+shrink the requirements: genuine source absences remain visible, and changed
+reference bytes fail the pinned identity check. Runner identities bind both the
+reference data and comparator; old trajectories are not automatically repinned.
+Runtime analysis reads the small JSON, not the PDF, and has no PDF-library
+dependency. No tolerance was widened and no mature R4.4 trajectory was completed
+by this source integration. The held campaign remains incomplete.
+
+The unit square is embedded in positive SI-valued controls with dimensionless
+`theta = T_K - 1`, unit diffusivity, and `Ra=100`. This is a numerical embedding,
+not Earth calibration. Initial temperatures are exact cell averages of equation
+11, including both trigonometric integration factors. Bottom/top theta are 1/0;
+sidewalls are insulating and velocity walls are impermeable/free-slip. Zero
+composition and zero additional heating are explicit. The retained R3 warm-upward
+force convention remains unchanged; no new erratum is asserted for the printed
+momentum-sign issue. Changing source cannot rebind an old trajectory automatically.
+
+#### Independent simultaneous endpoint diagnostics
+
+`convection_benchmark.py` re-solves each sampled **accepted endpoint** before
+reporting its flow. The two stored RK-stage velocities are not relabelled as that
+endpoint. State, force, temperature, rheology, box, time, scaling and clipping
+checks bind the new diagnostic to the actual endpoint result.
+
+The diagnostic set includes mean temperature, instantaneous top/bottom Nusselt
+numbers, domain and surface RMS velocity, **signed** maximum horizontal surface
+velocity, boundary-inclusive sampled viscosity extrema, work, raw dissipation,
+`Phi/Ra`, percentage work/dissipation discrepancy, divergence and temperature
+bounds. Surface absolute speed and stress-support-only viscosity extrema remain
+separate additional channels. The half-cell wall flux is instantaneous, not the
+interval-integrated boundary heat in the transport ledger.
+
+MAC dual-volume quadrature is used for RMS velocity. Normal-strain dissipation
+is reconstructed at cell centres and shear dissipation at vertices, independently
+of the solver's acceptance scalar. The work quadrature uses cell temperature and
+centred vertical face velocity. Surface tangential velocity and normal strains
+use the nearest interior row; free-slip wall shear is zero. Wall rheology uses
+exact fixed-wall temperatures and depth, not adjacent cell temperatures mislabeled
+as boundary values. These are declared smooth-field, second-order reconstructions;
+they do not find unobserved subcell extrema or prove shear-band resolution.
+
+#### Predeclared maturity and adequacy gates
+
+The JSON contract was saved before the new long trajectories. Its multi-code
+reference envelope for Table 2 is the minimum/maximum of all ten applicable
+reported values, expanded by 0.5% for rounding/discretisation. The explicit v2
+case-specific contributor and normalisation correction above does not change
+that margin. This is not a statistical confidence
+interval and is only one necessary gate. The published paper does not supply all
+of the following universal stopping tolerances; they are Atlas's explicit
+numerical acceptance choices, not quotations from the paper.
+
+For steady flow: minimum dimensionless time 0.1, a final window of 0.05 with at
+least 101 samples, all ten diagnostic ranges no greater than `1e-4` relative
+(with a separate `1e-8` absolute scale), saved temperature-field change no greater
+than `1e-4`, and top/bottom heat-flux imbalance no greater than `1e-3`. A finite
+sample series cannot prove absence of all between-sample oscillations. A sampled
+endpoint must actually match the saved final state for the mature-regime gate.
+
+For periodic flow: ten complete cycles, at least 100 diagnostic samples per
+period, stable periods and extrema within 1%, and temperature fields compared
+phase-by-phase over the complete cycles with a 1% absolute dimensionless-field
+tolerance. Field archives must themselves resolve each period; densely sampled
+scalar diagnostics cannot hide sparse stored fields. Case 5b reports **both**
+mean cycle minima and maxima, averaged over ten complete cycles, as requested by
+the paper. Phase interpolation is a diagnostic only, never an evolved state.
+
+Matched mature-regime adequacy uses meshes 32/64/128, timestep factors 1/0.5/0.25,
+and nonlinear tolerance factors 1/0.1/0.01. Finest-pair relative diagnostic-change
+gates are respectively 1%, 0.5% and 0.1%, with decreasing, monotone changes or an
+explicit unresolved result. Roundoff-level identical values are not assigned an
+invented convergence order. Small-grid/transient studies are explicitly exploratory
+and cannot satisfy these full-run gates. Tightening includes linear, true momentum
+and viscosity-change tolerances together. Non-varied controls and regime/source
+identity must match; one endpoint comparison cannot establish adequacy.
+
+`analyse_convection_r4_4.py` verifies actual saved trajectories and reports these
+separate gates. `assess_convection_suite_r4_4.py` requires actual three-run studies
+for every applicable configuration, reference agreement, conservation/work and
+mature-regime checks, actual-code visual inspection, plus a full regression and
+bounded resource record bound to the exact current source inventory. Missing or
+ambiguous evidence cannot become PASS. The campaign example deliberately has
+empty study lists and therefore reports INCOMPLETE_R4_4. Passing these numerical
+gates would still not establish Earth/Diadem validity or global tectonic realism.
+
+#### Accepted execution and remaining evidence
+
+The [R4.4 execution contract](OPTIMISATION_REFERENCE.md#3cr4-4-execution) owns the
+fixed future schedule, finite total-step envelope, explicit iteration allowance,
+resource limits and recovery protocol. No automatic timestep shrinkage, tolerance
+relaxation, viscosity floor, alternate-solver fallback or unconverged endpoint is
+allowed. Both stages retain current-law and whole-step heat/inventory acceptance.
+Accepted states, exact input/source/runtime identities, stage records, balances
+and endpoint diagnostics remain bound together. Transactions precede exclusive
+atomic receipt publication; changed source/case/future schedule/runtime refuses.
+Hard-kill claims are not automatically removed. Failure/cancellation preserves
+the last accepted state without publishing a partial endpoint. Relocated-source,
+store-copy and fresh-process recovery must preserve these contracts.
+
+The fixed-temperature advection correction uses reflected-wall MC slopes capped
+by wall jump in both RK stages and the independent NumPy formulation. Insulating
+walls and composition retain their reconstruction. Periodic evidence must reach
+the endpoint; final-complete-cycle phase-matched temperature arrays must share the
+run's source/configuration/receipt. Nested mesh means restrict to common coarse
+cells; time/nonlinear studies retain identical support. Existing axis tolerances
+and non-monotonicity rules remain; missing/undersampled data is INCOMPLETE, never
+scalar-only acceptance. Bounded preflight, sampling/cadence controls, advisory Courant ceilings and retained
+sidecar limits belong to the execution reference. They do not replace evidence or
+guarantee a safe future step.
+
+[The dev40 assessment](OPTIMISATION_REFERENCE.md#adaptive-accuracy-and-assessment-limits) retains
+the frozen-field spatial-error finding, short corrected-timestep comparison,
+unresolved domain-RMS reference miss and rejected stress-support reconstruction.
+Those probes are not mature coupled adequacy. Source-bound re-equilibration,
+registered mature mesh/time/nonlinear studies, all applicable case/regime
+comparisons and assembled regression/resource/recovery/visual evidence remain
+required. Case-5b source acquisition is resolved; its full regime/reference
+comparison is not. Do not extend a failed coarse-grid result merely by adding
+steps, silently rebind old states or run a campaign through known reference
+blockers. No unit-test pass, finite run, attractive plot or R4.3 result closes R4.4.
+
+<a id="3cr4-4-native-mechanics"></a>
+<a id="3cr4-4-intra-step-guess"></a>
+<a id="3cr4-4-exact-source-verification"></a>
+<a id="3cr4-4-sparse-template"></a>
+<a id="3cr4-4-anderson"></a>
+<a id="3cr4-4-cross-step-start"></a>
+<a id="3cr4-4-preconditioner-reuse"></a>
+
+#### Numerical-policy and execution boundaries
+
+Exact [native action](OPTIMISATION_REFERENCE.md#3cr4-4-native-execution),
+[intra-step guesses](OPTIMISATION_REFERENCE.md#3cr4-4-intra-step-guess-execution),
+[source verification](OPTIMISATION_REFERENCE.md#3cr4-4-source-verification-execution),
+[sparse templates](OPTIMISATION_REFERENCE.md#3cr4-4-sparse-template-execution),
+[Anderson](OPTIMISATION_REFERENCE.md#3cr4-4-anderson-execution),
+[cross-step starts](OPTIMISATION_REFERENCE.md#3cr4-4-cross-step-start-execution) and
+[preconditioner reuse](OPTIMISATION_REFERENCE.md#3cr4-4-preconditioner-reuse-execution)
+retain their detailed policy, identity, memory, refusal and measured-cost contracts
+at those existing destinations. They do not change physical laws or confer mature
+acceptance.
+
+Full current stress, returned-SI residuals, binary64 and physical thresholds remain
+binding. Starting guesses are inputs, never accepted solutions; current forcing
+and law must be re-evaluated. Only accepted physical steps may publish successor
+state. Operator-split stage flow is not simultaneous endpoint flow. Policies cannot
+silently change physical laws, bypass current-law convergence, retry a failed solve
+or migrate changed-source/policy trajectories. Exact algorithm parameters and
+ownership/refusal controls have their single home at the execution links above.
+
 <a id="work-packages-and-dependency-gates"></a>
+
+<a id="current-implementation"></a>
+
 
 ## 5. Work packages and dependency gates
 
-Each W-package ends with a reviewed evidence record. Any failed gate blocks its dependent capability, but not unrelated analytical work. Parameters used to obtain a fit must be separated from withheld validation data. The foundation status below is already delivered; remaining work is subject to its scoped development and execution requirements. This document edit authorises no simulation or benchmark.
+Each package needs a reviewable case and evidence for its claimed capability.
+A failed gate blocks dependants, not unrelated analytical work. This register
+defines obligations; CURRENT_STATE owns status. Detailed methods and obtained
+results remain at the following owner destinations.
+
+| Package | Method owners |
+| --- | --- |
+| W00 | [Foundation contracts](FOUNDATIONS.md), selected case and existing execution card |
+| W01 | [Sampling](W01_INITIAL_SAMPLING.md), [motion](W01_MOTION_FORCING.md), [regional workflow](W01_REGIONAL_WORKFLOW.md), [assessment](W01_REGIONAL_WORKFLOW.md#stage-8-combined-acceptance) |
+| W02 | [Regional transport, cohorts, remap, ALE and events](FOUNDATIONS.md#w02-regional-case-openclosed-constant-density-thickness-transport) |
+| W03 | [Thermal columns](W03_THERMAL_COLUMNS.md), [support](W03_THERMAL_SUPPORT.md), [compaction](W03_COMPACTION.md), [workflow](W03_WORKFLOW.md) |
+| W04 | [Loads](W04_COLUMN_LOADS.md), [finite regions](W04_FINITE_REGIONS.md), [variable rigidity](W04_VARIABLE_RIGIDITY.md), [workflow](W04_WORKFLOW.md), [assessment](W04_WORKFLOW.md#combined-supported-workflow-acceptance) |
+| W05 | [Regional extension](W05_REGIONAL_EXTENSION.md), [assessment](W05_REGIONAL_EXTENSION.md#combined-acceptance-contract) |
+| W06 | [Spreading design](W06_SPREADING.md), [birth](W06_BIRTH.md), [cooling](W06_COOLING.md), [histories](W06_HISTORIES.md), [workflow](W06_WORKFLOW.md) |
+| W07 | [Mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_HETEROGENEOUS_THERMAL.md), [surface strength](W07_SURFACE_STRENGTH.md), [workflow](W07_WORKFLOW.md), fixed-box [3D mechanics](REGIONAL_MECHANICS_3D.md) / [evolution](REGIONAL_EVOLUTION_3D.md) |
+| W08 | [Regimes](W08_REGIMES.md), [shortening](W08_SHORTENING.md), [transform](W08_TRANSFORM.md), [subduction](W08_SUBDUCTION.md), [underthrust](UNDERTHRUST.md), [magmatism](W08_MAGMATISM.md), [joined routes](W08_JOINED.md) |
+| W09 | [Surface design](W09_SURFACE_PROCESSES.md), [water](W09_WATER.md), [erosion](W09_EROSION.md) |
+| W10 | [Scoped validation](W10_VALIDATION.md) |
+| W11 | [Execution, PF/PT methods and measurements](OPTIMISATION_REFERENCE.md) |
+| W12 | [Supported assembly](W12_ASSEMBLY.md); [remaining coupled completion](INTEGRATION_PLAN.md) |
 
 ### W00 — Freeze the scientific case and evidence rules
 
@@ -2230,85 +1177,31 @@ Create three distinct evidence sets: exact/manufactured verification, analogue/o
 
 ### W01 — Coordinates, rotations and initial geological fields
 
-**Stage 4B reference-library status:** sourced principal-material records,
-condition-aware property resolution and exact layer bindings are now supplied.
-Stage 5 must preserve the distinction between grain/bulk properties, explicit
-pore fluids, scalar reference values and still-needed constitutive laws.
-
-**Current stage-4 status:** descriptions and their structural/identity validation
-are implemented for regional and global initial configurations. Stage 5 now
-samples those descriptions through `InitialConditionState` and the shared
-prepared sampler; see [scope and checks](W01_INITIAL_SAMPLING.md). W03
-thermal/compaction evolution remains separate; Stage 7 now connects supported
-inventories to regional W02 evolution.
-
-
-
-**Prior stage-3C scope (retained for context):** automatic initial spherical
-partition construction/validation is implemented. Stage 4 above now supplies the
-initial geological description. Stage 5 supplies supported point, cell-average
-and inventory sampling. Stage 6 has a reviewed, locally integrated kinematic
-adapter with continuous-section interface checks and measured vectorisation;
-see [motion reduction](W01_MOTION_FORCING.md). Stage 7 now supplies the supported
-[W01–W02 workflow](W01_REGIONAL_WORKFLOW.md), and Stage 8 has the explicit
-[combined assessment](W01_COMBINED_ACCEPTANCE.md). Scientific gates remain open.
-
-
-**Stages 1–3 delivered within the declared regional/hemisphere-patch scope:** see `cases/w01_coordinates.json`, `cases/w01_geometry.json` and
-[coordinate/time implementation](OPTIMISATION_REFERENCE.md#w01-stage1-delivery).
-This is stage-level completion only. The agreed remaining sequence is:
-
-| W01 stage | State and completion responsibility |
-| --- | --- |
-| 1 — Coordinate/frame/time conventions | Implemented; explicit spherical, local and legacy axes, unit/epoch conversions and independent numerical checks. |
-| 2 — Plate and feature geometry | Implemented for planar polygons/traces and conditioned minor-arc spherical patches, with metrics/overlays, spatial indexes, gap/overlap diagnostics and checked persistence. No arbitrary whole-sphere Boolean engine is claimed. |
-| 3 — Shared boundaries and sidedness | Implemented: complete static domain coverage, single shared segments, verified sides/orientation, same-plate seams, cyclic junction sectors, point contacts, metric frames and prescribed velocity diagnostics. Spherical networks require a coherent common domain chart; arbitrary full-sphere stitching remains unsupported. |
-| 3B — Shared whole-sphere geometry | Delivered with canonical shared vertices, matching seams and global ownership; not dynamics. |
-| 3C — Generated initial partition | Geometry fixture complete. Earth-like scientific acceptance REOPENED: calibrated candidate and bounded scale-matched shape measurements supplied; full PB2002 prescribed-motion consistency checked, but full morphology and independently generated dynamics are not validated. |
-| 4 — Initial geological description | Delivered: typed crust/material/cohort/ordered-layer/thermal/fault/weak-zone descriptions, explicit provenance and precedence, regional/planetary attachment, and self-contained verified storage. Point/cell sampling remains stage 5. |
-| 5 — Initial-condition sampler | Implemented for the declared Stage-4 representation: topology-aware fixed features, point/average/inventory sampling, material-temperature checks, missing-data rules and verified restoration. See `W01_INITIAL_SAMPLING.md` for explicit supported geometry/field limits; not scientific acceptance or W02 evolution. |
-| 6 — Motion to regional forcing | Reviewed and locally integrated for supported planar/axial-Euler reductions: moving-frame components, explicit frozen interval, sided ownership and checked N+1 velocities. Continuous-section checks refuse unsupported interfaces even between grid faces. 200 focused checks; vectorised adapter used 27.1267% less query time than its scalar reference in the measured workload. See `W01_MOTION_FORCING.md`; no force inference or Stage-7 evolution. |
-| 7 — W01-to-W02 workflow | Implemented for explicit planar strips and axial-motion hemispheric wedges: actual S5 volumes become W02 cohorts without ad hoc intermediate arrays; initial thermal/history descriptions, source-bound reuse and continuation are retained. See `W01_REGIONAL_WORKFLOW.md`; not unrestricted spherical dynamics or evolved W03 physics. |
-| 8 — Combined W01 acceptance | Executable focused assessment supplied through `verify.py --w01`; original representation and assembled resource/cache/restoration gates are assessed separately from unclosed science. See `W01_COMBINED_ACCEPTANCE.md` and obtained evidence. Whole-W01 acceptance remains INCOMPLETE because S3C/physical-formation scientific gates are not closed. |
-
-
 **Dependencies:** W00. **References:** P01/P03, E01/E02/E04, F01/F03.
 
-Establish regional east/north/up and spherical Cartesian conventions with explicit conversion at legacy x-east/y-south interfaces. Implement future reference tests for finite rotations, composition order, inverse motion and reference-frame changes. State geometric and area errors separately from the physical model’s uncertainty.
+| Stage | Responsibility and scientific boundary |
+| --- | --- |
+| 1 | Explicit spherical/local/legacy frames, handedness, units and epochs; finite rotations, composition/inverse tests and rigid distances/zero strain. |
+| 2 | Planar polygons/traces and conditioned minor-arc patches; metrics, overlays, gaps/overlaps, indexes and persistence. No arbitrary full-sphere Boolean or polygon-soup repair. |
+| 3 / 3B | Shared edges/sides/orientation, same-plate seams, cyclic junction sectors, point contacts, canonical vertices and global ownership. A coherent chart or explicit shared binding is required; mismatches are refused rather than welded. Static closure is not dynamics. |
+| 3C | Generated partitions retain declared priors. Earth-like acceptance is REOPENED: gap-free Voronoi or area-conditioned geometry, fitted areas and bounded shape measurements do not establish generated dynamics or whole-W01 acceptance. |
+| 4 / 4B | Typed materials/cohorts/layers/thermal/fault/weak-zone descriptions with provenance/precedence, condition-aware library and exact bindings. Grain/bulk, pore fluid, reference scalar and constitutive law remain distinct; partial records remain partial. |
+| 5 | Fixed-feature point/average/inventory sampling, material-temperature checks, unknown masks, refinement invariance and restoration. Supported geometry/field limits remain explicit; sampling is not evolution. |
+| 6 | Prescribed motion into planar strips / axial-Euler hemispheric reductions, moving-frame components, original frozen interval, sided ownership and N+1 velocities. Continuous-section guards refuse unsupported interfaces between faces or out-of-plane motion; unsupported junction-path motion is not a constant-rate port. No force inference. |
+| 7 | Actual sampled volumes into W02 cohorts, explicit inflow and unchanged selected MUSCL scheme; original interval, thermal/history provenance and source-bound reuse/continuation. Not unrestricted spherical dynamics or evolved temperature. |
+| 8 | Combined representation, workflow, resource/cache and cold-recovery assessment, distinct from whole-package scientific acceptance. A technical pass cannot close S3C, R4.4 or generated-world gates. |
 
-Define a compact world/case description for crust types, layers, faults, weak zones and thermal profiles. Seeded generation may create initial plates/weakness patterns under declared priors, but cannot embed the desired final mountain surface. Sampling at a new grid must not move the underlying feature or silently supply unsupported material.
+Define compact crust/layer/fault/weak-zone/thermal inputs. A declared seed may
+generate a prior but must not embed final mountain geometry. Grid refinement cannot
+move geology or invent unsupported properties. Kernels consume the frozen profile
+in Section 3.4, not scattered physical literals. Geometry/area error is separate
+from physical uncertainty.
 
-Use the parameter separation in Section 3.4: kernels receive a frozen, identified Earth-like profile rather than scattered physical literals. This is ordinary input design inside W01 and subsequent kernels, not a new framework or a user customisation feature.
-
-**Deliverables:** conventions, pure initial-condition sampler, small known geometries and rotation/profile fixtures. **Gate:** rigid distances and zero strain, side/trace reversal, seam/pole tests for spherical primitives, unit/time round trips and correct thermal boundary limits. These tests validate representation, not the selected plate history.
+**Deliverables/gate:** conventions, pure sampler, known geometry and rotation/profile
+fixtures; side/trace reversal, seams/poles, unit/time round trips, rigid metrics and
+thermal limits. These qualify representation, not a selected plate history.
 
 ### W02 — Conservative material history and boundary events
-
-**Regional completion (17 September 2026):** the remaining representation, motion
-and event operations are delivered on ColumnGrid1D. The verification case
-`cases/w02_completion.json` binds equations, coverage, immutability, conservation,
-formation history, cold restoration and optimised defaults. All 488 tests pass on
-the recorded Linux runtime, including 78 new cases. This closes implementation of
-the regional contracts, not every geometry or scientific validation gate.
-The prior fixed-grid subsection below records the earlier delivery state.
-
-
-**Delivered fixed-grid portion (17 September 2026):** regional open/closed transport
-now has cohort partial thicknesses, formation-time metadata, explicit exterior
-composition, and parent-bound prescribed transfer receipts. The sum of cohort
-quantities is the total; no independent total-density constraint is claimed.
-Self-contained snapshots preserve histories and zero-volume catalogue entries.
-See `cases/material_transport.json` and the existing scientific case notes.
-That earlier remaining remap/motion/ownership work is supplied by the regional
-completion above. General planetary geometry and predictive forcing are not supplied.
-
-
-**Delivered increment:** `RegionalGrid1D`, `TransportBoundary`, `advect_regional`
-and timestep advice now supply fixed-grid, constant-density one-field transport.
-Compiled MC-limited MUSCL/SSP-RK2 is the new regional default; first-order upwind and
-independent references are explicit. The two schemes have distinct identities and
-CFL/accuracy envelopes. Source-reservoir labels are provenance, not a transported
-mixture or full history. Remaining W02 responsibilities below are still outstanding.
 
 **Dependencies:** W01. **References:** P02/P05/P11, E03/E10/E11/E23, N01/N02; F02/F04/F06/F07/F13.
 
@@ -2318,29 +1211,16 @@ Use shared boundaries with explicit side ownership and junctions. Supported ridg
 
 **Deliverables:** material/event schema, boundary-account reference, moving-point and column tests. **Gate:** known extension/shortening, sharp tagged-material advection, birth-age history, reversible motion where physically reversible, explicit sinks, and unchanged totals under a remap-only step. Event discovery itself remains a declared rule, not a force prediction.
 
+The existing W02 completion is 1D regional, common-velocity, constant-density
+and prescribed-kinematics on ColumnGrid1D. It does not supply variable-density,
+multi-velocity, general 2D/spherical-junction or predictive source/force laws.
+Cohort partial thicknesses sum to the total; exterior and parent-bound transfer
+accounts, known/unknown formation dates and zero-volume catalogue entries survive
+self-contained snapshots. MUSCL/SSPRK2 remains the accuracy-first regional default;
+upwind is a distinct explicit numerical identity. Resource pressure cannot silently
+lower accuracy or replace retained fixed-quantum representations.
+
 ### W03 — Thermal evolution, lithosphere age and compaction
-
-**Local increment 1, 22 September 2026:** [finite-plate cooling and source-bound
-thermal-age columns](W03_THERMAL_COLUMNS.md) implemented and optimised. The
-constant-property conduction/heat accounts and young/old limits have bounded
-independent checks.
-
-**Local increment 2, 22 September 2026:** [thermal density and single-owner
-support](W03_THERMAL_SUPPORT.md) implemented and optimised: existing Boussinesq
-law, explicit reference-column/fill/compensation choices, source-linked total
-displacement and direct plate integration without depth sampling. This is
-homogeneous first-order local compensation, not deformable geometry or empirical
-terrain calibration.
-
-**Local increment 3, 22 September 2026:** [drained compaction and partial
-rebound](W03_COMPACTION.md) implemented and optimised. Fixed-solid parcels retain
-maximum effective loading, grain/cohort provenance and changing-area conservation;
-finite pooled reservoir accounts, source-bound authored-sediment import, verified
-reuse and self-contained state recovery are included. The explicit shifted-log
-loading/rebound law requires explicit parameter calibration; it is not transient Darcy
-consolidation or Athy reconstruction used as forward unloading. Ordered history
-remapping, thermal-field reconciliation and external fluid/support integration
-remain part of assembled W03 acceptance; whole W03 remains incomplete.
 
 **Dependencies:** W01–W02. **References:** P03/P07, E04/E07/E14/E15; F03/F09.
 
@@ -2352,28 +1232,6 @@ Derive or select the thermal-density/support relationship consistently. A reduce
 
 ### W04 — Vertical support from a physically defined load
 
-Local 22 September increment: **step 1 load construction implemented**, with
-finite reference/replacement accounts, separate fixed-coverage Boussinesq thermal
-loads, compensated batching and existing verified reuse. See
-[contract](W04_COLUMN_LOADS.md) and [bounded evidence](../evidence/w04-loads.md).
-Local step 2 now adds [source-bound W01-W03 support integration](W04_WORKFLOW.md):
-actual stationary columns, finite spatial reservoir allocations, separate external
-traction and single-owner thermal load feed the periodic uniform solver. Its
-outputs are total-reference projections, not feedback into material/thermal
-geometry. [Step 3 finite 1D regions](W04_FINITE_REGIONS.md) now distinguish
-continuous-plate cuts from physical free/clamped ends, with explicit surrounding
-loads and conditional exterior-error bounds. Analytical cell integration and
-linear FFT reuse are verified; see [step-3 evidence](../evidence/w04-finite-regions.md).
-[Step 4 variable rigidity](W04_VARIABLE_RIGIDITY.md) now adds fixed source-linked
-material profiles, conservative C1 Hermite support, explicit mesh-change gates
-and reused banded factors. It connects to all three boundary modes; continuing
-variable-D support requires exact declared exterior loads. Evolving rigidity
-and broad physical extensions are not implied. [Step 5 combined acceptance](W04_COMBINED_ACCEPTANCE.md)
-now passes the selected stationary planar 1D workflow: 62 focused tests include
-evolved columns across six support alternatives, reference shifts, exact restart,
-cache and local strain guards. This closes the stated W04 support-response gate
-within that scope, not field calibration or general terrain acceptance. W05 is next.
-
 **Dependencies:** W01, with W02/W03 when material or thermal loads are used. **References:** P06/P15, E12/E13/E28, N03; F08/F09.
 
 First solve uniform, small-deflection flexure for a periodic sinusoid and a local-isostatic limiting case. Derive the load in Pa from a stated reference column, density contrast and replacement medium; thickness alone is not a load. Then test domain enlargement, nonperiodic boundaries and only subsequently variable rigidity with the correct operator.
@@ -2383,35 +1241,6 @@ Record whether a result is total deflection from the reference state or an incre
 **Deliverables:** load-construction and support contracts, analytical solution fixtures and candidate numerical method. **Gate:** sinusoid amplitude/sign, superposition where linear, convergence with domain/grid and independent load response. A model passing this gate explains response to a load, not where the mountain or magma load originated.
 
 ### W05 — First coupled mechanism: regional extension
-
-Local 22 September increment: [step 1 mechanism specification](W05_REGIONAL_EXTENSION.md)
-is complete. It selects dry, isothermal prescribed listric motion over continuous
-uniform elastic support, with separate footwall/hanging-wall accounts, a fixed
-reference load, exact translation/dilution controls, cell-mean output semantics
-and a bounded synthetic acceptance case. Support is evaluated only at requested
-outputs while that one-way kinematic closure holds. [Step 2 motion and independent
-reference](../evidence/w05-motion.md) are implemented and verified. Exact
-characteristic cell integration avoids the measured MUSCL moving-edge smoothing
-failure without relaxing the 10 m gate. Three grids, finite cohort exports,
-64/128 output partitions and a larger domain pass. Kernel integration is 99.04%
-faster than independent quadrature, with setup-inclusive tradeoffs recorded.
-[Step 3 support integration](../evidence/w05-support.md) is now implemented and
-component-verified: finite-column loads, one continuous uniform flexural response,
-analytical mean output weights, explicit tail uncertainty and continuous physical
-validity guards. At 125 m, sampled smooth-reference w error is about 1 mm; the
-three-output sequence is 24.84% quicker with preparation included.
-[Step 4 recoverable workflow](../evidence/w05-workflow.md) now provides atomic
-requested-output snapshots, source-bound continuation and compact lossless reuse.
-Warm reopening saves 52.41% including preparation on the frozen case; the first
-durable run costs 11.76% extra. [Step 5 combined acceptance](W05_COMBINED_ACCEPTANCE.md)
-now passes the scoped prescribed dry 1D mechanism: 37 focused checks in 31.807 s,
-full-crop three-grid/each-output independent references, equivalently averaged
-extrema, original physical bounds, exact recovery and partition/domain sensitivity.
-Fine-grid support error including reference uncertainty is 1.0164 mm. The
-[evidence](../evidence/w05-acceptance.md) reuses the unchanged Step 4 timing rather
-than rerunning it. The separate analogue/observational challenge plan is complete;
-execution still requires independently bound analogue and support data, so this
-numerical acceptance does not claim empirical terrain validation.
 
 **Dependencies:** W02 and W04; W03 when thermal/compaction effects are in scope. **References:** P08/P15, E16/E17/E28 and N01; F11/F08.
 
@@ -2423,40 +1252,6 @@ Connect the physical column/load change to a single vertical-response treatment.
 
 ### W06 — Spreading, passive margins and changing plate histories
 
-Local 22 September increment: [Step 1 model/case design](W06_SPREADING.md) is
-complete. The first prescribed planar case uses exact birth-strip trajectories,
-finite crust/mantle feedstocks, distinct formation/cooling histories and one
-water-loaded thermal-subsidence owner. It reuses W03 kernels, not the stationary
-W03/W04 assembled adapters; their guards remain. Layered thermal/energy/water
-accounts, history changes, independent reference tolerances and bounded timing
-criteria are specified. [Step 2 conservative birth/spreading](W06_BIRTH.md) is
-implemented for constant prescribed velocities: full continuous birth histories,
-finite phase feeds, exact cell intersections and direct boundary exports. Eleven
-focused W06 checks pass; [bounded timing](../evidence/w06-birth.md) records 97.23%
-kernel time saving against an independent scalar reference, with source safeguards
-retained. [Step 3 cooling/inherited margins](W06_COOLING.md) now connects true
-phase/age thermal means, boundary-exit energy/water, finite allowances and single-owner
-wet support; margins preserve actual inherited profiles and reference geometry.
-Thirty focused checks and nine shared identity checks have passing evidence.
-[Timing](../evidence/w06-cooling.md) records 73.29% matched thermal-reference saving
-and 51.76% prepared margin reuse saving; these are bounded, not generator-wide gains.
-[Step 4 changing histories](W06_HISTORIES.md) now supplies exact piecewise motion,
-asymmetric spreading/ridge migration, stopping/restarting and explicit same-side
-plate reassignment. Full birth-age intervals and first-exit owner/heat/water are
-preserved. Twenty new focused checks and nine shared identity checks have passing
-evidence. [Timing](../evidence/w06-history.md) records 84.37% less time than the
-256-cell scalar reference and 48.30% less time for setup-inclusive preparation
-reuse across four 4000-cell outputs. These are distinct comparison scopes.
-[Step 5 recoverable workflow](W06_WORKFLOW.md) now adds atomic scheduled outputs,
-exact fresh-process continuation and verified reuse for constant ocean, changing
-history ocean and inherited-margin routes. The selected combined profile passes
-20 checks in 44.148 s; five separate ocean codec checks have passing evidence.
-Unchanged numerical component evidence is retained by source binding, rather than
-repeating its grid/partition sweeps. [Workflow evidence](../evidence/w06-workflow.md)
-reports first-publication overhead as well as recovery savings. This completes
-the scoped W06 implementation sequence; independent observational acceptance
-remains separate. Next: W07's selected regional mechanical backend.
-
 **Dependencies:** W02–W05. **References:** P01–P03/P07, E01–E04/E15 and N02; F01/F02/F03/F09.
 
 Extend the kinematic regime to selected breakup and ocean-birth events. Compute creation at moving ridges, track material age and cool it. Test asymmetric spreading, ridge migration and explicit plate-boundary transitions; distance to today’s ridge is not a general formation-age estimator.
@@ -2467,38 +1262,6 @@ Keep continental thinning and new oceanic material distinct. A passive margin in
 
 ### W07 — A selected regional mechanical backend
 
-Local 22 September increment: [Step 1 model and benchmark specification](W07_REGIONAL_MECHANICS.md)
-remains frozen. [Step 2 solver and evidence](W07_REGIONAL_SOLVER.md) now implement
-2D incompressible plane-strain constant-Newtonian mechanics with imposed motion,
-no-slip/traction boundaries, explicit pressure datum, full stress/work and
-reactions. Retain the boundary-aware MAC backend after the independent small
-Q2/P1-discontinuous continuum comparison; retain FE as a numerical reference,
-not a newly adopted external framework. The public SI/source/resource interface
-reuses preparation and the latest verified result. Measured three-output savings
-are 44.8399%/53.5336% respectively, including setup and with exact output parity.
-The [ten-case register](../cases/w07_mechanics.json) still separates the passed
-basic boundary/nullspace scope from subsequent heterogeneous, thermal, yielding
-and true-ALE surface work. Local 23 September increment:
-[Step 3](W07_HETEROGENEOUS_THERMAL.md) now supplies explicit heterogeneous
-stress-site properties, both source-explicit SolCx variants, retained nonlinear
-laws and open/translated-grid thermal/material coupling with endpoint mechanics.
-Current-law fields, SI forces, conservation and source/resource controls pass
-their selected tests. Identical-request savings are 0.94827 s / 47.95%; changed
-viscosity shows no measured gain in the small benchmark.
-[Step 4](W07_SURFACE_STRENGTH.md) now supplies dry pressure-sensitive strength
-and real material-surface evolution. The deformed branch explicitly adopts the
-assessed Q2/physical-P1-discontinuous alternative with mapped stresses and
-conservative Laplacian ALE motion; the flat MAC branch is unchanged.
-Finest relaxation error is 0.003688%, with decreasing mesh/time errors and volume
-closure. Identical-state reuse saves 0.4548072 s / 54.64%.
-[Step 5](W07_WORKFLOW.md) now connects source-bound geological inputs, explicit
-physical ownership, atomic complete snapshots and verified recovery. Five new
-assembled/reference/timing checks pass. Reopening the same final state takes
-2.608 s versus 6.148 s fresh (57.58% saved); first-save overhead is 9.05%.
-The three supported geological routes and remaining bridges are named in the
-record; selected W07 Steps 1–5 are complete. Next: W08 process/design. A physical localisation
-length remains separately required; do not add support/gravity forces twice.
-
 **Dependencies:** W00–W03; W04 supplies checks of loading, not automatically an added response. **References:** P04/P05/P15, E05–E11/E28; F04–F07.
 
 Study one explicit mixed velocity–pressure formulation. Start with constant-viscosity analytical/manufactured velocity fields, pressure-reference handling, rigid-body modes and boundary traction. Compare candidate discretisations against those cases before adopting a framework architecture. Add variable viscosity and heat transport only after that baseline passes.
@@ -2508,31 +1271,6 @@ C01 and C02 must close before strain localisation or surface mechanics is claime
 **Deliverables:** one selected formulation, boundary/constitutive specification, verified reference solver and public benchmark definition. **Gate:** force/divergence/thermal residuals, independently calculated fields, sharp material contrasts, convergence and mesh-independent quantities of interest. A low nonlinear residual cannot excuse a numerically defined shear-zone width. If a reduced K-mode answers the question sufficiently, M is not mandatory for that particular case.
 
 ### W08 — Shortening, transform/oblique motion, subduction and magmatism
-
-**Local Step 1, 23 September 2026:** [selected regime design](W08_REGIMES.md)
-and [frozen cases](../cases/w08_regimes.json) define the six-increment sequence,
-finite-strain/transfer closures, required bridges and acceptance references.
-[Step 2 implementation and evidence](W08_SHORTENING.md) now supply the selected
-distributed finite-shortening route, conservative fixed-grid material/enthalpy
-projection and compatible dry load/support. Twenty-one focused checks pass;
-setup-inclusive prepared three-output reuse saves 0.4944981 s / 46.96% with exact
-output identity. The source-inventory prerequisite now retains bounded complete
-digest records, not raw source text, and advances execution identity to v4 with
-old checkpoint refusal. Frozen design/case bindings remain unchanged.
-[Step 3 transform/oblique implementation](W08_TRANSFORM.md) is also now complete
-for exact full-vector affine motion, compatible prescribed nodal bends/stepovers
-and discontinuous straight-fault slip. Conservative planar projections and actual
-region/exterior exchanges preserve full material/enthalpy accounts. Sixty-six
-focused checks and nine shared identity checks have passing evidence; the frozen
-bend challenge converges through three spatial levels and meets its 0.02 RMS gate.
-Three changing outputs save 0.7768963 s / 51.59% using preparation reuse; identical
-results save 64.26%, with setup and source checks included. [Step 4 implementation](W08_SUBDUCTION.md)
-now adds prescribed subduction/computed-wedge mechanics, direct steady heat,
-conservative thermal velocity transfer and finite material retirement. Acceptance
-remains IN_PROGRESS with the named source-adapter/numerical gates; this does not
-advance the plan past Step4.
-Supplied underthrust scenarios still need their explicit structural and host-space
-closure; uniform thickening does not replace it.
 
 **Dependencies:** W02/W04/W06, and W07 where mechanical response is claimed. These are separate cases, not one universal tuned recipe.
 
@@ -2549,26 +1287,6 @@ Close C03/C04 before geological histories: slab polarity/geometry/time, oceanic 
 **Deliverables/gate:** separate regime evidence records with clear prescribed/predicted distinctions, geological observables and cross-regime transition tests. An unsupported case stays unsupported rather than receiving generic mountain uplift. Full 1.0 claims require all core regime gates, not just the successful extension case.
 
 ### W09 — Necessary surface response and source-to-sink accounting
-
-**Local Step 1, 23 September 2026:** [selected model and bridge design](W09_SURFACE_PROCESSES.md)
-and [frozen synthetic controls](../cases/w09_surface_processes_r1.json) close
-the initial C05 selection. Design complete; solver/bridge implementation pending.
-Next is physical drainage and lake storage, not a full landscape campaign.
-
-**Local Step 2, 23 September 2026:** [drainage and finite-water implementation](W09_WATER.md)
-is complete for the selected ideal-sill model, with frozen water controls,
-conservative bed-change transfer, bounded prepared reuse and exact checkpoint
-continuation. Next is material-aware erosion/hillslope transport; the broader
-sediment/thermal/support bridges remain later W09 work.
-
-**Local Step 3, 23 September 2026:** [finite-material erosion and hillslope transport](W09_EROSION.md)
-is complete for the explicit fixed-receiver river and initial 1D strip hillslope
-operators. Coupled implicit cover/slope solves, ordered finite rock layers,
-conservative tagged releases and sparse nonlinear soil transport pass E1-E3/H1-H2.
-Prepared three-request reuse saves 28.3199% for covered river erosion and 38.8217%
-for hillslope transport with identical full outputs. [Measured evidence](../evidence/w09-erosion.json)
-preserves all samples. Full planar hillslope gradients are not inferred from face
-slopes. Next is Step 4's tagged transport/deposition and explicit physical bridges.
 
 **Dependencies:** an accepted tectonic mechanism from W05/W06/W08; W03/W04 for feedback. **References:** P09–P11/P15, E18–E23/E28; F10–F13.
 
@@ -2600,24 +1318,75 @@ Then test adaptive support, conservative remapping, nonuniform layers, spherical
 
 ### W12 — Production integration and release acceptance
 
-**24 September implementation:** [W12_ASSEMBLY.md](W12_ASSEMBLY.md) records the
-supported regime/export matrix, public source-checkout driver, explicit current
-R11/R24/R12 producer/consumer wiring, native restart closure, focused verification
-and finite resource envelope. W12 is complete at that stated technical integration
-scope, not an unrestricted world/field acceptance. Existing scientific holds and
-historical source-bound receipts remain unchanged. The six advanced W11 candidates
-remain deferred, not prerequisites silently started by this implementation.
-
-**26 September scope correction:** that limited technical delivery did not finish
-the intended tectonics generator. Remaining physical integration and generated-world
-acceptance are explicitly open under [INTEGRATION_PLAN.md](INTEGRATION_PLAN.md).
-Do not interpret the dated implementation statement as end-to-end completion.
-
 **Dependencies:** relevant W10 physical gates and W11 resource/scale gates. Only now select production adapters into Atlas’s wider graph and retained spatial outputs. Reuse existing execution, source identity and recovery systems where suitable; do not build another chain of copied module globals merely to attach the new work.
 
 A separately identified producer must publish the equation/closure version, inputs, numerical policy, declared scope, output identities, material/load accounts and restart dependencies. Historical R5 controls are not rebadged as checkpoints of changed physics. Public fixtures and a reproducible compatible runtime must accompany any independent-execution claim.
 
 **Release gate:** supported regime matrix, scientific evidence, finite resource envelope, coherent checkpoint/recovery drill, clean-versus-incremental comparison and truthful documentation. Code approval, physical acceptance and fictional canon remain separate. Main-branch publication requires its own coding/publication scope; this documentation consolidation changes no numerical implementation.
+
+<a id="plate-formation-implementation-plan"></a>
+
+### Causal plate-formation obligations: R1–R9
+
+| Stage | Implementation and deliverable | Acceptance before its dependent claim |
+| --- | --- | --- |
+| **3C-R1 — Reference data and success criteria** | Extend the existing reference/diagnostic modules to full accessible plate outlines, boundary-step motion and deformation-region data. Preserve raw-source identities, licence, coordinate/time conventions and known uncertainty. Reserve independent regions, reconstructions or model versions for tests not used to choose parameters. Compare at declared physical scales and per-plate resolution. | Check source transcription, sphere-area and perimeter calculations, signs and units against independent values. Register each metric, scientific question, tolerance derivation and holdout split before tuning. PB2002 area-fit values are calibration, not held-out validation; another derivative of the same map is not independent evidence. |
+| **3C-R2 — Initial state before final plate labels** | Extend W01's existing geological records with an explicit pre-partition description: continental/oceanic structure, ordered layers, thermal initial state, known formation versus cooling history, inherited weak zones and supported mantle/slab structure. Implement the bounded portion of stage-5 sampling needed to populate test meshes. Distinguish observed, authored, sampled-prior and model-evolved values. | No circular dependency requiring final plates before specifying their geological substrate. Missing thermal/stress/damage state is not filled by unlabeled noise. Seeded fields have documented amplitudes/scales and stable streams; mesh refinement does not redraw the prior. Authored states remain unchanged. |
+| **3C-R3 — Freeze the physical closure** | Select one reference rheology, then one memory model; document viscosity, yield, healing, composition, heating and surface/boundary choices. Obtain complete methods/supplements before reproducing a paper. Give each law a versioned parameter profile and finite validity envelope. Separate body forces from prescribed tractions to avoid double-counting slab pull or other forcing. | Hand-calculated constitutive values, reference-unit conversions, temperature/pressure/strain-rate limits, zero-damage and healing-only solutions. The 20°C material catalogue is not a mantle-creep model. Localisation needs demonstrated mesh-independent regularisation; a numerical viscosity floor is disclosed, not treated as measured material strength. |
+| **3C-R4 — Verified thermal/mechanical core** | Build the selected W07 structured staggered finite-volume pilot with W03 heat evolution and conservative composition transport. Begin in a 2D box: constant viscosity, then variable viscosity/yielding and the applicable Tosi benchmark cases (PF-C14). Reuse existing numerical interfaces/budgets; a small native sparse direct solution is an independent reference, with preconditioned native iterative solves for larger verified workloads. | Manufactured velocity/pressure, boundary/pressure null-space handling, mass/divergence and heat accounts, space/time/nonlinear convergence and published benchmark diagnostics. Two-dimensional success establishes a solver component, not planet-wide shapes, trench curvature or transform segmentation. |
+| **3C-R5 — Process experiments, not decorative contours** | Test weak-zone reactivation against healed/undamaged controls; inherited-structure rifting; segmented spreading and transform development; one-sided subduction with an appropriate surface/interface treatment; curved-trench fragmentation and small-block formation. Use 3D regional geometry when the claimed feature varies along strike. Run paired cases that change one causal ingredient rather than fitting every output. | Each process reproduces its selected independent benchmark/analogue constraints and remains stable under refinement and rotated mesh orientation. Do not require damage to have one universal effect, place a plume beneath every ridge, infer polarity from convergence, or count a 2D cross-section as an along-trench fragmentation test. A failed family remains unsupported. |
+| **3C-R6 — Spherical dynamics and plate identification** | Extend the verified formulation to a coupled 3D spherical shell, using globally consistent metric terms and pressure/interface treatment. Existing surface patches are output geometry, not a ready volume mesh. Recover coherent surface regions from independently calculated velocity/strain/damage fields, and fit Euler rotations to candidate interiors. Keep distributed deformation explicitly represented. | Spherical benchmark and rotation/seam tests, conservation, parameter and resolution sensitivity, declared spin-up and sample-selection rules, rigidity residuals and stable segmentation thresholds. A warm-up ends by registered diagnostics, not because one image looks Earth-like. Never prescribe Euler poles then claim recovering them proves independent rigidity. |
+| **3C-R7 — Shared geometry and causal event history** | Convert supported field-derived boundaries into the existing shared-edge atlas; maintain one edge, two sides and consistent junctions. Fit boundary/junction velocities subject to the selected kinematic rules. Track persistent material, weakness, plates and events separately; record splits, merges, reactivation, accretion/export and candidate rejection. Use conservative multidimensional transfers where needed; reuse W02 contracts, not its 1D equations under a spherical name. | Underlying surface coverage remains complete without forcing every cell into a perfectly rigid plate; deformation zones do not vanish as polygon gaps. Boundary extraction has a spatial error budget and does not move material. Junction compatibility is stricter than the telescoping sum of relative velocities. Preserve origin/energy/history through events and cold restoration. |
+| **3C-R8 — Initialisation and W01 integration** | Supply a named starting-epoch workflow: load an authored/reconstructed state, use a declared statistical candidate, or evolve an accepted dynamic precursor and select its state by the recorded rule. Any faster reduced generator must be calibrated on process results and checked independently before adoption. Map the resulting geology, supported motion and fields through W01 sampling into appropriate regional W02 scenarios. | No manual stitching, unknown-as-zero state or regenerated world on restore. Identical provenance yields the agreed reproducibility. Exact plate-count requests are only supported where the selected origin model warrants them; dynamic mode does not forcibly merge bodies to hit a UI number. An initialisation pass is not complete global material/thermal evolution. |
+| **3C-R9 — Independent acceptance and selected default** | Run predeclared ensembles, holdout-data challenges, mesh/time/parameter sensitivity, controls and ablations, then combined execution/cache/storage/restoration/platform checks. Keep accepted regimes, failures and source-bound evidence at their existing owner destinations; CURRENT_STATE owns the active checkpoint. | Keep calibration, numerical verification, physical validation and fictional compatibility separate. No universal percentage realism score; no pass from a lone attractive map or small global-average error hiding lost microplates. Promote the appropriate accuracy-first optimised recipe only for supported regimes. Report platform/resource limits and retain explicit verification/control paths. |
+
+The R1 delivery is limited to the reviewed present-day PB2002 uses described in
+the reviewed source-use contract. It does not satisfy the independent-model or historical challenges
+reserved for R9. Those unavailable observations cannot be filled from modern Euler
+poles or another reformat of PB2002.
+
+### Required observations and failure tests
+
+Use multi-scale area distribution, compactness, elongation/concavity, turning and
+segmentation by boundary type, topology and adjacency, small-plate position relative
+to margins, intraplate deformation, relative motion, weak-zone persistence,
+reorganisation and heat/material accounts. Plates and broad deformation zones are
+not interchangeable labels (PF-C15). Total perimeter must ignore computational
+seams. Sampling density must not improve a morphology score by adding vertices.
+A plate population is temporally variable; do not fit exactly one modern spectrum
+(PF-C10). Held-out observables must not have already selected the same parameters.
+
+Numerical thresholds come from the declared equations, source precision and
+refinement study, not convenient post-hoc tolerance changes. Use at least three
+resolutions for appropriate convergence cases, vary time step independently, and
+keep geometric tolerances distinct from physical uncertainty. Model ensembles and
+steady/transient sampling windows are registered before scoring, including failed
+seeds and error bars. Data versions with shared ancestry are sensitivity challenges,
+not additional independent samples.
+
+Reference/statistical, prescribed-kinematic and dynamically produced origins are
+different scientific claims, recorded independently of K/M calculation mode. M
+may start from an explicit statistical prior; a mature starting epoch need not be
+simulated from a magma ocean. Exact plate count, copied Earth outlines, random
+wiggles or a fit to Diadem mountains are not acceptance criteria.
+
+R2/R8 credit relevant W01 initialisation; R3–R6 credit the named W03/W07 and
+W06/W08 subsets rather than duplicating those modules. W03 sediment compaction,
+full W04 loading, other W08 regimes, W09 surface work and production remain separate.
+The 1D W02 completion does not establish planetary material evolution. W11's
+relevant checks accompany each stage; no later blanket optimisation pass is implied.
+
+After R1–R3 there is a specification/input path, not simulated boundary formation;
+after R4–R5, individually supported regional solver/process behaviours, not
+whole-planet acceptance. R6–R9 can qualify only tested regimes, laws, resolutions
+and data challenges. Statistical candidates remain controls. No stage table
+authorises coding, a new solver, a large simulation or resumption through a hold.
+
+[Formation execution](OPTIMISATION_REFERENCE.md#plate-formation-execution-plan)
+owns detailed implementation/resource choices. Comments beside code must identify
+equations, units, assumptions, contribution ownership, invalidation and failures.
+Cases/tests remain beside implementation; no extra general scheduler, cache,
+compression format or planning supplement is required.
 
 <a id="coupling-timestep-and-state-acceptance-policy"></a>
 
@@ -2698,7 +1467,7 @@ For a chosen Maxwell material, $\tau_M=\eta/\mu$ is a useful relaxation timescal
 
 This scale analysis provides an early feasibility/validity filter without a simulation. It also guards against importing a centimetre-scale laboratory setup or short earthquake-cycle equation into a kilometre-scale geological problem without matching the relevant nondimensional behaviour.
 
-### 7.4 Development placement and current next step
+### 7.4 Performance obligations by package
 
 | Work | Required performance planning |
 | --- | --- |
@@ -2708,8 +1477,6 @@ This scale analysis provides an early feasibility/validity filter without a simu
 | W10 | Parallelise independent cases/diagnostics where valid. Keep stable random identities and validation separate from performance tuning. |
 | W11 | Measure enabling work when needed; then compare accepted behaviour at matched error and broaden the workload envelope. No speculative whole-world speed multiplier. |
 | W12 | Carry only supported backends, compatible fixtures and tested cache/recovery behaviour into production. |
-
-Local 22 September update: W04 load construction, stationary W01-W03 support integration, finite uniform 1D regions and fixed variable rigidity have passed their selected combined stationary planar 1D acceptance. W05's prescribed dry regional-extension mechanism now also passes its selected combined numerical acceptance; its separate empirical challenge still needs independently bound source data. W06 Steps 1–5 now provide the frozen design, conservative oceanic birth/spreading, age-resolved cooling/heat/water/support, source-preserving inherited-margin conduction, explicit piecewise changing motion/ownership histories, and recoverable requested-output execution with selected combined acceptance. Continue to reuse compatible W02 transport, cohorts, remapping and events; continuous birth strips retain their own explicit history, and the stationary W04 projection does not supply moving thermal/material coupling. W07's selected regional mechanical backend is next, not a whole-world run.
 
 <a id="verification-physical-validation-and-decision-rules"></a>
 
@@ -2845,41 +1612,47 @@ Thermal/support references and kinematics can be developed in parallel after W00
 | Caches or queued work exceed resources | Byte budgets, back-pressure, ownership and PT03–PT06; no unbounded pools or metadata-only source authentication. |
 | A fast result cannot be recovered | Immutable accepted state, coherent publication and PT09–PT11; shared history is not disposable cache data. |
 
-### 11.3 Items that remain open, with a concrete resolution point
+### 11.3 Decision points for a capability extension
 
-Before W00 can be signed off: select the first case’s observables, physical domain and duration, benchmark/data access and finite experimental budget; fill the relevant execution-card decisions. Estimate early memory/work and identify safe parallel units without building a runtime framework. This plan recommends extension as the first coupled case but does not authorise executing it.
+Resolve the next case's observables, domain/duration, exact data access and finite
+budget in W00. Existing decisions in specialist contracts are not reopened merely
+because an old generic plan names their design gate. New W07 claims need compatible
+discretisation/C01/C02, thread/solver ownership and true residuals; W08 needs its
+productivity/recycling, transitions and magma closures; W09 needs water/storage/
+sediment closure. W11 studies need the actual numerical baseline, workload,
+hardware, error criteria and limits; broad scale claims also need relevant W10
+physical evidence. W12 needs runtime/fixtures, release scope, recovery and rights
+plus the integration plan's finish rules.
 
-Before W07: choose the mechanical discretisation and C01/C02 specifications, including solver/thread ownership and true-residual checks. Before W08: close productivity/recycling, transitions and any claimed magmatism. Before W09: choose water/storage and sediment closures. For each enabling W11 study: identify the verified numerical baseline, actual workload, hardware, error criteria and finite limits; broader W11 scale claims also require relevant W10 acceptance. Before W12: agree public runtime/fixtures, release scope, recovery and source/data licensing decisions.
+Resolve each missing decision in the smallest affected package. Do not restart
+completed stages, decide every planetary process before a bounded mechanism, or
+treat a documentation gate as authority to change scientific criteria.
 
-These decisions are not an excuse to keep writing general plans. Each is resolved in the smallest relevant package, with the case’s equations and expected evidence in hand. Do not attempt to decide every future planetary process before implementing the first independently testable mechanism.
+## 12. Review and continuation
 
-## 12. Next development scope and review guide
+Use CURRENT_STATE for the next authorised action and actual holds. INTEGRATION_PLAN
+governs the remaining coupled route. Neither this plan nor an old next-stage
+sentence starts it.
 
-**Historical (revision 34):** R4.4 — full applicable convection benchmarks and combined acceptance — was then the next increment; it is now held. Current authority and next action: [current state](../../docs/CURRENT_STATE.md) and the [integration plan](INTEGRATION_PLAN.md).
-R4.3's registered component and explicit coupling are delivered under revision 34; R4 remains IN_PROGRESS.
-R4.2's registered constant-property heat/binary-composition envelope is delivered in revision 32; R4.4 remains open.
-R4.1 supplies the constant-viscosity mechanical component; R4 remains IN PROGRESS.
-R3's local-law and 1D regularisation-primitive scope is delivered under revision 28;
-coupled localisation and full benchmark reproduction remain explicit R4/R5 gates.
-R2's registered initial-state/sampling envelope is delivered under revision 25;
-its remaining general W01 responsibilities are explicit above. R1's reviewed
-uses stay complete under revision 24, while strict consistency and external-model/
-historical validation remain distinct unpassed claims. **R4 is in progress, not complete.** Follow the
-[explicit sequence](#plate-formation-implementation-plan). Causal formation later
-requires the named W03/W07 subset; do not smuggle it into an unrelated W01 update.
-Retain the current statistical candidates as controls, the existing geometry and
-material knowledge, and regional W02. Complete remaining W01 stage-5–8 work through
-the planned connections; no spherical geometry-to-1D physics equivalence is implied.
+Review the K/M distinction, N01/N02/E28 accounts and exclusive load/heat ownership;
+explicit C01–C07 closures; falsifiable evidence independent of desired geography;
+regional versus planetary scope; matched-error execution and nonlocal coupling;
+source identities, resources, random streams and recovery. A finding should name
+the equation/contract, plausible failure, supporting evidence and smallest required
+correction. Preferences alone are not defects; AI agreement is not physical proof.
 
-For Claude or another reviewer, review this plan in the following order: (1) whether the two deformation modes are honestly distinguished; (2) whether N01/N02 and E28 close the material/surface links without double counting; (3) whether C01–C07 identify real missing physics rather than hiding it; (4) whether the proposed cases can falsify errors independently of Diadem geometry; (5) whether the core 1.0 scope and later planetary aims are realistic and distinct; (6) whether optimisation is matched to a verified equation and fixed error budget; (7) whether the P01–P15 execution map respects nonlocal/sequential dependencies; (8) whether cache identities, resource admission, random streams and PT01–PT14 tests can catch real failures. Challenge any PF candidate whose added complexity exceeds its demonstrated benefit.
-
-A review finding should identify the section/equation, the suspected physical or numerical failure, supporting evidence and the smallest correction or verification. Competing preferences are not defects by themselves. Proposed plan changes remain reviewable, not automatic code changes.
-
-**Bottom line:** establish coherent motion and material accounts, verify thermal/support responses, demonstrate one causal mechanism, then earn each additional tectonic regime and its surface consequences. Efficient design and verified enabling acceleration support that investigation from the beginning. Broad physical scale claims and production integration still follow independent realism evidence. This is the plan—not a claim that any future gate has passed.
+Meaningful actual-code visual QA remains required for relevant stage delivery.
+Record units, source identities and display transformations; inspect geometry,
+slivers, discontinuities, unknowns, material/age joins, antimeridian and poles
+where applicable. Distinguish renderer defects from model defects and authored
+inputs from predictions. A stage with no meaningful visual observable records
+that limit. Attractive plots cannot replace numerical/physical gates or owner
+review. Delivery reports retain a clear changelog and relevant before/after changes;
+they do not grant publication or source-rebinding authority.
 
 ## References and evidence scope
 
-The pre-study register remains historical evidence, not a separate maintained planning file. Scientific methods remain grounded in the four pre-studies and the original three benchmark leads. Revision 2 adds PS01–PS08: targeted official documentation about execution, parallel randomness, solver reuse, storage and measurement, checked on 16 September 2026. Dynamic documentation is not a pinned or installed runtime; select exact versions before implementation. Proposed Atlas rules are design judgements, not blanket claims about those packages. No source is evidence that Atlas ran or passed a test.
+The pre-study register remains historical evidence, not a separate maintained planning file. The historical basis comprises the four pre-studies and original three benchmark leads; selected R3/R4 sources are additionally recorded in their case contracts above. Revision 2 adds PS01–PS08: targeted official documentation about execution, parallel randomness, solver reuse, storage and measurement, checked on 16 September 2026. Dynamic documentation is not a pinned or installed runtime; select exact versions before implementation. Proposed Atlas rules are design judgements, not blanket claims about those packages. No source is evidence that Atlas ran or passed a test.
 
 **[R01](#research-basis) — Modelling capabilities and scientific methods.** Supplied Atlas pre-study, 15 September 2026. Planning evidence; not an installed or independently accepted physical model.
 
@@ -2937,7 +1710,7 @@ The pre-study register remains historical evidence, not a separate maintained pl
 
 ### Historical research basis
 
-R01 (modelling), R03 (implementation feasibility) and R04 (the 28-equation/15-process cross-reference) are the dated pre-studies already supplied in this conversation. They remain source material, not additional maintained plans, and are not reproduced in this two-document edition. R02’s optimisation methods and the retained engineering methods now have their maintained home in the [optimisation reference](OPTIMISATION_REFERENCE.md). The primary scientific sources above continue to support the plan. A reference to R04 preserves an equation identifier; it does not assert that every R04 equation is fully specified or implemented here.
+R01 (modelling), R03 (implementation feasibility) and R04 (the 28-equation/15-process cross-reference) are the dated pre-studies already supplied in this conversation. They remain source material, not additional maintained plans, and are not reproduced here. R02’s optimisation methods and the retained engineering methods now have their maintained home in the [optimisation reference](OPTIMISATION_REFERENCE.md). The primary scientific sources above continue to support the plan. A reference to R04 preserves an equation identifier; it does not assert that every R04 equation is fully specified or implemented here.
 
 
 [url-001]: https://github.com/Atlantispy/atlas/blob/7d0e707a576fe08b9bcb816466a0a8fb5f115808/docs/CODING_SAFETY.md

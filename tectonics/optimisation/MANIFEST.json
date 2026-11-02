@@ -3696,11 +3696,6 @@
    "kind": "workbench"
   },
   {
-   "path": "workbench/geometry-growth-r1/WP11-FEASIBILITY-NOTE.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/WP11-FEASIBILITY-NOTE.md",
-   "kind": "workbench"
-  },
-  {
    "path": "workbench/geometry-growth-r1/WP18-PART1-DESIGN-NOTE.md",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/WP18-PART1-DESIGN-NOTE.md",
    "kind": "workbench"
@@ -3713,11 +3708,6 @@
   {
    "path": "workbench/geometry-growth-r1/reviews/item19-initpar-r1-review.md",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/reviews/item19-initpar-r1-review.md",
-   "kind": "workbench"
-  },
-  {
-   "path": "workbench/geometry-growth-r1/reviews/s4-retry-review.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/geometry-growth-r1/reviews/s4-retry-review.md",
    "kind": "workbench"
   },
   {
@@ -5016,11 +5006,6 @@
    "kind": "workbench"
   },
   {
-   "path": "workbench/probes/step8/claude-20261015/wp25-disposition-20261016.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step8/claude-20261015/wp25-disposition-20261016.md",
-   "kind": "workbench"
-  },
-  {
    "path": "workbench/probes/step8/claude-20261015/wp25_iteration_counts.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step8/claude-20261015/wp25_iteration_counts.py",
    "kind": "workbench"
@@ -5153,11 +5138,6 @@
   {
    "path": "workbench/probes/step8/claude-20261015/heat-width/census_widths.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step8/claude-20261015/heat-width/census_widths.py",
-   "kind": "workbench"
-  },
-  {
-   "path": "workbench/probes/step8/claude-20261015/heat-width/heat-magnitude-width-20261016.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step8/claude-20261015/heat-width/heat-magnitude-width-20261016.md",
    "kind": "workbench"
   },
   {
@@ -5356,21 +5336,6 @@
    "kind": "workbench"
   },
   {
-   "path": "workbench/probes/step9/claude-20261016/design-9a-promote-after-reader.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/design-9a-promote-after-reader.md",
-   "kind": "workbench"
-  },
-  {
-   "path": "workbench/probes/step9/claude-20261016/design-ledger-comparator.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/design-ledger-comparator.md",
-   "kind": "workbench"
-  },
-  {
-   "path": "workbench/probes/step9/claude-20261016/design-route1-steps2-3.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/design-route1-steps2-3.md",
-   "kind": "workbench"
-  },
-  {
    "path": "workbench/probes/step9/claude-20261016/diff_by_function.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/diff_by_function.py",
    "kind": "workbench"
@@ -5403,11 +5368,6 @@
   {
    "path": "workbench/probes/step9/claude-20261016/item11m_before_copy.py",
    "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item11m_before_copy.py",
-   "kind": "workbench"
-  },
-  {
-   "path": "workbench/probes/step9/claude-20261016/item21-design.md",
-   "source": "<TASK_ROOT>/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1/probes/step9/claude-20261016/item21-design.md",
    "kind": "workbench"
   },
   {
@@ -6461,11 +6421,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/pressure/proof-request-draft.md",
-   "source": "<TASK_ROOT>/ps/proof-request-draft.md",
-   "kind": "pending"
-  },
-  {
    "path": "pending/pressure/c/full/PS_COMPOSITION.json",
    "source": "<TASK_ROOT>/ps/c/full/PS_COMPOSITION.json",
    "kind": "pending"
@@ -6951,21 +6906,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/pressure/width/DESIGN-r2-ADDENDUM-E.md",
-   "source": "<TASK_ROOT>/ps/width/DESIGN-r2-ADDENDUM-E.md",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/pressure/width/DESIGN-r2-KNOWN.md",
-   "source": "<TASK_ROOT>/ps/width/DESIGN-r2-KNOWN.md",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/pressure/width/DESIGN.md",
-   "source": "<TASK_ROOT>/ps/width/DESIGN.md",
-   "kind": "pending"
-  },
-  {
    "path": "pending/pressure/width/N9-RECONCILE.md",
    "source": "<TASK_ROOT>/ps/width/N9-RECONCILE.md",
    "kind": "pending"
@@ -7063,11 +7003,6 @@
   {
    "path": "pending/kernels/REPORT-m1.md",
    "source": "<TASK_ROOT>/ck/REPORT-m1.md",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/kernels/d5/DESIGN.md",
-   "source": "<TASK_ROOT>/ck/d5/DESIGN.md",
    "kind": "pending"
   },
   {
@@ -7838,11 +7773,6 @@
   {
    "path": "pending/kernels/work/h3out/private_heat_certification_resources_r1.py",
    "source": "<TASK_ROOT>/ck/work/h3out/private_heat_certification_resources_r1.py",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/storage/assembly-manifest.md",
-   "source": "<TASK_ROOT>/so/assembly-manifest.md",
    "kind": "pending"
   },
   {
@@ -8646,11 +8576,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s1/INTEGRATION.md",
-   "source": "<TASK_ROOT>/so/s1/INTEGRATION.md",
-   "kind": "pending"
-  },
-  {
    "path": "pending/storage/s1/build_s1.py",
    "source": "<TASK_ROOT>/so/s1/build_s1.py",
    "kind": "pending"
@@ -8713,11 +8638,6 @@
   {
    "path": "pending/storage/s2/INTEGRATION-r8.md",
    "source": "<TASK_ROOT>/so/s2/INTEGRATION-r8.md",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/storage/s2/INTEGRATION-r9.md",
-   "source": "<TASK_ROOT>/so/s2/INTEGRATION-r9.md",
    "kind": "pending"
   },
   {
@@ -9761,11 +9681,6 @@
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s4/INTEGRATION.md",
-   "source": "<TASK_ROOT>/so/s4/INTEGRATION.md",
-   "kind": "pending"
-  },
-  {
    "path": "pending/storage/s4/integration_component_volume_auto.py",
    "source": "<TASK_ROOT>/so/s4/integration_component_volume_auto.py",
    "kind": "pending"
@@ -9821,18 +9736,8 @@
    "kind": "pending"
   },
   {
-   "path": "pending/storage/s7/S7-REPORT.md",
-   "source": "<TASK_ROOT>/so/s7/S7-REPORT.md",
-   "kind": "pending"
-  },
-  {
    "path": "pending/storage/s7/scan_guard.py",
    "source": "<TASK_ROOT>/so/s7/scan_guard.py",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/storage/s8/INTEGRATION.md",
-   "source": "<TASK_ROOT>/so/s8/INTEGRATION.md",
    "kind": "pending"
   },
   {
@@ -9878,11 +9783,6 @@
   {
    "path": "pending/storage/s8/r2/base/reopen_fresh_restart.py",
    "source": "<TASK_ROOT>/so/s8/r2/base/reopen_fresh_restart.py",
-   "kind": "pending"
-  },
-  {
-   "path": "pending/storage/s9/INTEGRATION.md",
-   "source": "<TASK_ROOT>/so/s9/INTEGRATION.md",
    "kind": "pending"
   },
   {
@@ -10236,38 +10136,13 @@
    "kind": "pending"
   },
   {
-   "path": "docs/release/EXPECTATIONS.md",
-   "source": "<TASK_ROOT>/rm/EXPECTATIONS.md",
-   "kind": "docs"
-  },
-  {
    "path": "docs/release/FOLD.md",
    "source": "<TASK_ROOT>/rm/FOLD.md",
    "kind": "docs"
   },
   {
-   "path": "docs/release/LANGUAGES.md",
-   "source": "<TASK_ROOT>/rm/LANGUAGES.md",
-   "kind": "docs"
-  },
-  {
-   "path": "docs/release/RECONCILE.md",
-   "source": "<TASK_ROOT>/rm/RECONCILE.md",
-   "kind": "docs"
-  },
-  {
    "path": "docs/release/RELEASE-CHECKS.md",
    "source": "<TASK_ROOT>/rm/RELEASE-CHECKS.md",
-   "kind": "docs"
-  },
-  {
-   "path": "docs/release/inv-A.md",
-   "source": "<TASK_ROOT>/rm/inv-A.md",
-   "kind": "docs"
-  },
-  {
-   "path": "docs/release/inv-CDE.md",
-   "source": "<TASK_ROOT>/rm/inv-CDE.md",
    "kind": "docs"
   },
   {
@@ -11581,7 +11456,7 @@
    "path": "workbench/plan16/README.md",
    "source": "<PLAN16_REVIEW_EXPORT>/workbench/plan16/README.md",
    "kind": "workbench",
-   "sha256": "697c07586e34e6941f8924b7fbfe4035ed7db5c55398fca8d7c62db2a8e2f939"
+   "sha256": "fea2f2a038a1b06c461d83a0dfb2dd54ab6de01ccb9378eb98fc7b94cf1c890e"
   },
   {
    "path": "workbench/plan16/tests/test_integration_policy.py",
@@ -11647,7 +11522,7 @@
    "path": "workbench/plan15/README.md",
    "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan15/README.md",
    "kind": "workbench",
-   "sha256": "49ea067b962eaddfb8c65f5f398ce981d5efeceb908d2d8aa485d20773f78352"
+   "sha256": "1fa17b9792832be02e068e92ed93586d58d3d757ebabc24e82de62a5c0db2da5"
   },
   {
    "path": "workbench/plan15/RETAINED-RESULTS.json",
@@ -11713,7 +11588,7 @@
    "path": "workbench/plan17/README.md",
    "source": "<PLAN17_R7_INTEGRATION>/workbench/plan17/README.md",
    "kind": "workbench",
-   "sha256": "ec7e9a473816ccb1b76d40e024b6c69a0d67ca2f21d98855deb2c0df6aba655d"
+   "sha256": "c6c9a9491190a4990ed6876571621c170bd7dd4b27bff2d030c58984806337b7"
   },
   {
    "path": "workbench/plan17/RETAINED-RESULTS.json",
@@ -11728,12 +11603,6 @@
    "sha256": "5b208d36d570bd136f9402965001b33e02f737712be96f91058886cd94cb142c"
   },
   {
-   "path": "workbench/plan17/transforms/D1-D2-KNOWN.md",
-   "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/transforms/D1-D2-KNOWN.md",
-   "kind": "workbench",
-   "sha256": "d518e1aae18b28dd13cb6c2b519c1e2625ec65943825811dff5fadb1198d4712"
-  },
-  {
    "path": "workbench/plan17/transforms/incidence_constant_r2.py",
    "source": "<PLANS15_17_REVIEW_EXPORT>/workbench/plan17/transforms/incidence_constant_r2.py",
    "kind": "workbench",
@@ -11746,33 +11615,16 @@
    "sha256": "52eeb837a0c4b41af0b7411d490b721c74b1a26bc8244ed15a9be78207998318"
   },
   {
-   "path": "plans/plan-17-geometry-arithmetic-q23-q24.md",
-   "source": "<PLAN17_R7_INTEGRATION>/plans/plan-17-geometry-arithmetic-q23-q24.md",
-   "kind": "workbench-source"
-  },
-  {
-   "path": "IN-PROGRESS.md",
-   "source": "<PLAN17_R7_INTEGRATION>/IN-PROGRESS.md",
-   "kind": "workbench-source",
-   "sha256": "29acbad08f52fa7262b9967ce63db62483a7a14a3555bdaf19e83dc0ce2b2133"
-  },
-  {
    "path": "README.md",
    "source": "<PLAN17_R7_INTEGRATION>/README.md",
    "kind": "workbench-source",
-   "sha256": "afd9759fd2f9bd6bccf0b997818db6900984eff2708896c3069a043fbff5018b"
-  },
-  {
-   "path": "plans/INDEX.md",
-   "source": "<PLAN17_R7_INTEGRATION>/plans/INDEX.md",
-   "kind": "workbench-source",
-   "sha256": "f0111147f647307a72154f6d127abaaa38135f76e2e0b0c4536396ea793edb1f"
+   "sha256": "6ad3cbf320072a4c388e6adff61eacf91ed8bfb06f9d0bda597b0d151cd6a135"
   },
   {
    "path": "CHANGELOG.md",
    "source": "<PLAN17_R7_INTEGRATION>/CHANGELOG.md",
    "kind": "workbench-source",
-   "sha256": "4fa361f40e98fcd22e30a129edf31a6717b718e5a4d20b90121773df5d9f60c8"
+   "sha256": "3b47afe9137322619dade0e57f7a76be7bfb647d9ebd57461cee2cb4753fd553"
   },
   {
    "path": "workbench/plan17/r7/admission_r7.py",
@@ -11832,12 +11684,6 @@
    "sha256": "53b89d92a344edc6160f2133ba481dfbb3e8d0ac0108cf0f469dd00eec899ecf"
   },
   {
-   "path": "plans/plan-20-diagnostic-captures-s2.md",
-   "source": "<REVIEWED_PLANS19_20_PUBLICATION>/plans/plan-20-diagnostic-captures-s2.md",
-   "kind": "accepted-source-integration",
-   "sha256": "915be2a678cb392c11add3d74490a37dbe62b57213c2ad7283dd7fa201f850fa"
-  },
-  {
    "path": "workbench/plan19/README.md",
    "source": "<REVIEWED_PLANS19_20_PUBLICATION>/workbench/plan19/README.md",
    "kind": "accepted-source-integration",
@@ -11859,7 +11705,7 @@
    "path": "workbench/plan20/README.md",
    "source": "<REVIEWED_PLANS19_20_PUBLICATION>/workbench/plan20/README.md",
    "kind": "accepted-source-integration",
-   "sha256": "87780e9e73625a05dc15580067a5ac898607f13ad7d9f907de6ca0797f8edadc"
+   "sha256": "8efabbd119543f354dfb513d562ea6a2d73ee850d1f10ef01dde85033d813aa5"
   },
   {
    "path": "workbench/plan20/RETAINED-RESULTS.json",
@@ -11955,7 +11801,7 @@
    "path": "workbench/plan18/README.md",
    "source": "<ACCEPTED_PLAN18_PUBLICATION>/workbench/plan18/README.md",
    "kind": "accepted-source-integration",
-   "sha256": "39e1d5eca4be1c484388db15affee19ad351d2206fe770ba7fd2cdf87c9e7839"
+   "sha256": "2d0529d449bf4e8f4e16859ded8079ccf2bdc8321cb041c8c14abd813f9f1420"
   },
   {
    "path": "workbench/plan18/SOURCE-MAP.json",

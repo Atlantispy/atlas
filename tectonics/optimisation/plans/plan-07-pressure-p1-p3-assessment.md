@@ -18,7 +18,7 @@ Path abbreviations:
 - `R = T/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1`.
 - `A = C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas`.
 
-The controlling sources are `PS/HANDOFF.md` §§1–2 and its fixed rules, `PS/proof-request-draft.md`, the actual profile/proof/comparator scripts, and the current consolidated plan and queue protocol under `A/.atlas-dev`. Existing implementation ownership is unchanged. N9 remains PAUSED BY USER; its possible later effect on P1 booking is a dependency, not authority to resume N9. Fresh full intervals and individual holds remain intact.
+The controlling sources are `PS/HANDOFF.md` §§1–2 and its fixed rules, the full-scale request contract below, the actual profile/proof/comparator scripts, and the current consolidated plan and queue protocol under `A/.atlas-dev`. Existing implementation ownership is unchanged. N9 remains PAUSED BY USER; its possible later effect on P1 booking is a dependency, not authority to resume N9. Fresh full intervals and individual holds remain intact.
 
 ## 2. Retained candidate and measurement evidence
 
@@ -30,7 +30,6 @@ The controlling sources are `PS/HANDOFF.md` §§1–2 and its fixed rules, `PS/p
 | Profile harness | `PS/scripts/run_arms.py` | `51e98e01` |
 | Proof harness | `PS/scripts/ab_pressure_r4.py` | `2e6aa2f5` |
 | Comparator and null control | `PS/scripts/compare_ab_r2.py`; `PS/nullfields-ab2.json` | `7ac3a1df`; `30f86dad` |
-| Existing request draft | `PS/proof-request-draft.md` | `3d2293df` |
 
 These identify the retained proof route; they are not receipts for a new run. Refresh any changed source through the owner's existing process rather than silently repinning it. The handoff retains successful small-case contract, mutant, indexed-database and transient checks and a refuter outcome of HOLDS. Reuse adequate unchanged evidence within its recorded scope.
 
@@ -61,9 +60,9 @@ After an authorised completion, Pressure reports actual tree peak against the bo
 
 ### Full-scale request and gate basis
 
-Complete the existing `PS/proof-request-draft.md`, including TOTAL, duration and its no-duplicate registry check. Submit an **EXCLUSIVE REQUEST** to the coordinator, naming the runtime/composition, inputs, output locations, total resource basis and estimated duration. The coordinator supplies the ticket; there are no plan-created ticket JSON files.
+Prepare the full-scale request from this contract, including TOTAL, duration and its no-duplicate registry check. Submit an **EXCLUSIVE REQUEST** to the coordinator, naming the runtime/composition, inputs, output locations, total resource basis and estimated duration. The coordinator supplies the ticket; there are no plan-created ticket JSON files.
 
-The draft's **approximately 70 minutes and 3.5 GiB TOTAL are PROJECTED**, to be refined from q02 and adequate retained smoke evidence. **6.2 GiB** is the calculated start requirement on that booking basis, not a fixed live gate or a measured peak.
+The historical estimate’s **approximately 70 minutes and 3.5 GiB TOTAL are PROJECTED**, to be refined from q02 and adequate retained smoke evidence. **6.2 GiB** is the calculated start requirement on that booking basis, not a fixed live gate or a measured peak.
 
 Under the dated queue amendment, predicted peak is the maximum retained measured peak for the matching command/input key, falling back to the booking where no matching history exists. Failed runs do not lower the prediction. Need is predicted peak × 1.2 plus the 1 GiB floor and 1 GiB small-job allowance. Preserve the actual prediction, basis, need and free memory recorded at launch; the 4.4/6.2 GiB examples do not override them.
 
@@ -73,7 +72,7 @@ The proof requires q02's result, the coordinator's slot and a queue that is not 
 
 ## 4. Exact proof coverage and parity
 
-The retained draft specifies two sequential proof processes and then the comparisons: one base serial arm on `test:T/gg/workers6-r6`, and six candidate arms on `test:PS/c/w6f5`:
+The proof contract specifies two sequential proof processes and then the comparisons: one base serial arm on `test:T/gg/workers6-r6`, and six candidate arms on `test:PS/c/w6f5`:
 
 1. `serial`.
 2. `auto1`.
@@ -94,13 +93,13 @@ There is **no epsilon tolerance**. Preserve byte-identical pressure records and 
 
 Use the existing `fp/cand/report.json` and session fields. No new telemetry dataclass is required.
 
-**(a) Transport and child accounting.** Report the full-scale gate's raw `input_bytes`, `decoded_bound` and actual `child_bytes`; worker real peak (`peak_child_rss`) beside booked peak (`peak_child_ledger`); and declined/recomputed walls per arm. Also retain free cores, workers asked/granted, adopted/declined/crashed walls and total/per-worker peaks. The production route passes `policy.child_bytes` to both the gate and the worker session. The dispatch constructor's 128 MiB default is not that route's allowance. The draft records a 512 MiB policy default, but report the actual selected value rather than inferring it from either default.
+**(a) Transport and child accounting.** Report the full-scale gate's raw `input_bytes`, `decoded_bound` and actual `child_bytes`; worker real peak (`peak_child_rss`) beside booked peak (`peak_child_ledger`); and declined/recomputed walls per arm. Also retain free cores, workers asked/granted, adopted/declined/crashed walls and total/per-worker peaks. The production route passes `policy.child_bytes` to both the gate and the worker session. The dispatch constructor's 128 MiB default is not that route's allowance. The historical request records a 512 MiB policy default, but report the actual selected value rather than inferring it from either default.
 
 **(b) Real versus booked cost.** Report the decoded bound and raw-data relationship against the worker's retained copy and measured RSS. Preserve the existing match-real-cost obligation and report actual versus booked. A booking estimate is not measured memory, and neither is an operating-system cap.
 
 **(c) Parent transient.** Retain the separate, **untimed** `--transient` memory pass in `ab_pressure_r4`. It observes `_shared_inputs` through local monitoring events without rebinding the implementation, stops at the gate before starting a worker, and records the traced peak and retained amount. Require `verify_boundary` to have run and passed with events live, at the gate and after release, with the monitoring tool released. Any missing check is TRANSIENT FAIL. Keep these memory results separate from timed arms. If the transient exceeds **256 MiB**, book it **before integration**; otherwise, the later match-real-cost repair obligation still applies. This is not permission to raise a scope cap or disregard an unbooked transient.
 
-**(d) Reopening.** Preserve **no reopen change**. The draft's existing observation is zero reopens on six real walls; it is not a claim that the new full-scale proof has already run.
+**(d) Reopening.** Preserve **no reopen change**. The historical estimate’s existing observation is zero reopens on six real walls; it is not a claim that the new full-scale proof has already run.
 
 The proof harness samples total parent-plus-worker working set every 0.5 seconds. Retain that measurement scope, its per-worker figures and the separate queue observations. Existing 12 GiB tree-RSS, 1 GiB free-floor, 16 GiB logical, 256 MiB scope, 1 MiB integer and 256 accepted-step limits remain unchanged. Bookings, projections and sampled peaks do not redefine those contracts.
 
@@ -108,7 +107,7 @@ The proof harness samples total parent-plus-worker working set every 0.5 seconds
 
 Forced decline and crash are intentional proof arms and must demonstrate exact recomputation. An arbitrary crash is not automatically external or VOID-ENVIRONMENT. When a worker-count arm cannot obtain its required workers, use the established VOID-ENVIRONMENT disposition and submit a rerun REQUEST for that arm alone. There is **no automatic launch or rerun**. Preserve failures, partial outputs and source identities; a later comparator pass cannot erase them.
 
-After the proof and resource conditions are satisfied, Pressure returns the complete evidence and outstanding dispositions. **Geometry integrates binding/dispatch; Runner pins after the proof.** Preserve the interaction with parallel admission in shared files and their owners. This plan neither edits those files nor admits the candidate to final assembly by itself. Plan 31 (not included in this public snapshot) and Plan 35 (not included in this public snapshot) retain their separate assembly and combined-measurement gates. Any remeasurement after N9 integration remains a coordinator dependency while N9 is paused.
+After the proof and resource conditions are satisfied, Pressure returns the complete evidence and outstanding dispositions. **Geometry integrates binding/dispatch; Runner pins after the proof.** Preserve the interaction with parallel admission in shared files and their owners. This plan neither edits those files nor admits the candidate to final assembly by itself. [Plan31 final construction](../workbench/plan31/final/README.md) and the separately owned combined-measurement plan retain their separate assembly and combined-measurement gates. Any remeasurement after N9 integration remains a coordinator dependency while N9 is paused.
 
 ## 7. Completion gates and provenance
 
@@ -119,3 +118,23 @@ After the proof and resource conditions are satisfied, Pressure returns the comp
 - [ ] Pressure delivers the proof and resource evidence; Geometry and Runner complete their respective integration/pinning boundaries before later assembly or combined-performance acceptance is claimed.
 
 The frozen Codex initial review (private evidence unavailable in this public snapshot) is unchanged. The post-reveal assessment and complete primary-source pins (private evidence unavailable in this public snapshot) record the corrections and their evidence. This revision implements general463 and Claude's explicit additions in general465. Plan acceptance is distinct from execution, proof, integration and scientific acceptance.
+
+## Retained proof-harness qualification
+
+The historical request's supporting checks were 4/4 transport/gate mutants in
+each of two generations, 6/6 contract-plane cases, 3/3 indexed-store cases, 4/4
+comparator cases and 9/9 transient controls (clean/unbound/repeated/failure at
+live/gate/release/traced/busy/no-build). ARMS DIFFER exits 1. Small smoke sm10
+recorded ARMS EQUAL, all three inventory checks and monitoring-tool release; the
+earlier transient control that violated loaded identity was refused. The small
+measured transient was 25.6 MiB (9.18 times raw), with 1.0 times raw retained.
+Those checks establish harness behaviour at their original bindings, not the
+held full-scale proof. The null control permits only its 11 declared identity
+fields; new differences require investigation.
+
+The old 70-minute estimate combined a roughly 23-minute base and 37-minute
+candidate with headroom. Its input admission observation was 840 seconds and
+558 MiB working set; the parent/worker projection was approximately 0.7 GiB plus
+six workers at 0.2–0.4 GiB. These are historical booking inputs, not a valid
+current launch request. Actual q02/worker evidence and the existing queue gate
+control any future authorised request.

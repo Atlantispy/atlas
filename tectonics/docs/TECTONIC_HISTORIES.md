@@ -67,7 +67,7 @@ entire accumulated output sequence into every new checkpoint: each record has on
 parent link, with only the latest output kept live. Existing factor/preparation
 reuse remains active for missing outputs. Native thread, 128 MiB accounted work,
 128 source-file and 256-output limits are unchanged. Accounted bytes are not RSS.
-The later [A3 capacity repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+The later [A3 capacity repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
 raised the source-file limit to 512; the other limits stated here are unchanged.
 
 **Every published checkpoint can be restored under the budget that published it

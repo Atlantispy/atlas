@@ -27,7 +27,7 @@ current delivery status belongs in the current-state record.
 | Coordinates, geometry, descriptions and reference materials | [Foundations chapter](docs/how-it-works/01-foundations.md), [specialist contracts](docs/FOUNDATIONS.md) |
 | Transport, cooling, compaction, loads and support | [Tectonic processes](docs/how-it-works/02-tectonic-processes.md) |
 | Regional mechanics, recovery and resource ownership | [Coupling and reliability](docs/how-it-works/03-coupling-and-reliability.md) |
-| Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_ACCEPTANCE.md), [portable bundles](docs/NEW_WORLD_BUNDLE.md) |
+| Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification), [portable bundles](docs/NEW_WORLD_BUNDLE.md) |
 | Experimental force-driven convection | [Dynamics chapter](docs/how-it-works/05-experimental-dynamics.md), [scientific plan](docs/TECTONICS_PLAN.md) |
 | Coupled physics, shared state, exchanges and accepted time | [Physical integration](docs/how-it-works/06-physical-integration.md), [I02 workflow](docs/I02_WORKFLOW.md) |
 | Evolving sphere, starting families and reduced driving feedback | [I03 network](docs/I03_SPHERICAL_NETWORK.md), [I04 causal start](docs/I04_CAUSAL_START.md), [I05 moving state](docs/I05_MOVING_STATE.md), [shared ports](docs/I04_I05_PORTS.md) |
@@ -181,6 +181,61 @@ These cards are not full benchmark campaigns. Visuals require the optional
 `visual` extra, inspected outputs and new destinations. The thermal example
 advances an authored 48×48 box for 40 steps; endpoint velocity is recomputed from
 the accepted endpoint, rather than an intermediate stage. This is not calibration.
+
+### Bounded R4.4 studies
+
+These commands do not authorise held R4.4 work. The component plan owns the
+[scientific acceptance](docs/TECTONICS_PLAN.md#3cr4-progress), and the optimisation
+reference owns [execution and recovery](docs/OPTIMISATION_REFERENCE.md#storage-contract).
+
+For an explicitly authorised study, from the scoped source root using the declared installed environment (no automatic installation or repinning):
+
+```sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/run_convection_r4_4.py \
+  --output NEW_RUN --case tosi-1 --cells 16 --dt 1e-5 \
+  --max-steps 30000 --segment-steps 1000 --sample-every 25 --save-every 500
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/run_convection_r4_4.py \
+  --output NEW_RUN --resume --segment-steps 1000
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/analyse_convection_r4_4.py \
+  --run CLOSED_RUN --output NEW_ANALYSIS.json
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/tools/visual_convection_r4_4.py \
+  --run CLOSED_RUN --output NEW_VISUAL_DIRECTORY
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -I -B tectonics/verify.py --acceptance
+```
+
+These example run controls are exploratory, not the registered 32/64/128 adequacy
+triplet and not a guarantee of a mature state by the selected terminal time.
+`--seconds` requests a cooperative per-invocation bound. A genuine physical refusal
+needs investigation, not an automatic retry under weaker controls. Successful
+finite-schedule completion means only that the predeclared steps were accepted.
+
+For an actual three-run study, give the auditor three `--run` paths in coarse-to-fine
+order and `--study-axis mesh`, `timestep` or `nonlinear`. It verifies the non-varied
+controls and actual mature regimes before considering differences. Fill a copy of
+`convection_r4_4_campaign.example.json` with actual run paths, the final unchanged
+source's `verify.py --acceptance` record and separately recorded source-bound visual
+inspections. Run `assess_convection_suite_r4_4.py --manifest CAMPAIGN.json --output
+NEW_SUITE_RESULT.json`. Missing evidence returns `INCOMPLETE_R4_4` and exit status 1;
+malformed or unsafe input is refused with exit status 2. A fabricated PASS field in
+a campaign manifest is not consumed as evidence.
+
+Visuals come from decoded actual states and re-solved simultaneous endpoint flow.
+Raw arrays, complete source/state/flow identities and file hashes are retained.
+Temperature/viscosity/pressure displays use unsmoothed original cells; velocity
+arrows use declared face-to-centre averages without unit-vector normalisation.
+Histories are saved diagnostic samples. Assistant inspection and Michael's visual
+approval are separate records; the renderer asserts neither. Initial transient
+pictures are not promoted to mature convection or observational evidence.
+
 
 ## Reproducible diagnostic visuals
 
@@ -542,7 +597,7 @@ physical acceptance. Consult [current evidence](../docs/CURRENT_EVIDENCE.md), it
 [register](evidence/current-evidence.json) and [full-suite status](../docs/CURRENT_STATE.md#current-delivery-and-acceptance).
 Dated receipts describe bound sources, workload, runtime and platform; a README
 edit does not refresh them. Original records remain in [`evidence/`](evidence/),
-including the [first delivery](evidence/DELIVERY.md). Historical optimisation
+including the [first delivery](docs/FOUNDATIONS.md#first-remake-evidence-and-limits). Historical optimisation
 ratios are not whole-generator speedups or world-scale forecasts.
 
 ## Delivery and licence

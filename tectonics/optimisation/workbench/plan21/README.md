@@ -124,13 +124,30 @@ These are measured private reopen increments on a lineage retaining the precedin
 `private_heat_indexed_runtime.metric_identity` streams an unscoped compact mesh in full again on every call. The candidate reuses the identity that the mesh's constructor streamed and sealed in the same process.
 
 **Conditions for reuse.** The candidate reuses the seal only when all of these hold:
-- the arrays are still one funded read-only allocation;
+- the arrays are still the one funded, read-only, bytes-backed allocation;
 - there is no segment;
-- the reader is a plain blob reader;
-- any file source is unchanged;
-- the seal names this geometry.
+- the reader is a plain blob reader, with neither iter_json nor export;
+- the support source passes check_unchanged();
+- the seal is LEGACY and names this geometry.
 
 **What is kept.** Every support-blob read with its type, length and SHA-256 refusal, and every cancellation check. Only the row re-encoding is skipped.
+
+The support sequence remains _view_allocation, view._check(), reader(ident,size),
+then the same type/length/SHA refusal and R.check(cancel) per blob. Any ineligible
+case returns None to the original full-stream route; r13's geometry_id comparison
+still runs. Only pure row re-encoding is skipped. Scoped/segment restart/reopen
+views retain the full stream, so this cannot promise the original whole-stream
+projection or general restart saving.
+
+The original first review found skipped closure-reader reads; that defect was
+fixed by retaining every support read. Twelve candidate controls and seven
+targeted mutants covered SHA, loop/cancellation, plain-reader/owner-count and
+source guards. Earlier base/candidate 4+2 control scopes and their common lazy
+partition_v2 import error retain their original limits; later current coverage
+and the closed disabled disposition below supersede the old pending q20 note.
+Logical support-read charging (size+64 KiB instead of 2*size+64 KiB plus decode)
+is not a measured RSS reduction. No future repair/run/enablement is authorised
+by this migration.
 
 **Status.**
 - **Controls.** Its unit tests pass on the selected base. The four-arm measurement checker has two clean controls and 24 known faults; the separate launcher limitations below remain.

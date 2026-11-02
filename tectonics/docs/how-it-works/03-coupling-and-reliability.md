@@ -406,7 +406,7 @@ representation while mutable constants, defaults and function bindings are
 re-examined. This avoids repeated formatting, not source verification. Focused
 controls deliberately mutate sources and functions and require refusal.
 
-The [explicit final source constructor](../../optimisation/workbench/plan31/final/r3/README.md)
+The [explicit final source constructor](../../optimisation/workbench/plan31/final/README.md#explicit-construction-and-data-boundary)
 can select a manifest-bound fixture route. It authenticates the selected manifest
 with its SHA-256 at context entry, then retains those exact immutable bytes. Each
 subsequent fixture-identity lookup opens the manifest afresh and compares all its
@@ -489,14 +489,21 @@ it does not authenticate every preplanted self-declared module or arbitrary
 runtime rewriting. The public port preserves the existing query-stage behaviour
 and all unrelated source members.
 
+Some delivery contracts below refer to later components absent from this
+public snapshot; their identifiers are retained as design references. The
+[published Plan39 selection](../../optimisation/workbench/plan39/README.md)
+records its actual source coverage and outstanding closure/build work.
+These descriptions do not establish publication or qualification of the
+missing receivers, fold tools or installation route.
+
 The [source constructor](../../optimisation/workbench/plan26/build_candidate.py)
 authenticates its complete parent, applies exact declared diffs and creates a new
 source tree. It refuses output overlap with its inputs before writing, linked
 members and undeclared files, including nested manifests. Focused controls cover
 these boundaries and the four validator callers. The
-[fold and parity source](../../optimisation/docs/release/fold/r6/README.md)
+fold and parity source contract (`fold/r6`, not supplied here)
 separately retains native, source and AST guards with explicit publication hashes.
-The [pre-fold receiving guards](../../optimisation/workbench/plan26/receiving/README.md)
+The pre-fold receiving guards (`plan26/receiving`, not supplied here)
 also distinguish the fresh profile from its prepared companion and bind both to
 the selected source manifest. Selected-generation checks bind the independently
 reviewed constructor, its complete construction plan and the delivered files.
@@ -509,7 +516,7 @@ A source manifest from either component is not a prepared runtime receipt.
 Actual selected profiles, loaded bytes, compiled execution, folded/unfolded
 parity and interval admission require their own source-bound qualification.
 
-The [closed-payload receiver](../../optimisation/workbench/plan39/README.md#canonical-closure-and-payload-receiver)
+The [closed-payload release boundary](../../optimisation/workbench/plan39/README.md)
 uses the canonical source-bound closure checker, its authenticated base and fixed
 policy. It checks complete delivered code coverage, finite native/helper import
 domains, explicit fixture aliases and pinned Python-environment proofs before a
@@ -520,7 +527,7 @@ writing the release marker and build seal. Its qualified source-frame set remain
 empty until authentic folded records are supplied, so packaged qualification is
 still pending. The checker parses source without importing the scientific payload.
 
-The [selected-generation receiver](../../optimisation/workbench/plan26/receiving/README.md)
+The selected-generation receiver contract (`plan26/receiving`, not supplied here)
 checks the constructor and complete source membership before invoking its
 prepared-base guard. It also authenticates the original paired-profile
 configuration and exact namespace authority. The explicit public receiving caller
@@ -530,19 +537,19 @@ paired API intake, retaining exact status checks and recursive purpose/rehearsal
 refusal. Unbound public tool or authority projections refuse before dispatch.
 Local execution and public counterpart identities are recorded separately;
 actual public observations, fold gates and runtime qualification retain their own
-evidence. The [selected public fold source](../../optimisation/docs/release/fold/r10/README.md)
+evidence. The selected fold source contract (`fold/r10`, not supplied here)
 provides the separately bound transformer and checker counterparts. Prepared policy
 data and predecessor recordings do not supply missing
 actual fold bindings.
 
-After a completed fold, the [runtime metadata constructor](../../optimisation/workbench/plan31/final/folded-runtime-r1/README.md)
+After a completed fold, the [runtime metadata constructor](../../optimisation/workbench/plan31/final/README.md#folded-runtime-construction)
 binds the actual source, manifest, report and fixed tool identities before deriving
 new paired profiles. The report must explicitly declare an empty rehearsal list;
 a missing declaration, null, boolean false or a nonempty list is refused. The
 actual fold caller requires all seven gates to pass. Constructed metadata and
 strict identity capture still require the subsequent receiving qualification.
 
-The [complete original-record consumer](../../optimisation/workbench/plan26/receiving/final-records-r2/README.md)
+The complete original-record consumer contract (`plan26/receiving/final-records-r2`, not supplied here)
 checks the original producer and reader sources, collected records and completed
 process evidence before comparing a source arm with its folded counterpart.
 The parent creates each leg's authority only after that independent evidence
@@ -572,7 +579,7 @@ source-bound results. Source/fold qualification can precede installation; the
 installed consumers still require their separately qualified delivery.
 
 Installing that same folded source has a separate
-[profile relocation route](../../tools/materialise_profile.py). It authenticates
+profile relocation contract (`materialise_profile.py`, not supplied here). It authenticates
 the completed constructor result, selected profile and exact fold before moving
 their references to the qualified installation. The original policy, manifest
 and evidence remain pinned external dependencies. A separate installation policy
@@ -651,7 +658,7 @@ in addition to the database allowance; referenced histories are dependencies.
 
 ### Carry verified pages between read batches
 
-The optional [L3 candidate](../../optimisation/workbench/plan22/README.md) addresses
+The optional [L3 candidate](../../optimisation/workbench/plan22/README-r4.md) addresses
 repeated reads of the same immutable pages. A view can retain at most 128 verified
 pages between its batches, trimming to 10 MiB of booked memory per view and
 refusing a carry above 32 MiB across the process. The page cache remains 64 MiB.
@@ -782,7 +789,7 @@ gaps or missing dependencies refuse, including on graph-cache hits.
 [graph tests](../../tests/test_w12_graph.py) compare complete direct, assembled,
 clean and resumed results. The [assembly receipt](../../evidence/w12-assembly-r1.json)
 records that historical integration evidence. The
-[subsequent repair record](../REVIEW_REPAIRS_2026-09-26.md) separately covers
+[subsequent repair record](../../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification) separately covers
 signed-zero export, initial-surface policy and ownership corrections.
 
 ### Export compatible fields without inventing a physical bridge

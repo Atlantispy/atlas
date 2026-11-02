@@ -12,8 +12,8 @@ assembled acceptance and matched recovery measurement PASS. The [Step 1 design](
 [case register](../cases/w07_mechanics.json) are unchanged.
 
 Subsequent 23 September dependency repair: surface projection and variable
-flexure now load SciPy lazily. The [review-fix record](../../docs/REMAKE_REVIEW_FIXES.md#23-september-review-of-5ae74dc--reported-failures-resolved-locally)
-supplies current focused evidence. The combined report, source-byte comparisons,
+flexure now load SciPy lazily. The [review-fix record](../../docs/CURRENT_EVIDENCE.md#23-september-review-of-5ae74dc--reported-failures-resolved-locally)
+supplies source-scoped focused evidence. The combined report, source-byte comparisons,
 inventory and timings below describe the preceding Step 5 completion snapshot;
 they have not been rebound to the later dependency-only source changes.
 

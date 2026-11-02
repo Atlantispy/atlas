@@ -1,13 +1,13 @@
 # I04/I05 port record: the values that pass between motion and material state
 
-**WORKING NON-CANON. Record written 3 October 2026 by I04 Part A (single writer); not yet accepted.**
+**WORKING NON-CANON.** This is the shared interface contract.
+[Current state](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
+owns delivery and acceptance.
 - **Conditions applied.** The coordinator's rulings on the decisions proposal, and its round-1 verification
   (3 October 2026), are written into this record.
-- **Order of work.** I05 codes against this record only after Codex accepts it. Until then I04 Part A tests its own
-  controls against these shapes, using authored, labelled inputs.
 - **Amendments.** Proposed changes from I05 or later stages go in their handoffs as amendments, not into a parallel
   adapter.
-- **I04b amendments (4 October 2026; candidate, coordinator verification pending).** The coupled P5, the endpoint
+- **I04b interface additions.** The coupled P5, the endpoint
   P1/P2 headers, the P6 and P7 types, the new P9 boundary reaction, D-P3 decided for the coupled route, and P8 not
   issued in v1. They follow the coordinator's rulings on the I04b decisions proposal (P1-P7, B5).
 
@@ -103,7 +103,7 @@ consumers (the starting family's producer and the D1 balance) use the same code 
 - `material_id`, `creep_law_id` and `healing_law_id`. The only admitted healing law is the zero-healing selection
   `atlas.i04-healing-none.v1`.
 
-**P2 layout (amendment of 4 October 2026; accepted at coordinator level, Codex to confirm).** I05a codes it as
+**P2 layout.** I05a codes it as
 `integration_properties.strength_port`. P2 is issued with `parameter_id` the I05 moving state's `moving_id`.
 - **Support:** the piece support `atlas.i05-piece-support.v1`. It is the ordered (face, cohort) pieces of one I03
   state, bound to its network and material; `support_id` is its digest.

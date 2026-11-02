@@ -146,7 +146,46 @@ disk. There is no new dependency, JIT or forced worker pool for millisecond batc
 - **Existing Atlas**: W01 grain/bulk/fluid conventions, W02 cohort identity,
   resource admission and verified reuse/store machinery were inspected and reused.
 
-See [focused checks and measured batching gain](../evidence/w03-compaction.md).
+See [focused checks and measured batching gain](#obtained-evidence-22-september-2026).
 The subsequent [assembled W01/W02/W03 increment](W03_WORKFLOW.md) covers compatible
 thermal fields, ordered stationary material/history and external fluid/load
 accounting—not a long R4.4 or whole-world simulation.
+
+## Obtained evidence, 22 September 2026
+
+The saturated, already-drained, fixed-grain model passed 64 focused Windows
+checks (21 new/43 affected) in 6.560 s: loading/unloading/reloading, Decimal
+small-increment witnesses, peak-history/epoch/fluid/basis/porosity refusals,
+changing-area grain/fluid accounts, immutable state, budget/cancellation,
+source/callable invalidation, exact store continuation and pooled reservoir limits.
+The command selected test_w03_compaction_law, test_w03_compaction_columns,
+test_w03_thermal_support and execution IdentityTests/CacheExecutionTests with
+source/tests on PYTHONPATH. Existing Python 3.12.14/NumPy 2.4.6 used one thread;
+no Linux/full-suite/long-run evidence is implied.
+
+An independent continuum self-weight case (100 m³ grains, 2650/1000 kg/m³
+grain/fluid, g=10, initial void ratio 0.8, zero top traction, 100000 Pa offset,
+loading/rebound slopes 0.1/0.02) changed area 1 → 0.5 → 1 m². Exact thickness was
+180 → 348.0489533306557 → 175.21958133226227 m, grain mass 265000 kg.
+Loading thickness error at 16/32/64/128 parcels was 0.0415422/0.0122789/
+0.00326733/0.000832255 m. The coarse sample was not asymptotic; the final
+32/64/128 comparison retained its 3.5–4.1 ratio gate. Reduced area explains
+increased loaded thickness; partial rebound does not recreate original pores.
+
+Review repaired copying malformed shapes before admission, incomplete component/
+text metadata charges and duplicated scalar stock across columns. Save/restore
+fixture store limits were corrected separately. No tolerance was relaxed.
+
+[Raw batching measurements](../evidence/w03-compaction-timing.json) compare 1,024
+columns × 64 parcels, one warm-up/three alternating pairs: per-column 81.860500 ms
+versus batch 2.343700 ms, saving 79.516800 ms (97.136959%). Results/history are
+bit-identical. This measures call-overhead batching for the same new law, not old
+production, full workflow or whole-generator performance. No disk/JIT/worker
+speed claim; buffers share state without growing histories. Entry:
+python -B tectonics/tools/benchmark_w03_compaction.py.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w03-compaction.md) retains full selections,
+identities, static results and consulted-source extent (Fowler/Yang, Müller,
+pyBacktrack; original Athy full text unavailable). Empirical calibration,
+transient consolidation, automatic peak-history remap and later assembled
+acceptance are not supplied by this component result.

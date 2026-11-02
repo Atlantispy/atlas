@@ -104,19 +104,84 @@ bounded resources and absence of repeated thermal work.
 shared live-source identity tests and profile/status contract. It has no broad
 discovery fallback; empty, duplicated, skipped, failed or source-drifted work
 cannot receive PASS. Focused ocean snapshot tests are a separate component gate.
-Numerical component evidence is documented in [Step 3](../evidence/w06-cooling.md)
-and [Step 4](../evidence/w06-history.md); these are not rerun for reassurance.
+Numerical component evidence is documented in [Step 3](W06_COOLING.md#retained-numerical-evidence)
+and [Step 4](W06_HISTORIES.md#retained-numerical-evidence); these are not rerun for reassurance.
 
 The selected profile passed all 20 checks in 44.148 s with no skips, failures,
 errors or source drift: eight combined workflow checks, nine shared identity
 checks and three acceptance-profile checks. Five focused ocean codec checks also
 have passing evidence. See the [acceptance record](../evidence/w06-workflow-acceptance.json)
-and [measurement and implementation evidence](../evidence/w06-workflow.md).
+and [retained workflow measurements](#retained-workflow-measurements).
 
 The existing empirical challenge remains separate: independently reconstructed
 isochrons/motion, corrected basement depths and heat-flow observations must be
 bound before an observational claim. Do not reuse fitted observations as held-out
 validation. This workflow does not reopen R4.4 or authorise a large world run.
+
+## Retained workflow measurements
+
+The 22 September 2026 Windows/Python 3.12.14 measurement uses one numerical thread
+and three rotating-order samples/mode, 4000-cell ocean cases / two actual margin
+layers / four outputs. Each mode includes fresh context/preparation/workflow,
+execution and closure; durable modes also store open/close/inventory. Process
+launch, source hashing and exact equality work are outside the timer. Warm
+means reopened SQLite connection, not OS cold cache.
+
+| Route | No-store, s | First-save, s | Verified warm, s | Warm vs no-store | Partial, s |
+| --- | ---: | ---: | ---: | --- | ---: |
+| Constant ocean | 1.220668 | 1.683468 | 0.520681 | 0.699987 s/57.34% less | 0.919054 |
+| Changing-history ocean | 0.981009 | 1.341096 | 0.396041 | 0.584968 s/59.63% less | 0.705706 |
+| Inherited margin | 0.989721 | 1.099665 | 0.411937 | 0.577783 s/58.38% less | 0.602819 |
+
+First publication adds 37.91%/36.71%/11.11%. Warm versus full compute+publish
+saves 69.07%/70.47%/62.54%. Partial continuation starts with outputs 0–2 accepted,
+restores 2 and computes/saves 3: prefix/seeding is excluded, so 45.41%/47.38%/45.18%
+less time than full cold publication is shorter remaining work, not a faster
+algorithm or cheaper interruption overall. No-store remains appropriate when
+durability is unnecessary. These gains cannot be added to Step 3/4 kernel gains.
+
+All 36 timed results exactly matched complete typed-state/array/account/provenance
+signatures; 97 benchmark source bindings matched before/after. The
+[original samples](../evidence/w06-workflow-timing.json) retain raw data and
+conditions; no rerun selected better numbers.
+
+| Route | Snapshots | Encoded payload, B | Database, B | Peak accounted, B |
+| --- | ---: | ---: | ---: | ---: |
+| Constant ocean | 4 | 485,901 | 548,864 | 48,195,696 |
+| Changing history | 4 | 503,118 | 565,248 | 48,236,200 |
+| Margin | 4 | 168 | 32,768 | 34,345,687 |
+
+Reservations closed at zero under 128 MiB including 16 MiB caller allowance; this
+is accounting, not an RSS cap. Existing Blosc2-backed Zstd level 1 / byte shuffle /
+palettes were used, no dictionary/decoded cache or standalone zstandard package.
+Ocean provenance/geometry reconstruct from bound recipes; margin separately
+retains tiny temperature changes to prevent cancellation on restore.
+
+## Retained recovery controls and limits
+
+The [unchanged acceptance JSON](../evidence/w06-workflow-acceptance.json) retains
+20/20 in 44.148151 s, no errors/failures/skips/source drift: eight workflow, nine
+identity and three profile/status controls. Separate static symlink skipping
+does not affect that strict profile. Coverage includes all three typed routes,
+exact fresh-child continuation, unknown inherited history/nonzero epoch, future
+event provenance, independent endpoint/first-exit checks, zero warm-load thermal
+calls, finite stocks, precommit rollback/mid-evolution cancellation, corruption
+including consistently rehashed foreign state, missing history and source/
+schedule/policy refusal, bounded decode and 256-request/borrowed-owner limits.
+
+Five ocean-codec controls have passing evidence; initial full five passed, then
+only the affected budget/cancellation/history-corruption method was rerun after
+fixing stricter child-budget propagation into ocean packing. Earlier numerical
+evidence was reused only after 94 Step 3/4 source/case/test bindings matched,
+excluding intentionally changed public exports/identity registry, with current
+shared-identity controls covering registration. No three-grid/quadrature/partition
+sweep was repeated or claimed as new.
+
+This establishes PASS_SUPPORTED_W06_WORKFLOW, not a merged ocean-continent domain,
+independently calibrated age/depth/heat-flow realism, Linux execution, power-cut
+or arbitrary sync/network durability. Existing SQLite/filesystem guarantees remain;
+R4.4 and scientific holds stay intact. All source/recipe/output-index/parent
+bindings, corruption refusals and no-repin rules above remain unchanged.
 
 ## Existing software and research consulted
 

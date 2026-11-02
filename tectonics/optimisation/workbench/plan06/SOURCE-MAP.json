@@ -14,19 +14,21 @@
       "original_sha256": "9e0c5186919cc1ed4cc6b69587fbb7fc396b3112690190ef416ec9e50aaf2821",
       "transformations": [
         "replaced owner personal name in comments/documentation",
-        "removed private coordination identity and unavailable discussion path"
+        "removed private coordination identity and unavailable discussion path",
+        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged."
       ],
       "line_endings": "LF",
-      "public_sha256": "f9070428893312d2d379f96adda68587367dac6d05637e2d0c7ac3d85b332e92"
+      "public_sha256": "ee8483a8d898b9dbc846558983834193841ed22e71e94d3f517b0c1895c3f830"
     },
     {
       "path": "README.md",
       "source": "<PLAN06_PUBLICATION>/README.md",
       "original_sha256": "04b688d66d6c9db860c0365ec33fd71091aeae03b715bbfa40c2f3569f30263f",
-      "public_sha256": "04b688d66d6c9db860c0365ec33fd71091aeae03b715bbfa40c2f3569f30263f",
+      "public_sha256": "c9449e415113de2e58aac55e624916ca646b4f6538fae8fc05eff2ec4e366b91",
       "line_endings": "LF",
       "transformations": [
-        "authored public summary; not an exported private run receipt"
+        "authored public summary; not an exported private run receipt",
+        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged."
       ]
     },
     {

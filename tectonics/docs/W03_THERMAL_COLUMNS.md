@@ -141,14 +141,49 @@ admission. It includes depths, cell bottoms, ages and full parameter provenance
 in the invocation. Small calculations normally bypass disk. The new module is
 in the callable identity inventory. Old checkpoints are not rebound or promoted.
 
-See [tests and paired timings](../evidence/w03-thermal-columns.md). Source and
+See [tests and paired timings](#obtained-evidence-22-september-2026). Source and
 Windows execution are verified locally; this change has not been run on Linux.
 No platform-specific numerical path was added, but that is not a Linux pass.
 
 Thermal density and single ownership of vertical support are now implemented in
 the separate [increment 2](W03_THERMAL_SUPPORT.md). Solid-conserving drained
 compaction/rebound with changing area is supplied by [increment 3](W03_COMPACTION.md).
-Assembled W01/W02/W03 acceptance remains. No density-driven buoyancy or age-depth subsidence is supplied by
+Assembled W01/W02/W03 qualification is described in [the workflow owner](W03_WORKFLOW.md). No density-driven buoyancy or age-depth subsidence is supplied by
 increment 1 itself. This restricted conductive
 model excludes variable material properties, internal/latent/adiabatic heating,
 melt, hydrothermal circulation, moving plate thickness and horizontal conduction.
+
+## Obtained evidence, 22 September 2026
+
+The constant-property finite-plate route passed 50 focused Windows checks in
+6.014 s (twelve new/38 affected): independent 300-mode and half-space limits,
+zero/mature ages, branch switch, true cell-mean quadrature, cumulative boundary
+heat, SI/extreme scales, provenance/unknown-age/epoch refusals, immutability,
+admission/cancellation and real verified cache invalidation. Independent dense
+finite-volume 16/32/64-cell conduction gave successive max-error ratios >3.5;
+one/two exponential steps agreed within 3e−14 normalised temperature. Unknown
+cooling age was never replaced by formation time.
+
+Review fixed false rejection of zero-contrast heat and shallow-cell cancellation
+from 1−mean(erfc), preserving a unit-temperature mean near 2.8209479177e−18.
+Unrepresentable depth ratios refuse instead of becoming the surface. No
+time-marching campaign or tolerance relaxation occurred.
+
+[Raw timing/source record](../evidence/w03-cooling-timing.json):
+1,024 ages × 256 points/cells, warm-up plus three pairs, one thread. The
+vectorised 100-mode reference versus direct-age medians were 31.204800 →
+8.972800 ms (points, 71.2454%) and 35.854900 → 21.850300 ms (cell means, 39.0591%).
+Maximum normalised differences were 8.88178e−16/2.67564e−14. Modal factor reuse
+fixed the initial cell-mean regression; final figures supersede that development
+checkpoint. The reference used resolved Fo=0.005..10; arbitrary fixed-mode
+truncation was not used to certify zero/young ages. Entry:
+python -B tectonics/tools/benchmark_w03_cooling.py.
+
+The original check selected test_w03_plate_cooling, foundations ThermalTests
+and execution IdentityTests/CacheExecutionTests on Python 3.12.14, NumPy 2.4.6,
+SciPy 1.17.1 with one thread. The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w03-thermal-columns.md)
+retains exact commands/source identities/static results. These are same-equation
+algorithm comparisons for a newly implemented model, not earlier-stage,
+external-simulator, full-generator or R4.4 speedups. Variable properties, moving
+thermal mesh/material coupling, density/support and compaction are outside that
+component qualification; Linux was not executed.

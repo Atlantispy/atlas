@@ -8,16 +8,13 @@ B2 implementation order. [W12_ASSEMBLY.md](W12_ASSEMBLY.md) remains the record o
 what actually exists. [CURRENT_STATE.md](../../docs/CURRENT_STATE.md) remains the
 single progress summary; do not maintain another competing status ledger here.
 
-This is the complete planning scope, not blanket execution authority. The latest
-owner instruction (3 October 2026) authorised closing the I03 review findings,
-including the larger supplied-junction geometry and transient-accounting extension.
-I02.3–I02.8 remain accepted for their declared workflow; stop before I04. Preparing the later
-briefs does not start them. See the coordinator's WORKFLOW_DECISIONS.md and bridge/loop.json for
-live controls, [the I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the single
-current-state record. No installations, reopening R4.4, broad/full-world runs,
-commits, pushes or paid overage are implied. The I01-only automatic timeout
-continuation permission has expired. Do not change an in-flight brief or its
-editable files when updating this plan; use the revised plan for its successor.
+This document defines integration obligations, not execution authority or a second
+status log. [Current state](../../docs/CURRENT_STATE.md) identifies delivered scope
+and remaining holds; the affected owner's accepted source and run controls govern
+an actual assignment. A completed prerequisite does not authorise its successors.
+No installation, held R4.4 run, full-world campaign or change to an in-flight brief
+follows from this plan. Keep private coordination and live run controls outside
+public documentation.
 
 ## 1. The outcome we must deliver
 
@@ -224,13 +221,20 @@ performance measurement. Do not postpone all testing or optimisation until I11.
 
 ### How Codex and Claude use these briefs
 
-Each numbered assignment below is a bounded delivery, not an instruction to send
-an entire stage in one large prompt. Codex selects the next dependency-ready
-assignment and supplies exact editable paths and current input identities.
-Claude implements it and prepares focused tests; Codex reviews the actual patch,
-executes the required checks and sends corrections or the next authorised brief.
-The current shell-free Claude route cannot execute its tests: prepared tests and
-passing tests must remain distinct. The UI owner retains UI implementation.
+Each numbered assignment below is a bounded delivery. The assigned owner supplies
+exact editable paths, source identities, dependencies and completion criteria,
+then implements, checks and integrates that scope. Keep one writer and preserve
+unrelated work. The UI owner retains UI implementation.
+
+Review concerns the completed implementation and integration. Test preparation,
+execution and interpretation need no separate reviewer approval. Reuse adequate
+unchanged results; another agent need not rerun a check merely to receive it.
+Distinguish prepared tests from executed tests and name any actual unavailable
+capability, rather than assuming a particular client's shell access. Retain
+mandatory independent implementation review, final acceptance, run admission and
+scientific holds where the assigned route requires them. A client handover yields
+its scope before the receiving owner continues; it does not create a parallel
+review or publication chain.
 
 **Research must resolve a coding decision.** Start with the stage's named local
 method contract and existing evidence. Reopen only relevant primary equations or
@@ -292,171 +296,31 @@ routes to producers, evidence and remaining decisions in generation order.
 They distinguish missing I01 physics from later implementation; the matrix is
 not a completed generator or an accepted separation law.
 
-The I01 review repairs enforce actual thermal/mechanical density and prepared
-thermal content, require explicit supported branches for common-Gibbs inversions,
-and reuse the unchanged separation filter factor. All 592 I01 tests and the
-affected connected controls pass; the current evidence register points to fresh
-receipts rather than rewriting old ones. I02's current authority is stated above.
+The matrix and linked specialist methods own the selected equations, control
+results and scientific limits. [Current state](../../docs/CURRENT_STATE.md) owns
+delivery; [current evidence](../../docs/CURRENT_EVIDENCE.md) owns evidence-status
+rules and the register. The table below retains the integration obligations,
+without copying each method's dated test totals or repair narrative.
 
-MC-06 now has a [conditional lateral-conduction criterion](I01_LATERAL_HEAT.md)
-and a [bounded control](../evidence/i01-lateral-heat-r1.json). It selects the
-thermal error rule, while valid contact geometry, whole-window bounds and
-coupled feedback remain I05/I06 implementation/admission work. MC-04 now has a
-[reviewed basal specification and accounts](I01_BASAL_CLOSURE.md), with
-[eight bounded controls](../evidence/i01-basal-closure-r1.json), including an
-independent exact mechanical-work solution. Actual transport, source-state to
-prescription binding and resolved-depth sensitivity remain I05/I07 work.
-The remaining-choice pass distinguishes I01 selection/feasibility from the full
-physical-event acceptance already assigned to I05–I09. The latter gates are not
-waived or counted as completed by small controls. MC-01's
-[resolved-band control](I01_SEPARATION_FEASIBILITY.md) now passes fixed-length/time
-refinement and independent energy accounts with irreversible bond history.
-MC-03's compatible instantaneous segregation control now passes. Together with
-the retained G25 checks and selected focusing/thermal contract, this completes
-its I01 choice and bounded feasibility, not source-to-crust evolution or physical
-calibration. Exact receipts and review details belong in CURRENT_STATE.
-MC-02 now has a [resolved-initiation method and prospective test specification](I01_INITIATION_DECISION.md),
-including retained stress, prescribed pore pressure, physical-length weakening
-and a genuine force-release check. Its independent
-[analytical verification route](I01_INITIATION_VERIFICATION.md) now has
-[sixteen passing controls](../evidence/i01-initiation-verification-r1.json).
-This closes I01's choice and bounded prerequisite verification without requiring
-an unreconstructable published experiment. Li and Gurnis (2023) and Gurnis,
-Hall and Lavier (2004) remain external comparison sources; missing inputs are
-not invented. I07 must still lock the complete physical case and pass coupled
-refinement, boundary-sensitivity and true release tests before initiation
-acceptance. The current authored-R control is not a generated event. MC-07's
-[water-loaded columns-to-GPE connection](I01_WATER_GPE.md) now passes nineteen
-tests and [eight controls](../evidence/i01-water-gpe-r1.json), without a second
-isostatic correction or load. Structural dry/Airy/uniform cases need no further
-input; nonuniform finite rigidity requires an explicit shear-transfer depth.
-The [declared single-core producer](I01_ELASTIC_CORE.md) now supplies that depth
-and rigidity from the same homogeneous material layer. Eighteen tests and
-[six bounded controls](../evidence/i01-elastic-core-r1.json) support selecting
-this MC-07 branch. Core geometry and moduli are explicit inputs, not inferred
-from effective elastic thickness or D2 strength. Spherical/boundary assembly,
-variable rigidity and curved-reference admission remain I04/I08 work.
-MC-05 now has [exact contact detection](I01_JUNCTION_EVENTS.md) followed by a
-[local outgoing ridge check](I01_RIDGE_JUNCTION.md): two endpoint laws and
-ownership-oriented growth are checked for a supplied symmetric-ridge candidate.
-Physical boundary birth and complete geometric admission are still required;
-these prerequisites do not close MC-05 or select a graph edit.
-The [MC-05 physical route](I01_JUNCTION_REORGANISATION.md) now selects a local
-multidirectional deforming region, using the common separation/initiation/magma
-mechanisms, followed by joint material-derived topology extraction. I07 must
-retain both horizontal directions and vertical structure in the general regional
-solve; the declared 3D constitutive convention needs explicit parameter conversion.
-I09 owns work-conjugate feedback, I03 the shared geometry and I02 the joint commit.
-No graph score, contact-only flip or new standalone junction fracture law replaces
-that chain. The [multidirectional feasibility control](I01_JUNCTION_FEASIBILITY.md)
-now runs eight actual plate-coupled 3D solves with independent force, torque and
-power checks. Its [passing receipt](../evidence/i01-junction-feasibility-r1.json)
-supports I01 selection; evolving shared mechanisms and joint topology acceptance
-remain I03/I07/I09/I02 work. Do not rerun completed contact/ridge helpers merely
-to replace those missing physical connections.
-MC-01's elastic-memory subchoice is now **retain**, with the
-[logarithmic-objective direction and exact coaxial control](I01_ELASTIC_MEMORY.md)
-checked by twelve tests and [nine controls](../evidence/i01-elastic-memory-r1.json).
-This does not close MC-01's separation mechanism or implement the general law.
-I02/I05 preserve and transport stress; I07 owns non-coaxial mechanics and its
-stored-energy/heat balance. Omitting stress memory is not an admitted default.
+| Connection and method owner | Obligation that remains with the receiving stage |
+| --- | --- |
+| [Separation](I01_SEPARATION_LAW.md), [resolved-band control](I01_SEPARATION_FEASIBILITY.md) and [breakup](I01_BREAKUP_CLOSURE.md) | I06/I07 retain physical-length/time refinement, irreversible bond history and independent energy accounts for the complete event. Scalar admission is not a rupture trigger. |
+| [Elastic memory](I01_ELASTIC_MEMORY.md) | Retain stress memory: I02/I05 preserve and transport it; I07 supplies general non-coaxial mechanics and stored-energy/heat balance. The exact coaxial control does not implement the general law. |
+| [Initiation choice](I01_INITIATION_DECISION.md) and [analytical verification](I01_INITIATION_VERIFICATION.md) | I07 locks the complete case, retained stress, prescribed pore pressure, weakening length, coupled refinement, boundary sensitivity and genuine force release. Authored controls are not generated events; unavailable published inputs are not fabricated. |
+| [Melt route](I01_MELT_ROUTE.md), [segregation](I01_MELT_SEGREGATION.md), [phase pressure](I01_PHASE_PRESSURE.md) and [provider contract](I01_THERMO_PROVIDER_CONTRACT.md) | I05/I06 implement compatible pressure transport, extraction, focusing and source-to-crust evolution with depleted donor composition. Bounded feasibility is not calibration or a full event. |
+| [Phase partition](I01_PHASE_PARTITION.md), [energy](I01_PHASE_ENERGY.md), [finite receiver](I01_MAGMA_RECEIVER.md), [delivery](I01_DELIVERY.md) and [melting](I01_MELTING.md) | One compatible provider owns phase fractions/compositions/enthalpies, datum and pressure work. A prescribed extraction or fixed-P/T control cannot join incompatible thermal laws, invent transport, or reset the original Katz composition after extraction. |
+| [Basal closure](I01_BASAL_CLOSURE.md) | I05/I07 bind actual source state to its prescription, transport material/heat and establish resolved-depth sensitivity. Bounded work/account controls are prerequisites only. |
+| [Lateral heat](I01_LATERAL_HEAT.md) | I05/I06 supply valid contact geometry, whole-window bounds and coupled feedback before using the selected thermal-error rule. |
+| [Junction contact](I01_JUNCTION_EVENTS.md), [ridge prerequisite](I01_RIDGE_JUNCTION.md), [physical route](I01_JUNCTION_REORGANISATION.md) and [feasibility](I01_JUNCTION_FEASIBILITY.md) | Contact and a compatible outgoing ridge do not authorise graph edits. I07 retains both horizontal directions and vertical structure, with explicit 3D constitutive conversion; I09 owns work-conjugate feedback, I03 geometry and I02 joint commit. Evolving separation/initiation/magma mechanisms must support material-derived topology. |
+| [Dry GPE](I01_GPE.md), [water GPE](I01_WATER_GPE.md), [elastic core](I01_ELASTIC_CORE.md) and [water/flexure](I01_WATER_FLEXURE.md) | I04/I08 assemble compatible columns, spherical/boundary support and datum without extra ridge push, duplicated load or repeated total deflection. Nonuniform finite rigidity requires explicit shear-transfer depth; the homogeneous single-core route uses the same declared layer for depth and rigidity. Effective thickness/D2 strength cannot invent core geometry or moduli. Variable rigidity and curved references need admission. |
+| [Localisation](I01_FAULT2D.md), [strength](I01_STRENGTH.md), [column](I01_COLUMN.md), [weakening](I01_WEAKENING.md) and [thermal history](I01_THERMAL.md) | Preserve supplied profile and laboratory conventions, raw per-point history and supported pressure closure. Constitutive or small-strain diagnostics do not establish resolved rupture, lateral localisation, finite transport or a replacement D2 solver. |
+| [Motion coupling](I01_MOTION_COUPLING.md), [column heat](I01_COLUMN_HEAT.md) and [thermomechanical motion](I01_THERMOMECHANICAL_MOTION.md) | Keep drag and column dissipation disjoint, identical depth/capacity support and one coupled endpoint. Fixed-temperature or fixed-geometry controls do not establish finite-strain evolution, spherical assembly or separation. |
+| [Finite strain](I01_FINITE_STRAIN.md) and [finite admission](I01_FINITE_ADMISSION.md) | I02/I05 preserve original reference, elapsed time, material/history clocks and mass/capacity/work/heat accounts. The closed affine strip is not lateral flow or rupture; efficient persistence belongs to the receiving workflow. |
+| [Scalar admission](I01_DECOUPLING.md), [column admission](I01_COLUMN_ADMISSION.md) and [transitions](I01_TRANSITIONS.md) | Preserve each certificate's actual geometry, temperature, rheology and error assumptions. Non-admission means uncertified, not excessive actual error; mixed creep does not justify a fitted single-exponent law or an automatic physical switch. |
 
-Delivered design/control slice: [I01 physical contract](I01_PHYSICAL_CONTRACT.md),
-[versioned case record](../cases/i01_closures_v1.json) and
-[bounded control evidence](../evidence/i01-controls-r1.json), followed by a bounded
-[2D localisation probe](I01_FAULT2D.md), [pressure/temperature mechanical snapshots](I01_STRENGTH.md)
-and [reviewed D6 transition specification and controls](I01_TRANSITIONS.md).
-The [nonlinear motion-admission certificate](I01_DECOUPLING.md) supplies a bounded
-scalar prerequisite, not a physical rupture trigger. The reviewed
-actual-column extension in [I01_COLUMN_ADMISSION.md](I01_COLUMN_ADMISSION.md)
-now derives a sufficient exact upper bound from the represented mixed-creep
-column for fixed-geometry, fixed-temperature extension windows. Its ten tests
-and eight controls pass without fitting the rheology; non-admission is not
-misreported as excessive actual error. It remains separate from physical
-separation and finite-strain transport. The reviewed
-[thermal/history prototype](I01_THERMAL.md) now evolves temperature and accumulated
-plastic history with the retained mechanical response in a bounded small-strain
-material/reference cell. Analytical, grid/time, energy/history and refusal
-controls pass; finite-strain transport and global embedding remain open.
-The independent [phase-aware melt-delivery connection](I01_DELIVERY.md) now joins
-finite liquid separation to unchanged W08 placement/cooling with conserved
-component and enthalpy accounts. It requires a prescribed extraction amount.
-The independent [dry decompression control](I01_MELTING.md) now produces retained
-melt while coupling phase equilibrium and thermal cooling along a supplied
-pressure path. Its exact and tighter-reference controls pass. Compatible phase
-thermodynamics between this batch law and the common-Tm delivery law, extraction,
-transport and source compaction remain physical closures; the two prototypes are
-not silently joined by passing a fraction between incompatible models.
-The independent [composition-aware phase partition](I01_PHASE_PARTITION.md)
-now provides a fixed-P/T component-balance prerequisite: extraction changes
-bulk composition and re-equilibration preserves the depleted liquid inventory.
-Nine tests and an analytical binary control pass. It does not supply missing
-phase enthalpies or connect the incompatible thermal laws; a shared provider
-must own `F,c_s,c_l,h_s,h_l`, a common datum and pressure-work convention before
-the existing W08 emplacement can receive its energy-bearing payload. I01 owns
-that model choice; I05 owns moving thermal/material implementation and I06 its
-ocean-birth use. No reset of original Katz composition after extraction.
-The [nonlinear column-resistance control](I01_COLUMN.md) adds published-convention
-creep coefficients, regularised friction and depth-integrated force/work for
-explicit supplied profiles. It is a constitutive diagnostic, not a resolved
-rupture reaction or an automatic replacement for the existing D2 solver.
-The reviewed [evolving column-weakening adapter](I01_WEAKENING.md) now evolves
-raw per-point plastic history and transmitted resistance with the compatible
-vertical/mean-pressure closure, fixed-rate/force controls and bounded history
-envelopes. Immutable preparation and direct-entry guards were corrected during
-review. Temperature remains prescribed; it is not laterally resolved rifting,
-thermal feedback, finite-strain evolution or a separation criterion. The column's
-mixed creep exponents also do not directly fit the scalar decoupling family.
-The new [resistance-to-motion connection](I01_MOTION_COUPLING.md) balances
-external driving force against disjoint generalised drag and that evolving
-column resistance. It solves rate at each history stage, with signed nonlinear
-root checks, consistent work, time/depth refinement and measured warm-start reuse.
-This is a fixed-temperature regional feasibility connection, not spherical
-assembly or a rigorous separation certificate. The reviewed
-[column-heat connection](I01_COLUMN_HEAT.md) now evolves conduction, mechanical
-heat and thermal weakening on identical depth support. Nineteen focused tests
-and all seven corrected r2 controls pass; geometry/capacity pairing and physical
-layer-mean reporting were repaired without changing the valid-case physics.
-The reviewed [force-driven thermal/motion connection](I01_THERMOMECHANICAL_MOTION.md)
-now joins force-balanced motion to that thermal/history evolution, keeping
-external drag dissipation out of the column heat account. Twelve focused tests
-and all six bounded controls pass, including second-order homogeneous oracles,
-coupled time/depth refinement and atomic refusals. It does not replace
-finite-strain transport or a physical separation criterion.
-The reviewed [finite-strain column](I01_FINITE_STRAIN.md) now connects changing
-width/thickness and pressure with material-following temperature/history and
-force-balanced motion in a closed affine strip. Twenty-three tests and all seven
-corrected r2 controls pass; mass, capacity, work and heat are accounted together.
-This removes the fixed-geometry limit for that bounded representation, not for
-lateral/localised flow or rupture. Its measured eigensystem/warm-start reuse
-saves 75.66% on one matched control; no world-runtime claim.
-The [finite-water/flexure control](I01_WATER_FLEXURE.md) now couples a 2D periodic,
-constant-rigidity plate to a changing wet mask and conserved water volume.
-Dry restoring force, shared endpoint, exact controls and grid refinement are
-checked; no double water feedback or repeated addition of total deflection.
-This is D5 closure feasibility, not I08 finite-regional/global embedding.
-The [dry columns-to-GPE connection](I01_GPE.md) now uses the same material and
-thermal columns for support and driving traction, with a common compensated
-datum and no extra ridge push. Exact layer moments, spherical gradients and
-the retained D1 torque solver are checked together against analytical hemisphere
-rotations and work. This is D1/D5 feasibility, not I04 evolving-world sampling;
-water-loaded or mechanically resolved columns need their own compatible join.
-The reviewed [finite-strain admission](I01_FINITE_ADMISSION.md) connects a
-conditional conservative motion bound to issued states of the evolving strip,
-preserving absolute reference, elapsed time and history. Its nineteen tests and
-five bounded controls pass; no rupture or automatic switch is authorised.
-Efficient persisted continuation belongs to I02/I05, not another I01 adapter.
-The [common ideal-mixture energy law](I01_PHASE_ENERGY.md) and
-[compatible finite receiver](I01_MAGMA_RECEIVER.md) also close bounded
-composition/enthalpy feasibility; they do not calibrate mantle material or select
-pressure transport and extraction rates. Their current receipts and remaining
-boundaries are recorded in the current-state page.
-These controls are not generated boundary/rupture acceptance. The new
-[bond-history/resolved-band specification](I01_SEPARATION_FEASIBILITY.md) and
-[porous-flow/cooling-barrier route](I01_MELT_ROUTE.md) complete the I01 choices.
-Their complete physical applications stay with the named later owners. Consult
-current state for executed feasibility and remaining dependencies. Original
-source-bound receipts are unchanged; documentation-only drift is labelled.
+These boundaries are not new checks to run on every edit. Use the affected method's
+existing controls when a dependency or claim changes; unchanged analytical,
+refinement and conservation evidence retains only its original declared scope.
 
 **Depends on:** this plan. **Work:** turn D1–D6 into versioned, testable model
 specifications; define generated versus prescribed modes and required/unsupported
@@ -484,17 +348,10 @@ validation or permission to generate an unsupported event.
 
 ### I02 — Common state, exchange transactions and accepted-time controller
 
-**Status: I02.1–I02.8 reviewed, corrected, integrated locally and accepted for the
-declared supported workflow, 30 September 2026.** The owner released the deferred
-review hold and authorised the fixes. The joined route, restart precision repair,
-corrected equivalence checks, refreshed affected evidence and measurements are
-described in [I02 workflow](I02_WORKFLOW.md). All 758 I01/I02 tests passed on
-Git-normalised candidate bytes. Linux coverage remains explicitly outstanding,
-as allowed below; no cross-platform or whole-planet acceptance is claimed.
-I03 is now separately authorised; this I02 acceptance does not authorise I04 or later work.
-Claude implements bounded assignments and Codex reviews their actual changes.
-Preserve existing work; permission, usage and unresolved technical failures still
-stop dispatch. No blanket installation, broad simulation or publication approval.
+The [I02 workflow](I02_WORKFLOW.md) owns the implemented lifecycle, compatibility,
+measurements and evidence. [Current state](../../docs/CURRENT_STATE.md) records
+acceptance and platform coverage. The obligations below define the supported
+workflow; they do not restart completed substeps or authorise later stages.
 
 **Depends on:** I01's equations, ownership, support and acceptance contracts.
 **Outcome:** one real, connected, restartable physical workflow using the existing
@@ -686,14 +543,11 @@ evolution remains the target, not a feature removed by using a bounded first cas
 
 ### I03 — Evolving sphere, conservative history and spatial bridges
 
-**Implemented route:** [I03's method](I03_SPHERICAL_NETWORK.md) connects the
-prescribed spherical history to the I02 clock and ledger, with conservative
-material, interval-bound regional returns and joint supplied events. The 3 October
-review extension adds declared-vertex traversal, explicit compatible curved
-junction paths, and material supplied and consumed within one interval, including
-moving continuation after reopening. It does not choose future junction paths
-from an unstated physical law. The current checkpoint owns acceptance and limits;
-I04 and physical event generation have not been started by this repair pass.
+[I03's method](I03_SPHERICAL_NETWORK.md) owns the prescribed-history implementation,
+including declared traversals, compatible junction paths and transient material
+accounts. It does not infer future paths or physical event laws. Consult
+[current state](../../docs/CURRENT_STATE.md) for delivered scope and acceptance;
+the assignments below retain the integration contract.
 
 **Focused research decisions:** choose a conservative spherical intersection/remap
 method for the actual cell edges and physical measures; specify polar/seam
@@ -1558,14 +1412,11 @@ Integration is complete only at **I12**, when the section-1 outcome and required
 matrix are met. A new shared-state class, connected graph, green unit suite,
 regional demo, export table or visually attractive world is not a substitute.
 
-**I01 is complete as a model-choice, contract and bounded-feasibility stage.**
-I02.1–I02.8 are accepted for the declared connected and restartable column workflow
-(see its method and current-state record). I03 is under the separately authorised
-review-and-repair scope described above; stop before I04. I04–I12 remain planned,
-not newly started or authorised by this document. Preserve
-the physical-event gates assigned to their later implementation stages. Do not
-repeat completed reading or bounded controls without changed inputs, a failure
-or missing required coverage.
+Select the next authorised assignment from [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
+and the affected owner's remaining obligations. This plan does not carry a second
+checkpoint, dated dispatch instruction or independent permission to start work.
+Preserve physical-event gates and individual run/scientific holds. Reuse completed
+reading and bounded controls while their relevant inputs and claims are unchanged.
 
-The later-stage briefs are planning only. Acceptance recorded above is supported
-by the linked I01/I02 method and evidence records, not by the existence of this plan.
+The stage briefs define required outcomes. Acceptance comes from their actual
+implementation and source-scoped evidence, not from the existence of this plan.

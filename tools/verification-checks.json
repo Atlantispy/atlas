@@ -121,9 +121,9 @@
     {
       "id": "atlas.docs.content-and-consumers",
       "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when consolidating or retiring documentation.",
-      "module": "Edited Markdown entry points and their incoming links",
+      "module": "Changed documentation, migrated links and retired prose-only qualification assertions",
       "process": "Documentation consolidation and source publication qualification",
-      "entry_point": "Manual review plus read-only path/anchor and example comparison over the explicit Git change set",
+      "entry_point": "Manual complete-content review; explicit changed-scope path/anchor comparison; AST comparison of each retired prose assertion against its parent Git blob",
       "owner": "Atlas documentation/publication owner",
       "consumers": [
         "Repository users",
@@ -150,13 +150,17 @@
         "Edited content",
         "Linked destinations/anchors",
         "Actual source/evidence authority",
-        "Consumer and privacy requirements"
+        "Consumer and privacy requirements",
+        "Retired qualification-test methods and retained test/case contracts"
       ],
       "evidence": [
-        "README.md",
-        "docs/CURRENT_STATE.md",
-        "tectonics/README.md",
-        "tectonics/optimisation/README.md"
+        "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
+        "tectonics/docs/TECTONICS_PLAN.md",
+        "tectonics/docs/OPTIMISATION_REFERENCE.md",
+        "tectonics/docs/INTEGRATION_PLAN.md",
+        "docs/CODING_SAFETY.md",
+        "tectonics/tests/test_stokes_delivery_r4_1.py",
+        "tectonics/tests/test_thermochemical_delivery_r4_2.py"
       ]
     },
     {
@@ -227,7 +231,6 @@
       "on_failure": "unittest failure rejects checker qualification; a skipped OS fixture remains missing coverage.",
       "affected_by": [
         "tests/test_coding_safety.py",
-        "tests/test_coding_safety.py",
         "tools/check_coding_safety.py"
       ],
       "evidence": [
@@ -265,7 +268,6 @@
       "on_failure": "Nonzero with the offending path; owner privacy review still covers changed documents outside the scan.",
       "affected_by": [
         "tools/check_public_paths.py",
-        "tools/check_public_paths.py",
         "docs/CODING_SAFETY.md"
       ],
       "evidence": [
@@ -302,7 +304,6 @@
       },
       "on_failure": "unittest failure rejects this guard qualification.",
       "affected_by": [
-        "tests/test_public_paths.py",
         "tests/test_public_paths.py"
       ],
       "evidence": [
@@ -334,11 +335,10 @@
         "release_state": "NOT_APPLICABLE",
         "debug_state": "NOT_APPLICABLE",
         "actual_enabled": "ON_WHEN_INVOKED",
-        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+        "control": "One explicit final staged-candidate invocation; optional earlier worktree result is reused only with identical candidate and relevant tool/environment/binding identities. No hook or automatic CI."
       },
       "on_failure": "Nonzero means the guard run failed or refused; report each constituent result and never relabel it as a passing guard.",
       "affected_by": [
-        "tools/check_before_commit.py",
         "tools/check_before_commit.py",
         "docs/CODING_SAFETY.md#before-every-commit"
       ],
@@ -368,7 +368,7 @@
         "stages": [
           "development"
         ],
-        "trigger": "Guard/Git behaviour or relevant environment changes; missing valid qualification evidence.",
+        "trigger": "Guard/Git behaviour or relevant environment changes, an unresolved failure, or missing valid qualification evidence; not every documentation commit.",
         "release_state": "NOT_APPLICABLE",
         "debug_state": "NOT_APPLICABLE",
         "actual_enabled": "ON_WHEN_INVOKED",
@@ -376,7 +376,6 @@
       },
       "on_failure": "unittest failure rejects guard qualification; expected failing child fixtures are asserted by their parent tests.",
       "affected_by": [
-        "tests/test_check_before_commit.py",
         "tests/test_check_before_commit.py"
       ],
       "evidence": [
@@ -412,7 +411,6 @@
       },
       "on_failure": "Nonzero on invalid register or mismatched required binding; never repin a historical receipt to clear failure.",
       "affected_by": [
-        "tools/check_current_evidence.py",
         "tools/check_current_evidence.py",
         "tectonics/evidence/current-evidence.json",
         "docs/CURRENT_EVIDENCE.md"
@@ -453,7 +451,6 @@
       "on_failure": "unittest failure rejects the line-ending check.",
       "affected_by": [
         "tectonics/tests/test_digest_line_endings.py",
-        "tectonics/tests/test_digest_line_endings.py",
         "tools/check_before_commit.py"
       ],
       "evidence": [
@@ -491,7 +488,6 @@
       "on_failure": "unittest failure reports unsupported publication integrity. Existing baseline failures remain failures; they are not repaired by changing unrelated navigation or repinning evidence.",
       "affected_by": [
         "tectonics/tests/test_plan05_publication.py",
-        "tectonics/tests/test_plan05_publication.py",
         "tectonics/tests/test_plan04_publication.py",
         "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
         "tectonics/optimisation/MANIFEST.json"
@@ -501,6 +497,240 @@
         "tectonics/tests/test_plan04_publication.py",
         "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
         "tectonics/optimisation/MANIFEST.json"
+      ]
+    },
+    {
+      "id": "atlas.docs.r41-progress-wording",
+      "purpose": "Required two maintained guides to repeat R4.1-era progress wording and the instruction Continue with R4.2.",
+      "module": "tectonics/tests/test_stokes_delivery_r4_1.py",
+      "process": "Historical delivery wording qualification, retired during explanation consolidation",
+      "entry_point": "ContinuationTests.test_two_maintained_plans_have_progress_links (removed; historical definition in Git parent 1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd)",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Historical R4 delivery qualification"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Literal progress prose asserted no numerical, identity, safety or recovery behaviour. Frozen case assertions and all behavioural tests remain unchanged; maintained status belongs to CURRENT_STATE.",
+      "classification_refs": [
+        "docs/CURRENT_STATE.md",
+        "docs/CODING_SAFETY.md#keep-changes-and-current-status-small"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "RETIRED; formerly on discovery of the named delivery test module",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "Only the named test method is deleted; no test discovery or runtime control changes."
+      },
+      "on_failure": "Historical behaviour: unittest failure on absent prose literal. Retirement adds no replacement prose gate.",
+      "affected_by": [
+        "Reintroduction of that historical prose assertion",
+        "Change to the distinction between frozen cases and current documentation"
+      ],
+      "evidence": [
+        "tectonics/tests/test_stokes_delivery_r4_1.py",
+        "docs/CURRENT_STATE.md",
+        "tectonics/docs/TECTONICS_PLAN.md"
+      ],
+      "retirement_basis": "Actual before/after AST comparison preserves all other tests, imports and class content. Useful anchors, scientific limits and actual holds remain in their owners."
+    },
+    {
+      "id": "atlas.docs.r42-progress-wording",
+      "purpose": "Required the maintained component plan to contain literal R4.2, R4.3 and R4.4 labels.",
+      "module": "tectonics/tests/test_thermochemical_delivery_r4_2.py",
+      "process": "Historical delivery wording qualification, retired during explanation consolidation",
+      "entry_point": "Delivery.test_maintained_stage_is_not_one_and_done (removed; historical definition in Git parent 1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd)",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Historical R4 delivery qualification"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Literal progress prose asserted no numerical, identity, safety or recovery behaviour. Frozen case assertions and all behavioural tests remain unchanged; maintained status belongs to CURRENT_STATE.",
+      "classification_refs": [
+        "docs/CURRENT_STATE.md",
+        "docs/CODING_SAFETY.md#keep-changes-and-current-status-small"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "RETIRED; formerly on discovery of the named delivery test module",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "OFF_REMOVED",
+        "control": "Only the named test method is deleted; no test discovery or runtime control changes."
+      },
+      "on_failure": "Historical behaviour: unittest failure on absent prose literal. Retirement adds no replacement prose gate.",
+      "affected_by": [
+        "Reintroduction of that historical prose assertion",
+        "Change to the distinction between frozen cases and current documentation"
+      ],
+      "evidence": [
+        "tectonics/tests/test_thermochemical_delivery_r4_2.py",
+        "docs/CURRENT_STATE.md",
+        "tectonics/docs/TECTONICS_PLAN.md"
+      ],
+      "retirement_basis": "Actual before/after AST comparison preserves all other tests, imports and class content. Useful anchors, scientific limits and actual holds remain in their owners."
+    },
+    {
+      "id": "atlas.publication.r44-benchmark-contract",
+      "purpose": "Qualify the retained historical benchmark source/manifest refusal, exact fixed base, seed-chain and result/provenance contracts using disposable fixtures; moving the reference document must not relax that source audit.",
+      "module": "tectonics/tests/test_combined_start_benchmark_r4_4.py",
+      "process": "Focused publication qualification for the optimisation-reference consumer",
+      "entry_point": "python -B tools/check_before_commit.py --staged --tests test_combined_start_benchmark_r4_4.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Bounded R4.4 benchmark harness owner",
+        "Documentation publication reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Source-audit and harness qualification on disposable Git/array fixtures. No scientific solver or benchmark campaign is run; the actual historical benchmark retains its exact source and run-authority requirements.",
+      "classification_refs": [
+        "tectonics/tools/benchmark_combined_start_r4_4.py",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Affected benchmark/document identity consumer or harness changes; explicitly selected publication check.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit unittest module selection; Windows symlink fixture is skipped by the existing test decorator, not by this change."
+      },
+      "on_failure": "Nonzero unittest result rejects this qualification; skips remain declared coverage gaps. Expected source refusal must not call the numerical loader.",
+      "affected_by": [
+        "tectonics/tools/benchmark_combined_start_r4_4.py",
+        "tectonics/tests/test_combined_start_benchmark_r4_4.py",
+        "tectonics/docs/OPTIMISATION_REFERENCE.md",
+        "Git/Python/NumPy fixture behaviour"
+      ],
+      "evidence": [
+        "tectonics/tools/benchmark_combined_start_r4_4.py",
+        "tectonics/tests/test_combined_start_benchmark_r4_4.py",
+        "tectonics/docs/OPTIMISATION_REFERENCE.md"
+      ]
+    },
+    {
+      "id": "atlas.publication.plan04-export",
+      "purpose": "Qualify the changed Plan04 public document inventory, exact current publication digests, disclosed transformations and privacy without executing its scientific route.",
+      "module": "tectonics/tests/test_plan04_publication.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tectonics/tests -p test_plan04_publication.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Changed authored-publication documents, maps or their actual static publication consumer; no scientific or queue fixture selected.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure reports unsupported publication integrity. Existing baseline failures remain failures; they are not repaired by changing unrelated navigation or repinning evidence.",
+      "affected_by": [
+        "tectonics/tests/test_plan04_publication.py",
+        "tectonics/optimisation/workbench/plan04/SOURCE-MAP.json",
+        "Changed published document bytes"
+      ],
+      "evidence": [
+        "tectonics/tests/test_plan04_publication.py",
+        "tectonics/optimisation/workbench/plan04/SOURCE-MAP.json"
+      ]
+    },
+    {
+      "id": "atlas.publication.plan06-export",
+      "purpose": "Qualify the changed Plan06 public document inventory, exact current publication digests, disclosed transformations and privacy without executing its scientific route.",
+      "module": "tectonics/tests/test_plan06_publication.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest test_plan06_publication.Plan06Publication.{test_metadata_and_exact_digests,test_exact_inventory,test_no_private_run_data_or_paths,test_python_sources_compile_without_import,test_corrupt_digest_is_rejected} (PYTHONPATH=tectonics/tests)",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Changed authored-publication documents, maps or their actual static publication consumer; no scientific or queue fixture selected.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure reports unsupported publication integrity. Existing baseline failures remain failures; they are not repaired by changing unrelated navigation or repinning evidence.",
+      "affected_by": [
+        "tectonics/tests/test_plan06_publication.py",
+        "tectonics/optimisation/workbench/plan06/SOURCE-MAP.json",
+        "Changed published document bytes"
+      ],
+      "evidence": [
+        "tectonics/tests/test_plan06_publication.py",
+        "tectonics/optimisation/workbench/plan06/SOURCE-MAP.json"
+      ]
+    },
+    {
+      "id": "atlas.publication.document-inventories",
+      "purpose": "Current document publication maps match changed prose and membership while every source payload row and original evidence identity remains unchanged; global inventory retires only reviewed documentation entries.",
+      "module": "tectonics/optimisation/MANIFEST.json and affected public document maps",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "Owner comparison of each changed JSON row to its parent Git blob, retained/deleted document set and SHA-256 of actual Git-normalised publication bytes",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "documentation review"
+        ],
+        "trigger": "Changed documentation, retirement paths or their consumers.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "NOT_APPLICABLE",
+        "control": "Manual owner review of explicit changed scope"
+      },
+      "on_failure": "Reject a missing/mismatched current document member or any unreviewed runtime/source/receipt change; historical receipt digests are not regenerated.",
+      "affected_by": [
+        "Changed Markdown paths/bytes",
+        "Affected publication-map rows",
+        "Global descriptive inventory membership"
+      ],
+      "evidence": [
+        "tectonics/optimisation/MANIFEST.json",
+        "tectonics/optimisation/workbench/plan02/SOURCE-MAP.json",
+        "tectonics/optimisation/workbench/plan04/SOURCE-MAP.json",
+        "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
+        "tectonics/optimisation/workbench/plan06/SOURCE-MAP.json",
+        "tectonics/optimisation/workbench/plan40/pressure/PUBLICATION.json"
       ]
     }
   ]

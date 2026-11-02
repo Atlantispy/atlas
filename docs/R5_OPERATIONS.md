@@ -153,7 +153,7 @@ an explicit migration/portability task, not this tool's restoration procedure.
 
 Do not retire the previous recovery point until this isolated drill has succeeded.
 No native Windows load or historical checkpoint drill was possible in this public
-source-only session; see [the obtained evidence](R5_OPERATIONS_EVIDENCE.md).
+source-only session; see [the obtained evidence](#obtained-evidence-15-september-2026).
 
 ## Failure handling and explicit limitations
 
@@ -203,3 +203,32 @@ The new tests use temporary synthetic byte fixtures, not real codec libraries or
 accepted terrain checkpoints. They verify the recovery tooling, including failure
 paths, without importing or running Atlas. Passing them is not native Windows,
 checkpoint-continuation, physical or full-world acceptance.
+
+## Obtained evidence, 15 September 2026
+
+Linux/CPython 3.13.5, standard library only: the checker passed 13 source maps/41
+paths, all 31 coding-safety tests and all 49 recovery tests passed, and the diff
+had no whitespace errors. The commands are the focused source-only selection
+above. The fixtures exercised deduplicated shared references, independent copies,
+relative/empty stores, recovery after deleting original fixtures, relocation,
+corrupt/missing frames, malformed metadata, traversal/link/reparse/lock refusal,
+copy-time source/control/membership mutation, insufficient space, interrupted/
+failed writes, stale/tampered manifests, path/case collisions, Windows-origin
+metadata, absolute pin checks, unresolved relative pins and nonzero CLI refusal.
+
+Frames were opaque bytes rather than native Zstandard; controls were storage-shaped
+fixtures rather than scientific checkpoints. No Atlas import, native DLL, real
+Windows filesystem, crash/power-loss recovery or isolated native restart was
+tested. Simulated Windows flags and lexical paths do not establish integration.
+Dependency declarations cannot prove closure, and NTFS permissions, service state
+and hardware/network durability remain outside this tool's contract. Use the
+isolated native drill above before relying on a real recovery point; a control
+still pointing to a live original store proves no recovered-store restart.
+
+The [original qualification and exact tested SHA-256 table](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/R5_OPERATIONS_EVIDENCE.md)
+retain provenance against public commit `fd4677c512b46dbc6d0ebd712fd90637daffbce6`
+and unchanged engineering tree `de32de5bbbff9a31640321f459d8c90fbb034246`.
+No scientific source, binding, tolerance, checkpoint, shared object or 256-step
+boundary changed. No installation, simulation, benchmark, live backup, cleanup or
+original Windows integration ran. This is historical tooling qualification, not
+R5 performance evidence or qualification of this subsequently revised runbook.

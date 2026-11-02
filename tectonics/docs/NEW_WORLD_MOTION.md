@@ -4,7 +4,7 @@ Status: backend implementation, WORKING NON-CANON, 24 September 2026.
 
 Evidence status, 26 September: the r1 receipt below predates the committed
 frame-neutral motion correction and is historical, not a current-source pass.
-The corrected motion now has a fresh [three-case workflow check](NEW_WORLD_ACCEPTANCE.md#current-rerun-26-september-2026);
+The corrected motion now has a fresh [three-case workflow check](NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification);
 this does not replace independent motion/morphology acceptance.
 
 This extends the actual Step 2 atlas and Step 3 lithosphere; it is not the fixed

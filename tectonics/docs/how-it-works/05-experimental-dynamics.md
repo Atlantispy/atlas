@@ -121,7 +121,7 @@ The benchmark case definitions come from the
 Atlas's [diagnostic implementation](../../src/atlas_tectonics/convection_benchmark.py)
 and [assessment tests](../../tests/test_convection_assessment_r4_4.py) check the
 measurement machinery; they do not confer physical acceptance on a short run.
-The recorded [dev40 assessment](../../evidence/r4-4-dev40-numerical-assessment.md)
+The recorded [dev40 assessment](../OPTIMISATION_REFERENCE.md#adaptive-accuracy-and-assessment-limits)
 still reports an unresolved domain-RMS comparison. Nothing in this guide authorises
 another long run or describes this branch as completed planetary plate generation.
 

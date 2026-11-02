@@ -12,7 +12,7 @@ conversion within an owned calculation. There is no measured whole-interval gain
 for these proposals. Heat's importance to interval time is a reason to prioritise
 its repeated work, not to add overlapping historical speedups.
 
-The [additional examination](ADDITIONAL-FINDINGS.md) records C12–C20 from the
+The [additional examination](#additional-arithmetic-candidates) records C12–C20 from the
 requested further search, including flux/polygon work, shared observation
 enclosures, retired inverse columns and repeated conversions. It also records
 the repaired control-entry boundary. These additions and the repair are accepted
@@ -216,3 +216,67 @@ scientific acceptance or completion of all Plan40 is claimed.
 
 Prepared with OpenAI Codex assistance from the named local source and retained
 evidence. No new external research or library installation was used.
+
+## Additional arithmetic candidates
+
+C12–C20 and the non-removable control-entry repair were accepted for the
+23 October source examination. They do not themselves implement, enable, time or
+resource-qualify an optimisation. The same 44-file SOURCE-BINDINGS selection and
+holds apply; later prototype/receiving results retain their own owner scope.
+
+| Candidate | Unique exactness, ownership and exclusion contract |
+| --- | --- |
+| C12 flux | Reuse six quadratic derivative averages, subresults, scale square and nine normal-power products within one flux invocation. Preserve every original getter/q/admission/poll in order, exact sum and output order. Up to 28 subresults plus references need funding; 128 scratch slots do not automatically fund containers. Point rows use C1; prescribed-power faces return earlier. |
+| C13 polygon | Reuse normal norm, edge differences and exact second-moment symmetry while retaining the full prospective inventory, polygon fan/centroid/area/convexity/refusal order, full 3×3 output and separate row lists. Optional triangle-sum reuse adds O(T) reference/container custody; the smaller subset avoids it. |
+| C14 screening | Observation-coordinate enclosures may share across faces only for the same immutable ordered typed/source/environment generation. Centres/distances/seeds/ranking/ties/shell diagnostics remain fresh. A table beyond a face needs its own parent/worker-lifetime charge; every worker/restart begins a generation. No cache of centre-relative rankings. |
+| C15 inverse | Retire only earlier left-block columns that later pivots/returned inverse never read. Preserve finite trapped factory contexts, pivot choices/swaps, trailing/right arithmetic and phase/cancellation checks, with full row/container reservation. This is neither a different inverse nor deleting returned zero terms. |
+| C16 matrix | Borrow the already-converted immutable MPFR observation matrix only inside the same live attempt, contexts and precision. Preserve coordinate checks, physical dots/jump/factors/singleton/Decimal/export validation. Drop before attempt retirement/export shrink; exceptional native fallback replays the reference. The existing overcharged 4mn scalar allowance may cover it, but concrete owner/container layout still needs proof. |
+| C17 point | Reuse finite exact downward GMP-rational conversion only when rc=0 under matched factory contexts, retaining sign/precision/ternary metadata, entry checks and full allowance. Unknown type/context/nonexact input takes both conversions. Apply after C16 to avoid double counting. |
+| C18 public audits | Convert locally created immutable **public rounded floats**, once at the original first site, for residual/global/scale audits. Do not substitute pre-rounding energy or remove either independent audit/relative gate. Confirm layout within unchanged 4n public-rational slots; no cross-solve cache. |
+| C19 boundary values | Reuse only after every original mapping read, keyed by key plus strong raw-object identity and approved immutable type. Replacements/negative-zero changes/unsupported types/unfunded optional storage take reference conversion. Retained entries and replacement overlap need funding; signatures do not replace reads. |
+| C20 constants/signs | Share immutable Decimal zero/target objects; eligible owner ±1 multiplication may use identity/copy_negate only for fresh finite normal/zero values under the same context. Subnormal/unsupported cases fall back. Preserve Decimal tuples/strings/flags/zero signs and target parsing at first use. Keep the off-diagonal rounded +0 operation. |
+
+For C15, earlier left columns are exact identity before each pivot. A swap among
+remaining rows preserves them; finite nonzero normalisation and elimination there
+operate only on exact zero/one and produce no flags. No later retained arithmetic
+reads them, so omitted discarded zero signs do not affect outputs. Retained
+nonfinite operations still trap at their original site. Rank n removes n(n−1)/2
+normalisation divisions and n(n−1)²/2 elimination multiplies/subtractions each.
+At rank 20 that is 190/800 divisions and 3,610/15,200 of each elimination operation,
+excluding unchanged midpoint work; it is an operation count, not elapsed saving.
+
+C12's cubic flux changes multiply/divide/add counts 116/51/48 → 66/39/36.
+C13 with T=N−2 triangles removes 18T multiplies, 3T divisions, 36T additions and
+3N(N−1) subtractions; optional triangle-sum custody removes another 36T adds.
+C14 observation calls change 3MF → 3M per serial generation, with 3F centre calls
+unchanged; separate processes count separately and one face per generation saves
+nothing. Up to 6M float objects plus flags/containers may remain live. C16 directed
+matrix conversions change 4mn → 2mn, C17 two → one only for exact hits, C18 3n → n;
+C19 W → D depends on unmeasured repeated raw identities. C20's tiny HIGH zero
+fixture changes nine constructors to one. Do not sum overlapping C2/C14 or C16/C17
+savings or convert counts to timing projections.
+
+[Certificate extension controls](extension_certificate_controls.py)/[result](EXTENSION-CERTIFICATE-RESULTS.json)
+cover twenty inverse cases, five singular/cancellation cases, 44 exact/nonexact
+points and eight solve/physical cases with changed-input fallbacks.
+[Polygon controls](extension_flux_controls.py)/[result](EXTENSION-FLUX-RESULTS.json)
+cover four admitted/seven refused shapes and separate row ownership.
+[Solve conversion controls](extension_solve_controls.py)/[result](EXTENSION-SOLVE-RESULTS.json)
+exercise actual LOW audits/HIGH construction, replacement and 28 Decimal sign
+cases. Representations/flags/traces are compared, but native H3, full-runtime,
+worker/lifetime and arbitrary resource proofs are not inferred. C12 guard replay
+and C14 table lifetime were source-defined obligations, not prototype executions.
+Every public control refuses optimised Python before numerical imports/source
+loading/output, fixing removable-assert unconditional-PASS risk.
+
+The [original addendum](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/heat/ADDITIONAL-FINDINGS.md)
+retains exact fixture tables, source correspondences and q22 profile totals.
+Those 284.8951766 aggregate profiler seconds overlap cumulative scopes and have
+unmeasured overhead; matching function AST does not renew descendant/configuration
+timing or imply per-call rank. Polygon arithmetic does not remove its larger
+prospective-plan cost (Plan34). Rejected routes remain rejected: rounded reciprocal
+for MPFR division, residual elision, boundary-signature trust, mixed exact/public
+energy, shared rankings/certificates and conductivity/beta cancellation. Generic
+digit/factor conversion caches had no demonstrated population warranting new
+retained state. All new implementations require their actual loaded-code/caller/
+inventory identities and full consumer/resource/recovery obligations.

@@ -86,3 +86,60 @@ The checks use synthetic files and commands, exercise refusal/no-output and
 completion evidence corruption, and preserve the existing focused caller tests.
 Their actual results belong in the Plan 02 owner record after execution; no
 scientific interval or performance result is claimed by this document.
+
+## Shared core and Route1 evidence
+
+For positive integer predicted peak P bytes:
+
+    gate_bytes = P + ceil(P/5) + (1 << 30) + (1 << 30)
+
+The terms are the 1-GiB free floor and 1-GiB allowance. Integer ceiling is binding:
+1.2*P+2 GiB is shorthand, not floating-point implementation. A 5-GiB prediction
+gives an 8-GiB gate; this is arithmetic, not a workload measurement. Admission
+checks available bytes, reserves no exclusive physical RAM and adds no separate
+12-GiB limit on prediction or gate. In-run protection remains 12 GiB tree RSS,
+1 GiB available floor and 16 GiB logical work, not a virtual-address-space cap.
+
+decide selects the largest supplied qualifying measured peak. Only with no
+measurements does it use a booking; with neither it refuses. It does not take
+max(measured,booking). Both booking bytes and nonblank basis must be supplied
+together and valid even if unused; a valid larger or smaller booking cannot
+override the observations. Named invalid or duplicate evidence refuses rather
+than being skipped or replaced by booking.
+
+Route1 stage_peaks validates every named stage record before decide:
+- schema atlas.private.fresh-interval-stage.r1, matching stage and integer interval;
+- ADOPTED or ADOPTED_WIDTH_GATE_STOP_BEFORE_INTERVAL_2 status;
+- exactly runner, reader, finalise, adopt in that order, each ok is True;
+- positive integer sampled_peak_bytes.process_tree_rss for runner and reader,
+  using their maximum;
+- provenance naming the resolved record and digest of the actual bytes read.
+
+Route2's complete role/command/evidence rules above are distinct; its completion
+records are not Route1 stage records. The core admit checks seed zero, schema,
+one of the two basis labels, positive integer prediction, recomputed integer gate
+and current available memory. It does not independently reconstruct prediction
+from the embedded evidence, reopen source records or authenticate provenance.
+Qualification belongs to the launcher's stage_peaks/decide or Route2 adapter;
+a coherent understated direct-child decision can pass that narrower child check.
+
+--launch computes/adopts a qualified decision before creating the run output
+directory. Direct encoded --start-gate with --launch refuses; it belongs to the
+guarded child's --workload route and is appended last to preserve argv layout.
+The child rechecks its current memory and records admission/guard limits. The
+command-only path is not admission. Preserve actual refusal-before-run-output;
+there is no invented exit 77 or claim that all diagnostic output is forbidden.
+
+Runtime-importing children require clean environment, PYTHONHASHSEED=0 and a
+fail-closed hash-randomisation check. -I/-E ignore that environment setting and
+are unsuitable for those children; queue-helper isolation is separate. A matching
+five-GiB measured peak plus two-GiB booking still yields eight GiB, and below-gate
+memory must refuse before initial run output. Focused caller controls must also
+cover paired booking arguments, invalid evidence, seed, arithmetic and handoff.
+Historical shell wrappers with fixed log paths are not portable caller proofs;
+any justified authorised rerun needs fresh outputs, not overwritten logs.
+
+Source/helper/profile changes need an explicit successor and affected seam checks.
+Old receipts remain untouched. The corrected positive native publication/cold
+reopen proof stays separately held; source/API integration and cancelled individual
+post-assembly checks do not supply it or create another sign-off gate.

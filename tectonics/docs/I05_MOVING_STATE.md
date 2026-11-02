@@ -1,6 +1,8 @@
 # I05a: complete material records, heat on the moving sphere, current properties
 
-**I05a candidate; coordinator verification pending; not accepted.** WORKING NON-CANON.
+**WORKING NON-CANON.** This document owns the I05a method and its limits.
+[Current state](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
+owns delivery and acceptance; the substeps below are scope, not a dispatch list.
 
 I05 owns what an I03 cohort's history reference stands for, and how heat, properties, bonds and stress or stretch
 evolve on the moving spherical network. I05a covers three substeps:

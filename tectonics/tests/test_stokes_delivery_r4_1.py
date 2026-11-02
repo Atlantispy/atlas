@@ -35,11 +35,6 @@ class ContinuationTests(unittest.TestCase):
             self.assertIs(self.case['acceptance'][key],False)
     def test_existing_t08_and_other_families_reused(self):
         self.assertIn('T08',self.case['verification_families']);self.assertIn('T15',self.case['verification_families'])
-    def test_two_maintained_plans_have_progress_links(self):
-        a=(ROOT/'docs/TECTONICS_PLAN.md').read_text(encoding='utf-8')
-        b=(ROOT/'docs/OPTIMISATION_REFERENCE.md').read_text(encoding='utf-8')
-        self.assertIn('R4 as a whole is NOT complete',a);self.assertIn('3cr4-progress',a)
-        self.assertIn('Continue with R4.2',b)
     def test_r3_case_is_historical_not_rewritten_for_current_stage(self):
         old=json.loads((ROOT/'cases/physical_closure_r3.json').read_text(encoding='utf-8'))
         self.assertIs(old['acceptance']['R4_started'],False)

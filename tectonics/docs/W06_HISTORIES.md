@@ -4,7 +4,7 @@
 [W06 design](W06_SPREADING.md), [birth geometry](W06_BIRTH.md) and
 [cooling/support adapter](W06_COOLING.md). The Step 1 design bytes and numerical
 gates are unchanged. Checks and measured performance are recorded in
-[the Step 4 evidence](../evidence/w06-history.md).
+[retained numerical evidence](#retained-numerical-evidence).
 
 ## Events and material history
 
@@ -99,7 +99,7 @@ of 0.646369 s for independent scalar integration (84.37% less time). Reusing one
 preparation across four 4000-cell outputs takes 0.658347 s instead of 1.273474 s
 with fresh preparation each time (48.30% less, setup included). These are separate
 three-repetition median comparisons, with no approximate physical shortcuts;
-the [evidence](../evidence/w06-history.md#measured-performance) retains raw timings,
+the [raw evidence](../evidence/w06-history-timing.json) retains raw timings,
 numerical errors, source bindings and admission accounting.
 
 The accepted-request ceiling remains 256; semantic events also have a finite 256
@@ -108,6 +108,42 @@ just numerical arrays. Complex histories may exhaust the supplied budget and are
 refused without partial debits. Outputs are immutable candidate branches; durable
 publication/recovery is Step 5. No disk cache, new dependency, worker pool or
 unrequested large simulation is introduced here.
+
+## Retained numerical evidence
+
+The 22 September 2026 Windows 11/Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1 checks used
+one numerical thread. The independent reference integrates each parcel's supplied
+piecewise velocity and chronological first crossing, then uses separate adaptive
+depth/age thermal integration. It imports no production geometry/thermal routines
+and receives complete birth-age intervals rather than mean age.
+
+Eight geometry methods have passing scoped evidence. The initial six-pass/two-
+failure batch exposed test-fixture issues: a nearly symmetric linspace centre
+really had 0.0625 s age, and a mocked export correctly triggered live-source
+protection. Exactly symmetric geometry and a genuine bounded-admission fixture
+corrected those two tests without changing production or acceptance. Nine shared
+identity controls passed. Twelve assembled thermal/history methods then passed
+with no subsequent production change; unchanged Step 3 suites were reused.
+
+Coverage includes 900 km created / 850 km represented / 50 km right export, exact cell
+intersections/centre ages, first-exit time/age/owner, reassignment/stopping/restart,
+semantic-boundary samples and event ± 1 s, partial outputs, 64/128 partitions,
+clipped/enlarged domains, constant-history reduction to Step 3, finite heat/water,
+immutable/source/cancellation/budget guards. Restart retains the genuine missing
+birth-age interval instead of resetting old crust or smoothing the discontinuity.
+The 256-event no-export case fits 128 MiB by avoiding unneeded quadratic export work,
+not by relaxing limits.
+
+[Original raw timing](../evidence/w06-history-timing.json) retains the two separate
+three-alternation comparisons above: matched 256-cell independent-reference output
+and setup-inclusive four 4000-cell preparation reuse. An identical endpoint took
+0.023533 s with current source checks. Prepared reuse gave exactly equal fields,
+centre ages/accounts. Maximum matched phase mean error 2.05e-12 K, subsidence
+6.75e-13 m, centre-age zero and normalised heat 4.24e-17; absolute cumulative
+heat-field difference 0.046875 J/m2 and independent balance 9.35e-17 of birth heat
+retain their distinct measures. Accounted peak 45,256,928 B includes 24 MiB caller
+allowance, closes at zero and is not measured RSS. No tolerance changed, large
+run or new external simulator execution is claimed.
 
 ## Papers and existing software actually checked
 

@@ -2,7 +2,7 @@
 
 Status: **WORKING NON-CANON — prescribed planar, constant-velocity implementation**.
 This implements the material/motion part of the [frozen Step-1 design](W06_SPREADING.md).
-See [measured verification](../evidence/w06-birth.md); this is not combined W06
+See [retained numerical evidence](#retained-numerical-evidence); this is not combined W06
 acceptance or empirical validation of generated terrain.
 
 ## Model and ownership
@@ -76,10 +76,49 @@ the prepared lease owns its initial state, not arbitrarily many caller snapshots
 The benchmark explicitly reserves caller output allowances. These are accounted
 working bytes, not measured process RSS.
 
-Cooling, inherited passive margins, enthalpy/water/support accounts, changing or
-stopped ridge histories and durable recovery are the planned later steps. No
+[Cooling and inherited margins](W06_COOLING.md), heat/water/support accounts,
+[changing/stopped histories](W06_HISTORIES.md) and [durable recovery](W06_WORKFLOW.md)
+have separate contracts; this birth component does not establish their acceptance. No
 stationary W03/W04 assembled adapter is applied to these moving newborn strips.
 No disk cache or parallel dispatch is added to this inexpensive vector kernel.
+
+## Retained numerical evidence
+
+The 22 September 2026 Windows 11/Python 3.12.14/NumPy 2.4.6 run used one numerical
+thread. At 20 Myr it created 800 km/m strike, 1.624e13 kg crust and 2.4552e14 kg mantle,
+with zero ledger residual; remaining feed was 3.76e12/5.448e13 kg. A smaller 200 km
+window independently accounted both boundary exports without changing common
+interior history. Three 1000/500/250 m grids, 0/5/10/20 Myr and partial-cell outputs,
+ridge-straddling/nonuniform cells, independent birth moments, finite/exact-feed
+exhaustion, exports/domain enlargement and translated/moving frames were checked.
+
+32/64/128 requested partitions retained bit-identical final geometry/accounts
+and full strips, while parent/state identities recorded the actual sequence.
+Zero/repeated endpoints, 256 limit, immutable views, cancellation/budget/closed/
+foreign/live-source refusals passed. Eleven focused tests have passing evidence
+across the original run and scoped corrections: first nine passed/two failed
+test normalisation, then those two passed. The corrected assertions divide
+each moment by its own occupied width and compare near-zero signed balance
+against established mass-scale roundoff, not relative zero. Frozen 1e-7 m geometry,
+1 s age and 128-epsilon W02 mass gates were unchanged. Nine shared identity checks
+passed; the static suite's Windows symlink skip was a separate platform limit.
+
+[Original timing and source record](../evidence/w06-birth-timing.json) retains
+three alternating repetitions / four outputs / 4000 cells / two phases, imports excluded:
+
+| Scope | Median | Interpretation |
+| --- | ---: | --- |
+| Independent scalar geometry | 0.017475400 s | Matched width/youngest/oldest fields |
+| Vector geometry | 0.000484100 s | 97.23% less kernel time, not older-production/world gain |
+| Prepared protected sequence | 0.459981000 s | Fresh context/outputs/thickness/accounts; no matching end-to-end baseline |
+| Validated identical endpoint | 0.021219200 s | In-memory reuse, not persistent-cache gain |
+
+Maximum matched width error 3.962e-11 m and age 0.0625 s over 20 Myr are numerical
+reference differences, not geological accuracy. Accounted peak 8,680,576 B includes
+6,721,664 B caller allowance and closes at zero; it is not measured RSS. Source
+checks dominate this small protected workload and remain enforced. No Linux,
+full-generator/Diadem/R4.4, thermal simulation or durable W06 cache was run by
+this birth evidence. The research access limits below remain unchanged.
 
 ## Reproduction
 

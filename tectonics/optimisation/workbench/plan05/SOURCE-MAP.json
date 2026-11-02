@@ -303,8 +303,10 @@
       "path": "README.md",
       "source": "<PUBLIC_PLAN05_PUBLICATION>/README.md",
       "original_sha256": "46db0215d4c7024cf1c8b6423a6fb4ebb51e44a222449f629ae1ccfd58a5312b",
-      "public_sha256": "46db0215d4c7024cf1c8b6423a6fb4ebb51e44a222449f629ae1ccfd58a5312b",
-      "transformations": [],
+      "public_sha256": "f939c18b6774a4b6265c82060128244e2c2ac2f3a996f12cfe78f66e21cb29a1",
+      "transformations": [
+        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged."
+      ],
       "line_endings": "LF"
     },
     {

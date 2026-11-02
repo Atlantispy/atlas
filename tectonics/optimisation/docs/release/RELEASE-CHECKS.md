@@ -90,7 +90,7 @@ Recommendation key:
 - **SHARE** = release shares it between boundaries.
 - **NO-SHIP** = not in the release payload.
 
-### A. Scientific checks (detail: `T/rm/inv-A.md`)
+### A. Scientific checks
 
 | # | Family | Representative sites | Protects | Cost | Rec. | Risk if off |
 |---|---|---|---|---|---|---|
@@ -121,7 +121,7 @@ Recommendation key:
 | B12 | Mode provenance | §1 row "Mode provenance" | Producer policy is recorded but excluded from scientific identity | Negligible | **ON** | **ON** |
 | B13 | **Gap: no identity boundary at compact-store seal and promote** | `H/compact_restart_store.py:616` `seal_and_promote`, `:631` `seal_pending`; `adopt_and_promote` in the interval store set | Publication of an interval | none today | Covered only if a driver verifies just before; check this when implementing | **Add a full boundary** here. This is release's main publication point. |
 
-### C. Resource guards (detail: `T/rm/inv-CDE.md` §C)
+### C. Resource guards
 
 All of these protect the user's machine, and **all stay on in release**. The only question is how they size
 themselves. Never above today's values unless Michael gives a number with evidence.
@@ -143,7 +143,7 @@ themselves. Never above today's values unless Michael gives a number with eviden
 | C13 | Launcher hook refusal and RUNNING wait | `H/launch_monitored_interval.py:50, 418-420`; `H/launch_fresh_interval.py:143-144` | n/a | **ON** |
 | C14 | Old r9 route constants (13 GiB start floor) | `H/probe_heat_original_connected_r9.py:29-30`; `H/private_heat_continuation_support_r3.py:84-88, 277-283` | Fixed | Retire with the r9 route (E2). Don't ship. |
 
-### D. Diagnostics and instrumentation (detail: `T/rm/inv-CDE.md` §D)
+### D. Diagnostics and instrumentation
 
 | # | Item | Where | Default today | Rec. | Why |
 |---|---|---|---|---|---|
@@ -165,7 +165,7 @@ themselves. Never above today's values unless Michael gives a number with eviden
 
 Profiling hooks (cProfile, tracemalloc, settrace) appear nowhere in the production closure.
 
-### E. Test- and proof-only code (detail: `T/rm/inv-CDE.md` §E)
+### E. Test- and proof-only code
 
 | # | Item | Count / where | Rec. |
 |---|---|---|---|
@@ -368,3 +368,90 @@ Each decision keeps every class-A check, adds no relaxed tolerance, raises no gu
 - R5: predicted-peak start gate and machine-sized in-run cap for the packaged launcher (decision 5).
 - R6: release manifest of production modules only; promote E2; A7 explicit raises; refuse `-O`; build-time import ban
   and the static rebinding check (§3.3 b).
+
+## 7. Inventory evidence and coverage limits
+
+The consolidated [class-A inventory](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/inv-A.md)
+was read-only grep/source inspection of composed-r2: 236 package and 214 non-test
+helpers, 450 files/216,934 lines. Its 10,955 raise-line count is a heuristic,
+not a semantic check count; repeated helper revisions/reference copies duplicate
+checks. Keyword subsets overlap. The C/D/E inventory separately included all 369
+helpers. No scientific check was found gated by debug/release in the surveyed
+package; exact performance filters/caches do not make scientific checks optional.
+Detailed differential_geometry inspection beyond the cited ranges was absent;
+the inventory is not exhaustive independent qualification.
+
+Retain these distinctions when implementing the decision table:
+
+- Binary64 sign filters require IEEE/gradual-underflow conditions; decline uses
+  exact rational/GMP evaluation. Python/GMP backend selection keeps both routes
+  exact, while explicitly demanded unavailable GMP refuses. GEOS planar predicates
+  are robust floating predicates, expressly not exact arithmetic.
+- Certificates retain exact/outward bounds and explicit unresolved outcomes;
+  a float may select candidates but never certify a sign. Worker proof metadata
+  does not replace full worker/source binding. True residual, conservation/GCL,
+  positive/range and finite-input checks remain ordinary correctness contracts.
+  Never adjust a final cell, clip a failed state or skip hysteretic intermediates
+  to conceal failed balance/convergence. Last-allowed-iteration convergence may
+  pass its unchanged gate; iteration caps and the 256-step ceiling stay bounded.
+- A verified driving token is eligible only with its issued head/key/text.
+  Cache hits recheck query/precision/geometry/load meaning and authenticated bytes;
+  extension hits intentionally avoid rerunning the Green convolution. A dormant
+  certified-fact cache has no runtime hook; disabling optional caches recomputes.
+  These cases differ from removing a correctness check.
+- Two scientific bare asserts in the old heat-finish helper were strip-able under
+  optimised Python. The monitored launcher alone refused optimisation at that
+  snapshot; A7's explicit-raise/release-entry remedy remains a required contract,
+  not evidence it has already landed everywhere.
+
+The [complete C/D/E inspection](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/inv-CDE.md)
+retains fifteen resource and fifteen diagnostic rows, source locations, actual
+defaults and unverified branches. Physical RSS/free-memory, job-tree kill-on-close/
+no-breakaway, cancellation, disk headroom, logical reservations, measured process
+margins, worker/CPU slots and child deadlines protect distinct contracts. Logical
+16 GiB accounting was not 16 GiB allocated RAM. Optional worker admission may
+reduce workers or use serial fallback; mandatory reservations refuse. The old
+13 GiB r9 start floor belongs to that route and cannot be casually substituted
+for the 10 GiB current-runner gate or a future measured packaged policy.
+
+Diagnostic appearance does not prove dispensability: geometry return callbacks
+feed guard phase/ticks/cancellation; process meters and child resource files
+enforce admission; parallel profiles feed automatic worker selection. Passive
+summary errors disable only the summary. Focused-artifact output frequency,
+the production wall observer and the exact child-stop branch were unverified;
+UNKNOWN is neither OFF nor debug-only. Preserve their consumer review before
+classification/change. Explicit stage-timing environment input accepts only
+unset/0/1; malformed values refuse even when timing is disabled.
+
+The 185 test/proof-named helper files were a name inventory, not deletion proof.
+The real flow imports probe_heat_original_connected_r9; pressure-force and fixture/
+mode definitions arrive through external historical-tests imports, and the build
+copies probe_execution_identity. Three production drivers import unittest. E2
+requires promotion of functional definitions before excluding test/probe modules.
+The strict two-level search did not inspect the external tests' own dependencies
+or writes; quoted module names/imports differ from a docstring-only reference.
+No current import closure is established by those old counts alone.
+
+## 8. Historical source-guard cost evidence
+
+The [S7 profile analysis](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/pending/storage/s7/S7-REPORT.md)
+used existing cProfile files, counting only outside-guard callers; its cross-family
+union was an edge-propagation estimate. cProfile inflated verify to 55–110 ms/call
+versus 27–32 ms unprofiled on 5 October. Historical composed-r1 admission issued
+3,876 verifies: four per cached_initial_component × 969 components, 329.3 profile
+seconds/31.3%. Projecting the unprofiled per-call observation gives 105–124 s,
+25–30% of its 415 s admission; it is an estimate, not a new timing.
+
+Composed-r2 source handles removed file rereads; 96% of remaining verification
+was the callable walk. Pressure admission/stage guard shares were 2.6%/1.1%
+(54/45 calls). Heat issuer r13 was different: only ~28% source identity and ~72%
+snapshot/mesh/origin hashing, which survives a source-guard policy. Tail union was
+19.57 s/9.9% after de-nesting; 64 of 106 context verifies came through the regional
+owner chain. Worker module checks were 5.58 s over 4,282 calls/~1.06%, without
+ExecutionContext calls; deep geometry surfaces executed none. Seven context
+captures cost 3.2–3.3 profile seconds separately. Heat waiting shares and missing
+q03 coverage limit inference. Exact tables/source-profile names remain linked.
+
+Cost evidence supports approved sharing inside a verified lifetime, never removal
+of distinct publication, restore, worker acceptance, strict-source or data-integrity
+boundaries. No run, disabling or current performance acceptance follows here.

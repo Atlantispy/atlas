@@ -1,11 +1,10 @@
-# Current evidence register
+# Current evidence: status, use and writing
 
-5 October 2026. WORKING NON-CANON. Roadmap Phase A2.
-
-Old receipts remain useful history, but documentation must not present one as
-evidence about the current checkout after the bytes it bound have changed. The
-[register](../tectonics/evidence/current-evidence.json) is the explicit list of
-classified evidence; `tools/check_current_evidence.py` is its read-only checker.
+WORKING NON-CANON. This guide explains the bounded register and source/status rules.
+[CURRENT_STATE.md](CURRENT_STATE.md) owns delivery status; the
+[register](../tectonics/evidence/current-evidence.json) owns individual entries,
+and specialist method documents own interpretation. Changed bound sources or known
+dependencies can invalidate current claims; moving prose creates no qualification.
 
 ## Run it
 
@@ -37,685 +36,297 @@ results remain observations of the original run. Nothing is re-executed.
 
 ## Coverage today
 
-The [current connected evidence chain](#successor-capture-after-i022a-and-the-writer-correction)
-was refreshed as one optimisation batch on 5 October 2026. All eight affected
-controls pass with the same science and tolerances; finite-admission r11 includes
-the final backup-boundary guard. The unchanged `i01-column-r2` receipt is reused from
-29 September. All affected bounded captures passed. The five
-phase/receiver/separation writer-correction receipts and G25 receipt captured on
-29 September also remain current; their inputs were unaffected and were not rerun.
-The replaced receipts are superseded and remain byte-identical. The separate
-separation-performance comparison remains historical.
-No physics gate is waived. `python -B tools/check_current_evidence.py` prints the
-live record counts; this page does not repeat them.
+The [register](../tectonics/evidence/current-evidence.json) owns each record's
+classification, checked bindings, exclusions, successor and limits. Run its
+checker for current counts; this guide does not maintain a parallel receipt list.
+Unlisted evidence, including W01–W12 receipts, is **unclassified**. A current
+classification never means physical, platform or whole-world acceptance.
 
-The superseded entries below retain their original measurements and timings;
-those numbers are historical observations, not measurements of the new successors.
-Use the linked current receipts in the capture table for the new run results.
-I02 evidence covers the bounded column's shared state, continuation, exchanges,
-accepted clock and save/reopen workflow; it does not establish physical-event or
-whole-world acceptance.
+The connected I01 column chain and I02 timing were renewed after the 5 October
+optimisation batch; unchanged column and phase/receiver/separation/G25 evidence
+was reused. Finite-admission r12 adds engine-owned restoration and binds its
+method, tools, restoration modules and prerequisites. I02 timing r12 has five
+repetitions, seven passing equality/parity comparisons and 166 checked source
+digests; its opaque execution identity remains an unchecked runtime observation.
+A source change can invalidate it without measuring 3-D or spherical speed.
+Restoration checks trusted local consistency, not authorship. See
+[I02 evidence effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
-I02 adds engine-owned restoration (`restored()`) to the finite-admission tool.
-[i01-finite-admission-r12](../tectonics/evidence/i01-finite-admission-r12.json) now
-binds that tool, its method document, the restoration modules and the renewed
-upstream receipts. Its predecessors remain superseded, with recorded bytes intact.
-Restoration checks consistency in a trusted local store, not authorship of records.
-Repair batch R1 (30 September 2026) changed two restoration modules r4 binds
-(`src/atlas_tectonics/timebase.py` and `src/atlas_tectonics/w08_inventory.py`).
-Successor r5 followed R1 and its dtype-identity correction. Successor r6 was
-captured on 1 October 2026 after R4 and the final restoration repair: all five
-controls passed in 1.9299832 s after imports with unchanged sources. Valid upstream
-receipts were reused; this is bounded finite admission, not scientific acceptance.
-See the [I02 workflow method](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
+Whole-package identity and declared file binding are different. Adding I02.1
+changed source membership without changing existing physical laws. Step 7 r2 and
+bundle r2 predate A3's changed native reuse.py; matching adapter hashes cannot
+make their native integration current. Motion-frame r2 embeds project/session
+observations with changed/unbound dependencies, so the whole receipt is historical
+without undoing the motion fix. Its matrix is separately classified. Known unbound
+dependency drift requires historical status even when declared bindings match;
+classification is no rerun.
 
-Successor r7 was captured on 3 October after the I03 ledger/clock integration and
-the correction of stale prerequisite names in the method prose. Its five controls
-passed in 1.9232363 s after imports, with unchanged sources and matching imports
-and upstream receipts. The correct finite-strain r5 and column-admission r3
-prerequisites were reused; their bytes and the original r6 receipt were not changed.
+Native R5 performance remains historical original-workspace evidence. The
+[recovery qualification](R5_OPERATIONS.md#obtained-evidence-15-september-2026)
+is synthetic byte-tool evidence, not renewed performance/native restart evidence;
+the runbook already changed at 18dfb1d. Installation evidence binds recorded package
+versions, not wheels, local smoke script, current package availability or installed
+library bytes. Environment consistency has its own metadata checker.
 
-Successor r8 was captured after the final I03 K1–K5 repairs on 3 October.
-All five controls passed in 1.9032870 s after imports. The unchanged finite-strain
-r5 and column-admission r3 prerequisites were reused; r7 retains its original bytes.
+Specialist owners retain interpretation: the [I01 closure matrix](../tectonics/docs/I01_CLOSURE_MATRIX.md)
+links the selected controls and open I02–I09 obligations; the
+[physical integration chapter](../tectonics/docs/how-it-works/06-physical-integration.md)
+connects the column, heat, force, phase, support, admission and event contracts.
+[3-D mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md) and
+[evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) retain fixed-box/first-order
+limits. [New-world evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification),
+[bundles](../tectonics/docs/NEW_WORLD_BUNDLE.md) and
+[B1 diagnostics](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1)
+retain scenario/recovery/descriptive limits. Local analytical/manufactured
+controls do not establish calibrated rupture, native source-to-crust flow,
+physical boundary birth, arbitrary curved plates or generated-world realism.
+The [complete previous coverage account](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/CURRENT_EVIDENCE.md#coverage-today)
+retains every dated control count, exact timing, original receipt/method link,
+failure/repair and qualification limit at its original identity; these are not
+fresh measurements of successors.
 
-Successor r9 was captured after I04/I05a integration and its reviewed repairs on
-4 October. All five controls passed in 1.9376287 s after imports, reusing the same
-unchanged prerequisites. Its 38 source bindings include the changed restoration
-modules; r8 retains its original bytes.
-
-The current [I02 workflow timing receipt](../tectonics/evidence/i02-workflow-timing-r12.json)
-was captured on 5 October 2026 after the optimisation batch, after
-the other numerical checks had finished. It supersedes r11; r1-r11
-retain their original bytes and historical measurements. r12 records five
-repetitions on one Windows machine,
-unchanged sources and all seven passing equality/parity comparisons. Its 166 source-file digests
-are checked by the register; its opaque package/native `execution_identity` is
-classified as an unchecked runtime observation. A further change to any package
-source makes r12 stale in turn. The column does not use spherical movement or the
-3-D solvers; this renews source bindings, not their speed measurement. This is operational timing, not scientific
-acceptance, a whole-generator speed claim or other-platform evidence.
-
-The native terrain R5 performance figures are historical measurements from the
-original workspace, not a fresh public-checkout run. Its recovery runbook changed
-at `18dfb1d`; the [R5 evidence record](R5_OPERATIONS_EVIDENCE.md) must not be read as
-a new performance receipt for that changed runbook or the present checkout.
-
-I02.1 adds a package module, changing source membership and native execution
-identity even though existing physical code is unchanged. The three registered
-whole-package records below are therefore historical. Their original successful
-measurements remain useful; none was rewritten or rerun to refresh its label.
-
-- **Reviewed melt-segregation numerical evidence:** [nine control groups](../tectonics/evidence/i01-melt-segregation-r1.json)
-  pass in 0.1425885 s after imports; 21 tests in 0.031 s. Analytical and manufactured
-  solutions, refinement, gravity reversal, mass/pressure balances, dry limits,
-  boundary conditions and bit-identical factor reuse support the instantaneous
-  1D method. This is not live G25-to-receiver evolution. The receipt is historical
-  because three documentation links were corrected after capture; the scientific
-  tool, case and tests still match its hashes. No numerical rerun or repinning was
-  needed for that link repair. Median savings for 16 changed loads are 1.9642 ms
-  (47.36%) at 256 cells and 4.7928 ms (42.32%) at 4096 cells, with an unchanged
-  operator. [Method, interfaces and consulted sources](../tectonics/docs/I01_MELT_SEGREGATION.md).
-
-- **Superseded spatial separation feasibility — historical measurements:** [six controls](../tectonics/evidence/i01-separation-feasibility-r3.json)
-  pass in 6.391 s; eighteen focused tests pass. Reusing an immutable banded
-  Cholesky factor preserves the physical model, input checks and refinement gates.
-  Receipt v2 correctly calls the imposed quantity shear displacement, not normal
-  opening. A [matched comparison](../tectonics/evidence/i01-separation-performance-r1.json)
-  measures 0.4640272 to 0.3708135 s for the same prepared 64-cell/4000-step run:
-  **0.0932137 s / 20.0880% saved**. Event brackets are identical; other outputs
-  differ only by round-off (largest absolute difference 7.11e-15).
-  Initial preparation is excluded. This is not a whole-generator speed claim
-  or full lithosphere breakup. [Method and sources](../tectonics/docs/I01_SEPARATION_FEASIBILITY.md).
-
-- **Current independent initiation verification:** [sixteen controls](../tectonics/evidence/i01-initiation-verification-r1.json)
-  pass in 0.0009773 s after imports; eight tests in 0.006 s. Analytical gravity-flow,
-  real force release versus clamping, and separate gravitational/elastic work
-  checks replace dependence on an incomplete archive for I01 method selection.
-  They do not validate a subduction event. Full I07 acceptance is retained.
-  [Method and consulted sources](../tectonics/docs/I01_INITIATION_VERIFICATION.md).
-
-- **Historical multidirectional junction feasibility:** [eight real 3D solves](../tectonics/evidence/i01-junction-feasibility-r1.json)
-  pass the symmetry, load, material-direction, rotation, ownership and independent
-  force/torque/power controls in 2.5066567 s; three tests in 3.144 s. This supports
-  the selected regional route, not physical boundary birth or a world graph edit.
-  [Method and consulted software](../tectonics/docs/I01_JUNCTION_FEASIBILITY.md).
-
-- **Current corrected local separation candidate:** [nine controls](../tectonics/evidence/i01-separation-law-r1.json)
-  pass in 0.0452191 s and 35 focused tests in 0.359 s. Exact-yield drive, residual
-  cohesion, separate softening/bond events and explicit history support are
-  corrected. The final positive fracture-energy guard also rejects underflow
-  after division by two, without imposing a physical minimum. This is an exact
-  local synthetic-law check, not calibrated rupture, generated separation or
-  MC-01 closure. [Method and research basis](../tectonics/docs/I01_SEPARATION_LAW.md).
-
-- **Superseded experimental G25 melt connection — historical measurements:** [Windows receipt](../tectonics/evidence/i01-gibbs-provider-r2.json)
-  passes in 21.740828 s; sixteen analytical tests pass. Corrected G25 through
-  pinned MAGEMin supplies common-Gibbs phase H/S/V, finite extraction, changed-bulk
-  checks and fixed-pressure H/S recovery. Inversions now require a declared
-  continuous branch bound to provider, controls, pressure and actual inventory;
-  both endpoints and all bisection samples must retain its phase identities.
-  This refuses demonstrated crossings, not a proof excluding unsampled ones.
-  Median exact-repeat requests take 1.4718673/0.0002556 s uncached/cached:
-  1.4716117 s (99.9826%) saved. Dry KLB1 remains a software reference, not
-  withheld geological calibration or source-to-crust evolution.
-  [Method and sources](../tectonics/docs/I01_THERMO_PROVIDER_CONTRACT.md).
-
-- **Historical connected 3D regional evolution:** [retained receipt](../tectonics/evidence/regional-evolution3d-r1.json)
-  binds the package, all three new test modules and the method/tool. Nine joined
-  tests pass in 19.8664455 s; twelve transport and thirteen heat tests separately
-  pass in 6.569 s and 7.460 s. The receipt's tests and matched timing pass in
-  25.9262947 s. Its small 3x3x3 quiescent fixture takes 1.1233156 s rebuilt versus
-  0.5050915 s prepared: 0.6182241 s / 55.04% saved with bit-identical outputs.
-  This is first-order fixed-box Boussinesq material/thermal evolution and
-  constitutive/force feedback, not elastic-tensor, free-surface or planetary
-  acceptance. See [method and consulted sources](../tectonics/docs/REGIONAL_EVOLUTION_3D.md).
-
-- **Historical 3D regional mechanics receipt:** [six controls](../tectonics/evidence/regional3d-r1.json)
-  bind the implementation, all package source files, its method and focused tests.
-  Eleven element tests and thirteen solver tests pass (0.020 s and 4.899 s).
-  The small 4x4x4 check passes in 1.7613544 s, including exact fields and
-  bit-identical reuse. Median rebuilt/prepared/cached calls take
-  0.2708626/0.0845028/0.0392329 s: preparation saves 0.1863598 s (68.80%),
-  exact-result reuse 0.2316297 s (85.52%). This is fixed-region mechanics and
-  finite-mode force feedback, not geological history or planetary acceptance.
-  The source checker does not verify the recorded native execution identity.
-  The later transport/heat/evolution module additions change package identity;
-  this unchanged receipt retains its original mechanical measurement scope,
-  not current whole-package runtime acceptance. Its bound method document now
-  describes the new tools-only Euler plate connection, so the receipt is historical
-  for that documentation drift; the original numerical code and tests were not
-  changed or rerun. Seven focused plate-adapter tests separately passed in 4.675 s.
-
-- **Current I01 elastic-core connection:** [six controls](../tectonics/evidence/i01-elastic-core-r1.json)
-  pass in 0.184093 s; eighteen focused tests pass in 0.246 s. One declared rock
-  layer produces both bending rigidity and the depth at which load is carried
-  sideways. Independent smooth-pressure/Fourier checks support the
-  [bounded MC-07 selection](../tectonics/docs/I01_ELASTIC_CORE.md), not inference
-  from a thermal/strength profile or arbitrary curved-plate acceptance. At 16,384
-  cells the added median cost is 0.0201 ms (1.57%); this short comparison is not
-  a speedup or a world-runtime estimate. I04/I08 retain spherical and boundary work.
-- **Current I01 outgoing ridge prerequisite:** [nine controls](../tectonics/evidence/i01-ridge-junction-r1.json)
-  pass in 0.169193 s; nine focused tests pass in 0.002 s. Exact symmetric-ridge
-  endpoint constraints and ownership-oriented growth reject incompatible,
-  stationary or reversed local continuations. [Method and sources](../tectonics/docs/I01_RIDGE_JUNCTION.md)
-  distinguish local feasibility from boundary birth and complete geometry.
-  Preparation reuse saves 23.8007 ms (97.8796%) for 300 repeated length queries,
-  not a world-run speedup. MC-05 remains open.
-- **Current I01 junction-contact prerequisite:** [nine controls](../tectonics/evidence/i01-junction-events-r1.json)
-  pass in 0.130276 s; ten focused tests pass in 0.001 s. Exact affine planar
-  contact detection catches a double root without a sign change and preserves
-  tiny near misses. Reusing the prepared path saves 11.9981 ms (84.613%) over
-  1,000 repeated queries, not a world-solver speedup. [Method and sources](../tectonics/docs/I01_JUNCTION_EVENTS.md)
-  distinguish this implemented helper from physical reorganisation, graph edits
-  and later moving-world integration, which it does not provide.
-- **Current I01 water-to-GPE connection:** [eight controls](../tectonics/evidence/i01-water-gpe-r1.json)
-  pass in 0.2123609 s after imports; nineteen focused tests pass in 0.207 s.
-  Dry/Airy/uniform limits, finite-flexure Fourier fields, datum changes and
-  independent pressure integrals check the join. Negative depth refuses; small
-  nonuniform support cannot bypass the shear-depth requirement. At 16,384 cells,
-  the join and traction take a median 1.644 ms, with no baseline saving claimed.
-  [Method and sources](../tectonics/docs/I01_WATER_GPE.md) leave the material
-  producer to the separate elastic-core connection above; weak/broken plate-boundary
-  assembly remains later work. The original receipt has not been rewritten.
-- **Current I01 elastic-memory control:** [nine checks](../tectonics/evidence/i01-elastic-memory-r1.json)
-  pass in 0.1475084 s, with twelve focused tests in 0.002 s. The future rift
-  retains stored stress; the exact local update separates stored energy from heat
-  and rejects general shear. Prepared coefficients give bit-identical results,
-  saving 3.189 ms (34.781%) over 2,000 updates in the bounded benchmark, not a
-  whole-generator speedup. [Method and sources](../tectonics/docs/I01_ELASTIC_MEMORY.md)
-  distinguish this coaxial control from the later general finite-strain implementation.
-- **Current I01 basal closure:** [reviewed controls](../tectonics/evidence/i01-basal-closure-r1.json)
-  bind four new files and three retained cases. Fifty focused tests pass in
-  0.087 s; all eight controls pass in 0.0237441 s. Geometry-bound inventories,
-  thermal boundary conditions, endpoint-account matching and strip containment
-  are checked. An independently integrated exact Newtonian flow tests traction,
-  gravity and dissipation signs. This selects MC-04's boundary/account contract,
-  not a numerical flow solution or coupled I05/I07 acceptance. Sources and
-  deferred resolved checks are in the [method](../tectonics/docs/I01_BASAL_CLOSURE.md).
-- **Current I01 lateral-conduction criterion:** [bounded controls](../tectonics/evidence/i01-lateral-heat-r1.json)
-  bind the four new files. Twelve focused tests pass in 0.876 s; ten control
-  checks pass in 0.0710187 s. The analytical error is 0.1498426 K against an exact
-  0.15 K bound. This selects a conditional semi-discrete thermal criterion,
-  not omission throughout a coupled neck; [assumptions and sources](../tectonics/docs/I01_LATERAL_HEAT.md)
-  remain explicit. No solver-speed improvement or old-receipt rewrite is claimed.
-- **Superseded I01 breakup analytical feasibility — historical measurements:** [five refreshed controls](../tectonics/evidence/i01-breakup-closure-r2.json)
-  passed in 0.5319846 s against the then-current finite-strain/heat chain. The fixed
-  power-law analytical route, per-rung limits and numerical gates are unchanged.
-  Resolved events and retained-lithosphere breakup remain UNRESOLVED; no
-  physical separation or world acceptance is granted.
-- **Superseded I01 reversible pressure/energy connection — historical measurements:** [pressure-work controls](../tectonics/evidence/i01-phase-pressure-r2.json)
-  bind the method/tool/test/case and corrected partition provider. Thirteen tests
-  pass; the campaign passes in 0.6031263 s. Independent pure work integrals,
-  binary pressure integration and the receiver connection distinguish enthalpy
-  change from external work. Matched 40-call medians: 0.0282109 s Newton versus
-  0.1398615 s bisection, saving 0.1116506 s / 79.83%, parity 1.07e-8 K.
-  Stable minority-component arithmetic fixes the false near-liquidus refusal;
-  heat and entropy inversion pass 1e-6 K inside both phase boundaries. No tolerance
-  relaxation, mantle calibration or native delivery is claimed; r1 is historical.
-- **Superseded I01 finite-strain admission — historical measurements:** [five refreshed controls](../tectonics/evidence/i01-finite-admission-r2.json)
-  pass in 1.9014433 s against the corrected finite-strain/heat chain. Admission
-  tolerances, issued-state requirements and numerical law are unchanged.
-  This remains a conditional represented-column bound, not rupture, restart
-  or world acceptance; [method](../tectonics/docs/I01_FINITE_ADMISSION.md).
-- **Superseded I01 compatible magma receiver — historical measurements:** [finite-receipt control](../tectonics/evidence/i01-magma-receiver-r2.json)
-  binds the tool/test/case/method and corrected partition dependency. Thirteen
-  tests and the 0.1879935 s campaign pass, including independent crystallisation,
-  entropy and pressure-volume work accounts. Eight co-arriving parcels take
-  0.0129064 s per 20 batched calls versus 0.0479586 s sequentially: 73.09% saved,
-  temperature parity 2.28e-13 K. Same-pressure analytical ideal mixture only;
-  no native emplacement, flow-rate law or persisted delivery transaction.
-- **Superseded I01 composition-aware phase energy — historical measurements:** [analytical extraction/cooling control](../tectonics/evidence/i01-phase-energy-r3.json)
-  binds the ideal-mixture caloric law, tests, case, method and corrected
-  partition helper. Twelve focused tests pass, including thermodynamic identities
-  and pure/congruent melting plateaux. A three-batch comparison saves 83.04% against
-  same-accuracy bisection for 40 inversions. This is not calibrated mantle physics,
-  native W08 delivery or a whole-world speedup; r1/r2 remain historical after
-  the solver safeguard and partition arithmetic changed respectively.
-- **Superseded I01 composition-aware phase partition — historical measurements:** [analytical controls](../tectonics/evidence/i01-phase-partition-r2.json)
-  bind four files; eleven focused test methods pass and the campaign takes
-  0.0579674 s. Component depletion survives re-equilibration without recreating
-  extracted liquid. Per-component minority inventories avoid cancellation at
-  phase disappearance and with extreme partition coefficients. Three interleaved
-  200-call batches take median 0.0020329 s with safeguarded Newton versus
-  0.0164274 s bisection: 0.0143945 s / 87.62% saved,
-  mass parity 2.37e-9 kg. This is supplied-coefficient fixed-P/T composition
-  feasibility, not energy-bearing delivery or a world-runtime claim; see
-  [method and the still-required common thermal law](../tectonics/docs/I01_PHASE_PARTITION.md).
-- **Superseded I01 material-following finite strain — historical measurements:** [seven refreshed controls](../tectonics/evidence/i01-finite-strain-r3.json)
-  pass in 14.2133972 s against the corrected thermal preparation and then-current
-  upstream receipts. The actual force/heat/history/geometry chain remains
-  compatible with legitimate thermal-operator rebuilding. Mass, whole-strip
-  heat capacity, accounts and numerical gates are unchanged. This is a closed
-  affine strip, not lateral rupture or a complete world workflow;
-  [method and sources](../tectonics/docs/I01_FINITE_STRAIN.md).
-- **Superseded I01 actual-column admission — historical measurements:** [connected controls](../tectonics/evidence/i01-column-admission-r1.json)
-  bind twelve source/specification and reviewed-receipt files. Ten tests pass in
-  0.011 s; eight control checks in 0.1361079 s. An exact upper bound connects
-  mixed-creep column resistance to motion admission without changing its laws.
-  Reusing the bound saves 0.0175392 s / 93.68% per ten guarded calls in three
-  interleaved batches, with identical outputs. Fixed-column sufficient admission
-  only; not physical rupture, continuum enclosure or world speedup. The inherited
-  layered control remains uncertified at 1%; see [method](../tectonics/docs/I01_COLUMN_ADMISSION.md).
-- **Superseded I01 force-driven thermal/motion connection — historical measurements:** [six refreshed controls](../tectonics/evidence/i01-thermomechanical-motion-r2.json)
-  pass in 3.6745271 s with the corrected heat preparation. Force, temperature
-  and weakening still share integration stages; external drag is not column heat.
-  Verified upstream receipt references changed, not equations, forcing or gates.
-  Fixed-geometry small-strain feasibility, not world acceptance;
-  [method and sources](../tectonics/docs/I01_THERMOMECHANICAL_MOTION.md).
-- **Superseded I01 layered column heat — historical measurements:** [seven refreshed controls](../tectonics/evidence/i01-column-heat-r3.json)
-  pass in 1.4539432 s; twenty-two focused tests pass. Actual mechanical and
-  thermal reference densities must agree for lithostatic columns; an asserted
-  fingerprint cannot hide a 1% mismatch. A preparation digest also detects
-  replaced capacities, conductances and reference arrays. Supplied-pressure
-  analytical fixtures and legitimate rebuilt thermal properties remain supported.
-  No physical inputs, equations or tolerances changed. Supplied-rate,
-  fixed-geometry small-strain feasibility only; [method](../tectonics/docs/I01_COLUMN_HEAT.md).
-  Previous receipts remain unchanged, superseded snapshots.
-- **Superseded I01 resistance-to-motion connection — historical measurements:** [force/drag/history controls](../tectonics/evidence/i01-motion-coupling-r1.json)
-  bind eight new and retained files. Eight focused tests pass (0.157 s); the
-  bounded campaign passes in 1.209959 s. Finest velocity changes are 8.20e-9
-  relative in time and 1.36e-4 in depth. One matched cold/warm comparison takes
-  0.4459559/0.0926285 s: 0.3533274 s / 79.23% saved with 7.99e-13 relative parity.
-  Motion is solved from force and actual evolving resistance, with a disjoint
-  drag account. This is a fixed-temperature regional feasibility control, not
-  assembled world mechanics or a rupture certificate; see [method](../tectonics/docs/I01_MOTION_COUPLING.md).
-- **Superseded I01 evolving column weakening — historical measurements:** [reviewed controls](../tectonics/evidence/i01-weakening-r2.json)
-  bind seven tool/case/method/test and retained-helper evidence files. Seventeen
-  tests pass in 0.137 s and all seven controls in 0.948857 s. Prepared-coefficient
-  reuse takes 0.0347743 versus 0.2257254 s: 0.1909511 s / 84.59% saved in one
-  bitwise-matched comparison. Review fixed immutable-storage, provider identity
-  and direct-entry/window guards without changing physics or case tolerances.
-  Original [r1](../tectonics/evidence/i01-weakening-r1.json) is historical.
-  See [the method and physical limits](../tectonics/docs/I01_WEAKENING.md).
-- **Current I01 columns-to-driving connection:** [spherical controls](../tectonics/evidence/i01-gpe-r1.json)
-  bind the new four-file implementation and unchanged retained torque helper.
-  Ten tests pass in 0.007 s; campaign 0.0428281 s. Finest analytical rotation
-  error is 0.0100396%, with second-order refinement. Five interleaved medians
-  for 4,096 three-layer column moments: scalar 0.0075236 s, vectorised
-  0.0001414 s, saving 0.0073822 s / 98.12%, relative parity 2.38e-16.
-  This is a kernel comparison and a dry manufactured spherical connection,
-  not whole-world validation. See [method and sources](../tectonics/docs/I01_GPE.md).
-- **Current I01 water/flexure connection:** [coupled controls](../tectonics/evidence/i01-water-flexure-r1.json)
-  bind four new source/case/test/method files. Ten tests pass in 0.062 s; the
-  32²/64²/128² campaign passes in 0.113740 s. The finest-pair displacement change
-  is 0.002723% of mean water depth. Verified wet-set reuse saves 0.0022661 s /
-  31.11% per small solve in an interleaved benchmark. This is a periodic flat
-  plate with finite connected water, not regional/global embedding. See the
-  [equations, sources and limits](../tectonics/docs/I01_WATER_FLEXURE.md).
-- **Current I01 dry melt production:** [parcel controls](../tectonics/evidence/i01-melting-r1.json)
-  bind the four new tool/case/test/method files. Nine focused tests and the
-  two-path/exact-reference campaign pass; the campaign takes 0.024851 s.
-  Tighter-reference differences stay below 0.000962 K and 1.30e-6 mass fraction.
-  Analytic versus numerical derivatives save 0.0006566 s / 41.47% in a five-run
-  median microbenchmark. This is retained-melt production, not extraction or a
-  compatible join to common-Tm delivery. See [method and sources](../tectonics/docs/I01_MELTING.md).
-- **Current I01 evolving thermal/history connection:** [reviewed controls](../tectonics/evidence/i01-thermal-r2.json)
-  bind nine thermal and retained-helper source/case/method/test files. All five
-  controls pass in 6.396674 s; 13 focused tests pass in 0.274 s. Review closed
-  input-validation gaps without changing physical equations or tolerances.
-  One warm/cold comparison saves 1.054211 s / 65.60%; not a world-runtime claim.
-  The [method](../tectonics/docs/I01_THERMAL.md) separates bounded material-reference
-  evolution from the translation-only check and unimplemented finite-strain transport.
-  [Claude's r1](../tectonics/evidence/i01-thermal-r1.json) remains unchanged and historical.
-- **Superseded I01 nonlinear column resistance — historical measurements:** [column controls](../tectonics/evidence/i01-column-r1.json)
-  bind the new tool/case/tests/method. Common-stress composite creep, regularised
-  friction and unit conventions have 11 passing focused tests. The prescribed
-  layered snapshot and 64/128-point comparison pass in 0.0549932 s; force changes
-  by 0.0366%. A ten-local-solve comparison saves 0.0003092 s / 86.95% against
-  bisection, not against a world run. See [scope and references](../tectonics/docs/I01_COLUMN.md).
-- **Historical I01 melt-delivery connection:** [phase-selective delivery](../tectonics/evidence/i01-delivery-r1.json)
-  binds its tool/case/method/tests and the then-current native Python tree. Five
-  analytical cases and the W08 separation/placement/cooling account pass in
-  0.0243872 s; 12 focused tests pass in 0.006 s. Available liquid is separated with
-  its own enthalpy, not bulk enthalpy. Extraction timing and amount still require
-  a physical producer; see the [method and sources](../tectonics/docs/I01_DELIVERY.md).
-- **Current nonlinear motion-admission control:** [I01 decoupling](../tectonics/evidence/i01-decoupling-r1.json)
-  binds its new tool/case/method/tests. Exact rational threshold checks, analytical
-  oracles and conditional finite-window refusals pass, independently of the
-  thermal/history work. The 97.78% saving is a 100-decision micro-comparison against
-  exact bisection, not a world-generation estimate. See [scope](../tectonics/docs/I01_DECOUPLING.md).
-- **Current I01 transitions:** [reviewed D6 controls](../tectonics/evidence/i01-transitions-r2.json)
-  bind the corrected tool, case, method and focused tests. Six controls pass;
-  32 focused tests cover the added root/account/frame refusal cases. This is
-  authored reduced-model evidence, not generated breakup or subduction initiation.
-  The linear-only handoff certificate, full-extraction melt-inventory estimate
-  and transmitted-force work limits are in the [method](../tectonics/docs/I01_TRANSITIONS.md).
-  [Claude's original r1](../tectonics/evidence/i01-transitions-r1.json) remains
-  byte-identical and historical after review found uncovered gaps.
-- **Current I01 pressure/temperature connection:** [mechanical snapshots](../tectonics/evidence/i01-strength-r1.json)
-  bind the new tool, case, method and focused tests plus the retained 2D helper.
-  An exact pressure/temperature oracle, full force/work balance, 17/33/65-grid
-  controls and warm/cold parity pass. This is supplied-temperature mechanics,
-  not evolved heat/history, rock calibration or rupture; see the
-  [method and limitations](../tectonics/docs/I01_STRENGTH.md).
-- **Current I01 2D numerical probe:** [2D controls](../tectonics/evidence/i01-fault2d-r1.json)
-  bind their separate tool, case and method document. Grid/time comparisons,
-  oblique analytical laminates, right-angle covariance and work checks pass.
-  This does not settle pressure-sensitive friction, arbitrary-angle fault
-  nucleation, material transport, physical calibration or rupture. The first
-  [default-thread run](../tectonics/evidence/i01-fault2d-threaded-r1.json) is
-  historical against its pre-thread-policy tool, retained for the timing comparison.
-- **Current I01 design controls:** [four bounded controls](../tectonics/evidence/i01-controls-r1.json)
-  bind their tool, declared case policy and physical-contract document. The four
-  controls pass, but do not establish 2D fault generation, physical rupture,
-  global evolution or regional water/flexure coupling. Runtime versions are
-  observations, not sealed library binaries. No native package is imported.
-- **Current:** the Step 7 r2 predeclared matrix and the
-  [B1 matched boundary diagnostics](../tectonics/evidence/boundary-kinematics-r1.json).
-  B1 checks its tool and two portable input bindings, not a native simulation or
-  transitive runtime seal; its source/runtime limitations remain explicit.
-  The [Windows installation receipt](../tectonics/evidence/environment-install.json)
-  also remains current against its package-version JSON record. Its local smoke
-  script, wheel archives and runtime are not repository bindings. It records one
-  successful installation, not continuing PyPI availability, current Atlas behaviour
-  or a fresh byte audit of installed libraries. Requirement-file consistency is
-  checked separately by the environment checker.
-- **Historical:** S2, S3, S4 and S5 r1; Step 7 r2; bundle r1 and r2;
-  motion-frame r2; the [separation-performance comparison](../tectonics/evidence/i01-separation-performance-r1.json);
-  and the line-ending correction trails [r1](../tectonics/evidence/line-ending-digest-correction-r1.json)
-  and [r2](../tectonics/evidence/line-ending-digest-correction-r2.json).
-- **Superseded:** S7 r1, by S7 r2; the fifteen immediate predecessors of the
-  29 September I01 captures; and the eight connected receipts replaced by the
-  [30 September successors](#successor-capture-after-i022a-and-the-writer-correction).
-  Their original results must not be quoted as current-checkout measurements.
-- **Invalid:** none.
-
-Evidence files that are not listed, including the W01-W12 receipts, are
-unclassified. The register makes no claim about them.
-
-Integration review found that A3 changed the native `reuse.py` source after Step 7
-r2 and bundle r2 ran. Their adapter hashes still match, but this cannot make
-their native integration results current. Motion-frame r2 binds its correction
-and assessment files, but its embedded project/session integration and generation
-observations use changed or unbound dependencies. The whole receipt is therefore
-historical; this does not undo the implemented motion correction. None of the
-original receipts, source hashes, measurements or runtime identities was rewritten.
-
-Known dependency drift requires historical classification even when all declared
-file bindings still match. An unchecked dependency is not evidence of compatibility.
-Classification alone does not rerun a physical campaign. The bounded successor
-captures below provide new evidence for the changed package/writer sources.
-
-Receipts may contain identities that cannot be checked locally; the register must
-name each one if such a receipt is classified current. Each current record's
-`limits` are printed on every run. For
-example, `native_execution_id` is an atlas_tectonics loaded-code and runtime
-identity, not a file hash. The checker never compares it with a file. An opaque
-identity observation alone cannot detect changes to package sources or the
-scientific runtime. Separate file bindings can check source bytes, as the current
-I02 timing receipt does; they still do not verify the installed runtime.
-Generated worlds, job files and output identities live outside the repository
-and are listed as artefacts.
+Every unchecked digest-bearing identity in a current receipt must be named with
+a reason. Native execution IDs combine loaded code/runtime and are not file
+digests. Source bindings check disk bytes, not installed runtime. Generated
+worlds/jobs/output identities outside the repository are artefacts.
 
 ## Line-ending digest correction r2
 
-Six I01 writers (`check_i01_phase_partition.py`, `check_i01_phase_energy.py`,
-`check_i01_phase_pressure.py`, `check_i01_magma_receiver.py`,
-`check_i01_separation_feasibility.py` and `check_i01_gibbs_provider.py`) opened
-their receipts in text mode with the platform newline. Windows runs therefore wrote
-CRLF, and 13 receipts were registered by the digest of those CRLF bytes: 13 register
-values and 6 closure-matrix values. Git stores the LF bytes, so no checkout matched.
-The writers now write LF, and `test_digest_line_endings.py` refuses an I01 writer
-that does not. The [r2 correction trail](../tectonics/evidence/line-ending-digest-correction-r2.json)
-records each old and new value with its proof. Only those 64-character values
-changed: receipt bytes, measurements and recorded source bindings are unchanged, and
-nothing was rerun. Because the writer change alters tool bytes those receipts bind,
-the current ones among them became historical rather than being repinned.
+Six I01 phase/receiver/separation/G25 writers used platform newlines; Windows
+generated CRLF while Git retained LF. Thirteen register and six closure-matrix
+digests therefore named bytes no clone received. Writers now emit LF and
+test_digest_line_endings.py guards that contract. The
+[r2 trail](../tectonics/evidence/line-ending-digest-correction-r2.json) retains
+all old/new values and proofs. Only digest citations changed; receipt bytes,
+measurements and recorded bindings were not rewritten or rerun. Affected current
+receipts became historical after the writer change rather than being repinned.
+The [original account](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/CURRENT_EVIDENCE.md#line-ending-digest-correction-r2)
+retains the exact six-writer list.
 
 ## Successor capture after I02.2a and the writer correction
 
-All fifteen original successor captures completed successfully on 29 September
-2026 and were then registered as current. Nine covered the connected column
-chain after the reviewed package extraction. On 30 September the I02
-cold-restart stress-resolution correction required eight further successors;
-`i01-column-r2` remained valid and was reused. The current chain below was renewed
-again on 5 October after bitwise kernel and persistence-guard integration.
-Each affected tool was retargeted before its run, so downstream captures bind
-the new upstream receipts and the package owners they execute. Every output was
-written as a new file; no old receipt or recorded measurement was rewritten.
+Captures were exclusive new files, ordered so downstream tools bound reviewed
+upstream receipts and actual owners. No old receipt/measurement was edited. The
+connected dependency order is column → weakening → column heat/motion → column
+admission/thermal-motion → finite strain → finite admission/breakup. The register
+owns current receipt IDs and exclusions; the I01 closure matrix owns selection.
 
-| Order | Control in `tectonics/tools/` | Captured current receipt | Receipts it checks |
-| --- | --- | --- | --- |
-| 1 | `check_i01_column.py` | [i01-column-r2](../tectonics/evidence/i01-column-r2.json), reused from 29 September | none |
-| 2 | `check_i01_weakening.py` | [i01-weakening-r5](../tectonics/evidence/i01-weakening-r5.json) | column r2 |
-| 3 | `check_i01_column_heat.py` | [i01-column-heat-r6](../tectonics/evidence/i01-column-heat-r6.json) | weakening r5, column r2 |
-| 4 | `check_i01_motion_coupling.py` | [i01-motion-coupling-r4](../tectonics/evidence/i01-motion-coupling-r4.json) | weakening r5 |
-| 5 | `check_i01_column_admission.py` | [i01-column-admission-r4](../tectonics/evidence/i01-column-admission-r4.json) | motion coupling r4, decoupling r1 |
-| 6 | `check_i01_thermomechanical_motion.py` | [i01-thermomechanical-motion-r5](../tectonics/evidence/i01-thermomechanical-motion-r5.json) | column heat r6, motion coupling r4 |
-| 7 | `check_i01_finite_strain.py` | [i01-finite-strain-r6](../tectonics/evidence/i01-finite-strain-r6.json) | thermomechanical r5, column heat r6, motion coupling r4 |
-| 8 | `check_i01_finite_admission.py` | [i01-finite-admission-r12](../tectonics/evidence/i01-finite-admission-r12.json) | finite strain r6, column admission r4 |
-| 9 | `check_i01_breakup_closure.py` | [i01-breakup-closure-r5](../tectonics/evidence/i01-breakup-closure-r5.json) | finite strain r6 |
+Fifteen successors passed on 29 September: nine package-extraction controls and
+six phase/receiver/separation/G25 LF captures. Eight connected receipts renewed
+after 30 September cold-restart stress-resolution repair; unchanged column r2 was
+reused. Eight affected controls renewed on 5 October after bitwise-kernel/
+persistence integration; finite-admission r12 followed its restoration change.
 
-The five phase/receiver/separation successors and the G25 successor passed on
-29 September and remain current without a new capture:
-
-| Control in `tectonics/tools/` | Captured current receipt | Capture boundary |
-| --- | --- | --- |
-| `check_i01_phase_partition.py` | [i01-phase-partition-r3](../tectonics/evidence/i01-phase-partition-r3.json) | Corrected LF writer; bounded phase controls |
-| `check_i01_phase_energy.py` | [i01-phase-energy-r4](../tectonics/evidence/i01-phase-energy-r4.json) | Corrected LF writers; bounded energy controls |
-| `check_i01_magma_receiver.py` | [i01-magma-receiver-r3](../tectonics/evidence/i01-magma-receiver-r3.json) | Corrected LF writers; bounded receiver controls |
-| `check_i01_phase_pressure.py` | [i01-phase-pressure-r3](../tectonics/evidence/i01-phase-pressure-r3.json) | Corrected LF writers; bounded pressure/energy controls |
-| `check_i01_separation_feasibility.py` | [i01-separation-feasibility-r4](../tectonics/evidence/i01-separation-feasibility-r4.json) | Corrected LF writer; bounded spatial separation controls |
-| `check_i01_gibbs_provider.py` | [i01-gibbs-provider-r3](../tectonics/evidence/i01-gibbs-provider-r3.json) | Corrected LF writer; pinned isolated Julia/MAGEMin environment |
-
-The 29 September verification recorded 633 I01/I02 tests passing in 12.390 s
-and three digest-line-ending tests in 0.777 s. Its Git-normalised candidate
-check passed all three guards in 17.7 s, including the exported-byte test suite
-in 12.704 s. Those are historical measurements of that day's source snapshot.
-
-On 30 September all eight refreshed captures passed in 24.72 seconds in total
-after imports. The final Git-normalised I02 closeout passed all three checks in
-154.1 s, including 758 I01/I02 tests in 149.794 s. The evidence register matched
-445 digests across 37 current records, with 28 historical, 31 superseded and no
-invalid records; the closure-matrix receipt digests and statuses matched the
-register. These are the recorded closeout results, not a full-suite or
-independent physical-validation claim. No physical law, acceptance threshold,
-case or retained 256-step ceiling changed, and no old receipt was repinned.
-
-The separation-performance comparison used a harness outside the repository and
-has no successor route. Its older timings remain historical. Capture and
-registration are local evidence states; Git commit and publication are separate.
+Recorded closeouts were 633 I01/I02 tests, three LF checks and a 3/3 Git-normalised
+guard (29 September); eight captures in 24.72 s, 758 tests and a 3/3 guard
+(30 September). The [original capture account](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/CURRENT_EVIDENCE.md#successor-capture-after-i022a-and-the-writer-correction)
+retains exact source identities, receipt order, test timings and historical
+register counts. These are bounded controls, not full-suite or independent
+physical validation. No physical law, case, tolerance or 256-step ceiling changed.
+The external separation-performance harness has no successor route; its timing
+remains historical. Local capture/registration is separate from Git publication.
 
 ## Optimisation integration, 5 October 2026
 
-This batch repairs four development-tool findings: incomplete candidate runs
-cannot report a pass, quick I02 partitions validate against complete discovery,
-impact maps retain the traced run's original source/runtime provenance, and
-fingerprints include effective inherited import paths. The standard full test
-selection remains unchanged. Quick and impact-selected runs are labelled as such.
+Integrated tooling corrections refuse incomplete candidate passes, validate quick
+I02 partitions against full discovery, retain traced source/runtime provenance in
+impact maps and fingerprint inherited import paths. Quick/impact runs remain
+labelled; the standard full selection is unchanged. Strict execution reuses deeply
+immutable constants, never mutable defaults or source-check outcomes. Numerical
+reuse preserves arithmetic order, including geometry, batched special functions,
+budgeted multigrid work arrays/CSR transposes. No tolerance, fastmath, solver gate
+or step ceiling changed. Default 256 MiB admits the closed 8-cube control and
+refuses 9 cubes; explicit 512 MiB admits the latter. The resource expectation was
+corrected rather than hidden.
 
-Strict execution now reuses normalised deeply immutable constants, never mutable
-defaults or source-check outcomes. Numerical changes reuse identical geometry,
-batch repeated special-function evaluations and preserve arithmetic order in
-NumPy/SciPy/Numba kernels. Retained multigrid work arrays and CSR transposes are
-fully budgeted. Default 256 MiB admits the closed 8-cube control but refuses the
-9-cube control; an explicit 512 MiB shared budget admits the latter. No physical
-tolerance, solver gate, fastmath option or step ceiling changed.
+Focused evidence reused unchanged passes: 33 tooling tests, 29 profile tests,
+382 affected numerical/geometry tests, 13 new bitwise controls and sixteen extra
+baseline-byte comparisons; eight new multigrid controls plus 41 reused passes;
+228 storage/reuse/project/bundle/job checks (one host-conditional skip); twelve
+release/mutation/capture/retained-byte controls; six packaging and four commit-policy
+checks. Eight successor captures, three receipt-binding checks, closure mirror and
+seven strict workflow comparisons over five repetitions passed. Final
+Git-normalised guard: 3/3 in 8.5 s with an **explicit 33-test optimisation
+selection**, not the default I01/I02 suite.
 
-Focused verification, with valid unchanged results reused:
+The [operational comparison](../tectonics/evidence/optimisation-20261005.json)
+became historical on 16 October when a bound tool added reuse.py to restoration
+inventory; its external harness cannot produce a successor. One Windows machine,
+one fresh process/configuration and one pass of seven workloads measured aggregate
+92.574 → 78.235 s strict and 44.331 s Release diagnostic. Strict saved 14.339 s
+(15.49%); diagnostic Release saved 48.243 s (52.11%) but I02 regressed 2.111 s
+(55.39%). A one-pass 1.04% strict I02 change supports no reliable speed claim.
+Five original digests matched; New World/job comparisons separated adapter
+hash/request-ID/mode provenance from identical scientific payload. Timings include
+imports. Diagnostic Release was not an installed EXE or strict scientific
+qualification; required persistence checks remained enabled. Causality,
+statistical confidence and world-scale benefit were not established.
 
-- Development tooling: 33 tests in 16.928 s; verification profiles: 29 in 2.238 s.
-- Affected numerical/geometry modules: 382 in 25.574 s; 13 new bitwise controls
-  in 0.838 s. Sixteen additional multigrid raw-byte comparisons matched baseline.
-- Multigrid: 8 new controls passed; 41 existing passes were reused after updating
-  the one honest resource-admission expectation. That control, including explicit
-  512 MiB admission, passed separately in 3.335 s.
-- Reuse, storage, project, bundle and job seams: 228 tests in 63.004 s, OK with
-  one existing host-conditional skip. Release policy, mutation refusal, concurrent
-  capture and exact retained-byte accounting: 12 tests in 1.922 s after adding the
-  raw-backup boundary check. Packaging helper: 6 tests; commit-policy helper: 4.
-- Eight final I01 successor captures passed. Finite-admission r10 is retained
-  as superseded by r11 after the final storage guard. Three receipt-binding checks
-  and the closure-mirror check passed. Strict workflow timing r12 passed all seven
-  equality/source checks over five repetitions after other test processes stopped.
-- The Git-normalised candidate guard passed 3/3 in 8.5 s: 464 registered digest
-  bindings, 3 line-ending checks and 33 optimisation controls in 4.481 s.
-  This explicitly selected the new controls, not the default full I01/I02 suite.
-  Later edits only add the performance record and status documentation.
-
-The [matched operational record](../tectonics/evidence/optimisation-20261005.json)
-is historical since 16 October 2026: a bound tool gained `reuse.py` in its restoration
-inventory, and the external timing harness cannot produce a successor. It
-uses one Windows machine, one fresh process per configuration and one pass of
-seven bounded workloads. Source bytes remained unchanged. Whole-process seconds
-include imports; the release configuration is an explicit diagnostic bootstrap,
-not an installed EXE test or strict scientific acceptance. Five original digests
-match exactly. For New World and the regional job, retained payload comparison
-separates only changed adapter hashes, their recomputed request ID and the new
-execution-mode provenance; the scientific payload bytes match as well.
-
-| Workload | Previous strict, s | New strict, s | Release diagnostic, s |
-| --- | ---: | ---: | ---: |
-| W03 columns | 7.866 | 7.233 | 2.602 |
-| W07 regional | 6.491 | 6.099 | 1.877 |
-| 3-D regional, n=10 | 16.703 | 11.982 | 10.756 |
-| I02 column save/reopen | 3.811 | 3.772 | 5.922 |
-| New World generate/reopen | 8.945 | 5.304 | 4.836 |
-| Regional job | 16.425 | 12.607 | 7.326 |
-| W05/W06 | 32.332 | 31.238 | 11.013 |
-| Sum of these workloads | 92.574 | 78.235 | 44.331 |
-
-Strict mode saves **14.339 s (15.49%)** in this pass; the release diagnostic saves
-**48.243 s (52.11%)** overall, but I02 is **2.111 s slower (55.39%)** in release
-in this diagnostic; required persistence checks remain enabled. This timing
-comparison does not isolate the cause. The 1.04% strict I02 difference
-is too small for a reliable speed claim from one pass. These results are neither
-whole-planet estimates nor statistical confidence intervals. The current checkout
-remains strict. Future packaged workloads must retain their own measured trade-off.
-
-Uncoordinated helper threads (PAR-2), removal of the defensive constructed-ring
-check (VAL-1), a persistent desktop worker and bytecode-cache packaging are not
-included. No physics paper or alternative physical model was used in this batch:
-the implementation basis is the reviewed existing NumPy/SciPy/Numba algorithms,
-Claude's byte-parity prototypes and the checks above. The paused fidelity
-candidate, installed EXE, Git index and commit history are not changed by this
-integration. No full Atlas suite, Linux run or whole-planet simulation is claimed.
+The [original account](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/CURRENT_EVIDENCE.md#optimisation-integration-5-october-2026)
+retains individual workloads, check timings and identity counts. PAR-2 threads,
+VAL-1 ring-check removal, persistent desktop worker and bytecode-cache packaging
+were excluded. Existing NumPy/SciPy/Numba algorithms and reviewed parity prototypes
+were used, with no alternative physics/fresh paper review. Fidelity holds and
+installed/scientific acceptance remained unchanged. No full Atlas, Linux or
+whole-planet run was claimed.
 
 ## Integration checks
 
-On 4 October the I04 delivery, its I05a prerequisites and the reviewed result,
-sensitivity, staircase and one-sided coverage repairs were integrated locally.
-Focused checks reused adequate unchanged broad-suite evidence. The separately
-predeclared 42/84-row refinement passed all four fixed 3% comparisons; its largest
-change was 0.0556096%. The [I04 method](../tectonics/docs/I04_CAUSAL_START.md#reviewed-repairs-and-resolved-refinement-4-october-2026)
-and [observational report](../tectonics/evidence/i04-resolved-refinement-r1.json)
-state its source-reuse boundary: no complete launch manifest was captured, so it
-is not represented as a source-sealed run of the final tree. Finite-admission r9
-and workflow-timing r11 separately renew their own declared final-source bindings.
-The final Git-normalised guard passed all three checks in 26.2 s, including the
-register, three line-ending checks and eleven staircase tests (22.348 s). Valid
-unchanged broader test evidence was reused; this was not a new full-suite run.
+These are source-scoped historical integration outcomes. The
+[complete original account](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/CURRENT_EVIDENCE.md#integration-checks)
+retains exact selections, identities, local logs, timings and guard counts.
+No full Atlas/planetary acceptance follows; earlier receipts remain unchanged.
 
-**I03 K1–K5 repairs, 3 October 2026: reviewed and integrated locally.**
-The candidate preserves junction paths through mesh/rename replay, covers all
-supported declared-vertex traversals (including D5 endpoints `f=0` and `f=1`),
-recovers degenerate GEOS overlays with exact spherical operands within the caller's
-budget, corrects C7 range semantics, and checks fresh-admission replay for all three
-regional bridge representations. Old step/map schemas are explicitly refused.
-C1/C4 application derivations are now documented under Michael's “approve fix
-everything” authority; this does not assert an earlier Claude approval.
+| Integration | Outcome and retained failure/qualification boundary |
+| --- | --- |
+| I04/I05a, 4 October | Reviewed repairs and predeclared 42/84-row refinement passed all four fixed 3% comparisons (maximum 0.0556096%). No complete launch manifest was captured: refinement is observational, not final-tree source-sealed evidence. Finite-admission r9/timing r11 renewed their own bindings. Final explicit eleven-staircase/LF/register guard passed 3/3. [Owner](../tectonics/docs/I04_CAUSAL_START.md#reviewed-repairs-and-resolved-refinement-4-october-2026). |
+| I03 K1–K5, 3 October | Path-preserving replay, all supported vertex traversals including D5 endpoints, bounded exact GEOS overlay recovery, C7 ranges and three bridge representations integrated; old schemas refuse. C1/C4 derivations follow Michael's fix authority, not invented earlier Claude approval. Of initial 323 tests, 320 passed, two expected failures remained and one obsolete refusal assertion was replaced by recovery/conservation/replay controls. Affected seams passed with unchanged results reused. Later clean 323-test run passed with the two historical expected failures. Exact fallback improved 26.2%/32.4% at 48/192 bands with identical rows/state/budget; 96 bands did not use fallback and showed no gain. [Owner](../tectonics/docs/I03_SPHERICAL_NETWORK.md). |
+| I03 N1, 3 October evening | Named refusal replaces misleading errors for D1-b inside a D5 transient triangle; a pass outside it beside zero opening remains admitted. Refusal control failed previously and passes repaired; admitted control passes both. Full 325-test selection passed with two expected failures. No tolerance relaxed/new case admitted. Timing r10 superseded r9; finite-admission r8 did not bind the changed transfer file. Default guard passed 3/3 with 759 I01/I02 tests, separately from earlier explicit selections. |
+| R7, 2 October | 211 affected checks covered phase/structure/heat/3-D (132), flexure (12) and coupled support/heat/save-reopen/project seams (67). New heat fixture exceeded the existing timestep bound: only its timestep changed, yielding 19 heat passes while retaining the other 113. Independent flexure tolerances stayed unchanged. Timing r7 followed other processes; overlapping capture stayed local and was not performance evidence. Default guard passed 3/3 with 759 I01/I02 tests. Initial candidate-object write refusal resolved by authorised rerun, without changing the real index or committing. |
+| R4, 1 October | Corruption/races, never-started retry, accounting, cache and ZIP/input fixes integrated. Focused selections passed: 45 solver, 94 lifecycle, 65 reuse, fifteen history plus four final guards, and one restore regression. Finite-admission/timing r6 renewed their scopes; default guard passed 3/3 with 759 I01/I02 tests and no skips. |
+| Original checker | Initial eleven-record register/nineteen tests integrated. Strict exponent overflow now refuses alongside literal NaN/Infinity. Eighteen passed with one Windows file-symlink skip; actual junction refusal passed. Initial one-current/nine-historical/one-superseded classifications and separate fixed-record assertion checked. No numerical campaign. |
 
-The final production-source I03 run completed 323 tests in 190.579 s: 320 passed,
-two original strict slow-consumption comparisons remained historical expected
-failures, and one obsolete assertion still expected overlay refusal. Only that
-assertion was replaced with exact-overlay recovery, conservation and replay
-checks. It passed together with the unchanged I02 persistence/finite-admission
-seams (42 tests in 10.918 s). Five checks affected by late fixture-binding edits
-passed in 1.854 s. Reusing the unchanged full-run passes gives final I03 coverage
-of 321 passes and the two historical expected failures; no new clean 323-test
-invocation is claimed. The local review logs are `i03-repair-final.log`,
-`repair-seams.log` and `fixture-binding-check.log`. The original strict per-trench
-audit and physical tolerances remain unchanged.
+I03 full-run/default-guard outcomes are distinct from earlier explicit-test runs.
+Local integration, Git publication, installed EXE, Linux coverage and scientific
+acceptance remain separate.
 
-Matched one-case exact-fallback measurements decreased from 2.3598282 to
-1.7407953 s at 48 bands (26.2%) and from 17.0186592 to 11.5097252 s at 192 bands
-(32.4%), with identical rows, states and peak budget use. The 96-band case did
-not use exact fallback and showed no gain (4.0196 to 4.0530 s). These are bounded
-case observations, not whole-planet performance.
+## Historical repair qualification
 
-Finite-admission r8 passed all five controls and workflow-timing r9 all seven
-checks over five repetitions, after other test processes had stopped. Original
-receipt bytes and unchanged prerequisites were retained. The candidate register
-passes with 37 current records and 454 matching bindings, 28 historical,
-43 superseded and none invalid; its closure-mirror check passed. Coding-safety
-checks passed (13 source maps, 41 required paths; 30 tests passed with one existing
-Windows symlink-privilege skip in 0.114 s). The public-path guard and its 14 tests
-passed (0.828 s). All 26 promoted files matched the tested candidate. The final
-Git-normalised guard passed 3/3 checks in 8.9 s: the register, three line-ending
-tests (0.774 s) and two combined path/mesh replay tests (5.022 s). Final status-only
-closeout edits do not alter the tested source, cases or receipt bindings.
-No commit, push, EXE rebuild, full Atlas regression, Linux or
-planetary-run claim is made.
+Historical explanatory pages and links may be consolidated without retaining
+obsolete files solely to preserve their hashes. Digests in old correction trails
+identify the original presentation; they are not repinned to revised prose.
+Numerical results and original run identities remain distinguishable. Current
+registered receipt/source bindings and live-run integrity have separate contracts.
 
-That 8.9 s guard used an explicit `--tests` selection, which replaces the default
-I01/I02 tests. On the same K1–K5 bytes, the coordinator session then ran the default
-Git-normalised guard: 3/3 checks passed in 163.5 s, including 759 I01/I02 tests.
-A clean full I03 run gave 323 tests in 186.069 s, OK with the two historical
-expected failures.
+These summaries preserve the interpretation of the retired narrative reports.
+They do not change receipt classifications, exact source bindings or current
+delivery. The full [dev40 review](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/REMAKE_REVIEW_FIXES.md)
+and [26 September review](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/REVIEW_REPAIRS_2026-09-26.md)
+retain all original test selections/commands, timings, file-identity observations
+and repair chronology. Historical next actions in those versions are not current
+instructions. No new scientific execution or paper review accompanies this move.
 
-**I03 N1 follow-up, 3 October 2026 (evening): integrated locally.** D1-b at a
-junction where a plate builds a D5 transient triangle is not constructed. It was
-refused with misleading geometric or seam causes, and it is now refused by name
-(`integration_transfer.py`). A pass beside a zero-opening side, outside the
-triangle, stays admitted with exact closure and restore. The cases are in v4
-`d5_traversal`, recorded after they were first probed. Of two new tests in
-`test_i03_vertex_traversal.py`, the refusal test failed on the previous source (five
-subtests with the old messages) and passes now; the admitted-pass test passes on both,
-as a non-regression control. The full I03 suite ran 325 tests in 177.330 s, OK with the two
-historical expected failures. Workflow-timing r10 passed all seven checks over five
-repetitions with no concurrent test process. It supersedes r9; only
-`integration_transfer.py` differs from r9's bindings, and finite-admission r8 does
-not bind it. The register passes with 37 current records and 454 matching bindings,
-28 historical, 44 superseded and none invalid. The final default Git-normalised guard
-result is recorded below. No tolerance changed, and no case is newly admitted.
-The default Git-normalised guard (`tools/check_before_commit.py`, without `--tests`) passed 3/3 checks in 161.3 s: the register, digest line endings and 759 I01/I02 tests in 156.977 s. Coding-safety (31 tests), public-path (14) and register (20) tests passed; the safety and register runs each have their existing Windows symlink skip. Only this status paragraph and the matching CURRENT_STATE sentence were written after that run.
+### Dev40 numerical and identity repairs
 
-**R7 integration, 2 October 2026.** The reviewed candidate and follow-up fixes
-are integrated locally. Adequate unchanged R7 checks were reused; affected paths
-received 211 focused checks: 132 phase/structure/heat/3-D controls, 12 flexure
-controls, and 67 coupled support/heat/save-reopen/project checks. The first
-132-test selection took 83.911 s and exposed one new test fixture exceeding the
-existing heat timestep limit; correcting only its timestep gave 19 heat tests
-passing in 0.869 s on a byte-verified private snapshot. The other 113 results
-were reused. All 12 final flexure controls passed in 0.128 s, including the
-unchanged independent Green-function and two-material tolerances; the 67 seam
-checks passed in 101.129 s. No failed assertion or numerical tolerance was
-weakened to manufacture acceptance.
+The dev39-based repairs (`7aacee7661a96ce35f78dfe61ec5228801ba44dc`) preserve
+diagnostic-only recovery: cancellation after an accepted endpoint can append its
+missing hash-linked diagnostic receipt before advancing, including step zero/final
+step, without replaying physics or rewriting existing receipts. Audit retains
+the complete chain; repeated resume adds nothing. Spherical stitching aligns
+source rings to the network chart before lookup while retaining exact vertices.
+Species adapters authenticate actual declared files before/after execution and
+cache/resume restoration; synthetic markers apply only to explicitly synthetic
+evidence, never exempt real paths. Fixed-grid/ALE transport refuses rounded clock
+intervals; adjacent widths define remap distances independently of large origins.
 
-Workflow-timing r7 passed all seven checks over five repetitions, captured after
-the test processes ended. An earlier overlapping capture was kept only in local
-scratch, never registered or cited for performance. The final Git-normalised
-guard passed all three checks in 169.0 s: 37 current records and 449 matching
-bindings (28 historical, 39 superseded, none invalid), three LF-digest tests and
-759 I01/I02 tests in 164.726 s with no failures or skips. Static source-map and
-public-path checks also passed. The sandbox initially refused the guard's private
-candidate-object write; the authorised rerun completed without modifying the
-real index, staging, committing or pushing. These are bounded Windows checks,
-not a full-suite or whole-planet acceptance claim.
+Authored holes remain strictly interior/disjoint, while exact overlays/WKB may
+retain GEOS-valid point contact; no snapping/discarding is introduced. A near-unit
+fraction sum may pass its sum check but refuse the stricter conductivity bound:
+no renormalisation or invented constituent resolves that separate policy question.
+The [numerical assessment](../tectonics/docs/OPTIMISATION_REFERENCE.md#adaptive-accuracy-and-assessment-limits)
+retains the thermal-wall, periodic-assessment, schedule/preflight and dependency
+corrections. The [adaptive-inner review](../tectonics/docs/OPTIMISATION_REFERENCE.md#adaptive-inner-windows-and-returned-linux-measurements)
+retains the restored Tosi-plastic certificate repair, non-unit-SI/adaptive recovery
+checks and opt-in policy. Inactive adaptive solving cannot omit a strict certificate.
 
-**R4 integration, 1 October 2026.** The reviewed patch and its follow-up
-checkpoint corruption/race, never-started retry, resource-accounting, cache and
-ZIP/input fixes are integrated locally. Focused Windows checks passed: 45 solver
-tests in 117.055 s; 94 job/bundle/session/worker tests in 17.765 s; 65 reuse tests
-in 23.741 s; 15 history tests in 101.880 s plus four final guards in 7.457 s; and
-one restoration regression. These are selected checks, not a full-suite pass.
-Finite-admission r6 passed all five controls and workflow-timing r6 all seven
-equality/source checks; their r5 predecessors remain unchanged and superseded.
-The final Git-normalised integration guard passed all three checks in 169.6 s:
-the evidence register, three LF-digest tests and 759 I01/I02 tests (164.449 s).
-No failures or skips occurred in that I01/I02 run. Nothing was staged or committed.
+Focused Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1/Numba 0.65.1 checks, one numerical
+thread, passed 155 distinct component/workflow tests (18 material/remap, 47
+geometry, 80 convection/recovery, ten species), plus 30 static tests with one
+Windows symlink skip. Seven species checks repeated in the delivery checkout are
+already included, not added twice. Actual R12/R24 executors/disk Store were used;
+full R31/spawned scientific workers were not. Earlier 37-file byte comparison and
+its results apply to the preceding checkpoint, not the subsequent adaptive return.
+No full suite, mature convection campaign or world generation ran; R4.4/R4
+remained IN_PROGRESS and full scientific acceptance false.
 
-**Original checker delivery (historical).**
-Claude supplied the checker and 19 focused tests. Review corrected the three
-whole-record classifications above and tightened strict JSON parsing: exponent
-overflow such as `1e999` is now refused instead of silently becoming infinity.
-The focused suite recorded 18 passes and one Windows file-symlink-privilege skip
-in 0.526 s; the directory-junction refusal passed. That initial checker reported one current
-declaration, nine historical records and one superseded record. No simulation ran.
-The added fixed-record classification assertion passed separately in 0.033 s.
-Public-path scanning and required static source checks also passed; the latter
-recorded 30 passes and its existing Windows privilege skip in 0.122 s.
+### 23 September review of 5ae74dc — reported failures resolved locally
+
+Both surface geometry and variable flexure now import SciPy banded solvers lazily.
+NumPy-only reference imports remain usable; SciPy-dependent operations explicitly
+raise TectonicsError when unavailable, with no fallback/partial factor cache.
+The first local rerun exposed the second eager import masked by the first. Only
+tests were corrected to the already authenticated SciPy range `>=1.15,<1.18`
+and integrated Tosi references; no requirement widened. Preflight still refuses
+an incomplete benchmark and reads no arrays/analysis/solve. Four W07 failures
+already repaired during Step 5 were rerun for thermal restart, cancellation,
+corrupt-record refusal and dry-strength recovery. All nine externally failing
+methods gained local passing evidence: 22 distinct focused checks, plus static
+13-map/41-path and 30-pass/one-skip results, using the existing Windows environment.
+No Linux/full-suite pass, physics/tolerance/solver/dependency/resource change or
+speedup is inferred. Earlier W04/W07 reports remain bound to their own sources.
+The observed 2,097,129-byte inventory had only 23 bytes below 2 MiB at that
+checkpoint; the later bounded source-inventory representation is its successor,
+not permission to increase byte limits.
+
+### A3 follow-on: bounded source-inventory capacity
+
+The 26 September package had 126 Python files, two below the former 128-file cap.
+The successor is 512 files (386 spare); the 513th refuses before reading contents.
+The 2 MiB canonical-inventory cap, 64 KiB streaming buffer, complete byte counts/
+SHA-256, mutation/link guards and native step ceiling are unchanged. Raising a
+ceiling allocates no 512-record array for a 126-file package. This is capacity,
+not measured speed or new numerical acceptance. Source identity changes normally;
+Step 7 r2/bundle r2 remain historical first-batch observations, not post-A3 passes.
+Dated W08/W09 128-file statements describe predecessors.
+
+Twenty-two focused Windows/Python 3.12.14 tests passed in 4.559 s (5.326449 s with
+imports): exact capacity, a real 129-file context and mutation refusal, encoded
+memory/streaming/link/loaded-code guards, both backends and legacy checkpoint
+refusal. The original command selects test_source_inventory and
+test_execution_reuse.IdentityTests with source/tools/tests on the import path.
+Static checks passed 13 maps/41 paths and 30 tests with one unrelated Windows
+symlink skip. No Linux/full suite or simulation rerun was required/performed.
+
+### External-review first batch, 26 September 2026
+
+The repair basis was remake e7466e8, using review/patches against 6285d4a.
+[W12 assembly](../tectonics/docs/W12_ASSEMBLY.md#what-the-graph-and-recovery-actually-do)
+owns exact signed-zero export, initial pressure/reservoir consistency, supplied/
+effective input identities and foreign-thread closure semantics. No physical
+tolerance was relaxed. [Bundles](../tectonics/docs/NEW_WORLD_BUNDLE.md#integrity-and-recovery-rules)
+own foreign-binding inspection with refused native continuation and trusted-temp
+staging with distinct environment errors. No metadata-only world fallback,
+hidden generation, migration or dependency installation was added.
+
+The first-batch checks passed 134 distinct methods: W12 33, bundle/project/session
+51 (the corrected actual junction check closes the initial bundle symlink skip),
+digest/subduction four, acceptance/worker sixteen and static thirty. One unrelated
+static Windows symlink skip remained. Step 7's three-world/nine-phase r2 check
+passed in 46.767698 s; native bundle r2 reused seed42 and passed in 3.875754 s,
+preserving exact world/results and refusing mismatched resume. This was a simulated
+foreign identity, not an actual Linux transfer. The first bundle harness caught
+the wrong exception class; the product correctly returned SOURCE_MISMATCH, and
+only that catch was repaired before success. Initial artefacts were retained.
+Reproduction selections and first-attempt timings remain in the original report;
+document maintenance does not authorise these native runs.
+
+The r1 [line-ending trail](../tectonics/evidence/line-ending-digest-correction-r1.json)
+retains all 31 reviewed corrections across fourteen holder files and proofs of
+exact CRLF/LF transformations. Twenty-two named local evidence files were
+normalised with original bytes retained outside the public checkout; no whole-tree
+rewrite or numerical repin occurred. Writers explicitly emit LF. The A4
+[publication trail](../tectonics/evidence/public-path-redaction-r1.json) separately
+records original/public digests for thirteen personal path components in three
+W07 reports. Scientific values, timings, source/runtime identities and parent
+digest provenance are preserved. The read-only privacy guard accepts only
+LOCAL_USER, including escaped JSON paths, and reports location without content.
+Thirteen synthetic privacy checks, actual public scan and two digest guards
+passed. No source-package identity or Git history changed for that publication.
+
+A2's bounded checker correction/classifications are recorded under
+[integration checks](#integration-checks). A6 replaced duplicate status chronology
+with CURRENT_STATE, retaining method/evidence/ownership in their homes and Git
+history, rather than a new dated copy. A5's
+[Windows environment owner](TECTONICS_ENVIRONMENT.md) retains 39 exact pins
+(28 core, one acceptance, ten visual): eight have historical receipt strings,
+31 are installed-only. Metadata matched all 39 plus extra pip; no installation or
+fresh reconstruction was tested. Two failing checker fixtures exposed omitted
+wheel-only directives and repeated includes; repaired rules require the directive
+per expanded route and refuse repeated paths, with limits of 32 files/four levels/
+1 MB per file. Ten environment tests passed; privacy/static/link checks passed.
+No Linux, Python 3.13, current visual run or index-based reconstruction was
+established. The proposed whole-checkout/full-suite-on-push workflow was rejected.
+Holds, generated realism, full-suite and whole-world acceptance remained open.
 
 ## When it fails
 

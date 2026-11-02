@@ -6,7 +6,7 @@ the existing plan's W12, not a new scientific model or a competing roadmap.
 26 September correction: signed-zero bytes, initial-surface policy consistency
 and owner-thread closure are repaired. All 33 publishing/assembly/ports/graph
 checks pass on the corrected source; details are in the
-[repair record](REVIEW_REPAIRS_2026-09-26.md). Earlier execution receipts remain
+[repair record](../../docs/CURRENT_EVIDENCE.md#external-review-first-batch-26-september-2026). Earlier execution receipts remain
 historical after the native source change; no checkpoint was silently repinned.
 
 **Integration completion correction, 26 September:** the delivery below is a
@@ -35,7 +35,7 @@ The two kinds of delivery are deliberately distinct:
 
 | Native owner / output | W12 delivery | Physical scope stays with |
 | --- | --- | --- |
-| W01/W02 regional workflow | Typed sampled geometry, material and provenance fields | [W01 acceptance](W01_COMBINED_ACCEPTANCE.md) and native regional workflow |
+| W01/W02 regional workflow | Typed sampled geometry, material and provenance fields | [W01 acceptance](W01_REGIONAL_WORKFLOW.md#stage-8-combined-acceptance) and native regional workflow |
 | W03 columns | Typed material, compaction and finite-water state; column assembly continuation | Existing W03 column laws and their supplied thermal history |
 | W04 support | Identified support, loads and water-surface known mask; full column assembly | [W04 methods](TECTONICS_PLAN.md) and its stationary support envelope |
 | W05 extension | Typed requested-output state, exchanges and support | Existing extension workflow and prescribed motion |

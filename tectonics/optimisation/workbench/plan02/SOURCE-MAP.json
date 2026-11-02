@@ -217,13 +217,16 @@
       "path": "ROUTE2_ADMISSION.md",
       "source": "<PRIVATE_PLAN02_LIVE>/ROUTE2_ADMISSION.md",
       "original_sha256": "f262d2b4bc365e5591a70bca723e48e8130b055df83a5145fa49d94d230f81ba",
-      "public_sha256": "3d38ead14e051539646aaeeb3838c96d054a715e230191d9701d8a52aacff8b7",
+      "public_sha256": "a551f6dfe9ec70889d5461cd69d707a236ea6b6815e26be55a5326e975cb12f8",
       "user_path_replacements": 0,
       "line_endings": "LF",
       "publication_changes": [
         "Replace superseded private ownership and integration status with current public method scope."
       ],
-      "public_path": "tectonics/optimisation/workbench/plan02/ROUTE2_ADMISSION.md"
+      "public_path": "tectonics/optimisation/workbench/plan02/ROUTE2_ADMISSION.md",
+      "transformations": [
+        "Consolidate public explanatory contracts and historical scope into the maintained owner document; original source and scientific receipt bindings unchanged."
+      ]
     },
     {
       "path": "native_transfer.py",

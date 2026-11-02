@@ -88,6 +88,104 @@ inputs and runtime admission. Historical receipts do not authenticate this new l
   composition. On Windows, keep the system temp path short: native store paths
   under it can exceed the 260-character path limit.
 
+## Endpoint ordering, lifetime and parity contract
+
+Part1 selects general512-job/4096-request bounds plus cross-support lookahead at
+two endpoint workers. More workers are deferred; the separate EndpointBatchPass
+prototype is unchanged. Hardest-first was abandoned because available labels did
+not predict cost; no ahead-of-router project_compact or ALE/Step8 algorithm change
+is selected.
+
+The scheduler retains _weigh/_fits and MAX_BATCH_INPUT. Future supports contribute
+only logical cell ID, parent presence, constraint count and partition-path length.
+Noncompact lookahead uses the prepaid decode envelope; compact lookahead retains
+a real charged handle/support_fields and drops its temporary native support.
+
+- Read ahead while a session exists OR the current first-batch plan still asks
+  for offers (offered<_wanted). Session-open-only would deadlock first-batch formation.
+- Without a session, stop renewed read-ahead when the horizon is sated; below-
+  threshold/estimate-free work cannot eagerly scan the pass twice.
+- Remaining-work estimates combine current jobs and unread supports times observed
+  jobs/support; this is scheduling estimation, not changed geometry.
+- Bind support index and identifier; mismatch stops scheduling and leaves serial
+  continuation without adopting the wrong result.
+- Keep actual compact handles, prune passed memo entries, drop current/held
+  references on stop and close already-offered work before partition close.
+- Preserve request/adoption/checkpoint order, reservations, cancellation/failure
+  and bounded handle peaks. Session revocation on reservation shortage and one
+  failed job declining the remainder of a 512-job batch remain efficiency limits.
+
+The authentic detached proof has five arms:
+
+| Order/arm | Route | Required engagement |
+| --- | --- | --- |
+| 1 IV2 serial | Serial reference | None |
+| 2 IV2 w2 | Auto2, default 120-second minimum | started>0, adopted>0, refused=0 |
+| 3 IV1 serial | Serial reference | None |
+| 4 IV1 w2 | Auto2, default 120-second minimum | Equality only; legitimate serial allowed |
+| 5 IV1 w2-min30 | Auto2,30-second minimum | started>0, adopted>0, refused=0 |
+
+The retained harness supports full sets or shard 0/N in every arm; its smoke used
+shard 0/10. Header max_volume_error_m3/max_leaves and support-ID/index agreement
+remain binding. Existing exact stream widths are retained, not new tolerances:
+
+| Input | Numerator | Denominator |
+| --- | --- | --- |
+| IV1 | 0x2f00cbfcd7c08aad8918ab19af | 0x4e3bbe22f900000000000000000000000000000000000 |
+| IV2 | 0xef6aca6e197d9db2f69d62da0b | 0xc6ae51dc48000000000000000000000000000000000000 |
+
+Each arm needs positive record count, exact serial ordered list/hash of measure
+ID/canonical-record digest/met, same nonmissing package binding, no error and
+successful child exit. Started work alone does not prove simultaneous children.
+The default IV1 arm may remain serial; fallback cannot replace required engagement
+in IV2 or min30. A report followed by nonzero child exit must fail the complete
+wrapper, even if JSON looks acceptable; missing telemetry cannot become proof.
+The old wrapper-exit concern and fake-handle-only/mismatch-borrow gaps are
+historical scope limits, not a revived request after the accepted replay and
+real-partition/worker closure evidence below.
+
+Freeze source/harness/input identities and use new exclusive outputs. Runtime
+imports use cleaned seed 0/B/one-thread settings, not-I; pure helpers may isolate.
+Report actual gate/load, parent/child/RSS/session observations as samples, not
+continuous upper bounds. No15% hurdle exists. The old 402→217 s/91→57 s estimates
+remain projections, not the measured detached replay or successor interval result.
+The IV1 threshold/default decision belongs to its owner, separately from proof.
+
+## Deferred first-session retry (S4)
+
+The three scheduling transforms preserve parent order and adopted results:
+s4roll, s4sel and s4auto, with s4auto after wp18. They were excluded from q18's
+attributable WP18 proof runtime; their source availability is not default adoption
+or a new run request.
+
+On a momentary machine/ledger refusal before the first session, _open may return
+LATER before any session, funding or worker count exists. Schedule retries on its
+own clock after 15 s, doubling to a 120 s maximum, for at most24 deferrals; the 25th
+refusal stops with session not opened. Missing psutil is permanent and stops
+immediately. CPU, memory, budget and predicate hints may improve, but nothing is
+reserved; actual session/funding refusal returning None still stops immediately.
+
+Between retries advance returns before planning/offering/launching/holding work.
+The existing reached/hungry/horizon rules remain bounded; WP18 no-session
+lookahead offers only the last plan's remaining demand, never the full pass.
+A late open is an ordinary first session; retries stop mattering once it exists.
+Repeated same-gate refusals replace their latest note within the 8-note window.
+Ending mid-deferral retains stopped='session not opened' and refusal detail;
+late-open/no-launch can retain reason='session deferred' with stopped None.
+
+The bounded claim is at most25 probes, each about 50ms plus one plan and at least15s
+apart: roughly 1.75 s cost per affected pass, not a measured global overhead.
+The retry span is about 45 minutes, not a required wait or proof deadline.
+The old 125 s lost-opportunity figure is PROJECTED, with zero opportunity when
+first open succeeds. Any later authorised affected-pass measurement must record
+session-deferred reasons, open time, started batches and serial-relative wall.
+It is not owed as a new dispatch merely because this explanation moved.
+
+Retained evidence is six retry controls, fixed lower-priority review findings,
+no P0–P2 owner-review defect and no introduced lint finding. Scheduling invariance
+does not replace real compact lifetime/partition parity or imply no process-memory
+cost. The accepted header/worker evidence below remains separately scoped.
+
 ## Original private identities (provenance)
 
 | Private generation | Composition | Run manifest | Profile |
@@ -154,5 +252,3 @@ booking, the diagnostic and tests. Records and routing order are unchanged.
   released.
 
 The original receipts are unchanged.
-
-Anthropic Claude Code prepared this method record at the project owner's request.

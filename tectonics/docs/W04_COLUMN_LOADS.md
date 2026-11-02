@@ -115,12 +115,48 @@ platform-specific process/fork path; actual tests/timing here were on Windows.
 
 These were paper/documentation reviews, not external software installation,
 execution, code audits or cross-solver validation. No empirical data calibration
-is claimed. See [focused evidence and measured timing](../evidence/w04-loads.md).
+is claimed. See [focused evidence and measured timing](#obtained-evidence-22-september-2026).
 
-## Next, not silently completed
+## Assembled support routes
 
-The subsequent [W04 step-2 implementation](W04_WORKFLOW.md) now supplies actual
-stationary W01-W03 adapters and exclusive thermal/support ownership for the
-periodic uniform case. Non-periodic/domain-size treatment, variable rigidity and
-general assembled support verification remain subsequent steps. No full terrain
-or held R4.4 campaign was run.
+[W04 workflow](W04_WORKFLOW.md) owns actual stationary W01–W03 adapters and
+exclusive thermal/support ownership. [Finite regions](W04_FINITE_REGIONS.md)
+and [variable rigidity](W04_VARIABLE_RIGIDITY.md) describe the distinct supported
+boundary problems. Their combined qualification remains stationary planar 1D;
+no full terrain or held R4.4 campaign is established by this load kernel.
+
+## Obtained evidence, 22 September 2026
+
+The finite fixed-reference load kernel passed 29 focused Windows tests:
+nineteen load controls plus ten identity/reuse checks, 0.010/1.920 s. The initial
+cache development pass is not counted twice. Selection:
+test_w04_column_loads, test_w04_load_reuse and execution IdentityTests,
+Python 3.12.14/NumPy 2.4.6. No Linux/full-suite/held run claim.
+
+Independent synthetic SI witnesses check compaction with replacement-water
+inventory/replacement −0.8/+0.8 kg/m² (zero force), air-background −1.6 Pa,
+deposition replacing water +2.4 Pa/reversed erosion, finite-gap density +3.2 Pa,
+and three metres cooled five kelvin +0.24 Pa without inventory change.
+Fully occupied support ignores background changes. Independent absolute mass,
+zero/reversal/additivity/subdivision and compensated large opposing loads pass.
+Mismatch/shape/capacity/temperature/thermal-volume/double-count/underflow
+refusals, immutability, source/runtime, cancellation/admission and real cache
+invalidation remain. Review repaired intermediate underflow using checked
+products/quotients with Decimal-backed regressions rather than false zeros.
+
+[Raw load timings](../evidence/w04-load-timing.json) cover 65,536 columns/eight
+phases, three alternating repeats after warm-up, identical immutable snapshots.
+Independent scalar fsum 0.289386600023 s versus batch 0.008304700023 s saves
+0.281081900001 s (97.130240300726%). Shared input construction is separately
+0.027473299997 s; accounted workspace is 16,785,408 bytes, not RSS. Inventory/
+replacement accounts match exactly; maximum thermal/pressure differences
+2.84217e−14 kg/m²/3.63798e−12 Pa meet unchanged 2e−13 relative/2e−9 absolute
+comparison. Each arm repeats its own output bitwise. Entry:
+python -B tectonics/tools/benchmark_w04_loads.py --output NEW.json.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-loads.md) retains exact module/source
+identities, commands/static results and research pointers. This was a new
+same-kernel scalar/batch comparison without cache/workers, not old production or
+whole-generator gain. Thermal coverage is attested, not geometrically
+authenticated; subsequent actual-source/reservoir/owner/support assembly has its
+own acceptance, not supplied by this component result.

@@ -3,7 +3,7 @@
 22 September 2026. WORKING NON-CANON, local unreleased `remake` work.
 Implemented and optimised for the stationary, planar **1D** W01-W03 support
 projection. This extends [finite regions](W04_FINITE_REGIONS.md); it does not
-change the existing fast uniform-rigidity routes. Subsequent [combined acceptance](W04_COMBINED_ACCEPTANCE.md)
+change the existing fast uniform-rigidity routes. Subsequent [combined acceptance](W04_WORKFLOW.md#combined-supported-workflow-acceptance)
 passes the selected stationary 1D support workflow, not general terrain validation.
 
 ## Physical contract
@@ -160,7 +160,7 @@ Factor construction, retained ownership and response workspace use shared byte
 admission, composing explicit per-call budgets. `close()` releases factors. Crops
 are detached from halo buffers. Cancellation is checked between bounded mesh
 operations, not by interrupting a native Cholesky call. Accounted bytes are not a
-process RSS limit. See [focused checks and measured savings](../evidence/w04-variable-rigidity.md).
+process RSS limit. See [focused checks and measured savings](#obtained-evidence-22-september-2026).
 
 ## Papers and software reviewed before selection
 
@@ -186,3 +186,45 @@ process RSS limit. See [focused checks and measured savings](../evidence/w04-var
 
 These are paper/documentation reviews, not external gFlex execution, external
 source-code audits or measured superiority to another terrain generator.
+
+## Obtained evidence, 22 September 2026
+
+The fixed source-linked rigidity route passed 41 distinct focused Windows
+tests: eight variable-flexure (0.033 s), then five new workflow/six retained
+finite/thirteen periodic/nine identity controls (33 tests, 39.012 s). Selected
+test_w04_variable_flexure, test_w04_variable_workflow,
+test_w04_regional_workflow, test_w04_workflow and execution IdentityTests used
+Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1, one thread.
+
+Independent arbitrary-D equilibrium, two-material eight-coefficient continuum
+solution/curvature jump, uniform Green refinement, periodic translation/mean,
+reflection/exterior extension and same-D/different-Te strain check the conservative
+Hermite route. Actual W03 boundary/halo/owner/source joins, total-reference output,
+cache/restore parity, one-shot equivalence and lifetime/resource/refusal controls
+pass. Continuing variable D requires exact declared exterior loads; omitted-pressure
+uncertainty refuses. Mesh-change estimates and diagnostic third derivatives are
+not continuum certificates; no evolving-D/2D/field-calibrated feedback is implied.
+
+Review found slower curvature than displacement convergence. The default permits
+six refinements within existing element/resource limits, replacing four; the
+tight 1e−4 oracle explicitly permits seven, without widening accuracy gates.
+Even-subdivision centre traces now average both internal FE traces to preserve
+reflection, while genuine source/material interfaces stay one-sided. Far-load
+nonzero-underflow checks, construction/factor overlap admission, composed budgets
+and cancellation through fresh/cache/mesh paths were corrected.
+
+[Raw factor-reuse timings](../evidence/w04-variable-timing.json) compare twelve
+changing loads over 512 cells/400 km/three Te regions (1/2/4 km), three alternating
+repetitions. Both include cold preparation, refinement/validation/diagnostics/
+admission/output/close after the same native warm-up. Rebuild median
+0.039662400028 s versus retained profile 0.020635399967 s saves 0.019027000060 s
+(47.97238706%). Responses and mesh-gate metadata are bit-identical; accepted meshes
+have 2–8 subcells/cell. Maximum factor capacity is 1,352,512 bytes/accounted peak
+18,465,600, not RSS; all reservations release. Entry:
+python -B tectonics/tools/benchmark_w04_variable_rigidity.py --output NEW.json.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-variable-rigidity.md) retains exact
+source identities, static checks and reviewed gFlex/Hermite/Winkler/SciPy source
+extent. Unchanged uniform finite evidence was reused. No cache hits/workers/W03
+evolution/context are timed; no old-release/whole-world speed or Linux/scientific/
+empirical acceptance follows.

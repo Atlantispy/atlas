@@ -167,55 +167,12 @@
     {
       "path": "FINDINGS.md",
       "source_sha256": "0d0f05216ffb668f06a9e0b8bc2afe3afdf4549e7b9f4197afc3d9d3ef6990dc",
-      "public_sha256": "887423fd767131d5ec4619cadef4062d0d3d53cb7fab8b095caa251036f0d883",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; narrow UTF-8 punctuation repair of confirmed mojibake only (en dash, minus, right arrow, multiplication sign as present); numerical tokens and embedded source hashes unchanged; clarify original retained JSON digests versus LF publication copies without changing any quoted identity; document the actual opt-in existing-loader/profile/worker connection without changing historical evidence; clarify that reused completed review applies to the selected numerical sources",
+      "public_sha256": "a923a3d8d417a9bf77b4dc9cfe1c7bdc579b8214e6ae70084235c302c35f99f7",
+      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; narrow UTF-8 punctuation repair of confirmed mojibake only (en dash, minus, right arrow, multiplication sign as present); numerical tokens and embedded source hashes unchanged; clarify original retained JSON digests versus LF publication copies without changing any quoted identity; document the actual opt-in existing-loader/profile/worker connection without changing historical evidence; clarify that reused completed review applies to the selected numerical sources; consolidate six companion analysis narratives into maintained findings, preserving scientific scope and historical numerical results",
       "evidence_scope": "document transformation only; no numerical rerun or historical result repinning",
       "public_sha256_before_encoding_repair": "2cb326092fd12cf142f8207966dea9222dbeeb2725136146ce00c88d35427bbb",
       "public_sha256_before_runtime_integration": "714638e57110243ad250a0030f05a892661a273afe2000ed0e7c23f71392cc24",
       "public_sha256_before_guard_clarification": "c8b0b14bfd859b100c073c8c272e18da35e9a49b5cb957d01b7e9f2f653e906a"
-    },
-    {
-      "path": "wall-constraint-analysis.md",
-      "source_sha256": "f805dfee462c648c98cdf74b349a3cd0a99c7b1ea32704dadd5fdbe39c5adcfa",
-      "public_sha256": "56d886a100dc5991aaaabb06c9d3febd0336ca9211db94c578990b0efc008fe8",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
-    },
-    {
-      "path": "midpoint-value-analysis.md",
-      "source_sha256": "f3d058b4213d3838638cd7fcf0f003c061ae7dcd1dfad289e7f07f22886726a7",
-      "public_sha256": "b90c14e2e5649f4bf275cd38b61090297745812d53fdfa88a1c6af19d87a0f34",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; narrow UTF-8 punctuation repair of confirmed mojibake only (en dash, minus, right arrow, multiplication sign as present); numerical tokens and embedded source hashes unchanged",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning",
-      "public_sha256_before_encoding_repair": "126e735db528e72433d00fab72175634149515a1ad386556e610f8d732f8ee30"
-    },
-    {
-      "path": "cross-evaluator-analysis.md",
-      "source_sha256": "9a5e4ee652d9d1b851ec9534c0583a726098f2e66fe127442876903f14284026",
-      "public_sha256": "c6bebc5a7cfd64aee1c759b69e4c570ec1265fff01febb1b9ddf859b7278ee10",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
-    },
-    {
-      "path": "self-product-analysis.md",
-      "source_sha256": "288779b53b485fdfea62f077b879d35796f335cc60954f3552fae1e356c76fd2",
-      "public_sha256": "e4a447f5a92c4ffe111607d5176066cd5791801e3ba941577f8d5507a7f6a5ec",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
-    },
-    {
-      "path": "chart-preparation-analysis.md",
-      "source_sha256": "eae25dedb7a764cb4223287e582a657c459b668b5c16c5c4865b2b16bc121f82",
-      "public_sha256": "0575faf08dc90f903b7a71a328c60ede49b94a84ebad2137700d33927b8b3a7d",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; clarify original retained JSON digests versus LF publication copies without changing any quoted identity",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
-    },
-    {
-      "path": "chart-point-analysis.md",
-      "source_sha256": "38e7f66cb12e5fbf4896abf1c69df2ed4b32c024b8aebbcb79b17d7d1edf00ae",
-      "public_sha256": "7af422d967e1024345a0b1a318cb9dc86fd9f627aff092c5e0d616fda9deac2a",
-      "transform": "public historical copy: remove private paths/coordination; FINDINGS additionally reconciles actual receiving selection and measured limits; clarify original retained JSON digests versus LF publication copies without changing any quoted identity",
-      "evidence_scope": "document transformation only; no numerical rerun or historical result repinning"
     }
   ]
 }

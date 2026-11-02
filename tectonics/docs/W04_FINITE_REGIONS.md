@@ -110,7 +110,7 @@ work auto-bypass. Its identity is distinct from periodic flexure and includes
 geometry, physical boundaries, materials and all load bytes, including far fields.
 W04 additionally binds exterior sources and bounds. W03 restoration plus
 reconstructed exterior inputs reproduces results and IDs. No old seal is repinned.
-See [checks and timings](../evidence/w04-finite-regions.md).
+See [checks and timings](#obtained-evidence-22-september-2026).
 
 ## Papers and software checked before selection
 
@@ -130,3 +130,46 @@ See [checks and timings](../evidence/w04-finite-regions.md).
 Paper/documentation reviews only: no external gFlex execution or source-code
 audit. Independent quadrature and closed-form controls provide numerical evidence,
 not field calibration or full terrain realism acceptance.
+
+## Obtained evidence, 22 September 2026
+
+The uniform-D/K stationary planar 1D finite-region route passed 39 distinct
+focused Windows tests: eleven independent finite controls, six real W03 regional
+joins, thirteen retained periodic and nine shared identity checks. After final
+finite/exterior fixes, all seventeen affected new-route tests passed in 11.494 s;
+the unchanged 22 retained results were reused. Selection:
+test_w04_finite_region, test_w04_regional_workflow, test_w04_workflow and
+test_execution_reuse.IdentityTests, with declared scientific dependencies/one
+thread. No Linux/full-suite/long-run evidence is inferred.
+
+Independent Green quadrature, rectangular/forebulge response, direct cell sums,
+half-lines, subdivision/crop enlargement/translation, omitted-strip bounds,
+free/mixed/clamped ends and range/resource/cancellation/refusal/restart controls
+check the stated continuum problem. Actual source/halo/thermal continuation,
+closed-water/owner/epoch/datum and total-reference identities remain active.
+Physical ends require declared boundaries; arbitrary tractions, short ill-conditioned
+bases, variable rigidity, 2D/spherical support and subcell-extrema certification
+were not qualified by this increment.
+
+Review fixed a returned interior view retaining the full halo beyond its charged
+lifetime: output now detaches while both buffers are admitted, with bounded
+exterior hashing. Safe scaling also prevents q/(2K) silently vanishing at extreme
+finite K; q=K=1e308 gives the independent 0.5 m half-line displacement.
+
+[Raw finite timings](../evidence/w04-finite-timing.json) compare 2,048 cells/400 km,
+twelve solves/repetition and three alternating pairs, signed synthetic loads.
+Both use the same cell-integrated kernel, all centre/face displacements plus
+three derivatives, validation/admission/immutable outputs. Direct superposition
+0.101421499974 s versus prepared linear FFT 0.010749100009 s saves
+0.090672399965 s (89.40155686%) per twelve solves; setup is separately
+0.001285999897/0.001994500053 s and transform storage 524,352 bytes. Largest
+displacement difference is 1.82146e−17 m; derivatives meet unchanged
+5e−13 × per-component max response. The first harness tolerance-format error was
+fixed to the same explicit inequality, without changing the gate. Entry:
+python -B tectonics/tools/benchmark_w04_finite_region.py --output NEW.json.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-finite-regions.md) retains exact
+identities/static checks and reviewed gFlex/SciPy documentation. These are new
+kernel algorithm measurements, not old-release/whole-generator gains, empirical
+validation or external gFlex execution; W03 evolution/context and workers/cache
+hits are outside timing.

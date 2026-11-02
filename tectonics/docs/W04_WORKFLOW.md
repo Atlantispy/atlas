@@ -4,7 +4,7 @@
 This joins the supported stationary W01/W02/W03 column workflow to **uniform,
 periodic, linear flexure**. It produces an immutable displacement/surface-change
 projection; it does not deform the W03 material/thermal mesh or close a nonlinear
-hydrology/erosion feedback loop. Subsequent [combined W04 acceptance](W04_COMBINED_ACCEPTANCE.md)
+hydrology/erosion feedback loop. Subsequent [combined W04 acceptance](#combined-supported-workflow-acceptance)
 passes the selected stationary 1D support workflow, not general terrain validation.
 
 [Step 3](W04_FINITE_REGIONS.md) extends this bridge with explicit finite 1D
@@ -126,7 +126,7 @@ continuous `k^4` spectral operator or independently tiled regions. Output slope,
 bending strain and W03 fixed-plate deflection bounds must all pass. These guards
 do not replace checking the thin-plate approximation against an intended use case.
 Step 3 supplies bounded non-periodic and domain-size treatment; [step 4](W04_VARIABLE_RIGIDITY.md)
-adds fixed variable rigidity. The later [assembled acceptance](W04_COMBINED_ACCEPTANCE.md)
+adds fixed variable rigidity. The later [assembled acceptance](#combined-supported-workflow-acceptance)
 checks these alternatives without claiming broader terrain validation.
 
 ## Efficient use, caching and recovery
@@ -156,7 +156,7 @@ W04 is a derived projection rather than a new evolving material store. Existing
 W03 save/restore preserves its actual inputs under unchanged source identity;
 reconstruct the explicit surface inputs and prepared projection after restoration.
 No old checkpoint is repinned, and no second history/cache system is introduced.
-See [verification and timings](../evidence/w04-workflow.md).
+See [verification and timings](#obtained-workflow-and-combined-evidence-22-september-2026).
 
 ## Papers and software checked
 
@@ -172,3 +172,101 @@ These are paper/documentation reviews, not execution or source audits of either
 external package. Local W01-W03, finite-plate integration and FFT support source
 were reviewed directly. Independent analytical controls are not field calibration
 or external cross-solver acceptance, and do not establish finished terrain realism.
+
+## Combined supported-workflow acceptance
+
+The 22 September 2026 gate is **PASS_SUPPORTED_STATIONARY_PLANAR_1D_W04** for
+the selected stationary planar 1D W01–W03 route. The original
+[machine result](../evidence/w04-acceptance.json) and
+[obtained evidence](#obtained-workflow-and-combined-evidence-22-september-2026) retain their source scope;
+this does not accept whole-world terrain, geological calibration or other stages.
+
+`python -I -B tectonics/verify.py --w04`, with declared scientific dependencies
+and one BLAS/OMP thread, selects eight reviewed groups: physical reference loads
+(19 tests), uniform periodic support (10), uniform finite support (11), variable
+rigidity (8), combined workflow (4), verified load reuse (1), source/geometry/
+ownership/validity guards (6), and status contract (3). Missing, empty, failed,
+skipped or drifting selections cannot pass; no full-suite fallback is used.
+
+The combined control uses authenticated W03 initial columns, cooling and prescribed
+drained compaction, then partial rebound and more cooling. Expelled/reabsorbed
+water is booked and placed once; zero-total redistribution and additional pressure
+are explicit. Independent depth-cell thermal integration and inventory accounts
+check the load, without changing source grains/states. The same sequence covers
+uniform/variable rigidity under periodic, continuing and mixed free/clamped ends.
+The continuing case has two left/one right halo cells and explicit constant-load/
+material half-lines. Different boundaries define different physical problems.
+
+Reference shifts establish interval additivity without accumulating prior totals;
+W03 restore/rebound and rebuilt/cached W04 projections retain exact bytes/IDs.
+Variable-D strain checks apply on cache hits using cropped local Te, including
+the mesh-change margin. Rigidity stays positive and fixed, with positive constant
+restoring K; elastic thickness is not inferred from thermal/crustal thickness.
+No moving plate, 2D/spherical support, yielding, viscoelasticity or evolving D is
+qualified. Periodic discrete, uniform finite continuum and variable weak-form
+representations need no finite-resolution identity across different equations.
+Continuing variable D requires declared exterior loads and refuses omitted-pressure
+uncertainty; uniform exterior bounds remain conditional. Mesh-change estimates
+are not rigorous continuum-error certificates; variable FE one-sided strain/
+extrema, sampled uniform finite validity and diagnostic third derivatives retain
+their separate scope. Prescribed drained W03 traction is distinct from W04
+external pressure; shoreline, erosion and mesh/heat feedback remain absent.
+
+The first longer-cooling fixture correctly refused on strain. Only its cooling
+interval was shortened; original limits/tolerances were unchanged. This step
+added qualification, not production-solver optimisation, and claimed no solver/
+whole-generator speedup or empirical validation. The
+[original assessment](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/W04_COMBINED_ACCEPTANCE.md)
+retains exact gate descriptions and consulted gFlex sections (Wickert 2016,
+2.1, 2.4–2.5, 3.2; numerical-accuracy documentation). Those informed matching
+equations, loads and boundaries, without importing external grid rules, signs
+or tolerances. Neither gFlex nor a field comparison was run.
+
+## Obtained workflow and combined evidence, 22 September 2026
+
+The original periodic bridge passed **43 distinct focused tests**: thirteen workflow
+and thirty load/identity/affected-W03 controls, 13.737/5.348 s. A targeted cleanup
+rerun was already among those thirteen, not a 44th check. Actual source joins,
+closed-water zero force, sinusoidal response/translation, independently integrated
+thermal pressure, compaction/reservoir redistribution, uniform pressure, shifted
+reference, masks/immutability/validity/source refusals and exact restored result
+IDs were assessed. Failed context-manager entry initially retained resources;
+cleanup was hardened. Its test then correctly encountered changed-callable refusal
+during close rather than the guessed entry message; release passed without
+weakening the source guard.
+
+The [workflow timing record](../evidence/w04-workflow-timing.json) compares four
+actual W03 snapshots over 128 columns on a 100 km × 1 km synthetic profile, three
+alternating repetitions after warm comparison. Both include W04 setup/close and
+exclude the same 4.137581199990 s source/surface-input preparation. Separate
+one-shot preparations took median 3.123138900031 s; shared preparation
+1.681624000077 s, saving 1.441514899954 s (46.155965075384%), with bit-identical
+outputs/provenance. Source/load/thermal/FFT/mask/validity work remains; no cache
+hits, workers or skipped snapshots create this gain. Entry:
+`python -B tectonics/tools/benchmark_w04_workflow.py --output NEW.json`.
+This is same-implementation reuse, not an old shipped stage or whole-generator gain.
+
+The later explicit `python -I -B tectonics/verify.py --w04` passed **62 tests in
+51.7190680000931 s**, no failures/errors/skips, with identical before/after source
+inventory. Gate counts were 19 load, ten periodic, eleven finite, eight variable,
+four assembled, one reuse, six validity/source and three status. An independent
+review added cache-hit strain coverage using cropped local Te/mesh-change margin,
+distinct from the placeholder policy Te; it found an evidence gap, not a bad
+solver. Three new W04 and three retained W01 profile tests passed separately.
+
+The first combined run correctly refused its uniform mixed-edge snapshot:
+strain 0.012010364704435138 exceeded unchanged 0.01, while slope 0.015213242362989914
+was below 0.1. Fixture cooling intervals changed 1e6/2e6 → 1e5/2e5 s, preserving
+compaction stresses, spatial loads, physical limits and assertion tolerances.
+This is prescribed drained accounting, not calibrated consolidation time. No
+production solver module changed in that acceptance step. Earlier variable-factor
+timing (47.97238706% setup reuse) remained bound to unchanged code and was reused,
+not rerun or added to an end-to-end percentage.
+
+The [full workflow report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-workflow.md)
+and [combined report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-acceptance.md)
+retain exact selected tests, module/verifier/case/result identities, static checks
+and reviewed-source extent. Windows/Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1 with
+one native thread was used. No Linux, full suite, full terrain, R4.4, publication,
+external gFlex, empirical or whole-world acceptance is supplied by these results.
+The machine result remains the original observation; no checkpoint was repinned.

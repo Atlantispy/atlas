@@ -125,4 +125,4 @@ Runner integration follows the accepted proof and Geometry/code-owner review. Re
 - [ ] Actual elapsed time, adoption and measured tree peak versus booking, including any overrun or gate caveat, are reported through the existing owner/coordinator process.
 - [ ] Runner and Geometry complete the required integration handoff and shared pressure/admission composition; any assembly disposition is explicitly recorded as a separate state.
 
-Related work: [Plan 07: pressure proof](plan-07-pressure-p1-p3-assessment.md), [Plan 02: by-need start gate](plan-02-start-gate.md), and Codex's Plan 09 source assessment (private evidence unavailable in this public snapshot). Frozen independent reviews remain unchanged.
+Related work: [Plan 07: pressure proof](plan-07-pressure-p1-p3-assessment.md), [Plan 02: by-need start gate](../workbench/plan02/README.md), and Codex's Plan 09 source assessment (private evidence unavailable in this public snapshot). Frozen independent reviews remain unchanged.

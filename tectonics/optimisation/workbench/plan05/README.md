@@ -47,6 +47,46 @@ The relative launcher/backend layout is preserved. The [writer contract](integra
 and [consumer contract](integrated-r13/consumer-repair/CONTRACT.md) describe their
 distinct boundaries.
 
+## Physical correspondence and diagnostic history
+
+Input comparison precedes solver attribution. The first authentic q31 pair
+matched all five binary64 arrays under a complete 236-cell map and a separate
+832-face/incidence/orientation map, but exact cell-account differences occupied
+236/235/236/235 rows and 593 paired-face energies differed. Independent exact
+replay established finite-arithmetic row-order dependence, not mere encoding.
+The repair preserves physical inputs, public metric identities, face order,
+equations, tolerance and native identity checks.
+
+The four cell families are exact_cell_storage_residual_j,
+exact_corrected_enthalpy_j, exact_retained_solver_residual_j and
+exact_stock_projection_residual_j; exact_paired_face_energy_j is separate.
+All agree in corrected q32 along with both ledgers, arrays and required scalars.
+Its 5,122 metadata leaves comprise 4,862 mapped and 260 other leaves. The 208
+actual difference dispositions are 199 provenance, six resource and three header
+entries, each tied to its precise evidence entry. This does not assert every
+metadata byte is equal or establish a universal physical crosswalk.
+
+| Single diagnostic pair | Both-arm wall time | Sampled controller/owned peak | Queue peak | Retained bytes |
+| --- | ---: | ---: | ---: | ---: |
+| q31: reproduced defect | 149.266 s | 1,109,262,336 B | 1.04 GiB | 17,300,771 |
+| q32: physical-order repair | 168.359 s | 1,122,922,496 B | 1.05 GiB | 29,012,400 |
+
+These are single diagnostic pairs, not ABBA evidence or a speed gain. A 2.03-GiB
+booking combined the matching-command 1.03-GiB observed baseline and an estimated
+1-GiB capture/order allowance, giving a 4.436-GiB admission gate; the extra allowance
+was an estimate, not a measured upper bound. q32 used six workers on both calls
+without fallback/leaks and with complete process/log finality.
+
+Original aggregate/observer failures, q29 admission refusal, q30 invalid worker
+environment, q31 arithmetic failure and initial consumer test-environment failure
+remain historical. The original verifier's nonzero q32 linkage verdict and queue
+classification remain intact. Later scoped correctness acceptance, separate run
+authority and the completed successor on q22 are
+[recorded separately](../plans10-12/README.md#q22-correctness-and-execution).
+The launcher binds that proof, full input/source closure, dispositions, finality,
+both prediction histories and authentic schedule; admission precedes producer
+import and every child. None of this authorises a new capture or q22 repeat.
+
 ## Publication and dependencies
 
 [SOURCE-MAP.json](SOURCE-MAP.json) records all 27 Python source files and five
@@ -85,7 +125,7 @@ not an ABBA speed comparison or a heap bound. No speed improvement is claimed.
 The retained results above describe the checkpoint before scoped acceptance
 and q22 release. Their PENDING/HELD fields are historical. The successor
 consumer subsequently bound the actual proof, dispositions and separate run
-authority. [Plan12](../../plans/plan-12-heat-q22-abba.md) records the accepted
+authority. [The q22 decision and execution](../plans10-12/README.md#q22-correctness-and-execution) records the accepted
 lf3/lh scope, decision identities and completed execution on the same q22
 ticket. This does not rewrite q10 FAIL, q32 NOT_REPRODUCED or the verifier
 exit 1, and supplies no general equivalence proof or permission to rerun.

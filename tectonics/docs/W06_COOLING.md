@@ -4,7 +4,7 @@ Status: **WORKING NON-CANON; scoped implementation and numerical checks pass**,
 22 September 2026. The [Step 1 design](W06_SPREADING.md) remains frozen. This
 increment extends [constant prescribed birth/spreading](W06_BIRTH.md); it does
 not advance to Step 4 changing histories or Step 5 durable combined workflow.
-See [checks and measured timings](../evidence/w06-cooling.md).
+See [retained numerical evidence](#retained-numerical-evidence).
 
 ## Physical model and accounting
 
@@ -133,6 +133,49 @@ an older production cooling adapter, which did not exist. Separately, the protec
 4000-cell, four-output sequence including setup takes 0.5856365 seconds. Prepared
 margin reuse reduces three-output elapsed time from 0.6438855 to 0.3106270 seconds
 (51.76%). None is a whole-generator speed claim.
+
+## Retained numerical evidence
+
+The 22 September 2026 Windows/Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1 evidence
+contains 30 focused passing checks plus nine shared identity checks, using one
+numerical thread. This is combined source-bound coverage across scoped runs,
+not a new all-at-once full regression.
+
+The independent ocean reference imports no production thermal routines: scalar
+image/Fourier temperature, adaptive depth/age integrals and separate birth-time
+resident/export enthalpy; exported parcels stop cooling at exit. Tightened
+quadrature challenges resolution. The margin reference independently integrates
+initial-profile sine coefficients/depth means. Coverage includes all occupied crop
+cells/centres at 1000/500/250 m, four main/partial outputs, true exit ages, ridge
+migration, 32/64/128 equality, finite stocks, oldest-parcel validity and whole-history
+water/temperature/deflection limits, unknown cooling history/nonzero epoch and caps.
+
+Two initial reference/fixture failures remain visible:
+
+- the thermal reference missed a shallow diffusion tail; geometric diffusion-scale
+  cuts resolved it, with production and frozen tolerances unchanged;
+- a 3.41e-13 K margin reference-rounding difference exceeded a 3e-13 K test-only
+  allowance, corrected to 1e-11 K. The frozen 1e-3 K acceptance threshold was unchanged.
+
+The affected methods were rerun, not relabelled as a clean original batch or
+used to weaken scientific gates. Ordinary command-discovery mistakes created
+no production/result change.
+
+[Ocean raw timing](../evidence/w06-cooling-timing.json) and
+[margin timing](../evidence/w06-margin-timing.json) retain the distinct three-
+repetition scopes described above. Ocean preparation is excluded only from the
+matched 256-cell comparison, not the separate 4000-cell sequence; both regenerate
+matched fields/accounts without saved-result lookup. Margin comparison includes
+new contexts/preparation and preserves IDs/means/heat for nine compared outputs,
+excluding imports/fixture/equality work.
+
+Maximum matched ocean differences were 1.137e-12 K phase temperature,
+4.406e-13 m support, 1.194e-16 normalised heat and 1.193e-7 m3 water; production
+heat closure was -1.869e-17 normalised. These are synthetic numerical differences,
+not physical accuracy. Accounted peak 35,223,008 B under 128 MiB, including 16 MiB
+caller allowance, closed at zero; it is not process RSS. No process pool, weakened
+source protection, new dependency or external geodynamic execution was used.
+This Windows evidence is not a Linux qualification.
 
 ## Research and software actually checked
 

@@ -49,40 +49,20 @@ Three generated-world realism problems have been identified:
 
 The saved boundary correction is a **prototype**, not completed integration. The tracked [new_world_boundary.py](../tectonics/tools/new_world_boundary.py) contains coalescing and area-constrained spherical smoothing, but its existence alone does not establish that generation uses it or that it passes final acceptance.
 
-The recent external review also reports stale evidence bindings, signed-zero/digest and bundle issues, an approaching source-inventory limit and public-path leakage. These are **reported findings to reconcile against the checkout**, not newly verified results of this roadmap. Old evidence may remain valid for its original source version while being unsuitable for a claim about current code.
+Delivery and outstanding review findings belong in [current state](CURRENT_STATE.md).
+The [evidence guide](CURRENT_EVIDENCE.md) distinguishes current bindings from
+historical results; a result can remain valid for its original source version
+without supporting a claim about today's code.
 
 ## 4. Phase A — make the repository and its evidence dependable
 
-26 September checkpoint: **A1's first repair batch and A2-A4 are implemented and checked**;
-see [repairs and exact verification scope](../tectonics/docs/REVIEW_REPAIRS_2026-09-26.md).
-W12 export/surface-policy defects, digest consistency and bundle inspection/staging
-are corrected. Fresh Step 7 evidence replaces the stale current-code claim;
-old physical measurements remain historical. [A2's checker and bounded register](CURRENT_EVIDENCE.md)
-are integrated, including classification of the native-source change and older
-integration observations. **A5's Windows environment record and metadata checker
-are integrated; A6's documentation consolidation is implemented.** The
-[environment guide](TECTONICS_ENVIRONMENT.md) records 39 exact versions with
-tested/installed status. Claude's clean Windows installation is reviewed and
-integrated: all 39 pins install, dependency/metadata checks and ten environment
-tests pass, and compiled-library/basic rendering smoke checks succeed. An Atlas
-visual workflow, Linux and Python 3.13 remain unverified by this record. The single
-[current summary](CURRENT_STATE.md) replaces the accumulated status log and records
-the next action, without another dated archive copy. A5 and A6 do not change
-scientific code or renew scientific acceptance. This does not complete all Phase A or the tectonics realism
-programme.
-
-A3 raises the source-file ceiling from 128 to 512 with complete capture and the
-existing 2 MiB inventory bound retained; 22 focused checks pass. This changes the
-native source identity, so the first-batch Step 7 r2/bundle r2 receipts now describe
-that prior snapshot, not exact-current-source acceptance. Keep their original
-bindings; do not rerun physical campaigns solely for this capacity policy.
-
-A4 redacts 13 personal path components in three W07 historical reports, retains
-original/public digest provenance, updates only affected publication references,
-and adds a read-only regression guard. Original scientific bindings and all
-numerical results remain unchanged; Git history is not rewritten.
-
-Resolve blocking correctness and evidence issues before producing new acceptance claims. Keep this bounded; it is not a new global infrastructure project.
+The table defines Phase A's obligations. Consult [current state](CURRENT_STATE.md)
+for their delivery and the [evidence guide](CURRENT_EVIDENCE.md) for the retained
+repair results, publication digest trails and source-capacity consequences.
+[Environment qualification](TECTONICS_ENVIRONMENT.md) owns platform and install
+coverage. Resolve blocking correctness and evidence issues before producing new
+acceptance claims; completed repairs do not require another campaign merely to
+refresh this roadmap.
 
 | Priority | Work | Completion condition |
 | --- | --- | --- |
@@ -101,17 +81,15 @@ Order: establish comparable measurements; finish boundary correction; improve st
 
 ### B1. Establish one comparable realism assessment
 
-**Implemented checkpoint, 26 September 2026:** the supplied tool is reviewed and
-integrated, with focused controls and one original/prototype/development-reference
-comparison. See [method and results](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1).
-It retains the registered 100/250/500 km series; no 400 km result is implied.
-The prototype uses the saved original rotations, not a successor motion fit.
+The [boundary-diagnostic method](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1)
+owns the recorded original/prototype/reference comparison and its limitations.
 Multi-seed successor checks, applicable outline/reflex gates and loop-phase
-sensitivity remain acceptance work after B2, not completed by this baseline.
+sensitivity remain acceptance work after B2. The retained prototype uses saved
+original rotations; it does not qualify a successor motion fit.
 
 Use the same method for the original generator, the candidate and the shipped PB2002 reference. Review the offered measurement-tool patch before writing another tool.
 
-- Predeclare physical sampling lengths. Suggested comparison scales are 100, 250 and 400 km; retain any existing 500 km baseline as a separately identified series. Never compare different scales as though they were equivalent.
+- Predeclare physical sampling lengths. The retained comparison uses 100, 250 and 500 km; the earlier suggested 400 km scale is not a recorded result. Any changed scale needs a separately identified series. Never compare different scales as though they were equivalent.
 - Define boundary-chain traversal, junction exclusion, closed loops, short chains, resampling phase, weighting and reference coverage consistently. Do not double-count the two sides of a boundary.
 - Report mean, median and distributions of bend angles, plus the existing reflex-turning diagnostic where its definition is applicable.
 - Count raw normal-motion sign changes per 1,000 km separately from transitions between opening-dominated and shortening-dominated stretches. Declare any obliquity classification in advance and retain the continuous normal/shear components.

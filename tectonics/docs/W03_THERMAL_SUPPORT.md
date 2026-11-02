@@ -150,8 +150,47 @@ dependency or historical checkpoint repin is introduced.
 
 The mathematics is independently implemented; no upstream software code was
 copied. External-package runtimes are not claimed. See
-[focused checks and paired timings](../evidence/w03-thermal-support.md).
+[focused checks and paired timings](#obtained-evidence-22-september-2026).
 
 Solid-conserving drained compaction/rebound with changing column area is now
-implemented in [increment 3](W03_COMPACTION.md). Next: assembled W01/W02/W03
-acceptance. No long R4.4 or whole-world run was performed.
+implemented in [increment 3](W03_COMPACTION.md). Assembled W01/W02/W03
+qualification is described in [the workflow owner](W03_WORKFLOW.md). No long R4.4 or whole-world run was performed.
+
+## Obtained evidence, 22 September 2026
+
+The homogeneous constant-property first-order local-compensation component passed
+77 selected checks across retained runs: 76 in the 77-test run (6.448 s), followed
+by the one repaired fixture in 0.003 s. That fixture omitted a required second
+cooling history; no production calculation failed or unrelated test rerun was
+hidden. The selection covered plate integrals/support/cooling, thermochemical
+consistency and execution identity/cache controls in Windows Python 3.12.14,
+NumPy 2.4.6/SciPy 1.17.1, one thread.
+
+Independent 1,000-mode integrals, partitioned true means, young/mature/adjacent-age
+limits, SI/range/zero-expansivity/reversed-sign cases, fsum joins and constant
+cooling establish the stated model. Owner/material/history/epoch/datum,
+internal-heating, small-deflection and unknown-input refusals remain. Reference
+is the selected model at the declared time, not an assertion that it equals
+authored W01 temperature. Boussinesq sheet anomaly is a load diagnostic, not an
+evolving mass inventory; outputs neither mutate elevation nor accumulate support.
+
+Cache tuple/list metadata was canonicalised consistently before persistence and
+comparison. Review also repaired false-zero paths: weighted-temperature underflow
+before scaling and distinct epochs collapsing to equal ages against ancient
+starts now refuse. Conservative leading-transient underflow remains documented;
+no physical minimum age or tolerance was invented.
+
+[Raw support comparison](../evidence/w03-support-timing.json) uses 2,048 columns,
+256 sampled true means, warm-up and three alternating pairs. Sampled depth
+integration 45.518000 ms versus direct integral 0.934000 ms saves 44.584000 ms
+(97.948064%); unchanged reference temperatures are reused in the sampled arm.
+Maximum sheet/pressure/displacement differences are 1.86265e−9 kg/m²,
+1.49012e−8 Pa and 9.09495e−13 m, within the unchanged combined relative/absolute
+rule. Entry: python -B tectonics/tools/benchmark_w03_support.py. This removes
+sampling for the same model, not physical accuracy, and measures neither an old
+production stage nor whole-generator/ASPECT/gFlex performance.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w03-thermal-support.md) retains exact
+selections, hashes, static results and reviewed Parsons/Sclater, gFlex and ASPECT
+source extent. No external simulator, Linux, full-world, deformable/layered
+thermal model or empirical calibration was established.

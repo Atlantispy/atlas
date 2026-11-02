@@ -57,7 +57,7 @@ identities refuse rather than being repinned. Loaded callable/default/constant
 and runtime checks remain, including the two new shortening modules.
 
 At this W08 checkpoint the 128-file membership limit stayed fixed; the later
-[A3 repair](REVIEW_REPAIRS_2026-09-26.md#a3-follow-on-bounded-source-inventory-capacity)
+[A3 repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
 raises it to 512 without changing the 2 MiB bound. That bound applies to the
 complete encoded inventory, not raw source text; this is a representation change,
 not a claim that the former raw-text limit still applies. A single 64 KiB buffer

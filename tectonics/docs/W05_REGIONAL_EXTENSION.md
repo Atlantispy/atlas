@@ -332,12 +332,12 @@ Step 1 delivered the selected mechanism, equations, boundary/ownership decisions
 synthetic challenge, independent-reference design and efficiency choices.
 **Step 2 is now implemented and checked:** conservative prescribed motion,
 cell-mean thinning, stationary footwall, cohort history and finite-domain exports.
-See [the motion evidence](../evidence/w05-motion.md). **Step 3 is now implemented
+See [the retained motion evidence](#retained-component-evidence). **Step 3 is now implemented
 and component-verified:** load/support coupling and true cell-mean geometry;
-see [support evidence](../evidence/w05-support.md). **Step 4 recoverable optimised
-workflow is now complete:** [workflow evidence](../evidence/w05-workflow.md).
+see [support evidence](#retained-component-evidence). **Step 4 recoverable optimised
+workflow is now complete:** [workflow evidence](#retained-recovery-and-measurements).
 **Step 5 combined acceptance now passes the selected dry prescribed 1D workflow:**
-[acceptance design](W05_COMBINED_ACCEPTANCE.md) and [measured evidence](../evidence/w05-acceptance.md).
+[acceptance design](#combined-acceptance-contract) and [measured evidence](#retained-combined-acceptance-evidence).
 The five-step numerical sequence and separate empirical challenge plan are complete;
 the actual empirical comparison awaits independently bound analogue/support data.
 Existing W01/R4.4 holds are unchanged. No later workstream is automatically started.
@@ -503,5 +503,168 @@ fine-grid support error including quadrature uncertainty is 1.0164 mm against th
 smooth reference. Production equations and frozen thresholds were unchanged.
 The final [JSON](../evidence/w05-acceptance.json) records every case and source hash.
 Existing matched timing was reused after source checks, not measured again.
-The [combined acceptance design](W05_COMBINED_ACCEPTANCE.md) records the exact
+The [combined acceptance design](#combined-acceptance-contract) records the exact
 claim, analogue challenge plan and papers/software actually checked this step.
+
+### Retained component evidence
+
+These 22 September 2026 Windows 11/Python 3.12.14/NumPy 2.4.6 observations used one
+numerical thread (SciPy 1.17.1 for independent references). They qualify the frozen
+dry/isothermal/constant-density planar 1D, uniform-rigidity prescribed mechanism,
+not empirical terrain, arbitrary stratigraphy, force-selected faults or R4.4.
+
+Motion's 800/1600/3200-cell independent crop errors were 3.638e-12 m at each grid,
+finest relative L1 8.616e-17; global integral error <= 5.457e-12 m. The 0.25/0.75
+cohorts exported -2,499,999.999900741/-7,499,999.999702223 m2 on the right with zero
+left inflow and maximum 2.310e-7 m2 residual within unchanged W02 allowances.
+64/128-output continuation was bit-identical and enlarged-domain common crop
+difference zero. The explicit MUSCL diagnostic's 24.5848 m edge error failed the
+10 m gate and is excluded from matched-quality speed claims. Nine production,
+two independent-reference and nine identity controls passed; the initial cache
+fixture was corrected to fund existing SQLite residency, not weaken admission.
+
+Support uses rho_m*g with no duplicate Airy/mantle load or accumulated total w.
+Its reference is independent continuum Green quadrature with front/load splits,
+nested target-cell integration and bounded omitted tails; estimates are not
+interval proofs. At 500/250/125 m, sampled point/mean errors were respectively
+0.016208160/0.016152466 m, 0.004051992/0.004045824 m and
+0.001012995/0.001012273 m (84 points/nine means each). These sampled comparisons
+are distinct from full-crop combined acceptance below. All 3200 same-load direct/
+FFT means differed by at most 8.527e-14 m; enlarged-domain surface difference was
+6.599e-13 m. Nonzero omitted-load w bound 2.382e-8 m and derivative bounds stay visible;
+tail underflow cannot establish exact zero or permit the front outside its window.
+The 125 m continuous validity bounds included |w| <= 210.062996 m, slope <= 0.007716859,
+strain <= 0.001997166, including exterior/inter-sample uncertainty.
+
+Nine support tests, three reference controls and 18 affected motion/identity
+regressions passed. The Hc0 = 1e12 m case proves arithmetic preservation of small
+moving loads against a large fixed baseline, not a supported planetary geology.
+[Motion raw samples](../evidence/w05-motion-timing.json) retain 99.0434% analytical-
+kernel saving against scalar quadrature and 8.6130% native-reduction sequence saving
+excluding setup; setup reverses this short comparison (0.4237254 → 0.4812860 s).
+[Support samples](../evidence/w05-support-timing.json) retain direct/FFT
+0.0138066 → 0.0016364 s and setup-inclusive three-output 0.5016300 → 0.3770274 s
+(24.8395% less). Prepared operator arrays total 1,179,728 B with higher conservative
+admission. These are bounded method comparisons, not release/world benchmarks.
+Existing Landlab/Clawpack/gFlex references above were read, not executed; no new
+paper or external simulator run is claimed.
+
+### Retained recovery and measurements
+
+Seven compact-workflow controls passed, plus nine shared identity controls:
+exact requested outputs/cold/warm/partial continuation, zero solver calls on a
+completed hit, in-transaction cancellation/rollback, corruption/missing outputs,
+schema/source/schedule refusal, budgets/lifetimes and live-code invalidation.
+Only the compact layout's affected checks were rerun; no physical sweep followed.
+SQLite DELETE/FULL durability was retained. Rollback used an injected transaction
+exception, not a power-cut/network/sync guarantee; use existing backup APIs.
+
+The [original workflow timing](../evidence/w05-workflow-timing.json) retains three
+setup-inclusive repetitions on 3200 cells / two cohorts / 250, 500, 1000 m outputs:
+no-store 0.767235100 s, first durable 0.857438100 s, warm reopen 0.365163300 s,
+partial continuation 0.757400200 s. Warm means fresh SQLite connection, not OS cache
+flush. First-output seed 0.458186700 s is excluded from the partial figure; paired
+seed+resume 1.216164700 s exceeds uninterrupted calculation by 58.5127%, so tiny-run
+interruption is not cheaper overall. First publication overhead is real.
+
+Three snapshots retain 619,839 encoded/671,744 database bytes versus initial
+1,032,553/1,105,920 B; redundant fields are reconstructed bit-exactly. Raw input
+saving 230,400 B/output and 39.9702% payload reduction are storage-layout results,
+not a timing gain. Accounted peak 38,533,376 B closed at zero, not process RSS.
+No process pool, second cache or new lossless codec is justified by these timings.
+
+### Retained combined acceptance evidence
+
+The [unchanged JSON record](../evidence/w05-acceptance.json) records 37/37 checks
+in 31.807493 s, source inventory unchanged, no skips/errors/failures. Windows-only
+execution covered every crop face/centre at each output/grid, 1,921 unique
+coordinates/output and 5,763 nonzero smooth-reference evaluations. The separate
+static suite's Windows symlink skip is not a skip in this strict acceptance.
+
+| Grid | Full-crop support error including reference uncertainty | Basin mean minimum | Footwall mean maximum |
+| --- | ---: | ---: | ---: |
+| 500 m | 0.016259127 m | -739.188000 m | 180.678009 m |
+| 250 m | 0.004065289 m | -751.422984 m | 181.432673 m |
+| 125 m | 0.001016411 m | -757.620578 m | 181.804348 m |
+
+Errors decrease about fourfold per halving; 1.0164 mm finest error is numerical
+against the selected smooth reference, not real terrain accuracy. Largest
+reference uncertainty 1.353e-7 m is below 0.01 m; independent moving means differ
+by <= 3.638e-12 m. Mean extrema selected identical locations; finest amplitude
+differences including uncertainty were 0.7939/0.6570 mm, not point/mean equivalence.
+32/64/128 partitions gave identical final surfaces. Enlarged-domain change with
+both exterior bounds was 3.354e-12 m, below unchanged 0.01 m.
+
+Largest material residual consumed 0.4636% of the roundoff allowance, not 0.4636%
+mass loss. Continuous maxima 218.379417 m displacement / 0.008385350 slope /
+0.002130729 strain stayed below 1000 m / 0.1 / 0.01. The separate local-isostatic
+951.625820 m unflexed drop/144.185730 m net subsidence is not the finite-rigidity
+basin prediction. Accounted peak 34,322,688/134,217,728 B closed at zero with no
+refusal; this is not measured RSS. Step 4 timing was reused on matched bindings,
+not rerun or relabelled as a Step 5 speedup. Empirical comparison still needs the
+independently bound analogue/support data specified below.
+
+## Combined acceptance contract
+
+**PASS_SUPPORTED_DRY_LISTRIC_1D_W05** qualifies numerical assembly of the frozen
+[motion](../cases/w05_motion.json)/[support](../cases/w05_support.json) cases,
+not empirical landscape calibration, stress-predicted faulting or general tectonic
+evolution. The dry strike-invariant section is 400 km long, with 1 km prescribed
+heave, crop -40 to 80 km and outputs at 0/250/500/1000 m. The original 500/250/125 m
+grids and thresholds are unchanged; partition/domain comparisons use 250 m.
+`python -I -B tectonics/verify.py --w05` selects the named gates, including the
+separate ALE dilation control. Invalid names, skips, empty selections, errors or
+source changes cannot pass. Numerical threads must be explicit for timing.
+
+Independent cell integrals, finite exports, nonnegative partial thickness,
+stationary footwall and unchanged cohort histories check accounting/geometry.
+Zero motion/load, motion-only geometry, separately invoked same-load support and
+`z = z_kin - w` isolate components; repeated outputs cannot accumulate movement.
+Every crop centre/face at every output/grid is assessed. Finest H max error is
+bounded by 10 m and relative L1 by 0.005; smooth-load w max by 1 m with reference
+uncertainty at most 0.01 m. Independently cell-averaged basin/footwall extrema
+use the 1 m support target and locations within 125 m, without imposing a forebulge
+sign. Smooth-load error must decrease; final 64/128-partition surface difference
+is at most 1 m, and enlarged-domain crop change at most 0.01 m. There are no
+hidden CFL substeps. Original continuous dry-displacement/slope/strain/exterior
+limits remain; fault dip is not plate slope. Exact recovery/cold-warm equality,
+source/definition refusal, corruption, interrupted publication and allocation
+guards remain part of the gate.
+
+Smooth-reference integration versus production cell-mean loading measures
+discretisation error, separately from same-load operator checks. Nested-grid
+reference coordinates are evaluated once; bounded candidate extrema avoid
+quadrature in every cell. Quadrature estimates are not interval certificates.
+No production equation changed. Reuse previous workflow timing only while its
+code, case, environment and configuration remain compatible. The acceptance
+record hashes tests/verifier/current sources separately. Support is a total
+initial-reference change applied to derived elevations, while material remains
+in its transport frame; local-isostatic and finite-rigidity controls are distinct.
+No closed global mantle reservoir, arbitrary terrain validity or release of
+another stage's hold follows.
+
+### Separate empirical challenge plan
+
+`field_validated` remains false. The candidate kinematic analogue is
+[Ellis and McClay (1988)](https://www.earthdoc.org/content/journals/10.1111/j.1365-2117.1988.tb00005.x),
+*Listric extensional fault systems — results of analogue model experiments*.
+Only its publisher abstract was accessible. Obtain the exact homogeneous-sand,
+rigid-footwall, simple-detachment experiment/figure, displacement, scales and
+uncertainty before building an executable comparison; layered, inversion and
+ramp/flat experiments exceed this closure. Freeze geometry/heave/initial section
+before examining residuals. Fit an exponential to the independently measured
+fault only within source uncertainty, otherwise refuse that geometry; never fit
+both the fault and rollover output. Compare normalised rollover, section area
+and open-boundary export under predeclared digitisation/measurement uncertainty.
+Secondary faults/depth-dependent strain are model discrepancies, not smoothing
+targets; mixed cohorts do not gain invented bedding order.
+
+Flexure needs separate independent load/density/rigidity/displacement constraints.
+A rigid sandbox base does not measure elastic support; fitting Te to the same
+topography cannot independently validate it. No empirical score or threshold is
+invented. The step consulted Landlab's ListricKinematicExtender theory/Example 5,
+rechecked Wickert's model-description abstract (full methods already reviewed
+for Step 3), and used Atlas tests/independent SciPy quadrature directly. Neither
+external simulator was installed or run. The
+[complete original design and source-review record](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/W05_COMBINED_ACCEPTANCE.md)
+retains those dated provenance details; no fresh paper review is claimed here.

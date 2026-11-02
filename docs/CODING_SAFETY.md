@@ -239,14 +239,18 @@ repository root with the tested tectonics interpreter (the I01/I02 modules need
 NumPy, SciPy and threadpoolctl):
 
 ```text
-python -B tools/check_before_commit.py
 python -B tools/check_before_commit.py --staged
-python -B -m unittest discover -s tests -p test_check_before_commit.py -v
 ```
 
-The first form checks everything `git add --all` would stage, including unstaged
-and untracked files; `--staged` checks exactly the index and names each
-working-tree change it leaves out. Both copy the index to a temporary file, export
+Use this final staged candidate once. The alternative form without `--staged`
+checks everything `git add --all` would stage, including unstaged and untracked
+files; it is useful before staging, not an additional mandatory pass.
+`--staged` checks exactly the index and names each working-tree change it leaves
+out. Reuse an earlier result only when the final candidate bytes, relevant tools,
+dependencies, configuration and external bindings are demonstrably identical.
+If they differ, check the affected final candidate.
+
+Both forms copy the index to a temporary file, export
 the Git-normalised candidate bytes and always run `tools/check_current_evidence.py`
 and `tectonics/tests/test_digest_line_endings.py` on that export. The I01/I02
 test modules also run unless every candidate change only adds or modifies a
@@ -268,8 +272,11 @@ fails the evidence check.
 
 The real index, working tree and Git settings are not changed; like
 `git add`, the tool may store Git objects for changed files. It is not an installed
-hook and never commits. The third command runs the guard's own tests on throwaway
-repositories. A failure names the file: fix the writer or source, or capture a
+hook and never commits. Qualify changes to the guard or its relevant environment
+with `python -B -m unittest discover -s tests -p test_check_before_commit.py -v`.
+Those tests use throwaway repositories; reuse adequate unchanged qualification
+instead of rerunning it for every documentation edit. A failure names the file:
+fix the writer or source, or capture a
 successor receipt. Never repin a recorded digest to make the guard pass.
 
 Git must not start other programs while the candidate is built. Every Git call,
@@ -300,3 +307,95 @@ source/runtime identities or publication bytes changed, which current claims are
 affected, and which evidence remains historical. Reuse unaffected valid results;
 rerun only for changed relevant inputs, an unresolved failure, missing necessary
 coverage or a mandatory check. Never rewrite an old receipt to make it current.
+
+## 6. Changed expectations and landing obligations
+
+The 16 October 2026 I03–I05 comparison covered remake `1a58e0b`, the heat-repair
+tests accompanying composed-r2 and their 4 October fidelity origin. Fifteen test
+files differed: five only added obligations, ten changed expectations. No numerical
+bound was widened. Michael accepted A–D/E1–E10 at about 17:53, conditional on no
+accuracy loss. This supersedes the original report's earlier acceptance gap;
+it unblocked only the expectations side of U2, not merge/run authority or X1/R1
+dependencies. The [original comparison](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/EXPECTATIONS.md)
+retains complete assertion/provenance details.
+
+| Change | Retained contract |
+| --- | --- |
+| E1/E2 producer replay | Prepared/stored overlap rows are recomputed from their declared producer before occupancy checks. Forgery refuses earlier with the same code; sliver refusal deadline is unchanged, and occupancy remains independently tested. Restart replay costs bounded extra work. |
+| E3 exact rigid sweep | Two former expected failures become ordinary passing equivalence tests at the original C7 bound; disabling the precise map still fails. No added slack. |
+| E4 sub-ulp merger tie | Binary64 area totals may tie while exact recorded piece accounts differ (+3/1024 m² in the original case). Rotation follows the larger exact account, deterministically. |
+| E5 schema successor | Motion/map IDs remain equal; state ID changes with material schema v3 and survives restoration. Record the new state as a successor observation; never edit the old baseline. |
+| E6 density and positions | Identical stock arrays do not establish identical provenance: declared density is part of identity. Shared-face cohorts without explicit footprints refuse rather than invent positions. Legacy records remain inspectable without position records. |
+| E7 heat account | Exact balance is over patch heat; piece projection rounding has its own exact residual, and split support is recorded. No tolerance replaces exact balance. |
+| E8 physical growth witness | The original fixture's apparent growth was at most 9.09e−13 K round-off against 175 K contrast. A separate hot-base (+50 K) fixture supplies genuine growth; unchanged start/end/zero refusal and passing controls remain. |
+| E9 properties | Fixtures explicitly write patch heat; P1 opts into cell means. Corrupt 30-epsilon reference density refuses when a physical field is supplied. |
+| E10 approximation | I04 feedback explicitly uses `allow_cell_mean=True`; the exact default refuses unsupported trace input. State this approximation wherever that feedback control is described. |
+
+At landing rerun the existing `rm/reconcile/expect.py` comparison and refuse any
+looser assertion bound. Bring relevant S-line tests and documentation with the
+method change. Legacy remake records may open with different IDs; an old I05
+state without per-column temperatures cannot continue. These contracts do not
+authorise editing tests to disguise a rejected method or silently migrating state.
+
+## 7. Conditional compiled-kernel development
+
+The [16 October language assessment](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/LANGUAGES.md)
+was a plan, with no installation/compilation/run. Its installed-version facts and
+gain estimates remain dated. L2/L3/L5 were accepted as recommended; L4 identity
+work was approved for the next planned identity change through assembly. L1 was
+a conditional compiler proposal; N1–N4 preparation was deferred to the Step-19
+reprofile. Nothing here installs tools, resumes held work or enables a kernel.
+
+Keep the Python reference as the unchanged specification/fallback. Compile only
+after Python-level fixes and the final reprofile: normally at least ~10% of
+interval CPU for the group and ~5% projected interval saving. The compiler
+proposal additionally requires K1/K2 together to retain at least ~15% of interface
+CPU. Rank the whole interval, including previously unprofiled driver/recovery/I/O;
+component/cProfile shares are not interval timings. Adoption needs measured gain,
+D-b parity (all numbers/fields identical, only declared identities differ), required
+review and the existing ticket/GO for heavy work. Recommended sequence is K2
+rational pilot → K1 Decimal leaf → optional K3 clipping/K4 AOT heat for memory or
+packaging. Keep numba where already selected; no wholesale generator rewrite.
+
+| Kernel | Exactness and ownership conditions |
+| --- | --- |
+| K1 Decimal-80 jets | Cython/libmpdec at leaf granularity using the same library version as the reference. Read live precision, rounding, Emin/Emax, clamp and traps; update flags identically or prove they are unread. Preserve first-of-equals exponent/signed-zero choice and all original trap/refusal positions. Decline subclasses or instance-replaced attributes. A private PyDecObject layout is eligible only with pinned `_decimal` binary/layout self-test; otherwise fall back. Per-operation string conversion was rejected as too costly. |
+| K2 rational jets/K3 exact clipping | Cython via the same gmpy2 GMP/MPFR C ABI. Free GMP allocations using GMP, preserve `CEILING_BITS = 2**27`, exact types and shared D5/P4 work charges including settlement/retained surcharges. Honour `ATLAS_EXACT_ARITHMETIC`; do not bypass it with a direct dependency import. |
+| K4 heat dots | Retain H3 numba unless a separate AOT memory/packaging case is demonstrated. Existing MPFR operations, original self-tests and strict resource/identity controls remain. AOT saving estimates are not measured whole-heat speed. |
+
+Recommended build route is MSVC v143/x64 plus the Windows SDK and hash-pinned
+Cython/setuptools/wheel in a separate build environment using the same CPython
+ABI. Never install build packages into the scientific environment. Michael owns
+compiler installation/licence/PATH decisions. Preserve `/O2 /fp:strict`, no fastmath,
+FMA contraction or architecture-specific AVX2 requirement, and `/Brepro` without
+embedded private PDB paths. Source arithmetic remains in libmpdec/GMP/MPFR rather
+than host floating point. Ship only `.pyd`, import self-test and build record;
+the compiler/build environment/fuzz harness are not runtime dependencies.
+
+Each build record binds source/shim/library/generated-C hashes, compiler/linker/
+Cython versions, flags, import-library/dependency hashes and output digest. Loaded
+`.pyd` bytes, version, once-chosen compiled/Python route and build-record digest
+join the existing runtime binary identity at first capture; no new reduced boundary
+is introduced. The original assessment identified `_decimal.pyd`, `python312.dll`
+and probably stdlib fractions/decimal sources as identity gaps. Confirm and close
+them in the authorised identity successor, including libmpdec version; do not
+claim they were already pinned or silently repin historical records.
+
+Qualification requires import-self-test reference parity (any failure/exception
+selects Python), bitwise differential fuzzing, planted mutants, real-call capture/
+replay and same-ticket complete D-b control parity. Decimal `as_tuple()` and flags
+catch exponent/zero differences; rationals compare numerator/denominator/type.
+Cover zero endpoints, signs, exponent/range boundaries, digit-80 carries, cancellation,
+huge/tiny rationals and reachable NaN/Inf. Mutants include wrong rounding/precision,
+corner order, jet term/truncation, unreduced rationals, zero sign, work charge,
+live context and subclass acceptance. Preserve mandated per-kernel independent
+review and affected-fix review. Two reproducible builds must agree; otherwise the
+shipped pinned binary remains authoritative and a rebuild needs a declared successor.
+
+MPFR/Arb replacing Decimal endpoints is D-c and requires separate method authority/
+rebaseline. Rust's second arithmetic stack, FLINT/C++ build burden, python-flint
+boundary conversion/dependency and mypyc's limited logic gain did not justify
+selection. Compiled libraries already handle most solver/storage/hash work;
+memoisation/hoisting and correct identity-boundary policy address repetition
+without a language rewrite. Exact original rankings, figures and rejected routes
+remain in the linked assessment; no unmeasured gain is asserted here.

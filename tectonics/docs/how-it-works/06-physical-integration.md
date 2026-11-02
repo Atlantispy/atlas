@@ -53,7 +53,7 @@ reference values exactly and deliberately try wrong inputs and caller mutations.
 pass after correcting an exposed array-descriptor alias and enforcing the existing
 duration limit.
 
-**Continuing from the record (implemented, awaiting review).** A continuation first
+**Continuing from the record.** A continuation first
 rebuilds the column's solvers from the recorded inputs and checks that they reproduce
 every stored reference value exactly, not just a matching label. A changed runtime or
 edited reference therefore stops the history instead of silently continuing it. It
@@ -208,7 +208,7 @@ spherical bending solver.
 which is reproduced exactly and compared bitwise. Its boundary form and
 error formula are derived in the [I04 method](../I04_CAUSAL_START.md#r4-2-gpe-on-the-sphere).
 
-**At the end of a coupled interval (I04.4, candidate).** When motion and the rock's
+**At the end of a coupled interval (I04.4).** When motion and the rock's
 state are solved together, the columns are read from the candidate end state of the
 interval rather than from its start. Where a cell holds several pieces of
 identical layering, I05 gives their enthalpy-consistent mean column, and the
@@ -225,7 +225,7 @@ The [weakening adapter](../I01_WEAKENING.md) carries accumulated plastic deforma
 
 ### Belts that resist plate motion on the shared network (I04.3)
 
-**Candidate, not accepted.** [I04's reduced belt](../I04_CAUSAL_START.md#r4-4-d2-on-the-sphere)
+[I04's reduced belt](../I04_CAUSAL_START.md#r4-4-d2-on-the-sphere)
 ([`integration_strength.py`](../../src/atlas_tectonics/integration_strength.py))
 lets a declared plate boundary resist the plates' relative motion with the
 strength of the rock it crosses.
@@ -345,7 +345,7 @@ GPE and mantle-drag methods of
 consulted, but none of their fitted coefficients is adopted. Method:
 [I04 D1 on the sphere](../I04_CAUSAL_START.md#r4-1-d1-on-changing-spherical-geometry).
 
-**With belts (I04.3, candidate).** When boundaries carry belts, their forces depend
+**With belts (I04.3).** When boundaries carry belts, their forces depend
 on the motion, so the balance becomes nonlinear. Atlas solves it by Newton's method
 with the belts' exact rate of change, checks that the belts only ever resist
 motion, and records the work the belts dissipate on its own line of the power
@@ -358,7 +358,7 @@ held fixed, not the result of a large change or later weakening. Where a station
 belt has no supported finite derivative, the sensitivity is marked unavailable,
 rather than treating its resistance as absent.
 
-**Over one interval (I04.4, candidate;
+**Over one interval (I04.4;
 [`integration_feedback.py`](../../src/atlas_tectonics/integration_feedback.py)).**
 Following the [method](../I04_CAUSAL_START.md#r4-7-first-feedback-coupling):
 1. Guess the motion from the start of the interval.
@@ -744,7 +744,7 @@ what was actually consulted.
 ### Carry each cohort's history and heat with the shared network (I05)
 
 **What happens.** Every interval, the network's step carries the extensive amounts of each piece of rock. I05 carries
-everything else the rock holds, in a moving state beside the network. A candidate, not yet reviewed, does this in
+everything else the rock holds, in a moving state beside the network. The I05a route does this in
 three parts:
 - **Transport.** What a cohort's rock carries travels with that cohort: its layering and original profile, its dates,
   its raw plastic history, whether its bonds ever broke, and any compaction or elastic memory. Each piece's heat,
@@ -1440,7 +1440,7 @@ includes counterexamples for unrestricted Gram symmetry, deleting zero terms and
 postponing rounding. Source-bound feasibility controls do not replace the later
 resource, consumer, runtime or whole-interval checks.
 
-The accepted [additional heat examination](../../optimisation/workbench/plan40/heat/ADDITIONAL-FINDINGS.md)
+The accepted [additional heat examination](../../optimisation/workbench/plan40/heat/FINDINGS.md#additional-arithmetic-candidates)
 also identifies repeated flux/polygon arithmetic, observation enclosures shared
 across faces, unused earlier inverse columns and repeated exact/interval
 conversions. Each proposal retains its own validation, rounding and ownership

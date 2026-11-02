@@ -50,3 +50,30 @@ Status: **WORKING NON-CANON; integrated source component, not a qualified final
 generation.** This route grants no runtime admission, interval execution, default
 selection or scientific acceptance. It does not construct the held final n12f
 generation, run a timing or parity campaign, or update an installed package.
+
+## Stage observation contract
+
+The original S1 observation supplies `completed_queries_by_stage` in `run.json`
+(schema `atlas.completed-queries-by-stage.v1`). Each guard-stage row records exact
+owner-counter deltas for `hits`, `misses`, `written` and `incomplete`, the last
+`unflushed` value, `opens`, and the counters at each open in `opened_with`.
+Stages without a live owner have null counts. The later Tier1 hit classification
+above extends this observation; its 21 MiB booking must not be confused with the
+original stage-row bookkeeping cost.
+
+Observation uses the existing runner `save()` after a phase change, open/close
+notifications and final `finish()`. It neither wraps queries nor changes guard
+phase order, stores, cache keys or results. Finalisation closes the last row and
+marks COMPLETE. A hard kill preserves only the last saved closed rows, with no
+invented complete in-progress row. Ordinary instrumentation exceptions mark
+INCOMPLETE and stop observation; interrupts also mark INCOMPLETE and re-raise
+unchanged. The status store precedes error formatting so a second interrupt cannot
+make a partially updated row COMPLETE or count it again. A second interrupt may
+leave no error text; an exception whose `__str__` raises may still escape after
+the INCOMPLETE store. Those retained limitations are not scientific success.
+
+Historical S1 r4 qualification comprised the runner's 41 cases unchanged,
+17 observation cases and 24 killed mutants, including double-interrupt controls.
+These are predecessor results, distinct from the Tier1 checks and bindings above.
+A changed runner requires the constructor's exact seams and input checks; this
+consolidation does not authorise repinning a live generation.

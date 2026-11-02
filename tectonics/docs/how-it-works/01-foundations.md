@@ -228,9 +228,9 @@ workflow checks those bindings and the original forcing interval rather than
 inventing further motion. [Workflow tests](../../tests/test_w01_workflow.py) and
 [combined acceptance tests](../../tests/test_w01_acceptance.py) cover inventory
 closure, seam-crossing axial motion, refusal, reuse and restoration. The
-[recorded W01 assessment](../../evidence/w01-stage8-acceptance.md) separates a
+[recorded W01 assessment](../W01_REGIONAL_WORKFLOW.md#obtained-stage-7-and-8-evidence-22-september-2026) separates a
 supported technical workflow from incomplete whole-W01 geological realism.
-[Bounded shape evidence](../../evidence/w01-bounded-validation.md) likewise does
+[Bounded shape evidence](../W01_REGIONAL_WORKFLOW.md#bounded-shape-validation-and-limits) likewise does
 not accept independently generated dynamics. The sampling and kinematic references
 above are the shared scientific basis for this connection.
 
@@ -331,7 +331,7 @@ reservoir supplies energy. No finite instantaneous surface flux is invented at
 the discontinuous age-zero state.
 
 [Cooling tests](../../tests/test_w03_plate_cooling.py) compare independent series,
-quadrature, finite-volume conduction and heat balance. [Recorded evidence](../../evidence/w03-thermal-columns.md)
+quadrature, finite-volume conduction and heat balance. [Recorded evidence](../W03_THERMAL_COLUMNS.md#obtained-evidence-22-september-2026)
 supports the stated implementation snapshot. [Parsons and Sclater (1977)](https://topex.ucsd.edu/geodynamics/parsons_sclater77.pdf)
 is the primary cooling-model basis. The present column model excludes variable
 properties, internal/latent heating, hydrothermal circulation and moving thickness;
@@ -353,7 +353,7 @@ managed route from applying thermal support both locally and through flexure.
 
 [Tests](../../tests/test_w03_thermal_support.py) check signs, dimensions, unchanged
 fields, gravity cancellation in local support and independent thermal integrals.
-[Evidence](../../evidence/w03-thermal-support.md) retains its snapshot scope.
+[Evidence](../W03_THERMAL_SUPPORT.md#obtained-evidence-22-september-2026) retains its snapshot scope.
 The basis combines Parsons and Sclater with [ASPECT's Boussinesq explanation](https://aspect-documentation.readthedocs.io/en/v3.0.0/user/methods/approximate-equations/ba.html).
 This diagnostic does not solve dynamic topography, shoreline migration or a
 compressible mass balance.
@@ -376,7 +376,7 @@ parcel, so thick parcels require refinement.
 [Law tests](../../tests/test_w03_compaction_law.py) and
 [column tests](../../tests/test_w03_compaction_columns.py) check load–unload cycles,
 grain conservation, area changes, finite water stock and convergence towards an
-independent continuous solution. [Recorded evidence](../../evidence/w03-compaction.md)
+independent continuous solution. [Recorded evidence](../W03_COMPACTION.md#obtained-evidence-22-september-2026)
 is snapshot-specific. [Fowler and Yang (2002)](https://people.maths.ox.ac.uk/fowler/papers/2002.1.pdf)
 informs the history distinction; Atlas's selected law is its own approximation.
 The response assumes saturated, hydrostatic, already-drained pores. It predicts
@@ -398,7 +398,7 @@ carried by pore water remain excluded.
 
 [Workflow checks](../../tests/test_w03_workflow.py) challenge independent accounts,
 incompatible thermal/source inputs, insufficient water, unloading history and
-restored continuation. The [recorded assessment](../../evidence/w03-workflow.md)
+restored continuation. The [recorded assessment](../W03_WORKFLOW.md#obtained-evidence-22-september-2026)
 applies to stationary columns, not a general evolving basin. Its research basis
 is the cooling, buoyancy and compaction work above; the connection introduces no
 new constitutive law.
@@ -418,7 +418,7 @@ If expelled pore water is replaced by identical water, their weight changes canc
 Replacement by air unloads the column. Optional thermal pressure uses fixed coverage
 and actual volume-mean temperatures; the buoyancy anomaly remains separate from
 conserved mass. [Load tests](../../tests/test_w04_column_loads.py) check these
-cancellations, density changes, units and overfill refusals; [evidence](../../evidence/w04-loads.md)
+cancellations, density changes, units and overfill refusals; [evidence](../W04_COLUMN_LOADS.md#obtained-evidence-22-september-2026)
 records the snapshot. The shared research basis for all W04 subsections is
 [Wickert's gFlex paper](https://gmd.copernicus.org/articles/9/997/2016/), especially
 the distinction between imposed load, restoring material and boundary conditions.
@@ -440,7 +440,7 @@ answer. Output is downward displacement in metres.
 
 [Periodic workflow tests](../../tests/test_w04_workflow.py) check independently
 constructed discrete operators, sinusoidal loads, refinement and superposition.
-[Recorded workflow evidence](../../evidence/w04-workflow.md) does not make a
+[Recorded workflow evidence](../W04_WORKFLOW.md#obtained-workflow-and-combined-evidence-22-september-2026) does not make a
 regional crop physically periodic. Repetition must be an explicit assumption.
 
 ### Continuing plates and physical ends
@@ -458,7 +458,7 @@ Physical ends instead add a homogeneous correction satisfying the endpoint rules
 
 [Tests](../../tests/test_w04_finite_region.py) compare independent quadrature,
 analytical controls, source subdivision, endpoint conditions and exterior changes.
-[Evidence](../../evidence/w04-finite-regions.md) is tied to the recorded method.
+[Evidence](../W04_FINITE_REGIONS.md#obtained-evidence-22-september-2026) is tied to the recorded method.
 Uniform-route validity samples centres and faces; it does not certify every
 between-sample extremum. This remains a planar transect with loading invariant in
 the transverse direction, not a finite-width two-dimensional plate.
@@ -491,7 +491,7 @@ when stiffness changes. It does not derive stiffness evolution or viscoelasticit
 [Variable](../../tests/test_w04_variable_flexure.py) and
 [evolving tests](../../tests/test_evolving_flexure.py) check two-material analytical
 solutions, refinement and unchanged-load/changing-rigidity controls. See the
-[variable evidence](../../evidence/w04-variable-rigidity.md) and
+[variable evidence](../W04_VARIABLE_RIGIDITY.md#obtained-evidence-22-september-2026) and
 [evolving method/check record](../EVOLVING_MECHANICS.md).
 
 ### Connected support, outputs and acceptance limits
@@ -511,7 +511,7 @@ elevation, sea level or shoreline feedback.
 [Combined tests](../../tests/test_w04_acceptance.py) exercise uniform/variable
 rigidity with periodic, continuing and free/clamped boundaries, independent load
 accounts, reference shifts, restored continuation and reuse. The
-[recorded W04 acceptance](../../evidence/w04-acceptance.md) is explicitly for the
+[recorded W04 acceptance](../W04_WORKFLOW.md#obtained-workflow-and-combined-evidence-22-september-2026) is explicitly for the
 supported stationary planar 1D workflow and its snapshot. Small-deflection limits,
 source checks and conservation do not establish realistic mountains or calibrated
 basins.

@@ -213,10 +213,67 @@ The result supports a combined implementation candidate rather than adding the t
 
 ## Evidence provenance and remaining limits
 
-The detailed historical companions are [wall/face/constraint analysis](wall-constraint-analysis.md), [midpoint feasibility](midpoint-value-analysis.md), [cross-evaluator reuse](cross-evaluator-analysis.md), [self-products](self-product-analysis.md), [lazy preparation](chart-preparation-analysis.md) and [chart point/inverse reuse](chart-point-analysis.md). Their original numerical/source arguments are retained; current implementation status is this document's ten-group table. [PUBLICATION.json](PUBLICATION.json) records original/public digests, limited document sanitisation and publication-only line-ending changes. The nine Python probes are byte-identical to their retained originals. The twelve JSON results are logically identical public copies with CRLF normalised to LF; their public byte digests differ from the original retained-result digests. Parsed records, numerical content and embedded source/evidence identities are unchanged. No historical result is repinned, reauthenticated or rerun for publication.
+The historical companion reports are consolidated in the source-proof sections
+above. Their complete original arguments, source tables and command histories
+remain in Git: [wall/face/constraints](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/wall-constraint-analysis.md),
+[midpoint](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/midpoint-value-analysis.md),
+[cross-evaluator](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/cross-evaluator-analysis.md),
+[self-products](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/self-product-analysis.md),
+[chart preparation](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/chart-preparation-analysis.md)
+and [chart point/inverse](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/workbench/plan40/pressure/chart-point-analysis.md).
+Current implementation status is the ten-group table. [PUBLICATION.json](PUBLICATION.json)
+owns publication metadata. Nine Python probes retain original bytes; twelve JSON
+results preserve parsed records/numerical content/embedded identities with LF
+publication bytes distinct from original CRLF digests. Consolidated prose is no
+rerun, reauthentication or scientific repin.
 
 The arithmetic result has selected source pins but no helper hash. Its predecessor fault traceback does not authenticate fault execution of the current helper (the entry/equality line locations differ); the current fault's rejection is source-established and is not claimed as a rerun. Midpoint 172-case and cross-evaluator results likewise do not bind their own current script hashes. Donor-only 60-case/selected results remain predecessors of the focused combined-profile/donor result; the final broad combined mode remains unexecuted. Chart 216/36 arithmetic evidence binds adapter `04c72c14b1b3fe784fe18832ff5908485299f6e8c8f6b874edb4c37edfcebf30`, not current portable helper `bcabef407a99aae01af82f9ec7d50d7d9378b1bce76a7885db89f4f0bcfbfa5a`; later synthetic CLI controls have separate current bindings. Self-product r2 and both chart-point results bind their current probes/helpers. Composition 27-case evidence binds its own probe and two helpers. These distinctions survive unchanged in the shipped JSON.
 
 All probes take explicit repository/output arguments. Keep sibling helper bindings intact; do not overwrite a retained result when running a new check. The optional actual-capture replay capabilities ship without private captures. Synthetic replay controls prove transport/refusal only. Private fixtures, raw logs, runtime paths, measurement harnesses and coordination records are excluded. Pre-3.12 constructor fallback exists where copied from the original source, but no older-interpreter execution is claimed.
 
 Representative actual-stage operation/width prevalence and nonradial coverage remain unmeasured. The planned actual survey supplied no executed coverage to this package; its absence neither proves a branch dead nor blocks the separately qualified synthetic receiving selection. Full-IV net benefit, final combined-runtime/default adoption, future native batching and scientific acceptance remain separate work under their existing gates. The measured P4 regression still rejects its present enablement; do not derive a native threshold from synthetic wide-rational controls. Source publication is not live deployment.
+
+### Local source-proof contracts
+
+The retired companions' remaining details apply to their **historical prototype
+boundary**, not an assertion that the selected receiving code is unimplemented:
+
+- Local CSE must retain first-equal longest-edge/min/max choice, zero-edge fallback,
+  centre/radius/bound expressions, radial-before-cone-before-plane early-outs and
+  original evaluator/leaf counts. Original work reservations account for actual
+  widths (`65536 + 128*bits + 256*len(values) + 256*pairs` in the examined helper).
+  Fewer operations never permit dropping an admission.
+- Value-only midpoint arithmetic keeps zero/one/constant shortcut order and radial
+  expression metadata at their original attach/drop points. Unknown singleton
+  constancy invokes only the dedicated unsupported fallback. Candidate scratch
+  dies before the original full callback; numerical/resource/cancellation errors
+  propagate. The original full interval and precision-reset finally remain.
+- Historical donor keys are `(entry,exit,bottom,top)` and profile keys
+  `(bottom,top,rho,ptop)`. Eight entries each retain preweighted complete scalar
+  jets/flags or impossible-support sentinels, never exceptions. Capacity overflow
+  computes normally; bounds alone cannot key profile density/pressure. Fixed
+  entry counts do not bound wide-rational/container bytes. Optional caches must
+  relinquish storage before they could make a later original admission fail.
+- Lazy chart preparation shares six exact `(a,b,normal)` invariants and profile
+  coefficients only under one integration owner, including original source/type
+  binding. It cannot borrow leaf scratch after callback retirement. Radius/root
+  reuse keys exact value/type plus precision and remains invocation-local (at most
+  three radius values/two sqrt pairs in the prototype). Supplied chart inverse
+  reuse is private to the proved nonconstant call; the original constant branch
+  ignores it and the first division/refusal stays in place.
+- Self-products require operand identity and the built-in rational domain, not
+  value equality. Negation applies only to ordered Fraction pairs; float signed
+  zeros, subclasses, reversed intervals and generic containers take the reference.
+  Drop reused temporaries at their last expression; do not skip outward rounding.
+- Portable replay requires a source-matched PASS capture, verifies complete
+  original outputs/witnesses before candidate parity, and refuses UNVALIDATED,
+  missing capture and malformed exact encodings. Chart transport checks canonical
+  reduced positive denominators, denominator-one integers and 4096-bit/structure
+  bounds without truncation. Synthetic transport did not execute real captures.
+
+Original production geometry remains distinct: fixed-grid binary64 EOS converted
+to Q is not interchangeable with spatial exact EOS; pressure cut certificates,
+ordered torque/projection and signed-zero outputs are retained. Exact commuting
+rotation reductions require actual history, not representative-matrix proximity.
+Constraint/path caches need immutable premise owners and separate parent/child
+charges; existing P2 preparation/indexed DAG ownership are already covered.

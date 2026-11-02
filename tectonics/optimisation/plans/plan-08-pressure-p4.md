@@ -22,7 +22,7 @@ Paths in this document: `T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-
 | `R/width_gate.py` | SHA256 prefix `4c31a92f6880` | Record-width projections and units; no coefficient-compression authority. |
 | `A/.atlas-dev/plan-status-20261016.md` | SHA256 prefix `be270e6898e0` | P4 unbuilt, D5 excluded from assembly, current order and unchanged acceptance boundaries. |
 
-The P3 base is `c/full3`, not an integrated P4 runtime. The Pressure handoff records P4 as unknown in N12 s4. Acceptance of [Plan 06](plan-06-d5-exact-arithmetic.md) did not repair or land D5. Its saved candidate remains refuted and off N12; the existing owners retain their work and any pre-existing authority for their own repairs.
+The P3 base is `c/full3`, not an integrated P4 runtime. The Pressure handoff records P4 as unknown in N12 s4. Acceptance of [Plan 06](../workbench/plan06/README.md) did not repair or land D5. Its saved candidate remains refuted and off N12; the existing owners retain their work and any pre-existing authority for their own repairs.
 
 This document grants no implementation, queue, integration or publication authority. N9 remains PAUSED BY USER (general319); fresh interval and individual run holds remain in force. Reopen the current owner/status records when a later implementation assignment is made.
 
@@ -88,4 +88,4 @@ There is no substitute gate based on only non-degenerate comparisons, imagined f
 - [ ] Byte-identical records/arrays, any required D-b null control, focused checks/mutants, one refuter and the small A/B meet the stipulated bar.
 - [ ] The coordinator-requested timed proof and owner acceptance are recorded with scoped measurements; any subsequent integration/assembly disposition is explicit and does not release unrelated holds.
 
-Related work: [Plan 07: P1-P3 proof](plan-07-pressure-p1-p3-assessment.md), [Plan 04: paused N9 tools](plan-04-n9-width-tools.md), and Codex's post-reveal source corrections (private evidence unavailable in this public snapshot). The frozen independent reviews remain unchanged.
+Related work: [Plan 07: P1-P3 proof](plan-07-pressure-p1-p3-assessment.md), [Plan 04: paused N9 tools](../workbench/plan04/README.md), and Codex's post-reveal source corrections (private evidence unavailable in this public snapshot). The frozen independent reviews remain unchanged.

@@ -12,6 +12,10 @@ below, each with the reason no runtime route reaches it. The docstrings will be 
 transform's next revision; until then, this file is the reference. It is kept outside the
 transforms so their pinned bytes do not change.
 
+The additive Plan17 transform successors narrow documentation only. They establish
+no new universal exception or instrumentation equivalence; K1 and K2 below remain
+the substantive limits. Source-bound transform comments are preserved unchanged.
+
 ## K1 (D1): an exception in a skipped coefficient is not raised
 
 The fast path reads only coefficient 0 of the four jets; coefficients 1 to 12 are skipped. The full

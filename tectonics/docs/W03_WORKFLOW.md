@@ -122,4 +122,45 @@ Restore verifies the current state/accounts, not an unretained complete trajecto
   behaviour. This integration introduces no replacement constitutive law or
   newly calibrated sediment coefficients.
 
-See [bounded acceptance and measured sequence timings](../evidence/w03-workflow.md).
+See [bounded acceptance and measured sequence timings](#obtained-evidence-22-september-2026).
+
+## Obtained evidence, 22 September 2026
+
+The selected stationary fixed-area W01/W02/W03 assembly passed 63 focused Windows
+tests in 31.735 s (nine new plus affected compaction/support/identity/cache). The
+selection was test_w03_workflow, test_w03_compaction_columns,
+test_w03_thermal_support and execution IdentityTests/CacheExecutionTests.
+Python 3.12.14/NumPy 2.4.6 used one native thread; no full-suite/Linux claim.
+
+The synthetic join used four 2 m² columns: 40 m sediment at porosity 0.4 above
+60 m at 0.25 gives per-column solid equivalents 24/45 m and pore equivalent 31 m.
+Pore water 248 m³ plus reservoir 100 m³ closes at 348 m³ through load/unload/reload.
+Time labels differ by 1e12 s, but complete drainage is prescribed, not proven
+dynamically. Source grains/reference masses are unchanged by buoyancy.
+
+Actual source/sample/cohort and ordered-parcel checks refuse transported/mixed
+geology or multiple fluid origins rather than infer stratigraphy/maximum-load
+history. Thermal boundary/means/history/diffusivity/epoch/datum and authored
+lithosphere versus model plate depth are reconciled. Both signs of mixed W02
+exchange remain in the last-step account. Restore rechecks the actual thermal
+source, peak history and stock; restored/uninterrupted/forced-cache successors
+are bit-identical. Net heat is integrated directly; unresolved increments refuse.
+Independent mass/heat/support accounts, insufficient stock, invalid clocks,
+budgets/cancellation and nonaccumulating reference queries were checked.
+Import/backend and typed-JSON restoration defects were repaired before the final
+run without relaxing tolerances.
+
+[Raw sequence timings](../evidence/w03-workflow-timing.json) compare six sequential
+load/unload steps, 256 columns × 128 parcels (196,608 updates), three alternating
+repetitions after equivalence warm-up. Separate setup 3.261035100 s versus shared
+sequence setup 2.181135000 s saves 1.079900100 s (33.115255%), with identical final
+state. Both include context setup/close; shared initialisation is outside both.
+No intermediate hysteretic load, live source check or precision is skipped; no
+cache/worker gain and no addition of earlier component percentages. Entry:
+python -B tectonics/tools/benchmark_w03_workflow.py.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w03-workflow.md) retains source identities,
+exact commands/static results and ASPECT/pyBacktrack/Fowler–Yang review extent.
+General lateral history remap, multiple-fluid allocation, evolved properties/
+deformed thermal mesh, advected pore heat and transient pressure remain outside
+this reduced synthetic acceptance.

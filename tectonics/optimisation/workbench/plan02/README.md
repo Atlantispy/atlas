@@ -51,6 +51,22 @@ included for inspection; their presence does not make the whole suite runnable
 in a public clone. A new native installation needs its own complete source
 closure and profile binding.
 
+## Start-admission contract
+
+The selected Route1 and Route2 callers share the exact integer gate and unchanged
+in-run guards, but qualify different evidence records. The
+[admission contract](ROUTE2_ADMISSION.md#shared-core-and-route1-evidence) now keeps
+the Route1 stage-record schema, prediction/booking rules, parent/child division
+and refusal-before-output boundary alongside Route2's command-bound completion
+evidence. Replacing only the prepared runner remains incompatible with old callers
+that use START_BYTES; materialise the complete selected logical layout.
+
+The earlier gate-core evidence comprised 23 tests and 43/43 planted mutants.
+Those counts describe that core revision, not all callers or a fixed future test
+count. The later 43 live and 100 C18 checks below retain their separate scopes.
+Adequate unchanged checks are reused; this consolidation requests no core rerun,
+positive native publication, reopen or cancelled post-assembly sign-off.
+
 ## Verification and remaining work
 
 The private selected generation was installed with 43 distinct live checks

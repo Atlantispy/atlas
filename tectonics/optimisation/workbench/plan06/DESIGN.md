@@ -90,3 +90,37 @@ new r3 evidence files, never to rewritten historical receipts.
 
 Pressure P4 and T3 restructuring are separate. The shared interface is available
 without implementing those consumers or releasing any scientific/job hold.
+
+## Shared D5 and P4 design boundary
+
+The retained D5 proposal and P4 use one primitive interface: backend/loaded-object
+eligibility, exact native conversion, canonical fresh Fraction return, the
+reference-typed lease calculation, and Policy A retained-native accounting.
+A native twin of `_dyadic_outward` must preserve the same floor/ceil and bit-count
+rules if P4 is separately implemented. There is no direct gmpy2 import on the
+Python route, no retry on another arithmetic backend and no weakening of
+instrumentation visibility. The implemented rules above supersede the proposal's
+post-reservation ceiling exception and its early attachment assumptions.
+
+Clip twins retain original kept vertex objects, unchanged polygons and early
+normal identities; new values/containers retain the reference relationships.
+Native arithmetic must preserve sign tests, deduplication order and Fraction
+result types. Taylor work and reservation order, including step-zero widths from
+reference objects, remain observable. Policy A settles retained native values
+and adds only the surcharge above the reference allowance. Fixed per-operation
+block guesses and uncharged retained natives were rejected as under-accounting.
+
+Qualification compares complete captured calls, pickle protocols 2–5 with input
+memo relationships, deep types/aliases, exception type/text and ordered
+work/reservation traces. Relevant controls include mixed int/Fraction inputs,
+zero/huge integers, degenerate/duplicate/collinear polygons, backend refusal and
+instrumentation changes. Numerical equality alone does not establish this contract.
+
+The original deep profile attributed roughly 102 of 1,087 profiler-inflated CPU
+seconds to the proposed rotation/clip/line work; its projected 6% stage saving was
+not a measured improvement. The retained scoped proof instead measured
+regressions and D5 remains disabled; see [source and measurements](README.md).
+The larger T3 moving-interface clip-chain rewrite remains a separate geometry
+change after D1–D4. N9 pose rounding and D5 are text-disjoint but still require
+composed parity on actual selected inputs. P4, T3, changed queue bookings and any
+new deep/full-scale proof require their own existing authority.

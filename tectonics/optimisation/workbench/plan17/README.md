@@ -23,7 +23,7 @@ type, unbudgeted-algebra and nonzero guards. D2 hoists angular-rate conversion a
 reciprocals while preserving multiplication/subtraction order and fallback. G-PY r4
 uses the reviewed D2 input and existing per-coefficient interval classes without
 changing Decimal operation order. The additive transform successors correct method
-documentation only; [K1/K2 limits](transforms/D1-D2-KNOWN.md) still apply. No new
+documentation only; [K1/K2 limits](../geometry-growth-r1/transforms/D1-D2-KNOWN.md) still apply. No new
 research, numerical method, tolerance or performance result is claimed.
 
 The source-bound dispatcher reuses Plan15's owned Windows-job supervisor and the
@@ -139,7 +139,7 @@ UNVERIFIED; this condition does not validate that historical proof.
 308,133,888 B, and owned command walls 1.5 s / 0.25 s / 0.266 s. These scoped observations
 establish no performance gain. Both genuine proofs and all nine comparisons are
 complete. The source export does not enable a default or adopt a final assembly.
-The [contract](../../plans/plan-17-geometry-arithmetic-q23-q24.md) retains the four
+The [proof completeness contract](#proof-completeness-contract) retains the four
 composition preflights, exact 40,968 / 901 / 216 populations, pinned deep-query multiset,
 cap rules, complete shard/exit accounting and comparator requirements. Empty,
 partial, failed or all-capped evidence cannot pass.
@@ -163,6 +163,36 @@ they are retained for inspection and are not advertised as portable. The
 source map includes the supervisor/backend; admission's shared start gate remains
 the unchanged member of Plan15's selected closure. No launch occurs on import.
 
+## Proof completeness contract
+
+The selected order is base+d1det+d2rot+gpy4. Replay one arm at a time with six
+processes and retain all 36 shard exits. q24 preflights all four compositions:
+nonempty exact Python inventory, all bytes, no bytecode cache, full moving-face/
+interface module pins. A digest prefix cannot replace this closure.
+
+| Stage | Rows/arm | Exact population |
+| --- | ---: | --- |
+| IV1 surfaces | 40,968 | All selected surfaces, shards 0–5, uncapped |
+| IV2 sample | 901 | One-in-ten keys, shards 0/10/20/30/40/50 of 60; seven listed interface caps |
+| IV2 deep | 216 | Pinned query multiset including multiplicities, uncapped |
+
+The copied deep lists retain concatenated identity
+1981300315d474de6aa88fff0d82d9bc0e728c9b060f302312d0b426722f8373.
+Fixed counts without correct keys cannot pass. Require nonempty expected files,
+sole final completion, totals, no missing/extra rows or shards, consistent
+nonmissing package identity within each arm and distinct identities across arms.
+Canonical settled records match bounds/leaves/met/work units exactly under the
+original source-digest translation; no generic float tolerance.
+
+Candidate caps where baseline finished fail. Only listed baseline sample caps
+are permitted, backed by the exact uncapped deep evidence. Equal-mode uncapped
+rows compare every field except CPU/wall time; capped pairs compare keys and
+multiplicities only, not their partial numerical values. q23's genuine proof plus
+six equal-mode repeat comparisons and q24's genuine stacked proof plus three
+new-base/old-jets comparisons are separate completed obligations. Empty, partial,
+failed or all-capped evidence never passes. Historical jets-r1 remains UNVERIFIED;
+D3/D4 remains unstarted.
+
 ## Integration and remaining boundaries
 
 The bounded source confirmation and component integration are complete. The
@@ -179,4 +209,3 @@ projections of the execution records, not an independent execution authority.
 Final assembly/identity/fold adoption, eligible ROOT, programme acceptance and
 default enablement remain separate. N9 remains paused and fresh full intervals
 remain held. Publication runs no scientific proof and changes no tolerance.
-OpenAI Codex prepared and integrated this bounded change at the owner's request.

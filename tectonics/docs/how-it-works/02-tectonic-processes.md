@@ -78,7 +78,7 @@ closure, informed by [Wickert's gFlex methods](https://gmd.copernicus.org/articl
 
 [Support code](../../src/atlas_tectonics/extension_support.py),
 [independent reference tests](../../tests/test_w05_support_reference.py) and the
-[combined receipt](../../evidence/w05-acceptance.md) distinguish exact same-load
+[combined receipt](../W05_REGIONAL_EXTENSION.md#retained-combined-acceptance-evidence) distinguish exact same-load
 FFT/direct agreement from refinement against a smooth continuum load. They also
 check hydrostatic limits, domain enlargement, and displacement, slope and bending
 strain between samples. The recorded millimetre-scale numerical error is not
@@ -93,7 +93,7 @@ schedule and source/runtime identities. Each completed output is published in on
 storage transaction; failure leaves the previous completed state available.
 
 [Workflow tests](../../tests/test_w05_workflow.py) and the
-[recorded checks](../../evidence/w05-workflow.md) cover exact reopen/continuation,
+[recorded checks](../W05_REGIONAL_EXTENSION.md#retained-recovery-and-measurements) cover exact reopen/continuation,
 interrupted publication, corruption, incompatible schedules and zero solver calls
 for a completed saved result. They establish recoverability and faithful reuse,
 not physical realism. The workflow keeps its latest state rather than duplicating
@@ -122,7 +122,7 @@ accretion; it does not calculate breakup or the melting process that supplies it
 
 See [birth implementation](../../src/atlas_tectonics/spreading.py),
 [birth tests](../../tests/test_w06_spreading.py) and
-[birth evidence](../../evidence/w06-birth.md). Independent trajectory/intersection
+[birth evidence](../W06_BIRTH.md#retained-numerical-evidence). Independent trajectory/intersection
 checks, finite-stock tests and boundary-crossing integrals establish the selected
 geometry and mass account. Outward-motion and ridge-inside-window restrictions
 prevent unsupported re-entry or disappearance at the regional boundary.
@@ -157,7 +157,7 @@ properties do not reproduce their more elaborate calibrated Earth model.
 The [cooling code](../../src/atlas_tectonics/spreading_cooling.py),
 [integral kernels](../../src/atlas_tectonics/spreading_integrals.py),
 [tests](../../tests/test_w06_spreading_cooling.py) and
-[receipt](../../evidence/w06-cooling.md) check independent depth/age quadrature,
+[receipt](../W06_COOLING.md#retained-numerical-evidence) check independent depth/age quadrature,
 partial cells, three grids, heat/water closure and equivalent time partitions.
 Validity is checked for the oldest parcel as well as the cell mean.
 
@@ -183,7 +183,7 @@ First-exit calculations split at both birth and exit-motion stages. This matters
 because parcels born later need not have greater exit age. The
 [history cooling tests](../../tests/test_w06_history_cooling.py) check those
 distributions, event boundaries, stopped-age gaps and exports frozen at departure;
-[recorded evidence](../../evidence/w06-history.md) retains their snapshot.
+[recorded evidence](../W06_HISTORIES.md#retained-numerical-evidence) retains their snapshot.
 
 The [W06 workflow](../../src/atlas_tectonics/w06_workflow.py) supports constant
 spreading, staged spreading and inherited-margin cooling as separate scenarios.

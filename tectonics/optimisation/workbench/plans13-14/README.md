@@ -17,7 +17,9 @@ precision, acceptance tolerance or exact conservation accounts.
 
 The H2 → L1 → H3 construction retains the physical scratch-order repair and
 original public cell/face order. Heat S1 reuses the closed-guard endpoint
-certificates through closed-owned r5 and finish r11. The current forward,
+certificates through closed-owned r5 and finish r11. Its accepted 266 zero-mismatch
+cases and 30-test suite retain their separate scope; small S1 query observations
+are another change. The current forward,
 checkpoint, joined, restored, RAM and native cold-reader consumers bind this
 same generation. Historical readers and receipts remain intact.
 
@@ -32,6 +34,62 @@ probes resolve the unique loaded code object before admission. The exact
 projection marker observes `NUMERICS.calculate` on N5 and `R.calculate` on N4;
 decoding still uses `R.verified_private`. These observations do not change the
 numerical kernel, and nested stage durations must not be added together.
+
+## Loaded marker and closure contract
+
+Resolve the seam before admission through the actual loaded m.J.I.F.FINISH.Q._guard;
+do not hard-code another imported guard. _closure selects the unique direct
+types.CodeType entry of fn.__code__.co_consts with the requested co_name, raising
+on zero or multiple matches. Exact code identity matters. Do not execute the
+guard/closures for discovery or prescribe an unrecorded exception class.
+
+Retain observer r1's ordered (probe,tick_name) interface. Ordinary probes are real
+functions; nested probes are SimpleNamespace(__code__=resolved_code). No global
+setprofile/settrace replacement is introduced.
+
+| Ordered tick | Probe through loaded m |
+| --- | --- |
+| component_volume_queries | m.G.component_volume_bounds |
+| heat_faces | m.J.I.F.FUNCTIONS._face |
+| heat_faces_collected | m.J.I.F.FUNCTIONS.PARALLEL.completed |
+| metric_identity_calls | m.J.I.INDEXED.metric_identity |
+| closed_guard_certificates | _closure(m.J.I.F.FINISH.Q._guard,'certificate') |
+| closed_guard_admissible_tests | _closure(m.J.I.F.FINISH.Q._guard,'admissible') |
+
+| Ordered heat stage | Function through loaded m |
+| --- | --- |
+| actual-differential-geometry | m.G.enclose_differential_ale |
+| actual-composed-heat-forward | m.J.forward |
+| heat-low-predictor | m.J.I.F.LOW.solve |
+| heat-certified-polygon-reconstruction | m.J.I.F.FUNCTIONS.reconstruct |
+| heat-conservative-finish | m.J.I.F.FINISH.finish |
+| heat-finish-correction | m.J.I.F.FINISH.C.correct |
+| heat-finish-closed-guard | m.J.I.F.FINISH.Q.closed_guard |
+| heat-finish-issue | m.J.I.F.FINISH.I.issue |
+| heat-native-projection | m.J.I.N.project |
+| heat-projection-decode | m.J.I.N.R.verified_private |
+| heat-projection-exact | m.J.I.N.NUMERICS.calculate on N5; m.J.I.N.R.calculate on historical N4 |
+
+Keep the commit stages afterwards: heat-result-packaging, heat-checkpoint-save,
+optional heat-checkpoint-r3-checks, heat-exterior-finish, endpoint-store-publish.
+There are 16 registered pairs only when Workflow._r3_after_heat_checkpoint is
+callable, otherwise 15; keep the no-R3 condition/test and unchanged 11-stage prefix.
+
+Registration includes nested calls, not a new solver order or proof all stages
+executed. Preserve observed_stages and actual route. Closed-guard certificate/
+admissible fixture counts are:
+
+| Guard | Full theta=1 | Bisection | Remaining at zero |
+| --- | --- | --- | --- |
+| r4 | 4/1 | 70/67 | 70/67 |
+| r5 | 2/1 | 67/67 | 66/67 |
+
+Do not infer unobserved IV1 paths, sum overlapping phase timings or claim zero
+instrumentation cost. Marker-only changes affect counters/seconds, preserving
+sealed-output parity; S1 separately permits certificate-sharing/skipped-work/source
+metadata differences while guard/energy/face/certificate values remain exact.
+H5a need not be generated for the selected lf3/S1/H3 route. HeatS2 remains
+conditional on worthwhile bisection; S4 consumes commit markers.
 
 ## Source and earlier-plan integration
 
@@ -84,6 +142,16 @@ The original q52 metadata-admission failure is preserved; a separate corrected
 offline proof compared its saved numerical arms successfully. These observations
 cannot be added to the earlier heat/ROOT improvements. Final interval time,
 runtime disk, combined peak RAM and Release/Debug gains remain unmeasured.
+
+The q25 component schedule was H2 proof, H3 proof, H3 time, H2 time on genuine W4,
+with six workers per heat call, no fallback/leaks, frozen sources and environment
+checks, proof D-b PASS and an explicit compiled-H3 route record. The historical
+q06 loaded-identity failure remains separate. The old 28-run/seven-fail marker
+baseline is not relabelled as current passing proof. The174-source numerical
+capture excluded both drivers; nine final marker controls cover that seam.
+Native conversion-work values compare exactly, while their uncaptured
+ABI-dependent object-size preimage remains unproved. No new full-driver runtime
+run or additive whole-programme speed claim follows.
 
 ## Remaining programme boundaries
 

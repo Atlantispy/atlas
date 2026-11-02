@@ -31,6 +31,12 @@ rule is not imported. The accepted D6 diagnostic exception is bounded by ordered
 requests and overlapping live charges. Final peak-map inequalities alone are
 insufficient; unexplained changes remain unresolved. See [DESIGN.md](DESIGN.md).
 
+D2's over-ceiling refusal applies before reservation at entry, both clipping
+paths and rotation. Mid-call identity changes or later ceiling crossings continue
+the reference state without repeating earlier work or reservations. Required
+aliases and pickle memo relationships remain intact. This is the repaired
+Policy-A/D6 contract, not N9's separate zero-refusal criterion.
+
 ## Source layout and construction
 
 | Location | Purpose |

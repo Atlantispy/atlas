@@ -21,7 +21,7 @@ Historical changes only. Read [current delivery and acceptance](../../docs/CURRE
 - The [fold record](docs/release/FOLD.md) distinguished published r4 tools/evidence from an unpublished folded package: 236/236 cells matched by key and all five arms loaded the same MPFR file. Worker coverage was 51/60, explicitly INCOMPLETE for nine missing exit records. Final-generation qualification was a separate scope.
 - Evidence/disposition reconciliation distinguished interim component results from the final source-freeze/fold/retest/fresh-run/pre-landing record. Booking review retained comparable whole-ticket peaks without changing guards or predictions; WP17's serial twelve-kill result was not transferred to the batched route.
 - [Plan24](plans/plan-24-storage-segment-summaries.md) completed its summary/buffer-pool assessment without establishing either build gate. Claims of complete attribution and allocation-cost bounds were corrected; neither mechanism was built.
-- [Plan22's earlier candidate](workbench/plan22/README.md) repaired touched-wrapper retention, reclaimable required entry and repeated mesh close while preserving the current capture encoder. Its earlier UNCERTAIN/unmeasured-selection state was historical; the later corrected-reader selection is recorded above.
+- [Plan22's earlier candidate](workbench/plan22/README-r4.md) repaired touched-wrapper retention, reclaimable required entry and repeated mesh close while preserving the current capture encoder. Its earlier UNCERTAIN/unmeasured-selection state was historical; the later corrected-reader selection is recorded above.
 
 ## 23–24 October 2026 — lazy rows
 

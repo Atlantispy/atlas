@@ -53,6 +53,24 @@ differences and a zero process exit are not interchangeable with a behavioural
 fault detection; test completion, intended predicate, errors, final process state
 and retained streams must agree.
 
+### Verdict and association contract
+
+| Verdict | Exit | Meaning |
+| --- | ---: | --- |
+| PASS | 0 | All required numerical and independent proof conditions pass |
+| REVIEW | 3 | A specific comparison/proof remains unresolved; not acceptance |
+| FAIL | 1 | Located numerical, deterministic resource, proof or integrity defect |
+| VOID-ENVIRONMENT | 4 | Evidenced external interruption |
+| VOID-OBSERVER | 4 | Evidenced external observer interruption |
+| VOID-SUSPECT | 4 | Unresolved stop causality or incomplete outcome |
+
+Every VOID blocks acceptance. Radius association must retain actual quantity,
+units, norm, source, refinement/history and projection context; quaternion L2
+radius and four-times operator error are not interchangeable. A new dump hash,
+zero exit, assertion or diagnostic change cannot replace complete independent
+binding, the intended behavioural predicate, error/finality checks and retained
+logs. Unknown associations remain non-accepting.
+
 ## Current guarded integration route
 
 The actual [guarded width composer](../plan31/final/width/README.md) now

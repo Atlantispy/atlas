@@ -36,7 +36,7 @@ Those are separate integration/portability projects, not solved by adding pip pa
 
 Use an ordinary writable local filesystem and CPython **3.12 or 3.13**, with no
 optimisation. The tested interpreter/platform is recorded in
-[the obtained evidence](INDEPENDENT_DEVELOPMENT_EVIDENCE.md); a supported-minor
+[the obtained evidence](#obtained-evidence-15-september-2026); a supported-minor
 policy is not a claim that every OS/interpreter combination has been tested.
 
 No package manager, administrator rights, compiler, GIS libraries or account
@@ -171,3 +171,37 @@ own real evidence, rather than inventing missing historical files.
 - Python 3.13 `importlib`: https://docs.python.org/3.13/library/importlib.html
 
 No project-wide licence or third-party notice was changed by this development setup.
+
+## Obtained evidence, 15 September 2026
+
+The original Linux/CPython 3.13.5 qualification used a fresh checkout materialised
+from the prepared Git index, without `.atlas-dev`. Offline bootstrap needed no
+manual repair; the four-node smoke returned `2,3,3,11`, with exact independent/
+retained-oracle agreement and full warm-cache reuse. `all-public` passed 277
+tests: 127 runtime, 25 numerics and 125 tooling (31 safety, 49 recovery, 45
+development), with no failures, errors or skips. Runtime tests spawned real
+workers; numerics excluded long analytical decay and native continuation.
+
+Unmocked CLI controls refused another checkout's binding and a one-byte fixture
+mutation (exit 2), accepted restored exact bytes (exit 0), reused real cache in
+a subsequent process, and refused an existing bootstrap environment. Unit checks
+also covered membership/runtime/executed-source drift, historical-schema refusal,
+strict fixture bounds, exclusive publication, interrupted setup, path-only
+installation, malformed inputs and symlink/reparse refusal. Some tiny unit
+fixtures mocked runtime metadata; the clean CLI/profile runs did not. The safety
+map passed 13 maps/41 paths; the prepared diff had no whitespace errors.
+
+This qualified public components only. Windows/macOS, Python 3.12, full R31,
+native R5 codec/history, original Windows integration and historical restart were
+not executed. No source-bound scientific tree, numerical policy, tolerance or
+256-step boundary changed; no simulation, benchmark, live backup or cleanup ran.
+New public identities do not adopt historical seals or provide a hostile-code
+security boundary. The executable bootstrap/smoke/test commands remain above.
+
+The [complete original qualification and tested SHA-256 table](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/docs/INDEPENDENT_DEVELOPMENT_EVIDENCE.md)
+retain exact file identities and commands. Its basis was public commit
+`10a49165fdd7d4fa5bc349719d3219df321dc15c`, tree
+`891dd286a3835e01f1ff957dbed8abdc9e1d44ac`; unchanged engineering/shared trees were
+`de32de5bbbff9a31640321f459d8c90fbb034246` and
+`4b5dfce5f416bff0f0456b8d438e9742866dabec`. These identify that delivery, not a
+fresh pass or execution binding for this guide's present bytes.

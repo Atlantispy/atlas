@@ -805,3 +805,54 @@ are bitwise equal on 236 cells, and the mutants pass 14 of 14 (mt4/mutants.json 
   the volume auto module moves from 2b9d9fc5 to 96cbf772).
 - **Published:** the r4 tools under fold/r4, and path-free evidence under fold/r4/evidence. The folded package is not
   published.
+
+## 15. Landing lineage and dependency obligations
+
+The [16 October reconciliation](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/RECONCILE.md)
+is historical source analysis, not a current landing instruction or new merge
+authorisation. It compared remake `1a58e0b` (157 package files) with composed-r2
+(236): 136 equal, 21 changed and 79 additions, no remake-only module. Its scratch
+ancestor was I03 `30a79e6` plus combined I04/I05 patch `4ec2f359…`; lineage then
+passed fidelity → 7 October heat repair → composed-r1 → composed-r2. All remake
+hunks were present in that selected descendant, including five both-changed modules;
+four textual integration_driving conflicts were adjacent insertions, not missing
+behaviour. These observations cannot establish inclusion in a later selection.
+
+The original helper closure was 119 modules/47,886 lines, reached by 22 package
+modules through thirty direct helper targets. Path-keyed identities, sibling byte
+pins, five literal user paths and compose-time transforms prevented a plain copy.
+Runtime helper extraction belongs inside the selected folded package, with
+package-relative source keys, removed private paths and bottom-up sibling pins.
+Compose-time transformations do not become runtime dependencies. The existing
+fold manifest/preimage proof must account for every permitted identity change;
+numeric fields remain D-b. Retain composed-r2 itself as its original reference.
+
+| Historical unit | Dependency/receiving contract |
+| --- | --- |
+| U0/U1 | Add exact_arithmetic to the finite-admission restoration closure when reuse actually imports it. Keep remake's already-correct tool/upstream pins. Four modified infrastructure leaves plus twelve additions were helper-free. Confirm actual cold restoration with the persistence seam; an import-only smoke is insufficient. |
+| U2 | Thirteen modified I03/I04/I05 modules and six additions formed one helper-free cycle. Relevant tests, material/heat/position semantics and method docs land together; apply the [accepted expectation conditions](../../../../docs/CODING_SAFETY.md#6-changed-expectations-and-landing-obligations). Legacy records may be inspectable but lack continuation state. |
+| U3/U4 | Regional 3-D/spatial and feedback/geometry joins require their helper closure first. Preserve import cycles as units; no unit may depend on an unlanded later unit. |
+| U5/U6 | Differential/parallel/component-volume/moving-face and regional workflow/cold routes require actual runtime helper promotion, reviewed source names and strict/release decisions. A “private” basename is not itself a scientific defect, but public paths/identities must be deliberate. |
+
+Each source unit needs its actual import/persistence/admission/affected-test checks
+and method updates in dependency order. The original proposed helper-free 35-module
+tranche was not authority to bypass X1/R1, expectations acceptance or the owner's
+merge decision. Current constructors/maps and delivery status take precedence.
+The historical “one commit per unit” recommendation is not blanket Git authority.
+
+At that comparison only finite-admission r12 and whole-package I02 timing r12
+bound changed package files. The proposed successor order was finite admission,
+then timing with five strict repetitions; unaffected upstream receipts were to be
+reused. Reassess actual bindings at a real landing rather than assume the old
+count/IDs. Capture new records or honestly retire a timing claim; never alter an
+old receipt to match. Source/runtime membership changes invalidate caches and
+loaded identities normally. Requirements changes such as enabling gmpy2 need
+their own reviewed environment successor; its historical installed presence was
+not a clean-install declaration.
+
+Private interval stores/checkpoints/queue evidence bound to composed-r2's absolute
+root do not become evidence for the landed package. Default is a fresh declared
+baseline; authenticated migration is a separate decision. No existing guard,
+capacity ceiling, run hold, old reference or acceptance obligation is relaxed.
+The original tree/merge/closure/layer scripts and exact tables remain in Git at
+the link above; this consolidation runs none of them.

@@ -154,6 +154,33 @@ records interpreter and NumPy versions, and fails if there are skips, errors or
 source changes. This is local test evidence, not a tamper-proof attestation, a
 historical restart seal, physical acceptance or a performance benchmark.
 
+## First-remake evidence and limits
+
+The 16 September 2026 first-remake run on Linux x86_64/CPython 3.13.5/NumPy 2.3.5,
+with one numerical thread, passed 53 actual-kernel mathematical tests with no
+failures/errors/skips. [foundation-tests.json](../evidence/foundation-tests.json)
+retains the structured environment and before/after source inventory; it is not
+a signature or performance record. A fresh relocated copy without bytecode
+produced the identical structured record and no bytecode. CPython 3.12 grammar
+parsing passed, which is not a 3.12 runtime test. Separate source-only checks
+passed 13 maps/41 paths and 31 tooling tests in that historical run.
+
+The implemented scope was rotations/boundary signs, periodic conservative
+thickness transport, analytical half-space cooling, uniform periodic difference
+flexure, explicit immutable parameter records and narrow verification. Dense
+real-space flexure and small-grid first/second-order refinement were independent
+controls. It did not complete W01–W04. Chunk/palette/sparse volumetric ideas were
+proposals, not a 3D storage layer, distributed solver, copied game code or external
+Minecraft/OpenVDB dependency.
+
+That run supplied no geological observations/calibration, world simulation,
+performance benchmark, old-checkpoint continuation, Windows/macOS/Python 3.12
+runtime, alternative NumPy, editable-install or large-memory qualification.
+Further/nonperiodic mechanics and physical realism remained unverified there.
+It imported no historical source-bound Atlas package and created no main-branch,
+synchronisation, background-execution or licensing authority. Later capabilities
+retain their own separate evidence; moving this account does not renew the run.
+
 ## Performance and memory scope
 
 Use contiguous NumPy arrays and bounded caller-owned batches. Each public kernel
@@ -842,6 +869,7 @@ Primary method references:
 
 <a id="w01-boundaries"></a>
 
+<a id="w01-stage3"></a>
 ## W01 stage 3: static shared-boundary case
 
 `cases/w01_boundaries.json` defines scope and the existing geometry tolerances.

@@ -2,7 +2,7 @@
 
 Evidence status, 26 September: old r1 timings and outputs below bind earlier
 motion/adapters and remain historical. Use the fresh
-[r2 combined workflow receipt](NEW_WORLD_ACCEPTANCE.md#current-rerun-26-september-2026)
+[r2 combined workflow receipt](#current-rerun-26-september-2026)
 for current-code regional outputs; historical numerical results were not repinned.
 
 WORKING NON-CANON. This producer connects a saved S2/S3/S4 world to actual
@@ -270,6 +270,75 @@ source sampling time is zero. Complete retained job storage is 402,993 bytes,
 including the 327,172-byte original archive. Native evolution's accounted peak
 is 2,428,894 bytes, not a process-RSS measurement. See the full
 [evidence and source identities](../evidence/new-world-s5-r1.json).
+
+## Combined lifecycle qualification
+
+The fixed [Step-7 runner](../tools/check_new_world_acceptance.py) declares three
+cases before execution: seed42 and seed43 each use six plates/192 support patches;
+seed42-finer uses twelve/512. All use Earth radius/gravity and continental fraction
+0.3. Each saves an actual initial world, reopens in another process, samples a
+40 × 20 km footprint into four parcels, saves time zero, and continues in another
+process to 50,000/100,000 years. All three passed first attempt without replacement
+or reduced scope. Exact reopened views, unchanged committed prefixes, zero initial
+resampling on resume, direct-evaluation field parity and completed reuse with no
+new outputs check lifecycle composition. Independent finite-deformation area,
+compensating thickness and crust/mantle weight checks pass; mass/reference-volume
+arrays remain exact and unknown heat/absolute elevation remain unknown. These
+test the prescribed regional model, not empirical forcing or plate morphology.
+
+### Current rerun: 26 September 2026
+
+This incoming anchor names the tested r2 snapshot, **not the present sources**.
+The [r2 receipt](../evidence/new-world-s7-r2.json) predates the same-day
+[A3 repair](../../docs/CURRENT_EVIDENCE.md#a3-follow-on-bounded-source-inventory-capacity)
+and is historical. The [predeclared matrix](../evidence/new-world-s7-r2-matrix.json)
+has its separate register classification. All nine fresh-process r2 phases passed
+in 46.767698 s with matching source/runtime bindings. Corrected motion gave mean
+100,000-year regional surface changes of 181.254509 / 119.939201 / 1.644192 m for
+seed42/seed43/seed42-finer, replacing r1's 2.768 / 120.330 / 26.849 m. This physical
+difference follows the frame-neutral motion correction, not line endings/platform.
+It does not renew S2–S5/UI qualification or establish geological realism.
+
+One Windows/CPython 3.12.14, one-thread observation per r2 case measured create/
+save/view versus same-view reopening at 3.162314/1.061075, 3.136050/1.057452 and
+4.316352/1.522087 s (66.45%, 66.28%, 64.74% restoration savings). Completed reuse
+took 0.786622 / 0.773937 / 0.767947 s. These compare generation with restoration,
+not old/new solver performance; no repeated benchmark or second-platform run.
+
+### Historical record: 24 September 2026
+
+The [r1 receipt](../evidence/new-world-s7-r1.json) binds original sources and reused
+S2 geometry/seed/reference controls (including stress refusal), S3 structure/
+thermal/conservation, superseding S4 motion/project/1024-patch archives, S5's 27
+sampling/evolution/lifecycle checks and the UI owner's 132 focused/browser/native
+checks. Reuse required matching scope/bindings; the old S3 session was not repinned.
+Four acceptance-report guards passed in 0.231 s; static checks passed 13 maps/41
+paths and 30 tests with one Windows symlink skip. Linux was unavailable (WSL not
+installed), and no production simulation source changed.
+
+Equal-settings seeds differed intrinsically: sorted plate-area L1 0.1225684,
+largest sorted crust-thickness difference 8,040.88 m and boundary RMS-speed
+difference 1.96266 cm/year. Changing seed42 support/plate count preserved its
+underlying structure identity while changing dependent layout/motion. These are
+scenario differences, not a global mountain-height distribution. Original archive
+sizes were 331,263 / 331,263 / 736,775 bytes and complete jobs 408,530 / 406,461 /
+814,255 bytes, already including frozen input. Keeping original plus job duplicates
+the archive deliberately; audit logs are separate. Largest process working set was
+203,538,432 bytes (194.11 MiB), versus native accounted peak 2,428,894 bytes; a
+128 MiB native budget is not a total-process ceiling. Single-pair fresh-process
+restoration savings were 73.3484%, 67.1011%, 63.3069%, not a solver speedup or
+an uninterrupted-run comparison. Exact timings/identities remain in the
+[complete original qualification](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/NEW_WORLD_ACCEPTANCE.md).
+
+Supported initial-world limits remain 1024 patches, 256 MiB accounted work and
+120 s; regional jobs remain 256 outputs, 2 MiB/record, 64 MiB outputs and 300 s
+per attempt, subject to native footprint/horizon admission. The matrix's
+100,000-year regional horizon is no global-duration promise. Reproduce only this
+matrix with `python -B tectonics/tools/check_new_world_acceptance.py --output
+NEW_DIRECTORY`, its `test_new_world_acceptance.py` guards and required static
+checks; document cleanup authorises no run. No fresh method or paper review was
+needed. [Portable bundles](NEW_WORLD_BUNDLE.md) now own combined initial/result
+storage; broader global plate-network evolution remains separate.
 
 ## CLI and UI handoff
 
