@@ -14,14 +14,15 @@ Steps (each recorded in the summary JSON; the exit code is 0 only when every req
    the tree and not under ``.atlas-dev/``; the combined patch names exactly the paths the chain changes; optional
    ``--forbid-paths FILE`` (one path per line) and ``--expect-paths FILE`` (the exact changed-path list);
 4. static checks in the combined tree: tools/check_coding_safety.py, check_public_paths.py,
-   check_current_evidence.py, their tests (tests/test_coding_safety.py, test_public_paths.py,
-   test_current_evidence.py) and the default tools/check_before_commit.py;
+   their tests (tests/test_coding_safety.py, test_public_paths.py, test_current_evidence.py) and the default
+   tools/check_before_commit.py, which runs check_current_evidence.py on Git-normalised candidate bytes;
 5. a test tier through run_tests_parallel.py: ``quick`` (registered slow tests omitted), ``full``, ``impact``
    (the candidate is committed in the scratch clone and test_impact.py selects BASE..HEAD from ``--impact-map``;
    selected units run one per fresh process, as recorded; everything when the selector says so; the
    repository-root ``tests/`` suite also runs when a change lies outside what the recorded suite covers) or ``none``.
 
-A pass is the same evidence those commands give when run by hand, gathered once; even the full parallel tier is not
+A failed tree/byte phase stops before static checks; a failed static phase stops before the test tier.
+A pass is the same evidence those commands give when run by hand; even the full parallel tier is not
 the verify.py gate, and it is not scientific acceptance.
 """
 from __future__ import annotations
@@ -42,7 +43,6 @@ HERE = Path(__file__).resolve().parent
 STATIC = (
     ('check_coding_safety', ['tools/check_coding_safety.py']),
     ('check_public_paths', ['tools/check_public_paths.py']),
-    ('check_current_evidence', ['tools/check_current_evidence.py']),
     ('test_coding_safety', ['-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_coding_safety.py']),
     ('test_public_paths', ['-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_public_paths.py']),
     ('test_current_evidence', ['-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_current_evidence.py']),
@@ -158,6 +158,14 @@ def main(argv=None):
         temporary.write_text(json.dumps(summary, indent=1), encoding='utf-8')
         os.replace(temporary, summary_path)
 
+    def finish():
+        summary['completed'] = True
+        save()
+        print(json.dumps(dict(summary=str(summary_path), passed=summary['passed'],
+                              steps={k: v.get('passed') for k, v in steps.items()},
+                              wall_seconds=summary['wall_seconds'])))
+        return 0 if summary['passed'] else 1
+
     try:
         # 1-2. Clone, apply, compare trees.
         clone = work/'chain'
@@ -213,6 +221,8 @@ def main(argv=None):
                                 % (sorted(expected - set(changed)), sorted(set(changed) - expected)))
         steps['bytes_and_paths'] = dict(passed=not problems, problems=problems, changed_paths=changed)
         save()
+        if not ok or problems:
+            return finish()
 
         env = child_env(work)
         # 4. Static checks.
@@ -220,6 +230,8 @@ def main(argv=None):
             for name, command in STATIC:
                 steps['static:'+name] = run_step(name, [args.python, '-B', *command], combined, env, logs)
                 save()
+            if any(not step['passed'] for name, step in steps.items() if name.startswith('static:')):
+                return finish()
 
         # 5. A test tier.
         if args.tier != 'none':
@@ -260,9 +272,7 @@ def main(argv=None):
                     if not names:
                         tier.update(passed=True, note='no recorded test can be affected')
                         steps['tier'] = tier
-                        summary['completed'] = True
-                        save()
-                        return 0 if summary['passed'] else 1
+                        return finish()
                     for name in names:
                         runner += ['--only', name]
             step = run_step('tier-'+args.tier, runner, combined, env, logs)
@@ -280,11 +290,7 @@ def main(argv=None):
         save()
         print(json.dumps(dict(summary=str(summary_path), passed=False, error=steps['error']['error'])))
         return 1
-    summary['completed'] = True
-    save()
-    print(json.dumps(dict(summary=str(summary_path), passed=summary['passed'],
-                          steps={k: v.get('passed') for k, v in steps.items()}, wall_seconds=summary['wall_seconds'])))
-    return 0 if summary['passed'] else 1
+    return finish()
 
 
 if __name__ == '__main__':

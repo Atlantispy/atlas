@@ -1,0 +1,122 @@
+{
+  "schema_version": "verification-checks/v1",
+  "scope": "Candidate-verifier scheduling regression boundaries only",
+  "coverage": "PARTIAL",
+  "coverage_evidence": [],
+  "checks": [
+    {
+      "module": "tools/verify_candidate.py",
+      "process": "Development candidate qualification",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "tools/verify_candidate.py users",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development/release qualification of the candidate verifier; not an Atlas runtime check.",
+      "classification_refs": [
+        "docs/DEVELOPMENT_TOOLS.md#verify_candidatepy",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Candidate-verifier scheduling/export or failure-boundary changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "control": "Owner-run unittest CandidateVerifierTests using disposable Git repositories."
+      },
+      "on_failure": "unittest fails; candidate implementation qualification is rejected.",
+      "affected_by": [
+        "tools/verify_candidate.py",
+        "tools/check_before_commit.py",
+        "tools/run_tests_parallel.py",
+        "tests/test_development_tools.py"
+      ],
+      "evidence": [
+        "tests/test_development_tools.py#CandidateVerifierTests"
+      ],
+      "cost_note": "Small synthetic repositories and standard-library checks; no Atlas numerical workload.",
+      "id": "atlas.dev.candidate.normalised-evidence-scheduling",
+      "purpose": "The real commit guard remains the single authoritative current-evidence invocation on its Git-normalised export; a failing evidence checker still rejects the candidate.",
+      "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
+    },
+    {
+      "module": "tools/verify_candidate.py",
+      "process": "Development candidate qualification",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "tools/verify_candidate.py users",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development/release qualification of the candidate verifier; not an Atlas runtime check.",
+      "classification_refs": [
+        "docs/DEVELOPMENT_TOOLS.md#verify_candidatepy",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Candidate-verifier scheduling/export or failure-boundary changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "control": "Owner-run unittest CandidateVerifierTests using disposable Git repositories."
+      },
+      "on_failure": "unittest fails; candidate implementation qualification is rejected.",
+      "affected_by": [
+        "tools/verify_candidate.py",
+        "tools/check_before_commit.py",
+        "tools/run_tests_parallel.py",
+        "tests/test_development_tools.py"
+      ],
+      "evidence": [
+        "tests/test_development_tools.py#CandidateVerifierTests"
+      ],
+      "cost_note": "Small synthetic repositories and standard-library checks; no Atlas numerical workload.",
+      "id": "atlas.dev.candidate.phase-rejection",
+      "purpose": "Rejected tree/byte inputs do not dispatch static checks, and a failed static phase does not dispatch the selected test tier; completed rejection remains failed and interruption remains incomplete.",
+      "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
+    },
+    {
+      "module": "tools/verify_candidate.py",
+      "process": "Development candidate qualification",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "tools/verify_candidate.py users",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development/release qualification of the candidate verifier; not an Atlas runtime check.",
+      "classification_refs": [
+        "docs/DEVELOPMENT_TOOLS.md#verify_candidatepy",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Candidate-verifier scheduling/export or failure-boundary changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "control": "Owner-run unittest CandidateVerifierTests using disposable Git repositories."
+      },
+      "on_failure": "unittest fails; candidate implementation qualification is rejected.",
+      "affected_by": [
+        "tools/verify_candidate.py",
+        "tools/check_before_commit.py",
+        "tools/run_tests_parallel.py",
+        "tests/test_development_tools.py"
+      ],
+      "evidence": [
+        "tests/test_development_tools.py#CandidateVerifierTests"
+      ],
+      "cost_note": "Small synthetic repositories and standard-library checks; no Atlas numerical workload.",
+      "id": "atlas.dev.candidate.tier-coverage",
+      "purpose": "A valid requested tier still executes, with commit-guard and worker-context numerical fixtures both retained; tier none and skip-static keep their declared meanings.",
+      "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
+    }
+  ]
+}

@@ -579,6 +579,165 @@ class ImpactRecordTests(unittest.TestCase):
 
 
 class CandidateVerifierTests(unittest.TestCase):
+    def scheduling_fixture(self, folder):
+        """Real guard and runner; disposable leaves expose their execution roots."""
+        root = Path(folder)/'repo'
+        write(root/'.gitattributes', '*.txt text eol=lf\ntectonics/binding.txt text eol=crlf\n')
+        write(root/'value.txt', 'one\n')
+        write(root/'tectonics'/'binding.txt', 'normalised\n')
+        guard = root/'tools'/'check_before_commit.py'
+        guard.parent.mkdir(parents=True, exist_ok=True)
+        guard.write_bytes((ROOT/'tools'/'check_before_commit.py').read_bytes())
+        marker = '''
+            import json
+            import os
+            from pathlib import Path
+            import sys
+
+            def record(kind, **extra):
+                with open(os.environ['ATLAS_TEST_MARKERS'], 'a', encoding='utf-8') as stream:
+                    stream.write(json.dumps(dict(kind=kind, cwd=str(Path.cwd()),
+                                                 source=str(Path(__file__).resolve()),
+                                                 python=sys.executable, **extra)) + '\\n')
+        '''
+        write(root/'tectonics'/'src'/'scheduling_probe.py', marker)
+        for name in ('check_coding_safety', 'check_public_paths'):
+            write(root/'tools'/(name+'.py'), textwrap.dedent(marker) + f'\nrecord({name!r})\n')
+        write(root/'tools'/'check_current_evidence.py', textwrap.dedent(marker) + '''
+record('evidence', binding=(Path(__file__).resolve().parents[1]/'tectonics'/'binding.txt').read_bytes().hex())
+raise SystemExit(int(os.environ.get('ATLAS_TEST_EVIDENCE_EXIT', '0')))
+''')
+        for name in ('test_coding_safety', 'test_public_paths', 'test_current_evidence'):
+            write(root/'tests'/(name+'.py'), '''
+                import unittest
+                class StaticLeaf(unittest.TestCase):
+                    def test_pass(self):
+                        pass
+            ''')
+        write(root/'tectonics'/'tests'/'test_digest_line_endings.py', '''
+            from pathlib import Path
+            import unittest
+            class DigestLeaf(unittest.TestCase):
+                def test_binding_is_available(self):
+                    self.assertEqual((Path.cwd()/'tectonics'/'binding.txt').read_bytes().splitlines(),
+                                     [b'normalised'])
+        ''')
+        write(root/'tectonics'/'tests'/'test_i01_fixture.py', '''
+            import os
+            from pathlib import Path
+            import unittest
+            import scheduling_probe
+            class NumericalLeaf(unittest.TestCase):
+                def test_records_its_real_execution_context(self):
+                    scheduling_probe.record('numerical', pythonpath=os.environ.get('PYTHONPATH'),
+                                            imported=str(Path(scheduling_probe.__file__).resolve()))
+        ''')
+        git(root, 'init', '-q')
+        git(root, 'add', '-A')
+        git(root, 'commit', '-q', '-m', 'fixture')
+        base = git(root, 'rev-parse', 'HEAD').strip()
+        write(root/'value.txt', 'two\n')
+        patch_path = Path(folder)/'candidate.patch'
+        patch_path.write_bytes(subprocess.run(['git', '-c', 'core.autocrlf=false', 'diff'], cwd=root,
+                                             capture_output=True, check=True).stdout)
+        git(root, 'reset', '-q', '--hard', base)
+        return root, base, patch_path
+
+    def run_scheduling_fixture(self, folder, fixture, name, *extra, evidence_exit=0, patch_path=None):
+        root, base, original_patch = fixture
+        work, markers = Path(folder)/name, Path(folder)/(name+'.jsonl')
+        with patch.dict(os.environ, {'ATLAS_TEST_MARKERS': str(markers),
+                                     'ATLAS_TEST_EVIDENCE_EXIT': str(evidence_exit)}):
+            code = candidate.main(['--repo', str(root), '--base', base, '--combined',
+                                   str(patch_path or original_patch), '--python', sys.executable,
+                                   '--workers', '1', '--work', str(work), *extra])
+        summary = json.loads((work/'summary.json').read_text(encoding='utf-8'))
+        records = [json.loads(line) for line in markers.read_text(encoding='utf-8').splitlines()] \
+            if markers.exists() else []
+        return code, summary, records
+
+    def test_real_guard_checks_evidence_once_and_full_tier_keeps_both_numerical_contexts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            code, summary, records = self.run_scheduling_fixture(folder, fixture, 'full', '--tier', 'full')
+            self.assertEqual(code, 0, summary)
+            self.assertTrue(summary['completed'])
+            self.assertTrue(summary['passed'])
+            self.assertNotIn('static:check_current_evidence', summary['steps'])
+            self.assertTrue(summary['steps']['static:check_before_commit']['passed'])
+            self.assertTrue(summary['steps']['tier']['passed'])
+            evidence = [row for row in records if row['kind'] == 'evidence']
+            numerical = [row for row in records if row['kind'] == 'numerical']
+            self.assertEqual(len(evidence), 1, records)
+            export = Path(evidence[0]['cwd'])
+            combined = Path(folder)/'full'/'combined'
+            self.assertNotEqual(export, combined)
+            self.assertEqual(Path(evidence[0]['source']).parent.parent, export)
+            self.assertEqual(bytes.fromhex(evidence[0]['binding']), b'normalised\n')
+            self.assertEqual((combined/'tectonics'/'binding.txt').read_bytes(), b'normalised\r\n')
+            self.assertEqual({row['cwd'] for row in numerical}, {str(export), str(combined)})
+            self.assertEqual(len(numerical), 2, records)
+            for row in numerical:
+                self.assertEqual(Path(row['python']).resolve(), Path(sys.executable).resolve())
+                self.assertEqual(Path(row['imported']).parent, Path(row['cwd'])/'tectonics'/'src')
+            guard_row = next(row for row in numerical if row['cwd'] == str(export))
+            self.assertEqual(guard_row['pythonpath'], str(export/'tectonics'/'src'))
+            worker_row = next(row for row in numerical if row['cwd'] == str(combined))
+            self.assertEqual(worker_row['pythonpath'].split(os.pathsep)[0], str(combined/'tectonics'/'src'))
+
+    def test_evidence_failure_rejects_before_the_requested_tier(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            code, summary, records = self.run_scheduling_fixture(folder, fixture, 'failed', '--tier', 'full',
+                                                                 evidence_exit=7)
+            self.assertEqual(code, 1, summary)
+            self.assertTrue(summary['completed'])
+            self.assertFalse(summary['passed'])
+            self.assertFalse(summary['steps']['static:check_before_commit']['passed'])
+            self.assertNotIn('tier', summary['steps'])
+            self.assertFalse((Path(folder)/'failed'/'tests').exists())
+            self.assertEqual(sum(row['kind'] == 'evidence' for row in records), 1, records)
+            numerical = [row for row in records if row['kind'] == 'numerical']
+            self.assertEqual(len(numerical), 1, records)  # the guard still runs its remaining checks
+            self.assertNotEqual(numerical[0]['cwd'], str(Path(folder)/'failed'/'combined'))
+
+    def test_invalid_tree_or_patch_bytes_reject_before_statics_and_tier(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            crlf = Path(folder)/'crlf.patch'
+            crlf.write_bytes(fixture[2].read_bytes().replace(b'+two\n', b'+two\r\n'))
+            for name, extra, patch_path, failed_step in (
+                    ('wrong-tree', ('--expect-tree', '0000000'), None, 'trees'),
+                    ('crlf', (), crlf, 'bytes_and_paths')):
+                with self.subTest(case=name):
+                    code, summary, records = self.run_scheduling_fixture(
+                        folder, fixture, name, '--tier', 'full', *extra, patch_path=patch_path)
+                    self.assertEqual(code, 1, summary)
+                    self.assertTrue(summary['completed'])
+                    self.assertFalse(summary['passed'])
+                    self.assertFalse(summary['steps'][failed_step]['passed'])
+                    self.assertEqual(set(summary['steps']), {'trees', 'bytes_and_paths'})
+                    self.assertEqual(records, [])
+                    self.assertFalse((Path(folder)/name/'tests').exists())
+
+    def test_none_and_skip_static_preserve_the_requested_scope(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            for name, extra, expected_evidence, expected_numerical, expected_tier in (
+                    ('none', ('--tier', 'none'), 1, 1, False),
+                    ('worker-only', ('--tier', 'full', '--skip-static'), 0, 1, True),
+                    ('bytes-only', ('--tier', 'none', '--skip-static'), 0, 0, False)):
+                with self.subTest(case=name):
+                    code, summary, records = self.run_scheduling_fixture(folder, fixture, name, *extra)
+                    self.assertEqual(code, 0, summary)
+                    self.assertTrue(summary['completed'])
+                    self.assertTrue(summary['passed'])
+                    self.assertEqual(sum(row['kind'] == 'evidence' for row in records), expected_evidence, records)
+                    self.assertEqual(sum(row['kind'] == 'numerical' for row in records), expected_numerical, records)
+                    self.assertEqual('tier' in summary['steps'], expected_tier)
+                    if '--skip-static' in extra:
+                        self.assertFalse(any(name.startswith('static:') for name in summary['steps']))
+
     def test_missing_impact_map_refuses_before_creating_a_run(self):
         with tempfile.TemporaryDirectory() as folder:
             work = Path(folder)/'work'

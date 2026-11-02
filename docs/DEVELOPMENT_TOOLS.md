@@ -191,8 +191,8 @@ chain and the combined patch in two working trees, and records each step in the 
 1. equal tree hashes (and `--expect-tree`);
 2. no CR byte in a patch or a changed file; patch paths relative and outside `.atlas-dev/`; the combined patch names
    exactly the chain's changed paths; optional `--forbid-paths` and `--expect-paths` lists;
-3. `check_coding_safety`, `check_public_paths`, `check_current_evidence`, their tests and the default
-   `check_before_commit`, in the combined tree;
+3. `check_coding_safety`, `check_public_paths`, the three focused static-check test modules and the default
+   `check_before_commit`; the latter runs `check_current_evidence` on the Git-normalised candidate export;
 4. one tier through `run_tests_parallel.py`: `quick`, `full`, `impact` or `none`.
    - `--slow-file` supplies a registry when the candidate tree has none.
    - `impact` needs `--impact-map`. It commits the candidate inside the scratch clone, selects BASE..HEAD, and runs
@@ -203,6 +203,12 @@ The exit code is 0 only when every requested step passes. During execution the s
 `passed: false`; an interrupted run cannot leave a green receipt. Missing required tier arguments refuse before a
 scratch run is created. A completed pass is evidence for those commands only; even the full parallel tier is not the
 `verify.py` gate and is not scientific acceptance.
+
+Tree/byte failures finish as a completed rejection before static execution. Static failures finish as a completed
+rejection before the test tier. The summary retains the actual failure and executed steps. The standalone checkout
+evidence-check invocation is consolidated into the existing mandatory commit guard; its export, checks and I01/I02
+selection are unchanged. Guard and parallel-tier numerical tests remain separate because their import environments,
+temporary folders and process isolation differ. No numerical test result is cached or substituted across them.
 
 ## Measured at `30a79e6`
 
