@@ -261,6 +261,113 @@ Reuse and complete the existing shared machinery rather than building a separate
 | Execution and resources | Use parallelism where work is independent and expected savings exceed startup/communication costs. Estimate before starting; the previously discussed roughly two-minute trigger is a heuristic to evaluate, not a universal law or reason to wait until a full serial run has finished. Count aggregate worker/native memory. |
 | Testing and measurement | Focus on changed behaviour and affected joins; broaden only for shared-system risk. Use deterministic controls, independent physical comparisons, withheld cases, scientific parity and meaningful visual checks where relevant. |
 
+### Assessed code consolidation
+
+**Assessment complete; implementation not started.** Static review of source snapshot
+`f9e3efde6f12ef199b322e804c63cc5925797aab` identified the bounded work below.
+Syntax/duplicate screening and selected consumer inspection do not establish
+whole-repository equivalence, runtime compatibility or scientific acceptance.
+The mutation candidate pool is **248 Python files / 8,944,114 checkout logical
+bytes**; only two recipe reconstructions were checked, each reproducing its stored
+source text exactly. These counts are neither deletion clearance nor measured
+savings. Implementation requires the relevant owner's authority and an explicit
+source successor where identities change.
+
+- **CODE-C01 — first: share source construction and guarded publication.**
+  [Combined](../tectonics/optimisation/workbench/combined-runtime-r1/build_selection.py)
+  and [Plan39](../tectonics/optimisation/workbench/plan39/build_selection.py) repeat
+  the same construction skeleton; [Plan18](../tectonics/optimisation/workbench/plan18/build_selection.py),
+  [Plan21](../tectonics/optimisation/workbench/plan21/build_selection.py) and
+  [heat receiving](../tectonics/optimisation/workbench/plan40/heat/integration-r2/build_selection.py)
+  repeat staged publication with differing path safeguards.
+  Use one source-only module under `tools`, thin versioned route descriptors,
+  pure overlay composition and one guarded publication boundary. Begin with
+  successor Combined/Plan39 constructors; migrate Plan21 and Plan30/S1A pins and
+  source-tool bindings before retiring predecessors. Preserve ordering-sensitive
+  identity encodings, public/private base provenance, authority flags and
+  [Plan22's D10 selection](../tectonics/optimisation/workbench/plan22/build_selection.py).
+  Parameterise the existing constructor controls; retain route schemas, pin
+  refusals, reserved/case-aliased paths, junction/symlink rejection, destination
+  races, validated-byte snapshots and failed-write cleanup. Compare complete
+  output membership, bytes and provenance; revalidate final publication paths.
+
+- **CODE-C02 — independently, one fully reconstructed mutation family at a time.**
+  Existing [S1 recipes](../tectonics/optimisation/pending/storage/refute/s1/make_mutants.py)
+  and [S2 recipes](../tectonics/optimisation/pending/storage/refute/s2/delta-r8/make_my_mutants.py)
+  can generate disposable variants instead of retaining every generated copy.
+  Retain necessary selected baselines, pinned recipes, shared tests and minimal
+  useful results at their existing owners. Before any deletion, reconstruct the
+  complete family exactly and migrate its actual source-map and qualification
+  consumers.
+  Check complete variant coverage, exact outputs, seam-count refusals, clean
+  control success and intended fault detection with honest exit/failure reporting;
+  setup/import failures do not prove fault detection. The two checked samples,
+  S1 `m01_drop_closed` and S2 r8 `b1_block_1p5_mib`, do not qualify the whole pool.
+
+- **CODE-C03 — later, with C04: an explicit generator execution successor.**
+  [R29](../engineering/work/generator_upgrade_r29/registry.py),
+  [R30](../engineering/work/generator_upgrade_r30/registry.py) and
+  [R31](../engineering/work/generator_upgrade_r31/registry.py) repeat registration,
+  worker, signature and error-preservation plumbing. Replace the selected R31
+  cloning/decorating route with an execution shell taking explicit registration,
+  owner, provenance and receipt policies; keep spawn entry points explicit.
+  Preserve the six-overridden/26-retained registration split, unaffected
+  producer/cache identities, R30 prepared-context closure, receipt schemas,
+  primary/cleanup errors and checkpoint behaviour.
+  Qualify registry behaviour, serial/spawn identity, cold/warm reuse, drift
+  refusals, combined failures and stop/resume through authorised isolated fixtures.
+
+- **CODE-C04 — share capture mechanics within that same successor boundary.**
+  [R26 provenance](../engineering/work/generator_upgrade_r26/provenance.py) through
+  [R31 provenance](../engineering/work/generator_upgrade_r31/provenance.py) repeat
+  inventory, checked-byte hashing, stability and loaded-byte verification while
+  already sharing the [R24 reader](../engineering/work/generator_upgrade_r24/verification.py).
+  Put a small helper beside that machinery and bind its executed bytes explicitly.
+  Keep package prefixes, aliases, extra modules, R29 local capture, R30 retained
+  R29 capture and R31 nested `retained_r30` identity as caller policies. Check
+  added/deleted files, mutation during capture, loaded-byte mismatch, aliases,
+  retained-module drift, exact identity shape and unaffected producer keys.
+  Sharing does not remove checks or introduce a persistent mtime/digest cache.
+
+- **CODE-C05 — a small independent test-maintenance change.**
+  [Mechanics tests](../tectonics/tests/test_evolving_mechanics.py) and
+  [W07 workflow tests](../tectonics/tests/test_w07_workflow.py) duplicate four
+  factorisation failure injectors and `Abort`. Share only these instance-level
+  injectors in a test-only `regional_failure_fixtures` module. Keep consumer tokens
+  and distinct mechanics disposal/resource-recovery versus workflow checkpoint,
+  publication and reload assertions. Run both affected classes with all four
+  failure modes; do not patch protected module code or collapse recovery scenarios.
+
+- **CODE-C06 — when an affected executor next changes.**
+  [R12](../engineering/work/generator_runtime_r12/executor.py) and
+  [R24](../engineering/work/generator_upgrade_r24/executor.py) have identical
+  25-line `_frontiers` functions. Share only the pure graph-wave calculation,
+  with explicit source capture. Check deterministic waves, repeated-parent
+  deduplication, completed prefixes, impossible-frontier refusal and serial/wave
+  parity. Preserve R24 streaming/out-of-order acceptance/contiguous recovery and
+  R12 wave execution as distinct contracts; retain the existing recovery checks.
+
+- **CODE-C07 — when affected native modules next change.**
+  [Driving](../tectonics/src/atlas_tectonics/integration_driving.py),
+  [ledger](../tectonics/src/atlas_tectonics/integration_ledger.py),
+  [ports](../tectonics/src/atlas_tectonics/integration_ports.py) and
+  [sphere](../tectonics/src/atlas_tectonics/integration_sphere.py) repeat an immutable
+  array-copy primitive with different dtype defaults. Share an explicit typed
+  helper beside `_validation`; its float64-only `frozen` is not a substitute.
+  Preserve caller validation and bool/int/uint8 types. Check dtype, shape, C-order
+  bytes including signed zero, detachment from inputs, write-enable refusal and
+  supported empty arrays, plus affected I02–I04 and source-identity controls.
+
+Do not flatten revision folders or merge complete executors, solvers or transport
+implementations from textual similarity. Frozen payloads remain until actual
+consumers migrate; Plan21 r4 is not interchangeable with Plan22's frozen legacy
+Plan21 selection. The unresolved Plan04 width and L frozen-constructor selections
+remain protected. This work does not access current runs/stores or historical
+archives, change holds, add an IV1 prerequisite or enable a production default.
+C06/C07's modest consolidation belongs with relevant authorised changes, not a
+separate requalification campaign. No general utility framework or measured
+time/RAM/storage saving is proposed.
+
 ### Performance reporting
 
 - Preserve quality first. Optimise useful work before calling an increment complete, but do not make exhaustive optimisation a prerequisite for every new capability.
