@@ -608,12 +608,24 @@ record('evidence', binding=(Path(__file__).resolve().parents[1]/'tectonics'/'bin
 raise SystemExit(int(os.environ.get('ATLAS_TEST_EVIDENCE_EXIT', '0')))
 ''')
         for name in ('test_coding_safety', 'test_public_paths', 'test_current_evidence'):
-            write(root/'tests'/(name+'.py'), '''
-                import unittest
-                class StaticLeaf(unittest.TestCase):
-                    def test_pass(self):
-                        pass
-            ''')
+            write(root/'tests'/(name+'.py'), textwrap.dedent(marker) + f'''
+import unittest
+record('static_import', module={name!r})
+class StaticLeaf(unittest.TestCase):
+    def test_pass(self):
+        record('static_test', module={name!r})
+        self.assertNotEqual(os.environ.get('ATLAS_TEST_STATIC_FAIL'), {name!r})
+''')
+        write(root/'tests'/'test_remaining.py', textwrap.dedent(marker) + '''
+import unittest
+record('remaining_import')
+if os.environ.get('ATLAS_TEST_ROOT_MODE') == 'import-error':
+    raise ImportError('remaining module import sentinel')
+class RemainingLeaf(unittest.TestCase):
+    def test_remaining(self):
+        record('remaining_test')
+        self.assertNotEqual(os.environ.get('ATLAS_TEST_ROOT_MODE'), 'failure')
+''')
         write(root/'tectonics'/'tests'/'test_digest_line_endings.py', '''
             from pathlib import Path
             import unittest
@@ -655,6 +667,59 @@ raise SystemExit(int(os.environ.get('ATLAS_TEST_EVIDENCE_EXIT', '0')))
         records = [json.loads(line) for line in markers.read_text(encoding='utf-8').splitlines()] \
             if markers.exists() else []
         return code, summary, records
+
+    def impact_scheduling_map(self, folder, fixture):
+        root, base, _ = fixture
+        path = Path(folder)/'impact-map.json'
+        path.write_text(json.dumps(dict(schema=impact.SCHEMA, commit=base,
+                                        files=impact.tracked_blobs(root), numba_files=[], units={})), encoding='utf-8')
+        return path
+
+    def test_impact_root_tests_reuse_successful_statics_and_skip_static_runs_them_in_full(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            impact_map = self.impact_scheduling_map(folder, fixture)
+            modules = ['test_coding_safety', 'test_public_paths', 'test_current_evidence']
+            for name, extra, expected_reuse in (('reuse', (), modules), ('skip', ('--skip-static',), [])):
+                with self.subTest(case=name):
+                    code, summary, records = self.run_scheduling_fixture(
+                        folder, fixture, name, '--tier', 'impact', '--impact-map', str(impact_map), *extra)
+                    self.assertEqual(code, 0, summary)
+                    self.assertTrue(summary['completed'])
+                    self.assertTrue(summary['passed'])
+                    self.assertTrue(summary['steps']['root_tests']['passed'])
+                    self.assertEqual(summary['steps']['root_tests']['reused_static_modules'], expected_reuse)
+                    for kind in ('static_import', 'static_test'):
+                        self.assertEqual(sorted(row['module'] for row in records if row['kind'] == kind),
+                                         sorted(modules), records)
+                    self.assertEqual(sum(row['kind'] == 'remaining_test' for row in records), 1, records)
+                    if extra:
+                        self.assertFalse(any(key.startswith('static:') for key in summary['steps']))
+
+    def test_impact_root_failures_and_import_errors_remain_failures_and_static_failure_stops(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = self.scheduling_fixture(folder)
+            impact_map = self.impact_scheduling_map(folder, fixture)
+            for name, mode, static_fail in (('assertion', 'failure', ''),
+                                             ('import', 'import-error', ''),
+                                             ('static', '', 'test_public_paths')):
+                with self.subTest(case=name), patch.dict(os.environ, {'ATLAS_TEST_ROOT_MODE': mode,
+                                                                      'ATLAS_TEST_STATIC_FAIL': static_fail}):
+                    code, summary, records = self.run_scheduling_fixture(
+                        folder, fixture, name, '--tier', 'impact', '--impact-map', str(impact_map))
+                    self.assertEqual(code, 1, summary)
+                    self.assertTrue(summary['completed'])
+                    self.assertFalse(summary['passed'])
+                    if static_fail:
+                        self.assertFalse(summary['steps']['static:test_public_paths']['passed'])
+                        self.assertNotIn('root_tests', summary['steps'])
+                        self.assertNotIn('tier', summary['steps'])
+                        self.assertFalse(any(row['kind'] == 'remaining_import' for row in records), records)
+                    else:
+                        self.assertFalse(summary['steps']['root_tests']['passed'])
+                        log = Path(summary['steps']['root_tests']['log']).read_text(encoding='utf-8')
+                        self.assertIn('remaining module import sentinel' if mode == 'import-error'
+                                      else 'AssertionError', log)
 
     def test_real_guard_checks_evidence_once_and_full_tier_keeps_both_numerical_contexts(self):
         with tempfile.TemporaryDirectory() as folder:

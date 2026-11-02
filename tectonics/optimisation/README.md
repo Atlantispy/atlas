@@ -44,9 +44,9 @@ These links identify subjects and existing owners. Read status in the current-st
 | 16 | [Geometry-worker assessment](workbench/plan16/README.md) |
 | 17 | [Geometry stacked parity](workbench/plan17/README.md) |
 | 18 | [Endpoint batching](workbench/plan18/README.md) |
-| 19 | [Geometry candidates](plans/plan-19-geometry-fast-paths.md) |
+| 19 | [Geometry candidates](workbench/plan19/README.md) |
 | 20 | [Diagnostic captures](workbench/plan20/README.md); [measurement and folded-DLL contract](workbench/plan20/README.md) |
-| 21 | [Lazy rows and sealed-mesh identity](plans/plan-21-lazy-fields-s3-s9.md) |
+| 21 | [Lazy rows and sealed-mesh identity](workbench/plan21/README.md) |
 | 22 | [Bounded page carry](workbench/plan22/README-r4.md); [corrected-reader selection](workbench/plan22/README-r4.md) |
 | 23 | [Mapped sidecar reads](plans/plan-23-storage-mapped-reads-wp12.md) |
 | 24 | [Segment summaries and buffer pools](plans/plan-24-storage-segment-summaries.md) |

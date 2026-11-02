@@ -104,6 +104,21 @@ must be measured rather than presumed zero.
    the same independent reader and promotion checks; an orphan is never silently
    promoted.
 
+### Preseal refusal and explicit review adoption
+
+`preseal_or_review` may seal an otherwise refused candidate for inspection and
+then re-raise its first cause. It records `FAILED_PRESEAL_SEALED_FOR_REVIEW`; the
+launcher stops before the ordinary reader. `MemoryError`, cancellation and guard
+aborts propagate without sealing, and a failed seal remains fatal.
+
+Review adoption requires all three: an independent reader PASS on that exact
+sealed file, a written diagnosis establishing a checker defect, and the existing
+`atlas.fresh-interval-review-approval.v1` approval from the coordinator or owner
+binding the file digest and reader verdict. Ordinary adoption refuses a review
+approval. Stored-data integrity failures, including chunk, manifest or G8 failures,
+are quarantined and never adopted; the interval must be rerun after its actual
+repair under the existing run authority. A review seal is not an accepted result.
+
 The reader catches swapped chunks before promotion without requiring a new storage accumulator; the separately proposed WP10 accumulator remains optional defence in depth, not a substitute for the independent reader.
 
 The selected separate-process route releases producer memory before pending-store
@@ -346,6 +361,30 @@ partial/garbled/stale/premature gate, wrong process/attempt/receipt, launcher lo
 wait expiry/cancel/free-floor refusal before store access, Windows replacement/race
 handling, missing/extra finalise fields and fresh-directory fallback. Reuse adequate
 unchanged evidence; do not run an unrelated suite or turn this list into new authority.
+
+## Composition order and frozen source locations
+
+The retained partition composition uses `LP.transform`, not the older
+`transform_lifetimes` description. With the native ROOT partition parent, interval
+one creates native proposals and copies supports into the end mesh. From interval
+two, restored `PartitionV2` passes its compact scope, so proposals and the mesh
+share same-scope sealed supports. The corrected lifetime condition is therefore
+copied at interval one, shared from interval two; the old forecast of repeated
+native copies does not describe this selected route.
+
+`live_memory_composition.STAGES` runs at source construction, never as a runtime
+transform. Its stages consume the specified LF source and compile each result;
+the differential-mesh patch precedes its dependent stages. `LP.transform` must
+come first on differential geometry because its source pins require that order.
+The historical probe found spatial composition commuted with the six geometry
+stages; it does not waive the selected constructor's exact input/order checks.
+
+The retained frozen heat control copies pinned sibling helpers byte-for-byte,
+inserts only the reference used by that control, audits imported roots and checks
+array parity. Heat identities also include absolute helper locations: unchanged
+arrays alone do not permit relocation or identity reuse. Freeze the chosen source
+location before a run begins; moving it requires its own new binding and existing
+qualification. This documentation neither moves a source tree nor starts a run.
 
 ## Retained evidence and completion boundaries
 

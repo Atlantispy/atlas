@@ -34,6 +34,17 @@ A pass means only that the declared bytes match. It is **not** runtime,
 native-execution, platform or scientific verification. Recorded timings and PASS
 results remain observations of the original run. Nothing is re-executed.
 
+Classification does not require permanent checkout retention. Finished receipts
+with no current consumer can leave the register and active tree after their
+references are resolved; their original bytes remain in Git history. The
+[pre-retirement snapshot](https://github.com/Atlantispy/atlas/tree/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence)
+contains the 77 retired historical/superseded receipts. The 37 current entries
+and their binding rules are unchanged. Nine older entries remain: three support
+named I01 selections without a current successor, and six are linked by method
+documents whose current evidence binds those exact document bytes. These are
+specific remaining consumers, not a requirement to preserve every old run.
+The register now checks 46 records; it does not connect to a run store or archive.
+
 ## Coverage today
 
 The [register](../tectonics/evidence/current-evidence.json) owns each record's
@@ -96,7 +107,7 @@ Six I01 phase/receiver/separation/G25 writers used platform newlines; Windows
 generated CRLF while Git retained LF. Thirteen register and six closure-matrix
 digests therefore named bytes no clone received. Writers now emit LF and
 test_digest_line_endings.py guards that contract. The
-[r2 trail](../tectonics/evidence/line-ending-digest-correction-r2.json) retains
+[r2 trail](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/line-ending-digest-correction-r2.json) retains
 all old/new values and proofs. Only digest citations changed; receipt bytes,
 measurements and recorded bindings were not rewritten or rerun. Affected current
 receipts became historical after the writer change rather than being repinned.
@@ -149,7 +160,7 @@ seven strict workflow comparisons over five repetitions passed. Final
 Git-normalised guard: 3/3 in 8.5 s with an **explicit 33-test optimisation
 selection**, not the default I01/I02 suite.
 
-The [operational comparison](../tectonics/evidence/optimisation-20261005.json)
+The [operational comparison](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/optimisation-20261005.json)
 became historical on 16 October when a bound tool added reuse.py to restoration
 inventory; its external harness cannot produce a successor. One Windows machine,
 one fresh process/configuration and one pass of seven workloads measured aggregate
@@ -300,7 +311,7 @@ only that catch was repaired before success. Initial artefacts were retained.
 Reproduction selections and first-attempt timings remain in the original report;
 document maintenance does not authorise these native runs.
 
-The r1 [line-ending trail](../tectonics/evidence/line-ending-digest-correction-r1.json)
+The r1 [line-ending trail](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/line-ending-digest-correction-r1.json)
 retains all 31 reviewed corrections across fourteen holder files and proofs of
 exact CRLF/LF transformations. Twenty-two named local evidence files were
 normalised with original bytes retained outside the public checkout; no whole-tree

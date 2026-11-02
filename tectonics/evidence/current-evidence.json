@@ -3,13 +3,6 @@
   "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
-      "id": "optimisation-20261005",
-      "path": "tectonics/evidence/optimisation-20261005.json",
-      "sha256": "21774036c2d42fa3288e117c915065fac014042c1d9d830f79978ca067658167",
-      "status": "historical",
-      "note": "Historical since 16 October 2026: tools/check_i01_finite_admission.py, which this record binds, gained src/atlas_tectonics/reuse.py in its RESTORATION inventory (successor i01-finite-admission-r12). The timing harness, baseline snapshot and raw records are outside the repository, so rerunning a repository tool cannot produce a successor; the receipt remains an observation of the 5 October 2026 snapshot. Original result: one matched pass with 21 successful bounded executions, five original digest matches and two explicitly explained identity/provenance differences; whole-process timings and the I02 diagnostic-release regression retained. Scope of the original result: one Windows machine and interpreter, one pass per configuration, bounded n=10 multigrid, no confidence intervals and no whole-generator, other-platform or packaged EXE claim; private-state release diagnostics are not strict scientific acceptance. The inventory change alters no solver, workload or timed code path."
-    },
-    {
       "id": "i02-workflow-timing-r12",
       "path": "tectonics/evidence/i02-workflow-timing-r12.json",
       "sha256": "ca3913c425008b7f66b1ee46fb2cc5a5765329d6d52fb461a5d5bb0fb1affa3a",
@@ -32,101 +25,6 @@
         "One Windows machine and interpreter; no other-platform or whole-generator performance claim.",
         "The bounded column workflow preserves the retained scientific tolerances and 256-step ceiling; timing and numerical parity do not establish physical validation or generated-world acceptance."
       ]
-    },
-    {
-      "id": "i02-workflow-timing-r11",
-      "path": "tectonics/evidence/i02-workflow-timing-r11.json",
-      "sha256": "e81bb79810dbfacec653ad652745fe6a3077cae21576fbacf1fc1be7c387f9ea",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r12",
-      "note": "Original bytes retained; replaced after the 5 October 2026 optimisation batch by i02-workflow-timing-r12. No recorded digest or timing was rewritten."
-    },
-    {
-      "id": "i02-workflow-timing-r10",
-      "path": "tectonics/evidence/i02-workflow-timing-r10.json",
-      "sha256": "ddb86eab7dd6b834e55586818c2d04d751822133374126782f02b67842999a54",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r11",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r11 after the 4 October 2026 I04/I05a integration and repairs. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r9",
-      "path": "tectonics/evidence/i02-workflow-timing-r9.json",
-      "sha256": "f4986ac20d9186a59608a260f14add34dc920811bd885a04d8a9482d82c2cd05",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r10",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r10 after the 3 October 2026 N1 change to integration_transfer.py. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r8",
-      "path": "tectonics/evidence/i02-workflow-timing-r8.json",
-      "sha256": "fa380b911460c5a170b3dafb1660cd115cdf261857e6e0b416345720d6714c4a",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r9",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r9 after the 3 October 2026 K1-K5 follow-up repairs. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r7",
-      "path": "tectonics/evidence/i02-workflow-timing-r7.json",
-      "sha256": "d78cd33b52d08ac452fa15657c73c4c7799f7dfb8e3cbb0932f653450e72e31a",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r8",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r8 after the 3 October 2026 I03 repairs and extension. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r6",
-      "path": "tectonics/evidence/i02-workflow-timing-r6.json",
-      "sha256": "80a32a2067180851147fa00e432264330c180e1e6e90b2a8a6c978ead1ec241c",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r7",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r7 after the 2 October 2026 R7 integration. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r5",
-      "path": "tectonics/evidence/i02-workflow-timing-r5.json",
-      "sha256": "a9df0f954604f0e5e4ec2f0a32b1f8527f933bb826bda414b640846089d75656",
-      "status": "superseded",
-      "superseded_by": "i02-workflow-timing-r6",
-      "note": "Retained original receipt; superseded by i02-workflow-timing-r6 after the 1 October 2026 R4 integration. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i02-workflow-timing-r4",
-      "path": "tectonics/evidence/i02-workflow-timing-r4.json",
-      "sha256": "81baafa7e03a1b5f8501647cb3c493de7cb5a134e2078133513cd161ceb950bc",
-      "status": "superseded",
-      "note": "The automatic 3-D evolution restart admission fix changed two bound package sources. Superseded by i02-workflow-timing-r5 after its recapture passed. Original receipt bytes and measurements remain unchanged.",
-      "superseded_by": "i02-workflow-timing-r5"
-    },
-    {
-      "id": "i02-workflow-timing-r2",
-      "path": "tectonics/evidence/i02-workflow-timing-r2.json",
-      "sha256": "ebc1584b438214e7c9815a6d099a43101028ae33640166bf16b28209dc3faf01",
-      "status": "superseded",
-      "note": "The 3-D solver scaling changed bound package sources (regional_elements3d, regional_execution3d and regional_evolution3d; regional_multigrid3d and regional_solver_selection3d added); superseded by i02-workflow-timing-r3 after its recapture passed. Original receipt bytes and measurements remain unchanged.",
-      "superseded_by": "i02-workflow-timing-r3"
-    },
-    {
-      "id": "i02-workflow-timing-r3",
-      "path": "tectonics/evidence/i02-workflow-timing-r3.json",
-      "sha256": "e7e08cb16d36a131cf195e4d6a9dbcf927448ea3cea8aee5c856e70781f38f86",
-      "status": "superseded",
-      "note": "Captured on the first, cost-predicting version of the automatic 3-D solver choice (never committed). That version was replaced the same day by the multigrid-first rule, which changed bound package sources; superseded by i02-workflow-timing-r4 after its recapture passed. Receipt bytes and measurements remain unchanged.",
-      "superseded_by": "i02-workflow-timing-r4"
-    },
-    {
-      "id": "i02-workflow-timing-r1",
-      "path": "tectonics/evidence/i02-workflow-timing-r1.json",
-      "sha256": "d08d3af69fbb1773c8be6d3ae7552b3197548661e2920f52998f8640994bb74e",
-      "status": "superseded",
-      "note": "R1 changed bound sources; superseded by i02-workflow-timing-r2 after the integrated correction passed. Original receipt bytes and measurements remain unchanged.",
-      "superseded_by": "i02-workflow-timing-r2"
-    },
-    {
-      "id": "i01-separation-performance-r1",
-      "path": "tectonics/evidence/i01-separation-performance-r1.json",
-      "sha256": "7d90169607529a2517424955594aa19de575f12dbb64e753cb2d0bd0c28e5b02",
-      "status": "historical",
-      "note": "Historical since 29 September 2026: tools/check_i01_separation_feasibility.py, which this comparison binds, was corrected to write LF text. Its comparison harness is outside the repository, so rerunning a repository tool cannot produce a successor; the samples remain an observation of the original snapshot. Original result: three alternating paired samples of the retained banded solve versus prepared Cholesky reuse. Identical 64-cell/4000-step runs: median 0.4640272 versus 0.3708135 s, saving 0.0932137 s / 20.0880%. Event brackets identical; largest absolute reported numeric difference 7.11e-15. Scope of the original result: prepared-operator run and repeated-filter timing only; initial preparation excluded; no whole-generator speed claim. Synthetic resolved shear strip; round-off-equivalent outputs, not bit-identical; no physical tolerance change or scientific acceptance."
     },
     {
       "id": "i01-melt-segregation-r1",
@@ -155,35 +53,17 @@
       ]
     },
     {
-      "id": "i01-separation-feasibility-r3",
-      "path": "tectonics/evidence/i01-separation-feasibility-r3.json",
-      "sha256": "8a9cf57dda36dec8fddd6f0f02056300500e640b61d26f9c725415307255b432",
-      "status": "superseded",
-      "superseded_by": "i01-separation-feasibility-r4",
-      "note": "Historical since 29 September 2026: its receipt writer, tools/check_i01_separation_feasibility.py, which this receipt binds, was corrected to write LF text. Physics, case and tolerances are unchanged and nothing was rerun; a successor from the corrected writer is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: eighteen focused tests pass; all six controls pass in 6.391 s. Fixed-operator Cholesky factor reused instead of repeated factorisation; input/output checks and all physical tolerances retained. Schema v2 correctly names imposed shear displacement, not normal opening. Scope of the original result: synthetic 1D resolved transverse shear strip, homogeneous along slip/strike, with elastic surroundings and fixed pressure/temperature; not calibrated lithosphere rupture. Bonded connectivity differs from point-set connectivity; cohort preservation is a contract/helper, not implemented conservative global bond transport. Full mixed-material neck, thermal/free-surface/basal/exterior sensitivity and global event/handoff acceptance remain I05/I07/I02; numerical event brackets are refinement diagnostics, not rigorous event-time enclosures."
-    },
-    {
-      "id": "i01-separation-feasibility-r2",
-      "path": "tectonics/evidence/i01-separation-feasibility-r2.json",
-      "sha256": "ce1d42b6be9d79670eace3707d02d1de82e1e96a51b9ef32f7705c0ad703417f",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering.",
-      "superseded_by": "i01-separation-feasibility-r3"
-    },
-    {
-      "id": "i01-separation-feasibility-r1",
-      "path": "tectonics/evidence/i01-separation-feasibility-r1.json",
-      "sha256": "a48343af85efecf225cc249c396aa06a3cf4e819055362112d2f98cf42cae87f",
-      "status": "historical",
-      "note": "Actual first campaign refusal: creep arm's explicit dt exceeded the fixed stability allowance. Not a passing result. Retained unchanged; r2 halves only that arm's dt. This early failure record did not include source bindings or elapsed time; the writer was corrected before r2. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
-    },
-    {
       "id": "i01-initiation-verification-r1",
       "path": "tectonics/evidence/i01-initiation-verification-r1.json",
       "sha256": "b2bd857dcfa29e7f1f78d8791c7d2beb6d5b6a51083f073f54233c8649f32583",
       "status": "current",
       "note": "Eight tests pass in 0.006 s and sixteen analytical controls in 0.0009773 s after imports. Fixed pre-run tolerances; finest variable-viscosity velocity error 0.01580%, power error 0.02441%. This is independent method verification, not a reconstructed published subduction case.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Synthetic one-dimensional viscous shear and retained coaxial elastic relaxation; no full objective VEP, bending slab, moving free surface or generated initiation.",
@@ -204,7 +84,12 @@
       "sha256": "ebc6b22485c0501ad69cdb16dd6870af2aecc0fcc83b57346be5d4b324c56b9c",
       "status": "current",
       "note": "Reviewed local cohesion-loss candidate after exact-yield, residual-state, history and numeric-range corrections. Codex completed the final positive-energy underflow guard. Thirty-five focused tests pass in 0.359 s and nine campaign groups in 0.0452191 s. For 50 identical local advances, rebuilt/prepared medians are 0.0041113/0.0037912 s; setup reuse only, not world performance.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Exact fixed-temperature/pressure local band with elastic surroundings, optional Newtonian creep and declared linear slip weakening; synthetic parameters, not calibrated rupture or a resolved neck.",
@@ -278,42 +163,17 @@
       ]
     },
     {
-      "id": "i01-gibbs-provider-r2",
-      "path": "tectonics/evidence/i01-gibbs-provider-r2.json",
-      "sha256": "c49be8c15b0e211276de6e4712da0f75df66f4fdd66e0dfdf57ff0b3d303392d",
-      "status": "superseded",
-      "superseded_by": "i01-gibbs-provider-r3",
-      "note": "Historical since 29 September 2026: its receipt writer, tools/check_i01_gibbs_provider.py, which this receipt binds, was corrected to write LF text. Provider code, declared bounds and physics are unchanged and nothing was rerun. A successor needs the separately installed, pinned Julia/MAGEMin environment and is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: sixteen analytical tests pass; the native Windows G25 connection passes in 21.740828 s. Explicit inventory/pressure/provider-bound thermal-branch declarations and sampled phase checks close the unsupported wide-bracket route. Median exact-input cache requests take 0.0002556 versus 1.4718673 s, saving 99.9826%; not faster new equilibrium states. Manifest, native-library, wrapper-tree and provider identities were reported by the run, not checked by this register. Scope of the original result: dry KLB1 software reference at 0.8 GPa and two temperatures; not withheld geological calibration or a wet-input test; Linux was not executed. Common chemical-potential derivatives supply phase H/S/V with refinement and branch checks; fixed-pressure finite extraction, changed-bulk consistency and H/S recovery are exercised, with no latent-plateau inversion. No extraction-rate, permeability, spatial focusing, axial thermal lid or persisted material transactions; experimental opt-in adapter, not default world generation. Caller-declared continuous-branch support is an explicit assumption, not proved by finite sampling."
-    },
-    {
-      "id": "i01-gibbs-provider-r1",
-      "path": "tectonics/evidence/i01-gibbs-provider-r1.json",
-      "sha256": "708a8f319da35780b812bd935d8ca15dc38983a8d92ffdb60c1f6446e1f4c649",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-gibbs-provider-r2"
-    },
-    {
-      "id": "regional-evolution3d-r1",
-      "path": "tectonics/evidence/regional-evolution3d-r1.json",
-      "sha256": "68890a2625c19d524904b1b15f7ed43d57470f2fef48a71ff734bb422ce36f77",
-      "status": "historical",
-      "note": "Retained bounded snapshot: nine joined tests in 19.8664455 s; receipt checks and reuse measurement in 25.9262947 s. The 3x3x3 fixture saved 0.6182241 s (55.04%) with bit-identical arrays. Adding the I02 integration_state module changes this receipt's whole-package source membership and execution identity. Existing regional code and original receipt are unchanged; no rerun or repin. Original Boussinesq, fixed-box and scalar-history limits remain in the receipt; no current whole-package, elastic, free-surface or planetary acceptance is implied."
-    },
-    {
-      "id": "regional3d-r1",
-      "path": "tectonics/evidence/regional3d-r1.json",
-      "sha256": "45bfce5c3f0c7396b9a49991a6e229e72958a756262de5a6c84322910c4b727c",
-      "status": "historical",
-      "note": "Retained exact-field/reuse measurements for the original same-time 3D mechanical component. Its native mechanical code, tests and receipt are unchanged, but the bound method document was expanded to describe the new tools-only Euler plate coupling adapter. That documentation-only binding drift makes this record historical; no numerical rerun or receipt rebind was performed. Earlier package additions also changed execution identity. Do not use the original component receipt as validation of the new mapper or current whole-package runtime. Original scope: fixed Cartesian Q2/Q1 box, supplied viscosity/extra stress and finite-mode feedback, small Windows controls, no geological calibration or global assembly; all original bindings and limitations remain in the unchanged receipt."
-    },
-    {
       "id": "i01-elastic-core-r1",
       "path": "tectonics/evidence/i01-elastic-core-r1.json",
       "sha256": "0bf419bd68efbe6d6ff51454ac03c8e87980425bfb0c014ad640fa937013aa85",
       "status": "current",
       "note": "Reviewed declared single-core producer for rigidity and shear-transfer depth. Eighteen focused tests pass in 0.246 s; six controls pass in 0.1840925 s. At 16384 cells, producer/join-only interleaved medians are 0.0012974/0.0012773 s: 0.0000201 s (1.57%) added in this short observation, not a speedup or world forecast.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "One declared homogeneous isotropic core, shear-free faces, constant rigidity and a periodic linear flat-reference plate. The core is explicit material input, not inferred from effective elastic thickness or the D2 strength envelope.",
@@ -327,7 +187,12 @@
       "sha256": "f16b123c3d9b0a06a88c54412f45cd453cfc1a9b162bb657ee5935451c9a4a0e",
       "status": "current",
       "note": "Local post-contact all-ridge candidate kinematics. Nine tests pass in 0.002 s; nine controls in 0.1691927 s. For 300 repeated squared-length queries, preparation reuse takes 0.0005156 s versus 0.0243163 s rebuilt: 0.0238007 s (97.8796%) saved, not a world speedup.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Declared constant planar velocities/normals, four distinct plates and symmetric positively opening ridges only; exact supplied-number feasibility, not physical geometry accuracy.",
@@ -341,7 +206,12 @@
       "sha256": "94528a8edd2edaab622b6a9518b61520eaebf829c82f21fba16098caa05e2066",
       "status": "current",
       "note": "Exact contact on declared affine planar junction paths. Ten focused tests pass in 0.001 s; nine controls pass in 0.130276 s. Median 1000-query times are 0.0021818 s prepared versus 0.0141799 s rebuilt: 0.0119981 s or 84.613% saved for preparation reuse only.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Exact for supplied constant-velocity planar paths only; no integration with the existing junction solver, spherical trajectories, uncertainty certificate or generated-world speedup.",
@@ -355,7 +225,12 @@
       "sha256": "539f76c29ca0d94e302f81da1cccc1a48dd2460f544d5ce07f8b561eca09100d",
       "status": "current",
       "note": "Reviewed water-loaded-column pressure/GPE connection. Nineteen focused tests pass in 0.207 s; eight controls pass in 0.2123609 s after imports. Negative depths refuse and no-load-transfer classification uses structural limits, not a residual threshold. At 16384 cells the join plus traction median is 0.0016438 s; no matched baseline or speedup claim.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Planar periodic constant-rigidity plate with one communicating finite reservoir, hydrostatic layers and one declared effective shear-transfer level. Not a spherical torque or boundary calculation.",
@@ -369,7 +244,12 @@
       "sha256": "3a10007088a438296b483ee184c17bcef8f3a126fedca4f60ec6fa04b7173218",
       "status": "current",
       "note": "Retain elastic stress memory in the future rift; exact coaxial Maxwell control. Twelve tests pass in 0.002 s; nine controls in 0.1475084 s. Prepared/rebuilt updates are bit-identical; median 2000-update times 0.00597980/0.00916880 s (34.781% saved), not a world speedup.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Constructed coaxial stretch plus rigid rotation, constant modulus and viscosity, prescribed rate and small elastic strain only. General shear is refused; this is not a general objective finite-strain solver.",
@@ -383,7 +263,12 @@
       "sha256": "142fca72ff63441f9c5585fed5d82168f04d636bcf1886c4dfc5adf65825a506",
       "status": "current",
       "note": "Reviewed MC-04 specification and bounded accounts. Fifty focused tests pass in 0.087 s; eight controls pass in 0.0237441 s. Corrected inventory/geometry, thermal-boundary, endpoint-account and strip-containment checks; exact independent Newtonian mechanical-work oracle. No retained source or old receipt changed.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Boundary prescription and supplied-flux accounts only, not a numerical Stokes solution, general well-posedness proof, material transport, melting or separation.",
@@ -397,7 +282,12 @@
       "sha256": "b472de541fdf36a1ec614c4b9d243a74aefa574d85817d669f51f1420683df50",
       "status": "current",
       "note": "MC-06 conditional thermal omission criterion. Twelve focused tests pass in 0.876 s; ten bounded control checks pass in 0.0710187 s. Exact rational gate, unequal-capacity analytical solution and independent three-cell matrix oracle; no old source or receipt changed.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Conditional bound between exact solutions of a declared semi-discrete thermal model, not a continuum or time-discretisation error estimate. Positive capacities, symmetric nonnegative contacts and a contractive retained vertical operator are premises.",
@@ -424,38 +314,6 @@
       ]
     },
     {
-      "id": "i01-breakup-closure-r4",
-      "path": "tectonics/evidence/i01-breakup-closure-r4.json",
-      "sha256": "c34aafd8b7613d9671c0c2ef6e15afea43efd24bfc5dec919acf8e87c4d7b07c",
-      "status": "superseded",
-      "superseded_by": "i01-breakup-closure-r5",
-      "note": "Retained original receipt, superseded by i01-breakup-closure-r5 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-breakup-closure-r3",
-      "path": "tectonics/evidence/i01-breakup-closure-r3.json",
-      "sha256": "8736fa718b977df2d166d36fc95efeae49796c670512456168a99da6f510414d",
-      "status": "superseded",
-      "superseded_by": "i01-breakup-closure-r4",
-      "note": "Superseded on 2026-09-30 by i01-breakup-closure-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls. Resolved event and generated breakup of the retained lithosphere remain UNRESOLVED; no separation event or new crust is authorised, and a finite-state refusal neither predicts nor excludes eventual breakup."
-    },
-    {
-      "id": "i01-breakup-closure-r2",
-      "path": "tectonics/evidence/i01-breakup-closure-r2.json",
-      "sha256": "9c1334b3e98008d59a18f7e656c68da58b9ae9063e04b97942829528ed288b1d",
-      "status": "superseded",
-      "superseded_by": "i01-breakup-closure-r3",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Five controls pass in 0.5319846 s with the refreshed finite-strain/heat source chain. Analytical feasibility unchanged; retained physical breakup remains refused/unresolved. Scope of the original result: Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls. Spatial refinement covers the first detection level for n=3, not all singular-limit rungs. Resolved event and generated breakup of the retained mixed-creep/plastic lithosphere remain UNRESOLVED; no separation event or new crust is authorised. Retained operating state has plastic-work share 0.550579 and is outside the reduced-route classification. That finite-state refusal neither predicts nor excludes eventual breakup. Bounded Windows numerical controls, not sealed runtime or world acceptance."
-    },
-    {
-      "id": "i01-breakup-closure-r1",
-      "path": "tectonics/evidence/i01-breakup-closure-r1.json",
-      "sha256": "322fe24c3812042bc23b8c063943b608189d9277d00003ddc7827f9ce6e2f20f",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-breakup-closure-r2"
-    },
-    {
       "id": "i01-phase-partition-r3",
       "path": "tectonics/evidence/i01-phase-partition-r3.json",
       "sha256": "81e89be29d9ac31db31daf0b092de8656dbd1a7106cc224152188a4e172b5dbc",
@@ -473,14 +331,6 @@
         "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
         "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
       ]
-    },
-    {
-      "id": "i01-phase-partition-r2",
-      "path": "tectonics/evidence/i01-phase-partition-r2.json",
-      "sha256": "2a89d8897651c8f859514e185a5b2c4b05188f1f22dfe9c7fef956bef2ab8edb",
-      "status": "superseded",
-      "superseded_by": "i01-phase-partition-r3",
-      "note": "Historical since 29 September 2026: its receipt writer, tools/check_i01_phase_partition.py, which this receipt binds, was corrected to write LF text. Physics, solver and tolerances are unchanged and nothing was rerun; a successor from the corrected writer is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: stable per-component minority inventories fix disappearing-phase cancellation; eleven focused partition methods pass; bounded campaign 0.0579674 s. Scope of the original result: supplied partition coefficients and analytical compositions, not calibrated mantle petrology; no enthalpy, reaction rate, transport, native payload or generated crust supply is authorised. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse, and the absolute fraction tolerance is not a promise of relative accuracy below that scale. Source-bound bounded controls and Windows CPython 3.12.14 observations only; runtime binaries are not sealed."
     },
     {
       "id": "i01-phase-energy-r4",
@@ -502,14 +352,6 @@
       ]
     },
     {
-      "id": "i01-phase-energy-r3",
-      "path": "tectonics/evidence/i01-phase-energy-r3.json",
-      "sha256": "4f6538237e8d8b2819df93bd37716b8829b7a76ba4de533b973369233628d91d",
-      "status": "superseded",
-      "superseded_by": "i01-phase-energy-r4",
-      "note": "Historical since 29 September 2026: receipt writers it binds, tools/check_i01_phase_energy.py and tools/check_i01_phase_partition.py, were corrected to write LF text. Material law, caloric solver and tolerances are unchanged and nothing was rerun; a successor from the corrected writers is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: twelve focused energy tests and the bounded caloric campaign pass after partition endpoint arithmetic changed; campaign 0.4114995 s; the separate connected pressure regression recovers enthalpy at both phase boundaries. Scope of the original result: ideal mixing with equal effective molar masses, common heat capacity and constant phase-specific volumes; analytical properties, not calibrated mantle petrology; no native payload, moving-pressure integration, extraction-rate law, compaction or global embedding. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Source-bound bounded controls and Windows CPython 3.12.14 observations only; runtime binaries are not sealed."
-    },
-    {
       "id": "i01-magma-receiver-r3",
       "path": "tectonics/evidence/i01-magma-receiver-r3.json",
       "sha256": "0ffc4f5816a84cbd3719a1a3d778b1eb5689dc010c152838605cc4bbe7f76f29",
@@ -527,14 +369,6 @@
         "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
         "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
       ]
-    },
-    {
-      "id": "i01-magma-receiver-r2",
-      "path": "tectonics/evidence/i01-magma-receiver-r2.json",
-      "sha256": "b6d8cee3906dd1fa878b9944c93f0227e8590b0620161158bc95b463de20809e",
-      "status": "superseded",
-      "superseded_by": "i01-magma-receiver-r3",
-      "note": "Historical since 29 September 2026: receipt writers it binds, tools/check_i01_magma_receiver.py, tools/check_i01_phase_energy.py and tools/check_i01_phase_partition.py, were corrected to write LF text. Receiver physics, source and tolerances are unchanged and nothing was rerun; a successor from the corrected writers is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: thirteen receiver tests and the bounded campaign pass against corrected partition endpoint inventories; campaign 0.1879935 s. Scope of the original result: analytical ideal-mixture material, not calibrated mantle; prescribed finite liquid quantities and constant pressure; no pressure transport, kinetic/gravitational energy, flow rate, compaction, native emplacement, persisted transaction or whole-world acceptance. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Source-bound bounded controls and Windows CPython 3.12.14 observations only; runtime binaries are not sealed."
     },
     {
       "id": "i01-phase-pressure-r3",
@@ -556,21 +390,6 @@
       ]
     },
     {
-      "id": "i01-phase-pressure-r2",
-      "path": "tectonics/evidence/i01-phase-pressure-r2.json",
-      "sha256": "e43ccd1cff8b6d532a02e8114a06e6467c5670a93993813a599cc4e9fb5d0ee8",
-      "status": "superseded",
-      "superseded_by": "i01-phase-pressure-r3",
-      "note": "Historical since 29 September 2026: receipt writers it binds, tools/check_i01_phase_pressure.py, tools/check_i01_phase_energy.py, tools/check_i01_phase_partition.py and tools/check_i01_magma_receiver.py, were corrected to write LF text. Physics and tolerances are unchanged and nothing was rerun; a successor from the corrected writers is pending. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering. Original result: thirteen focused pressure tests and independent pure/binary work controls pass against corrected partition endpoint inventories; entropy and enthalpy both recover within 1e-7 K at 1e-6 K inside solidus/liquidus; campaign 0.6031263 s; no tolerance relaxation. Scope of the original result: analytical constant-volume ideal mixture, not mantle calibration or native ascent; no extraction rate, flow rate, thermal expansion, compaction, kinetic/gravitational energy or persisted transaction; every pressure sample must retain the original segment entropy. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Source-bound bounded controls and Windows CPython 3.12.14 observations only; runtime binaries are not sealed."
-    },
-    {
-      "id": "i01-phase-pressure-r1",
-      "path": "tectonics/evidence/i01-phase-pressure-r1.json",
-      "sha256": "df73b74127960401fcc70013cdd3f32b16851fa357862d0a57da8158fe97cd5d",
-      "status": "historical",
-      "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-pressure-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
-    },
-    {
       "id": "i01-finite-admission-r12",
       "path": "tectonics/evidence/i01-finite-admission-r12.json",
       "sha256": "04173bff7448587c1de99115fcaed6c75719f09bf5a0c4b899e85d99707bd8ef",
@@ -587,122 +406,6 @@
         "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance.",
         "States may be issued by this evolution or restored from a consistent accepted commit in its trusted local I02 ledger. Store checks establish consistency, not authorship. The derivation, not endpoint sampling, supports intermediate-stage bounds; runtime versions are recorded observations, not sealed binaries."
       ]
-    },
-    {
-      "id": "i01-finite-admission-r11",
-      "path": "tectonics/evidence/i01-finite-admission-r11.json",
-      "sha256": "e1264ae2c1108eaa3a50c82702ebae23c4d346fb0d988c275f77c77c699d16a4",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r12",
-      "note": "Retained receipt, superseded by i01-finite-admission-r12 after reuse.py was added to the restoration inventory on 16 October 2026. Preserved byte-intact; no receipt bytes or recorded digest were rewritten. No current source claim."
-    },
-    {
-      "id": "i01-finite-admission-r10",
-      "path": "tectonics/evidence/i01-finite-admission-r10.json",
-      "sha256": "67b2d208b1f2e7905347c013563364ee332f74921d398c85d403ff98d9094f6b",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r11",
-      "note": "Bounded capture passed on 5 October 2026 immediately before the final storage backup release-boundary correction. Preserved byte-intact; r11 captures the final storage sources. No current source claim."
-    },
-    {
-      "id": "i01-finite-admission-r9",
-      "path": "tectonics/evidence/i01-finite-admission-r9.json",
-      "sha256": "2bf66a343b21f628bbb3ef07700e5ef57dae8e3fef55000ea30a1bd3dce1c7dc",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r11",
-      "note": "Retained original receipt, superseded by i01-finite-admission-r11 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-finite-admission-r8",
-      "path": "tectonics/evidence/i01-finite-admission-r8.json",
-      "sha256": "b7621e8144a0b647f862fa7deaa413ae704460b1ef309be37508ef84b20683d5",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r9",
-      "note": "Retained original receipt; superseded by i01-finite-admission-r9 after the 4 October 2026 I04/I05a integration and repairs. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i01-finite-admission-r7",
-      "path": "tectonics/evidence/i01-finite-admission-r7.json",
-      "sha256": "7998a72fe41900358ab4ba7ebfb774358294b831d5bd7829f5387e7bbe105ae5",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r8",
-      "note": "Retained original receipt; superseded by i01-finite-admission-r8 after the 3 October 2026 ledger diagnostic correction. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i01-finite-admission-r6",
-      "path": "tectonics/evidence/i01-finite-admission-r6.json",
-      "sha256": "c3d1a33b978f3c6647a2913a7a61532cbc0cd27ed5ed6d39557a5166afb821bf",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r7",
-      "note": "Retained original receipt; superseded by i01-finite-admission-r7 after the 3 October 2026 I03 integration changes. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i01-finite-admission-r5",
-      "path": "tectonics/evidence/i01-finite-admission-r5.json",
-      "sha256": "c80102f82262598f64b3ce61051bc287d4de6da388f9b9392796d4de51b334b8",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r6",
-      "note": "Retained original receipt; superseded by i01-finite-admission-r6 after the 1 October 2026 R4 integration. No byte rewrite or digest rebinding."
-    },
-    {
-      "id": "i01-finite-admission-r4",
-      "path": "tectonics/evidence/i01-finite-admission-r4.json",
-      "sha256": "c51fb2b7b1586d7bd97a84c9aa94db32da0f760b149a6deb44f162c2d6518629",
-      "status": "superseded",
-      "note": "R1 changed bound sources; superseded by i01-finite-admission-r5 after the integrated correction passed. Original receipt bytes and measurements remain unchanged.",
-      "superseded_by": "i01-finite-admission-r5"
-    },
-    {
-      "id": "i01-finite-admission-r3",
-      "path": "tectonics/evidence/i01-finite-admission-r3.json",
-      "sha256": "552bf79b8a718f1a3f76501bde3ec043579c5cd630a0dd0f9f7531b189f5094d",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r4",
-      "note": "Superseded on 2026-09-30 by i01-finite-admission-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Historical in the unreviewed I02.3-I02.8 candidate (29 September 2026): tools/check_i01_finite_admission.py gained restored(), the engine-owned issue path for accepted I02 ledger commits, and now also binds the package modules it executes, and docs/I01_FINITE_ADMISSION.md documents it, so this receipt's recorded tool and method-document digests no longer match. No recorded digest was edited and no new receipt was written. Successor to capture only after the candidate is reviewed and accepted: i01-finite-admission-r4, by the same dependency-ordered route. Scope of the original result, unchanged: conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance. Its issued states were process-local; the derivation, not endpoint samples, supports intermediate-stage bounds. No physical law, case, tolerance or step ceiling changed."
-    },
-    {
-      "id": "i01-finite-admission-r2",
-      "path": "tectonics/evidence/i01-finite-admission-r2.json",
-      "sha256": "a9b9136d514a80bdad2633f2c34e340bd9b41896164943ec3218cd0c79baafd2",
-      "status": "superseded",
-      "superseded_by": "i01-finite-admission-r3",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Five controls pass in 1.9014433 s against the refreshed finite-strain/heat chain. No admission threshold or physical law changed. Scope of the original result: Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted. No rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance. Layered control is honestly uncertified; the homogeneous control passes at 10%, not 1%. Process-local issued states preserve absolute reference, elapsed time and history. Evolutions rerun from their reference; persisted identity and efficient restart remain I02/I05 work. Numerical observations cover window endpoints and aggregate accounts; the derivation, not those samples, supports intermediate-stage bounds."
-    },
-    {
-      "id": "i01-finite-admission-r1",
-      "path": "tectonics/evidence/i01-finite-admission-r1.json",
-      "sha256": "f5b7f194191a46737b75fa03946dcdb2c53273eedaec02db5b3bf41cef74c4e5",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-finite-admission-r2"
-    },
-    {
-      "id": "i01-magma-receiver-r1",
-      "path": "tectonics/evidence/i01-magma-receiver-r1.json",
-      "sha256": "785f7d9c342fca331be110d06e68baea0e27eff88951330239f9781447095ea1",
-      "status": "historical",
-      "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-magma-receiver-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
-    },
-    {
-      "id": "i01-phase-energy-r2",
-      "path": "tectonics/evidence/i01-phase-energy-r2.json",
-      "sha256": "fb4118a6214bd17af38e39e1eb246cb5766db530d659ed6ae75ec78b6d919764",
-      "status": "historical",
-      "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-energy-r3 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
-    },
-    {
-      "id": "i01-phase-energy-r1",
-      "path": "tectonics/evidence/i01-phase-energy-r1.json",
-      "sha256": "41351f506a4c331d9c160be02b51cfa0ea7ca290dfb237e36504d0195481e25c",
-      "status": "historical",
-      "note": "Initial passing analytical control retained unchanged. The Newton safeguard subsequently replaced a fixed bracket-edge margin with a residual-progress safeguard, reducing 28 to 5 iterations without changing physics, case or tolerances. Its successors r2 and r3 are historical as well. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
-    },
-    {
-      "id": "i01-phase-partition-r1",
-      "path": "tectonics/evidence/i01-phase-partition-r1.json",
-      "sha256": "7b8fde6df584a0b451023fdd02ea2e8f7888678a7750963cb9c1d8b2ba0e83c9",
-      "status": "historical",
-      "note": "Unchanged predecessor retained after the per-component phase-inventory cancellation correction; its successor i01-phase-partition-r2 is itself historical since the writer correction. Its scientific laws and tolerances were not retuned. The registered sha256 is the LF digest recorded in line-ending-digest-correction-r2; the value first registered hashed a CRLF rendering."
     },
     {
       "id": "i01-finite-strain-r6",
@@ -723,45 +426,6 @@
       ]
     },
     {
-      "id": "i01-finite-strain-r5",
-      "path": "tectonics/evidence/i01-finite-strain-r5.json",
-      "sha256": "d2a08846976b6ce5db1fac11e322cb8f6c37b1e4e42450b686949d3fa7970ce1",
-      "status": "superseded",
-      "superseded_by": "i01-finite-strain-r6",
-      "note": "Retained original receipt, superseded by i01-finite-strain-r6 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-finite-strain-r4",
-      "path": "tectonics/evidence/i01-finite-strain-r4.json",
-      "sha256": "ce0c4728f6849b9fea03f3ad5e5e909894dfbf8bd5c64ed86d9f2168d860258c",
-      "status": "superseded",
-      "superseded_by": "i01-finite-strain-r5",
-      "note": "Superseded on 2026-09-30 by i01-finite-strain-r5 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Closed laterally uniform incompressible affine strip, authored force and drag, fixed per-material properties and material-base temperature. No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries. ASPECT references were consulted, not run as a comparison solver."
-    },
-    {
-      "id": "i01-finite-strain-r3",
-      "path": "tectonics/evidence/i01-finite-strain-r3.json",
-      "sha256": "90898b22f36f829cc8b3cc9082c7f85dfddff287511a689386fe45efb26c301f",
-      "status": "superseded",
-      "superseded_by": "i01-finite-strain-r4",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Seven controls pass in 14.2133972 s with corrected heat pairing and verified upstream receipts. Legitimate material-following thermal rebuilds remain compatible; no physical or tolerance changes. Scope of the original result: Binds sixteen new/retained source, case, method, test and accepted-receipt files before/after. Runtime versions are observations, not binary seals. Windows only; ASPECT references checked, not an independently executed comparison solver. Closed laterally uniform incompressible affine strip, authored force/drag, fixed per-material properties and material-base temperature. Current geometry/pressure, transported temperature/history, force balance and whole-strip heat/work accounts are connected. No lateral localisation, inflow, melting, rupture, global embedding or generated-world acceptance."
-    },
-    {
-      "id": "i01-finite-strain-r2",
-      "path": "tectonics/evidence/i01-finite-strain-r2.json",
-      "sha256": "e356000b7d467bc3d43bb4dd0637cdc89d06c32f0bac5e335697d5a8d7e97b34",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-finite-strain-r3"
-    },
-    {
-      "id": "i01-finite-strain-r1",
-      "path": "tectonics/evidence/i01-finite-strain-r1.json",
-      "sha256": "d1abb2409ef9ebe39c5117aaee533a69a1e1658089ecf8eb8d2ff34aad90de00",
-      "status": "historical",
-      "note": "Original failed campaign retained unchanged: six groups passed, states failed because its compression endpoint was compared with positive extension forcing. Review also closed endpoint-deadline and prescribed-control temperature-window guards. Current corrected evidence is r2; no old receipt was rewritten."
-    },
-    {
       "id": "i01-column-admission-r4",
       "path": "tectonics/evidence/i01-column-admission-r4.json",
       "sha256": "e0de86619f8878f48a230c0d9b793debaec614769267a44306340fd3895de037",
@@ -778,30 +442,6 @@
         "Sufficient bound for the represented Gauss-point fixed column with constant drive, drag, width, temperature and pore state, positive extension and nondecreasing history; every point needs plastic regularisation and total used plus future strain stays at most 0.05.",
         "No continuum enclosure, finite-strain transport or physical separation claim; an inherited column left uncertified is not falsely admitted. Runtime versions are recorded observations, not sealed binaries."
       ]
-    },
-    {
-      "id": "i01-column-admission-r3",
-      "path": "tectonics/evidence/i01-column-admission-r3.json",
-      "sha256": "3a04c1dd18e121f9c7e7a81f1cfa3a0994509be7dfe2b2ca18296c53273d6bb3",
-      "status": "superseded",
-      "superseded_by": "i01-column-admission-r4",
-      "note": "Retained original receipt, superseded by i01-column-admission-r4 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-column-admission-r2",
-      "path": "tectonics/evidence/i01-column-admission-r2.json",
-      "sha256": "c8c9552030adf99c168a1e1d132de4261777e6988fe6b27c2d8e511ff8c3cc59",
-      "status": "superseded",
-      "superseded_by": "i01-column-admission-r3",
-      "note": "Superseded on 2026-09-30 by i01-column-admission-r3 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Sufficient bound for the represented Gauss-point fixed column with constant drive, drag, width, temperature and pore state, positive extension and nondecreasing history; every point needs plastic regularisation and total used plus future strain stays at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim; an inherited column left uncertified is not falsely admitted. Runtime versions are recorded observations, not sealed binaries."
-    },
-    {
-      "id": "i01-column-admission-r1",
-      "path": "tectonics/evidence/i01-column-admission-r1.json",
-      "sha256": "abe11697a0ea3b3feb4089dc77231bda90780e2ff504ee0de4a45687d77d0520",
-      "status": "superseded",
-      "superseded_by": "i01-column-admission-r2",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Exact rational sufficient resistance bound from the retained mixed-creep column into the existing motion-admission gate. Ten focused tests and eight connected control checks pass; no actual rheology is fitted or replaced and no physical rupture is authorised. Scope of the original result: Binds twelve source, case, test, method and reviewed-receipt files before/after; runtime versions are observations, not binary seals. Windows only. Reference software and paper sections consulted, not independently executed. Sufficient bound for the represented Gauss-point fixed column, constant drive/drag/width/temperature/pore state, positive extension and nondecreasing history. Every point needs plastic regularisation; total used plus future strain remains at most 0.05. No continuum enclosure, finite-strain transport or physical separation claim. Ten tests pass in 0.011 s; all eight controls pass in 0.1361079 s. Three interleaved batches of ten actual admission calls: rebuilt median 0.0187222 s, reused 0.0011830 s, saving 0.0175392 s / 93.68% with identical outputs. Mechanical preparation excluded equally; not a simulation/world speedup. The inherited column remains uncertified at the 1% allowance, not falsely admitted."
     },
     {
       "id": "i01-thermomechanical-motion-r5",
@@ -822,38 +462,6 @@
       ]
     },
     {
-      "id": "i01-thermomechanical-motion-r4",
-      "path": "tectonics/evidence/i01-thermomechanical-motion-r4.json",
-      "sha256": "59b91c7d453340b9ee32cd7827f87ee48677cdef498e7cae25aefc207e0eaa13",
-      "status": "superseded",
-      "superseded_by": "i01-thermomechanical-motion-r5",
-      "note": "Retained original receipt, superseded by i01-thermomechanical-motion-r5 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-thermomechanical-motion-r3",
-      "path": "tectonics/evidence/i01-thermomechanical-motion-r3.json",
-      "sha256": "02960c10b0e3070c126f0a9842f5335f43eb4e1cb15e937fbf8901e6b06d0af3",
-      "status": "superseded",
-      "superseded_by": "i01-thermomechanical-motion-r4",
-      "note": "Superseded on 2026-09-30 by i01-thermomechanical-motion-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Fixed geometry and width, constant thermal layer properties and authored constant external force and drag, below 0.05 axial strain. No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance. Runtime versions are recorded observations, not sealed binaries."
-    },
-    {
-      "id": "i01-thermomechanical-motion-r2",
-      "path": "tectonics/evidence/i01-thermomechanical-motion-r2.json",
-      "sha256": "23c3ea8c9811700d068632ea30125b17c8d8b07d7bbf0a6b662decd1da25089a",
-      "status": "superseded",
-      "superseded_by": "i01-thermomechanical-motion-r3",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Six controls pass in 3.6745271 s with the corrected heat preparation. Updated verified upstream receipt only; forces, equations and physical gates unchanged. Scope of the original result: Binds thirteen new/retained source, case, method, test and accepted-receipt files before and after execution. Runtime versions are observations, not binary seals; Windows execution only. ASPECT heating and SciPy integration documentation were consulted, not external comparison solvers executed. Fixed geometry/width, constant thermal layer properties and authored constant external force/drag, below 0.05 axial strain. No finite-strain transport, melting, lateral localisation, rupture, spherical assembly or generated-world acceptance."
-    },
-    {
-      "id": "i01-thermomechanical-motion-r1",
-      "path": "tectonics/evidence/i01-thermomechanical-motion-r1.json",
-      "sha256": "c9eb3b75cbd4f27aa36fa19809b8595b25769a4a58d829c19d3866cd9212ecc1",
-      "status": "superseded",
-      "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-thermomechanical-motion-r2"
-    },
-    {
       "id": "i01-column-heat-r6",
       "path": "tectonics/evidence/i01-column-heat-r6.json",
       "sha256": "74b9aba0c532a7c8d0613e861db4eee2cece796ccd223ccdb19b79663e6d16cb",
@@ -872,36 +480,12 @@
       ]
     },
     {
-      "id": "i01-column-heat-r5",
-      "path": "tectonics/evidence/i01-column-heat-r5.json",
-      "sha256": "576ea2153ac23b3e6458594832926d5a9d733bed07eec124ea5280767e7b08a2",
-      "status": "superseded",
-      "superseded_by": "i01-column-heat-r6",
-      "note": "Retained original receipt, superseded by i01-column-heat-r6 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-column-heat-r4",
-      "path": "tectonics/evidence/i01-column-heat-r4.json",
-      "sha256": "ee12fd44d8624bd1e625dfdf99478b22b0342474f7d218d27733179ea0cf30bc",
-      "status": "superseded",
-      "superseded_by": "i01-column-heat-r5",
-      "note": "Superseded on 2026-09-30 by i01-column-heat-r5 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance. Prepared thermal content is verified; arbitrary forged mechanical internals remain outside this guard. Runtime versions are recorded observations, not sealed binaries."
-    },
-    {
-      "id": "i01-column-heat-r3",
-      "path": "tectonics/evidence/i01-column-heat-r3.json",
-      "sha256": "e78ba8537d9301cfac4f27265b00eab6a5746a4f698f316d58c799f11fdb26bf",
-      "status": "superseded",
-      "superseded_by": "i01-column-heat-r4",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Seven controls pass in 1.4539432 s after the actual thermal/mechanical reference-density guard and prepared-array seal. Public 1% density mismatch and modified derived arrays now refuse. Valid equations and tolerances unchanged; 22 focused tests pass. Scope of the original result: Binds twelve new/retained source, case, method, test and reviewed-receipt files. Runtime versions are observations, not binary seals. ASPECT and NumPy sources were consulted, not installed or run as comparison software. Supplied-rate, fixed-geometry, small-strain column with constant layer thermal properties. No force-driven thermal evolution, finite-strain transport, lateral localisation, melting or rupture acceptance. Prepared thermal content is now verified; arbitrary forged mechanical internals remain outside this guard."
-    },
-    {
       "id": "i01-column-heat-r2",
       "path": "tectonics/evidence/i01-column-heat-r2.json",
       "sha256": "325f55b13ba18186e0262e3990ad4aa2f2d1236e5d83b4e864e3d9cb8e13dfd4",
       "status": "superseded",
       "note": "Unchanged original snapshot. Replaced by fresh bounded controls after the I01 interface correction; original scope and measurements remain in this receipt.",
-      "superseded_by": "i01-column-heat-r3"
+      "superseded_by": "i01-column-heat-r6"
     },
     {
       "id": "i01-column-heat-r1",
@@ -929,30 +513,6 @@
       ]
     },
     {
-      "id": "i01-motion-coupling-r3",
-      "path": "tectonics/evidence/i01-motion-coupling-r3.json",
-      "sha256": "6aa3837acd8a0e150c0f2dfda581479deb6bdc8eacfb5e51241f0c6f13fb7297",
-      "status": "superseded",
-      "superseded_by": "i01-motion-coupling-r4",
-      "note": "Retained original receipt, superseded by i01-motion-coupling-r4 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-motion-coupling-r2",
-      "path": "tectonics/evidence/i01-motion-coupling-r2.json",
-      "sha256": "2c122d11cb07342165ceed7bd8621a2cf72597008ad9979ac1d6ebee8b2657b8",
-      "status": "superseded",
-      "superseded_by": "i01-motion-coupling-r3",
-      "note": "Superseded on 2026-09-30 by i01-motion-coupling-r3 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Fixed-temperature, fixed-width small-strain column and constant authored external force and generalised drag. No spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate. Runtime versions are recorded observations, not sealed binaries. Timings are small-control observations, not world speedups."
-    },
-    {
-      "id": "i01-motion-coupling-r1",
-      "path": "tectonics/evidence/i01-motion-coupling-r1.json",
-      "sha256": "a8afc8c4bfdc143160dc5c45941d2d09e3ebee8bd7ea3c6878b9d052427d526c",
-      "status": "superseded",
-      "superseded_by": "i01-motion-coupling-r2",
-      "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. External drive and disjoint generalised drag coupled to actual evolving layered resistance; motion solved at each accepted Heun stage. Eight focused tests and bounded time/depth, both-sign root, work and warm/cold controls pass. Scope of the original result: Binds eight new/retained tool, case, test, method and reviewed receipt files. Runtime versions are observations, not binary seals. Retained weakening/column helpers and Claude's independent heat files were not changed. Fixed-temperature, fixed-width small-strain column and constant authored external force/generalised drag. No full spherical assembly, moving mantle, finite strain, calibration, rupture or rigorous decoupling certificate. Eight tests pass in 0.157 s; campaign 1.209959 s after imports. Finest time/depth velocity differences 8.20e-9 and 1.36e-4 relative. One matched cold/warm observation: 0.4459559/0.0926285 s, saving 0.3533274 s / 79.23%, relative outcome difference 7.99e-13. Not a world speedup."
-    },
-    {
       "id": "i01-weakening-r5",
       "path": "tectonics/evidence/i01-weakening-r5.json",
       "sha256": "094fcd7ed687e0b44d7c8fea72631a422b48be4acb5ddacc4c8fa5cd10ee8cdd",
@@ -971,35 +531,12 @@
       ]
     },
     {
-      "id": "i01-weakening-r4",
-      "path": "tectonics/evidence/i01-weakening-r4.json",
-      "sha256": "41110048ebd3854e5ec2f08a971b794cb67cd98998a24eff8e96a699f4619177",
-      "status": "superseded",
-      "superseded_by": "i01-weakening-r5",
-      "note": "Retained original receipt, superseded by i01-weakening-r5 after the 5 October 2026 optimisation and release-boundary changes. No receipt bytes or recorded digest were rewritten."
-    },
-    {
-      "id": "i01-weakening-r3",
-      "path": "tectonics/evidence/i01-weakening-r3.json",
-      "sha256": "30829616b08badd96ad0946870aa4092b10bf199f65ea083bba7ca8ef2990b31",
-      "status": "superseded",
-      "superseded_by": "i01-weakening-r4",
-      "note": "Superseded on 2026-09-30 by i01-weakening-r4 after the I02 cold-restart stress-resolution correction and dependency-ordered successor capture. Original receipt bytes are preserved. Previous classification and scope: Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration. Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. Runtime versions are recorded observations, not sealed binaries."
-    },
-    {
       "id": "i01-weakening-r2",
       "path": "tectonics/evidence/i01-weakening-r2.json",
       "sha256": "14fa0e8606ebd38ba6dfb0e6f8019191b28260aaea0dc5fa4bae38ce6939ac7f",
       "status": "superseded",
-      "superseded_by": "i01-weakening-r3",
+      "superseded_by": "i01-weakening-r5",
       "note": "I02.2a moved the executed solver into package modules; this receipt binds the earlier tool layout and cannot certify the current checkout. Original receipt bytes and physical thresholds are unchanged. The review found extraction equivalence and passing numerical regressions, not renewed campaign evidence. Reviewed layered strength-to-evolving-plastic-history adapter. Pressure-consistent extension/compression, force/rate control, work and history envelopes pass. Seventeen focused tests and all seven bounded controls pass after immutable-preparation, changed-provider and direct-entry/window guard fixes; physical equations and case tolerances are unchanged. Scope of the original result: Binds its tool, case, method, tests and the unchanged column helper/case/receipt before and after execution. Runtime versions are observations, not binary seals. External ASPECT sources were consulted, not executed or vendored. Laterally uniform coaxial small-strain column with prescribed temperature and pore pressure, inherited raw plastic history and a lithostatic vertical-stress closure. No localisation, finite-strain restart, thermal feedback, calibrated rupture, separation or native/world integration. Envelope proofs require fixed coefficients, a certified law and the admitted monotone branch; numerical endpoints are not outward-rounded certificates. 17 tests in 0.137 s; seven controls in 0.948857 s after imports. Evolving inherited weakening lowers the case resistance by 1.9688%; constant-force rate rises by 23.0%. One matched reuse comparison: 0.0347743 versus 0.2257254 s, saving 0.1909511 s / 84.59%, with bitwise parity. Not a whole-generator speedup."
-    },
-    {
-      "id": "i01-weakening-r1",
-      "path": "tectonics/evidence/i01-weakening-r1.json",
-      "sha256": "e8c74da719e418a8b2e23db134dd18174c78a34e95ba6e4bb482aa79608381d4",
-      "status": "historical",
-      "note": "Claude's original seven-control delivery, retained byte-identical. Its valid case passed; review found reversible array write flags, unchecked changed providers and incomplete direct-entry/window guards. Corrected source-bound evidence is i01-weakening-r2. Physics, case and numerical tolerances were not retuned."
     },
     {
       "id": "i01-gpe-r1",
@@ -1007,7 +544,12 @@
       "sha256": "bfd5ddbaa6a204ca156b9d94b981269fb9ce0956bb5ec37d1fd111b6c248e4fd",
       "status": "current",
       "note": "Dry compensated material/thermal columns supply GPE traction to the retained D1 torque solver. Ten focused tests and three spherical refinement controls pass; no separate double-counted ridge push.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds four new tool/case/test/method files and the unchanged retained I01 closure helper before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
@@ -1021,7 +563,12 @@
       "sha256": "6e22ad6d509520eaefb30f2ddcba1eea2957770ce3c4f33e78aabe712b6c3932",
       "status": "current",
       "note": "Coupled 2D periodic constant-rigidity flexure and finite communicating-water equilibrium. Ten focused tests and the 32/64/128-grid campaign pass. Dry restoring coefficient avoids double water feedback; total equilibrium uses an unloaded reference.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
@@ -1035,7 +582,12 @@
       "sha256": "6781354026b9a650f4ef924bffb7be8e8f9ad04c903ec468dad8ccdba6e1660d",
       "status": "current",
       "note": "Dry Katz batch melt production coupled to approximate isentropic decompression. Exact solid adiabat, equal-expansion endpoint root, two tighter-reference paths and nine focused tests pass. Independent of the parallel weakening task.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. Research/software sources were consulted, not executed or vendored.",
@@ -1049,7 +601,12 @@
       "sha256": "7087eb15fa9a2e0035ca8e051ca6344e4dc138de416491514992275e6567a7bf",
       "status": "current",
       "note": "Reviewed evolving thermal/plastic-history prototype. Direct evolution validates the declared representation and unsupported laws before solving; all five bounded controls and 13 focused tests pass. Physical equations, case values and numerical tolerances are unchanged from Claude's r1.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds nine thermal and retained-helper source/case/method/test files before and after execution. Imported strength/fault helper bytes match their earlier receipts. Runtime versions are observations, not binary seals; papers are not bound.",
@@ -1103,7 +660,12 @@
       "sha256": "af0a679fc808e0ae3952966b63e13caf55266ffca24e26a3e620536e015ca8e6",
       "status": "current",
       "note": "Conditional nonlinear scalar motion-admission certificate: exact rational inequality replaces derivative-only release and iterative root finding for integer stress exponents 1 through 8. Analytical controls, whole-window refusals and matched decision benchmark pass; not a physical separation law.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds its own tool/case/method/tests only. No native imports or dependency on the parallel thermal prototype. Runtime version is recorded, not a binary seal.",
@@ -1117,7 +679,12 @@
       "sha256": "5850a6b80e27a798f8c49ffc5d5efc2581198ccdb6749aa22ecc99eddcceb5c7",
       "status": "current",
       "note": "Reviewed D6 delivery: six bounded transition controls pass after crossing, atomic-account and observer-frame corrections. Separation, melt-inventory and transmitted-work claims are restricted to the actual reduced models. No generated breakup, subduction initiation or I01 completion claim.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds the tool, case, method document and focused tests before/after the run. Runtime versions are observations, not binary seals; external papers and software are not bound.",
@@ -1138,7 +705,12 @@
       "sha256": "d9f8fe199716efc57d0545d6dd237640977f80bb9c9128b51bb307ac7f5d8d85",
       "status": "current",
       "note": "Bounded D2 mechanical snapshots couple temperature-dependent creep to total effective-pressure friction. Analytical pressure/temperature oracle, full returned-state momentum/work checks, 17/33/65-grid comparison and nearby-state warm/cold parity pass. Not a thermal evolution, calibrated fault or generated-world acceptance.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds the new tool/case/method/tests and retained 2D numerical helper. Recorded runtime versions are not native binary seals; external papers/software are not bound.",
@@ -1152,7 +724,12 @@
       "sha256": "2bc45baa382f384ce8a7b000ef5dcd12b35265ed26f861a1582cb918fe369b7a",
       "status": "current",
       "note": "Bounded periodic 2D plane-strain numerical probe: spatial/time refinement, oblique analytical laminates, right-angle covariance, homogeneous history and work balance. PASS_BOUNDED_2D_CONTROLS_ONLY, not generated lithosphere acceptance.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "Binds the control tool, authored case and method document. Runtime versions/thread policy are recorded, not sealed binaries. Unit-test source and external references are not bound by this receipt.",
@@ -1161,19 +738,17 @@
       ]
     },
     {
-      "id": "i01-fault2d-threaded-r1",
-      "path": "tectonics/evidence/i01-fault2d-threaded-r1.json",
-      "sha256": "15e799cfcfaa3be57b2a3a40cdc3f1a9e11e1614cc37a8248bd398be44aac69e",
-      "status": "historical",
-      "note": "First identical 2D control campaign before adding a scoped single-thread BLAS limit and recording that policy. Actual 66.1528 s result retained unchanged; its original tool binding is deliberately not repinned. Compare i01-fault2d-r1 (55.3882 s) only as one execution observation."
-    },
-    {
       "id": "i01-controls-r1",
       "path": "tectonics/evidence/i01-controls-r1.json",
       "sha256": "0a8166560cac314f577468dbd40cff0ff4852f7ec3f1c8d273c97c82348713c4",
       "status": "current",
       "note": "Four bounded design controls: exact torque moments/work, candidate 1D softening/localisation, staged spherical-lune ocean accounts and local Airy finite-water level. PASS_BOUNDED_CONTROLS_ONLY; no native package import, full world or scientific acceptance.",
-      "bindings": [{"pointer": "/source_sha256/{key}", "file": "tectonics/{key}"}],
+      "bindings": [
+        {
+          "pointer": "/source_sha256/{key}",
+          "file": "tectonics/{key}"
+        }
+      ],
       "not_checked": [],
       "limits": [
         "The control tool, case policy and physical-contract document are byte-bound. Runtime versions are recorded, not native binary execution identities. The test file and external papers/software are not sealed by this receipt.",
@@ -1332,13 +907,6 @@
       ]
     },
     {
-      "id": "new-world-s7-r2",
-      "path": "tectonics/evidence/new-world-s7-r2.json",
-      "sha256": "0c433c7fd5b6d6ba54bfea9133288bb8728b2bea0a23ed77b418c081cd0eaab7",
-      "status": "historical",
-      "note": "Historical first-repair-batch Step 7 rerun, 26 September 2026. A3 subsequently changed tectonics/src/atlas_tectonics/reuse.py and therefore its native execution identity. Adapter file hashes still match, but the whole run is not exact-current-source acceptance. Original receipt and runtime bindings remain unchanged; no rerun or repin."
-    },
-    {
       "id": "new-world-s7-r2-matrix",
       "path": "tectonics/evidence/new-world-s7-r2-matrix.json",
       "sha256": "3345e9502e0fd286df14ea9d92f423d7cf72542f99e6aa459d27b03471c7e7c1",
@@ -1354,77 +922,6 @@
       "limits": [
         "Declares the cases, times and one-attempt policy only; outcomes are recorded in new-world-s7-r2."
       ]
-    },
-    {
-      "id": "new-world-bundle-r2",
-      "path": "tectonics/evidence/new-world-bundle-r2.json",
-      "sha256": "0fd49191ef1eb1e3043baee298b5483696d69eefbc83a8646de96d72f07bad00",
-      "status": "historical",
-      "note": "Historical first-repair-batch native save/inspect/load and result check, 26 September 2026. The later A3 reuse.py change alters native execution identity; this receipt binds four adapters but neither native sources nor runtime. It remains evidence for its original integration snapshot, not a current native functional check."
-    },
-    {
-      "id": "new-world-motion-frame-r2",
-      "path": "tectonics/evidence/new-world-motion-frame-r2.json",
-      "sha256": "f77900e4a4cea7b7106efe3f42644765fbdb39d3b76efc97f8845464439ea2ed",
-      "status": "historical",
-      "note": "Historical whole receipt for the 24 September frame-neutral motion correction. Its four correction/diagnostic source bindings remain useful, but embedded project/session restoration, affected-integration and full-generation observations use changed or unbound dependencies. Conservatively classify the whole record as historical rather than treating matching subset hashes as current integration acceptance. The implemented motion correction is not reverted."
-    },
-    {
-      "id": "new-world-s2-r1",
-      "path": "tectonics/evidence/new-world-s2-r1.json",
-      "sha256": "397cebaa17ba7f27b6c21061b26012ed09077606416e4da87b5f8e3edb0be531",
-      "status": "historical",
-      "note": "Step 2 layout and morphology measurement, 24 September 2026. Its runner binding (check_new_world_layout.py) has since changed; its native execution, qhull and generator runtime identities belong to that run. Descriptive morphology, not geological acceptance (tectonics/docs/NEW_WORLD_LAYOUT.md)."
-    },
-    {
-      "id": "new-world-s3-r1",
-      "path": "tectonics/evidence/new-world-s3-r1.json",
-      "sha256": "6dcc3cbfaef0fd6dbbec18e1484be75a34fb51a8ba536c8c418fd2f97de03510",
-      "status": "historical",
-      "note": "Step 3 lithosphere measurement, 24 September 2026. Binds earlier new_world_project.py and new_world_session.py bytes and a native execution_id of that run (tectonics/docs/NEW_WORLD_STRUCTURE.md)."
-    },
-    {
-      "id": "new-world-s4-r1",
-      "path": "tectonics/evidence/new-world-s4-r1.json",
-      "sha256": "02ba19d2643446880307015a0c59a92af0d0fe0ce32e7e060e67f8bf7e9a39c6",
-      "status": "historical",
-      "note": "Step 4 initial-motion measurement, 24 September 2026. Binds the pre-correction new_world_motion.py and earlier project/session adapters; historical per tectonics/docs/NEW_WORLD_MOTION.md."
-    },
-    {
-      "id": "new-world-s5-r1",
-      "path": "tectonics/evidence/new-world-s5-r1.json",
-      "sha256": "49f7d4d9bf14140346444d6debe00dfd11687736570ec1f5620cf2251d8990ae",
-      "status": "historical",
-      "note": "Step 5 regional evolution evidence, 24 September 2026. Binds the pre-correction motion and earlier project adapters with that run's native_execution_id; historical per tectonics/docs/NEW_WORLD_EVOLUTION.md."
-    },
-    {
-      "id": "new-world-s7-r1",
-      "path": "tectonics/evidence/new-world-s7-r1.json",
-      "sha256": "03502affee3918bf50126e3fef584d5be82f14b358d42f995e334a6989f19ba7",
-      "status": "superseded",
-      "superseded_by": "new-world-s7-r2",
-      "note": "Step 7 r1, 24 September 2026, on the pre-correction motion and earlier project/session/tool sources. Its regional mean surface changes (2.768, 120.330 and 26.849 m) must not be quoted as current. /reused_evidence/0/sha256 holds the corrected LF digest recorded in line-ending-digest-correction-r1."
-    },
-    {
-      "id": "new-world-bundle-r1",
-      "path": "tectonics/evidence/new-world-bundle-r1.json",
-      "sha256": "c651336799dc45058ccc5450138762e1fe500eb28669fb068fc4d87af641de67",
-      "status": "historical",
-      "note": "Portable bundle delivery, 24 September 2026: save/load timings and the 44.37% storage saving were measured on earlier wrapper, project and motion sources. new-world-bundle-r2 is a later historical functional check and does not re-measure them (tectonics/docs/NEW_WORLD_BUNDLE.md)."
-    },
-    {
-      "id": "line-ending-digest-correction-r1",
-      "path": "tectonics/evidence/line-ending-digest-correction-r1.json",
-      "sha256": "6f736262953175eeb1128dda3073b04637c4dadb6235239ad2e9827fa74fa4e8",
-      "status": "historical",
-      "note": "Audit trail of the 31 recorded SHA-256 values corrected from CRLF to LF digests on 26 September 2026. Its old_sha256 values are deliberately stale: they are a trail, not bindings, and this file is not parsed as a receipt."
-    },
-    {
-      "id": "line-ending-digest-correction-r2",
-      "path": "tectonics/evidence/line-ending-digest-correction-r2.json",
-      "sha256": "e3baced127238bf9f977982c6f4d05c8eb9f2d3b0bd69686a38071283cd59e55",
-      "status": "historical",
-      "note": "Audit trail of the 19 recorded SHA-256 values (13 register records and 6 closure-matrix receipt entries) corrected from CRLF to LF digests on 2026-09-29, when the six I01 receipt writers were corrected to write LF text. Its old_sha256 values are deliberately stale: they are a trail, not bindings, and this file is not parsed as a receipt."
     }
   ]
 }

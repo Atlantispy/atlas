@@ -223,7 +223,7 @@ selection, forced head-on motion or geological acceptance badge is introduced.
 
 ### Correction evidence, 24 September 2026
 
-[Bounded correction evidence](../evidence/new-world-motion-frame-r2.json) compares
+[Bounded correction evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-motion-frame-r2.json) compares
 three retained geometry/geology inputs without evolving a world. The old fit's
 reference sensitivity was 72.2718%, 104.6057% and 42.6831% boundary-weighted RMS
 relative-field difference when changing from largest to smallest anchor. These
@@ -413,7 +413,7 @@ Sources actually consulted for this implementation:
 
 ## Historical measured checkpoint
 
-[Full bounded evidence](../evidence/new-world-s4-r1.json): Windows/Python 3.12.14,
+[Full bounded evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s4-r1.json): Windows/Python 3.12.14,
 seed41, 6,371 km radius, 0.3 continental fraction, unchanged saved outputs.
 
 | Case | Create, save and view | Restore and view | Saved |

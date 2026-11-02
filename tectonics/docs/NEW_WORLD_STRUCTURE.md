@@ -122,7 +122,7 @@ claim that an unrun test passed. No whole-world evolution campaign is required.
 
 ### Obtained Windows evidence, 24 September 2026
 
-[Bound measurements](../evidence/new-world-s3-r1.json): six thermal, six structure,
+[Bound measurements](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s3-r1.json): six thermal, six structure,
 twelve project and twelve session checks pass. The mixed-cell test verifies each
 cohort volume as well as total volume and temperature-volume integral against
 disjoint child queries, within the unchanged 2e-11 tolerance. Seed replay and

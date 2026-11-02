@@ -175,7 +175,7 @@ data, not scientific revalidation or execution compatibility.
 ## Measured native checkpoint
 
 The measurements below are historical r1 observations, not current-source timing
-claims. The [26 September native check](../evidence/new-world-bundle-r2.json)
+claims. The [26 September native check](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-bundle-r2.json)
 also predates A3's native-source change and is historical integration evidence,
 as recorded in the [evidence register](../../docs/CURRENT_EVIDENCE.md). It
 passed save/inspect/load and saved-output access on the repaired adapters, including
@@ -205,7 +205,7 @@ current-wrapper native read are recorded in the delivery evidence. No scientific
 or source-bound job code changed. Tests replace preparation/evolution with
 throwing guards during save/load to prove that opening does not regenerate.
 
-The [bound delivery evidence](../evidence/new-world-bundle-r1.json) records source
+The [bound delivery evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-bundle-r1.json) records source
 identities, archive hashes and raw-measurement bindings. Twelve focused synthetic
 archive/lifecycle methods pass in 0.645 s, alongside the real native checks above.
 The required static map check passes (13 maps/41 paths); 30 safety tests pass,

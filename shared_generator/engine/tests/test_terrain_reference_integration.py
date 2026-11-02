@@ -91,13 +91,13 @@ class TerrainReferenceIntegrationTests(unittest.TestCase):
                 with self.assertRaises(FileNotFoundError):
                     entry.load_workflow(Path(temporary))
 
-    def test_launch_source_closure_contains_both_preserved_and_successor_code(self):
+    def test_launch_source_closure_contains_all_selected_engine_code(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
             generator=root/"06_Generator_System"
             engine=generator/"engine"
             files=[generator/"Run-Generator.ps1",engine/"build_terrain_reference.py",
-                   engine/"terrain_reference_r2"/"workflow.py",
+                   engine/"selected_component"/"reference.py",
                    engine/"terrain_reference_r2_repair_r1"/"workflow.py",
                    engine/"terrain_reference_r2_repair_r1"/"source_binding.py",
                    root/"04_Manifests/Tools/LocalFirst/SafetyControls/INSTALLATION_STATUS.json"]

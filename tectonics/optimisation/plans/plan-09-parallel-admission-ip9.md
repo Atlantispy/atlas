@@ -56,6 +56,17 @@ These are transformed Python source identities. In particular, `73091fd3` is not
 
 Reuse adequate unchanged t9, smoke and refuter evidence. The removed hostile concurrent-lock test has no established failure mechanism or authorised post-READY harness change here. Any material later code/harness delta follows the existing review-before-queue and focused failure-case requirements; the measured code must be the reviewed code.
 
+The earlier initpar-r1 review found that cache-hit batches could retain supports
+and exhaust the outstanding window. The selected r2 implementation's `_passed`
+retires unclaimed passed batches; the warm-store smoke above has a distinct scope
+from q19. An honestly unmet worker answer still closes the optional route and
+falls through to the serial accuracy refusal; it is not a numerical acceptance.
+Read-ahead holds borrowed supports, so its context must finish before the
+partition closes. The retained transform calls `prefetch.finish()` after the
+normal loop, without a local `finally`: on an exception the enclosing
+`InitialParallel` context remains responsible for closure. Do not retry inside
+the same failed pass as though its admission and session had already ended.
+
 ## 4. Authentic proof checks
 
 The pinned job uses the two-worker route (`proof 2`) on a fresh store. Its checks must all pass, with exit code 0; a missing required field, failed comparison, changed source or missing/zero worker count must not be relabelled as success.

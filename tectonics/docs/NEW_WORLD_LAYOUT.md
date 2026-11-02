@@ -371,7 +371,7 @@ sensitivity, not a fabricated mesh-convergence certificate.
 
 ## Measured verification
 
-[Windows evidence](../evidence/new-world-s2-r1.json), Python 3.12.14,
+[Windows evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s2-r1.json), Python 3.12.14,
 predeclared world seeds 0/1/2 with 12 plates and 512 support cells, then seed 0
 at 1024 support cells and an explicit 52-plate/1024-cell stress case:
 

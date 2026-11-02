@@ -121,7 +121,7 @@
     {
       "id": "atlas.docs.content-and-consumers",
       "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when consolidating or retiring documentation.",
-      "module": "Changed documentation, migrated links and retired prose-only qualification assertions",
+      "module": "Changed documentation, process instructions, migrated links and retired prose-only qualification assertions",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "Manual complete-content review; explicit changed-scope path/anchor comparison; AST comparison of each retired prose assertion against its parent Git blob",
       "owner": "Atlas documentation/publication owner",
@@ -151,7 +151,8 @@
         "Linked destinations/anchors",
         "Actual source/evidence authority",
         "Consumer and privacy requirements",
-        "Retired qualification-test methods and retained test/case contracts"
+        "Retired qualification-test methods and retained test/case contracts",
+        "Client profile registration/model/effort, explicit review/bridge limits and PR policy links"
       ],
       "evidence": [
         "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
@@ -160,7 +161,10 @@
         "tectonics/docs/INTEGRATION_PLAN.md",
         "docs/CODING_SAFETY.md",
         "tectonics/tests/test_stokes_delivery_r4_1.py",
-        "tectonics/tests/test_thermochemical_delivery_r4_2.py"
+        "tectonics/tests/test_thermochemical_delivery_r4_2.py",
+        ".claude/agents/atlas-lead.md",
+        ".github/PULL_REQUEST_TEMPLATE.md",
+        "tectonics/optimisation/drivers/INTERVAL_CHAIN.md"
       ]
     },
     {
@@ -384,7 +388,7 @@
     },
     {
       "id": "atlas.publication.current-evidence",
-      "purpose": "Match declared current receipt/source digests and retain honest historical/superseded/invalid statuses. Byte identity does not qualify runtime or science.",
+      "purpose": "Match declared current receipt/source digests and retain honest historical/superseded/invalid statuses. Byte identity does not qualify runtime or science. Classification does not require permanent retention: obsolete entries may be explicitly retired after consumer review, without altering retained/current receipts.",
       "module": "tools/check_current_evidence.py",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "tools/check_before_commit.py -> python -B tools/check_current_evidence.py",
@@ -423,7 +427,7 @@
     },
     {
       "id": "atlas.publication.digest-line-endings",
-      "purpose": "Reject CRLF-rendered evidence digests and platform-newline receipt writers in the Git-normalised export.",
+      "purpose": "Reject CRLF-rendered evidence digests and platform-newline receipt writers in the Git-normalised export. Scan all remaining text records; obsolete historical correction-file exemptions are retired with those files.",
       "module": "tectonics/tests/test_digest_line_endings.py",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "tools/check_before_commit.py -> unittest discover -s tectonics/tests -p test_digest_line_endings.py",
@@ -693,8 +697,8 @@
     },
     {
       "id": "atlas.publication.document-inventories",
-      "purpose": "Current document publication maps match changed prose and membership while every source payload row and original evidence identity remains unchanged; global inventory retires only reviewed documentation entries.",
-      "module": "tectonics/optimisation/MANIFEST.json and affected public document maps",
+      "purpose": "Current document publication maps match changed prose and membership while every source payload row and original evidence identity remains unchanged; global inventory retires only reviewed documentation entries. Retired evidence mirror rows and supersession edges resolve honestly; all current registered records and their binding rules stay unchanged.",
+      "module": "tectonics/optimisation/MANIFEST.json and affected public document maps; tectonics/evidence/current-evidence.json; tectonics/cases/i01_closure_matrix_v1.json",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "Owner comparison of each changed JSON row to its parent Git blob, retained/deleted document set and SHA-256 of actual Git-normalised publication bytes",
       "owner": "Atlas documentation/publication owner",
@@ -730,8 +734,356 @@
         "tectonics/optimisation/workbench/plan04/SOURCE-MAP.json",
         "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
         "tectonics/optimisation/workbench/plan06/SOURCE-MAP.json",
-        "tectonics/optimisation/workbench/plan40/pressure/PUBLICATION.json"
+        "tectonics/optimisation/workbench/plan40/pressure/PUBLICATION.json",
+        "tectonics/evidence/current-evidence.json",
+        "tectonics/cases/i01_closure_matrix_v1.json"
       ]
+    },
+    {
+      "module": "tools/verify_candidate.py",
+      "process": "Development candidate qualification",
+      "owner": "Atlas development tooling owner",
+      "consumers": [
+        "tools/verify_candidate.py users",
+        "Candidate implementation reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development/release qualification of the candidate verifier; not an Atlas runtime check.",
+      "classification_refs": [
+        "docs/DEVELOPMENT_TOOLS.md#verify_candidatepy",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "STATIC scheduling, impact root discovery, unittest/Python, candidate environment or reuse-summary changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "control": "Owner-run unittest CandidateVerifierTests using disposable Git repositories.",
+        "actual_enabled": "ON_WHEN_INVOKED"
+      },
+      "on_failure": "unittest fails; candidate implementation qualification is rejected.",
+      "affected_by": [
+        "tools/verify_candidate.py",
+        "tools/check_before_commit.py",
+        "tools/run_tests_parallel.py",
+        "tests/test_development_tools.py",
+        "Python/unittest discovery and import behaviour",
+        "STATIC/root-test module selection and summary"
+      ],
+      "evidence": [
+        "tests/test_development_tools.py#CandidateVerifierTests.test_impact_root_tests_reuse_successful_statics_and_skip_static_runs_them_in_full",
+        "tests/test_development_tools.py#CandidateVerifierTests.test_impact_root_failures_and_import_errors_remain_failures_and_static_failure_stops",
+        "tools/verify_candidate.py",
+        "docs/DEVELOPMENT_TOOLS.md"
+      ],
+      "cost_note": "Small synthetic repositories and standard-library checks; no Atlas numerical workload.",
+      "id": "atlas.dev.candidate.impact-root-static-reuse",
+      "purpose": "Reuse exact successful STATIC root-test modules in the same impact candidate/interpreter. Preserve full root discovery with --skip-static, remaining import/assertion failures and static-failure stop; numerical export and worker contexts remain separate.",
+      "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
+    },
+    {
+      "id": "atlas.cleanup.source-retirement",
+      "purpose": "Remove only unused finished public source/probe/receipt copies; preserve selected import, constructor, qualification, original-source and current-evidence consumers. Descriptive inventory or historical hash membership alone is not a retention requirement.",
+      "module": "Reviewed probes, exact duplicate families, historical receipts and public terrain helper selection",
+      "process": "Authorised repository retention cleanup",
+      "entry_point": "Owner exact Git-tree family/path comparison, source-selector/import/fixture and publication-map review, retained-byte/AST comparison, removal-boundary and logical-size assertions",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "documentation review"
+        ],
+        "trigger": "A scoped retirement or its actual dependency/consumer changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "NOT_APPLICABLE",
+        "control": "Manual owner review of explicit changed scope"
+      },
+      "on_failure": "Retain an actual unresolved selected/frozen/private dependency and record its exact owner/consumer; reject lost current coverage or an unreviewed source change.",
+      "affected_by": [
+        "Candidate/source bytes and membership",
+        "Current/private/frozen selection evidence",
+        "Imports, constructors, fixture roles and publication maps"
+      ],
+      "evidence": [
+        "shared_generator/engine/build_terrain_reference.py",
+        "tectonics/optimisation/docs/release/fold/r4/run_trace_r4.sh",
+        "tectonics/optimisation/workbench/composed-checks/w4r_probe_overhead.py",
+        "tectonics/optimisation/workbench/probes/step9/claude-20261016/heat_control_on_frozen.py",
+        "tectonics/evidence/current-evidence.json"
+      ]
+    },
+    {
+      "id": "atlas.publication.current-evidence-controls",
+      "purpose": "Qualify strict evidence-register parsing, binding/refusal behaviour and the current closure-matrix mirror; changed retention must not bypass current binding failures.",
+      "module": "tests/test_current_evidence.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tests -p test_current_evidence.py -v",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Checker/schema/fixture contracts change, or substantive register/mirror retirement requires its existing repository control.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure rejects this guard qualification.",
+      "affected_by": [
+        "tools/check_current_evidence.py",
+        "tests/test_current_evidence.py",
+        "tectonics/evidence/current-evidence.json",
+        "tectonics/cases/i01_closure_matrix_v1.json"
+      ],
+      "evidence": [
+        "tests/test_current_evidence.py",
+        "tools/check_current_evidence.py"
+      ]
+    },
+    {
+      "id": "cleanup.step4.terrain-entry-selection",
+      "purpose": "Published terrain shim selects the repaired versioned package",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_shim_selects_versioned_successor",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py:26"
+      ],
+      "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
+    },
+    {
+      "id": "cleanup.step4.terrain-private-import",
+      "purpose": "Preloaded global workflow cannot substitute selected workflow bytes",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_existing_global_workflow_cannot_replace_exact_package",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py:59"
+      ],
+      "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
+    },
+    {
+      "id": "cleanup.step4.terrain-load-isolation",
+      "purpose": "Each source load has independent workflow globals",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_each_load_has_private_workflow_globals",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py:71"
+      ],
+      "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
+    },
+    {
+      "id": "cleanup.step4.terrain-source-pin-refusal",
+      "purpose": "Executed bytes must agree with workflow source identity",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_executed_bytes_must_match_workflows_own_source_pin",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py:79"
+      ],
+      "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
+    },
+    {
+      "id": "cleanup.step4.terrain-no-fallback",
+      "purpose": "A missing repaired package refuses and never resolves an old global workflow",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_missing_successor_cannot_fall_back_to_old_workflow",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py:89"
+      ],
+      "qualification_scope": "Five existing test methods compiled from actual class with actual public entry module and disposable workflow fixtures; external diadem_safety and real scientific successor were not imported. Exact duplicate check used static source inspection, not science execution."
+    },
+    {
+      "id": "cleanup.step4.terrain-launch-source-closure",
+      "purpose": "Launch-source inventory includes every selected first-party engine member and changes its recorded digest when a selected member changes.",
+      "module": "shared_generator/engine/tests/test_terrain_reference_integration.py",
+      "process": "Step4 bounded public-source cleanup",
+      "entry_point": "TerrainReferenceIntegrationTests.test_launch_source_closure_contains_all_selected_engine_code",
+      "owner": "Tidy cleanup owner",
+      "consumers": [
+        "public-source cleanup",
+        "shared generator entry owner"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Qualifies this public retirement and source-loader boundary, not scientific runtime or full installed launch",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Once for this changed public source inventory; rerun only for changed relevant entry/loader/contracts or unresolved failure",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit selected unittest or the actual method body with its required imports and disposable fixture; no replacement/mock loader or installed-science claim."
+      },
+      "on_failure": "Refuse cleanup completion / report failed contract; no repin, fallback or private source alteration",
+      "affected_by": [
+        "relevant source paths/selectors/loader/test bytes",
+        "consumer or private selection changed"
+      ],
+      "evidence": [
+        "shared_generator/engine/tests/test_terrain_reference_integration.py#TerrainReferenceIntegrationTests.test_launch_source_closure_contains_all_selected_engine_code"
+      ],
+      "qualification_scope": "The renamed disposable fixture preserves the full assertion body. Executing this method requires the original diadem_launch_gate/diadem_safety context absent from the public checkout; lack of execution is not an OFF state."
     }
   ]
 }

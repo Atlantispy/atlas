@@ -269,7 +269,7 @@ Fresh-process partial continuation takes 2.501657 s, including startup; its
 source sampling time is zero. Complete retained job storage is 402,993 bytes,
 including the 327,172-byte original archive. Native evolution's accounted peak
 is 2,428,894 bytes, not a process-RSS measurement. See the full
-[evidence and source identities](../evidence/new-world-s5-r1.json).
+[evidence and source identities](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s5-r1.json).
 
 ## Combined lifecycle qualification
 
@@ -289,7 +289,7 @@ test the prescribed regional model, not empirical forcing or plate morphology.
 ### Current rerun: 26 September 2026
 
 This incoming anchor names the tested r2 snapshot, **not the present sources**.
-The [r2 receipt](../evidence/new-world-s7-r2.json) predates the same-day
+The [r2 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r2.json) predates the same-day
 [A3 repair](../../docs/CURRENT_EVIDENCE.md#a3-follow-on-bounded-source-inventory-capacity)
 and is historical. The [predeclared matrix](../evidence/new-world-s7-r2-matrix.json)
 has its separate register classification. All nine fresh-process r2 phases passed
@@ -307,7 +307,7 @@ not old/new solver performance; no repeated benchmark or second-platform run.
 
 ### Historical record: 24 September 2026
 
-The [r1 receipt](../evidence/new-world-s7-r1.json) binds original sources and reused
+The [r1 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r1.json) binds original sources and reused
 S2 geometry/seed/reference controls (including stress refusal), S3 structure/
 thermal/conservation, superseding S4 motion/project/1024-patch archives, S5's 27
 sampling/evolution/lifecycle checks and the UI owner's 132 focused/browser/native

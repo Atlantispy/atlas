@@ -197,7 +197,10 @@ chain and the combined patch in two working trees, and records each step in the 
    - `--slow-file` supplies a registry when the candidate tree has none.
    - `impact` needs `--impact-map`. It commits the candidate inside the scratch clone, selects BASE..HEAD, and runs
      the selection one unit per process. It also runs the root `tests/` suite when a change lies outside what the
-     recorded suite covers.
+     recorded suite covers. In that root-suite branch, the three exact root modules already passed by STATIC are
+     reused in the same combined checkout and tested interpreter; the summary names them in
+     `root_tests.reused_static_modules`. Remaining modules retain ordinary discovery, package fixtures and import
+     failures. With `--skip-static`, root discovery runs in full and the reused list is empty.
 
 The exit code is 0 only when every requested step passes. During execution the summary has `completed: false` and
 `passed: false`; an interrupted run cannot leave a green receipt. Missing required tier arguments refuse before a

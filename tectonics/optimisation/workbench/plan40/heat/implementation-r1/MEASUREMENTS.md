@@ -29,6 +29,20 @@ The C3/C8 actual imported consumer controls and all declared exact outputs, acco
 
 The raw copies are byte-identical. Scoped Git attributes preserve their exact JSON bytes, including Windows newlines. Source generation is bound in [SOURCE-GENERATION.json](SOURCE-GENERATION.json); the original selected map remains unchanged. Native module import/build/self-tests are reported separately from warmed C3 component calls.
 
+The C13 adapter uses the pinned functional check's four fixtures: triangle,
+rectangle, reversed rectangle and a tiny tilted triangle far from the origin.
+Workload SHA-256 is `1e0b74d2583a3f8feb7a32875a65a8bad4a8edca96d68ad64517a670baf6f034`.
+Each sample includes all four native calls, budget/poll construction, admission,
+the symmetric injected START component fence, full prospective plan, retained
+transfer, diagnostic export, close and zero-charge verification. Hash comparison
+is outside timing. The ABBA/BAAB/ABBA loop gives six samples per arm; its no-clock
+smoke `actual-c13-smoke-r1.json` retained 12 matching samples with digest
+`60869ebbed11ec42fca3c8682ba2eb8af6ac68459ae2a1cc84a8ac203388b15f`.
+The adapter pins the original passing functional evidence and complete imported
+successor; it does not repeat that correctness campaign or qualify the original
+private START fence, workers, checkpoints or a full runtime. These completed
+preparation controls are not a pending measurement or a reason to repeat it.
+
 The guarded payload occupied about 4 s and the outer tracked attempt about 7 s. Eighteen 250 ms guard samples recorded aggregate supervisor/descendant peak RSS239,751,168B, minimum physical free12,767,072,256B and0.0083557 s sampling time. No trigger occurred; inner and outer trees reached zero members. These physical observations are separate from logical per-arm accounting and do not bound between-sample spikes.
 
 Implementation review/integration/final acceptance/publication remain separate from this completed supporting measurement. No testing-review approval, worker dispatch, production default, full interval or scientific acceptance is implied.

@@ -648,7 +648,7 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r10](../evidence/i02-workflow-timing-r10.json),
+**Current source-bound measurement:** [i02-workflow-timing-r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json),
 3 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
 one BLAS thread. It was captured after the I03 N1 change to
 `integration_transfer.py`, which followed the K1–K5 repairs, without a concurrent
@@ -668,7 +668,7 @@ the receipt retains every sample and growth
 measurement. These tiny-case costs are not a general overhead or speedup claim.
 
 **Historical r5 measurement, 30 September 2026:** the table and interpretation
-below describe the unchanged [r5 receipt](../evidence/i02-workflow-timing-r5.json),
+below describe the unchanged [r5 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r5.json),
 not the current checkout. Earlier timings from the harness with incomplete
 equality checks are not current acceptance evidence. Warm medians of the four
 later r5 repetitions unless marked cold:
@@ -774,8 +774,8 @@ R4 and its follow-up fixes are integrated locally, changing `storage`,
 `tectonic_history`, `tectonic_history_codec`, `reuse`, resource/solver accounting
 and `tools/tectonics_job.py`. Timing r5 (whole package and `tectonics_job.py`) and
 finite-admission r5 (restoration dependencies) are now superseded by fresh
-[timing r6](../evidence/i02-workflow-timing-r6.json) and
-[finite-admission r6](../evidence/i01-finite-admission-r6.json). All seven timing
+[timing r6](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r6.json) and
+[finite-admission r6](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r6.json). All seven timing
 checks and all five admission controls passed with unchanged sources; valid
 upstream receipts were reused. The old receipts were not edited. Final
 Git-normalised integration verification passed as recorded in section 6 above.
@@ -787,7 +787,7 @@ preparing as `StoreError` (previously a raw SQLite error), matching the commit
 contract above.
 
 R7 and its follow-up corrections change the shared package identity again.
-[Timing r7](../evidence/i02-workflow-timing-r7.json) supersedes r6 after passing all
+[Timing r7](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r7.json) supersedes r6 after passing all
 seven checks over five repetitions; 151 source bindings are renewed without
 rewriting an earlier receipt. Finite-admission r6 and the other unchanged current
 records remain valid and were reused. Earlier saved execution-bound states must
@@ -796,11 +796,11 @@ The current integration checks are in [the evidence guide](../../docs/CURRENT_EV
 
 I03's ledger/clock integration and junction extension then required finite-admission
 r7 and timing r8. The final K1–K5 repairs supersede those receipts with
-[finite-admission r8](../evidence/i01-finite-admission-r8.json) and
-[timing r9](../evidence/i02-workflow-timing-r9.json): all five admission controls
+[finite-admission r8](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r8.json) and
+[timing r9](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r9.json): all five admission controls
 and all seven timing checks passed, with unchanged prerequisite receipts.
 The I03 N1 change to `integration_transfer.py` then superseded timing r9 with
-[timing r10](../evidence/i02-workflow-timing-r10.json), whose seven checks also
+[timing r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json), whose seven checks also
 passed; finite-admission r8 does not bind that file and stays current.
 Earlier receipts retain their original bytes. These successors renew the bounded
 column's affected source bindings; they do not measure spherical or 3-D solver

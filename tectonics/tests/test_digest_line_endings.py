@@ -16,9 +16,6 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 # reference_data keeps exact upstream bytes (-text) and is deliberately not scanned.
 SCANNED=('cases','docs','evidence','src','tests','tools')
-# These list superseded CRLF values on purpose: they are the correction audit trails.
-CORRECTION_RECORDS=frozenset(('evidence/line-ending-digest-correction-r1.json',
-                              'evidence/line-ending-digest-correction-r2.json'))
 HEX=re.compile(rb'(?<![0-9a-fA-F])[0-9a-f]{64}(?![0-9a-fA-F])')
 LF,CRLF=b'\n',b'\r\n'
 
@@ -58,7 +55,7 @@ class RecordedDigestLineEndingTests(unittest.TestCase):
         cls.allowed|=set(cls.lf)
         cls.recorded=[(name,match.start(),match.group().decode())
                       for name,raw in cls.files.items()
-                      if name not in CORRECTION_RECORDS and b'\0' not in raw[:8192]
+                      if b'\0' not in raw[:8192]
                       for match in HEX.finditer(raw)]
 
     def test_no_recorded_digest_matches_only_a_crlf_rendering(self):

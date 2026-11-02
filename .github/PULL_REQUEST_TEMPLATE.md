@@ -1,6 +1,6 @@
 ## Requested change
 
-Describe the scoped change and the active route. Disclose ChatGPT/Codex, Claude Code or other AI assistance.
+Describe the problem, resulting behaviour and active route.
 
 ## Source and behaviour boundaries
 
@@ -12,10 +12,11 @@ Describe the scoped change and the active route. Disclose ChatGPT/Codex, Claude 
 ## Evidence
 
 - Exact checks actually run and their results:
-- `python -B tools/check_before_commit.py` result (required for tectonics code, evidence or receipt-bound docs; docs/CODING_SAFETY.md "Before every commit"):
+- Applicable final-candidate check and result under [CODING_SAFETY.md](../docs/CODING_SAFETY.md#before-every-commit):
 - Reader guide (tectonics/docs/how-it-works/) and method document updated, or not applicable:
 - Checks not run, missing dependencies and remaining assumptions:
 - Route guide/review inventory updated where wiring changed:
 
-Passing source checks is not runtime or scientific acceptance. Maintainer review
-is required; this request does not authorise automatic merging or further runs.
+Report only checks required by the changed boundary; reuse valid unchanged
+evidence. Passing source checks does not establish runtime or scientific
+acceptance. Existing review/run holds and the assigned delivery authority apply.

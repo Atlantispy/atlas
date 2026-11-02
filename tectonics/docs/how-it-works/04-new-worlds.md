@@ -409,7 +409,7 @@ Three different questions need different checks:
 
 The [combined acceptance tool](../../tools/check_new_world_acceptance.py) exercises
 fixed cases through creation, saving, reopening, evolution and fresh-process
-continuation. The [r2 record](../../evidence/new-world-s7-r2.json) reports all nine
+continuation. The [r2 record](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r2.json) reports all nine
 phases passing for its three-case repair snapshot. The native source inventory
 then changed: the [current-evidence register](../../../docs/CURRENT_EVIDENCE.md)
 correctly treats that numerical receipt as historical. Its current case matrix

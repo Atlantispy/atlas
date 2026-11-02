@@ -263,8 +263,26 @@ def main(argv=None):
                 # The recorded suite is tectonics/tests. Changes it cannot see run the repository-root tests too.
                 if chosen['outside_scope'] or chosen['untouched'] or any(
                         not p.startswith('tectonics/') for p in changed):
-                    steps['root_tests'] = run_step('root_tests', [args.python, '-B', '-m', 'unittest', 'discover',
-                                                                  '-s', 'tests'], combined, env, logs)
+                    reused = [command[-1] for name, command in STATIC
+                              if steps.get('static:'+name, {}).get('passed')
+                              and command[:6] == ['-m', 'unittest', 'discover', '-s', 'tests', '-p']]
+                    root_command = [args.python, '-B', '-m', 'unittest', 'discover', '-s', 'tests']
+                    if reused:
+                        # Reuse only the exact root modules already checked in this checkout/interpreter.
+                        # Match paths before import; remaining discovery, load_tests and import errors are intact.
+                        root_command = [args.python, '-B', '-c', '''
+from pathlib import Path
+import sys
+import unittest
+excluded = {Path('tests', name).resolve() for name in sys.argv[1:]}
+class Loader(unittest.TestLoader):
+    def _match_path(self, path, full_path, pattern):
+        return Path(full_path).resolve() not in excluded and super()._match_path(path, full_path, pattern)
+result = unittest.TextTestRunner().run(Loader().discover('tests'))
+raise SystemExit(0 if result.wasSuccessful() else 1)
+''', *reused]
+                    steps['root_tests'] = run_step('root_tests', root_command, combined, env, logs)
+                    steps['root_tests']['reused_static_modules'] = [Path(name).stem for name in reused]
                     save()
                 runner.append('--fresh')          # the composition the map was recorded with: one unit per process
                 if not chosen['all']:

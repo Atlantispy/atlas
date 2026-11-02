@@ -2014,13 +2014,13 @@ changes with it.
 
 The 3 October K1-K5 follow-up also changes `integration_ledger.py` to preserve an
 explicit old-schema refusal cause. Its final bound source was recaptured as
-[finite-admission r8](../evidence/i01-finite-admission-r8.json); all five bounded
+[finite-admission r8](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r8.json); all five bounded
 controls passed, reusing unchanged finite-strain-r5 and column-admission-r3
-prerequisites. [Workflow timing r9](../evidence/i02-workflow-timing-r9.json) renews
+prerequisites. [Workflow timing r9](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r9.json) renews
 whole-package source bindings after the final transfer, path and bridge repairs;
 its seven parity checks pass. Both predecessors remain unchanged and superseded.
 The later N1 change to `integration_transfer.py` (the named D1-b/D5 refusal)
-superseded timing r9 with [timing r10](../evidence/i02-workflow-timing-r10.json),
+superseded timing r9 with [timing r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json),
 which also passes its seven checks; finite-admission r8 does not bind that file.
 That column timing is not a measurement of spherical transfer speed. The exact
 fallback comparison and its limitations are reported separately in section 11,
