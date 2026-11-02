@@ -1084,6 +1084,46 @@
         "shared_generator/engine/tests/test_terrain_reference_integration.py#TerrainReferenceIntegrationTests.test_launch_source_closure_contains_all_selected_engine_code"
       ],
       "qualification_scope": "The renamed disposable fixture preserves the full assertion body. Executing this method requires the original diadem_launch_gate/diadem_safety context absent from the public checkout; lack of execution is not an OFF state."
+    },
+    {
+      "id": "atlas.dev.python-focused-lint",
+      "purpose": "Reject newly introduced undefined names, unused locals and ambiguous zip strictness in changed Python modules, without treating inherited findings as new failures.",
+      "module": "Changed Python source and tests",
+      "process": "Focused source qualification during cleanup",
+      "entry_point": "ruff check --no-cache --isolated --select F821,F841,B905 --output-format json <changed Python paths>; compare with the same rules on their parent-commit bytes",
+      "owner": "Source change owner",
+      "consumers": [
+        "Maintainers",
+        "Candidate qualification"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Development static defect check; not scientific runtime or mandatory historical clean-up of existing findings.",
+      "classification_refs": [
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "New or changed Python source within the scoped change; reuse while source and rule/interpreter inputs are unchanged.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit bounded lint invocation; no installed hook or background lint run."
+      },
+      "on_failure": "Report introduced findings or tool failure and resolve affected code before claiming this check passed.",
+      "affected_by": [
+        "Changed Python bytes",
+        "Ruff version or selected rules",
+        "Baseline comparison or invocation configuration"
+      ],
+      "evidence": [
+        "tools/verify_candidate.py",
+        "tests/test_development_tools.py",
+        "tests/test_current_evidence.py",
+        "tectonics/tests/test_digest_line_endings.py",
+        "shared_generator/engine/tests/test_terrain_reference_integration.py"
+      ]
     }
   ]
 }
