@@ -1,789 +1,46 @@
 # Atlas tectonics package
 
-**Version string `0.1.0.dev42`. WORKING NON-CANON.** The string was last changed at
-dev42 and has not been incremented for the later I01/I02 package modules. It is a
-development label, not a release or acceptance marker: receipts bind the package by
-source digests and native execution identity, so a new version string alone would
-certify nothing. Delivery status is kept in [current status](../docs/CURRENT_STATE.md);
-the sections below are dated implementation entries, and a heading that calls an
-older entry "current" describes that entry's own date.
-
-The [new-world step 1 contract](docs/NEW_WORLD_CONTRACT.md) provides reproducible
-128-bit seeds, Fixed/Auto settings, strict plan identities and safe save/load via
-`tools/new_world.py`. This prepares a configuration only; it does not generate a
-planet or send new-world settings to the fixed W12 column demonstration. Different
-physical inputs invalidate their configured scientific identity; independent
-random streams do not imply independent crust/plate physics.
-
-[New-world step 2](docs/NEW_WORLD_LAYOUT.md) adds variable plate-size targets and
-real connected spherical candidates, with explicit refusals and scale-aware
-morphology assessment. It reuses native sparse cuts without changing historical
-recipes or W12 source bindings.
-
-[Step 3](docs/NEW_WORLD_STRUCTURE.md) adds grid-independent crust, material and
-thermal initial conditions. [Step 4](docs/NEW_WORLD_MOTION.md) adds seeded,
-crust-conditioned plate rotations, whole-edge motion and first-order junction
-compatibility, persisted in native projects without regenerating on load.
-These are declared initial scenarios. [Step 5](docs/NEW_WORLD_EVOLUTION.md) now
-connects a real saved world to conservative native regional deformation and
-calculated crustal thickness/uplift, with immutable outputs and resumable jobs.
-It remains distinct from whole-planet evolution and the fixed W12 fixture.
-[Step 7 combined acceptance](docs/NEW_WORLD_ACCEPTANCE.md) now closes three fixed
-cross-seed/settings save/reopen/evolve/resume cases with exact scientific parity,
-genuine physical diversity and measured time/storage. Prior checks are reused;
-the new evidence is Windows-only.
-[Combined portable projects](docs/NEW_WORLD_BUNDLE.md) now have a tested backend
-for initial worlds plus saved/resumable regional results; UI integration is pending.
-
-[W12 supported assembly](docs/W12_ASSEMBLY.md) now provides a public runnable
-W01-W04 example, native interruption/recovery and a real Atlas graph/cache
-connection. Seventeen supported native output forms can be exported with their
-fields, units, masks and original identities. Start from the repository root:
-
-```text
-python -B tectonics/tools/run_tectonics.py --directory w12-demo
-python -B tectonics/tools/run_tectonics.py --directory w12-demo --resume
-```
-
-Use the declared compatible Python environment; the first directory must be new.
-The linked record explains the supported regime matrix, actual tests and recovery
-dependencies. The six advanced optimisation candidates remain deferred.
-
-To inspect one saved column result without running a simulation, the new
-[read-only UI bridge](docs/W12_ASSEMBLY.md#read-only-ui-connection) returns verified
-JSON fields, units, masks and native support through `tools/read_tectonics.py`.
-This backend reader does not itself provide a browser UI or simulation controls.
-
-The [module-wide W11 optimisation pass](docs/OPTIMISATION_REFERENCE.md#w11-module-wide-linked-workflow-pass--24-september-2026)
-now covers existing tectonics families and their implemented connections. Cheaper
-exact source checks, W07 producer-context reuse and a checkpoint-copy removal
-improve the measured linked workflows by 20–37%, with matched scientific outputs.
-Default Zstd checkpoint writes improve 8.41% on the 10 MiB case. Physics and
-numerical gates are unchanged; timings and current focused checks are in the record.
-
-For a plain-English explanation broken down by W01–W12 and individual methods,
-read [How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md). Its six linked
-chapters cover scientific inputs/outputs, research and software, actual code,
-checks and their limits, seeded-world creation and the separate force-driven
-experiment. The [I01 physical integration chapter](docs/how-it-works/06-physical-integration.md)
-explains how strength, motion, heat, material history and changing geometry interact,
-alongside gravitational driving, water loading, melt and transition controls.
-These bounded connections do not yet form the complete evolved-world route.
-The [optimisation comparison method](docs/how-it-works/03-coupling-and-reliability.md#compare-optimised-outputs-under-their-actual-source-contracts)
-explains source and caller binding, quantity-specific error proofs and the
-remaining limits of the N9 tools.
-The [spherical network method](docs/I03_SPHERICAL_NETWORK.md) describes I03: one
-closed network beside the accepted state, moved under supplied plate rotations with
-exact transfer of its material, with bridges to regional models and supplied plate
-splits, merges and ridge jumps. Supplied compatible junction paths generate curved
-ends; transient ridge-to-trench material is accounted for within the same interval.
-See [current status](../docs/CURRENT_STATE.md) for reviewed scope and checks.
-The [causal-start method](docs/I04_CAUSAL_START.md) describes I04 Part A (unreviewed):
-- a declared starting family on that network;
-- a plate force balance with GPE from the same columns and declared slab pull;
-- the [I04/I05 port record](docs/I04_I05_PORTS.md).
-
-It also describes I04 Part B (candidate, unreviewed):
-- [reduced belts](docs/I04_CAUSAL_START.md#r4-4-d2-on-the-sphere) whose rock strength resists plate motion;
-- the [first motion/property feedback](docs/I04_CAUSAL_START.md#r4-7-first-feedback-coupling), solved at each
-  interval's end, with replayed provenance and the boundary reaction port.
-The [moving-state method](docs/I05_MOVING_STATE.md) describes I05a (unreviewed): cohort histories and heat carried with
-that network, and current properties returned through the port record.
-The [3D regional solver](docs/REGIONAL_MECHANICS_3D.md) now supplies full-stress
-heterogeneous flow, explicit velocity/traction boundaries and finite-mode
-force feedback, with prepared sparse reuse. Its [connected fixed-box advance](docs/REGIONAL_EVOLUTION_3D.md)
-now carries material, heat and scalar history, conducts heat and recalculates
-motion from the changed constitutive state. Moving surfaces, objective elastic
-history and fully evolving sphere connections remain outstanding. Whole-planet
-evolution remains an explicit integration acceptance requirement.
-Use [current status](../docs/CURRENT_STATE.md) for delivery status
-rather than the dated implementation entries below. The
-[validation record](docs/W10_VALIDATION.md) distinguishes implementation,
-numerical resolution, physical observations and supported assembly.
-Its comprehensive successor includes the approved mixed-material remap/ALE fix,
-137 passing integration checks, active coupling and Windows resource evidence.
-The failed pre-fix full baseline and unavailable platform checks remain explicit;
-earlier source-bound W10/W11 receipts are historical, not silently refreshed.
-
-## Scientific ownership and next work
-
-The historical package contains reusable work for several scientific modules.
-Its directory name is not an instruction to expand all of them inside tectonics.
-Per the [23 September ownership decision](docs/TECTONICS_PLAN.md#current-module-boundaries-and-continuation-23-september-2026),
-keep existing code/imports and source-bound checkpoints unchanged. Further water
-work belongs to hydrology; erosion/deposition to erosion and sediment transport;
-geological, compaction and magmatic development to their respective owners.
-Receiving modules implement the effects of tectonic outputs on their own state.
-
-The supplied ramp-flat [collision/underthrusting route](docs/UNDERTHRUST.md) is now
-implemented: side-preserving material motion, continuous-path stationary-host
-checks, named receiving/exterior accounts and separate supplied work/gravity.
-Twenty-eight focused checks pass. Three changed outputs save 0.4323981 s / 48.90%
-through prepared reuse (0.8841770 to 0.4517789 s), with complete-output hash parity.
-
-[Step 3 evolving mechanical inputs](docs/EVOLVING_MECHANICS.md) is implemented:
-changing elastic rigidity uses separate absolute reference/current equilibria;
-regional material, force and boundary inputs must match time/frame/support and
-name single owners. Twenty-six new focused tests pass. Three changed outputs save
-28.09% for regional mechanics and 47.15% for elastic support with complete-output
-hash parity. Source, budget and numerical gates are retained.
-
-[Step 4 supported histories](docs/TECTONIC_HISTORIES.md) now adds atomic dated
-recovery for underthrust, evolving elastic support and regional mechanics. It
-preserves each route's physical ownership and restores the latest complete output
-without replaying accepted work. Existing W05-W08 workflows remain in use.
-
-[W10's bounded validation assessment](docs/W10_VALIDATION.md) is now implemented:
-26 selected checks pass, free-surface convergence is freshly verified, and the
-unchanged cooling model passes a 50-bin observational heat-flow dispersion screen.
-The record retains its negative bias, sensitivities and unresolved field claims;
-historical subduction evidence is not relabelled as a current campaign.
-
-[W11's bounded performance/scale assessment](docs/OPTIMISATION_REFERENCE.md#w11-bounded-matched-output-scale-assessment--24-september-2026)
-now measures existing preparation reuse at 8x8/16x16/24x24 regional grids:
-30.38%/21.05%/28.59% less time for three changed outputs, with complete parity,
-independent affine error checks and five paired repetitions per size. Fourteen
-selected execution safeguards pass; no new numerical shortcut or planetary
-extrapolation. Evidence destinations are now claimed before expensive work.
-Tectonics W12 generator integration is implemented within these supported bounds;
-see the current assembly record above for the public route and export coverage.
-W09 Steps 4-5 are retained downstream work, not the
-next tectonics implementation. Existing shared thermal/load/accounting components
-remain available; mechanical response is not removed from tectonics.
-
-## Local W08 regimes and shortening
-
-[Step 1](docs/W08_REGIMES.md) and the [case register](cases/w08_regimes.json)
-specify shortening, transform/oblique motion, subduction and finite-source
-magmatism. Exact finite maps, boundary-relative fluxes, material/enthalpy accounts
-and required W04/W07 bridges are explicit. [Step 2](docs/W08_SHORTENING.md) now
-implements exact distributed finite shortening, conservative material/enthalpy
-projection and compatible dry load/support. Twenty-one focused checks pass;
-prepared three-output reuse saves 0.4944981 s / 46.96% including setup and source
-verification, with identical outputs. The source-capture prerequisite now uses
-bounded complete digest inventories and v4 execution identity; old checkpoint
-identities refuse. See [final evidence](evidence/w08-shortening-r2.json).
-[Step 3 transform/oblique motion](docs/W08_TRANSFORM.md) now joins full-vector
-finite histories, compatible distributed bends/stepovers and discontinuous named
-straight-fault slip to conserved material/heat and explicit region exchanges.
-Sixty-six new focused checks have passing evidence. Prepared changing outputs
-save 51.59% (1.5057947 to 0.7288984 s); identical-result reuse saves 64.26%, including
-setup and source checks. [Evidence](evidence/w08-transform.json) records unchanged
-output identities and the three-level bend reference. [Step 4 subduction](docs/W08_SUBDUCTION.md)
-now has prescribed-slab/computed-wedge mechanics, steady heat, separate conservative
-thermal velocity transfer and finite material retirement. Step4 acceptance remains
-IN_PROGRESS; its original-source and numerical comparison gates are recorded in
-the linked implementation record. Plotting stays deferred.
-
-## Local W07 regional mechanics
-
-[Step 1 model and benchmark specification](docs/W07_REGIONAL_MECHANICS.md) remains
-frozen. [Step 2 implementation and evidence](docs/W07_REGIONAL_SOLVER.md) now supply
-a boundary-aware full-stress MAC solver, public SI/source-bound execution,
-physical pressure and reactions, and an independent Q2/P1-discontinuous comparator.
-The small continuum comparison retains MAC for the next step; it does not claim
-one method is universally superior. Prepared reuse saves **44.84%** and verified
-identical-result reuse **53.53%** on the measured three-output 32×32 workload,
-including setup, at byte-identical output. The [ten benchmark families](cases/w07_mechanics.json)
-separate these basic boundaries from subsequent material/thermal, yielding and
-true-ALE surface work. [Step 3](docs/W07_HETEROGENEOUS_THERMAL.md) now supplies
-heterogeneous stress-site viscosity, sharp-interface references, retained nonlinear
-laws and open/translated-grid heat/material coupling. Finest B07 thermal error
-is 0.42053%; million-to-one interface viscosity cases pass. New identical-request
-reuse saves 0.94827 s / 47.95% on its three-output workload; changed-coefficient
-reuse shows no gain (4.66% slower median).
-[Step 4](docs/W07_SURFACE_STRENGTH.md) now adds dry pressure-sensitive strength
-and genuine body-fitted surface evolution, using Q2/physical-P1 mechanics on the
-deformed branch. Finest surface-relaxation error is 0.003688%; mesh/time refinement
-and conservation pass. Finest 64-step runs took 2.55–2.63 s. Verified identical
-surface-state reuse saves 0.4548072 s / 54.64% on three complete outputs.
-[Step 5](docs/W07_WORKFLOW.md) now connects actual W01/W02 geological inputs,
-single-owner physical contributions, atomic snapshots and exact recovery.
-Five assembled/reference/timing checks pass; finest joined heat-reference error
-is 0.003964% of the declared 100 K scale. Reopening the same requested final state
-takes 2.608 s instead of 6.148 s (**57.58% saved**); first-save overhead is 9.05%.
-The three supported routes and retained integration boundaries are explicit in
-the record. W08's next-stage design is linked above.
-
-## Local W06 conservative oceanic birth and spreading
-
-[Step 1](docs/W06_SPREADING.md) fixes the model and numerical gates.
-[Step 2](docs/W06_BIRTH.md) supplies conservative birth/age histories and finite
-material feeds. [Step 3](docs/W06_COOLING.md) now connects phase-resolved cooling,
-single-owner wet subsidence, finite heat/water accounts and boundary-exit exports.
-Inherited margins evolve their actual temperature fields without resetting age.
-Thirty new focused checks have passing evidence, plus nine shared identity checks.
-Matched 256-cell thermal output saves 73.29% against independent scalar integration
-(0.3553722 to 0.0949111 s); prepared margin reuse saves 51.76% including setup.
-The separate 4000-cell/four-output protected ocean sequence takes 0.5856 s including
-setup. See [evidence and limits](evidence/w06-cooling.md). These are bounded Windows
-measurements, not whole-generator speedups or empirical terrain acceptance.
-[Step 4 changing histories](docs/W06_HISTORIES.md) now supports asymmetric rate
-switches, continuous ridge migration, stopping/restarting and explicit plate
-reassignment without resetting material age or first-exit accounts. Twenty new
-focused checks and nine shared identity checks have passing evidence. Matched
-256-cell output takes 0.101052 s versus 0.646369 s for the scalar reference
-(84.37% less time); preparation reuse across four 4000-cell outputs takes
-0.658347 s versus 1.273474 s (48.30% less, including setup). See
-[Step 4 evidence](evidence/w06-history.md) for the separate comparison scopes.
-[Step 5 recoverable workflow](docs/W06_WORKFLOW.md) now gives all three routes
-atomic requested-output checkpoints, exact fresh-process continuation and verified
-reuse without repeating completed thermal work. Selected combined acceptance
-passes 20 checks; five separate ocean codec checks also have passing evidence.
-See [Step 5 evidence](evidence/w06-workflow.md) for recovery timings and first-save
-overheads. Next: W07's selected regional mechanical backend.
-
-## Local W05 combined regional-extension acceptance
-
-[Step 1](docs/W05_REGIONAL_EXTENSION.md) defines the first prescribed dry
-listric-extension mechanism, separate conservative hanging-wall/footwall
-accounts, one reference-based flexural response, synthetic case, independent
-references and efficiency decisions. [Step 2 motion](evidence/w05-motion.md) is
-now implemented and checked: exact characteristic cell means, cohort histories,
-stationary footwall and finite exports. The kernel is 99.04% faster than the
-independent quadrature implementation at matched accuracy (not a whole-generator
-claim). [Step 3 load/support integration](evidence/w05-support.md) now adds
-continuous flexure, true mean surface/base/fault outputs and bounded exterior
-effects. The three-output load/support sequence is 24.84% quicker with reuse,
-including preparation, at identical output quality. [Step 4 recoverable workflow](evidence/w05-workflow.md)
-now saves complete requested outputs atomically and resumes with exact output
-equality. Setup-inclusive warm reopening saves 52.41% on the bounded case; first
-durable execution costs 11.76% extra. [Step 5 combined acceptance](docs/W05_COMBINED_ACCEPTANCE.md)
-now passes: 37 focused checks in 31.807 s, all crop centres/faces on three grids,
-independent cell-mean extrema, accounts, recovery and domain/time sensitivity.
-Fine-grid support error is 1.0164 mm against the declared smooth reference, not
-real-world terrain error. See [acceptance evidence](evidence/w05-acceptance.md).
-Reproduce with `python -I -B tectonics/verify.py --w05`. The scoped numerical
-workflow is accepted; a separate empirical challenge remains pending source data.
-
-## Local unreleased W04 combined acceptance
-
-[Step 5](docs/W04_COMBINED_ACCEPTANCE.md) passes the selected stationary planar
-1D load-to-support gate: 62 focused tests, including the evolved W03 sequence
-through uniform/variable and periodic/continuing/physical support, reference
-shifts, restart/cache and local strain guards. Reproduce with
-`python -I -B tectonics/verify.py --w04`; this is not a full terrain or R4.4 run.
-See [bounded evidence](evidence/w04-acceptance.md). W05 acceptance is recorded above;
-general terrain, moving/2D/spherical support and field calibration are not accepted.
-
-## Local unreleased W04 step 4
-
-[Fixed spatially variable rigidity](docs/W04_VARIABLE_RIGIDITY.md) now connects
-source-linked E/Te/nu profiles to the stationary W01-W03 projection. Conservative
-Hermite support, sharp material interfaces, explicit mesh-change gates and reused
-banded factors work with periodic, physical and continuing boundaries. Continuing
-variable-D support requires exact declared exterior loads. Evolving rigidity is
-unsupported; the separate combined acceptance is recorded above. See [checks and measured savings](evidence/w04-variable-rigidity.md).
-
-## Local unreleased W04 step 3
-
-[Finite 1D regions](docs/W04_FINITE_REGIONS.md) now distinguish continuing plates
-from explicitly physical free/clamped ends. Source-bound surrounding loads,
-omitted-load error bounds, exact cell integration, shared FFT preparation,
-verified reuse and analytical controls are connected to W03. This increment is
-uniform-rigidity; step 4 above adds its separate variable-D route. See
-[checks and timing](evidence/w04-finite-regions.md).
-
-## Local unreleased W04 step 2
-
-[Source-bound support integration](docs/W04_WORKFLOW.md) now projects actual
-stationary W01/W02/W03 snapshots through explicit finite-reservoir placement and
-single-owner thermal loading into the existing periodic flexure solver. Results
-are total-reference displacement and surface changes, not accumulated movement
-or a feedback update to the W03 mesh. Shared preparation, existing cache/recovery
-and focused controls are included; see [evidence](evidence/w04-workflow.md).
-
-## Local unreleased W04 step 1
-
-[Finite-reference physical loads](docs/W04_COLUMN_LOADS.md) now account separately
-for rock/sediment/water inventories, replacement material and fixed-coverage
-thermal buoyancy. Batched compensated evaluation and source-aware optional reuse
-are included. This is load construction only: actual W01-W03 support coupling,
-non-periodic boundaries and variable rigidity remain separate steps. See
-[focused checks and timing](evidence/w04-loads.md).
-
-## Local unreleased W03 increment 4
-
-[Bounded assembled columns](docs/W03_WORKFLOW.md) connect W01/W02 source sediment
-inventories to cooling, compaction history and an actually booked finite water
-reservoir. Initial thermal reconciliation, complete per-step receipts, shared
-execution preparation and source-backed restart are included. This completes the
-selected stationary fixed-area assembly, not general moving-stratigraphy or
-fully coupled terrain acceptance. See [checks and timings](evidence/w03-workflow.md).
-
-## Local unreleased W03 increment 3
-
-[Drained compaction and partial rebound](docs/W03_COMPACTION.md) now preserve grain
-inventories under changing column area, retain maximum loading, and explicitly
-balance pore-fluid exchange against a finite shared reservoir. Source-bound W01
-sediment import, grouped/batched evaluation, verified reuse and state recovery are
-included. See [focused checks and timings](evidence/w03-compaction.md). This is a
-saturated already-drained approximation, not transient consolidation or complete
-W03 assembly/terrain acceptance.
-
-## Local unreleased W03 increment 2
-
-[Thermal density and single-owner support](docs/W03_THERMAL_SUPPORT.md) connect
-the existing Boussinesq law to named reference-column loads and total local
-displacement. The finite-plate route integrates directly without a depth grid;
-source-linked histories, grouped evaluation and verified auto-cache reuse are
-included. [Research, focused checks and timings](evidence/w03-thermal-support.md)
-are retained. This is homogeneous, first-order local compensation, not full
-W03, a free surface, compaction or empirically calibrated terrain.
-
-## Local unreleased W03 increment 1
-
-[Finite-plate cooling and thermal-age columns](docs/W03_THERMAL_COLUMNS.md) now
-provide stable direct-age temperatures, true cell means and cumulative boundary
-heat. Known cooling histories retain their source/epoch and are not confused with
-rock formation dates. Batched model reuse and verified auto-cache integration are
-included. See [bounded validation and timings](evidence/w03-thermal-columns.md).
-This is the constant-property thermal-column increment, not complete W03,
-compaction or empirically calibrated terrain. Density/support is supplied by the
-separate increment 2 above.
-
-## Local unreleased physical-validation corrections
-
-The constant-viscosity MINRES route now removes compressible solver roundoff
-before coupled transport, without a small-speed clamp or looser acceptance gates.
-The explicit sparse direct route remains an independent mechanical reference.
-W02 fixed-grid material transport now reconstructs cohorts jointly at both RK
-stages, so their summed thickness follows the scalar total law without artificial
-bumps. This is method v2; old v1 histories keep their original identity.
-See [bounded checks and limitations](evidence/w01-bounded-validation.md#physical-validation-corrections--22-september-2026).
-These corrections do not establish whole-world realism or resume R4.4.
-
-## Local unreleased W01 Stage 8 assessment
-
-Run `python -I -B tectonics/verify.py --w01` for the focused combined W01 profile:
-original representation gates, assembled workflow, resources, caching and recovery.
-See [scope and acceptance decisions](docs/W01_COMBINED_ACCEPTANCE.md).
-A technical pass does not close reopened S3C scientific acceptance or the held
-R4.4 work; the emitted record explicitly keeps whole W01 INCOMPLETE.
-
-## Local unreleased W01 Stage 7
-
-The [regional workflow](docs/W01_REGIONAL_WORKFLOW.md) now connects described
-geology and supported plate motion to conservative W02 cohort transport without
-manually assembled inventory arrays. It retains initial thermal provenance,
-explicit pore-fluid histories, whole-cell geometry checks, bounded steps,
-source-bound reuse and linked save/restore. Run the small authored example with
-`python -I -B tectonics/tools/run_w01_workflow.py` from the repository root.
-This is a restricted planar/hemispheric-wedge workflow, not unrestricted planetary
-dynamics. Stage 8 is assessed above; scientific acceptance remains and R4.4 is not resumed.
-
-## Local unreleased W01 Stage 6
-
-Prescribed plate motion now feeds checked regional face velocities for explicit
-planar/axial-Euler reductions. Unsupported cross-section motion and discontinuous
-internal interfaces are refused, including boundaries hidden between grid faces.
-Stage-5 changes are preserved. Local review: 200 focused checks passed; vectorised
-queries used 27.1267% less time than the same adapter's scalar control in the
-bounded benchmark. See [scope, checks and timings](docs/W01_MOTION_FORCING.md).
-Stage 7 is supplied by the local update above; R4.4 remains held. This is not a released version or
-whole-generator scientific acceptance.
-
-## Current dev42 — seeded diagnostics and cheaper fixed multigrid cycles
-
-Accepted-state diagnostic snapshots reuse the immutable stage-1 initial guess,
-while solving the current equations under unchanged publication gates. Fixed GMG
-cycles skip the known-zero first sparse product without shared scratch or changed
-smoothing. The zero-rate default and automatic GMG selection are unchanged.
-
-Three-pair local developed-input measurements: diagnostic 7.841676 -> 2.096511 s
-(73.265% saved); the two-step batch plus final diagnostic saved 19.052%. The
-cycle change then saved another 0.905394 s / 4.165% on its paired sampled batch.
-These are separate incremental comparisons, not additive or campaign forecasts.
-Physical arrays matched exactly. See [review and raw timings](evidence/r4-4-dev42-diagnostic-and-cycle.md).
-NEW source-bound runs only; R4.4 remains IN_PROGRESS / WORKING NON-CANON.
-
-## Predecessor dev41 — strict publication refinement and selective multigrid
-
-Strict adaptive results that lose sufficient accuracy during SI conversion now
-receive a recorded refinement inside the unchanged nonlinear iteration envelope.
-The actual returned fields must still pass the original strict residual and
-physical gates; invalid internal images and failed linear solves still refuse.
-
-NEW variable-mechanics plans default to `velocity_preconditioner='auto'` (CLI:
-`--velocity-preconditioner auto`). On square power-of-two, isotropic grids from
-128x128, auto uses a fixed geometric velocity V-cycle for Tosi-linear rheology,
-or Tosi-plastic with Anderson, adaptive inner and guarded preconditioner reuse
-all enabled. Smaller, constant, prescribed, unknown or other configurations use
-ILU. Explicit `ilu` and `gmg` remain available for scoped comparisons; explicit
-GMG requires a supported grid >=8x8 and GMRES. No hidden solver fallback.
-
-Bounded Windows coupled trials, including preparation and guarded reuse: case 1
-128x128 saved **0.682812 s / 33.138% per two-step batch**; developed case 2 128x128
-saved **7.401708 s / 28.322% per step**. These are not mature-campaign forecasts.
-The measured smaller 64x64 plastic gain was only 4.098%; it was not promoted as
-an automatic default. Stronger pressure preconditioning remains experimental.
-See [dev41 implementation and focused evidence](evidence/r4-4-dev41-multigrid.md).
-Changed source/policies require NEW runs; no old checkpoint is rebound.
-**R4.4/R4 remain IN_PROGRESS; physical acceptance is unchanged.**
-
-## Verified dev41 combined warm-start profile
-
-For the tested NEW Tosi case-2 128x128 workloads, combine
-`--nonlinear-start previous-stage1 --nonlinear-solver anderson --adaptive-inner
---preconditioner-max-uses 4 --velocity-preconditioner gmg`.
-Matched two-step medians saved **0.542237 s / 21.639%** on the analytic initial
-field and **15.036685 s / 42.852%** on a developed-field-derived new input.
-Original strict gates passed; this is not a mature-campaign forecast or a
-blanket default change. See the [measured profile, raw timings, storage cost and
-reproduction limits](evidence/r4-4-dev41-combined-start-profile.md).
-
-## Predecessor dev40 — thermal accuracy and benchmark assessment
-
-The reviewed adaptive-inner optimisation is also available on NEW nonlinear runs
-with `--adaptive-inner`, optionally combined with `--nonlinear-solver anderson
---nonlinear-start previous-stage1 --preconditioner-max-uses 4`. It relaxes only
-intermediate linear solves, then requires fresh strict final certification.
-The default remains unchanged. The bounded Windows dev40 comparison saved 26.06 ms
-per prepared timestep (8.42%); this is not a full-campaign or whole-generator claim.
-See [adaptive-inner review and measurements](evidence/r4-4-dev40-adaptive-inner.md).
-
-The remake review repairs add append-only recovery of cancelled endpoint
-diagnostics, cross-chart spherical-network stitching, represented-duration checks
-for material transport, and translation-stable reference remapping. The retained
-generator also verifies species source files on fresh execution and cached/resumed
-acceptance. See [review-fix scope and verification](../docs/REMAKE_REVIEW_FIXES.md).
-
-Fixed-temperature walls now inform bounded thermal advection reconstruction;
-insulated walls, composition transport, conservation and Courant limits are
-unchanged. Courant refusals report the failing RK stage, measured limit and an
-advisory same-velocity timestep ceiling. SciPy is constrained to `<1.18`, matching
-the authenticated FFT backend (1.18 changed it).
-
-Periodic maturity must extend to the actual endpoint. Periodic mesh/time/nonlinear
-studies now compare authenticated final-cycle temperature fields as well as scalars;
-absent or undersampled fields are INCOMPLETE. The existing campaign tool's
-`--preflight` reads configurations and known reference blockers without opening run
-arrays. New schedules must include a uniformly sampled final endpoint; short
-explicit diagnostic schedules remain allowed but warn when they cannot mature.
-
-`tools/probe_convection_r4_4.py` isolates frozen-field resolution effects without
-claiming coupled convergence. See revision 44 of the maintained documents and
-[bounded evidence](evidence/r4-4-dev40-numerical-assessment.md).
-**R4.4/R4 remain IN_PROGRESS.** No old checkpoint is rebound to changed source.
-This is a local review candidate, not a published release or complete campaign.
-
-## Current dev39 — guarded request-local preconditioner reuse
-
-New nonlinear runs can select:
-
-```text
---nonlinear-solver anderson --nonlinear-start previous-stage1 --preconditioner-max-uses 4
-```
-
-The equations and pressure approximation stay current. Only the approximate velocity
-ILU can be reused, with age, viscosity-change and linear-work guards. Reuse stays
-inside each nonlinear request; known strain-independent laws bypass it. Defaults
-remain unchanged. Source and policy changes cannot silently resume old trajectories.
-See revision 43 of the two maintained documents and `cases/preconditioner_reuse_r4_4.json`.
-R4.4/R4 remain IN_PROGRESS; this is not mature convection acceptance.
-
-## Current dev38 — explicit cross-timestep starting guesses
-
-Use `--nonlinear-solver anderson --nonlinear-start previous-stage1` on a NEW run
-to combine Anderson with the checkpoint-owned previous second-stage starting guess.
-The existing Picard/zero-rate defaults and intra-step `rk-stage0` option are unchanged.
-Initial stage 0 remains cold. All subsequent first stages use the exact seed saved
-with the previous accepted step; both stages still solve their current equations.
-Checkpoint, failure and identity contracts are in revision 42 of the two maintained
-documents. Old-source runs are not silently migrated. R4.4/R4 remain IN_PROGRESS.
-
-## Current — dev37 / plan revision 41
-
-Safeguarded Anderson acceleration is now an explicit production solver option.
-Picard remains the default. New benchmark runs opt in with
-`--nonlinear-solver anderson`; `--nonlinear-start rk-stage0` independently selects
-the existing intra-step guess. Mixing history is local to each request; restart
-retains no hidden solver history. Physical equations and all convergence gates
-are unchanged. R4.4/R4 remain IN_PROGRESS; this is not mature benchmark acceptance.
-
-See the current headings of `docs/TECTONICS_PLAN.md` and
-`docs/OPTIMISATION_REFERENCE.md`, and `cases/anderson_r4_4.json`.
-Use the exact dev36 Sparse Structure baseline for the incremental patch, not the
-separate same-version Sparse Layout build. Changed-source continuation is refused.
-
-
-## Current dev36: exact sparse velocity-template reuse
-
-Optimisation item 4 reuses only the viscosity-independent CSC sparsity and contribution
-ordering of the variable-Stokes velocity block. Every matrix call still reads the current
-cell/vertex viscosity, constructs fresh numerical data, and rebuilds the ILU whenever the
-existing coefficient identity requires it. The explicit sparse-direct reference keeps the
-predecessor SciPy assembly and does not use this template.
-
-The retained template reproduces dev35 sparse-matrix values exactly on the tested grids and
-matched physical fields remain byte-identical. It primarily reduces repeated nonlinear
-assembly cost; initial 64/128-grid whole-step timings do not show a dependable gain. Read the
-revision-40 headings of `docs/TECTONICS_PLAN.md` and `docs/OPTIMISATION_REFERENCE.md`.
-R4.4/R4 remain IN_PROGRESS. Apply either the reviewed dev35-based patch or a complete merge,
-never both; do not resume dev35 trajectories under changed dev36 source.
-
-### Retained dev35 and earlier history
-
-# Current scoped package: 0.1.0.dev35
-
-## Current dev35: cheaper exact source verification
-
-Optimisation item 3 avoids rebuilding discarded callable inventories during each
-live verification. All current-source reads, membership checks, function/code
-identity, mutable-default/constant/native-option checks and original verification
-call sites remain. The physical solver and existing opt-in warm-start policy are
-unchanged. Read the revision-39 headings of `docs/TECTONICS_PLAN.md` and
-`docs/OPTIMISATION_REFERENCE.md`; lower "current" headings are retained release
-history, not today's source authority. R4.4/R4 remain IN_PROGRESS. Use exactly one
-dev34-based patch or a reviewed source merge; do not resume dev34 trajectories
-under changed dev35 source.
-
-### Retained dev34 and earlier history
-
-## Previous dev34: explicit intra-step nonlinear guesses (opt-in)
-
-The isolated second optimisation adds `nonlinear_start='rk-stage0'` to
-`PreparedThermochemical2D` and `--nonlinear-start rk-stage0` to new R4.4 runner
-invocations. The default remains cold `zero-rate`. Only stage 1 is initialised
-from the current step's stage-0 solution; both stages still solve their own
-unchanged equations and meet all existing convergence checks. No hidden
-cross-step state, tolerance relaxation or automatic failure fallback is added.
-
-Standalone current-source constant/Tosi solves may explicitly pass
-`initial_guess=NonlinearStokesGuess(previous_solution)` to `solve_rheology`.
-The immutable starting fields and provenance are stored with the result. Saved
-physical states remain self-contained, and restarting with another source or
-starting policy is refused. `mechanical_snapshot` remains cold and independent.
-
-See the revision-38 sections of the two maintained documents and the new
-`cases/nonlinear_start_r4_4.json` verification contract. This implements item 2,
-not mature convection/mesh/time/nonlinear campaign acceptance; R4.4/R4 remain
-IN_PROGRESS. Apply one dev33-based patch or a reviewed source merge, not both.
-
-Dev33 compiles the existing variable-stress GMRES matrix-vector action without fast-math or disk JIT caching. NumPy residual checks and the explicit sparse-direct reference remain independent. See the revision-37 headings of `docs/TECTONICS_PLAN.md` and `docs/OPTIMISATION_REFERENCE.md`. This is the isolated mechanical-kernel optimisation, not nonlinear warm starts or R4.4 benchmark completion.
-
-R4.4 published-case/diagnostic/trajectory/acceptance machinery is implemented and
-the benchmark execution path has a measured solver optimisation pass, but **R4.4
-and R4 remain IN_PROGRESS**. Mature published-case reproduction and the full
-adequacy/campaign gates have not been demonstrated. The current authorities
-are revision 37 of [the scientific plan](docs/TECTONICS_PLAN.md#3cr4-4-native-mechanics)
-and [the execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-4-native-execution).
-Read those current headings before retained historical status text below.
-No R5, spherical dynamics or Earth/Diadem observational validation is claimed.
-The release application instructions and evidence distinguish new final-source
-verification from original dev30 results and incomplete attempts.
-
----
-
-# Atlas tectonics remake
-
-## Current remake delivery: R4.3 (`0.1.0.dev30`)
-
-The variable-viscosity/yielding stress-divergence solver and its explicit two-stage
-heat/composition coupling are delivered within the
-[revision-34 scope](docs/TECTONICS_PLAN.md#3cr4-3-variable-mechanics).
-**R4 is IN_PROGRESS. R4.4 full convection benchmarks and combined acceptance
-remain outstanding.** This is not global plate dynamics or Diadem terrain.
-
-`PreparedVariableStokes2D` uses the existing R3 profiles, native sparse/block
-preconditioned GMRES, true nonlinear convergence and returned-SI diagnostics.
-The small independently assembled direct reference is explicit, not a fallback.
-Use `ThermochemicalProblem(..., mechanical_mode='variable-r4.3')` and optional
-`nonlinear_policy=NonlinearStokesPolicy(...)` for constant/Tosi evolving coupling.
-The historical default stays `constant-r4.2`; BF needs explicit frozen damage in
-a separate snapshot and is not silently enabled in two-field evolution.
-
-The [execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) records
-optimisation, limits, source-safe restart and the exact test/visual commands.
-New evidence is in `evidence/3cr4-3-tests.json` and
-`evidence/3cr4-3-measurements.json`; prior results are historical, not overwritten.
-Actual-code visual QA uses `tools/visual_variable_stokes_r4_3.py`.
-
-
-## Current R4.2 review — version 0.1.0.dev29
-
-The constant-property thermal/binary evolution component now uses reference-
-independent insulated diffusion, conditioned short-step exponentials and safe
-source products. Published time intervals are checked against the integrated
-duration before evolution; old snapshots decode unchanged without a source
-rebind. Unused insulated time-average transforms are eliminated. See the
-[scientific review](docs/TECTONICS_PLAN.md#3cr4-2-review) and
-[execution review](docs/OPTIMISATION_REFERENCE.md#3cr4-2-review-execution).
-
-**R4 remains in progress. R4.3 is next; R4.4 benchmarks/acceptance remain open.**
-New results are in `evidence/3cr4-2-review-tests.json` and
-`evidence/3cr4-2-review-measurements.json`. Earlier numerical cases, evidence and
-third-party bytes remain unchanged. This is not a calibrated Earth/Diadem model.
-
-
-## Current development: R4.2 delivered within scope; R4 remains in progress
-
-**`0.1.0.dev28` / plan revision 32.** The reviewed mechanical core now drives
-constant-property heat and binary-composition evolution in the closed uniform
-2D Boussinesq box. Temperature and material fraction are actually advanced;
-buoyancy velocity is solved at both transport RK stages. No first-order fallback,
-field clipping or automatic timestep reduction is used.
-
-The normal route uses a prepared discrete thermal exponential and fused native
-MC/SSPRK2 face transport. Conductive boundary heat, internal/external heating,
-constituent inventory and shared-face balances are checked on returned fields.
-Same-source saved endpoints restore and continue exactly through the existing
-lossless store. This is not yet a complete cohort-history/world adapter.
-
-**Next: R4.3 variable-viscosity/yielding mechanics. R4.4 full benchmark/combined
-acceptance remains outstanding.** R4 and W03/W07 are not declared complete.
-See the [current numerical contract](docs/TECTONICS_PLAN.md#3cr4-2-thermochemical),
-[execution reference](docs/OPTIMISATION_REFERENCE.md#3cr4-2-execution) and
-[progress table](docs/TECTONICS_PLAN.md#3cr4-progress).
-
-```sh
-# Complete software regression, not a global simulation.
-python -I -B tectonics/verify.py
-# Finite component references and same-equation timing.
-python -I -B tectonics/tests/check_thermochemical_r4_2.py
-# Optional Matplotlib extra: real authored-start / evolved-endpoint comparison.
-python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /path/to/new/r4-2-visuals
-```
-
-The visual example advances 40 explicit steps on a 48-by-48, 1,000-km box.
-Initial fields are authored cell averages; final fields are solver results.
-The separately plotted endpoint velocity is recomputed from that accepted endpoint,
-not borrowed from an operator-split intermediate. No calibrated Earth/Diadem state,
-full Tosi convection reproduction, spherical evolution or platform acceptance is
-implied. The first mechanical example below remains useful as a steady control;
-its historical limitations/next-step sentences describe R4.1, not current R4.2.
-
-
-## Historical R4.1 development and retained mechanical example
-
-**`0.1.0.dev27` / plan revision 31 — R4.1 mechanical core with reviewed SI publication.**
-Atlas now solves steady velocity and dynamic pressure in a uniform 2D free-slip,
-impermeable box. This is the first component of R4, **not completion of R4**.
-The next increment is **R4.2: heat evolution and conservative composition transport**;
-variable viscosity/yielding and applicable full convection benchmarks follow.
-See the [maintained progress table](docs/TECTONICS_PLAN.md#3cr4-progress).
-
-The [R4.1 review correction](docs/TECTONICS_PLAN.md#3cr4-1-publication-review)
-checks residuals against the actual returned SI fields, not only the internal
-normalised solution. It prevents unit-scale distortion and refuses inadequate
-subnormal output rounding without relaxing tolerances. The physical model,
-solver/preconditioner and pending R4 increments are unchanged.
-
-
-The ordinary solver is matrix-free preconditioned MINRES with a separable native
-velocity inverse; a small explicit sparse direct solve is retained for comparison.
-Inputs use a named Cartesian x-right/z-up frame, R3 constant rheology and explicit
-SI scales. Inward-depth R2 data are not silently renamed. No temperature evolution,
-plate motion, variable law or terrain is invented by a steady mechanical solve.
-
-```python
-import numpy as np
-from atlas_tectonics import (
-    StokesBox2D, DiffusiveScales, reference_rheology, PreparedStokes2D,
-)
-box = StokesBox2D(32, 32, 1.0, 1.0, "analytical-x-right-z-up")
-scales = DiffusiveScales("declared-unit-SI", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-# Uniform downward body force: a hydrostatic pressure response, no circulation.
-fx = np.zeros((box.nz, box.nx - 1))
-fz = np.full((box.nz - 1, box.nx), -1.0)
-with PreparedStokes2D(box, reference_rheology("constant"), scales) as plan:
-    result = plan.solve(fx, fz, frame_id=box.frame_id,
-                        epoch_id="analytical-steady", time_s=0.0,
-                        source="Authored hydrostatic verification case")
-pressure_pa = result.array("pressure_pa")
-```
-
-In the separately documented tectonics environment, run
-`python -I -B tectonics/tests/check_stokes_r4_1.py` for bounded numerical/timing
-evidence and `python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/path`
-for actual solved velocity/pressure, residuals, and the separately labelled
-**authored** temperature input. The visual tool requires the optional visual extra.
-Use new output paths; raw numerical fields and provenance are retained.
-
-Older dated sections below describe their delivery-time state. The latest plan
-and current progress table take precedence; previous evidence remains unchanged.
-
-**Branch: `remake`. WORKING NON-CANON. Mathematical verification, not accepted terrain.**
-Vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under Michael's direction.
-
-This isolated package follows the [tectonics plan](docs/TECTONICS_PLAN.md) and
-[consolidated optimisation reference](docs/OPTIMISATION_REFERENCE.md). It imports
-neither `engineering/work` nor `shared_generator`. Historical bindings, numerical
-limits, checkpoints, `main` and the original Windows installation remain separate.
-
-
-## Current R3 — version `0.1.0.dev25`, plan revision 29
-
-The [R3 arithmetic correction](docs/TECTONICS_PLAN.md#3cr3-stress-hardening)
-fixes premature underflow/overflow in stress and viscous heating without changing
-the physical equations. Non-zero unrepresentable outputs now fail explicitly;
-finite subnormals and exact zero-strain responses remain supported. The actual
-review convention is to fix verified in-stage defects, test the result and supply
-a Git changelog, rather than stop at reporting the issue. Historical source-bound
-reports remain intact; fresh results are `evidence/3cr3-hardening-tests.json` and
-`evidence/3cr3-hardening-measurements.json`.
-
-The [R3 local physical closure](docs/TECTONICS_PLAN.md#3cr3-physical-closure) is
-implemented: constant and Tosi benchmark rheology, one sourced BF2023 memory/
-healing model with a damage-free control, explicit thermochemical force/heat
-accounting, and a separately declared 1D fixed-length regularisation primitive.
-**R4 is next and has not started.** A local viscosity or healing curve is not a
-convection solution, localisation acceptance or geologically accepted world.
-R1/R2 and their source restrictions remain unchanged. Historical delivery
-paragraphs below describe their dated scope.
-
-```python
-from atlas_tectonics import PreparedRheology, reference_rheology
-
-# Named dimensionless local reference; initial damage is deliberately supplied.
-with PreparedRheology(reference_rheology("bf23-memory")) as law:
-    response = law.evaluate(temperature=[0.0, 0.5, 1.0], depth=0.1,
-                            strain_rate_ii=1.0, damage=0.0)
-    memory = law.advance(damage=20.0, strain_rate_ii=0.0,
-                         temperature=0.0, elapsed=1.0)
-viscosity = response.array("viscosity")  # immutable result, not mantle calibration
-healed_damage = memory.array("damage_after")
-```
-
-T and depth must be in [0,1]. SI input requires a named `DiffusiveScales` with
-**separate diffusive length and depth normalisation**; outputs remain explicitly
-scaled and retain that conversion record. Do not pass kelvin/metres as if they
-were dimensionless. Pressure is not a hidden yield-law input. Numerical
-viscosity bounds are optional, explicit and diagnosed, not measured strength.
-The 1D length operator is an Atlas extension, not an unlabelled change to the
-published model or evidence of mesh-independent coupled shear bands.
-
-The normal evaluator uses native buffered serial operations; threaded evaluation
-is available through the existing bounded execution policy. The finite measured
-workloads did not justify threading by default. Full inputs, profile, outputs,
-scales and source identity can be saved/restored with the existing lossless store.
-See [execution and evidence](docs/OPTIMISATION_REFERENCE.md#3cr3-execution).
-
-From the repository root in the declared environment, the new bounded checks are:
-
-```sh
-python -I -B tectonics/tests/check_constitutive_r3.py
-python -I -B tectonics/tools/visual_r3.py --output r3-visuals
-```
-
-The second command needs the existing optional `visual` extra and a new output
-directory. It renders actual local-law, healing, buoyancy and fixed-length curves
-with their numerical data and source identities; inspection is a separate step.
-Every implementation delivery includes a copy-ready Git changelog in its response.
-
-## Historical cleanup — version `0.1.0.dev23`, plan revision 27
-
-The R2 initial-state/sampling and optimisation scope is unchanged. This cleanup
-fixes linked-interpreter portability, consolidates engineering methods, improves
-delivery/evidence hygiene and corrects source-derived diagnostic plots. R1's
-scoped acceptance and strict discrepancy failure remain separate. **R3 has not
-started.** Older delivery paragraphs below are dated history, not current setup.
-
-Atlas aims to investigate whether and how the Diadem's authored geography could
-arise, not to make random worlds reproduce it. A failed explanation, unusual
-explicit event or unresolved mechanism remains a legitimate result. No geography
-is an answer key for tuning general physics. Visual QA uses actual code/data after
-each meaningful stage; it is separate from numerical and physical acceptance.
+**WORKING NON-CANON.** This isolated package supplies scientific components,
+explicitly bounded connected workflows, command tools and source-bound evidence.
+It imports neither `engineering/work` nor `shared_generator`; those are separate
+Atlas routes. Static spherical geometry, regional evolution and a physically
+accepted evolving planet are different capabilities.
+
+The version string is `0.1.0.dev42`. It was not incremented for later integration
+modules and is not a release or acceptance marker. Receipts bind actual source
+and execution identities. Read [current delivery and acceptance](../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
+for reviewed scope, platform coverage, holds and remaining work, including I04/I05a.
+Numerical checks, physical acceptance and Diadem canon are separate outcomes.
+
+[Scientific guide](docs/HOW_TECTONICS_IS_MADE.md) · [Environment](#tectonics-environment) ·
+[Commands](#commands) · [API examples](#api-examples) · [Evidence](#verification-and-evidence)
+
+## Scientific methods and navigation
+
+[How Atlas tectonics is made](docs/HOW_TECTONICS_IS_MADE.md) explains the methods,
+inputs, outputs, scientific/software references and check limits in generation
+and dependency order. Use its chapters and the specialist contracts below;
+current delivery status belongs in the current-state record.
+
+| Question | Maintained explanation |
+| --- | --- |
+| Coordinates, geometry, descriptions and reference materials | [Foundations chapter](docs/how-it-works/01-foundations.md), [specialist contracts](docs/FOUNDATIONS.md) |
+| Transport, cooling, compaction, loads and support | [Tectonic processes](docs/how-it-works/02-tectonic-processes.md) |
+| Regional mechanics, recovery and resource ownership | [Coupling and reliability](docs/how-it-works/03-coupling-and-reliability.md) |
+| Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_ACCEPTANCE.md), [portable bundles](docs/NEW_WORLD_BUNDLE.md) |
+| Experimental force-driven convection | [Dynamics chapter](docs/how-it-works/05-experimental-dynamics.md), [scientific plan](docs/TECTONICS_PLAN.md) |
+| Coupled physics, shared state, exchanges and accepted time | [Physical integration](docs/how-it-works/06-physical-integration.md), [I02 workflow](docs/I02_WORKFLOW.md) |
+| Evolving sphere, starting families and reduced driving feedback | [I03 network](docs/I03_SPHERICAL_NETWORK.md), [I04 causal start](docs/I04_CAUSAL_START.md), [I05 moving state](docs/I05_MOVING_STATE.md), [shared ports](docs/I04_I05_PORTS.md) |
+| Fixed-box 3-D mechanics and evolution | [Solver](docs/REGIONAL_MECHANICS_3D.md), [evolution](docs/REGIONAL_EVOLUTION_3D.md) |
+| Supplied collision, changing inputs and supported histories | [Underthrust](docs/UNDERTHRUST.md), [evolving mechanics](docs/EVOLVING_MECHANICS.md), [histories](docs/TECTONIC_HISTORIES.md) |
+| Numerical versus physical validation | [Validation](docs/W10_VALIDATION.md), [I01 closure matrix](docs/I01_CLOSURE_MATRIX.md) |
+| Execution, persistence, exact reuse and optimisation limits | [Execution reference](docs/OPTIMISATION_REFERENCE.md), [optimisation navigation](optimisation/README.md) |
+
+Scientific ownership is defined in the [reader guide](docs/HOW_TECTONICS_IS_MADE.md#scientific-ownership-and-maintenance)
+and [module boundaries](docs/TECTONICS_PLAN.md#current-module-boundaries-and-continuation-23-september-2026).
+Further hydrology, erosion/deposition, geological, compaction and magmatic work
+belongs with its receiving module; existing shared code, imports and checkpoint
+dependencies stay intact. Mechanical response remains in tectonics.
 
 <a id="environment"></a>
 
@@ -829,8 +86,8 @@ Do not delete an existing working tree to get a pass; investigate it or use a cl
 copy. Do not use `--system-site-packages` for a fresh independent installation;
 the cleanup test harness used it only to reuse already installed dependencies
 without downloading/installing anything. Instructions for any platform are not
-platform acceptance; the latest full-suite result, which is not a pass, is in
-[current status](../docs/CURRENT_STATE.md#full-suite-status). Full verification
+platform acceptance; the recorded full-suite outcome is in
+[current status](../docs/CURRENT_STATE.md#current-delivery-and-acceptance). Full verification
 also exercises real filesystem symlinks; a host unable to create those fixtures
 has not completed that part of verification. Skips are not counted as a full pass.
 
@@ -862,6 +119,69 @@ For repository navigation/planning edits, the
 unrelated I01/I02 numerical reruns while still checking Git-normalised evidence
 and line endings. Its reviewed document allowlist is deliberately narrow.
 
+## Commands
+
+Run from the repository root using the declared compatible environment. These
+calculation/measurement commands are explicit actions, not setup requirements for
+documentation changes. Use new output paths and never rebind changed-source runs.
+
+### Supported W12 and authored precursor examples
+
+```text
+python -B tectonics/tools/run_tectonics.py --directory w12-demo
+python -B tectonics/tools/run_tectonics.py --directory w12-demo --resume
+```
+
+The first directory must be new. [Supported assembly](docs/W12_ASSEMBLY.md)
+describes the bounded W01–W04 example, graph/cache connection, exports and native
+recovery dependencies. The [read-only bridge](docs/W12_ASSEMBLY.md#read-only-ui-connection)
+uses `tools/read_tectonics.py` without starting a simulation; it is a backend
+reader rather than a browser UI.
+
+```sh
+# Authored two-province initial output; no simulation or reference download.
+python -I -B tectonics/tools/prepare_precursor_example.py > initial-example.json
+# Existing files refuse; load the result by its reported sample_id, then .state.
+python -I -B tectonics/tools/prepare_precursor_example.py --save-store initial-example.db
+# Restricted prescribed-motion regional workflow.
+python -I -B tectonics/tools/run_w01_workflow.py
+```
+
+The examples use authored assumptions, not calibrated Earth-like defaults.
+See [initial sampling](docs/W01_INITIAL_SAMPLING.md), [regional workflow](docs/W01_REGIONAL_WORKFLOW.md)
+and [precursor execution](docs/OPTIMISATION_REFERENCE.md#3cr2-initial-execution)
+for geometry, memory, history and source restrictions.
+
+### Offline plate-reference assessment
+
+```sh
+# Strict consistency: exit 1 reports the retained discrepancies.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-strict.json
+# Permitted uses: exit 0 only for exact audited data and known findings.
+python -I -B tectonics/tools/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
+```
+
+Both return exit 2 for unavailable/changed inputs. `--assess-use` does not waive
+strict checks. [Source-use contract](docs/FOUNDATIONS.md#3c-r1-reviewed-source-use-contract-18-september-2026)
+and [policy](cases/plate_reference_use_policy.json) define the different populations,
+scale/phase restrictions, source discrepancies and reserved holdouts. Raw diagnostics
+are not qualified morphology or geological acceptance.
+
+### Component checks and visuals
+
+| Component | Bounded numerical/timing check | Optional diagnostic visual |
+| --- | --- | --- |
+| Precursor | `python -I -B tectonics/tests/check_precursor_r2.py` | `python -I -B tectonics/tools/visual_qa.py --output /new/path` |
+| Local rheology | `python -I -B tectonics/tests/check_constitutive_r3.py` | `python -I -B tectonics/tools/visual_r3.py --output /new/path` |
+| Steady 2-D mechanics | `python -I -B tectonics/tests/check_stokes_r4_1.py` | `python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/path` |
+| Thermal/composition evolution | `python -I -B tectonics/tests/check_thermochemical_r4_2.py` | `python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /new/path` |
+| Variable mechanics | [Execution contract](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) | `python -I -B tectonics/tools/visual_variable_stokes_r4_3.py --output /new/path` |
+
+These cards are not full benchmark campaigns. Visuals require the optional
+`visual` extra, inspected outputs and new destinations. The thermal example
+advances an authored 48×48 box for 40 steps; endpoint velocity is recomputed from
+the accepted endpoint, rather than an intermediate stage. This is not calibration.
+
 ## Reproducible diagnostic visuals
 
 ```sh
@@ -885,491 +205,52 @@ not automatic approval. No landform, velocity or thermal-evolution result is
 implied. The two earlier chat plots with hard-coded ages and a wrong `-` legend
 are withdrawn as evidence; the corrected plots supersede them.
 
-## Delivery, evidence and licence
+## API examples
 
-Merge a full snapshot into the named `remake` baseline without deleting unrelated
-or newer files. Review the supplied change manifest (old/new hashes) and grouped
-patches first. An update-only bundle must be explicitly labelled and must never
-be run as a standalone package. Michael handles commits/pushes manually.
-Routine new `.log` transcripts are ignored; structured JSON and unique diagnostic
-evidence are retained. Already tracked historical logs and source records remain
-unchanged. Optional visual PNGs stay in the ignored output directory by default.
+These retained examples illustrate declared interfaces. Radii, parameters and
+initial values are synthetic or explicit trial inputs, not Earth/Diadem calibration.
+Use the separate package environment above; source/runtime checks still apply.
+Scientific explanations and limits live in the linked specialist contracts.
 
-**Atlas-owned code is licensed AGPL-3.0-only**, as selected by the owner on
-19 September 2026. See [the complete licence](LICENSE) and
-[project scope](../LICENSING.md). PB2002 and other third-party material retain
-their existing licences; see [third-party notices](THIRD_PARTY_NOTICES.md). The
-earlier unapplied Apache proposal is superseded, not an alternative grant.
+### Coordinates and time
 
-
-## Historical cleanup evidence
-
-These receipts record an earlier cleanup snapshot; the suite and package have grown
-since, so they are not a current pass.
-
-- [Linked-interpreter full suite](evidence/review-cleanup-linked-tests.json):
-  that snapshot's 1,512 tests, with no failures, errors or skips.
-- [Copied-interpreter full suite](evidence/review-cleanup-copied-tests.json):
-  the same 1,512 tests, with no failures, errors or skips.
-- [Cleanup scope and preservation](evidence/review-cleanup.json) and
-  [actual-code visual inspection](evidence/review-cleanup-visual-qa.json).
-
-The environment reuses already available dependency installations; a fresh pip
-installation, macOS and Windows execution were not performed. The tests are
-implementation/numerical checks, not physical realism or release acceptance.
-
-## Historical R2 implementation and execution delivery
-
-
-**Version `0.1.0.dev22`, 18 September 2026. R3 is next; it has not started.**
-R2 adds geological starting states **without requiring or producing final plate
-labels**. It does not generate realistic plate shapes, solve mechanics or evolve
-heat. R1's reviewed uses and deliberately failing strict consistency gate remain
-unchanged. The two maintained plans and the new
-[`precursor_r2.json`](cases/precursor_r2.json) govern the exact scope.
-
-Revision 26 adds conservative spherical candidate indexing and connects the sampler
-to the existing admitted executor. Large indexed point queries automatically use
-bounded threads; small/unindexed queries and cell workloads remain serial where
-threading was not beneficial in the registered comparisons. Threaded cells remain
-an explicit tested route, not an unimplemented feature. Whole-request overlaps,
-row/hit/work limits, binary64 accuracy, immutable results and cancellation/drain
-semantics are preserved. See the current [execution contract](docs/OPTIMISATION_REFERENCE.md#3cr2-scaling-execution)
-and [`precursor_r2_scaling.json`](cases/precursor_r2_scaling.json).
-
-
-| Delivered interface | Meaning |
-|---|---|
-| `GeologicalDomain` and existing `GeologicalCase` | Plate-independent planar/spherical support with immutable sourced materials, formation cohorts, columns, provinces and inherited features. |
-| `PrecursorState` | Explicit input origins, separate cooling histories, source-bound volume conventions, named priors, prescribed/unresolved scalar fields and bounded slab/mantle initial inputs. |
-| `PreparedPrecursor.sample_points` | Indexed point material/temperature queries; retains all province matches and exact inherited weak-zone memberships. |
-| `PreparedPrecursor.sample_cells` | Mixed polygon-prism or shell-sector initial inventories and supported mean temperatures; no centre-point substitution or hidden double counting. |
-| `save/load_precursor_state`, `save/load_initial_samples` | Existing lossless, verified, deduplicated `ArrayStore` snapshots with actual geometry, library dependencies and source/history identities. |
-
-The Earth-material catalogue is reused, not re-entered per cell. Numerical values
-remain reference-condition knowledge, not hot/high-pressure laws. Bulk, matrix,
-true solid, explicit pore and source-reference mass quantities are separately
-labelled. Unknown fields have explicit masks, and normal accessors refuse unknown
-values. A thermal cell mean is not an energy inventory. Slab/mantle records are
-supplied footprint/depth-band inputs, not predictions of dipping 3D geometry.
-
-From the repository root, using the [tectonics environment](#environment):
-
-```sh
-# Build an authored two-province example offline; output only, no simulation.
-python -I -B tectonics/tools/prepare_precursor_example.py > initial-example.json
-# Explicitly create a new self-contained result store; existing files are refused.
-python -I -B tectonics/tools/prepare_precursor_example.py --save-store initial-example.db
-# Full regression and the separate bounded R2 execution card.
-python -I -B tectonics/verify.py > 3cr2-tests.json
-python -I -B tectonics/tests/check_precursor_r2.py > 3cr2-sampling-evidence.json
-```
-
-The example's geometry, temperatures and history are labelled authored
-assumptions, not a validated Earth-like default. The optional store contains one
-result snapshot; load by its reported `sample_id`, then access `.state`.
-No dependencies, reference data or historical checkpoints are downloaded.
-
-**Limits that remain explicit:** constant-depth column/body descriptions, not
-general 3D/dipping geometry; spherical point priors but no spherical cell average
-of a Cartesian spectral prior; no automatic disjoint-mesh certification across
-incompatible charts. Such overlap checks fail rather than snap boundaries, and
-explicitly overlapping queries are marked non-additive. General remaining W01
-sampling, motion-to-regional forcing, W01-to-W02 evolution integration and the
-combined W01 acceptance gate are not complete. No R3/W03 implementation or
-physical plate-formation acceptance is included.
-
-Tests/evidence: [`3cr2-tests.json`](evidence/3cr2-tests.json),
-[`3cr2-tests.log`](evidence/3cr2-tests.log), and
-[`3cr2-sampling-evidence.json`](evidence/3cr2-sampling-evidence.json).
-Scientific details are in [the plan](docs/TECTONICS_PLAN.md#3cr2-initial-state);
-normal execution, memory ownership and measured costs are in
-[the optimisation reference](docs/OPTIMISATION_REFERENCE.md#3cr2-initial-execution).
-Test results are software/numerical evidence, not production/Windows acceptance.
-
-**Applying the historical revision-25 delivery:** merge its `tectonics/` files into the local `remake`
-checkout based on `e79bf94ea5285a36bbce18b503234a8df56e3910`. Review newer local
-edits rather than overwriting them, and preserve unrelated/historical files.
-Do not replace the whole repository or delete the destination folder. Michael
-owns application, commit and push; sandbox files do not change his PC.
-
-## Retained 3C-R1 delivery (revision 24)
-
-**18 September 2026:** source acquisition, offline processing and the bounded
-reference-use review are complete. This is **scoped use of PB2002 evidence**, not
-a claim that its raw records form a perfect two-owner mesh or that generated
-tectonics are geologically accepted. The complete distribution includes all eight
-unchanged, attributed source files; it needs no further reference download.
-
-Two deliberately different offline commands run from the repository root:
-
-```sh
-# Original strict consistency: exit 1, with every discrepancy still reported.
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only > 3cr1-strict.json
-# Reviewed permitted uses: exit 0 only for the exact audited dataset and findings.
-python -I -B tectonics/tools/prepare_plate_reference.py --verify-only --assess-use > 3cr1-use.json
-python -I -B tectonics/verify.py
-```
-
-`--assess-use` does not waive or rewrite strict checks. Both commands return exit 2
-for unavailable/changed inputs. Unknown findings prevent a scoped-use approval.
-The default command remains strict; dependencies are never installed automatically.
-
-| Source issue | Enforced treatment |
-|---|---|
-| ON published area versus outline | Publication confirms the stored 0.00802 sr. Table and computed outline values remain separately labelled; no substitution, averaging or relaxed rounding check. The discrepancy's cause is not established. |
-| MS coincident/retraced branch | Documented subsurface representation, not an ordinary simple surface ring. Retain original boundary kinematics; exclude MS ordinary morphology at **all** scales and phases. |
-| Three polygon-only connectors | Preserve the finite gaps and refuse the affected surface-edge uses, including the approximately 2 m connector; do not invent motion rows. |
-| Peru open deformation outline | Retain the raw 49-point trace; refuse closed-polygon metrics and a complete recomputed deformation mask. Original source-provided flags are not recomputed from an incomplete mask. |
-
-All 52 labelled area records and 5,819 individual source-motion rows remain
-available for their stated uses. Ordinary plate morphology has **51 eligible
-records** before scale-dependent unresolved cases; **12 of 13** deformation
-outlines support closed-polygon diagnostics. Conservative surface-neighbour
-statistics exclude all nine owners touching an incidence discrepancy, retaining
-43 of 52. These populations are not interchangeable or complete global coverage.
-
-`plate_reference_use.prepare_reference_use(data_directory)` verifies sources,
-recomputes the unchanged strict report, and prepares immutable shared indexes.
-`observations()` requires a named split/run and a physical scale **and** phase for
-shape metrics; area observations require an explicit table or outline basis.
-`compare()` adds candidate identity, expected population and unresolved counts.
-Selections include every eligible record in their registered split and disclose
-all restrictions/unresolved records. No caller-selected mask, subset-area
-renormalisation or aggregate realism pass is provided. Raw diagnostic APIs remain
-available as raw evidence, not an alternative route to qualified approval.
-
-The policy is a pinned, versioned **post-source-audit** decision in
-[cases/plate_reference_use_policy.json](cases/plate_reference_use_policy.json).
-It does not alter the original preregistered split or numerical case. All 52 areas
-remain previously exposed calibration; ten morphology holdouts remain reserved.
-Historical reconstructions and an external model are still unavailable later-stage
-validation requirements. **R2, W03 and the plate-generation algorithms are untouched.**
-
-See [scope and evidence](evidence/3cr1-reference-use-assessment.json),
-[coverage by scale](evidence/3cr1-reference-use-coverage.json),
-[unchanged strict report](evidence/3cr1-complete-reference-checks.json),
-and [fresh regression](evidence/3cr1-reference-use-tests.json).
-**Verification:** all 1,298 implementation tests passed (1,254 retained plus 44
-new), with zero failures, errors or skips. The 93 recorded source/test/case/tool
-hashes were unchanged during the run. This does not change the strict gate.
-
-The earlier incomplete-import incident was running an update-only ZIP without
-its baseline, corrected in the preceding complete delivery. Sources, previous
-test files, numerical kernels/tolerances and historical evidence remain intact.
-
-## Initial plate layouts: corrected scientific status (18 September 2026)
-
-The nearest-seed generator is a **geometry fixture**, not a demonstrated Earth-like
-plate-layout model. Its API and old mathematical tests remain unchanged.
-A reference-conditioned alternative now uses shared support cells grouped into
-connected, unequal, potentially concave plates. **This is a candidate:** its size
-spectrum is calibrated against PB2002, while global outline morphology and dynamic
-history are not accepted. Generated records explicitly distinguish those gates.
+[Contract and limitations](docs/FOUNDATIONS.md#w01-coordinates). Local coordinates are 3-D chords, not a map projection; time has a named epoch and explicit units.
 
 ```python
-from atlas_tectonics import SphericalFrame, PlateLayoutSettings, generate_plate_layout
-# Radius is an explicit world input. Settings below specify a statistical trial,
-# not an accepted Earth reconstruction or a prediction of mantle-driven plates.
-atlas = generate_plate_layout(
-    SphericalFrame(6_371_000., "example-world"),
-    PlateLayoutSettings(plate_count=12, seed=41, support_cells=512),
-)
+from atlas_tectonics import (SphericalFrame, LocalCartesianFrame,
+    TimeAxis, SECOND, JULIAN_MEGAYEAR)
+
+# Synthetic example radius, not Earth calibration.
+sphere = SphericalFrame(radius_m=6_400_000., frame_id="example-planet-axes")
+xyz = sphere.to_cartesian([[30., 45., 100.]], angle_unit="degrees")
+region = LocalCartesianFrame(sphere, "example-region", longitude_rad=0., latitude_rad=0.)
+local = region.positions_from_cartesian(xyz)
+velocity = region.vectors_from_cartesian([[1., 2., 3.]])  # no origin subtraction
+ago = TimeAxis("example-epoch", JULIAN_MEGAYEAR, 0., "before")
+formation_time_s = float(ago.to_seconds(10.))  # negative forward-time timestamp
 ```
 
-The offline reference contains 52 published areas, one complete previously exposed Cocos
-outline, and 12 original AF/AN boundary-motion rows with signed Euler poles.
-Tests include spherical shape measures and exact rigid-motion area integrals;
-these do not turn a matched area spectrum into geological validation.
-`require_geological_layout_acceptance(atlas)` refuses that unsupported claim.
-See [current scientific scope and remaining acceptance](docs/OPTIMISATION_REFERENCE.md#plate-layout-science-correction).
-The corrected increment passes **1,134 tests**: 1,091 retained tests plus 43 new
-checks, without failures/errors/skips. See [tests](evidence/plate-layout-tests.json)
-and [the actual comparisons](evidence/plate-layout-comparisons.json). This is
-mathematical/data/engineering verification, NOT a new geological acceptance.
-No W03 implementation or GitHub publication is included.
+### Feature geometry
 
-
-## W01 stage 4B — sourced Earth-material reference library (17 September 2026)
-
-`earth_material_library()` now supplies **67 named reference profiles**: 39 bulk
-rock profiles, 25 constituent minerals/endmembers, fresh water, seawater and ice.
-Seven named sediment/regolith matrix recipes are explicitly illustrative starting
-compositions, not measured universal sediment types. All porosities and pore fluids
-remain explicit. This completes the bounded reference-library increment, not a
-pressure-temperature equation of state or W03/W07 constitutive modelling.
-
-- Covers felsic/intermediate/mafic igneous rocks, ultramafic mantle samples,
-  siliciclastic/carbonate/evaporite/organic sedimentary rocks and main metamorphic
-  families. Material names do not claim one universal composition or pore state.
-- Each property retains its source, table/section, original units, reported range,
-  selection rule and reference conditions. A selected range midpoint is a declared
-  representative, not a measured mean or a statistically calibrated distribution.
-- Reference completeness is checked per requested quantity AND condition. At the
-  nominal 293.15 K coordinate, **44 profiles** have compatible density, specific
-  heat and conductivity values. Some records deliberately retain data at other
-  temperatures or only a subset of properties. No missing heat source becomes zero.
-- **30 profiles have interval-mean expansion references**, not instantaneous
-  expansion laws. They are excluded from ordinary scalar-alpha exports/gathers.
-  No hot-mantle density law, pressure model, elastic tensor or phase transition is
-  inferred. A request beyond the supplied reference is refused, not extrapolated.
-- `mix_materials()` distinguishes mass and volume fractions, conserves additive
-  volume/heat inventory and requires explicit fluid for pores. Already-bulk rock
-  references cannot receive a second porosity correction. Conductivity defaults
-  to scalar harmonic/arithmetic bounds; series/parallel arrangements and a geometric
-  approximation require explicit selection. No thermal-expansion mixture is guessed.
-- `RadiogenicAssay` converts explicit elemental U/Th/K concentrations using a named
-  present-day natural-isotope reference equation. It does not infer composition,
-  oxide conversion, formation age, secular equilibrium or radioactive evolution.
-- `definitions()` exports normal stage-4 records with binding identities and the
-  full property-evidence statement. `resolve_geological_layer()` checks that the
-  geological case uses those exact definitions and resolves its cohort mixture
-  without changing origins, formation dates or thicknesses.
-- `PreparedMaterialTable` shares one immutable numerical table and mask, then uses
-  native bounded integer-index gathers. Unknown placeholders cannot leak through
-  the ordinary gather interface. Metadata and citations are not repeated per cell.
-- The existing source/instruction identities include the library implementation
-  and raw data. Complete libraries save through the existing Zstd/deduplicated
-  store and restore without a network query or dependence on the installed version.
-
-Example (reference selection, not a thermal simulation):
+[Contract and limitations](docs/FOUNDATIONS.md#w01-geometry). Queries return all owners. No snapping or automatic polygon repair; spherical topology uses conditioned charts and actual-sphere metrics.
 
 ```python
-from atlas_tectonics import earth_material_library, sediment_matrix
-
-library = earth_material_library()
-materials, evidence = library.definitions((
-    "rock.granite", "rock.basalt", "rock.peridotite", "fluid.fresh_water"))
-# Attach the returned records/evidence to the existing GeologicalCase description.
-# The initial geometry, layer order and material origins still belong to the case.
-
-matrix = sediment_matrix("quartz_sand_or_silt_matrix", porosity=0.30,
-                         pore_fluid="fluid.fresh_water")
-# matrix.conductivity_bounds_w_m_k is a range, NOT an invented exact conductivity.
-# matrix.heat_production_w_m3 remains None without an explicit source assumption.
+from atlas_tectonics import (PlanarGeometry, GeometryFeature, GeometryIndex,
+    SphericalFrame, SphericalChart, SphericalGeometry)
+region = PlanarGeometry.polygon([[0, 0], [2, 0], [2, 2], [0, 2]],
+                                frame_id="synthetic-plane")
+with GeometryIndex((GeometryFeature("region-a", region),)) as index:
+    hits = index.query([[1, 1], [2, 1], [3, 1]])
+    print(hits.pairs)  # all matching (query index, feature index) pairs
+sphere = SphericalFrame(2., "synthetic-sphere")  # not an Earth calibration
+chart = SphericalChart(sphere, (1., 1., 1.))
+octant = SphericalGeometry.polygon([[1, 0, 0], [0, 1, 0], [0, 0, 1]], chart=chart)
+print(octant.area_m2)  # pi/2 steradians times radius squared
 ```
 
-**Verification:** 1,091 checks pass (1,005 prior + 86 new) on the recorded Linux
-runtime, including independent source anchors and mixture arithmetic, malformed
-inputs, condition/porosity refusals, exact binding, memory/cancellation, immutable
-restoration, source-change invalidation, fresh-process and independent-backup reuse.
-See [case](cases/w01_earth_materials.json),
-[test evidence](evidence/w01-earth-materials-tests.json) and
-[coverage/retained-size record](evidence/w01-earth-materials-coverage.json).
-These are reference-data/numerical checks, not physical calibration. No prior
-numerical test, tolerance, equation or historical evidence has been replaced.
+### Shared regional boundaries
 
-**W01 stage 5 is implemented for the declared representation.** See
-[initial-condition sampling](docs/W01_INITIAL_SAMPLING.md) for the topology-aware
-entry point, numerical checks and explicit limits. Reference-only properties must not be
-silently applied at a different temperature/pressure; selected W03/W07 laws remain
-separate responsibilities. W01 stages 6–8 remain; W03 implementation is paused.
-
-## W01 stage 4 — initial geological descriptions (17 September 2026)
-
-`GeologicalCase` now attaches a compact, validated initial geological description
-to a stage-3 regional `BoundaryNetwork` or the stage-3B/3C `SphericalAtlas`.
-It preserves topology/generation provenance but does not sample or evolve it.
-**Stage 4 is the description/validation layer. Stage 5 sampling is now supplied;
-stages 6–8 remain. W03 is paused.**
-
-- Shared material reference properties use explicit SI quantities, sources and
-  optional validity intervals. Unknown properties remain `None` with reasons.
-- W02 cohorts retain distinct material, origin and formation identities. Ordered
-  `ColumnDescription` stacks define sediment, crust and lithospheric mantle with
-  bulk thickness, porosity and solid-volume mixtures. Sediments count as crust;
-  a layer's solid fractions are not mass fractions and are never silently normalised.
-- Known/unknown, constant, tabulated and half-space `ThermalInitialProfile` records
-  describe initial conditions. Cooling-start time is independent of formation
-  time. Tables have explicit linear interpolation/no extrapolation; no W03 solver
-  runs. Tabulated profiles must cover their assigned column's full depth.
-- Provinces can follow plates/regions or independent geographic pieces. Exactly
-  one explicitly supplied domain background closes the description; it can
-  describe unknown geology. Explicit precedence replaces a whole column, not an
-  implicit merge of overlapping layer stacks. Candidate receipts retain all hits.
-- Directed fault traces have declared dip side, dip and depth bounds. Weak zones
-  are area/depth extents or finite-width trace corridors with declared strength
-  factors (or explicit unknowns). Intersections do not create slip/forces, and
-  overlapping weakness factors are not silently multiplied.
-- `save_geological_case` / `load_geological_case` use one self-contained, checked
-  ArrayStore snapshot. The canonical definition itself is a compressed/chunked
-  byte dataset; shared geometry is included once. Native indexes are rebuilt and
-  verified on restore, not trusted from pickle. Backups need no original database.
-
-All descriptive records are immutable. Catalogues and ranks are prepared once;
-resolution works on supplied candidates rather than scanning all world features.
-Definitions, geometry and native execution checks use the existing shared
-budgets, identities and persistence. No new numerical backend or dependency is
-introduced. Owner-retained topology/geometry/case metadata remains a separate RAM
-responsibility; admission estimates are not a process-wide RSS cap.
-
-**Supported initial representation:** surface-relative, piecewise constant bulk
-layer thicknesses by province, ordered flat stacks and explicitly homogeneous
-solid mixtures. Fault ribbons are descriptions, not meshed fault surfaces. Detailed
-variable interfaces, point/cell sampling, spatial thermal evaluation, deformation,
-compaction and physically calibrated rock laws are not claimed by these records.
-The separate [Stage-5 sampler](docs/W01_INITIAL_SAMPLING.md) now calculates
-membership, mixed-cell integrals and relevant depth/temperature validity;
-returning one point winner is not permission to assign an entire mixed cell to it.
-
-**Verification:** all **1,005 checks passed** (915 prior + 90 new), with no failures,
-errors or skips, on Linux/CPython 3.13.5. Earlier test sources and fixtures remain
-unchanged. Windows and geological calibration are unverified.
-
-[Case and acceptance](cases/w01_geological_description.json) ·
-[Test evidence](evidence/w01-stage4-tests.json) ·
-[Existing scientific notes](docs/FOUNDATIONS.md#w01-geological-description) ·
-[Implementation decisions](docs/OPTIMISATION_REFERENCE.md#w01-stage4-delivery)
-
-## W01 stage 3C — automatic initial planetary partitions (17 September 2026)
-
-`generate_planetary_partition()` creates a whole-sphere ownership partition from
-an explicit sphere, plate count and seed. Shared vertices, edges, junctions and
-working patches are generated together; **native generation needs no manual seam
-bindings**. Stage 3B independently checks the assembled geometry before returning it.
-
-```python
-from atlas_tectonics import (SphericalFrame, PlanetPartitionSettings,
-    generate_planetary_partition)
-
-# Example radius is deliberately synthetic; supply the actual case's radius/frame.
-world = generate_planetary_partition(
-    SphericalFrame(1_000_000., "example-planet"),
-    PlanetPartitionSettings(plate_count=12, seed=42),
-)
-areas_m2 = world.areas()
-neighbours = world.adjacency()
-# Existing world.index(), save_spherical_atlas() and load_spherical_atlas() apply.
-```
-
-The explicit initialisation prior is **unweighted spherical Voronoi ownership**:
-nearest angular site, not a geological plate-size distribution or force solution.
-One-, two- and three-site cases have exact whole-sphere/hemisphere/lune constructions.
-For four or more sites, one native convex hull produces the shared dual topology.
-Candidates must surround the sphere centre and avoid unresolved degeneracy; a
-bounded whole-candidate retry records rejected reasons and the accepted attempt.
-No site jitter, boundary snapping or repair hides a failed geometric check.
-
-`prepare_planetary_partition(sphere, sites)` accepts named authored site directions,
-without resampling them. Unsupported/non-spanning/degenerate authored diagrams are
-refused. Existing hand-authored stage-3B atlases are still accepted by their original
-API; this generator never overwrites them with random geometry.
-
-`PlanetaryPartitionPlan.build()` reuses prepared topology. The default `auto`
-layout retains a whole cell when a conditioned chart supports it; otherwise it
-uses interior fan patches. Explicit `triangles` changes the working representation,
-not plate geometry. `repatch_planetary_partition()` uses stored sites, not a new
-random draw. The intrinsic partition identity and interplate edges survive this
-change; extra fan spokes are computational seams, never new tectonic boundaries.
-
-Native hull/tree routines, linear-size incidence structures, shared definitions,
-shared memory admission, cancellation and existing Zstd/deduplicated persistence
-are used. There is no dense site-by-site distance matrix, per-plate worker pool or
-new cache/codec framework. Prepared definitions and returned atlases are owner-side
-retained-memory costs; native allocation estimates are not a total-process RAM cap.
-
-**Verification: 915 tests passed (847 prior + 68 new), no failures/errors/skips.**
-Independent nearest-site scores, symmetry/lune areas, closure, patch invariance,
-authored inputs, deterministic repeats, cancellation, budgets, corruption and
-fresh-process/backup restoration are covered. No old fixture or tolerance changed.
-[Tests](evidence/w01-stage3c-tests.json), [bounded measurements](evidence/w01-stage3c-measurements.json),
-[scientific contract](docs/FOUNDATIONS.md#w01-stage3c),
-[optimisation decisions](docs/OPTIMISATION_REFERENCE.md#w01-stage3c-delivery).
-
-This is an initial geometry generator, **not** generated velocities, crust/layers,
-a validated tectonic history, global W02 transport or a finished world generator.
-Repeatability is qualified by recorded site bytes and runtime, not promised across
-unverified backend upgrades. Windows is unverified. W01 stages **4–8** remain;
-W03 stays paused. Copy-ready files are delivered for manual review/commit/push;
-no changes to the PC or remote repository are made by this delivery.
-
-## W01 stage 3B — closed spherical patch atlas (17 September 2026)
-
-A complete **static planetary geometry** can now be represented without requiring
-one hemisphere-wide working map. `SphericalPatch` connects an oriented local face
-to shared global vertex IDs; `build_spherical_atlas()` validates a closed spherical
-partition and returns a `SphericalAtlas`. Individual charts remain conditioned
-local views. A single region/plate may span many charts, exceed a hemisphere,
-contain holes/disconnected pieces, or cover the whole sphere.
-
-- Every shared edge has two opposite, geometrically consistent uses. A geometric
-  vertex-link test checks that neighbourhood ownership closes once around each
-  vertex. Connectedness, Euler characteristic and area closure are checked too;
-  summing areas to 4*pi alone is NOT used to excuse gaps or overlaps.
-- Regional/plate names do not become patch IDs. Artificial subdivisions inside an
-  owner contribute neither new plate boundaries nor extra physical perimeter.
-- `stitch_spherical_networks()` accepts existing stage-3 networks with explicit
-  bindings to a shared vertex registry. It does not guess matching vertices by
-  distance. Projected copies must agree with the supplied registry within the
-  fixed round-off attachment band; actual discrepancies remain in provenance.
-- Authoritative unit directions are preserved across restoration/reattachment.
-  Working-chart changes do not alter the canonical edge coordinates, metrics or
-  geometry identity. Changing a patch subdivision can change representation IDs,
-  but must preserve the represented owner/area/boundary answers within tolerance.
-- `atlas.index()` is a caller-owned reusable native spatial index with tight,
-  radius-bucketed spherical caps, bounded queries and the existing final local
-  geometry predicates. It returns **all** boundary owners. Same-owner patch hits
-  collapse into one owner, not an arbitrary first-hit or nearest-owner choice.
-- Frames, adjacency, junctions and prescribed boundary-motion diagnostics now work
-  across the entire atlas. This is NOT a global material or force solver.
-- Definitions save through existing Zstd/deduplicated `ArrayStore` snapshots.
-  Restoration rebuilds and verifies geometry/connectivity rather than unpickling
-  native indexes. Index reservations last until close; returned state remains
-  caller-owned, and the shared WorkBudget is not a whole-process RAM cap.
-
-**Input boundary:** the supplied mesh must be conforming, with matching seam
-subdivisions and shared vertex identities. Unpaired seams, crossed/ambiguous
-edges, wrong sidedness, unsupported charts and conflicting owners are refused.
-No automatic polygon repair, nearest-neighbour welding or silent snapping occurs.
-This removes the prior global-coverage limitation for such explicitly defined
-atlases; it is not an arbitrary polygon-soup repair or planet-generation feature.
-
-**Verification:** 847 tests passed (756 previous + 91 new), no failures/errors/skips.
-[Fresh test record](evidence/w01-stage3b-tests.json). The focused whole-sphere query
-comparison returned identical ownership through indexed and exhaustive paths.
-All earlier test sources, fixtures and numerical tolerances remain unchanged.
-
-[Case and invariants](cases/w01_spherical_atlas.json),
-[implementation details](docs/FOUNDATIONS.md#w01-stage3b),
-[optimisation and evidence](docs/OPTIMISATION_REFERENCE.md#w01-stage3b-delivery).
-W01 stages **4–8 remain outstanding**. No W03 work is included. Windows execution,
-global evolving plate/material dynamics and geological realism are not established.
-
-## W01 stage 3 — shared boundaries, verified sides and junctions
-
-**17 September 2026.** The corrected stage-2 geometry now feeds a static shared
-boundary network. **W01 remains incomplete: stages 4–8 remain.** W03 is not part
-of this delivery. This is not a moving whole-planet plate model or a W01→W02
-forcing adapter; that adapter remains stage 6/7 work.
-
-- `BoundaryRegion` separates region identity from plate identity. The declared
-  domain must be covered exactly once by polygon interiors; gaps, overlaps and
-  out-of-domain regions are refused, never snapped, clipped or repaired.
-- `build_boundary_network` orients occupied interiors to the left, nodes the ring
-  linework and stores each shared atomic segment once. Neighbours reference the
-  same segment in opposite directions. Point contacts are not edge adjacency.
-- `BoundaryNetwork` retains compact vertex/edge/left-right/incidence arrays and a
-  reusable native edge index. `junction()` reports counter-clockwise incident
-  rays, verified intervening owners and point-only contacts. Ordinary polygon
-  corners are not automatically labelled tectonic triple junctions.
-- `edge()` exposes verified sides and reversal; `frames()` batches tangents,
-  right normals, lengths and positions. Spherical frames use actual great-circle
-  geometry and radius, not projected distances. No epsilon-offset owner guessing.
-- `motion()` associates supplied plate velocities with those sides and projects
-  opening/shear diagnostics, checked against the existing boundary-motion formula.
-  It does not infer motion, slab polarity or a fault law. Spherical radial relative
-  motion is reported rather than silently discarded.
-- Same-plate region joins are explicit `patch-seam` edges, excluded from normal
-  interplate adjacency/motion selection. `validate_trace()` checks an authored
-  directed trace against the network and its declared owners, without moving it.
-- Self-contained save/load uses the existing Zstd/deduplicated `ArrayStore`; native
-  indexes rebuild from verified definitions. Derived connectivity participates in
-  identity. These content IDs are not permanent geological boundary labels.
-
-**Spherical boundary:** one declared, conditioned open-hemisphere domain chart is
-required. Input regions can have compatible different charts only when exact
-reprojection/coverage checks succeed. Tiny reprojection gaps are refused, not
-hidden by a tolerance. Arbitrary whole-sphere patch stitching is NOT supplied.
+[Contract and limitations](docs/FOUNDATIONS.md#w01-boundaries). Coverage must be exact. Supplied velocities describe motion; they do not predict forces.
 
 ```python
 from atlas_tectonics import PlanarGeometry, BoundaryRegion, build_boundary_network
@@ -1388,180 +269,99 @@ motion = network.motion({"plate-a": [0, 0], "plate-b": [2, 0]}, [0, 0])
 assert motion.opening_m_s[0] == 2
 ```
 
-The owner accounts for retained geometry/network data and native-index allowances
-outside individual calls. Build/query operations use the existing shared budget;
-this remains an allocation estimate, not a GEOS/process heap cap. No scheduler,
-new dependency or automatic source migration is introduced.
+### Initial spherical partition
 
-See [case notes](docs/FOUNDATIONS.md#w01-boundaries),
-[implementation and measurements](docs/OPTIMISATION_REFERENCE.md#w01-stage3-delivery),
-and [fresh tests](evidence/w01-stage3-tests.json). The copy-ready delivery includes
-stages 1 and 2 with their targeted fixes on the pushed `ecac085f…` baseline. No
-files require deletion. Linux verification does not establish Windows or geological
-acceptance. Nothing is published or written to the owner's PC by this delivery.
-
-## W01 stage 2 — plate and geological-feature geometry
-
-
-### Targeted stage-2 corrections — 17 September 2026
-
-This delivery corrects the four defects exposed by the independent double-check;
-it is not W03 or a new geometry backend. Short spherical arcs use a stable
-sum/difference plane normal with scaled normalisation. Imported traces and polygon
-rings use the same zero-edge sequence checks as direct construction, including
-multipart/nested definitions. Unrepresentable metre distances are refused before
-publication. Empty spherical classification honours cancellation.
-
-The original angular tolerance, finite-arc endpoint behaviour, conditioned
-hemisphere scope and accuracy-first compiled defaults are unchanged. No geometry
-repair, corridor widening, schema migration or new dependency is introduced.
-The package version is `0.1.0.dev13`; valid geometry definition IDs remain stable,
-while changed source participates in the existing execution identity.
-
-See [fresh regression evidence](evidence/w01-stage2-corrections-tests.json) and
-[the focused correction record](evidence/w01-stage2-corrections.json). The previous
-646-test record is retained as historical evidence, not overwritten. Windows and
-geological realism remain unverified. At that delivery, stages 3–8 were outstanding;
-the current stage-3 section above updates that status.
-
-
-**17 September 2026.** Stage 2 adds an immutable native-backed geometry layer:
-Cartesian polygons (including concavity, holes and multipart overlay results),
-zero-width feature/fault traces, and spherical minor-great-circle patches.
-**Historical stage-2 status:** stages 3–8 were not supplied by geometric predicates;
-shared-boundary support is now supplied by the stage-3 section above.
-
-- `PlanarGeometry` supplies membership, boundary classification, metres/m² metrics,
-  finite-trace distances/corridors and intersection/union/difference operations.
-- `SphericalChart` and `SphericalGeometry` use a conditioned gnomonic chart only for
-  topology. Arc distances and solid-angle areas are evaluated on the actual sphere.
-  Longitude-seam and polar cases work. A feature must fit an explicit open-hemisphere
-  chart; horizon/antipodal ambiguity and operations without a supported common chart
-  are refused. This is not an arbitrary full-sphere polygon/Boolean engine.
-- `GeometryIndex` reuses native STRtrees and immutable feature definitions. It returns
-  all hits in stable feature-ID order, including both sides of a shared boundary.
-  It never selects plate ownership by the first hit. Spherical indexes group charts.
-- `audit_coverage` reports explicit gaps, out-of-domain area, positive-area overlaps
-  and zero-area contacts. It does not move boundaries or delete material to obtain
-  coverage. Stage 3 supplies supported domain-patch junctions; arbitrary global
-  patch stitching is not claimed.
-- `save_geometry`/`load_geometry` reuse the existing compressed/deduplicated store.
-  Bounded 2D WKB definitions are checked before native parsing; prepared objects and
-  indexes rebuild on restoration. No pickle-based native-object cache is introduced.
-  Since R7 (1 October 2026) a restored collection is refused, not merged, if its
-  polygons overlap or share an edge, its traces cross or overlap, or a trace lies
-  inside or along one of its polygons.
-- Native double precision is normal. No snapping, `make_valid`, lossy simplification,
-  automatic precision reduction or spherical-to-flat metric substitution occurs.
-  Optional boundary bands report uncertainty, not repaired geometry or ownership.
+[Contract and limitations](docs/FOUNDATIONS.md#w01-stage3c). Unweighted spherical Voronoi ownership is a geometry fixture, not a geological size distribution or evolving planet.
 
 ```python
-from atlas_tectonics import (PlanarGeometry, GeometryFeature, GeometryIndex,
-    SphericalFrame, SphericalChart, SphericalGeometry)
-region = PlanarGeometry.polygon([[0, 0], [2, 0], [2, 2], [0, 2]],
-                                frame_id="synthetic-plane")
-with GeometryIndex((GeometryFeature("region-a", region),)) as index:
-    hits = index.query([[1, 1], [2, 1], [3, 1]])
-    print(hits.pairs)  # all matching (query index, feature index) pairs
-sphere = SphericalFrame(2., "synthetic-sphere")  # not an Earth calibration
-chart = SphericalChart(sphere, (1., 1., 1.))
-octant = SphericalGeometry.polygon([[1, 0, 0], [0, 1, 0], [0, 0, 1]], chart=chart)
-print(octant.area_m2)  # pi/2 steradians times radius squared
+from atlas_tectonics import (SphericalFrame, PlanetPartitionSettings,
+    generate_planetary_partition)
+
+# Example radius is deliberately synthetic; supply the actual case's radius/frame.
+world = generate_planetary_partition(
+    SphericalFrame(1_000_000., "example-planet"),
+    PlanetPartitionSettings(plate_count=12, seed=42),
+)
+areas_m2 = world.areas()
+neighbours = world.adjacency()
+# Existing world.index(), save_spherical_atlas() and load_spherical_atlas() apply.
 ```
 
-**New normal dependency:** Shapely `>=2.1,<3` (tested 2.1.2, GEOS 3.13.1).
-Nothing is auto-installed and there is no lower-accuracy fallback if it is absent.
-The existing Numba requirement supplies the finite-arc distance kernel; importing
-reference-only calculations does not import that compiler eagerly.
+### Candidate plate layout
 
-See [scientific notes](docs/FOUNDATIONS.md#w01-geometry),
-[optimisation decisions](docs/OPTIMISATION_REFERENCE.md#w01-stage2-delivery),
-[test evidence](evidence/w01-stage2-tests.json), and
-[bounded query measurements](evidence/w01-stage2-measurements.json).
-The copy-ready delivery includes local stage 1 on top of `ecac085f…`. No deletions,
-publication, Windows execution or geometric-to-tectonic physical acceptance occur.
-
-## W01 stage 1 — coordinates, reference frames and model time
-
-**17 September 2026.** `SphericalFrame`, `LocalCartesianFrame` and `TimeAxis`
-complete stage 1 of the W01 catch-up sequence. **W01 as a whole remains partial:**
-At that delivery, plate/feature geometry and the remaining stages were outstanding.
-The current stage-3 section above supersedes that status; stages 4–8 remain. W03 implementation follows
-that work; this increment does not create polygons, plate histories or a new solver.
-
-- Spherical inputs explicitly specify longitude/latitude units, geocentric latitude,
-  radial height and a named planet-centred frame with an explicit radius.
-- Full three-dimensional Cartesian/ENU conversions distinguish positions, vectors
-  and moving-frame velocities. Local X can be rotated explicitly from east towards
-  north. At a pole, the supplied longitude selects the local frame's meridian.
-- Geographic longitude is canonical across the seam. The inverse assigns longitude
-  zero only on the exact polar axis; it does not snap nearby points to the pole.
-- Local coordinates are **3D chord coordinates, not a map projection**. Dropping
-  their up component or treating planar distance as surface distance is not allowed
-  by this contract. Ellipsoids/geodetic datums are not silently treated as spheres.
-- Legacy east/south/up axes have an explicit reflection, with a distinct axial-vector
-  rule for angular velocity. Metre/kilometre and degree/radian conversions are named.
-- Internal time is forward SI seconds in a named epoch. A `before` axis explicitly
-  reverses timestamp/rate orientation, not positive durations. Cross-epoch conversion
-  requires a supplied `EpochOffset`. Julian years are available only when selected;
-  there is no implicit year length or civil-time/calendar conversion.
-- All bulk paths use existing array validation, immutable outputs and shared memory
-  admission. Frames reuse a 72-byte numerical basis. Direct local-to-local conversion
-  composes a small operator rather than materialising another complete XYZ array.
-  Source/callable verification now includes the new modules and named time units.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#plate-layout-science-correction). Reference-conditioned size spectra do not establish outline/dynamic acceptance. `require_geological_layout_acceptance(atlas)` refuses that claim.
 
 ```python
-from atlas_tectonics import (SphericalFrame, LocalCartesianFrame,
-    TimeAxis, SECOND, JULIAN_MEGAYEAR)
-
-# Synthetic example radius, not Earth calibration.
-sphere = SphericalFrame(radius_m=6_400_000., frame_id="example-planet-axes")
-xyz = sphere.to_cartesian([[30., 45., 100.]], angle_unit="degrees")
-region = LocalCartesianFrame(sphere, "example-region", longitude_rad=0., latitude_rad=0.)
-local = region.positions_from_cartesian(xyz)
-velocity = region.vectors_from_cartesian([[1., 2., 3.]])  # no origin subtraction
-ago = TimeAxis("example-epoch", JULIAN_MEGAYEAR, 0., "before")
-formation_time_s = float(ago.to_seconds(10.))  # negative forward-time timestamp
+from atlas_tectonics import SphericalFrame, PlateLayoutSettings, generate_plate_layout
+# Radius is an explicit world input. Settings below specify a statistical trial,
+# not an accepted Earth reconstruction or a prediction of mantle-driven plates.
+atlas = generate_plate_layout(
+    SphericalFrame(6_371_000., "example-world"),
+    PlateLayoutSettings(plate_count=12, seed=41, support_cells=512),
+)
 ```
 
-Run `python -I -B tectonics/verify.py` for the complete regression suite. The
-[new case](cases/w01_coordinates.json), [scientific notes](docs/FOUNDATIONS.md#w01-coordinates)
-and [optimisation decisions](docs/OPTIMISATION_REFERENCE.md#w01-stage1-delivery)
-state the numerical range and ownership limits. The obtained test record is
-[evidence/w01-stage1-tests.json](evidence/w01-stage1-tests.json).
-No dependencies, historical bindings, numerical tolerances or Windows files change.
+### Reference materials
 
-## W02 regional completion — remapping, moving boundaries and plate events
+[Contract and limitations](docs/FOUNDATIONS.md#w01-earth-materials). Reference conditions, source ranges and unknowns remain explicit; this is not a hot/high-pressure constitutive law.
 
-**17 September 2026.** W02's data/transport/event capabilities are now implemented
-for the existing **1D regional, common-density, prescribed-kinematics model**.
-This completes the outstanding regional remap/motion/ownership work; it is not
-planetary topology, predictive tectonic forces or geological acceptance.
+```python
+from atlas_tectonics import earth_material_library, sediment_matrix
 
-- `ColumnGrid1D` stores explicit nonuniform edges and an identified coordinate
-  frame. `to_column_state` is an explicit inventory-preserving bridge from the
-  previous uniform representation; older numerical APIs remain unchanged.
-- `RemapPlan` uses a linear-size overlap sweep, reusable independently of material
-  fields. `remap_materials` integrates limited linear reconstructions conservatively.
-  Domain cropping or filling is refused; coarsening is not falsely reversible.
-- `advect_ale` separates physical velocity **u** from mesh velocity **w** and evolves
-  **thickness times cell width**, with relative flux **(u-w)H**. Compiled MC-MUSCL /
-  SSP-RK2 remains normal. Closed moving faces require u=w, not u=0. Crossings,
-  unsafe stages and known interior events are refused, never repaired by clipping.
-- `PlateTopology1D` defines complete interval coverage, shared boundary sides and
-  distinct plate/block/material IDs. Splits, merges, membership changes, boundary
-  activation/deactivation and polarity changes retain parent and retired IDs.
-- `advance_plate_state` moves aligned ownership/control-volume faces together;
-  each shared flux reconciles neighbouring block/cohort inventories with opposite
-  signs. Material birth/addition/removal reuses the existing prescribed transfers.
-- `MaterialMarkers1D` supports an explicit material-following piecewise-affine map,
-  accumulated log stretch and unchanged material identifiers. An arbitrary moving
-  numerical mesh is not assumed to carry the material with it.
-- Existing budgets, native executor, verified input/result identities, cache
-  admission and Zstd/deduplicated snapshots are reused. State/marker snapshots
-  restore without a chain of prior manifests. No new cache or scheduler is added.
+library = earth_material_library()
+materials, evidence = library.definitions((
+    "rock.granite", "rock.basalt", "rock.peridotite", "fluid.fresh_water"))
+# Attach the returned records/evidence to the existing GeologicalCase description.
+# The initial geometry, layer order and material origins still belong to the case.
 
-Example with deliberately synthetic values, not Earth calibration:
+matrix = sediment_matrix("quartz_sand_or_silt_matrix", porosity=0.30,
+                         pore_fluid="fluid.fresh_water")
+# matrix.conductivity_bounds_w_m_k is a range, NOT an invented exact conductivity.
+# matrix.heat_production_w_m3 remains None without an explicit source assumption.
+```
+
+### Regional transport
+
+[Contract and limitations](docs/FOUNDATIONS.md#w02-regional). Open inflow requires explicit data. Inventory is m² per unit width under common density, not kg. No clipping or automatic substeps.
+
+```python
+import numpy as np
+from atlas_tectonics import (RegionalGrid1D, TransportBoundary,
+                            advect_regional, transport_timestep_limit)
+
+grid = RegionalGrid1D(cells=128, length_m=128.0)
+left = TransportBoundary("open", exterior_thickness_m=2.0,
+                         material_id="synthetic-external-reservoir")
+right = TransportBoundary("open")
+h = np.ones(grid.cells)                     # synthetic thickness, m
+u = np.full(grid.cells + 1, 0.25)            # prescribed velocity, m/s
+limit = transport_timestep_limit(u, grid, left=left, right=right)
+step = advect_regional(h, u, grid, 0.5, left=left, right=right)
+# step.balance_residual_m2 checks after - before - left_exchange - right_exchange.
+```
+
+### Distinct material histories
+
+[Contract and limitations](docs/FOUNDATIONS.md#w02-cohorts). Formation identities remain separate; transfers do not predict production. Retaining every earlier receipt is a caller policy.
+
+```python
+import numpy as np
+from atlas_tectonics import (RegionalGrid1D, MaterialCohort, MaterialState,
+    MaterialBoundary, advect_materials)
+
+cohorts = (MaterialCohort("old", "basalt", "source-A", -100.0),
+           MaterialCohort("young", "basalt", "source-B", -10.0))
+state = MaterialState(RegionalGrid1D(16, 16.0), cohorts,
+    np.array([[1.0] * 16, [2.0] * 16]), time_s=0.0, epoch_id="synthetic-seconds")
+inflow = MaterialBoundary("open", {"old": 1.0, "young": 2.0}, "west")
+outflow = MaterialBoundary("open", None, "east")
+result = advect_materials(state, np.ones(17), 0.2, left=inflow, right=outflow)
+# result.state.ages_s() == (100.2, 10.2); histories were not blended.
+```
+
+### Conservative remap and ALE
+
+[Contract and limitations](docs/FOUNDATIONS.md#w02-completion). Mesh and material velocity differ. Cropping/filling and unsafe stages refuse; coarsening is not reversible.
 
 ```python
 import numpy as np
@@ -1581,147 +381,47 @@ result = advect_ale(state, velocity, velocity, 0.5,
 # Save or consume result before reusing/releasing its owner's memory allowance.
 ```
 
-**Verification:** all **488 tests (410 existing + 78 new)** passed without failures,
-errors or skips in the tested Linux environment. Independent overlap/flux, geometric
-conservation, refinement, event/history, cold restore, cache and concurrency cases
-are in [the case](cases/w02_completion.json), [test evidence](evidence/w02-completion-tests.json)
-and [measurements](evidence/w02-completion-measurements.json). Current reference and
-native ALE outputs agree within unchanged tolerance, not necessarily bit-for-bit.
+### Local rheology
 
-The plan and optimisation reference remain the two maintained authorities.
-**Current next work is W01 stages 2–8**, then W03 thermal/compaction and W04
-load construction before W05. The earlier W04-first suggestion is superseded. Future 2D/spherical junctions,
-variable-density mechanics and physical creation/recycling laws need their own
-geometry and process extensions; no global or Windows sign-off is implied.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#3cr3-execution). Temperature/depth here are dimensionless in [0,1]. SI needs explicit `DiffusiveScales` with separate length/depth normalisation. No hidden pressure or measured strength.
 
-## W02 material cohorts and formation history (17 September 2026)
+```python
+from atlas_tectonics import PreparedRheology, reference_rheology
 
-Accuracy remains the default: compiled MC-MUSCL/SSP-RK2, not automatic upwind
-selection when a lower-order method is quicker. The new `advect_materials` API
-transports each nonnegative cohort partial thickness under the same prescribed
-face velocity. Total thickness is derived; material IDs and formation times are
-metadata, not floating fields that can be interpolated or averaged away.
+# Named dimensionless local reference; initial damage is deliberately supplied.
+with PreparedRheology(reference_rheology("bf23-memory")) as law:
+    response = law.evaluate(temperature=[0.0, 0.5, 1.0], depth=0.1,
+                            strain_rate_ii=1.0, damage=0.0)
+    memory = law.advance(damage=20.0, strain_rate_ii=0.0,
+                         temperature=0.0, elapsed=1.0)
+viscosity = response.array("viscosity")  # immutable result, not mantle calibration
+healed_damage = memory.array("damage_after")
+```
 
-- `MaterialCohort`: stable material/origin/formation identity; unknown time is None.
-- `MaterialState`: immutable compact cohort×cell thickness, forward-time epoch,
-  parent identity and detached last-transition receipt. `ages_s()`,
-  `total_thickness()` and `fractions()` derive views; empty fractions need the mask.
-- `MaterialBoundary`: explicit incoming cohort composition and reservoir. Missing
-  inflow refuses; closed-boundary velocities must be zero.
-- `advect_materials`: per-cohort mean flux and before/after/in/out accounts,
-  positive candidates, native default, independent reference, no renormalisation.
-  `material_timestep_limit` advises a safe interval without changing the scheme.
-- `register_cohorts`: explicit zero-inventory catalogue additions, no relabelling.
-- `apply_material_event`: parent-bound birth/add/remove amounts at the exact current
-  time. Birth sets the actual formation event; addition preserves prior age;
-  removal keeps the cohort record even when its inventory becomes zero.
-- `cached_material_transport` (in `reuse.py`) and `save_material_state` /
-  `load_material_state` use the existing verified cache and deduplicated Zstd store.
-- `KernelExecutor.material_transports` reuses bounded serial/thread/spawn execution
-  for independent velocity scenarios, never adjacent tiles or sequential times.
+### Steady mechanical control
 
-Example (synthetic values, not geological calibration):
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#3cr4-1-execution). The uniform free-slip steady box has no thermal evolution or plate dynamics. The direct reference is explicit, not a fallback.
 
 ```python
 import numpy as np
-from atlas_tectonics import (RegionalGrid1D, MaterialCohort, MaterialState,
-    MaterialBoundary, advect_materials)
-
-cohorts = (MaterialCohort("old", "basalt", "source-A", -100.0),
-           MaterialCohort("young", "basalt", "source-B", -10.0))
-state = MaterialState(RegionalGrid1D(16, 16.0), cohorts,
-    np.array([[1.0] * 16, [2.0] * 16]), time_s=0.0, epoch_id="synthetic-seconds")
-inflow = MaterialBoundary("open", {"old": 1.0, "young": 2.0}, "west")
-outflow = MaterialBoundary("open", None, "east")
-result = advect_materials(state, np.ones(17), 0.2, left=inflow, right=outflow)
-# result.state.ages_s() == (100.2, 10.2); histories were not blended.
+from atlas_tectonics import (
+    StokesBox2D, DiffusiveScales, reference_rheology, PreparedStokes2D,
+)
+box = StokesBox2D(32, 32, 1.0, 1.0, "analytical-x-right-z-up")
+scales = DiffusiveScales("declared-unit-SI", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+# Uniform downward body force: a hydrostatic pressure response, no circulation.
+fx = np.zeros((box.nz, box.nx - 1))
+fz = np.full((box.nz - 1, box.nx), -1.0)
+with PreparedStokes2D(box, reference_rheology("constant"), scales) as plan:
+    result = plan.solve(fx, fz, frame_id=box.frame_id,
+                        epoch_id="analytical-steady", time_s=0.0,
+                        source="Authored hydrostatic verification case")
+pressure_pa = result.array("pressure_pa")
 ```
 
-Volume is m² per unit width under the common constant-density approximation,
-not an unqualified mass ledger. Events prescribe transfers; they do not predict
-magmatic productivity or subduction rates. No variable-density/momentum coupling,
-continuous thermal/exhumation path, conservative remapping, moving grid or plate
-ownership/split/merge logic is supplied. Those remain separately tested W02 work.
-The last receipt and self-contained state are persisted; retaining every earlier
-receipt is the caller's history policy, not an implicit growing in-memory list.
+### Shared resource admission
 
-**Verification:** 410 tests passed (331 prior + 79 new), with no failures, errors
-or skips on Linux. Smooth-cohort refinement approaches second-order convergence.
-The native and reference measurements solve the same higher-order problem; their
-measured partial-thickness outputs were identical. Windows is not verified.
-
-[Scientific contract](docs/FOUNDATIONS.md#w02-cohorts),
-[implementation and memory decisions](docs/OPTIMISATION_REFERENCE.md#w02-materials-delivery),
-[test evidence](evidence/w02-material-tests.json) and
-[bounded measurements](evidence/w02-material-measurements.json) describe the scope.
-No old tests/tolerances or prior numerical kernels changed; no publication,
-dependency installation, Windows integration or geological acceptance is implied.
-
-## W02 regional transport increment (17 September 2026)
-
-`advect_regional` now transports constant-density crustal thickness on a fixed
-one-dimensional regional grid with **N cells and N+1 faces**. The existing periodic
-API and its implementation remain unchanged. This is the open-boundary part of
-W02, not completion of material cohorts, plate topology or crust production.
-
-- Both ends explicitly select open or closed boundaries. Inflow requires supplied
-  exterior face thickness; outflow uses the interior donor. Reversal requires new
-  valid incoming data. A closed boundary rejects a nonzero supplied velocity.
-- The normal backend is compiled Numba. The default numerical profile is limited
-  **MUSCL/SSP-RK2**; `scheme="upwind"` selects the cheaper first-order scheme and
-  `backend="reference"` independently checks either calculation. Numerical scheme
-  selection is explicit: it is not a silent change to the old periodic method.
-- The sufficient outgoing-fraction limits are 1/2 (MUSCL) and 1 (upwind), including
-  both external faces. `transport_timestep_limit` advises a safe interval; the
-  caller still chooses it. No clipping, automatic substeps or guessed inflow.
-- Results include immutable thickness, interval-mean face flux, signed left/right
-  exchange and nonnegative inflow/outflow totals. Inventory is **m² per unit width**,
-  not kg. The RK2 boundary account uses its stage-averaged flux, not endpoint flux.
-- `cached_regional_transport` and `KernelExecutor.regional_transports` reuse the
-  existing cache, resource and worker infrastructure. Source, compiler, scheme,
-  boundaries, interval and typed inputs participate in identity. Automatic cache
-  admission still avoids persisting cheap steps. Whole independent cases can use
-  explicit threads/spawn; auto currently retains serial compiled regional batches
-  because outer threading was slower in the bounded end-to-end comparison.
-
-```python
-import numpy as np
-from atlas_tectonics import (RegionalGrid1D, TransportBoundary,
-                            advect_regional, transport_timestep_limit)
-
-grid = RegionalGrid1D(cells=128, length_m=128.0)
-left = TransportBoundary("open", exterior_thickness_m=2.0,
-                         material_id="synthetic-external-reservoir")
-right = TransportBoundary("open")
-h = np.ones(grid.cells)                     # synthetic thickness, m
-u = np.full(grid.cells + 1, 0.25)            # prescribed velocity, m/s
-limit = transport_timestep_limit(u, grid, left=left, right=right)
-step = advect_regional(h, u, grid, 0.5, left=left, right=right)
-# step.balance_residual_m2 checks after - before - left_exchange - right_exchange.
-```
-
-All **331 checks passed** (280 prior + 51 new) on the tested Linux environment.
-The new tests cover independent rational flux balances, inflow/outflow/reversal,
-closed boundaries, variable-speed thinning, refinement and sharp fronts, compiled
-versus independent reference, native/thread/spawn agreement, cancellation,
-immutable restoration, cache identities, corruption and deduplicated payload reuse.
-[Recorded tests](evidence/w02-regional-tests.json) and
-[accuracy/cost measurements](evidence/w02-regional-measurements.json) retain their
-actual scopes. Timings are noisy bounded synthetic comparisons, not world forecasts.
-Windows, moving grids, geological validation and full evolving-world recovery remain
-unverified. No source/dependency installation, publication or old-history migration
-is part of this delivery. See [the existing scientific case notes](docs/FOUNDATIONS.md#w02-regional)
-and [optimisation decisions](docs/OPTIMISATION_REFERENCE.md#w02-regional-delivery).
-
-## Combined resource acceptance — item 12 (17 September 2026)
-
-The normal optimised backends and storage profiles are retained. Executors, cache
-wrappers and stores now share byte admission rather than each assuming its own
-full allowance. `WorkBudget(max_bytes, parent=...)` supports related component
-limits; a reservation charges shared ancestors once. Store cache/page-capacity
-allowances stay reserved until close. Codec, decoding, staging, retained manifests
-and pending results have separate lifetimes. Resource estimates remain distinct
-from measured total process memory.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#combined-acceptance). Shared allocation estimates are not total process RSS. Caller-retained arrays and independent processes remain separate costs.
 
 ```python
 from atlas_tectonics.resources import WorkBudget
@@ -1734,55 +434,9 @@ run_budget = WorkBudget(256 * 1024**2)
 # Kernels keep pure numerical interfaces; no disk paths enter their equations.
 ```
 
-Default-constructed stores and executors join the same process-local default
-budget. An explicitly store-bound cache wrapper inherits that store's budget even
-when automatic admission decides to recalculate. Distinct independently launched
-programs are not collectively capped by this Python object. Caller-retained inputs,
-outputs and operators must have explicit run reservations; shared immutable bytes
-should be counted once by their owner, not once per view.
+### Incremental storage
 
-Pool capacity is coordinated across executors. Spawn workers have an explicit
-96 MiB per-worker baseline allowance, held until shutdown in addition to their job
-reservations; it is not a worker RSS limit. Cancelling a stream drains running calls
-before release. Active store preparation cannot be closed underneath its writer.
-Under shared memory pressure an executor refuses or drains pending work rather
-than spinning because another component holds its remaining capacity.
-
-**Obtained verification:** 280 tests passed (254 prior + 26 new), no failures, errors
-or skips, on Linux/CPython 3.13.5. The combined drill additionally passed three
-fresh-process profiles: serial/raw, automatic/balanced Zstd, and spawn/compact Zstd.
-Each runs first use and five warm cycles combining native transport, cooling,
-rotations, complete flexure domains, forced cache round trips, incremental branches
-and an isolated backup. Output bytes agree between those profiles; original physical
-fixtures and tolerances are unchanged. See the [acceptance record](evidence/combined-resource-acceptance.json)
-and the [method/resource boundaries](docs/OPTIMISATION_REFERENCE.md#combined-acceptance).
-
-```sh
-# The usual complete regression checks (no telemetry dependency needed).
-python -I -B tectonics/verify.py
-# Complete regression + bounded process-tree resource/platform acceptance.
-# psutil is the explicit acceptance extra; this command never installs anything.
-python -I -B tectonics/verify.py --acceptance > item12-local.json
-```
-
-The latter command is also the local Windows acceptance route. **Windows remains
-unverified until it actually passes there.** Missing dependencies, failed checks
-and unsupported permissions/platform behaviour fail explicitly. No Windows pass,
-power-loss guarantee or real-world tectonic validation is inferred from Linux or
-from a spawn test. Item 1 remains skipped; no broad baseline/tuning programme ran.
-
-
-## Current storage defaults (items 9–11)
-
-The normal storage path now uses Zstd level 1 with byte shuffle and exact
-categorical selection. No opt-in is needed; raw storage remains explicitly
-selectable. Missing Blosc2 is an error, not a silent slower fallback. Blosc2 is
-included in normal package requirements; no installer runs during computation.
-
-`storage_profile("fast"|"balanced"|"compact")` supplies versioned starting profiles
-with 16/64/256 KiB chunk suggestions. Existing stores keep their chunk size.
-Packed 1/2/4/8-bit indices and run-length encoding preserve integer/Boolean data
-exactly. Existing raw, uniform, palette8 and Zstd snapshots remain readable.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#storage-profiles-delivery). Supply full invocation identities, arrays and metadata. Replacements must be complete named chunks; existing stores retain their chunk size.
 
 ```python
 # Snapshot IDs are supplied full scientific invocation identities (SHA-256).
@@ -1797,30 +451,9 @@ with ArrayStore("existing-directory/fields.sqlite", limits, profile.compression)
                           {"temperature": {0: replacement_chunk}}, child_metadata)
 ```
 
-Encoding and one-time round-trip checks now happen before the writer transaction,
-using a bounded memory/disk spool. Dependency checks, batched insertion and final
-publication remain transactional. Warm reads reuse verified chunks only inside a
-stable database view, with invalidation for same/other-connection changes.
+### Independent execution batches
 
-All **254 checks passed**. Repeated reads and unchanged snapshots were faster in
-bounded measurements; first writes can be slower. Dictionaries and queued reads
-did not justify automatic use in the tested cases. No codec tuning is a global
-performance guarantee, and item 12 is not completed by this increment.
-
-Read the [implementation, measurement and resource boundaries](docs/OPTIMISATION_REFERENCE.md#storage-profiles-delivery)
-and [test record](evidence/storage-profiles-tests.json). Numerical kernels,
-scientific tolerances and prior evidence remain unchanged. No publication,
-Windows integration, physical simulation or dependency installation was performed.
-
-## Current execution and reuse defaults (items 6–8)
-
-The latest local delivery adds `KernelExecutor` for bounded independent cooling,
-rotation and flexure batches, reusable `ExecutionContext`/`PreparedInput` identity
-preparation, and automatic persistent-cache admission with same-request
-coordination. The SciPy, Numba and matrix numerical defaults are unchanged.
-Small jobs and matrix rotations remain serial when threading is not beneficial;
-large eligible cooling/FFT batches use up to two threads under the automatic
-profile. A persistent spawn-process path was tested and is not the default.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#execution-reuse-delivery). Requests are independent complete cases; the caller controls retained output memory.
 
 ```python
 from atlas_tectonics.execution import KernelExecutor
@@ -1830,83 +463,9 @@ with KernelExecutor() as executor:
         consume(temperatures)  # caller controls retained output memory
 ```
 
-Cache wrappers now use automatic admission: they avoid caching cheap products and
-learn measured compute/write/restore costs. `CachePolicy(mode="always")` explicitly
-requests persistence; `mode="off"` disables store access. Supplying an immutable
-`PreparedInput` lets repeated calls reuse its digest rather than rehash the payload.
-Context reuse still compares exact current source bytes; it does not replace
-verification with timestamps. Creator failure, wait cancellation, corruption and
-source changes remain explicit errors. The existing transaction checks cancellation
-and source state immediately before committing an admitted result.
+### Optional persistent cooling
 
-See the [single maintained optimisation reference](docs/OPTIMISATION_REFERENCE.md#execution-reuse-delivery)
-for policies, use boundaries and the measured decisions. The full verifier passed
-**216 checks, with no failures/errors/skips**, including the original 169 and 47
-new checks. [Test record](evidence/execution-reuse-tests.json) and
-[measurements](evidence/execution-reuse-measurements.json) are scoped numerical and
-execution evidence, not physical validation. `threadpoolctl>=3.6,<4` is now a normal
-requirement. No dependencies were installed in this delivery; Windows/macOS and
-other native builds were not run. No files have been pushed to origin.
-
-## Implemented calculations
-
-| Component | Capability | Boundary |
-| --- | --- | --- |
-| Rotations and boundary motion | Finite quaternions with reused immutable matrix application by default; ordered composition, inverse, bounded batches, streaming and scale-safe normalisation | No generated plates, force balance or geometric sidedness audit |
-| Thickness transport | Conservative, positivity-preserving periodic 1D upwind update; compiled Numba update and exact positive-sum accounting by default; explicit NumPy/`math.fsum` reference | No open boundaries, material birth or subduction |
-| Half-space cooling | Analytical temperature with explicit depth/age/parameters; SciPy array backend by default; explicit scalar reference | No evolving thermal PDE or calibrated material profile |
-| Periodic flexure | Uniform 1D centred-difference operator solved with FFT; immutable setup reuse and scaled extreme-range arithmetic | Not continuous spectral k^4, variable rigidity, open edges or the cause of uplift |
-| Parameter records | Immutable typed SI values and identities, without hidden Earth/Diadem defaults | No user customisation UI or new scientific calibration |
-
-These do not complete W01-W04 or supply the W05 coupled extension experiment.
-Physical validation and production integration remain outstanding.
-
-## Memory and persistence increment (17 September 2026)
-
-- Masked numerical inputs are refused before their missing-value information can
-  be discarded. Shapes and projected array work are checked before bulk allocation.
-- `WorkBudget` bounds estimated simultaneous kernel allocations, including shared
-  reservations across threads. The default local envelope is 256 MiB; callers can
-  supply a different explicit budget. This is **not a total process RSS cap**:
-  caller-owned inputs, retained outputs and native allocator overhead remain separate.
-- Transport reuses private donor/scratch arrays without mutating the input or
-  changing the shared-face update. Accurate budget summations are retained.
-- `backend="scipy"` is the default bulk error-function evaluation. It is numerically
-  compared, not claimed bit-identical to `math.erf`. Missing dependencies cause an
-  explicit error, never a silent backend substitution.
-- Flexure restoration rebuilds its immutable coefficients from the typed definition.
-  The method identity is versioned for range handling. Transport-result restoration
-  also re-establishes immutable array backing; generic NumPy pickle is not a storage contract.
-- `ArrayStore` provides typed, immutable array snapshots in a **local SQLite file**,
-  with chunk deduplication, exact uniform encoding, optional integer palettes,
-  optional Zstd via Blosc2, and byte/bit/no-shuffle choices. Compression uses one
-  thread per call. Encoding records name codec/filter/version; raw storage is used
-  when it is smaller. This is a declared encoding choice, not missing-dependency fallback.
-- A repeated snapshot reuses unchanged chunks; one changed chunk stores one new
-  payload. Each manifest references chunks directly, without long temporal delta
-  chains. There is no automatic deletion or history migration.
-- Reads validate stored and logical hashes, lengths, shape and dtype. Arrays restore
-  with immutable byte backing. A bounded decoded-chunk LRU, direct chunk reads and
-  streaming avoid requiring a complete decoded snapshot in RAM.
-- SQLite transactions coordinate writers and publish complete snapshots. Conflicting
-  results for one identity, corrupt records, missing chunks and exceeded limits are
-  errors. `backup_to()` makes a consistent independent copy to a new file.
-- `cached_temperature` and `cached_flexure` are optional wrappers outside the physics.
-  Keys include typed input bytes, resolved parameters, selected backend, package
-  source, loaded Python instructions and selected runtime binary identities.
-  Profiles and input descriptors remain in the stored manifest, not just a filename.
-  Source/instruction identity is rechecked before publication.
-
-SHA-256 here detects corruption and supports identity; it is not a signature or a
-security boundary against an attacker controlling the process or database. The
-local directory must be owned/trusted. Binary runtime files are assumed immutable
-for the lifetime of a process. This is not a recursively sealed historical runtime.
-
-### Example: optional persistent cooling
-
-Use an existing compatible environment; no command here installs dependencies.
-The directory must already exist. Values below are **synthetic test values**, not
-an Earth profile. The storage limits are example execution limits, not owner budgets.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#storage-contract). Use an existing trusted directory. `store=None` avoids persistent I/O; `backend="reference"` explicitly selects diagnostic reference evaluation. Storage limits are examples, not owner budgets.
 
 ```python
 from pathlib import Path
@@ -1925,96 +484,9 @@ with ArrayStore(Path("existing-cache-directory") / "fields.sqlite", limits,
         store=store, backend="scipy", budget=WorkBudget(32*1024**2))
 ```
 
-The same call with `store=None` computes without persistent I/O. Imports use the
-`tectonics/src` layout; use a declared environment or a separately prepared editable
-installation. Normal requirements include NumPy, SciPy and `numba==0.65.1`.
-Blosc2 remains the explicit `storage` extra. No package auto-installs.
-Use `backend="reference"` explicitly for a diagnostic reference calculation.
-Blosc2's level 0-9 scale is not the direct Zstd level scale.
+### Cooling, rotation and flexure batches
 
-### Memory/storage limits
-
-Storage chunks are flat C-order pieces of a typed array, not physical boundaries.
-Non-native byte order is losslessly normalised to little endian. Shapes, signed
-zeros and categorical values are retained; masked/object/nonfinite arrays are
-refused. A mask can be a separately identified boolean dataset only when its
-scientific consumer actually supports that policy.
-
-`max_array_bytes` limits individual writes and complete snapshot materialisation;
-use `read_chunk()`/`iter_chunks()` for partial reads. `max_store_bytes` bounds
-retained database pages/records; provision **up to another database-sized rollback
-journal**, plus backups. SQLite cache and codec workspace are separate costs.
-Input arrays must not be mutated during a store write. Returned data can outlive
-an LRU entry, so caller-held arrays must still be counted in the application's RAM.
-
-This is result persistence, not a demonstrated restart of an evolving world. No
-Zstd dictionaries, global voxel engine, automatic GC, lossy history, GPU solver,
-distributed mechanics or old R5 conversion is introduced.
-
-## Optimised defaults (17 September 2026 follow-up)
-
-Normal calls use the tested accelerated implementation: `advect_thickness` selects
-Numba, while `half_space_temperature` and `cached_temperature` select SciPy.
-The explicit reference routes remain for independent verification. Missing
-dependencies cause an error, not silent fallback. The normal package requirements
-include these backends; no setup command runs or installs packages automatically.
-First-use compilation remains; compiler flags and numerical tolerances are unchanged.
-
-The default-selection change passed 82 focused checks (53 explicit reference,
-21 native and eight default/dependency checks) on Linux/Python 3.13.5.
-The complete storage/reuse suite was not rerun for this follow-up; the cache-wrapper
-default was checked structurally. Earlier full-suite records below remain historical.
-No benchmark, simulation, Windows run or remote publication accompanied this change.
-
-## Verification and evidence
-
-```sh
-# Existing NumPy environment: original 53 mathematical cases
-python -I -B tectonics/verify.py --core
-# Full suite, including compiled transport, with normal requirements and storage extra
-python -I -B tectonics/verify.py
-```
-
-The verifier refuses local `.pyc` files: `-B` alone prevents writes, not reads.
-It writes test details to stderr and a fresh versioned record to stdout. Missing
-required dependencies block full verification rather than silently skipping it.
-
-The 17 September delivery passed **93 tests (53 existing + 40 new), no failures,
-errors or skips**, on Linux/CPython 3.13.5/NumPy 2.3.5, with SciPy 1.17.0,
-Blosc2 4.3.3 and its Zstd 1.5.7. See
-[evidence](https://github.com/Atlantispy/atlas/blob/0590774b9d59fa9e6c9cba8f5306a3e2b9f6bc40/tectonics/evidence/memory-storage-tests.json). Tests include independent numerical
-references, masked/range regressions, allocation refusal, immutable restore,
-fresh-process cache reuse, changed-input identities, Zstd/palette round trips,
-concurrent writers, corruption/oversized decoding, rollback, and isolated backup.
-
-[Bounded measurements](https://github.com/Atlantispy/atlas/blob/0590774b9d59fa9e6c9cba8f5306a3e2b9f6bc40/tectonics/evidence/memory-storage-measurements.json) compare synthetic
-65,536-element kernels and a 1,179,648-byte three-field storage sample. They are not
-world-scale forecasts or physical validation. Transport reduced tracked peak
-allocations by about 22%, without a demonstrated timing improvement. The opt-in
-cooling backend was faster in warmed comparisons; its results were not bit-identical.
-Compression/deduplication gains depend on the field and must not be extrapolated.
-
-Windows/macOS, Python 3.12, other dependency builds, power-loss behaviour on other
-filesystems, large-world memory and geological realism were not verified here.
-The [first delivery record](evidence/DELIVERY.md) remains historical and unchanged.
-
-## Historical W01 development gate
-
-The earlier instruction to implement W01 stages 7–8 and pause W03 has been
-superseded by the delivered supported workflow and subsequent W03–W11 work.
-See [Scientific ownership and next work](#scientific-ownership-and-next-work)
-above for the current continuation. This does not close the separately held
-generated-dynamics/R4.4 acceptance.
-
-
-## Optimisations 4 and 5 — cooling and geometric batches
-
-The optimised defaults remain enabled: SciPy cooling and compiled Numba transport.
-Rotation now defaults to a reused immutable matrix (`backend="reference"` preserves
-its earlier formula). Cooling computes age-dependent lengths before broadcasting,
-then uses bounded sample batches. Flexure retains its verified FFT operator and
-fast contiguous path, adding bounded independent-load grouping and lazy batch
-consumption rather than an unproven backend replacement.
+[Contract and limitations](docs/OPTIMISATION_REFERENCE.md#delivered-optimisations-4-5). These are complete independent requests, not spatial tiles. `consume` is caller handling, not an Atlas API; discard consumed batches to bound retention.
 
 ```python
 # Ordinary calls use the selected optimisations without opt-in switches.
@@ -2029,12 +501,60 @@ for deflection_batch in operator.solve_batches(load_batches, budget=budget):
     consume(deflection_batch)
 ```
 
-`consume` represents the caller's chosen output handling, not a new Atlas function.
-Discard processed batches to keep total output retention bounded. No disk write,
-worker pool or background activity is started by these iteration APIs. The full
-array-returning methods still require memory for the entire returned array.
+### Persistence and memory boundaries
 
-[Decisions, limitations and obtained measurements](docs/OPTIMISATION_REFERENCE.md#delivered-optimisations-4-5)
-are maintained in the existing reference. The new tests are included by
-`python -I -B tectonics/verify.py`; no dependencies are installed by verification.
-No other optimisation-list item or physical mechanism is implemented here.
+Storage chunks are flat C-order typed-array pieces, not physical boundaries.
+Non-native byte order normalises losslessly; shapes, signed zeros and categorical
+values remain. Masked/object/nonfinite arrays refuse. A separate boolean mask
+requires explicit consumer support. `max_array_bytes` bounds writes and complete
+materialisation; use `read_chunk()`/`iter_chunks()` for partial reads.
+`max_store_bytes` bounds retained database pages/records. Allow another
+database-sized rollback journal plus backups; SQLite cache and codec workspace
+are separate. Inputs must remain unchanged during writes. Restored immutable
+arrays can outlive cache entries and still count as caller RAM.
+
+Identity checks use actual current source bytes, not timestamps. Corruption,
+identity conflicts, missing dependencies and exceeded limits fail explicitly.
+SHA-256 supports identity/corruption detection, not a signature or a security
+boundary against an attacker controlling the trusted directory/process. Runtime
+binaries are assumed immutable during a process. Result persistence is not proof
+of evolving-world restart; no automatic deletion or history migration follows.
+See [cache ownership](docs/OPTIMISATION_REFERENCE.md#cache-contract) and
+[storage/recovery](docs/OPTIMISATION_REFERENCE.md#storage-contract).
+
+## Verification and evidence
+
+```sh
+# Original mathematical core selection.
+python -I -B tectonics/verify.py --core
+# Complete software regression, not a world-generation command.
+python -I -B tectonics/verify.py
+# Complete regression plus bounded process-tree resource/platform acceptance.
+# Requires the explicit acceptance extra (psutil); installs nothing.
+python -I -B tectonics/verify.py --acceptance > item12-local.json
+```
+
+The verifier writes test details to stderr and a new versioned record to stdout.
+It refuses pre-existing local `.pyc` files: `-B` prevents writes, not reads.
+Missing required dependencies block verification rather than silently skipping it.
+[Focused profiles](#focused-regression-selections) do not establish full-suite or
+physical acceptance. Consult [current evidence](../docs/CURRENT_EVIDENCE.md), its
+[register](evidence/current-evidence.json) and [full-suite status](../docs/CURRENT_STATE.md#current-delivery-and-acceptance).
+Dated receipts describe bound sources, workload, runtime and platform; a README
+edit does not refresh them. Original records remain in [`evidence/`](evidence/),
+including the [first delivery](evidence/DELIVERY.md). Historical optimisation
+ratios are not whole-generator speedups or world-scale forecasts.
+
+## Delivery and licence
+
+Review changes against the intended baseline and preserve newer/unrelated files.
+Label update-only bundles and never run them standalone. Source publication,
+local integration, runtime compatibility and physical acceptance are separate.
+Never repin saved checkpoints or rewrite historical receipts. Optional visual
+outputs remain ignored; retained structured evidence and tracked historical logs
+stay intact.
+
+**Atlas-owned code is AGPL-3.0-only.** See [the licence](LICENSE),
+[project scope](../LICENSING.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
+PB2002 and other third-party material retain their own licences. The superseded
+Apache proposal is not an alternative grant.

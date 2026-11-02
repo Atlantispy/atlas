@@ -62,7 +62,7 @@ Other authority and evidence:
 
 - Current consolidated status (private evidence unavailable in this public snapshot), “Drivers, admission and proof tools”, “Item21 publication completed” and “Order and unchanged acceptance boundaries”; SHA-256 `be270e6898e0b1d5aa0c7d29065baf1d4df16ece34490f17d7c68a9d77d4339e`.
 - `D/STATE-NOTE.md`, wind-down section A: core evidence, historical wiring plan, remaining Route 2 choice and freeze/before-copy rules; SHA-256 `3556ac777b8fd632a68c6204575ca767b0e46600944d4a6c8391ce557cd6d312`.
-- `RV/tectonics/optimisation/IN-PROGRESS.md`, “Start gate sized by need”: retained core evidence and published wiring status. Use actual core code for the complete formula; its short gate summary is not a replacement specification.
+- [Selected caller source and retained evidence](../workbench/plan02/README.md), with the [Route2 admission contract](../workbench/plan02/ROUTE2_ADMISSION.md). Use actual core code and section 3 below for the complete formula; the retired progress-page summary was not a replacement specification.
 - Current queue protocol (private evidence unavailable in this public snapshot): execution, source-freeze and resource rules for any authorised work.
 
 Later authoritative decisions supersede historical status. Before implementation, verify the selected caller identities and dependencies rather than silently repinning changed files.
@@ -139,7 +139,7 @@ This remains a downstream obligation, not a Plan02 completion prerequisite.
 
 ## 5. Evidence and proportionate verification
 
-**Retained core evidence:** 23 tests and 43/43 planted mutants caught, as recorded in the Runner handoff and `IN-PROGRESS.md`. These counts describe that core revision; they are not fixed future test counts or proof of every caller. Preserve the published chain-r3 evidence described in the consolidated status and reuse it only while its tested scope, code, inputs and configuration remain valid.
+**Retained core evidence:** 23 tests and 43/43 planted mutants caught, as recorded in the historical Runner handoff. These counts describe that core revision; they are not fixed future test counts or proof of every caller. The retired progress summary remains in Git history. [Later selected-caller evidence](../workbench/plan02/README.md) has its own scope and must not be substituted for those earlier counts. Preserve the published chain-r3 evidence described in the consolidated status and reuse it only while its tested scope, code, inputs and configuration remain valid.
 
 The retained selected-adapter and changed-caller checks cover the mandatory refusal cases:
 

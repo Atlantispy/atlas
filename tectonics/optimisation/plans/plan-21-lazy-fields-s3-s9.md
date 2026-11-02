@@ -7,6 +7,8 @@ predeclared rule. [Issue #47](https://github.com/Atlantispy/atlas/issues/47) rem
 
 ## Scope
 
+Small S3 here means lazy D1-B rows. Heat S3's former unscoped metric-identity work is subsumed into Small S9; neither scope is an assembly-manifest section 5 structural/safety exclusion. Keep their actual dispositions distinct.
+
 - S3 serves the carried-start volume, geometry-error and exact fields lazily.
   Other operations use the bounded whole-row fallback. Renamed children retain
   their booked copy and cell identity. Admission and failed-read scratch stay funded.

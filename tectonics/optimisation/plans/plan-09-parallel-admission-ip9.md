@@ -14,6 +14,8 @@ This is not a new physical partitioning algorithm. The smoke's 969 chunks and 96
 
 **ip9 supersedes ip8 as the selected source.** The owner told Small that ip9 supersedes ip8 in N12; that message alone does not verify an assembly-manifest edit or final integration. The authoritative consolidated status records ip9 READY and q19 proof not run. No full-scale parallel speed result follows from READY or the retained small checks.
 
+The ip9-on-f2 choice is resolved. Geometry's confirmation that intervening stages do not write the selected differential/dual geometry sources remains an explicit receiving obligation alongside q19 proof. READY does not establish that confirmation; retain it at the actual composition boundary.
+
 The earlier `ck/scripts` freeze was lifted: CK/STATE.md records q11 PASS at 18:26 and explicitly says `ck/scripts no longer frozen`, before t9, smoke-s4 and READY. The later q19 waiter was released and then exited on the 18:45 hold without running its proof. The consolidated record subsequently lists q19 as queued, not launched. Do not restore the earlier q06/q11 wait as a current unresolved freeze, infer a new q25 dependency, or infer launch authority from queue status. Preserve the current owner/coordinator release conditions and the selected-source freeze during any future proof.
 
 This document authorises no launch, implementation, integration, hold release or publication. N9 remains PAUSED BY USER; fresh intervals and individual task/run holds remain binding.

@@ -1,161 +1,101 @@
-# Optimisation programme: review snapshot (16 Oct 2026)
+# Atlas optimisation programme
 
-Status: WORKING NON-CANON. This is a review snapshot, not the landed route. It is not runnable as-is.
+**WORKING NON-CANON.** Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance) for status, outstanding work and holds. This page supplies navigation and durable workflow contracts. Publication, component acceptance, installed delivery, runtime/default selection, scientific acceptance and Diadem canon are separate outcomes.
 
-The aim is exact, certified interval generation that runs fast enough for an interactive generator: under five
-minutes of wall time per interval on one Windows machine. Every change either keeps physical results bit-identical
-or changes only digests under field parity. No tolerance is relaxed, and no resource guard or step ceiling is raised.
+The engineering aim is exact, certified interval generation in under five minutes on one Windows machine. That is a target, not measured combined performance. Changes preserve exact results or an explicitly approved field/identity translation; they do not widen tolerances or resource limits.
 
 ## Layout
 
-| Folder | Contents |
-|---|---|
-| `composed-r2/src/atlas_tectonics/` | Full package copy of the integrated checkpoint build. Compare it against `tectonics/src/atlas_tectonics/`. |
-| `composed-r2/helpers/` | Composition helpers: runtime transforms, compact store and restart, heat ledger tables, transfer and admission code, plus their tests and probes. |
-| `composed-r2/composition.json` | The composition, with the pinned helper hashes. |
-| `drivers/` | Fresh and prepared interval drivers, launchers, reopen tools and their tests. |
-| `pending/<area>/` | Built candidates not yet in `composed-r2`: heat, pressure, kernels, storage, geometry. |
-| `workbench/` | Earlier composition stages and probe/measurement scripts. |
-| `docs/` | `COMPACT_EVERYWHERE_PLAN.md` (the 21-step plan) and the release-check and language plans. |
-| `MANIFEST.json` | Each file's origin in the private engineering tree. |
-| `SANITISED.md` | Files where local user paths or contact details were replaced. |
-| `CHANGELOG.md` | What changed, with MEASURED and PROJECTED results. |
-| `IN-PROGRESS.md` | Part-implemented work: state, location, what is left and the acceptance gate. |
-| `plans/` | Dated public projections (01-25) and `INDEX.md`; private execution plans retain authority. |
+| Location | Purpose |
+| --- | --- |
+| [`composed-r2/`](composed-r2/) | Historical checkpoint package, helpers and composition pins. |
+| [`drivers/`](drivers/) | Interval entry points, launch/reopen tools and tests; [continuation method](drivers/INTERVAL_CHAIN.md). |
+| [`pending/`](pending/) | Retained candidates and predecessors; the name does not establish present selection. |
+| [`workbench/`](workbench/) | Source constructors, component owner records, measurements and predecessor selections. |
+| [`docs/COMPACT_EVERYWHERE_PLAN.md`](docs/COMPACT_EVERYWHERE_PLAN.md) | Compact storage/restart design, ownership, measurement and completion contracts. |
+| [`docs/release/`](docs/release/) | [Check policy](docs/release/RELEASE-CHECKS.md), [fold](docs/release/FOLD.md), [languages](docs/release/LANGUAGES.md) and [landing expectations](docs/release/EXPECTATIONS.md). |
+| [`plans/`](plans/) | Dated public projections of private execution plans; directory below. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Concise historical changes. |
+| [`MANIFEST.json`](MANIFEST.json), [`SANITISED.md`](SANITISED.md) | Historical export origins and sanitisation record, not a live runtime manifest. |
 
-Source exports reuse existing identical public files where their import layout permits.
-Plan02 retains a local `start_gate.py` copy because its preserved callers import it
-beside them; its source map records that deliberate dependency copy.
+MANIFEST's document rows inventory the historical export. They do not require retired status/index pages to remain in the current checkout. Their earlier prose remains in Git history; consolidation does not repin that historical manifest.
 
-Plans 01 and 03 now include reviewed workbench successors and their focused test sources. The frozen composed-r2 helpers, live runtime and historical execution pins are unchanged. See the two plan completion sections for retained evidence and remaining launch/integration limits.
+## Plan directory
 
-Plan02's selected callers and collar metadata repair are retained in
-[`workbench/plan02/`](workbench/plan02/README.md). Its additive
-[prepared-construction v2 component](workbench/plan02/prepared-construction-v2-r3/README.md)
-emits the explicit historical-root/files-store bindings and supplies the operational
-public API used by Plan31. Bounded actual source/profile/API checks support this
-component integration. Individual-plan post-assembly re-verification is cancelled;
-the separately held native publication/cold reopen is not claimed. No main-package
-overlay, default enablement or run permission is applied.
+These links identify subjects and existing owners. Read status in the current-state table and detailed contracts/evidence in the linked records. A plan number, folder revision or larger member count does not select a runtime.
 
-Plan06's repaired exact wall twins, shared primitives, guarded hook and actual
-assembly tools are in [workbench/plan06](workbench/plan06/README.md). Retained
-technical checks passed, but the measured candidate was slower: D5 remains
-disabled. Final selected Plan31/N9 binding and collective review remain open.
+| Plan | Public plan or owner record |
+| --- | --- |
+| 01 | [Runner test isolation](plans/plan-01-runner-test-isolation.md) |
+| 02 | [By-need start gate](plans/plan-02-start-gate.md); [prepared-construction v2](workbench/plan02/prepared-construction-v2-r3/README.md) |
+| 03 | [q21 launch environment](plans/plan-03-q21-launch-environment.md) |
+| 04 | [N9 comparison tools and width](plans/plan-04-n9-width-tools.md); [bounded-width method](workbench/plan04/BOUNDED-WIDTH.md) |
+| 05 | [Heat correctness](plans/plan-05-q10-heat-correctness.md) |
+| 06 | [D5 exact arithmetic](plans/plan-06-d5-exact-arithmetic.md) |
+| 07 | [Pressure P1–P3](plans/plan-07-pressure-p1-p3-assessment.md) |
+| 08 | [Pressure P4](plans/plan-08-pressure-p4.md) |
+| 09 | [Parallel initial admission](plans/plan-09-parallel-admission-ip9.md) |
+| 10 | [Initial measurement reuse](plans/plan-10-measurement-reuse-n3.md) |
+| 11 | [Reader-admission overlap](plans/plan-11-stage-overlap-phase2.md) |
+| 12 | [Heat timings/profile](plans/plan-12-heat-q22-abba.md) |
+| 13 | [H3 certification](plans/plan-13-heat-kernel-h3-q25.md) |
+| 14 | [Heat finish and closure markers](plans/plan-14-heat-finish-closure-markers.md) |
+| 15 | [Heat-worker assessment](plans/plan-15-heat-worker-sweep-q01.md) |
+| 16 | [Geometry-worker assessment](plans/plan-16-geometry-parallel-assessment.md) |
+| 17 | [Geometry stacked parity](plans/plan-17-geometry-arithmetic-q23-q24.md) |
+| 18 | [Endpoint batching](plans/plan-18-geometry-endpoint-batching-q18.md) |
+| 19 | [Geometry candidates](plans/plan-19-geometry-fast-paths.md) |
+| 20 | [Diagnostic captures](plans/plan-20-diagnostic-captures-s2.md); [measurement and folded-DLL contract](workbench/plan20/README.md) |
+| 21 | [Lazy rows and sealed-mesh identity](plans/plan-21-lazy-fields-s3-s9.md) |
+| 22 | [Bounded page carry](plans/plan-22-storage-l3.md); [corrected-reader selection](workbench/plan22/README-r4.md) |
+| 23 | [Mapped sidecar reads](plans/plan-23-storage-mapped-reads-wp12.md) |
+| 24 | [Segment summaries and buffer pools](plans/plan-24-storage-segment-summaries.md) |
+| 25 | [Runtime arithmetic identity](plans/plan-25-runtime-identity-l4.md) |
+| 26 | [Fold contract and historical parity](docs/release/FOLD.md); [prepared/fresh receiving](workbench/plan26/README.md) |
+| 27–29 | N9 science, shared identity and live integration: [width](workbench/plan04/BOUNDED-WIDTH.md), [L4/C12/X1](plans/plan-25-runtime-identity-l4.md), [driver lineage](drivers/INTERVAL_CHAIN.md). Separate private plans are not supplied. |
+| 30 | [B17/item14 and guarded reads](workbench/plan30/s1a/README.md) |
+| 31 | [Query reporting](workbench/plan31/tier1/README.md), [final source/emitter](workbench/plan31/final/README.md), [explicit construction](workbench/plan31/final/r4/README.md) |
+| 32–38 | Booking, query-store decision, reprofile, retests, dispositions, landing and intervals: [assembly](pending/storage/assembly-manifest.md), [compact programme](docs/COMPACT_EVERYWHERE_PLAN.md), [expectations](docs/release/EXPECTATIONS.md), [driver](drivers/INTERVAL_CHAIN.md). Separate private plans are not supplied. |
+| 39 | [Release policy source and qualification](workbench/plan39/README.md) |
+| 40 | [Pressure arithmetic](workbench/plan40/pressure/FINDINGS.md) and [heat arithmetic](workbench/plan40/heat/FINDINGS.md), with their linked receiving routes |
 
-Plan04's installed comparator r24, dump r5, launcher and selected assembly
-tooling are in [workbench/plan04](workbench/plan04/README.md), with original/public
-hashes and test sources. Final Plan31 composition and authenticated field-proof
-binding remain open; readiness guards stay false and collective review is deferred.
+## Read source selections by their role
 
-Plan05's observer ownership repair, complete correspondence verifier, native
-launcher, physical-order repair and integrated q22 consumer are in
-[workbench/plan05](workbench/plan05/README.md). The corrected private pair agrees
-exactly. The scoped successor proof was subsequently accepted, and the
-successor execution on the same q22 ticket completed all 11 arms with PASS.
-[Plan12](plans/plan-12-heat-q22-abba.md) records the decision identities,
-execution scope and retained historical failures. Historical q10 FAIL and
-q32 NOT REPRODUCED remain preserved; the later selected source and scoped measurements are recorded below. This publication supplies source
-and truthful scoped results, not a runnable private profile or main-package overlay.
+The [Plans19–20 selection](workbench/plans19-20/README.md) and [645-member combined snapshot](workbench/combined-runtime-r1/README.md) are historical composition stages, with their own maps and receiving evidence. Neither is a universal current-source pointer. Later constructors authenticate their actual predecessors and write additive successors; they do not rewrite those maps or renew their receipts.
 
-The selected complete Plans10–12 private integration is exported in
-[workbench/plans10-12](workbench/plans10-12/README.md), including its earlier
-enabled source closure, original/public digest map and scoped retained results.
-The new profile requires its own eligible ROOT; final interval testing remains held.
+Plan31's [final source/emitter record](workbench/plan31/final/README.md) distinguishes its public composition from the separate private final component. The [explicit construction route](workbench/plan31/final/r4/README.md) uses a closed authenticated external context; the older context-free r2 API retains its own selection. Construction membership and Release membership differ. Source construction, prepared restart, installed production and desktop delivery retain separate entry points and qualification contracts. Select by actual consumer, inputs and authority, never by highest revision.
 
-The successor [Plans13–14 source integration](workbench/plans13-14/README.md)
-extends that selected closure with H3 certificate batches, Heat S1 finish reuse,
-exact projection witnesses and fresh/prepared markers. It preserves earlier source
-members and historical receipts, and includes the missing shared construction
-dependencies. H3 remains candidate-only; final assembly and held runs remain later.
+Source exports reuse identical public files where import layout permits. Plan02 deliberately retains adjacent `start_gate.py` for preserved callers. Sanitised public bytes do not authenticate private runs. Private inputs, checkpoints, codecs, libraries, profiles, execution receipts and coordination records are excluded; this tree alone is not a runnable historical installation.
 
-The [Plan16 geometry successor](workbench/plan16/README.md) extends the same
-selected closure with authenticated parent measurements and conditional four/six
-worker ceilings. Its sampled six-worker proof and native-entry preflight passed;
-all native source is preserved. The public regression exercises the actual
-helper functions on synthetic receipts without loading the private runtime.
+## Shared numerical and resource contracts
 
-The [Plan15 heat-worker successor](workbench/plan15/README.md) extends Plan16's
-complete selection with the measured eight-worker candidate and independently
-bound native observation. The [Plan17 source](workbench/plan17/README.md) adds
-operational r7, retained r4 overrun sources and corrected method notes. Both
-genuine geometry proofs and all nine comparisons are complete; the current selected
-geometry sources are preserved with no native/runtime delta. Final programme
-acceptance and held full intervals remain separate from this source publication.
+| Contract | Meaning |
+| --- | --- |
+| Numerical comparison | Exact field/number parity unless a specific approved identity translation or bounded N9 field exception applies; no blanket epsilon. |
+| Tree RSS / free memory | Existing optimisation-run limits: 12 GiB across parent and children, at least 1 GiB free physical memory. Parent-only RSS is insufficient. |
+| Logical accounting | 16 GiB total; applicable 256 MiB scope caps and paid lifetimes remain. This is not virtual-memory size. |
+| Start admission | Existing [by-need gate](plans/plan-02-start-gate.md#31-gate-arithmetic-and-guard-meanings): integer `P + ceil(P / 5) + 2 GiB`, qualifying matching-command observations and prescribed booking fallback; never clip predictions. The separate [Release sizing route](workbench/plan39/README.md#behaviour-and-integration) has its own contract. |
+| Record integer limit | 1 MiB = 8,388,608 bits, distinct from D5's `2**27`-bit arithmetic ceiling. |
+| Continuation width | Interval 1 uses `gate()`; N≥2 uses `gate_next()`. W(N+1) ≤50% and W(N+2) ≤100% of the record limit. No 25% gate or override; an old residual is not a successor guarantee. |
+| Accepted steps | 256 is a ceiling, not a convergence target or permission for a truncated interval. |
+| Runtime seed | Runtime-importing processes require `PYTHONHASHSEED=0` and fail closed unless `sys.flags.hash_randomization == 0`. `-I`/`-E` ignore that setting and are unsuitable for those children; isolated non-runtime helpers are separate. |
 
-The current [Plans19–20 source selection](workbench/plans19-20/README.md)
-combines Plan19's two accepted geometry changes with Plan20's eight capture-helper
-members, preserving the later heat and worker selection. It references existing
-unchanged files instead of copying a second package. Plan19's declared private
-validation is accepted; Plan20 A/B is accepted with the folded DLL binding still
-pending. This is source integration on the review branch, not an executable
-release, a main-package overlay or a new combined-runtime validation result.
+Preserve full loaded-source identities, immutable stores and refusal/cancellation semantics. Short hashes are references only. Higher RAM for measured speed is acceptable within actual memory/admission contracts; report both. Keep comparable source/configuration, timing, RAM/disk and observation scope. Do not sum overlapping gains, extrapolate samples to whole-run proof or turn missing observations into zero.
 
-The [Plan18 endpoint and retention source](workbench/plan18/README.md) adds
-cross-support endpoint lookahead at one or two workers, plain support-header
-retention, a measured 2,112 B ownership-carrier booking and a retained-handle
-diagnostic to the compact route. Its exact endpoint-loop replay is a detached
-measurement, not a whole-interval or integrated-runtime result. Larger-interval
-retained capacity was still open in that predecessor selection; the combined
-snapshot below supplies the subsequent partition-sized allowance.
+## Composition and delivery workflow
 
-The additive [Plan40A pressure examination and source successor](workbench/plan40/pressure/FINDINGS.md)
-covers all ten arithmetic groups and selects the reviewed core plus G4.
-Full-interval jets still supply curvature bounds; a separately funded midpoint
-value calculation keeps the original rounding/constant semantics and full
-fallback. Complete synthetic core calls save 27.35–61.94%, with a further small
-marginal G4 gain. The [new explicit source map](workbench/plan40/pressure/implementation/SOURCE-MAP.json)
-is connected through an [opt-in runtime constructor and entry](workbench/plan40/pressure/implementation/runtime/README.md)
-to the existing fresh-profile loader and pressure worker. The constructor
-preserves the frozen predecessor, external dependencies and live defaults.
-Component measurements do not establish whole-IV performance or scientific acceptance.
+Follow the actual command-to-consumer route: entry, imports, implementation, fixtures, startup, ownership, cleanup and downstream readers. Inspect the changed route before expensive checks. Isolated imports, mocks, hashes or unexecuted branches do not establish readiness. Reuse adequate source-bound evidence while inputs, configuration and consumer scope remain valid. New comparison harnesses retain required independent refutation and planted failures before proof.
 
-The completed [combined source snapshot](workbench/combined-runtime-r1/README.md)
-brings those selections together in 645 members, with 22 changed copies and 623
-references to existing public files. It adds per-partition retained-carrier pools,
-capture reservation/lifetime fixes and selected-source runner/bootstrap repairs.
-Focused receiving, bootstrap, materialiser and prepared-entry fixture checks
-support their stated seams. The prepared fixture does not execute a full prepared
-workload. The qualified fold and installed-package delivery remain separate;
-no application update, runtime admission, whole-interval performance or scientific
-acceptance follows from source snapshot completion. Historical maps and component
-measurements are retained unchanged.
+The retained programme order is Plan31 selected-source freeze → Plan26 final fold/parity and Plan31 build acceptance → Plan34 authorised reprofile → Plan35 applicable retests → separately authorised Plan38 outcomes → Plan36 final dispositions → Plan37 authorised landing. Plan32 follows comparable measurements, including later interval peaks. Plan39 is later/separate and does not gate Plans31/35/37/38. Dependencies release no run or landing holds.
 
-The [guarded-read component](workbench/plan30/s1a/README.md) extends the policy
-selection while preserving its open and publication boundaries. The
-[query-stage source constructor](workbench/plan31/tier1/README.md) then adds complete
-fresh/restart reporting with sticky truncation. These constructors authenticate
-their predecessors and write new layouts; they do not replace historical maps
-or select an installed runtime. The [combined storage gate](workbench/plan22/gate/README.md)
-uses explicit input locations and fixed source pins, and refuses false success
-from failed child exits, skipped coverage or an empty changed suite.
+A source-bound replay candidate and an accepted final freeze/fold differ. A candidate name is not acceptance; an approved test-only replay route can precede final component integration. R1 development/smoke and ticketed parity retain their explicitly selected input generations. The final X1 generation and mandatory last-stage R1 fold preserve the approved L4 timing fallback in [Plan25](plans/plan-25-runtime-identity-l4.md#implementation-and-composition-contract). C18's later rebase amendment remains in the [assembly manifest](pending/storage/assembly-manifest.md), superseding its earlier no-rebase statement.
 
-## Not included
+Composition requires justified dispositions and integration of selected work, not enabling every candidate. Preserve the [conditional reprofile list and structural/safety exclusions](pending/storage/assembly-manifest.md#5-switched-off-items-to-re-test-at-the-final-reprofile-19r), including 13A's not-built status; profile scoping is not an implemented cache. WP17 may remain off without making future counts a prerequisite for the first separately authorised run. The [compiler decisions](docs/release/LANGUAGES.md) retain distinct denominators: about 15% residual interface CPU for K1+K2, versus about 10% interval CPU plus 5% projected interval saving per speed-driven group; K4 has a separate capacity/packaging route.
 
-- Private inputs, checkpoints, sealed interval stores, run records, receipts, logs, captured data and working notes.
-- Helpers and drivers expect those inputs and the pinned identities. Sanitised files no longer match the hashes pinned
-  in `composition.json` or in run records.
-- Sanitised public bytes do not authenticate historical runs.
-
-## Package overlay
-
-Not applied. `composed-r2`'s package and the current `tectonics/src/atlas_tectonics/` differ in both directions.
-`remake` has lines that `composed-r2` lacks (`integration_ledger`, `integration_transfer`, `reuse`), and some
-I04/I05 modules differ. Reconcile them file by file before any landing.
+Each plan reports its actual outcome, blocker or residual state under its authentic existing identity into the final evidence/disposition record. Coverage reporting is broader than execution dependencies and creates no cyclic prerequisite. Retain unresolved, held, unbuilt, excluded and cancelled states literally. Cancelled individual post-assembly checks are not passes and do not remove assembly/fold owners' necessary checks. [Landing expectations](docs/release/EXPECTATIONS.md#3-decision) retain bound refusal, successor state-ID and explicit cell-mean-approximation obligations. Reconcile the actual package file by file before an authorised overlay: `composed-r2` and the main package differ in both directions.
 
 ## Plan publication authority
 
-The private execution plans and their bound owner evidence govern implementation,
-run clearance and scientific acceptance. Public `plans/` files are dated,
-sanitised projections for readers; they are not a second execution ledger.
-Their differing bytes are expected after redaction, public explanation and
-explicitly dated result updates. Git history retains earlier public versions.
+Private execution plans and bound owner evidence govern implementation, run clearance and scientific acceptance. Public plans are dated sanitised projections, not a second execution ledger. Their differing bytes are expected after redaction, explanation and dated result updates. Reopen relevant current authority on authorised implementation resume; a summary or old manifest row cannot override a later decision. A queue ticket grants no launch authority, and release of one hold does not release another.
 
-Execution-contract or status corrections must first be reconciled against the
-private owner record, then reflected in the affected public summary. Public-only
-link, spelling and privacy repairs remain publication changes. A later export
-must merge those repairs and preserve newer scoped results; blindly copying a
-private plan over a public file is not a valid publication procedure. Compare
-the exact source and destination versions before replacement. Source maps bind
-exported implementation bytes; a public plan never substitutes for those maps
-or private execution evidence. Publication does not release run holds.
+Reconcile execution-contract or acceptance corrections against owner evidence before reflecting them publicly. Public-only link, spelling and privacy repairs remain publication changes. Later exports preserve those repairs and newer scoped results: compare exact source/destination versions before replacement. Source maps bind implementation bytes; public prose never substitutes for maps or private evidence. Keep current status in CURRENT_STATE and history in CHANGELOG; Git retains superseded prose. This page grants no run, repin, hold release, package overlay or publication permission.

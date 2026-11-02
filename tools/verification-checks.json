@@ -1,6 +1,6 @@
 {
   "schema_version": "verification-checks/v1",
-  "scope": "Candidate-verifier scheduling regression boundaries only",
+  "scope": "Candidate-verifier scheduling boundaries and the explicitly reused documentation/publication checks; not a full repository catalogue",
   "coverage": "PARTIAL",
   "coverage_evidence": [],
   "checks": [
@@ -117,6 +117,391 @@
       "id": "atlas.dev.candidate.tier-coverage",
       "purpose": "A valid requested tier still executes, with commit-guard and worker-context numerical fixtures both retained; tier none and skip-static keep their declared meanings.",
       "entry_point": "python -B -m unittest discover -s tests -p test_development_tools.py -k CandidateVerifierTests -v"
+    },
+    {
+      "id": "atlas.docs.content-and-consumers",
+      "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when consolidating or retiring documentation.",
+      "module": "Edited Markdown entry points and their incoming links",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "Manual review plus read-only path/anchor and example comparison over the explicit Git change set",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "documentation review"
+        ],
+        "trigger": "Changed documentation, retirement paths or their consumers.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "NOT_APPLICABLE",
+        "control": "Manual owner review of explicit changed scope"
+      },
+      "on_failure": "Broken/misdirected links, lost unique contracts, changed examples or private material require correction before accepting the documentation batch.",
+      "affected_by": [
+        "Edited content",
+        "Linked destinations/anchors",
+        "Actual source/evidence authority",
+        "Consumer and privacy requirements"
+      ],
+      "evidence": [
+        "README.md",
+        "docs/CURRENT_STATE.md",
+        "tectonics/README.md",
+        "tectonics/optimisation/README.md"
+      ]
+    },
+    {
+      "id": "atlas.publication.coding-safety",
+      "purpose": "Check the selected direct-import/adapter contracts and required source/document paths without executing Atlas.",
+      "module": "tools/check_coding_safety.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B tools/check_coding_safety.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Source-only guide/tool changes under AGENTS.md; affected route or inventory changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "Nonzero refusal for a missing required path or changed mapped contract; inspect the actual change, never regenerate blindly.",
+      "affected_by": [
+        "tools/check_coding_safety.py",
+        "tools/coding_safety_manifest.json",
+        "docs/CODING_SAFETY.md"
+      ],
+      "evidence": [
+        "tools/coding_safety_manifest.json",
+        "docs/CODING_SAFETY.md"
+      ]
+    },
+    {
+      "id": "atlas.publication.coding-safety-controls",
+      "purpose": "Qualify the coding-safety checker including malformed, escaping or linked sources and changed adapter/import contracts.",
+      "module": "tests/test_coding_safety.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tests -p test_coding_safety.py -v",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Checker, inventory semantics or relevant environment changes; missing valid qualification evidence.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure rejects checker qualification; a skipped OS fixture remains missing coverage.",
+      "affected_by": [
+        "tests/test_coding_safety.py",
+        "tests/test_coding_safety.py",
+        "tools/check_coding_safety.py"
+      ],
+      "evidence": [
+        "tests/test_coding_safety.py",
+        "tools/check_coding_safety.py"
+      ]
+    },
+    {
+      "id": "atlas.publication.personal-paths",
+      "purpose": "Refuse personal home paths in public tectonics evidence and method documentation. This declared scan excludes other entry-point documents.",
+      "module": "tools/check_public_paths.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B tools/check_public_paths.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Public tectonics documentation/evidence or writer changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "Nonzero with the offending path; owner privacy review still covers changed documents outside the scan.",
+      "affected_by": [
+        "tools/check_public_paths.py",
+        "tools/check_public_paths.py",
+        "docs/CODING_SAFETY.md"
+      ],
+      "evidence": [
+        "tools/check_public_paths.py",
+        "docs/CODING_SAFETY.md"
+      ]
+    },
+    {
+      "id": "atlas.publication.personal-path-controls",
+      "purpose": "Qualify path recognition, explicit public placeholders and failure reporting.",
+      "module": "tests/test_public_paths.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tests -p test_public_paths.py -v",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Path guard or relevant input/normalisation behaviour changes; missing valid qualification evidence.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure rejects this guard qualification.",
+      "affected_by": [
+        "tests/test_public_paths.py",
+        "tests/test_public_paths.py"
+      ],
+      "evidence": [
+        "tests/test_public_paths.py"
+      ]
+    },
+    {
+      "id": "atlas.publication.normalised-candidate",
+      "purpose": "Export exact Git-normalised candidate bytes from a private index and run evidence, line-ending and declared regression coverage; refuse external filters/hooks/submodules.",
+      "module": "tools/check_before_commit.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B tools/check_before_commit.py --staged [--tests PATTERN]",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Final intended commit candidate; invalidate for affected candidate bytes, Git configuration, guard/dependency or evidence inputs.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "Nonzero means the guard run failed or refused; report each constituent result and never relabel it as a passing guard.",
+      "affected_by": [
+        "tools/check_before_commit.py",
+        "tools/check_before_commit.py",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ],
+      "evidence": [
+        "tools/check_before_commit.py",
+        "docs/CODING_SAFETY.md#before-every-commit"
+      ]
+    },
+    {
+      "id": "atlas.publication.candidate-guard-controls",
+      "purpose": "Qualify candidate/index isolation, normalisation, selected coverage and external-program refusal using disposable Git fixtures.",
+      "module": "tests/test_check_before_commit.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tests -p test_check_before_commit.py -v",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Guard/Git behaviour or relevant environment changes; missing valid qualification evidence.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure rejects guard qualification; expected failing child fixtures are asserted by their parent tests.",
+      "affected_by": [
+        "tests/test_check_before_commit.py",
+        "tests/test_check_before_commit.py"
+      ],
+      "evidence": [
+        "tests/test_check_before_commit.py"
+      ]
+    },
+    {
+      "id": "atlas.publication.current-evidence",
+      "purpose": "Match declared current receipt/source digests and retain honest historical/superseded/invalid statuses. Byte identity does not qualify runtime or science.",
+      "module": "tools/check_current_evidence.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "tools/check_before_commit.py -> python -B tools/check_current_evidence.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Final candidate guard; registered evidence or its supporting claims change.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "Nonzero on invalid register or mismatched required binding; never repin a historical receipt to clear failure.",
+      "affected_by": [
+        "tools/check_current_evidence.py",
+        "tools/check_current_evidence.py",
+        "tectonics/evidence/current-evidence.json",
+        "docs/CURRENT_EVIDENCE.md"
+      ],
+      "evidence": [
+        "tools/check_current_evidence.py",
+        "tectonics/evidence/current-evidence.json",
+        "docs/CURRENT_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "atlas.publication.digest-line-endings",
+      "purpose": "Reject CRLF-rendered evidence digests and platform-newline receipt writers in the Git-normalised export.",
+      "module": "tectonics/tests/test_digest_line_endings.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "tools/check_before_commit.py -> unittest discover -s tectonics/tests -p test_digest_line_endings.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Final candidate guard or digest/writer contract changes.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure rejects the line-ending check.",
+      "affected_by": [
+        "tectonics/tests/test_digest_line_endings.py",
+        "tectonics/tests/test_digest_line_endings.py",
+        "tools/check_before_commit.py"
+      ],
+      "evidence": [
+        "tectonics/tests/test_digest_line_endings.py",
+        "tools/check_before_commit.py"
+      ]
+    },
+    {
+      "id": "atlas.publication.plan05-export",
+      "purpose": "Check Plan05 public source membership/digests, transformation provenance, hygiene, retained outcome limits and its slice of the historical global manifest.",
+      "module": "tectonics/tests/test_plan05_publication.py",
+      "process": "Documentation consolidation and source publication qualification",
+      "entry_point": "python -B -m unittest discover -s tectonics/tests -p test_plan05_publication.py",
+      "owner": "Atlas documentation/publication owner",
+      "consumers": [
+        "Repository users",
+        "Change reviewers"
+      ],
+      "classification": "QUALIFICATION_ONLY",
+      "classification_reason": "Required documentation/publication qualification under AGENTS.md and CODING_SAFETY; not an enabled scientific or end-user runtime check.",
+      "classification_refs": [
+        "AGENTS.md",
+        "docs/CODING_SAFETY.md#5-source-only-check-and-change-procedure"
+      ],
+      "execution": {
+        "stages": [
+          "development"
+        ],
+        "trigger": "Changes to that export, its maps/manifest slice or its public consumer contract; explicitly selected qualification only.",
+        "release_state": "NOT_APPLICABLE",
+        "debug_state": "NOT_APPLICABLE",
+        "actual_enabled": "ON_WHEN_INVOKED",
+        "control": "Explicit owner invocation; no hook, automatic CI or runtime enabling is added."
+      },
+      "on_failure": "unittest failure reports unsupported publication integrity. Existing baseline failures remain failures; they are not repaired by changing unrelated navigation or repinning evidence.",
+      "affected_by": [
+        "tectonics/tests/test_plan05_publication.py",
+        "tectonics/tests/test_plan05_publication.py",
+        "tectonics/tests/test_plan04_publication.py",
+        "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
+        "tectonics/optimisation/MANIFEST.json"
+      ],
+      "evidence": [
+        "tectonics/tests/test_plan05_publication.py",
+        "tectonics/tests/test_plan04_publication.py",
+        "tectonics/optimisation/workbench/plan05/SOURCE-MAP.json",
+        "tectonics/optimisation/MANIFEST.json"
+      ]
     }
   ]
 }

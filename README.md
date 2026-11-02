@@ -8,7 +8,7 @@ Atlas is intended to become a **world-agnostic generator**, developed primarily 
 
 **Current status: experimental, WORKING NON-CANON.** Atlas has implementations across 18 modelling categories, connected execution infrastructure and a runnable public component-development package. It is not yet a complete, independently validated world generator. Mountain and wider terrain realism remain unaccepted.
 
-[Product and scale](#product-and-scale-contract) · [The 18 categories](#the-18-modelling-categories) · [How it works](#how-atlas-works) · [Progress](#what-has-been-achieved) · [Outputs](#what-atlas-produces) · [Try it](#try-the-public-development-package) · [Roadmap](#development-direction)
+[Product and scale](#product-and-scale-contract) · [The 18 categories](#the-18-modelling-categories) · [How it works](#how-atlas-works) · [Current state](docs/CURRENT_STATE.md#current-delivery-and-acceptance) · [Outputs](#what-atlas-produces) · [Try it](#try-the-public-development-package) · [Roadmap](#development-direction)
 
 ## What Atlas is trying to achieve
 
@@ -58,8 +58,8 @@ The product is a coherent route through appropriate scientific producers,
 execution infrastructure and spatial delivery machinery—not whichever directory
 has the highest revision. The retained shared builders consume existing terrain
 and water inputs; current bounded native experiments do not yet supply a proven
-world-scale replacement. **Selecting and implementing that production connection
-is still the next task.** World generalisation and eventual planetary geometry,
+world-scale replacement. The production connection and its remaining work are tracked in
+[current state](docs/CURRENT_STATE.md). World generalisation and eventual planetary geometry,
 coverage and physics remain additional design requirements. Production hardware,
 RAM/disk/time budgets, requested/selected resolutions, per-process supports, masks
 and physical horizons must be specified before a production-size run. This contract does not authorise one.
@@ -93,101 +93,28 @@ The following list follows the exact category order in the [snapshot contract](e
 
 ## How Atlas works
 
-For the detailed stage-by-stage scientific explanation, start with
-[How Atlas tectonics is made](tectonics/docs/HOW_TECTONICS_IS_MADE.md). It breaks
-W01–W12 into individual methods, including research/software references, code,
-checks and their limits, plus seeded-world creation and the separate experimental
-force-driven route. Its [physical integration chapter](tectonics/docs/how-it-works/06-physical-integration.md)
-explains the newer I01 connections: rock strength and motion; heating and weakening;
-changing column geometry; gravitational driving and water loading; melt and
-transition accounts. Each explanation links the scientific basis to the actual
-method and its checks. W01–W12 name the component work packages; I01–I12 name the
-integration programme. I01's method choices, contracts and bounded feasibility
-are selected; its bounded controls check the code against analytical cases,
-refinement and conservation, not against independent physical observations, and a
-connected whole-world engine and physical-event acceptance remain later work.
-I02 now connects the shared state and package-owned coupled solver to atomic
-state-and-exchange commits, one accepted clock, save/reopen/continue and a small
-command workflow for one bounded column case. Its restart precision and timing
-checks are corrected, and affected controls have fresh source-bound evidence.
-[Section 8 of that chapter](tectonics/docs/how-it-works/06-physical-integration.md#8-accept-save-and-continue-one-evolving-state)
-explains the connected route. See the current-state record for acceptance and
-platform coverage.
-The [spherical network method](tectonics/docs/I03_SPHERICAL_NETWORK.md) describes I03:
-one closed network of plates, boundaries and material beside that accepted state,
-moved under supplied plate rotations, with bridges to regional models and supplied
-plate splits, merges and ridge jumps. Explicit compatible junction trajectories
-generate curved boundary ends, and material born and consumed within one interval
-is accounted for without inventing an endpoint cell. Current acceptance is recorded
-in [current state](docs/CURRENT_STATE.md).
-The [causal-start method](tectonics/docs/I04_CAUSAL_START.md) describes I04 Part A
-and the reviewed, repaired reduced-belt feedback route, accepted for its declared scope:
+Start with [How Atlas tectonics is made](tectonics/docs/HOW_TECTONICS_IS_MADE.md)
+for the scientific explanation in generation and dependency order. Its linked
+chapters explain inputs, methods, references, outputs and what the checks establish.
+The [physical integration chapter](tectonics/docs/how-it-works/06-physical-integration.md)
+connects material history, strength, motion, heat, geometry and accepted-state recovery.
+Specialist contracts are linked from that guide and the [package README](tectonics/README.md).
 
-- a declared starting family on that network;
-- a plate force balance driven by gravitational potential energy from the same columns and by declared slab pull;
-- the [port record](tectonics/docs/I04_I05_PORTS.md) shared with I05.
+The wider generator uses explicit recipes and identified component ports rather
+than a universal pipeline that automatically runs every category. The
+[snapshot contract](engineering/work/generator_upgrade_r11/snapshot.py) distinguishes
+supplied constraints, modelled products and unknowns;
+[R31](engineering/work/generator_upgrade_r31/registry.py) connects selected operations,
+while [R12](engineering/work/generator_runtime_r12/) supplies authenticated execution
+and reuse. [Native R5](engineering/work/native_terrain_r5/) shares immutable closed
+history between experiments. Shared stores are dependencies, not disposable caches;
+the [R5 runbook](docs/R5_OPERATIONS.md) covers their operational boundaries.
 
-The [moving-state method](tectonics/docs/I05_MOVING_STATE.md) describes the I05a prerequisite: each cohort's
-history and heat carried with that network, and the current properties returned to I04.
-This is a methods guide, not another progress log.
+Use [current delivery and acceptance](docs/CURRENT_STATE.md#current-delivery-and-acceptance)
+for implemented scope, reviewed acceptance, evidence and remaining work. Execution,
+numerical verification, physical validation and Diadem canon remain separate decisions.
+Historical measurements live with their owner records, not in this front page.
 
-### 1. Bind the inputs before computing
-
-A recipe identifies its world, snapshot, calendar, spatial frame, vertical reference and scenario. Component ports declare the quantity, unit and spatial/temporal support expected on each connection. Source files and selected implementations have recorded identities.
-
-This helps prevent a result for one area, season or scenario being mistaken for an interchangeable input elsewhere. The [snapshot contract](engineering/work/generator_upgrade_r11/snapshot.py) distinguishes modelled products, supplied constraints and unknown results, and carries unresolved issues alongside the output.
-
-### 2. Connect explicit component operations
-
-A recipe forms a **dependency graph**: each operation names what it consumes and produces. The [R31 registry](engineering/work/generator_upgrade_r31/registry.py) connects current and retained producers through that interface. For example, the geological route can construct material columns, apply a declared terrain/water forcing and expose a derived terrain view.
-
-This is not a single universal pipeline that automatically runs all 18 categories. A recipe selects the relevant operations and must provide the required inputs. Connections still need meaningful physical assumptions; matching interface fields alone is not scientific validation.
-
-### 3. Preserve numerical meaning
-
-The native terrain work uses [explicit numerical policies](engineering/work/native_terrain_r2/numerics.py), including fixed-quantum integer accounting and deterministic allocation for represented quantities. [Evolution checks](engineering/work/native_terrain_r2/evolve.py) compare alternative step resolutions, track error budgets and refuse unsupported conditions.
-
-Not every solver uses exact arithmetic: other components retain their disclosed floating-point methods and tolerances. Likewise, a drainage-topology change that requires explicit treatment is a reason to stop, not permission to force continuation. The current native accepted-step ceiling remains 256.
-
-### 4. Reuse work without disguising changed inputs
-
-The [execution machinery](engineering/work/generator_upgrade_r24/executor.py) schedules ready operations after their dependencies finish; bounded workers support independent work. Ordered terrain intervals and shared-state operations still require their intended sequencing.
-
-The [R12 runtime](engineering/work/generator_runtime_r12/) combines invocation identities, authenticated cache records and continuation checks. A cached result is not accepted simply because its filename exists. Declared dependency or source changes affect reuse, while timing and reuse diagnostics remain distinguishable from scientific content.
-
-### 5. Branch experiments without duplicating closed history
-
-[Native terrain R5](engineering/work/native_terrain_r5/) stores identical closed compressed history records once and lets independent controls reference them. Branches share those immutable bytes while retaining separate current states. Control publication checks for stale or changed state before replacement.
-
-A shared store is therefore a dependency, **not a disposable cache**. The [R5 operational tools](docs/R5_OPERATIONS.md) inventory dependencies and support byte-preserving backup, verification and staged recovery. They do not replace the original runtime's validation of a scientific checkpoint.
-
-### 6. Review results before accepting them
-
-Execution completion, numerical checks, scientific validation and fictional-world canon are separate outcomes. Source-bound receipts make a result inspectable; they do not make it physically true. Atlas preserves this distinction in the [connected executor](engineering/work/generator_upgrade_r24/executor.py) and [current-state record](docs/CURRENT_STATE.md).
-
-## What has been achieved
-
-The optimisation review branch now supplies a completed
-[645-member combined source snapshot](tectonics/optimisation/workbench/combined-runtime-r1/README.md)
-covering endpoint lookahead, partition-sized retention, bounded captures and the
-selected geometry, pressure and heat consumers. It also includes runner and
-worker-bootstrap source-authentication repairs. Focused checks support these
-implementation seams; the qualified fold and installed-package delivery remain
-separate outstanding work. Component results, source integration and remaining
-delivery limits are distinguished in [current state](docs/CURRENT_STATE.md).
-
-Progress below describes implemented work or explicitly recorded evidence, not a new test run triggered by this README.
-
-| Area | Demonstrated progress | Remaining boundary |
-| --- | --- | --- |
-| Connected generator | Implementations through **generator upgrade R31**, with registered routes across the 18 categories and explicit source/operation identities. R31 replaces six topography routes while retaining other operation identities. | Connected component coverage is not an accepted end-to-end world. |
-| Execution infrastructure | **Runtime R12** provides tested graph execution, authenticated caching and worker behaviour; the wider orchestration also retains its connected scheduler. | The public component tests are not full R31 integration tests. |
-| Native terrain development | R2 addressed numerical representation; R3 reduced repeated copying; R4 selected interval prediction; R5 introduced shared immutable history. | R4 changes requested/rejected history; full historical-trajectory identity must not be inferred. Native terrain is only one part of Atlas. |
-| Shared-history storage | In three recorded matched, already-loaded branch comparisons, R5 reduced creation time from **3.70 to 0.68 seconds** and added disk from **8.00 to 0.88 MB**. These are original-workspace records; no receipt is included in this public repository. | Ordinary interval timing was essentially unchanged. This is a branch/storage result, not a solver speed-up or whole-world forecast. |
-| Recovery support | Dependency inventory, deduplicated byte backup, independently anchored verification and new-directory restoration, with **49 synthetic recovery tests** recorded passing. | A real Windows backup and isolated native restart still need their own evidence. |
-| Independent development | A clean offline public setup recorded **277 passing tests**: 127 runtime, 25 selected numerical and 125 tooling tests, with no failures, errors or skips on Linux/CPython 3.13.5. | This is a dated, explicitly selected test set, not all Atlas tests or a claim about every operating system. |
-
-Evidence: [native development and measurement limits](docs/CURRENT_STATE.md), [recovery evidence](docs/R5_OPERATIONS_EVIDENCE.md) and [independent-development evidence](docs/INDEPENDENT_DEVELOPMENT_EVIDENCE.md). [R31 integration test source](engineering/work/test_r31_registry.py) is supplied for inspection; it is **not a public-checkout passing-run receipt**. Original-environment results and publicly runnable component evidence must not be conflated. Successive timing ratios have different scopes and must not be added or multiplied into a headline generator speed-up.
 
 ## What Atlas produces
 
@@ -236,7 +163,8 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 | [`engineering/work/`](engineering/work/) | Geological, tectonic, terrain, environmental, biological and human-system implementations and their tests. |
 | [`shared_generator/engine/`](shared_generator/engine/) | Retained shared generator builders, contracts, validators and export tools. |
 | [`development/`](development/) | Public development package, environment/profile declarations and small fixtures. |
-| [`tectonics/`](tectonics/README.md) | Native tectonics package: W01–W12 methods, New World, I01/I02 integration, and its tests, tools, cases and source-bound evidence. |
+| [`tectonics/`](tectonics/README.md) | Native tectonics package: usage, commands and navigation to scientific methods, tests, tools, cases and source-bound evidence. |
+| [`tectonics/optimisation/`](tectonics/optimisation/README.md) | Optimisation methods, plan navigation and retained source selections; delivery status remains in current state. |
 | [`desktop/`](desktop/README.md) | Windows Electron build of the Atlas UI and its tectonics backend (unsigned development build; a rebuild needs the UI owner's snapshot, which is not in this repository). |
 | [`tectonics/requirements/`](tectonics/requirements/) | [Windows tectonics environment pins and metadata checks](docs/TECTONICS_ENVIRONMENT.md), distinct from the offline public-component environment and exact native restart identity. |
 | [`tools/`](tools/) and [`tests/`](tests/) | Development entry point, source-wiring checks, R5 recovery tools and focused tooling tests. |
@@ -244,14 +172,13 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 
 ## Development direction
 
-The priorities are capability and trustworthy evidence, not simply increasing revision numbers:
+The [Atlas roadmap](docs/ATLAS_ROADMAP.md) sets out the production connection,
+regional proof and eventual world-independent expansion. The
+[product and scale contract](docs/PRODUCT_AND_SCALE_CONTRACT.md) defines coverage,
+resolution and budget decisions; the [module scopes](docs/MODULE_SCOPES.md) distinguish
+planned non-tectonics work. Use [current state](docs/CURRENT_STATE.md) for the active
+checkpoint and outstanding work. These documents do not authorise a simulation.
 
-1. **Review the product and scale contract.** The [revised contract](docs/PRODUCT_AND_SCALE_CONTRACT.md) separates the world-agnostic goal and eventual planetary scope from current Diadem-specific implementations. It specifies configurable, budget-dependent resolution including 1 m or finer where feasible, not universal 100 m/10 m targets. Documentation completion is not production acceptance.
-2. **Establish one end-to-end production path.** Use Diadem as the initial case while separating world-specific inputs from reusable interfaces. Select terrain/hydrology producers and delivery interfaces, distinguishing supplied inputs from generated fields. Choose base/detail and process supports against a budget; simplify affected adapters rather than undertaking a blanket rewrite.
-3. **Prove a representative regional case when authorised.** Select its footprint, external dependencies, physical criteria and finite resource budget before execution. Demonstrate cross-boundary accounting, useful outputs and feasible resource use; small reference cases support rather than substitute for that evidence.
-4. **Expand capability and independent reproducibility.** Extend the verified path to other worlds, categories, finer detail and larger extents, eventually assessing whole-planet support. Pair each with suitable geometry, processes, runtime packages, public fixtures and budget/physical evidence. Portability must not masquerade as historical restart compatibility.
-
-These are development priorities, not completed features, delivery dates or permission to start simulations. Optimisations should follow measured bottlenecks in the relevant workload, not speculative whole-generator speed claims.
 
 ## Scope, safeguards and contribution
 
@@ -261,7 +188,7 @@ Private coordination and source-owner records, personal tools, credentials, inst
 
 The full scientific routes still depend on excluded components, including the recursively sealed scientific bundle and the original bound checkpoint codec. Native compressed history uses a pinned Windows Zstandard library. Copying these source folders to another operating system does not establish compatibility. The public package deliberately does not fabricate replacements for historical dependencies.
 
-Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAFETY.md) before changing code. Identify AI assistance, preserve unrelated work and provide focused, reproducible evidence. Keep the following boundaries intact:
+Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAFETY.md) before changing code. Preserve unrelated work and provide focused, reproducible evidence. Keep the following boundaries intact:
 
 - Do not disable hash/source verification, silently repin checkpoints, relax acceptance tolerances or raise the native 256-step ceiling to obtain a pass.
 - Preserve retained predecessors and immutable history dependencies. Backup, restoration, cleanup and migration require explicit scope; a copied control alone is not a restartable delivery.
