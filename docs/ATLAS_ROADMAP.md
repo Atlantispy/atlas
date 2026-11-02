@@ -261,6 +261,30 @@ Reuse and complete the existing shared machinery rather than building a separate
 | Execution and resources | Use parallelism where work is independent and expected savings exceed startup/communication costs. Estimate before starting; the previously discussed roughly two-minute trigger is a heuristic to evaluate, not a universal law or reason to wait until a full serial run has finished. Count aggregate worker/native memory. |
 | Testing and measurement | Focus on changed behaviour and affected joins; broaden only for shared-system risk. Use deterministic controls, independent physical comparisons, withheld cases, scientific parity and meaningful visual checks where relevant. |
 
+### Delivery order with the I modules
+
+The minimum shared foundation comes before substantial implementation of the next
+I-module slice; the remaining shared engineering develops alongside the modules:
+
+1. Complete the current successful IV1 and old/new comparison under its existing
+   delivery, admission and scientific controls.
+2. In the first implementation slice of the next new or resumed I-module
+   assignment, establish or reuse the authoritative package, versioned selected-route
+   configuration, real producer-to-consumer fixture and repeatable build/install/check
+   route. The module owner connects this foundation before expanding the module.
+3. Deliver that module through the shared route immediately. Each following I-module
+   and Phase C slice reuses and extends the same machinery as its actual consumers
+   require; retire replaced paths as their consumers migrate.
+
+Completing every shared-engineering proposal or migrating every legacy route is
+not a prerequisite for starting the next module. Shared engineering is part of
+module delivery from its first slice, rather than a separate project after the I
+modules. Independent bounded tooling and fixture maintenance keeps its own scope;
+this sequence adds no current-IV1 prerequisite and changes no hold or run authority.
+The [programme roadmap](https://github.com/Atlantispy/atlas/issues/3) and
+[shared-engineering issue](https://github.com/Atlantispy/atlas/issues/38) retain the
+existing workflow and ownership boundaries.
+
 ### Assessed code consolidation
 
 **Assessment complete; implementation not started.** Static review of source snapshot

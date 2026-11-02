@@ -154,7 +154,8 @@
         "Retired qualification-test methods and retained test/case contracts",
         "Client profile registration/model/effort, explicit review/bridge limits and PR policy links",
         "Retention rules must not grant current-run/store access, lift holds or weaken required checks.",
-        "Proposed consolidation must distinguish assessed candidates from implemented changes, preserve distinct consumers/identities, and add no run prerequisite or deletion release."
+        "Proposed consolidation must distinguish assessed candidates from implemented changes, preserve distinct consumers/identities, and add no run prerequisite or deletion release.",
+        "Shared foundation begins in the first next I-module slice after current IV1/comparison; later shared work extends module delivery without a blanket legacy-migration or current-IV1 prerequisite."
       ],
       "evidence": [
         "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
@@ -168,7 +169,8 @@
         ".github/PULL_REQUEST_TEMPLATE.md",
         "tectonics/optimisation/drivers/INTERVAL_CHAIN.md",
         "AGENTS.md",
-        "docs/ATLAS_ROADMAP.md#assessed-code-consolidation"
+        "docs/ATLAS_ROADMAP.md#assessed-code-consolidation",
+        "docs/ATLAS_ROADMAP.md#delivery-order-with-the-i-modules"
       ]
     },
     {
