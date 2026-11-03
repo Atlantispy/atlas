@@ -2,7 +2,7 @@
 
 **Contract ID:** `ATLAS-PRODUCT-SCALE-1` · **Revision:** 2 · **Date:** 15 September 2026
 
-**Status:** PROPOSED CONTRACT FOR REVIEW; project remains WORKING NON-CANON.
+**Status:** PROPOSED CONTRACT FOR REVIEW.
 
 **Source review basis:** [`3ed5dd95b20150553528d9e83c0520b7617652df`](https://github.com/Atlantispy/atlas/tree/3ed5dd95b20150553528d9e83c0520b7617652df).
 
@@ -124,7 +124,7 @@ Private locations and data belong in private manifests, not this public document
 | Input family | Required declaration |
 | --- | --- |
 | Frame and domain | World/scenario/snapshot/calendar IDs; world geometry and extent; horizontal frame and units; vertical datum and units; origin, axis directions, cell-centre convention; domain, land/water/unknown masks and coverage geometry; mask IDs/hashes. A planetary profile must declare surface geometry/size and valid distance, area and neighbour definitions; a planar profile must declare its finite boundaries. |
-| Selected spatial authorities | Terrain generation and lineage; water/coast/catchment topology; relevant political and settlement registries; per-layer/per-footprint authority and permitted overrides. An input labelled “working” is not canon. |
+| Selected spatial authorities | Terrain generation and lineage; water/coast/catchment topology; relevant political and settlement registries; per-layer/per-footprint authority and permitted overrides. Draft inputs do not override approved source authority. |
 | Physical state and forcing | Selected geological/material state, initial terrain or its generative recipe, atmospheric/water conditions, rates versus amounts, time intervals, coefficients and their evidence or declared assumptions. Applicable gravity, rotation, atmospheric and other world parameters must be explicit where a model consumes them. Supplied, generated and modelled forcing remain distinguishable. |
 | Biological and human inputs | Species parameters, range/stock/occupancy definitions, population baselines, crop/land commitments, resources, political choices, service/network capacities and constraints required by the selected operations. Narrative does not automatically supply numerical parameters. |
 | External boundary exchanges | Which neighbouring areas/catchments/coasts contribute water, sediment, heat, people or goods; their supports, intervals, input hashes and conservation/transfer rules. A cropped region does not erase its upstream sources. |
@@ -466,6 +466,6 @@ retained path inventory, and exact patch-application checks. Unchanged source-de
 observations are retained from revision 1. Earlier coding-safety test results are
 not presented as newly executed tests. See this revision's review packet/check log. No simulation, performance benchmark,
 new public/historical execution binding, codec installation, live data read,
-Windows integration, licence decision or physical/canon acceptance is part of
+Windows integration, licence decision or physical acceptance is part of
 this change. Source links identify the reviewed definitions; test files linked
 elsewhere may be inspection material rather than reproducible public run evidence.

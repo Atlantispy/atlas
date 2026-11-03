@@ -1,9 +1,32 @@
 # Coding Atlas without losing the active route
 
-Reviewed against public commit `15a8e8f217a84ebedc47489dfe9a213efe2baa67`.
+Navigation and contract descriptions reconciled against public source snapshot
+`d7bc3c277235eff4f1a9f31646debb08adf77862` on 3 November 2026.
 This is a source-navigation and change-review map, not an installed runtime,
 complete call graph, scientific sign-off or replacement for execution bindings.
-The current status remains [WORKING NON-CANON](CURRENT_STATE.md).
+See [current delivery and acceptance](CURRENT_STATE.md#current-delivery-and-acceptance).
+
+### Legacy document and format bindings
+
+Atlas uses engineering and scientific status, without worldbuilding canon labels.
+Existing saved-world formats still emit the legacy literal `WORKING NON-CANON`;
+that value is a compatibility field, not an Atlas acceptance category. Changing
+the format needs a separately scoped consumer migration.
+
+Thirteen frozen method documents also retain their original wording because live
+receipt guards or selected constructor fixtures consume their exact bytes. The
+[I01 matrix](../tectonics/docs/I01_CLOSURE_MATRIX.md#1-how-to-read-it) identifies
+the column chain and Plan39 fixtures; the W06–W09 workflow owners interpret their
+four frozen designs. Mutable owner documents carry current meaning. Documentation
+maintenance does not silently repin those inputs or renew scientific evidence.
+
+Historical export inventories, including `optimisation/MANIFEST.json` and the
+document rows in the Plan02, Plan22 gate and Plan40 pressure publication records,
+retain publication-time prose identities. They do not authenticate today's
+mutable explanations. Selected implementation payloads retain their actual
+constructor checks. The Plan04–Plan06 current-publication maps also cover prose;
+their public document digests and disclosed transformations follow edited
+documentation, while original-source pins and scientific receipts stay intact.
 
 ## 1. Choose the route before reading the stack
 
@@ -169,7 +192,7 @@ native thread ownership is permitted by this execution policy.
   placeholder codec, tolerance relaxation or silent rebind is acceptable.
 - Sanitised public sources cannot be labelled byte-identical to historical private
   execution bindings. A portability implementation needs its own reviewed identity
-  and focused evidence. Code approval does not grant scientific or canon acceptance.
+  and focused evidence. Code approval does not grant scientific acceptance.
 
 ## 5. Source-only check and change procedure
 
@@ -329,11 +352,13 @@ retains complete assertion/provenance details.
 | E7 heat account | Exact balance is over patch heat; piece projection rounding has its own exact residual, and split support is recorded. No tolerance replaces exact balance. |
 | E8 physical growth witness | The original fixture's apparent growth was at most 9.09e−13 K round-off against 175 K contrast. A separate hot-base (+50 K) fixture supplies genuine growth; unchanged start/end/zero refusal and passing controls remain. |
 | E9 properties | Fixtures explicitly write patch heat; P1 opts into cell means. Corrupt 30-epsilon reference density refuses when a physical field is supplied. |
-| E10 approximation | I04 feedback explicitly uses `allow_cell_mean=True`; the exact default refuses unsupported trace input. State this approximation wherever that feedback control is described. |
+| E10 approximation | The accepted comparison required explicit opt-in for legacy cell-mean controls. Published routes differ: primary `tectonics/src` labels compatible bitwise-structure cell means without an opt-in argument; composed-r2 `moving_columns` defaults to exact material support and exposes `allow_cell_mean=True` only for an explicit legacy approximation. Published composed feedback uses `material_trace_support` without that opt-in, so it is not a mean-column control. See the [route-specific P1 contract](../tectonics/docs/I04_I05_PORTS.md). |
 
-At landing rerun the existing `rm/reconcile/expect.py` comparison and refuse any
-looser assertion bound. Bring relevant S-line tests and documentation with the
-method change. Legacy remake records may open with different IDs; an old I05
+For a landing that affects these expectations, reuse an adequate unchanged
+comparison or rerun the affected owner comparison with its actual inputs. The
+original `rm/reconcile/expect.py` is a private comparison route, not a command
+supplied by this public checkout. Refuse any looser assertion bound and bring the
+relevant S-line tests and documentation with the method change. Legacy remake records may open with different IDs; an old I05
 state without per-column temperatures cannot continue. These contracts do not
 authorise editing tests to disguise a rejected method or silently migrating state.
 

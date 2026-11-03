@@ -1,6 +1,6 @@
 # W06 Step 4 — changing plate-motion histories
 
-22 September 2026. WORKING NON-CANON. This extends the frozen
+22 September 2026. This extends the frozen
 [W06 design](W06_SPREADING.md), [birth geometry](W06_BIRTH.md) and
 [cooling/support adapter](W06_COOLING.md). The Step 1 design bytes and numerical
 gates are unchanged. Checks and measured performance are recorded in

@@ -1,6 +1,6 @@
 # I01: nonlinear belt-to-boundary motion admission
 
-27 September 2026. WORKING NON-CANON. A bounded extension of the
+27 September 2026. A bounded extension of the
 [reviewed D6 specification](I01_TRANSITIONS.md#3-continental-separation-atlasrift-decoupling-handoffv1).
 Earlier source-bound files and evidence are unchanged. This is one numerical
 prerequisite for a handoff, not a physical rupture law or an implemented world.

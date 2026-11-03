@@ -1,6 +1,6 @@
 # I01: dry columns to gravitational driving traction
 
-Status: **WORKING NON-CANON**, bounded D1/D5 connection. The new helper calculates
+Bounded D1/D5 connection. The helper calculates
 support and gravitational potential energy (GPE) from the same material and
 thermal columns, then supplies calculated traction to the retained D1 torque
 solver. It is not an I04 world-evolution implementation.

@@ -1,6 +1,6 @@
 # Plan40A: pressure arithmetic examination
 
-WORKING NON-CANON. The selected numerical sources have completed code review and controlled component measurement. The selected I2 receiving combination is **core G1/G2/G3/G7/G10 plus G4**. This source package does not enable a live/default method, alter the selected Plans19–20 map, establish scientific acceptance, or release the separate full-IV/native holds.
+The selected numerical sources have completed code review and controlled component measurement. The selected I2 receiving combination is **core G1/G2/G3/G7/G10 plus G4**. This source package does not enable a live/default method, alter the selected Plans19–20 map, establish scientific acceptance, or release the separate full-IV/native holds.
 
 ## Decision and measured scope
 

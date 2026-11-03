@@ -1,6 +1,6 @@
 # Plan17: exact geometry arithmetic and qualified parity
 
-WORKING NON-CANON. Plan17's requested source integration and bounded geometry
+Plan17's requested source integration and bounded geometry
 proof obligations are complete; this revision supplies their source publication. Both genuine parity proofs and all nine
 comparisons are qualified: q23 plus six repeats, and q24 plus three cross-checks.
 The confirmed r4 source and bounded component integration are retained.

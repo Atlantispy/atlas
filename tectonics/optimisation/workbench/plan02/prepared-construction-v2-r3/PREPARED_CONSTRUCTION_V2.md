@@ -1,6 +1,6 @@
 # Prepared construction and explicit restart bindings
 
-WORKING NON-CANON. These construction tools prepare source and profile metadata.
+These construction tools prepare source and profile metadata.
 Construction, receiving qualification, native publication and independent cold
 reopening, scientific acceptance and publication of source are separate states.
 The long positive native publication/reopen validation remains held.

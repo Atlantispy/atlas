@@ -1,6 +1,6 @@
 # W03 increment 1: finite-plate cooling and thermal-age columns
 
-22 September 2026. Implemented locally, WORKING NON-CANON. This completes the
+22 September 2026. Implemented locally This completes the
 selected **constant-property thermal-column increment**, not all W03, empirical
 Earth/Diadem calibration, evolved topography or mature R4.4 acceptance.
 

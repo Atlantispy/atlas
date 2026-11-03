@@ -1,6 +1,6 @@
 # Plan 06: repaired exact wall arithmetic
 
-WORKING NON-CANON. **Source snapshot; D5 is disabled. Collective review is deferred.**
+**Source snapshot; D5 is disabled. Collective review is deferred.**
 The repaired implementation and private construction are complete. This directory
 publishes their sources; it does not install an overlay into the main package or
 supply a runnable scientific profile.

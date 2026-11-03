@@ -1,6 +1,6 @@
 # W04 step 4: fixed spatially variable rigidity
 
-22 September 2026. WORKING NON-CANON, local unreleased `remake` work.
+22 September 2026. local unreleased `remake` work.
 Implemented and optimised for the stationary, planar **1D** W01-W03 support
 projection. This extends [finite regions](W04_FINITE_REGIONS.md); it does not
 change the existing fast uniform-rigidity routes. Subsequent [combined acceptance](W04_WORKFLOW.md#combined-supported-workflow-acceptance)

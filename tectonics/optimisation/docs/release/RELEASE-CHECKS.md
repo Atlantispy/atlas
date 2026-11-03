@@ -2,7 +2,12 @@
 
 Thread "Release-mode check policy", 16 Oct 2026. Answers Michael's request: decide which checks stay on in the
 packaged **release** build and which run only in **strict** (debug, checkout, tests, scientific evidence).
-This is a decision and design deliverable. Nothing in source-bound code was changed.
+This retains the 16 October decision/design baseline for the original composed-r2
+bytes. “Today”, source line numbers and “none started” below refer to that baseline.
+The later [Plan39 source integration](../../workbench/plan39/README.md) implements
+part of this policy with its own selection; packaged parity, closure, runner/fold
+and desktop wiring remain unqualified. Release is not the default. This design
+capture itself changed no source-bound code.
 
 Paths: `S/` = `R/composed-r2/src/atlas_tectonics/`, `H/` = `R/composed-r2/helpers/`,
 R = `T/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1`.
@@ -221,9 +226,12 @@ Three things could change between two boundaries.
   result is never published.
 - The residual case is a *transient* patch-and-restore between two boundaries. Strict per-call checks catch it only if
   a verify happens to fall inside the window.
-- Release closes that case with a ship-time static check run in strict CI on the release bytes. The check finds no
+- The proposed installed-build policy requires a ship-time static check in strict CI on the release bytes, finding no
   assignment to another atlas module's attributes or registered constants, no `setattr` on modules and no
   `mock.patch`.
+  This is a bounded static policy, not a proof of arbitrary Python data flow.
+  Plan39's current closure still refuses unresolved imports; its source controls
+  do not establish the actual packaged no-rebinding or publication claim.
 
 **(c) Stored data.**
 - Byte authentication (B6) and data-identity hashing (B7) stay on.

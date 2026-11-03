@@ -1,6 +1,6 @@
 # Plan 06 implemented exact wall twins, r3
 
-WORKING NON-CANON. This revision implements the accepted DESIGN-r2 contracts and
+This revision implements the accepted DESIGN-r2 contracts and
 the accepted 19 October D6 decision. This is an additive source snapshot.
 Collective review is deferred. Technical validation and run safeguards remain.
 Historical CK sources, r1 failures and smoke results are preserved.

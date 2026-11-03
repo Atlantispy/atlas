@@ -1,6 +1,6 @@
 # Atlas tectonics package
 
-**WORKING NON-CANON.** This isolated package supplies scientific components,
+This isolated package supplies scientific components,
 explicitly bounded connected workflows, command tools and source-bound evidence.
 It imports neither `engineering/work` nor `shared_generator`; those are separate
 Atlas routes. Static spherical geometry, regional evolution and a physically
@@ -10,7 +10,7 @@ The version string is `0.1.0.dev42`. It was not incremented for later integratio
 modules and is not a release or acceptance marker. Receipts bind actual source
 and execution identities. Read [current delivery and acceptance](../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 for reviewed scope, platform coverage, holds and remaining work, including I04/I05a.
-Numerical checks, physical acceptance and Diadem canon are separate outcomes.
+Numerical checks and physical acceptance are separate outcomes.
 
 [Scientific guide](docs/HOW_TECTONICS_IS_MADE.md) · [Environment](#tectonics-environment) ·
 [Commands](#commands) · [API examples](#api-examples) · [Evidence](#verification-and-evidence)
@@ -25,8 +25,8 @@ current delivery status belongs in the current-state record.
 | Question | Maintained explanation |
 | --- | --- |
 | Coordinates, geometry, descriptions and reference materials | [Foundations chapter](docs/how-it-works/01-foundations.md), [specialist contracts](docs/FOUNDATIONS.md) |
-| Transport, cooling, compaction, loads and support | [Tectonic processes](docs/how-it-works/02-tectonic-processes.md) |
-| Regional mechanics, recovery and resource ownership | [Coupling and reliability](docs/how-it-works/03-coupling-and-reliability.md) |
+| Transport, cooling, compaction, loads and support | [Material, heat and support foundations](docs/how-it-works/01-foundations.md) |
+| Regional mechanics, recovery and resource ownership | [Regional mechanics](docs/how-it-works/02-tectonic-processes.md#w07-calculate-slow-regional-deformation), [coupling and reliability](docs/how-it-works/03-coupling-and-reliability.md) |
 | Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification), [portable bundles](docs/NEW_WORLD_BUNDLE.md) |
 | Experimental force-driven convection | [Dynamics chapter](docs/how-it-works/05-experimental-dynamics.md), [scientific plan](docs/TECTONICS_PLAN.md) |
 | Coupled physics, shared state, exchanges and accepted time | [Physical integration](docs/how-it-works/06-physical-integration.md), [I02 workflow](docs/I02_WORKFLOW.md) |
@@ -58,7 +58,9 @@ files in [`requirements/`](requirements/): use the
 [recreate commands](../docs/TECTONICS_ENVIRONMENT.md#recreate-an-environment) in the
 [tectonics environment record](../docs/TECTONICS_ENVIRONMENT.md). The commands below
 instead install floating versions within the `pyproject.toml` ranges. Linux and
-Python 3.13 are not recorded environments ([current status](../docs/CURRENT_STATE.md)).
+Python 3.13 have no current pinned qualification; their older receipts retain
+their historical scope ([environment limits](../docs/TECTONICS_ENVIRONMENT.md),
+[current status](../docs/CURRENT_STATE.md)).
 
 From the repository root on Linux/macOS:
 
@@ -104,15 +106,21 @@ Use the existing verifier with the tested environment for the changed boundary:
 | `--i02-quick` | I02 tests excluding only the four full timing-harness integration tests. |
 | `--i02-measurement` | Those four real-workload measurement, restart and failure-propagation tests. |
 | `--regional3d` | Regional 3-D component, solver and evolution test modules. |
+| `--quick` | Full discovery or one focused profile with only the registered measured slow tests omitted; reports a quick selection, not a full gate. |
 
 For example, `python -I -B tectonics/verify.py --i02-quick` records the actual
 selected test IDs, timing and source identities. The quick and measurement
-selections together cover the complete I02 selection. Use `--i02` when changing
-its workflow, restart or measurement boundaries; quick-only is not equivalent
-coverage. Existing W01/W04/W05/W06 profiles are unchanged, and **no option still
-means the full suite**. Focused profiles neither loosen tolerances nor establish
-physical or whole-generator acceptance. Do not compare their timings as though
-they ran equivalent work.
+selections together cover the complete I02 selection. Choose the selection that
+covers the changed boundary and its affected consumers; use `--i02` when complete
+I02 coverage is required. Quick-only is not equivalent coverage. The separate
+general `--quick` option can combine with the focused profiles in this table;
+it additionally omits their registered slow tests and cannot combine with
+`--core`, `--native`, `--acceptance` or the legacy W01/W04/W05/W06 profiles.
+[Development tools](../docs/DEVELOPMENT_TOOLS.md#when-the-full-gate-is-still-required) owns that
+selection policy. Existing W01/W04/W05/W06 profiles are unchanged, and invoking
+the verifier **without options runs the full suite**. Focused profiles neither
+loosen tolerances nor establish physical or whole-generator acceptance. Do not
+compare their timings as though they ran equivalent work.
 
 For repository navigation/planning edits, the
 [before-commit guard](../docs/CODING_SAFETY.md#before-every-commit) can avoid
@@ -561,10 +569,13 @@ for deflection_batch in operator.solve_batches(load_batches, budget=budget):
 Storage chunks are flat C-order typed-array pieces, not physical boundaries.
 Non-native byte order normalises losslessly; shapes, signed zeros and categorical
 values remain. Masked/object/nonfinite arrays refuse. A separate boolean mask
-requires explicit consumer support. `max_array_bytes` bounds writes and complete
-materialisation; use `read_chunk()`/`iter_chunks()` for partial reads.
+requires explicit consumer support. `max_array_bytes` bounds the complete snapshot
+on writes and full materialisation, not each field independently. Partial reads
+through `read_chunk()`/`iter_chunks()` check each declared array against that limit
+without materialising the complete snapshot.
 `max_store_bytes` bounds retained database pages/records. Allow another
-database-sized rollback journal plus backups; SQLite cache and codec workspace
+database-sized rollback journal and any explicitly required recovery copy;
+SQLite cache and codec workspace
 are separate. Inputs must remain unchanged during writes. Restored immutable
 arrays can outlive cache entries and still count as caller RAM.
 

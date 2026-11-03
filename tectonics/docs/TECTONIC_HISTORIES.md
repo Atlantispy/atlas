@@ -1,7 +1,9 @@
 # Tectonics continuation Step 4: supported dated histories
 
-WORKING NON-CANON, 23 September 2026. Implementation is in
+23 September 2026. Implementation is in
 `atlas_tectonics.tectonic_history` and `tectonic_history_codec`.
+[Current state](../../docs/CURRENT_STATE.md) owns subsequent repair/integration
+status and holds; the numerical and timing records below retain their dated scope.
 
 ## Connected scope
 
@@ -40,7 +42,8 @@ reference convention or replace supplied input bytes with a callback.
 `run(through=i)` completes through an optional output index; `run()` completes the
 schedule. Each returned `TectonicHistoryOutput` contains the original typed
 `.result`, `.index`, `.time_s`, `.output_id` and `.checkpoint_id`. `load(i)` restores
-an existing output without computing a missing one. Explicit foreign checkpoint
+an existing output without computing a missing one, returning `None` when it is
+absent. Explicit foreign checkpoint
 IDs refuse. Closing a history does not close its borrowed physical preparation.
 
 Create the producer and `ArrayStore` beneath the same explicit
@@ -65,15 +68,16 @@ there is no lossy compression or pickle execution. The existing store supplies
 lossless compression and exact chunk deduplication. Histories do not copy the
 entire accumulated output sequence into every new checkpoint: each record has one
 parent link, with only the latest output kept live. Existing factor/preparation
-reuse remains active for missing outputs. Native thread, 128 MiB accounted work,
-128 source-file and 256-output limits are unchanged. Accounted bytes are not RSS.
-The later [A3 capacity repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
-raised the source-file limit to 512; the other limits stated here are unchanged.
+reuse remains active for missing outputs. Native thread, 128 MiB accounted work
+and 256-output limits are unchanged. The
+[A3 capacity repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
+raised the original 128 source-file limit to the current 512. Accounted bytes are
+not RSS.
 
-**Every published checkpoint can be restored under the budget that published it
-(R4 repair, 30 September 2026 candidate).** Checkpoints are immutable and recovery
+**Publication admits fresh-session restoration under the publishing budget
+(R4 repair, introduced 30 September 2026; subsequently integrated).** Checkpoints are immutable and recovery
 always finds the latest one, so a checkpoint that its own budget could not restore
-would block that store for good; a larger store budget cannot rescue it, because a
+would block automatic continuation within the fixed cap; a larger store budget cannot rescue it, because a
 history refuses budgets above 128 MiB. Before the repair this happened: restoring
 reserved three times the retained result plus 512 KiB, then the store read
 workspace and its output envelope, then the codec's own restoration, while
@@ -147,8 +151,8 @@ admitted restoration envelope equals the actual restoration peak on every route.
 known/unknown signed heat, pressure and signed-zero handling, malformed/nonfinite
 records, immutable payloads and bounded cancellation/resource release.
 
-The reproducible timing driver is `tools/check_tectonic_history.py`; its new report
-is `evidence/tectonic-history-r1.json`. It compares three already-completed outputs
+The reproducible timing driver is `tools/check_tectonic_history.py`; the original
+report is `evidence/tectonic-history-r1.json`. It compares three already-completed outputs
 with latest-checkpoint recovery on the same prepared producer. It includes fresh
 history ownership, source verification, complete result hashing and store reopen
 for recovery. Upstream producer-input construction and borrowed preparation are
@@ -184,6 +188,8 @@ the measured execution and focused recovery tests used Windows.
 - [Wickert (2016), gFlex](https://gmd.copernicus.org/articles/9/997/2016/): modular imposed-load/heterogeneous-lithosphere response. The existing absolute-equilibrium W04 semantics remain unchanged; a dated workflow does not turn them into accumulated displacement increments.
 - Existing Atlas W05/W06/W07/W08 workflows, `regional_checkpoint` and `ArrayStore`: reused publication, typed snapshot, resource and source-identity conventions rather than introducing another storage engine.
 
-Next: W10 tectonics validation, W11 performance/scale, then W12 generator assembly.
+Subsequent [W10 validation](W10_VALIDATION.md) and
+[bounded W12 assembly](W12_ASSEMBLY.md) retain their own delivered scope;
+[the integration plan](INTEGRATION_PLAN.md) owns remaining coupled execution.
 The held R4.4 campaign, source-bound historical reports and downstream scientific
-ownership are unchanged.
+ownership are unchanged. No old next-stage instruction starts new work.

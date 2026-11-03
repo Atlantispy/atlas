@@ -1,8 +1,12 @@
 # Public postfold runtime constructor source
 
+This is the predecessor source snapshot. [Current delivery](../../../../../../docs/CURRENT_STATE.md)
+identifies the selected successor. This maintained guide can differ from the
+publication-time documentation digest in its original source map.
+
 This source-only counterpart retains the existing generic folded-runtime constructor and capture interfaces. Its four substitutions in the closed five-role fold table select the publication fold, façade validator, parent fold and parity sources. The fixture role is unchanged. Every function/class definition and the capture adapter remain unchanged. The original generic constructor and the separately selected local source-consumer candidate remain preserved.
 
-The publication tools have different raw identities from their local counterparts. Their source mapping does not turn a local B qualification or fold receipt into publication-source qualification. The selected publication fold source is [`fold_r12.py`](../../../../docs/release/fold/r10/fold_r12.py), with its [source map](../../../../docs/release/fold/r10/SOURCE-MAP.json). This directory's [source map](SOURCE-MAP.json) records all five fixed report roles and the reversible derivation.
+The publication tools have different raw identities from their local counterparts. Their source mapping does not turn a local B qualification or fold receipt into publication-source qualification. The original selection named `tectonics/optimisation/docs/release/fold/r10/fold_r12.py` and its sibling source map; those predecessor files are not supplied in this checkout. This directory's [source map](SOURCE-MAP.json) retains all five fixed report roles and the reversible derivation. The [fold contract](../../../../docs/release/FOLD.md) owns the maintained method.
 
 No authority records, runnable configuration, native payload, historical data, execution environment or fold result are supplied here. The exact compiler utility and prepared-profile producer required by the unchanged accepted component pins are not supplied by this export; the known repository source counterparts have different identities and are not substituted. The prepared producer also requires its exact historical-input sibling. The B façade export retains an explicit unshipped-authority location and refuses absent selected authority. This export neither fills that location nor supplies a fallback.
 

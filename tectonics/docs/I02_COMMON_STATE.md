@@ -1,6 +1,6 @@
 # I02.1: the common physical state around the finite-strain column
 
-**30 September 2026. WORKING NON-CANON. I02.1 and I02.2 (the package-owned solver
+**30 September 2026. I02.1 and I02.2 (the package-owned solver
 and its continuation, including the prepared-runner ownership correction, section 9)
 are reviewed and accepted for their bounded scope. I02.3–I02.8 are now integrated
 locally, described in [I02 workflow](I02_WORKFLOW.md); the current-state record
@@ -249,12 +249,13 @@ in the three downstream admission/breakup tools. All 13 extraction checks pass
 in 1.388 s; 206 methods pass across the eleven focused suites. Two old
 source-freshness methods correctly fail because their receipts predate the move.
 The nine affected campaign records are historical, not silently rebound. The
-dependency-ordered campaign refresh remains due once I02.2b stabilises, before
-current campaign acceptance. This review establishes ownership/execution parity,
+dependency-ordered campaign refresh was subsequently captured as successor
+evidence, as recorded in section 10 and [I02 workflow](I02_WORKFLOW.md#8-evidence-effects).
+This extraction review establishes ownership/execution parity,
 not completion of the continuable workflow or a new speedup.
 
-**I02.2b: one continuable core, connected to this envelope (implemented; ownership
-correction awaiting review).** The same implementation is now split around one
+**I02.2b: one continuable core, connected to this envelope (reviewed, including the
+prepared-runner ownership correction).** The same implementation is now split around one
 immutable prepared `Runner` in
 [`integration_evolution`](../src/atlas_tectonics/integration_evolution.py), and
 `Continuation` in [`integration_state`](../src/atlas_tectonics/integration_state.py)
@@ -291,8 +292,8 @@ connects it to this envelope. In execution order:
    shares the parent's reference, settings, native payloads and original
    `theta0`/`kappa0` bytes. It keeps the root's world, scenario, epoch, frame, history
    start and declared source and runtime identities; a continuation refuses states
-   whose declarations differ, and rebinding after a source or runtime change belongs
-   to I02.5. Its new column record carries stretch, thermal clock,
+   whose declarations differ. I02.5 verifies those bindings on reopen; a source or
+   runtime change does not silently rebind an existing history. Its new column record carries stretch, thermal clock,
    displacement, log-strain path and quadrature, the global accepted-step index with
    elapsed time `accepted*step_s`, the 14 accounts, counters, extrema, per-point yield
    counts and the reference velocity and force. Identities bind these exactly, as for
@@ -337,7 +338,7 @@ identity refuses, as does a state of another root, reference, settings or payloa
 Introspection that rewrites a whole envelope and all its identities consistently is
 not defended. Nothing confers finite admission.
 
-**Prepared-runner ownership (review correction, awaiting review).** Review found that
+**Prepared-runner ownership (reviewed correction).** Review found that
 the runner kept the preparation, thermal support and eigensystem it was given and
 returned those same objects through `Continuation.runner`. Frozen dataclasses and
 read-only arrays do not stop a caller changing an array's shape or dtype in place:
@@ -384,8 +385,8 @@ result = run.report(rest.state)          # the retained evolve result of that ac
 
 **Evidence limits.** These edits change `integration_evolution`, `integration_state` and
 the finite-strain tool, and therefore the whole-package execution identity again. The
-nine historical campaign records stay unrebound; the dependency-ordered evidence
-refresh is still due after review. The ownership correction changes the bytes of
+nine historical campaign records stay unrebound; the dependency-ordered successor
+captures are recorded in section 10 and the workflow's evidence effects. The ownership correction changed the bytes of
 `integration_evolution` and `integration_state` again; nothing is rebound. No
 campaign, timing or speedup is claimed.
 
@@ -434,8 +435,9 @@ They use the same tiny cases: the order-8 layered column over eight steps of
 `dt = 6.25e12 s` and the order-4 homogeneous layer. Pieces of 3 + 5 and 1 + 2 + 4 + 1
 steps must reproduce one uninterrupted `evolve` bitwise inside one continuation. This
 covers extension, compression and rest, a signed initial departure and inherited
-history, temperature, history, geometry, clock, displacement, all 24 signed accounts,
-conservation and every retained diagnostic. An independently prepared column must
+history, temperature, geometry, clock, displacement, the 14 carried energy accounts
+and the report's ten derived totals/relative identities, conservation and every
+retained diagnostic. An independently prepared column must
 agree at round-off. A cold rebuild in a new continuation must agree within the retained
 `1e-8` parity while booking each stage once. A two-piece homogeneous continuation is
 judged against the independent DOP853/Brent oracle, not only against the wrapper. The

@@ -2,7 +2,7 @@
 
 **Current actual-source result:** the later [exact-version comparison](../MEASUREMENTS.md) improves the rank-20 complete r3 attempt by 3.340% and solve by 4.800%; rank-4 solve regresses4.646% and its r3 attempt is effectively flat. C3 is retained as an unenabled source candidate with mixed performance. The prototype selection table below is earlier evidence, not the final implementation percentage.
 
-WORKING NON-CANON. Implemented **C3 only**, as full additive Python certificate and compiled-dot source successors, plus the parallel caller's two corresponding source pins. Nothing selects this generation in production or starts a worker. C15-first readiness was conditional on savings; the actual measurements do not support it.
+Implemented **C3 only**, as full additive Python certificate and compiled-dot source successors, plus the parallel caller's two corresponding source pins. Nothing selects this generation in production or starts a worker. C15-first readiness was conditional on savings; the actual measurements do not support it.
 
 ## Measured selection
 
@@ -67,17 +67,18 @@ PYTHON -B measure_successor.py --repo ABSOLUTE_CHECKOUT --controls ABSOLUTE_ACCE
 
 The first form qualified the no-clock loop before the second form executed once under the exact q80 GO. Any future controlled repetition requires fresh admission. Mode defaults to smoke; neither smoke nor its result collects elapsed samples. The unchanged native source still uses its own internal import self-test clocks. Schema includes top-level `status`, `candidate: C3`, `script_sha256`, `mode`; complete samples are under `candidates.C3.benchmarks`, and import/build records under `imports`. An existing output or source-fixture directory refuses; optimised Python refuses before work; errors produce FAIL/nonzero. Projected bound is one core, under 700 MiB RSS and 180 seconds; these are caps for planning, not measured utilisation. Review applies to the completed implementation, not a separate testing gate. All production/worker/scientific holds remain.
 
-## Explicit later receiving obligations
+## Original receiving gap and its successor
 
 The genuine r3 `_attempt` controls and functional-bounds import/identity checks
-are not complete `assess_weights` or bounds-entry qualification. The existing
-certification inventory still pins the original r1. A later receiving generation
-must provide an explicit successor inventory/source binding before those full
-entry points can select C3; the old guard must not be bypassed or silently repinned.
+in this original batch were not complete `assess_weights` or bounds-entry
+qualification. Its original inventory pinned the preceding r1. The separate
+[receiving generation](../../integration-r2/README.md) supplies the explicit
+successor inventory and full certificate/bounds controls; the old inventory and
+historical bindings remain unchanged.
 
-The pin-only parallel successor still attests its original fourteen MPFR exports.
+This batch's pin-only parallel successor attests its original fourteen MPFR exports.
 The C3 native implementation additionally uses `mpfr_zero_p`, `mpfr_number_p`,
 `mpfr_signbit` and `mpfr_set_zero`. Any later worker observer/composition binding
-must attest those four functions as well. No worker route is qualified by the
-current pin edits. These are explicit limits of this accepted source-only batch,
-not permission to enlarge it, modify held profiles or relabel old evidence.
+must attest those four functions as well. The receiving successor includes them
+in both outer and embedded export sets. Actual worker execution remains
+unqualified; these source changes do not modify held profiles or relabel old evidence.

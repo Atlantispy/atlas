@@ -1,6 +1,6 @@
 # I02.3–I02.8: accept, save, continue and inspect the first physical route
 
-**30 September 2026. WORKING NON-CANON.** Reviewed, corrected, integrated locally
+**30 September 2026.** Reviewed, corrected, integrated locally
 and accepted for the declared supported workflow. The owner released the review
 hold and authorised the benchmark and restart corrections. This is the specialist method document for I02.3–I02.8 of the
 [integration plan](INTEGRATION_PLAN.md#i02--common-state-exchange-transactions-and-accepted-time-controller);
@@ -648,7 +648,7 @@ the measurement has finished, and records `FAILED_EQUALITY` with every timing wi
 when any mode (including the fresh-process reopening) did not compute the same accepted
 history.
 
-**Current source-bound measurement:** [i02-workflow-timing-r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json),
+**Recorded 3 October source-bound measurement:** [i02-workflow-timing-r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json),
 3 October 2026; Windows AMD64, CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1,
 one BLAS thread. It was captured after the I03 N1 change to
 `integration_transfer.py`, which followed the K1–K5 repairs, without a concurrent
@@ -737,77 +737,24 @@ rebound):
   second cause. The view adapter's own identity also includes `read_tectonics.py`, so
   its view identifiers change.
 
-The finite-admission tool gained `restored()` and now binds, and checks that it
-imports, every package module `restored()` executes: the ledger, its store and the
-restorer (`integration_ledger`, `storage`, `integration_state`) with the helpers they
-call (`_validation`, `materials`, `resources`, `timebase`, and `w08_inventory` with
-`constitutive` when stocks are attached), and `mesh`, which the `Ledger.open` it relies
-on executes; the retained owners it already bound (`integration_evolution` and the
-`_integration_*` modules) are executed too. Its own file and the bound method document
-[`docs/I01_FINITE_ADMISSION.md`](I01_FINITE_ADMISSION.md) changed as well, so
-`i01-finite-admission-r3` no longer matches the implementation. It is now
-**superseded** by the freshly captured passing `i01-finite-admission-r4`, without
-rewriting its bytes. The stress-coordinate correction also required seven upstream
-or dependent captures: weakening r4, column heat r5, motion coupling r3, column
-admission r3, thermomechanical motion r4, finite strain r5 and breakup closure r4.
-All eight passed; unchanged column r2 was reused. The [evidence guide](../../docs/CURRENT_EVIDENCE.md)
-records the dependency order. These source-bound controls retain their existing
-cases and scientific tolerances.
+The finite-admission tool's `restored()` path binds and checks the actual imported
+ledger, store and restorer with their material, resource, time and retained
+column helpers. The stress-coordinate repair required dependency-ordered
+successor captures for weakening, column heat, motion coupling, column admission,
+thermomechanical motion, finite strain, finite admission and breakup closure;
+unchanged column evidence was reused. R1, R4, R7, I03 and later source changes
+then received affected successor captures rather than edits to old receipts.
+Whole-package I02 timing captures renew bounded-column bindings; they do not
+measure spherical or 3-D solver performance.
 
-R1 then changed `timebase` and `w08_inventory`, and strengthened whole-package
-loaded-code/data identity. Fresh finite-admission r5 passed all five controls and
-supersedes r4; timing r2 passed all seven equivalence checks and supersedes r1.
-Their valid prerequisites were reused. Prior receipt bytes remain unchanged.
-
-The 3-D solver scaling (the matrix-free multigrid method and the automatic
-gmres/multigrid choice) then rewrote three 3-D package modules and added two. No
-I01 or I02 control reads them, but timing r2 binds every package source. Timing
-r3 was captured on a first version of the choice that was never committed. Timing
-r4 on the multigrid-first version passed all seven checks with 151 bindings and
-superseded r3, which superseded r2. The subsequent 3-D evolution restart-admission
-correction changed package sources again. Fresh timing r5 passed all seven checks
-over five repetitions with 151 bindings and supersedes r4; r1-r4 remain unchanged.
-This successor checks the bounded column workflow, not 3-D solver speed. No other
-current record binds the changed files.
-
-R4 and its follow-up fixes are integrated locally, changing `storage`,
-`tectonic_history`, `tectonic_history_codec`, `reuse`, resource/solver accounting
-and `tools/tectonics_job.py`. Timing r5 (whole package and `tectonics_job.py`) and
-finite-admission r5 (restoration dependencies) are now superseded by fresh
-[timing r6](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r6.json) and
-[finite-admission r6](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r6.json). All seven timing
-checks and all five admission controls passed with unchanged sources; valid
-upstream receipts were reused. The old receipts were not edited. Final
-Git-normalised integration verification passed as recorded in section 6 above.
-`tectonics_job.py` is one of this workflow's sources, so column-workflow projects saved
-before it refuse `advance` and `load` with `SOURCE_MISMATCH`. Its control files are now
-written as compact JSON; they are read as JSON, so the format alone refuses nothing.
-The ledger's store now also reports a lock that is already held when a `put` starts
-preparing as `StoreError` (previously a raw SQLite error), matching the commit
-contract above.
-
-R7 and its follow-up corrections change the shared package identity again.
-[Timing r7](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r7.json) supersedes r6 after passing all
-seven checks over five repetitions; 151 source bindings are renewed without
-rewriting an earlier receipt. Finite-admission r6 and the other unchanged current
-records remain valid and were reused. Earlier saved execution-bound states must
-still satisfy their exact source/runtime contracts; no silent migration is added.
-The current integration checks are in [the evidence guide](../../docs/CURRENT_EVIDENCE.md#integration-checks).
-
-I03's ledger/clock integration and junction extension then required finite-admission
-r7 and timing r8. The final K1–K5 repairs supersede those receipts with
-[finite-admission r8](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r8.json) and
-[timing r9](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r9.json): all five admission controls
-and all seven timing checks passed, with unchanged prerequisite receipts.
-The I03 N1 change to `integration_transfer.py` then superseded timing r9 with
-[timing r10](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i02-workflow-timing-r10.json), whose seven checks also
-passed; finite-admission r8 does not bind that file and stays current.
-Earlier receipts retain their original bytes. These successors renew the bounded
-column's affected source bindings; they do not measure spherical or 3-D solver
-performance, establish whole-world acceptance or migrate saved execution-bound
-states. The repaired candidate is integrated locally; final promotion checks are
-recorded in the evidence guide.
-
+[The evidence guide](../../docs/CURRENT_EVIDENCE.md) explains classification,
+dependencies and integration checks; its linked register owns each receipt's status. The
+[original capture account](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/docs/I02_WORKFLOW.md#8-evidence-effects)
+retains the r1–r10 timing and r3–r8 admission succession and its dated test counts.
+Those historical records keep their original bytes; a receipt described as
+current at one capture is not thereby current for this checkout. Successor
+captures establish their declared controls only, not whole-world acceptance or
+migration of execution-bound saved states.
 ## 9. Acceptance commands after review
 
 The patch and corrections are integrated. These commands identify the relevant

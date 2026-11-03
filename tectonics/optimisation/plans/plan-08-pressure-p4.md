@@ -1,12 +1,18 @@
 # Plan 08: Pressure P4 exact jet arithmetic
 
 **Item:** 08 / P4  
-**Status:** WORKING NON-CANON; P4 NOT BUILT; blocked on accepted D5 shared primitives landing and a coordinator assignment.  
-**Route owner:** Exact Kernels and Parallel Admission. The P4 implementation assignee remains pending; the coordinator will assign Kernels or Pressure after the prerequisite lands.  
+**Status:** retained owner evidence records P4 implemented, tested and disabled after the q41 regression. No production/default adoption or whole-interval benefit is established.<br>
+**Route owner:** Exact Kernels and Parallel Admission; current selection and any later assignment remain with the existing owners.<br>
 **Plan decision:** Agreed replacement of the numerical draft, general487-488, 17 October 2026. This accepts the specification, not an implementation, proof, integration or run.  
-**Target completion condition:** Replace the existing exact Fraction pressure-jet arithmetic with the shared native mpq route while reproducing its interval operations, outward enclosure rounding and observable contracts; satisfy D5 dependencies and the P4 proof sequence below before owner/coordinator acceptance.
+**Disposition:** The [pressure arithmetic owner](../workbench/plan40/pressure/FINDINGS.md#retained-measurements) records nine q41 arms and exact/null comparisons passing, but median SMALL pressure-stage time rising from 57.12 to 123.025 seconds (+115.38%), with no material RAM benefit. P4 therefore stays disabled. These are retained private-generation results, not a public rerun or a timing of the later lifetime-corrected shared primitive.
 
-## 1. Current evidence and authority
+Sections 1–7 retain the **17 October original handover specification and its original
+source pins**, not a current execution checklist. Its NOT BUILT/refuted/open-D6
+statements were superseded: [Plan06](../workbench/plan06/README.md) supplies repaired
+shared primitives and the accepted D6 disposition, while retaining D5 disabled
+after its own regressions. That does not select P4 or authorise another proof.
+
+## 1. Original handover evidence and authority
 
 Paths in this document: `T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-diadem-local-tasks-10`; `PS = T/ps`; `CK = T/ck`; `A = C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas`; `R = T/fidelity-integration-20261005/continuation-repair-20261013/optimisation-20261014/resumability-r1`.
 
@@ -22,7 +28,10 @@ Paths in this document: `T = C:/Users/LOCAL_USER/Documents/Codex/2026-09-02/the-
 | `R/width_gate.py` | SHA256 prefix `4c31a92f6880` | Record-width projections and units; no coefficient-compression authority. |
 | `A/.atlas-dev/plan-status-20261016.md` | SHA256 prefix `be270e6898e0` | P4 unbuilt, D5 excluded from assembly, current order and unchanged acceptance boundaries. |
 
-The P3 base is `c/full3`, not an integrated P4 runtime. The Pressure handoff records P4 as unknown in N12 s4. Acceptance of [Plan 06](../workbench/plan06/README.md) did not repair or land D5. Its saved candidate remains refuted and off N12; the existing owners retain their work and any pre-existing authority for their own repairs.
+The original P3 base was `c/full3`, not an integrated P4 runtime. The dated
+Pressure handoff recorded P4 as unknown in N12 s4 and the then-saved D5 candidate
+as refuted. Those are predecessor observations; repaired Plan06 primitives and
+the later P4 outcome above have separate bindings. Neither supplies final N12 adoption.
 
 This document grants no implementation, queue, integration or publication authority. N9 remains PAUSED BY USER (general319); fresh interval and individual run holds remain in force. Reopen the current owner/status records when a later implementation assignment is made.
 

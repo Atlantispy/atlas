@@ -1,6 +1,6 @@
 # I01: finite water and map-view flexure
 
-Status: **WORKING NON-CANON; a coupled, bounded D5 closure control.** This does
+Status: **a coupled, bounded D5 closure control.** This does
 not start I08 regional embedding or complete I01. Existing native and earlier
 I01 sources/evidence stay unchanged; the parallel weakening work is independent.
 

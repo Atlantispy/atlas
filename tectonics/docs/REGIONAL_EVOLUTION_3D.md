@@ -1,6 +1,6 @@
 # Connected regional material and heat evolution
 
-**WORKING NON-CANON.** `regional_evolution3d.py` connects the actual
+`regional_evolution3d.py` connects the actual
 [three-dimensional mechanical solve](REGIONAL_MECHANICS_3D.md) to conservative
 material/heat carriage, conduction and the next mechanical solve. It is a
 fixed Cartesian Boussinesq branch, not completion of I01, I05, I07 or the planet.
@@ -94,8 +94,9 @@ controls, not scientific error bars or a cosmetic alteration of generated maps.
 First-order donor-cell carriage uses an outgoing-volume CFL no greater than one.
 This is robust and conservative but diffuses sharp interfaces. The current
 connection does not claim a sharp-interface or fracture-resolving calculation.
-On the coarse grids that fit the default memory budget (at most 6 cells per axis
-for a cube; see [memory admission](REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse)),
+On the small grids that fit the default memory budget (depending on solver,
+boundary pattern and retained transport/heat work; see
+[memory admission](REGIONAL_MECHANICS_3D.md#solving-and-safe-reuse)),
 a sharp contrast spans only a few cells, and the checked fixture is 3x3x3. This
 first-order numerical diffusion is then large relative to the features the grid can
 represent and spreads a moving contrast over neighbouring cells. Such results are

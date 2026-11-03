@@ -1,6 +1,6 @@
 # I01 MC-03: melt segregation by two-phase compaction (instantaneous one-dimensional closure)
 
-**WORKING NON-CANON: an instantaneous closure candidate, not generated melt or calibrated ridge supply.**
+**an instantaneous closure candidate, not generated melt or calibrated ridge supply.**
 Execution results and current MC-03/I01 status live in [CURRENT_STATE](../../docs/CURRENT_STATE.md); the method and synthetic
 controls below do not establish physical acceptance. The closure-matrix decision and evidence receipts remain
 separate from this document.
@@ -402,8 +402,9 @@ native G25 route currently refuses phase appearance/disappearance: transporting 
 establish generated ocean crust, a freezing lid or experimental calibration. Those physical-acceptance gates
 remain downstream even if I01 selects the restricted law and its numerical feasibility is demonstrated.
 
-I02 still owns the once-only commit. Codex decides whether the matrix records this closure as MC-03's selected
-segregation law.
+I02 still owns the once-only commit. The [closure matrix](I01_CLOSURE_MATRIX.md#5-remaining-items-by-class)
+records the selected MC-03 scope and its evidence; that selection does not authorise
+the later physical source-to-crust event.
 
 ## 11. Commands and execution status
 

@@ -1,7 +1,7 @@
 # Plan 07 — Pressure P1–P3 profiling and full-scale proof
 
 **Item:** 07  
-**Status:** WORKING NON-CANON. Plan amendments agreed in general463 and accepted with explicit additions in general465. P1–P3 is built and checked on the small case; full-scale proof and integration remain outstanding.  
+**Status:** Plan amendments agreed in general463 and accepted with explicit additions in general465. P1–P3 is built and checked on the small case; full-scale proof and integration remain outstanding.<br>
 **Owner:** Pressure. Geometry integrates binding/dispatch after the proof; Runner then pins the accepted integration.  
 **Completion condition:** Obtain the authorised q02 profile and its fail-closed checks, refine and submit the exclusive full-scale proof request, complete the specified base/candidate comparisons and resource conditions, then deliver the evidence through the existing Geometry/Runner integration boundary. This plan grants no launch or implementation authority.
 

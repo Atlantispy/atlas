@@ -1,6 +1,6 @@
 # I01: a compatible finite magma receiver
 
-WORKING NON-CANON. This connects the [ideal-mixture energy provider](I01_PHASE_ENERGY.md)
+This connects the [ideal-mixture energy provider](I01_PHASE_ENERGY.md)
 to a finite receiving body at the **same pressure and with exactly the same law**.
 It does not reinterpret that material through W08's different energy convention.
 

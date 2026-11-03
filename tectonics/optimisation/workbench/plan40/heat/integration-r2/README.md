@@ -1,6 +1,6 @@
 # Heat arithmetic receiving integration
 
-WORKING NON-CANON. This is the successor combined source selection for the
+This is the successor combined source selection for the
 optimisation branch. It connects the accepted C3 and C8 implementations to the
 existing exact-arithmetic heat consumers. C13 remains excluded after its measured
 regression. This does not replace the different NumPy/SciPy heat algorithms in

@@ -1,6 +1,6 @@
 # Plan19: shell and alternate-axis endpoint bounds
 
-WORKING NON-CANON. The selected two-source integration and its bounded native
+The selected two-source integration and its bounded native
 engineering validation are accepted. This additive source snapshot supplies the
 single-boundary shell and alternate quadrature axis changes. It preserves the
 current public heat and helper selection; it does not replace that selection

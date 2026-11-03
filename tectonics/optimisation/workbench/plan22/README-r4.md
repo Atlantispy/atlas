@@ -1,6 +1,6 @@
 # Corrected-reader L3 source selection
 
-Status: WORKING NON-CANON. The controlled corrected-reader comparison selects L3. This additive constructor selects the current reader in a separate 647-member source layout; it grants no runtime admission, default promotion, final-generation or scientific acceptance.
+Status: The controlled corrected-reader comparison selects L3. This additive constructor selects the current reader in a separate 647-member source layout; it grants no runtime admission, default promotion, final-generation or scientific acceptance.
 
 ## Mechanism and receiving boundary
 

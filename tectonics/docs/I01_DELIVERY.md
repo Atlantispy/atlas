@@ -1,6 +1,6 @@
 # I01: phase-aware melt delivery into W08
 
-27 September 2026. WORKING NON-CANON. Bounded interface/control, not a world run.
+27 September 2026. Bounded interface/control, not a world run.
 
 ## What this adds
 
@@ -71,8 +71,9 @@ iteration, numerical transport, background process, cache or parallel overhead.
 Phase separation performs O(component count) work. No runtime saving is claimed
 against an alternative with different physics.
 
-Actual melt-production/extraction/focusing laws and their pressure/composition
-feedback are still an I01 closure decision. The D6 closed-batch Katz/Brune
+The [selected melt route](I01_MELT_ROUTE.md) owns production, extraction, focusing
+and pressure/composition feedback; its I05/I06 physical integration remains open.
+This W08-law control does not implement that route. The D6 closed-batch Katz/Brune
 inventory cannot simply be passed in as cumulative production or porosity under
 a different thermodynamic law. General two-phase compaction is not added here.
 

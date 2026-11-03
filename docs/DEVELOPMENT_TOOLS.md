@@ -1,7 +1,7 @@
 # Development speed tools
 
 Atlas is vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under the owner's direction.
-**WORKING NON-CANON.** These tools make development checks faster. None of them is a gate, a scientific acceptance
+These tools make development checks faster. None of them is a gate, a scientific acceptance
 or a replacement for `tectonics/verify.py`; they never relax a test, a tolerance or a refusal.
 
 | Tool | Purpose |
@@ -11,21 +11,26 @@ or a replacement for `tectonics/verify.py`; they never relax a test, a tolerance
 | `tools/test_impact.py` | Record what each test unit executes and opens; select the tests a change can affect. |
 | `tools/verify_candidate.py` | Verify a patch set in a scratch clone: trees, bytes, static checks and one test tier. |
 
-All four use the standard library only. Run them with the tested tectonics interpreter, passed explicitly
-(`--python`); no interpreter or private path is written into tracked files. Keep their outputs (run folders, maps,
+All four use the standard library only. Invoke `verify.py` with the tested tectonics interpreter;
+the other three tools accept that interpreter explicitly through `--python`.
+No interpreter or private path is written into tracked files. Keep their outputs (run folders, maps,
 summaries) outside tracked files, for example under the ignored `.atlas-dev/`.
 
 ## When the full gate is still required
 
-Run the unchanged full gate, `python -I -B tectonics/verify.py` (or the profile a stage names), before a result is
-reported as passing, before an evidence receipt is captured and before a change is accepted. A quick, focused,
-parallel or impact-selected run is evidence about the tests it ran, and only those. In particular:
+Run `python -I -B tectonics/verify.py` or an exact profile when the changed route,
+evidence writer or assigned stage requires it. A bounded result can pass its named
+checks without becoming a full-suite pass. Documentation-only changes use the
+[focused publication procedure](CODING_SAFETY.md#5-source-only-check-and-change-procedure),
+not an unrelated numerical campaign. A quick, focused, parallel or impact-selected
+run is evidence about the tests it ran, and only those. In particular:
 
 - `--quick` omits real tests; its JSON reports `PASS_QUICK_SELECTION_ONLY`, never the gate's status.
 - A parallel run reports the same per-test outcomes as a serial run of the same selection (checked once, below), but
   it is not `verify.py`: it does not write verify's source-inventory record.
-- An impact selection rests on stated assumptions (below). Use it to choose what to run while iterating, then run the
-  full gate once on the final candidate.
+- An impact selection rests on stated assumptions (below). Use it to select affected
+  checks; it cannot replace a full gate or exact qualification explicitly required
+  by the route or stage. Reuse adequate unchanged results at the final candidate.
 
 ## Test tiers: `SLOW_TESTS` and `--quick`
 
@@ -42,7 +47,8 @@ python -I -B tectonics/verify.py --quick --i02
 `--w10`; acceptance selections are exact and stay whole. A registry entry whose module the selection covers must name
 a discovered test or class exactly, or the run refuses as stale; an entry for a module outside the selection is not
 judged. An empty quick partition refuses. The full run, `_checks_passed` (no skips) and the local-bytecode refusal are
-unchanged. `--i02-quick` keeps its own meaning (the four timing-harness tests only).
+unchanged. `--i02-quick` keeps its own meaning: the I02 selection with the four real
+measurement-harness workloads omitted. `--i02-measurement` selects those workloads.
 The verifier requires strict execution before running a suite, including before the W10 delegation; a live
 packaged release mode cannot produce verification evidence.
 When combined with `--quick`, both I02 partitions validate registry entries against the original complete I02

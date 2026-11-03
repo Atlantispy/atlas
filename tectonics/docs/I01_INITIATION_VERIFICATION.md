@@ -1,6 +1,6 @@
 # Initiation: independent verification instead of guessing a published case
 
-WORKING NON-CANON. This is an I01 **bounded numerical verification route**, not
+This is an I01 **bounded numerical verification route**, not
 physical acceptance of generated subduction. It supplements the selected
 [resolved initiation method](I01_INITIATION_DECISION.md). The Li-Gurnis archive
 and its unresolved inputs remain intact as an optional external comparison.

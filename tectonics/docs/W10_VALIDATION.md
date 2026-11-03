@@ -30,7 +30,7 @@ each method's inputs, calculation, outputs and independent checks in plain Engli
 | W08 finite magma and joined regimes | Independent calorimetry, component/enthalpy/exhaustion checks, heat/material transfer ownership | Supplied phase/rate/emplacement laws, not spontaneous volcano prediction | Supported regime joins; further geological development belongs to its module |
 | Experimental generated dynamics | Constitutive, stress, coupling, solver, timestep, diagnostic and recovery tests | Mature-regime R4.4 comparison held/incomplete | No whole-planet acceptance inferred from short runs or prescribed-motion workflows |
 | Retained W09 downstream components | 49 existing methods cover drainage, finite lake water, river erosion and 1D hillslope transport, with analytic/discrete and separate time/space controls | Scenario/field calibration unestablished | Water/river continuation supported; no joined source-to-sink/tectonic-feedback route; hillslope persistent codec deferred. Regression coverage, not expanded tectonics ownership |
-| Storage, execution, histories and scale | Source/input identity, lossless parity, corruption/cancellation/refusal, resource controls; added interruption after commit before adoption | Engineering checks are not geological observations | Three supported history routes; current Windows check only, Linux unavailable here; W12 universal assembly not yet delivered |
+| Storage, execution, histories and scale | Source/input identity, lossless parity, corruption/cancellation/refusal, resource controls; added interruption after commit before adoption | Engineering checks are not geological observations | Three supported history routes; Windows coverage at this review. The later [W12 assembly](W12_ASSEMBLY.md) supplies bounded column continuation and typed exports, not universal physical assembly |
 
 ### Defects and missing checks addressed
 
@@ -155,7 +155,7 @@ release is part of this pass.
 The following is the earlier source-bound r1 result, retained rather than repinned.
 Its source-dependent receipts are not evidence for changed remap/ALE source.
 
-Implemented assessment, 24 September 2026. WORKING NON-CANON.
+Implemented assessment, 24 September 2026.
 Production physics, parameters, source budget and campaign holds are unchanged.
 
 ## Result and use

@@ -1,6 +1,6 @@
 # I01 reversible pressure changes with composition and energy
 
-WORKING NON-CANON, 27 September 2026. Bounded ideal-mixture connection, not a
+27 September 2026. Bounded ideal-mixture connection, not a
 calibrated mantle law or native ascent/emplacement. This method is frozen before
 the source-bound campaign; measured results belong in the current-evidence record.
 

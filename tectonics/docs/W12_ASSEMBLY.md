@@ -1,6 +1,6 @@
 # W12: supported tectonics assembly and release boundary
 
-24 September 2026. WORKING NON-CANON. This is the implementation record for
+24 September 2026. This is the implementation record for
 the existing plan's W12, not a new scientific model or a competing roadmap.
 
 26 September correction: signed-zero bytes, initial-surface policy consistency
@@ -208,7 +208,8 @@ case and native dependencies, then computes missing work only. Older reports
 remain untouched. A repeated run ID cannot launch a second calculation; different
 inputs under that ID refuse. Browser draft Save is still not checkpoint saving.
 
-**Effect of the unreviewed I02 candidate (29 September 2026).** Applying it changes
+**I02 compatibility change (29 September 2026).** The subsequently reviewed and
+integrated I02 route changes
 the package execution identity and `tectonics_job.py` and `read_tectonics.py`
 (Windows file-replacement retries). A job started before it then refuses `resume`
 with `SOURCE_MISMATCH`, and its saved results, read through `read_tectonics.py` or
@@ -223,7 +224,9 @@ and reaps the owned child; if an owner must terminate an unresponsive process,
 it must not call it cleanly cancelled or delete checkpoints. Subsequent resume
 performs normal native verification. Missing or invalid control files refuse.
 
-**Submission and control files (R4 candidate, 30 September 2026; not accepted).**
+**Submission and control files (R4 repair, 30 September 2026).**
+This is the implemented source behaviour; delivery and acceptance status are kept
+in [current state](../../docs/CURRENT_STATE.md), separately from the dated checks below.
 A fresh `run` writes `request.json` and an initial `status.json` (state
 `preparing`, phase `submitted`, attempt 1) into a dot-named staging folder
 `.<job ID>-<16 hex>` in the jobs root and then renames that folder to the job ID
@@ -440,8 +443,8 @@ partial ocean occupancy and unknown underthrust enthalpy keep their masks;
 placeholder zero values are not promoted to known physical zeroes. Unknown output
 classes and authored fields without supported unit contracts refuse.
 
-**One column-list form, and the two ocean routes renamed (R7, 1 October 2026; not
-accepted).** A field specification that names its matrix columns carries
+**One column-list form, and the two ocean routes renamed (R7, 1 October 2026).**
+A field specification that names its matrix columns carries
 `columns`: one `{name, units}` row per column, in matrix order, with the same
 units repeated in the field's `units` list. A row may add its own `known` mask,
 as the last W04 column does. Six output forms carry such a list: W04 support
@@ -567,5 +570,5 @@ request. They are neither implemented nor required by this release boundary.
 
 Atlas-owned example/code licensing follows [AGPL-3.0-only](../../LICENSING.md).
 The example uses authored synthetic inputs, not third-party world data. This
-record does not publish a release, upload data, approve canon or turn bounded
+record does not publish a release, upload data, approve authored-world changes or turn bounded
 technical integration into an unrestricted production/field acceptance claim.

@@ -1,13 +1,15 @@
 # I01: basal closure of the regional rifting box (MC-04)
 
-**27 September 2026. WORKING NON-CANON. One bounded I01 choice with analytical account
+**27 September 2026. One bounded I01 choice with analytical account
 controls and one exact analytical mechanical control; not I05/I07 implementation, a numerical
 Stokes or transport solution, melting, a resolved neck, breakup or physical acceptance.** This
 specifies the MC-04 prerequisite named in the
-[closure matrix](I01_CLOSURE_MATRIX.md#62-choices-that-stay-open): an explicit mechanical base
+[closure matrix](I01_CLOSURE_MATRIX.md#62-selected-choices-and-outstanding-physical-acceptance): an explicit mechanical base
 condition, the incoming and outgoing material and heat, and the moving-domain balance with a
 free surface. It does not implement a separation certificate or approve a separation
-mechanism; MC-01 and its elastic-memory choice stay open. The
+mechanism. MC-01's [bond-history method](I01_SEPARATION_FEASIBILITY.md) and
+[retained elastic memory](I01_ELASTIC_MEMORY.md) are selected separately; full
+physical-event integration and acceptance remain open. The
 [case](../cases/i01_basal_closure_v1.json), [tool](../tools/check_i01_basal_closure.py) and
 [focused tests](../tests/test_i01_basal_closure.py) are new. The contract, transitions, breakup,
 finite-strain and matrix records are read-only and unchanged. The tool imports no retained tool
@@ -133,7 +135,7 @@ the dissipation line.
 | D1 basal drag on the resolved footprint | Replaced by the resolved asthenosphere | Not applied a second time (contract D1) |
 | Gravity | D1/D5 GPE ledger | Mechanical ledger |
 | Interior dissipation | D2 rheology; D4 heat fraction (IN-05) | Mechanical sink; heat once as `f x dissipation` |
-| Elastic storage | Open with the MC-01 elastic-memory choice | Not in this viscoplastic configuration |
+| Elastic storage | Retained by the selected MC-01 elastic-memory method | Not in this viscoplastic configuration; the later coupled route must account for it |
 
 ## 4. Incoming and outgoing material and heat
 
@@ -674,7 +676,9 @@ not in this source-bound document.
 - **Force-driven sides**, taken from the D1 balance, belong to I04/I09.
 - **I05 transport** will use the cohort interface: moving surfaces, conduction of the inflow
   cohorts and the chain columns.
-- **MC-01 and its elastic-memory choice** stay open. This closure issues no event.
+- **MC-01 physical integration and acceptance** remain later work under the selected
+  [bond-history](I01_SEPARATION_FEASIBILITY.md) and
+  [elastic-memory](I01_ELASTIC_MEMORY.md) methods. This closure issues no event.
 
 ## 12. Commands and bindings
 

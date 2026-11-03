@@ -1,6 +1,6 @@
 # I01: nonlinear rock resistance through a supplied column
 
-27 September 2026. WORKING NON-CANON. Independent of the evolving thermal task.
+27 September 2026. Independent of the evolving thermal task.
 
 ## What this does, in plain language
 

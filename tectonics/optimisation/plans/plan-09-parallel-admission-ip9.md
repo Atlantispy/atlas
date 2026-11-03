@@ -1,7 +1,7 @@
 # Plan 09: Parallel initial admission, ip9 and q19 proof
 
 **Item:** 09 / N4 / backlog item 19  
-**Status:** WORKING NON-CANON; ip9 READY accepted; q19 queued, not launched; proof and integration remain outstanding.  
+**Status:** ip9 READY accepted; q19 queued, not launched; proof and integration remain outstanding.<br>
 **Retained owners:** Exact Kernels owns the item; Geometry owns and reviews the code; Runner integrates.  
 **Plan decision:** Amendments agreed in general497-498, 17 October 2026. Plan acceptance, READY, proof, integration and final assembly are separate states.  
 **Target completion condition:** Complete the authorised q19 proof on the selected ip9 tree using the existing two-worker route and fail-closed checks; report adoption and resource evidence; then hand the accepted result to the existing owners for integration, including the shared pressure/admission schema composition.

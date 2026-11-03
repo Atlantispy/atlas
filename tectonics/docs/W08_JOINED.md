@@ -1,10 +1,16 @@
 # W08 Step 6 — joined finite-stock histories and recovery
 
-Status: WORKING NON-CANON, local implementation, 23 September 2026.
+Status: local implementation, 23 September 2026.
 The original [W08 design](W08_REGIMES.md) and [case register](../cases/w08_regimes.json)
 remain unchanged. The new [joined fixture](../cases/w08_joined_r1.json) was frozen
 before candidate execution, SHA256
 `01269a9de5e3c94f7adf04f8aed5e970364af5f8af49889bd733e9f97d4395d4`.
+
+The Step-1 document is preserved as a frozen executable case input. Its pending
+implementation/source-adapter language describes that historical design capture.
+Steps 2–5 document their implemented routes, including the
+[resolved Step-4 interpretation](W08_SUBDUCTION.md#source-resolution-and-step-4-closure);
+this page owns the joined scope and its remaining limits.
 
 ## Supported joined route
 

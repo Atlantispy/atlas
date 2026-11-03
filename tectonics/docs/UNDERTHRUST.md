@@ -1,6 +1,6 @@
 # Prescribed collision and underthrusting
 
-Local implementation, 23 September 2026. WORKING NON-CANON.
+Local implementation, 23 September 2026.
 Tectonics continuation Step 2; this supplements, not rewrites, the frozen
 [W08 regime design](W08_REGIMES.md) and its case register.
 
@@ -47,8 +47,9 @@ slip, recorded separately for the two blocks. Gravitational change is m*g times
 the actual parcel centroid change. Q is not an inferred reaction or an unstated
 traction. An unclosed work/energy difference is not silently converted to heat.
 This producer does not independently add uplift, flexure or sediment loads.
-Connections to evolving mechanics and joined persistent histories are the next
-tectonics steps, using the existing shared components without source relocation.
+The [joined-history owner](TECTONIC_HISTORIES.md) now accepts this typed preparation
+alongside the supported evolving-mechanics routes. That connection preserves the
+prescribed model; it does not turn this section into general collision dynamics.
 
 ## API, bounds and efficient reuse
 
@@ -62,8 +63,9 @@ outputs evaluate directly from the reference, without timestep loops or cumulati
 remapping. Parcels inside one affine domain avoid unnecessary intersections/unions.
 Only the latest output is retained; exact repeat requests still verify live code.
 Callers retaining older outputs must account for their own storage. Close releases
-the prepared/latest reservations. There is no new persistent checkpoint codec in
-this increment; the joined-history step owns that connection.
+the prepared/latest reservations. Persistence is supplied by the
+[joined-history owner](TECTONIC_HISTORIES.md), not by a second checkpoint codec in
+this section producer.
 
 Bounds: shared-accounted 128 MiB, 4,096 parcels, 256 intervals, 64 interface knots,
 64 receivers and the existing geometry complexity limits. Nonfinite, unresolvable

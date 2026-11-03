@@ -120,10 +120,10 @@
     },
     {
       "id": "atlas.docs.content-and-consumers",
-      "purpose": "Preserve unique content, commands, scope/holds, source roles, incoming navigation and privacy when revising instructions or consolidating/retiring documentation.",
+      "purpose": "Keep all repository documentation consistent with selected code, other owner documents and actual evidence status; preserve unique content, working commands, scope/holds, source roles, incoming navigation and privacy.",
       "module": "Changed documentation, process instructions, migrated links and retired prose-only qualification assertions",
       "process": "Documentation consolidation and source publication qualification",
-      "entry_point": "Manual complete-content review; explicit changed-scope path/anchor comparison; AST comparison of each retired prose assertion against its parent Git blob",
+      "entry_point": "Manual full-text and selected code/consumer review of the explicit tracked documentation inventory; deterministic local path/anchor and UTF-8/diff comparison; selected fixture/source-map binding inspection. Retired prose assertions require AST comparison only when changed.",
       "owner": "Atlas documentation/publication owner",
       "consumers": [
         "Repository users",
@@ -139,7 +139,7 @@
         "stages": [
           "documentation review"
         ],
-        "trigger": "Changed documentation, retirement paths or their consumers.",
+        "trigger": "Substantive documentation review, changed documentation/authority, retirement paths or affected consumers; reuse adequate unchanged results.",
         "release_state": "NOT_APPLICABLE",
         "debug_state": "NOT_APPLICABLE",
         "actual_enabled": "NOT_APPLICABLE",
@@ -155,7 +155,9 @@
         "Client profile registration/model/effort, explicit review/bridge limits and PR policy links",
         "Retention rules must not grant current-run/store access, lift holds or weaken required checks.",
         "Proposed consolidation must distinguish assessed candidates from implemented changes, preserve distinct consumers/identities, and add no run prerequisite or deletion release.",
-        "Shared foundation begins in the first next I-module slice after current IV1/comparison; later shared work extends module delivery without a blanket legacy-migration or current-IV1 prerequisite."
+        "Shared foundation begins in the first next I-module slice after current IV1/comparison; later shared work extends module delivery without a blanket legacy-migration or current-IV1 prerequisite.",
+        "Engineering/scientific status must replace canon labelling in mutable Atlas prose while exact legacy wire literals and selected frozen input bytes remain compatible.",
+        "Documentation changes to receipt-bound sources require honest historical classification, mirror consistency and preserved original receipt hashes/results; no scientific recapture or silent rebind for prose."
       ],
       "evidence": [
         "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
@@ -170,7 +172,11 @@
         "tectonics/optimisation/drivers/INTERVAL_CHAIN.md",
         "AGENTS.md",
         "docs/ATLAS_ROADMAP.md#assessed-code-consolidation",
-        "docs/ATLAS_ROADMAP.md#delivery-order-with-the-i-modules"
+        "docs/ATLAS_ROADMAP.md#delivery-order-with-the-i-modules",
+        "docs/CURRENT_EVIDENCE.md",
+        "tectonics/docs/I01_CLOSURE_MATRIX.md",
+        "tectonics/cases/i01_closure_matrix_v1.json",
+        "docs/CODING_SAFETY.md#legacy-document-and-format-bindings"
       ]
     },
     {
@@ -703,7 +709,7 @@
     },
     {
       "id": "atlas.publication.document-inventories",
-      "purpose": "Current document publication maps match changed prose and membership while every source payload row and original evidence identity remains unchanged; global inventory retires only reviewed documentation entries. Retired evidence mirror rows and supersession edges resolve honestly; all current registered records and their binding rules stay unchanged.",
+      "purpose": "Current document publication maps match edited prose and membership while selected implementation payloads and original source/evidence identities remain unchanged. Historical export document rows keep their original snapshot scope. Changed receipt-bound method prose is classified honestly as historical, with register/mirror agreement and preserved receipt bytes; unchanged current records retain their original bindings.",
       "module": "tectonics/optimisation/MANIFEST.json and affected public document maps; tectonics/evidence/current-evidence.json; tectonics/cases/i01_closure_matrix_v1.json",
       "process": "Documentation consolidation and source publication qualification",
       "entry_point": "Owner comparison of each changed JSON row to its parent Git blob, retained/deleted document set and SHA-256 of actual Git-normalised publication bytes",
@@ -732,7 +738,10 @@
       "affected_by": [
         "Changed Markdown paths/bytes",
         "Affected publication-map rows",
-        "Global descriptive inventory membership"
+        "Global descriptive inventory membership",
+        "Edited method documents and current-evidence classification",
+        "Live frozen fixture and prerequisite source guards",
+        "Current-publication versus historical-export role of documentary hash rows"
       ],
       "evidence": [
         "tectonics/optimisation/MANIFEST.json",

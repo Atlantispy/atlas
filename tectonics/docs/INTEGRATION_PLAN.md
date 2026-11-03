@@ -1,6 +1,6 @@
 # Complete tectonics integration plan
 
-28 September 2026. **WORKING NON-CANON — plan, not implemented capability.**
+28 September 2026. **Forward plan with separately documented delivered slices.**
 
 This is the forward integration scope for finishing the tectonics generator.
 It replaces the narrower interpretation of W12 completion and the provisional
@@ -73,7 +73,7 @@ selected physical model, not a visual repair. Self-organising global mantle
 convection and spontaneous initiation of every fault remain outside this target;
 this does not waive the causal-generation requirement.
 
-For Diadem-specific generation, retain the existing project/source/canon admission
+For Diadem-specific generation, retain the existing project/source admission
 block until compatible approved inputs are available. Public synthetic controls
 are not permission to create replacement Diadem geography.
 
@@ -81,7 +81,11 @@ are not permission to create replacement Diadem geography.
 
 W-numbers identify responsibilities, **not twelve operations to run serially**.
 Existing code is reusable only inside its stated physical and geometric envelope.
-The table distinguishes connection work from genuinely new modelling.
+The table records the W-source baseline and its integration requirements, rather
+than declaring all of those connections still absent. I02's bounded lifecycle,
+I03's prescribed-history geometry and the reduced I04/I05 joins have their own
+implemented scopes and limits in the stage owners below. The table distinguishes
+connection work from genuinely new modelling; current delivery stays in CURRENT_STATE.
 
 | Existing area | Reuse | Remaining integration or mechanism |
 | --- | --- | --- |
@@ -192,9 +196,11 @@ accounts. Do not renormalise plate areas or inventories after an inconsistent st
 
 ## 5. Scientific decisions that must close before their implementation
 
-These are mandatory deliverables, not permission to insert plausible-looking
-defaults. I01 resolves them into exact equations, parameters, input needs,
-validity ranges and tests before the affected producer is integrated.
+These are mandatory contracts, not permission to insert plausible-looking defaults.
+I01's [closure matrix](I01_CLOSURE_MATRIX.md) records the selected equations,
+parameters/input needs, validity and bounded feasibility. Later implementation
+must satisfy those contracts and expose any specific new gap without reopening
+completed selection or treating feasibility as full physical acceptance.
 
 | Decision | Recommended investigation / resolution | Completion evidence |
 | --- | --- | --- |
@@ -210,8 +216,8 @@ specified driving/event laws and targeted regional mechanics**. This is an Atlas
 architecture proposal, not a published ready-made solution. A kinematic-only
 mode remains useful but cannot silently become the answer to D1/D2. If the
 required causal model cannot meet accuracy/resource goals, report that specific
-trade-off before changing scope. A full plan is not evidence that these research
-choices are already solved.
+trade-off before changing scope. A selected method and a complete plan are not
+evidence that the coupled generator or its physical acceptance is complete.
 
 ## 6. Implementation order and acceptance per increment
 
@@ -533,10 +539,11 @@ Report outstanding platform coverage separately. This establishes a connected
 workflow for the declared supported case, not merely plumbing tests and not
 whole-planet tectonics acceptance.
 
-**Boundary with later stages:** I03–I09 still implement evolving spherical
-geometry, causal world/motion production, transport/melt, physical transitions,
-support and their coupled acceptance. I02 must carry their state and exchange
-contracts without pretending those producers are implemented. I10 connects the
+**Boundary with later stages:** reuse delivered I03 geometry and reduced I04/I05
+joins within their declared scopes. Wider generated world/motion production,
+transport/melt, physical transitions, support and full coupled acceptance remain
+with the relevant I03–I09 owners. I02 carries their state/exchange contracts without
+turning a bounded implementation into the complete producer. I10 connects the
 complete scientific route to the world-project/UI and downstream consumers;
 I11–I12 retain their wider end-to-end acceptance and release responsibilities. Whole-planet
 evolution remains the target, not a feature removed by using a bounded first case.
@@ -606,6 +613,12 @@ bound. Include a closed-sphere source/sink control, not only an open transect.
 
 ### I04 — Causal starting-world and motion/boundary producer
 
+The [causal-start method](I04_CAUSAL_START.md) and
+[shared ports](I04_I05_PORTS.md) own the delivered reduced I04/I05 connection and
+staircase extension. Reuse their checked source and limits. The broader assignments
+below do not restart those deliveries, complete the whole stage or authorise I05b
+and later work; current authority and holds remain with the active owner.
+
 **Focused research decisions:** map the selected D1/D2 forces, GPE gradients,
 boundary integrals and physical weakening length onto changing spherical geometry
 without mesh-direction bias. Identify which coefficients are supported material
@@ -664,6 +677,11 @@ and calculated evolution are assessed separately. A finite prescribed-history
 demo cannot close this increment by itself.
 
 ### I05 — Moving material, thermal state and evolving properties
+
+The [moving-state method](I05_MOVING_STATE.md) owns implemented I05a transport,
+thermal/property ports and their support limits. The stage below also includes
+future phase-front, basal and wider feedback work; completion of the reduced
+connection does not authorise those later increments.
 
 **Focused research decisions:** define moving-grid/material energy fluxes and
 admitted contact geometry; decide when the selected lateral-conduction bound
@@ -821,15 +839,19 @@ the required claim; full coupled physical-event acceptance is still mandatory.
    sensitivities. Return admitted separation/handoff evidence to I06. These two
    kernel substeps need I02/I03/I05 interfaces, **not completed I06**.
    *Solver-scaling prerequisite:* the resolved neck needs finer regional grids
-   than the assembled 3D Stokes route admits. The default 256 MiB budget refused
-   every 7x7x7 cube, and the 24x24x24 assembly alone reserved about 6.4 GiB. A
+   than an assembled route can practically admit in all required configurations.
+   Admission depends on boundary conditions, solver and the current resource
+   model; there is no universal seven-cube limit. The
+   [mechanics method](REGIONAL_MECHANICS_3D.md) owns those bounds and retained
+   measurements. A
    matrix-free Q2 operator with a hybrid p/h Galerkin multigrid and flexible
    deflated GMRES is now integrated locally (`method='multigrid'`; see
    [its method section](REGIONAL_MECHANICS_3D.md#matrix-free-multigrid-candidate-i072-solver-scaling)).
    It keeps the equations, gates and outputs. A multigrid-first `auto` choice
    between it and the assembled route is now the default for new runs
    ([rule and measurements](REGIONAL_MECHANICS_3D.md#automatic-choice-between-gmres-and-multigrid-methodauto)).
-   Both are reviewed and corrected in the working tree. Automatic evolution
+   Their source delivery and verification are recorded by the method owner and
+   current state. Automatic evolution
    pins its admitted solver choices for restart consistency; temporary memory
    pressure refuses work instead of rerouting it. Neither is the neck,
    moving-material transfer or any other I07.2 deliverable.
@@ -1240,7 +1262,7 @@ references support release engineering, not tectonics realism.
    the example, method/evidence links and typed consumer contract, and identify
    exactly what other modules may rely on. Record package size/startup/read costs
    without rerunning unchanged scientific campaigns. Git publication, signing,
-   distribution outside the approved destination and Diadem canon acceptance
+   distribution outside the approved destination
    remain separately authorised actions, not automatic effects of this checklist.
 
 **Depends on:** I11. Update capability/status documentation, the reader guide,
@@ -1252,7 +1274,7 @@ their provenance. Record installed versus actually tested platform paths.
 and engineering cases are accepted; the three observed generation defects are
 resolved at their causes; no hidden manual arrays or unsupported bridges are
 needed; and a user can operate tectonics without completing the other 17 modules.
-Technical release, Git publication and Diadem canon remain separate actions.
+Technical release and Git publication remain separate actions.
 
 ### Dependencies and sensible parallel work
 
@@ -1261,7 +1283,7 @@ milestones to avoid circular waits and premature stage-complete claims:
 
 | Milestone | Dependency-ready work | What still cannot be claimed |
 | --- | --- | --- |
-| Shared foundation | Retain I01; complete I02's real lifecycle, then I03's shared geometry/maps | An evolving planet or physically generated event |
+| Shared foundation | Reuse I01, the bounded I02 lifecycle and I03 prescribed-history geometry/maps; complete only their named missing coverage | An evolving planet or physically generated event |
 | Driving/state pair | Agree I04/I05 ports; implement initial/driving producers alongside conservative material/thermal properties, then their first feedback control | Full regional feedback merely because both producers run |
 | Shared mechanics prerequisite | I07.1–I07.2 use available I02/I03/I05 contracts before complete I06; return the actual neck/separation evidence to I06.2 | I07 ocean-to-collision acceptance from a material kernel or neck alone |
 | Compatible supply and breakup | I05.4 supplies supported phase/energy transport; I06 joins that and the mechanical prerequisite to real separation/birth/history | Generated oceanic crust from prescribed splitting or missing phase-front support |
@@ -1281,7 +1303,7 @@ relevant I01/I02 interfaces stabilise. Their final acceptance still needs real
 upstream results. Independent method/reference work can be delegated concurrently;
 shared-file edits and accepted-time history cannot. Each assignment has one writer,
 an exact source scope and a named receiving review. No completed-step dependency
-alone grants authority beyond the currently approved I02 sequence.
+alone grants authority beyond the active assignment and its run/hold gates.
 
 ## 7. Acceptance matrix — prove the complete promised route
 
@@ -1369,10 +1391,11 @@ time/memory/output limit. The current interactive initialisation limit is not a
 measured promise for evolved-world generation. Do not launch multi-hour simulations
 to discover an already predictable budget failure.
 
-No credible total implementation-time or planetary-runtime estimate exists yet:
-D1/D2 and spherical exchanges are the largest uncertainties. Measure their bounded
-prototypes first and update the existing plan; do not present a small reference
-timing as a whole-generator forecast.
+No credible total implementation-time or planetary-runtime estimate exists yet.
+Reuse the delivered bounded force, state, geometry and regional measurements;
+measure genuinely missing joined workloads and their growth before extrapolating.
+Do not restart unchanged prototypes or present a small reference timing as a
+whole-generator forecast.
 
 ## 9. Research and software basis
 
@@ -1415,6 +1438,10 @@ regional demo, export table or visually attractive world is not a substitute.
 Select the next authorised assignment from [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 and the affected owner's remaining obligations. This plan does not carry a second
 checkpoint, dated dispatch instruction or independent permission to start work.
+I01–I12 are the sole implementation/acceptance sequence; B1–B6 outcome labels do
+not form a competing execution queue. After the current IV1/comparison obligations
+and their gates are satisfied, select the first unfinished dependency-ready I slice,
+starting from the shared foundation rather than bypassing its missing coverage.
 Preserve physical-event gates and individual run/scientific holds. Reuse completed
 reading and bounded controls while their relevant inputs and claims are unchanged.
 

@@ -7,9 +7,13 @@ and original scientific source/runtime identities did not. The digests below
 identify those public copies, not the original run artefacts. See the
 [before/after trail](../evidence/public-path-redaction-r1.json).
 
-23 September 2026. WORKING NON-CANON. Step 5 complete for the routes below;
+23 September 2026. Step 5 complete for the routes below;
 assembled acceptance and matched recovery measurement PASS. The [Step 1 design](W07_REGIONAL_MECHANICS.md) and
 [case register](../cases/w07_mechanics.json) are unchanged.
+
+The Step-1 document is an executable frozen design input. Its prospective
+implementation language describes that capture, not outstanding Steps 2–5;
+the linked component records and this workflow describe their delivered scope.
 
 Subsequent 23 September dependency repair: surface projection and variable
 flexure now load SciPy lazily. The [review-fix record](../../docs/CURRENT_EVIDENCE.md#23-september-review-of-5ae74dc--reported-failures-resolved-locally)
@@ -162,8 +166,9 @@ Costs and changes, accepted with the repair:
 
 - Checkpoint content changes. An evolved thermal record without the snapshot is
   refused with a field-set mismatch, and so is a record at the geological epoch
-  that carries one. Records written before the repair are recomputed in any
-  case, because the package execution identity changed.
+  that carries one. The changed package execution identity defines a new
+  invocation: old records are not migrated or rebound, and a new invocation
+  computes its own outputs.
 - Stores grow by up to one mechanics snapshot per evolved output. The store
   keeps each distinct array once, so a later interval's input, which is its
   parent's endpoint, adds no array payload; a first interval's epoch solve adds

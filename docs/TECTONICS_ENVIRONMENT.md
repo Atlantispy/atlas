@@ -1,6 +1,6 @@
 # Tectonics environment
 
-26 September 2026. WORKING NON-CANON. Roadmap Phase A5.
+26 September 2026. Roadmap Phase A5.
 
 This page records the tested Windows tectonics environment as reproducible setup
 inputs. Package-version pins are **not** proof of identical native binaries or of

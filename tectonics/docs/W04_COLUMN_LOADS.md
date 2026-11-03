@@ -1,6 +1,6 @@
 # W04 step 1: physical loads against a finite reference column
 
-22 September 2026. WORKING NON-CANON, local unreleased `remake` implementation.
+22 September 2026. local unreleased `remake` implementation.
 This completes **load construction**, not W04 support/coupling acceptance or
 empirical terrain realism. It does not change `PeriodicFlexure` or apply movement.
 

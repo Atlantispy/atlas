@@ -1,6 +1,6 @@
 # I01 D6: physical transitions and event transactions
 
-**27 September 2026. WORKING NON-CANON. D6 candidate v1, task
+**27 September 2026. D6 candidate v1, task
 atlas-i01-d6-20260926.** This refines D6 of the
 [I01 physical contract](I01_PHYSICAL_CONTRACT.md#8-d6--physical-events-not-label-switches)
 (`atlas.regime-transactions.v1`); it does not replace that contract or its r1
@@ -13,7 +13,8 @@ the [bounded controls](../tools/check_i01_transitions.py) write the
 No native solver, shared status file or earlier receipt is changed by this
 document or its controls. A passing control demonstrates only its stated reduced
 slice. **Generated continental breakup and generated subduction initiation remain
-blocked**; section 10 names the exact missing decisions and supported routes.
+blocked**; section 10 distinguishes the selected methods from their outstanding
+physical implementation and acceptance.
 
 ## 1. What D6 decides, in plain language
 
@@ -27,9 +28,10 @@ transferred, who owns the work and heat, and when Atlas must refuse.
 Two rules run through every transition:
 
 1. **A physical trigger, located in time.** The change happens when a declared
-   physical quantity crosses a value: a force ratio, a buoyancy balance or a
-   material supply. The crossing is a bracketed root of that quantity, evaluated
-   from the committed parent state. A thickness cutoff, a label, an angle
+   physical quantity reaches its admitted event condition: a force ratio, a
+   buoyancy balance, contact or a material supply. Its time needs a bracketed root
+   or a law-specific event certificate, evaluated from the committed parent state.
+   A thickness cutoff, a label, an angle
    threshold or a display test is not a trigger.
 2. **A switch that does not change the answer.** Switching representation at the
    trigger may change downstream accepted quantities (plate motion, material and
@@ -75,6 +77,11 @@ a crossing certificate beyond it; the bounded helper never extrapolates outside
 the interval. Every evaluation, including Brent's, uses the same sample budget.
 Nonfinite endpoints and a clock too coarse to advance are refused.
 
+This bounded sign-change helper refuses tangencies; it is not a detector for every
+physical event. The [exact affine junction-contact helper](I01_JUNCTION_EVENTS.md)
+handles its declared double-root contact directly. General contacts need their own
+geometry/event certificate and must not be discarded because this helper refuses.
+
 **Simultaneous events** (triggers within `tau_t`):
 
 - Disjoint footprints commute. They are applied in canonical event-ID order, and
@@ -117,7 +124,10 @@ symmetric wide rifts without migration.
 
 **What is decided.** When does the belt stop being a continental region that
 couples two plates, and become a divergent plate boundary? The answer is
-mechanical: when the belt no longer controls the plates' relative motion.
+mechanical for a representation handoff: when the belt no longer controls the
+plates' relative motion. Physical separation is a separate requirement under the
+[selected bond-history route](I01_SEPARATION_FEASIBILITY.md) or the supported
+[creep-necking branch](I01_BREAKUP_CLOSURE.md); decoupling alone never splits a plate.
 
 ```text
 F_drive - R_far(v) - F_belt(state, v) = 0      D1 balance, per side, per unit length
@@ -170,7 +180,10 @@ original plate ID. All thinned crust and mantle stay continental margin cohorts
 with their ages, thermal histories and D2 memory. The new boundary has a fresh ID;
 its new area comes only from D3 birth with the section 4 supply. In D1, the belt's
 coupling term is removed. Before handoff, driving work equals far-field
-dissipation plus belt dissipation; after it, the belt term is zero.
+dissipation plus belt dissipation; the reduced motion solve removes that named belt
+resistance after an admitted handoff. Stored stress/energy and material heat/history
+must still be retained or transferred under the
+[whole-window handoff contract](I01_SEPARATION_DECISION.md#4-mechanical-handoff-compare-solutions-over-time).
 
 **Required inputs.** D1 driving forces and the far-field resistance operator; D2
 depth-integrated belt strength with temperature, effective pressure, strain
@@ -305,7 +318,9 @@ theta = (Tb - T)/(Tb - Ts): I01 plate-cooling series; steady linear for continen
   work in this reduced model, not a proof of full gravitational/thermal closure;
   untransmitted work and actual sinking geometry remain outside this control.
 - `R(state)`, the resisting force through bending and failure, has no validated
-  reduced closure. That is the missing decision (section 10).
+  reduced closure. The [selected resolved initiation method](I01_INITIATION_DECISION.md)
+  computes that reaction instead of fitting a new scalar resistance; its full
+  physical implementation and acceptance remain I07 work.
 
 ## 7. Continental arrival and collision: `atlas.collision-buoyancy-handoff.v1`
 
@@ -358,7 +373,7 @@ slip; normal creation or convergence needs another physical route.
 | Split | Separation handoff, or an initiation segment that joins two existing boundaries or junctions | Fresh IDs; ownership by exact intersection of current material; refused if the new boundary ends inside a plate |
 | Merge | Collision handoff, then relative motion within tolerance over an interval | Suture kept as a D2 inheritance; no area renormalisation |
 | Retire | Plate area reaches zero through bracketed consumption | All material already in named destinations; ID stays reserved |
-| Junction reorganisation | Closure residual above tolerance | Needs an admitted evolution law; refused in v1 |
+| Junction reorganisation | Loss of compatible rigid motion or certified contact/degeneracy | Selected [resolved-patch method](I01_JUNCTION_REORGANISATION.md); physical event integration remains outstanding; refused in this control |
 | Ridge jump or polarity reversal | Prescribed history only (Crameri types: episodic, reversal) | Treated as a split plus retire; never inferred from labels |
 
 Coverage must remain exactly `4 pi R^2` with one owner per point. No rubber-band
@@ -366,23 +381,26 @@ closure, no smoothing and no recolouring may hide a gap or overlap.
 
 ## 10. Status, missing decisions and supported routes
 
-| Transition | Status | Exact missing decision | Supported now |
+| Transition | Status | Outstanding implementation or acceptance | Supported now |
 | --- | --- | --- | --- |
 | Event bracketing, simultaneity | Specified; bounded control implemented | Production trigger certificates per law (I02) | Prescribed and control use |
 | Separation trigger and transfer | Proposed; linear control implemented; **generation blocked** | Validated depth-integrated belt strength `F_belt(T, kappa, h)` from D2/D4, a resolved rift and an actual nonlinear replacement-error certificate | Prescribed separation (time and axis supplied) in `prescribed_history_v1` |
-| Post-separation supply | Column inventory/end-member control implemented, not actual supply | D4 axial lid `z_lid(rate)`, mantle `Tp` provenance, melt extraction and focusing | Scenario-supplied `Tp` and lid |
+| Post-separation supply | Column inventory/end-member control implemented, not actual supply | Implement the [selected flow/thermal route](I01_MELT_ROUTE.md), with compatible provider, phase-front handling, finite extraction/focusing and a solved cooling barrier; no universal `z_lid(rate)` | Scenario-supplied `Tp` and lid in the original control; bounded segregation separately |
 | Ridge and trench migration | Proposed (symmetric accretion; upper-plate trench) | Asymmetric accretion law; back-arc rollback | Prescribed asymmetry, resolved back-arc |
 | Rift migration | **Blocked** in reduced mode | Resolved belt with lateral strength gradient (I07) | Prescribed migration with exact transfers |
-| Junction persistence | Proposed; control implemented | Junction reorganisation law | Refusal plus prescribed reorganisation |
-| Subduction initiation | State and inventory specified; control implemented; **generation blocked** | `R(state)`: elasto-plastic bending plus weakening with physical length and pore pressure | Prescribed initiation (tests transfers); resolved I07 benchmark route |
+| Junction persistence | Kinematic control implemented; physical method selected | Integrate the [resolved patch](I01_JUNCTION_REORGANISATION.md) with actual mechanisms, geometry, event timing and joint transfers | Refusal plus prescribed reorganisation; bounded multidirectional mechanics separately |
+| Subduction initiation | State and inventory specified; method selected; **generation blocked** | Implement the [resolved initiation/release method](I01_INITIATION_DECISION.md) with retained memory, physical length, declared pore pressure and supported inputs | Prescribed initiation for transfer tests; [analytical prerequisites](I01_INITIATION_VERIFICATION.md) and later I07 physical case |
 | Collision | Proposed; control implemented | Partition of arriving continent; slab breakoff | Declared partition, or refusal |
 | Transform and oblique | Specified; control implemented | Resolved strain partitioning (I07) | Full-vector reduced adapter |
 
 The resolved route for initiation is an I07 regional elasto-visco-plastic
-experiment using the D2 physical length. It must reproduce Gurnis et al. (2004)
-behaviour: force rising with convergence and falling at plate failure, the
-failure offset independent of mesh, and age dependence. A full global convection
-model is not the automatic fallback.
+experiment using the D2 physical length. The [selected comparison hierarchy](I01_INITIATION_VERIFICATION.md)
+allows independent analytical verification for I01 while the published archives
+remain incomplete. I07 still needs its fully declared resolved case, fixed-length
+space/time/orientation and boundary checks, and genuine force release. A Gurnis
+reproduction is a separate source-reconciled comparison, not permission to guess
+missing inputs or an exclusive prerequisite for method selection. A full global
+convection model is not the automatic fallback.
 
 ## 11. Mechanical inputs a rupture or initiation law needs from D2
 

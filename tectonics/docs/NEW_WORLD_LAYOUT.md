@@ -1,9 +1,10 @@
 # New-world step 2: variable candidate plate layouts
 
-Status: **WORKING NON-CANON; candidate geometry, not geological acceptance.**
+Status: **candidate geometry, not geological acceptance.**
 The [step 1 configuration](NEW_WORLD_CONTRACT.md) feeds a real spherical
-plate-layout producer. Crust, temperature, motion and a complete initial-world
-descriptor belong to subsequent increments.
+plate-layout producer. [Crust and temperature](NEW_WORLD_STRUCTURE.md) and
+[initial motion](NEW_WORLD_MOTION.md) are supplied by their later adapters,
+not by this layout producer.
 
 ## Save and reopen a project
 
@@ -55,8 +56,9 @@ python -B tectonics/tools/new_world_session.py read --file MANAGED_PATH
 ```
 
 `generate` accepts exactly `{"title":"My world","request":S1_REQUEST}` on stdin
-(64 KiB maximum). It validates before generating once, preserves explicit
-candidate refusals and atomically saves only successful geometry. Interactive
+(64 KiB maximum). The current composed command prepares structure, then layout
+and motion, preserves explicit candidate refusals and atomically saves only a
+successful project. Interactive
 requests must select at most 1024 support cells, 256 MiB work memory and 120 seconds;
 larger requests are refused, not silently downsampled. These are connection limits,
 not modifications to the scientific producer or S1 domains. `read` requires no
@@ -66,23 +68,13 @@ the file generates geometry or simulation history.
 Both commands return `schema: atlas.world-session-response.v1`, `status: ok`,
 `data: WORLD_VIEW`, exit 0. Failures return the same schema with `status: error`
 and `error: {code, message}`, exit 2; messages omit private filesystem paths.
-Success output is bounded to 2 MiB. The view has exactly:
-
-```text
-schema: atlas.world-view.v1
-project_id, title, status: WORKING NON-CANON, atlas_id, geometry_id
-request: original S1 request
-resolved_settings: original sampled/fixed values
-configuration_compatible: S1 binding comparison only
-capabilities: save_world=true, load_world=true, candidate_geometry=true,
-              evolve_world=false, native_restart=false
-geometry:
-  coordinate_system: unit-sphere
-  vertices: [[x,y,z], ...]                  # original native unit directions
-  plate_ids: [id, ...]
-  patches: [{plate_index, rings:[[vertex_index, ...], ...]}, ...]
-  boundary_edges: [[vertex_index, vertex_index], ...]
-```
+Success output is bounded to 2 MiB. `world_view` now emits
+`atlas.world-view.v3`: project/request identities, resolved settings, configuration
+compatibility, capabilities and indexed geometry, plus nullable structure and
+motion. The [current view contract](NEW_WORLD_MOTION.md#ui-contract-world-view-v3)
+owns the field definitions, including `boundary_edge_indices` and the initial
+structure/motion capability flags. The original v1 table is not a second current
+schema. `evolve_world` and `native_restart` remain false for this initial-world view.
 
 Rings preserve native ordering: outer first, then holes. Close the last index to
 the first, using minor great-circle arcs, not straight longitude/latitude lines
@@ -338,8 +330,9 @@ change alone is never diversity evidence.
 
 Native `save_spherical_atlas` / `load_spherical_atlas` preserve actual arrays and
 bindings in the existing lossless store. Step 5 owns complete world jobs, cache
-admission and native continuation. UI remains configuration-only: this candidate
-must not feed the unrelated fixed W12 column demonstration.
+admission and native continuation. The layout function supplies candidate geometry;
+the composed UI route adds the separate structure and motion adapters. This
+candidate must not feed the unrelated fixed W12 column demonstration.
 
 ## Efficiency and resource scope
 

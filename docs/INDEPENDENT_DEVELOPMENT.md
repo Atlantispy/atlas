@@ -1,7 +1,7 @@
 # Independent Atlas development
 
 Atlas is vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under the owner's direction.
-**WORKING NON-CANON.** This is a runnable **public-component development package**,
+This is a runnable **public-component development package**,
 not a substitute installation of the private scientific runtime.
 
 The public package provides a fresh offline environment, an editable source
@@ -139,8 +139,11 @@ this is **not** a security sandbox for untrusted pull requests.
 
 For the tectonics suites, [DEVELOPMENT_TOOLS.md](DEVELOPMENT_TOOLS.md) describes `verify.py --quick` (the measured
 slow tests omitted), a parallel test runner, a conservative test-impact selector and a one-command patch-candidate
-verifier. They shorten iteration only: the full gate is still required before reporting a pass, capturing evidence
-or accepting a change.
+verifier. They report only their selected coverage. Use the qualification required
+by the affected route or stage; a focused pass does not claim a full-suite pass,
+and documentation edits do not require unrelated simulations. Follow the
+[shared check-scope policy](DEVELOPMENT_TOOLS.md#when-the-full-gate-is-still-required)
+and reuse adequate unchanged evidence.
 
 ## Troubleshooting
 

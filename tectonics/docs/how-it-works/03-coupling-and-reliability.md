@@ -2,8 +2,7 @@
 
 This chapter covers W09–W12 and the shared services that let supported tectonic
 calculations exchange, retain and inspect results. It belongs to
-[How tectonics is made](../HOW_TECTONICS_IS_MADE.md). Atlas remains **WORKING
-NON-CANON**: implemented equations, numerical verification, geological credibility
+[How tectonics is made](../HOW_TECTONICS_IS_MADE.md). Atlas remains : implemented equations, numerical verification, geological credibility
 and practical integration are different achievements.
 
 All numerical measurements below describe their recorded source/runtime snapshots.

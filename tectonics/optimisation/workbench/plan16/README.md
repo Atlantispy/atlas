@@ -1,6 +1,6 @@
 # Plan16: geometry worker cap and rolling interfaces
 
-WORKING NON-CANON. The sampled six-worker proof passed. This additive source
+The sampled six-worker proof passed. This additive source
 revision integrates the scheduling seam with [Plans13–14](../plans13-14/README.md),
 preserving 629 selected members and all 239 native files. Five helpers change;
 the existing worker/rolling/endpoint-clamp transforms are already present.

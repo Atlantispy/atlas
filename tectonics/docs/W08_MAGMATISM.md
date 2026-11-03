@@ -1,6 +1,6 @@
 # W08 step 5: finite-source magmatism
 
-23 September 2026. WORKING NON-CANON. Step5 is COMPLETE for the prescribed
+23 September 2026. Step5 is COMPLETE for the prescribed
 finite-transfer C06 route. The frozen design and original A04-A06 gates remain
 unchanged. Step6 owns joined regime histories, checkpoint/restart and combined
 acceptance; this increment does not replay R4.4.

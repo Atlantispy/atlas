@@ -109,10 +109,10 @@ workload before running. The command below creates a new receipt exclusively,
 binds this method, case, tool and tests, and checks source identity before/after:
 
 ```
-python -B tools/check_i01_junction_events.py --output evidence/i01-junction-events-r1.json
+python -B tectonics/tools/check_i01_junction_events.py --output NEW_PATH.json
 ```
 
-Five interleaved batches compare 1,000 identical queries with a prepared object
+Run from the repository root. Five interleaved batches compare 1,000 identical queries with a prepared object
 against rebuilding that object each time, requiring exact output equality.
 The recorded saving is **preparation reuse only**, not improvement over an
 existing world solver, end-to-end speedup or evidence for parallel execution.

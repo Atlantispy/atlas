@@ -2,7 +2,7 @@
 
 **Item ID:** 23  
 **Retained owner:** Storage; backlog 14 / WP12 D1.  
-**Status:** WORKING NON-CANON. Assessment complete: **UNBUILT/OFF** (see Disposition). No source, runtime or default change.
+**Status:** Assessment complete: **UNBUILT/OFF** (see Disposition). No source, runtime or default change.
 **Target completion condition:** Establish the code-quoted guard equivalence before implementation, then demonstrate exactness, resource accounting and the existing 5% net A/B gate on the selected live reader. Enable only if those conditions hold; otherwise retain an evidenced off/deferred disposition. This document authorises no build or run.
 
 ## Disposition — 23 October 2026

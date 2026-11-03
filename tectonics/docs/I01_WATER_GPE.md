@@ -1,6 +1,6 @@
 # I01 MC-07: water-loaded, flexed columns to gravitational driving
 
-**27 September 2026. WORKING NON-CANON. Bounded I01 choice and control for closure-matrix
+**27 September 2026. Bounded I01 choice and control for closure-matrix
 item MC-07 (rows CM-04 and CM-15).** It joins the retained [dry column/GPE helper](I01_GPE.md)
 to the retained [finite-water/flexure equilibrium](I01_WATER_FLEXURE.md) on their shared
 planar periodic support. It is not I04 world sampling, I08 regional or global support, or a
@@ -27,9 +27,10 @@ Contract `atlas.water-loaded-gpe.v1`:
   nonuniformity. The plate then carries part of each column's load sideways, so the pressure
   beneath its shear-carrying layer is not the weight of the material above. `V` depends on
   the depth `c` of that layer, with `dV/dc = B` below. The join runs only with an explicitly
-  declared effective shear-transfer depth and its basis. **Choosing that depth is an
-  unresolved material decision.** No default is supplied, and nothing here closes arbitrary
-  flexural loading or all of MC-07.
+  declared effective shear-transfer depth and its basis. The separately selected
+  [single-elastic-core branch](I01_ELASTIC_CORE.md) derives it together with rigidity
+  from one declared homogeneous core. Arbitrary layered or varying cores remain
+  unresolved; no default depth or acceptance of general flexural loading follows.
 
 ## 1. What moves through this connection
 
@@ -304,8 +305,9 @@ call leaves no partial state.
   scope. A sphere needs its own compatible support; nothing here is a spherical calculation.
 - **The Kirchhoff step.** It is exact for a homogeneous layer with symmetric shear. A
   layered or multi-core plate needs its load-weighted effective depth. Deriving that depth
-  from a strength envelope is not done here. The effective shear-transfer depth itself
-  remains an unresolved material choice (section 11).
+  from a strength envelope is not done here. The [single-core producer](I01_ELASTIC_CORE.md)
+  supplies one selected bounded branch; more general material choices remain open
+  (section 11).
 - **The traction operator.** Traction uses second-order periodic central differences,
   matching the order of the retained spherical stencil. A shoreline is a gradient kink in
   `V`. It is treated without spectral ringing, but only at first order locally.
@@ -441,10 +443,11 @@ implementation.
 
 ## 11. Remaining work
 
-- **Unresolved material choice (owner/I08).** Decide the effective shear-transfer depth for
-  finite-rigidity joins. Options include deriving it from a D2 strength envelope or from a
-  declared elastic-core position. The alternative is to restrict D1 driving to compensated
-  states. Until then, finite-rigidity output is conditional.
+- **Material choice (owner/I08).** Use the separately selected
+  [single-elastic-core branch](I01_ELASTIC_CORE.md) only with its explicit placement,
+  moduli and support. Layered/varying cores and a D2 strength-to-core producer remain
+  open; otherwise restrict D1 driving to compensated states. Finite-rigidity output
+  remains conditional on the declared supported material model.
 - **No omission bound.** A small nonuniform support is never treated as compensated.
   Admitting such states without a level would need a separately derived, predeclared bound
   on `c B` that covers the claimed output. None is derived here.

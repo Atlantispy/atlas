@@ -40,5 +40,5 @@ Use required independent review or explicit review holds where the assignment
 requires them. Otherwise the owner completes its focused check without a routine
 Codex approval wait. Escalate missing authority, consequential scientific choices,
 source conflicts, material privacy/security risks and genuine blockers. Stop at
-the assigned boundary and respect deferred-review dates. WORKING NON-CANON remains
-the project status; owner checking does not confer scientific acceptance.
+the assigned boundary and respect deferred-review dates. Describe engineering
+and scientific status explicitly; owner checking does not confer scientific acceptance.

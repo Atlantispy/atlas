@@ -1,6 +1,6 @@
 # I04/I05 port record: the values that pass between motion and material state
 
-**WORKING NON-CANON.** This is the shared interface contract.
+This is the shared interface contract.
 [Current state](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 owns delivery and acceptance.
 - **Conditions applied.** The coordinator's rulings on the decisions proposal, and its round-1 verification
@@ -253,6 +253,14 @@ trace point whose adjacent face holds several cohort pieces whose material at th
 
 **P1 representation `fv-cell-mean` (amendment of 4 October 2026, coordinator ruling).** For one case only, this
 supersedes "columns are never averaged". I05's `moving_columns` codes it.
+- **Source route.** The primary `tectonics/src` implementation admits this labelled
+  approximation automatically for the equal-structure case. The
+  [composed-r2 successor](../optimisation/composed-r2/src/atlas_tectonics/integration_properties.py)
+  instead defaults to exact trace extraction (`allow_cell_mean=False`); its
+  approximation requires explicit `allow_cell_mean=True`. Its published I04
+  feedback uses material-resolved trace support and keeps the exact default;
+  a legacy cell-mean control must opt in explicitly. A default exact-trace
+  refusal must not be described as an automatically averaged column.
 - **When it applies.** A face holding several pieces is admitted when every piece has bitwise-equal layer structure:
   the same material, phase, `rho_ref`, `alpha` and `cp` per sublayer, and identical tuples of sublayer thicknesses
   and depths (not equal within a tolerance).
@@ -301,7 +309,8 @@ I04a's v1 gate applies: the datum must be exactly 3300 kg/m³ at 293.15 K, else 
   I03/I05 from S0 with `omega^k` and `dkappa^k`, evaluates P1/P2 at the candidate endpoint `E^k` and solves D1 with
   the belts there, giving `omega^(k+1)`, `dkappa^(k+1)` (P6) and P7 from the same integration. The interval converges
   when the relative changes fall to `1e-8` (cap 40, the regional-strength precedent); it refuses when the change grows
-  twice running after the second iterate, or when the last contraction is `>= 1`
+  twice running after the second iterate. A converged return already has last
+  contraction below 1 by construction; there is no separate `rho >= 1` refusal
   ([I04_CAUSAL_START.md, R4-7](I04_CAUSAL_START.md#r4-7-first-feedback-coupling)).
 - **Non-convergence.** A nonconverged interval refuses without ageing rock or spending accounts; nothing is
   committed.

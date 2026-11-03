@@ -2,7 +2,7 @@
 
 **Item ID:** 24  
 **Retained owner:** Storage; backlog 18, ideas 043 and 032.  
-**Status:** WORKING NON-CANON. Assessment complete, reviewed 24 October 2026: **neither build gate is established; both mechanisms remain NOT BUILT**. No source, format, runtime or default change.
+**Status:** Assessment complete, reviewed 24 October 2026: **neither build gate is established; both mechanisms remain NOT BUILT**. No source, format, runtime or default change.
 **Target completion condition:** Use the retained q04 evidence to give each technique an evidence-bound disposition, accounting for the current L3/WP12 reader. Identify only the missing observation or gated follow-up. Do not implement a new format or pool merely to complete this scoping item.
 
 ## Disposition — reviewed 24 October 2026

@@ -1,7 +1,10 @@
 # I01 common thermodynamic provider: connection contract
 
-**WORKING NON-CANON — common-provider contract and experimental Gibbs connection.**
-MC-03 remains open. Sections 1–7 specify the connection; section 8 records the
+**common-provider contract and experimental Gibbs connection.**
+MC-03's [flow/thermal choice](I01_MELT_ROUTE.md) and
+[bounded segregation feasibility](I01_MELT_SEGREGATION.md) are selected; full
+source-to-crust implementation and physical acceptance remain open.
+Sections 1–7 specify the connection; section 8 records the
 implemented bounded route and its acceptance limits. No retained solver,
 historical evidence, W08 law or release default changes.
 
@@ -164,8 +167,8 @@ receipts or implies that every item in the table is complete.
   [R_DMC's pinned equilibrium code](https://github.com/richard-katz/R_DMC/blob/21d22e4d6fae26d47dc7ec9d9983a613dba69947/src/R_DMC_Equilibrium.m#L313-L325)
   and [Keller & Katz (2016)](https://eprints.gla.ac.uk/195948/1/195948.pdf) in that
   review and are reused here, not reread or adopted as a calibration. Concrete
-  target datasets, model/component choice, extraction, focusing and the thermal
-  lid remain separate MC-03 work.
+  target datasets and full extraction/focusing/thermal-lid integration remain
+  separate work under the [selected MC-03 route](I01_MELT_ROUTE.md).
 
 ## 8. Implemented common-Gibbs connection
 

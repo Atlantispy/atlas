@@ -1,6 +1,6 @@
 # I01: bounded junction mechanics feasibility
 
-WORKING NON-CANON. This control exercises the selected resolved-patch route
+This control exercises the selected resolved-patch route
 through the retained three-dimensional mechanics and plate-torque adapter.
 It establishes same-time numerical feasibility only. It does not issue physical
 interfaces, advance a world, choose a replacement graph or close physical

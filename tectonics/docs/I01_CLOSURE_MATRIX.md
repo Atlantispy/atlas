@@ -1,10 +1,10 @@
 # I01 closure matrix: promised routes, owners and remaining decisions
 
-**27 September 2026. WORKING NON-CANON. Route and acceptance matrix only: not a
+**27 September 2026. Route and acceptance matrix only: not a
 status ledger, configuration, evidence run or scientific acceptance.** This is the
 compact matrix that the [integration plan](INTEGRATION_PLAN.md#i01--freeze-the-end-to-end-contract-and-physical-closure-choices)
 asks I01 to bind to the promised user routes. It separates the physical choices I01
-still owns from work already assigned to I02–I12. [Current state](../../docs/CURRENT_STATE.md)
+has selected from implementation and physical acceptance assigned to I02–I12. [Current state](../../docs/CURRENT_STATE.md)
 remains the single progress record. The [physical contract](I01_PHYSICAL_CONTRACT.md)
 and the linked method documents remain the equations of record. The machine-readable
 mirror is [i01_closure_matrix_v1.json](../cases/i01_closure_matrix_v1.json).
@@ -20,7 +20,34 @@ mirror is [i01_closure_matrix_v1.json](../cases/i01_closure_matrix_v1.json).
   receipt is a bounded control: it records `scientific_acceptance` false or a
   `PASS_BOUNDED_..._ONLY` status. The B1 and New World receipts are descriptive or
   historical. None is generated-world acceptance. The JSON mirror carries the
-  register's digests.
+  register's digests and classifications. On 3 November 2026, changed bound method
+  prose made 25 controls historical. Their original receipt/source digests, results
+  and numerical limits remain preserved; scientific contracts, code, cases, tests
+  and thresholds are unchanged. No recapture or scientific rerun occurred. Unchanged
+  entries, including the frozen live column chain, retain their current bindings.
+- **Frozen method inputs.** The original column-admission, weakening, column-heat,
+  motion-coupling, thermomechanical and finite-strain specifications retain their
+  captured bytes where selected upstream-receipt guards consume them. Their
+  original handoff wording (including a then-pending r3 successor) is historical;
+  the selected chain receipts are the ones cited in the row details and register.
+  `check_i01_column_heat.reviewed_helpers` checks the weakening document, and
+  finite-strain/admission evidence matching checks all sources recorded by their
+  selected prerequisites. Editing those frozen inputs would invalidate that live
+  route, even if a register label changed. Later connected methods supply the
+  additional force, heat and finite-strain behaviours without widening each old
+  control's scope.
+- **Selected fixture specifications.** Plan39's retained
+  [source map](../optimisation/workbench/plan39/SOURCE-MAP.json)
+  (entries 420/421/422) selects `I01_SEPARATION_DECISION.md`,
+  `I01_SEPARATION_FEASIBILITY.md` and `I01_SEPARATION_LAW.md` as runtime
+  `_fixtures/docs` payloads with exact source
+  pins. Their bytes remain frozen. Their original MC-01-open, missing `eps_v`,
+  unselected irreversible-history and pending-wording statements describe those
+  earlier specifications, not today's method-selection state. The selected
+  [bond-history method](I01_SEPARATION_FEASIBILITY.md) owns the irreversible latch
+  and bonded/point-set distinction; [I02](I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v)
+  owns the later `eps_v = 0.01` policy. The old null stays in the frozen case.
+  Full lithosphere-event and whole-window certification remain outstanding.
 - **Remaining items** (section 5) have four classes: **MC** missing I01 choice or
   bounded feasibility; **LS** selected, later-stage implementation; **IN** explicit
   input or calibration; **UR** unsupported route or refusal.
@@ -99,7 +126,7 @@ Feedback ownership and exchange rules not repeated here are in
 - *Owners:* I04 supplies and I05 carries. D1 reads initial slabs, D2 inherited
   weakness and D4 thermal state.
 - *Evidence:* the D2 and breakup fixtures treat weakness as an authored initial
-  assumption (`i01-controls-r1`, `i01-breakup-closure-r4`).
+  assumption (`i01-controls-r1`, `i01-breakup-closure-r5`).
 - *Refused:* unknown age as zero, mean-age cooling of mixtures, nearest-present-ridge
   ages (UR-03).
 - *Remaining:* report how much retained material depends on assumed history
@@ -130,8 +157,8 @@ Feedback ownership and exchange rules not repeated here are in
   forcing. P: prescribed rotations remain a reference mode (UR-01).
 - *Exchange:* rad/s and N m. Positive drag anchors the declared mantle frame; net
   rotation is reported, never subtracted after the solve.
-- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, `i01-motion-coupling-r3`,
-  `i01-thermomechanical-motion-r4`, `i01-finite-strain-r5`, `i01-water-gpe-r1`,
+- *Evidence:* `i01-controls-r1`, `i01-gpe-r1`, `i01-motion-coupling-r4`,
+  `i01-thermomechanical-motion-r5`, `i01-finite-strain-r6`, `i01-water-gpe-r1`,
   `i01-elastic-core-r1`.
 - *Validity:* dry compensated columns, manufactured hemispheres and fixed-temperature
   regional balances; separately, periodic planar water-loaded traction with a
@@ -147,8 +174,8 @@ Feedback ownership and exchange rules not repeated here are in
   finite-volume enthalpy with mesh velocity distinct from material velocity; per-cohort
   enthalpy and history; constant-per-material `Cp` and `k`; properties from one endpoint
   state; raw plastic history transported and never filtered in place.
-- *Evidence:* `i01-thermal-r2`, `i01-column-heat-r5`, `i01-thermomechanical-motion-r4`,
-  `i01-finite-strain-r5`, `i01-finite-admission-r8`.
+- *Evidence:* `i01-thermal-r2`, `i01-column-heat-r6`, `i01-thermomechanical-motion-r5`,
+  `i01-finite-strain-r6`, `i01-finite-admission-r12`.
 - *Validity:* small-strain periodic cell, fixed-geometry columns and a closed laterally
   uniform strip. No lateral transport, inflow or melting.
 - *Refused:* mean-age cooling, averaged viscosities or ages as W07 input, bypassed
@@ -162,9 +189,9 @@ Feedback ownership and exchange rules not repeated here are in
 - *Routes:* G column law (composite creep plus regularised friction), evolving
   weakening, force-balanced motion, column heat and finite strain. Mechanical
   decoupling is the separate D6 record `atlas.rift-decoupling-handoff.v1`.
-- *Evidence:* `i01-column-r2`, `i01-weakening-r4`, `i01-column-heat-r5`,
-  `i01-thermomechanical-motion-r4`, `i01-finite-strain-r5`, `i01-decoupling-r1`,
-  `i01-column-admission-r3`, `i01-finite-admission-r8`, `i01-transitions-r2`.
+- *Evidence:* `i01-column-r2`, `i01-weakening-r5`, `i01-column-heat-r6`,
+  `i01-thermomechanical-motion-r5`, `i01-finite-strain-r6`, `i01-decoupling-r1`,
+  `i01-column-admission-r4`, `i01-finite-admission-r12`, `i01-transitions-r2`.
 - *Validity:* laterally uniform strips. The linear handoff bound covers only its linear
   control. The homogeneous strip is admitted at 10%; the layered strip is honestly
   uncertified at 1%.
@@ -192,8 +219,8 @@ Feedback ownership and exchange rules not repeated here are in
   splits ownership. Crustal disconnection is at most a separately named milestone.
   Crustal, mantle-lithosphere and mechanical-handoff diagnostics stay separate
   (section 6.1).
-- *Evidence:* `i01-breakup-closure-r4`, `i01-transitions-r2`, `i01-finite-strain-r5`.
-  `i01-separation-feasibility-r4` passes six controls, with eighteen focused tests:
+- *Evidence:* `i01-breakup-closure-r5`, `i01-transitions-r2`, `i01-finite-strain-r6`.
+  `i01-separation-feasibility-r4` records bounded controls and focused tests for
   fixed-length/time refinement, independent energy accounts and non-breakage
   controls in a synthetic nonuniform shear strip. Physical acceptance stays false.
   The retained column is `REFUSED_REQUIRES_RESOLVED_NECK`: plastic share 0.5506 at the
@@ -222,7 +249,7 @@ Feedback ownership and exchange rules not repeated here are in
     extensive accounts and failure semantics. Its experimental G25/MAGEMin adapter
     now supplies common-Gibbs phase H/S/V, finite extraction and same-pressure
     receiving. Sixteen analytical tests and the 25.097 s Windows native campaign
-    pass ([current receipt](../evidence/i01-gibbs-provider-r3.json)); this dry software
+    pass ([retained receipt](../evidence/i01-gibbs-provider-r3.json)); this dry software
     reference is not withheld calibration. The [selected melt route](I01_MELT_ROUTE.md)
     now specifies compatible porous flow, focusing and a solved cooling barrier,
     including its restrictions. The [segregation control](I01_MELT_SEGREGATION.md)
@@ -251,7 +278,8 @@ Feedback ownership and exchange rules not repeated here are in
   phase-front and thermal route and its physical acceptance. I06 creates birth at the moving ridge from a supplied source (a
   tectonics test) and from the selected melt-derived provider, with finite source
   and export closure (case C). The melt-derived route also needs the axial lid
-  `z_lid(rate)`, Tp provenance and MC-04.
+  from the solved thermal/permeability state, Tp provenance and MC-04; spreading
+  rate alone does not supply a universal lid-depth law.
 
 **CM-09 Spreading, ridges and ocean ages.**
 - *Routes:* G `atlas.spherical-cohort-transactions.v1`: half-rates `b_left` and
@@ -361,10 +389,12 @@ Feedback ownership and exchange rules not repeated here are in
 **CM-16 Save, continue, inspect, change and consume.**
 - *Routes:* G I02 atomic accepted state (parent, common endpoint, identities,
   reservations, all-or-nothing commit); I10 lifecycle and consumers; I08 external ports.
-- *Evidence:* none for the evolved route. `new-world-bundle-r1` and `new-world-bundle-r2`
-  are historical and cover the initial-condition route.
-- *Remaining:* I02 zero-motion round trip, once-only transfer, rollback and resume
-  parity; I10 CLI, UI, save, load, continue and export with a dependent consumer and
+- *Evidence:* [I02's implemented bounded column workflow](I02_WORKFLOW.md) supplies
+  its own accepted-state, transaction, save/reopen and continuation evidence.
+  It does not establish the complete evolving-world lifecycle. `new-world-bundle-r1`
+  and `new-world-bundle-r2` are historical initial-condition evidence.
+- *Remaining:* carry those I02 contracts through actual wider-world producers and
+  events; I10 CLI, UI, save, load, continue and export with a dependent consumer and
   correct invalidation (case J).
 
 ## 5. Remaining items by class
@@ -387,7 +417,7 @@ Selection does not certify the later coupled application.
 
 | ID | Priority | Item | Exact reason | Interim | Builder | Source |
 | --- | --- | --- | --- | --- | --- | --- |
-| MC-01 | Selected; bounded resolved feasibility | Cohesion loss of bonded connectivity with irreversible cohort history; elastic memory retained | [Six resolved-strip controls and seventeen tests](I01_SEPARATION_FEASIBILITY.md) support the choice; full mixed-lithosphere event acceptance still needs the original section 6 comparison and supported physical inputs | Supported strip mechanics; prescribed separation only until full admission | I05, I07; I02/I03 event integration | [selected method](I01_SEPARATION_FEASIBILITY.md); [contract](I01_PHYSICAL_CONTRACT.md) §§4, 8; [elastic memory](I01_ELASTIC_MEMORY.md) |
+| MC-01 | Selected; bounded resolved feasibility | Cohesion loss of bonded connectivity with irreversible cohort history; elastic memory retained | [Resolved-strip controls and focused tests](I01_SEPARATION_FEASIBILITY.md) support the choice; full mixed-lithosphere event acceptance still needs the original section 6 comparison and supported physical inputs | Supported strip mechanics; prescribed separation only until full admission | I05, I07; I02/I03 event integration | [selected method](I01_SEPARATION_FEASIBILITY.md); [contract](I01_PHYSICAL_CONTRACT.md) §§4, 8; [elastic memory](I01_ELASTIC_MEMORY.md) |
 | MC-04 | Selected bounded specification | Basal closure of thinning lithosphere: mechanical base condition, incoming temperature or enthalpy and composition, material and domain-volume balance with the moving free surface | [Reviewed specification](I01_BASAL_CLOSURE.md) and [bounded accounts](../evidence/i01-basal-closure-r1.json); independent exact work control. Inflow equals side outflow only at constant domain volume | Closed-strip runtime unchanged; open-base transport and resolved sensitivity remain later work | I05, I07 | [method and sources](I01_BASAL_CLOSURE.md#9-sources) |
 | MC-02 | Selected; bounded verification | Resolve initiation rather than fit `R(state)` | [Independent analytical route](I01_INITIATION_VERIFICATION.md) verifies gravity-flow, force release versus clamping, and energy ownership. Original archives remain incomplete; I07 needs the full supported case and event tests | Prescribed initiation; declared initial slabs until I07 acceptance | I07 | [decision and sources](I01_INITIATION_DECISION.md); transitions §§6, 10, 11 |
 | MC-05 | Selected; bounded regional feasibility | Physical junction reorganisation | [Eight real 3D mechanical solves](I01_JUNCTION_FEASIBILITY.md) verify the selected multidirectional route. Shared failure/initiation/magma histories and full event acceptance remain outstanding; contact or mechanical response alone is not a birth law | Supported regional mechanics; no generated reorganisation certificate | I07, I03, I09; I02 commit | [physical rule](I01_JUNCTION_REORGANISATION.md); [controls](I01_JUNCTION_FEASIBILITY.md); transitions §§5, 9, 10 |
@@ -490,7 +520,7 @@ chain's analytical feasibility (breakup §5) is not the retained lithosphere's e
      ranges against declared coefficient support (breakup §5, obligation 1).
 4. **Why ladders and manufactured fields cannot settle it** (Atlas reasoning; no source
    is claimed). While the velocity gradient stays bounded, material moves by a
-   continuous, invertible map. A connected material set therefore stays connected, and
+   continuous, invertible map. A connected material point set therefore stays connected, and
    its thickness stays at least its initial value times
    `exp(-integral of the maximum strain-rate magnitude dt)`. Breakup §2's fixed-width
    neck and the exponential branch above are special cases. Material separation at
@@ -500,7 +530,10 @@ chain's analytical feasibility (breakup §5) is not the retained lithosphere's e
    - an admitted change of state or composition, such as melting with extraction;
    - an admitted failure law that creates a discontinuity.
 
-   Manufactured connectivity or accounting controls establish none of these.
+   Constitutive bond loss can change bonded connectivity while the material point
+   set remains connected; the [selected bond-history method](I01_SEPARATION_FEASIBILITY.md)
+   keeps these diagnostics separate. Manufactured connectivity or accounting
+   controls alone establish none of these physical-event requirements.
 
 <a id="62-choices-that-stay-open"></a>
 
@@ -521,7 +554,7 @@ retained elastic stress memory with the logarithmic-objective direction below.
 **MC-01, separation mechanism.**
 - *I01 choice:* cohesion loss of bonded connectivity, with irreversible cohort
   bond history, physical width, explicit material support and retained elastic memory.
-  Six resolved-strip controls and seventeen tests pass in the
+  The resolved-strip controls and focused tests pass in the
   [bounded feasibility route](I01_SEPARATION_FEASIBILITY.md).
 - *Why physical acceptance stays open:* no full-neck event is admitted. A universal fracture energy and magma-assisted breakup
   are refused (UR-07), cutoffs are refused (UR-03) and truncated ladders fail the
@@ -619,8 +652,9 @@ work; neither NA-01 nor the resolved strip supplies that physical acceptance.
 The definitions also check the union of crust and mantle: an alternating-material
 bridge may remain even if each subset has no complete side-to-side path. They
 keep geometric neck width separate from plastic-zone width and fix a whole-window
-maximum velocity norm, replacement reference speed and expiry rule. I02 still
-supplies eps_v; no production value or wider nonlinear certificate is invented.
+maximum velocity norm, replacement reference speed and expiry rule. I02 records
+the approved [`eps_v = 0.01`](I02_WORKFLOW.md#relative-plate-velocity-handoff-contract-eps_v);
+that policy is not a wider nonlinear certificate.
 
 **Decision boundary.** The shared diagnostic/evidence specification is selected.
 NA-01 alone closes no additional MC item. The selected MC-01 method still needs
@@ -629,16 +663,18 @@ I07's full resolved comparison before physical events can be admitted.
 **Next owner obligations.** I05 supplies supported material inputs and conservative
 cohort/bond transport; I07 implements the original full-neck comparison, including
 the negative example, fixed-ell refinement, thermal/material evolution and basal
-sensitivity; I03/I07 cover exterior and along-strike paths. I02 later supplies
-`eps_v`, persistence and one atomic event commit. This record starts none of those
+sensitivity; I03/I07 cover exterior and along-strike paths. I02's declared `eps_v`
+and bounded persistence/commit machinery must be consumed by the later world event.
+This record starts none of those
 increments. I01's seven selections now have bounded support; its final finish-rule
 review remains with the integrating owner.
 
 **Files.** `tectonics/docs/I01_SEPARATION_DECISION.md` and
 `tectonics/cases/i01_separation_decision_v1.json`, plus one paragraph in section 7 of
 the [reader chapter](how-it-works/06-physical-integration.md). The source-bound
-contract, transitions and breakup documents stay unchanged. Any contract amendment is
-a separate owner decision.
+contract, transitions and breakup documents were unchanged by that original
+documentation-only assignment. Later method consistency repairs are separate
+changes and do not retroactively extend its evidence.
 
 **Checks.** JSON parsing, links, `tools/check_public_paths.py`,
 `tools/check_coding_safety.py` and `tools/check_current_evidence.py`. No scientific
@@ -685,9 +721,9 @@ breakup §11.
 No external software was installed or run. No test, campaign or measurement was run
 for this matrix.
 
-The current consistency pass uses the corrected separation controls (current
-record r4, recaptured after the LF receipt-writer correction), initiation r1
-and junction r1 controls, the plan's I01 finish boundary and the selected melt
+The original consistency pass used the corrected separation controls (record r4,
+recaptured after the LF receipt-writer correction), initiation r1 and junction r1
+controls, the plan's I01 finish boundary and the selected melt
 route, plus the delivered melt-segregation receipt and its documented prose-only
 drift. It adds no simulation or physical acceptance; I01's final closure review
 remains with the integrating owner.
@@ -697,7 +733,10 @@ admission, breakup and G25 receipts after enforcing actual thermal density and
 explicit thermodynamic branch support. The closure-matrix receipt table in the
 machine-readable mirror follows the register. As of 1 October 2026, active row,
 selection and source references here and in the mirror follow the registered
-successor. Historical receipt entries retain their original bytes and status.
+successor selected at that repair boundary. The 3 November documentation-only
+reclassification changes freshness, not those selections or original observations.
+The register and mirror retain the actual current/historical classifications; no
+receipt, scientific threshold or result was rewritten.
 The regression in `tests/test_current_evidence.py` checks mirror paths, digests,
 classifications and stale active references; it does not infer physical acceptance.
 Physical event requirements are unchanged; 592 I01 tests passed at that repair;

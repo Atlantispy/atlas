@@ -6,7 +6,7 @@ Atlas is intended to become a **world-agnostic generator**, developed primarily 
 
 **OpenAI's ChatGPT/Codex and Anthropic's Claude Code do the coding under the project owner's direction.** The owner supplies the worldbuilding requirements, decisions and feedback; AI assistants write the code and carry out much of the technical testing. Vibe-coding describes the development process, not a substitute for source review, reproducible tests or independent scientific validation.
 
-**Current status: experimental, WORKING NON-CANON.** Atlas has implementations across 18 modelling categories, connected execution infrastructure and a runnable public component-development package. It is not yet a complete, independently validated world generator. Mountain and wider terrain realism remain unaccepted.
+**Current status: experimental** Atlas has implementations across 18 modelling categories, connected execution infrastructure and a runnable public component-development package. It is not yet a complete, independently validated world generator. Mountain and wider terrain realism remain unaccepted.
 
 [Product and scale](#product-and-scale-contract) · [The 18 categories](#the-18-modelling-categories) · [How it works](#how-atlas-works) · [Current state](docs/CURRENT_STATE.md#current-delivery-and-acceptance) · [Outputs](#what-atlas-produces) · [Try it](#try-the-public-development-package) · [Roadmap](#development-direction)
 
@@ -14,7 +14,7 @@ Atlas is intended to become a **world-agnostic generator**, developed primarily 
 
 The goal is an inspectable worldbuilding system in which decisions have traceable consequences. A change to terrain can matter to water movement; water and ground conditions can matter to vegetation and agriculture; those results can inform settlement opportunities, population support and connectivity.
 
-Atlas combines **supplied world constraints** with **explicit modelling choices and reproducible generation**. Existing geography, species parameters, population records and political decisions are inputs where a component requires them. New worlds may instead use declared generators, parameters and seeds; a complete pre-authored world is not an intended universal prerequisite. Generated assumptions must not masquerade as measured or authored facts. Alternative scenarios remain distinguishable, and experimental results do not silently become accepted world canon.
+Atlas combines **supplied world constraints** with **explicit modelling choices and reproducible generation**. Existing geography, species parameters, population records and political decisions are inputs where a component requires them. New worlds may instead use declared generators, parameters and seeds; a complete pre-authored world is not an intended universal prerequisite. Generated assumptions must not masquerade as measured or authored facts. Alternative scenarios remain distinguishable, and experimental results do not silently replace authored world facts.
 
 Three objectives guide the architecture:
 
@@ -72,12 +72,12 @@ The following list follows the exact category order in the [snapshot contract](e
 
 | # | Category | What the current implementation covers |
 | --- | --- | --- |
-| 1 | **Plate tectonics** (`plate_tectonics`) | The wider R31 route retains [structural and motion snapshots](engineering/work/diadem_tectonics_r2/snapshot.py) from supplied records. The separate [tectonics package](tectonics/README.md) adds W01–W12 physical methods, seeded initial worlds and [I01 coupled-process controls](tectonics/docs/how-it-works/06-physical-integration.md). These additions are not automatically wired into R31 or a completed evolving planet. |
+| 1 | **Plate tectonics** (`plate_tectonics`) | The wider R31 route retains [structural and motion snapshots](engineering/work/diadem_tectonics_r3/snapshot.py) from supplied records. The separate [tectonics package](tectonics/README.md) adds W01–W12 physical methods, seeded initial worlds and [I01 coupled-process controls](tectonics/docs/how-it-works/06-physical-integration.md). These additions are not automatically wired into R31 or a completed evolving planet. |
 | 2 | **Geology** (`geology`) | [Regional geological interpretation, layered ground columns and material properties](engineering/work/generator_upgrade_r26/physical.py) that can feed terrain calculations. Results depend on selected source fields and explicit geological assumptions. |
 | 3 | **Topography and topology** (`topography_topology`) | [Terrain construction, advancement and derived views](engineering/work/generator_upgrade_r31/topography.py), including the relationships used to route water and sediment. The native route remains bounded; realistic mountain formation is not accepted. |
 | 4 | **Hydrology** (`hydrology`) | [Surface-water routing and terrain/water interactions](engineering/work/generator_upgrade_r26/physical.py) using declared runoff, connectors, durations and ground states. Conservation checks do not establish a complete calibrated watershed model. |
 | 5 | **Political borders** (`political_borders`) | [Physical district formation followed by political assignment and typed joins](engineering/work/generator_upgrade_r20/pipeline.py). Political rules and exclusions are supplied separately; the model does not invent legitimate ownership or approve a map. |
-| 6 | **Settlements** (`settlements`) | [Settlement-candidate construction](engineering/work/generator_upgrade_r26/human.py) from explicit candidate, spatial and supporting inputs. Candidate opportunities are not automatically realised settlements or accepted canon. |
+| 6 | **Settlements** (`settlements`) | [Settlement-candidate construction](engineering/work/generator_upgrade_r26/human.py) from explicit candidate, spatial and supporting inputs. Candidate opportunities are not automatically realised settlements or approved world records. |
 | 7 | **Populations** (`populations`) | [Reference-population assignment and scenario placement](engineering/work/generator_upgrade_r22/placement.py), with supplied weights and capacity limits, exact totals and visible unplaced balances. This is not autonomous demographic history generation. |
 | 8 | **Biomes** (`biomes`) | [Cell classification](engineering/work/generator_upgrade_r26/environment.py) using climate metrics, plant functional-type results and declared classification controls. A classification remains conditional on those inputs and rules. |
 | 9 | **Climate** (`climate`) | [Bounded moist-air transport along a transect](engineering/work/generator_upgrade_r4/climate.py), driven by prescribed atmospheric conditions. This is not a global atmospheric-circulation model. |
@@ -112,7 +112,7 @@ the [R5 runbook](docs/R5_OPERATIONS.md) covers their operational boundaries.
 
 Use [current delivery and acceptance](docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 for implemented scope, reviewed acceptance, evidence and remaining work. Execution,
-numerical verification, physical validation and Diadem canon remain separate decisions.
+numerical verification, physical validation and approval of authored-world changes remain separate decisions.
 Historical measurements live with their owner records, not in this front page.
 
 
@@ -192,7 +192,7 @@ Read [AGENTS.md](AGENTS.md) and the relevant [coding-safety map](docs/CODING_SAF
 
 - Do not disable hash/source verification, silently repin checkpoints, relax acceptance tolerances or raise the native 256-step ceiling to obtain a pass.
 - Preserve retained predecessors and immutable history dependencies. Backup, restoration, cleanup and migration require explicit scope; a copied control alone is not a restartable delivery.
-- Report what actually ran and what remains untested. Code approval, scientific validation and Diadem canon are separate decisions requiring their own review.
+- Report what actually ran and what remains untested. Code approval and scientific validation are separate decisions requiring their own review.
 
 Proposed improvements and pull requests are welcome. No automatic merging, background simulation, full-world/whole-year run or synchronisation is enabled by this documentation or the public setup.
 

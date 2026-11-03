@@ -1,6 +1,6 @@
 # Pressure runtime integration
 
-WORKING NON-CANON. This is the executable receiving route for the selected
+This is the executable receiving route for the selected
 [pressure implementation](../README.md), using the existing fresh-profile
 runner and pressure worker. It adds an explicit source/profile binding;
 existing profiles and defaults are preserved. No run or scientific hold is

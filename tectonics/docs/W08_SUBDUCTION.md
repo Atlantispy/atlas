@@ -1,6 +1,6 @@
 # W08 Step 4: prescribed subduction and mantle wedge
 
-WORKING NON-CANON. Implementation and bounded comparison record, not a change to
+Implementation and bounded comparison record, not a change to
 the frozen [W08 design](W08_REGIMES.md) or held R4.4 acceptance.
 **Step 4 COMPLETE, 23 September 2026**, for the explicit accepted routes below.
 The source question is resolved by the frozen design's independent weak/strong
@@ -224,6 +224,11 @@ The eventual event-history owner must serialise spending and authenticate the
 whole source-bound workflow; this primitive is not that cumulative ledger.
 
 ## Verification and timing
+
+This section and the following research-led correction retain the failed and
+intermediate comparisons preceding [Step-4 closure](#source-resolution-and-step-4-closure).
+Their unresolved statuses and proposed next work are historical; the closure
+below identifies the selected passing routes without erasing those failures.
 
 The comparison fixture retains2C diagnostic and1C finest-change targets. Initial
 gradingr1 failed thermal convergence; gradingr2 uses h+0.25 times physical normal
@@ -584,7 +589,9 @@ for adapted2a. Failed/refused alternative rows are not accepted or erased.
 Current package bytes exactly match the final automatic-refinement integration
 record; no solver source changed during closure, so no new coupled campaign is
 needed. Finite-retirement, residual/flux, cancellation and resource-lifetime
-checks retain their previously recorded evidence. Overall W08 remains unfinished.
+checks retain their previously recorded evidence. Subsequent
+[magmatism](W08_MAGMATISM.md) and [joined workflow](W08_JOINED.md) results retain
+their own scope; Step-4 closure alone does not establish the combined route.
 
 Closure checks:3 focused adapter/evidence/driver tests PASS in1.261s, including
 one small h24 analytic-flow driver invocation (not a convergence campaign).

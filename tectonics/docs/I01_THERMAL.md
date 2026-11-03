@@ -1,6 +1,6 @@
 # I01: evolving thermal and material history
 
-**27 September 2026. WORKING NON-CANON. Bounded prototype, task
+**27 September 2026. Bounded prototype, task
 atlas-i01-thermal-20260927.** This advances the reviewed
 [pressure/temperature snapshot](I01_STRENGTH.md) and its
 [2D localisation probe](I01_FAULT2D.md) in time. Their tools are imported read-only

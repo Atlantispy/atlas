@@ -1,6 +1,6 @@
 # Plan05: exact heat correspondence and physical ordering
 
-WORKING NON-CANON. **The repaired implementation is integrated in the private
+**The repaired implementation is integrated in the private
 route. This is a source snapshot. The later scoped correctness decision and
 11-arm q22 successor execution are complete.** It supplies no runnable scientific profile and applies no
 overlay to the main package or frozen composition.

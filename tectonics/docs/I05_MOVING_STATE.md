@@ -1,6 +1,6 @@
 # I05a: complete material records, heat on the moving sphere, current properties
 
-**WORKING NON-CANON.** This document owns the I05a method and its limits.
+This document owns the I05a method and its limits.
 [Current state](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance)
 owns delivery and acceptance; the substeps below are scope, not a dispatch list.
 
@@ -533,10 +533,13 @@ faces meet in one receiver. Increments take five values per interval, by a deter
 ## 7. Properties (I05.3)
 
 **P1** (`moving_columns`). This is the I04/I05 port record's P1 on the trace support.
-- **Header.** It names this state, its network, frame and datum, with `endpoint_s = interval[2] =` the state's own
-  time and `interval[0] =` its step.
-  - An endpoint or interval other than the state's own refuses `unsupported`, with I04's evaluation label.
-  - Another parent state, network, frame, parameter or datum refuses `stale identity`, with that field as detail.
+- **Header.** Part A names this state, its network, frame and datum, with
+  `endpoint_s = interval[2] =` the state's own time and `interval[0] =` its step.
+  The coupled I04b route instead names the interval's parent as `parent_state_id`
+  and binds the candidate endpoint through its network and `moving_id`, with
+  `endpoint_s = interval[3] =` the state's time and `interval[1] =` its step.
+  - An endpoint matching neither supported start nor end refuses `unsupported`, with I04's evaluation label.
+  - A foreign parent on the start route, or a foreign network, frame, parameter or datum, refuses `stale identity`, with that field as detail.
 - **Provenance.** P1 and P2 are issued with `parameter_id` the `moving_id` they are computed from. A header naming
   another moving state refuses `stale identity` (detail `parameter_id`), so columns from two moving states cannot pass
   as one.
@@ -549,6 +552,12 @@ faces meet in one receiver. Increments take five values per interval, by a deter
 - **Layers**, bottom to top: current thickness; the cohort's fixed `ρ_ref` and `α`; the sublayer's finite-volume mean
   temperature as both boundary temperatures. This is the piecewise-constant case of the `I01_GPE` representation.
 - **Mixed faces: `fv-cell-mean`** (amendment of 4 October 2026, recorded in `I04_I05_PORTS.md`).
+  - **Source route.** This automatic labelled-mean rule describes the primary
+    `tectonics/src` implementation. The composed-r2 successor defaults to exact
+    trace extraction (`allow_cell_mean=False`) and requires explicit
+    `allow_cell_mean=True` for this approximation. Published composed I04 feedback
+    uses material-resolved traces with the exact default; a legacy cell-mean
+    control must opt in. See the [shared port record](I04_I05_PORTS.md#d-p2-mapping-i04-supports-to-i05-material-points).
   - **When admitted.** A face holding several pieces is admitted only when every piece has bitwise-equal layer
     structure: the same material, phase, `ρ_ref`, `α` and `cp` per sublayer, and identical tuples of sublayer
     thicknesses and depths, not equal within a tolerance. The thickness tuple is compared as well as the depths
@@ -788,8 +797,10 @@ checks look it up in `sys.modules`.
 
 ## 11. Results
 
-These were executed in the scratch candidate on Windows/CPython 3.12.14, 4 October 2026. They are candidate results,
-not acceptance. The focused counts:
+These were executed in the scratch candidate on Windows/CPython 3.12.14,
+4 October 2026. These are the dated candidate results; the subsequently reviewed
+and integrated bounded route is recorded in [current state](../../docs/CURRENT_STATE.md).
+The focused counts:
 
 | Module | Tests |
 | --- | --- |
@@ -801,8 +812,8 @@ not acceptance. The focused counts:
 | `test_i03_history_split` | 10 |
 
 All passed. Every test of the I01–I05 regression set also passed, the 2 historical I03 expected failures apart. The
-evidence register is affected only as ruled: two receipts go historical, with successors to capture after
-acceptance.
+affected receipt succession is recorded in the [evidence guide](../../docs/CURRENT_EVIDENCE.md).
+The candidate counts are not a new run or a current-source receipt.
 
 ## 12. Limits and what remains
 

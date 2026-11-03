@@ -1,6 +1,6 @@
 # Guarded pose-width integration and bounded evidence
 
-WORKING NON-CANON. Width implementation is selected for guarded source integration on the bounded native checks and retained component evidence. No additional interval validation (IV) is authorised or required for this integration-only route. Full coupled scientific acceptance, real successor reader tables and production/default enablement remain separate and unproved.
+Width implementation is selected for guarded source integration on the bounded native checks and retained component evidence. No additional interval validation (IV) is authorised or required for this integration-only route. Full coupled scientific acceptance, real successor reader tables and production/default enablement remain separate and unproved.
 
 ## Method and actual consumers
 

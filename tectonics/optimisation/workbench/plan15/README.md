@@ -1,6 +1,6 @@
 # Plan15: measured heat reconstruction workers
 
-WORKING NON-CANON. The original six-arm schedule passed: 6, 8, 10, 12, 8, 6 workers.
+The original six-arm schedule passed: 6, 8, 10, 12, 8, 6 workers.
 The selected candidate uses eight heat reconstruction workers during fresh admission
 and retains the passive first-interval heat report. Geometry's authenticated
 four/six selection, pressure policy and the earlier heat/marker changes are preserved.

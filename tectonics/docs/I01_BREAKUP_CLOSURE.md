@@ -1,6 +1,6 @@
 # I01: physical breakup closure — from necking to material separation
 
-**27 September 2026. WORKING NON-CANON. One bounded I01 decision with analytical
+**27 September 2026. One bounded I01 decision with analytical
 feasibility controls; not I05/I06 implementation, a resolved breakup certificate, a
 rift solver, world generation or physical acceptance.** This refines D2 and D6 of the
 [I01 physical contract](I01_PHYSICAL_CONTRACT.md) and the continental-separation row of
@@ -18,9 +18,12 @@ record them separately:
 
 1. **Mechanical decoupling.** The stretched belt becomes too weak to control how fast
    the plates move. The rock is still one connected piece.
-2. **Material separation (breakup).** The continental material joining the two sides
-   thins to nothing somewhere. The margins become separate bodies and the mantle
-   beneath reaches the surface.
+2. **Material separation (breakup).** In this creep-necking branch, the connecting
+   material thins to zero in a supported finite limit. The separate
+   [selected cohesion-loss route](I01_SEPARATION_FEASIBILITY.md) instead diagnoses
+   irreversible loss of bonded connectivity; it can retain material and frictional
+   contact. Neither a crust-only disconnection nor either diagnostic alone permits
+   a global plate split.
 3. **Magmatic ocean birth.** New crust forms in the gap from melted mantle. That needs
    a melt supply; without one, the floor of the gap is exhumed mantle.
 
@@ -412,8 +415,8 @@ The case fixes every input and gate; the tool refuses a case that differs.
 **Authored control inputs:**
 
 - `H = 100 km`, the thickness of the accepted strip.
-- `L = 300 km` and `ell = 600 km`, so the weakest column is 25% weaker in `A` than the
-  belt edge.
+- `L = 300 km` and `ell = 600 km`, so the belt-edge creep prefactor is
+  `0.75 A_max`; the weakest central column has `A = A_max`.
 - `F_drive = 2e13 N/m` and `D = 5e22 Pa s`: the reviewed motion drive and drag,
   checked against the retained context.
 - Initial belt share `s0 = 1/2`.

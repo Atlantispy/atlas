@@ -1,9 +1,11 @@
 # W01 Stage 5 — initial-condition sampling
 
 Status: implemented and optimised for the declared Stage-4 geometry and geological
-representation, **WORKING NON-CANON**. This is a representation/sampling stage,
-not a plate-history simulation or independent scientific acceptance. W01
-Stages 6–8 and the separate unfinished R4.4 acceptance campaign are unchanged.
+representation, . This is a representation/sampling stage,
+not a plate-history simulation or independent scientific acceptance. The later
+[motion adapter](W01_MOTION_FORCING.md) and [assembled regional workflow and
+Stage-8 assessment](W01_REGIONAL_WORKFLOW.md) retain their own bounded scope;
+the separate unfinished R4.4 acceptance campaign is unchanged.
 
 ## Entry point
 
@@ -117,9 +119,10 @@ means and material inventories are supported. This implementation does not
 silently approximate an unsupported mean.
 
 Motion-to-regional forcing is Stage 6; W01-to-W02 initialisation/evolution is
-Stage 7; assembled scientific/resource/cache/restoration acceptance is Stage 8.
-None is claimed complete here. No R4.4 run or whole-world physical simulation
-is needed to test Stage 5 representation contracts.
+Stage 7; assembled scientific/resource/cache/restoration assessment is Stage 8.
+Their implemented supported routes are documented at the links above; Stage 5
+alone does not establish them. No R4.4 run or whole-world physical simulation is
+needed to test Stage 5 representation contracts.
 
 ## Focused verification
 

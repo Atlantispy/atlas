@@ -1,9 +1,14 @@
 # W09 Step 3: finite-material erosion and hillslope transport
 
-23 September 2026. **WORKING NON-CANON. Step 3 COMPLETE** for the fixed-receiver
+23 September 2026. **Step 3 COMPLETE** for the fixed-receiver
 river and initial strip hillslope operators in the
 [frozen design](W09_SURFACE_PROCESSES.md), without changing its
 [independent case register](../cases/w09_surface_processes_r1.json).
+
+The Step-1 design is retained byte-for-byte as a frozen case input. Its pending
+implementation wording describes the design capture; [Step 2](W09_WATER.md) and
+this Step 3 document the implemented components. The joined Step-4/5 route remains
+outside these component results.
 
 ## Material-aware river incision
 

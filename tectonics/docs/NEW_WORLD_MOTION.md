@@ -1,6 +1,6 @@
 # New-world Step 4: initial plate motion
 
-Status: backend implementation, WORKING NON-CANON, 24 September 2026.
+Status: backend implementation, 24 September 2026.
 
 Evidence status, 26 September: the r1 receipt below predates the committed
 frame-neutral motion correction and is historical, not a current-source pass.
@@ -241,7 +241,7 @@ Three alternating warm pairs per case measure `_reconcile` only, not whole-world
 generation. These small differences show no material timing change or established
 speedup. No extra solver, worker, cache or physics step is introduced.
 
-`tools/assess_new_world_motion.py PROJECT.atlas` reopens one existing initial world
+`python -B tectonics/tools/assess_new_world_motion.py PROJECT.atlas` reopens one existing initial world
 read-only. `assess_motion(atlas, motion, plan=original_plan, structure=original_state)`
 also supports a separately calculated candidate. The helper derives fractions
 from Euler zero crossings rather than trusting saved regime labels. Full, normal
@@ -387,13 +387,14 @@ component-retention addition passed in 4.804 seconds (overlapping tests, not 37
 unique tests). No full simulation or existing acceptance campaign is
 rerun for this measurement tool.
 
-Integration checks: `tools/check_current_evidence.py` passes (two current,
-nine historical, one superseded); its checked-in-register test passes in 0.083 s.
+At the original B1 capture, `tools/check_current_evidence.py` passed (two current,
+nine historical, one superseded); its checked-in-register test passed in 0.083 s.
+Those counts describe that snapshot; the maintained register owns current status.
 Required `tools/check_coding_safety.py` passes (13 maps/41 paths); its suite has
 30 passes and one existing Windows privilege skip in 0.123 s. The public-path
 scan passes and its 14 tests pass in 0.756 s. These are source/publication checks,
 not additional physical validation. No native solver, generator, dependency pin
-or existing result was changed; no commit or push was made.
+or existing result was changed by that diagnostic implementation.
 
 Sources actually consulted for this implementation:
 

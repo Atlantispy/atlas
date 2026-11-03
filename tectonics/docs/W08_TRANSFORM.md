@@ -1,6 +1,6 @@
 # W08 Step 3 — transform and oblique motion
 
-WORKING NON-CANON. This is the full-vector horizontal kinematic increment from
+This is the full-vector horizontal kinematic increment from
 the [frozen W08 design](W08_REGIMES.md), not an earthquake-cycle displacement
 accumulated as geological deformation. The [challenge definition](../cases/w08_transform.json)
 was written before candidate execution; the parent design and A02/A03 controls
@@ -155,5 +155,7 @@ python -B tectonics/tools/check_w08_transform.py --output <new-report-path.json>
   out. The concrete Atlas closure remains explicit, not a GPlates reproduction.
 
 SciPy and Shapely are existing dependencies actually used. GPlates and external
-geodynamic packages were not installed or executed. Next: W08 Step 4, prescribed
-subduction and computed wedge, beginning with its already-recorded source adapters.
+geodynamic packages were not installed or executed. The later
+[Step 4 subduction and computed-wedge route](W08_SUBDUCTION.md) and
+[Step 6 joined workflow](W08_JOINED.md) have their own component and integration
+results; this motion increment does not qualify them.

@@ -1,6 +1,6 @@
 # Plan20: exact pre-advance diagnostic captures
 
-WORKING NON-CANON. The capture-write measurement (A) and applied private
+The capture-write measurement (A) and applied private
 integration with its bounded checks (B) are accepted as a partial outcome.
 The selected-generation folded DLL binding (C) remains pending. This source
 publication does not enable a programme default, admit a runtime or establish

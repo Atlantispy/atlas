@@ -1,8 +1,12 @@
 # Public postfold runtime constructor binding successor
 
+This is the predecessor source snapshot. [Current delivery](../../../../../../docs/CURRENT_STATE.md)
+identifies the selected successor. This maintained guide can differ from the
+publication-time documentation digest in its original source map.
+
 This additive source counterpart changes only the fixed publication fold and facade-validator hashes from the preceding public constructor. The five-role table selects the current publication fold, validator, parent, parity and fixture sources. All function/class bodies and the accepted capture adapter remain unchanged. The corresponding local source-consumer constructor has separate exact tool identities; source correspondence does not transfer a local fold or qualification result to this counterpart.
 
-The current publication fold and its source map are in [the selected fold directory](../../../../docs/release/fold/r10/SOURCE-MAP.json). This directory's [source map](SOURCE-MAP.json) records the complete five-role table, the immediate source predecessors and the reversible local/public derivation. The two changes against the preceding public constructor preserve four role substitutions against the corresponding local constructor. The fixture role is byte equal.
+The original publication fold selection named `tectonics/optimisation/docs/release/fold/r10/SOURCE-MAP.json`; that predecessor directory is not supplied in this checkout. This directory's [source map](SOURCE-MAP.json) retains the complete five-role table, the immediate source predecessors and the reversible local/public derivation. The two changes against the preceding public constructor preserve four role substitutions against the corresponding local constructor. The fixture role is byte equal. The [fold contract](../../../../docs/release/FOLD.md) owns the maintained method.
 
 No authority record, native or historical payload, execution environment, runnable context, future fold hash, reviewed apply token or generated profile is supplied. Exact external utility and prepared-profile components retain their accepted identities; the export does not substitute differing repository counterparts. The facade validator retains its unshipped-authority refusal, without a fallback.
 

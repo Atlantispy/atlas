@@ -1,6 +1,6 @@
 # W03 increment 2: thermal density and one support owner
 
-22 September 2026. Implemented locally on `remake`, WORKING NON-CANON. This
+22 September 2026. Implemented locally on `remake` This
 completes the selected homogeneous, constant-property thermal-density/local-support
 increment. It is not complete W03, a deformable free surface, empirical calibration,
 or an acceptance of generated Earth/Diadem terrain.

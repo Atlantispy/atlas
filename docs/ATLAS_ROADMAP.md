@@ -1,8 +1,8 @@
 # Atlas: completion and development roadmap
 
-**Date:** 26 September 2026  
-**Planning baseline:** `remake`, commit `6285d4a`  
-**Status:** WORKING NON-CANON. A development plan, not a claim of completed implementation or scientific acceptance.
+**Reconciled:** 3 November 2026<br>
+**Original planning baseline:** 26 September 2026, `remake`, commit `6285d4a`<br>
+**Status:** A development plan, not a claim of completed implementation or scientific acceptance.
 
 ## 1. What we are building
 
@@ -16,7 +16,7 @@ The immediate priorities are to repair the remaining tectonics realism and relia
 - Any claimed geological history must nevertheless be represented explicitly. A present-day motion field does not establish past crust formation or ocean ages.
 - Different seeds must produce meaningful differences in the planet, not just different colours, names or rotations of the same template. The same seed and scientific inputs must reproduce the same result under the declared numerical contract.
 - Keep a reusable engine, world profiles and execution/detail profiles separate. The Diadem is the principal development case, not a compulsory setting for all worlds.
-- Keep Diadem and generic-world projects visibly distinct. Do not silently generate replacements for protected Diadem geography or treat synthetic worlds as canon. Canon-constrained generation can be developed later; current authority protections remain in force.
+- Keep Diadem and generic-world projects visibly distinct. Do not silently generate replacements for protected Diadem geography or treat synthetic worlds as approved Diadem inputs. Generation constrained by authored world facts can be developed later; current authority protections remain in force.
 - Support regional, continental and eventual planetary coverage with suitable geometry and budget-selected resolution. Existing grid sizes are not permanent product targets. Finer output is not automatically finer physical accuracy.
 - Provide usable speed/detail choices, provisionally **Preview, Balanced and Research**. Each must disclose its approximation and be checked against appropriate references. Do not achieve a faster tier merely by loosening acceptance tests.
 - Ordinary world creation must not depend on multi-day research simulations. Keep expensive scientific reference cases separate from the consumer generation path.
@@ -77,7 +77,25 @@ A new, simple evidence format may be introduced for future records while the che
 
 ## 5. Phase B — finish tectonics realism and the usable tectonics module
 
-Order: establish comparable measurements; finish boundary correction; improve starting crust; connect an explicit ocean-age model; supply a declared elevation baseline; close the assembled workflow. Short independent documentation or fixture work can overlap, but dependent outputs must use the corrected geometry and source identities.
+B1–B6 are retained outcome labels, not a second implementation or acceptance
+queue. **I01–I12 is the single execution and acceptance sequence** in the
+[complete integration plan](../tectonics/docs/INTEGRATION_PLAN.md) and
+[programme roadmap](https://github.com/Atlantispy/atlas/issues/3). The requirements
+below remain in scope through these owners; an old B label starts no separate
+campaign or new current-run prerequisite.
+
+| Outcome | Implementation and acceptance home |
+| --- | --- |
+| B1 matched realism | I11 owns the successor comparison and realism acceptance. |
+| B2 causal boundaries | I04 owns the producer; I03–I09 supply connected state and feedback, I10 delivers it and I11 accepts it. |
+| B3 varied starting crust | I04 owns the starting family, with I03/I05 geometry and material consumers. |
+| B4 ocean-age history | I06 owns history/process, I05 carries formation/thermal memory and I03 supplies transfers. |
+| B5 elevation/bathymetry | I08 owns support, datum, accounting and terrain/coastal ports. |
+| B6 usable standalone tectonics | I10 owns lifecycle, I11 scientific/platform/resource acceptance and I12 delivery. |
+
+Short independent documentation or fixture work can overlap. Dependent outputs
+must use the selected geometry and source identities; consult CURRENT_STATE for
+what has actually landed.
 
 ### B1. Establish one comparable realism assessment
 
@@ -408,8 +426,11 @@ Keep the map primary, with progressively available scientific detail. Backend pr
 
 Maintain a separate frontend/backend integration boundary. Supply a versioned data contract and real small example to the UI owner; do not rewrite the frontend as part of a backend repair or claim integration until it is exercised. If the frontend is unavailable in the checkout, finish the backend contract and explicitly identify that dependency.
 
-**Requested Windows delivery, brought forward before I01 completion:** package the existing Atlas interface
-and backend as a double-clickable `.exe`, without requiring terminal commands.
+**Retained early Windows delivery requirement:** the bounded development build
+has its own [obtained qualification](../desktop/README.md#obtained-windows-qualification).
+The requirements below govern affected rebuilds; they are not an unfulfilled
+request to package that same baseline again. Package the interface and backend
+as a double-clickable `.exe`, without requiring terminal commands.
 Coordinate frontend changes with the UI owner. Include the required runtime and
 assets (or a clearly documented installer), use writable per-user locations for
 projects/cache, preserve New/Save/Load and read-only inspection, and shut down
@@ -443,7 +464,7 @@ Full-year verification means the chosen coupled seasonal workflow, not forcing e
 
 ## 10. What counts as finishing a checkpoint
 
-A checkpoint is complete when its requested capability is implemented in the real route, its affected inputs/outputs are connected, the necessary scientific and technical checks pass, useful performance work is measured, and documentation/evidence describe those actual bytes. A helper file, passing unit tests, a rendered picture or a handoff alone is not integration.
+A checkpoint is complete when its requested capability is implemented in the real route, its affected inputs/outputs are connected, the necessary scientific and technical checks pass, applicable performance changes are measured, and documentation/evidence describe those actual bytes. A helper file, passing unit tests, a rendered picture or a handoff alone is not integration.
 
 A finished increment is not automatically a finished module. Future-module completion also requires the common responsibilities and category-specific connections in [MODULE_SCOPES.md](MODULE_SCOPES.md), including the producers for required inputs. Mark unresolved or unsupported coverage explicitly; do not move missing essential connections into a new completion programme after declaring the module done.
 
@@ -452,7 +473,7 @@ The completion summary should be short:
 1. What changed and why.
 2. Relevant papers/software consulted and the design choice made.
 3. Exact focused checks and remaining platform/physical limits.
-4. Measured time before/after, with the workload and any regressions.
+4. Measured time before/after, workload and regressions when performance changed or is claimed; otherwise mark it not applicable.
 5. Files/evidence, source-identity implications and the next unfinished checkpoint.
 
 Do not perform repeated broad audits, coordinator acknowledgements or reviewer-of-reviewer passes. Preserve a concise handoff and stop when the authorised checkpoint and necessary continuations are genuinely complete.

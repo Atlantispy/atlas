@@ -11,7 +11,7 @@ This chapter describes the implemented W05–W08 routes, including retained ther
 and geological helpers. Their location in the tectonics package does not transfer
 scientific ownership: further geological, compaction and magmatic development
 belongs to the corresponding modules; receiving modules apply tectonic outputs to
-their own state. All outputs remain **WORKING NON-CANON**.
+their own state.
 
 The linked numerical receipts describe their original source/runtime snapshots.
 W01–W12 numerical receipts are outside the initial

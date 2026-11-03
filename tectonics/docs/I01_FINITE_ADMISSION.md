@@ -1,7 +1,6 @@
 # I01: motion admission on the evolving finite-strain column
 
-**27 September 2026; restoration of I02 ledger commits added 29 September 2026. WORKING
-NON-CANON. One bounded I01 connection, which also admits states the I02 ledger restores
+**27 September 2026; restoration of I02 ledger commits added 29 September 2026. One bounded I01 connection, which also admits states the I02 ledger restores
 (section 5) but is not itself I02; not rupture or topology, a whole-world run or an
 automatic solver switch.** The
 [case](../cases/i01_finite_admission_v1.json), [tool](../tools/check_i01_finite_admission.py)
@@ -37,11 +36,11 @@ certified by this bound**: the actual error may still be small. Nothing is switc
 separated or ruptured, and `generated_separation_authorised` is always false.
 
 The window is measured on the strip's own clock from its undeformed reference. Only a
-state that the tool itself produced by running the accepted evolution (or that
-evolution's starting state) can be admitted, and only with an envelope prepared from
-the same run. An edited, rebuilt or imported state is refused, so no one can relabel
-the clock, the reference or the rock's history to claim a used part of the horizon
-again (section 5).
+state issued from that evolution's starting state, a complete retained run, or a
+consistent accepted I02 ledger commit can be admitted, and only with an envelope
+from the same `Evolution`. Ordinary edited, rebuilt or imported records are refused.
+Ledger restoration trusts the local store's history and declared source/runtime
+identities; it checks consistency, not authorship or re-execution (section 5).
 
 ## 2. The model that is bounded
 
@@ -211,12 +210,13 @@ result     = admit(envelope, base, thermal, law, drive, later_state,
   constructors and `replace()` cannot inject externally mutable modal data. Every
   issued run reuses those owned modes. The copied window/policy control refusals,
   not trajectory coefficients; the inputs key is checked again before each run.
-- **Two state issuers.** `reference_state(evolution)` issues lam = 1 at zero time with
+- **Three state issuers.** `reference_state(evolution)` issues lam = 1 at zero time with
   the evolution's own initial history and temperature. `evolved(evolution, n)` calls
   the retained `fs.evolve` itself, from that reference, for `n` steps at the
   evolution's own step and settings. It issues a state only for a `COMPLETE` run of
   exactly `n` steps at that step, copying the committed endpoint read-only, and
-  returns the raw output beside it for diagnostics.
+  returns the raw output beside it for diagnostics. `restored()` is the third
+  issuer, with the engine-owned trusted-store contract below.
 - **One envelope issuer.** `prepare()` accepts only a state issued by an evolution of
   exactly the preparation, support, law and drive it receives, and records that
   evolution in the envelope. `admit()` accepts only an issued envelope and a state
@@ -265,8 +265,9 @@ result     = admit(envelope, base, thermal, law, drive, later_state,
   modules `integration_ledger`, `integration_state`, `storage`, `_validation`, `materials`,
   `resources` and `timebase`, and `w08_inventory` with `constitutive` when stocks are
   attached; the `Ledger.open` or `Ledger.create` it relies on also executes `mesh`. These
-  ten, plus `integration_clock` used by the bound restoration regression, are the tool's
-  eleven `RESTORATION` sources: all are bound and all are import-checked (an
+  ten, `integration_clock` used by the bound restoration regression, and `reuse`
+  executed by storage at its read/publication boundaries are the tool's twelve
+  `RESTORATION` sources: all are bound and all are import-checked (an
   evidence run refuses before any control if an imported module is not its bound file).
   The retained package owners it executes as well (`integration_evolution` and the
   `_integration_*` modules) were already bound and import-checked with the retained tools.
@@ -280,26 +281,32 @@ regaining part of a used horizon. The inequality remains as a consistency check 
 Provenance, not another inequality, now carries the clock.
 
 **Proposition (carried limits).** Every certificate from `admit()` refers to a window
-`[t_s, t_s + T]` where `t_s` is the actual elapsed time, since the absolute reference,
-of the one evolution E that issued both the admitted state and the envelope's
-preparing state. `lam_s`, `kappa_s` and the temperatures are E's committed values at
-`t_s`, and the envelope's floors are E's values at a time `t_f <= t_s`.
+`[t_s, t_s + T]` where `t_s` is the elapsed time carried from the absolute reference
+of the one evolution E associated with both issued states. Direct computation
+supplies that run's committed values; restoration supplies values from its
+consistent accepted ledger history under the trusted-store premise. The envelope's
+floors are from an issued state at `t_f <= t_s`.
 
 *Proof.* The envelope carries a mark, so `prepare()` made it. `prepare()` recorded the
 evolution E of an issued preparing state `S_f` and copied `L`, `t_f` and `kappa_f`
 from it. Frozen fields cannot be reassigned, and a replaced or built envelope carries
 no mark. The admitted state `S` carries a mark with `S.evolution is E`. Marks are set
-only by `reference_state(E)`, whose values are E's `(1, 0, kappa0, theta0)`, and by
+by `reference_state(E)`, whose values are E's `(1, 0, kappa0, theta0)`, by
 `evolved(E, n)`, whose values are copied from a `COMPLETE` retained run of E's own
-inputs for `n` steps of E's fixed step. So `t_s` is the clock that run accumulated,
-`n` times the step, and the same holds for `S_f`. Both states are therefore committed
-states of the one evolution E, measured from one reference, and `t_s + T <= H`
-bounds E's total elapsed time. No normal operation yields a marked state or envelope
-with other values, so no used horizon can be regained. The admission checks below
-then place `S` inside the floors. ∎
+inputs for `n` steps of E's fixed step. For those direct issuers, `t_s` is the clock
+that run accumulated, `n` times the step. The third issuer,
+`restored(E, ledger, commit)`, takes the clock
+and fields from a verified accepted record whose reference, settings and initial
+history match E; it does not rerun that prefix or prove who computed it. The same
+alternatives apply to `S_f`. Thus both clocks use the same reference and
+`t_s + T <= H` bounds the carried horizon. Ordinary record construction or editing
+cannot regain that horizon. This statement relies on the declared trusted-store
+boundary for restored records; it is not protection against fabricated consistent
+store history. The admission checks below then place `S` inside the floors. ∎
 
-The mark proves where a state came from. It does not add accuracy: a certificate
-remains the conditional statement of section 3 about E's continuation from `S`.
+The mark identifies the authorised issuance route and associated evolution. It
+does not prove restored history's authorship or add accuracy: a certificate remains
+the conditional statement of section 3 about continuation from `S`.
 
 **Admission checks.**
 
@@ -389,8 +396,10 @@ The cooperative budget is 60 s after imports (hard ceiling 120 s).
 - A **restartable finite-strain evolution** that continues from an issued state,
   carrying the cumulative clock, accounts and evolution identity. The retained
   `evolve` always starts at the reference, so `evolved()` re-runs from the reference
-  for every issued state, and a generator cannot yet alternate admission and
-  evolution without re-running.
+  for every issued state. That standalone issuer cannot alternate admission and
+  continuation without re-running. The separate [I02 workflow](I02_WORKFLOW.md)
+  owns persisted continuation; `restored()` admits its matching accepted commits
+  under the trust boundary above.
 - The **I02 common state and transactions** must carry the evolution identity,
   cumulative clock and stretch with the material as a checkpoint that survives
   persistence and restart. The I02 ledger and `restored()` above provide one from a

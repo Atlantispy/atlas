@@ -59,5 +59,5 @@ owners. This component neither edits the shared Plan31 constructor nor selects a
 final parent. Fold/parity export remains separate: their accepted private layout
 and gate pins are retained; no portable runtime contract is fabricated here.
 
-Status: WORKING NON-CANON; staged source component, not final-generation,
+Status: staged source component, not final-generation,
 installed-package, runtime, default or scientific acceptance.

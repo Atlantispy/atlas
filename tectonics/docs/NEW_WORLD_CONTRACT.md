@@ -1,6 +1,6 @@
 # New-world initialisation: step 1 contract
 
-WORKING NON-CANON. This increment configures a reproducible candidate; it does not
+This increment configures a reproducible candidate; it does not
 generate geometry, evolve physics or certify a realistic planet. Existing native
 sources, jobs and saved outputs are unchanged. Implementation lives outside the
 source-bound scientific package in `tools/new_world_contract.py`.
@@ -100,6 +100,7 @@ inputs, forcing and dependencies. No persistent result cache is introduced here.
 
 Future `atlas.initial-world-descriptor.v1` fields: schema, status
 `WORKING NON-CANON`, plan_id, scientific_id, epoch, frame, origins, products.
+The status value is a [legacy compatibility field](../../docs/CODING_SAFETY.md#legacy-document-and-format-bindings).
 Products must name exactly topology, material, thermal, motion and boundaries.
 Each is a structural reference `{product_id, support_id, unit, frame_id, epoch_id,
 known_mask_id, origin}`. IDs are full SHA-256 hex. Units respectively are `1`,
@@ -112,9 +113,11 @@ and `statistical-kinematic` mode. No fabricated zero arrays fill missing product
 
 Descriptor validation verifies declarations only. Real product bytes, native
 closure and physical acceptance must be checked by the later producer/consumer.
-Current capabilities: configure true; generate_world, evolve_world and
-native_restart all false. UI must not enable those actions or send this request
-to the synthetic W12 column job.
+This configuration-only adapter reports configure true; generate_world,
+evolve_world and native_restart are all false. Those flags describe Step 1, not
+the later [creation and evolution adapters](NEW_WORLD_EVOLUTION.md). A UI using
+only the Step 1 response must not advertise those later actions or send this
+request to the synthetic W12 column job.
 
 ## CLI and UI ownership
 

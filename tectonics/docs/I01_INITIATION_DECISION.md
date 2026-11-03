@@ -1,6 +1,6 @@
 # I01: resolve subduction initiation, rather than prescribe its resistance
 
-WORKING NON-CANON. **Selected method and test specification, not an implemented
+**Selected method and test specification, not an implemented
 initiation model or passing subduction benchmark.** [The companion case](../cases/i01_initiation_decision_v1.json)
 is not runnable configuration. I01 selects the resolved method and the independent
 [analytical verification route](I01_INITIATION_VERIFICATION.md). I07 owns its full

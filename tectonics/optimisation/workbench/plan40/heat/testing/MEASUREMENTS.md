@@ -1,6 +1,6 @@
 # Heat candidate component measurements
 
-**MEASURED, 23 October 2026. WORKING NON-CANON.** All 20 source-bound candidate arms passed their declared checks. These are short, synthetic component comparisons, not whole-heat or IV timings. The later source implementations have distinct identities; this table measures the frozen experimental arms and does not establish their deployed performance.
+**MEASURED, 23 October 2026.** All 20 source-bound candidate arms passed their declared checks. These are short, synthetic component comparisons, not whole-heat or IV timings. The later source implementations have distinct identities; this table measures the frozen experimental arms and does not establish their deployed performance.
 
 Times below are the median of the complete recorded arm samples in milliseconds; each row retains its actual batch size. Saved time is baseline minus candidate, so negative means slower. Different rows are not comparable workloads and their percentages must not be added. Small differences and overlapping short samples are not robust production savings.
 

@@ -1,6 +1,6 @@
 # W06 Step 3 — ocean cooling and inherited passive margins
 
-Status: **WORKING NON-CANON; scoped implementation and numerical checks pass**,
+Status: **scoped implementation and numerical checks pass**,
 22 September 2026. The [Step 1 design](W06_SPREADING.md) remains frozen. This
 increment extends [constant prescribed birth/spreading](W06_BIRTH.md); it does
 not advance to Step 4 changing histories or Step 5 durable combined workflow.
@@ -84,7 +84,7 @@ The public package exports `OceanCoolingParameters`, `ThermalExport`,
 `PreparedMarginCooling`, `MarginThermalResult` and `MarginSupportResult`.
 
 `PreparedSpreadingCooling(spreading, parameters, budget=..., cancel=...)` reuses,
-but does not own, the live `PreparedSpreading` plan/context. Use `.initial`, then
+but does not own, the live `PreparedRidgeSpreading` plan/context. Use `.initial`, then
 `.advance(state, time_s=...)`. Closing its parent invalidates the adapter. Requesting
 the same endpoint validates source/state and returns the same immutable object,
 without another debit. Returned-state retention remains the caller's resource duty.

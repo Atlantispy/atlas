@@ -1,6 +1,6 @@
 # Plan21: lazy carried-start rows (S3) and sealed-mesh identity reuse (S9)
 
-WORKING NON-CANON.
+
 
 - S3 port-r4 carries the corrected r5 implementation with an explicit exporter-preflight binding and current carried-page fallback controls. Real interval-1 read parity was measured on r4 and carried to the private r5 successor by source analysis; the current combined gate passes; final frozen-generation IV1 parity remains pending.
 - S9 is **not selected**: real interval-1 identity passed, but the synthetic timing checks did not demonstrate the required gain. It stays disabled; this gain assessment is closed.

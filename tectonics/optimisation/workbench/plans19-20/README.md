@@ -1,6 +1,6 @@
 # Plans19–20: integrated geometry and capture source selection
 
-WORKING NON-CANON. This is the predecessor combined source selection on the optimisation
+This is the predecessor combined source selection on the optimisation
 review branch. The [heat receiving successor](../plan40/heat/integration-r2/README.md)
 retains this selection and connects C3/C8 through their existing consumers.
 [SOURCE-MAP.json](SOURCE-MAP.json) resolves every member to one existing

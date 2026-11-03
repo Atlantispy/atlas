@@ -1,6 +1,6 @@
 # Tectonics Step 3: compatible evolving mechanical inputs
 
-23 September 2026. WORKING NON-CANON. Local implementation on `remake`.
+23 September 2026. Local implementation on `remake`.
 This is the next tectonics increment after [underthrusting](UNDERTHRUST.md),
 not W09 surface-process expansion. Existing modules stay in place.
 
@@ -142,7 +142,8 @@ What this costs and changes:
 
 These inputs can describe successive supplied states. There is no interpolation,
 transport, integrated displacement or invented geological history between them.
-Joined histories and persistent continuation belong to the next tectonics step.
+Joined histories and persistent continuation are supplied by the separate
+[tectonic-history owner](TECTONIC_HISTORIES.md), within its supported route scope.
 Nonlinear constitutive evolution remains with the existing explicitly supported
 material/thermal/mechanical producers, not an implicit law in this interface.
 
@@ -198,7 +199,7 @@ overwrite and source changes during measurement refuse.
 
 ### Measured preparation reuse
 
-[Current-source Windows evidence](../evidence/evolving-inputs-r1.json) passes
+[Original Windows evidence](../evidence/evolving-inputs-r1.json) passes
 complete output/identity hash parity for both routes. Medians of three alternating
 cold/prepared pairs (three changed outputs each):
 

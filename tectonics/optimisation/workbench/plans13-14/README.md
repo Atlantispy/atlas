@@ -1,6 +1,6 @@
 # Plans 13–14: compiled heat certificates, finish reuse and observations
 
-WORKING NON-CANON. Implementation and selected private integration are complete.
+Implementation and selected private integration are complete.
 This additive snapshot extends [Plans 10–12](../plans10-12/README.md) on the
 optimisation branch. It preserves 618 selected source members, changes 11 and adds
 five: 239 native and 395 helper files in total, with no removed predecessor.

@@ -1,6 +1,6 @@
 # I01 MC-07: one elastic core for stiffness and load transfer
 
-**28 September 2026. WORKING NON-CANON. Bounded I01 material-closure step for closure-matrix item MC-07
+**28 September 2026. Bounded I01 material-closure step for closure-matrix item MC-07
 (rows CM-04 and CM-15).** The [water-loaded GPE join](I01_WATER_GPE.md) left one material choice open. For
 nonuniform finite rigidity it needs the depth `c` at which the plate's vertical shear hands a column's excess
 weight to the uniform mantle pressure. This step supplies that depth from a declared material model: one

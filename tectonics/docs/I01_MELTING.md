@@ -1,6 +1,6 @@
 # I01 dry decompression melt production
 
-Status: **WORKING NON-CANON; bounded parcel controls, not whole-I01 acceptance.**
+Status: **bounded parcel controls, not whole-I01 acceptance.**
 
 ## What this does
 
@@ -108,7 +108,8 @@ derivatives are not a selectable public physical model.
 The existing delivery prototype has an isobaric, common-melting-temperature
 phase/enthalpy law. Katz batch fractions cannot be fed into that law as though
 their reference states, fusion energy and phase compositions were interchangeable.
-A compatible extraction/transport handoff remains a distinct I01 decision.
+A compatible extraction/transport handoff follows the separately
+[selected melt route](I01_MELT_ROUTE.md), whose physical integration remains open.
 This control produces a defensible parcel melt amount; it does not yet deliver
 that melt, grow crust, diagnose breakup or alter a generated world.
 

@@ -1,6 +1,6 @@
 # I01 composition-aware phase partition
 
-WORKING NON-CANON. A bounded fixed-pressure/temperature prerequisite for a shared
+A bounded fixed-pressure/temperature prerequisite for a shared
 melt law, not its thermal closure or a replacement for the accepted Katz control.
 
 ## Why this is needed

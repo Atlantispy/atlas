@@ -1,6 +1,6 @@
 # W04 step 3: finite regions without invented plate edges
 
-22 September 2026. WORKING NON-CANON, local unreleased `remake` work.
+22 September 2026. local unreleased `remake` work.
 Implemented for the current **uniform-rigidity, stationary planar 1D** W01-W03
 workflow. This is a linear support projection, not material evolution or
 whole-world terrain acceptance. [Step 2](W04_WORKFLOW.md) retains its explicitly

@@ -1,7 +1,11 @@
 # FOLD: helpers into a private subpackage with package-relative identity (R1)
 
-16 Oct 2026. Design only, written for review (condition d). Nothing under atlas_tectonics or composed-*
-was edited, and nothing was run except read-only scans.
+The opening sections retain the 16 October 2026 design baseline; their “today”,
+unbuilt statements and line numbers refer to that generation. Later sections
+record scoped tooling and parity outcomes. Current constructor selection and
+postfold qualification belong to [final construction](../../workbench/plan31/final/README.md#folded-runtime-construction)
+and [current delivery state](../../../../docs/CURRENT_STATE.md). The original
+design capture edited no atlas_tectonics/composed-* source and ran only read-only scans.
 
 Paths used below:
 - R = the resumability-r1 folder.
@@ -661,7 +665,8 @@ R3 of the R1 fold was accepted on condition C1 below. The handoff is rm/fold/HAN
   others (rm/fold/run_parity_r7.sh). v25/limbs_r2.py must report A vs A′ and B vs B′ with rows_differing 0, and the
   three booking reports (A vs B, A′ vs B, A vs B′) must be byte-identical. This makes "order-determined" a measured
   property on both sides: a B whose sizes varied run to run would make the limb cap a flake risk for the gate.
-- The residual is recorded as RF3 in RELEASE-CHECKS.md §7.
+- This section retains the rational-booking residual; the [Release inventory](RELEASE-CHECKS.md#7-inventory-evidence-and-coverage-limits)
+  separately records its historical inspection scope.
 
 ### 12.1 Correction to the decision 6 mechanism statement (23 Oct, after a cold review; verdict unchanged)
 

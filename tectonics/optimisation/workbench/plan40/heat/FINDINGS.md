@@ -1,7 +1,12 @@
 # Plan40B: source-bound heat arithmetic examination
 
-WORKING NON-CANON. Examination accepted in final review on 23 October 2026; no proposed
-optimisation below is implemented, enabled or timed. This is the heat workstream
+Examination accepted in final review on 23 October 2026. This
+document retains that source-analysis checkpoint; its controls did not implement,
+enable or time the proposals. Later [component tests and measurements](testing/README.md),
+[actual implementations](implementation-r1/README.md) and
+[C3/C8 receiving integration](integration-r2/README.md) have their own source and
+evidence boundaries. C13 remains excluded and no production default is enabled.
+This is the heat workstream
 of Plan40, not a new plan or work package. Pressure 40A and the later native
 kernel design retain their separate acceptance requirements.
 

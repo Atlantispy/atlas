@@ -1,6 +1,6 @@
 # W06 Step 2: conservative oceanic birth and spreading
 
-Status: **WORKING NON-CANON — prescribed planar, constant-velocity implementation**.
+Status: **prescribed planar, constant-velocity implementation**.
 This implements the material/motion part of the [frozen Step-1 design](W06_SPREADING.md).
 See [retained numerical evidence](#retained-numerical-evidence); this is not combined W06
 acceptance or empirical validation of generated terrain.

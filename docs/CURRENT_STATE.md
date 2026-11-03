@@ -1,6 +1,6 @@
 # Atlas: current development state
 
-**Updated: 2 November 2026. WORKING NON-CANON.** This is the delivery and acceptance
+**Updated: 3 November 2026.** This is the delivery and acceptance
 summary for the published `review/optimisation-20261016` source branch. Owner
 documents retain detailed results, source selections and remaining work. Private
 or uncommitted successors are not described as published here. Use Git for commit
@@ -48,7 +48,7 @@ and push state; this page does not authorise execution or lift holds.
   whole-year run remain unaccepted. Grid-shaped boundaries, restrictive starting
   crust and history-dependent ocean age remain explicit limitations.
 - Source integration, qualified fold, installed delivery, default enablement,
-  scientific acceptance and Diadem canon are distinct. Public sources omit private
+  scientific acceptance are distinct. Public sources omit private
   inputs/codecs/runtime; byte recovery is not native continuation.
 - Preserve source/runtime guards, physical tolerances, resource admission and the
   retained 256-interval ceiling. Unrelated speed-up ratios cannot establish a

@@ -1,6 +1,6 @@
 # New-world Step 3: coherent initial lithosphere
 
-WORKING NON-CANON. A declared initial-condition scenario, not reconstructed
+A declared initial-condition scenario, not reconstructed
 geological history, dry-land coverage or a mature terrain map.
 
 ## What is made and why
@@ -70,9 +70,11 @@ Opening a project restores its actual values and never runs either generator.
 
 ## UI handoff contract
 
-`new_world_session.py` will emit `atlas.world-view.v2` inside the unchanged
-`atlas.world-session-response.v1` envelope. Existing fields are retained, with
-`capabilities.initial_structure` and `structure` added. `structure` is null for
+`new_world_session.py` emits `atlas.world-view.v3` inside the unchanged
+`atlas.world-session-response.v1` envelope. Step 3 introduced the structure fields
+in view v2; the current v3 view also includes [Step 4 motion](NEW_WORLD_MOTION.md).
+`capabilities.initial_structure` and `structure` describe the saved structure.
+`structure` is null for
 a legacy layout-only project; otherwise it is `atlas.initial-structure-view.v1`:
 
 - `structure_id`, `state_id`, frame/epoch/time/depth reference;
@@ -148,5 +150,6 @@ recovery comparisons, not a physics-solver speedup or a whole-planet forecast.
 The archive is 313,649 bytes and its view 65,824 bytes. Four shared profiles use
 315 knots altogether; the largest analytical interpolation bound is 0.039772 K.
 
-Backend completion and UI integration are separate: the UI owner received the
-actual v2 fixture and final backend hashes, with a direct completion return due.
+Backend completion and installed UI coverage are separate; use the
+[desktop delivery record](../../desktop/README.md#obtained-windows-qualification)
+for the actual delivered scope rather than this original Step 3 handoff.

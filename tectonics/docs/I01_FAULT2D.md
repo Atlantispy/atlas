@@ -1,6 +1,6 @@
 # I01 D2: bounded two-dimensional fault-law checks
 
-WORKING NON-CANON. Numerical feasibility, not generated lithosphere acceptance.
+Numerical feasibility, not generated lithosphere acceptance.
 This supplements rather than rewrites the source-bound I01 r1 contract.
 
 ## Equations and conventions

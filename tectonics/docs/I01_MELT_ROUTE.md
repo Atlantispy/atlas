@@ -1,6 +1,6 @@
 # I01: melt focusing and the axial cooling barrier
 
-WORKING NON-CANON. **Model route selected; spatial implementation and physical
+**Model route selected; spatial implementation and physical
 acceptance remain open.** The [companion decision record](../cases/i01_melt_route_v1.json)
 is a design contract, not executable configuration or a calibration receipt.
 This completes the focusing/lid choice without assigning a universal lid depth,

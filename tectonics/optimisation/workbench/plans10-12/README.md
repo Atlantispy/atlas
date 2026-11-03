@@ -4,7 +4,7 @@ The [Plans13–14 successor](../plans13-14/README.md) preserves this selected cl
 and adds compiled certificates, finish reuse and loaded-code markers. The results
 below retain their original generation and scope.
 
-WORKING NON-CANON. The selected private combined build is integrated and its
+The selected private combined build is integrated and its
 focused checks pass. This is a sanitised source snapshot for inspection. The
 main package is not overlaid and the public copy is not a runnable native profile.
 

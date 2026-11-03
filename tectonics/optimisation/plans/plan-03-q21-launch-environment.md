@@ -2,7 +2,7 @@
 
 **Item ID:** 03  
 **Retained owner:** Geometry / Runner; the coordinator retains queue ownership.  
-**Status:** WORKING NON-CANON. Published r5 retained; r6 preservation-guard correction implemented and focused-tested as a workbench successor. q21 retry and scientific parity remain separate.
+**Status:** Published r5 retained; r6 preservation-guard correction implemented and focused-tested as a workbench successor. q21 retry and scientific parity remain separate.
 **Completion condition:** Preserve the invalid attempt, resolve its orphan disposition explicitly, prepare a bounded child-environment correction and copy-failure guard, and verify those boundaries before requesting a separately authorised successor proof.
 
 ## 1. Scope and authority
@@ -126,4 +126,8 @@ The r5 command intentionally exits 1 with those five failures; the r6 command ex
 
 Tested r6 source SHA-256: `290240cee42ed20be23ae6114ddbd9f4e93bf061ec5e13031f4d4712ebc4bc1c`. Regression-source SHA-256: `f9b948680c36e7f3da0c6eafd0bfdb273d61c7c07f8ccece6d0eb979dff4d849`. The tests replace only fixture paths and the synthetic outer-log hash in disposable wrapper copies; preflight interpreter, parity and summary calls use explicit stand-ins. No historical source pin or receipt was rewritten.
 
-This is a review-snapshot correction, not installation into the live wrapper. Plan 16 still owns any retry and actual worker/parity proof. No held run, source binding or frozen composition is changed.
+This is a review-snapshot correction, not installation into the live wrapper.
+The later [Plan16 q53 result](../workbench/plan16/README.md) completes its bounded
+worker/parity proof and supersedes the old pending retry instructions. It does
+not change q21's invalid-launch disposition or turn this preservation check into
+scientific evidence. No held run, source binding or frozen composition is changed.

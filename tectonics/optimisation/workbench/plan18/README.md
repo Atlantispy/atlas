@@ -1,6 +1,6 @@
 # Plan18: geometry endpoint lookahead and compact header retention
 
-WORKING NON-CANON. This record describes the accepted Plan18 source
+This record describes the accepted Plan18 source
 changes selected for the optimisation review branch. Their private receiving
 integration was accepted on 23 October 2026. The [public source map](SOURCE-MAP.json)
 adds those changes to the preceding public selection while preserving historical
@@ -231,6 +231,12 @@ The accepted successor differs from the closure-proof successor only in carrier
 booking, the diagnostic and tests. Records and routing order are unchanged.
 
 ## Limits and holds
+
+These carrier limits describe this Plan18 predecessor. The later
+[combined selection](../combined-runtime-r1/README.md) adds a paid allowance for
+three ownership carriers per support and retains the fixed budget for transient
+reads/exports. Its own whole-run and machine guards still apply; the old fixed-cap
+forecast below is not a limit of every later source selection.
 
 - **Larger intervals.** The IV4 projection of 87,000 supports books 551.2 MB
   (525.7 MiB) on carriers alone, against the 256 MiB retained cap. The

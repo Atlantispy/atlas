@@ -1,6 +1,6 @@
 # I01 D2: pressure and temperature in the mechanical response
 
-WORKING NON-CANON. A bounded extension of the [2D localisation probe](I01_FAULT2D.md),
+A bounded extension of the [2D localisation probe](I01_FAULT2D.md),
 not its replacement and not a native production component. The earlier receipts,
 case, tool and physical contract remain unchanged. This document and the new
 case/tool/tests are bound by the new receipt.

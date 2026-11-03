@@ -1,6 +1,6 @@
 # Atlas optimisation programme
 
-**WORKING NON-CANON.** Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance) for status, outstanding work and holds. This page supplies navigation and durable workflow contracts. Publication, component acceptance, installed delivery, runtime/default selection, scientific acceptance and Diadem canon are separate outcomes.
+Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance) for status, outstanding work and holds. This page supplies navigation and durable workflow contracts. Publication, component acceptance, installed delivery, runtime/default selection, scientific acceptance are separate outcomes.
 
 The engineering aim is exact, certified interval generation in under five minutes on one Windows machine. That is a target, not measured combined performance. Changes preserve exact results or an explicitly approved field/identity translation; they do not widen tolerances or resource limits.
 

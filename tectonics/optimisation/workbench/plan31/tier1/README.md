@@ -46,7 +46,7 @@ orders, stage reset, real generated flush/error reporting, actual restart wiring
 and input/output/reapplication refusal. The private successors passed four
 regression cases across both runners and reproduce the reviewed output bytes.
 
-Status: **WORKING NON-CANON; integrated source component, not a qualified final
+Status: **integrated source component, not a qualified final
 generation.** This route grants no runtime admission, interval execution, default
 selection or scientific acceptance. It does not construct the held final n12f
 generation, run a timing or parity campaign, or update an installed package.

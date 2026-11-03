@@ -1,6 +1,6 @@
 # Atlas future modules: connected completion scopes
 
-**Planning revision: 27 September 2026. Status: WORKING NON-CANON.**
+**Planning revision: 27 September 2026.**
 
 This is the detailed scope behind [Phase C of the roadmap](ATLAS_ROADMAP.md#6-phase-c--complete-all-other-modelling-categories), covering **all 17 categories after tectonics**. Category numbers match the existing registry; they are not implementation order. Category 1 remains governed by the [tectonics integration plan](../tectonics/docs/INTEGRATION_PLAN.md). [CURRENT_STATE.md](CURRENT_STATE.md) remains the progress authority: these scopes neither certify existing code nor start another module while tectonics work is active.
 

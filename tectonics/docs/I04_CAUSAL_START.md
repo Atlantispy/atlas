@@ -1,6 +1,6 @@
 # I04: a declared starting family and plate driving on the evolving sphere
 
-**WORKING NON-CANON. I04 reviewed, repaired and accepted for its declared reduced-model scope, 4 October 2026.**
+**I04 reviewed, repaired and accepted for its declared reduced-model scope, 4 October 2026.**
 - The coordinator's rulings on the decisions proposal (3 October 2026) are written in below. They approved the
   proposal with conditions and replaced the boundary-kind rule, first by F6 and then, after F6 proved degenerate
   on the development seeds, by F6′.
@@ -511,7 +511,7 @@ by name, and so do ridge jump, subduction polarity reversal, slab breakoff and c
 
 ### R4-8. Package ownership of the tool-resident I01 helpers
 
-No tool is moved or edited in Part A; ten current receipts bind those tools.
+No tool was moved or edited in Part A; ten then-current receipts bound those tools.
 - **Reproduced in the package**, each with the same equations and arithmetic order:
   - `Datum` and `columns` (from `check_i01_gpe.py`);
   - `solve_torque` (from `check_i01_closures.py`), which now also returns its residual;
@@ -563,7 +563,7 @@ boundary edges are sampled.
     fan triangles.
   - At most 64 attempts are made, then the world refuses. There is never a seed retry.
 
-| Parameter | `default` (physically safe) | `wide` (opt-in, recorded) |
+| Parameter | `default` (declared prior) | `wide` (opt-in, recorded) |
 | --- | --- | --- |
 | major provinces | 3–7 | 1–12 |
 | fragments | 0–6 | 0–16 |
@@ -762,8 +762,8 @@ left the staircase criterion unmet; the genuine repair control below now covers 
 | fv-cell-mean | one coupled balance with GPE on `s00-merged` records its trace indices | the P7(2) obligation |
 | Provenance on an I02 ledger (round 1) | inheritance from the parent commit (`step`/`commit`); found = "recorded, not replayed"; the whole interval replayed; forged labels, strain, heat or P5, a dropped inheritance and a malformed record refuse by name; an interval solved for another span cannot be committed | D1 provenance after reopen |
 | Case A frame | tilted world: rotated omega, same increments within `cond(M+J) 1e-10 + 2e-11` | frame invariance |
-| Case B direction | cohesion x2 slower; +100 K faster; kappa0 2.5 faster; torque x2 faster with a larger plastic share | the response moves the predeclared way |
-| Case B rows 2/4/8 | change 4 to 8 `<= 0.03` (peak force, speed, kappa gain, width_2sigma (the raw-history width)) | reduced-model refinement: **failed on the peak increment; convergence not established** (see Part B results); not a physical width |
+| Case B direction | cohesion x2 slower; +100 K faster; kappa0 2.5 faster; torque x2 faster. The original larger-plastic-share expectation was withdrawn as an authored error (Part B results) | the supported direction controls, retaining the failed historical expectation |
+| Case B rows 2/4/8 | change 4 to 8 `<= 0.03` (peak force, speed, kappa gain, width_2sigma (the raw-history width)) | coarse peak increment fails; the separately predeclared 42/84-row successor passes all four unchanged 3% comparisons (reviewed repairs below). This is reduced-model numerical refinement, not a physical width |
 | Case B length | `ell` 2500 against 5000 m, cells under 2500 m: width differs by more than 50 m | the declared length acts |
 | w and side disclosures | reported, not gated | dependence on authored assumptions |
 | Time oracle | orders in `[0.8, 1.2]` against DOP853 (uniform one-row single-layer belt, one-sided) | first-order time accuracy of the scheme on that belt, against a high-order integration of the same reduced equations (the package's balance as right-hand side); not of the layered, localising belt |
@@ -815,7 +815,8 @@ An intentionally omitted face on the selected side still refuses.
 ## 5. Results
 
 Executed in the scratch candidate on Windows/CPython 3.12.14, on 3 October 2026, after approval. These are
-candidate results, not acceptance.
+the dated candidate results; later review and reduced-scope acceptance are
+recorded at the top of this document. They are not a new current-source receipt.
 
 **D1 and GPE** (`test_i04_driving.py`, 35 tests OK, with the round-2 fixes):
 - **GPE two-hemisphere control.** Relative rotation errors of the north plate at `N = 32, 64, 128` (the test asserts
@@ -1105,13 +1106,17 @@ not a claim that the long test executed the final package's exact bytes.
   `JunctionPath`. No family world is advanced with D1 output in Part A, and no junction-direction law is invented. The
   regional velocity bridge refuses every motion with junction paths.
 - **Explicit interval.** `omega` is solved at the start of the interval and held over it, with no temporal-accuracy
-  or convergence claim. Part B and I09 own convergence.
+  or convergence claim. This is the Part-A route; the implemented Part-B endpoint
+  coupling is described in R4-7, and I09 owns final coupled acceptance.
 - **Trace partition.** The symmetric partition at plate boundaries is declared, and `J_b` and `delta_omega_b`
   publish its sensitivity. An admitted interface law would replace it.
 - **Mixed faces after an advance.** A P1 producer that reads an I03 state (I05) must refuse `unresolved column` for a
   trace point whose adjacent face holds several cohort pieces it cannot place. This is a rule for that producer; Part A
-  has no such producer and does not code it. The lasting fix is conforming faces (I04.1) or I03 sub-face geometry, and
-  it is a probable blocker for runs of more than one interval.
+  has no such producer and does not code it. The lasting exact fix is conforming
+  faces (I04.1) or sub-face geometry. The primary I05 route separately admits
+  labelled equal-structure `fv-cell-mean` columns; the composed successor uses
+  material-resolved traces and exact-default extraction. These distinct routes
+  are recorded in [the shared ports](I04_I05_PORTS.md#d-p2-mapping-i04-supports-to-i05-material-points).
 - **Finite-rigidity water loading** is refused until an elastic core and a spherical flexure producer exist.
 - **Plate count.** N = 2 and 3 are not supported by the v1 family. At sampling level 0, I03 refuses some small-N
   worlds on chart conditioning; levels 1 and above build them.

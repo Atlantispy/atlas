@@ -1,6 +1,6 @@
 # I01: physical reorganisation of plate-boundary junctions
 
-WORKING NON-CANON. **Resolved-patch method selected; physical implementation and
+**Resolved-patch method selected; physical implementation and
 acceptance outstanding.** The [case record](../cases/i01_junction_reorganisation_v1.json)
 fixes the proposed route and controls, not a runnable simulation. MC-05 is not
 closed by this document. The previously completed contact and outgoing-ridge

@@ -1,7 +1,8 @@
 # I01: testing a proposed ridge after junction contact
 
-**WORKING NON-CANON. Local kinematic prerequisite implemented; physical
-reorganisation selection remains OPEN (MC-05).** This is not a graph edit,
+**Local kinematic prerequisite implemented; physical
+reorganisation follows the [selected resolved-patch route](I01_JUNCTION_REORGANISATION.md)
+(MC-05); full physical acceptance remains open.** This is not a graph edit,
 rupture law or generated-world acceptance. It follows the separate
 [contact calculation](I01_JUNCTION_EVENTS.md) without changing its source.
 
@@ -14,7 +15,7 @@ checks the first question for a declared all-ridge planar candidate; it does not
 answer the second. Supplied normals and velocities are hypotheses, not a
 mechanism derived from the lithosphere.
 
-The next physical route must use the local traction/stress, temperature,
+The selected physical route must use the local traction/stress, temperature,
 composition and inherited weakness with an admitted localisation/rupture or
 magmatic propagation mechanism. It must also supply melt and conserve material.
 An isolated residual, unsigned edge length or minimum-dissipation guess cannot
@@ -78,7 +79,8 @@ event admission. I02 owns authenticated state and once-only transactions. The
 helper never sets `topology_change_authorised`, `physical_birth_verified` or
 `global_geometry_verified` true. No candidate is automatically selected or
 committed. Trench/transform candidates require their own laws and are not silently
-represented as ridges. MC-05 remains open.
+represented as ridges. MC-05's physical-event acceptance remains open; its selected
+method and [bounded mechanics feasibility](I01_JUNCTION_FEASIBILITY.md) are separate.
 
 ## 4. Small controls and efficiency
 
@@ -101,10 +103,10 @@ rebuilt queries with exact parity. This measures preparation reuse only, never
 end-to-end generator speedup. A bounded campaign creates a new receipt:
 
 ```
-python -B tools/check_i01_ridge_junction.py --output evidence/i01-ridge-junction-r1.json
+python -B tectonics/tools/check_i01_ridge_junction.py --output NEW_PATH.json
 ```
 
-The receipt binds this method, tool, tests, case and imported exact-number/contact
+Run from the repository root. The receipt binds this method, tool, tests, case and imported exact-number/contact
 helper. Existing source-bound contact/transition files and receipts stay unchanged.
 
 ## 5. Sources actually consulted

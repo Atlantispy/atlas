@@ -7,7 +7,7 @@ and original scientific source/runtime identities did not. The digests below
 identify those public copies, not the original run artefacts. See the
 [before/after trail](../evidence/public-path-redaction-r1.json).
 
-WORKING NON-CANON. Implementation and acceptance record, 22 September 2026.
+Implementation and acceptance record, 22 September 2026.
 Completion status: **STEP 2 COMPLETE; bounded numerical acceptance and reuse measured.**
 
 The [Step 1 design](W07_REGIONAL_MECHANICS.md) remains frozen. This increment
@@ -296,8 +296,10 @@ Both reports retain complete source inventories. The supplement binds the
 original report and both runner versions; the correction changes only the
 reference callback adapter and reporting/targeted-run route, not solver outputs,
 equations, gates or grids. The frozen Step 1 document/case register are unchanged.
-Next: Step 3 heterogeneous stress-site properties and sharp-interface checks,
-then compatible thermal/material transport and the selected nonlinear laws.
+The later [Step 3 implementation](W07_HETEROGENEOUS_THERMAL.md) supplies
+heterogeneous stress-site properties, sharp-interface checks, compatible
+thermal/material transport and the selected nonlinear laws. This Step-2 result
+does not independently qualify those extensions.
 
 ## Papers and software checked
 

@@ -2,7 +2,7 @@
 
 **Item ID:** 01  
 **Retained owner:** Runner / Claude  
-**Status:** WORKING NON-CANON. Reviewed test-only repair published as a workbench successor; frozen composed-r2 remains unchanged.
+**Status:** Reviewed test-only repair published as a workbench successor; frozen composed-r2 remains unchanged.
 **Scope:** Test-only repair of the import-time state leak in `C/test_wp10_integration.py`, followed by the existing named 17-module regression when authorised.  
 **Completion condition:** Candidate setup no longer contaminates test discovery; deliberately replaced module bindings, the parent-package attribute and `sys.path` are restored after successful or failed setup; the canonical suite has no failures or errors; the successor failure record reflects the actual result.
 

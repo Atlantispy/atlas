@@ -1,8 +1,9 @@
 # W05 step 1: prescribed regional extension
 
-22 September 2026. **WORKING NON-CANON — mechanism specification complete;
-implementation and acceptance NOT YET COMPLETE.** This is the first of the five
-W05 steps, not a new terrain generator or a passed realism experiment.
+22 September 2026. **the five-step numerical implementation
+and bounded dry prescribed 1D acceptance are complete.** This document retains
+the mechanism specification and its component/combined results below. The separate
+empirical challenge remains pending; this is not accepted terrain realism.
 
 ## Selected mechanism and scientific boundary
 
@@ -180,7 +181,7 @@ Physical free/clamped ends and evolving rigidity are not needed for this case.
 ## Bounded synthetic execution case for steps 2-5
 
 These are declared numerical challenge inputs, **not measured calibration or
-Diadem canon**. Their order of magnitude alone is not evidence of realism.
+authored Diadem data**. Their order of magnitude alone is not evidence of realism.
 
 | Input | Selected value |
 | --- | --- |

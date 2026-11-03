@@ -1,6 +1,6 @@
 # Plan22 composed gate
 
-**WORKING NON-CANON. Current source successor, 18 bounded controls and a retained
+**Current source successor, 18 bounded controls and a retained
 private combined-gate PASS.** This directory supplies the complete gate, its three
 child sources and a portable standard-library control test. The retained private
 combined gate used these exact gate/child bytes and passed 359 checks across 96
@@ -98,7 +98,10 @@ The S1A integration, D-22r timing and final enabling selection retain their own
 requirements. Historical gate results are not rebound to these changed bytes.
 [SOURCE-MAP-r4.json](SOURCE-MAP-r4.json) is the current source map. It records the
 changed gate, S3 child and control-test identities, the new control result, and the
-complete expected public membership excluding only its own self-hash.
+complete expected public membership excluding only its own self-hash. Its README
+row records the publication-time explanation, not later prose maintenance;
+selected gate and source payload identities remain unchanged. See
+[publication binding scope](../../../../../docs/CODING_SAFETY.md#legacy-document-and-format-bindings).
 [SOURCE-MAP.json](SOURCE-MAP.json) remains unchanged as the historical predecessor.
 `gate_child.py` and `test_gate_l3_store.py` still retain their exact original bytes.
 `s3_child.py` is the reviewed successor that adds the two carried-page cases and

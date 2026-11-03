@@ -1,9 +1,9 @@
 # Prepared construction v2 and receiving integration
 
-WORKING NON-CANON. The reviewed component emits a closed prepared-restart v2
+The reviewed component emits a closed prepared-restart v2
 profile with an explicit historical root and a manifest-declared `files`
 completed-query store. Its real writer, source stager and operational receiving
-APIs are included here. The historical25-member Plan02 source map is preserved
+APIs are included here. The historical 25-member Plan02 source map is preserved
 as a separate generation.
 
 ## Operational receiving API
@@ -15,7 +15,7 @@ digest and loads the full module. Its two receiving APIs use only the standard
 library and the supplied workspace/records; legacy HERE/WORKSPACE layout
 constants are not an implicit source for these calls.
 
-`build_restart_profile` takes all17 explicit keyword-only bindings in its
+`build_restart_profile` takes all 17 explicit keyword-only bindings in its
 signature, including the exact policy bytes. It authenticates the complete
 source/native inventory and returns the v2 record before downstream construction
 receipts exist. `selected_restart_profile` then checks the actual generated
@@ -38,7 +38,7 @@ closed record fields, store capability handling and refusal boundaries.
 
 ## Source and evidence limits
 
-[SOURCE-MAP.json](SOURCE-MAP.json) binds all18 exported source/control members,
+[SOURCE-MAP.json](SOURCE-MAP.json) binds all 18 exported source/control members,
 original/public digests, exact public paths and sanitisation. Personal home
 names become LOCAL_USER and text uses LF. Execution/selection pins are retained;
 sanitised members cannot authenticate private historical runs. The assembler,

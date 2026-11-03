@@ -5,7 +5,7 @@
 W01–W04 establish where rock is, what material it contains, how prescribed motion
 moves that material, and how cooling, compaction and loading affect a supported
 column. They provide several connected, bounded methods rather than one unrestricted
-planet simulation. All remain **WORKING NON-CANON**.
+planet simulation.
 
 The test links below describe executable checks. Linked numerical receipts are
 **recorded evidence for their stated source/runtime snapshots**, not current-code

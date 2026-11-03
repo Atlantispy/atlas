@@ -1,8 +1,15 @@
 # Atlas: coding instructions
 
 Atlas is vibe-coded: OpenAI ChatGPT/Codex and Anthropic Claude Code write code under the owner's
-requirements, decisions and review. Status is **WORKING NON-CANON**. Passing tests,
+requirements, decisions and review. Passing tests,
 code review and scientific acceptance are separate outcomes.
+
+Describe Atlas work by its engineering and scientific status: planned,
+implemented, published, enabled, tested or scientifically validated, as supported
+by evidence. Do not add worldbuilding canon labels to Atlas documentation.
+Preserve authored-world constraints and source authority. Legacy literal values
+and frozen fixture documents remain compatibility inputs, not project status;
+see `docs/CODING_SAFETY.md#legacy-document-and-format-bindings`.
 
 ## Start with the smallest relevant context
 

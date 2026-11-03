@@ -1,6 +1,6 @@
 # Current evidence: status, use and writing
 
-WORKING NON-CANON. This guide explains the bounded register and source/status rules.
+This guide explains the bounded register and source/status rules.
 [CURRENT_STATE.md](CURRENT_STATE.md) owns delivery status; the
 [register](../tectonics/evidence/current-evidence.json) owns individual entries,
 and specialist method documents own interpretation. Changed bound sources or known
@@ -38,12 +38,12 @@ Classification does not require permanent checkout retention. Finished receipts
 with no current consumer can leave the register and active tree after their
 references are resolved; their original bytes remain in Git history. The
 [pre-retirement snapshot](https://github.com/Atlantispy/atlas/tree/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence)
-contains the 77 retired historical/superseded receipts. The 37 current entries
-and their binding rules are unchanged. Nine older entries remain: three support
-named I01 selections without a current successor, and six are linked by method
-documents whose current evidence binds those exact document bytes. These are
-specific remaining consumers, not a requirement to preserve every old run.
-The register now checks 46 records; it does not connect to a run store or archive.
+contains the 77 retired historical/superseded receipts. At that retirement boundary,
+37 current and nine older entries remained: three supported named I01 selections
+without a current successor, and six had named method-document consumers. Those
+counts describe the cleanup checkpoint, not the current classification. The
+register owns today's counts and remaining consumers; it does not connect to a
+run store or archive.
 
 ## Coverage today
 
@@ -53,14 +53,25 @@ checker for current counts; this guide does not maintain a parallel receipt list
 Unlisted evidence, including W01–W12 receipts, is **unclassified**. A current
 classification never means physical, platform or whole-world acceptance.
 
-The connected I01 column chain and I02 timing were renewed after the 5 October
-optimisation batch; unchanged column and phase/receiver/separation/G25 evidence
-was reused. Finite-admission r12 adds engine-owned restoration and binds its
-method, tools, restoration modules and prerequisites. I02 timing r12 has five
-repetitions, seven passing equality/parity comparisons and 166 checked source
-digests; its opaque execution identity remains an unchecked runtime observation.
-A source change can invalidate it without measuring 3-D or spherical speed.
-Restoration checks trusted local consistency, not authorship. See
+The connected I01 column chain and I02 timing were originally captured or renewed
+after the 5 October optimisation batch; unchanged column and
+phase/receiver/separation/G25 evidence was reused at that capture boundary.
+Finite-admission r12 records engine-owned restoration and its then-bound method,
+tools, restoration modules and prerequisites. On 3 November 2026, documentation-only
+reconciliation changed bound method prose for 25 registered controls. Those
+receipts are now historical; their original bytes, SHA-256, source bindings,
+results and numerical qualification limits are preserved. Scientific contracts,
+code, cases, tests and thresholds are unchanged, and no recapture or scientific
+suite rerun accompanied the reclassification. The register retains the original
+notes, limits and unchecked-digest qualifications for those historical controls.
+Receipt references alone do not propagate reclassification: entries whose declared
+bytes and bindings still match remain current, including the frozen live column
+chain and I02 timing.
+
+I02 timing r12 retains five recorded repetitions, seven passing equality/parity
+comparisons and 166 checked source digests; its opaque execution identity remains
+an unchecked runtime observation. Its unchanged byte bindings measure no 3-D or
+spherical speed. Restoration checks trusted local consistency, not authorship. See
 [I02 evidence effects](../tectonics/docs/I02_WORKFLOW.md#8-evidence-effects).
 
 Whole-package identity and declared file binding are different. Adding I02.1

@@ -1,6 +1,6 @@
 # Fresh interval chains, independent readers and adoption
 
-**WORKING NON-CANON.** This is the durable contract for fresh ROOT construction,
+This is the durable contract for fresh ROOT construction,
 continuation, independent reading, comparison, admission and atomic promotion.
 [Current state](../../../docs/CURRENT_STATE.md) owns delivery and holds. The
 [combined Plans10–12 source selection](../workbench/plans10-12/README.md) publishes
@@ -11,7 +11,7 @@ and individual ticket holds and the 256 accepted-step ceiling remain intact.
 
 The retained driver docstrings describe actual entry points. Source integration,
 focused qualification, an adopted interval, final assembly, whole-workflow cold
-recovery, scientific acceptance and canon remain different outcomes. In particular,
+recovery and scientific acceptance remain different outcomes. In particular,
 old design-only statements about unbuilt work do not override later scoped
 implementation evidence, and a component PASS does not qualify a final runtime.
 
@@ -246,7 +246,7 @@ start_gate.py replaces a blanket 10 GiB launch requirement and the obsolete
 TOTAL+5 GiB queue threshold. The launcher derives need from successful matching
 command/stage measurements, or explicit booking if none exists:
 
-**start need = predicted peak×1.2 + 1 GiB free floor + 1 GiB small-job allowance.**
+**start need = P + ceil(P/5) + 1 GiB free floor + 1 GiB allowance**, using integer bytes. This is the [shared by-need core](../workbench/plan02/ROUTE2_ADMISSION.md#shared-core-and-route1-evidence); floating-point 1.2×P is shorthand only.
 
 Use the largest successful matching-command peak; failed runs cannot lower it.
 Match route/workers/inputs and include parent/worker contributions. Record basis,

@@ -1,6 +1,6 @@
 # Atlas tectonics core route: exact versions observed read-only on 26 September 2026
 # in the existing Windows scientific environment (CPython 3.12.14, win_amd64).
-# WORKING NON-CANON. Setup input only: equal versions do not prove identical native
+# Setup input only: equal versions do not prove identical native
 # binaries, CPU features or checkpoint-continuation compatibility. Not verified on
 # Linux or any other interpreter. Tested/installed status and evidence per package:
 # windows-amd64-cp312.json and docs/TECTONICS_ENVIRONMENT.md.

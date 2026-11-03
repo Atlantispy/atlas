@@ -1,6 +1,6 @@
 # W09 Step 2: drainage and finite lake water
 
-23 September 2026. **WORKING NON-CANON. Step 2 COMPLETE** for the bounded
+23 September 2026. **Step 2 COMPLETE** for the bounded
 instantaneous-routing/ideal-sill model selected in the
 [frozen design](W09_SURFACE_PROCESSES.md). The original design and
 [case register](../cases/w09_surface_processes_r1.json) remain unchanged.
@@ -137,5 +137,6 @@ solver path or new runtime installation was introduced.
   separation of routing geometry, lake capacity and accumulated supplied runoff.
   No third-party simulator was installed or claimed as an executed comparator.
 
-**Next:** W09 Step 3, material-aware bedrock/alluvium erosion and finite-supply
-hillslope transport. Joined sediment/thermal/load feedback remains Step 4.
+The later [Step 3 implementation](W09_EROSION.md) supplies material-aware
+bedrock/alluvium erosion and finite-supply hillslope transport. Joined
+sediment/thermal/load feedback remains Step 4.

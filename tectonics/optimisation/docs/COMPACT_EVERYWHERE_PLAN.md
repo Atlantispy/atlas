@@ -1,8 +1,8 @@
 # Integrated optimisation plan: compact data, resumability and exact computation
 
-**WORKING NON-CANON.** This is the WP0–WP25 design, dependency and acceptance contract. [Current delivery state](../../../docs/CURRENT_STATE.md) and the selected component owners control present selections and holds; the historical component measurements below do not authorise work.
+This is the WP0–WP25 design, dependency and acceptance contract. [Current delivery state](../../../docs/CURRENT_STATE.md) and the selected component owners control present selections and holds; the historical component measurements below do not authorise work.
 
-**Objective.** Complete the agreed WP0-WP25 optimisation programme: preserve exact scientific results and restartability while reducing live memory, storage, repeated decoding and computation. The first operational milestone is a compact interval-two advance, publication and independent reopen under the existing guards. The programme finishes only after every planned optimisation has a measured enabled/disabled outcome and the final enabled composition passes its affected checks. L1/L2 remain later phases with their stated authority boundaries.
+**Objective.** Complete the agreed WP0-WP25 optimisation programme: preserve exact scientific results and restartability while reducing live memory, storage, repeated decoding and computation. The first operational milestone is a compact interval-two advance, publication and independent reopen under the existing guards. The programme finishes only after every planned optimisation has an evidence-bound disposition under its applicable gate and the final enabled composition passes its affected checks. An accepted no-build or prerequisite-based disposition is distinct from measured benefit or failure. L1/L2 remain later phases with their stated authority boundaries.
 
 **Reading order.** Decisions D1-D6 below control the design. Section 3 is the single execution schedule, dependency map and ownership rule for all 26 packages. Sections 1-2 and 6-13 supply the detailed contracts and source coverage. Section 4 defines measurement and resource acceptance; section 14 defines completion and continuation. Earlier estimates and open-decision wording in the historical workflow record are superseded where this plan expressly reconciles them.
 
@@ -37,7 +37,7 @@ Every optimisation item is a **planned work item**: the four encodings plus zstd
 
 The following stay unchanged:
 - physics, exactness, provenance and accounting;
-- the guard limits: 12 GiB RSS, 1 GiB free floor, 10 GiB start and 16 GiB logical.
+- the guard limits: 12 GiB tree RSS, 1 GiB free floor and 16 GiB logical. The historical fixed 10 GiB start gate was superseded by the [by-need admission contract](../workbench/plan02/ROUTE2_ADMISSION.md#shared-core-and-route1-evidence): integer `P + ceil(P/5) + 2 GiB`, with qualifying measured peaks or explicit booking.
 
 **Decided constraints D1-D6 (Michael, 15 Oct 2026, recorded in WORKFLOW_DECISIONS.md). These are settled; section 5 lists implementation risks, not renewed approval questions:**
 
@@ -384,7 +384,7 @@ Reserve before allocation. A `ChargeSpec` includes backing capacity, owner/conta
 
 Support cache 128 MiB, certified-fact cache 64 MiB, page cache 64 MiB and verified-hash set 20,000,000 bytes/200,000 entries are subordinate **cache-retention quotas**, not additive allowances or mandatory-read size limits. A valid 128 MiB read may bypass the 64 MiB page cache when the aggregate/run budgets permit. A cache taking custody of an already owned backing does not charge the backing twice. Declined insertion leaves the caller's owned value intact. Keep the native decoded cache disabled when WP1 supplies the single page-cache layer.
 
-Optional admission evicts eligible unpinned entries and retries once, then returns a decline without worker revocation or mandatory-refusal accounting. Mandatory reads reclaim eligible entries and use existing mandatory admission; an unresolved shortage raises `MemoryLimitError`. Pinned entries cannot be evicted or credited as reclaimed. WP11 does not register a second `_revoker`, replace `_scope`, or change the existing optional-worker owner; current resource ancestry permits only one owner. Never hold a cache lock across admission/revocation or cancellation callbacks. Codec/row scratch, producer state and worker/export workspaces remain separately charged to the run budget. Escaping results belong to the retained scope; scratch cannot become an uncharged output. Logical reservations are not measured RSS. The 12 GiB process-tree RSS ceiling, 1 GiB free floor, 10 GiB start gate and 16 GiB logical run limit are unchanged.
+Optional admission evicts eligible unpinned entries and retries once, then returns a decline without worker revocation or mandatory-refusal accounting. Mandatory reads reclaim eligible entries and use existing mandatory admission; an unresolved shortage raises `MemoryLimitError`. Pinned entries cannot be evicted or credited as reclaimed. WP11 does not register a second `_revoker`, replace `_scope`, or change the existing optional-worker owner; current resource ancestry permits only one owner. Never hold a cache lock across admission/revocation or cancellation callbacks. Codec/row scratch, producer state and worker/export workspaces remain separately charged to the run budget. Escaping results belong to the retained scope; scratch cannot become an uncharged output. Logical reservations are not measured RSS. The 12 GiB process-tree RSS ceiling, 1 GiB free floor and 16 GiB logical run limit are unchanged; start admission uses the by-need successor linked above.
 
 Cache keys are immutable and domain-separated. Support keys bind exact support identity plus decoder/schema. Page/hash keys bind process epoch, authenticated immutable file identity, typed chunk ID and descriptor digest. View-seal keys bind ordered descriptor bindings, logical schema/profile and identity. Fact keys include predicate kind, every ordered and role-labelled exact operand, every result-affecting parameter, method/execution identity and certificate/verifier schema; no operand reordering without an established symmetry contract. Verify before insertion and check cancellation before returning a hit. Certified false results may be cached; cancellation, budget refusal, timeout, partial proof and operational declines may not. Fresh processes revalidate required bytes.
 
@@ -436,17 +436,7 @@ retains the earlier chronology.
 | WP7 heat | Exact rational spelling, metadata/result IDs and all five float arrays remain unchanged. Ordered mesh IDs are shared only after exact checks. r13 packaging/r10 consumers/r4 bounded storage preserve the numerical-kernel AST and r12 logical labels; historical r3 lookups require authenticated mappings. A one-way descriptor repaired a metadata cycle while escaped descriptors retain funding. |
 | Step7B reader | Each authenticated leaf is admitted once, including empty columns. Typed borrows and optional per-traversal 1 MiB LRU (≤1,024 entries, each ≤64 KiB) preserve every ordered logical byte, native authentication, reachability, spelling, cancellation/freshness and direct fallback. No whole expanded ledger is retained. |
 
-| Recorded comparison | Time | Memory/storage and limits |
-| --- | --- | --- |
-| Shared generic graph fixture | No general speed claim | 203,088,011 logical B used 52,511 column B; second copy added 76 B. Deliberate sharing, not a ratio for unique data. |
-| Sealed 128-lookup page reuse | 1.716→0.461 s; underlying reads 128→1 | Same 73,080-byte record; in-memory fixture was slower. Initial 60 s failure preceded the bounded correction. |
-| 7,700-support cold mesh | 600 s timeout retained; corrected open 505.599 s; compound preparation 306.727 s | 675,698,476 logical mesh B; 886,168 physical catalog/store B with repeated 81,920-byte token. Retained after open 31,601,894 B; final observed working-set peak 153,649,152 B, private commit peak 1,130,541,056 B. No old process-memory baseline; OS cache uncontrolled. Preparation itself 162.993→1.578 s, so not all total variation is attributed to the patch. |
-| Fresh compact producer | Packaging 0.01675→0.14576 s (slower) | Tracked peak 47,335,976→2,286,908 B; retained 3,391,552→177,402 B; sampled working-set peak 129.00→119.29 MiB. Shared synthetic fixture only. |
-| Compact publication/rows | Packing/seal 0.12614/0.02301 s varied on rerun; 1,000/3,800 rows 0.10629/0.43110 s | Sealed interval/catalog 54,664 B plus 32,768 B numeric-head DB; final row additional allocation 166,720 B at both scales. No matched legacy persistence or row-memory baseline. |
-| Genuine owner checkpoint | Whole fixture 184.09 s, no matched old timing | Actual PreparedSpatialOwner/SpatialOwnerTransport, 236 cells/832 faces, compact in-memory mesh, advance/validate/save/seal/restore exact. Zero retained after close. Genuine origin true; production acceptance false. Earlier lifetime failure retained. |
-| 80,000-cell/240,000-face ledger | Pack/save 39.94/10.50 s; original reopen 206.60 s | 616,160,149 logical B, only 71,056 physical store/catalog B due to extreme sharing. Tracked write/open peaks 74.54/30.09 MiB; retained open 18.52 MiB, zero closed. No old-format or process-RAM baseline; later branches were not a rerun of this timing. |
-| Matched small r3→r4 ledger | Save 0.14906→0.11297 s; reopen 0.06102→2.12556 s (slower) | Same 4,051,335-byte metadata and five arrays; reopen tracked peak 48.69→30.09 MiB, sampled process peak 145.89→128.70 MiB; physical 135,168→120,206 B. Single synthetic observation. |
-| Step7B matched readers | Large 189.07803→31.24293 s (one process/version); small 2.05859→0.84264 s (median three) | Tracked peak 30.09 MiB unchanged. Small process peak 127.84→127.38 MiB; large 132.30→131.96 MiB, effectively unchanged. Physical files unchanged. All result/metadata/array identities equal, reservations zero at close. Uncontrolled cache/load and extreme sharing limit generalisation; the original genuine-owner evidence remains on its earlier source. |
+The consolidated [comparison table in section 4](#4-capacity-memory-performance-and-launch-evidence) retains component time, memory/storage and coverage limits, including the distinct graph-sharing, compact publication and genuine-owner observations.
 
 Original component coverage included 91/92 Step4 tests with a host-denied
 hardlink fixture, 76 Step6 tests, 44 Step7 tests and 65 Step7B tests across their
@@ -454,9 +444,13 @@ recorded executions. Those totals are historical qualification, not new runs.
 The superseded stand-in skip, cancelled/failed cold attempts and initial
 fresh-process invocation refusal remain limitations of their own records.
 
-Later reopening work is deferred: profile the actual selected reader before
-choosing among repeated traversal/reconstruction, typed batching or immutable
-validation reuse. The old pre-7B decompression observation (0.000295 s in ten
+At that component checkpoint, later reopening work was deferred. Subsequent
+[corrected-reader L3](../workbench/plan22/README-r4.md),
+[guarded-reader S1A](../workbench/plan30/s1a/README.md) and
+[storage-chain selection](../workbench/plan21/README.md#private-storage-chain-disposition)
+own the later implementations and measurements; they do not qualify a final interval.
+Any further proposal must profile the actual selected reader before choosing
+among repeated traversal/reconstruction, typed batching or immutable validation reuse. The old pre-7B decompression observation (0.000295 s in ten
 calls) does not explain the later reader's remaining cost. Preserve exact hashes,
 ownership, freshness, cancellation and fallback, and compare matched time/RAM/disk
 before enabling changes. No current work or additional check is launched here.
@@ -503,7 +497,7 @@ routes; [CURRENT_STATE](../../../docs/CURRENT_STATE.md) owns delivery and holds.
 4. Tampering, a missing or reordered segment, an unknown schema, and an old reader on a new schema are all refused.
 5. Cancellation leaves no partial root.
 6. Ruff reports no introduced findings.
-7. **Every agreed optimisation remains in scope.** Implement and test each planned item in its owning package, subject to its explicit prerequisite (including the WP24 hotspot/build gate). Enable it only where the relevant measured path shows a net gain with no accuracy/accounting change. A failed benefit gate means tested and disabled, with the result in the existing receipt; it is not silent omission. A prerequisite-blocked item stays INCOMPLETE with the precise dependency and next action. Storage-only or pre-advance measurements cannot decide compute-path gates. No extra receipt system is introduced.
+7. **Every agreed optimisation remains in scope for a justified disposition.** Apply its prerequisite/build gate before implementation (including the WP24 hotspot gate). A source/evidence assessment may close an explicitly conditional option as NOT BUILT/OFF or deferred without building it merely to obtain a timing. Otherwise implement and test the selected item in its owning package, enabling it only where the relevant measured path shows a net gain with no accuracy/accounting change. A measured failed benefit gate means tested and disabled, with the result in the existing receipt; a no-build assessment must not be labelled a measured failure. A prerequisite-blocked item stays INCOMPLETE with the precise dependency and next action. Storage-only or pre-advance measurements cannot decide compute-path gates. No extra receipt system is introduced.
 
 **WP0: Census v2.** Owns `R/probes/probe_codec_census.py` and its test.
 - **0a, now.** Guarded, read-only selected reads that measure:
@@ -665,22 +659,22 @@ Focused verification covers 17 scanner tests, 20 structural-measurement tests, e
   - a content change produces a new key;
   - the cross-query fact key covers every operand plus the method identity, and budget/cancel refusals are never cached.
 
-**WP12: Zero-copy reads of hot raw arrays** (section 8). Owns new `C/raw_sidecar_store.py` and its test.
-- **What it is.** An immutable, content-addressed raw sidecar file holding the hot raw arrays: the current mesh metric/connectivity columns and the partition node tables. Arrays are read through `mmap` as read-only numpy views.
-- **Binding.** The ArrayStore stays the authority. The sidecar is an optional, regenerable local cache, outside the one-authoritative-file-per-interval layout; its absence must never prevent reopening the catalog. It is excluded from scientific identity and is not a second durable source. All mappings and outstanding borrows are charged and closed before replacement. The sidecar is bound by the same chunk IDs and descriptor digests, and it is verified once per process against the store chunks before any use.
+**WP12: Authenticated positioned sidecar reads** (section 8). The [Plan23 assessment](../plans/plan-23-storage-mapped-reads-wp12.md) supersedes the original mmap design and closes the conditional option as **UNBUILT/OFF**. Owns new `C/raw_sidecar_store.py` and its test.
+- **Prospective mechanism.** Positioned reads into fresh immutable bytes from a locked sidecar, initially for the eligible `int.bytes` class; no mmap or zero-copy claim. Plan23 records one established eligible sealed reopen and an estimated central net saving of -3.1%, below its 5% gate. This is a no-build assessment, not a measured failure.
+- **Binding.** The ArrayStore stays the authority. The sidecar is an optional, regenerable local cache, outside the one-authoritative-file-per-interval layout; its absence must never prevent reopening the catalog. It is excluded from scientific identity and is not a second durable source. All read buffers, handles and outstanding borrows are charged and closed before replacement. Each served range retains typed-chunk authentication, cache-disabled verification and the per-read path/file freshness contract. Once-per-process authentication cannot replace those checks; eager unused-chunk coverage remains an explicit equivalence question before any implementation.
 - **Tests:**
-  - views are byte-identical to the store reads;
+  - returned bytes are identical to the store reads;
   - a tampered or truncated sidecar is refused;
-  - views stay pinned while borrowed;
-  - mapped pages are charged as held bytes;
+  - read owners and handles stay live while borrowed;
+  - buffers, scratch and handles are charged through their full lifetimes;
   - deleting the sidecar falls back to store reads with identical results.
-- **Gate.** Enabled only where WP0b shows that hot-array read time drops by at least 5% of the run path. This is a storage-engine extension (D5).
+- **Gate.** Any reconsideration needs Plan23's guard-equivalent freshness, actual eligible reuse count and at least 5% net reopen saving including sidecar build/open costs. No later S1A result automatically selects WP12.
 
 ### Integrated execution, ownership and completion
 
 The authoritative 21-step sequence above replaces the earlier three-wave/session estimate. The dependency and ownership tables below elaborate that sequence; they do not replace its numbering or order. The work-package definitions and their tests remain the scope contract, including additions in sections 6–13. A later position in the sequence does not remove an item. Core interval-two readiness and completion of the whole optimisation programme are separate milestones.
 
-Steps 1 / WP19, 2 / WP0a, 3 / joint interface freeze, 4 / storage/view/cache components, 5 / mesh-partition components, the bounded Step 5B follow-up, 6 / compact records-validation and 7 / compact heat-ledger/source composition are complete at their recorded scopes. The genuine owner-heat/checkpoint check now passes. WP8 runtime integration, WP9 frozen composition, WP14 combined live-memory evidence and WP0b actual compact-data measurements remain outstanding. The historical census must not be rerun merely because work crosses a step boundary. Current compact sources must enter WP9's reviewed successor inventory before real use; frozen RC1 and historical reviewed inputs have not been repinned. Reuse valid unchanged evidence within its original scope.
+At the historical compact-component checkpoint, Steps 1 / WP19, 2 / WP0a, 3 / joint interface freeze, 4 / storage/view/cache components, 5 / mesh-partition components, the bounded Step 5B follow-up, 6 / compact records-validation and 7 / compact heat-ledger/source composition are complete at their recorded scopes. The genuine owner-heat/checkpoint check now passes. WP8 runtime integration, WP9 frozen composition, WP14 combined live-memory evidence and WP0b actual compact-data measurements were then outstanding. Later implementation selections and their remaining qualification belong to the linked current component owners; this checkpoint does not override them. The historical census must not be rerun merely because work crosses a step boundary. Current compact sources must enter WP9's reviewed successor inventory before real use; frozen RC1 and historical reviewed inputs have not been repinned. Reuse valid unchanged evidence within its original scope.
 
 #### Dependency order
 
@@ -739,16 +733,19 @@ After successful IV2, **L1** remains archival compact copies alongside untouched
 
 | Completed bounded comparison | Previous version | Implemented version | Measured change | Evidence/scope |
 |---|---:|---:|---|---|
-| 128 sealed-file scalar lookups | 1.716 s, direct reads | 0.461 s, authenticated small-column reuse | 3.7x faster | Step 4 receipt (`test-results/step4-components.json`); same sealed-file fixture, not whole workflow |
+| Shared generic graph fixture | No matched unshared baseline or general timing | 203,088,011 logical B uses 52,511 column B; second copy adds 76 B | Deliberate sharing; no general-data ratio | Original component fixture, not current runtime qualification |
+| Compact synthetic publication | No matched legacy persistence baseline | Packing 0.12614 s; seal 0.02301 s | Single observations that varied on rerun | Separate from the row-processing fixture; bounded component scope |
+| Genuine owner heat/checkpoint | No matched earlier timing | 184.09 s whole fixture | Time savings not measured; zero retained after close | Actual PreparedSpatialOwner/SpatialOwnerTransport, 236 cells/832 faces, compact in-memory mesh, advance/validate/save/seal/restore exact; genuine origin true, production acceptance false, earlier lifetime failure retained |
+| 128 sealed-file scalar lookups | 1.716 s, direct reads | 0.461 s, authenticated small-column reuse | 3.7x faster; underlying reads 128→1 | Step 4 receipt (`test-results/step4-components.json`); same 73,080-byte record, not whole workflow. In-memory fixture was slower; initial 60 s failure preceded the bounded correction |
 | 40 large-column scalar/raw lookups | 40 underlying reads | 1 underlying read | 39 reads avoided | Step 5 receipt (`test-results/step5-mesh-partition.json`); same sealed synthetic column; no claim about overall run time |
 | 4,000 warmed scalar lookups | 0.538877 s, repeated verified cache gets | 0.0309396 s, paid page borrows within one atomic read | 17.4x faster | Step 5 receipt (`test-results/step5-mesh-partition.json`); same two columns, zero underlying reads in both, profiling enabled in both |
-| Complete large compact cold reopen | Timed out at 600 s during generic validation | Passed in 505.599 s | Now completes within the test deadline; no exact speedup factor from a timeout | Step 5 receipt (`test-results/step5-mesh-partition.json`); same already sealed 7,700-support fixture |
+| Complete large compact cold reopen | Timed out at 600 s during generic validation | Passed in 505.599 s | Now completes within the test deadline; no exact speedup factor from a timeout | Step 5 receipt (`test-results/step5-mesh-partition.json`); same already sealed 7,700-support fixture, 675,698,476 logical mesh B with a repeated 81,920-byte token |
 | Retained RAM after that large reopen | No successful old-open measurement | 31,601,894 B (30.14 MiB) | Savings not measured; below the 64 MiB retained-open gate | Tracked allocations, not total process RAM or minimum RAM required |
 | Physical disk for that large fixture | No matched old-format store | 886,168 B (865.40 KiB) | Savings not measured | Deliberately high-sharing synthetic catalog/store; not a general-data compression claim |
 | Step 5B mesh preparation | 162.993 s | 1.578 s | 99.0% less time | Same saved fixture; support-inventory completion to mesh-validation start |
 | Step 5B complete cold reopen | 505.599 s | 306.727 s | 198.871 s / 39.3% less time observed | Single matched workload comparison; other unchanged phases also varied; OS cache uncontrolled |
 | Step 5B retained RAM after open | 31,601,894 B | 31,601,894 B | Unchanged | 30.14 MiB tracked allocation; not total process RAM |
-| Step 5B process RAM | Not measured | 146.53 MiB lifetime peak working set; 1.053 GiB peak private commit | Savings not measured | Peak counters read at completion checkpoints, through final support verification; at open working set was 142.86 MiB |
+| Step 5B process RAM | Not measured | 153,649,152 B (146.53 MiB) lifetime peak working set; 1,130,541,056 B (1.053 GiB) peak private commit | Savings not measured | Peak counters read at completion checkpoints, through final support verification; at open working set was 142.86 MiB |
 | Step 5B physical catalog/store | 886,168 B | 886,168 B | Unchanged | Same fixture files byte-for-byte; reference receipt excluded on both sides |
 | Step 6 producer packaging | 0.01675 s | 0.14576 s | 0.12901 s slower | Final matched fresh-process synthetic sample; relevant source files checked unchanged |
 | Step 6 producer tracked peak / retained | 47,335,976 / 3,391,552 B | 2,286,908 / 177,402 B | 95.2% / 94.8% less | Tracked allocation; not process RAM or minimum required RAM |
@@ -756,17 +753,17 @@ After successful IV2, **L1** remains archival compact copies alongside untouched
 | Step 6 synthetic persisted records | Not measured | 54,664 B sealed interval/catalog; separate numeric head 32,768 B | Disk savings not measured | Different fixture from producer measurement; no matched legacy store baseline |
 | Step 6 compact row-processing scale | 1,000 rows: 166,720 B / 0.10629 s | 3,800 rows: 166,720 B / 0.43110 s | Row allocation stays bounded as count grows | Additional tracked row allocation; not an old-format comparison |
 | Step 7 matched heat save | 0.14906 s, r3 | 0.11297 s, r4 | 0.03609 s less observed | Input packaging excluded; codec imported before timing; one final sample |
-| Step 7 matched heat reopen | 0.06102 s, r3 | 2.12556 s, r4 | 2.06454 s slower | Same synthetic logical result; includes store/catalog verification, field hashing and close |
+| Step 7 matched heat reopen | 0.06102 s, r3 | 2.12556 s, r4 | 2.06454 s slower | Same synthetic logical result, 4,051,335-byte metadata and five arrays; includes store/catalog verification, field hashing and close |
 | Step 7 reopen tracked peak | 51,052,600 B | 31,552,512 B | 38.2% less | 48.69 to 30.09 MiB; tracked reservations, not process RAM |
 | Step 7 reopen sampled process peak working set | 145.89 MiB | 128.70 MiB | 11.8% less observed | 5 ms sampling; includes interpreter/imports; no minimum-RAM claim |
 | Step 7 matched physical heat store | 135,168 B | 120,206 B | 11.1% less | SQLite plus compact catalog; evidence/receipt files excluded |
-| Step 7 large logical ledger | No matched r3 baseline | 39.94 s pack / 10.50 s save / 206.60 s reopen | Savings not measured | 616,160,149 logical metadata bytes; original bound fixture evidence |
-| Step 7 large tracked memory / physical store | Not measured | 74.54 MiB write peak / 30.09 MiB cold peak; 71,056 B store | Savings not measured | Deliberately high-sharing synthetic data; process RAM not measured |
+| Step 7 large logical ledger | No matched r3 baseline | 39.94 s pack / 10.50 s save / 206.60 s reopen | Savings not measured | 80,000 cells/240,000 faces, 616,160,149 logical metadata bytes; original bound fixture evidence, not rerun by later branches |
+| Step 7 large tracked memory / physical store | Not measured | 74.54 MiB write peak / 30.09 MiB cold peak; 18.52 MiB retained open, zero closed; 71,056 B store | Savings not measured | Deliberately high-sharing synthetic data; process RAM not measured |
 | Step 7B small compact reopen | 2.05859 s | 0.84264 s | 59.1% less time; 2.44x faster | Medians of three fresh processes per version; same saved fixture and exact identities |
 | Step 7B large compact reopen | 189.07803 s | 31.24293 s | 83.5% less time; 6.05x faster | One fresh process per version; same 616,160,149-byte logical fixture; OS cache uncontrolled |
 | Step 7B tracked peak RAM, both fixtures | 31,552,512 B | 31,552,512 B | Unchanged | 30.09 MiB; tracked reservations, not minimum required RAM |
 | Step 7B sampled peak process working set, small / large | 127.84 / 132.30 MiB | 127.38 / 131.96 MiB | Effectively unchanged | 5 ms sampling; small medians, large single observations; no material saving claimed |
-| Step 7B physical interval/catalog, small / large | 120,206 / 71,056 B | 120,206 / 71,056 B | Unchanged | Files and receipts unchanged; matched evidence (`probes/step7b/measurement.json`) |
+| Step 7B physical interval/catalog, small / large | 120,206 / 71,056 B | 120,206 / 71,056 B | Unchanged | Files and receipts unchanged; all result/metadata/array identities equal and reservations zero at close; matched evidence (`probes/step7b/measurement.json`). Extreme sharing and uncontrolled cache/load limit generalisation; genuine-owner evidence remains bound to its earlier source |
 | Step 8 partition construction, 2,016 supports | 47.100 s; 270,151,680 B peak process RSS | 99.415 s; 145,895,424 B peak process RSS | 111.1% more time; 46.0% less peak RSS | Matched compact-endpoint evidence (`probes/wp14-partition/handoff.json`); identical logical record and 983,735 B packed arrays, not measured physical-store savings |
 | Step 8 partition construction, charged peak | 193,367,745 B | 57,412,041 B | 70.3% less | Same comparison; both finish with the same compact representation, so this extra build time establishes no later reuse speed gain |
 | Step 8 ordinary mesh construction, 216 cells / 752 faces | 2.16291 s; 189,956,096 B peak RSS; 4,747,132 B retained output charge | 2.99595 s; 190,672,896 B peak RSS; 719,335 B retained output charge | 38.5% more time; no process-peak gain; 84.8% less retained output charge | Mesh/collar evidence (`probes/step8/mesh-collar-handoff.json`); exact logical identity; ephemeral output, no authoritative store written |
@@ -813,7 +810,7 @@ The old 560,352 B successor-manifest estimate is **above** the common 256 KiB ta
 
 **Memory accounting and margins.**
 
-- Keep the existing 12 GiB RSS guard, 1 GiB free-memory floor, 10 GiB start gate and 16 GiB logical budget. Preserve the current monitor's accounting and cancellation cadence. Parent, worker and codec/prefetch memory must be measured together; a worker-count increase must fit the same available envelope.
+- Keep the existing 12 GiB tree-RSS guard, 1 GiB free-memory floor and 16 GiB logical budget, with the by-need start-admission successor linked above. Preserve the current monitor's accounting and cancellation cadence. Parent, worker and codec/prefetch memory must be measured together; a worker-count increase must fit the same available envelope.
 - The 256 MiB post-publication/cold-reader target is **one aggregate cap across retained views and caches**, not a cap per object. WP11 allocates shared sub-budgets. Individual maxima (support LRU 128 MiB, fact cache 64 MiB, verified-hash set about 20 MB, page caches up to 64 MiB) are ceilings, not simultaneously available allocations. Evict unpinned entries or decline optional caching rather than overbook the aggregate. Pinned bytes stay charged; exception/cancellation paths release ownership correctly.
 - The codec/validator temporary target is at most two 128 MiB segments plus one explicitly sized row block. Add retained views/caches, producer state, required charged exports, worker payloads and codec workspaces when evaluating TOTAL peak. WP0/WP6/WP7 set and test the row-block and export caps before launch; the 32 MB transport export must be accounted for explicitly. The temporary target alone is not a bound on the whole advance.
 - WP14 removes whole-record lifetimes and measures construction, advance, finish and commit on representative IV2-shape inputs. WP15/WP18 include parent/worker copies and simultaneous in-flight work. WP19 attributes measured RSS/private bytes alongside logical reservations; the two are reported separately.
@@ -849,11 +846,11 @@ Decisions D1-D6 are settled at the top of this document. Remaining engineering u
 | R7: optimistic size/sharing scenarios | WP0 replaces launch-critical assumptions with measurements; WP13 checks each actual interval file and the whole disk footprint. No store-limit workaround. |
 | R8: repeated identity/validation CPU | WP2/WP3/WP7 seal only identities verified in the process; WP11 measures bounded reuse. A fresh process validates its required bytes again. |
 | R9: changed execution identity | WP9 records the composed identity; WP17 refuses old/foreign completed-query hits. Reusing logical chunk content never makes an old execution checkpoint current. |
-| R10: uncharged or multiply retained cache data | WP11 owns the aggregate retained-memory budget; owners expose actual held bytes, borrows and evictions. WP12 accounts for mapped pages and sidecar lifetimes. |
+| R10: uncharged or multiply retained cache data | WP11 owns the aggregate retained-memory budget; owners expose actual held bytes, borrows and evictions. WP12 accounts for read buffers, handles and sidecar lifetimes. |
 | R11: catalog crash, missing history or cold-file recompression | WP13 implements section 9's atomic seal/reference rules and immutable archival successors; tested crash points cannot advance an unaccepted catalog head. |
 | R12: overlap between storage, live-memory and speed packages | Section 3 assigns one file writer and a dependency contract before edits. WP9 alone composes the result; combined tests cover changed interfaces. |
 
-Resolve ordinary implementation choices inside these contracts. A new dependency installation, altered hard limit, changed accepted scientific result or identity semantics, canon decision, live/EXE promotion or external publication still needs its applicable existing authority. This plan does not reopen settled D1-D6 decisions or lift unrelated holds.
+Resolve ordinary implementation choices inside these contracts. A new dependency installation, altered hard limit, changed accepted scientific result or identity semantics, authored-world decision, live/EXE promotion or external publication still needs its applicable existing authority. This plan does not reopen settled D1-D6 decisions or lift unrelated holds.
 
 ## 6. Lossless compression on top of the compact layout
 
@@ -963,7 +960,7 @@ All are planned work items. Each is gated by its measurement and enabled only fo
 | Merkle / per-chunk hash index | The manifest already lists content-addressed chunk IDs. A per-record Merkle root over each array's chunk-ID list (in `SegmentRef`) lets reopen and re-read skip unchanged chunks (static tables, IV1 history, cached verified IDs) | Small index, plus one root check | sha256 throughout. The streamed canonical **logical** identity is still computed whenever a consumer needs it, then sealed (section 7) | **Adopt** (WP1, WP11) |
 | Shared-denominator / common-scale rational columns | Large where denominators repeat. Dyadic (2^k) denominators from binary64-derived values shrink to an exponent | gcd on decode; LCM blow-up if forced | Must reproduce the exact original spelling, including the reduced form and the hex/decimal class. Verified at pack time per value; otherwise falls back to (num, den) pool refs | **Planned, WP2/WP7** (enabled per column where it shrinks) |
 | Bit-packing and varints | Small counts, sign bits and flags | Varints break O(1) CSR indexing | Lossless | **Planned, WP2-WP4**: narrowest fixed dtypes (u1/u2/u4, sign bit-planes) plus palette and delta. Varints for cold append-only streams (gated) |
-| Zero-copy mmap of hot raw arrays | No copy for hot metric columns | Chunks are SQLite BLOBs in pages, so mmap would need a raw sidecar file: a storage-engine change | Unaffected. The sidecar is bound by chunk IDs and verified once per process | **Planned, WP12** (raw sidecar plus mmap; gated; D5). Fallback is the current one-copy `memoryview` reads |
+| Authenticated positioned sidecar reads | May avoid eligible SQLite/decode miss work | Fresh immutable buffers plus build/open, typed-byte and per-read freshness costs | Same typed chunk IDs and refusal contracts; no mmap or once-only freshness shortcut | **UNBUILT/OFF, WP12** under [Plan23](../plans/plan-23-storage-mapped-reads-wp12.md); any reconsideration retains its separate net-benefit/equivalence gate |
 | Parallel chunk encode/decode and async prefetch | zstd/blosc2 and hashlib release the GIL for large buffers. Prefetching the next covering chunks helps sequential row streams | Threads × workspace (charged). SQLite reads are serialised by the store lock | Deterministic: chunk IDs are order-independent and manifest order is fixed | **Planned, WP10** (at most 2 threads; gated) |
 | Remove the compact_store v2 duplicate support bytes | v2 stores each support twice: as a staged per-support snapshot and in the packed array. Fixing this saves 0.1-0.15 GB at IV1 and about 0.4-0.75 GB at IV2 | None. Write supports straight into content-addressed segments (reusable after cancellation), or share them through the partition | Unchanged support sha256 | **Adopt** (WP3) |
 | Static-table and key-shape sharing | Interval-invariant grid tables and object key-shape tables are stored once per workflow and referenced by key | Small | Content-addressed | **Adopt** (WP2, WP3) |
@@ -1012,7 +1009,7 @@ All are planned work items. Each is gated by its measurement and enabled only fo
 
 **Opening.**
 - A thin store-set layer opens the latest interval file plus, lazily and read-only, only the earlier files its manifests actually reference.
-- File handles are bounded with an LRU and charged to the budget. An open file/view stays pinned while borrowed; eviction cannot close a live borrower. Validate safe catalog-relative paths, file identity and the entire required reference closure; missing, cyclic, future, foreign or unsealed references fail closed. An unavailable archive dependency is not an empty chunk or a reason to skip validation.
+- File handles are bounded with an LRU and charged to the budget. An open file/view stays pinned while borrowed; eviction cannot close a live borrower. Validate safe catalog-relative paths, file identity and the entire required reference closure; missing, cyclic, future, foreign or unsealed references fail closed. An unavailable sealed-history dependency is not an empty chunk or a reason to skip validation. Historical archives have separate database, code, configuration and lifecycle, with no current-run input, selection, dispatch, recovery or runtime dependency.
 - The independent reader uses the same layer on a copy, or read-only.
 
 **Identity and provenance.**
@@ -1114,7 +1111,7 @@ Acceptance:
 - identical results.
 
 **WP15: Worker payloads.** Parallel geometry and heat workers currently receive serialised inputs: the routing InputMap, heat first-pass payloads and endpoint batch jobs.
-- Send compact references instead: segment and content IDs, plus row ranges, or shared read-only buffers or memory-maps (WP12) where possible.
+- Send compact references instead: segment and content IDs, plus row ranges, or separately qualified shared read-only buffers where their ownership contract permits. WP12's accepted prospective route uses positioned bytes, not memory-maps.
 - Workers open bounded views themselves.
 - Outcome: less copying, less parent and worker RAM, faster dispatch.
 
@@ -1172,7 +1169,7 @@ Every item here must:
 
 WP19 lands in Stage A. Its real per-stage measurements select the order within the scheduled acceleration stages; the package numbers are stable identifiers, not a numerical execution order.
 
-**WP18: Parallelism that actually engages.** This extends the existing batching.
+**WP18: Parallelism that actually engages.** The bullets below retain the original candidate inventory. Later [Plan18](../workbench/plan18/README.md) selects 512-job/4,096-request cross-support lookahead with up to two endpoint workers and abandons hardest-first ordering; [Plan16](../workbench/plan16/README.md) owns the separate geometry worker policy. [Plan15](../workbench/plan15/README.md) selects eight heat workers in its bounded candidate while retaining the six-worker global default. The old 10–12-worker proposal is not the current selection. Remaining candidates need their own disposition; none is enabled by this inventory.
 - **Endpoint volumes.** Batches currently span only the current support. Workers start only if that one support projects at least 120 s (`integration_parallel_rolling.py` ~468-476, `AutomaticEndpoints._beyond`), so about 2,000 moderate supports stay serial.
   - Let batches span several supports, so the gate uses total remaining work.
   - Schedule hardest first, ordering by learned or estimated cost, so the slow tail starts early.
@@ -1343,7 +1340,7 @@ The eleven mappings below are included in the owning packages and the section 3 
 **Two distinct milestones.**
 
 1. **Compact IV2 accepted:** the selected candidate completes the real interval-two advance and publication under unchanged guards, bounded in-process revalidation passes, and the independent fresh-process reader verifies scientific/accounting identities, compact references and historical receipt compatibility. The catalog still reopens the preceding accepted state after a simulated interrupted attempt. This milestone permits the scheduled acceleration work to continue; it does not mean all WP0-WP25 work is complete.
-2. **Optimisation programme complete:** every WP0-WP25 package and every technique assigned in sections 6-13 has an outcome in the existing package/composition receipts: implemented and enabled with measured benefit; implemented/tested and disabled because its benefit gate failed; or an explicitly prerequisite-gated item such as WP24 measured out under its stated gate. An unresolved failure, missing measurement or missing authority stays INCOMPLETE. The final enabled composition passes all affected parity, bound, recovery and independent-reopen checks. Broader Atlas L2, archival L1 and live/EXE promotion are not implied.
+2. **Optimisation programme complete:** every WP0-WP25 package and every technique assigned in sections 6-13 has an outcome in the existing package/composition receipts: implemented and enabled with measured benefit; implemented/tested and disabled because its benefit gate failed; or an explicitly conditional item closed by its stated prerequisite/build gate, including an accepted NOT BUILT/OFF assessment. Assessment, measurement, implementation and enablement remain distinct; WP12's no-build assessment is not a failed timing. An unresolved failure, missing measurement or missing authority stays INCOMPLETE. The final enabled composition passes all affected parity, bound, recovery and independent-reopen checks. Broader Atlas L2, archival L1 and live/EXE promotion are not implied.
 
 **Evidence is bound to what was exercised.** Record exact source/helper/runtime/configuration and authenticated input identities, guard/thread/cache settings, output identities, elapsed time and resource peaks in the existing receipts. Reuse adequate unchanged evidence at its exact scope. A source change invalidates only the affected evidence and downstream dependencies; a new thread or doc revision alone is not a reason to rerun tests. A new composition identity can invalidate old completed-query hits even where a focused mathematical result remains reusable.
 

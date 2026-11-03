@@ -1,8 +1,10 @@
 # I01: retain elastic stress memory; exact coaxial control
 
-WORKING NON-CANON. This settles the **keep rather than omit** branch of MC-01's
+This settles the **keep rather than omit** branch of MC-01's
 rift elastic-memory choice and supplies a bounded constitutive control. MC-01's
-separation mechanism remains open. This is not a resolved neck or a production
+[bond-history mechanism and bounded feasibility](I01_SEPARATION_FEASIBILITY.md)
+are selected separately; full physical separation acceptance remains later work.
+This is not a resolved neck or a production
 stress-transport solver. Existing viscoplastic controls and receipts are unchanged.
 
 ## What this changes

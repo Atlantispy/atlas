@@ -1,6 +1,6 @@
 # W07 Step 4 — material surface and dry strength
 
-23 September 2026. WORKING NON-CANON. Implementation and focused acceptance
+23 September 2026. Implementation and focused acceptance
 record; the frozen [Step 1 design](W07_REGIONAL_MECHANICS.md) and
 [case register](../cases/w07_mechanics.json) are not edited or silently repinned.
 

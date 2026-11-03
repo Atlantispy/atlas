@@ -1,8 +1,10 @@
 # R5 shared-store backup and recovery
 
 Atlas is vibe-coded with OpenAI ChatGPT/Codex and Anthropic Claude Code under the owner's direction.
-**WORKING NON-CANON.** These operational tools preserve selected bytes; they do not
+These operational tools preserve selected bytes; they do not
 accept terrain physics, run a simulation or establish runtime compatibility.
+Use this procedure for an explicitly authorised recovery need. It does not require
+creating backups, second copies or extra historical archives by default.
 
 Implementation: [`tools/r5_recovery.py`](../tools/r5_recovery.py), Python 3.10+,
 standard library only. It never imports Atlas, loads a DLL, decodes/recompresses a
@@ -101,7 +103,7 @@ only beside the bundle. Later verification requires that digest. A digest obtain
 from a suspected damaged bundle cannot establish its original identity. The
 internal marker is not an independent trust anchor; there is no signature system.
 
-### 3. Verify and maintain independent recovery copies
+### 3. Verify the selected recovery point
 
 ```text
 python -B tools/r5_recovery.py verify --bundle E:/AtlasBackups/r5-point-001 --expected-manifest-sha256 REPLACE_WITH_64_HEX_DIGEST
@@ -112,11 +114,13 @@ control-to-frame closure and recognised selected source/library pins. It does no
 need the original workspace or runtime. It can inspect a copied Windows-origin
 bundle on another operating system without opening its original Windows paths.
 
-Keep a verified copy on independent storage and protect both copies and the
-private plan. Copying to a second folder on the same failing disk is not independent
-recovery. Keep at least one known-good earlier recovery point. Verify a secondary
-copy against the separately retained digest, including after transfer or suspected
-damage. These are operating procedures, not scheduled actions added by this change.
+Choose the number and location of recovery copies for the stated failure risk.
+If recovery must survive failure of the original storage device, retain a verified
+copy on independent storage; a second folder on that same device does not meet the
+requirement. Additional copies and earlier recovery points need a concrete remaining
+recovery purpose. Protect the private plan and verify any transferred copy against
+the separately retained digest, or reverify after suspected damage. These are
+explicit operating procedures, not scheduled backup or retention actions.
 
 ### 4. Restore into a separate staging directory
 
@@ -151,7 +155,9 @@ recompute historical bindings, replace the codec, relax tolerances or raise the
 256-step limit to obtain a pass. A different layout/platform requiring changes is
 an explicit migration/portability task, not this tool's restoration procedure.
 
-Do not retire the previous recovery point until this isolated drill has succeeded.
+Retain a previous recovery point while it is needed to protect against a failed
+replacement; retire it only after the required isolated drill succeeds and its
+remaining recovery purpose has ended.
 No native Windows load or historical checkpoint drill was possible in this public
 source-only session; see [the obtained evidence](#obtained-evidence-15-september-2026).
 

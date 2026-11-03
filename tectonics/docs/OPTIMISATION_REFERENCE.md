@@ -1,6 +1,6 @@
 # Atlas optimisation reference
 
-**WORKING NON-CANON.** This reference owns execution, numerical cost, source and runtime identity, caches, storage and measurement contracts. [Current state](../../docs/CURRENT_STATE.md) owns delivery, outstanding work and holds. The scientific-fidelity repair remains paused, and R4.4 and full-interval scientific work retain their holds. Component checks, source integration, publication, enabled defaults, platform qualification, scientific acceptance and Diadem canon are separate outcomes.
+This reference owns execution, numerical cost, source and runtime identity, caches, storage and measurement contracts. [Current state](../../docs/CURRENT_STATE.md) owns delivery, outstanding work and holds. The scientific-fidelity repair remains paused, and R4.4 and full-interval scientific work retain their holds. Component checks, source integration, publication, enabled defaults, platform qualification and scientific acceptance are separate outcomes.
 
 Start with the selected calculation and its consumers. Choose useful methods, then compare complete work at the required accuracy. Retained measurements describe their original sources and environments; they do not authenticate today's runtime or permit a checkpoint rebind. No scientific test, benchmark, installation or runtime change accompanies this consolidation. Git history retains obsolete delivery prose.
 
@@ -1741,7 +1741,9 @@ encoding/decoding, random access, halo reads, write amplification and actual
 solver time. Match physical accuracy and conservation, not just displayed detail.
 
 Require exact round trips for lossless data, explicit unknown/missing handling,
-finite memory budget, restart after source changes, conservative material remap,
+finite memory budget, and restart under the declared source/runtime identity.
+Changed sources must refuse old checkpoint reuse unless a separately admitted
+successor defines and verifies the migration. Require conservative material remap
 and cross-chunk results matching a monolithic reference under the declared policy.
 Only then choose chunk dimensions, codec or sparse hierarchy. The current small
 1D reference kernels are intentionally storage-agnostic, not the permanent world
@@ -1911,7 +1913,7 @@ not every conceivable future optimisation or a planetary-scale forecast.
 
 ### Regional prepared-owner scale study
 
-WORKING NON-CANON. This is the retained scoped decision for the supported regional
+This is the retained scoped decision for the supported regional
 mechanical route, not a replacement for the historical PF/PT planning definitions
 below. No production equation, backend, tolerance, timestep or checkpoint identity
 changes. W10's bounded evidence is retained; its unresolved physical claims remain.
@@ -2972,8 +2974,11 @@ and [header retention](how-it-works/06-physical-integration.md#retain-only-plain
 The 1.65× interval-2 endpoint result comes from a detached endpoint-loop replay
 on captured supports. It is not a run of the integrated successor or of a whole
 interval. The integrated route's evidence is its closure proofs and focused
-tests. Larger-interval capacity under the 256 MiB retained cap remains open. No
-new research or scientific acceptance is claimed.
+tests. Larger-interval capacity under that predecessor's 256 MiB retained cap
+remains open; later combined-source selection has its own paid carrier/support
+allowance and is not bounded by this predecessor-only forecast. The
+[endpoint owner](../optimisation/workbench/plan18/README.md) distinguishes those
+routes. No new research or scientific acceptance is claimed.
 
 The [Plans19–20 source selection](../optimisation/workbench/plans19-20/README.md)
 combines two accepted geometry changes and the accepted S2 r9 capture helpers,

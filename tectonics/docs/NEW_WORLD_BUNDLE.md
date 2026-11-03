@@ -1,6 +1,7 @@
 # Portable world projects
 
-**WORKING NON-CANON — backend implemented, UI integration pending.**
+**backend implemented.** Installed UI coverage is recorded
+separately in the [desktop delivery record](../../desktop/README.md#obtained-windows-qualification).
 
 `tools/new_world_bundle.py` saves an initial world and selected regional results
 in one `.atlas` file. Loading restores the original world, saved times and the
@@ -56,7 +57,7 @@ storage contract.
   through the bundle `result` interface. Native resume still refuses mismatched
   bindings; no automatic installation, compatibility migration or silent repin is
   performed. Only supported saved schemas are admitted.
-- Applying the unreviewed I02 candidate (29 September 2026) changes the package
+- The integrated I02 workflow changes the package
   execution identity and `tectonics_job.py` and `read_tectonics.py`, which every
   New World job binds. Jobs started before it then refuse resume, output export and
   bundle saving with `SOURCE_MISMATCH`; bundles already saved stay inspectable as
@@ -143,6 +144,8 @@ All commands return a path-free envelope:
 ```json
 {"schema":"atlas.world-bundle-response.v1","status":"ok","data":{"kind":"combined","bundle_id":"64-hex","project_id":"64-hex","title":"World title","status":"WORKING NON-CANON","jobs":[],"generated_on_open":false,"world_file":"world.atlas","jobs_directory":"jobs"}}
 ```
+
+The nested status is a [legacy compatibility field](../../docs/CODING_SAFETY.md#legacy-document-and-format-bindings).
 
 `save` additionally reports `archive_bytes`, `stored_world_copies: 1` and
 `avoided_frozen_world_copies`. Each job summary contains `job_id`, `producer_id`,

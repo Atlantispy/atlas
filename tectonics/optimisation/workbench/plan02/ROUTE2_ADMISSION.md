@@ -1,6 +1,6 @@
 # Prepared-restart admission
 
-WORKING NON-CANON. This candidate adds by-need admission to the prepared producer,
+This candidate adds by-need admission to the prepared producer,
 its external monitored launcher, and its independent reader. It changes no
 scientific method, runtime source identity rule or in-run resource limit.
 

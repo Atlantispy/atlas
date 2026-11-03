@@ -4,7 +4,7 @@
 
 Tectonic processes affect one another. Temperature changes rock strength; strength affects motion; motion changes thickness, heating and the forces driving the next interval. I01 investigates the physical rules needed to connect these effects without losing material, inventing heat or counting a force twice.
 
-**I01's method choices, contracts and bounded feasibility are complete; the work remains WORKING NON-CANON.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I04 Part A (reviewed and locally integrated) adds a declared starting family on the shared network ([New World chapter §3](04-new-worlds.md#3-supply-crust-materials-and-inherited-structure)) and a force balance, with reviewed reduced-belt feedback, that calculates plate rotations from gravitational driving, slab pull and resistance on it (sections 2 and 4 here). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
+**I01's method choices, contracts and bounded feasibility are complete; the work remains** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I04 Part A (reviewed and locally integrated) adds a declared starting family on the shared network ([New World chapter §2](04-new-worlds.md#2-supply-crust-materials-and-inherited-structure)) and a force balance, with reviewed reduced-belt feedback, that calculates plate rotations from gravitational driving, slab pull and resistance on it (sections 2 and 4 here). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
 
 The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
 
@@ -47,8 +47,8 @@ rock volume, for example. Mismatched time, units, support, references or ownersh
 are refused.
 
 The record itself is not a calculation. It creates no rock and grants no permission:
-the finite-admission check in section 7 still accepts only states produced by its own
-evolution. Sixteen focused checks preserve the actual starting case, rebuild its
+the finite-admission check in section 7 requires a state issued by its retained
+evolution or restored through the matching trusted I02 ledger. Focused checks preserve the actual starting case, rebuild its
 reference values exactly and deliberately try wrong inputs and caller mutations. They
 pass after correcting an exposed array-descriptor alias and enforcing the existing
 duration limit.
@@ -459,14 +459,13 @@ from viscous heating. That interface does not itself update elastic history.
 The solver prepares its sparse matrix once, reuses factors for changed loads,
 and keeps only one latest result and one motion-response cache.
 
-That stored matrix is what limited resolution. Each velocity unknown is coupled
-to about 180 others, so the matrix and its approximate factor grew so quickly that
-the default memory allowance refused every 7x7x7 box. Correctly counting the
-factorisation library's working storage also refuses a 6x6x6 all-free-slip box
-under 256 MiB (about 271 MiB required), while an all-velocity-prescribed box fits
-(about 216 MiB). The allocation check no longer creates extra copies of both
-factors merely to count them. These changes affect safe admission, not the
-equations. A second solver avoids
+The assembled matrix and its approximate factor grow quickly with resolution.
+Admission depends on the mesh, boundary conditions, solver and current resource
+model; there is no universal six- or seven-cell-per-axis limit. The
+[mechanics method](../REGIONAL_MECHANICS_3D.md) owns the current bounds
+and their retained measurements. The allocation check counts the factorisation
+library's working storage without copying both factors merely to measure them.
+These checks protect admission and leave the equations unchanged. A second solver avoids
 the large assembled velocity matrix. It is integrated locally with the
 automatic choice described below. It applies the same
 equations directly from one shared table for
@@ -552,8 +551,8 @@ evolving regions and plate motions into one world state remains separate work.
 
 Over each accepted interval, the [network of section 1](#the-shared-spherical-network-one-owner-for-every-point-of-the-sphere)
 is moved by one supplied rotation per plate. In this mode the rotations, and what
-ridges supply and trenches remove, are given to Atlas; calculating them from forces
-is later work. A plate that does not move must be told so. Leaving a plate out is
+ridges supply and trenches remove, are given to Atlas. The separate I04 balance
+in section 4 calculates rotations from forces within its reduced scope. A plate that does not move must be told so. Leaving a plate out is
 refused, because unknown motion is not the same as no motion.
 
 **Faces ride with their plate.** A face away from any plate boundary keeps its
@@ -772,8 +771,14 @@ three parts:
   - a strength state for each piece.
 
   A boundary cell holding pieces of different cohorts gives one column only when the pieces share exactly the same
-  layering. The column is then their heat-weighted cell mean, and it is labelled as such. Their histories are never
+  layering. The column is then their enthalpy-consistent cell mean, and it is labelled as such. Their histories are never
   averaged.
+
+  This is the primary package's labelled cell-mean route. The composed runtime's
+  [property port](../../optimisation/composed-r2/src/atlas_tectonics/integration_properties.py)
+  instead uses exact material traces by default; its older cell mean requires
+  explicit opt-in. The composed feedback caller supplies that trace support.
+  Source selections and their approximation claims must stay distinct.
 
   Heating rock makes it lighter and its surface higher, while its reference mass stays exactly the same.
 
@@ -822,8 +827,10 @@ Adversarial verifications of the first build, and then the coordinator's review,
 certificates, saved records, property checks and basal transfers. Each was repaired with a test that failed first,
 and their claims were corrected.
 
-The checks do not show convergence over a whole world, coupled feedback with the plate balance, or melting; those are later
-work. The [method document](../I05_MOVING_STATE.md) records the equations, inputs, checks, limits and sources.
+These component checks do not show whole-world convergence or melting. The
+separate reduced I04 feedback connection in section 4 exercises the joined plate
+balance within its stated fixture scope. The [method document](../I05_MOVING_STATE.md)
+records the equations, inputs, checks, limits and sources.
 
 ### Hand part of the network to a regional model and take it back
 
@@ -1107,7 +1114,8 @@ speed relative to the rock is distinguished from the amount crossing a fixed or
 moving receiver; confusing those would transfer the wrong mass. Truly dry cells
 stay dry, and the phase-fraction conversion preserves very small positive liquid
 fractions rather than silently discarding them. Reusing an unchanged pressure
-operator speeds up new load solves without changing their results. These checks
+operator avoids rebuilding its factor for changed loads; no measured saving is
+claimed for that design alone. These checks
 support the method; connecting it to evolving chemistry, heat and receivers is
 the later integration work, not something this column test already performs.
 
@@ -1181,7 +1189,7 @@ to create a boundary. Real separation/initiation mechanisms, compatible finite
 magma where needed, evolving history, joint timing/transfers and the full
 mechanical handoff remain conditions for physical reorganisation.
 
-The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The controls](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/i01-finite-admission-r8.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
+The [finite-strain admission](../I01_FINITE_ADMISSION.md) now extends that reasoning to the widening, thinning, heating strip. It bounds resistance using the carried geometry and weakening history, then checks a future interval on the strip's actual cumulative clock. Only states issued by the retained evolution, or restored by the engine from a saved entry of it, can pass, so editing a state's clock in memory cannot recover time already used. Internally owned heat operators also prevent a changed calculation masquerading as the same evolution. Independent closed-form cases, genuine evolved endpoints, aggregate work/displacement and deliberate invalid-state tests check this connection. The mathematical bound covers intermediate stages conditionally; endpoint samples alone do not prove that. [The retained controls](../../evidence/i01-finite-admission-r12.json) retain non-admission for the strong layered column rather than loosen the tolerance. Goldberg's [floating-point analysis](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html) and Python's [dataclass semantics](https://docs.python.org/3.12/library/dataclasses.html), inspected for the specialist method, inform numerical bounds and state ownership. Reusing a prepared bound saves repeated calculation. In the integrated route of section 8, a saved and reopened accepted state can also be admitted, but only through the engine's own restoration of that saved entry; holding its identity or fingerprint admits nothing. The saved file is trusted rather than authenticated: an entry written into it by other means that satisfies the engine's relations, even one recording later physics under an earlier clock, would be restored and admitted like a calculated one. Physical breakup remains a separate responsibility.
 
 The [breakup control](../I01_BREAKUP_CLOSURE.md) examines whether a narrowing neck can reach zero thickness in finite time, rather than declaring breakup at an arbitrary thickness. For its precisely stated creep law and quadratic weakness, an exact continuum solution shows when this is possible. The discrete columns agree at the first thinning level; they do not resolve every later, much narrower neck. The [reviewed checks](../../evidence/i01-breakup-closure-r5.json) therefore establish analytical feasibility, not a generated split. They also show why weak resistance alone does not prove separation and why a finite set of gentle slopes cannot justify a law whose limiting neck becomes too steep. The method documents the Hutchinson-Neale and Audoly-Hutchinson necking sources and the Brune/ASPECT rifting comparisons; no new geological calibration is implied. The mixed-creep/plastic lithosphere still needs resolved neck mechanics before an event can be issued.
 
@@ -1205,23 +1213,18 @@ I07 still owes the declared resolved plate, history, exterior-sensitivity and
 finite-window force-release experiment. Published reproduction remains an
 optional independent comparison once its missing source definitions are resolved.
 
-The paper's force curves now have a retained, reproducible extraction script and
-raw readings. It reads the original drawn segments, keeps reading bands rather
-than false single-value precision, and preserves the two plates' force signs.
-The research owner's execution reproduced all 28 rounded bands; local review
-checked the source figures and complete method, without reinstalling its parser.
-These readings are comparison material, not new constitutive constants or a
-substitute for the still-missing benchmark definitions and error allowances.
+The [initiation method](../I01_INITIATION_DECISION.md#4-predeclared-comparison-without-claiming-missing-data)
+owns the archival comparison: reproducible graph-reading bands for Gurnis et al.
+(2004), and a separately reconstructed numerical row from Li and Gurnis (2023).
+The [comparison tool](../../tools/check_i01_initiation_inputs.py) checks sourced
+definitions, units, predeclared allowances and complete curves before comparing
+forces and work. Those tool checks are not subduction validation. Missing input
+files, source-case mapping, constitutive conventions and uncertainty remain
+explicit; matching a speed or a figure does not fill them. Published reproduction
+and Atlas's force-release test remain separate. The specialist record retains
+the complete findings, extracted values and reading/execution provenance.
 
-The [initiation comparison tool](../../tools/check_i01_initiation_inputs.py) now checks whether the required definitions have sources and have been reviewed. Unknowns remain unknown. Once those inputs and the comparison rules are ready, it can compare resistance against distance travelled, including peaks between the published sample points, and calculate the work done. The plan fixes the input and tolerance identities before the run; missing coverage, changed plans and incompatible units are refused. Its synthetic tests check the measuring tool, not whether subduction itself is realistic. Published reproduction and Atlas's separate force-release test remain distinct.
-
-For that comparison, the preferred newer source is [Li and Gurnis (2023)](https://doi.org/10.1093/gji/ggac332), keeping the 2004 paper as supporting evidence. Its [archive](https://data.caltech.edu/records/haw6e-eck15) lets us inspect the calculation and use numerical histories instead of reading points from a graph. Inspection found missing case settings and a missing velocity row, so the data cannot yet be used as a completed benchmark. Most importantly, holding a plate still is not the same experiment as letting go of it: Atlas must still test whether sinking continues after the driving force is removed. This source review improves the test plan; it does not claim a new sinking result.
-
-The [source reconstruction](../../cases/i01_li_gurnis_reconstruction_v1.json) now converts one 4 cm/year data row consistently and preserves its original measurements. This resolves the time units and sign of the force measured inside the plate, but that force is not automatically the work done at the model boundary. Reading the actual equations also exposed a temperature-scaling discrepancy and a missing basalt-density file. Eight small tests check the reconstruction without running subduction. We still need the original case settings and a reliable link between data rows and rock-behaviour models before claiming to reproduce the published experiment.
-
-Reading the original benchmark more closely matters here: its older, 40-million-year right-hand plate sinks beneath the younger, 10-million-year left-hand plate. Its published material constants are now recorded, but a complete input recipe is still unavailable. The paper's basal-temperature descriptions disagree, and several boundary and weakening definitions remain missing. The research also recovered approximate graph readings; their line thickness describes how precisely we can read a figure, not how accurately a model represents nature. All 28 readings now have the reproducible extractor and coordinate calibration described above. They remain outside accepted comparisons because complete benchmark inputs, applicability and axis/systematic uncertainty allowances are unresolved. Nor can the paper's weakening-strain number simply be copied: its precise definition must first be related to Atlas's accumulated engineering plastic shear.
-
-Generated breakup, complete melt-derived supply and crust birth, resolved initiation and evolving global geometry still require their later implementation and physical acceptance. The unresolved published benchmark remains separate from the new analytical verification route. The [reviewed transition evidence](../../evidence/i01-transitions-r2.json) supports bounded event machinery, not generated-world acceptance. Existing receipts and source-bound method documents retain their original meaning; explaining their connections does not renew or extend their evidence.
+Generated breakup, complete melt-derived supply and crust birth, resolved initiation and physically generated global geometry still require their later implementation and physical acceptance. The unresolved published benchmark remains separate from the new analytical verification route. The [reviewed transition evidence](../../evidence/i01-transitions-r2.json) supports bounded event machinery, not generated-world acceptance. Existing receipts and source-bound method documents retain their original meaning; explaining their connections does not renew or extend their evidence.
 
 ## 8. Accept, save and continue one evolving state
 
@@ -1358,18 +1361,14 @@ run. Continuing in a new process, including after a time budget stops a run, re-
 starting stage and agrees within the existing solver tolerance rather than bit for bit,
 and the conservation identities close. Injected failures and killed writers never expose a
 partial save, competing writers cannot both extend the history, and on Windows a program
-polling the status while a run saves no longer makes the run fail. The 30 September
-I02 checkpoint passed all 758 I01/I02 tests on Windows. R4 and the subsequent
-checkpoint, recovery, resource and cache fixes are integrated with focused
-regressions and fresh r6 admission/timing receipts. The final Git-normalised
-check passed all three guards, including 759 I01/I02 tests in 164.449 s, with no
-failures or skips. R7 and its follow-up corrections then passed 211 focused checks
-and a fresh Git-normalised guard including 759 I01/I02 tests. The current r7 timing
-comparison records warm bare evolution at 0.06976490 s and the stored workflow at
-0.10974810 s (+0.03998320 s, or 57.31%) for this tiny column. That is a saving/recovery cost, not a physics speedup; the
-[method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead) gives the measured
-seconds. This reviewed, connected and restartable route completes I02 for its
-declared case. Whole-planet integration and Linux platform coverage remain separate.
+polling the status while a run saves no longer makes the run fail. The
+[workflow method](../I02_WORKFLOW.md#7-checks-coverage-and-measured-overhead)
+owns its scoped verification and measured storage/recovery overhead; the
+[current-state page](../../../docs/CURRENT_STATE.md) owns delivery and platform
+coverage. These results complete I02 for its declared bounded case, rather than
+the whole-planet lifecycle. Source integration, current byte-bound evidence,
+installed delivery and scientific acceptance remain separate.
+
 
 ### Prepare an independent reader while a private producer runs
 
@@ -1472,8 +1471,10 @@ new C8 owner/result types, so transfer, refinement and cleanup remain consistent
 The issuer captures that selected source closure, and checkpoint, joined and
 restored bindings carry its new identities. The worker observer includes the
 additional MPFR functions and resolves the exact pinned library in the loaded
-interpreter environment. Historical sources and saved identities are preserved;
-the new graph does not make old checkpoints interchangeable or release held runs.
+interpreter environment. Historical sources and saved identities are preserved. The receiving source
+map selects C3 and forward-only C8 and excludes C13; its complete source bindings
+do not establish runtime admission, checkpoint migration or scientific acceptance.
+The new graph does not make old checkpoints interchangeable or release held runs.
 
 
 ### Reduce repeated pressure arithmetic while preserving certified bounds

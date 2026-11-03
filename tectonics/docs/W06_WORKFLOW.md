@@ -1,10 +1,16 @@
 # W06 Step 5 — recoverable outputs and combined acceptance
 
-22 September 2026. WORKING NON-CANON. Selected combined acceptance PASS.
+22 September 2026. Selected combined acceptance PASS.
 The [frozen design](W06_SPREADING.md) and Steps [2](W06_BIRTH.md),
 [3](W06_COOLING.md) and [4](W06_HISTORIES.md) retain their equations and tolerances.
 This step adds an executable requested-output schedule and exact recovery, not
 another physical law or an internal time-stepping approximation.
+
+The Step-1 design is retained byte-for-byte as a frozen input to the W06 cases,
+tests and benchmark drivers. Its "implementation pending" and "not yet claimed"
+phrases describe the design capture; the implemented routes and bounded outcomes
+are documented here and in Steps 2–4. They are not outstanding implementation
+instructions or a claim of empirical validation.
 
 ## Supported routes and API
 

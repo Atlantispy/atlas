@@ -1,6 +1,6 @@
 # I01: a conditional error bound for omitted lateral conduction
 
-WORKING NON-CANON. This selects a bounded thermal criterion for MC-06. It does
+This selects a bounded thermal criterion for MC-06. It does
 not certify a coupled neck, implement I05/I06 transport or permit separation.
 The earlier thermal and breakup kernels and their receipts remain unchanged.
 

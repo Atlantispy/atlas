@@ -1,6 +1,6 @@
 # I01: physical contracts and discriminating controls
 
-**26 September 2026. WORKING NON-CANON. Version 1 design/candidate contract.**
+**26 September 2026. Version 1 design/candidate contract.**
 This continues the research checkpoint, not a second tectonics implementation.
 [Current state](../../docs/CURRENT_STATE.md) owns progress; the
 [integration plan](INTEGRATION_PLAN.md) owns I01–I12 scope. The machine-readable

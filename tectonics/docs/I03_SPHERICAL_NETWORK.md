@@ -1,6 +1,6 @@
 # I03: one shared spherical network, moved, bridged and changed by supplied events
 
-**WORKING NON-CANON. Method updated 3 October 2026.** I03.1–I03.4 include
+**Method updated 3 October 2026.** I03.1–I03.4 include
 the reviewed shared network, material transport, regional bridges and supplied
 events. The repair/extension pass adds strict forcing/support binding, corrected
 junction planes and transfer allowances, exact difficult-sweep intersections,
@@ -22,6 +22,13 @@ This document describes
 
 [Current state](../../docs/CURRENT_STATE.md) owns delivery status; this document explains the method and what its
 checks establish.
+
+The contracts below describe the primary `tectonics/src/atlas_tectonics` route.
+The published `tectonics/optimisation/composed-r2` successor also represents resolved
+material support (`atlas.i03-sphere-material.v3`); its exact material-trace projection
+and explicitly opted-in legacy cell means are distinguished in
+[the shared property ports](I04_I05_PORTS.md). The primary route's uniform-piece
+limitations below must not be read as a claim about every published source route.
 
 Everything here runs in `prescribed_history_v1`: rotations, ridge and trench rules,
 sources, destinations and mesh changes are supplied. Nothing chooses a motion, a
@@ -1369,7 +1376,8 @@ and so its measured area can change by rounding (below). The bookkeeping that fo
   continues one plate, its frame and its total rotation, by a rule that does not depend
   on spelling:
   - for a ridge jump, the plate across the old ridge;
-  - otherwise, the larger plate by measured area, the first in identity order on a tie.
+  - otherwise, the larger plate by its exact rational piece-area account, the first
+    in identity order on an exact tie. Rounded measured areas do not decide.
 
   The other plate's coordinates, and a retired ridge's vertices, are carried into that
   frame at the instant. New ridge records start with a frame of their own.

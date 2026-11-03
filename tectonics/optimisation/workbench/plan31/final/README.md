@@ -1,6 +1,6 @@
 # Final source construction and receiving
 
-WORKING NON-CANON. The source composer connects the accepted full-B source arm,
+The source composer connects the accepted full-B source arm,
 Tier1 observation wiring and paired receiving ports through their actual existing
 APIs. It keeps all 697 members (287 native and 410 helpers), applying only the
 15 declared source rows relative to S1A. Private A1 and N9 width are unselected;

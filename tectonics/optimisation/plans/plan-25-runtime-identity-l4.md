@@ -2,7 +2,7 @@
 
 **Item ID:** 25  
 **Retained owner:** Kernels, with coordinator control of the shared runtime-record seam.  
-**Status:** WORKING NON-CANON. Approved, not started; the shared-file plan/decision and implementation remain outstanding.  
+**Status:** Approved, not started; the shared-file plan/decision and implementation remain outstanding.<br>
 **Target completion condition:** Add the approved label-keyed arithmetic pins to the actual runtime record, prove refusal for changed pinned bytes and unchanged numbers, then carry the reviewed successor through C12/X1. Preserve historical receipts. This planning update does not authorise a shared-source edit.
 
 ## Authority and exact scope
@@ -48,4 +48,4 @@ Reuse existing unchanged runtime tests within their actual scope. The focused ne
 
 Run only the authorised small-lane proof under the existing queue and runtime seed/source rules. Record its actual source pins, observations, refusal evidence and disposition in Kernels' existing owner record and the composition manifest. No test command or success is fabricated here.
 
-Completion requires the shared-file decision, source-bound transform, changed-input refusals, small proof and correct C12/X1 hand-off. It does not establish final-composition, scientific or canon acceptance. L4 remains not started until its owner record supplies those results.
+Completion requires the shared-file decision, source-bound transform, changed-input refusals, small proof and correct C12/X1 hand-off. It does not establish final-composition or scientific acceptance. L4 remains not started until its owner record supplies those results.

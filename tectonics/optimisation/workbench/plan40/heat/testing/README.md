@@ -1,6 +1,6 @@
 # Heat candidate component tests
 
-WORKING NON-CANON. All 20 Plan40B candidates have passing bounded executable
+All 20 Plan40B candidates have passing bounded executable
 tests, and the controlled comparisons have completed. The
 [measurements](MEASUREMENTS.md) retain every sample and all 31 workload cases.
 These are isolated component prototypes, not production optimisations or

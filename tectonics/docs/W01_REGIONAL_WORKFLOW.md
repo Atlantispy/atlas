@@ -1,6 +1,6 @@
 # W01 Stage 7: described geology to regional material evolution
 
-22 September 2026. Local, unreleased implementation; WORKING NON-CANON.
+22 September 2026. Local, unreleased implementation
 This connects the supported S5/S6/W02 route, not whole-W01 scientific acceptance.
 The subsequent [Stage-8 assessment](#stage-8-combined-acceptance) checks this
 assembled route. Reopened S3C acceptance, unrestricted spherical dynamics and

@@ -1,6 +1,6 @@
 # W04 step 2: source-bound load and support integration
 
-22 September 2026. WORKING NON-CANON, local unreleased `remake` work.
+22 September 2026. local unreleased `remake` work.
 This joins the supported stationary W01/W02/W03 column workflow to **uniform,
 periodic, linear flexure**. It produces an immutable displacement/surface-change
 projection; it does not deform the W03 material/thermal mesh or close a nonlinear

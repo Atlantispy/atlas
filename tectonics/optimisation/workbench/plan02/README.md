@@ -1,6 +1,6 @@
 # Plan02 source snapshot
 
-WORKING NON-CANON. This additive snapshot preserves the selected Plan02
+This additive snapshot preserves the selected Plan02
 runner/caller generation and the subsequent collar metadata repair. It is
 source for review, not a runnable installation or a complete native package.
 The frozen `composed-r2` snapshot and the main tectonics package are unchanged.
@@ -83,7 +83,7 @@ no simulation. It requires NumPy, as does the helper.
 The additive [prepared-construction v2 component](prepared-construction-v2-r3/README.md)
 now emits the actual closed v2 profile and declared files query store. Its
 operational public API is connected to the real Plan31 loader; this retains the
-historical25-member map above and does not overlay the main native package.
+historical 25-member map above and does not overlay the main native package.
 
 Positive native prepared-state publication and independent cold reopening remain
 separately held after the repair. Individual Plan02 verification after full assembly

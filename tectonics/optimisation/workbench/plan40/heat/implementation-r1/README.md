@@ -1,6 +1,6 @@
 # Additive heat arithmetic implementations
 
-**WORKING NON-CANON. Implemented candidates, not selected production defaults.**
+**Implemented candidates, not selected production defaults.**
 This is one bounded source batch following the [all-20 component measurements](../testing/MEASUREMENTS.md).
 The earlier experiment's elapsed percentages do not automatically describe these
 complete source/receiver implementations. Their [exact-entry comparison](MEASUREMENTS.md) is complete: C3 is mixed by size,
@@ -36,10 +36,11 @@ implementation acceptance and non-forced publication to the authorised review
 branch. Source availability and passing checks are distinct from scientific
 acceptance.
 
-C3 remains a source-only candidate: its original certification-inventory r1 pin
-must receive a successor before full `assess_weights`/bounds use. Its later worker
-observer must also attest the four added MPFR functions. Current attempt controls
-and bounds import checks are not proof of those full receiving routes.
+This original implementation batch left certification-inventory and worker-observer
+bindings unresolved. The separate [receiving successor](../integration-r2/README.md)
+now supplies the C3 inventory binding and all eighteen MPFR export names, and
+connects C8 to forward/lifetime consumers. Those source/receiver outcomes do not
+qualify spawned workers, historical checkpoint migration or full intervals.
 
 ## C13 polygon experiment: not adopted
 

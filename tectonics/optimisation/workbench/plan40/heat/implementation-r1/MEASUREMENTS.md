@@ -1,6 +1,6 @@
 # Actual source implementation measurements
 
-**MEASURED, 23 October 2026; WORKING NON-CANON.** These results measure the complete additive imported source/receiver versions, including their own source checks and native ownership. They supersede prototype percentages for these implemented entries. They are short synthetic component samples, not full-IV timings, production occurrence rates or scientific acceptance. Positive saved time means faster.
+**MEASURED, 23 October 2026** These results measure the complete additive imported source/receiver versions, including their own source checks and native ownership. They supersede prototype percentages for these implemented entries. They are short synthetic component samples, not full-IV timings, production occurrence rates or scientific acceptance. Positive saved time means faster.
 
 | Candidate | Complete component | Baseline ms/call | Successor ms/call | Saved ms/call | Saving |
 |---|---|---:|---:|---:|---:|

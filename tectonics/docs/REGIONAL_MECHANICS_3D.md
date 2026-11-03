@@ -1,6 +1,6 @@
 # Finite-region three-dimensional mechanics
 
-Status: WORKING NON-CANON. This is an implemented same-time mechanical solver
+Status: This is an implemented same-time mechanical solver
 and finite-mode force connection, not a generated rift or evolved planet.
 
 ## Responsibility and inputs
@@ -250,9 +250,11 @@ there is no growing history cache. Caller-retained snapshots remain caller stora
 
 ## Matrix-free multigrid candidate (I07.2 solver scaling)
 
-Status: optimisation candidate reviewed with benchmark/documentation corrections,
-now applied in the working tree with the automatic choice below; not yet
-accepted. It is used when requested with `method='multigrid'` or chosen by
+Status: reviewed source integration with benchmark/documentation corrections
+and the automatic choice below. Delivery status is kept in
+[current state](../../docs/CURRENT_STATE.md); the scratch comparisons below are
+not scientific acceptance or a new execution receipt. It is used when requested
+with `method='multigrid'` or chosen by
 `method='auto'`. The assembled `gmres` route stays the reference and the
 small-case choice; `direct` stays the bounded oracle. Nothing below changes an equation, coefficient, gate,
 tolerance, iteration ceiling, output field or pressure-gauge rule.
@@ -344,7 +346,7 @@ to the bounded grids measured below.
   boundary pattern and method. With `release=True` the old plan is closed first,
   so its storage and reservations are returned before the new plan is admitted.
   The connected evolution now rebuilds through this path for every method. Its
-  default `gmres` results are bitwise unchanged, because the reused mesh is
+  explicit `gmres` results are bitwise unchanged, because the reused mesh is
   identical.
 - **Admission.** The candidate reserves structure (mesh, B, patterns, transfers,
   level matrices), work (Krylov basis, element and stencil transients, the result
@@ -366,10 +368,12 @@ to the bounded grids measured below.
   allowance is about 494 MB and the complete reservation about 1,970 MB, against
   the saved 553 MB total peak. These comparisons reuse the recorded Windows
   measurements; they are not a new memory campaign or a universal allocator
-  bound. The unchanged 256 MiB default now admits the closed 9x9x9 case at
+  bound. At that 2 October correction the unchanged 256 MiB default admitted the closed 9x9x9 case at
   252.45 MiB, but refuses the formerly admitted closed 10x10x10 case whose
   corrected estimate is 322.92 MiB. Boundary conditions and coarse-grid changes
-  affect admission, so this is not a universal nine-cell limit. Numerical
+  affect admission, so this was not a universal nine-cell limit. The later
+  5 October buffer-accounting change below supersedes that admission example.
+  Numerical
   equations, gates, tolerances and the 2-24 cell interface remain unchanged.
 
 ### Evidence from the literature and software
@@ -559,7 +563,8 @@ reference was not run there.
   loses its effect; a line smoother along the thin axis would be needed.
   Semi-coarsening acts only on nested Q1 levels above 3,000 unknowns. Such
   refusals are visible (`3D FGMRES-DR did not converge`), never wrong output.
-  The default `gmres` route remains the choice for these materials.
+  The assembled `gmres` route remains the choice for these materials under
+  the automatic policy when it fits the admitted budget.
 - With a sharp 1e4 inclusion, iterations still grow with resolution: about 680
   at 12 cells and 690 at 16.
 - Some small problems are faster with the assembled reference. The
@@ -575,8 +580,9 @@ reference was not run there.
 
 ## Automatic choice between gmres and multigrid (`method='auto'`)
 
-Status: implemented and focused-tested on 30 September 2026. Not yet reviewed
-or accepted. `auto` is the default for new plans and new 3D evolution runs.
+Status: implemented and focused-tested on 30 September 2026, subsequently reviewed
+and integrated within the bounded source scope recorded in
+[current state](../../docs/CURRENT_STATE.md). `auto` is the default for new plans and new 3D evolution runs.
 Explicit `gmres`, `direct` and `multigrid` requests are honoured exactly as
 before. The choice never changes an equation, coefficient, gate, tolerance,
 iteration ceiling, output field or pressure-gauge rule.

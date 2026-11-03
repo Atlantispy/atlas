@@ -1,14 +1,14 @@
 # Plan04: N9 comparator, extraction and caller integration
 
-WORKING NON-CANON. **The width implementation is selected for guarded source
+**The width implementation is selected for guarded source
 integration using bounded native and retained evidence, without another IV.
 Actual guarded receiving integration is complete. The guarded outcome is accepted; this export supplies the current tool sources.
 Both public guards remain False.** The retained comparator r24, dump r5, captures map r3,
 the launcher and their helpers were installed together in the private live
 tool route. The additive assembly tool was selected there. This export supplies
 their sources, not a runnable profile or a scientific replay.
-The reviewed bindings-r4 successor is supplied separately below; it does not
-replace the tool bytes required by existing compositions.
+The current bindings-r5 successor and its retained bindings-r4 predecessor are
+supplied separately below; existing compositions retain their own tool bytes.
 
 ## Method and preserved contracts
 
@@ -102,6 +102,9 @@ IV and default/installed holds remain.
   the later lazy-row and page-carry overlays also retain their dependencies.
   Three unchanged sibling files are included because the authenticated loader
   requires a complete toolset. Existing composition maps are not repinned.
+- `bindings-r5/n9-tools-r21/` supplies the current guarded receiving toolset,
+  including compact-root and observer-alias repairs described below. It is
+  selected explicitly by the width composer; it does not replace r4 in old maps.
 - `integration/assemble_r3_plan04.py` extends the retained Plan06 assembler's
   check/pin/compose route. The payload contract names the original selected
   eight assets. D5 remains unselected unless separately and explicitly bound.

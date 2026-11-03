@@ -1,6 +1,6 @@
 # I01 composition-aware phase energy
 
-WORKING NON-CANON. A bounded thermodynamically consistent ideal-mixture control,
+A bounded thermodynamically consistent ideal-mixture control,
 not a calibrated mantle model or an automatic replacement for Katz/W08.
 
 ## What happens, in generation order
@@ -147,8 +147,10 @@ of independent software benchmark agreement.
 
 ## Next connection
 
-Carry this law's identity, pressure and component/energy references into a compatible
-receiver and material-history adapter. A receiver may not reinterpret these joules
+The [finite receiver](I01_MAGMA_RECEIVER.md) and [pressure-move control](I01_PHASE_PRESSURE.md)
+carry this law's identity, pressure and component/energy references. A receiver may not reinterpret these joules
 through the old common-Tm inversion. Geological material parameters, non-ideal
 equilibrium where required, physical extraction/focusing, moving pressure/thermal
-history and global coupling remain distinct work. I01 remains open.
+history and global coupling remain distinct work under the
+[selected melt route](I01_MELT_ROUTE.md). These ideal-mixture controls are not its
+calibrated mantle provider or physical source-to-crust implementation.

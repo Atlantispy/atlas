@@ -1,6 +1,6 @@
 # W07 Step 3 — heterogeneous and thermal mechanics
 
-23 September 2026. **WORKING NON-CANON; scoped Step 3 complete.**
+23 September 2026. **scoped Step 3 complete.**
 Change ID: `ATLAS-W07-3-20260922` (work began 22 September).
 The [Step 1 specification](W07_REGIONAL_MECHANICS.md) and
 [case register](../cases/w07_mechanics.json) remain frozen. This supplements the
@@ -234,6 +234,7 @@ escalated invocation completed. No historical report was overwritten.
   copied-cell ghost-boundary algorithm or a newly checked external benchmark.
 
 No external framework was installed or executed; no generated third-party solver
-source was copied. **Next: Step 4 surface/strength response**, with real moving
-surface geometry and separately justified pressure-sensitive strength/localisation.
-R4.4 and whole-W07 acceptance remain in their existing state.
+source was copied. The later [Step 4 surface/strength response](W07_SURFACE_STRENGTH.md)
+and [Step 5 assembled workflow](W07_WORKFLOW.md) have their own reduced-model
+results. Physical localisation and whole-world acceptance are not established by
+those bounded routes; R4.4 retains its hold.

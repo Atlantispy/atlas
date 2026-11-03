@@ -1,11 +1,14 @@
 # Atlas tectonics component plan
 
-**WORKING NON-CANON.** This plan defines scientific responsibilities, component
+This plan defines scientific responsibilities, component
 contracts and capability gates. Use [CURRENT_STATE](../../docs/CURRENT_STATE.md)
 for the active checkpoint and holds, the [roadmap](../../docs/ATLAS_ROADMAP.md) for
 programme direction and the [integration plan](INTEGRATION_PLAN.md) for coupled
 integration order and finish rules. I01–I12 are integration increments, not new
 W-packages. Limited W12 technical assembly does not complete the generator.
+W00–W12, the R1–R9 obligations and M0–M7 below retain scientific responsibilities
+and required outcomes; the integration plan owns the sole remaining I01–I12
+execution route. These tables do not create parallel implementation sequences.
 
 The scientific-fidelity repair remains paused at the owner's request. R4.4 and
 full-interval scientific work remain held; this plan lifts no hold or execution
@@ -83,7 +86,7 @@ consolidation is not a fresh scientific-software audit.
 
 The tectonics product should provide evolving plate/block geometry; deformation and displacement; crustal/lithospheric state; surface and subsurface material histories; specified thermal and magmatic consequences; and the uncertainties, applicability limits and accounts behind them. A terrain view must identify what elevation came from tectonics, loading, thermal support, erosion, deposition or generated visual detail.
 
-A successful numerical run is not necessarily geologically plausible. A geologically plausible unconstrained case is not automatically compatible with the Diadem. Code correctness, numerical accuracy, physical adequacy, world-design compatibility and canon approval remain distinct judgements.
+A successful numerical run is not necessarily geologically plausible. A geologically plausible unconstrained case is not automatically compatible with the Diadem. Code correctness, numerical accuracy, physical adequacy, world-design compatibility remain distinct judgements.
 
 
 ### 1.4 Document and evidence ownership
@@ -166,7 +169,7 @@ Each exchange carries the quantity, units, sign/frame, spatial support, physical
 
 A future step result should conceptually contain a candidate state, material and energy transfers, explicit surface contributions, events, unresolved conditions and error diagnostics. The accepted state remains unchanged until validation succeeds. This is a data contract for future coding—not a requirement to add a new general scheduler or plugin framework.
 
-### 3.3 Canon and generated detail
+### 3.3 Authored constraints and generated detail
 
 Keep authored constraints in a separate world profile with hard/soft status and uncertainty. Do not optimise the physical parameters against a desired mountain outline and then use that same outline as independent validation. A compatibility study can be reported honestly as an inverse/constrained scenario. It must be accompanied by tests that were not constructed around the Diadem.
 
@@ -1278,7 +1281,7 @@ C01 and C02 must close before strain localisation or surface mechanics is claime
 
 **Transform/oblique:** begin with pure shear and translated markers, then prescribed bends/stepovers and oblique motion. Test local compression/extension, offset histories, volume balance and frame invariance. Optional E24/E25 elastic responses serve a diagnostic, not an accumulated million-year plastic model.
 
-**Subduction:** use a prescribed slab/plate kinematic benchmark with a mechanically computed wedge as the first thermal-mechanical reference. A published community benchmark explicitly uses this mixed approach; it tests boundary and rheological treatment, not spontaneous global plate formation. Follow with a buoyant-slab/free-surface benchmark only if the claimed response needs it. The methods literature warns that viscosity averaging and artificial surface layers can materially change results. [[N-S01][url-019]; [N-S02][url-020]]
+**Subduction:** use a prescribed slab/plate kinematic benchmark with a mechanically computed wedge as the first thermal-mechanical reference. A published community benchmark explicitly uses this mixed approach; it tests boundary and rheological treatment, not spontaneous global plate formation. The delivered bounded implementation and independently derived natural-outflow source resolution are owned by [W08 subduction](W08_SUBDUCTION.md#source-resolution-and-step-4-closure); they do not authenticate every original contributor's code. Follow with a buoyant-slab/free-surface benchmark only if the claimed response needs it. The methods literature warns that viscosity averaging and artificial surface layers can materially change results. [[N-S01][url-019]; [N-S02][url-020]]
 
 Close C03/C04 before geological histories: slab polarity/geometry/time, oceanic material sinks, accretion versus erosion, trench migration, overriding shortening/extension, and collision/subduction-cessation rules. Back-arc opening and rollback remain conditional until separately tested. A valid boundary projection does not choose which plate subducts.
 
@@ -1322,7 +1325,7 @@ Then test adaptive support, conservative remapping, nonuniform layers, spherical
 
 A separately identified producer must publish the equation/closure version, inputs, numerical policy, declared scope, output identities, material/load accounts and restart dependencies. Historical R5 controls are not rebadged as checkpoints of changed physics. Public fixtures and a reproducible compatible runtime must accompany any independent-execution claim.
 
-**Release gate:** supported regime matrix, scientific evidence, finite resource envelope, coherent checkpoint/recovery drill, clean-versus-incremental comparison and truthful documentation. Code approval, physical acceptance and fictional canon remain separate. Main-branch publication requires its own coding/publication scope; this documentation consolidation changes no numerical implementation.
+**Release gate:** supported regime matrix, scientific evidence, finite resource envelope, coherent checkpoint/recovery drill, clean-versus-incremental comparison and truthful documentation. Code approval and physical acceptance remain separate. Main-branch publication requires its own coding/publication scope; this documentation consolidation changes no numerical implementation.
 
 <a id="plate-formation-implementation-plan"></a>
 
@@ -1489,7 +1492,7 @@ This scale analysis provides an early feasibility/validity filter without a simu
 | **V1: implementation verification** | Units/signs, manufactured/analytic solutions, conservation, field bounds and declared invalid-input refusal. | The constitutive law is true for a geological setting. |
 | **V2: numerical adequacy** | Mesh/time/coupling/domain refinement, appropriate residuals, remapping/rounding error and resolved physical features. | A visually plausible field matches independent observations. |
 | **V3: physical adequacy** | Withheld analogue/geophysical/geological observables and sensitivity/uncertainty within a defined regime. | Every world, scale, history or boundary condition is covered. |
-| **V4: world compatibility and release** | Required authored constraints, provenance, resources, output/restart consistency and named supported capabilities. | Canon approval or an untested generic-planet guarantee. |
+| **V4: world compatibility and release** | Required authored constraints, provenance, resources, output/restart consistency and named supported capabilities. | Approval to replace authored world inputs or an untested generic-planet guarantee. |
 
 A common modelling assumption across two codes weakens their independence as physical evidence. Use exact checks, alternate discretisations and observations/experiments for different purposes. Software-family agreement and agreement between AI reviewers are not acceptance metrics.
 
@@ -1700,7 +1703,7 @@ The pre-study register remains historical evidence, not a separate maintained pl
 
 **[A07][url-005] — Atlas: topography kernels.** Pinned Atlas source code. Target for relevant routing/geometry method study, not a claim of modification.
 
-**[N-S01][url-019] — van Keken et al. (2008): A community benchmark for subduction zone modeling.** Primary author institutional record and abstract. Kinematically prescribed slab plus dynamically computed wedge. Full benchmark configuration/data not acquired or executed.
+**[N-S01][url-019] — van Keken et al. (2008): A community benchmark for subduction zone modeling.** The original planning source was the primary institutional record and abstract. Subsequent [W08 source work](W08_SUBDUCTION.md#papers-and-software-checked) acquired the author-hosted paper, cases and reference rows, and records the bounded five-case comparison and independent natural-outflow derivation. Historical contributor-code equivalence remains NOT_VERIFIED; the delivered source interpretation is not an author-confirmed erratum or spontaneous-subduction result.
 
 **[N-S02][url-020] — Schmeling et al. (2008): A benchmark comparison of spontaneous subduction models—Towards a free surface.** Peer-reviewed primary methods paper; publisher abstract/preview. Numerical/laboratory comparison; viscosity averaging and free-surface sensitivity. No figures/tables or performance results reproduced.
 

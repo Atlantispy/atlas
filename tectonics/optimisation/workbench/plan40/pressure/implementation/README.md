@@ -1,6 +1,6 @@
 # Plan40 pressure: selected receiving implementation
 
-WORKING NON-CANON. This additive source selection contains the accepted
+This additive source selection contains the accepted
 CORE+G4 pressure implementation: G1, G2, G3, G4, G7 and G10. The bounded
 complete-call receiving comparison selects G4 on its net elapsed-time benefit.
 G5 and the combined G4/G5 variant remain outside this selection.

@@ -1,11 +1,12 @@
 # New-world Step 5: generated regional tectonic evolution
 
-Evidence status, 26 September: old r1 timings and outputs below bind earlier
-motion/adapters and remain historical. Use the fresh
-[r2 combined workflow receipt](#current-rerun-26-september-2026)
-for current-code regional outputs; historical numerical results were not repinned.
+The r1 timings and outputs below bind earlier motion/adapters. The later
+[r2 combined workflow receipt](#current-rerun-26-september-2026) also remains
+historical after subsequent source repairs. [Current evidence](../../docs/CURRENT_EVIDENCE.md)
+owns receipt classification; [current state](../../docs/CURRENT_STATE.md) owns
+delivery and holds. Historical numerical results were not repinned.
 
-WORKING NON-CANON. This producer connects a saved S2/S3/S4 world to actual
+This producer connects a saved S2/S3/S4 world to actual
 conserved-crust deformation and calculated surface change. It does not send new
 seeds to the fixed W12 demonstration or claim global geological evolution.
 
@@ -72,7 +73,9 @@ that admitted the planar column approximation in
 [NEW_WORLD_STRUCTURE.md](NEW_WORLD_STRUCTURE.md). For this constant-gradient map
 the area ratio is exactly `det exp(G t) = exp(trace(G) t)`, monotonic in time,
 so the thickest crust over the horizon is the initial equivalent thickness
-divided by `min(1, J(T))`; no time sampling is needed. The bound, both sources,
+divided by `min(1, J(T))`; no time sampling is needed. Admission uses the larger
+of requested and represented endpoint duration and leaves a relative margin of
+`2 * transform.MAP_ERROR` for the native map's accepted area error. The bound, both sources,
 the minimum area ratio and the admitted maximum thickness are recorded as
 `column_envelope` in the native input and in every evaluated output, and
 `evaluate` refuses to publish any thickness above the recorded bound. Thinning has
@@ -136,7 +139,9 @@ accounted work-memory budget. No parallel pool is added for these tiny coupled
 outputs. Prepared native operators, stored sampling and direct evaluation avoid
 repeated work without changing the selected equations or precision.
 
-**Submission limits (R4 candidate, 30 September 2026; not accepted).** Every
+**Submission limits (R4 repair, introduced 30 September 2026).** The reviewed,
+integrated repair status is recorded in [current state](../../docs/CURRENT_STATE.md);
+the dated failures and checks below retain their original scope. Every
 control file (`status.json`, `prefix.json`, a cancellation request) is written
 in its canonical compact form plus one newline and is read with a 65,536-byte
 limit, so a record's canonical bytes may use at most 65,535. The 256-time limit
@@ -144,7 +149,8 @@ is unchanged, but `submit` now also refuses with `OUTPUT_LIMIT`, before anything
 is created, a schedule whose complete `prefix.json` could not fit. It builds the
 prefix that the job would write with every entry at its largest: the index and
 file name for its position, 64-hex digests and `size_bytes` of 2 MiB. No
-schedule of floats is refused: 256 times at 1/7 Myr spacing need at most
+otherwise-valid schedule of at most 256 binary64 floats is refused by this
+prefix-size check: 256 times at 1/7 Myr spacing need at most
 63,211 bytes on disk, and 256 floats with the longest (23-character)
 representations need 64,609. Integer times of about 27 digits or more
 throughout the schedule are refused; real schedules are also bounded by the
@@ -259,7 +265,7 @@ run. Direct native CLI selection of the middle saved time also passes without
 generation. Thirty source-safety tests pass; one existing Windows symlink-
 privilege check is skipped. No full suite or Linux claim is added.
 
-Current-job fresh generation/storage: **4.937890 s**. Verified completed reuse:
+Original r1 job fresh generation/storage: **4.937890 s**. Verified completed reuse:
 **0.788870 s**, saving **4.149019 s / 84.0241%** (one end-to-end pair). Repeated
 preparation versus one prepared owner for three identical outputs, three
 alternating pairs: **1.836554 -> 0.695375 s**, saving **1.141179 s / 62.1370%**.
@@ -356,6 +362,8 @@ second committed time; omission selects the latest. `submit`/`resume` optionally
 take `--max-new-outputs 1` to finish a bounded committed prefix with state
 `partial`, not falsely report completion or cancellation. The requested schedule
 is immutable; execution resumes the same definition, not modified settings.
+It contains 1–256 finite nonnegative elapsed times, starts at zero and strictly
+increases; its last time must fit the prepared horizon.
 
 The response schema is `atlas.new-world-evolution-job.v1`. Job states distinguish
 `preparing`, `running`, `partial`, `completed`, `cancelled`, `failed`, `interrupted`.
@@ -364,14 +372,17 @@ describes the committed prefix. A result response contains the separately typed
 `atlas.generated-regional-output.v1` scientific object. Errors are safe bounded
 codes, including source/input mismatch and native-input/evolution refusal.
 
-The existing UI owner owns the new **regional** evolve action, managed process,
+The UI owner owns the **regional** evolve action, managed process,
 progress/cancel/resume, saved-time selection and rendering actual calculated
 fields. Keep the initial world visible on failure. Do not relabel an initial
 world-view.v3 as an evolved planet, connect this action to the fixed W12 fixture,
-or infer absolute elevation from displacement. Save World still exports the
-original initial `.atlas`; this distinct evolution job persists in the managed
-local jobs directory and must be labelled separately, not falsely advertised as
-included in that portable archive. A future combined portable format is separate.
+or infer absolute elevation from displacement. An initial-only `.atlas` contains
+the original starting world; this distinct evolution job persists in the managed
+local jobs directory and must be labelled separately, not advertised as included
+in that initial-only archive. The implemented
+[combined portable bundle](NEW_WORLD_BUNDLE.md) separately carries the initial
+world and selected committed regional jobs without changing their producer or
+restart identities.
 
 ### UI integration closed, 24 September 2026
 

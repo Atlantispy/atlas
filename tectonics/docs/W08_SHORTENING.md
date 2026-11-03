@@ -1,6 +1,6 @@
 # W08 Step 2 — finite shortening and load/support
 
-Status: WORKING NON-CANON, local implementation, 23 September 2026.
+Status: local implementation, 23 September 2026.
 The [Step 1 design](W08_REGIMES.md) and [case register](../cases/w08_regimes.json)
 remain frozen. This increment implements their distributed plane-strain shortening
 route; it does not manufacture fault or underthrust geometry from convergence.
@@ -45,7 +45,9 @@ budgets and the 256-history-interval cap are retained; accounted allocation is n
 process RSS. Caller-retained older outputs need the caller's own allowance.
 Persistent joined W08 restart belongs to increment 6. A supplied fault/underthrust
 scenario still needs its separate structural and host-space closure; none was
-invented for this distributed-shortening increment. Next: transform/oblique motion.
+invented for this distributed-shortening increment. The later
+[transform/oblique route](W08_TRANSFORM.md) and [joined workflow](W08_JOINED.md)
+retain their own source and acceptance boundaries.
 
 ## Shared source-capture prerequisite
 

@@ -1,6 +1,6 @@
 {
   "schema": "atlas.current-evidence-register.v1",
-  "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. WORKING NON-CANON. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
+  "scope": "New-world evidence (Steps 2-7, motion-frame correction, world bundle, B1 boundary diagnostics), I01 bounded design controls, Windows installation evidence and the line-ending correction trail. Unlisted records are unclassified. Current claims cover declared source/input/specification bindings only; no generated-world physical acceptance is classified current. Checks do not establish native execution, unbound dependencies, platform compatibility or scientific acceptance. See docs/CURRENT_EVIDENCE.md.",
   "records": [
     {
       "id": "i02-workflow-timing-r12",
@@ -56,20 +56,8 @@
       "id": "i01-initiation-verification-r1",
       "path": "tectonics/evidence/i01-initiation-verification-r1.json",
       "sha256": "b2bd857dcfa29e7f1f78d8791c7d2beb6d5b6a51083f073f54233c8649f32583",
-      "status": "current",
-      "note": "Eight tests pass in 0.006 s and sixteen analytical controls in 0.0009773 s after imports. Fixed pre-run tolerances; finest variable-viscosity velocity error 0.01580%, power error 0.02441%. This is independent method verification, not a reconstructed published subduction case.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Synthetic one-dimensional viscous shear and retained coaxial elastic relaxation; no full objective VEP, bending slab, moving free surface or generated initiation.",
-        "Force release is distinguished from velocity clamping and gravitational work from stored elastic energy. Actual coupled release over a finite window remains I07 acceptance.",
-        "No physical calibration, Linux execution or whole-world speed claim. Missing original benchmark inputs remain missing."
-      ]
+      "status": "historical",
+      "note": "Eight tests pass in 0.006 s and sixteen analytical controls in 0.0009773 s after imports. Fixed pre-run tolerances; finest variable-viscosity velocity error 0.01580%, power error 0.02441%. This is independent method verification, not a reconstructed published subduction case. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_INITIATION_VERIFICATION.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Synthetic one-dimensional viscous shear and retained coaxial elastic relaxation; no full objective VEP, bending slab, moving free surface or generated initiation. Force release is distinguished from velocity clamping and gravitational work from stored elastic energy. Actual coupled release over a finite window remains I07 acceptance. No physical calibration, Linux execution or whole-world speed claim. Missing original benchmark inputs remain missing."
     },
     {
       "id": "i01-junction-feasibility-r1",
@@ -101,311 +89,99 @@
       "id": "i01-gibbs-provider-r3",
       "path": "tectonics/evidence/i01-gibbs-provider-r3.json",
       "sha256": "696cc9cf306e8d891d5b0bba9fb73d23d8f6c976956cfa2f74858bf4061c7a30",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 in the pinned isolated Julia/MAGEMin environment with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_bindings/{key}",
-          "file": "tectonics/{key}"
-        },
-        {
-          "pointer": "/metadata/worker_sha256",
-          "file": "tectonics/tools/magemin_g25.jl"
-        }
-      ],
-      "not_checked": [
-        {
-          "pointer": "/metadata/manifest_sha256",
-          "kind": "runtime",
-          "reason": "Frozen isolated Julia environment manifest; reported from the real run, not a repository file checked here."
-        },
-        {
-          "pointer": "/metadata/native_sha256",
-          "kind": "runtime",
-          "reason": "Loaded native MAGEMin library identity; the repository checker does not inspect installed binaries."
-        },
-        {
-          "pointer": "/metadata/wrapper_source_sha256",
-          "kind": "runtime",
-          "reason": "Installed MAGEMin Julia wrapper tree identity; not a repository-file digest."
-        },
-        {
-          "pointer": "/solid/provider_id",
-          "kind": "runtime",
-          "reason": "Composite provider identity including installed software and declared bounds, not a file digest."
-        },
-        {
-          "pointer": "/melting/provider_id",
-          "kind": "runtime",
-          "reason": "Composite provider identity including installed software and declared bounds, not a file digest."
-        },
-        {
-          "pointer": "/extraction/parcel/provider_id",
-          "kind": "runtime",
-          "reason": "Composite provider identity including installed software and declared bounds, not a file digest."
-        },
-        {
-          "pointer": "/declared_thermal_branches/receiver/provider_id",
-          "kind": "runtime",
-          "reason": "Composite provider identity, not a repository-file digest."
-        },
-        {
-          "pointer": "/declared_thermal_branches/entropy_recovery/provider_id",
-          "kind": "runtime",
-          "reason": "Composite provider identity, not a repository-file digest."
-        }
-      ],
-      "limits": [
-        "Dry KLB1 software reference at 0.8 GPa and two temperatures; not withheld geological calibration or a wet-input test.",
-        "Common chemical-potential derivatives supply phase H/S/V with refinement and branch checks. Fixed-pressure finite extraction, changed-bulk consistency and H/S recovery are exercised; no latent-plateau inversion.",
-        "No extraction-rate, permeability, spatial focusing, axial thermal lid or persisted material transactions. Experimental opt-in adapter, not default world generation.",
-        "Caller-declared continuous-branch support is an explicit assumption, not proved by finite sampling. Both endpoints and all bisection samples must retain declared phase identities."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 in the pinned isolated Julia/MAGEMin environment with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_THERMO_PROVIDER_CONTRACT.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Dry KLB1 software reference at 0.8 GPa and two temperatures; not withheld geological calibration or a wet-input test. Common chemical-potential derivatives supply phase H/S/V with refinement and branch checks. Fixed-pressure finite extraction, changed-bulk consistency and H/S recovery are exercised; no latent-plateau inversion. No extraction-rate, permeability, spatial focusing, axial thermal lid or persisted material transactions. Experimental opt-in adapter, not default world generation. Caller-declared continuous-branch support is an explicit assumption, not proved by finite sampling. Both endpoints and all bisection samples must retain declared phase identities. Original unchecked digest qualifications: /metadata/manifest_sha256 (runtime): Frozen isolated Julia environment manifest; reported from the real run, not a repository file checked here. /metadata/native_sha256 (runtime): Loaded native MAGEMin library identity; the repository checker does not inspect installed binaries. /metadata/wrapper_source_sha256 (runtime): Installed MAGEMin Julia wrapper tree identity; not a repository-file digest. /solid/provider_id (runtime): Composite provider identity including installed software and declared bounds, not a file digest. /melting/provider_id (runtime): Composite provider identity including installed software and declared bounds, not a file digest. /extraction/parcel/provider_id (runtime): Composite provider identity including installed software and declared bounds, not a file digest. /declared_thermal_branches/receiver/provider_id (runtime): Composite provider identity, not a repository-file digest. /declared_thermal_branches/entropy_recovery/provider_id (runtime): Composite provider identity, not a repository-file digest."
     },
     {
       "id": "i01-elastic-core-r1",
       "path": "tectonics/evidence/i01-elastic-core-r1.json",
       "sha256": "0bf419bd68efbe6d6ff51454ac03c8e87980425bfb0c014ad640fa937013aa85",
-      "status": "current",
-      "note": "Reviewed declared single-core producer for rigidity and shear-transfer depth. Eighteen focused tests pass in 0.246 s; six controls pass in 0.1840925 s. At 16384 cells, producer/join-only interleaved medians are 0.0012974/0.0012773 s: 0.0000201 s (1.57%) added in this short observation, not a speedup or world forecast.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "One declared homogeneous isotropic core, shear-free faces, constant rigidity and a periodic linear flat-reference plate. The core is explicit material input, not inferred from effective elastic thickness or the D2 strength envelope.",
-        "Smooth-profile pressure quadrature and independently derived Fourier load check the connection; core-shift checks the centroid identity, while traction uses the retained gradient operator. No arbitrary-relief or initial-curvature/membrane error bound is established.",
-        "Selects the bounded MC-07 branch. Variable rigidity, multiple or yielding cores, spherical support, weak/broken boundaries and moving-world integration remain I04/I08 work. No calibration or generated-world acceptance; runtime binaries are reported, not sealed."
-      ]
+      "status": "historical",
+      "note": "Reviewed declared single-core producer for rigidity and shear-transfer depth. Eighteen focused tests pass in 0.246 s; six controls pass in 0.1840925 s. At 16384 cells, producer/join-only interleaved medians are 0.0012974/0.0012773 s: 0.0000201 s (1.57%) added in this short observation, not a speedup or world forecast. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_ELASTIC_CORE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: One declared homogeneous isotropic core, shear-free faces, constant rigidity and a periodic linear flat-reference plate. The core is explicit material input, not inferred from effective elastic thickness or the D2 strength envelope. Smooth-profile pressure quadrature and independently derived Fourier load check the connection; core-shift checks the centroid identity, while traction uses the retained gradient operator. No arbitrary-relief or initial-curvature/membrane error bound is established. Selects the bounded MC-07 branch. Variable rigidity, multiple or yielding cores, spherical support, weak/broken boundaries and moving-world integration remain I04/I08 work. No calibration or generated-world acceptance; runtime binaries are reported, not sealed."
     },
     {
       "id": "i01-ridge-junction-r1",
       "path": "tectonics/evidence/i01-ridge-junction-r1.json",
       "sha256": "f16b123c3d9b0a06a88c54412f45cd453cfc1a9b162bb657ee5935451c9a4a0e",
-      "status": "current",
-      "note": "Local post-contact all-ridge candidate kinematics. Nine tests pass in 0.002 s; nine controls in 0.1691927 s. For 300 repeated squared-length queries, preparation reuse takes 0.0005156 s versus 0.0243163 s rebuilt: 0.0238007 s (97.8796%) saved, not a world speedup.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Declared constant planar velocities/normals, four distinct plates and symmetric positively opening ridges only; exact supplied-number feasibility, not physical geometry accuracy.",
-        "Checks both new endpoint constraints and oriented forward growth; no cyclic-order/crossing certificate, spherical integration, graph edits, authenticated contact or material/supply admission.",
-        "No physical birth or reorganisation selector; MC-05 remains open. Gerya-Burov weighted steady-state optimisation is not implemented. Existing contact and transition sources remain unchanged."
-      ]
+      "status": "historical",
+      "note": "Local post-contact all-ridge candidate kinematics. Nine tests pass in 0.002 s; nine controls in 0.1691927 s. For 300 repeated squared-length queries, preparation reuse takes 0.0005156 s versus 0.0243163 s rebuilt: 0.0238007 s (97.8796%) saved, not a world speedup. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_RIDGE_JUNCTION.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Declared constant planar velocities/normals, four distinct plates and symmetric positively opening ridges only; exact supplied-number feasibility, not physical geometry accuracy. Checks both new endpoint constraints and oriented forward growth; no cyclic-order/crossing certificate, spherical integration, graph edits, authenticated contact or material/supply admission. No physical birth or reorganisation selector; MC-05 remains open. Gerya-Burov weighted steady-state optimisation is not implemented. Existing contact and transition sources remain unchanged."
     },
     {
       "id": "i01-junction-events-r1",
       "path": "tectonics/evidence/i01-junction-events-r1.json",
       "sha256": "94528a8edd2edaab622b6a9518b61520eaebf829c82f21fba16098caa05e2066",
-      "status": "current",
-      "note": "Exact contact on declared affine planar junction paths. Ten focused tests pass in 0.001 s; nine controls pass in 0.130276 s. Median 1000-query times are 0.0021818 s prepared versus 0.0141799 s rebuilt: 0.0119981 s or 84.613% saved for preparation reuse only.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Exact for supplied constant-velocity planar paths only; no integration with the existing junction solver, spherical trajectories, uncertainty certificate or generated-world speedup.",
-        "Detects contact without sign-change bracketing and preserves tiny near misses. Initial/persistent contact is distinct; IDs are unauthenticated labels and once-only or simultaneous transactions remain later work.",
-        "No graph changes, boundary birth, physical reorganisation selection or generated event. MC-05 remains open; scientific_acceptance and generated_reorganisation are false."
-      ]
+      "status": "historical",
+      "note": "Exact contact on declared affine planar junction paths. Ten focused tests pass in 0.001 s; nine controls pass in 0.130276 s. Median 1000-query times are 0.0021818 s prepared versus 0.0141799 s rebuilt: 0.0119981 s or 84.613% saved for preparation reuse only. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_JUNCTION_EVENTS.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Exact for supplied constant-velocity planar paths only; no integration with the existing junction solver, spherical trajectories, uncertainty certificate or generated-world speedup. Detects contact without sign-change bracketing and preserves tiny near misses. Initial/persistent contact is distinct; IDs are unauthenticated labels and once-only or simultaneous transactions remain later work. No graph changes, boundary birth, physical reorganisation selection or generated event. MC-05 remains open; scientific_acceptance and generated_reorganisation are false."
     },
     {
       "id": "i01-water-gpe-r1",
       "path": "tectonics/evidence/i01-water-gpe-r1.json",
       "sha256": "539f76c29ca0d94e302f81da1cccc1a48dd2460f544d5ce07f8b561eca09100d",
-      "status": "current",
-      "note": "Reviewed water-loaded-column pressure/GPE connection. Nineteen focused tests pass in 0.207 s; eight controls pass in 0.2123609 s after imports. Negative depths refuse and no-load-transfer classification uses structural limits, not a residual threshold. At 16384 cells the join plus traction median is 0.0016438 s; no matched baseline or speedup claim.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Planar periodic constant-rigidity plate with one communicating finite reservoir, hydrostatic layers and one declared effective shear-transfer level. Not a spherical torque or boundary calculation.",
-        "Zero-water, zero-rigidity and uniform-load structural limits need no shear-depth input. Other states require its explicit basis, however small their support. The separate elastic-core receipt selects a declared single-core producer; this original receipt alone does not supply it or establish arbitrary finite flexure.",
-        "Manufactured columns, exact Fourier fields and independent pressure quadrature establish this bounded join, not calibration, moving-world integration or scientific acceptance. Retained source/receipt and import checks pass; runtime binaries are reported but not sealed."
-      ]
+      "status": "historical",
+      "note": "Reviewed water-loaded-column pressure/GPE connection. Nineteen focused tests pass in 0.207 s; eight controls pass in 0.2123609 s after imports. Negative depths refuse and no-load-transfer classification uses structural limits, not a residual threshold. At 16384 cells the join plus traction median is 0.0016438 s; no matched baseline or speedup claim. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_WATER_GPE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Planar periodic constant-rigidity plate with one communicating finite reservoir, hydrostatic layers and one declared effective shear-transfer level. Not a spherical torque or boundary calculation. Zero-water, zero-rigidity and uniform-load structural limits need no shear-depth input. Other states require its explicit basis, however small their support. The separate elastic-core receipt selects a declared single-core producer; this original receipt alone does not supply it or establish arbitrary finite flexure. Manufactured columns, exact Fourier fields and independent pressure quadrature establish this bounded join, not calibration, moving-world integration or scientific acceptance. Retained source/receipt and import checks pass; runtime binaries are reported but not sealed."
     },
     {
       "id": "i01-elastic-memory-r1",
       "path": "tectonics/evidence/i01-elastic-memory-r1.json",
       "sha256": "3a10007088a438296b483ee184c17bcef8f3a126fedca4f60ec6fa04b7173218",
-      "status": "current",
-      "note": "Retain elastic stress memory in the future rift; exact coaxial Maxwell control. Twelve tests pass in 0.002 s; nine controls in 0.1475084 s. Prepared/rebuilt updates are bit-identical; median 2000-update times 0.00597980/0.00916880 s (34.781% saved), not a world speedup.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Constructed coaxial stretch plus rigid rotation, constant modulus and viscosity, prescribed rate and small elastic strain only. General shear is refused; this is not a general objective finite-strain solver.",
-        "Manufactured coefficients and analytical constitutive controls, not calibrated lithosphere, a resolved neck, plastic or thermal coupling, or a separation event.",
-        "The keep-memory subchoice is selected; MC-01's physical separation mechanism remains open. I02/I05/I07 must persist and transport stress and implement the general logarithmic constitutive formulation."
-      ]
+      "status": "historical",
+      "note": "Retain elastic stress memory in the future rift; exact coaxial Maxwell control. Twelve tests pass in 0.002 s; nine controls in 0.1475084 s. Prepared/rebuilt updates are bit-identical; median 2000-update times 0.00597980/0.00916880 s (34.781% saved), not a world speedup. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_ELASTIC_MEMORY.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Constructed coaxial stretch plus rigid rotation, constant modulus and viscosity, prescribed rate and small elastic strain only. General shear is refused; this is not a general objective finite-strain solver. Manufactured coefficients and analytical constitutive controls, not calibrated lithosphere, a resolved neck, plastic or thermal coupling, or a separation event. The keep-memory subchoice is selected; MC-01's physical separation mechanism remains open. I02/I05/I07 must persist and transport stress and implement the general logarithmic constitutive formulation."
     },
     {
       "id": "i01-basal-closure-r1",
       "path": "tectonics/evidence/i01-basal-closure-r1.json",
       "sha256": "142fca72ff63441f9c5585fed5d82168f04d636bcf1886c4dfc5adf65825a506",
-      "status": "current",
-      "note": "Reviewed MC-04 specification and bounded accounts. Fifty focused tests pass in 0.087 s; eight controls pass in 0.0237441 s. Corrected inventory/geometry, thermal-boundary, endpoint-account and strip-containment checks; exact independent Newtonian mechanical-work oracle. No retained source or old receipt changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Boundary prescription and supplied-flux accounts only, not a numerical Stokes solution, general well-posedness proof, material transport, melting or separation.",
-        "Independent mechanical oracle is a homogeneous exact Newtonian pure-shear field. Its thermal entries are manufactured; it does not validate the layered plastic or coupled thermal model.",
-        "I05/I07 must bind source states to the selected prescription, implement transport and once-only I02 transactions, predeclare resolved tolerances and test base-depth/law sensitivity. No measured solver speedup or world acceptance."
-      ]
+      "status": "historical",
+      "note": "Reviewed MC-04 specification and bounded accounts. Fifty focused tests pass in 0.087 s; eight controls pass in 0.0237441 s. Corrected inventory/geometry, thermal-boundary, endpoint-account and strip-containment checks; exact independent Newtonian mechanical-work oracle. No retained source or old receipt changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_BASAL_CLOSURE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Boundary prescription and supplied-flux accounts only, not a numerical Stokes solution, general well-posedness proof, material transport, melting or separation. Independent mechanical oracle is a homogeneous exact Newtonian pure-shear field. Its thermal entries are manufactured; it does not validate the layered plastic or coupled thermal model. I05/I07 must bind source states to the selected prescription, implement transport and once-only I02 transactions, predeclare resolved tolerances and test base-depth/law sensitivity. No measured solver speedup or world acceptance."
     },
     {
       "id": "i01-lateral-heat-r1",
       "path": "tectonics/evidence/i01-lateral-heat-r1.json",
       "sha256": "b472de541fdf36a1ec614c4b9d243a74aefa574d85817d669f51f1420683df50",
-      "status": "current",
-      "note": "MC-06 conditional thermal omission criterion. Twelve focused tests pass in 0.876 s; ten bounded control checks pass in 0.0710187 s. Exact rational gate, unequal-capacity analytical solution and independent three-cell matrix oracle; no old source or receipt changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Conditional bound between exact solutions of a declared semi-discrete thermal model, not a continuum or time-discretisation error estimate. Positive capacities, symmetric nonnegative contacts and a contractive retained vertical operator are premises.",
-        "Whole-window temperature contrasts and valid fixed orthogonal geometry are caller obligations; samples cannot certify the envelope. Temperature-dependent forcing, moving geometry and coupled mechanical feedback are unsupported.",
-        "Coupled-neck and physical-separation certification remain false. Bounded Windows controls, not sealed runtime, a new simulation backend, native integration or a measured generator speedup."
-      ]
+      "status": "historical",
+      "note": "MC-06 conditional thermal omission criterion. Twelve focused tests pass in 0.876 s; ten bounded control checks pass in 0.0710187 s. Exact rational gate, unequal-capacity analytical solution and independent three-cell matrix oracle; no old source or receipt changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_LATERAL_HEAT.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Conditional bound between exact solutions of a declared semi-discrete thermal model, not a continuum or time-discretisation error estimate. Positive capacities, symmetric nonnegative contacts and a contractive retained vertical operator are premises. Whole-window temperature contrasts and valid fixed orthogonal geometry are caller obligations; samples cannot certify the envelope. Temperature-dependent forcing, moving geometry and coupled mechanical feedback are unsupported. Coupled-neck and physical-separation certification remain false. Bounded Windows controls, not sealed runtime, a new simulation backend, native integration or a measured generator speedup."
     },
     {
       "id": "i01-breakup-closure-r5",
       "path": "tectonics/evidence/i01-breakup-closure-r5.json",
       "sha256": "4a5b17336725d7abf65603ecb76c5b6ac648540b90e0b7af7ac6a04b5e38f434",
-      "status": "current",
-      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls.",
-        "Resolved event and generated breakup of the retained lithosphere remain UNRESOLVED; no separation event or new crust is authorised, and a finite-state refusal neither predicts nor excludes eventual breakup."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 5 October 2026 in dependency order after the reviewed optimisation and release-boundary changes. All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_BREAKUP_CLOSURE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Analytical fixed power law and non-degenerate quadratic weakness only; 2<n<=4 and limiting slopes inside the declared long-wave bound. Gravity/GPE and lateral heat flow are disabled in the isothermal controls. Resolved event and generated breakup of the retained lithosphere remain UNRESOLVED; no separation event or new crust is authorised, and a finite-state refusal neither predicts nor excludes eventual breakup."
     },
     {
       "id": "i01-phase-partition-r3",
       "path": "tectonics/evidence/i01-phase-partition-r3.json",
       "sha256": "81e89be29d9ac31db31daf0b092de8656dbd1a7106cc224152188a4e172b5dbc",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Supplied partition coefficients and analytical compositions, not calibrated mantle petrology. No enthalpy, reaction rate, transport, native payload or generated crust supply is authorised.",
-        "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
-        "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_PHASE_PARTITION.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Supplied partition coefficients and analytical compositions, not calibrated mantle petrology. No enthalpy, reaction rate, transport, native payload or generated crust supply is authorised. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale. Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
     },
     {
       "id": "i01-phase-energy-r4",
       "path": "tectonics/evidence/i01-phase-energy-r4.json",
       "sha256": "b015ec91761870fdf2fe54fe222fc3b566cdbf9696b478bbc03d8fee875abde8",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Ideal mixing with equal effective molar masses, common heat capacity and constant phase-specific volumes. Analytical properties, not calibrated mantle petrology. No native payload, moving-pressure integration, extraction-rate law, compaction or global embedding.",
-        "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
-        "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_PHASE_ENERGY.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Ideal mixing with equal effective molar masses, common heat capacity and constant phase-specific volumes. Analytical properties, not calibrated mantle petrology. No native payload, moving-pressure integration, extraction-rate law, compaction or global embedding. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale. Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
     },
     {
       "id": "i01-magma-receiver-r3",
       "path": "tectonics/evidence/i01-magma-receiver-r3.json",
       "sha256": "0ffc4f5816a84cbd3719a1a3d778b1eb5689dc010c152838605cc4bbe7f76f29",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Analytical ideal-mixture material, not calibrated mantle. Prescribed finite liquid quantities and constant pressure; no pressure transport, kinetic/gravitational energy, flow rate, compaction, native emplacement, persisted transaction or whole-world acceptance.",
-        "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
-        "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_MAGMA_RECEIVER.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Analytical ideal-mixture material, not calibrated mantle. Prescribed finite liquid quantities and constant pressure; no pressure transport, kinetic/gravitational energy, flow rate, compaction, native emplacement, persisted transaction or whole-world acceptance. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale. Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
     },
     {
       "id": "i01-phase-pressure-r3",
       "path": "tectonics/evidence/i01-phase-pressure-r3.json",
       "sha256": "073860acd1c2862c68419f62ab2e103f5e9ec8087b52af04585db030a0b48ef7",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Analytical constant-volume ideal mixture, not mantle calibration or native ascent. No extraction rate, flow rate, thermal expansion, compaction, kinetic/gravitational energy or persisted transaction. Every pressure sample must retain the original segment entropy.",
-        "Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale.",
-        "Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 with its receipt writer corrected to write LF text. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_PHASE_PRESSURE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Analytical constant-volume ideal mixture, not mantle calibration or native ascent. No extraction rate, flow rate, thermal expansion, compaction, kinetic/gravitational energy or persisted transaction. Every pressure sample must retain the original segment entropy. Endpoint arithmetic preserves normally represented minority component inventories; unresolved conditioning and underflow still refuse. Absolute fraction tolerance is unchanged, not a promise of relative accuracy below that scale. Source-bound bounded controls; runtime versions are recorded observations, not sealed binaries. No world-scale run, external software execution or speedup claim."
     },
     {
       "id": "i01-finite-admission-r12",
       "path": "tectonics/evidence/i01-finite-admission-r12.json",
       "sha256": "04173bff7448587c1de99115fcaed6c75719f09bf5a0c4b899e85d99707bd8ef",
-      "status": "current",
-      "note": "Successor captured on 16 October 2026 after src/atlas_tectonics/reuse.py was added to the finite-admission RESTORATION inventory (storage executes reuse at its read and publication boundaries). All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance.",
-        "States may be issued by this evolution or restored from a consistent accepted commit in its trusted local I02 ledger. Store checks establish consistency, not authorship. The derivation, not endpoint sampling, supports intermediate-stage bounds; runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 16 October 2026 after src/atlas_tectonics/reuse.py was added to the finite-admission RESTORATION inventory (storage executes reuse at its read and publication boundaries). All bounded controls passed with unchanged source bindings during capture and matched retained prerequisites. Cases, physical laws, scientific tolerances and step ceilings are unchanged. Timings are control observations, not performance or scientific acceptance. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_FINITE_ADMISSION.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Conditional exact resistance bound for the represented extending Gauss-point strip while temperature and constitutive support remain admitted; no rupture, automatic switch, continuous-depth enclosure, native integration or world acceptance. States may be issued by this evolution or restored from a consistent accepted commit in its trusted local I02 ledger. Store checks establish consistency, not authorship. The derivation, not endpoint sampling, supports intermediate-stage bounds; runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-finite-strain-r6",
@@ -542,77 +318,29 @@
       "id": "i01-gpe-r1",
       "path": "tectonics/evidence/i01-gpe-r1.json",
       "sha256": "bfd5ddbaa6a204ca156b9d94b981269fb9ce0956bb5ec37d1fd111b6c248e4fd",
-      "status": "current",
-      "note": "Dry compensated material/thermal columns supply GPE traction to the retained D1 torque solver. Ten focused tests and three spherical refinement controls pass; no separate double-counted ridge push.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds four new tool/case/test/method files and the unchanged retained I01 closure helper before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
-        "Prescribed dry locally compensated columns, linear layer temperatures, smooth great-circle samples and two manufactured hemispheres. Reference material mass is distinct from effective buoyancy load; diagnostic mantle fill is not a conserved transported inventory. No water-loaded/world/deforming-state acceptance or calibrated planet defaults.",
-        "Ten tests in 0.007 s; campaign 0.0428281 s after imports. Finest analytical rotation error 0.0100396%, decreasing by approximately four per refinement. Five interleaved medians for exact 4096-column/three-layer moments: scalar 0.0075236 s, vectorised 0.0001414 s, saving 0.0073822 s / 98.12%; relative parity 2.38e-16. Kernel microbenchmark only, not a previous generator release or world-runtime forecast."
-      ]
+      "status": "historical",
+      "note": "Dry compensated material/thermal columns supply GPE traction to the retained D1 torque solver. Ten focused tests and three spherical refinement controls pass; no separate double-counted ridge push. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_GPE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds four new tool/case/test/method files and the unchanged retained I01 closure helper before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited. Prescribed dry locally compensated columns, linear layer temperatures, smooth great-circle samples and two manufactured hemispheres. Reference material mass is distinct from effective buoyancy load; diagnostic mantle fill is not a conserved transported inventory. No water-loaded/world/deforming-state acceptance or calibrated planet defaults. Ten tests in 0.007 s; campaign 0.0428281 s after imports. Finest analytical rotation error 0.0100396%, decreasing by approximately four per refinement. Five interleaved medians for exact 4096-column/three-layer moments: scalar 0.0075236 s, vectorised 0.0001414 s, saving 0.0073822 s / 98.12%; relative parity 2.38e-16. Kernel microbenchmark only, not a previous generator release or world-runtime forecast."
     },
     {
       "id": "i01-water-flexure-r1",
       "path": "tectonics/evidence/i01-water-flexure-r1.json",
       "sha256": "6e22ad6d509520eaefb30f2ddcba1eea2957770ce3c4f33e78aabe712b6c3932",
-      "status": "current",
-      "note": "Coupled 2D periodic constant-rigidity flexure and finite communicating-water equilibrium. Ten focused tests and the 32/64/128-grid campaign pass. Dry restoring coefficient avoids double water feedback; total equilibrium uses an unloaded reference.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited.",
-        "Periodic flat constant-D plate with declared common water connectivity; no finite-edge/exterior, variable-D, spherical/geoid, mantle-volume, isolated-basin or dynamic relaxation acceptance. Iteration/residual estimates are mathematical bounds evaluated in floating point, not certified geological or interval-arithmetic bounds.",
-        "Ten tests in 0.062 s; campaign 0.113740 s after imports. Finest-pair displacement change 0.00272251% of prescribed mean water depth. Five interleaved median solves: resort 0.0072849 s, verified reuse 0.0050188 s, saving 0.0022661 s / 31.11%; parity 6.26e-13 m. Microbenchmark, not whole-generator savings."
-      ]
+      "status": "historical",
+      "note": "Coupled 2D periodic constant-rigidity flexure and finite communicating-water equilibrium. Ten focused tests and the 32/64/128-grid campaign pass. Dry restoring coefficient avoids double water feedback; total equilibrium uses an unloaded reference. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_WATER_FLEXURE.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. No native or concurrent weakening source is imported or edited. Periodic flat constant-D plate with declared common water connectivity; no finite-edge/exterior, variable-D, spherical/geoid, mantle-volume, isolated-basin or dynamic relaxation acceptance. Iteration/residual estimates are mathematical bounds evaluated in floating point, not certified geological or interval-arithmetic bounds. Ten tests in 0.062 s; campaign 0.113740 s after imports. Finest-pair displacement change 0.00272251% of prescribed mean water depth. Five interleaved median solves: resort 0.0072849 s, verified reuse 0.0050188 s, saving 0.0022661 s / 31.11%; parity 6.26e-13 m. Microbenchmark, not whole-generator savings."
     },
     {
       "id": "i01-melting-r1",
       "path": "tectonics/evidence/i01-melting-r1.json",
       "sha256": "6781354026b9a650f4ef924bffb7be8e8f9ad04c903ec468dad8ccdba6e1660d",
-      "status": "current",
-      "note": "Dry Katz batch melt production coupled to approximate isentropic decompression. Exact solid adiabat, equal-expansion endpoint root, two tighter-reference paths and nine focused tests pass. Independent of the parallel weakening task.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. Research/software sources were consulted, not executed or vendored.",
-        "Dry fixed-composition retained-melt parcels, 0-3.5 GPa and at most 40% melt. Thermal/path differential accounts are not absolute entropy or full enthalpy conservation. No extraction, transport, common-Tm delivery join, crust production, native or whole-world acceptance.",
-        "Campaign 0.024851 s after imports; two parcel controls 0.001126 and 0.0013724 s. Reference differences below 0.000962 K and 1.30e-6 mass fraction. Five-run median analytic versus numerical derivatives: 0.0009269 versus 0.0015835 s, saving 0.0006566 s / 41.47%, parity 5.86e-8 K. Microbenchmark only, not generator-wide savings."
-      ]
+      "status": "historical",
+      "note": "Dry Katz batch melt production coupled to approximate isentropic decompression. Exact solid adiabat, equal-expansion endpoint root, two tighter-reference paths and nine focused tests pass. Independent of the parallel weakening task. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_MELTING.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds its four new tool/case/test/method files before and after execution. Runtime versions are observations, not binary seals. Research/software sources were consulted, not executed or vendored. Dry fixed-composition retained-melt parcels, 0-3.5 GPa and at most 40% melt. Thermal/path differential accounts are not absolute entropy or full enthalpy conservation. No extraction, transport, common-Tm delivery join, crust production, native or whole-world acceptance. Campaign 0.024851 s after imports; two parcel controls 0.001126 and 0.0013724 s. Reference differences below 0.000962 K and 1.30e-6 mass fraction. Five-run median analytic versus numerical derivatives: 0.0009269 versus 0.0015835 s, saving 0.0006566 s / 41.47%, parity 5.86e-8 K. Microbenchmark only, not generator-wide savings."
     },
     {
       "id": "i01-thermal-r2",
       "path": "tectonics/evidence/i01-thermal-r2.json",
       "sha256": "7087eb15fa9a2e0035ca8e051ca6344e4dc138de416491514992275e6567a7bf",
-      "status": "current",
-      "note": "Reviewed evolving thermal/plastic-history prototype. Direct evolution validates the declared representation and unsupported laws before solving; all five bounded controls and 13 focused tests pass. Physical equations, case values and numerical tolerances are unchanged from Claude's r1.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds nine thermal and retained-helper source/case/method/test files before and after execution. Imported strength/fault helper bytes match their earlier receipts. Runtime versions are observations, not binary seals; papers are not bound.",
-        "Small-strain material/reference periodic cell with a displacement-gradient refusal bound. Uniform translation is a separate transport-only control. No finite-strain coupled advection, lithosphere column, calibrated rupture or native/global integration acceptance.",
-        "13 focused tests in 0.274 s; five controls in 6.396674 s after imports. One warm/cold comparison: 0.552737 versus 1.606948 s, saving 1.054211 s / 65.60%, with matched outcomes. Not a repeated benchmark or whole-generator forecast."
-      ]
+      "status": "historical",
+      "note": "Reviewed evolving thermal/plastic-history prototype. Direct evolution validates the declared representation and unsupported laws before solving; all five bounded controls and 13 focused tests pass. Physical equations, case values and numerical tolerances are unchanged from Claude's r1. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_THERMAL.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds nine thermal and retained-helper source/case/method/test files before and after execution. Imported strength/fault helper bytes match their earlier receipts. Runtime versions are observations, not binary seals; papers are not bound. Small-strain material/reference periodic cell with a displacement-gradient refusal bound. Uniform translation is a separate transport-only control. No finite-strain coupled advection, lithosphere column, calibrated rupture or native/global integration acceptance. 13 focused tests in 0.274 s; five controls in 6.396674 s after imports. One warm/cold comparison: 0.552737 versus 1.606948 s, saving 1.054211 s / 65.60%, with matched outcomes. Not a repeated benchmark or whole-generator forecast."
     },
     {
       "id": "i01-thermal-r1",
@@ -625,19 +353,8 @@
       "id": "i01-column-r2",
       "path": "tectonics/evidence/i01-column-r2.json",
       "sha256": "452d9259853a17ae869c86aadcd5e673003a9dc132c50323535bf44a4fe55ef7",
-      "status": "current",
-      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Prescribed mean-pressure, temperature and pore-pressure profiles and a uniform plane-strain rate; not resolved vertical momentum, evolved weakening, source calibration, fault formation or a replacement for the current 2D solver.",
-        "Binds its tool, case, tests, method and the package column kernel it executes. Runtime versions are recorded observations, not sealed binaries."
-      ]
+      "status": "historical",
+      "note": "Successor captured on 2026-09-29 by the dependency-ordered route after I02.2a moved the executed solver into package modules; it binds the package modules it executes and the upstream successors it checks. Results are those recorded in this receipt; no physical law, case, tolerance or step ceiling changed. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_COLUMN.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Prescribed mean-pressure, temperature and pore-pressure profiles and a uniform plane-strain rate; not resolved vertical momentum, evolved weakening, source calibration, fault formation or a replacement for the current 2D solver. Binds its tool, case, tests, method and the package column kernel it executes. Runtime versions are recorded observations, not sealed binaries."
     },
     {
       "id": "i01-column-r1",
@@ -658,39 +375,15 @@
       "id": "i01-decoupling-r1",
       "path": "tectonics/evidence/i01-decoupling-r1.json",
       "sha256": "af0a679fc808e0ae3952966b63e13caf55266ffca24e26a3e620536e015ca8e6",
-      "status": "current",
-      "note": "Conditional nonlinear scalar motion-admission certificate: exact rational inequality replaces derivative-only release and iterative root finding for integer stress exponents 1 through 8. Analytical controls, whole-window refusals and matched decision benchmark pass; not a physical separation law.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds its own tool/case/method/tests only. No native imports or dependency on the parallel thermal prototype. Runtime version is recorded, not a binary seal.",
-        "Fixed positive drive and drag, scalar quasi-static direction and integer exponent only. A caller must establish whole-window resistance envelopes on the coupled trajectory. No rupture, geometry/material transfer, general energy or nonlinear D2 integration acceptance.",
-        "One prepared-law comparison of 100 decisions: 0.0235752 s exact bisection versus 0.0005243 s direct, 0.0230509 s / 97.78% saved. Not a whole-generator or statistically established speedup."
-      ]
+      "status": "historical",
+      "note": "Conditional nonlinear scalar motion-admission certificate: exact rational inequality replaces derivative-only release and iterative root finding for integer stress exponents 1 through 8. Analytical controls, whole-window refusals and matched decision benchmark pass; not a physical separation law. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_DECOUPLING.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds its own tool/case/method/tests only. No native imports or dependency on the parallel thermal prototype. Runtime version is recorded, not a binary seal. Fixed positive drive and drag, scalar quasi-static direction and integer exponent only. A caller must establish whole-window resistance envelopes on the coupled trajectory. No rupture, geometry/material transfer, general energy or nonlinear D2 integration acceptance. One prepared-law comparison of 100 decisions: 0.0235752 s exact bisection versus 0.0005243 s direct, 0.0230509 s / 97.78% saved. Not a whole-generator or statistically established speedup."
     },
     {
       "id": "i01-transitions-r2",
       "path": "tectonics/evidence/i01-transitions-r2.json",
       "sha256": "5850a6b80e27a798f8c49ffc5d5efc2581198ccdb6749aa22ecc99eddcceb5c7",
-      "status": "current",
-      "note": "Reviewed D6 delivery: six bounded transition controls pass after crossing, atomic-account and observer-frame corrections. Separation, melt-inventory and transmitted-work claims are restricted to the actual reduced models. No generated breakup, subduction initiation or I01 completion claim.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds the tool, case, method document and focused tests before/after the run. Runtime versions are observations, not binary seals; external papers and software are not bound.",
-        "Authored scalar/1D/accounting/instantaneous-junction controls only. The linear separation bound does not certify nonlinear D2 handoff. Melt-column inventory assumes complete extraction for its crust equivalent, not actual evolving supply. Slab work is the reduced transmitted-force balance.",
-        "Thirty-two focused tests pass in 0.087 s; six controls pass in 0.1847716 s after imports. This is not a whole-world run or speedup measurement. Original r1 and I01/D2 source-bound evidence remain unchanged."
-      ]
+      "status": "historical",
+      "note": "Reviewed D6 delivery: six bounded transition controls pass after crossing, atomic-account and observer-frame corrections. Separation, melt-inventory and transmitted-work claims are restricted to the actual reduced models. No generated breakup, subduction initiation or I01 completion claim. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_TRANSITIONS.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds the tool, case, method document and focused tests before/after the run. Runtime versions are observations, not binary seals; external papers and software are not bound. Authored scalar/1D/accounting/instantaneous-junction controls only. The linear separation bound does not certify nonlinear D2 handoff. Melt-column inventory assumes complete extraction for its crust equivalent, not actual evolving supply. Slab work is the reduced transmitted-force balance. Thirty-two focused tests pass in 0.087 s; six controls pass in 0.1847716 s after imports. This is not a whole-world run or speedup measurement. Original r1 and I01/D2 source-bound evidence remain unchanged."
     },
     {
       "id": "i01-transitions-r1",
@@ -703,57 +396,22 @@
       "id": "i01-strength-r1",
       "path": "tectonics/evidence/i01-strength-r1.json",
       "sha256": "d9f8fe199716efc57d0545d6dd237640977f80bb9c9128b51bb307ac7f5d8d85",
-      "status": "current",
-      "note": "Bounded D2 mechanical snapshots couple temperature-dependent creep to total effective-pressure friction. Analytical pressure/temperature oracle, full returned-state momentum/work checks, 17/33/65-grid comparison and nearby-state warm/cold parity pass. Not a thermal evolution, calibrated fault or generated-world acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds the new tool/case/method/tests and retained 2D numerical helper. Recorded runtime versions are not native binary seals; external papers/software are not bound.",
-        "Temperature and nonlocal material history are supplied snapshots, with uniform prescribed reference/pore pressure and authored parameters. No heat/history transport, dislocation creep, elastic memory, calibration, rupture or global generation.",
-        "Warm reuse saves 0.0107423 s (27.23%) in one small same-process observation. This is not a statistically established or whole-generator speedup. The earlier I01 receipts and native sources remain unchanged."
-      ]
+      "status": "historical",
+      "note": "Bounded D2 mechanical snapshots couple temperature-dependent creep to total effective-pressure friction. Analytical pressure/temperature oracle, full returned-state momentum/work checks, 17/33/65-grid comparison and nearby-state warm/cold parity pass. Not a thermal evolution, calibrated fault or generated-world acceptance. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_STRENGTH.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds the new tool/case/method/tests and retained 2D numerical helper. Recorded runtime versions are not native binary seals; external papers/software are not bound. Temperature and nonlocal material history are supplied snapshots, with uniform prescribed reference/pore pressure and authored parameters. No heat/history transport, dislocation creep, elastic memory, calibration, rupture or global generation. Warm reuse saves 0.0107423 s (27.23%) in one small same-process observation. This is not a statistically established or whole-generator speedup. The earlier I01 receipts and native sources remain unchanged."
     },
     {
       "id": "i01-fault2d-r1",
       "path": "tectonics/evidence/i01-fault2d-r1.json",
       "sha256": "2bc45baa382f384ce8a7b000ef5dcd12b35265ed26f861a1582cb918fe369b7a",
-      "status": "current",
-      "note": "Bounded periodic 2D plane-strain numerical probe: spatial/time refinement, oblique analytical laminates, right-angle covariance, homogeneous history and work balance. PASS_BOUNDED_2D_CONTROLS_ONLY, not generated lithosphere acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "Binds the control tool, authored case and method document. Runtime versions/thread policy are recorded, not sealed binaries. Unit-test source and external references are not bound by this receipt.",
-        "Fixed material coordinates, temperature and effective strength; no pressure-sensitive friction, arbitrary-angle nucleation, calibration, finite deformation or rupture. A periodic square has only discrete rotational symmetry; oblique laminate oracles are not 2D fault emergence.",
-        "The default-thread baseline is historical. One wall-time comparison under background load is not a repeated benchmark or whole-generator speedup. Native Atlas source and I01 r1 controls were not edited."
-      ]
+      "status": "historical",
+      "note": "Bounded periodic 2D plane-strain numerical probe: spatial/time refinement, oblique analytical laminates, right-angle covariance, homogeneous history and work balance. PASS_BOUNDED_2D_CONTROLS_ONLY, not generated lithosphere acceptance. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_FAULT2D.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: Binds the control tool, authored case and method document. Runtime versions/thread policy are recorded, not sealed binaries. Unit-test source and external references are not bound by this receipt. Fixed material coordinates, temperature and effective strength; no pressure-sensitive friction, arbitrary-angle nucleation, calibration, finite deformation or rupture. A periodic square has only discrete rotational symmetry; oblique laminate oracles are not 2D fault emergence. The default-thread baseline is historical. One wall-time comparison under background load is not a repeated benchmark or whole-generator speedup. Native Atlas source and I01 r1 controls were not edited."
     },
     {
       "id": "i01-controls-r1",
       "path": "tectonics/evidence/i01-controls-r1.json",
       "sha256": "0a8166560cac314f577468dbd40cff0ff4852f7ec3f1c8d273c97c82348713c4",
-      "status": "current",
-      "note": "Four bounded design controls: exact torque moments/work, candidate 1D softening/localisation, staged spherical-lune ocean accounts and local Airy finite-water level. PASS_BOUNDED_CONTROLS_ONLY; no native package import, full world or scientific acceptance.",
-      "bindings": [
-        {
-          "pointer": "/source_sha256/{key}",
-          "file": "tectonics/{key}"
-        }
-      ],
-      "not_checked": [],
-      "limits": [
-        "The control tool, case policy and physical-contract document are byte-bound. Runtime versions are recorded, not native binary execution identities. The test file and external papers/software are not sealed by this receipt.",
-        "Only the stated analytical and 1D/accounting slices are checked. Two-dimensional fault orientation, generated breakup/subduction initiation, global remapping and coupled regional water/flexure remain open. Timings exclude library imports and are not world-runtime or speedup measurements."
-      ]
+      "status": "historical",
+      "note": "Four bounded design controls: exact torque moments/work, candidate 1D softening/localisation, staged spherical-lune ocean accounts and local Airy finite-water level. PASS_BOUNDED_CONTROLS_ONLY; no native package import, full world or scientific acceptance. Documentation-only reconciliation on 3 November 2026 changed the bound method document (tectonics/docs/I01_PHYSICAL_CONTRACT.md). Scientific contracts, code, cases, tests, thresholds and recorded results are unchanged. The original receipt bytes, SHA-256 and recorded source bindings are preserved; no recapture or scientific rerun occurred. Historical qualification limits: The control tool, case policy and physical-contract document are byte-bound. Runtime versions are recorded, not native binary execution identities. The test file and external papers/software are not sealed by this receipt. Only the stated analytical and 1D/accounting slices are checked. Two-dimensional fault orientation, generated breakup/subduction initiation, global remapping and coupled regional water/flexure remain open. Timings exclude library imports and are not world-runtime or speedup measurements."
     },
     {
       "id": "environment-install",

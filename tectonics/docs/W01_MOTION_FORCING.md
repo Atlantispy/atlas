@@ -1,6 +1,6 @@
 # W01 Stage 6 — prescribed motion to regional forcing
 
-**WORKING NON-CANON; reviewed and integrated locally on 22 September 2026.**
+**reviewed and integrated locally on 22 September 2026.**
 The source basis is the supplied dev42 + implemented/optimised Stage-5 snapshot.
 This stage supplies prescribed kinematic input; it does not derive forces,
 stress, uplift, temperature, damage or mantle evolution from velocity.
