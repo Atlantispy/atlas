@@ -1,11 +1,9 @@
 # W07 regional solver and heterogeneous thermal mechanics
 
-Publication note, 26 September 2026: the linked W07 reports are now
-explicitly redacted historical public copies. Only personal path components,
-publication metadata and affected report-file digests changed; measurements
-and original scientific source/runtime identities did not. The digests below
-identify those public copies, not the original run artefacts. See the
-[before/after trail](../evidence/public-path-redaction-r1.json).
+The linked reports are redacted historical public copies. Publication changed
+personal paths and report digests, not the recorded measurements or scientific
+source/runtime identities; the [redaction record](../evidence/public-path-redaction-r1.json)
+retains the boundary.
 
 Implementation and acceptance record, 22 September 2026.
 Completion status: **STEP 2 COMPLETE; bounded numerical acceptance and reuse measured.**
@@ -149,8 +147,7 @@ fails between the start of its numeric refill and its acceptance leaves the plan
 invalid: the solver core may hold coefficients that the plan's definition does
 not name. Nothing is rolled back and the state is never cleared. Every operation
 except `close` then refuses with "regional plan invalidated by an interrupted
-coefficient refill; close it and prepare a new plan" (R7 repair, 1 October 2026
-candidate; before it this refusal read as a closed, active or wrong-thread
+coefficient refill; close it and prepare a new plan" (R7 repair, integrated 2 October 2026; before it this refusal read as a closed, active or wrong-thread
 plan). Closed, active and wrong-thread calls are tested first and keep that
 older refusal, so a call made while a refill is still running is not reported as
 interrupted. The read-only `usable` property is False once the plan is closed or

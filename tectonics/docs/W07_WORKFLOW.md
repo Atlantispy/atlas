@@ -1,11 +1,9 @@
 # W07 Step 5 — geological assembly and recoverable execution
 
-Publication note, 26 September 2026: the linked W07 reports are now
-explicitly redacted historical public copies. Only personal path components,
-publication metadata and affected report-file digests changed; measurements
-and original scientific source/runtime identities did not. The digests below
-identify those public copies, not the original run artefacts. See the
-[before/after trail](../evidence/public-path-redaction-r1.json).
+The linked reports are redacted historical public copies. Publication changed
+personal paths and report digests, not the recorded measurements or scientific
+source/runtime identities; the [redaction record](../evidence/public-path-redaction-r1.json)
+retains the boundary.
 
 23 September 2026. Step 5 complete for the routes below;
 assembled acceptance and matched recovery measurement PASS. The [Step 1 design](W07_REGIONAL_MECHANICS.md) and
@@ -30,7 +28,7 @@ datum and source identities. Raw construction of the geological binding refuses.
 Inward-positive source depth becomes upward-positive mechanical z explicitly.
 The external surface pressure has no assumed value: the caller states
 `external_pressure_pa`, zero gauge as an explicit `0.`, and an unstated pressure
-is refused (R7 repair, 1 October 2026 candidate; before it, it silently became 0 Pa).
+is refused (R7 repair, integrated 2 October 2026; before it, it silently became 0 Pa).
 
 Pure ordered horizontal layers supply point viscosity at cell centres and exact
 vertical-series compliance over shear dual intervals. This is a stated series
@@ -81,7 +79,7 @@ mechanical field is unchanged; the heat receipt binds that field's identity,
 transported velocity hashes and maximum correction. This resolves near-rest
 round-off without clipping small physical velocities or relaxing solver gates.
 A restore regenerates that record from the stored mechanical field and requires
-the stored record to equal it (R7 repair, 1 October 2026 candidate; see
+the stored record to equal it (R7 repair, integrated 2 October 2026; see
 [the heat-coupling record on restore](#recovery-storage-and-resource-ownership)).
 
 ## Recovery, storage and resource ownership
@@ -112,7 +110,7 @@ seeds only its validated endpoint into the prepared solver. Initial-state, actua
 force-array, dry-strength linear-origin and surface-history checks also apply on
 restore, including when a corrupted record has internally consistent hashes.
 
-**Heat-coupling record on restore (R7 repair, 1 October 2026 candidate).** A heat
+**Heat-coupling record on restore (R7 repair, integrated 2 October 2026).** A heat
 interval is carried by one mechanical field, its input mechanics: the solve at
 the geological epoch for a first interval, the parent output's endpoint
 mechanics for a later one. The heat receipt's coupling record names that field
@@ -260,7 +258,7 @@ rather than increasing the 2 MiB source-inventory limit. Final inventory is
 must address the bounded representation explicitly; no physical fields were
 removed. No numerical tolerance, grid or physical duration was changed to pass.
 
-**Interrupted dry-strength refill (R7 repair, 1 October 2026 candidate).** The
+**Interrupted dry-strength refill (R7 repair, integrated 2 October 2026).** The
 steady dry-strength route lends the workflow's own regional plan to the C01
 Picard loop, which refills the plan's stress-site viscosity at every iteration.
 A refill that is cancelled or fails between the start of its numeric part and
