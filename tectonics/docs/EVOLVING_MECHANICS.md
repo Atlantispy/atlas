@@ -1,7 +1,7 @@
 # Evolving mechanics and supported tectonic histories
 
 23 September 2026. Local implementation on `remake`.
-This is the next tectonics increment after [underthrusting](UNDERTHRUST.md),
+This is the next tectonics increment after [underthrusting](W08_SHORTENING.md#prescribed-collision-and-underthrusting),
 not W09 surface-process expansion. Existing modules stay in place. The later
 [dated-history section](#tectonics-continuation-step-4-supported-dated-histories)
 records supported continuation and recovery for these inputs and underthrusting.

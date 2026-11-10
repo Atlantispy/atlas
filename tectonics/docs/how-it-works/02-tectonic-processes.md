@@ -416,7 +416,7 @@ explicit exterior retain volume, mass and signed enthalpy.
 Supplied boundary work in joules and gravitational potential-energy change remain
 separate. Their difference is not automatically converted into heat. The
 [underthrust tests](../../tests/test_underthrust.py),
-[method/source discussion](../UNDERTHRUST.md) and
+[method/source discussion](../W08_SHORTENING.md#prescribed-collision-and-underthrusting) and
 [receipt](../../evidence/underthrust-r1.json) cover exact maps, side preservation,
 path occupancy and finite accounts. This is a structural motion model, not a
 self-consistent collision dynamics calculation.
