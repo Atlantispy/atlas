@@ -355,11 +355,14 @@ Both outcomes are regime diagnostics at the sampled states:
 
 | Record | Trigger | What changes | What does not |
 | --- | --- | --- | --- |
-| Mechanical decoupling (D6 `atlas.rift-decoupling-handoff.v1`) | `phi = F_t/F_drive <= eps_v` | The solver may treat the belt as a weak coupling | Material stays connected; no new area, no boundary split |
+| Mechanical decoupling (D6 `atlas.rift-decoupling-handoff.v1`) | In this control, `phi = F_t/F_drive <= eps_v` | The control may treat the belt as a weak coupling | Material stays connected; no new area, no boundary split |
 | Material separation (`atlas.connectivity-loss-event.v1`) | A future resolved certificate (section 5); not issued by this closure | Split at the neck by current material position; fresh divergent boundary; margins keep cohorts, ages, heat and D2 memory | No ocean crust is created by the split |
 | Magmatic ocean birth (D3 `atlas.decompression-supply.v1`) | Opening after separation plus an actual melt/enthalpy source | New cohorts from the supply | Exhumed mantle is never relabelled as basalt |
 
-In this chain `phi` decreases monotonically, so decoupling is permanent once reached.
+In this fixed-state, linear-far-drag chain, `phi` is the instantaneous relative
+velocity difference and decreases monotonically, so its control handoff persists.
+This is not a general D6 certificate: nonlinear or history-dependent belts need
+the actual coupled-versus-replacement and whole-window error checks in [transitions §3](I01_TRANSITIONS.md#3-continental-separation-atlasrift-decoupling-handoffv1).
 The control shows two things:
 
 - For `n = 3`, decoupling comes before the analytical pinch-off, with a finite interval

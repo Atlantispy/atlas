@@ -1,8 +1,8 @@
 # I01 reversible pressure changes with composition and energy
 
 27 September 2026. Bounded ideal-mixture connection, not a
-calibrated mantle law or native ascent/emplacement. This method is frozen before
-the source-bound campaign; measured results belong in the current-evidence record.
+calibrated mantle law or native ascent/emplacement. The method was frozen for
+the recorded source-bound campaign; its results belong in the evidence register.
 
 ## Why this connection exists
 

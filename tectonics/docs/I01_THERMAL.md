@@ -255,7 +255,8 @@ and additional mechanics laws are refused. Two added regression tests cover thes
 cases (13 focused tests total). The separate translation control remains a
 transport-only check, not evidence of finite-strain coupled advection.
 
-The [original r1 receipt](../evidence/i01-thermal-r1.json) is retained byte-identical
-as historical evidence; r2 binds the corrected tool, tests and explanation.
+The [original r1 receipt](../evidence/i01-thermal-r1.json) is retained as historical
+evidence. R2 bound the corrected tool, tests and then-current explanation at capture;
+it is now historical after later documentation changes, as the [evidence register](../../docs/CURRENT_EVIDENCE.md) records.
 No constitutive law, case input or numerical acceptance tolerance changed.
 The unchanged strength/fault helper checks are reused, not rerun for handoff.

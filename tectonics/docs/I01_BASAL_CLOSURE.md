@@ -652,9 +652,9 @@ and no output was fitted.
 
 ## 10. Results
 
-None are recorded here. The coordinator runs the focused tests and the bounded campaign. Any
-reviewed receipt belongs in the [current evidence register](../../docs/CURRENT_EVIDENCE.md),
-not in this source-bound document.
+The bounded controls and their limits are recorded in the [basal closure receipt](../evidence/i01-basal-closure-r1.json)
+and [evidence register](../../docs/CURRENT_EVIDENCE.md). The receipt is historical after
+method-prose changes; it has not been recaptured or extended into I07 acceptance.
 
 ## 11. Remaining work and blocked parts
 
@@ -671,8 +671,8 @@ not in this source-bound document.
   same law, as a sensitivity that is never tuned.
 - **The Winkler or free-slip comparison arm** needs the SLIM3D Winkler formulation (Popov and
   Sobolev 2008, not read) and the side-mesh convention of Brune's free-slip test.
-- **Interior melting.** Rising 1613 K rock crosses the quoted dry solidus near 2.08 GPa. That
-  needs MC-03, or the run must refuse.
+- **Interior melting.** Rising 1613 K rock crosses the quoted dry solidus near 2.08 GPa. The selected MC-03 route has bounded feasibility, but full melt integration remains
+  later work; until the relevant connection is implemented and admitted, the run must refuse.
 - **Force-driven sides**, taken from the D1 balance, belong to I04/I09.
 - **I05 transport** will use the cohort interface: moving surfaces, conduction of the inflow
   cohorts and the chain columns.

@@ -68,9 +68,9 @@ would instead imply 1,800 kg.
 
 This accepts sourced `K` at P/T, not a calibrated mantle model or a phase diagram
 inferred from desired melt amounts. The fixture is analytical. No MagmaticPayload
-or cooling result is produced. The shared provider still must supply compatible
-`F,c_s,c_l,h_s,h_l`, a common energy datum, composition evolution and pressure-work
-convention. Only then can extraction transfer `dm_i=dm*c_l_i`, `dH=dm*h_l` into
+or cooling result is produced. An experimental [common-Gibbs provider](I01_THERMO_PROVIDER_CONTRACT.md#8-implemented-common-gibbs-connection) exists;
+the integrated route still needs a compatible provider supplying `F,c_s,c_l,h_s,h_l`,
+a common energy datum, composition evolution and a pressure-work convention. Only then can extraction transfer `dm_i=dm*c_l_i`, `dH=dm*h_l` into
 existing W08 emplacement without its incompatible common-Tm source inversion.
 Temperature evolution, reaction kinetics, permeability, compaction and physical
 extraction amount remain named closures. Prescribed splitting is not crust supply.

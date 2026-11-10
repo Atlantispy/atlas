@@ -144,7 +144,7 @@ python -B tectonics/tools/check_i01_lateral_heat.py --output NEW_PATH.json
 The command writes only a new exclusive receipt and binds these four new files
 before and after execution. Failures are retained. No benchmark or broad
 simulation is required. Execution results belong in the new receipt and current
-owner record, not edits to this source-bound method after the run.
+owner record. Later method-document edits do not renew an old source binding.
 
 ## Sources checked
 

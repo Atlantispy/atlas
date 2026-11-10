@@ -173,10 +173,12 @@ compare the actual coupled and proposed replacement solutions, with a declared
 norm/reference scale and history-window error bound. Until that certificate and
 the resolved physical separation law exist, generated separation stays blocked.
 
-**Transfer at handoff.** Split the belt's material at the separation axis, the
-locus of minimum integrated strength in the resolved solution, by exact
-intersection of *current material position*: ownership follows material, not the
-original plate ID. All thinned crust and mantle stay continental margin cohorts
+**Handoff and separation transfer.** A weak-coupling handoff alone does not split
+connected material or change plate ownership. After separately admitted
+through-lithosphere separation with a valid network and transaction, split the
+belt's material at the separation axis, the locus of minimum integrated strength
+in the resolved solution, by exact intersection of *current material position*:
+ownership follows material, not the original plate ID. All thinned crust and mantle stay continental margin cohorts
 with their ages, thermal histories and D2 memory. The new boundary has a fresh ID;
 its new area comes only from D3 birth with the section 4 supply. In D1, the belt's
 coupling term is removed. Before handoff, driving work equals far-field
