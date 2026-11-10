@@ -845,7 +845,8 @@ The candidate counts are not a new run or a current-source receipt.
   - `I01_CLOSURE_MATRIX.md` (CM-02, CM-05 to CM-08, MC-01, MC-04, MC-06, IN-02/04/05/06);
   - `I01_LATERAL_HEAT.md`, `I01_BASAL_CLOSURE.md`, `I01_SEPARATION_FEASIBILITY.md`, `I01_ELASTIC_MEMORY.md`,
     `I01_BREAKUP_CLOSURE.md` and `I01_WEAKENING.md`;
-  - `W03_THERMAL_COLUMNS.md`, `W03_COMPACTION.md`, `W06_COOLING.md` and `W07_HETEROGENEOUS_THERMAL.md`;
+  - `W03_THERMAL_COLUMNS.md`, `W03_COMPACTION.md`, `W06_COOLING.md` and the former `W07_HETEROGENEOUS_THERMAL.md` (now
+    [W07 Step 3](W07_REGIONAL_SOLVER.md#w07-step-3--heterogeneous-and-thermal-mechanics));
   - `I03_SPHERICAL_NETWORK.md` and `I04_I05_PORTS.md`;
   - Droniou (2014) and Fazio–LeVeque, as cited by `I01_LATERAL_HEAT.md`.
 - **Newly consulted:** the FiPy official documentation (§2 R-1).

@@ -256,7 +256,7 @@ a result.
 [strength tests](../../tests/test_w07_regional_strength.py) and
 [interface references](../../tests/test_w07_interface_reference.py) check analytic
 shear, factors and units, pressure-datum behaviour, current-law residuals and sharp
-viscosity contrasts. The [method record](../W07_HETEROGENEOUS_THERMAL.md) explicitly
+viscosity contrasts. The [method record](../W07_REGIONAL_SOLVER.md#w07-step-3--heterogeneous-and-thermal-mechanics) explicitly
 separates two conflicting SolCx forcing descriptions. Agreement with one must not
 be claimed as testing the other. Perfect yielding supplies no physical shear-band
 width or proof of mesh-independent localisation.

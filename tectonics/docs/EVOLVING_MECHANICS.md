@@ -101,7 +101,7 @@ which material the operator holds. Before the repair the interface assumed it
 still held the previous one and kept the operator whatever had happened:
 
 - after a cancellation or failure during the refill it held an operator that
-  [refuses every operation](W07_HETEROGENEOUS_THERMAL.md), so every later request
+  [refuses every operation](W07_REGIONAL_SOLVER.md#w07-step-3--heterogeneous-and-thermal-mechanics), so every later request
   was refused, and a tectonic history on this route could not resume;
 - after a cancellation at the closing check it held the new material under the
   previous material's label, so the next request carrying the previous material
