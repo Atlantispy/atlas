@@ -1,6 +1,6 @@
 # Certificate implementation outcome
 
-**Current actual-source result:** the later [exact-version comparison](../MEASUREMENTS.md) improves the rank-20 complete r3 attempt by 3.340% and solve by 4.800%; rank-4 solve regresses4.646% and its r3 attempt is effectively flat. C3 is retained as an unenabled source candidate with mixed performance. The prototype selection table below is earlier evidence, not the final implementation percentage.
+**Current actual-source result:** the later [exact-version comparison](../MEASUREMENTS.md) improves the rank-20 complete r3 attempt by 3.340% and solve by 4.800%; rank-4 solve regresses 4.646% and its r3 attempt is effectively flat. C3 has mixed performance and is selected in the additive [receiving generation](../../integration-r2/README.md), not enabled as a production default. The prototype selection table below is earlier evidence, not the final implementation percentage.
 
 Implemented **C3 only**, as full additive Python certificate and compiled-dot source successors, plus the parallel caller's two corresponding source pins. Nothing selects this generation in production or starts a worker. C15-first readiness was conditional on savings; the actual measurements do not support it.
 

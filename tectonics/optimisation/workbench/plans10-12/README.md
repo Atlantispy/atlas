@@ -55,10 +55,10 @@ The stale bundled reuse test and outdated reader-order wording are corrected.
 
 | Original measured scope | Reference | Selected outcome | Limit |
 |---|---|---|---|
-| Heat W4 control | lw109.625s mean | lf3 80.742s;26.347% less | Not a full-interval saving; H5a was6.067% slower and stays off. |
-| ROOT producer/reader cohort | Sequential1701.781s | Overlap1172.375s;31.1089% less | One pair; sampled arm RAM74.2286% higher; original profile only. |
-| Producer initial-measurement reuse |969 recorded queries |969hits/0misses;134.078s runner | No matching unseeded smoke baseline; reader recomputation unchanged. |
-| New integration qualification | No equivalent earlier combined run | Orchestration7.376s/0.06GiB; heat21.614s/0.19GiB sampled queue peaks | Validation costs, not speedup measurements. |
+| Heat W4 control | lw 109.625 s mean | lf3 80.742 s; 26.347% less | Not a full-interval saving; H5a was 6.067% slower and stays off. |
+| ROOT producer/reader cohort | Sequential 1701.781 s | Overlap 1172.375 s; 31.1089% less | One pair; sampled arm RAM 74.2286% higher; original profile only. |
+| Producer initial-measurement reuse | 969 recorded queries | 969 hits/0 misses; 134.078 s runner | No matching unseeded smoke baseline; reader recomputation unchanged. |
+| New integration qualification | No equivalent earlier combined run | Orchestration 7.376 s/0.06 GiB; heat 21.614 s/0.19 GiB sampled queue peaks | Validation costs, not speedup measurements. |
 
 These component results cannot be added or multiplied into a whole-interval gain.
 The source-package increase is 38,932 logical bytes (0.254%); this is not interval

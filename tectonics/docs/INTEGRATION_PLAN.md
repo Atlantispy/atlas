@@ -288,10 +288,11 @@ connections. Unsupported required physics is a blocker, not a reduced default.
 
 **Focused brief: retain the established baseline.** Reuse the
 [physical contract](I01_PHYSICAL_CONTRACT.md), [closure matrix](I01_CLOSURE_MATRIX.md)
-and their current evidence. The seven choices have bounded support; the matrix
-still records final finish-rule review with the integrating owner. The status of
-that review has not been reconciled with earlier baseline-completion wording.
-No new I01 coding/research assignment is needed merely to start a later stage. If an implementation exposes a specific missing equation,
+and their current evidence. The [integrating baseline](https://github.com/Atlantispy/atlas/blob/577c044425e83a2383cc83a0041e57b2dd891e43/docs/CURRENT_STATE.md#L56-L67) records all seven method
+choices, their contracts and bounded feasibility as complete. The matrix assigned
+final review to the integrating owner; a separate sign-off is not identified in
+the surviving records. Full physical-event and planetary acceptance remain later
+work. No new I01 coding/research assignment is needed merely to start a later stage. If an implementation exposes a specific missing equation,
 input, ownership rule or invalid assumption, isolate that question, consult the
 primary source already cited by its method document, correct the affected contract
 and test only the changed claim. Return the resolved requirement to its named

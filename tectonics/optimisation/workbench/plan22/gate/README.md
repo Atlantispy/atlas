@@ -94,8 +94,10 @@ before any publication. No result is written for early refusal.
 
 Neither status selects L3 by default, qualifies a combined IV run, measures a
 speed gain, releases an execution hold or establishes scientific acceptance.
-The S1A integration, D-22r timing and final enabling selection retain their own
-requirements. Historical gate results are not rebound to these changed bytes.
+The [S1A source integration](../../plan30/s1a/README.md) and [D-22r component
+comparison](../README-r4.md) are complete within their respective scopes. Final
+stack timing, runtime/default enablement and scientific acceptance remain separate.
+Historical gate results are not rebound to these changed bytes.
 [SOURCE-MAP-r4.json](SOURCE-MAP-r4.json) is the current source map. It records the
 changed gate, S3 child and control-test identities, the new control result, and the
 complete expected public membership excluding only its own self-hash. Its README

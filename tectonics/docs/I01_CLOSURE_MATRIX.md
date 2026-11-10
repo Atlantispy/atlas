@@ -411,9 +411,9 @@ MC-01 has passed resolved-strip controls and selected irreversible bond history.
 Their I01 choices are selected, while full event acceptance remains with I07 and
 the shared-state owners. MC-03 now combines the retained G25 checks, nine passed
 instantaneous segregation controls and the selected flow/thermal contract. All
-seven MC choices have selection/feasibility support; the plan's I01 closure review
-remains with the integrating owner, and full physical acceptance stays later work.
-Selection does not certify the later coupled application.
+seven MC choices have selection/feasibility support. The [integrating baseline](INTEGRATION_PLAN.md#i01--freeze-the-end-to-end-contract-and-physical-closure-choices)
+records the bounded I01 outcome as complete; full physical acceptance stays later
+work. Selection does not certify the later coupled application.
 
 | ID | Priority | Item | Exact reason | Interim | Builder | Source |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -665,9 +665,8 @@ cohort/bond transport; I07 implements the original full-neck comparison, includi
 the negative example, fixed-ell refinement, thermal/material evolution and basal
 sensitivity; I03/I07 cover exterior and along-strike paths. I02's declared `eps_v`
 and bounded persistence/commit machinery must be consumed by the later world event.
-This record starts none of those
-increments. I01's seven selections now have bounded support; its final finish-rule
-review remains with the integrating owner.
+This record starts none of those increments. I01's seven selections have bounded
+support; the integrating baseline records that scoped outcome as complete.
 
 **Files.** `tectonics/docs/I01_SEPARATION_DECISION.md` and
 `tectonics/cases/i01_separation_decision_v1.json`, plus one paragraph in section 7 of
@@ -725,8 +724,9 @@ The original consistency pass used the corrected separation controls (record r4,
 recaptured after the LF receipt-writer correction), initiation r1 and junction r1
 controls, the plan's I01 finish boundary and the selected melt
 route, plus the delivered melt-segregation receipt and its documented prose-only
-drift. It adds no simulation or physical acceptance; I01's final closure review
-remains with the integrating owner.
+drift. It adds no simulation or physical acceptance. The original handoff left
+final review with the integrating owner; the [integration plan](INTEGRATION_PLAN.md#i01--freeze-the-end-to-end-contract-and-physical-closure-choices)
+records the surviving completion and sign-off distinction.
 
 The subsequent I01 repair refreshed heat, thermomechanical motion, finite strain,
 admission, breakup and G25 receipts after enforcing actual thermal density and

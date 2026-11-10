@@ -64,4 +64,4 @@ python -B measure_c8_receiver.py --repo CHECKOUT --smoke --output NEW_SMOKE.json
 python -B measure_c8_receiver.py --repo CHECKOUT --benchmark --output NEW_MEASUREMENT.json
 ```
 
-The actual additive receiver is complete, callable and integrated for its accepted source-only scope. Selecting it in the held full forward/issuer route, modifying the frozen source map/profile, worker dispatch, whole-programme integration and scientific acceptance remain separate authority/source gates. The original selected r5/r4 and their consumers still select the original r2.
+The actual additive receiver is complete, callable and integrated for its accepted source-only scope. The later [receiving generation](../../integration-r2/README.md) selects C8 on the forward route and binds the issuer closure. Actual held full-forward execution, changes to a frozen source map/profile, worker dispatch, whole-programme integration and scientific acceptance remain separate. The original selected r5/r4 and their consumers still select the original r2.

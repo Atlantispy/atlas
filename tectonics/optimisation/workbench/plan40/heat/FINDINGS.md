@@ -10,9 +10,10 @@ This is the heat workstream
 of Plan40, not a new plan or work package. Pressure 40A and the later native
 kernel design retain their separate acceptance requirements.
 
-The most promising additional work is exact polynomial reuse inside the existing
+The original source analysis prioritised exact polynomial reuse inside the existing
 admission sequence, followed by reuse of immutable reconstruction preparation.
-The smaller opportunities remove demonstrably redundant construction or repeated
+The later [prototype measurements](testing/MEASUREMENTS.md) did not adopt C1 or C2
+after their measured regressions in those fixtures. The smaller opportunities remove demonstrably redundant construction or repeated
 conversion within an owned calculation. There is no measured whole-interval gain
 for these proposals. Heat's importance to interval time is a reason to prioritise
 its repeated work, not to add overlapping historical speedups.
@@ -30,7 +31,7 @@ the proposed optimisations.
 ## Source generation and evidence boundary
 
 The examination starts from commit `0a2855125b79abcb4e05cf090adf46dcc8b1c80b`
-and the [637-member selected source map](../../plans19-20/SOURCE-MAP.json), SHA-256
+and the [637-member selected source map](https://github.com/Atlantispy/atlas/blob/0a2855125b79abcb4e05cf090adf46dcc8b1c80b/tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json), SHA-256
 `ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc`.
 Its public selection identity is
 `dce2275046a2f8f9deb809bdb8a02e90bee65f777bb70919048e2c5ef583befb`.

@@ -62,7 +62,7 @@ coverage does not establish spawned transport or whole-IV benefit.
 
 ## Selected source and execution identities
 
-Base public commit: `0a2855125b79abcb4e05cf090adf46dcc8b1c80b` on `review/optimisation-20261016`. The [Plans19–20 source map](../../plans19-20/SOURCE-MAP.json) has file SHA-256 `ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc` and selected-member digest `dce2275046a2f8f9deb809bdb8a02e90bee65f777bb70919048e2c5ef583befb`. All named examined source files match its selected public hashes. The map binds source publication, not an executable combined runtime.
+Base public commit: `0a2855125b79abcb4e05cf090adf46dcc8b1c80b` on `review/optimisation-20261016`. The [Plans19–20 source map](https://github.com/Atlantispy/atlas/blob/0a2855125b79abcb4e05cf090adf46dcc8b1c80b/tectonics/optimisation/workbench/plans19-20/SOURCE-MAP.json) has file SHA-256 `ce77c8f2922e0d8780e241ba9204e775388fa093935968eaee7c577606baaccc` and selected-member digest `dce2275046a2f8f9deb809bdb8a02e90bee65f777bb70919048e2c5ef583befb`. All named examined source files match its selected public hashes. The map binds source publication, not an executable combined runtime.
 
 Source aliases below are relative to `tectonics/optimisation/`:
 

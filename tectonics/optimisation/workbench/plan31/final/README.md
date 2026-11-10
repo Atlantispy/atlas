@@ -3,8 +3,9 @@
 The source composer connects the accepted full-B source arm,
 Tier1 observation wiring and paired receiving ports through their actual existing
 APIs. It keeps all 697 members (287 native and 410 helpers), applying only the
-15 declared source rows relative to S1A. Private A1 and N9 width are unselected;
-condition 5 remains held. No IV, runtime/default or scientific authority follows.
+15 declared source rows relative to S1A. This original constructor does not select
+private A1 or N9 width; the later [guarded width successor](#guarded-width-source-successor)
+is a separate bounded source composition. Condition 5 remains held. No IV, runtime/default or scientific authority follows.
 
 From an explicit checkout, choose a new output directory outside the checkout:
 

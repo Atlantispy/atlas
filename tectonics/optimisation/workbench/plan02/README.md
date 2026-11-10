@@ -26,9 +26,9 @@ existing producer output; it does not change simulation calculations.
 [SOURCE-MAP.json](SOURCE-MAP.json) maps all 25 logical source/document members
 to their original and public SHA-256 values. Each `public_path` is relative to
 the repository root. Nine byte-identical fresh-route source/test members refer
-to existing files in `optimisation/drivers/`; the other 16 remain here. Their
-original and public hashes are unchanged. The root optimisation manifest lists
-each physical exported file.
+to existing files in `optimisation/drivers/`; the other 16 remain here. The map
+records each member's original and public identity separately. The root
+optimisation manifest lists each physical exported file.
 
 `start_gate.py` is intentionally retained here despite matching the driver copy:
 the remaining prepared-route modules and tests import it as a local sibling.
