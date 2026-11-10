@@ -8,6 +8,11 @@ The subsequent [Stage-8 assessment](#stage-8-combined-acceptance) checks this
 assembled route. Reopened S3C acceptance, unrestricted spherical dynamics and
 R4.4 remain separate. No long simulation was run to implement this bridge.
 
+The sections also describe the [initial sampler](#initial-condition-sampling),
+[prescribed-motion forcing](#prescribed-motion-to-regional-forcing) and the
+[plate-independent R2 substrate](#3cr2-initial-state). Each retains its own
+support and acceptance limits.
+
 ## Public workflow
 
 `PreparedRegionalWorkflow(initial, definition, section, reduction, grid, support)`

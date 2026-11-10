@@ -1,5 +1,17 @@
 # Numerical foundations and local-law contracts
 
+This document collects the foundational cases and the later regional and
+thermomechanical contracts. Follow a section for its actual scope; component
+verification does not establish whole-generator or physical acceptance.
+
+- [Foundation case and numerical contract](#foundation-case-and-numerical-contract)
+- [W02 regional material transport and histories](#w02-regional)
+- [W01 coordinates, geometry and geological descriptions](#w01-coordinates)
+- [R4.1–R4.3 rectangular thermomechanics](#rectangular-thermomechanics-component-contracts)
+- [R3 local rheology and memory](#3cr3-physical-closure)
+- [R4.4 mature convection acceptance](#3cr4-4-convection)
+
+
 ## R4.3 variable-stress component (revision 34)
 
 The rectangular variable-viscosity MAC component uses normal stress at centres,
