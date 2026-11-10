@@ -1372,343 +1372,101 @@ installed delivery and scientific acceptance remain separate.
 
 ### Prepare an independent reader while a private producer runs
 
-On the selected private fresh-interval route, a reader prepares independently
-while the producer computes. It cannot read or adopt the result until the
-producer stops cleanly, the sealed result and processes are authenticated, memory
-is rechecked and the independent comparison and verification pass. Cancellation,
-guard failure or launcher loss stops it; a narrowly authorised fallback never
-starts the next producer speculatively.
-
-[The interval-chain method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)
-owns the gates and measured ROOT-only time/RAM trade-off. The [combined source](../../optimisation/workbench/plans10-12/README.md)
-adds the selected heat route; full intervals and cold recovery remain separate,
-held work. Neither preparation overlap nor a producer-only smoke proves reader
-adoption, a whole-interval gain or new physical acceptance.
+A reader can prepare while a private producer works, but adoption waits for the
+producer's clean exit, authentication, resource checks and independent verification.
+The [interval-chain method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)
+sets those gates and the measured time/RAM trade-off. A producer-only smoke or
+preparation overlap does not establish full-interval performance or physical acceptance.
 
 ### Compile heat certificates and observe the conservative finish
 
-The selected heat candidate batches directed MPFR certificate operations while
-preserving the original expressions as a fallback, rounding, precision and heat
-accounts. Shared endpoint certificates and deterministic width witnesses avoid
-repeated work; observation markers measure the conservative finish without
-changing its physics. The [Plan13/14 owner](../../optimisation/workbench/plans13-14/README.md)
-records its exact comparisons, component time/RAM trade-off and limits.
-
-The [Plan40 heat findings](../../optimisation/workbench/plan40/heat/FINDINGS.md)
-distinguish exact reuse candidates from slower, excluded or unselected changes.
-Its [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
-selects C3 and forward-only C8, excludes C13, and binds the affected certificate,
-forward, ownership and restoration consumers. These source/component results do
-not establish runtime admission, migration of old checkpoints, full-interval
-benefit or scientific acceptance; run holds remain unchanged.
+The selected heat route reuses certificate work and retains the original rounding,
+precision and heat accounts. The [Plan13/14 record](../../optimisation/workbench/plans13-14/README.md)
+owns the comparisons. [Plan40 heat](../../optimisation/workbench/plan40/heat/FINDINGS.md)
+selects C3 and forward-only C8 while excluding C13; its
+[receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
+does not establish runtime admission, old-checkpoint migration or whole-interval benefit.
 
 ### Reduce repeated pressure arithmetic while preserving certified bounds
 
-The [Plan40 pressure successor](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
-can use value-only midpoint bounds and bounded worker-local reuse where admitted,
-falling back to the original calculation otherwise. It preserves interval
-derivatives for certification, ordered outward rounding, refinement limits,
-resource admission and cleanup. Its [source and runtime receiving route](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
-connects the selected modules to the existing loader and pressure worker.
-
-The owner record distinguishes measured component gains, fallback regression,
-source/identity controls and excluded candidates. Those observations do not
-establish the production workload mix, a whole-interval benefit, a changed default
-or scientific acceptance.
+The [Plan40 pressure route](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
+reuses bounded worker-local calculations where admitted and retains the original
+fallback, directed bounds and resource controls. Its
+[runtime selection](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
+does not establish a changed default, whole-interval benefit or scientific acceptance.
 
 ### Choose rolling geometry workers from an authenticated parent
 
-The private source successor uses the adopted parent interval's producer receipt
-to choose the ordinary successor's worker ceiling. Its hash, profile, interval,
-runner and seal must agree with the existing lineage. Actual parent RSS and
-logical peaks feed the retained resource formula: four by default, six only
-when CPU, physical RAM and logical booking all fit. Missing measurements refuse.
-Native sessions still apply their own admission cuts. Pressure, interval-one
-serial execution, explicit serial comparisons and approved recovery retain their
-separate rules; changing the profile requires a newly eligible ROOT.
-
-The [Plan16 mechanism and source map](../../optimisation/workbench/plan16/README.md)
-describe the unchanged exact worker/rolling/endpoint-clamp implementation and
-the new driver bindings. One IV2 shard 0/20 proof used six actual workers and
-matched serial records/streams exactly. Its component elapsed time fell 55.45%
-against the retained serial observation, at a sampled guarded tree peak of
-1.34 GiB. Historical load metadata is incomplete; neither this result nor sums
-of separate component peaks establish whole-interval performance. Existing
-resource limits, source identities and scientific/interval holds remain.
+The [Plan16 selection](../../optimisation/workbench/plan16/README.md) sets a successor's
+worker ceiling from authenticated parent measurements and resource limits. Its sampled
+geometry proof and timing are component evidence, not whole-interval performance.
 
 ### Look ahead across supports to keep endpoint workers busy
 
-Component-volume geometry adopts each support's endpoint results in a fixed
-router order. The earlier endpoint route clamped worker batches to 32 jobs and 64
-requests. The [Plan18 method record](../../optimisation/workbench/plan18/README.md)
-uses the scheduler's general bounds instead: 512 jobs per batch and a
-4,096-request horizon. It also lets one or two endpoint workers compute ahead
-across later supports. These are configurable policy defaults, not physical
-limits. The scheduler's existing capacity checks and batch-input limit still
-apply, and geometry, numerical and transport limits are unchanged.
-
-The parent still projects every routing row and adopts results strictly in
-serial router order. A support read ahead contributes only a small summary:
-logical cell id, parent flag, constraint count and partition-path length. Each
-ahead-read support is bound to its index and identifier. A mismatch stops the
-lookahead and leaves serial evaluation to continue, so a mismatched worker result
-is never adopted. Compact supports are never projected ahead of their router
-position. Workers engage only when the projected remaining endpoint time passes a
-gate, 120 s by default. The horizon bounds outstanding requests, not every
-projected support: empty-support tails may be read through and keep small index
-entries until they are bound.
-
-One exact five-arm comparison measured the endpoint loop alone. It replayed
-captured interval-2 and interval-1 supports through a dedicated endpoint runtime,
-and the ordered endpoint records were identical in every arm (27,004 and 7,181).
-With two workers, endpoint time fell from 451.32 to 274.23 s on interval 2 (1.65×)
-and from 111.00 to 96.35 s on interval 1 (13.2% less). A 30 s gate gave no
-observed further gain, so the default stays; one replay cannot show that a lower
-gate never helps. When the machine refuses workers, the replay runtime stops,
-whereas the integrated route defers. The replay did not run the integrated
-successor, and no whole interval was timed. The earlier figure of 402 → 217 s
-was a projection.
+[Plan18](../../optimisation/workbench/plan18/README.md) allows bounded endpoint
+lookahead while retaining serial adoption order, resource admission and refusal on
+mismatched inputs. Its timing comes from a detached endpoint replay, not a run of
+the integrated successor or a whole interval.
 
 ### Retain only plain support headers on the compact route
 
-On the compact route, each projected support keeps a handle for the whole
-interval. Before this change, each handle's header kept live record-field
-exports. They were booked at about 0.2 MiB each against the scope's fixed 256 MiB
-retained budget, so a closure proof refused interval 1 after about 1,168 of its
-2,016 supports. Handles now keep deep-copied plain header values, charged at
-their measured size to the run budget, and release the exports. Records and
-routing order are unchanged.
-
-Each retained share also keeps an ownership carrier. Carriers book 2,112 B
-instead of the general 4,096 B owner floor. The figure is 1.25 times the worst
-size measured, rounded up to 64 B. The measurement used Python's
-[tracemalloc](https://docs.python.org/3/library/tracemalloc.html) in a synthetic
-sweep of 24,000 carriers on a cold retained scope: worst 1,674.8 B, mean 1,486.0 B.
-A focused test re-measures a carrier the same way and fails if it exceeds the
-booking. General owner charges keep their 4,096 B floor. The earlier selection
-kept all carriers within the fixed 256 MiB retained budget.
-Logical booking is not a physical-memory bound; the separate RSS guard covers
-real memory.
-
-Released carriers leave a residual. After release, about 142 B per peak carrier
-of holder-set and charge-table capacity stays allocated, unbooked, until the
-owning allocation's or scope's storage is released. The live carriers' booking
-margins cover it only while enough of the peak carriers remain live: about a
-quarter at the mean size, about a third at the worst. Nothing enforces that
-condition.
-
-A diagnostic compares a retained handle with a fresh read of its support record
-and walks its ownership graph. It checks that:
-- the carrier set is exact;
-- no record export or extra run-budget allocation is reachable;
-- both sides have exactly the header keys;
-- values match as canonical JSON bytes;
-- allocations are live and fully charged.
-
-Before reading, it confirms that the record reference is usable the way the real
-field reader will use it. A closed or incomplete reference is therefore reported
-as unavailable instead of raising, while an error inside the read itself still
-propagates. The diagnostic cannot prove that nothing else is retained.
-
-The successor that introduced header retention passed:
-- fake-handle and real-partition closure cases;
-- a probe;
-- compact and legacy reference runs, with identical records and all 2,016
-  retained headers clean;
-- seven real-worker cases that ended with no outstanding borrows.
-
-Against that successor, the accepted successor changes only the carrier booking,
-the diagnostic and tests. Its 50 focused tests pass, and its three real-reader
-cases fail on the previous successor, as intended.
-
-On interval 1, carriers book 12.8 MB. A projected 87,000-support interval would
-book 551.2 MB on carriers alone, over the earlier 256 MiB cap; its carrier-only
-ceiling was about 42,400 supports.
-
-The combined implementation gives each verified partition a separate allowance
-of its actual support count × three carriers × 2,112 B. Facades with the same
-complete record identity share that allowance. Different partitions held at the
-same time have separate allowances; the run's shared fixed budget remains
-256 MiB. Retaining a handle transfers only its actual reference ancestry to the
-partition allowance. A fourth live carrier for a support refuses, and temporary
-readers and exports continue to use the fixed budget. Transfer reserves the new
-charge before releasing the old one, with rollback if admission fails.
-
-The partition membership index also has a fixed-budget allowance of 8,192 B
-plus 1,024 B per support, including its owner charge. That conservative allowance
-is not a measured physical-memory result. Accounting reports the fixed portion,
-each live partition and their aggregate current and peak capacities. The existing
-whole-run logical budget and machine-memory guards still apply. This removes
-the earlier carrier-only capacity obstruction; it does not establish that an
-87,000-support interval will fit or complete. No new interval result is claimed.
+[Plan18](../../optimisation/workbench/plan18/README.md) retains charged plain headers
+instead of live field exports and records the carrier accounting and its limitations.
+The later [combined selection](../../optimisation/workbench/combined-runtime-r1/README.md)
+adds a separate per-partition carrier allowance while keeping transient reads and
+exports in the fixed budget. Whole-run and machine guards still apply; a capacity
+projection does not prove that a larger interval will complete.
 
 ### Choose heat reconstruction workers and prepare exact geometry proofs
 
-Independent face reconstruction uses the unchanged exact numerical method in
-worker processes. The [Plan15 candidate](../../optimisation/workbench/plan15/README.md)
-selects eight workers before fresh admission and records actual first-pass work.
-Two repeats per compared count gave 1.3321% less mean time than six, at 26.9974%
-higher maximum RAM. This is a bounded component result, not whole-interval scaling.
-Actual native module/export binding distinguishes proved relocation from changed
-compiled code while preserving refusals and exact results. The global default stays six.
-
-[Plan17](../../optimisation/workbench/plan17/README.md) preserves the already-selected
-incidence-leading-coefficient, rotation-constant and directed-interval transforms.
-Its source-bound proof launcher enforces owned-process memory/finality and exact
-admission before replay. Duplicate JSON keys refuse before prediction/hold selection.
-The completed genuine jets and stacked proofs retain exact IV1/sample/deep
-coverage and all nine required repeat comparisons. Listed sample caps are paired
-with the exact uncapped deep proof; capped partial values are not claimed equal.
-Operational r7 additionally binds the actual Windows interpreter and separates
-queue ticket identity from the scientific phase. Its retained overrun worker has
-separate ownership and bounded delivery without adding a proof kill deadline.
-The proved geometry bytes already match the current selected composition, so
-integration preserves native sources and profiles. These checks introduce no new
-physical model, tolerance, research result or whole-interval speed claim. Final
-programme acceptance and held full intervals remain separate.
+[Plan15](../../optimisation/workbench/plan15/README.md) records the bounded worker
+comparison and its time/RAM trade-off; the global default remains six.
+[Plan17](../../optimisation/workbench/plan17/README.md) records exact geometry
+proofs and their resource and identity boundaries. Neither establishes a
+whole-interval speed-up or new physical acceptance.
 
 ### Refine only the geometric bounds that need it
 
-The [selected geometry improvements](../../optimisation/workbench/plan19/README.md)
-tighten supported shell bounds and choose an alternate quadrature axis in proved
-cases. They preserve directed enclosures, refusal semantics, funded work and
-result ownership. Better bounds can avoid unnecessary subdivision; this does
-not change the represented physical model or permit an unbounded shortcut.
-Checks cover complete records, ordered resource refusals, affected graph/thermal
-consumers, real worker adoption and a fresh checkpoint restore. The two retained
-complete-call comparisons improved by 7.40% and 18.44%; these are overlapping
-component observations. Some cases use more memory, and three other tested
-ideas remain excluded. No new research or full-interval measurement is claimed.
+[Plan19](../../optimisation/workbench/plan19/README.md) uses tighter bounds and an
+alternate quadrature axis in supported cases, preserving directed enclosures,
+resource refusals and ownership. Its comparisons are component results with
+memory trade-offs, not full-interval measurements.
 
 ### Save diagnostic operands without changing their logical identity
 
-The [S2 capture route](../../optimisation/workbench/plan20/README.md) writes mesh,
-closed-graph and bounds operands as bounded exact-byte Zstandard level-3 captures.
-It retains raw byte count/hash as logical identity and authenticates each stored
-container separately. The ledger still reads supported legacy gzip records.
-Before allocating output it checks declared limits, container size/hash and the
-authenticated footer; it then consumes the bounded reader and verifies raw identity.
-Fresh/prepared entry points contain explicit capture-route admission calls.
-Private fresh-entry probes executed. Six bounded checks also execute the real
-prepared entry and capture gate for both successor branches with valid, missing
-and wrong backends. They stop before the following derivation, so they establish
-entry connectivity and refusal ordering, not a full prepared workload or native
-backend qualification.
-The folded route binds the packaged native library by a relative key and its
-unchanged content hash; a missing or ambiguous holder refuses. New combined
-source identities require a new fold and its receiving checks. The measured
-write-time/disk savings exclude input decoding,
-block preparation and initial library load; streaming does not prove lower whole-reader RAM.
-
-Most canonical items fit within the writer's existing header allowance. For a
-larger item, the combined route computes a conservative size bound without
-serialising it, reserves twice that bound, then creates the canonical text and
-bytes. The bytes retain their reservation through bounded output slices and
-through any error traceback that still holds them. Encoded keys and punctuation
-are yielded separately so concatenation cannot discard that ownership. The
-logical byte stream, capture format and existing limits are unchanged.
-
-These methods can serve another Atlas module only where its geometry, exact-byte
-data and resource/identity contracts match. The combined source selection keeps
-one implementation for compatible consumers. Wider adoption belongs to the
-receiving module's integration and checks; no universal speed-up is inferred.
-
-The published source selection includes the checked bootstrap and runner
-interfaces needed by an installed package. Actual package folding, installed
-CLI and desktop delivery, their new profile bindings and receiving checks
-remain separate work. Historical profiles, captures and checkpoints are not
-silently rebound: source-derived cell identities can change between compositions
-even when physical values remain equal. Current delivery status is recorded on
-the [development-state page](../../../docs/CURRENT_STATE.md).
+[Plan20](../../optimisation/workbench/plan20/README.md) stores bounded, lossless
+captures while preserving raw-byte identity and supporting existing gzip records.
+Its measurements and prepared-entry checks have narrower scope than full prepared
+execution. The [combined selection](../../optimisation/workbench/combined-runtime-r1/README.md)
+records capture reservation and entry wiring; fold and installed delivery remain
+separate. Historical captures and checkpoints are not silently rebound.
 
 ### Read only the carried-start fields a spatial operation needs
 
-The [Plan21 lazy-row selection](../../optimisation/workbench/plan21/README.md)
-serves the spatial owner's carried-start mappings without decoding an entire row
-for every volume, geometry-error or exact-quantity read. Other operations use one
-bounded whole-row export cached on that row. Renamed children retain their
-booked copy and cell identity; the physical values and tolerances are unchanged.
-
-An admission walk first checks the whole-row bounds and reserves the same
-temporary traversal workspace as the original exporter. A field-path memory
-refusal falls back to the whole row after collecting unreachable failed-read
-leases. The required contract is that a field answers wherever the whole row
-answers, with the same value. The field can also answer when only unrelated
-whole-row decoding or its larger allocation would refuse. Synthetic caller and
-resource controls exercise these boundaries. A retained interval-1 comparison
-found equal values for the owner read expressions on r4, with source-analysis
-carry to the private r5 successor. It did not execute the complete owner functions;
-final combined-runtime parity and a timing benefit remain unproved. The separate
-final-source interval-1 verification was cancelled, not passed; wider programme
-qualification remains separate. This is a storage-access change derived from the
-existing reader/exporter contracts, with no new physical method.
-
-The receiving successor additionally binds the copied private exporter preflight
-and falls back to the current whole-row route if its callable/code changes.
-A stored-segment test with current carried pages checks paid-registry adoption,
-failure-workspace release and exact settled accounting before and after fallback.
-Faults that remove collection or fallback are detected. This is separate from
-the in-memory S3 read-parity check and does not replace final-generation qualification.
+[Plan21](../../optimisation/workbench/plan21/README.md) selects lazy field reads
+with bounded whole-row fallback, preserving the original physical values,
+refusals and resource contracts. Component comparisons do not establish final
+source parity or whole-interval performance.
 
 ### Keep read ownership and incomplete diagnostics correct
 
-The [guarded-read component](../../optimisation/workbench/plan30/s1a/README.md)
-can hold the file and directory handles needed to bind a sealed reader to its
-path. Acquisition cleanup, explicit close and finalisation share one lifetime
-and the token-query lock. An interruption after registering a finaliser therefore
-cannot make two cleanup paths close the same descriptor number. Closing waits
-for an active token query, and later queries refuse a closed lifetime. Existing
-publication checks, path binding and fallback remain in the selected source.
-
-The [query-stage integration](../../optimisation/workbench/plan31/tier1/README.md)
-keeps a stage's diagnostic counts marked truncated after any contributing reader
-loses complete classification. A later complete reader cannot relabel that same
-stage complete; a new stage starts its own status. Both fresh and restart runners
-use this rule. These counts describe observation coverage, not physical accuracy.
-
-The [combined qualification gate](../../optimisation/workbench/plan22/gate/README.md)
-checks child exit status as well as its reported result. Required suites must
-execute their expected tests, and comparisons preserve declared skip coverage.
-A zero-test or all-skipped result cannot supply the missing proof. Bounded fault
-controls exercise these repairs, and the retained private combined gate passed
-within its declared S3/L3/S1A scope. That result does not qualify the final private
-generation or authorise an interval. No numerical tolerance changes.
-
-The [B receiving arms](../../optimisation/workbench/plan21/README.md#b-with-current-s3l3-receiving-sources) retain
-the reader's path/publication hooks while reusing descriptor parsing, hashing
-stored content in parts, and optionally returning contents through one
-lazy-CASE query. All eight SQL metadata predicates and the original Python
-refusal order remain. [SQLite's expression reference](https://sqlite.org/lang_expr.html#the_case_expression)
-documents lazy CASE evaluation; if any predicate fails, all four content columns
-are NULL. [SQLite's length reference](https://sqlite.org/lang_corefunc.html#length)
-states that `length(TEXT)` stops at the first U+0000, so passing these predicates
-does not impose absolute bounds on complete returned TEXT or allocation. This
-limitation is inherited from the baseline predicates; B3 introduces no new
-refusal regression.
-The [A1 receiver](../../optimisation/workbench/plan21/README.md#a1-diagnostic-preserving-receiving-overlay) preserves
-requested reservation bytes/category when unexpected fast admission failures
-reach the existing geometry, trace and capture consumers. Its short ledger path
-keeps the same generator/frame, locking, refusal and accounting contracts.
-The controlled private reopen chain selects repaired S1A and full B, while
-A1 remains UNCERTAIN / NOT ENABLED after a two-block PASS/FAIL result. Its
-repaired public receiver stays explicit opt-in; final private receiving omits
-the five-row A1 overlay. These private measurements retain the preceding S3
-source and do not establish final S3/n12f or whole-interval performance.
-Actual final integration and qualification remain separate.
+[S1A](../../optimisation/workbench/plan30/s1a/README.md) owns reader-handle lifetime;
+[Tier1](../../optimisation/workbench/plan31/tier1/README.md) preserves incomplete
+query classifications. The [combined gate](../../optimisation/workbench/plan22/gate/README.md)
+passed within its declared S3/L3/S1A scope and rejects missing test coverage or
+failed child exits. It does not qualify the final private generation or authorise
+an interval. [Plan21](../../optimisation/workbench/plan21/README.md) records the
+selected B route, the inherited SQLite text-length limitation and the uncertain,
+not-enabled A1 result.
 
 ### Check identity at publication and worker boundaries
 
-The [Plan39 source selection](../../optimisation/workbench/plan39/README.md)
-connects a guarded Release policy to the existing storage and worker interfaces.
-Opening a store establishes its verified read session; committing, sealing,
-promoting or adopting data requires a full publication check. A context that
-failed its closing verification cannot stand in for a successful check. Release
-keeps source handles for the process lifetime, and the parent verifies the
-worker binding before accepting its identity. Scientific evidence stays strict.
+[Plan39](../../optimisation/workbench/plan39/README.md) sets the selected Release
+policy's publication, source-lifetime and worker-identity checks. Release remains
+non-default; dependency promotion, runner/fold/desktop wiring, measured peaks and
+packaged parity remain outstanding. The policy changes neither the physical model
+nor its numerical tolerances.
 
-This policy changes when integrity work is repeated, not physical equations or
-numerical tolerances. The sizing helpers need a composition-bound table of
-strict-measured peaks and refuse a missing estimate. The current generation has
-no such table and still fails its release-closure check. Dependency promotion,
-runner and desktop integration, folded helper pins and real packaged parity
-remain pending; the source selection does not activate Release or claim speed.
+The [optimisation reference](../OPTIMISATION_REFERENCE.md) brings the wider methods
+and measurements together. Component selection, installed delivery, default
+activation and scientific acceptance remain separate, and existing holds apply.
