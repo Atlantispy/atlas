@@ -8,7 +8,7 @@ zero-mean dynamic-pressure gauge. Native block-preconditioned GMRES and a small
 independent sparse-direct route share true returned-field diagnostics, not a
 constant-viscosity Laplacian substitution. Existing Tosi laws are evaluated at
 both stress supports and converged with updated-law Picard residuals. The
-[maintained plan](TECTONICS_PLAN.md#3cr4-3-variable-mechanics) is authoritative
+[variable-mechanics contract](#3cr4-3-variable-mechanics) is authoritative
 for collocation, units, tests and limits; the
 [execution contract](OPTIMISATION_REFERENCE.md#3cr4-3-execution) covers reuse.
 The optional new thermochemical mechanical mode preserves legacy descriptors
@@ -16,7 +16,7 @@ and rejects unsupported damage evolution. R4.4 benchmark/combined acceptance is
 held and incomplete; the scientific-fidelity repair remains paused.
 
 
-R4.2 review (dev29 / revision 33): see the [current scientific contract](TECTONICS_PLAN.md#3cr4-2-review) for conditioned diffusion, source products, clock precision and unchanged remaining R4 scope. Historical sections below retain their dated meaning.
+R4.2 review (dev29 / revision 33): see the [current scientific contract](#3cr4-2-review) for conditioned diffusion, source products, clock precision and unchanged remaining R4 scope. Historical sections below retain their dated meaning.
 
 
 ## R4.1 addition — mechanical component, not full R4
@@ -1355,3 +1355,367 @@ surface-neighbour counts, 12 closed orogens, 52 separately labelled areas and al
 R2 or any new thermal/mechanical evolution. Sources and decisions are referenced
 in the two maintained plan/optimisation documents and executable policy; no extra
 general planning page is introduced.
+
+## Rectangular thermomechanics: component contracts
+
+R4 is incomplete. R4.1 constant mechanics, R4.2 heat/binary transport, R4.3
+nonlinear mechanics and R4.4 mature-reference/combined acceptance have distinct
+obligations. CURRENT_STATE owns delivery and hold status. No component test count
+or short evolved example closes R4/W03/W07, starts R5, supplies planetary topology
+or explains Diadem landforms. Constant-property routes retain their original
+descriptors and scope when nonlinear modes are added.
+
+<a id="3cr4-1-mechanical-core"></a>
+
+### R4.1: equations, units and declared boundaries
+
+The solver implements `-grad(p)+eta*laplacian(v)+f=0`, `div(v)=0`, with **constant**
+positive viscosity. For this constant-coefficient incompressible case the vector
+Laplacian equals `div(2 eta e)`; for variable eta it does not. `StokesBox2D` uses
+x right and **z upward from the bottom** in metres, a uniform rectangular grid,
+and a named frame. It is not R2's inward depth or a transformed global patch.
+All four walls have zero normal velocity and zero normal derivative of tangential
+velocity (impermeable/free slip). No no-slip wall, traction, free surface, inflow
+or prescribed plate motion is silently approximated by this boundary selection.
+
+`PreparedStokes2D` requires the existing `DiffusiveScales` and an unclipped
+constant `RheologyProfile`. Dynamic pressure has a zero-domain-mean gauge; it is
+not absolute/lithostatic pressure and is not fed into a pressure-sensitive law.
+The force snapshot is explicitly supplied on the interior velocity faces in
+N/m^3. It is used once. The optional `face_force_from_density` helper declares
+arithmetic interpolation of a cell anomaly to those faces and constant Cartesian
+gravity; it does not insert reference density, infer gravity, remap arbitrary
+meshes or add a second slab traction. R3's Boussinesq response can provide that
+anomaly. Snapshot time/epoch/source describe the input; no time advance occurs.
+
+### Spatial discretisation and pressure compatibility
+
+Pressure occupies cell centres, u vertical faces and w horizontal faces. The
+zero normal boundary DOFs are eliminated. Face-centred finite-volume balances
+and centred differences produce `A=-laplacian`, `G=-D.T`. A constant pressure
+has zero gradient. It is fixed by a symmetric Lagrange-multiplier augmentation
+`[A,G,0;G.T,0,c;0,c.T,0]`, where `c=ones/sqrt(Np)`. **Every continuity equation is
+retained**; a pinned pressure is not used to discard a cell's divergence check.
+The multiplier is checked for compatibility and cannot conceal a mass source.
+
+The independent small sparse-direct and native iterative routes solve this same
+boundary problem; no dense inverse, independently solved physical tiles or silent
+fallback may replace it. Detailed solver/preconditioner construction, admission
+and measured costs belong to the
+[execution reference](OPTIMISATION_REFERENCE.md#3cr4-1-execution).
+
+<a id="3cr4-1-publication-review"></a>
+
+### R4.1: returned-SI acceptance
+
+Extreme arithmetic probes exposed a gap: the internal normalised solution
+could pass while the returned SI fields failed the same equations. A 2x2
+circulation with force `20 * smallest_positive_binary64` rounded to a nonzero
+velocity with a 20% force residual but reported zero. An arbitrary diffusivity
+reference of 1e22 with force 1e-200 and physical viscosity 1e100 also changed a
+normal, representable velocity by about 1.19%; diffusivity is not a parameter
+of this steady mechanical problem. Neither probe is an Earth-like mantle case. A related density-to-face-force
+probe found that rounding an unequal subnormal endpoint mean before multiplying
+gravity could introduce a 33% error in a normal final force. Shared-exponent
+interpolation now preserves the original half weights without that intermediate
+rounding; genuinely unrepresentable final forces still fail explicitly.
+
+The correction normalises original SI forces directly. It evaluates conversions
+with `U0 = F L^2/eta` and `P0 = F L` using binary mantissas/exponents, not rounded
+intermediate subnormal scale products. Every independent residual/work gate now
+checks the returned SI velocity and pressure, re-expressed against the original
+force. Accurate nonzero subnormals remain supported; inadequate final rounding
+is refused. No original residual or physical tolerance is raised. New records
+identify this publication contract; old snapshots retain their historical checks,
+source identities and bytes without being relabelled as newly validated.
+
+The correction is registered in [stokes_r4_1_review.json](../cases/stokes_r4_1_review.json).
+[Original review tests](../evidence/3cr4-1-review-tests.json) and
+[measurements](../evidence/3cr4-1-review-measurements.json) retain the old failures
+and corrected scope; this is implementation evidence, not geological validation.
+
+### R4.1: verification and visual scope
+
+The registered case is [`stokes_r4_1.json`](../cases/stokes_r4_1.json). Analytical
+forcing is differentiated from a continuous trigonometric streamfunction and
+independent pressure field, not computed by the discrete operator being tested.
+Square and unequal-spacing rectangular refinement, zero force, hydrostatics,
+checkerboard-pressure exclusion, sign reversal, superposition, SI scale
+invariance and warm-upward buoyancy are covered. Separate ghost/central-stencil
+momentum residuals, all-cell uncorrected divergence, pressure gauge and discrete
+work balance are checked even when MINRES returns success. The force-normalised
+residual tolerances are new R4.1 choices; no historical tolerance is changed.
+
+`tools/visual_stokes_r4_1.py` renders actual solved velocity/pressure/divergence,
+the explicitly **authored** temperature used to construct buoyancy, and continuous
+solution refinement. Face-to-centre averaging is display interpolation only;
+raw staggered arrays and provenance are retained. No temperature evolution or
+terrain is fabricated. Numerical acceptance, assistant visual inspection and
+Michael's visual review remain distinct.
+
+The existing lossless ArrayStore stores complete steady problem/result records
+with source/runtime, frame, epoch, time, units, force provenance, scales and law.
+Restore does not run a solver or rebind an old record. **This steady result is not an evolving thermal/material checkpoint**; use the
+separate R4.2/R4.4 contracts for that claim.
+The recorded result explicitly carries `R4_complete=false`.
+
+<a id="3cr4-2-thermochemical"></a>
+
+### R4.2: equations, physical ownership and boundaries
+
+The [registered case](../cases/thermochemical_r4_2.json) specifies
+
+    rho0 cp [dT/dt + div(u T)] = k lap(T) + H,
+    dC/dt + div(u C) = 0,
+    rho' = -rho0 alpha (T-Tref) + delta_rho C,  f = rho' g.
+
+T is a cell-average absolute temperature; C is the volume fraction of ONE named
+constituent and 1-C is its complement. C is not a plate, material-cohort identity
+or formation age. The constant rho0 cp is the selected Boussinesq reference heat
+capacity, not an in-situ variable-density mass or latent enthalpy. All quantities
+are SI in an explicit x-right/z-up frame and named epoch. Extensive budgets are
+for one metre out-of-plane thickness. R2 inward depth is not renamed to z-up, and
+no full R2-to-W02 world/history conversion is implied.
+
+Constant positive k, rho0, cp and viscosity are required. The retained R3 thermal/
+compositional density anomaly feeds the reviewed mechanical solver once. Mechanical
+walls remain closed/free-slip. Thermal sides are insulating; top and bottom are
+either both fixed spatially uniform face temperatures or both insulating. A fixed
+face is half a cell width from its boundary-cell centre. No hidden periodicity,
+open material reservoir, compressibility, phase reaction or moving mesh is added.
+
+H is material internal heating plus an explicit nonnegative scalar/cell source,
+held constant for the supplied interval. It is integrated once over that interval.
+Dissipation, adiabatic heating and latent heat are not inferred or double-counted.
+Missing temperature, invalid composition, excessive density anomaly and unsupported
+rheology fail explicitly rather than acquiring arbitrary laws or zero defaults.
+
+### R4.2: numerical meaning and acceptance limits
+
+The normal step is Strang **D(dt/2)–A(dt)–D(dt/2)**. D is the exact time evolution
+of the **second-order discrete finite-volume** diffusion/source operator, not exact
+continuum diffusion. A reusable DCT-II in x and DST-II (fixed walls) or DCT-II
+(insulated) in z diagonalise this specific constant-coefficient rectangle. The
+nonnegative discrete eigenvalues are `4 kappa sin(pi*j/(2*n))^2 / h^2`, with j from
+0 to n-1 for insulation and 1 to n for fixed face values. A linear stationary
+thermal lift handles the fixed walls. Stable exponential/phi coefficients also
+integrate the source and time-mean boundary heat. This avoids an explicit parabolic
+CFL restriction and large-step Crank–Nicolson oscillations without changing the
+spatial stencil. Splitting error still needs time refinement: a stable large
+thermal step is NOT automatically an accurate coupled step.
+
+A is unsplit multidimensional MC-limited finite-volume transport with SSPRK2.
+Each shared face has one oriented transfer, used with opposite signs by neighbours.
+The two RK stages each solve the constant-viscosity buoyancy response from their
+own T/C fields; start-of-full-step velocity is not frozen by default. An explicitly
+supplied frozen MAC velocity is a separate kinematic reference experiment. RK
+velocities are labelled operator-split intermediates, not simultaneous final-state
+mechanics. The demonstration solves endpoint mechanics again before plotting it.
+
+The sufficient multidimensional outgoing-Courant bound is 1/2 (default 0.45),
+checked at BOTH Euler stages. Summing outgoing directions matters; taking only a
+maximum over axes would be unsafe. Divergence is checked on the actual velocities.
+A failure publishes no partial state and requires an explicitly smaller interval;
+there is no automatic substep, reduced-order route or material clipping. MC
+limiting is formally second order in smooth monotone regions and loses order near
+extrema/contacts. The compact-rotation test records observed errors/peak diffusion;
+it is not misreported as exact shape preservation or uniform second order.
+
+Raw C excursions within 64 binary64 epsilon are retained and reported, never
+renormalised or clipped; larger excursions reject the step. The primary constituent
+inventory residual is relative to its own amount, so a trace constituent is not
+hidden behind total domain volume. Because only C is independently stored, the
+relative precision of a vanishing 1-C is limited by subtraction near unity; both
+inventories and the raw bound excursions remain visible. No general multi-material
+cohort-advection completion is claimed by this binary pilot.
+
+Every accepted step checks returned endpoint heat against signed integrated outward
+boundary heat and source input. Composition and cell-local advective ledgers are
+checked independently of the update loop. Zero normal material flux is exact.
+Closed-to-material does not mean thermally insulated. Source/field/gauge/validity
+checks from the R4.1/R3 components are retained. Subnormal source products are
+combined before rounding where possible, and representable attenuated modal tails
+are not lost merely because an exponential coefficient underflows first.
+
+### R4.2: independent checks and restart
+
+Tests use an independent face-balance dense exponential, a separate boundary-heat
+integral, analytical diffusion modes, independent transport matrices, rotating
+Gauss-averaged compact data, and an independently derived 2x2 circulation mode
+coupled to high-accuracy DOP853 integration. The latter is an independent temporal
+reference, not a second Earth model. Timestep and spatial refinements remain
+separate. Test failures are not fixed by changing retained reference answers.
+
+Endpoint snapshots use the existing lossless ArrayStore and contain both fields,
+complete problem/epoch/source definitions, latest-step balances and parent IDs.
+A prior parent snapshot is not needed to decode or continue that state. Future
+forcing is still explicit caller input; this is not a stored future schedule or
+complete past flux/trajectory catalogue. Step objects expose both stage velocities
+and shared-face transfers for callers needing those records. Reopen/fresh-process
+continuation with the same source, policy and next forcing must reproduce exactly;
+changed source/policy is refused rather than silently rebinding a checkpoint.
+
+The real-output visual tool draws authored initial and genuinely evolved final
+T/C fields, their difference, separately solved endpoint velocity and conservation
+residuals. It retains numerical arrays, case/source identities and output hashes.
+Assistant visual inspection and user review are separate from numerical or physical
+acceptance. The 48-by-48, 40-step example is illustrative, not a calibrated Earth,
+Diadem or full Tosi convection case. No new plate geometry needs a globe render here.
+
+<a id="3cr4-2-review"></a>
+
+### R4.2: conditioned thermal arithmetic
+
+The insulated diffusion operator no longer uses the material's buoyancy reference
+as its numerical temperature offset. With zero thermal expansivity, changing that
+reference cannot change this physical experiment, but the old subtraction/FFT/
+addition could lose resolved field differences or fail heat accounting. Each
+insulated call now uses the midpoint of the supplied field range as an offset.
+The physical reference remains unchanged in the density law. These are deliberate
+conditioning probes, not claims of realistic 10^16 K mantle reference values.
+
+For short spectral intervals (maximum rate*dt <= 0.5), compute the field change
+with `expm1(-rate*dt)` and add it to the original field. The fixed-wall time-mean
+increment uses `phi1-1=-x*phi2` rather than subtracting near-ones. For larger
+attenuation retain the absolute decayed-field form to avoid cancellation of
+nearly all the original temperature. Both forms evaluate the same discrete
+exponential/source equation with the original spatial/time order. No rates,
+source, boundary values, physical durations or accepted tolerances are changed.
+The independent dense exponential and heated steady-parabola refinement checks
+cover both forms. Fixed-wall integrated heat remains independently evaluated.
+
+The weighted modal-source helper now combines exponents whenever the intermediate
+weight*dt is NONZERO subnormal as well as zero/overflowed. Rounding such a factor
+before multiplication by a large mode could otherwise change the final normal
+response by 33.3% in the registered arithmetic counterexample. The finite
+representable response agrees with direct Decimal products after correction.
+
+### R4.2: represented clock and integrated interval
+
+A merely increasing binary64 endpoint is insufficient: at epoch 10^16 s,
+requesting 3 s produces a representable clock increase of 4 s. Integration must
+not use 3 s while recording that it covered 4. New steps require the represented
+endpoint difference AND twice the represented thermal half-step to agree with
+the requested duration within `min(inventory_rtol,2e-11)` relative precision.
+Inadequate intervals fail BEFORE any evolution, not by altering dt silently.
+This is a numerical precision guard, not a finest temporal resolution or an
+inferred geological timestep. An explicit suitable epoch/interval is the caller's
+choice. Ordinary 4096-step non-bit-exact clock sequences remain supported.
+
+`publication_contract=atlas.thermochemical-conditioned-diffusion-and-clock.v1`
+labels new records. Earlier snapshots still decode with exactly their original
+identity, metadata and arrays, without acquiring the new guarantee. Changed
+source/execution identity still prevents an unrequested restart rebind.
+The method's finite-volume/Strang equations retain their existing identifier;
+source/version and the publication contract identify these arithmetic changes.
+
+[thermochemical_review_r4_2.json](../cases/thermochemical_review_r4_2.json)
+retains reference-invariance, short fixed-wall/source/epoch probes, historical
+restoration and changed-source refusal. Insulated variance decay, transpose and
+complement covariance, source and heated-conduction controls verify the declared
+PDE, not mature convection. [Execution and original review evidence](OPTIMISATION_REFERENCE.md#3cr4-2-review-execution)
+retain exact scope and costs; no old reference answer or PB2002 record is replaced.
+
+<a id="3cr4-3-variable-mechanics"></a>
+
+### R4.3: full symmetric stress
+
+The existing uniform staggered rectangle, zero normal wall velocity, zero wall
+shear traction and zero-domain-mean dynamic-pressure gauge are retained. Normal
+strains/stresses are cell-centred; engineering shear `gamma=du/dz+dw/dx` and
+`tau_xz=eta_vertex*gamma` are at interior vertices. Normal stresses are
+`tau_xx=2*eta_cell*du/dx`, `tau_zz=2*eta_cell*dw/dz`. The discretised equation is
+`-grad(p)+div(2*eta*e)+f=0`, `div(v)=0`. No reference density/gravity is counted
+twice and dynamic pressure is not sent to an absolute-pressure material law.
+
+The positive velocity block is
+`A=2*Bx.T*eta_cell*Bx+2*Bz.T*eta_cell*Bz+S.T*eta_vertex*S`.
+The independent padded stress-divergence stencil and this native sparse derivative
+assembly are separately tested. The pressure gradient is the negative divergence
+adjoint; the existing gauge augmentation preserves every continuity equation.
+For constant viscosity the divergence-free solution agrees with R4.1, while
+variable viscosity includes the coefficient-gradient and cross-derivative terms
+that an `eta*laplacian(v)` substitution would lose.
+
+`PreparedVariableStokes2D.solve` accepts explicit positive SI viscosity at both
+stress supports; it does not invent an average for a discontinuous supplied field.
+`solve_rheology` evaluates the unchanged R3 constant/Tosi profiles. Cell temperature
+is supplied; interior-vertex temperature is the arithmetic mean of four adjacent
+cells. At each stress support, missing strain tensor components are reconstructed
+with symmetric local arithmetic averages, then `eII=sqrt(e:e/2)` is evaluated.
+This is a named second-order collocation rule for resolved smooth fields, not a
+proof of interface, subcell shear-band or mesh-independent localisation accuracy.
+Depth is measured down from the top using the separate R3 depth normalisation.
+
+### R4.3: current-law and returned-field acceptance
+
+Picard iterations solve with lagged viscosity, evaluate viscosity again from the
+new velocity and check the **true updated-law** force residual and maximum
+log-viscosity change. Default full relaxation is explicit; any alternative fixed
+relaxation enters the policy/identity. Tosi's factor-two harmonic combination and
+Frobenius plastic denominator remain unchanged, including their zero-rate limits.
+No minimum strain rate, hidden yield cap or new viscosity floor is introduced.
+Optional existing R3 viscosity bounds remain explicit and return clipping masks.
+
+Default linear GMRES tolerance is `1e-12`; the true normalised momentum gate is
+`1e-9`, continuity `1e-10`, pressure-mean gauge `1e-12`, work balance `1e-9`, and
+log-viscosity change `1e-8`. These are registered R4.3 numerical policies, not
+relaxations of R4.1/R4.2 controls. Maximum iteration counts and a finite contrast
+admission envelope do not guarantee convergence for every allowed input. Failure
+raises an error; it neither publishes a lagged solution nor changes the law,
+mesh, tolerances or solver route. The final test uses the actual rounded returned
+SI velocity, pressure and viscosity with the rheology re-evaluated at that velocity.
+Independent stress, divergence, gauge and mechanical-work checks remain distinct.
+
+The selected BF model is available for a separate mechanical snapshot **only with
+explicit frozen damage**. This neither clips the raw history nor advances/heals
+it. The two-field evolving state has no damage field, so BF coupling is refused,
+not filled by implicit zeroes. General damage advection, 2D/3D physical-length
+regularisation and coupled localisation still need their own selected extension.
+
+### R4.3: explicit thermochemical coupling
+
+`ThermochemicalProblem(..., mechanical_mode='variable-r4.3')` explicitly enables
+constant/Tosi mechanical feedback through `PreparedThermochemical2D`, which accepts
+`nonlinear_policy=NonlinearStokesPolicy(...)`. Both RK transport stages must
+converge their own current temperature-dependent/yielding mechanics before the
+shared-face transfers are accepted. A nonlinear failure or failed second-stage
+Courant check publishes no endpoint. The existing Strang split, discrete thermal
+exponential, MC/SSPRK2 transport, clock, source/boundary heat and binary-inventory
+checks are unchanged. Composition affects buoyancy, not an invented strength law.
+Thermal conductivity/capacity are still constant and the domain is still closed.
+
+The default `constant-r4.2` contract deliberately retains its old variable-law
+refusal and canonical descriptor. New records retain both stage solution IDs,
+true diagnostics, policy and iteration counts, while the accepted endpoint has
+its own time and identity. Stored stage velocities are not relabelled as the final
+simultaneous flow; visualisation re-solves the endpoint when it displays that flow.
+Snapshots decode without a chain of parent deltas, but are not complete archived
+trajectories or future forcing schedules. Restart requires the same recorded
+source and policy; old source states do not silently rebind.
+
+### R4.3: independent evidence and limits
+
+The new checks reuse **T08 mechanics**, **T09 strength** (not free-surface or
+localisation completion), applicable T05/T14/T15 and the existing PT families.
+An independent rectangular streamfunction/pressure with analytically differentiated
+exponential viscosity verifies second-order space refinement. A 2x2 continuity
+reduction gives an independently written scalar Tosi root; an eight-variable ODE
+combines that root with independent transport/heat matrices to check nonlinear
+coupled time refinement. Sharp coefficient, hydrostatic, axis-transposition,
+pressure-checkerboard, work, constant-limit and refusal tests complement them.
+
+Primary corroboration uses PETSc's DMStag variable-coefficient example and official
+SciPy solver documentation; no external implementation is copied. The unchanged
+R3 source register remains authoritative for rheological formulas. The benchmark
+and visual controls are synthetic, not tuned to PB2002 holdouts or Diadem output.
+Bounded direct/iterative and repeated-preparation measurements report actual costs,
+not a universal performance claim. Details belong in the
+[maintained execution reference](OPTIMISATION_REFERENCE.md#3cr4-3-execution).
+
+Post-stage actual-code visual QA is required. This increment renders solved flow,
+viscosity, continuous reduction relative to the zero-rate law, pressure, nonlinear
+residuals, independent refinement and short coupled evolution. It retains raw
+arrays and source identities. A continuous viscosity reduction is not falsely
+labelled as a discrete yielded-region map. Rendering and assistant inspection
+remain separate from Michael's visual review and physical acceptance.
