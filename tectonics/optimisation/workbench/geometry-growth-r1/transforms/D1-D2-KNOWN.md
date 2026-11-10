@@ -1,20 +1,17 @@
 # D1 incidence_constant and D2 rotated_hoist: known limits
 
-Both transforms give byte-identical records on every runtime route. A refutation pass on 16 Oct
-found no counterexample, and its fuzz compared each helper with the original by repr:
+On the reviewed routes and tested cases, both transforms gave byte-identical records. A refutation
+pass on 16 Oct found no counterexample, and its fuzz compared each helper with the original by repr:
 
 - D1: about 118k cases over two runtimes, with -0, 0E+5, -0E-7, 3E+5, underflowing 1E-600000,
   80-digit endpoints and J.z jets;
 - D2: about 28k cases, both exact interval algebras, with zero rates and zero or point posed endpoints.
 
-The transforms' docstrings claim more than holds for inputs built by hand. The gaps are listed
-below, each with the reason no runtime route reaches it. The docstrings will be narrowed at each
-transform's next revision; until then, this file is the reference. It is kept outside the
-transforms so their pinned bytes do not change.
-
-The additive Plan17 transform successors narrow documentation only. They establish
-no new universal exception or instrumentation equivalence; K1 and K2 below remain
-the substantive limits. Source-bound transform comments are preserved unchanged.
+The original transforms' docstrings claim more than holds for inputs built by hand. The gaps and
+the reasons the reviewed runtime routes do not reach them are listed below. The additive Plan17
+successors narrow their docstrings; the source-bound original comments remain unchanged. Those
+successors establish no universal exception or instrumentation equivalence: K1 and K2 remain
+the substantive limits.
 
 ## K1 (D1): an exception in a skipped coefficient is not raised
 

@@ -286,10 +286,12 @@ connections. Unsupported required physics is a blocker, not a reduced default.
 
 ### I01 — Freeze the end-to-end contract and physical closure choices
 
-**Focused brief: retain the completed baseline.** Reuse the
+**Focused brief: retain the established baseline.** Reuse the
 [physical contract](I01_PHYSICAL_CONTRACT.md), [closure matrix](I01_CLOSURE_MATRIX.md)
-and their current evidence. No new I01 coding/research assignment is needed merely
-to start a later stage. If an implementation exposes a specific missing equation,
+and their current evidence. The seven choices have bounded support; the matrix
+still records final finish-rule review with the integrating owner. The status of
+that review has not been reconciled with earlier baseline-completion wording.
+No new I01 coding/research assignment is needed merely to start a later stage. If an implementation exposes a specific missing equation,
 input, ownership rule or invalid assumption, isolate that question, consult the
 primary source already cited by its method document, correct the affected contract
 and test only the changed claim. Return the resolved requirement to its named

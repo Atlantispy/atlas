@@ -308,7 +308,10 @@ waived or reclassified by 54 distinct passing focused module checks (12 main,
 9 mesh,13 linear,11 retirement,9 transport). The shared identity and coding-safety
 checks also passed; no full-suite, whole-world or held R4.4 run was launched.
 
-## Research-led correction in progress
+<a id="research-led-correction-in-progress"></a>
+## Research-led correction (historical)
+
+This records an intermediate stage; the later [source resolution and Step 4 closure](#source-resolution-and-step-4-closure) supersedes its pending next actions.
 
 The original paper's PGC contributor description (printed p.190) reports a 1 m
 horizontal tip removal and elements ranging from 4e-8 to 70 m within the first
