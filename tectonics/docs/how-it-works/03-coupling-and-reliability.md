@@ -444,7 +444,7 @@ callers as the store's own error, with lock contention reported separately from 
 damaged file. Dated histories go one step further: a checkpoint is written only
 after its complete restoration has been admitted under the same memory budget.
 Resumption still requires the compatible producer, original schedule and an
-adequate fresh-session budget ([dated histories](../TECTONIC_HISTORIES.md#recovery-and-optimisation)).
+adequate fresh-session budget ([dated histories](../EVOLVING_MECHANICS.md#recovery-and-optimisation)).
 Reusing the latest output in memory also checks the store's change token. If
 another writer has changed the database, the saved output is verified again;
 matching output names alone cannot hide damaged data or justify continuing it.

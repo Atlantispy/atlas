@@ -50,7 +50,7 @@ adapters remain usable in place. W09 Steps 4–5 remain unfinished cross-module
 surface work for their individual owners, not the next tectonics expansion.
 
 [Underthrusting](UNDERTHRUST.md), [evolving-input mechanics](EVOLVING_MECHANICS.md)
-and [supported histories](TECTONIC_HISTORIES.md) retain their supplied geometry,
+and [supported histories](EVOLVING_MECHANICS.md#tectonics-continuation-step-4-supported-dated-histories) retain their supplied geometry,
 host-space, absolute-reference, coincident force/material and recovery contracts.
 Uniform thickening does not replace structural collision; a regime label cannot
 transfer state between incompatible representations.

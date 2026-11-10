@@ -42,7 +42,7 @@ The two kinds of delivery are deliberately distinct:
 | W06 constant spreading / changing spreading / inherited margin | Typed dated thermal, material, heat and support results | Existing W06 native producer and history |
 | W07 steady / thermal / surface | Every published state and mechanical field | [W07 workflow](W07_WORKFLOW.md); supported route-specific solver/coupling |
 | W08 joined regimes | Geometry, material inventory, regional view and native receipt | Existing W08 joined workflow and its declared regimes |
-| Underthrust / evolving elastic support / evolving regional mechanics | Typed direct results and dated-history outputs | [Underthrust](UNDERTHRUST.md), [evolving mechanics](EVOLVING_MECHANICS.md), [histories](TECTONIC_HISTORIES.md) |
+| Underthrust / evolving elastic support / evolving regional mechanics | Typed direct results and dated-history outputs | [Underthrust](UNDERTHRUST.md), [evolving mechanics](EVOLVING_MECHANICS.md), [histories](EVOLVING_MECHANICS.md#tectonics-continuation-step-4-supported-dated-histories) |
 
 This matrix is an export/integration matrix, **not permission to join arbitrary
 rows physically**. In particular, the new example does not supply the missing

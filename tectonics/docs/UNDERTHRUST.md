@@ -47,7 +47,7 @@ slip, recorded separately for the two blocks. Gravitational change is m*g times
 the actual parcel centroid change. Q is not an inferred reaction or an unstated
 traction. An unclosed work/energy difference is not silently converted to heat.
 This producer does not independently add uplift, flexure or sediment loads.
-The [joined-history owner](TECTONIC_HISTORIES.md) now accepts this typed preparation
+The [joined-history owner](EVOLVING_MECHANICS.md#tectonics-continuation-step-4-supported-dated-histories) now accepts this typed preparation
 alongside the supported evolving-mechanics routes. That connection preserves the
 prescribed model; it does not turn this section into general collision dynamics.
 
@@ -64,7 +64,7 @@ remapping. Parcels inside one affine domain avoid unnecessary intersections/unio
 Only the latest output is retained; exact repeat requests still verify live code.
 Callers retaining older outputs must account for their own storage. Close releases
 the prepared/latest reservations. Persistence is supplied by the
-[joined-history owner](TECTONIC_HISTORIES.md), not by a second checkpoint codec in
+[joined-history owner](EVOLVING_MECHANICS.md#tectonics-continuation-step-4-supported-dated-histories), not by a second checkpoint codec in
 this section producer.
 
 Bounds: shared-accounted 128 MiB, 4,096 parcels, 256 intervals, 64 interface knots,

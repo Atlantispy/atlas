@@ -32,7 +32,7 @@ current delivery status belongs in the current-state record.
 | Coupled physics, shared state, exchanges and accepted time | [Physical integration](docs/how-it-works/06-physical-integration.md), [I02 workflow](docs/I02_WORKFLOW.md) |
 | Evolving sphere, starting families and reduced driving feedback | [I03 network](docs/I03_SPHERICAL_NETWORK.md), [I04 causal start](docs/I04_CAUSAL_START.md), [I05 moving state](docs/I05_MOVING_STATE.md), [shared ports](docs/I04_I05_PORTS.md) |
 | Fixed-box 3-D mechanics and evolution | [Solver](docs/REGIONAL_MECHANICS_3D.md), [evolution](docs/REGIONAL_EVOLUTION_3D.md) |
-| Supplied collision, changing inputs and supported histories | [Underthrust](docs/UNDERTHRUST.md), [evolving mechanics](docs/EVOLVING_MECHANICS.md), [histories](docs/TECTONIC_HISTORIES.md) |
+| Supplied collision, changing inputs and supported histories | [Underthrust](docs/UNDERTHRUST.md), [evolving mechanics](docs/EVOLVING_MECHANICS.md), [histories](docs/EVOLVING_MECHANICS.md#tectonics-continuation-step-4-supported-dated-histories) |
 | Numerical versus physical validation | [Validation](docs/W10_VALIDATION.md), [I01 closure matrix](docs/I01_CLOSURE_MATRIX.md) |
 | Execution, persistence, exact reuse and optimisation limits | [Execution reference](docs/OPTIMISATION_REFERENCE.md), [optimisation navigation](optimisation/README.md) |
 
