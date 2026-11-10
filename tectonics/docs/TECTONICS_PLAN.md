@@ -734,30 +734,21 @@ caveats remain with the method reference, including the incomplete pTatin3D sour
 review and the status of the pyBacktrack and goSPL extensions. Any future code or
 data adoption requires a separate rights and dependency review.
 
-## 10. Responsibilities across Atlas’s eighteen categories
+## 10. Interfaces with other Atlas categories
 
-This is an interface plan, not a task to build the whole generator now. Tectonics owns the selected deformation/material history. It should not absorb every downstream scientific responsibility.
+Tectonics supplies identified deformation, crustal/material and thermal history;
+it does not own the whole generator. The [module scopes](../../docs/MODULE_SCOPES.md#shared-ownership-and-interfaces)
+are the maintained home for each receiving category and its feedback. They assign
+one owner to shared surface, geological, water and material state and describe
+the connected consumers. The [product contract](../../docs/PRODUCT_AND_SCALE_CONTRACT.md#4-the-18-categories-product-support-and-time-meaning)
+sets the overall category and time requirements.
 
-| Category | Tectonic contribution / boundary |
-| --- | --- |
-| Plate tectonics | Plate/block motion, boundary history, supported regional deformation and material birth/recycling. |
-| Geology | Material structure, deformation, thermal/magmatic histories and exposure; geology supplies density/strength/stratigraphy laws. |
-| Topography and topology | Rock displacement plus explicit surface/support contributions; drainage topology remains a distinct physical/numerical responsibility from plate topology. |
-| Hydrology | Geometry and structural changes, defined loads and boundary fluxes; no universal water dynamics implied by accumulation. |
-| Political borders | Later constraints/opportunities only; physical deformation does not generate legitimate political ownership. |
-| Settlements | Later terrain/ground opportunity and hazard context; not automatically realised sites. |
-| Populations | Indirect downstream support/constraints; no tectonically determined population count. |
-| Biomes | Indirect elevation/material and history forcing through climate/soil/ecology. |
-| Climate | Continental positions, elevation and land–ocean geometry where used; full atmospheric circulation is separately scoped. |
-| Precipitation | Explicit forcing for the test; later climate interaction, with intervals and units preserved. |
-| Plant and animal ranges | Indirect habitat/barrier/history information, not biological coefficients inferred from geology. |
-| Soils and ground conditions | Parent material, thermal/structural setting and disturbance; soil water/root/failure laws remain explicit. |
-| Erosion and sediment transport | Tectonic forcing and exposed materials in; removal, transfer, deposition and unloading out. |
-| Seas and coastal processes | Basin/coast/seafloor movement and selected boundary histories; water/sediment/sea-level conventions remain separate. |
-| Resources and land suitability | Geological/magmatic/structural evidence; occurrence and economic/extractable quantities are separate claims. |
-| Land use and agriculture | Later terrain, material and water constraints, not tectonic crop or food predictions. |
-| Infrastructure and connectivity | Later topographic barriers, ground stability and hazard context; no road construction in this plan. |
-| Natural hazards | Active structure, strain/slip, slab/volcanic setting as inputs; event probabilities, recurrence and exposure are separate validated models. |
+Physical outputs provide evidence or constraints to ecological, hazard, resource
+and human systems. They do not by themselves predict species ranges, hazard
+probabilities, economic deposits, political legitimacy, populations, settlements
+or roads. Climate, drainage, sediment and ground processes retain their own laws
+and required inputs. A supplied forcing or bounded cross-domain helper does not
+imply that the corresponding receiving module is complete.
 
 <a id="milestones-decision-ownership-and-risk-control"></a>
 
