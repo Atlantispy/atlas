@@ -551,7 +551,7 @@ or extrusion and accounts for finite displaced/replaced host material. Net load
 depends on incoming minus outgoing mass per area. It does not independently run a
 thermal or structural response. [Thermodynamic tests](../../tests/test_w08_magmatic_thermodynamics.py),
 [transfer tests](../../tests/test_w08_magmatic_transfer.py) and
-[recorded controls](../W08_MAGMATISM.md) use calorimetry, analytic mixing, competing
+[recorded controls](../W08_JOINED.md#w08-step-5-finite-source-magmatism) use calorimetry, analytic mixing, competing
 outlets, exact depletion and component/enthalpy closure. They check supplied
 processes rather than predicting volcano locations or melt-source chemistry.
 

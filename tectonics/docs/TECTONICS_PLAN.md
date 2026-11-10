@@ -1164,7 +1164,7 @@ results remain at the following owner destinations.
 | W05 | [Regional extension](W05_REGIONAL_EXTENSION.md), [assessment](W05_REGIONAL_EXTENSION.md#combined-acceptance-contract) |
 | W06 | [Spreading design](W06_SPREADING.md), [birth](W06_WORKFLOW.md#oceanic-birth-and-spreading), [cooling](W06_COOLING.md), [histories](W06_WORKFLOW.md#changing-motion-histories), [workflow](W06_WORKFLOW.md) |
 | W07 | [Mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_REGIONAL_SOLVER.md#w07-step-3--heterogeneous-and-thermal-mechanics), [surface strength](W07_SURFACE_STRENGTH.md), [workflow](W07_WORKFLOW.md), fixed-box [3D mechanics](REGIONAL_MECHANICS_3D.md) / [evolution](REGIONAL_EVOLUTION_3D.md) |
-| W08 | [Regimes](W08_REGIMES.md), [shortening](W08_SHORTENING.md), [transform](W08_TRANSFORM.md), [subduction](W08_SUBDUCTION.md), [underthrust](UNDERTHRUST.md), [magmatism](W08_MAGMATISM.md), [joined routes](W08_JOINED.md) |
+| W08 | [Regimes](W08_REGIMES.md), [shortening](W08_SHORTENING.md), [transform](W08_SHORTENING.md#w08-step-3--transform-and-oblique-motion), [subduction](W08_SUBDUCTION.md), [underthrust](UNDERTHRUST.md), [magmatism](W08_JOINED.md#w08-step-5-finite-source-magmatism), [joined routes](W08_JOINED.md) |
 | W09 | [Surface design](W09_SURFACE_PROCESSES.md), [water](W09_WATER.md), [erosion](W09_WATER.md#finite-material-erosion) |
 | W10 | [Scoped validation](W10_VALIDATION.md) |
 | W11 | [Execution, PF/PT methods and measurements](OPTIMISATION_REFERENCE.md) |
