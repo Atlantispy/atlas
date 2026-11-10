@@ -440,7 +440,7 @@ answer. Output is downward displacement in metres.
 
 [Periodic workflow tests](../../tests/test_w04_workflow.py) check independently
 constructed discrete operators, sinusoidal loads, refinement and superposition.
-[Recorded workflow evidence](../W04_WORKFLOW.md#obtained-workflow-and-combined-evidence-22-september-2026) does not make a
+[Recorded workflow evidence](../W04_COLUMN_LOADS.md#obtained-workflow-and-combined-evidence-22-september-2026) does not make a
 regional crop physically periodic. Repetition must be an explicit assumption.
 
 ### Continuing plates and physical ends
@@ -458,7 +458,7 @@ Physical ends instead add a homogeneous correction satisfying the endpoint rules
 
 [Tests](../../tests/test_w04_finite_region.py) compare independent quadrature,
 analytical controls, source subdivision, endpoint conditions and exterior changes.
-[Evidence](../W04_WORKFLOW.md#finite-region-evidence) is tied to the recorded method.
+[Evidence](../W04_COLUMN_LOADS.md#finite-region-evidence) is tied to the recorded method.
 Uniform-route validity samples centres and faces; it does not certify every
 between-sample extremum. This remains a planar transect with loading invariant in
 the transverse direction, not a finite-width two-dimensional plate.
@@ -491,7 +491,7 @@ when stiffness changes. It does not derive stiffness evolution or viscoelasticit
 [Variable](../../tests/test_w04_variable_flexure.py) and
 [evolving tests](../../tests/test_evolving_flexure.py) check two-material analytical
 solutions, refinement and unchanged-load/changing-rigidity controls. See the
-[variable evidence](../W04_WORKFLOW.md#variable-rigidity-evidence) and
+[variable evidence](../W04_COLUMN_LOADS.md#variable-rigidity-evidence) and
 [evolving method/check record](../EVOLVING_MECHANICS.md).
 
 ### Connected support, outputs and acceptance limits
@@ -511,7 +511,7 @@ elevation, sea level or shoreline feedback.
 [Combined tests](../../tests/test_w04_acceptance.py) exercise uniform/variable
 rigidity with periodic, continuing and free/clamped boundaries, independent load
 accounts, reference shifts, restored continuation and reuse. The
-[recorded W04 acceptance](../W04_WORKFLOW.md#obtained-workflow-and-combined-evidence-22-september-2026) is explicitly for the
+[recorded W04 acceptance](../W04_COLUMN_LOADS.md#obtained-workflow-and-combined-evidence-22-september-2026) is explicitly for the
 supported stationary planar 1D workflow and its snapshot. Small-deflection limits,
 source checks and conservation do not establish realistic mountains or calibrated
 basins.
