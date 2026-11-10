@@ -29,7 +29,6 @@ every performance-related implementation in Atlas.
 | [`workbench/`](workbench/) | Source constructors, component owner records, measurements and predecessor selections. |
 | [`docs/COMPACT_EVERYWHERE_PLAN.md`](docs/COMPACT_EVERYWHERE_PLAN.md) | Compact storage/restart design, ownership, measurement and completion contracts. |
 | [`docs/release/`](docs/release/) | [Check policy](docs/release/RELEASE-CHECKS.md), [fold](docs/release/FOLD.md), [languages](../../docs/CODING_SAFETY.md#7-conditional-compiled-kernel-development) and [landing expectations](../../docs/CODING_SAFETY.md#6-changed-expectations-and-landing-obligations). |
-| [`CHANGELOG.md`](CHANGELOG.md) | Concise historical changes. |
 | [`MANIFEST.json`](MANIFEST.json) | Historical export origins, not a live runtime manifest. |
 
 The historical export replaced personal paths and contact details in selected
@@ -315,7 +314,20 @@ WP0–WP25 are the [compact optimisation programme](docs/COMPACT_EVERYWHERE_PLAN
 | WP24 | Compiled hot kernels |
 | WP25 | Heat warm start and mixed-precision certified solves |
 
-WP0 includes the historical census and later candidate measurements. WP12's
+WP0 includes the historical census and later candidate measurements. Early
+composed-r2 observations included compact storage examples (graph 104.7 →
+15.4 MB; heat ledger about 357 → 167 MB; IV1 supports 113.0 → 20.5 MB and IV2
+supports 553.9 → 88.8 MB). Mesh packing measured 1,219.5 → 13.8 s and a
+kept-mesh finish 24 min 53 s → 26 ms; a later sealed IV1 heat reopen measured
+46.1 → 15.7 s. These are distinct historical workloads, not an additive or
+whole-generator forecast. Step10 IV1/IV2 growth parity retained reference
+structure except 245 unstarted charts; serial-shard surface CPU was 893 → 454 s
+and 885 → 620 s. Empty-piece/support changes reduced IV2 constraints 598,337 →
+76,135, supports 5,801 → 3,502 and pieces 31,769 → 23,585. An early heat-ledger
+full recheck measured 40 min → 5 min 23 s. Observer overhead was material in one
+heat arm: 119 s without profiling versus 1,173 s with it, with equal outputs.
+
+WP12's
 positioned-sidecar option was assessed **not built/off**; see
 [Plan23](#plan-23--authenticated-sidecar-reads-wp12). The separate WP25 heat
 warm-start proposal was evaluated and disabled; its
@@ -530,4 +542,4 @@ Each plan reports its actual outcome, blocker or residual state under its authen
 
 Private execution plans and bound owner evidence govern implementation, run clearance and scientific acceptance. Public plans are dated sanitised projections, not a second execution ledger. Their differing bytes are expected after redaction, explanation and dated result updates. Reopen relevant current authority on authorised implementation resume; a summary or old manifest row cannot override a later decision. A queue ticket grants no launch authority, and release of one hold does not release another.
 
-Reconcile execution-contract or acceptance corrections against owner evidence before reflecting them publicly. Public-only link, spelling and privacy repairs remain publication changes. Later exports preserve those repairs and newer scoped results: compare exact source/destination versions before replacement. Source maps bind implementation bytes; public prose never substitutes for maps or private evidence. Keep current status in CURRENT_STATE and history in CHANGELOG; Git retains superseded prose. This page grants no run, repin, hold release, package overlay or publication permission.
+Reconcile execution-contract or acceptance corrections against owner evidence before reflecting them publicly. Public-only link, spelling and privacy repairs remain publication changes. Later exports preserve those repairs and newer scoped results: compare exact source/destination versions before replacement. Source maps bind implementation bytes; public prose never substitutes for maps or private evidence. Keep current status in CURRENT_STATE and substantive methods in their owners; Git retains superseded prose. This page grants no run, repin, hold release, package overlay or publication permission.
