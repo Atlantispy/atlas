@@ -1,13 +1,13 @@
 # Atlas optimisation programme
 
-Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance) for status, outstanding work and holds. This page supplies navigation and durable workflow contracts. Publication, component acceptance, installed delivery, runtime/default selection, scientific acceptance are separate outcomes.
+Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current-delivery-and-acceptance) for status, outstanding work and holds. This page supplies navigation and durable workflow contracts. Publication, component acceptance, installed delivery, runtime/default selection and scientific acceptance are separate outcomes.
 
-The engineering aim is exact, certified interval generation in under five minutes on one Windows machine. That is a target, not measured combined performance. Changes preserve exact results or an explicitly approved field/identity translation; they do not widen tolerances or resource limits.
+The engineering aim is exact, certified interval generation in under five minutes on one Windows machine. This page states that target; it is not measured combined performance. Changes preserve exact results or an explicitly approved field/identity translation; they do not widen tolerances or resource limits.
 
 This page is the consolidated catalogue of the optimisation work in this published
 branch: programme plans, compact work packages, candidate families and researched
-techniques. Each list links to its existing owner for the actual contracts, evidence
-and current status. The lists overlap: one method can appear in several programmes.
+techniques. Each list links to its existing owner for the actual contracts and
+evidence. The lists overlap: one method can appear in several programmes.
 An idea listed here is not automatically implemented, enabled, measured or accepted.
 The [current delivery and acceptance record](../../docs/CURRENT_STATE.md) owns the
 status and holds; private or later work not represented there is outside this public
@@ -59,9 +59,9 @@ These links identify subjects and existing owners. Read status in the current-st
 | 17 | [Geometry stacked parity](workbench/plan17/README.md) |
 | 18 | [Endpoint batching](workbench/plan18/README.md) |
 | 19 | [Geometry candidates](workbench/plan19/README.md) |
-| 20 | [Diagnostic captures](workbench/plan20/README.md); [measurement and folded-DLL contract](workbench/plan20/README.md) |
+| 20 | [Diagnostic captures, measurement and folded-DLL contract](workbench/plan20/README.md) |
 | 21 | [Lazy rows and sealed-mesh identity](workbench/plan21/README.md) |
-| 22 | [Bounded page carry](workbench/plan22/README-r4.md); [corrected-reader selection](workbench/plan22/README-r4.md) |
+| 22 | [Bounded page carry and corrected-reader selection](workbench/plan22/README-r4.md) |
 | 23 | [Authenticated sidecar reads](#plan-23--authenticated-sidecar-reads-wp12) |
 | 24 | [Segment summaries and buffer pools](#plan-24--segment-summaries-and-buffer-pools) |
 | 25 | [Runtime arithmetic identity](#plan-25--runtime-arithmetic-identity-l4) |
@@ -294,7 +294,7 @@ WP0–WP25 are the [compact optimisation programme](docs/COMPACT_EVERYWHERE_PLAN
 | WP15 | Worker payloads |
 | WP16 | Diagnostic captures |
 | WP17 | Completed-query store |
-| WP18 | Parallel scheduling and worker utilisation |
+| WP18 | Parallel scheduling and worker utilisation (“Parallelism that actually engages” in the programme) |
 | WP19 | Checkpoint-only development timing |
 | WP20 | One-shot exact certificates for zero-volume slivers |
 | WP21 | Exact constraint simplification and chart merging |
@@ -348,7 +348,7 @@ features, and selecting a family does not authorise a benchmark or change.
 
 ## Scientific-software methods
 
-The [O01–O17 research references](../docs/OPTIMISATION_REFERENCE.md#scientific-methods)
+The [O01–O17 research references](../docs/OPTIMISATION_REFERENCE.md#scientific-software-methods-o01o17)
 identify useful methods from other scientific software. They are precedents and
 conditional ideas, not evidence that Atlas implements or adopts those projects.
 
@@ -435,8 +435,8 @@ below are mapped to packages and remain subject to their actual dispositions.
 | Expression templates / loop fusion (1, 2) | WP23 |
 | Abstract data types swap (1) | WP23 |
 | Loop interchange / tiling for locality (2) | WP18/WP11 |
-| Consolidating invariant bounds checks (2) | WP23 |
-| Reusing invariant guard results (2) | WP23 |
+| Consolidating invariant bounds checks (bounds-checking elimination, 2) | WP23 |
+| Reusing invariant guard results (jump threading, 2) | WP23 |
 | Test reordering (2) | WP22 |
 | Rematerialisation (2) | WP11 |
 | Speculative execution (4) | WP18 |
