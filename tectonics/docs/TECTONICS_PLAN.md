@@ -77,7 +77,7 @@ consolidation is not a fresh scientific-software audit.
 | Earth-like tectonics for 1.0 | Assume a mobile lithosphere with terrestrial-style physical relationships; do not require a model of the origin of plate tectonics. |
 | Physical parameters are not buried in solver code | Use explicit, versioned Earth-like profiles in 1.0; reserve user-facing customisation for later without making it a release obligation. |
 | Atlas must not require the Diadem | World identity, radius/geometry, material parameters, constraints and initial conditions are inputs. History A is a compatibility example, not a universal template or independent validation case. |
-| Eventual whole planets | Establish spherical rotation and area conventions early. Full planetary physical execution is a later scale gate, not a claim made by passing regional cases. |
+| Whole-planet tectonics | Establish spherical rotation and area conventions early. Coarse whole-sphere tectonic generation is required for the tectonics completion target; regional cases alone do not establish it. |
 | Resolution as fine as feasible, including 1 m | Keep evidence, process, exchange and output spacing separate. No fixed 100 m/10 m product ceiling; no promise of metre-scale whole-planet physics. |
 | Realism before production wiring | Independent equations and bounded mechanism tests precede the end-to-end production chain. Interfaces needed to test a mechanism are allowed in its future scope; production integration remains later. |
 | Learn methods, do not integrate packages now | Reuse scientific ideas and documented algorithms as references. Any future source, data, library or database adoption needs a separate dependency/provenance and permission review. |
@@ -141,7 +141,7 @@ Mode M may take boundary velocities from Mode K. In that configuration K supplie
 | Specialist diagnostics | Optional: elastic dislocation diagnostics, phase-equilibrium property tables and thermochronometric observations. They must answer a needed question, not expand scope automatically. |
 | Beyond the baseline | Deferred: self-organising global mantle convection, spontaneous initiation of every fault/subduction zone, individual earthquake rupture/waves, full reactive two-phase magma transport, non-Earth-like tectonic regimes and universal metre-scale mechanics. |
 
-Complete planetary execution is a separate capability claim even if spherical mathematics is present. Whether it is included in the eventual 1.0 release should depend on its evidence and resource gate, not on a new restriction of the owner’s long-term product intent.
+Coarse whole-sphere tectonic generation is part of the [tectonics completion target](INTEGRATION_PLAN.md#1-the-outcome-we-must-deliver). It requires its own scientific and resource evidence; spherical mathematics or passing regional cases do not establish it. This does not require every Atlas process to run globally or promise metre-scale planetary mechanics.
 
 <a id="scientific-state-and-interface-contracts"></a>
 
@@ -717,29 +717,22 @@ For a conserved quantity, the residual is final storage minus initial storage mi
 
 Do not invent one universal percentage for every geological observable. Tolerances must reflect numerical truncation and independent measurement/model uncertainty, recorded separately. A failed run cannot redefine its own limits after seeing the result. A changed scientific model gets a new identity and comparison, not a backdated pass.
 
-## 9. All seventeen software families: decisions, not dependencies
+## 9. Scientific software references
 
-| Family | Planned lesson | Disposition |
-| --- | --- | --- |
-| F01 GPlates / pyGPlates | Spherical rotations, shared boundaries, cached time states. | Early mathematical foundation; not a mantle-force predictor. |
-| F02 GPlately | Moving ocean-material birth/age/removal; separate gridding. | Early history reference; reject hidden initial-age guesses. |
-| F03 Geodynamic World Builder | Compact feature-based initial geometry and thermal/composition sampling. | Early case-definition reference. |
-| F04 LaMEM | Staggered mechanics and moving material; solver/data separation. | Candidate regional mechanics reference, not a framework clone. |
-| F05 ASPECT | Governing formulations, creep/yield conventions, adaptive/multigrid methods. | Closure and verification reference; advanced solvers conditional. |
-| F06 Underworld | Material history versus mesh fields; batching and equation visibility. | Use narrow lessons first; UW2 and UW3 are not assumed identical. |
-| F07 pTatin3D | Mixed pressure–velocity solve and matrix-free/preconditioning lessons. | Specialist comparison; incomplete earlier source access remains a caveat. |
-| F08 gFlex | Load-to-deflection equations and analytical/finite-difference verification. | Early physical-support reference; FFT is a derived candidate, not a certified stable feature claim. |
-| F09 pyBacktrack | Thermal subsidence and solid-preserving decompaction. | Early where needed; inverse/reconstruction workflow is not generative physics. |
-| F10 FastScape family | Restricted implicit incision, ordered graph sweep and ADI diffusion. | Surface-response reference after law selection; Python/Fortran/C++ scopes remain distinct. |
-| F11 Landlab | Prescribed extension and TVD; routing/depression-policy separation. | First mechanism candidate, not blanket validation of all Landlab components. |
-| F12 Badlands | Source-to-sink material, stratigraphy and controlled remeshing. | Later surface/material coupling. |
-| F13 goSPL | Spherical finite volumes and explicit distributed face flux. | Scale study after a valid serial operator; no metre-scale claim. |
-| F14 PyLith | Prescribed-slip mechanics, nondimensionalisation and interface constraints. | Optional diagnostic; not spontaneous rupture inferred from older papers. |
-| F15 cutde | Triangular elastic response; dense/blocked/matrix-free trade-offs. | Optional diagnostic; low-rank compression is approximate. |
-| F16 MAGEMin | Pressure–temperature–composition equilibrium and bounded properties. | Optional after material-state validity; not an eruption model. |
-| F17 GDTchron | Independent thermal-history observables and batch histories. | Optional validation stage, not a tectonic driver. |
+The [scientific-methods reference](OPTIMISATION_REFERENCE.md#scientific-methods)
+collects the seventeen software families, their proposed applications, evidence
+and limitations. The equation-to-method map in section 4.1 links them to the
+relevant work packages. They are references or conditional diagnostics, not
+seventeen dependencies to integrate.
 
-All entries inherit the source and version caveats of Reports 01–04. No new feature claim is based on the under-review pyBacktrack/goSPL extensions. No code or database copying is selected; a future implementation must review the exact source/data rights and required notices separately from the scientific method. [[R01](#research-basis); [R02](OPTIMISATION_REFERENCE.md#scientific-methods); [R03](#research-basis); [R04](#research-basis)]
+Keep physical interpretations distinct: prescribed motion does not predict
+mantle forces; reconstruction is not generative physics; surface routing is not
+a complete sediment model; and prescribed elastic slip is not long-term plastic
+deformation. Phase-equilibrium and thermal-history tools are conditional
+property or validation aids, not eruption or tectonic drivers. Source/version
+caveats remain with the method reference, including the incomplete pTatin3D source
+review and the status of the pyBacktrack and goSPL extensions. Any future code or
+data adoption requires a separate rights and dependency review.
 
 ## 10. Responsibilities across Atlas’s eighteen categories
 
