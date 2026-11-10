@@ -2113,7 +2113,7 @@ refused. WorkBudget is not an OS total-RSS limiter.
 One one-step feasibility pilot preceded the new comparison specification; its
 comparison gates were fixed before formal tests/measurements and never loosened.
 The initial descriptor list/tuple mismatch and memory-exception reclassification
-were corrected before final evidence. R4.4 remains IN_PROGRESS; this completes
+were corrected before final evidence. R4.4 remains held and incomplete; this completes
 only the separately selected explicit-start optimisation, retained as opt-in.
 
 

@@ -13,10 +13,10 @@ for collocation, units, tests and limits; the
 [execution contract](OPTIMISATION_REFERENCE.md#3cr4-3-execution) covers reuse.
 The optional new thermochemical mechanical mode preserves legacy descriptors
 and rejects unsupported damage evolution. R4.4 benchmark/combined acceptance is
-still outstanding; R4 remains IN_PROGRESS.
+held and incomplete; the scientific-fidelity repair remains paused.
 
 
-R4.2 review (dev29 / revision 33): see the [current scientific contract](TECTONICS_PLAN.md#3cr4-2-review) for conditioned diffusion, source products, clock precision and unchanged ongoing R4 scope. Historical sections below retain their dated meaning.
+R4.2 review (dev29 / revision 33): see the [current scientific contract](TECTONICS_PLAN.md#3cr4-2-review) for conditioned diffusion, source products, clock precision and unchanged remaining R4 scope. Historical sections below retain their dated meaning.
 
 
 ## R4.1 addition — mechanical component, not full R4
