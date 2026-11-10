@@ -519,15 +519,15 @@ identity; earlier source-bound W10/W11 receipts remain historical.
 
 ## Verification and resources
 
-The acceptance record is [w12-assembly-r1.json](../evidence/w12-assembly-r1.json).
-It separates native direct-versus-assembled calculations, clean-versus-resumed
+The original bounded Windows observation is [w12-assembly-r1.json](../evidence/w12-assembly-r1.json).
+That record separates native direct-versus-assembled calculations, clean-versus-resumed
 results, cross-route export round trips, graph reuse and refusal/resource checks.
 The tests compare complete fields and identities, not merely one plotted value.
 The CLI campaign separately exercises actual process restarts and retained files.
 
-Results: **29 distinct W12 test methods pass**, including all 17 typed output
-forms; 30 source-only safety tests pass with one explicit existing skip. The
-final publisher change receives its own 10-test suite, with the affected assembly
+The original results recorded **29 distinct W12 test methods passing**, including all
+17 typed output forms; 30 source-only safety tests passed with one existing skip. The
+final publisher change received its own 10-test suite, with the affected assembly
 guards checked afterwards; no full regression replay is implied by these counts.
 
 | Public CLI invocation | New outputs | Restored native outputs | Reported seconds |

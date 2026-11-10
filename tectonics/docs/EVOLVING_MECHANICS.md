@@ -90,8 +90,9 @@ identical request still verifies live source identity. Only one current operator
 and latest response are retained. Geometry, boundary types and pressure convention
 changes need a new plan, not a silently reused incompatible operator.
 
-**An interrupted viscosity change no longer breaks the plan (R7 repair, 1 October
-2026 candidate).** A coefficient change can be cancelled, or fail, at three kinds
+**An interrupted viscosity change no longer breaks the plan (R7 repair).** The
+1 October candidate was later integrated within its documented scope; see [current
+state](../../docs/CURRENT_STATE.md). A coefficient change can be cancelled, or fail, at three kinds
 of moment: before the numeric refill starts, during it (including after the solver
 core has taken the new coefficients but before the operator records them), and at
 the operator's closing cancellation/source check, after the change was accepted.

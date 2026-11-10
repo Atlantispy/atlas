@@ -161,7 +161,8 @@ Production physics, parameters, source budget and campaign holds are unchanged.
 ## Result and use
 
 [Original assessment](../evidence/w10-assessment-r1.json): `ASSESSMENT_COMPLETE`.
-All 26 selected implementation checks pass, no skips, with unchanged source bytes.
+At that assessment, all 26 selected implementation checks passed with no skips
+and unchanged source bytes.
 The unchanged synthetic oceanic cooling parameters also pass the predeclared
 observational **dispersion screen**. This is a bounded physical consistency result,
 not a calibrated confidence statement or blanket acceptance of tectonic dynamics.
@@ -241,16 +242,16 @@ T10 shortening/shear/underthrust, T11 retained subduction comparisons, T14 joine
 accounts and T15 source refusal/recovery. Manufactured conduction, flexure and
 mechanics tests include refinement; they are not geological observations.
 
-T09 additionally has a fresh [B09 surface convergence run](../evidence/w10-free-surface-r1.json):
+T09 additionally had a [B09 surface convergence run](../evidence/w10-free-surface-r1.json):
 12 checks, ten trajectories, Q2 grids 4x2/8x4/16x8, 16/32/64 steps and both frozen
 small amplitudes. Finest maximum amplitude errors are 0.00368764%/0.00368756%;
 time-difference ratios are 4.11201/4.11201. Its independent finite-depth BVP oracle,
-resource gates, frozen design/case and all current production/driver hashes pass.
-The old surface record was not reused as current after relevant code changed.
+resource gates, frozen design/case and then-selected production/driver hashes
+passed. The older surface record was not reused after relevant code changed.
 
-Step 4's three-route recovery evidence is reused only because its complete
-production, helper/fixture and runtime bindings still match. No accepted physical
-outputs are replayed just for reassurance. The five-case subduction acceptance
+At the assessment, Step 4's three-route recovery evidence was reused because its
+complete production, helper/fixture and runtime bindings matched then. No accepted
+physical outputs are replayed just for reassurance. The five-case subduction acceptance
 and adapter/report hashes are checked, but those campaigns are labelled historical:
 recorded source differences are listed, not hidden behind their passing numbers.
 Later documented parity checks support limited retention, not a claim that every
@@ -279,9 +280,10 @@ it does not close all withheld-geological tests. T12 incision/diffusion and T13
 sediment/lake routing remain with their downstream owners, per the module boundary
 decision. W09's unfinished downstream work is not silently included in tectonics.
 
-Next is W11 performance and scale within supported envelopes. W12 assembly must
-retain these distinctions and cannot turn unresolved field evidence into release
-acceptance. No whole-world, production-ready or calibrated-uncertainty flag is set.
+W11 performance work and the bounded [W12 assembly](W12_ASSEMBLY.md) followed;
+[current state](../../docs/CURRENT_STATE.md) records their delivery boundaries.
+The assembly does not turn unresolved field evidence into release acceptance.
+No whole-world, production-ready or calibrated-uncertainty flag is set.
 
 ## Time, resources and focused verification
 

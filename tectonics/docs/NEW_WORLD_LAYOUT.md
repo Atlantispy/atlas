@@ -237,8 +237,9 @@ missing evolution layer and must not be treated as three independent visual fixe
 
 The five points above describe the diagnosed generator gap, not the whole
 integration scope. The [complete integration plan](INTEGRATION_PLAN.md) now governs
-implementation: **I01 closes the scientific model/contract choices before I02's
-state and transaction layer**. It also covers W05–W08 joins, global/regional and
+implementation: I01's model/contract choices and bounded feasibility are recorded
+complete, and I02's bounded state and transaction workflow is delivered. Later
+physical-event and world integration remain open. The plan also covers W05–W08 joins, global/regional and
 external feedback, support ownership, W12 delivery, UI and end-to-end acceptance.
 Do not substitute this earlier short outline for that full plan. A history
 interface alone does not fix the three realism defects; consumer runtime has not

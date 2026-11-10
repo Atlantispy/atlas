@@ -1,6 +1,6 @@
 # W03 increment 3: drained compaction and partial rebound
 
-22 September 2026. local `remake` implementation. A forward,
+Implemented 22 September 2026. A forward,
 history-dependent, saturated **already-drained equilibrium** column model, not
 Athy backstripping relabelled as physical unloading. This completes the selected
 compaction increment; the subsequent [bounded W01/W02/W03 assembly](W03_WORKFLOW.md)

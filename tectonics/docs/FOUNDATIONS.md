@@ -1001,7 +1001,9 @@ block restoration and remain distinct from an absent disposable snapshot.
 
 This is a static geometric capability. Global transport, plate evolution,
 material budgets, thermal evolution and predictive forces are not obtained by
-joining maps. W01 stages 4–8 and relevant later scientific packages remain.
+joining maps. The later [W01 sampler and regional workflow](W01_REGIONAL_WORKFLOW.md)
+are implemented within their declared bounds; global transport, plate evolution
+and predictive forces remain separate work.
 
 ### Independent references and checks
 
@@ -1139,7 +1141,8 @@ unless that association is explicitly declared.
 Fault dip is measured down from horizontal toward the named side of the directed
 trace. Faults and weak zones have declared depth ranges; no offset, slip, displaced
 layer stack, thermal source, weakness multiplication or generated tectonic force is
-inferred. Point/depth evaluation belongs to the remaining sampler and mechanisms.
+inferred. Point/depth evaluation belongs to the later [sampler](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling)
+and supported mechanisms, not this static descriptor.
 
 Whole cases save through ArrayStore with their complete topology and geometry.
 The compressed canonical byte definition participates in exact identity. Restoration
@@ -1235,7 +1238,8 @@ or high-pressure profile because they fit the same Python schema.
 the selected library, combines quantities for property calculations only, and
 preserves separate W02 cohorts. It rejects unknown pores, a second pore correction
 and a differently bound library. It does not select a spatial province or change
-a layer's thickness: those remain stage 5 and later physical responsibilities.
+a layer's thickness: those belong to the [stage-5 sampler](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling)
+and later physical mechanisms, respectively.
 
 The seven matrix recipes carry authored composition assumptions and do not infer
 soil texture, compaction, burial or water saturation. Unusual materials and

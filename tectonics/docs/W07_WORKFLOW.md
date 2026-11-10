@@ -340,7 +340,7 @@ validation, calculation, cap or output format changed.
 
 ### Combined evidence
 
-The [current-source report](../evidence/w07-workflow.json) passes all **five**
+The [Step 5 completion-snapshot report](../evidence/w07-workflow.json) passed all **five**
 assembled/reference/timing checks in **63.733 s**, on Windows 11, Python 3.12.14,
 NumPy 2.4.6 and SciPy 1.17.1, with one native thread. Report SHA-256:
 `b21b9b38b18a33f74bd8732a436d54baf449e93c3ac97c9a05e19c69255f460f`.

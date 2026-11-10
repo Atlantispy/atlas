@@ -17,8 +17,8 @@ intersection which silently discards material. Different density materials are
 separate phases; no undocumented density change is inferred from thickness.
 
 `geometry_source` and thermal coverage sources are caller attestations, not proof
-that two polygons or depth intervals coincide. The next W04 step must bind these
-to actual W01/W02/W03 geometry, inventory, history and exclusive support ownership.
+that two polygons or depth intervals coincide. The later [bounded W04 workflow](W04_WORKFLOW.md)
+binds its selected W01/W02/W03 geometry, inventory, history and support ownership.
 `epoch_id` names the instant of each snapshot; reference/current may differ. No
 time conversion or chronological interpolation is performed by this kernel.
 
@@ -44,7 +44,8 @@ occupies the vacated volume, its two accounts cancel: compaction alone creates n
 extra excess load. If negligible-density air replaces that water, the support
 unloads. Fluid arriving elsewhere loads its destination only when that destination
 is represented. This kernel neither locates an external reservoir nor proves its
-supply: source-bound finite-reservoir placement belongs to the next coupling step.
+supply. The [bounded workflow](W04_WORKFLOW.md) receives explicit finite-reservoir
+placement; this kernel does not infer it.
 
 ## Thermal term and double-counting boundary
 
@@ -72,9 +73,9 @@ The output of `column_load_change(reference,current,g)` has shape `(columns,4)`:
 
 This is the **total change from the given reference**, not a displacement or a
 load increment to repeatedly add to an already-loaded state. No precomputed W03
-subsidence is accepted as another load input. Integrating this with W03 must still
-enforce one owner: it must not apply both local thermal isostasy and flexure to the
-same thermal anomaly. Future deflection-created infill belongs to the restoring
+subsidence is accepted as another load input. The [bounded W03/W04 connection](W04_WORKFLOW.md#one-thermal-support-owner)
+enforces one owner: it does not apply both local thermal isostasy and flexure to
+the same thermal anomaly. Future deflection-created infill belongs to the restoring
 term/feedback equation, not both that equation and this fixed-reference load.
 There is no dynamic mantle traction, non-Boussinesq EOS or pressure-dependent
 mineral phase equilibrium in this step.

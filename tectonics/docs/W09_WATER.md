@@ -242,8 +242,8 @@ ulp away), and a continuation may pass the original end as `end_time_s`. Newly r
 Both operators detach immutable inputs, retain prepared geometry and source/runtime
 identity, and keep only one latest complete-request cache entry. Changed forcing
 or initial state computes new physics while reusing preparation. Both new modules
-join the loaded-code identity; the package now has 119 Python source files under
-the unchanged 128-file bound. Old reports/checkpoints are not repinned.
+joined the loaded-code identity; the package then had 119 Python source files under
+the 128-file bound. Old reports/checkpoints are not repinned.
 The later [A3 capacity repair](../../docs/CURRENT_EVIDENCE.md#historical-repair-qualification)
 raised that bound to 512 files; the count above is this checkpoint's.
 

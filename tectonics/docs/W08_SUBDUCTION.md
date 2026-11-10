@@ -5,7 +5,8 @@ the frozen [W08 design](W08_REGIMES.md) or held R4.4 acceptance.
 **Step 4 COMPLETE, 23 September 2026**, for the explicit accepted routes below.
 The source question is resolved by the frozen design's independent weak/strong
 operator derivation route, not by claiming recovered historical contributor code.
-Steps5 (magmatism) and6 (joined workflow/acceptance) remain separate work.
+[Step 5 magmatism](W08_MAGMATISM.md) and the [Step 6 joined workflow](W08_JOINED.md)
+have their own scoped results and acceptance boundaries.
 
 ## Projection-operator lifetime option, 23 September 2026
 
@@ -589,9 +590,9 @@ continues to mean historical contributor-code equivalence is not claimed.
 adapter and the retained reports. It independently recomputes all five numerical
 gates from the selected6/3/1.5km rows: r14+r15 for1a/1b/1c, r14+r16 for2b, r18
 for adapted2a. Failed/refused alternative rows are not accepted or erased.
-Current package bytes exactly match the final automatic-refinement integration
-record; no solver source changed during closure, so no new coupled campaign is
-needed. Finite-retirement, residual/flux, cancellation and resource-lifetime
+At Step 4 closure, package bytes matched the final automatic-refinement integration
+record and no solver source changed during closure; no new coupled campaign was
+needed for that result. This is not a claim that the present checkout matches it. Finite-retirement, residual/flux, cancellation and resource-lifetime
 checks retain their previously recorded evidence. Subsequent
 [magmatism](W08_MAGMATISM.md) and [joined workflow](W08_JOINED.md) results retain
 their own scope; Step-4 closure alone does not establish the combined route.
