@@ -312,143 +312,29 @@ checks also passed; no full-suite, whole-world or held R4.4 run was launched.
 <a id="research-led-correction-in-progress"></a>
 ## Research-led correction (historical)
 
-This records an intermediate stage; the later [source resolution and Step 4 closure](#source-resolution-and-step-4-closure) supersedes its pending next actions.
+The original benchmark's fine corner resolution motivated explicitly selected
+corner-graded meshes; this did not add a physical coupling ramp or change the
+frozen case. Early r4 work exposed conditioning and resource-accounting limits;
+the true saddle solve failed its unchanged continuity gate. The less extreme r5
+mesh passed the affine pressure patch after correcting premature numerical
+convergence, without changing the physical tolerances or iteration ceiling.
 
-The original paper's PGC contributor description (printed p.190) reports a 1 m
-horizontal tip removal and elements ranging from 4e-8 to 70 m within the first
-kilometre. Its nonlinear cases have thin boundary layers. This is stronger
-resolution evidence than the nominal whole-domain spacing. The existing first
-P2 slab edge has speed samples (0,1,1), giving 3s-2s^2 and a 12.5% between-node
-overshoot. The stationary apex is source-supported; this numerical trace is not
-a linear physical coupling ramp. The separate original UM ramp variant and the
-2023 FEniCS-SZ ramp/adiabat are not silently adopted into the frozen no-ramp case.
+On r5, all five fine reference-error checks passed, but case 2a's 3-to-1.5 km
+change was 1.029971 °C against a 1 °C limit. A separately tested monotone
+first-edge velocity trace removed an overshoot but barely changed that result; it
+was not promoted as a convergence fix. The [later one-pass refinement](#remaining-convergence-check-corrected-by-one-pass-refinement)
+resolved the numerical gate, and [source resolution](#source-resolution-and-step-4-closure)
+separately resolved the boundary-operator interpretation. Neither result rewrites
+the earlier failed or refused attempts.
 
-Grading r4 retains r3 away from the corner and adds geometric upper bounds on
-spacing. With r in km from (50,50), s=sqrt(h/6), and d a lower-bound distance
-outside the wedge, the additional targets are
-`h/4+s*(.05*r+.5*max(r-25,0)+.25*d)` and
-`h/6000+s*(.35*r+.25*d)`. The 25 km transition is half the lid thickness.
-The first resolves the near-corner layer; the second confines the singular
-first-edge approximation to 1/0.5/0.25 m targets at base scales 6/3/1.5 km.
-The coefficients were chosen using geometry and bounded mesh admission before
-the new thermal comparisons, not fitted to their temperatures. This gives
-2654/6084/14511 triangles, of which 1014/2448/5996 are in the wedge.
-No PGC notch or finite physical coupling ramp is introduced. Geometry checks
-pass, but no numerical acceptance is implied by those counts.
-
-The first r4 attempts exposed conditioning on tiny elements and an excessive
-retained-geometry allowance. `interface-r3` remains the working default;
-`corner-r4` is an explicit experimental mesh, not silently substituted for it.
-`corner-r5` is a second declared candidate: the final apex target is h/60
-(100/50/25 m at base h=6/3/1.5 km) with the same surrounding corner grading.
-It avoids the sub-metre extreme; no boundary trace, coupling ramp, viscosity law,
-128 MiB cap, iteration ceiling or acceptance tolerance has been changed.
-The mesh policy and realised target are included in the plan/result identity.
-
-Transport conditioning now subtracts the local streamfunction gauge before
-differentiation, retains compensated boundary-integral prefixes until after a
-single global gauge shift, and closes that integral on the longest boundary
-edge. These are constant-gauge/round-off changes, not flux redistribution.
-Eleven focused transport checks pass, including independently differentiated
-cubic traces on a 512 km/0.244 m graded boundary.
-
-Locator retention now accounts for the warmed, closed non-incremental SciPy
-Qhull object's complete Python/array backing, rather than a coarse envelope.
-The r4 fine main+wedge reservation falls from15,645,104 to6,187,778 bytes;
-this is a more accurate accounting allowance, not a measured RAM saving.
-Flow gradients are also released during factorisation and regenerated only for
-the strain calculation. These phase changes retain the original cap and
-round-off arithmetic; caller-held results remain charged.
-
-The r4 true saddle solve still fails unchanged continuity checks at the
-1200-inner-iteration ceiling. It must not be accepted because geometry checks
-pass. Moderate r5 computes both creep cases at base h=6/3 km; its h=3 maximum
-reference errors are1.336940 C (2a) and1.147598 C (2b). Fine convergence and the
-refined affine pressure patch are still required before candidate acceptance.
-
-The affine patch has since passed after fixing premature normwise convergence:
-the solver now conditionally uses its already permitted defect corrections when
-the true equilibrated residual remains above an operation-magnitude round-off
-scale. The existing physical1e-10 gates,1200-inner-iteration ceiling and two
-correction opportunities are unchanged. On r5 the manufactured pressure error
-falls from2.967546e-7 to3.820023e-12; the unchanged1e-8 assertion passes.
-
-The finest candidate then exposed sparse-factor fill, not a physical failure.
-Heat now uses RCM followed by SuperLU MMD_AT_PLUS_A, symmetric mode and a0.01
-diagonal-pivot threshold (off-diagonal pivoting remains available). This is full
-LU with original-equation residual checks, not incomplete factorisation.
-Heat gradients are released before LU, since only assembled operators are needed
-afterwards. Freed headroom permits a72MiB internal construction envelope instead
-of64MiB while retaining the unchanged shared128MiB cap and realised-fill checks.
-CSC backing and permutation storage are included in the new accounting.
-
-A three-repeat alternating comparison on the same26,692-unknown fine case1a
-thermal matrix gives0.9100626s →0.0457220s median ordering/conversion/factor time:
-0.8643406s /94.97595% saved. Factor nonzeros fall1,890,881 →1,771,368.
-Manufactured forward error is1.12e-14 and backward residual8.52e-16.
-This is a factor-only speedup, not a whole-generator or completed-baseline-run
-claim. Both measured variants are assessed using the same complete storage rule.
-
-The r16 nonlinear fine solves now complete. Their full shared accounting peaks
-at exactly134,217,728 bytes: the velocity-factor construction reservation is
-limited to the actual available ancestral-budget headroom, then its realised
-fill and retained storage are still checked. This avoids treating an internal
-72MiB maximum reservation as irreducible live storage when Anderson history is
-also resident. No native hard-RSS limit or extra uncharged allocation is claimed.
-
-The previous corner-r5/nodal-P2 comparisons use r14 h=6/3 km, r15 finest constant
-cases and r16 finest creep cases. These reports deliberately preserve their
-different source identities: intervening changes concern factor ordering,
-storage lifetime and admission, not the physical equations, quadrature, mesh,
-boundary traces, sample points or nonlinear convergence thresholds.
-
-| Case | Fine maximum error (C), limit2 | 3-to-1.5 km change (C), limit1 | Fine elapsed (s) |
-|---|---:|---:|---:|
-|1a|0.047639|0.151066|0.326436|
-|1b|0.047088|0.148727|5.128511|
-|1c|0.074320|0.107190|1.335523|
-|2a|0.309064|**1.029971 FAIL**|43.110065|
-|2b|0.855078|0.511755|89.712439|
-
-All five now pass the reference-error test; four pass the fixed refinement test.
-The2a miss is not rounded into a pass. Compared with historical r10 timings,
-creep runs are12.584s/22.59% and67.345s/42.88% shorter, respectively; those are
-observed scenario improvements with changed meshes/algorithms, not a matched
-isolated optimisation experiment. The matched factor measurement above is the
-controlled speedup evidence. Step4 remains IN_PROGRESS.
-
-The optional `coupling_trace='mesh-linear-first-edge-v1'` now removes the
-first-edge12.5% mechanical velocity overshoot. It changes only that actual
-edge's P2 midpoint to the mean of its endpoint values; `nodal-p2-v1` remains
-the default. Geometry, trace choice and realised edge length are identity-bound;
-analytic1a is unchanged. Monotonicity is a mechanical boundary property, not a
-claim about the subsequently projected interior/tangential transport field.
-It is a mesh-tied numerical variant, not UM's physical ramp or PGC's notch.
-
-Its separate three-level2a comparison r17 completes in70.554689s. Fine reference
-error0.309063C passes, but finest change1.029971C still fails. Temperature changes
-versus the original trace are at most about3e-6C over these diagnostics: this
-rules out that overshoot as a material cause of the remaining diagnostic miss.
-The variant is retained explicitly, not promoted or called a convergence fix.
-
-Pre-adaptation checkpoint: implementation/owner regressions pass in their recorded
-scopes; all five r5 reference-error comparisons pass;2a refinement and the
-independent original2008 source operator remain unresolved. Next work should
-localise the thermal discretisation error and justify any further local
-resolution from it, rather than tuning geometry or tolerances to the reference
-row. Default mesh/trace remain interface-r3/nodal-p2-v1 pending acceptance.
-
-Evidence: [r14 coarse/middle and fill refusals](../evidence/w08-subduction-r14-refined.json),
-[r15 fine constant cases](../evidence/w08-subduction-r15-fine.json),
-[r16 fine creep](../evidence/w08-subduction-r16-creep.json),
-[matched thermal-factor timing](../evidence/w08-subduction-thermal-ordering.json),
-[r17 separate monotone-trace comparison](../evidence/w08-subduction-r17-monotone.json).
-
-Wilson & van Keken (2023), section2.3.3, explicitly defines homogeneous natural
-outflow as Neumann, and its steady weak equation117 has no diffusive boundary
-load. This independently supports the implemented zero-normal-diffusive-flux
-operator. It does not explicitly clarify the 2008 wording, so the historical
-source-exact gate remains visible rather than claiming an author correction.
+The controlled thermal-factor comparison measured a 94.98% reduction in
+ordering/conversion/factor time on one fine matrix; this was not a whole-run
+speedup or a claim that process RSS fitted the accounted budget. Details and the
+original scope remain in [r14](../evidence/w08-subduction-r14-refined.json),
+[r15](../evidence/w08-subduction-r15-fine.json),
+[r16](../evidence/w08-subduction-r16-creep.json), the
+[thermal-factor comparison](../evidence/w08-subduction-thermal-ordering.json)
+and [r17](../evidence/w08-subduction-r17-monotone.json).
 
 ## Remaining convergence check corrected by one-pass refinement
 
