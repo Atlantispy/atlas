@@ -120,8 +120,8 @@ is claimed. See [focused evidence and measured timing](#obtained-evidence-22-sep
 ## Assembled support routes
 
 [W04 workflow](W04_WORKFLOW.md) owns actual stationary W01–W03 adapters and
-exclusive thermal/support ownership. [Finite regions](W04_FINITE_REGIONS.md)
-and [variable rigidity](W04_VARIABLE_RIGIDITY.md) describe the distinct supported
+exclusive thermal/support ownership. [Finite regions](W04_WORKFLOW.md#finite-region-support)
+and [variable rigidity](W04_WORKFLOW.md#fixed-variable-rigidity) describe the distinct supported
 boundary problems. Their combined qualification remains stationary planar 1D;
 no full terrain or held R4.4 campaign is established by this load kernel.
 

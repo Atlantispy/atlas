@@ -1160,7 +1160,7 @@ results remain at the following owner destinations.
 | W01 | [Sampling](W01_INITIAL_SAMPLING.md), [motion](W01_MOTION_FORCING.md), [regional workflow](W01_REGIONAL_WORKFLOW.md), [assessment](W01_REGIONAL_WORKFLOW.md#stage-8-combined-acceptance) |
 | W02 | [Regional transport, cohorts, remap, ALE and events](FOUNDATIONS.md#w02-regional-case-openclosed-constant-density-thickness-transport) |
 | W03 | [Thermal columns](W03_THERMAL_COLUMNS.md), [support](W03_THERMAL_SUPPORT.md), [compaction](W03_COMPACTION.md), [workflow](W03_WORKFLOW.md) |
-| W04 | [Loads](W04_COLUMN_LOADS.md), [finite regions](W04_FINITE_REGIONS.md), [variable rigidity](W04_VARIABLE_RIGIDITY.md), [workflow](W04_WORKFLOW.md), [assessment](W04_WORKFLOW.md#combined-supported-workflow-acceptance) |
+| W04 | [Loads](W04_COLUMN_LOADS.md), [finite regions](W04_WORKFLOW.md#finite-region-support), [variable rigidity](W04_WORKFLOW.md#fixed-variable-rigidity), [workflow](W04_WORKFLOW.md), [assessment](W04_WORKFLOW.md#combined-supported-workflow-acceptance) |
 | W05 | [Regional extension](W05_REGIONAL_EXTENSION.md), [assessment](W05_REGIONAL_EXTENSION.md#combined-acceptance-contract) |
 | W06 | [Spreading design](W06_SPREADING.md), [birth](W06_BIRTH.md), [cooling](W06_COOLING.md), [histories](W06_HISTORIES.md), [workflow](W06_WORKFLOW.md) |
 | W07 | [Mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_HETEROGENEOUS_THERMAL.md), [surface strength](W07_SURFACE_STRENGTH.md), [workflow](W07_WORKFLOW.md), fixed-box [3D mechanics](REGIONAL_MECHANICS_3D.md) / [evolution](REGIONAL_EVOLUTION_3D.md) |

@@ -1,16 +1,16 @@
-# W04 step 2: source-bound load and support integration
+# W04 source-bound load and support workflow
 
-22 September 2026. local unreleased `remake` work.
 This joins the supported stationary W01/W02/W03 column workflow to **uniform,
 periodic, linear flexure**. It produces an immutable displacement/surface-change
 projection; it does not deform the W03 material/thermal mesh or close a nonlinear
 hydrology/erosion feedback loop. Subsequent [combined W04 acceptance](#combined-supported-workflow-acceptance)
 passes the selected stationary 1D support workflow, not general terrain validation.
 
-[Step 3](W04_FINITE_REGIONS.md) extends this bridge with explicit finite 1D
+[Finite-region support](#finite-region-support) extends this bridge with explicit finite 1D
 regions, exterior loads and physical free/clamped ends. The periodic contract
 below remains the step-2 alternative; the finite route has its own continuum
-equation and non-wrapping derivative checks.
+equation and non-wrapping derivative checks. [Fixed variable rigidity](#fixed-variable-rigidity)
+adds the separate variable-coefficient method and its accuracy limits.
 
 ## Connected data and required physical inputs
 
@@ -125,7 +125,7 @@ domain and solves the existing centred-difference biharmonic operator, not a
 continuous `k^4` spectral operator or independently tiled regions. Output slope,
 bending strain and W03 fixed-plate deflection bounds must all pass. These guards
 do not replace checking the thin-plate approximation against an intended use case.
-Step 3 supplies bounded non-periodic and domain-size treatment; [step 4](W04_VARIABLE_RIGIDITY.md)
+Step 3 supplies bounded non-periodic and domain-size treatment; [fixed variable rigidity](#fixed-variable-rigidity)
 adds fixed variable rigidity. The later [assembled acceptance](#combined-supported-workflow-acceptance)
 checks these alternatives without claiming broader terrain validation.
 
@@ -270,3 +270,416 @@ and reviewed-source extent. Windows/Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1 with
 one native thread was used. No Linux, full suite, full terrain, R4.4, publication,
 external gFlex, empirical or whole-world acceptance is supplied by these results.
 The machine result remains the original observation; no checkpoint was repinned.
+
+<a id="finite-region-support"></a>
+
+## Finite regions without invented plate edges
+
+Implemented for the current **uniform-rigidity, stationary planar 1D** W01-W03
+workflow. This is a linear support projection, not material evolution or
+whole-world terrain acceptance. The periodic workflow above retains its explicitly
+periodic centred-difference operator; this step does not change that equation.
+
+### Physical alternatives
+
+- `continuous-plate`: the output region is a window into a continuing plate with
+  the same prescribed D and K. Adjacent load cells and exterior half-lines are
+  explicit. No motion or traction is forced to zero at the crop edges.
+  Computational FFT padding is not an extra geological load region.
+- `physical-edges`: the region really terminates at both source-defined ends.
+  Each end is explicitly `clamped` (w=w'=0) or `free` (w''=w'''=0). Mixed
+  free/clamped ends work. These homogeneous conditions describe changes from the
+  chosen reference. Exterior plate loads are refused in this mode.
+
+`FlexureBoundary1D(left, right, source_id)` records the actual assumption.
+`W04SupportPolicy` takes `region_boundary` and `max_omitted_deflection_m` alongside
+its unchanged material, ownership and validity requirements. A physical end must
+not be chosen merely because source data stop there. Neither a coastline nor a
+closed W02 transport boundary automatically defines a plate edge.
+
+The 1D solution represents loading invariant along the transverse direction.
+W03's finite reference width converts inventories into pressures; it is **not**
+a finite-width 2D plate-edge treatment. Variable rigidity, spherical geometry,
+arbitrary end forces, mixed continuous/physical ends and general 2D regions remain
+outside this increment.
+
+### Explicit surrounding loads and uncertainty
+
+`W04ExteriorLoads(state, left_pressure_pa, right_pressure_pa, *, far_left_pa,
+far_right_pa, omitted_left_bound_pa, omitted_right_bound_pa, source_id)` binds one
+exterior specification to the exact W03 state, time, grid, frame and datum.
+
+Halo arrays contain total downward pressure in Pa on contiguous cells at the
+source spacing. Left order is far-to-near; right is near-to-far. Empty arrays
+explicitly mean no represented halo. Beyond each halo is a prescribed constant-
+pressure half-line. These are total exterior loads, including any thermal,
+geological, water or external components the source authorises; outside thermal
+evolution is never inferred. Globally uniform cooling must be explicitly
+continued outside to claim its uniform whole-line response. The closed W03
+reservoir still closes on its own cells; it is not allocated outside again.
+
+Supply reference exterior inputs through `PreparedW04Support(..., exterior=...)`
+and current inputs through `.solve(..., exterior=...)`. Halos must have identical
+geometry at both instants. Load changes are subtracted from that fixed reference;
+previous displacement is never accumulated. Changed halo extent needs new
+reference preparation, not a silent checkpoint repin.
+
+Each omitted bound is an absolute pressure departure from the declared far-field
+constant, valid everywhere beyond the represented halo. Reference/current bounds
+add conservatively. Zero is an explicit exact-load assumption, not unknown data.
+For nearest output-to-exterior distances dL,dR, define:
+
+`S = QL exp(-dL/alpha) + QR exp(-dR/alpha)`.
+
+Conservative error bounds are `S/(sqrt(2)*K)` for displacement, `S/(K*alpha)` for
+slope, and `sqrt(2)*S/(K*alpha^2)` for curvature. The selected omitted-displacement
+tolerance must pass. All three also augment the existing displacement, slope and
+bending-strain checks. Padding unknown surroundings with zeros does not establish
+that these bounds hold. Results retain the boundary source, full model grid,
+crop, flexural length, both exterior IDs and conditional uncertainty assessment.
+
+### Equation and numerical choice
+
+Solve the continuous uniform thin-plate equation `D w'''' + K w = q`, with
+`K=(rho_compensation-rho_void)g`, positive-down w, and `alpha=(4D/K)^(1/4)`.
+
+`G(r) = exp(-abs(r)/alpha) [cos(abs(r)/alpha)+sin(abs(r)/alpha)] / (2 K alpha)`.
+
+Each cell is constant pressure over its full width, not a point impulse.
+Analytical cell integration supplies exact weights for that representation.
+Stable complex exponential/expm1 expressions preserve narrow-cell and far-tail
+differences. Signed forebulges are retained. Zero-padded **linear** convolution
+has enough padding for the complete source/kernel convolution, with no periodic
+images. The whole coupled array is solved together. Output is point response at
+centres/faces, including three analytic derivatives, not output-cell-mean
+displacement. Unresolved subcell pressure still has a constant-cell assumption.
+
+Constant far-halfline pressures are integrated analytically. Physical ends use
+a four-coefficient homogeneous correction with bounded end-localised decaying
+sine/cosine modes. Derivative rows are scaled by alpha powers. The scaled 4x4
+condition number must be at most 1e8, and reconstructed endpoint residuals pass a
+512-epsilon scaled arithmetic check. Ill-conditioned very short physical plates
+refuse: this is a limitation of the numerical basis, not a singular physical
+problem. No FD fallback silently changes the method.
+
+The new continuum response and earlier periodic **discrete** biharmonic response
+need not agree at finite resolution. Source subdivision and zero-load crop/domain
+enlargement are independently tested. Physical-end changes deliberately change
+the problem. Oscillating load responses need not converge monotonically with
+distance. Validity checks sample analytic derivatives at every centre and face,
+including exterior uncertainty; they do not certify unsampled subcell extrema,
+independently validate thin-plate assumptions or calibrate elastic thickness.
+
+### Efficiency, provenance and recovery
+
+Integrated kernel transforms and physical-end bases are prepared once. No dense
+O(N-squared) matrix or growing history is kept. These short, globally coupled
+kernels remain serial. Shared byte admission covers setup, retained coefficients,
+full halo responses and compact interior output. A crop cannot retain its large
+temporary halo buffer. Exterior hashing streams both payloads without making a
+duplicate concatenation.
+
+`cached_finite_flexure` uses the existing store, runtime/source checks and cheap-
+work auto-bypass. Its identity is distinct from periodic flexure and includes
+geometry, physical boundaries, materials and all load bytes, including far fields.
+W04 additionally binds exterior sources and bounds. W03 restoration plus
+reconstructed exterior inputs reproduces results and IDs. No old seal is repinned.
+See [checks and timings](#finite-region-evidence).
+
+### Papers and software checked before selection
+
+- [Wickert (2016), gFlex v1.0](https://gmd.copernicus.org/articles/9/997/2016/):
+  full-text section 2.1, equations 1-4 and 7, Table 1 and section 2.3. Compared
+  analytical superposition and finite differences; checked continuous, clamped,
+  free and periodic meanings. This motivated exact cell integration for constant
+  rigidity and explicit exterior treatment instead of a guessed clamp.
+- [gFlex theory and numerics](https://gflex.readthedocs.io/en/latest/theory_and_numerics.html):
+  independent reviewer checked governing equations, flexural length, SAS/SAS_NG,
+  FD and FFT documentation. Atlas independently derives/tests positive-down
+  pressure units; finite physical padding is not treated as exactly infinity.
+- [SciPy FFT convolution documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.fftconvolve.html):
+  checked full linear-convolution behaviour and size-dependent direct/FFT costs.
+  Implementation uses existing NumPy FFTs; no dependency was installed.
+
+Paper/documentation reviews only: no external gFlex execution or source-code
+audit. Independent quadrature and closed-form controls provide numerical evidence,
+not field calibration or full terrain realism acceptance.
+
+<a id="finite-region-evidence"></a>
+
+### Obtained finite-region evidence, 22 September 2026
+
+The uniform-D/K stationary planar 1D finite-region route passed 39 distinct
+focused Windows tests: eleven independent finite controls, six real W03 regional
+joins, thirteen retained periodic and nine shared identity checks. After final
+finite/exterior fixes, all seventeen affected new-route tests passed in 11.494 s;
+the unchanged 22 retained results were reused. Selection:
+test_w04_finite_region, test_w04_regional_workflow, test_w04_workflow and
+test_execution_reuse.IdentityTests, with declared scientific dependencies/one
+thread. No Linux/full-suite/long-run evidence is inferred.
+
+Independent Green quadrature, rectangular/forebulge response, direct cell sums,
+half-lines, subdivision/crop enlargement/translation, omitted-strip bounds,
+free/mixed/clamped ends and range/resource/cancellation/refusal/restart controls
+check the stated continuum problem. Actual source/halo/thermal continuation,
+closed-water/owner/epoch/datum and total-reference identities remain active.
+Physical ends require declared boundaries; arbitrary tractions, short ill-conditioned
+bases, variable rigidity, 2D/spherical support and subcell-extrema certification
+were not qualified by this increment.
+
+Review fixed a returned interior view retaining the full halo beyond its charged
+lifetime: output now detaches while both buffers are admitted, with bounded
+exterior hashing. Safe scaling also prevents q/(2K) silently vanishing at extreme
+finite K; q=K=1e308 gives the independent 0.5 m half-line displacement.
+
+[Raw finite timings](../evidence/w04-finite-timing.json) compare 2,048 cells/400 km,
+twelve solves/repetition and three alternating pairs, signed synthetic loads.
+Both use the same cell-integrated kernel, all centre/face displacements plus
+three derivatives, validation/admission/immutable outputs. Direct superposition
+0.101421499974 s versus prepared linear FFT 0.010749100009 s saves
+0.090672399965 s (89.40155686%) per twelve solves; setup is separately
+0.001285999897/0.001994500053 s and transform storage 524,352 bytes. Largest
+displacement difference is 1.82146e−17 m; derivatives meet unchanged
+5e−13 × per-component max response. The first harness tolerance-format error was
+fixed to the same explicit inequality, without changing the gate. Entry:
+python -B tectonics/tools/benchmark_w04_finite_region.py --output NEW.json.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-finite-regions.md) retains exact
+identities/static checks and reviewed gFlex/SciPy documentation. These are new
+kernel algorithm measurements, not old-release/whole-generator gains, empirical
+validation or external gFlex execution; W03 evolution/context and workers/cache
+hits are outside timing.
+
+<a id="fixed-variable-rigidity"></a>
+
+## Fixed spatially variable rigidity
+
+Implemented and optimised for the stationary, planar **1D** W01-W03 support
+projection. This extends [finite-region support](#finite-region-support); it does not
+change the existing fast uniform-rigidity routes. Subsequent [combined acceptance](#combined-supported-workflow-acceptance)
+passes the selected stationary 1D support workflow, not general terrain validation.
+
+### Physical contract
+
+`RigidityProfile1D` supplies source-linked E (Pa), effective elastic thickness Te
+(m), and Poisson ratio nu for every ordered source/halo cell. Require E>0, Te>0,
+and -1<nu<0.5. Rigidity is `D=E Te^3/[12(1-nu^2)]` in N m. E and Te are not
+inferred from rock names, crustal thickness or the thermal-plate thickness.
+Arrays are immutable snapshots; source, grid, frame, datum, epoch and explicit
+exterior materials contribute to the profile identity.
+
+Solve the conservative thin-plate/Winkler equation
+
+`(D(x) w''(x))'' + K w(x) = q(x)`, `K=(rho_compensation-rho_void)g > 0`.
+
+Displacement and pressure are positive down. D and q are piecewise constant in
+the supplied cells; no averaging smears a stiffness jump. The weak form is
+`integral(D w'' v'' + K w v) = integral(q v)`. It transmits displacement, slope,
+bending moment and shear across an unloaded interface. Curvature itself may
+jump. Multiplying the old uniform biharmonic stencil by local D is **not** this
+equation and is not used.
+
+The profile is fixed across the reference/current projection. The solver acts on
+the change in load, so repeated calls give total displacement from that reference,
+not accumulated increments. Time-dependent rigidity would require separate
+reference/current absolute-load solutions; changing D is not supported here.
+Local maximum strain uses each cell's own Te times absolute curvature / 2.
+
+Boundary choices are explicit:
+
+- `periodic`: identify displacement and slope at the seam. D may jump across it;
+  the nonzero-mean load is retained because K is positive.
+- Physical ends: homogeneous `free` or `clamped`, including mixed free/clamped
+  ends, applied as natural weak conditions or constrained displacement/slope.
+- Continuing plate: specify both far materials as `(E,Te,nu)` tuples and both
+  exterior half-line pressures, with any represented halo cells in the profile.
+  Exact constant-material decaying half-line solutions supply endpoint stiffness
+  and forcing. The output crop is not a new plate edge.
+
+For continuing support, **nonzero omitted-exterior pressure uncertainty is
+refused**. The uniform Green-function tail bound is not valid through a variable-D
+interior. Zero bounds declare exact prescribed exterior loads; they never mean
+unknown data. Existing uniform support retains its previous uncertainty treatment.
+
+This remains linear small-deflection, stationary 1D flexure with constant K.
+Loading is invariant transverse to the transect; W03's inventory width does not
+make it a finite-width 2D plate. No spherical geometry, yielding, viscoelasticity,
+evolving rigidity, general end forces or feedback into W03 geometry/heat/water is
+added. Effective elastic inputs still need source-specific scientific selection.
+
+### Numerical accuracy and output
+
+C1 cubic Hermite finite elements preserve the correct weak equation. Exact
+element stiffness, consistent foundation and cell-load integrals are assembled
+in scaled `[w,h*theta]` degrees of freedom. A diagonal equilibration precedes
+SPD banded Cholesky. No artificial stiffness, matrix jitter, dense fallback or
+changed physics is used on failure. A componentwise scaled equation residual is
+checked after every solve.
+
+`VariableFlexureAccuracy` requires a source, relative tolerance and separate
+absolute tolerances for displacement, slope and curvature. Starting subcells
+respect the smallest prescribed flexural length. At least two meshes are solved;
+subdivision doubles until every cell's point/maxima change, plus the estimated
+numerical uncertainty of both meshes, passes its selected absolute tolerance plus
+relative tolerance times that field's domain maximum.
+The returned answer is the finer computed solution, not an extrapolation.
+Default maximum refinements is six, bounded to eight and an explicit element
+ceiling (default 65,536). Budget or convergence failure refuses the answer.
+
+These are **mesh-change estimates, not rigorous continuum-error bounds**. Exact
+element integration does not make the FE response exact, nor does a small backward
+residual prove a small forward error for every extreme stiffness/mesh condition.
+The independent controls include an exact two-material continuum solution and
+uniform-rigidity analytical Green response; broad geological calibration remains
+separate. An insufficient mesh ceiling is not repaired by loosening a tolerance.
+When the ceiling is reached and a failing field's domain-maximum change did not
+fall at the last refinement and lies above an earlier minimum, the refusal quotes
+that minimum, its subdivisions and the change at the ceiling instead of saying
+only that the tolerance was not reached. Round-off in the banded solve is the
+usual cause (the scaled bending term grows as `h^-4`), and then a higher ceiling
+is unlikely to help. The estimates do not establish that cause. An accidentally
+small early estimate gives the same pattern. Two later levels can also agree
+within the tolerance while round-off still moves each of them by more than that.
+The mesh-change diagnostic offers the cause conditionally and never asserts it.
+A failing field that is still falling at the ceiling keeps the plain refusal.
+
+Before accepting a mesh pair, an additional numerical-precision check now
+propagates scaled equation residuals and floating-point rounding estimates through
+the retained Cholesky factors. Assembly estimates include the magnitudes of the
+logarithmic stiffness scaling and the element contributions before cancellation.
+A scalar stiffness error preserves its correlated element bending operator;
+the local contraction's rounding and independent matrix assembly/equilibration
+errors remain included. Right-hand-side formation and polynomial evaluation are
+included separately.
+The three output operators are the Bernstein controls for displacement, slope
+and curvature. Their convex-hull property covers the whole represented element,
+including maxima between samples. A deterministic, bounded Hager/Higham norm
+estimate applies the LAPACK forward-error-estimation approach to those output
+operators. No elastic-input perturbation is used as an error bound.
+
+The acceptance allowance includes the mesh change and both numerical estimates.
+An apparent mesh pass that cannot fit this allowance is refused explicitly for
+numerical precision after the available levels have been tried. Tolerances and
+physical equations are unchanged. This is an engineering **error estimate**, not
+interval arithmetic or a rigorous upper bound: norm estimation can underestimate,
+and elementary-function rounding is modelled rather than certified. It improves
+the previous mesh-only gate without claiming a continuum-error certificate or
+guaranteed digits for arbitrary ill-conditioned systems (R7, 2 October 2026).
+
+The low-level immutable result has shape `(N,5,4)`:
+
+| Row | Meaning |
+| --- | --- |
+| 0 / 1 / 2 | Left face / centre / right face: w, w', w'', w''' |
+| 3 | FE-polynomial maxima in the source cell: abs(w), abs(slope), abs(curvature), strain |
+| 4 | Mesh-change plus both numerical-error estimates for w, slope, curvature; accepted subdivisions |
+
+True source/material faces remain one-sided. A centre falling on an artificial
+internal FE face averages its two traces, making sampling reflection-consistent
+without smoothing a material interface. Displacement/slope extrema include roots
+inside each cubic, not merely centre/face samples. The third derivative is a
+diagnostic FE derivative, **not** certified by the first-three-field mesh gate.
+The bridge adds these combined estimates to its displacement, slope and strain
+validity assessment; that remains a conditional engineering screen, not a proof
+of all continuum subcell extrema or of realistic terrain.
+
+### Integration, reuse and bounded resources
+
+Supply `rigidity=profile, accuracy=accuracy` to `PreparedW04Support` or
+`project_w04_support`. The full profile grid, actual W01 source frame and W03
+datum/epoch must match. Existing thermal ownership, physical load construction,
+reference surfaces and exterior state binding still apply. E/Te/nu in the profile
+are authoritative for bending; `policy.elastic` continues to supply K and gravity.
+
+All elements remain in one coupled solve. Finite bandwidth is three; folding the
+periodic ring keeps bandwidth at most five, so factorisation/storage are linear
+in the number of internal elements. Factors for visited meshes are retained once
+per prepared profile, not rebuilt per load or stored as a growing load history.
+Coefficient-rounding estimates add one retained band, one element vector and two
+small endpoint blocks. Numerical-precision estimation runs only for a mesh pair
+that otherwise passes: it uses a fixed number of band solves and linear-sized vectors, without
+a dense inverse. Estimates are reused only within the current load's solve.
+Each new load still passes the same refinement gate; previous loads do not select
+a different answer. Short kernels remain serial; this does not need worker startup.
+
+`cached_variable_flexure` uses the existing cache, source/runtime identities,
+single-flight and cheap-work bypass. The key includes exact pressure bytes,
+profile, operator and accuracy, with SciPy/LAPACK execution identity. Cache and
+fresh routes return identical response and convergence metadata. W03 restore plus
+the same explicitly reconstructed profile/surface/exterior inputs reproduces IDs;
+old source seals are not repinned. Profiles are not silently recovered from results.
+
+Factor construction, retained ownership and response workspace use shared byte
+admission, composing explicit per-call budgets. `close()` releases factors. Crops
+are detached from halo buffers. Cancellation is checked between bounded mesh
+operations, not by interrupting a native Cholesky call. Accounted bytes are not a
+process RSS limit. See [focused checks and measured savings](#variable-rigidity-evidence).
+
+### Papers and software reviewed before selection
+
+- [Wickert (2016), gFlex v1.0](https://gmd.copernicus.org/articles/9/997/2016/),
+  full-text section 2.2, equation 9 and boundary discussion: selected the
+  conservative variable-rigidity equation and explicit boundary meaning.
+- [TU Delft, Euler-Bernoulli beam](https://interactivetextbooks.citg.tudelft.nl/computational-modelling/structural_linear/euler_bernouilli.html),
+  weak/discrete form, equations 4.14-4.43: selected C1 Hermite interpolation and
+  source-aligned material stiffness rather than differentiating noisy D arrays.
+- [Wieckowski and Swiatkiewicz (2021), Materials 14, 460](https://mdpi-res.com/d_attachment/materials/materials-14-00460/article_deploy/materials-14-00460.pdf),
+  independent review of section 2.1 and the section 6 opening: cross-checked the
+  Winkler foundation and four-degree-of-freedom Hermite formulation.
+- SciPy's [banded Cholesky](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.cholesky_banded.html)
+  and [factor reuse](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.cho_solve_banded.html)
+  documentation: selected compact SPD factorisation/repeated solves over dense
+  matrices or a generic sparse solve per snapshot.
+- LAPACK [DPBRFS](https://www.netlib.org/lapack/double/dpbrfs.f)
+  and the deterministic sign/coordinate norm-estimation approach used by
+  [DLACN2](https://www.netlib.org/lapack/explore-html/d6/d2d/group__lacn2.html):
+  selected residual-plus-rounding forward-error estimates and explicit distinction
+  between an estimated error and a rigorous bound. The implementation estimates
+  the physical output operators rather than only the solution-vector norm.
+
+These are paper/documentation reviews, not external gFlex execution, external
+source-code audits or measured superiority to another terrain generator.
+
+<a id="variable-rigidity-evidence"></a>
+
+### Obtained variable-rigidity evidence, 22 September 2026
+
+The fixed source-linked rigidity route passed 41 distinct focused Windows
+tests: eight variable-flexure (0.033 s), then five new workflow/six retained
+finite/thirteen periodic/nine identity controls (33 tests, 39.012 s). Selected
+test_w04_variable_flexure, test_w04_variable_workflow,
+test_w04_regional_workflow, test_w04_workflow and execution IdentityTests used
+Python 3.12.14/NumPy 2.4.6/SciPy 1.17.1, one thread.
+
+Independent arbitrary-D equilibrium, two-material eight-coefficient continuum
+solution/curvature jump, uniform Green refinement, periodic translation/mean,
+reflection/exterior extension and same-D/different-Te strain check the conservative
+Hermite route. Actual W03 boundary/halo/owner/source joins, total-reference output,
+cache/restore parity, one-shot equivalence and lifetime/resource/refusal controls
+pass. Continuing variable D requires exact declared exterior loads; omitted-pressure
+uncertainty refuses. Mesh-change estimates and diagnostic third derivatives are
+not continuum certificates; no evolving-D/2D/field-calibrated feedback is implied.
+
+Review found slower curvature than displacement convergence. The default permits
+six refinements within existing element/resource limits, replacing four; the
+tight 1e−4 oracle explicitly permits seven, without widening accuracy gates.
+Even-subdivision centre traces now average both internal FE traces to preserve
+reflection, while genuine source/material interfaces stay one-sided. Far-load
+nonzero-underflow checks, construction/factor overlap admission, composed budgets
+and cancellation through fresh/cache/mesh paths were corrected.
+
+[Raw factor-reuse timings](../evidence/w04-variable-timing.json) compare twelve
+changing loads over 512 cells/400 km/three Te regions (1/2/4 km), three alternating
+repetitions. Both include cold preparation, refinement/validation/diagnostics/
+admission/output/close after the same native warm-up. Rebuild median
+0.039662400028 s versus retained profile 0.020635399967 s saves 0.019027000060 s
+(47.97238706%). Responses and mesh-gate metadata are bit-identical; accepted meshes
+have 2–8 subcells/cell. Maximum factor capacity is 1,352,512 bytes/accounted peak
+18,465,600, not RSS; all reservations release. Entry:
+python -B tectonics/tools/benchmark_w04_variable_rigidity.py --output NEW.json.
+
+The [complete original report](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/evidence/w04-variable-rigidity.md) retains exact
+source identities, static checks and reviewed gFlex/Hermite/Winkler/SciPy source
+extent. Unchanged uniform finite evidence was reused. No cache hits/workers/W03
+evolution/context are timed; no old-release/whole-world speed or Linux/scientific/
+empirical acceptance follows.

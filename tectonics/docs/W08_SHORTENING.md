@@ -143,5 +143,5 @@ safety tests in 0.106 s, 30 passed and one environment skip.
 - [Wickert (2016), gFlex v1.0](https://gmd.copernicus.org/articles/9/997/2016/gmd-9-997-2016.html):
   publisher abstract/method summary checked this increment, not a new full-paper
   review. The prior equation-level review is recorded in
-  [W04 finite regions](W04_FINITE_REGIONS.md). Independent reference evaluation
+  [W04 finite regions](W04_WORKFLOW.md#finite-region-support). Independent reference evaluation
   reuses the existing scalar SciPy quadrature helper, not the production operator.
