@@ -20,7 +20,7 @@ Historical changes only. Read [current delivery and acceptance](../../docs/CURRE
 - [Plan39](workbench/plan39/README.md) published a complete 692-member policy source selection, including the missing pin propagation. Failed-close publication and static-closure defects were repaired; 24 focused private checks and eight distinguishing race controls were retained. This was partial source integration, without packaged Release qualification or default enablement.
 - The [fold record](docs/release/FOLD.md) distinguished published r4 tools/evidence from an unpublished folded package: 236/236 cells matched by key and all five arms loaded the same MPFR file. Worker coverage was 51/60, explicitly INCOMPLETE for nine missing exit records. Final-generation qualification was a separate scope.
 - Evidence/disposition reconciliation distinguished interim component results from the final source-freeze/fold/retest/fresh-run/pre-landing record. Booking review retained comparable whole-ticket peaks without changing guards or predictions; WP17's serial twelve-kill result was not transferred to the batched route.
-- [Plan24](plans/plan-24-storage-segment-summaries.md) completed its summary/buffer-pool assessment without establishing either build gate. Claims of complete attribution and allocation-cost bounds were corrected; neither mechanism was built.
+- [Plan24](README.md#plan-24--segment-summaries-and-buffer-pools) completed its summary/buffer-pool assessment without establishing either build gate. Claims of complete attribution and allocation-cost bounds were corrected; neither mechanism was built.
 - [Plan22's earlier candidate](workbench/plan22/README-r4.md) repaired touched-wrapper retention, reclaimable required entry and repeated mesh close while preserving the current capture encoder. Its earlier UNCERTAIN/unmeasured-selection state was historical; the later corrected-reader selection is recorded above.
 
 ## 23–24 October 2026 — lazy rows
@@ -35,7 +35,7 @@ Historical changes only. Read [current delivery and acceptance](../../docs/CURRE
 - [Plan20](workbench/plan20/README.md) retained the 12-arm capture-only result: median writes 2.30882755 → 1.17920190 s (48.9264% lower), disk 91,964,804 → 79,554,271 B (13.4949% lower). Decode, block preparation and initial DLL loading were outside timing; no process-RAM or whole-interval saving was established. A/B acceptance did not complete folded-DLL or prepared-entry qualification; shared consumer failures and a dictionary skip remained explicit.
 - [Plan17](workbench/plan17/README.md) supplied operational r7 and retained r4 sources after both genuine proofs and all nine comparisons qualified. Selected geometry already matched; later helper changes were preserved without reapplication or a profile repin.
 - [Plan40 heat receiving](workbench/plan40/heat/integration-r2/README.md) connected C3/C8 to full certification, forward/lifetime, checkpoint, joined and restoration consumers. C13 remained excluded after regression. Prototype measurements were not claimed as integrated/whole-IV gains or worker qualification.
-- [Plan23](plans/plan-23-storage-mapped-reads-wp12.md) corrected WP12's eligible sealed-reopen count to one. Its central −3.1% estimated net saving missed the 5% gate; this was scoping, not a measured failure. WP12 remained UNBUILT/OFF with its guard-equivalent freshness prerequisite.
+- [Plan23](README.md#plan-23--authenticated-sidecar-reads-wp12) corrected WP12's eligible sealed-reopen count to one. Its central −3.1% estimated net saving missed the 5% gate; this was scoping, not a measured failure. WP12 remained UNBUILT/OFF with its guard-equivalent freshness prerequisite.
 
 ## 21–22 October 2026 — heat, workers and publication repairs
 
@@ -53,7 +53,7 @@ Historical changes only. Read [current delivery and acceptance](../../docs/CURRE
 
 ## 17–18 October 2026 — drivers and public plans
 
-- [Plan01](plans/plan-01-runner-test-isolation.md) published the reviewed isolation successor and five-case checker; retained original-environment evidence was 235 tests OK with eight skips. [Plan03](plans/plan-03-q21-launch-environment.md) supplied child-launch/preservation successors while keeping the invalid q21 launch distinct from worker/numerical evidence.
+- [Plan01](README.md#plan-01--runner-test-isolation) published the reviewed isolation successor and five-case checker; retained original-environment evidence was 235 tests OK with eight skips. [Plan03](README.md#plan-03--child-launch-and-evidence-preservation) supplied child-launch/preservation successors while keeping the invalid q21 launch distinct from worker/numerical evidence.
 - Public Plans01–25 and their navigation were exported as dated projections. Later owner updates retained their individual scope rather than granting blanket implementation or scientific acceptance.
 - The item21 interval-N/start-gate/query-stage drivers were applied from the chain-r3 source generation. Its method is in [INTERVAL_CHAIN.md](drivers/INTERVAL_CHAIN.md); branch application was not a live runtime replacement or runtime-manifest repin.
 
