@@ -157,7 +157,8 @@
         "Proposed consolidation must distinguish assessed candidates from implemented changes, preserve distinct consumers/identities, and add no run prerequisite or deletion release.",
         "Shared foundation begins in the first next I-module slice after current IV1/comparison; later shared work extends module delivery without a blanket legacy-migration or current-IV1 prerequisite.",
         "Engineering/scientific status must replace canon labelling in mutable Atlas prose while exact legacy wire literals and selected frozen input bytes remain compatible.",
-        "Documentation changes to receipt-bound sources require honest historical classification, mirror consistency and preserved original receipt hashes/results; no scientific recapture or silent rebind for prose."
+        "Documentation changes to receipt-bound sources require honest historical classification, mirror consistency and preserved original receipt hashes/results; no scientific recapture or silent rebind for prose.",
+        "Consolidated optimisation catalogue preserves overlap, proposal/implementation distinctions and source-owner status boundaries."
       ],
       "evidence": [
         "tectonics/docs/HOW_TECTONICS_IS_MADE.md",
@@ -176,7 +177,8 @@
         "docs/CURRENT_EVIDENCE.md",
         "tectonics/docs/I01_CLOSURE_MATRIX.md",
         "tectonics/cases/i01_closure_matrix_v1.json",
-        "docs/CODING_SAFETY.md#legacy-document-and-format-bindings"
+        "docs/CODING_SAFETY.md#legacy-document-and-format-bindings",
+        "tectonics/optimisation/README.md"
       ]
     },
     {

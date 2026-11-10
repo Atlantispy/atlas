@@ -4,6 +4,21 @@ Start with [current delivery and acceptance](../../docs/CURRENT_STATE.md#current
 
 The engineering aim is exact, certified interval generation in under five minutes on one Windows machine. That is a target, not measured combined performance. Changes preserve exact results or an explicitly approved field/identity translation; they do not widen tolerances or resource limits.
 
+This page is the consolidated catalogue of the optimisation work in this published
+branch: programme plans, compact work packages, candidate families and researched
+techniques. Each list links to its existing owner for the actual contracts, evidence
+and current status. The lists overlap: one method can appear in several programmes.
+An idea listed here is not automatically implemented, enabled, measured or accepted.
+The [current delivery and acceptance record](../../docs/CURRENT_STATE.md) owns the
+status and holds; private or later work not represented there is outside this public
+snapshot. Plan41 is included from the existing roadmap issue.
+This is an index of documented optimisation work, not an exhaustive audit of
+every performance-related implementation in Atlas.
+
+[Plans](#plan-directory) · [Compact work packages](#compact-work-packages) ·
+[Candidate families](#candidate-families) · [Scientific-software methods](#scientific-software-methods) ·
+[Engineering techniques](#engineering-techniques) · [94-technique mapping](#94-technique-mapping)
+
 ## Layout
 
 | Location | Purpose |
@@ -58,6 +73,192 @@ These links identify subjects and existing owners. Read status in the current-st
 | 32–38 | Booking, query-store decision, reprofile, retests, dispositions, landing and intervals: [assembly](workbench/plan31/final/README.md#assembly-dependencies-and-unresolved-scope), [compact programme](docs/COMPACT_EVERYWHERE_PLAN.md), [expectations](../../docs/CODING_SAFETY.md#6-changed-expectations-and-landing-obligations), [driver](drivers/INTERVAL_CHAIN.md). Separate private plans are not supplied. |
 | 39 | [Release policy source and qualification](workbench/plan39/README.md) |
 | 40 | [Pressure arithmetic](workbench/plan40/pressure/FINDINGS.md) and [heat arithmetic](workbench/plan40/heat/FINDINGS.md), with their linked receiving routes |
+| 41 | [Compact geometry between intervals](https://github.com/Atlantispy/atlas/issues/3#issuecomment-6439177800): planned after successful IV1/comparison and before a separately authorised longer campaign. |
+
+## Compact work packages
+
+WP0–WP25 are the [compact optimisation programme](docs/COMPACT_EVERYWHERE_PLAN.md#3-work-packages-execution-order-and-ownership), covering storage, memory, execution and exact arithmetic. Their status varies by package and receiving context; a name in this table is not a claim of completion or enablement. Use the programme and current-state links above for the actual disposition.
+
+| Package | Purpose |
+| --- | --- |
+| WP0 | Census v2 |
+| WP1 | Segment store |
+| WP2 | Generic record codec and views |
+| WP3 | Mesh v3 |
+| WP4 | Partition v2 |
+| WP5 | Record publication and restore |
+| WP6 | Validation consumers |
+| WP7 | Heat ledger |
+| WP8 | Runner, reader and materialise |
+| WP9 | Composition r2 |
+| WP10 | Lossless compression layer |
+| WP11 | Bounded content caches |
+| WP12 | Authenticated positioned sidecar reads |
+| WP13 | Interval file set and catalog |
+| WP14 | Live in-memory working data during the advance |
+| WP15 | Worker payloads |
+| WP16 | Diagnostic captures |
+| WP17 | Completed-query store |
+| WP18 | Parallel scheduling and worker utilisation |
+| WP19 | Checkpoint-only development timing |
+| WP20 | One-shot exact certificates for zero-volume slivers |
+| WP21 | Exact constraint simplification and chart merging |
+| WP22 | Filtered exact predicates everywhere they apply |
+| WP23 | Exact arithmetic efficiency, all lossless |
+| WP24 | Compiled hot kernels |
+| WP25 | Heat warm start and mixed-precision certified solves |
+
+WP0 includes the historical census and later candidate measurements. WP12's
+positioned-sidecar option was assessed **not built/off**; see
+[Plan23](plans/plan-23-storage-mapped-reads-wp12.md). The separate WP25 heat
+warm-start proposal was evaluated and disabled; its
+[disposition](../docs/OPTIMISATION_REFERENCE.md#wp25-heat-warm-start-disposition)
+distinguishes that proposal from mixed-precision refinement already present in LOW.
+
+## Candidate families
+
+[PF01–PF26](../docs/OPTIMISATION_REFERENCE.md#candidate-register) are categories
+to assess for a particular workload. Some related techniques already exist in
+specific routes; others are deferred or untested. They are not 26 implemented
+features, and selecting a family does not authorise a benchmark or change.
+
+| Family | Technique |
+| --- | --- |
+| PF01 | Demand-driven evaluation, common subexpression elimination and dependency-aware incremental rebuilds |
+| PF02 | Better graph ordering, spatial indexes, candidate pruning and active-domain algorithms |
+| PF03 | Bounded source, geometry and final-result caches with concurrent-safe publication |
+| PF04 | Reuse symbolic structure, numeric factors, transform plans and compiled expressions |
+| PF05 | Compact material histories, deferred gridding and deduplicated immutable data |
+| PF06 | Contiguous layout, vectorisation/SIMD, spatial ordering and cache blocking |
+| PF07 | Buffer reuse, copy elimination, loop fusion and batched state mutations |
+| PF08 | Compiled hot loops, specialised kernels and eligible JIT/AOT compilation |
+| PF09 | Shared-memory threads / native parallel loops |
+| PF10 | Persistent process pools, coarser task batches and bounded work queues |
+| PF11 | Parallel scenarios, ensembles and independent diagnostics |
+| PF12 | GPU batches, residency, coalesced access, kernel fusion and staged transfers |
+| PF13 | MPI decomposition, work-weighted partitioning and repartitioning |
+| PF14 | Nonblocking communication, preparation/compute overlap and bounded asynchronous I/O |
+| PF15 | Locality, CPU affinity, NUMA placement and load balancing |
+| PF16 | Sparse storage, active sets, memory maps and out-of-core streaming |
+| PF17 | Chunk/shard/access layout, lossless compression and format-conversion avoidance |
+| PF18 | Incremental checkpoints, bounded delta chains and independent output cadence |
+| PF19 | Preconditioning, multigrid, scaling, warm starts and Krylov-space reuse |
+| PF20 | Implicit, spectral, ADI and structured/specialised direct algorithms |
+| PF21 | Adaptive timesteps, event-aligned integration, multirate subcycling and solver-work balancing |
+| PF22 | Adaptive meshes, nonuniform layers, conservative remeshing and coarse/fine detail |
+| PF23 | Mixed precision, iterative refinement and controlled approximate arithmetic |
+| PF24 | Bounded lookup tables, low-rank compression, reduced-order or learned surrogates |
+| PF25 | Reduced physical equations or dimension reduction |
+| PF26 | Parallel-in-time / speculative future intervals |
+
+## Scientific-software methods
+
+The [O01–O17 research references](../docs/OPTIMISATION_REFERENCE.md#scientific-methods)
+identify useful methods from other scientific software. They are precedents and
+conditional ideas, not evidence that Atlas implements or adopts those projects.
+
+| Reference | Method considered |
+| --- | --- |
+| O01 | GPlates/pyGPlates: bounded geometry and rotation reuse |
+| O02 | GPlately: moving-point lifecycle rather than repeated full raster histories |
+| O03 | Geodynamic World Builder: evaluate compact feature descriptions lazily |
+| O04 | LaMEM: structured field layout and solver-aware data organisation |
+| O05 | ASPECT: adaptive resolution and matrix-free geometric multigrid |
+| O06 | Underworld: batch mutations, invalidate projections, compile equations once |
+| O07 | pTatin3D: precondition the coupled system, not just its expensive block |
+| O08 | gFlex: exploit linearity only where the operator permits it |
+| O09 | pyBacktrack: separate local column calculations and cache thermal relationships |
+| O10 | FastScape: ordered implicit updates on a valid receiver graph |
+| O11 | Landlab: efficient routing plus bounded TVD advection |
+| O12 | Badlands: controlled remeshing and compiled heavy kernels |
+| O13 | goSPL: finite-volume partitioning with explicit boundary fluxes |
+| O14 | PyLith: specialised fault constraints and nondimensionalisation |
+| O15 | cutde: choose dense, blocked, matrix-free or approximate low-rank evaluation |
+| O16 | MAGEMin: parallel point equilibrium and carefully bounded property tables |
+| O17 | GDTchron: batch independent histories without losing inherited information |
+
+## Engineering techniques
+
+The [engineering-method reference](../docs/OPTIMISATION_REFERENCE.md#engineering-methods)
+owns the explanation, application limits and evidence for these ideas. Their
+selection and implementation differ by route; none is enabled by this list.
+
+- Measure the whole operation before changing it.
+- Persist expensive prepared artefacts.
+- Create visual models only when first needed.
+- Load optional visual resources on demand.
+- Defer optional subsystem preparation.
+- Reuse stable registry and resource-discovery results.
+- Share equivalent immutable definitions.
+- Replace repeated categorical objects with compact indices.
+- Store volume in bounded chunks and compact uniform regions.
+- Build fresh fields through one controlled batch path.
+- Prune spatial candidates before exact geometry work.
+- Use inverted indices for repeated applicability searches.
+- Reuse valid matches and coalesce intermediate updates.
+- Invalidate derived data through explicit change events.
+- Evaluate affected networks without duplicate notifications.
+- Schedule generation and I/O with explicit dependencies.
+- Give state one owner and control ownership transitions.
+- Parallelise genuinely independent scenarios or frozen-input batches.
+- Budget worker pools, native threads and task granularity.
+- Release temporary objects when their final consumer finishes.
+- Keep caches only when their measured value exceeds their cost.
+- Smooth writes while keeping accepted checkpoints coherent.
+- Prepare only explicitly selected regions, with resumable tasks.
+- Batch drawing and minimise repeated graphics submission.
+- Prepare static visual geometry once per valid revision.
+- Cull invisible drawing, not invisible physics.
+- Maintain coarse context and fine detail in the viewer.
+- Separate viewer-region caches from active compute data.
+- Use hardware-specific render paths only behind a portable contract.
+- Refresh the interface according to change, not simulation ticks.
+- Aggregate only material parcels that remain scientifically equivalent.
+- Adapt service quality without silently changing the science.
+- Move selected bulk calculations behind a native interface.
+- Cache parsing and indexing separately from evaluated results.
+- Separate lookup hashing from cryptographic provenance.
+- Bound asynchronous diagnostics and preserve indispensable evidence.
+- Version random-stream and faster-maths changes explicitly.
+- Use reversible dictionaries and explicit delta bases for future streaming.
+- Eliminate copies only with proven ownership and lifetime.
+
+## 94-technique mapping
+
+The existing [94-technique comparison](docs/COMPACT_EVERYWHERE_PLAN.md#13-game-optimisation-benchmark-the-94-techniques-mapped-michael-15-oct)
+groups overlapping ideas under the packages above and records exclusions. It is a
+comparison against an external ideas list, not a claim that all 94 techniques are
+individually implemented or appropriate. Lighting and rendering/GPU items are
+excluded from that compact-generation assessment; reduced-accuracy simulation
+levels of detail are rejected for that scope. The separately considered techniques
+below are mapped to packages and remain subject to their actual dispositions.
+
+| Technique | Related work packages |
+| --- | --- |
+| Induction-variable stepping (2) | WP23 |
+| Partial evaluation / code generation (1) | WP23/WP24 |
+| Expression templates / loop fusion (1, 2) | WP23 |
+| Abstract data types swap (1) | WP23 |
+| Loop interchange / tiling for locality (2) | WP18/WP11 |
+| Consolidating invariant bounds checks (2) | WP23 |
+| Reusing invariant guard results (2) | WP23 |
+| Test reordering (2) | WP22 |
+| Rematerialisation (2) | WP11 |
+| Speculative execution (4) | WP18 |
+| External sorting (1) | WP2/WP14 |
+| Memory attribution profiling (11) | WP19 |
+| Integer / fixed-point arithmetic (3) | WP23 |
+
+Other mapped families include incremental algorithms, indices and shared work;
+compact data structures and packed keys; octrees/KD trees/BVHs; memoisation;
+fast paths; strength reduction; avoiding intermediate structures; loop-invariant
+work and common-subexpression elimination; copy elision; memory layout and
+narrow types; pools; SIMD; multithreading and segmentation; asynchronous/lazy
+loading; persistent caches; deduplicated replication; dictionary compression;
+embedded databases; and dead-store elimination. The full comparison describes
+overlap and which low-level, network or game-specific items were left out.
+Consolidation of repeated checks preserves the required correctness, identity,
+resource and recovery contracts and the existing cancellation/guard cadence.
 
 ## Read source selections by their role
 
