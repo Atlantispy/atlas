@@ -30,9 +30,21 @@ every performance-related implementation in Atlas.
 | [`docs/COMPACT_EVERYWHERE_PLAN.md`](docs/COMPACT_EVERYWHERE_PLAN.md) | Compact storage/restart design, ownership, measurement and completion contracts. |
 | [`docs/release/`](docs/release/) | [Check policy](docs/release/RELEASE-CHECKS.md), [fold](docs/release/FOLD.md), [languages](../../docs/CODING_SAFETY.md#7-conditional-compiled-kernel-development) and [landing expectations](../../docs/CODING_SAFETY.md#6-changed-expectations-and-landing-obligations). |
 | [`CHANGELOG.md`](CHANGELOG.md) | Concise historical changes. |
-| [`MANIFEST.json`](MANIFEST.json), [`SANITISED.md`](SANITISED.md) | Historical export origins and sanitisation record, not a live runtime manifest. |
+| [`MANIFEST.json`](MANIFEST.json) | Historical export origins, not a live runtime manifest. |
 
-MANIFEST's document rows inventory the historical export. They do not require retired status/index pages to remain in the current checkout. Their earlier prose remains in Git history; consolidation does not repin that historical manifest.
+The historical export replaced personal paths and contact details in selected
+public files. Those bytes do not authenticate private runs or satisfy original
+runtime pins. Public source maps, including [Plan02](workbench/plan02/SOURCE-MAP.json),
+[Plan04](workbench/plan04/SOURCE-MAP.json), [Plan05](workbench/plan05/SOURCE-MAP.json),
+[Plans10–12](workbench/plans10-12/SOURCE-MAP.json), [Plans13–14](workbench/plans13-14/SOURCE-MAP.json),
+[Plan15](workbench/plan15/SOURCE-MAP.json), [Plan17](workbench/plan17/SOURCE-MAP.json),
+[Plan19](workbench/plan19/SOURCE-MAP.json) and [Plan20](workbench/plan20/SOURCE-MAP.json),
+record their own publication boundaries. Private inputs, profiles, run records and
+runtime assets are not supplied by these exports.
+
+MANIFEST inventories the historical export; its document rows do not require
+retired pages to remain in the checkout. Git retains earlier prose and no historical
+manifest or execution receipt is repinned by documentation cleanup.
 
 ## Plan directory
 
