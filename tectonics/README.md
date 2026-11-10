@@ -27,7 +27,7 @@ current delivery status belongs in the current-state record.
 | Coordinates, geometry, descriptions and reference materials | [Foundations chapter](docs/how-it-works/01-foundations.md), [specialist contracts](docs/FOUNDATIONS.md) |
 | Transport, cooling, compaction, loads and support | [Material, heat and support foundations](docs/how-it-works/01-foundations.md) |
 | Regional mechanics, recovery and resource ownership | [Regional mechanics](docs/how-it-works/02-tectonic-processes.md#w07-calculate-slow-regional-deformation), [coupling and reliability](docs/how-it-works/03-coupling-and-reliability.md) |
-| Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification), [portable bundles](docs/NEW_WORLD_BUNDLE.md) |
+| Seeded starting worlds and regional continuation | [New worlds](docs/how-it-works/04-new-worlds.md), [combined acceptance](docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification), [portable bundles](docs/NEW_WORLD_EVOLUTION.md#portable-world-projects) |
 | Experimental force-driven convection | [Dynamics chapter](docs/how-it-works/05-experimental-dynamics.md), [scientific plan](docs/TECTONICS_PLAN.md) |
 | Coupled physics, shared state, exchanges and accepted time | [Physical integration](docs/how-it-works/06-physical-integration.md), [I02 workflow](docs/I02_WORKFLOW.md) |
 | Evolving sphere, starting families and reduced driving feedback | [I03 network](docs/I03_SPHERICAL_NETWORK.md), [I04 causal start](docs/I04_CAUSAL_START.md), [I05 moving state](docs/I05_MOVING_STATE.md), [shared ports](docs/I04_I05_PORTS.md) |

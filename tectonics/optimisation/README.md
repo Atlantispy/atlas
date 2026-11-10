@@ -457,7 +457,31 @@ resource and recovery contracts and the existing cancellation/guard cadence.
 
 ## Read source selections by their role
 
-The [Plans19–20 selection](workbench/plans19-20/README.md) and [645-member combined snapshot](workbench/combined-runtime-r1/README.md) are historical composition stages, with their own maps and receiving evidence. Neither is a universal current-source pointer. Later constructors authenticate their actual predecessors and write additive successors; they do not rewrite those maps or renew their receipts.
+The [Plans19–20 selection](#plans19-20-source-selection) and [645-member combined snapshot](workbench/combined-runtime-r1/README.md) are historical composition stages, with their own maps and receiving evidence. Neither is a universal current-source pointer. Later constructors authenticate their actual predecessors and write additive successors; they do not rewrite those maps or renew their receipts.
+
+<a id="plans19-20-source-selection"></a>
+
+### Plans19–20 source selection
+
+The predecessor [source map](workbench/plans19-20/SOURCE-MAP.json) selects 637
+public members: 239 native files and 398 helpers. Compared with Plan15 it keeps
+627, replaces seven and adds three. [Plan19](workbench/plan19/README.md) supplies
+the accepted shell and alternate-axis geometry; [Plan20](workbench/plan20/README.md)
+supplies S2 r9 captures and consumer changes. The selection retains the Plan15/16
+worker choices, Plan17 geometry, heat/finish markers and later cold-heat binding.
+The binding-only cold-heat delta does not invoke the changed geometry functions;
+the prepared driver retains the selected geometry interface and separate capture
+admission. The later [heat receiving successor](workbench/plan40/heat/integration-r2/README.md)
+uses this selection through its own consumers.
+
+The map has a new public source identity; private native results apply to their
+named private compositions and do not authenticate this public selection. The
+individual records retain the geometry and capture measurements, excluded
+candidates and remaining folded-DLL/prepared-entry work. Integration at this
+boundary does not establish final assembly, installed runtime, default adoption
+or scientific acceptance; those have their own receiving and fold requirements.
+
+### Later selections and delivery
 
 Plan31's [final source/emitter record](workbench/plan31/final/README.md) distinguishes its public composition from the separate private final component. The [explicit construction route](workbench/plan31/final/README.md#explicit-construction-and-data-boundary) uses a closed authenticated external context; the older context-free r2 API retains its own selection. Construction membership and Release membership differ. Source construction, prepared restart, installed production and desktop delivery retain separate entry points and qualification contracts. Select by actual consumer, inputs and authority, never by highest revision.
 

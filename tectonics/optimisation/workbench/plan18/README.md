@@ -13,7 +13,7 @@ and [header retention](../../../docs/how-it-works/06-physical-integration.md#ret
 
 ## What changes
 
-The public selection extends the [Plans19–20 selection](../plans19-20/README.md):
+The public selection extends the [Plans19–20 selection](../../README.md#plans19-20-source-selection):
 631 members are retained, six are replaced and four are added, giving 239 native
 files and 402 helpers. The two later Plan19 geometry implementations remain selected.
 The independently published heat and pressure receiving generations remain available;

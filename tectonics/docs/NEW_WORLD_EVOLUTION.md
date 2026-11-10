@@ -248,34 +248,12 @@ fixtures are labelled as such and do not replace it.
 
 ## Measured implementation checkpoint, 24 September 2026
 
-The retained generated six-plate world supplied native edge 101 and province-0
-crust, not the W12 example. A 40 x 20 km reference footprint, four material
-parcels and outputs at 0/50,000/100,000 years produced 12.2593% area reduction,
-5,273.37-5,273.41 m thickening and 688.253-688.258 m local isostatic surface rise.
-These are consequences of the stated scenario, not observations or validation
-of those assumed velocities/support against a real mountain belt. Reference
-volume and mass arrays are exactly unchanged. Maximum chart area-scale deviation
-over the admitted trajectories is 0.0034131%; the frozen-rigid-velocity path
-bound is 31.12 m, not an uncertainty estimate for the whole tectonic model.
-
-Twenty-seven focused methods pass (6 sampling, 8 evolution, 13 lifecycle).
-A fresh-process one-output prefix followed by resume computes only the missing
-two outputs and exactly matches every scientific field from the uninterrupted
-run. Direct native CLI selection of the middle saved time also passes without
-generation. Thirty source-safety tests pass; one existing Windows symlink-
-privilege check is skipped. No full suite or Linux claim is added.
-
-Original r1 job fresh generation/storage: **4.937890 s**. Verified completed reuse:
-**0.788870 s**, saving **4.149019 s / 84.0241%** (one end-to-end pair). Repeated
-preparation versus one prepared owner for three identical outputs, three
-alternating pairs: **1.836554 -> 0.695375 s**, saving **1.141179 s / 62.1370%**.
-The latter evidence was reused after the selected-time CLI addition only because
-the entire model source/runtime binding and every output identity matched.
-Fresh-process partial continuation takes 2.501657 s, including startup; its
-source sampling time is zero. Complete retained job storage is 402,993 bytes,
-including the 327,172-byte original archive. Native evolution's accounted peak
-is 2,428,894 bytes, not a process-RSS measurement. See the full
-[evidence and source identities](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s5-r1.json).
+The original r1 example used a generated six-plate world and a 40 × 20 km,
+four-parcel regional scenario. Its exact material conservation, direct
+restoration and finite-deformation checks apply to that declared case, not to
+empirical mountain-belt validation. Its timings and results are historical:
+[r1 evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s5-r1.json).
+They do not establish present-source performance or Linux acceptance.
 
 ## Combined lifecycle qualification
 
@@ -292,7 +270,9 @@ compensating thickness and crust/mantle weight checks pass; mass/reference-volum
 arrays remain exact and unknown heat/absolute elevation remain unknown. These
 test the prescribed regional model, not empirical forcing or plate morphology.
 
-### Current rerun: 26 September 2026
+<a id="current-rerun-26-september-2026"></a>
+
+### Historical rerun: 26 September 2026
 
 This incoming anchor names the tested r2 snapshot, **not the present sources**.
 The [r2 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r2.json) predates the same-day
@@ -313,38 +293,20 @@ not old/new solver performance; no repeated benchmark or second-platform run.
 
 ### Historical record: 24 September 2026
 
-The [r1 receipt](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-s7-r1.json) binds original sources and reused
-S2 geometry/seed/reference controls (including stress refusal), S3 structure/
-thermal/conservation, superseding S4 motion/project/1024-patch archives, S5's 27
-sampling/evolution/lifecycle checks and the UI owner's 132 focused/browser/native
-checks. Reuse required matching scope/bindings; the old S3 session was not repinned.
-Four acceptance-report guards passed in 0.231 s; static checks passed 13 maps/41
-paths and 30 tests with one Windows symlink skip. Linux was unavailable (WSL not
-installed), and no production simulation source changed.
+The original r1 qualification exercised the declared three-case regional
+lifecycle and retained its source-bound S2–S5 and UI checks. Different seeds
+and layouts produced different regional outcomes; this was not a global
+mountain-height distribution, solver comparison or geological acceptance.
+The [original qualification](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/NEW_WORLD_ACCEPTANCE.md)
+retains the historical results. The later r2 evidence above is also historical.
 
-Equal-settings seeds differed intrinsically: sorted plate-area L1 0.1225684,
-largest sorted crust-thickness difference 8,040.88 m and boundary RMS-speed
-difference 1.96266 cm/year. Changing seed42 support/plate count preserved its
-underlying structure identity while changing dependent layout/motion. These are
-scenario differences, not a global mountain-height distribution. Original archive
-sizes were 331,263 / 331,263 / 736,775 bytes and complete jobs 408,530 / 406,461 /
-814,255 bytes, already including frozen input. Keeping original plus job duplicates
-the archive deliberately; audit logs are separate. Largest process working set was
-203,538,432 bytes (194.11 MiB), versus native accounted peak 2,428,894 bytes; a
-128 MiB native budget is not a total-process ceiling. Single-pair fresh-process
-restoration savings were 73.3484%, 67.1011%, 63.3069%, not a solver speedup or
-an uninterrupted-run comparison. Exact timings/identities remain in the
-[complete original qualification](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/docs/NEW_WORLD_ACCEPTANCE.md).
-
-Supported initial-world limits remain 1024 patches, 256 MiB accounted work and
-120 s; regional jobs remain 256 outputs, 2 MiB/record, 64 MiB outputs and 300 s
-per attempt, subject to native footprint/horizon admission. The matrix's
-100,000-year regional horizon is no global-duration promise. Reproduce only this
-matrix with `python -B tectonics/tools/check_new_world_acceptance.py --output
-NEW_DIRECTORY`, its `test_new_world_acceptance.py` guards and required static
-checks; document cleanup authorises no run. No fresh method or paper review was
-needed. [Portable bundles](NEW_WORLD_BUNDLE.md) now own combined initial/result
-storage; broader global plate-network evolution remains separate.
+Supported initial-world limits remain 1,024 patches, 256 MiB accounted work and
+120 s; regional jobs remain 256 outputs, 2 MiB per record, 64 MiB outputs and
+300 s per attempt, subject to native footprint/horizon admission. The matrix's
+100,000-year regional horizon is no global-duration promise. The existing
+`tectonics/tools/check_new_world_acceptance.py` runner and its guards retain the
+declared matrix; this documentation grants no run authority. [Portable bundles](#portable-world-projects)
+carry combined initial/results storage; global plate-network evolution is separate.
 
 ## CLI and UI handoff
 
@@ -380,7 +342,7 @@ or infer absolute elevation from displacement. An initial-only `.atlas` contains
 the original starting world; this distinct evolution job persists in the managed
 local jobs directory and must be labelled separately, not advertised as included
 in that initial-only archive. The implemented
-[combined portable bundle](NEW_WORLD_BUNDLE.md) separately carries the initial
+[combined portable bundle](#portable-world-projects) separately carries the initial
 world and selected committed regional jobs without changing their producer or
 restart identities.
 
@@ -411,3 +373,194 @@ Initial-world preservation and separate local job storage remain unchanged.
   no new full-paper reproduction or calibrated tectonic history is claimed.
 - Existing Atlas W01/S5 sampling and W08 affine/material implementations were
   inspected and reused without changing the native source package.
+
+<a id="portable-world-projects"></a>
+
+## Portable world projects
+
+**backend implemented.** Installed UI coverage is recorded
+separately in the [desktop delivery record](../../desktop/README.md#obtained-windows-qualification).
+
+`tools/new_world_bundle.py` saves an initial world and selected regional results
+in one `.atlas` file. Loading restores the original world, saved times and the
+prepared inputs needed to continue a compatible partial run. Neither saving nor
+loading generates a world, samples geology or runs the physics. Resume is a separate,
+explicit action using the existing native job manager.
+
+### What the file contains
+
+The versioned outer ZIP contains `bundle.json`, the exact original `world.atlas`,
+and, for each selected job, its original `request.json`, `initial.json`,
+`prefix.json`, `status.json` and the prefix's committed `output-NNNN.json` files.
+The original world is stored **once**, even when several jobs use it. Every job
+must name those exact original bytes, not a regenerated equivalent planet.
+
+The manifest schema is `atlas.world-bundle.v1`. It records world/project identity,
+job IDs, exact member names, sizes, SHA-256 digests and a digest of the canonical
+manifest. These establish integrity and consistency, not a digital signature or
+independent scientific approval. Scientific definitions, original job IDs,
+request/source/runtime bindings, attempts, errors and timing records are not
+rewritten. Only committed output prefixes are saved. Lock files, cancellation
+requests, temporary files, orphan outputs and machine-specific UI records are
+not portable state and are excluded.
+
+The outer ZIP uses stored members: the native initial-world array store already
+uses lossless Zstandard. This avoids recompressing that data and requires no new
+codec. Transfer/import is streamed in 64 KiB chunks. Active restored controls are
+ordinary JSON. Import recreates each native job's isolated frozen input file;
+deduplication applies to the portable archive, not a change to the native job
+storage contract.
+
+<a id="bundle-integrity-and-recovery"></a>
+
+### Integrity and recovery rules
+
+- Initial-world v1/v2/v3 files remain loadable without modification. A legacy
+  file returns `kind: initial-only`, `bundle_id: null` and no jobs.
+- Regional jobs must have a complete initial/prefix pair, even when the prefix
+  has zero outputs. Cancellation during incomplete preparation is not magically
+  restartable and returns `INITIAL_INCOMPLETE`. A job stopped before its
+  preparation began (status phase `submitted`, R4 repair) is started by the job
+  tool's resume; until then it has no checkpoint to save and the bundle refuses it
+  with `INITIAL_INCOMPLETE` too.
+- Busy jobs return `RUN_BUSY`. A stale active state or unreconciled status counts
+  returns `UNSTABLE_JOB` or an integrity refusal: settle/recover the original job
+  first. Stable completed, partial, cancelled, failed or interrupted checkpoints
+  retain their real state; a failure is not relabelled successful because files
+  exist. The original attempt ceiling is preserved.
+- The native request, every prefix record, original input identity, initial
+  identity, scientific output digest, context/time and world pairing are checked.
+  Regional export requires the current code/runtime. Import and inspection also
+  admit integrity-verified jobs from a different code/runtime, retaining every
+  original binding and reporting `continuation_compatible: false` with
+  `continuation_refusal: SOURCE_MISMATCH`. Their saved results remain available
+  through the bundle `result` interface. Native resume still refuses mismatched
+  bindings; no automatic installation, compatibility migration or silent repin is
+  performed. Only supported saved schemas are admitted.
+- The integrated I02 workflow changes the package
+  execution identity and `tectonics_job.py` and `read_tectonics.py`, which every
+  New World job binds. Jobs started before it then refuse resume, output export and
+  bundle saving with `SOURCE_MISMATCH`; bundles already saved stay inspectable as
+  described above. Saved worlds with initial structure and motion still load, but new
+  evolution jobs from them, motion generated from a saved structure and re-saving with
+  structure and motion refuse with `SOURCE_MISMATCH`
+  ([I02 workflow](I02_WORKFLOW.md#8-evidence-effects)).
+- Strict member allowlists, record/total limits, duplicate/linked/encrypted/
+  compressed-member refusal, bounded central-directory parsing and manual member
+  copying prevent archive-path extraction and unbounded decompression. No
+  `extractall` is used. Native codecs still enforce their own limits.
+- The central-directory bound is checked from the ZIP end record before
+  `zipfile.ZipFile` reads or parses the directory. The outer bundle admits at most
+  `2 + 32 × (4 + 256)` members in at most 4 MiB. Every project container admits
+  exactly two members in at most 4096 directory bytes, on disk 0: a directly opened
+  `.atlas` project, a legacy initial-only file and a bundle's inner `world.atlas`
+  alike, because all three are read by `new_world_project.load_project`. A saved
+  project's two directory records occupy 117 bytes. Before this check a 64 MiB
+  project listing 1,429,325 members cost about 555 MiB of memory and 3 s before
+  its refusal; it is now refused in milliseconds without that allocation. The end
+  record is read by CPython's private `zipfile._EndRecData`, which reads at most the
+  final 64 KiB; that private name is a dependency on the pinned Python 3.12, and the
+  Python `zipfile` documentation states no directory or member-count bound of its own.
+- A project container that `zipfile` itself cannot read, because a record needs an
+  unsupported extract version, sets flag bit 5 (patched data) or 6 (strong
+  encryption), or has a member name that is not valid UTF-8 under the UTF-8 flag,
+  refuses as `INVALID_PROJECT` "Damaged project container." instead of a raw Python
+  error. The outer bundle reader maps those parser/member-read failures, plus
+  damaged ZIP and premature end-of-file errors, to `INVALID_BUNDLE`. This applies
+  to Python inspection/loading and the command response before destination
+  publication. Filesystem and environment failures retain their distinct handling;
+  nothing is generated or rebound to repair a damaged container.
+- Reopening applies the save-time title rule after the manifest integrity check.
+  The title must be a string that is nonblank after Python's `str.strip()`, at
+  most 160 code points long, with no C0 control character (below U+0020). The rule
+  does not refuse DEL (U+007F), C1 control characters (U+0080 to U+009F) or
+  invisible characters such as U+200B, at save or at load. Project digests are
+  self-digests, not signatures, so a crafted title with recomputed digests that
+  breaks this rule refuses with `INVALID_PROJECT` on load and inspection.
+  The session's `INVALID_TITLE` message names the C0 range explicitly; it does not
+  imply a wider Unicode-control ban than the existing save/load rule.
+- Saving publishes a complete, fsynced file exclusively. Loading validates all
+  data in an owned staging directory, then publishes into an exclusively new
+  managed directory. `ready.json` is published last. Callers adopt the new world
+  only after the successful response; failure retains the previously open world.
+  Rollback removes only unchanged files created by that call and its empty owned
+  directories, never an existing project or arbitrary recursive tree.
+- The trusted system temporary-directory root is resolved before staging, so a
+  system alias such as `/var` does not invalidate a save or load. User-supplied
+  source and destination paths still reject symlinks/reparse points. Unavailable
+  safe staging or missing native dependencies return `ENVIRONMENT_ERROR`, not a
+  claim that the saved world is damaged.
+
+Native world restoration remains mandatory and unchanged: its codecs and geometry
+identity checks must succeed before a world is returned. A different job execution
+binding does not by itself prevent world restoration. This is not a promise that
+every older schema, native library or platform can decode every world. A native
+reader refusal remains a refusal; the adapter neither repins a world nor claims
+metadata-only inspection as a successfully loaded world.
+
+The project/session staging adapters have changed; source-bound jobs created with
+their prior bytes may therefore be inspectable but noncontinuable under these
+updated adapters. Existing job and native execution guards remain unchanged.
+
+### Stable backend and UI interface
+
+Use the declared scientific Python and trusted server-owned paths:
+
+```text
+python -B tectonics/tools/new_world_bundle.py save --file NEW.atlas --world ORIGINAL.atlas --root JOBS_ROOT
+python -B tectonics/tools/new_world_bundle.py inspect --file SAVED.atlas
+python -B tectonics/tools/new_world_bundle.py result --file SAVED.atlas --job ORIGINAL_JOB_ID --index 0
+python -B tectonics/tools/new_world_bundle.py load --file SAVED.atlas --directory NEW_DIRECTORY
+```
+
+`save` reads exactly `{"job_ids":["lowercase-32-hex-job-id"]}` from standard input.
+An empty list saves the initial world alone; `--root` may then be omitted.
+At most 32 distinct IDs, 256 times per job, 64 MiB output data per job and 256 MiB
+total payload are admitted. Individual native bounds remain unchanged. The
+manifest is at most 2 MiB and the complete archive at most 260 MiB.
+
+All commands return a path-free envelope:
+
+```json
+{"schema":"atlas.world-bundle-response.v1","status":"ok","data":{"kind":"combined","bundle_id":"64-hex","project_id":"64-hex","title":"World title","status":"WORKING NON-CANON","jobs":[],"generated_on_open":false,"world_file":"world.atlas","jobs_directory":"jobs"}}
+```
+
+The nested status is a [legacy compatibility field](../../docs/CODING_SAFETY.md#legacy-document-and-format-bindings).
+
+`save` additionally reports `archive_bytes`, `stored_world_copies: 1` and
+`avoided_frozen_world_copies`. Each job summary contains `job_id`, `producer_id`,
+`state`, `attempt`, `completed_outputs`, `total_outputs`, `requested_elapsed_s`,
+`output_ids`, `continuation_compatible`, `continuation_refusal`, `attempts_remaining`
+and its safe `error` or null. Compatibility is not permission to reset an exhausted attempt count.
+Failures return `status: error`, safe `error.code/message` and exit 2, never
+private filesystem paths or raw exceptions.
+
+After successful load, `NEW_DIRECTORY/world.atlas` works with the existing
+`new_world_session.py read`. `NEW_DIRECTORY/jobs/<ORIGINAL_JOB_ID>/` works with
+the existing `new_world_job.py status/result/resume/cancel` interface when its
+source/runtime guards permit the operation. For historical saved results, use
+bundle `result`: it verifies the archive and committed scientific identities,
+returns `job`, `index`, `result` and `generated_on_open: false`, and never creates
+an execution owner. Omit `--index` or use `-1` for the last committed result.
+UI owns registration/routing to that imported jobs root and collision handling; it must
+not rename IDs, merge into an existing conflicting job, or call submit instead
+of resume. It should select committed saved times without initiating physics.
+The `.atlas` upload must not be treated as the old smaller initial-only format
+before its type and bounds are checked by this adapter.
+
+Python API: `save_bundle(path, world_path, *, jobs_root=None, job_ids=())`,
+`inspect_bundle(path)`, `load_bundle(path, new_directory)`. Each returns the
+envelope's `data` value; `read_bundle_output(path, job_id, index=-1)` returns a
+verified saved result with its job compatibility summary. `response(argv, stdin)`
+also supplies the exit code. Historical inspection is read-only access to saved
+data, not scientific revalidation or execution compatibility.
+
+### Historical bundle evidence
+
+The retained [r1 delivery evidence](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-bundle-r1.json)
+and [r2 native check](https://github.com/Atlantispy/atlas/blob/00b999430240365ba35af5640da940620ad8edc1/tectonics/evidence/new-world-bundle-r2.json)
+are historical after later source repairs. They recorded save, inspect, load and
+saved-output access, including foreign-identity refusal on resume, for their
+bounded Windows examples. They are not present-source timing, Linux compatibility
+or scientific acceptance. Current receipt classification belongs to the
+[evidence register](../../docs/CURRENT_EVIDENCE.md).

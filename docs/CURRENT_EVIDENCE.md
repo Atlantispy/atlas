@@ -97,7 +97,7 @@ connects the column, heat, force, phase, support, admission and event contracts.
 [3-D mechanics](../tectonics/docs/REGIONAL_MECHANICS_3D.md) and
 [evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) retain fixed-box/first-order
 limits. [New-world evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification),
-[bundles](../tectonics/docs/NEW_WORLD_BUNDLE.md) and
+[bundles](../tectonics/docs/NEW_WORLD_EVOLUTION.md#portable-world-projects) and
 [B1 diagnostics](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1)
 retain scenario/recovery/descriptive limits. Local analytical/manufactured
 controls do not establish calibrated rupture, native source-to-crust flow,
@@ -305,7 +305,7 @@ The repair basis was remake e7466e8, using review/patches against 6285d4a.
 [W12 assembly](../tectonics/docs/W12_ASSEMBLY.md#what-the-graph-and-recovery-actually-do)
 owns exact signed-zero export, initial pressure/reservoir consistency, supplied/
 effective input identities and foreign-thread closure semantics. No physical
-tolerance was relaxed. [Bundles](../tectonics/docs/NEW_WORLD_BUNDLE.md#integrity-and-recovery-rules)
+tolerance was relaxed. [Bundles](../tectonics/docs/NEW_WORLD_EVOLUTION.md#bundle-integrity-and-recovery)
 own foreign-binding inspection with refused native continuation and trusted-temp
 staging with distinct environment errors. No metadata-only world fallback,
 hidden generation, migration or dependency installation was added.

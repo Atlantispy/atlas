@@ -2980,7 +2980,7 @@ allowance and is not bounded by this predecessor-only forecast. The
 [endpoint owner](../optimisation/workbench/plan18/README.md) distinguishes those
 routes. No new research or scientific acceptance is claimed.
 
-The [Plans19–20 source selection](../optimisation/workbench/plans19-20/README.md)
+The [Plans19–20 source selection](../optimisation/README.md#plans19-20-source-selection)
 combines two accepted geometry changes and the accepted S2 r9 capture helpers,
 preserving later heat/worker choices. The reader chapter explains
 [bounded geometry refinement](how-it-works/06-physical-integration.md#refine-only-the-geometric-bounds-that-need-it)

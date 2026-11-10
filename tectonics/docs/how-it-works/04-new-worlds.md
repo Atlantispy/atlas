@@ -401,7 +401,7 @@ model. See [project code](../../tools/new_world_project.py),
 and their [project](../../tests/test_new_world_project.py),
 [job](../../tests/test_new_world_job.py), [bundle](../../tests/test_new_world_bundle.py)
 and [session](../../tests/test_new_world_session.py) tests. The
-[bundle contract](../NEW_WORLD_BUNDLE.md) defines exact refusal/recovery behaviour.
+[bundle contract](../NEW_WORLD_EVOLUTION.md#portable-world-projects) defines exact refusal/recovery behaviour.
 
 ## 10. Assess an actual generated world
 
