@@ -162,6 +162,17 @@ The rehearsal-report correction has separate inert controls against the actual `
 
 ### Fold binding successors and public intake
 
+The earlier public-r1 constructor substituted the publication fold, façade,
+parent and parity roles in the five-role table; r2 changed only its publication
+fold and façade bindings. Function/class bodies, capture behaviour and the
+fixture role stayed unchanged. Their original r10 publication predecessor is not
+in this checkout; neither are the exact utility and prepared-profile inputs or
+the latter's historical-input sibling. Missing selected authority still refuses.
+The preserved r1/r2 source maps contain publication-time guide digests, not a
+requirement to keep separate mutable guides. Constructors, maps and their pinned
+role/source identities remain in place; their historical source correspondence
+does not establish final fold, runtime, privacy, admission or scientific proof.
+
 `folded-runtime-r2` changes only the selected fold/parity tool roles; r3 changes the fold/facade roles to the public-r4 local tool identities; r4 binds the completed public-r5 fold/facade roles. The parent-fold and other unchanged roles keep their declared identities. These successors preserve the constructor functions and capture behaviour; exact role hashes remain in the actual constructors/maps. Their operational identities differ from the portable `folded-runtime-public-*` exports.
 
 The public c697 source-stage report has status `PASS_ACTUAL_PUBLIC_PUBLISHED_RECEIPT_PAIRED_API` and belongs under `review.evidence` as `public-source-paired-intake.json`, alongside its original authentic construction packet/configuration. It is a flat public observation, not the private-shaped `source-paired-intake.json`. The generic constructor consequently reports `SOURCE_STAGE_DISPOSITION_NOT_REASSERTED`; this neither erases that observation nor qualifies the fold. Do not repeat or rename a source-paired observation into postfold qualification.

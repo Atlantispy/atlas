@@ -72,7 +72,7 @@ Opening a project restores its actual values and never runs either generator.
 
 `new_world_session.py` emits `atlas.world-view.v3` inside the unchanged
 `atlas.world-session-response.v1` envelope. Step 3 introduced the structure fields
-in view v2; the current v3 view also includes [Step 4 motion](NEW_WORLD_MOTION.md).
+in view v2; the current v3 view also includes [Step 4 motion](NEW_WORLD_LAYOUT.md#initial-plate-motion).
 `capabilities.initial_structure` and `structure` describe the saved structure.
 `structure` is null for
 a legacy layout-only project; otherwise it is `atlas.initial-structure-view.v1`:

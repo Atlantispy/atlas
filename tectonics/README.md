@@ -156,7 +156,7 @@ python -I -B tectonics/tools/run_w01_workflow.py
 ```
 
 The examples use authored assumptions, not calibrated Earth-like defaults.
-See [initial sampling](docs/W01_INITIAL_SAMPLING.md), [regional workflow](docs/W01_REGIONAL_WORKFLOW.md)
+See [initial sampling](docs/W01_REGIONAL_WORKFLOW.md#initial-condition-sampling), [regional workflow](docs/W01_REGIONAL_WORKFLOW.md)
 and [precursor execution](docs/OPTIMISATION_REFERENCE.md#3cr2-initial-execution)
 for geometry, memory, history and source restrictions.
 

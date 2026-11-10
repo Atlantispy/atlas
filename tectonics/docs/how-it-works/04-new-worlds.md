@@ -250,7 +250,7 @@ Atlas's particular geological preference remains its own uncalibrated recipe.
 augmented least-squares formulation and changes of anchor. The recorded correction
 removes anchor-dependent relative motion, but its whole integration receipt is
 now classified historical. Code: [motion fit](../../tools/new_world_motion.py);
-method and evidence scope: [initial motion](../NEW_WORLD_MOTION.md).
+method and evidence scope: [initial motion](../NEW_WORLD_LAYOUT.md#initial-plate-motion).
 
 **A force balance instead of a fitted speed (I04.2; not yet wired into New World).**
 The [D1 balance on the shared network](06-physical-integration.md#balance-the-plates-of-the-shared-network)

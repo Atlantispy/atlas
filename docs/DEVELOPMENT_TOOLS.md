@@ -240,21 +240,10 @@ module, so the parallel times are, if anything, pessimistic.
 `SLOW_TESTS` at a 30 s threshold has 22 entries (37 tests, about 19% of the measured unit-seconds). A 60 s threshold
 would have had 5 entries (about 6%).
 
-Impact selection sizes from the map recorded at `30a79e6` (602 units, 5356 tests):
-
-| Edit | Units | Tests |
-| --- | --- | --- |
-| `integration_transfer.py`, a function body | 293 | 2782 |
-| `integration_transfer.py`, a module constant | 401 | 3881 |
-| `spherical_atlas.py`, a function body | 344 | 3305 |
-| `spherical_atlas.py`, a module constant | 506 | 4805 |
-| `plate_cooling.py`, a function body | 236 | 2637 |
-| `plate_cooling.py`, a module constant | 506 | 4805 |
-| `test_i03_events.py`, a test body | 75 | 930 |
-| `tectonics/tools/i02_column_workflow.py`, a function body | 77 | 930 |
-
-71 units (907 tests) are always selected because they start processes or skip tests. Package edits select many tests
-for the two reasons given under `test_impact.py` above.
+The historical impact map covered 602 units / 5,356 tests. Package edits
+selected many tests for the source-identity reasons described above; 71 units
+(907 tests) were always selected because they started processes or skipped tests.
+These snapshot counts are not a current selection guarantee.
 
 Mutation check: seven injected faults, each followed by one full-suite run. The faults were three package function
 bodies, a package constant, a numba kernel, a test helper and a data file. Every test whose outcome changed under

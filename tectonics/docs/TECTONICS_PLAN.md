@@ -307,7 +307,7 @@ of the same PB2002 data.
 #### R2: geological substrate and static sampling
 
 [precursor_r2.json](../cases/precursor_r2.json) registers the static contract.
-[W01 sampling](W01_INITIAL_SAMPLING.md) owns the supported initial-condition
+[W01 sampling](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling) owns the supported initial-condition
 interface; [execution/indexing](OPTIMISATION_REFERENCE.md#3cr2-initial-execution)
 owns scheduling, reuse, resource admission and measured costs.
 
@@ -1157,15 +1157,15 @@ results remain at the following owner destinations.
 | Package | Method owners |
 | --- | --- |
 | W00 | [Foundation contracts](FOUNDATIONS.md), selected case and existing execution card |
-| W01 | [Sampling](W01_INITIAL_SAMPLING.md), [motion](W01_MOTION_FORCING.md), [regional workflow](W01_REGIONAL_WORKFLOW.md), [assessment](W01_REGIONAL_WORKFLOW.md#stage-8-combined-acceptance) |
+| W01 | [Sampling](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling), [motion](W01_REGIONAL_WORKFLOW.md#prescribed-motion-to-regional-forcing), [regional workflow](W01_REGIONAL_WORKFLOW.md), [assessment](W01_REGIONAL_WORKFLOW.md#stage-8-combined-acceptance) |
 | W02 | [Regional transport, cohorts, remap, ALE and events](FOUNDATIONS.md#w02-regional-case-openclosed-constant-density-thickness-transport) |
 | W03 | [Thermal columns](W03_THERMAL_COLUMNS.md), [support](W03_THERMAL_SUPPORT.md), [compaction](W03_COMPACTION.md), [workflow](W03_WORKFLOW.md) |
 | W04 | [Loads](W04_COLUMN_LOADS.md), [finite regions](W04_WORKFLOW.md#finite-region-support), [variable rigidity](W04_WORKFLOW.md#fixed-variable-rigidity), [workflow](W04_WORKFLOW.md), [assessment](W04_WORKFLOW.md#combined-supported-workflow-acceptance) |
 | W05 | [Regional extension](W05_REGIONAL_EXTENSION.md), [assessment](W05_REGIONAL_EXTENSION.md#combined-acceptance-contract) |
-| W06 | [Spreading design](W06_SPREADING.md), [birth](W06_BIRTH.md), [cooling](W06_COOLING.md), [histories](W06_HISTORIES.md), [workflow](W06_WORKFLOW.md) |
+| W06 | [Spreading design](W06_SPREADING.md), [birth](W06_WORKFLOW.md#oceanic-birth-and-spreading), [cooling](W06_COOLING.md), [histories](W06_WORKFLOW.md#changing-motion-histories), [workflow](W06_WORKFLOW.md) |
 | W07 | [Mechanics](W07_REGIONAL_MECHANICS.md), [solver](W07_REGIONAL_SOLVER.md), [heterogeneous thermal](W07_HETEROGENEOUS_THERMAL.md), [surface strength](W07_SURFACE_STRENGTH.md), [workflow](W07_WORKFLOW.md), fixed-box [3D mechanics](REGIONAL_MECHANICS_3D.md) / [evolution](REGIONAL_EVOLUTION_3D.md) |
 | W08 | [Regimes](W08_REGIMES.md), [shortening](W08_SHORTENING.md), [transform](W08_TRANSFORM.md), [subduction](W08_SUBDUCTION.md), [underthrust](UNDERTHRUST.md), [magmatism](W08_MAGMATISM.md), [joined routes](W08_JOINED.md) |
-| W09 | [Surface design](W09_SURFACE_PROCESSES.md), [water](W09_WATER.md), [erosion](W09_EROSION.md) |
+| W09 | [Surface design](W09_SURFACE_PROCESSES.md), [water](W09_WATER.md), [erosion](W09_WATER.md#finite-material-erosion) |
 | W10 | [Scoped validation](W10_VALIDATION.md) |
 | W11 | [Execution, PF/PT methods and measurements](OPTIMISATION_REFERENCE.md) |
 | W12 | [Supported assembly](W12_ASSEMBLY.md); [remaining coupled completion](INTEGRATION_PLAN.md) |

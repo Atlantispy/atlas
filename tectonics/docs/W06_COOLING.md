@@ -2,7 +2,7 @@
 
 Status: **scoped implementation and numerical checks pass**,
 22 September 2026. The [Step 1 design](W06_SPREADING.md) remains frozen. This
-increment extends [constant prescribed birth/spreading](W06_BIRTH.md); it does
+increment extends [constant prescribed birth/spreading](W06_WORKFLOW.md#oceanic-birth-and-spreading); it does
 not advance to Step 4 changing histories or Step 5 durable combined workflow.
 See [retained numerical evidence](#retained-numerical-evidence).
 

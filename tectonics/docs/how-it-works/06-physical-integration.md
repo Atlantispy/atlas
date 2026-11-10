@@ -1372,143 +1372,49 @@ installed delivery and scientific acceptance remain separate.
 
 ### Prepare an independent reader while a private producer runs
 
-The separate private fresh-interval route implements a scheduling change:
-an independent reader rebuilds its starting plans while the current producer
-computes. The reader uses its own fresh files, memory budget and pinned code.
-It receives no producer values during that preparation and cannot open the
-producer's stored result until the producer has stopped cleanly and an
-authenticated release record identifies the exact sealed result and processes.
-It then repeats its memory check and performs the same independent comparison,
-final verification and adoption. Preparing early cannot accept an unchecked state.
+On the selected private fresh-interval route, a reader prepares independently
+while the producer computes. It cannot read or adopt the result until the
+producer stops cleanly, the sealed result and processes are authenticated, memory
+is rechecked and the independent comparison and verification pass. Cancellation,
+guard failure or launcher loss stops it; a narrowly authorised fallback never
+starts the next producer speculatively.
 
-Launcher loss, cancellation, a failed guard or an expired wait stops the reader.
-A specifically approved retry may use a new reader directory only when the
-failure is proven unrelated to data or identity, the original attempt remains
-inspectable and all relevant processes have stopped. There is at most one such
-fallback. The next producer is never started speculatively.
-
-The [fresh-interval method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)
-describes the gate, retained accounting and source boundaries. Implementation and
-private integration are complete for the selected route. In one original-profile
-ROOT pair, overlap reduced wall time from 1,701.781 to 1,172.375 seconds (31.11%)
-while sampled arm-tree RAM rose 74.23%. This is a ROOT-only observation, without an
-interval or whole-programme speed claim. Producer reuse is separate: its bounded
-producer-only smoke recorded 969 hits and zero misses; it did not run a reader.
-Independent reader recomputation remains required and has separate q46 evidence.
-
-The [combined source snapshot](../../optimisation/workbench/plans10-12/README.md)
-retains those mechanisms with the selected lf3 heat route. Its focused checks
-passed 27 orchestration tests, three native-entry cases and four heat cases.
-The earlier ROOT/reuse receipts belong to the earlier profile; the new profile
-needs its own eligible ROOT. Full intervals and full-workflow cold recovery remain
-later, held evidence. These changes do not alter the I02 scope and evidence above
-or establish new physical acceptance.
+[The interval-chain method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)
+owns the gates and measured ROOT-only time/RAM trade-off. The [combined source](../../optimisation/workbench/plans10-12/README.md)
+adds the selected heat route; full intervals and cold recovery remain separate,
+held work. Neither preparation overlap nor a producer-only smoke proves reader
+adoption, a whole-interval gain or new physical acceptance.
 
 ### Compile heat certificates and observe the conservative finish
 
-The private interval route now has a candidate that batches the directed MPFR
-dot products used to certify heat reconstruction. It keeps the original Python
-expressions when the compiled route cannot support the active context or result.
-Rounding direction, precision, exact accounts and the physical heat equations
-remain unchanged. Accepted endpoint certificates are shared during the closed
-finish, and projection retains an actual peak-width witness with deterministic
-ties. Current checkpoint and restoration consumers bind this same generation.
+The selected heat candidate batches directed MPFR certificate operations while
+preserving the original expressions as a fallback, rounding, precision and heat
+accounts. Shared endpoint certificates and deterministic width witnesses avoid
+repeated work; observation markers measure the conservative finish without
+changing its physics. The [Plan13/14 owner](../../optimisation/workbench/plans13-14/README.md)
+records its exact comparisons, component time/RAM trade-off and limits.
 
-The fresh and ordinary prepared drivers observe the loaded finish/projection
-functions and unique nested closure code objects. They share six ticks and an
-eleven-stage heat prefix, followed by conditional commit stages. N5's exact
-calculation marker follows its numerical helper; historical N4 keeps its original
-target. Nested phase durations overlap and cannot be summed into an interval time.
-
-The [method and source map](../../optimisation/workbench/plans13-14/README.md)
-describe the retained MPFR/Numba implementation, fallbacks, original proof and
-measurements. No new physical model or research source was introduced by this
-integration. Exact saved Heat comparisons and separate marker controls passed;
-neither establishes a full-driver or full-interval run. The candidate traded more
-RAM for lower measured component time. Final programme performance, real-IV1
-marker observations, recovery and enablement remain later scoped work.
-
-The accepted [heat arithmetic examination](../../optimisation/workbench/plan40/heat/FINDINGS.md)
-identifies further exact reuse opportunities in the selected source. In particular,
-the cubic basis repeats exact products: a bounded prototype preserves its original
-admission sequence while reusing monomials. Other proposed changes reuse immutable
-preparation, specialise finite signed-zero products without removing their ordered
-additions, and remove an unused HIGH-solver matrix representation. They remain
-outside current production selection. Equal real algebra is insufficient: the examination
-includes counterexamples for unrestricted Gram symmetry, deleting zero terms and
-postponing rounding. Source-bound feasibility controls do not replace the later
-resource, consumer, runtime or whole-interval checks.
-
-The accepted [additional heat examination](../../optimisation/workbench/plan40/heat/FINDINGS.md#additional-arithmetic-candidates)
-also identifies repeated flux/polygon arithmetic, observation enclosures shared
-across faces, unused earlier inverse columns and repeated exact/interval
-conversions. Each proposal retains its own validation, rounding and ownership
-conditions; none supplies a measured whole-interval improvement.
-
-The [component tests](../../optimisation/workbench/plan40/heat/testing/README.md)
-now exercise all 20 candidates against selected numerical bodies, including
-native interval kernels and real budget/cleanup objects where documented.
-Other tests retain explicit injected numerical or ownership seams. Exact output
-agreement, guard/refusal parity and ownership checks qualify those fixtures;
-production consumer integration remains separate. The
-[controlled comparisons](../../optimisation/workbench/plan40/heat/testing/MEASUREMENTS.md)
-include cache/view construction, reference fallback and retirement. Several
-large arithmetic-count reductions actually take longer; the small signed-zero
-dot and exact owner-unit scaling changes merit bounded source implementation.
-Their real successor imports, original resource guards and lifetime boundaries
-are checked explicitly. The [actual-version measurements](../../optimisation/workbench/plan40/heat/implementation-r1/MEASUREMENTS.md)
-include those costs: signed-zero dot is mixed by size, exact owner-unit scaling
-has a small positive fixture median, and the stateless polygon successor is
-slower and not adopted. Its original full native inventory is preserved. No
-prototype percentage is silently assigned to a changed source generation, and
-no component result establishes a whole-IV or scientific claim.
-
-The [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
-connects those retained arithmetic changes to existing consumers. Certificate
-assessment and functional bounds use the new certified dot through an explicit
-inventory binding. The forward assembly and its lifetime manager use the same
-new C8 owner/result types, so transfer, refinement and cleanup remain consistent.
-The issuer captures that selected source closure, and checkpoint, joined and
-restored bindings carry its new identities. The worker observer includes the
-additional MPFR functions and resolves the exact pinned library in the loaded
-interpreter environment. Historical sources and saved identities are preserved. The receiving source
-map selects C3 and forward-only C8 and excludes C13; its complete source bindings
-do not establish runtime admission, checkpoint migration or scientific acceptance.
-The new graph does not make old checkpoints interchangeable or release held runs.
-
+The [Plan40 heat findings](../../optimisation/workbench/plan40/heat/FINDINGS.md)
+distinguish exact reuse candidates from slower, excluded or unselected changes.
+Its [receiving integration](../../optimisation/workbench/plan40/heat/integration-r2/README.md)
+selects C3 and forward-only C8, excludes C13, and binds the affected certificate,
+forward, ownership and restoration consumers. These source/component results do
+not establish runtime admission, migration of old checkpoints, full-interval
+benefit or scientific acceptance; run holds remain unchanged.
 
 ### Reduce repeated pressure arithmetic while preserving certified bounds
 
-The [Plan40A pressure successor](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
-keeps the full interval derivatives used to certify curvature. At each admitted
-midpoint it can calculate just the value bounds instead. Unsupported predicates
-or exhausted optional scratch leave that attempt before the original full
-calculation runs. Precision, ordered outward rounding, constant shortcuts,
-refinement and the leaf ceiling are unchanged.
+The [Plan40 pressure successor](../../optimisation/workbench/plan40/pressure/FINDINGS.md)
+can use value-only midpoint bounds and bounded worker-local reuse where admitted,
+falling back to the original calculation otherwise. It preserves interval
+derivatives for certification, ordered outward rounding, refinement limits,
+resource admission and cleanup. Its [source and runtime receiving route](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
+connects the selected modules to the existing loader and pressure worker.
 
-Within one worker invocation, bounded caches reuse completed unweighted
-profile/donor integrals and donor polygon wedges. Every original coefficient
-scale, addition, fixed-flag update and donor order remains. Exact local powers
-and vectors are reused without reassociating interval arithmetic. Only the
-selected synchronous pressure worker can assert custody on its fresh ledger;
-other callers decline optional work. The 64 KiB wedge and contribution epochs
-and 256 KiB midpoint epoch clear in sequence, before later mandatory admissions
-or fallback, including cancellation unwinding.
-
-The [explicit additive source selection](../../optimisation/workbench/plan40/pressure/implementation/README.md)
-carries the changed coupling, spatial pressure, worker and midpoint-value
-modules together. Its [runtime constructor and explicit entry](../../optimisation/workbench/plan40/pressure/implementation/runtime/README.md)
-bind those sources into the existing fresh-profile loader and pressure-worker
-interfaces, preserving external dependencies and prior profiles. No alternate
-numerical caller or package stub is required. Exact-output/resource controls and implementation review
-support this bounded source change. Complete synthetic core calculations save
-27.35–61.94%; G4's guarded exact products add a small marginal gain. Unknown-root
-midpoint fallback is 2.33% slower in its fixture, with overlapping sample ranges;
-net complete-call benefit determines selection. All ten groups, negative and
-uncertain results are retained. No new physical method or research source is
-introduced. These measurements avoid subdivision and establish neither a
-production workload mix nor whole-IV savings. Frozen defaults and run holds
-remain unchanged.
+The owner record distinguishes measured component gains, fallback regression,
+source/identity controls and excluded candidates. Those observations do not
+establish the production workload mix, a whole-interval benefit, a changed default
+or scientific acceptance.
 
 ### Choose rolling geometry workers from an authenticated parent
 

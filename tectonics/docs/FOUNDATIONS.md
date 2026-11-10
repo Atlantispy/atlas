@@ -58,12 +58,8 @@ under downward gravity. The printed-source sign/normalisation issue is recorded
 for R4 rather than hidden by a benchmark claim. Pressure-dependent yielding,
 elasticity, general creep and high-pressure phase laws remain unimplemented.
 
-# Historical review cleanup: scope at revision 27
-
-Version `0.1.0.dev23` changes interpreter-path handling and diagnostic presentation,
-not equations or their tolerances. The [maintained plan](TECTONICS_PLAN.md) revision
-27 and [execution reference](OPTIMISATION_REFERENCE.md#cleanup-execution) govern
-current scope. Older delivery statements below describe their dated increments.
+Current programme status and holds belong to [current state](../../docs/CURRENT_STATE.md);
+older development revisions describe their own checkpoints, not current scope.
 
 # Foundation case and numerical contract
 

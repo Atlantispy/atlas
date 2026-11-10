@@ -788,7 +788,7 @@ The bounded library has 67 profiles, seven recipes and 11 source/method records 
 ### Initial sampling and bounded profile reuse
 
 
-PreparedPrecursor shares immutable case/catalogues and indexes. Grouped native point hits, unions/depth searches and CSR associations avoid per-point objects and point×mode/cell×material cubes. Exact cell overlay/precedence subtraction decides ownership. Constant-depth breaks split explicitly; compensated sums accumulate actual portions. A call-local cache of 1,024 interval means keys profile/top/bottom/radius at fixed case time, never a cross-state thermal cache. Polygon-boundary Fourier integrals include holes and separable depth factors; factored/sinc long-wave forms retain summation order. Unsupported spherical Cartesian-prior integration refuses, never substitutes cell-centre sampling. [Sampling science](W01_INITIAL_SAMPLING.md) owns formulas/support meaning.
+PreparedPrecursor shares immutable case/catalogues and indexes. Grouped native point hits, unions/depth searches and CSR associations avoid per-point objects and point×mode/cell×material cubes. Exact cell overlay/precedence subtraction decides ownership. Constant-depth breaks split explicitly; compensated sums accumulate actual portions. A call-local cache of 1,024 interval means keys profile/top/bottom/radius at fixed case time, never a cross-state thermal cache. Polygon-boundary Fourier integrals include holes and separable depth factors; factored/sinc long-wave forms retain summation order. Unsupported spherical Cartesian-prior integration refuses, never substitutes cell-centre sampling. [Sampling science](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling) owns formulas/support meaning.
 
 Retain context/maps/index allowances until close; join capture/fragments/sparse/native/publication admission, finite row/work/vertex bounds and active-reader close guards. Source invalidation at close must release reservations. Caller samples/state/geometry need aggregate nbytes accounting plus external native/interpreter headroom. State IDs bind case/library/origins/cooling/volume/precedence/prior stream/scales/frame; prepared IDs add limits/context. One result snapshot contains actual support/arrays/descriptor and precursor/library decoding dependencies, so restore neither reacquires nor resamples. Sampling-v2 worker order/configuration stays outside scientific identity; changed source refuses.
 
@@ -2315,132 +2315,68 @@ new environment install/change follows from this record.
 
 ### Adaptive-inner Windows and returned Linux measurements
 
-Independent corrected-dev40 Windows comparison: developed case 2 step 901 16×16 input,
-dt1e-5, one native worker, policy disabled/enabled with the same source and existing
-Anderson/previous-stage1/four-use reuse combination. One uncounted warm-up per mode,
-then three alternating pairs; each fresh plan times first step separately, then
-three prepared steps and a separate cold endpoint. Validation/stage records are
-inside timing, archive write/decode outside. This is fresh input, not historical
-source rebinding.
+On the corrected dev40 16×16 developed input at dt=1e-5, three alternating Windows pairs
+measured median prepared steps of 0.309461 s disabled versus 0.283397 s adaptive
+(8.42% less). One native worker, identical source and the existing reuse policies
+were used; archive write/decode were outside timing. Linear iterations
+fell from 6,006 to 3,363 while nonlinear iterations rose from 312 to 333.
+Temperature differed by at most 3.47e-13 K, composition was byte-identical and
+the strict linear target passed. Saved states/endpoints decoded at their original
+identities; work reservations released, but process RSS was not measured.
 
-| Pair | Disabled mean step, s | Adaptive mean step, s |
-| --- | ---: | ---: |
-| 0 | 0.304870966667 | 0.282951166620 |
-| 1 | 0.316855400063 | 0.283746133287 |
-| 2 | 0.309460666690 | 0.283396966639 |
-| Median | 0.309460666690 | 0.283396966639 |
-
-Median saving 0.026063700051 s/8.4223%, separated observed ranges but three samples
-are not confidence intervals. Across 18 timed stage solves per mode linear iterations
-6006→3363 (44.006% fewer), nonlinear 312→333: iteration saving is not elapsed saving.
-Temperature max difference 3.46833672893e-13 K, composition byte-identical; maximum
-strict-linear residual/target 0.896172966498<=1. All 8 saved timing states and 8 endpoint
-results decoded with original identities; reservations released, not measured RSS.
-
-| Mode | Preparation samples, s | First-step samples, s | Cold endpoint samples, s |
-| --- | --- | --- | --- |
-| Disabled | .211398, .222720, .217673 | .617637, .605410, .661890 | .248389, .251345, .258263 |
-| Adaptive | .245439, .221367, .224228 | .547261, .556236, .533269 | .216044, .206297, .213169 |
-
-Recorded 57 distinct focused tests, not full suite:30 adaptive/mechanics/coupling
-and 28 follow-up with one repeated restore case counted once. The first restore
-assertion expected an inner message rather than public wrapper; corrected to inspect
-cause, with production refusal already correct. Independent non-unit SI, activation
-restore and endpoint recovery controls remain. One later fresh-process CLI/restart/
-audit repetition took 12.520 s and is not another distinct test. Raw local records:
-adaptive-dev40-timings/ and adaptive-return-20260921/, not public runtime dependencies.
-
-Separate returned Linux dev39 reports (Python 3.13.5, NumPy 2.3.5, SciPy 1.17.0, Numba 0.65.1)
-measured .208890→.174891 s (16.28%) and .241936→.212036 s (12.36%) on later developed
-fixtures. Earlier 3.95% gain and bypassed-linear 9.51% regression had overlapping
-ranges. These are reported worker evidence, distinct from local Windows results,
-not additive or high-resolution/whole-generator forecasts.
+The 57 distinct focused tests include restore, SI and endpoint controls, not a full
+suite. Separate Linux dev39 reports on different developed fixtures measured
+0.208890 → 0.174891 s (16.28%) and 0.241936 → 0.212036 s (12.36%); earlier
+cases overlapped or regressed. RSS was not reported here. These are small,
+distinct component observations, not additive or whole-generator forecasts.
 
 ### Selective multigrid measurement and publication repair
 
-Windows CPython 3.12.14, NumPy 2.4.6, SciPy 1.17.1, Numba 0.65.1, one native thread and no
-concurrent worker. Both arms include the same SI publication repair and unchanged
-limits, Anderson/adaptive/four-use reuse. Alternate ILU/GMG, each from new input;
-plan creation/advance/close timed, compilation/fixtures/archive/comparison excluded.
-Developed input is a boundary-compatible reintegration of the retained 16-grid
-step 901 field, not evolved fine-grid evidence. dt1e-7; no old checkpoint rebind.
+Alternating Windows measurements compared ILU and GMG with the same publication
+repair, limits, reuse policies and one native thread. Plan creation, advance and
+close were timed; compilation, fixtures, archive and comparison were excluded.
+Developed cases were reintegrated from a retained 16-grid field at dt=1e-7,
+not mature fine-grid trajectories.
 
-| Coupled workload | Samples/arm | ILU median, s (range) | GMG median, s (range) | Saved |
-| --- | ---: | --- | --- | --- |
-| Case 1 initial 128², two steps | 3 | 2.060485 (2.033247–2.183173) | 1.377673 (1.334094–1.416143) | .682812 s/33.138% |
-| Case 2 developed 64², two steps | 3 | 5.060393 (4.977575–5.140371) | 4.853001 (4.809075–4.924622) | .207392 s/4.098% |
-| Case 2 developed 128², one step | 2 | 26.134182 (26.001997–26.266368) | 18.732475 (18.021319–19.443630) | 7.401708 s/28.322% |
+| Coupled workload | Samples per arm | ILU median | GMG median | Saving |
+| --- | ---: | ---: | ---: | ---: |
+| Initial 128², two steps | 3 | 2.060485 s | 1.377673 s | 33.14% |
+| Developed 64², two steps | 3 | 5.060393 s | 4.853001 s | 4.10% |
+| Developed 128², one step | 2 | 26.134182 s | 18.732475 s | 28.32% |
 
-Two-sample medians are means of two values, not confidence intervals. Earlier case 1
-64 screening mixed first-use thermal compilation and later overlapping ranges;
-no qualified gain there. Temperature max differences are 4.4408921e-16/6.6613381e-16/
-2.2204461e-16 K respectively, composition exactly zero, strict/physical gates passed,
-reservations released. Case 2 128 GMG had more nonlinear iterations 144/149 versus
-ILU 120/128 yet lower time; iteration count alone does not select the method.
-Frozen-system pressure alternatives remain comparison-only: small local gains did
-not justify replacing production pressure.
-
-The formerly refused 128 endpoint completes in 14.076966 s with 123 nonlinear iterations
-including one recorded conversion refinement: internal 4.56533324e-11, first returned
-9.91757609e-11, unchanged target 7.62747947e-11; final returned 7.49305771e-11 passes.
-This repairs successful completion, not a speed gain against failure. Final 34 focused
-tests cover GMG transfers/fixed linearity/direct and NumPy-residual agreement,
-coefficient/geometry reuse, selection/admission/cancel/source, publication and actual
-CLI/restart/policy refusal. A checkout repetition 13.016 s is not a 35th distinct test.
-Raw local records/driver are stokes-preconditioner-compare/{coupled_trial.py,
-publication-fixed-128, coupled-case1-128, coupled-case2-64, coupled-case2-128}; forced-arm
-timings preceded tightened auto selection, while final checks cover that selection.
-No complete suite, mature trajectory, physical acceptance or RSS gain was measured.
+The two-sample result is not a confidence interval. Temperature differences were
+at most 6.67e-16 K, composition was unchanged, strict/physical gates passed and
+reservations released; process RSS, full-suite and physical acceptance were not measured.
+Iteration count alone did not select the method. A previously refused 128 endpoint
+completed only after the documented SI publication refinement, with final returned
+residual below the unchanged target; completion is not a speedup against failure.
+The 34 focused controls cover the selected solver, reuse, admission, publication
+and CLI/restart boundaries. Frozen-system pressure alternatives remain comparisons.
 
 ### Combined warm-start profile measurement
 
-The exact-base [combined-start harness](../tools/benchmark_combined_start_r4_4.py)
-compares zero-rate versus previous-stage1 at the exact detached dev41 base specified under source identity.
-Both use GMG, Anderson, adaptive inner, four-use reuse, ILU fill 17, linear rtol 1e-12,
-momentum 1e-9, viscosity rtol 1e-8, Picard ceiling 400. This supports that explicit new-run
-profile only for tested 128² Tosi 2 inputs, not default changes/all rheologies/meshes.
-The 16² control saved 9.095 ms in one pair, insufficient small-workload promotion.
+The [combined-start harness](../tools/benchmark_combined_start_r4_4.py) compared
+zero-rate and previous-stage1 starts at its exact dev41 source base, with the same
+GMG, Anderson, adaptive-inner, four-use reuse, ILU fill 17 and prescribed linear,
+momentum and viscosity tolerances. Three alternating Windows pairs
+timed capture, preparation, two steps, seed capture and close; compilation,
+fixtures, checkpoint I/O and standalone endpoints were outside the timer.
 
-Each sample starts unseeded and times capture, prepare, two accepted steps at dt=1e-7,
-seed capture and close. Actual-path JIT/fixtures/check/export/checkpoint I/O/standalone
-endpoints are excluded: not full-run timings. Three alternating pairs:
+| 128² input | Cold median | Warm median | Saving |
+| --- | ---: | ---: | ---: |
+| Analytic | 2.505858 s | 1.963621 s | 21.64% |
+| Developed-derived | 35.089515 s | 20.052831 s | 42.85% |
 
-| Input | Cold samples, s | Warm samples, s | Median cold→warm, s | Saved |
-| --- | --- | --- | --- | --- |
-| Analytic128² | 2.505858400,2.330446000,2.514332000 | 1.963621100,2.030245800,1.936269700 | 2.505858400→1.963621100 | .542237300 s/21.638785% |
-| Developed-derived128² | 39.632789300,33.755287200,35.089515200 | 21.466978400,19.262625100,20.052830500 | 35.089515200→20.052830500 | 15.036684700 s/42.852358% |
-
-Every pair favours warm starts; three-pair medians are not confidence intervals or
-additive GMG/adaptive savings. Developed temperature comes from 16-grid from_900.npz,
-reintegrated by temperature_on_grid onto 128 with zero composition and new time zero.
-It is not an evolved 128-grid trajectory, mature convection, historical restart or terrain
-acceptance; private fixture/full records are not included publicly.
-
-Existing velocity/transport tolerances, 1e-9 K coupled bound and exact composition pass;
-max temperature difference 4.440892098500626e-16 K and developed velocity 3.135910142670895e-10m/s.
-Same-mode state IDs repeat. Nonlinear stage counts cold [144,149,143,132]=568 versus
-warm [144,63,50,91]=348; linear cold [2082,2111,2075,1872]=8140 versus
-warm [2082,718,608,1145]=4553. Max returned momentum 7.87226617227077e-10 under 1e-9,
-divergence 8.029132914089132e-13, heat-relative 3.4888853336570515e-19, composition residual 0.
-
-A separate 16² saved/restored first state recreated plan and matched uninterrupted
-state/arrays for both modes. Every trial checks seed chain/typed decoding/zero
-remaining reservations. Existing 8² fresh-process combined CLI evidence was reused,
-not rerun. Warm starts add 395,264 raw seed bytes (386 KiB) per 128² endpoint plus metadata,
-without recursive history; both use 1 GiB WorkBudget, not RSS cap.
-
-Windows 11 AMD64, Python 3.12.14, NumPy 2.4.6, SciPy 1.17.1, Numba 0.65.1, llvmlite 0.47.0,
-threadpoolctl 3.7.0, one native thread/exclusive numerical worker. Exact detached
-source bytes/membership matched before/after. The local bounded driver reused reviewed
-harness functions for one 16-grid restart check then three pairs/input; it did not run
-the longer all-in-one repeated CLI/128-grid restart sequence. Focused harness tests
-retain canonical-LF synthetic fixtures and source refusals. Reproduction requires
-its exact detached base, compatible installed dependencies, new output and explicit
-exclusive-host confirmation/repeat 3; the guard intentionally refuses newer source.
-No source/checkpoint pin is altered to make it pass. Original tooling-only packet
-could not execute numerical work; these later local measurements supersede that
-execution limitation, not its preserved evidence or broader acceptance gates.
-
+The developed input was reintegrated from a 16-grid state with zero composition,
+not an evolved 128-grid trajectory. Existing velocity, transport, heat and exact
+composition checks passed; same-mode state identities repeated. A separate 16²
+save/restore control matched uninterrupted states. Warm starts added 395,264 raw
+seed bytes per 128² endpoint plus metadata; the 1 GiB WorkBudget was not an RSS
+measurement. These short component results do not add to other speedups or select
+a general default: the explicit new-run profile was assessed only for these 128²
+Tosi 2 inputs; the separate 16² observation did not justify small-workload
+promotion. The exact-base guard refuses newer source; no old checkpoint or source
+identity was repinned, and scientific acceptance remains separate.
 
 ### Baseline mechanics and SI review
 

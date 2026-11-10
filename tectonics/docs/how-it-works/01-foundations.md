@@ -183,7 +183,7 @@ checks cover a fragment's temperature range rather than just a plausible average
 Unknowns remain identified or cause a requested calculation to refuse.
 
 [Sampling code](../../src/atlas_tectonics/precursor_sampling.py), the
-[method](../W01_INITIAL_SAMPLING.md) and
+[method](../W01_REGIONAL_WORKFLOW.md#initial-condition-sampling) and
 [tests](../../tests/test_w01_initial_sampling.py) cover analytical intersections,
 refinement, mixed cells and preserved source descriptions. Constant-depth layers
 and declared body bands are supported; arbitrary three-dimensional interfaces are
@@ -211,7 +211,7 @@ Inflow needs a supplied exterior composition.
 [Forcing tests](../../tests/test_w01_regional_forcing.py) exercise common motion,
 rotated frames, hidden interfaces and incompatible flow. They establish faithful
 conversion of a supported prescription, not the discovery of plate speeds.
-[Method details](../W01_MOTION_FORCING.md) retain the units and restrictions; the
+[Method details](../W01_REGIONAL_WORKFLOW.md#prescribed-motion-to-regional-forcing) retain the units and restrictions; the
 rotation basis is the pyGPlates reference above.
 
 ### Initialising and checking the connected regional workflow

@@ -99,7 +99,7 @@ what has actually landed.
 
 ### B1. Establish one comparable realism assessment
 
-The [boundary-diagnostic method](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1)
+The [boundary-diagnostic method](../tectonics/docs/NEW_WORLD_LAYOUT.md#matched-boundary-diagnostics-roadmap-b1)
 owns the recorded original/prototype/reference comparison and its limitations.
 Multi-seed successor checks, applicable outline/reflex gates and loop-phase
 sensitivity remain acceptance work after B2. The retained prototype uses saved

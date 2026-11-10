@@ -122,7 +122,7 @@ accretion; it does not calculate breakup or the melting process that supplies it
 
 See [birth implementation](../../src/atlas_tectonics/spreading.py),
 [birth tests](../../tests/test_w06_spreading.py) and
-[birth evidence](../W06_BIRTH.md#retained-numerical-evidence). Independent trajectory/intersection
+[birth evidence](../W06_WORKFLOW.md#birth-numerical-evidence). Independent trajectory/intersection
 checks, finite-stock tests and boundary-crossing integrals establish the selected
 geometry and mass account. Outward-motion and ridge-inside-window restrictions
 prevent unsupported re-entry or disappearance at the regional boundary.
@@ -183,7 +183,7 @@ First-exit calculations split at both birth and exit-motion stages. This matters
 because parcels born later need not have greater exit age. The
 [history cooling tests](../../tests/test_w06_history_cooling.py) check those
 distributions, event boundaries, stopped-age gaps and exports frozen at departure;
-[recorded evidence](../W06_HISTORIES.md#retained-numerical-evidence) retains their snapshot.
+[recorded evidence](../W06_WORKFLOW.md#history-numerical-evidence) retains their snapshot.
 
 The [W06 workflow](../../src/atlas_tectonics/w06_workflow.py) supports constant
 spreading, staged spreading and inherited-margin cooling as separate scenarios.

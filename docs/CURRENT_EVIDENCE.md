@@ -98,7 +98,7 @@ connects the column, heat, force, phase, support, admission and event contracts.
 [evolution](../tectonics/docs/REGIONAL_EVOLUTION_3D.md) retain fixed-box/first-order
 limits. [New-world evolution](../tectonics/docs/NEW_WORLD_EVOLUTION.md#combined-lifecycle-qualification),
 [bundles](../tectonics/docs/NEW_WORLD_EVOLUTION.md#portable-world-projects) and
-[B1 diagnostics](../tectonics/docs/NEW_WORLD_MOTION.md#matched-boundary-diagnostics-roadmap-b1)
+[B1 diagnostics](../tectonics/docs/NEW_WORLD_LAYOUT.md#matched-boundary-diagnostics-roadmap-b1)
 retain scenario/recovery/descriptive limits. Local analytical/manufactured
 controls do not establish calibrated rupture, native source-to-crust flow,
 physical boundary birth, arbitrary curved plates or generated-world realism.
