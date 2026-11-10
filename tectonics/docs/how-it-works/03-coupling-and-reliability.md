@@ -2,8 +2,9 @@
 
 This chapter covers W09–W12 and the shared services that let supported tectonic
 calculations exchange, retain and inspect results. It belongs to
-[How tectonics is made](../HOW_TECTONICS_IS_MADE.md). Atlas remains : implemented equations, numerical verification, geological credibility
-and practical integration are different achievements.
+[How tectonics is made](../HOW_TECTONICS_IS_MADE.md). Atlas remains experimental:
+implemented equations, numerical verification, geological credibility and
+practical integration are different achievements.
 
 All numerical measurements below describe their recorded source/runtime snapshots.
 The W01–W12 numerical receipts are outside the initial
@@ -558,9 +559,9 @@ capped (an 8 MB view previously cost about 700 MiB before any check could run). 
 full read under the same limits could load it back, and SQLite failures reach
 callers as the store's own error, with lock contention reported separately from a
 damaged file. Dated histories go one step further: a checkpoint is written only
-after its complete restoration has been admitted under the same memory budget, so
-a stopped history can always resume
-([dated histories](../TECTONIC_HISTORIES.md#recovery-and-optimisation)).
+after its complete restoration has been admitted under the same memory budget.
+Resumption still requires the compatible producer, original schedule and an
+adequate fresh-session budget ([dated histories](../TECTONIC_HISTORIES.md#recovery-and-optimisation)).
 Reusing the latest output in memory also checks the store's change token. If
 another writer has changed the database, the saved output is verified again;
 matching output names alone cannot hide damaged data or justify continuing it.
@@ -620,8 +621,9 @@ provenance/resource differences require explicit dispositions.
 [Plan05's method and implementation](../../optimisation/workbench/plan05/README.md)
 record the actual source, checks and limitations. The corrected private pair is
 exact; this is neither general physical validation nor a main-package overlay.
-Collective correctness acceptance and the held performance run remain separate.
-This explanation derives from the retained code and exact replay; no new
+The scoped correctness decision was accepted and the separately authorised q22
+successor execution completed; their [recorded boundaries](../../optimisation/workbench/plans10-12/README.md#q22-correctness-and-execution)
+do not establish full-interval or scientific acceptance. This explanation derives from the retained code and exact replay; no new
 external scientific literature was consulted for the repair.
 
 ### Bound parallel work and measure the complete workload

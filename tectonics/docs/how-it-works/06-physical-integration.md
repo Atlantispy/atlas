@@ -1638,8 +1638,10 @@ whole-row decoding or its larger allocation would refuse. Synthetic caller and
 resource controls exercise these boundaries. A retained interval-1 comparison
 found equal values for the owner read expressions on r4, with source-analysis
 carry to the private r5 successor. It did not execute the complete owner functions;
-final combined-runtime parity and a timing benefit remain unproved. This is a storage-access change,
-derived from the existing reader/exporter contracts, with no new physical method.
+final combined-runtime parity and a timing benefit remain unproved. The separate
+final-source interval-1 verification was cancelled, not passed; wider programme
+qualification remains separate. This is a storage-access change derived from the
+existing reader/exporter contracts, with no new physical method.
 
 The receiving successor additionally binds the copied private exporter preflight
 and falls back to the current whole-row route if its callable/code changes.
@@ -1668,8 +1670,9 @@ The [combined qualification gate](../../optimisation/workbench/plan22/gate/READM
 checks child exit status as well as its reported result. Required suites must
 execute their expected tests, and comparisons preserve declared skip coverage.
 A zero-test or all-skipped result cannot supply the missing proof. Bounded fault
-controls exercise these repairs; source construction and those controls do not
-replace the final combined run. No numerical tolerance changes.
+controls exercise these repairs, and the retained private combined gate passed
+within its declared S3/L3/S1A scope. That result does not qualify the final private
+generation or authorise an interval. No numerical tolerance changes.
 
 The [B receiving arms](../../optimisation/workbench/plan21/README.md#b-with-current-s3l3-receiving-sources) retain
 the reader's path/publication hooks while reusing descriptor parsing, hashing

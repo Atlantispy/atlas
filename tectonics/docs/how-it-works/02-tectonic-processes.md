@@ -345,10 +345,8 @@ that carried it. When a saved output is read back, the workflow rebuilds the
 record from that stored solution and refuses the output unless the rebuilt record
 equals the saved one. Nothing is solved again. For the first interval, which has
 no earlier saved output to name its solution, the stored solution must also be
-the one for the starting geological state. Before this repair (R7, 1 October 2026
-candidate) a saved output whose hashes had been made consistent could carry a
-wrong record unnoticed. The stored velocity itself is not recomputed, so it is
-trusted as saved, as every restored field is. The cost is a larger saved output,
+the one for the starting geological state. The stored velocity itself is not
+recomputed, so it is trusted as saved, as every restored field is. The cost is a larger saved output,
 by up to one mechanical solution each; an output saved without it is refused. The
 [method record](../W07_WORKFLOW.md#recovery-storage-and-resource-ownership) gives
 the exact sizes.
@@ -588,22 +586,11 @@ requires separate absolute reference/current equilibria. Preserving these exchan
 boundaries makes the individual methods useful together without claiming a fully
 coupled planet.
 
-A viscosity change can be interrupted: cancelled, or failed, while the solver's
-coefficients are being replaced. A half-replaced operator would pair new
-coefficients with the previous material's name. The regional plan therefore
-refuses all further work once a change was interrupted, says that this is the
-reason, and reports it through a `usable` flag; it does not try to undo the
-change. The interface does not keep such an operator. It closes it and prepares a
-new one from the next request's own material, which gives the same result as an
-uninterrupted change at the cost of one fresh preparation. A cancellation can
-also arrive just after a change was accepted, so the error alone does not show
-which material the operator holds. After any failed change the interface
-therefore stops trusting its own record of that. Before the next request is
-solved it reads back from the operator which material is in place, and changes
-the coefficients if the request needs another one, so a request is never solved
-with whatever happened to be left behind. A replacement operator must come from
-the same source code as the first one; otherwise the request is refused. The
-evolving-mechanics tests cancel a change at every point where cancellation is
-checked, and a [history test](../../tests/test_tectonic_history.py) resumes a dated
-sequence after such a cancellation. The [method record](../EVOLVING_MECHANICS.md)
-lists what the repair costs.
+A failed or interrupted viscosity change can leave an operator unusable. The
+interface closes it and prepares a replacement from the next request's material;
+a replacement from different source code is refused. If the operator remains
+usable, the interface reads back its actual material before deciding whether to
+change coefficients. This avoids solving with a mismatched material after a late
+cancellation. Tests cover the cancellation points, and a [history test](../../tests/test_tectonic_history.py)
+resumes a dated sequence after cancellation. The [method record](../EVOLVING_MECHANICS.md)
+explains the recovery conditions and preparation cost.
