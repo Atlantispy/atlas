@@ -811,3 +811,121 @@ python -I -B tectonics/tools/benchmark_w01_forcing.py --source . --output FRESH_
 
 Use a fresh result path. The driver records raw timings, runtime/source identities,
 setup, array equivalence and resource accounting; it does not run a simulation.
+
+<a id="3cr2-initial-state"></a>
+<a id="3cr2-scaling"></a>
+
+## R2: geological substrate and static sampling
+
+[precursor_r2.json](../cases/precursor_r2.json) registers the static contract.
+[W01 sampling](W01_REGIONAL_WORKFLOW.md#initial-condition-sampling) owns the supported initial-condition
+interface; [execution/indexing](OPTIMISATION_REFERENCE.md#3cr2-initial-execution)
+owns scheduling, reuse, resource admission and measured costs.
+
+**Plate-independent substrate.** `GeologicalDomain` is a bounded planar area,
+conditioned spherical patch, or an entire named reference sphere. It has no
+physical plate or region owners. Existing `GeologicalCase` validates its original
+materials, formation cohorts, ordered columns, thermal profiles, provinces,
+faults and weak zones against this support. Old `BoundaryNetwork`/`SphericalAtlas`
+cases and their serialised definitions remain supported. A pre-partition case
+refuses selectors that require final plate/region IDs; its computational sampling
+cells cannot determine the later physical plate partition.
+
+`PrecursorState` adds one explicit origin assignment per source (observed,
+authored, sampled named prior or model-evolved import), separate known/unknown
+cooling histories, density/volume bases, optional initial scalar fields and
+explicit mantle/slab inputs. An observed label requires a cited record but is not
+independent verification; model-evolved input requires its parent-state identity
+but does not run that model. Formation times are never replaced by cooling dates.
+All times are SI seconds in the case's named epoch; a frame, epoch or depth-datum
+mismatch requires explicit conversion, not a renamed array.
+
+**Inherited and deeper structure.** Existing faults/sutures and weak zones remain
+independent of plate labels. Exact finite-trace corridor membership is available
+at points; overlapping weakness follows the existing explicit precedence without
+invented multiplication, averaging or a damage law. Optional slab/mantle records
+use named footprints and constant surface-relative depth bands with explicit
+body precedence. They can replace column material or extend support below the
+lithosphere base. These are supplied initial structures, not dynamically formed,
+dipping/curved 3D slabs or inferred slab-pull forces.
+
+**Material knowledge and property conditions.** Exact bindings to the existing
+offline Earth-material library retain its full source/condition dependency and
+automatically obtain volume bases. Partial records remain partial; source-bound
+values cannot be silently rebound or extrapolated. Grain volume, reference
+aggregate/matrix volume, explicit pore volume, bulk volume and mass are distinct.
+Additional porosity on an already-bulk reference rock is refused. A bulk-reference
+row does not assert its unknown intrinsic solid/pore split. Optional
+`reference_mass_temperature_k` computes only source-reference-density inventory,
+not in-situ mass of hot/pressurised lithosphere or a common pressure assumption.
+No new hot/high-pressure or constitutive law is selected by R2.
+
+**Sampling added to W01 stage 5.** `PreparedPrecursor` supplies immutable point
+samples and conservative initial inventories for polygon-prism or minor-arc
+shell-sector cells. Province overlap is resolved by subtracting higher-priority
+footprints before integrating lower-priority material; body bands similarly
+replace rather than double-count it. All province candidates are retained at
+points. Layer/body intervals are top-inclusive and bottom-exclusive; cell faces
+have zero extensive volume. A winning centre point is never substituted for a
+mixed-cell average. Unsupported depths, missing required porosity/temperature or
+unresolved property requests fail explicitly. Optional unresolved scalar fields
+and reference masses carry known masks; convenience accessors refuse unknown
+values rather than treating numeric placeholders as physical zeroes.
+
+For planar area A and positive downward depths a,b, V=A(b-a). For a spherical
+footprint whose reference-surface area is A on radius R,
+
+    V = A/(3 R²) * [(R-a)³ - (R-b)³]
+      = A*(b-a)/3 * [((R-a)/R)² + ((R-a)/R)*((R-b)/R) + ((R-b)/R)²].
+
+The factored form avoids subtraction of nearly equal radius cubes. For explicit
+porosity phi, matrix volume is V(1-phi), explicit pore volume is V phi, and each
+constituent receives its declared fraction of matrix volume. Existing fractional
+round-off allowances are not renormalised: bulk-coverage and phase-volume
+residuals are reported separately. Cohort/material indices refer to shared
+immutable records, preserving origins and formation dates without rich objects
+copied into every cell. Crust and lithosphere thickness remain the existing
+separate column quantities.
+
+**Initial thermal/other fields.** Constant and piecewise-linear profiles integrate
+analytically with the appropriate radial metric. The existing E04 half-space
+initial reference uses bounded quadrature for cell means, with an explicit error
+estimate and refusal rather than midpoint fallback. Mean temperature is
+volume-weighted temperature, not heat/enthalpy; this adds no thermal evolution.
+Temperature offsets must also have a non-negative envelope on requested cell
+support; a positive mean cannot conceal potentially sub-zero temperatures.
+Stress, damage and prescribed forcing can be explicitly supplied/unresolved
+scalar components with units and interpretation, not an inferred mechanical state.
+
+A named prior is the bounded Cartesian cosine field
+
+    f(r) = mean + amplitude/N * sum_i cos(k_i dot (r-origin) + phase_i).
+
+SHA256(name, unsigned-64-bit seed, mode index) supplies fixed per-mode streams.
+Amplitude means maximum deviation, not standard deviation; wavelengths are named
+feature scales, not an asserted fitted correlation length. Domain/frame/origin
+and seed belong to the identity. Planar coordinates are (x,y,depth) metres;
+spherical coordinates are geocentric Cartesian metres, without a longitude seam.
+Changing support resolution/order does not redraw the field. Planar polygon-prism
+prior means are analytic Fourier integrals including holes. Statistical inputs
+remain assumptions, not simulated geological events.
+
+**Explicit remaining limits.** General dipping/curved 3D structure and arbitrary
+volumetric interpolation remain unimplemented. Spherical point priors and radial
+base-profile means work, but spherical cell means of Cartesian spectral priors
+are refused. Positive-volume overlap between query cells is refused by default;
+when charts cannot certify disjointness, no snapping or blanket sliver tolerance
+is substituted. Compatible patches are required, or the caller must explicitly
+request non-additive overlapping queries. A set of individually queried spherical
+volumes is not thereby certified as a global disjoint mesh. Static sampling does not itself close broader W01 interpolation, forcing/evolution,
+combined scientific acceptance or R3–R9 physics.
+
+Broad-phase caps include minor-arc edges/interiors, retain exact intersections
+for uncertain candidates and preserve tiny positive-volume overlaps. Dense cap
+overlap can still require quadratic work; indexing is not arbitrary cross-chart
+repair or a global disjoint-mesh certificate. Batching must preserve complete
+request checks, global hit/row/work ceilings, original order and fixed per-cell
+summation. Threading cannot multiply admission or change numerical arrays.
+[The scaling case](../cases/precursor_r2_scaling.json) and original tests/measurements
+retain these limits. Static T04/T05/T06/T14/T15 credit does not qualify their dynamic
+scopes. Existing limitations on dipping structures and spherical-prior means remain.
