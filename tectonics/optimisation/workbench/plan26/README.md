@@ -61,3 +61,63 @@ and gate pins are retained; no portable runtime contract is fabricated here.
 
 Status: staged source component, not final-generation,
 installed-package, runtime, default or scientific acceptance.
+
+## Private receiving and installation contracts
+
+The selected-generation receiver contract (`plan26/receiving`, not supplied here)
+checks the constructor and complete source membership before invoking its
+prepared-base guard. It also authenticates the original paired-profile
+configuration and exact namespace authority. The explicit public receiving caller
+connects that source boundary to its selected transformer and parity tools. It
+binds the public constructor context, source graph, construction-return roles and
+paired API intake, retaining exact status checks and recursive purpose/rehearsal
+refusal. Unbound public tool or authority projections refuse before dispatch.
+Local execution and public counterpart identities are recorded separately;
+actual public observations, fold gates and runtime qualification retain their own
+evidence. The selected fold source contract (`fold/r10`, not supplied here)
+provides the separately bound transformer and checker counterparts. Prepared policy
+data and predecessor recordings do not supply missing
+actual fold bindings.
+
+The complete original-record consumer contract (`plan26/receiving/final-records-r2`, not supplied here)
+checks the original producer and reader sources, collected records and completed
+process evidence before comparing a source arm with its folded counterpart.
+The parent creates each leg's authority only after that independent evidence
+has passed. A collection envelope or a fixture-created authority cannot supply
+missing process finality. Source identities are rederived from their full
+original preimages. Differences are permitted only in named source-defined
+identity slots with the corresponding typed proof; physical values and unknown
+containers remain exact.
+
+The comparison consumes complete private heat results, original checkpoint
+arrays, force and geometry records, retained accounting and historical storage
+records. It checks native manifests, page and chunk bindings and the complete
+logical records decoded from their original carriers. Indexed binary64 values
+are read in source order without float re-encoding. Prepared migration preserves
+historical funding and its full native, collar and spatial records. Logical
+resource reservations, limits and release obligations remain distinct from the
+explicitly identified measurements; an equal total does not excuse a missing
+accounting field.
+
+The selected ordinary fresh route compares two completed intervals; prepared
+receiving follows the actual migrated-root successor. This is separate from the
+six first-freeze source/fold arms, which stop before numerical advance. A complete
+synthetic pair can test record handling and physical-change refusal without
+proving that the native generator produced its geometry or that an actual reader
+and process qualified. Those runtime and scientific claims require their own
+source-bound results. Source/fold qualification can precede installation; the
+installed consumers still require their separately qualified delivery.
+
+Installing that same folded source has a separate
+profile relocation contract (`materialise_profile.py`, not supplied here). It authenticates
+the completed constructor result, selected profile and exact fold before moving
+their references to the qualified installation. The original policy, manifest
+and evidence remain pinned external dependencies. A separate installation policy
+names the new manifest and rebases all evidence references together. Source
+inventories, constraints and measured execution identities remain unchanged;
+the existing prepared runner and independent reader still require the selected
+manifest to match that policy. The profile pins the policy after the manifest
+is written, avoiding a circular hash dependency. This does not change preparation
+bytes, native source identity or historical acceptance. A different fold
+requires its own construction and evidence. Actual source and installed consumer
+checks remain necessary after the real artefacts arrive.

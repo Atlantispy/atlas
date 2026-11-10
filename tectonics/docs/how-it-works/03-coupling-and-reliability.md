@@ -384,137 +384,20 @@ its recorded version and build string and not by its bytes.
 
 ### Check retained state before reopening
 
-The [release-accounting source component](../../optimisation/workbench/plan26/README.md)
-connects one retained-state validator to both prepared and fresh producer/reader
-paths. Each snapshot must declare a retained limit equal to the fixed 256 MiB
-pool plus its own carrier allowance. Capacity and index peaks follow exact integer
-grids and lease bounds; an active compact scope also funds its 5,120-byte control
-charge. Both snapshots are checked independently. Their scope, shape and lifetime
-peaks must agree, peaks cannot fall, and the after-close snapshot retains no bytes
-or pools. A record that balances only in aggregate is insufficient.
+The [Plan26 component](../../optimisation/workbench/plan26/README.md) checks
+prepared and fresh producer/reader accounting independently, including capacity,
+lifetime peaks and complete release. Its conservative multi-pool slack remains;
+it does not increase the resource budget. The source constructor and protected
+heat-helper exception have their own identity and coverage limits.
 
-These constraints retain a conservative 50,688-byte slack per extra simultaneously
-funded pool. The one-pool capacity ceiling and total retained limit are different
-quantities; the checks do not establish exact multi-pool accounting or increase
-the allowed resource budget.
-
-The restart source port also preserves a narrow exception for the registered
-compiled heat helper. Its exact helper and kernel source pins and loaded-source
-bindings must agree. This remains a cooperative check of participating modules;
-it does not authenticate every preplanted self-declared module or arbitrary
-runtime rewriting. The public port preserves the existing query-stage behaviour
-and all unrelated source members.
-
-Some delivery contracts below refer to later components absent from this
-public snapshot; their identifiers are retained as design references. The
-[published Plan39 selection](../../optimisation/workbench/plan39/README.md)
-records its actual source coverage and outstanding closure/build work.
-These descriptions do not establish publication or qualification of the
-missing receivers, fold tools or installation route.
-
-The [source constructor](../../optimisation/workbench/plan26/build_candidate.py)
-authenticates its complete parent, applies exact declared diffs and creates a new
-source tree. It refuses output overlap with its inputs before writing, linked
-members and undeclared files, including nested manifests. Focused controls cover
-these boundaries and the four validator callers. The
-fold and parity source contract (`fold/r6`, not supplied here)
-separately retains native, source and AST guards with explicit publication hashes.
-The pre-fold receiving guards (`plan26/receiving`, not supplied here)
-also distinguish the fresh profile from its prepared companion and bind both to
-the selected source manifest. Selected-generation checks bind the independently
-reviewed constructor, its complete construction plan and the delivered files.
-They account for every changed, added and omitted member while preserving the
-full parent history. An isolated runtime facade remains in the complete file
-inventory; the native-package source digest covers the package itself.
-Their authentic producer contract and runtime bindings are supplied separately;
-the exported code does not qualify existing private packets or a public runtime.
-A source manifest from either component is not a prepared runtime receipt.
-Actual selected profiles, loaded bytes, compiled execution, folded/unfolded
-parity and interval admission require their own source-bound qualification.
-
-The [closed-payload release boundary](../../optimisation/workbench/plan39/README.md)
-uses the canonical source-bound closure checker, its authenticated base and fixed
-policy. It checks complete delivered code coverage, finite native/helper import
-domains, explicit fixture aliases and pinned Python-environment proofs before a
-package can pass. The desktop builder connects this receiver for explicit release
-builds; ordinary builds remain strict. It authenticates the complete source and
-Python inventories before output creation, then verifies delivered bytes before
-writing the release marker and build seal. Its qualified source-frame set remains
-empty until authentic folded records are supplied, so packaged qualification is
-still pending. The checker parses source without importing the scientific payload.
-
-The selected-generation receiver contract (`plan26/receiving`, not supplied here)
-checks the constructor and complete source membership before invoking its
-prepared-base guard. It also authenticates the original paired-profile
-configuration and exact namespace authority. The explicit public receiving caller
-connects that source boundary to its selected transformer and parity tools. It
-binds the public constructor context, source graph, construction-return roles and
-paired API intake, retaining exact status checks and recursive purpose/rehearsal
-refusal. Unbound public tool or authority projections refuse before dispatch.
-Local execution and public counterpart identities are recorded separately;
-actual public observations, fold gates and runtime qualification retain their own
-evidence. The selected fold source contract (`fold/r10`, not supplied here)
-provides the separately bound transformer and checker counterparts. Prepared policy
-data and predecessor recordings do not supply missing
-actual fold bindings.
-
-After a completed fold, the [runtime metadata constructor](../../optimisation/workbench/plan31/final/README.md#folded-runtime-construction)
-binds the actual source, manifest, report and fixed tool identities before deriving
-new paired profiles. The report must explicitly declare an empty rehearsal list;
-a missing declaration, null, boolean false or a nonempty list is refused. The
-actual fold caller requires all seven gates to pass. Constructed metadata and
-strict identity capture still require the subsequent receiving qualification.
-
-The complete original-record consumer contract (`plan26/receiving/final-records-r2`, not supplied here)
-checks the original producer and reader sources, collected records and completed
-process evidence before comparing a source arm with its folded counterpart.
-The parent creates each leg's authority only after that independent evidence
-has passed. A collection envelope or a fixture-created authority cannot supply
-missing process finality. Source identities are rederived from their full
-original preimages. Differences are permitted only in named source-defined
-identity slots with the corresponding typed proof; physical values and unknown
-containers remain exact.
-
-The comparison consumes complete private heat results, original checkpoint
-arrays, force and geometry records, retained accounting and historical storage
-records. It checks native manifests, page and chunk bindings and the complete
-logical records decoded from their original carriers. Indexed binary64 values
-are read in source order without float re-encoding. Prepared migration preserves
-historical funding and its full native, collar and spatial records. Logical
-resource reservations, limits and release obligations remain distinct from the
-explicitly identified measurements; an equal total does not excuse a missing
-accounting field.
-
-The selected ordinary fresh route compares two completed intervals; prepared
-receiving follows the actual migrated-root successor. This is separate from the
-six first-freeze source/fold arms, which stop before numerical advance. A complete
-synthetic pair can test record handling and physical-change refusal without
-proving that the native generator produced its geometry or that an actual reader
-and process qualified. Those runtime and scientific claims require their own
-source-bound results. Source/fold qualification can precede installation; the
-installed consumers still require their separately qualified delivery.
-
-Installing that same folded source has a separate
-profile relocation contract (`materialise_profile.py`, not supplied here). It authenticates
-the completed constructor result, selected profile and exact fold before moving
-their references to the qualified installation. The original policy, manifest
-and evidence remain pinned external dependencies. A separate installation policy
-names the new manifest and rebases all evidence references together. Source
-inventories, constraints and measured execution identities remain unchanged;
-the existing prepared runner and independent reader still require the selected
-manifest to match that policy. The profile pins the policy after the manifest
-is written, avoiding a circular hash dependency. This does not change preparation
-bytes, native source identity or historical acceptance. A different fold
-requires its own construction and evidence. Actual source and installed consumer
-checks remain necessary after the real artefacts arrive.
-
-Wheel and strict-desktop packaging read fixture membership from the same
-authenticated application declaration. Executable aliases must cover every
-declared fixture exactly once, while case JSON and documentation remain data.
-The build checks the complete source before copying and checks the copies again;
-an older fixed fixture list cannot silently substitute another generation.
-These checks preserve the selected bytes. They do not establish runtime or
-scientific qualification.
+A source selection is not a qualified runtime. Folded construction, receiving,
+original-record comparison and installed profile relocation require their actual
+source-bound inputs and separate checks. The Plan26 record describes the private
+contracts that are not supplied in this public snapshot; the
+[final construction record](../../optimisation/workbench/plan31/final/README.md#folded-runtime-construction)
+and [Release policy](../../optimisation/workbench/plan39/README.md) describe the
+published boundaries and outstanding qualification. Packaging checks preserve
+selected source and fixture bytes but do not establish scientific acceptance.
 
 ### Save losslessly, share unchanged chunks and publish atomically
 
@@ -574,34 +457,13 @@ in addition to the database allowance; referenced histories are dependencies.
 
 ### Carry verified pages between read batches
 
-The optional [L3 candidate](../../optimisation/workbench/plan22/README-r4.md) addresses
-repeated reads of the same immutable pages. A view can retain at most 128 verified
-pages between its batches, trimming to 10 MiB of booked memory per view and
-refusing a carry above 32 MiB across the process. The page cache remains 64 MiB.
-The registry and page holders keep their existing charges; raw and booked bytes
-are reported separately.
-
-The next batch must enter its verified read before adopting carry. Optional carry
-remains reclaimable while that entry acquires its required reservation, so it
-cannot hide memory needed for admission. Every served access still checks the
-segment. In an outermost store-set read, carry follows the closing freshness
-check. A view batch nested inside another verified read can carry before that
-enclosing check; if it refuses, the next verified-read entry must refuse before
-adopting those pages. Outside-batch reads use the ordinary verification path. Idle carry yields after
-unpinned pages cannot meet pressure; record and mesh close release it. Failed
-frames keep their own data funded. Evicted pages also leave the bounded touched
-set, preventing a long scan from retaining an unbounded list of closed wrappers.
-
-The receiving port preserves the mesh's streaming encoder used by diagnostic
-captures and its repeated-close behaviour. Synthetic exactness, lifetime,
-pressure and refusal controls exercise these boundaries. The corrected-reader
-[controlled comparison and additive source selection](../../optimisation/workbench/plan22/README-r4.md)
-now meet the recorded selection rule: 15.4381 s to 12.2384 s mean sealed-ledger
-reopen (3.1997 s / 20.73%) on the private comparison stack. The public/final stack
-was not timed. Component integration is finally accepted. Individual L3
-verification after assembly, including final L1 checks, was cancelled by the
-owner; this is not a PASS and does not enable runtime/default use or release
-other run/scientific holds.
+The optional [L3 selection](../../optimisation/workbench/plan22/README-r4.md)
+reuses bounded verified pages only after read admission, while retaining
+freshness, lifetime and resource checks. Its owner records nested-reader
+boundaries, refusal behaviour and the component time/RAM comparison. The
+comparison and component integration do not qualify the final assembled runtime:
+individual post-assembly L3/L1 verification was cancelled, not passed, and
+existing execution and scientific holds remain.
 
 ### Keep physical correspondence separate from row names
 
