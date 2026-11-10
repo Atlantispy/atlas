@@ -186,28 +186,12 @@ no P0–P2 owner-review defect and no introduced lint finding. Scheduling invari
 does not replace real compact lifetime/partition parity or imply no process-memory
 cost. The accepted header/worker evidence below remains separately scoped.
 
-## Original private identities (provenance)
+## Source lineage
 
-| Private generation | Composition | Run manifest | Profile |
-| --- | --- | --- | --- |
-| Accepted successor | `350496a3f3ddfadef2f3f8ee3353565f56b5c6339534ef93591ed81908200a7f` | `28cc2cb38599bbd50f8c51475c8144a05a3d36b21d72367c48e5f0e241853dc7` | `215075c2e97fe760ff4ca8146c163d5ac11fc1a614d80c4922896ccebe56821a` |
-| Lineage parent (Plan20 r1 composition) | `e14c05a8…` | – | – |
-
-Members that differ from the lineage parent. The native count stays at 239, and
-helpers rise from 398 to 402.
-
-| Member | Parent | Accepted successor (SHA256) |
-| --- | --- | --- |
-| `atlas_tectonics/integration_component_volume_auto.py` | `2b9d9fc5…` | `96cbf772e7e68b361ffb46ef234087511a7b02bfca733e343cb5bde13e87f70b` |
-| `helpers/content_cache.py` | `de7d3e45…` | `85fe9a5f421d8c693d44f23ca4c5189f2696d89cb2dcffd16a06c52ce90850f5` |
-| `helpers/partition_routing_patch.py` | `c7eebabf…` | `ffb95381a45643be191e49ce00f99afc36d0bf4de773f7686a3d9f01c50328a5` |
-| `helpers/test_compact_header_retention.py` | new | `696ca77fa67020564db2695be80dfef3cefcc880680b14dc969e20ca469cfbd4` |
-| `helpers/test_content_cache.py` | `e3754c32…` | `50f4f3e1a38d6e7763dd561c2bdf38d471cb5725e88fce43250fb722cd62474f` |
-| `helpers/test_owner_carrier_booking.py` | new | `ee424fd9aaf35a6ff85a2db64e204487b98f7ddca2d7bcf1d06720687da390d2` |
-| `helpers/test_r1_views.py` | `5eefb4e0…` | `24e464092ba96d82e81f39d3b1f8fa0b51811861110a47080cddc2e350ecef3a` |
-| `helpers/test_r1a_export_booking.py` | `937811a9…` | `5160cacbc83f1afcab4bcb8e157d9abe32925f7aadb2877178925faa8d8fcc35` |
-| `helpers/test_retained_handle_check.py` | new | `8b3c8ed16fcb805b7a3dcfd10c0c51a925a12ac1b9296576bfcfc61a89131df9` |
-| `helpers/test_spatial_allocation_order.py` | new | `e7b9e8fa0a2fc5acba8da15218a39709439d11b3442df9e20696d9ba85a255d6` |
+The accepted private successor followed the Plan20 r1 composition. The native
+count remained 239 and helpers rose from 398 to 402. The [public source map](SOURCE-MAP.json)
+owns the published selection and its original/public correspondence; public bytes
+do not authenticate the original private receipts or a later combined runtime.
 
 ## Evidence and its scope
 
