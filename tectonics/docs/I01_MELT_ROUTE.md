@@ -255,12 +255,11 @@ birth and formation history. I07/I09 provide regional mechanics and work-consist
 motion; I02 supplies atomic inventories and replay prevention. These are later
 integration obligations, not additional unexplained I01 model choices.
 
-For the I01 finish rule, the MC-03 **choice and bounded feasibility** requirement
-can close when the selected corrected-G25 provider is bound to its existing
-native/analytical checks, the separately owned real segregation controls pass
-under the compatible restricted branch, and this focusing/thermal contract and
-its explicit refusals are integrated. Published G25 calibration supports choosing
-that model family; it does not require Atlas to invent a new experimental fit.
+MC-03's **choice and bounded feasibility** are supported by the selected
+corrected-G25 provider and its existing native/analytical checks, the separately
+owned [segregation controls](I01_MELT_SEGREGATION.md) under the compatible
+restricted branch, and this focusing/thermal contract with its explicit refusals.
+Published G25 calibration supports choosing that model family; it does not require Atlas to invent a new experimental fit.
 This design document alone is not a passed feasibility test. None of those
 conditions closes the original physical-acceptance requirements: moving phase
 fronts and complete source-to-crust integration remain I05/I06 work, and the

@@ -433,6 +433,6 @@ component validation recorded in Steps 2–4.
 
 ## Delivery
 
-Local changes in Atlas `remake`; no commit, push, installation, R4.4 campaign or
-whole-world generation. Completion handoff: `ATLAS-W07-5-20260923` to GEO
+At the 23 September handoff, the changes were local to Atlas `remake`; no commit,
+push, installation, R4.4 campaign or whole-world generation had occurred. Handoff: `ATLAS-W07-5-20260923` to GEO
 Coordination, Integration & QA. Sending is delivery, not downstream acceptance.

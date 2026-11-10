@@ -1,9 +1,10 @@
 # I01: locating contact between moving junctions
 
-Status: **bounded numerical prerequisite implemented; generated junction
-reorganisation remains OPEN (MC-05).** No generated world or physical event is
-accepted by this helper. It does not alter a plate graph or call the current
-junction solver. Later I03/I09 integration must supply admissible trajectories.
+Status: **bounded numerical prerequisite implemented.** The MC-05
+[reorganisation route](I01_JUNCTION_REORGANISATION.md) is selected with bounded
+regional feasibility; generated reorganisation and full physical-event acceptance
+remain open. No generated world or physical event is accepted by this helper. It
+does not alter a plate graph or call the current junction solver. Later I03/I09 integration must supply admissible trajectories.
 
 ## 1. Why a junction residual is not enough
 

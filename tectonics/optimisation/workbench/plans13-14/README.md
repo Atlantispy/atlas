@@ -157,7 +157,9 @@ run or additive whole-programme speed claim follows.
 
 H3 is candidate-only; H5a, D5 and P4 stay disabled. A new profile needs its own
 eligible ROOT. Final assembly/fold, first IV1 marker observations, conditional
-S2/S4 work, N9 replay, full-workflow recovery, final timing and enablement remain
-later scoped work. The full-interval hold, numerical contracts, memory guards and
-accepted-step ceiling remain. This branch integration establishes neither
-scientific acceptance nor a commit/push.
+S2/S4 work, full-workflow recovery, final timing and enablement remain later
+scoped work. The [N9 owner](../plan04/BOUNDED-WIDTH.md) records its accepted
+bounded outcome, cancelled separate post-assembly verification and remaining
+unproved fields. N9 replay remains subject to its existing hold. The full-interval
+hold, numerical contracts, memory guards and accepted-step ceiling remain. This integration establishes neither scientific
+acceptance nor release authority.

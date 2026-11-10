@@ -44,7 +44,7 @@ The explicit capture generation uses *.capture, stored_bytes, container_sha256
 and format atlas.diagnostic-capture.v1 instead of gzip fields. Receipt bytes/
 derived IDs can change while scientific bytes do not. Legacy receipts stay intact.
 
-Selected writes use pinned Zstandard3,64-KiB bounded chunks, fsync, exclusive
+Selected writes use pinned Zstandard 3, 64 KiB bounded chunks, fsync, exclusive
 publication and atomic rename. Missing/mismatched native support refuses; raw
 mode is no ambient fallback. require_capture_route executes imports through the
 selected loader and verifies the backend for a compact store, leaving other
@@ -61,16 +61,16 @@ together and refuse cleanly if absent.
 | Limit/residual | Meaning |
 | --- | --- |
 | Capture route | 16 GiB logical/stored ceiling, not raised RSS/workspace limits |
-| WP16 export/replay/CLI | Their4 GiB defaults remain:4–16 GiB captures may read in the ledger and refuse there |
-| Legacy transient | About2*raw_bytes;182 MiB mesh example about 385 MiB, with decompressed chunk beside reallocating output |
+| WP16 export/replay/CLI | Their 4 GiB defaults remain: 4–16 GiB captures may read in the ledger and refuse there |
+| Legacy transient | About 2 × raw_bytes; 182 MiB mesh example about 385 MiB, with decompressed chunk beside reallocating output |
 | New reader | Still allocates validated raw_bytes output; streaming write is not constant whole-reader memory |
 | Many-member gzip | Accepted quadratic per-block work, bounded by raw/file ceilings; writers emit one member |
-| Chunk/booking | 64 KiB chunks; roughly 10 MB logical capture peak is not RSS or a new150 MiB cap |
+| Chunk/booking | 64 KiB chunks; roughly 10 MB logical capture peak is not RSS or a new 150 MiB cap |
 
 Legacy reading accepts gzip.decompress semantics plus matching header CRC and
 refusal of reserved flags. Refused cases include zlib-only input, space/tab
 padding, magic/header/padding-only streams and changing file length mid/end read.
-The rejected1-MiB max_length shortcut would need a drain loop: empty unconsumed_tail
+The rejected 1 MiB max_length shortcut would need a drain loop: empty unconsumed_tail
 does not imply eof or no pending output, and reallocation cost would remain.
 No silent weakening of malformed-stream checks is permitted.
 
@@ -83,11 +83,11 @@ refuses at capture after advance. Extra runner module-list checks for earlier
 stop-before-advance refusal remain optional owner choices, not newly mandatory
 tests. The prepared-entry and missed-fold-rewrite gaps below remain open.
 
-Retained r9 controls distinguished base8, candidate 37 and 37 killed reader mutants
+Retained r9 controls distinguished base 8, candidate 37 and 37 killed reader mutants
 from the writer's nine earlier faults. Three entry-placement negatives failed on
 old drivers, passed patched copies, and detected wrong successor placement.
 Base/candidate fresh-driver suites shared seven unrelated wiring failures;
-prepared17/17 was separate. Earlier smokes are not the completed12-arm timing.
+prepared 17/17 was separate. Earlier smokes are not the completed 12-arm timing.
 The r8→r9 wording/test delta was not separately re-refuted; the selected reader
 code was unchanged. No claim of all-green consumer or final fold follows.
 

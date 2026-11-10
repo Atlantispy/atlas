@@ -207,5 +207,8 @@ sources and proof limitations remain available. Public plans are sanitised
 projections of the execution records, not an independent execution authority.
 
 Final assembly/identity/fold adoption, eligible ROOT, programme acceptance and
-default enablement remain separate. N9 remains paused and fresh full intervals
-remain held. Publication runs no scientific proof and changes no tolerance.
+default enablement remain separate. N9 source integration and its bounded guarded
+outcome are accepted; separate post-assembly N9 verification was cancelled. Full
+coupled C4 and authentic successor reader/width tables remain unproved. The N9
+pause and fresh full-interval holds remain in place. Publication runs no scientific
+proof and changes no tolerance.

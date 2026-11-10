@@ -74,7 +74,7 @@ surfaces and arbitrary new fields are not silently discarded or evolved.
 
 ## Conservative flow, without changing the driving
 
-Continuous Q2/Q1 pressure/velocity elements conserve volume weakly, not exactly
+Continuous Q2/Q1 velocity/pressure elements conserve volume weakly, not exactly
 in every transport cell. `regional_transport3d.py` integrates the actual Q2
 normal velocity at 3x3 face Gauss points. It keeps both directions when a face
 contains simultaneous inflow and outflow; taking just its net sign would lose

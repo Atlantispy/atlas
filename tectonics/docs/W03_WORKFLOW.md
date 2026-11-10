@@ -1,6 +1,6 @@
 # W03 increment 4: bounded assembled columns
 
-22 September 2026. local unreleased `remake` work. The last
+Implemented 22 September 2026. The last
 selected W03 step joins the three component increments to actual W01/W02 source
 inventories and verifies a **stationary, fixed-area, already-drained** workflow.
 It is not acceptance of general coupled tectonics, moving stratigraphy or terrain.

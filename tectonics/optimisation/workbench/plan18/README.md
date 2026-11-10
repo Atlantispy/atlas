@@ -90,7 +90,7 @@ inputs and runtime admission. Historical receipts do not authenticate this new l
 
 ## Endpoint ordering, lifetime and parity contract
 
-Part1 selects general512-job/4096-request bounds plus cross-support lookahead at
+Part 1 selects general 512-job/4096-request bounds plus cross-support lookahead at
 two endpoint workers. More workers are deferred; the separate EndpointBatchPass
 prototype is unchanged. Hardest-first was abandoned because available labels did
 not predict cost; no ahead-of-router project_compact or ALE/Step8 algorithm change
@@ -147,7 +147,7 @@ real-partition/worker closure evidence below.
 Freeze source/harness/input identities and use new exclusive outputs. Runtime
 imports use cleaned seed 0/B/one-thread settings, not-I; pure helpers may isolate.
 Report actual gate/load, parent/child/RSS/session observations as samples, not
-continuous upper bounds. No15% hurdle exists. The old 402→217 s/91→57 s estimates
+continuous upper bounds. No 15% hurdle exists. The old 402→217 s/91→57 s estimates
 remain projections, not the measured detached replay or successor interval result.
 The IV1 threshold/default decision belongs to its owner, separately from proof.
 
@@ -160,7 +160,7 @@ or a new run request.
 
 On a momentary machine/ledger refusal before the first session, _open may return
 LATER before any session, funding or worker count exists. Schedule retries on its
-own clock after 15 s, doubling to a 120 s maximum, for at most24 deferrals; the 25th
+own clock after 15 s, doubling to a 120 s maximum, for at most 24 deferrals; the 25th
 refusal stops with session not opened. Missing psutil is permanent and stops
 immediately. CPU, memory, budget and predicate hints may improve, but nothing is
 reserved; actual session/funding refusal returning None still stops immediately.
@@ -173,7 +173,7 @@ Repeated same-gate refusals replace their latest note within the 8-note window.
 Ending mid-deferral retains stopped='session not opened' and refusal detail;
 late-open/no-launch can retain reason='session deferred' with stopped None.
 
-The bounded claim is at most25 probes, each about 50ms plus one plan and at least15s
+The bounded claim is at most 25 probes, each about 50 ms plus one plan and at least 15 s
 apart: roughly 1.75 s cost per affected pass, not a measured global overhead.
 The retry span is about 45 minutes, not a required wait or proof deadline.
 The old 125 s lost-opportunity figure is PROJECTED, with zero opportunity when

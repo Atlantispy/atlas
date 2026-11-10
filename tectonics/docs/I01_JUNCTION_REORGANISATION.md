@@ -2,9 +2,9 @@
 
 **Resolved-patch method selected; physical implementation and
 acceptance outstanding.** The [case record](../cases/i01_junction_reorganisation_v1.json)
-fixes the proposed route and controls, not a runnable simulation. MC-05 is not
-closed by this document. The previously completed contact and outgoing-ridge
-helpers remain valid numerical prerequisites, not the whole junction model.
+fixes the proposed route and controls, not a runnable simulation. This document
+alone does not establish bounded feasibility. The previously completed contact
+and outgoing-ridge helpers remain valid numerical prerequisites, not the whole junction model.
 
 ## 1. The physical rule
 
@@ -224,8 +224,9 @@ must be locked in runnable cases before physical tests; they are not supplied
 by the literature summaries. The exact conventions and refusal expectations in
 this record are predeclared now; campaign values remain unset, never silently
 defaulted. Existing kinematic/accounting receipts do not validate the new route.
-MC-05's completion rule is unchanged: admitted reorganisation, timing, transfers
-and bounded controls must actually pass before closure.
+The separate [multidirectional controls](I01_JUNCTION_FEASIBILITY.md) support
+bounded MC-05 feasibility. Full physical-event acceptance still requires admitted
+reorganisation, timing, transfers and the declared controls to pass.
 
 ## 8. Cost control and next coding slice
 

@@ -2,7 +2,7 @@
 
 # W01 sampling, motion and regional material workflow
 
-22 September 2026. Local, unreleased implementation
+Implemented 22 September 2026.
 This connects the supported S5/S6/W02 route, not whole-W01 scientific acceptance.
 The subsequent [Stage-8 assessment](#stage-8-combined-acceptance) checks this
 assembled route. Reopened S3C acceptance, unrestricted spherical dynamics and
