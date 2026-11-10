@@ -11,8 +11,11 @@ Implementation and acceptance record, 22 September 2026.
 Completion status: **STEP 2 COMPLETE; bounded numerical acceptance and reuse measured.**
 
 The [Step 1 design](W07_REGIONAL_MECHANICS.md) remains frozen. This increment
-implements its basic regional mechanics and independent method comparison, not
-the heterogeneous, thermal or moving-surface extensions assigned to later steps.
+implements its basic regional mechanics and independent method comparison. The
+[Step 3 extension](#w07-step-3--heterogeneous-and-thermal-mechanics) covers
+heterogeneous and thermal mechanics; moving-surface work remains separate.
+
+[Steady solver](#equations-and-boundary-implementation) · [Heterogeneous and thermal mechanics](#w07-step-3--heterogeneous-and-thermal-mechanics)
 
 ## Equations and boundary implementation
 

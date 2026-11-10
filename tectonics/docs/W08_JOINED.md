@@ -10,7 +10,11 @@ The Step-1 document is preserved as a frozen executable case input. Its pending
 implementation/source-adapter language describes that historical design capture.
 Steps 2–5 document their implemented routes, including the
 [resolved Step-4 interpretation](W08_SUBDUCTION.md#source-resolution-and-step-4-closure);
-this page owns the joined scope and its remaining limits.
+the joined-history section owns the joined scope and its remaining limits. The
+[finite-source magmatism section](#w08-step-5-finite-source-magmatism) records
+the separate Step 5 component.
+
+[Joined histories](#supported-joined-route) · [Checkpoint and recovery](#checkpoint-and-cache-contract) · [Finite-source magmatism](#w08-step-5-finite-source-magmatism)
 
 ## Supported joined route
 

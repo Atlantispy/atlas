@@ -2,7 +2,11 @@
 
 23 September 2026. Local implementation on `remake`.
 This is the next tectonics increment after [underthrusting](UNDERTHRUST.md),
-not W09 surface-process expansion. Existing modules stay in place.
+not W09 surface-process expansion. Existing modules stay in place. The later
+[dated-history section](#tectonics-continuation-step-4-supported-dated-histories)
+records supported continuation and recovery for these inputs and underthrusting.
+
+[Evolving support](#changing-elastic-properties-and-physical-loads) · [Regional inputs](#coincident-regional-force-material-and-boundary-inputs) · [Dated histories](#tectonics-continuation-step-4-supported-dated-histories)
 
 ## Changing elastic properties and physical loads
 

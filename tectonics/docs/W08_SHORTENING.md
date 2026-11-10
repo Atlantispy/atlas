@@ -2,8 +2,11 @@
 
 Status: local implementation, 23 September 2026.
 The [Step 1 design](W08_REGIMES.md) and [case register](../cases/w08_regimes.json)
-remain frozen. This increment implements their distributed plane-strain shortening
-route; it does not manufacture fault or underthrust geometry from convergence.
+remain frozen. Step 2 implements their distributed plane-strain shortening route;
+it does not manufacture fault or underthrust geometry from convergence. Step 3
+separately covers prescribed [transform and oblique motion](#w08-step-3--transform-and-oblique-motion).
+
+[Shortening](#implemented-model-and-interfaces) · [Transform and oblique motion](#w08-step-3--transform-and-oblique-motion)
 
 ## Implemented model and interfaces
 

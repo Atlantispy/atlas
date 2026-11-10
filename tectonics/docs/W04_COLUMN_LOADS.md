@@ -1,8 +1,12 @@
 # W04 physical loads and support workflows
 
 Implemented 22 September 2026.
-This completes **load construction**, not W04 support/coupling acceptance or
-empirical terrain realism. It does not change `PeriodicFlexure` or apply movement.
+The first section records **load construction**; the [assembled workflow](#w04-source-bound-load-and-support-workflow)
+records its separate bounded support acceptance. Neither establishes empirical
+terrain realism. Load construction itself does not change `PeriodicFlexure` or
+apply movement.
+
+[Load inputs](#inputs-and-physical-meaning) · [Support workflow](#w04-source-bound-load-and-support-workflow) · [Finite regions](#finite-region-support) · [Variable rigidity](#fixed-variable-rigidity)
 
 ## Inputs and physical meaning
 
