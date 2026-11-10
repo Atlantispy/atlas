@@ -73,7 +73,7 @@ logs. Unknown associations remain non-accepting.
 
 ## Current guarded integration route
 
-The actual [guarded width composer](../plan31/final/width/README.md) now
+The actual [guarded width composer](../plan31/final/README.md#guarded-width-source-successor) now
 materialises all 697 members (287 native/410 helpers), replacing exactly the three
 reviewed native width modules and seven existing N9 helper slots. Its source
 selection is 7e7c972a7a0e3077081c89018e1c9c611d005f3f442f90112ed16a7b0d48648b;

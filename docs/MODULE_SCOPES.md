@@ -67,7 +67,7 @@ A common small **mountain-to-coast seasonal region** should grow with these incr
 
 **Decide before implementation.** Discontinuity/layer representation; supported transformations; temperature/pressure/composition assumptions; property ranges; porosity/mass conventions; unresolved structures versus synthetic inheritance. A complete rock-cycle history is not required merely to initialise credible materials.
 
-**Connected acceptance.** A generated layered catchment exposes resistant material beneath weaker cover. Exposure changes erosion and sediment composition downstream without inventing layer mass. Check cross-sections, property contrasts, layer exhaustion and discontinuities at the claimed resolution.
+**Connected acceptance.** A generated layered catchment exposes resistant material beneath weaker cover. Exposure changes erosion and sediment composition downstream without inventing layer mass. Check column, volume and mass consistency, justified property laws and source-linked structural controls alongside cross-sections, property contrasts, layer exhaustion and discontinuities at the claimed resolution.
 
 ## C03 — Topography and topology
 
@@ -83,7 +83,7 @@ A common small **mountain-to-coast seasonal region** should grow with these incr
 
 **Decide before implementation.** Construction horizon/process laws; modelled versus synthesised fine structure; ridge/cliff representation; depression treatment; material-to-height conversion; regional boundaries and planetary geometry. Fix generative causes of unrealistic terrain, not a post-generation beautification filter that conceals them.
 
-**Connected acceptance.** An orogen-to-coast case produces distinct ridges, valleys and finite basins. Incision changes drainage and downstream sediment. Assess scale-matched relief, slope, curvature and drainage statistics alongside maps/sections and reference terrain; preserve real depressions, avoid grid-shaped features and uniformly gentle mountain summits. Test a relevant tile/resolution interface without claiming unsupported detail is accurate.
+**Connected acceptance.** An orogen-to-coast case produces distinct ridges, valleys and finite basins. Incision changes drainage and downstream sediment. Assess scale-matched relief, slope, curvature and drainage statistics alongside maps/sections and reference terrain; preserve real depressions, avoid grid-shaped features and uniformly gentle mountain summits. Test a relevant tile/resolution interface and conservation of transferred quantities across resolutions without claiming unsupported detail is accurate.
 
 ## C04 — Hydrology
 
@@ -151,7 +151,7 @@ A common small **mountain-to-coast seasonal region** should grow with these incr
 
 ## C08 — Biomes
 
-**Deliverable and inputs.** Seasonal vegetation structure/function and defensible biome classification, ecotones and uncertainty. Climate, water, soils and relief supply forcing; a numerical functional-type registry and declared establishment/initial-cover producer supply vegetation. Preserve biome classification as a summary, not a substitute for generating vegetation.
+**Deliverable and inputs.** Seasonal vegetation structure/function and defensible biome classification, ecotones and uncertainty. Do not derive biome patterns from annual means alone or arbitrary noise. Climate, water, soils and relief supply forcing; a numerical functional-type registry and declared establishment/initial-cover producer supply vegetation. Preserve biome classification as a summary, not a substitute for generating vegetation.
 
 **Connected implementation slices.**
 
@@ -227,7 +227,7 @@ A common small **mountain-to-coast seasonal region** should grow with these incr
 
 **Decide before implementation.** Profile formation assumptions; constitutive/property laws; phase-change energy; rooting/nutrient scope; groundwater boundary and changing-ground remapping. Initial soil development can be a declared conditioned model, not a mandatory long pedogenesis simulation. Temperature must respond to evolving moisture, not permanently retain its starting value.
 
-**Connected acceptance.** Contrasting soils change seasonal infiltration, freeze/thaw and catchment runoff. A deposit carries its material and accounted water/energy into the receiving profile; an eroded layer cannot leave hidden water or nutrients behind. Test dry/saturated and freeze/thaw limits under the supported laws.
+**Connected acceptance.** Contrasting soils change seasonal infiltration, freeze/thaw and catchment runoff. A deposit carries its material and accounted water/energy into the receiving profile; an eroded layer cannot leave hidden water or nutrients behind. Test dry/saturated and freeze/thaw limits under the supported laws, including conservation of water and energy through phase changes.
 
 ## C13 — Erosion and sediment transport
 
@@ -273,7 +273,7 @@ A common small **mountain-to-coast seasonal region** should grow with these incr
 
 **Ownership and feedback.** Each finite stock has its physical/biological owner; C15 publishes its resource interpretation and available allocation, not a second stock. C16/C17 consume allocations and return usage/access constraints.
 
-**Decide before implementation.** Resource classes; geological/ecological occurrence assumptions; extraction/renewal scope; suitability method and units; competing users. Distinguish mineral occurrence, reserve, accessible stock and production rate. Do not turn arbitrary scores into probabilities or invent a deposit to satisfy demand.
+**Decide before implementation.** Resource classes; geological/ecological occurrence assumptions; extraction/renewal scope; suitability method and units; competing users. Distinguish mineral occurrence, reserve, accessible stock and production rate. Do not use opaque scores that conceal limiting constraints, turn arbitrary scores into probabilities or invent a deposit to satisfy demand.
 
 **Connected acceptance.** A material/resource contrast affects actual access and use. Competing consumers cannot spend the same stock twice; depletion/renewal reconciles where supported, and unknown inputs remain visible rather than scoring as zero or ideal.
 

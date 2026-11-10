@@ -4,7 +4,7 @@ Width implementation is selected for guarded source integration on the bounded n
 
 ## Method and actual consumers
 
-The [actual receiving composer](../plan31/final/width/README.md) constructs
+The [actual receiving composer](../plan31/final/README.md#guarded-width-source-successor) constructs
 697 source members, including the three native width outputs and seven current
 N9 tools in their existing helper slots. Its immediate six composition/refusal
 checks passed without skips. Source integration is complete; the guarded outcome is accepted and its source export is supplied here. Separate N9 verification after full assembly is cancelled.

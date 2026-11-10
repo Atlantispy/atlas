@@ -97,7 +97,7 @@ The stored-segment case uses current L3 and published S1A: it adopts the same pa
 
 A callable/code replacement of the exporter uses the current whole-row route even after cached admission. Transient budget refusals remain uncached; unrelated admission exceptions still surface. These limits and Mapping/get/lazy-exact semantics remain explicit. The new test cleanup releases closed source owners before deleting only its verified temporary directory, including read-only sealed files.
 
-The explicit [B source arms](b/README.md) apply the current L3 and S3 rows to the authenticated complete Plan39/S1A parent before B, retain Plan39 hooks, parse the descriptor once, feed the stored hash in parts, and offer the separately attributable lazy-CASE query. The [A1 overlay](a1/README.md) restores requested bytes/category through the actual diagnostic consumers while retaining reservation accounting and generator-frame contracts. The combined source route adds three tests to the 694-member parent and requires 697 members (287 native files and 410 helpers). Historical Plan21/Plan22/Plan39/S1A builders and maps remain unchanged. Its source constructors and checks do not select the controlled D31r/D31s chain. Selected final source/profile/manifest integration and acceptance remain required; no timing saving is claimed.
+The explicit [B source arms](#b-with-current-s3l3-receiving-sources) apply the current L3 and S3 rows to the authenticated complete Plan39/S1A parent before B, retain Plan39 hooks, parse the descriptor once, feed the stored hash in parts, and offer the separately attributable lazy-CASE query. The [A1 overlay](#a1-diagnostic-preserving-receiving-overlay) restores requested bytes/category through the actual diagnostic consumers while retaining reservation accounting and generator-frame contracts. The combined source route adds three tests to the 694-member parent and requires 697 members (287 native files and 410 helpers). Historical Plan21/Plan22/Plan39/S1A builders and maps remain unchanged. Its source constructors and checks do not select the controlled D31r/D31s chain. Selected final source/profile/manifest integration and acceptance remain required; no timing saving is claimed.
 
 ### Private storage-chain disposition
 
@@ -163,3 +163,33 @@ No real interval data, profile, checkpoint, capture, execution receipt or measur
 S3 r5 repairs admission scratch funding; its current focused result and the historical r4 evidence are scoped above. S9 stays disabled, issue #47 stays open, and final private assembly remains separate. No new scientific research, full interval, Windows acceptance or default enablement is claimed.
 
 The combined current-L3/S3/B3/A1 source route is checked separately at 697 members. Its final LF receiver passes 20 lazy-row, 17 selected-owner consumer and two stored-fallback checks; [B receiving evidence](b/EVIDENCE.json) records the exact manifests. These results do not replace final selected-generation IV1 parity.
+
+## B with current S3/L3 receiving sources
+
+This explicit source constructor authenticates the complete published Plan39/S1A parent, applies the current L3 and S3 receiving rows, then applies the chosen B increment. It preserves the historical constructors and maps. The parent has 694 members; adding three tests produces 697 members: 287 native files and 410 helpers. Every selected member is authenticated.
+
+```text
+python -I -B tectonics/optimisation/workbench/plan21/b/build_candidate.py --repo REPOSITORY --output NEW_DIRECTORY --arm b3
+```
+
+Both `b1b2` and `b3` are explicit source arms. Choosing an arm here grants no chain selection, runtime admission, default, enablement or scientific authority. Existing outputs and linked paths are refused. The [A1 receiving overlay](#a1-diagnostic-preserving-receiving-overlay) takes the resulting directory and its exact manifest SHA-256.
+
+The source contract binds the complete Plan39 map, historical S3 map, current [L3 receiving map](L3-SOURCE-MAP-r3.json) and [S3 map](SOURCE-MAP-r4.json). The pinned `build_selection_r4.py` API applies exactly seven L3/S3 rows; only `test_l3_carried_pages`, `test_s3_lazy_rows` and `test_s3_l3_fallback` are added. The three original B rows follow. The manifest records ten targeted rows and their actual byte changes, with every other member retained. The complete Plan39 parent is checked directly; it is not assumed to inherit earlier overlays.
+
+The current L3 reader and carried-page test retain their private port bytes. Its mesh helper reuses the exact existing published LF source at `plan22/source/helpers/mesh_tables.py`, SHA-256 `75a3e282ad2e5c376572275d27810ce116fa59a50c5cf85f874745646d15eeb2`. The map records its original private CRLF identity and equal-AST line-ending transformation. No implicit normalisation or source-pin bypass occurs in this constructor; the private q120 source and receipt remain unchanged.
+
+[EVIDENCE.json](b/EVIDENCE.json) records actual complete staged B3 and downstream A1 constructions, each with 697 authenticated members. A1 changes exactly 22 mapped rows and preserves B3 bytes. On the final LF combined receiver, 20 lazy-row, 17 selected-owner consumer and two stored-fallback checks pass without foreign project imports or temporary residue. Fifteen focused caller controls pass, including real-parent authentication, map/payload/predecessor drift and unrelated-change refusal. The actual historical Plan22 loader still authenticates its old entry point; a changed entry point is refused. Native Ruff check-only reports no introduced findings.
+
+These are explicit B3 source receiving checks. The valid controlled private chain selects full B1+B2+B3 and its WP10 helper, while private A1 remains unselected. See the [private chain disposition](#private-storage-chain-disposition) for its measured conditions. Those private gains do not qualify this public or final S3/n12f stack. Actual selected-generation receiving, final IV1 parity and acceptance remain separate; no whole-interval result is asserted. B3 preserves the eight SQL predicates and Python refusal order; SQLite `length(TEXT)` stops at U+0000, so these inherited predicates do not impose an absolute returned-TEXT or allocation bound.
+
+## A1 diagnostic-preserving receiving overlay
+
+This explicit source constructor applies the fast optional reservation path with its actual diagnostic readers and the necessary source-digest closure. It preserves generator/frame accounting, requested bytes/category and ordered failure ledgers. The 22 mapped rows are five implementation/diagnostic sources and 17 digest-only reconciliation rows; numerical method bodies and source guards remain.
+
+Run `python -B tectonics/optimisation/workbench/plan21/a1/build_candidate.py --parent SOURCE_DIRECTORY --output NEW_DIRECTORY --parent-manifest-sha256 EXACT_PARENT_MANIFEST_SHA256`. The default pins the published S1A source manifest. B requires its exact explicit parent manifest; B source is never replaced by this overlay. Every parent member and changed row is authenticated before output. Source construction grants no chain selection, runtime admission, default, enablement or scientific acceptance.
+
+Resource suites passed 7/9/10/28 cases per arm and affected helper suites16/16/3/17; the A1 differential suite9 and diagnostic fault controls4 passed. No performance saving is claimed. Historical q81 remains bound to its original sources; changed-source timing and final-generation checks are separate.
+
+The actual final LF combined current-L3/S3/B3 parent and its A1 successor each authenticate 697 source members. The explicit parent-manifest route preserves all B3 bytes and changes exactly these 22 A1 rows. [Receiving evidence](b/EVIDENCE.json) records both manifests and the 39 affected S3 checks; this does not select the final private chain.
+
+The valid private chain leaves A1 **UNCERTAIN / NOT ENABLED** (two blocks PASS/FAIL). Its pooled mean saving does not meet the two-block selection rule. Final private receiving must omit that five-row overlay; the baseline generator/frame contract remains. This repaired 22-row public constructor stays explicit opt-in and is not substituted into the private lineage. See the [private chain disposition](#private-storage-chain-disposition) for measured conditions and limits.

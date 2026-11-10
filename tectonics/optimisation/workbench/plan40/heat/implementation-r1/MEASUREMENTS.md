@@ -15,6 +15,8 @@ Each row normalises every raw sample by its recorded complete-call count, then t
 
 ## Disposition
 
+The points below record the disposition at the time of measurement. The later [receiving integration](../integration-r2/README.md) selects C3 and forward-only C8 and excludes C13; this does not establish a whole-interval benefit or production enablement.
+
 - **C3: retained source candidate with mixed performance.** Rank-20 full solve and complete r3 attempt/export improve in this fixture; rank-4 solve regresses and its full attempt is effectively flat. No general rank threshold or production activation is inferred from two synthetic sizes. The full source/native successor is reviewable; later selection needs the actual receiving workload and explicit source generation.
 - **C8: retain the small additive source/owning receiver implementation for review.** All three paired batches favour it, but the absolute saving is about 0.060 ms/call in this fixture. Both arms use the same new public portability binding and original conservative admission; the only arithmetic difference is exact owner-unit scaling. No whole-IV saving follows.
 - **C13: do not adopt.** The real successor is about 6.001% slower when source verification/native plan/retained transfer/close are included. Its code, checks and failed performance outcome remain as an explicitly unselected experiment. The earlier 1.423% prototype reduction is not an implementation saving.
