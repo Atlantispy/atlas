@@ -1,0 +1,75 @@
+{
+  "schema": "atlas.i01-finite-strain-case.v1",
+  "status": "WORKING NON-CANON",
+  "scope": "closed, laterally uniform, incompressible plane-strain material strip of unit strike under affine pure shear, driven by a constant external force against disjoint generalised drag and the layered column resistance at the current geometry, overburden and temperature, with material-coordinate conduction of the column's own creep/plastic dissipation and radiogenic heat; not asthenospheric inflow, extraction, lateral localisation, rupture, breakup, melting, Eulerian/I05 transport, spherical/world assembly, native integration or calibration",
+  "provenance": {
+    "physics": "reviewed cases/i01_thermomechanical_motion_v1.json and, through it, cases/i01_column_heat_v1.json, cases/i01_weakening_v1.json and cases/i01_motion_coupling_v1.json: layered material, densities, rheology, weakening law, gravity, inherited history, thermal layer properties, boundary temperatures and heat fractions (1, 1), all unchanged",
+    "drive": "the reviewed motion-case drive 2e13 N/m of strike, generalised drag 5e22 Pa s and belt width 1e5 m, used unchanged as the reference width w0 at lam = 1; authored controls, not calibrated Earth values",
+    "duration": "1e14 s: the column force always opposes motion, so |v| <= |F|/D = 4e-10 m/s and |lam - 1| <= |F| t/(D w0) = 0.4 for any column state and either sign of the drive; the window [0.6, 1.4] is therefore guaranteed before running. Chosen from that bound, not from an expected speed",
+    "windows": "stretch [0.6, 1.4] is exactly the drag-only reachable range at 1e14 s and no wider; temperatures [273, 1613] K are the reviewed surface and strip-base boundary temperatures",
+    "boundaries": "the reviewed fixed temperatures act at the material surface (273 K) and at the material base of the closed strip (1613 K), which moves to depth h0/lam; the region below is not modelled and contributes only this declared boundary conduction",
+    "oracles": "clock oracle: the column-heat case's two-layer eigenmode fixture under prescribed linear stretch histories ending at 1.375 and 0.625; homogeneous oracle: the column-heat case's insulated uniform wet-quartzite layer, whose supplied mean pressure is treated as the material point's reference overburden and scales as 1/lam",
+    "authored": "step counts, quadrature orders, prescribed oracle histories, departure amplitudes, refusal fixtures and the two new stretch refinement gates are authored control inputs frozen before any run"
+  },
+  "representation": {
+    "geometry": "closed laterally uniform incompressible plane-strain strip of unit strike; affine pure shear about the surface: w = w0 lam, z = z0/lam, h = h0/lam; no inflow, extraction, births or mixing",
+    "finite_strain": "log stretch ln(lam) with lam_dot = v/w0 = a lam; raw engineering plastic history is constitutive memory, never geometry",
+    "control": "constant external driving force balanced by disjoint generalised drag and the layered column resistance at the current geometry, overburden and temperature at every stage",
+    "thermal": "material-coordinate conduction C0 dT/dt = -lam^2 (K0 T - b0) + radiogenic + mechanical heat; constant per-material properties, perfect layer contact, fixed-temperature surface and strip base; fixed enthalpy reference",
+    "heating": "column creep plus plastic dissipation deposited once per material control volume; external drag dissipation is not column heat; no latent or adiabatic heat",
+    "time_integration": "one reference eigensystem; ETD2 along the thermal clock dtau = 2 dt/(lam_n^-2 + lam_a^-2); the same stage weights integrate history, stretch and every account; accepted endpoint re-solved before commit",
+    "stretch_window": [0.6, 1.4],
+    "temperature_window_k": [273.0, 1613.0],
+    "max_temperature_step_k": 5.0
+  },
+  "inputs": {
+    "thermomechanical_case": "cases/i01_thermomechanical_motion_v1.json"
+  },
+  "drive": {
+    "source": "reviewed motion-case drive, drag and reference width through the thermomechanical case, unchanged",
+    "duration_s": 1e14,
+    "drag_only_stretch_bound": 0.4
+  },
+  "campaign": {
+    "reference_order": 64,
+    "reference_steps": 256,
+    "time_steps": [64, 128, 256],
+    "orders": [32, 64, 128],
+    "kinematics": {"order": 16, "steps": 32, "uniform_departure_k": 25.0},
+    "clock": {"order": 64, "steps": [64, 128, 256], "final_stretch": [1.375, 0.625],
+              "scaling_stretch": [0.6, 0.8, 1.2, 1.4], "recovery_steps": 4},
+    "homogeneous": {"order": 8, "steps": [64, 128, 256]},
+    "states": {"order": 16, "steps": 16, "rest_amplitude_k": 2.0},
+    "refusal": {"order": 8, "steps": 16, "window_steps": 8, "temperature_margin_k": 10.0,
+                "temperature_guard_k": 0.001, "compressive_volume_m3_mol": 0.001}
+  },
+  "policy": {
+    "max_steps": 256,
+    "maximum_seconds": 120.0,
+    "force_relative": 1e-10,
+    "power_relative": 2e-10,
+    "work_relative": 2e-10,
+    "energy_relative": 1e-10,
+    "work_heat_relative": 1e-10,
+    "flow_relative": 1e-9,
+    "oracle_order_range": [1.8, 2.2],
+    "oracle_relative": 1e-5,
+    "root_parity_relative": 1e-8,
+    "uniform_relative": 1e-13,
+    "time_velocity_relative": 1e-4,
+    "time_temperature_k": 0.01,
+    "time_history_relative": 1e-4,
+    "time_work_relative": 1e-4,
+    "time_stretch_relative": 1e-4,
+    "depth_velocity_relative": 0.003,
+    "depth_energy_relative": 0.01,
+    "depth_history_relative": 0.01,
+    "depth_work_relative": 0.003,
+    "depth_stretch_relative": 0.003,
+    "feedback_depth_relative": 0.03,
+    "coupling_resolution_factor": 10.0,
+    "parity_relative": 1e-8,
+    "eigen_finest_k": 0.01,
+    "kernel_parity_relative": 1e-10
+  }
+}

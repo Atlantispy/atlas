@@ -1,0 +1,75 @@
+{
+  "schema": "atlas.i01-separation-feasibility-case.v1",
+  "status": "WORKING_NON_CANON",
+  "kind": "predeclared resolved shear-band feasibility; synthetic SI inputs, not rock calibration",
+  "policy": {
+    "refinement_relative": 0.03,
+    "account_relative": 0.000001,
+    "filter_relative": 0.01,
+    "maximum_seconds": 60.0,
+    "maximum_cells": 256,
+    "maximum_steps": 20000
+  },
+  "required_input_contract": {
+    "residual_semantics": "broken_surface_sliding requires zero residual cohesion; weakened_intact does not remove bonds",
+    "support": "temperature and effective-pressure intervals plus whole-approach provenance; unsupported histories cannot become certified by returning inside",
+    "physical_lengths": "band_width_m and helmholtz_length_m with independent provenance; neither may be a cell count",
+    "softening": "linear yield at fixed pressure, constant friction; softening_history and plastic_viscosity_pa_s explicit",
+    "bond_history": "irreversible cohort-carried ever_broken latch; raw plastic history is transported, filtered history reconstructed; no automatic rewelding",
+    "mixing": "distinct bond cohorts cannot be averaged into one bond; unresolved geometry remains UNRESOLVED",
+    "production_parameters": "required from an evidenced material provider; this fixture supplies none"
+  },
+  "law": {
+    "peak_cohesion_pa": 8.16496580927726,
+    "peak_friction_rad": 0.2013579207903308,
+    "residual_cohesion_pa": 0.0,
+    "residual_friction_rad": 0.2013579207903308,
+    "softening_history": 1.0,
+    "band_width_m": 8.0,
+    "width_basis": "physical",
+    "plastic_viscosity_pa_s": 4.0,
+    "residual_state": "broken_surface_sliding",
+    "provenance": "synthetic SI control, peak yield 10 Pa and residual 2 Pa at 10 Pa pressure; not a calibrated geological material",
+    "support_temperature_k": [290.0, 310.0],
+    "support_effective_pressure_pa": [5.0, 15.0]
+  },
+  "loading": {
+    "stiffness_pa_m": 2.0,
+    "loading_rate_m_s": 1.0,
+    "creep_viscosity_pa_s": null,
+    "effective_pressure_pa": 10.0,
+    "temperature_k": 300.0,
+    "healing_rate_s": 0.0
+  },
+  "resolved": {
+    "helmholtz_length_m": 1.0,
+    "length_provenance": "synthetic physical length independent of 8 m band width; fixed during numerical refinement",
+    "cohesion_contrast": 0.1,
+    "initial_traction_pa": 2.0,
+    "horizon_s": 20.0,
+    "cells": [32, 64],
+    "dt_s": 0.005,
+    "initial_history_support": "INSIDE"
+  },
+  "physical_sensitivities": {
+    "helmholtz_length_factors": [2.0],
+    "band_width_factors": [0.5, 2.0],
+    "softening_history_factors": [0.5, 2.0],
+    "plastic_viscosity_factors": [0.5, 2.0],
+    "unstable_stiffness_pa_m": 0.5
+  },
+  "acceptance_scope": "selection and numerical feasibility of this resolved one-dimensional constitutive connection only",
+  "creep_control": {
+    "viscosity_pa_s": 1.0,
+    "dt_factor": 0.5,
+    "numerical_change": "The first campaign refused dt=0.005 s because creep adds k*w_s/eta_v to the explicit rate bound. Use dt=0.0025 s for this arm only; physical inputs, horizon, the 0.1 stability limit and all acceptance gates are unchanged. The failed r1 receipt is retained."
+  },
+  "scientific_acceptance": false,
+  "event_authorised": false,
+  "remaining_integration": [
+    "I05 conservative material and bond-history transport on evolving geometry",
+    "I07 mixed lithosphere/free-surface neck, thermal evolution, basal-depth and along-strike comparisons",
+    "I02 whole-window replacement tolerance and conservative single commit",
+    "evidenced material inputs, including cohesion-loss support and physical width"
+  ]
+}
