@@ -243,6 +243,10 @@ and the continuation gate remain required.
 
 ## W11: spend work on changed science
 
+The optimisations of the coupled interval runtime (independent reader, heat certificates,
+workers, compact headers and identity boundaries) are explained beside that interval in
+[Connecting the physical processes, section 8](06-physical-integration.md#prepare-an-independent-reader-while-a-private-producer-runs).
+
 ### Prepare geometry, evaluate lazily and use suitable kernels
 
 Preparation retains immutable geometry, spatial indices, drainage order,
@@ -463,7 +467,11 @@ freshness, lifetime and resource checks. Its owner records nested-reader
 boundaries, refusal behaviour and the component time/RAM comparison. The
 comparison and component integration do not qualify the final assembled runtime:
 individual post-assembly L3/L1 verification was cancelled, not passed, and
-existing execution and scientific holds remain.
+existing execution and scientific holds remain. The [13 November working snapshot](../../optimisation/working-snapshot-20261113/README.md#one-identity-check-per-read-batch)
+checks a sealed file's identity once at the start and once at the end of a read
+batch instead of around every read, and still verifies every chunk's checksum
+and content hash. It is published for visibility only; it is not a selected
+route and its checks establish nothing beyond their focused tests.
 
 ### Keep physical correspondence separate from row names
 

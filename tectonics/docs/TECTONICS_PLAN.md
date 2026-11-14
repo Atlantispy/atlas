@@ -769,7 +769,7 @@ imply that the corresponding receiving module is complete.
 
 Thermal/support references and kinematics can be developed in parallel after W00. Regional mechanics is a separate branch and is not a prerequisite for the first kinematic extension check. W11 execution design and verified enabling acceleration accompany the relevant packages; its production-scale acceptance remains after physical evidence. Regime tests share infrastructure but do not inherit one another’s scientific pass. W12 cannot be pulled forward by an attractive screenshot or an implementation milestone.
 
-**Decision ownership:** Michael chooses scope, world intent and resource priorities. Future coding agents implement the agreed case; they do not change its scientific criteria to get a pass. Independent reviewers challenge equations, assumptions, evidence and reproducibility. A suitably qualified domain review is desirable at physical acceptance gates; agreement among AI systems alone is not independent experimental evidence.
+**Decision ownership:** Atlan chooses scope, world intent and resource priorities. Future coding agents implement the agreed case; they do not change its scientific criteria to get a pass. Independent reviewers challenge equations, assumptions, evidence and reproducibility. A suitably qualified domain review is desirable at physical acceptance gates; agreement among AI systems alone is not independent experimental evidence.
 
 ### 11.2 Highest-priority risks
 

@@ -1409,7 +1409,7 @@ the explicitly **authored** temperature used to construct buoyancy, and continuo
 solution refinement. Face-to-centre averaging is display interpolation only;
 raw staggered arrays and provenance are retained. No temperature evolution or
 terrain is fabricated. Numerical acceptance, assistant visual inspection and
-Michael's visual review remain distinct.
+Atlan's visual review remain distinct.
 
 The existing lossless ArrayStore stores complete steady problem/result records
 with source/runtime, frame, epoch, time, units, force provenance, scales and law.
@@ -1676,7 +1676,7 @@ viscosity, continuous reduction relative to the zero-rate law, pressure, nonline
 residuals, independent refinement and short coupled evolution. It retains raw
 arrays and source identities. A continuous viscosity reduction is not falsely
 labelled as a discrete yielded-region map. Rendering and assistant inspection
-remain separate from Michael's visual review and physical acceptance.
+remain separate from Atlan's visual review and physical acceptance.
 
 <a id="3cr3-physical-closure"></a>
 <a id="3cr3-stress-hardening"></a>

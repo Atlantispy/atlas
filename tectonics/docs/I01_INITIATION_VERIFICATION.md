@@ -7,7 +7,7 @@ and its unresolved inputs remain intact as an optional external comparison.
 
 ## Why this route
 
-Michael authorised an alternative when the exact benchmark cannot be recovered.
+Atlan authorised an alternative when the exact benchmark cannot be recovered.
 The published experiment is useful but not the only way to check equations.
 ASPECT explicitly distinguishes solving the equations correctly (verification)
 from establishing that those equations represent the real phenomenon (validation).

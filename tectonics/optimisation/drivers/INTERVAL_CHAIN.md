@@ -88,7 +88,11 @@ must be measured rather than presumed zero.
    sealed, unlisted next-interval head through a pending resolver. It verifies
    immutable token, recomputed logical seal, parent seal equal to catalog head,
    and references confined to listed intervals. It re-derives the same required
-   scalars and binds its verdict to exact sealed-file bytes and logical seal.
+   scalars and binds its verdict to exact sealed-file bytes and logical seal. The
+   [13 November working snapshot](../working-snapshot-20261113/README.md#reader-process-census)
+   also censuses the reader's Windows job at close and exit, binds that census into
+   the reader's record and checks it when the reopen receipt is validated; that code
+   is published for visibility and is not a selected route.
 3. Only PASS plus the ordinary finalisation chain allows adopt_and_promote. A fresh
    store-set owner rechecks token/hash/seal, expected catalog digest, next interval,
    parent and reference closure, then uses atomic publish_catalog. The adoption

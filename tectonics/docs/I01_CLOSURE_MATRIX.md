@@ -267,10 +267,10 @@ Feedback ownership and exchange rules not repeated here are in
 - *Evidence:* `i01-melting-r1`, `i01-delivery-r1`, `i01-phase-partition-r3`,
   `i01-phase-energy-r4`, `i01-phase-pressure-r3`, `i01-magma-receiver-r3`,
   `i01-transitions-r2`, `i01-gibbs-provider-r3` (experimental G25 connection only),
-  and `i01-melt-segregation-r1` (nine instantaneous mechanical controls).
-  The segregation receipt is historical after three relative-link corrections in
-  its method document; tool/case/test bindings remain unchanged and its numerical
-  evidence remains valid. The original receipt is neither repinned nor rerun.
+  and `i01-melt-segregation-r2` (nine instantaneous mechanical controls).
+  r2 is a fresh capture after the focused test's status assertion changed; its
+  tool and case bytes and every control result equal r1 apart from timings. Like r1 it
+  is registered as historical; r1 is kept as superseded, not repinned.
 - *Validity:* dry Katz parcels at 0–3.5 GPa and at most 40% melt; an analytical ideal
   mixture, not calibrated mantle; a same-pressure receiver; delivery needs a
   prescribed extraction amount.

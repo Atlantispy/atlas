@@ -184,10 +184,16 @@ are not qualified morphology or geological acceptance.
 | Steady 2-D mechanics | `python -I -B tectonics/tests/check_stokes_r4_1.py` | `python -I -B tectonics/tools/visual_stokes_r4_1.py --output /new/path` |
 | Thermal/composition evolution | `python -I -B tectonics/tests/check_thermochemical_r4_2.py` | `python -I -B tectonics/tools/visual_thermochemical_r4_2.py --output /new/path` |
 | Variable mechanics | [Execution contract](docs/OPTIMISATION_REFERENCE.md#3cr4-3-execution) | `python -I -B tectonics/tools/visual_variable_stokes_r4_3.py --output /new/path` |
+| W05 extension | Motion, load/support and save/reopen/resume timing against matched outputs, no terrain run: `tectonics/tools/benchmark_w05_{motion,support,workflow}.py` ([record](evidence/w05-acceptance.json)) | |
+| W06 spreading | Matched-output cooling, fixed-cell history (not a persistent-cache benchmark), margin with preparation, and compute/publication/verified-recovery timing: `tectonics/tools/benchmark_w06_{cooling,history,margin,workflow}.py` ([cooling](evidence/w06-cooling-timing.json), [history](evidence/w06-history-timing.json), [margin](evidence/w06-margin-timing.json), [workflow](evidence/w06-workflow-acceptance.json) records) | |
+| W07 coupling | Thermal/mechanical coupling refinement on a synthetic case: `tectonics/tools/check_w07_coupling.py` (no evidence record) | |
+| New-world layout | Fixed small step-2 plate-layout assessment, no fitting or seed retries: `tectonics/tools/check_new_world_layout.py` (tested by `tests/test_new_world_layout_report.py`) | |
 
-These cards are not full benchmark campaigns. Visuals require the optional
+These cards are not full benchmark campaigns. The timing and diagnostic scripts are
+measurements, not scientific acceptance; each takes the arguments its docstring states. Visuals require the optional
 `visual` extra, inspected outputs and new destinations. The thermal example
-advances an authored 48×48 box for 40 steps; endpoint velocity is recomputed from
+(`tectonics/tools/thermochemical_example.py`, recorded in the
+[R4.2 measurements](evidence/3cr4-2-measurements.json)) advances an authored 48×48 box for 40 steps; endpoint velocity is recomputed from
 the accepted endpoint, rather than an intermediate stage. This is not calibration.
 
 ### Bounded R4.4 studies
@@ -225,6 +231,10 @@ triplet and not a guarantee of a mature state by the selected terminal time.
 `--seconds` requests a cooperative per-invocation bound. A genuine physical refusal
 needs investigation, not an automatic retry under weaker controls. Successful
 finite-schedule completion means only that the predeclared steps were accepted.
+The [W04 acceptance record](evidence/w04-acceptance.json) also cites
+`probe_convection_r4_4.py`, a frozen-temperature resolution study rather than coupled
+benchmark acceptance, and `compare_solver_candidates_r4_4.py`, a read-only check of
+paired solver measurements.
 
 For an actual three-run study, give the auditor three `--run` paths in coarse-to-fine
 order and `--study-axis mesh`, `timestep` or `nonlinear`. It verifies the non-varied
@@ -240,7 +250,7 @@ Visuals come from decoded actual states and re-solved simultaneous endpoint flow
 Raw arrays, complete source/state/flow identities and file hashes are retained.
 Temperature/viscosity/pressure displays use unsmoothed original cells; velocity
 arrows use declared face-to-centre averages without unit-vector normalisation.
-Histories are saved diagnostic samples. Assistant inspection and Michael's visual
+Histories are saved diagnostic samples. Assistant inspection and Atlan's visual
 approval are separate records; the renderer asserts neither. Initial transient
 pictures are not promoted to mature convection or observational evidence.
 

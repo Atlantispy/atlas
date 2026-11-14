@@ -30,8 +30,16 @@
       "id": "i01-melt-segregation-r1",
       "path": "tectonics/evidence/i01-melt-segregation-r1.json",
       "sha256": "2ce609204179961109d789b00cd52df07e3089bfe836ca847e9e8cc9547ff02f",
+      "status": "superseded",
+      "note": "Reviewed numerical snapshot: 21 tests pass in 0.031 s and nine control groups in 0.1425885 s after imports. Three CURRENT_STATE documentation links were repaired after capture; scientific tool, case and test bytes still match this receipt. No numerical code, equation or threshold changed after capture. Preserve the receipt without rebinding or repeating science for prose. Frozen-operator reuse saves 0.0019642 s (47.36%) at 256 cells and 0.0047928 s (42.32%) at 4096 cells for 16 changed loads; not evolving G25-to-receiver transport or a whole-world forecast.",
+      "superseded_by": "i01-melt-segregation-r2"
+    },
+    {
+      "id": "i01-melt-segregation-r2",
+      "path": "tectonics/evidence/i01-melt-segregation-r2.json",
+      "sha256": "eb27336c5659034d0bb3034d7fde62bee96b8a55ad2e6473b39d5e3cbe51afd5",
       "status": "historical",
-      "note": "Reviewed numerical snapshot: 21 tests pass in 0.031 s and nine control groups in 0.1425885 s after imports. Three CURRENT_STATE documentation links were repaired after capture; scientific tool, case and test bytes still match this receipt. No numerical code, equation or threshold changed after capture. Preserve the receipt without rebinding or repeating science for prose. Frozen-operator reuse saves 0.0019642 s (47.36%) at 256 cells and 0.0047928 s (42.32%) at 4096 cells for 16 changed loads; not evolving G25-to-receiver transport or a whole-world forecast."
+      "note": "Fresh capture after the focused test's status assertion was changed to the method document's current status sentence (the document no longer carries the WORKING NON-CANON label). Tool and case bytes equal r1; every control result equals r1 apart from timings. 21 tests pass; nine control groups in 0.1516296 s after imports. No numerical code, equation or threshold changed."
     },
     {
       "id": "i01-separation-feasibility-r4",

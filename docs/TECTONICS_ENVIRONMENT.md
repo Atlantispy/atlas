@@ -34,6 +34,17 @@ one pip input per route beside it. The acceptance and visual inputs each include
 | acceptance | extra `acceptance` | `windows-amd64-cp312-acceptance.txt` | +1 | psutil 7.2.2 |
 | visual | extra `visual` | `windows-amd64-cp312-visual.txt` | +10 | none |
 
+The record (`atlas.tectonics-environment.v1`) has exactly these fields, and the
+checker refuses any other: `schema`; `status`, `observed`, `declared_by` and
+`provenance` (non-empty text); `scope` (`implementation`, `python`, `sys_platform`,
+`machine`, and integer `pointer_bits`); `observation` (`system`, `release`,
+`os_version`, `compiler`, `build`); `not_pinned` and `unpinned_tools` (name to
+reason); `limits` (a list of text); and `routes`. Each route has `requirements`,
+`declared`, `note`, `includes` (other routes that include nothing) and `packages`.
+Each package uses its normalised name, belongs to one route only, and has `version`,
+`wheel` and `status` (`tested` or `installed`), exactly one of `direct: true` or
+`required_by`, and `evidence` exactly when it is `tested`.
+
 **Tested** means a Windows CPython 3.12.14 receipt in `tectonics/evidence` records
 exactly that version. The record names those receipts, and a test checks that each
 named receipt contains the pinned string. The receipts come from runs of earlier
@@ -116,6 +127,10 @@ Run the checker with the interpreter you want to check:
 ```text
 python -I -B tools/check_tectonics_environment.py [--route core|acceptance|visual] [--all]
 ```
+
+`--route` is repeatable (default `core`; routes it includes are added). `--lock PATH` names another
+repository-relative environment record (default `tectonics/requirements/windows-amd64-cp312.json`), and `--root`
+another repository root (default: the folder containing `tools/`).
 
 It uses only the standard library and `importlib.metadata`. It imports no Atlas or
 numerical package, installs nothing and writes nothing. It exits 1 when:

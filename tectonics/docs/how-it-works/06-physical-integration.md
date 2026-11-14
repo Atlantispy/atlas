@@ -8,7 +8,7 @@ Tectonic processes affect one another. Temperature changes rock strength; streng
 
 **I01's method choices, contracts and bounded feasibility are complete; full physical integration remains work for later increments.** I02 connects one real finite-strain column through shared state, coupled advancement, atomic state-and-exchange commits, one accepted clock, and saved-state continuation (section 8). I04 Part A (reviewed and locally integrated) adds a declared starting family on the shared network ([New World chapter §2](04-new-worlds.md#2-supply-crust-materials-and-inherited-structure)) and a force balance, with reviewed reduced-belt feedback, that calculates plate rotations from gravitational driving, slab pull and resistance on it (sections 2 and 4 here). I03 places one closed spherical network beside that history and moves it under supplied plate rotations, carrying its rock (sections 1 and 5). Its regional bridges return results only to the support and forcing for which they were calculated. Supplied plate splits, merges and ridge jumps commit with their interval, and explicitly supplied compatible junction paths can generate curved boundary ends. New rock that crosses from ridge to trench within one interval is supplied and consumed without inventing rock at the endpoint. These are joined prescribed-history mechanisms, not a physical motion/event producer. The sections below follow physical dependencies, not implementation dates. Source-bound controls and their successors are listed in [current evidence](../../../docs/CURRENT_EVIDENCE.md); completion and platform coverage live in [current status](../../../docs/CURRENT_STATE.md). The [integration architecture](../INTEGRATION_PLAN.md#4-architecture-one-evolving-physical-state) distinguishes this joined route from later physical-event work. The [experimental dynamics route](05-experimental-dynamics.md) remains separate.
 
-The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
+The [I01 closure matrix](../I01_CLOSURE_MATRIX.md) binds these physical choices to the promised user routes and owners. The research links below come from the existing method records. They explain the chosen methods; this chapter adds no research campaign, numerical run or scientific acceptance.
 
 ## 1. Start from one declared physical state
 
@@ -278,6 +278,39 @@ paper was newly read for this step.
 This is a feedback loop: motion weakens rock, and weakened rock changes the motion.
 It is closed with the plate balance of section 4 and the history carried in
 section 5.
+
+**What happens.** One interval is solved implicitly at its end
+([`integration_feedback.py`](../../src/atlas_tectonics/integration_feedback.py), route
+`d1d2_endpoint_fixed_point_v1`). A first guess of the plate rotations comes from the
+balance with the belts at the start state. Each iteration moves the network and
+the rock's strain history with the current rotations, evaluates the belt
+resistance at the resulting end state, and solves the balance there again by
+Newton's method with the exact tangent
+([`integration_driving.py`](../../src/atlas_tectonics/integration_driving.py)). The
+interval is accepted when the rotations and strain increments stop changing (relative
+change `1e-8`, at most 40 iterations); it refuses if the change grows twice in a row.
+Nothing is committed on refusal.
+
+**Inputs and outputs.** Inputs are the accepted parent state, the declared forcing and
+belts, the shared datum, the network's supplies and sinks, I05's births and conduction,
+and the parent interval's own record. Outputs are the interval's motion and moving
+advance with its `driving` record for an ordinary I02 commit, the end-state balance and
+a coupling report. Cumulative belt strain is carried from interval to interval and an
+interval that takes it above the unchanged I01 guard of `0.05` refuses. Dissipated
+energy is not yet converted to heat: its pointwise temperature bound is recorded and the
+temperatures are labelled as heat-omitted.
+
+**What the checks establish.** The [Part B controls](../I04_CAUSAL_START.md#part-b-controls-i043-and-i044)
+show that the coupled ports close their power and energy accounts, that a committed
+interval replays bit for bit from its verified parent, that the scheme is first order
+in time on a reduced belt, and that the coupled feedback is resolved under step
+halving on the layered column. They are reduced-model numerical checks. Coupled
+feedback runs only on a one-sided transform belt; symmetric, ridge and trench belts
+refuse by name ([limits](../I04_CAUSAL_START.md#6-limits-and-what-remains)).
+
+**Sources.** All inherited from I01, I03, I04a and I05a; SciPy's DOP853 is used as
+the time reference. No source was newly consulted for this step
+([sources](../I04_CAUSAL_START.md#8-sources)).
 
 ## 4. Solve motion against the calculated resistance
 
@@ -1374,6 +1407,9 @@ installed delivery and scientific acceptance remain separate.
 
 ### Prepare an independent reader while a private producer runs
 
+This and the remaining subsections of section 8 describe engineering of the interval
+runtime, not physical methods; the general methods they build on are in
+[W11: spend work on changed science](03-coupling-and-reliability.md#w11-spend-work-on-changed-science).
 A reader can prepare while a private producer works, but adoption waits for the
 producer's clean exit, authentication, resource checks and independent verification.
 The [interval-chain method](../../optimisation/drivers/INTERVAL_CHAIN.md#serial-reader-admission-overlap)

@@ -44,12 +44,22 @@ are never deleted. An empty referenced store directory is retained on recovery.
 
 ## Private plan and explicit execution
 
-Copy [`examples/r5-recovery-plan.example.json`](examples/r5-recovery-plan.example.json)
+Copy
+[`examples/r5-recovery-plan.example.json`](examples/r5-recovery-plan.example.json)
 to a **private location outside the public repository**. Replace every placeholder
 with verified original locations. Paths in selections use `/`; root locations must
 be absolute and valid on the machine doing the inventory. Directory selections
 include all regular files recursively, without silently excluding files. Review
-these selections for sensitive data and size before use.
+these selections for sensitive data and size before use. The plan
+(`atlas.r5-recovery-plan.v1`) has exactly four fields, and any other is refused:
+`schema`; `roots`, a non-empty map from alias (a lower-case letter, then up to 31
+lower-case letters, digits, `_` or `-`; not a Windows device name) to a location;
+`controls`, a non-empty list of selections; and `dependencies`, with exactly the
+roles `source`, `runtime`, `inputs` and `provenance`. A selection is `{"root":
+alias, "path": relative path}`; control selections may not repeat or select a
+whole root. Each role has `paths` (a list of selections, empty only for `inputs`)
+and a non-empty `note` explaining the choice. At most 200,000 controls are
+allowed.
 
 The example is intentionally not runnable against the public source-only export.
 It does not provide missing codecs, libraries, authority data or checkpoints. A

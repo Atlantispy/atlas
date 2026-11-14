@@ -1,6 +1,6 @@
 # Release-mode check policy for the generator composition (composed-r2)
 
-Thread "Release-mode check policy", 16 Oct 2026. Answers Michael's request: decide which checks stay on in the
+Thread "Release-mode check policy", 16 Oct 2026. Answers Atlan's request: decide which checks stay on in the
 packaged **release** build and which run only in **strict** (debug, checkout, tests, scientific evidence).
 This retains the 16 October decision/design baseline for the original composed-r2
 bytes. “Today”, source line numbers and “none started” below refer to that baseline.
@@ -65,7 +65,7 @@ Existing policy: `docs/CODING_SAFETY.md` §4 "Strict checkout and packaged relea
      owner's marginal-gains rule.
    - Where checks dominate, release does pay off: the recorded 5 Oct prototype test gave −54 % to 11× on short
      desktop jobs with byte-identical outputs (§4 row 5).
-6. **Six decisions for Michael (§5).** All recommendations keep every class-A check and never raise a resource guard.
+6. **Six decisions for Atlan (§5).** All recommendations keep every class-A check and never raise a resource guard.
 
 ## 1. What already exists
 
@@ -129,7 +129,7 @@ Recommendation key:
 ### C. Resource guards
 
 All of these protect the user's machine, and **all stay on in release**. The only question is how they size
-themselves. Never above today's values unless Michael gives a number with evidence.
+themselves. Never above today's values unless Atlan gives a number with evidence.
 
 | # | Guard | Where | Today | Release recommendation |
 |---|---|---|---|---|
@@ -270,7 +270,7 @@ I11.5's acceptance test must show four things:
 - The interval drivers call `require_strict_execution()`.
 - Building a fake payload would be bypassing the gate, so it wasn't done.
 
-**No new timing was run.** The coordinator paused timing at 14:37 (Michael's instruction). The existing development
+**No new timing was run.** The coordinator paused timing at 14:37 (Atlan's instruction). The existing development
 records already cover every part needed, so the two probes written here were withdrawn unrun at 14:38. They are kept
 in `T/rm` in case a direct check of release-as-coded is wanted later; it isn't needed for the decisions.
 
@@ -317,7 +317,7 @@ composition is the latter.
 and 3 in place. Run matched inputs and report actual seconds against the denominator. Show byte-identical scientific
 outputs. Release timings never replace strict acceptance.
 
-## 5. Decisions (APPROVED by Michael 16 Oct 15:25, via the coordinator: D1-D6 and B13; R1-R6 not started)
+## 5. Decisions (APPROVED by Atlan 16 Oct 15:25, via the coordinator: D1-D6 and B13; R1-R6 not started)
 
 Each decision keeps every class-A check, adds no relaxed tolerance, raises no guard, and leaves strict unchanged.
 

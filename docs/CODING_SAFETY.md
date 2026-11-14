@@ -87,8 +87,19 @@ identity. That is a test expectation, not a claim that tests ran in this handove
   Do not remove these compensations or replace this retained helper as a casual fix.
 
 The static inventory records selected direct imports, adapter call targets,
-keyword overrides and the small helper/default contracts. It is a review tripwire,
-not a proof of semantics or a complete transitive dependency scanner.
+keyword overrides and the small helper/default contracts. It is a review
+tripwire, not a proof of semantics or a complete transitive dependency scanner.
+The map, `tools/coding_safety_manifest.json` (`atlas.coding-safety-map.v1`), has
+exactly five fields, and any other field refuses: `schema`;
+`reviewed_public_commit` (a 40-character commit hash); `scope` (non-empty text);
+`required_files` (unique repository paths that must exist); and `source_checks`,
+a non-empty list of entries with exactly `path`, `imports`, `adapters` and
+`anchors`. Each `imports` item is one local import statement (relative, or from
+`work.`), and the file's local imports must match the list in kind and number.
+Each `adapters` item is one call expression to `_adapt`, `clone`, `_module`,
+`_function` or `FunctionType`, matched the same way. Each `anchors` item is one
+statement that must still appear in the file. Comparison is by syntax tree, so
+formatting changes do not count.
 
 ## 3. Choose focused tests by the changed boundary
 
@@ -248,6 +259,16 @@ changing that inventory. Do not regenerate every entry or erase a failure simply
 to get green output. Start a separate compatibility/versioned change before
 simplifying source-bound adapters; this guide does not refactor them.
 
+`tools/verification-checks.json` (`verification-checks/v1`) is the check inventory
+named in `AGENTS.md`. No tool reads it; it is a reviewed record. Its `coverage` is
+`PARTIAL` and its `scope` says what it covers. Every entry of `checks` has `id`,
+`module`, `entry_point`, `purpose`, `process`, `owner`, `consumers`,
+`classification` with `classification_reason` and `classification_refs` (links
+into these documents), `execution` (`stages`, `trigger`, `release_state`,
+`debug_state`, `control`, and in most entries `actual_enabled`), `on_failure`,
+`affected_by` and `evidence`. Some entries add `qualification_scope`, `cost_note`
+or `retirement_basis`. A classification describes the check; it never disables it.
+
 A completion report should contain the changed files, source/runtime-binding
 impact, exact checks actually run and their outcome, and untested dependencies.
 Keep the report bounded to the request. No repeated broad audit or coordination
@@ -271,7 +292,9 @@ files; it is useful before staging, not an additional mandatory pass.
 `--staged` checks exactly the index and names each working-tree change it leaves
 out. Reuse an earlier result only when the final candidate bytes, relevant tools,
 dependencies, configuration and external bindings are demonstrably identical.
-If they differ, check the affected final candidate.
+If they differ, check the affected final candidate. The guard refuses to run while
+`tectonics/.desktop-runtime.json` exists: a packaged desktop runtime cannot produce
+strict commit evidence.
 
 Both forms copy the index to a temporary file, export
 the Git-normalised candidate bytes and always run `tools/check_current_evidence.py`
@@ -336,7 +359,7 @@ coverage or a mandatory check. Never rewrite an old receipt to make it current.
 The 16 October 2026 I03–I05 comparison covered remake `1a58e0b`, the heat-repair
 tests accompanying composed-r2 and their 4 October fidelity origin. Fifteen test
 files differed: five only added obligations, ten changed expectations. No numerical
-bound was widened. Michael accepted A–D/E1–E10 at about 17:53, conditional on no
+bound was widened. Atlan accepted A–D/E1–E10 at about 17:53, conditional on no
 accuracy loss. This supersedes the original report's earlier acceptance gap;
 it unblocked only the expectations side of U2, not merge/run authority or X1/R1
 dependencies. The [original comparison](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/docs/release/EXPECTATIONS.md)
@@ -390,7 +413,7 @@ packaging. Keep numba where already selected; no wholesale generator rewrite.
 
 Recommended build route is MSVC v143/x64 plus the Windows SDK and hash-pinned
 Cython/setuptools/wheel in a separate build environment using the same CPython
-ABI. Never install build packages into the scientific environment. Michael owns
+ABI. Never install build packages into the scientific environment. Atlan owns
 compiler installation/licence/PATH decisions. Preserve `/O2 /fp:strict`, no fastmath,
 FMA contraction or architecture-specific AVX2 requirement, and `/Brepro` without
 embedded private PDB paths. Source arithmetic remains in libmpdec/GMP/MPFR rather

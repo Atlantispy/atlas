@@ -22,7 +22,7 @@ Abbreviations:
 - **C** = `compact-geometry-r1`.
 - **IV1** = interval one, the historical r9 head. **IV2** = interval two, the successor.
 
-**Michael's decision, 15 Oct: B, compact-first.** Every large geometry or heat record on the run path is written, read and validated through the lossless compact representation:
+**Atlan's decision, 15 Oct: B, compact-first.** Every large geometry or heat record on the run path is written, read and validated through the lossless compact representation:
 - arrays and CSR offsets;
 - exact integer and rational pools;
 - shared immutable IDs;
@@ -39,7 +39,7 @@ The following stay unchanged:
 - physics, exactness, provenance and accounting;
 - the guard limits: 12 GiB tree RSS, 1 GiB free floor and 16 GiB logical. The historical fixed 10 GiB start gate was superseded by the [by-need admission contract](../workbench/plan02/ROUTE2_ADMISSION.md#shared-core-and-route1-evidence): integer `P + ceil(P/5) + 2 GiB`, with qualifying measured peaks or explicit booking.
 
-**Decided constraints D1-D6 (Michael, 15 Oct 2026, recorded in WORKFLOW_DECISIONS.md). These are settled; section 5 lists implementation risks, not renewed approval questions:**
+**Decided constraints D1-D6 (Atlan, 15 Oct 2026, recorded in WORKFLOW_DECISIONS.md). These are settled; section 5 lists implementation risks, not renewed approval questions:**
 
 - **D1: re-derive codec item ceilings from the 128 MiB segment size.** Examples are MAX_NODES, MAX_EDGES, MAX_ITEMS and MAX_INTEGER_BYTES.
   - They remain enforced bounds, charged before materialising, with tests at each bound.
@@ -53,8 +53,8 @@ The following stay unchanged:
   - This is distinct from the 14 Oct decision that dropped only the runner's extra same-process cold reopen.
   - The independent fresh-process reader remains mandatory.
 - **D4: measure IV2's real store increment first; keep max_store_bytes at 4 GiB for IV2.**
-  - Layout (Michael, 15 Oct): **one sealed, compact store file per interval, plus a small catalog** (section 9, WP13). Unchanged data is referenced read-only, by content hash, from earlier interval files rather than stored again. This replaces the earlier idea of rolling over only when a store nears its limit.
-  - Raising max_store_bytes stays a simpler fallback (Michael: limits may be raised in future, but not instead of the compact layout).
+  - Layout (Atlan, 15 Oct): **one sealed, compact store file per interval, plus a small catalog** (section 9, WP13). Unchanged data is referenced read-only, by content hash, from earlier interval files rather than stored again. This replaces the earlier idea of rolling over only when a store nears its limit.
+  - Raising max_store_bytes stays a simpler fallback (Atlan: limits may be raised in future, but not instead of the compact layout).
 - **D5: use the already-installed `blosc2` in `.r44-env`.** WP10 verifies its support for the planned zstd, shuffle, delta and trained-dictionary paths before relying on each one.
   - The earlier 15 October environment check records Python 3.12.14 with `blosc2` present and `zstandard`, `numcodecs` and `lz4` absent. Reuse that evidence only against unchanged environment identity; verify each required codec/filter/dictionary API in WP10. Package presence alone does not prove every proposed API exists. No installation or dependency change is authorised by this plan revision.
   - Compression stays measurement-gated per array class. Its runtime-identity change is acceptable because composition is new anyway.
@@ -267,7 +267,7 @@ Rules that apply to every seam:
 
 ### Authoritative 21-step work sequence
 
-**Michael's confirmed plan, 15 October 2026.** The numbered steps below are the execution sequence. Work-package identifiers are implementation ownership labels and must never be substituted for step numbers. This table supersedes conflicting step mappings in earlier notes; the detailed contracts and dependency tables below support it and do not renumber or reorder it. A step is complete only when its stated work and required evidence are complete. Separately authorised parallel package work does not complete or skip its enclosing step.
+**Atlan's confirmed plan, 15 October 2026.** The numbered steps below are the execution sequence. Work-package identifiers are implementation ownership labels and must never be substituted for step numbers. This table supersedes conflicting step mappings in earlier notes; the detailed contracts and dependency tables below support it and do not renumber or reorder it. A step is complete only when its stated work and required evidence are complete. Separately authorised parallel package work does not complete or skip its enclosing step.
 
 | Step | Work | Packages |
 | ---- | ---- | -------- |
@@ -295,7 +295,7 @@ Rules that apply to every seam:
 
 ### Revised execution order, 16 October 2026
 
-**Decided by the coordinator, delegated by Michael ("based on performance and accuracy").** The 15 October table above is kept unchanged as history. Rule applied: take every change that keeps results exact and saves time; take none that changes a physical number; raise no guard or limit. Full decision and evidence: section 7b of `C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/plan-order-review-20261016.md`.
+**Decided by the coordinator, delegated by Atlan ("based on performance and accuracy").** The 15 October table above is kept unchanged as history. Rule applied: take every change that keeps results exact and saves time; take none that changes a physical number; raise no guard or limit. Full decision and evidence: section 7b of `C:/Users/LOCAL_USER/OneDrive/Documents/GitHub/atlas/.atlas-dev/plan-order-review-20261016.md`.
 
 | Order | Work | Steps / packages | Condition |
 | ---- | ---- | ---- | ---- |
@@ -309,7 +309,7 @@ Rules that apply to every seam:
 
 Not approved: (c) merging siblings that carry material (changes the heat and transport discretisation); (d) re-basing carried constraints, to be revisited before about interval 100 (nesting depth limit 128).
 
-**Clarification, 16 October 2026 (coordinator, at Michael's question).** Row 6 is not one lumped step. After interval 2, Steps 12, 13, 14 part 2, any remaining Step 18 items, 19 and 20 stay separate steps in their original order. Each keeps its own owner, tests and measured enable/disable gate, and is checked on saved inputs before the next starts. Only the final integration is combined: one recomposition, with interval 3 as its acceptance run in place of the old Step 21 interval-two rerun. Updated wording: review section 7b item 4.
+**Clarification, 16 October 2026 (coordinator, at Atlan's question).** Row 6 is not one lumped step. After interval 2, Steps 12, 13, 14 part 2, any remaining Step 18 items, 19 and 20 stay separate steps in their original order. Each keeps its own owner, tests and measured enable/disable gate, and is checked on saved inputs before the next starts. Only the final integration is combined: one recomposition, with interval 3 as its acceptance run in place of the old Step 21 interval-two rerun. Updated wording: review section 7b item 4.
 
 Current execution position belongs to [CURRENT_STATE](../../../docs/CURRENT_STATE.md) and the selected owner. Step numbers remain distinct from WP numbers; neither a storage component nor pre-advance reopen establishes WP14 simultaneous-live acceptance.
 
@@ -631,7 +631,7 @@ Focused verification covers 17 scanner tests, 20 structural-measurement tests, e
   - the guarded real-advance launch gate in section 4, with WP14 live-memory evidence and the owner-heat check.
 - **Candidate ready for Stage D** when the affected checks pass, the measured census meets the section 4 targets and the pre-advance smoke stays within guards. **IV2 acceptance** additionally requires the real advance, commit and independent fresh-process reader. Composition or smoke success alone is not acceptance.
 
-**WP10: Lossless compression layer** (section 6). Owns new `C/storage_codec_patch.py`, `C/codec_policy.json`, `C/codec_measure.py`, `C/codec_tradeoff.py`, codec runtime/backend/training/dictionary components, `C/cold_archive.py`, `C/cold_archive_worker.py`, and their tests. Michael's 15 October extension explicitly requests combined delta + zstd and purposeful `.tar.zst` use for suitable completed data.
+**WP10: Lossless compression layer** (section 6). Owns new `C/storage_codec_patch.py`, `C/codec_policy.json`, `C/codec_measure.py`, `C/codec_tradeoff.py`, codec runtime/backend/training/dictionary components, `C/cold_archive.py`, `C/cold_archive_worker.py`, and their tests. Atlan's 15 October extension explicitly requests combined delta + zstd and purposeful `.tar.zst` use for suitable completed data.
 - `C/storage_codec_patch.py` transforms `storage.ArrayStore._encode/_decode/put` to add:
   - a per-array codec policy;
   - `delta-v1`;
@@ -729,7 +729,7 @@ The former L1 proposal for default archival copies beside original stores is sup
 
 ## 4. Capacity, memory, performance and launch evidence
 
-**Measured improvement reporting (Michael, 15 October 2026).** At each completed subsection checkpoint, report **time taken, RAM used and physical disk space**, with before/after figures and the measured change, and retain the comparison in this plan and the existing owning receipt. Use the same input, operation, measurement boundary and relevant configuration; name the previous version and tested candidate. Label process RSS/private/peak RAM separately from tracked retained allocations; observed use is not a proven minimum RAM requirement. Label physical stored bytes separately from expanded logical bytes. Report physical reads/writes where relevant. Distinguish component results from end-to-end improvement; separate component gains are not an overall multiplier. A timed-out baseline stays a timeout, an estimate stays an estimate, and unmatched workloads do not acquire a speedup or savings ratio. Reuse valid recorded baselines; do not add unrelated benchmark runs or another reporting ledger. If a time, RAM or disk baseline/measurement is absent, include that dimension as not measured.
+**Measured improvement reporting (Atlan, 15 October 2026).** At each completed subsection checkpoint, report **time taken, RAM used and physical disk space**, with before/after figures and the measured change, and retain the comparison in this plan and the existing owning receipt. Use the same input, operation, measurement boundary and relevant configuration; name the previous version and tested candidate. Label process RSS/private/peak RAM separately from tracked retained allocations; observed use is not a proven minimum RAM requirement. Label physical stored bytes separately from expanded logical bytes. Report physical reads/writes where relevant. Distinguish component results from end-to-end improvement; separate component gains are not an overall multiplier. A timed-out baseline stays a timeout, an estimate stays an estimate, and unmatched workloads do not acquire a speedup or savings ratio. Reuse valid recorded baselines; do not add unrelated benchmark runs or another reporting ledger. If a time, RAM or disk baseline/measurement is absent, include that dimension as not measured.
 
 | Completed bounded comparison | Previous version | Implemented version | Measured change | Evidence/scope |
 |---|---:|---:|---|---|
@@ -901,11 +901,11 @@ Decoded-content identities survive a lossless codec change; encoded-payload hash
 
 These remain the existing per-class adoption thresholds. WP10 measures total encode/decode/persistence cost as well; compression is disabled where overall cost outweighs the saving. Raw fallback is mandatory if a proposed API or decoder-workspace bound is unavailable. A missing optional codec does not authorise installation or block compact-core acceptance; its planned item stays BLOCKED with the exact capability gap and required next action, not falsely completed. A demonstrated failed benefit gate can instead produce a tested-disabled outcome.
 
-**User-accepted WP10 trade-off, 15 October 2026.** Michael explicitly accepts the observed delta+zstd byte/1 result: 8.75% longer total time for a 20% smaller physical database compared with plain zstd byte/1 on identical input. The shared codec_tradeoff.py helper now implements that narrow exception in both assess_adoption and runtime policy validation. It requires decision wp10-delta-zstd-space-tradeoff-20261015, candidate delta-zstd-v1 byte/1, comparator zstd byte/1, matched positive physical byte counts, real-report SHA-256 and total times. Inclusive limits are at least 20% less physical storage and at most 8.75% longer total time. Incomplete, malformed or synthetic evidence cannot enable it; the evidence owner must authenticate the report and matched observations. Without explicit exception evidence, the strict total-time improvement requirement remains. WP0c must supply representative real-class/read-frequency/persistence evidence; WP8/WP9 integration, exactness, memory limits, compression ratio, decode-cost and cold-saving gates still apply. No production array rule was enabled and the original benchmark evidence is preserved. The tar.zst routing policy is unaffected.
+**User-accepted WP10 trade-off, 15 October 2026.** Atlan explicitly accepts the observed delta+zstd byte/1 result: 8.75% longer total time for a 20% smaller physical database compared with plain zstd byte/1 on identical input. The shared codec_tradeoff.py helper now implements that narrow exception in both assess_adoption and runtime policy validation. It requires decision wp10-delta-zstd-space-tradeoff-20261015, candidate delta-zstd-v1 byte/1, comparator zstd byte/1, matched positive physical byte counts, real-report SHA-256 and total times. Inclusive limits are at least 20% less physical storage and at most 8.75% longer total time. Incomplete, malformed or synthetic evidence cannot enable it; the evidence owner must authenticate the report and matched observations. Without explicit exception evidence, the strict total-time improvement requirement remains. WP0c must supply representative real-class/read-frequency/persistence evidence; WP8/WP9 integration, exactness, memory limits, compression ratio, decode-cost and cold-saving gates still apply. No production array rule was enabled and the original benchmark evidence is preserved. The tar.zst routing policy is unaffected.
 
 The most-read hot arrays stay raw where zero-copy reads matter. Cold history may use a higher zstd level.
 
-**Scoped WP10 implementation update, 15 October 2026.** The installed Blosc2 interface did not expose the required reusable-dictionary and native-workspace bounds. Michael subsequently authorised enabling those capabilities: the private hash-pinned `native/wp10_zstd.dll` and `native/wp10_train.exe` supply bounded zstd and owned offline training. This is the explicit scoped successor to D5's original environment-only investigation, not general installation authority. The default array policy remains disabled pending WP9 composition and representative WP0c evidence. `delta-zstd-v1` combines both operations on the same integer chunk, including signed wraparound, while keeping decoded bytes and typed IDs exact. The complete delta plus native workspace is charged within 8 MiB; this path conservatively uses one preparation worker and serial native prefetch. Ordinary zstd remains available for other array classes. Synthetic results are component evidence, not production adoption.
+**Scoped WP10 implementation update, 15 October 2026.** The installed Blosc2 interface did not expose the required reusable-dictionary and native-workspace bounds. Atlan subsequently authorised enabling those capabilities: the private hash-pinned `native/wp10_zstd.dll` and `native/wp10_train.exe` supply bounded zstd and owned offline training. This is the explicit scoped successor to D5's original environment-only investigation, not general installation authority. The default array policy remains disabled pending WP9 composition and representative WP0c evidence. `delta-zstd-v1` combines both operations on the same integer chunk, including signed wraparound, while keeping decoded bytes and typed IDs exact. The complete delta plus native workspace is charged within 8 MiB; this path conservatively uses one preparation worker and serial native prefetch. Ordinary zstd remains available for other array classes. Synthetic results are component evidence, not production adoption.
 
 **Purposeful `.tar.zst` finalisation of completed bundles.** `cold_archive.finalise_completed_bundle` receives an explicit closed diagnostic/export file list and automatically selects the representation. The measurement CLI finalises completed synthetic reports of at least 64 KiB into a sibling `.bundle` directory; this is the default export behaviour, without an opt-in compression flag. A compressed result is selected only when archive plus manifest/receipt allowance is at most 80% of the equivalent plain bundle, actual packing takes at most `2 + raw_bytes / (16 MiB/s)` seconds, and verified restoration takes at most `1 + raw_bytes / (64 MiB/s)` seconds. Failed benefit gates retain a plain directory and their measured reason. These are bounded offline latency allowances, not a claim that compression has zero cost or beats a direct copy. Compression level 3 is synchronous; no zstd worker option is set.
 
@@ -1045,7 +1045,7 @@ All are planned work items. Each is gated by its measurement and enabled only fo
   - storage of unchanged data is not duplicated;
   - each file stays within its limits at the projected IV2 size.
 
-## 10. Further coverage: everywhere else compact data structures are suitable (Michael, 15 Oct)
+## 10. Further coverage: everywhere else compact data structures are suitable (Atlan, 15 Oct)
 
 WP14-WP17 extend the same scheduled programme to live memory, workers, diagnostics and restart caches. Section 3 assigns their dependencies and integration points; none is an unscheduled appendix. Rules for all of them:
 - same principles: lossless and exact, charged, content-addressed where shared;
@@ -1148,11 +1148,11 @@ Acceptance: identical hit/miss semantics and results; measured lookup time and s
 
 **Measured component outcome, 15 October 2026.** The independent WP17 component passed 77 accumulated focused tests, including all 30 original W5-A cases, exact replay, refusal, crash-before-commit recovery and quotas. At 15,000 synthetic completed queries, disk fell from 18,638,481 to 6,606,848 bytes (64.55%) and files from 15,001 to 2; serial storage writes rose from 29.47 to 104.16 seconds. Three alternating 1,000-query pairs confirmed 2.21–3.97× slower writes. Corrected fresh-process reopen was 10.128 versus 0.004 seconds, while hit lookup was 1.170 versus 4.810 ms. No process-RAM saving is established; the earlier apparent saving was a directory-list measurement artefact and is withdrawn. A separate 60,000-query batch-128 population and sampled fresh-process reopen passed, but this is not native per-query throughput. Compact storage remains disabled by default; bounded pacing is tested but unwired. Evidence: WP17 receipt (`endpoint-checkpoints/wp17-result.json`), SHA256 479d97eb51d0a3380acf41d76623948f2e4d3cee76dc883878fb63958f0c98d4. No WP9 input freeze or IV2 was performed.
 
-**Future optimisation targets requested by Michael.** In Step 13/WP17 integration, measure bounded batches and durable paced writes to amortise transaction, index and flush costs. A completed-query acknowledgement must still mean its batch is durable; preserve cancellation, restart, exact execution binding, quotas and partial-write recovery. In Step 14/WP18, evaluate parallel independent encoding/preparation feeding a bounded writer queue; measure whether extra writers help or merely increase database contention. Compare each option and the combined configuration against the same existing file-store workload, reporting total and per-query time, hit/reopen latency, process/logical memory and disk. Geometry or heat speed-ups benefit both storage choices and do not by themselves erase this storage regression. Enable only a measured beneficial configuration; these are future targets, not demonstrated fixes.
+**Future optimisation targets requested by Atlan.** In Step 13/WP17 integration, measure bounded batches and durable paced writes to amortise transaction, index and flush costs. A completed-query acknowledgement must still mean its batch is durable; preserve cancellation, restart, exact execution binding, quotas and partial-write recovery. In Step 14/WP18, evaluate parallel independent encoding/preparation feeding a bounded writer queue; measure whether extra writers help or merely increase database contention. Compare each option and the combined configuration against the same existing file-store workload, reporting total and per-query time, hit/reopen latency, process/logical memory and disk. Geometry or heat speed-ups benefit both storage choices and do not by themselves erase this storage regression. Enable only a measured beneficial configuration; these are future targets, not demonstrated fixes.
 
 **Later scope.** The former L1 default-copy proposal is superseded by the independent historical-retention boundary stated above. Broader Atlas storage work is separately scoped in the roadmap; this plan does not authorise an archive copy, access to current runs or stores, or an additional audit.
 
-## 11. Speed: geometry and heat, all accuracy-preserving (Michael, 15 Oct)
+## 11. Speed: geometry and heat, all accuracy-preserving (Atlan, 15 Oct)
 
 Every item here must:
 - give byte-identical outputs, or the same certified results where a certified range is already approved;
@@ -1178,7 +1178,7 @@ Tests: identical outputs serial versus parallel; memory per worker; cleanup on f
 
 **WP19: Checkpoint-only development timing.** Source implementation complete, 15 October 2026; successor composition and real-workload measurement pending.
 
-Michael's later instruction narrows the earlier per-query design: Codex chooses meaningful checkpoints, normally at the end of a subsection. This supersedes per-query recording and extra liveness timestamps.
+Atlan's later instruction narrows the earlier per-query design: Codex chooses meaningful checkpoints, normally at the end of a subsection. This supersedes per-query recording and extra liveness timestamps.
 - Off by default; enable with `ATLAS_DEV_STAGE_TIMING=1` or the launcher's `--dev-timing`. Only unset, `0` and `1` are valid environment values.
 - Explicit completion calls only. No query hooks, guard method wrappers, tracing, timer, additional monitor or polling. Existing guardian checks and liveness remain unchanged.
 - A normal interval route records completed plans; historical authentication; checkpoint copying; endpoint materialisation; frozen initial workload authentication; root publication/reopen; pressure and force selection; geometry with pre-advance coverage; heat/projection with endpoint publication; post-publication reopen controls; interval source verification; and final source/original verification. The diagnostic session also closes after the function's final cleanup. The stopped-before-advance route records only the subsections it actually completes.
@@ -1251,7 +1251,7 @@ Tests: identical certified heat records and accounts on the existing controls; i
 - exact plane and normal invariants;
 - the completed-query store, which already exists.
 
-## 12. Further techniques from the mod-inspired ideas register (Michael, 15 Oct)
+## 12. Further techniques from the mod-inspired ideas register (Atlan, 15 Oct)
 
 Source: `The Diadem - Local Workspace/06_Generator_System/engine/MOD_INSPIRED_GENERATOR_IDEAS_TO_EVALUATE.md` (57 entries).
 - Mapped by entry title and summary, not a full read of every entry. The next session should read each cited entry before implementing it.
@@ -1274,9 +1274,9 @@ The eleven mappings below are included in the owning packages and the section 3 
 | 029 Stage-specific retention | Explicitly release each structure after its last use in a stage (charged leases closed), so only live data stays in RAM | Lower peak RSS during the advance | WP14 |
 | 021 Tight bounds with extent caching | Cache exact per-support extents and bounding boxes, updated only when the pose changes | Fewer recomputed bounds | WP11/WP23 |
 
-## 13. Game Optimisation Benchmark: the 94 techniques mapped (Michael, 15 Oct)
+## 13. Game Optimisation Benchmark: the 94 techniques mapped (Atlan, 15 Oct)
 
-**Source:** Michael's 11-category list of 94 techniques, pasted in chat on 15 Oct.
+**Source:** Atlan's 11-category list of 94 techniques, pasted in chat on 15 Oct.
 
 **Excluded as not applicable:**
 - Categories 7 (lighting) and 8 (rendering and GPU).

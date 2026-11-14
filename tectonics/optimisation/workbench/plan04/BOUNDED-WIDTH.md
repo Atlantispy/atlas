@@ -56,7 +56,7 @@ Original bounded report digest: ea842fd5bef5f2e579e2e549adb4a59a238461b0ce60ff85
 ## Pose-rounding contract
 
 The [16 October r2 design](https://github.com/Atlantispy/atlas/blob/1f1d78a6dd2ab3d1c533af9f9b5b79e769ce57fd/tectonics/optimisation/pending/pressure/width/DESIGN.md)
-records Michael's approval of bounded dyadic pose rounding (b) and outward stored
+records Atlan's approval of bounded dyadic pose rounding (b) and outward stored
 deviation (c), conditional on no significant accuracy loss. Summed-phase history
 replacement (a) and raising the 1 MiB integer cap were not selected. Historical
 design/probe projections are distinct from the later bounded evidence above.

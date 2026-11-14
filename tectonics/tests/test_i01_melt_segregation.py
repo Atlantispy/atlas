@@ -255,7 +255,7 @@ class CaseTests(unittest.TestCase):
         for name in s.NEW_FILES:
             self.assertTrue((s.ROOT/name).is_file(), name)
         document = (s.ROOT/"docs/I01_MELT_SEGREGATION.md").read_text(encoding="utf-8")
-        self.assertIn("WORKING NON-CANON", document)
+        self.assertIn("an instantaneous closure candidate, not generated melt or calibrated ridge supply", document)
         self.assertIn("CURRENT_STATE", document)
         self.assertIn("SYNTHETIC", SPEC["synthetic"]["material"]["provenance"]["status"])
 

@@ -101,6 +101,9 @@ every previous grid in memory. Requested output limits remain explicit.
 
 ## W06: create oceanic material and preserve its age
 
+The equations, data contracts, bounded case and acceptance criteria were first selected in the
+[W06 step 1 design](../W06_SPREADING.md); the sections below follow the implemented methods.
+
 ### Birth and spreading
 
 W06 starts with a declared ridge position and velocity, separate left/right plate
@@ -194,6 +197,10 @@ routes and recovery without repeated thermal calculation. A shared interface
 does not merge their footprints or grant duplicate access to a finite reservoir.
 
 ## W07: calculate slow regional deformation
+
+The [W07 model and benchmark specification](../W07_REGIONAL_MECHANICS.md) fixes the first comparisons
+and numerical gates; the [material surface and dry strength record](../W07_SURFACE_STRENGTH.md) covers
+Step 4.
 
 ### Balance forces, incompressibility and boundary conditions
 
@@ -362,6 +369,9 @@ refused. The [method record](../W07_WORKFLOW.md#recovery-storage-and-resource-ow
 states the cost, which is one fresh preparation.
 
 ## W08: shortening, sliding, subduction and finite magma
+
+The [W08 regimes and acceptance design](../W08_REGIMES.md) selected the physical and numerical
+contracts and first analytic fixtures before implementation.
 
 ### Shortening and transform deformation
 

@@ -168,7 +168,7 @@ Bootstrap refuses an existing environment rather than overwriting it. Changes to
 | [`desktop/`](desktop/README.md) | Windows Electron build of the Atlas UI and its tectonics backend (unsigned development build; a rebuild needs the UI owner's snapshot, which is not in this repository). |
 | [`tectonics/requirements/`](tectonics/requirements/) | [Windows tectonics environment pins and metadata checks](docs/TECTONICS_ENVIRONMENT.md), distinct from the offline public-component environment and exact native restart identity. |
 | [`tools/`](tools/) and [`tests/`](tests/) | Development entry point, source-wiring checks, R5 recovery tools and focused tooling tests. |
-| [`docs/`](docs/) | [Current state](docs/CURRENT_STATE.md), [coding/dependency map](docs/CODING_SAFETY.md), [recovery runbook](docs/R5_OPERATIONS.md) and [development workflow](docs/INDEPENDENT_DEVELOPMENT.md), with evidence records. |
+| [`docs/`](docs/) | [Current state](docs/CURRENT_STATE.md), [coding/dependency map](docs/CODING_SAFETY.md), [recovery runbook](docs/R5_OPERATIONS.md), [development workflow](docs/INDEPENDENT_DEVELOPMENT.md), [development speed tools](docs/DEVELOPMENT_TOOLS.md) and [current evidence register](docs/CURRENT_EVIDENCE.md), with evidence records. |
 
 ## Development direction
 

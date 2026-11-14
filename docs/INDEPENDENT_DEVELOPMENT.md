@@ -118,11 +118,19 @@ runtime validators remain untouched and mandatory on their own routes.
 
 `test` launches each selected profile in a fresh subprocess and checks the binding
 before and after it. A profile failure stops the aggregate; failed imports are
-errors, not successful skips. The machine-readable report gives actual counts,
-errors, failures and skips. A skipped test makes the profile `INCOMPLETE`, not a
-fully passed result. The command exits nonzero for incomplete evidence. Permission-
-dependent symlink tests may be incomplete on Windows; simulated reparse tests are
-not a substitute for real Windows execution.
+errors, not successful skips. The machine-readable report
+(`atlas.public-development.suite.v1`) has `schema`, `scope`, `binding_sha256`,
+`status` (`PASS` only when every selected profile passed) and `profiles`, one
+entry per profile run (`atlas.public-development.tests.v1`) with `profile`,
+`binding_sha256`, `tests_run`, `failures`, `errors`, `skipped` and `status`
+(`PASS`, `INCOMPLETE` or `FAIL`). The profiles come from
+[development/PROFILES.json](../development/PROFILES.json)
+(`atlas.public-development.profiles.v1`): each profile lists 1 to 32 dotted test
+names under `tests` and states its `coverage`; `unavailable_routes` explains the
+routes this harness cannot run. A skipped test makes the profile `INCOMPLETE`, not
+a fully passed result. The command exits nonzero for incomplete evidence.
+Permission-dependent symlink tests may be incomplete on Windows; simulated
+reparse tests are not a substitute for real Windows execution.
 
 `smoke` compares the independent integer expectations with both the retained graph
 oracle and cached execution. Repeated fixture invocations may already be warm;

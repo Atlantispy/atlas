@@ -773,7 +773,7 @@ left the staircase criterion unmet; the genuine repair control below now covers 
 
 ### Ridge/transform staircase repair control (4 October 2026)
 
-Michael authorised the necessary I03 material-seam extension, rather than accepting
+Atlan authorised the necessary I03 material-seam extension, rather than accepting
 the earlier oblique ridge as a staircase. The inputs and checks are recorded before
 execution in `cases/i04_staircase_v1.json`. This is a manufactured integration
 control, not a generated-world realism result.

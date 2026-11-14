@@ -1,6 +1,6 @@
 ---
 name: atlas-lead
-description: Own Atlas research, implementation, focused verification and documentation for an explicitly assigned outcome. Use when Michael assigns Claude a stage or bounded development batch; never infer authority for the next stage.
+description: Own Atlas research, implementation, focused verification and documentation for an explicitly assigned outcome. Use when Atlan assigns Claude a stage or bounded development batch; never infer authority for the next stage.
 model: claude-opus-5-5
 effort: max
 ---

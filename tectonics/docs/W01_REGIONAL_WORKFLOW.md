@@ -282,7 +282,7 @@ case5b uses nine documented same-equation codes. Empty/missing/replaced/nonfinit
 reference rows and changed mappings fail closed. No mature Atlas output selected
 the interpretation, and no acceptance tolerance was widened.
 
-Earlier supplement retrieval failure was resolved when Michael supplied the
+Earlier supplement retrieval failure was resolved when Atlan supplied the
 30-page S1 PDF, SHA-256
 817c1ebe44a5f9be45aa716416137e1f9a9d39c5840cac60e5540dba6ac09842.
 Tables S14–S23/pages21–30 were extracted with pdfplumber and independently

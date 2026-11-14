@@ -202,7 +202,7 @@ No full Atlas/planetary acceptance follows; earlier receipts remain unchanged.
 | Integration | Outcome and retained failure/qualification boundary |
 | --- | --- |
 | I04/I05a, 4 October | Reviewed repairs and predeclared 42/84-row refinement passed all four fixed 3% comparisons (maximum 0.0556096%). No complete launch manifest was captured: refinement is observational, not final-tree source-sealed evidence. Finite-admission r9/timing r11 renewed their own bindings. Final explicit eleven-staircase/LF/register guard passed 3/3. [Owner](../tectonics/docs/I04_CAUSAL_START.md#reviewed-repairs-and-resolved-refinement-4-october-2026). |
-| I03 K1–K5, 3 October | Path-preserving replay, all supported vertex traversals including D5 endpoints, bounded exact GEOS overlay recovery, C7 ranges and three bridge representations integrated; old schemas refuse. C1/C4 derivations follow Michael's fix authority, not invented earlier Claude approval. Of initial 323 tests, 320 passed, two expected failures remained and one obsolete refusal assertion was replaced by recovery/conservation/replay controls. Affected seams passed with unchanged results reused. Later clean 323-test run passed with the two historical expected failures. Exact fallback improved 26.2%/32.4% at 48/192 bands with identical rows/state/budget; 96 bands did not use fallback and showed no gain. [Owner](../tectonics/docs/I03_SPHERICAL_NETWORK.md). |
+| I03 K1–K5, 3 October | Path-preserving replay, all supported vertex traversals including D5 endpoints, bounded exact GEOS overlay recovery, C7 ranges and three bridge representations integrated; old schemas refuse. C1/C4 derivations follow Atlan's fix authority, not invented earlier Claude approval. Of initial 323 tests, 320 passed, two expected failures remained and one obsolete refusal assertion was replaced by recovery/conservation/replay controls. Affected seams passed with unchanged results reused. Later clean 323-test run passed with the two historical expected failures. Exact fallback improved 26.2%/32.4% at 48/192 bands with identical rows/state/budget; 96 bands did not use fallback and showed no gain. [Owner](../tectonics/docs/I03_SPHERICAL_NETWORK.md). |
 | I03 N1, 3 October evening | Named refusal replaces misleading errors for D1-b inside a D5 transient triangle; a pass outside it beside zero opening remains admitted. Refusal control failed previously and passes repaired; admitted control passes both. Full 325-test selection passed with two expected failures. No tolerance relaxed/new case admitted. Timing r10 superseded r9; finite-admission r8 did not bind the changed transfer file. Default guard passed 3/3 with 759 I01/I02 tests, separately from earlier explicit selections. |
 | R7, 2 October | 211 affected checks covered phase/structure/heat/3-D (132), flexure (12) and coupled support/heat/save-reopen/project seams (67). New heat fixture exceeded the existing timestep bound: only its timestep changed, yielding 19 heat passes while retaining the other 113. Independent flexure tolerances stayed unchanged. Timing r7 followed other processes; overlapping capture stayed local and was not performance evidence. Default guard passed 3/3 with 759 I01/I02 tests. Initial candidate-object write refusal resolved by authorised rerun, without changing the real index or committing. |
 | R4, 1 October | Corruption/races, never-started retry, accounting, cache and ZIP/input fixes integrated. Focused selections passed: 45 solver, 94 lifecycle, 65 reuse, fifteen history plus four final guards, and one restore regression. Finite-admission/timing r6 renewed their scopes; default guard passed 3/3 with 759 I01/I02 tests and no skips. |
@@ -365,6 +365,14 @@ Holds, generated realism, full-suite and whole-world acceptance remained open.
   with its reason. Do not drop the field.
 
 ## Writing rules
+
+The register (`atlas.current-evidence-register.v1`) has exactly `schema`, `scope`
+(non-empty text) and `records` (a non-empty list). Every record has `id` (unique
+lowercase text), `path` (repository-relative, registered once), `sha256` (64
+lowercase hexadecimal characters), `status` and `note`. A `current` record adds
+`bindings` (at least one rule with exactly `pointer` and `file`), `not_checked`
+(rules with exactly `pointer`, `kind` and `reason`) and `limits` (a list of text).
+A `superseded` record adds `superseded_by`. Any other field refuses.
 
 `pointer` is a JSON Pointer into the receipt. A whole segment `*` matches any key
 or list index. `{key}` does the same and passes the matched key into the `file`

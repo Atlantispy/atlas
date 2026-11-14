@@ -72,19 +72,23 @@ python -B tools/run_tests_parallel.py --compare RUN_A/summary.json RUN_B/summary
 
 - **Default selection.** Without `--pattern`, a run uses the tree's full `verify.py` discovery. That is its
   `FULL_PATTERNS`, `test_*.py` and `check_native_transport.py`; the same two are used for a tree whose `verify.py`
-  does not name them. A default run is therefore never narrower than the full gate's discovery.
+  does not name them. A default run is therefore never narrower than the full gate's discovery. `--only ID`
+  (repeatable) restricts the run to these test, class or module IDs (`test_impact.py select --only-args` prints
+  them); `--tests-dir DIR` (default `ROOT/tectonics/tests`) and `--src DIR` (default `ROOT/tectonics/src`, prepended to
+  `PYTHONPATH`) name the trees.
 - **Units.** A unit is a test class, or a whole module when it defines `setUpModule`, `tearDownModule` or
   `load_tests`, so fixtures keep their meaning. A unit never splits across processes. Units start longest first when
   `--durations` names an earlier `results.jsonl`.
-- **Workers.** Each worker is a separate process of the tested interpreter with:
+- **Workers.** `--workers N` sets their number (default: CPU count minus 2, at least 1). Each worker is a separate
+  process of the tested interpreter, started in `--cwd DIR` (default: the root), with:
   - single-threaded BLAS/OpenMP (`OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, ... = 1);
   - `PYTHONPATH` beginning with the selected `tectonics/src`, followed by the inherited entries (resolved before the
     worker changes directory);
-  - its own short temporary folder beside the inherited one, because several tests budget Windows path lengths from
-    it;
-  - `PYTHONPYCACHEPREFIX` pointing at a cache outside `src` and `tests`. By default this is a new short folder,
-    removed afterwards. A deep cache path plus a deep source path can exceed the Windows path limit, and then Python
-    silently recompiles every module in every worker.
+  - its own short temporary folder beside the inherited one, or under `--tmp-root DIR` (keep it short), because
+    several tests budget Windows path lengths from it; `--keep-tmp` keeps those folders;
+  - `PYTHONPYCACHEPREFIX` pointing at a cache outside `src` and `tests` (`--pycache DIR`). By default this is a
+    new short folder, removed afterwards. A deep cache path plus a deep source path can exceed the Windows path
+    limit, and then Python silently recompiles every module in every worker.
 
   The run refuses a cache inside `src` or `tests`, and fails if any local `.pyc` exists there at the end.
 - **Serial group.** `--serial-unit ID` and `SERIAL_UNITS` in the tool run units after the parallel phase, one at a
@@ -94,12 +98,17 @@ python -B tools/run_tests_parallel.py --compare RUN_A/summary.json RUN_B/summary
   conventional serial order passes; the cause is not yet identified.
 - **Reference.** `--serial` runs the whole selection in one process in discovery order: the conventional run that
   parallel outcomes are compared with.
-- **Records.** Results stream to `RUN/results.jsonl` as units finish; `RUN/summary.json` is written atomically with
+- **Records.** Results stream to `RUN/results.jsonl` as units finish, in `--run-dir RUN` (default: a new temporary
+  folder); `RUN/summary.json` (or `--summary PATH`) is written atomically with
   per-test outcome, seconds and detail, per-unit wall time, counts, the omitted slow tests and the bytecode check.
   Subtests are recorded separately and their parent test is recorded as failed, errored or skipped accordingly. A
   worker that dies or exceeds `--unit-timeout` is reported for every test of its unit and replaced.
   Traced runs also retain source and runtime provenance before discovery and after execution. An impact map requires
   equal snapshots of the clean commit, tracked blobs, actual file hashes and worker runtime/import environment.
+  The summary (`atlas.dev.parallel-test-run.v2`) holds `root`, `patterns`, `quick`, `only`, `provenance`,
+  `omitted_slow`, `serial_reference`, `workers`, `fresh_process_per_unit`, `wall_seconds`, `worker_tmp_root`,
+  `pycache`, `tests_selected`, `counts`, `passed`, `local_bytecode`, `units` (per unit `wall_seconds`, `crashed`,
+  `timeout`) and `tests` (per test ID). `--compare` reads only `tests` and reports differing outcomes.
 - **Exit code.** 0 only when nothing failed, errored or unexpectedly succeeded, every selected test has a result and
   no local bytecode exists. Skips are reported, not hidden; unlike `verify.py`, they do not fail the run.
 
@@ -140,6 +149,9 @@ that run's original provenance and refuses missing provenance, source drift, run
 selection. A second source/runtime check covers map construction itself. Old traced runs without these snapshots
 must be recorded again; they cannot be relabelled with the present commit or environment. The v4 map schema makes
 this boundary explicit. Outputs must be ignored or outside the repository so they do not dirty the source snapshot.
+The map (`atlas.dev.test-impact-map.v4`) holds `commit`, `scope` (`tests_dir`, `patterns`), `fingerprint`, `files`,
+`provenance`, `numba_files`, `code_observers`, `units` and `recorded_with` (runner exit, run folder, wall time,
+counts, tests selected). `select` refuses a map with another schema.
 Inherited `PYTHONPATH` entries are part of the observed worker import paths, including their order. A change selects
 all tests. The runner-controlled source/test paths are represented relative to the root so equivalent clean clones
 can reuse a map. This records the configured import environment, not arbitrary external file bytes; changing an
@@ -161,7 +173,10 @@ docstring. In short:
 - **Always selected.** Units that started a process, skipped or failed a test, or have no trace.
 - **Test files.** A changed test file of the suite selects its whole module.
 
-`--files` names working-tree changes against the root's HEAD and applies the same rules.
+`--files` names working-tree changes against the root's HEAD and applies the same rules. `select --only-args` prints
+the selection as `run_tests_parallel.py --only` arguments. `record` also takes `--workers N` (default: CPU count
+minus 2), `--durations` (an earlier `results.jsonl`, to start long units first) and `--run-dir` (a new or empty
+folder for the traced run).
 
 **Assumptions.**
 
@@ -191,15 +206,19 @@ python -B tools/verify_candidate.py --repo <checkout to clone> --base 30a79e6 \
     --python <tested python> --tier quick --summary .atlas-dev/verify-summary.json
 ```
 
-It clones `--repo` without hard links into a new short temporary folder (never inside the repository), applies the
-chain and the combined patch in two working trees, and records each step in the summary JSON:
+It clones `--repo` without hard links into `--work DIR`, which must not exist (default: a new short temporary
+folder; never inside the repository), applies the chain and the combined patch in two working trees, and records
+each step in the summary JSON (`atlas.dev.candidate-verification.v1`: `base`, `base_commit`, `work`, `patches` (path
+to SHA-256), `steps`, `completed`, `passed` and `wall_seconds`). Each step records its own `passed`; their names are
+`trees`, `bytes_and_paths`, `static:<name>`, `root_tests`, `tier` and, after an unexpected failure, `error`:
 
 1. equal tree hashes (and `--expect-tree`);
 2. no CR byte in a patch or a changed file; patch paths relative and outside `.atlas-dev/`; the combined patch names
    exactly the chain's changed paths; optional `--forbid-paths` and `--expect-paths` lists;
 3. `check_coding_safety`, `check_public_paths`, the three focused static-check test modules and the default
    `check_before_commit`; the latter runs `check_current_evidence` on the Git-normalised candidate export;
-4. one tier through `run_tests_parallel.py`: `quick`, `full`, `impact` or `none`.
+4. one tier through `run_tests_parallel.py`: `quick`, `full`, `impact` or `none`, with `--workers N` (default: CPU
+   count minus 2) and `--pattern` (repeatable; default: the candidate's `verify.py` full discovery).
    - `--slow-file` supplies a registry when the candidate tree has none.
    - `impact` needs `--impact-map`. It commits the candidate inside the scratch clone, selects BASE..HEAD, and runs
      the selection one unit per process. It also runs the root `tests/` suite when a change lies outside what the
