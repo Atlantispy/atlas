@@ -478,10 +478,15 @@ def advance_prepared_interval(*, case, workflow, base, execution, guard, record,
             guard.phase('current-physical-coverage-confirmed-before-advance')
             from atlas_tectonics._private.live_spatial_patch import record_access as _p26_record_access, reference as _p26_record_reference
             from atlas_tectonics._private.spatial_indexed_patch import iter_logical_json as _p26_bounds_chunks
-            with _p26_record_access(solution.bounds) as _p26_bounds_record:
+            from contextlib import nullcontext as _p26_nullcontext
+            # D-1 (design step5-6-twice 7fa21d3f s2): the capture hashed end_bounds' own bytes; when that is the solution's
+            # bounds_id they are the sidecar's bytes, already held: no render, no record open. The sidecar's hash decides.
+            _p26_held = record.get('preadvance_operands', {}).get('bounds', {}).get('raw_sha256') == solution.bounds.bounds_id
+            with (_p26_nullcontext() if _p26_held else _p26_record_access(solution.bounds)) as _p26_bounds_record:
                 record['receiving_certification'] = P26ReceivingCapture.certification(solution,
                     output_directory=artifacts, limits=asdict(workflow._store.limits),
-                    bounds_chunks=_p26_bounds_chunks(_p26_record_reference(_p26_bounds_record)))
+                    bounds_chunks=(memoryview(end_bounds._json),) if _p26_held else
+                    _p26_bounds_chunks(_p26_record_reference(_p26_bounds_record)))
 
         def completed(result):
             store = workflow._store
