@@ -108,6 +108,17 @@ must be measured rather than presumed zero.
    the same independent reader and promotion checks; an orphan is never silently
    promoted.
 
+The [working snapshot](../working-snapshot-20261113/README.md#unit-a-the-records-only-reader-15-november) (15 November,
+diagnostic only, unreviewed here) reads a non-review interval whose producer recorded its widths, and a
+root, with a records-only core: it opens and hashes the pending sealed file, takes the producer's width
+table and applies the width gate, without admission, a workflow open or source checks, which the chain's
+first step made. Review intervals keep the full core. Its
+[step 6 open](../working-snapshot-20261113/README.md#the-step-6-open-15-november) no longer repeats proofs that the heat binding's restore
+made on the same objects in the same process, and its
+[recheck removal](../working-snapshot-20261113/README.md#the-recheck-removal-15-november) drops the pre-seal read-and-hash of every chunk
+and the final re-verification after read-only; chunk checksums and content hashes are still verified on
+every read.
+
 ### Preseal refusal and explicit review adoption
 
 `preseal_or_review` may seal an otherwise refused candidate for inspection and
@@ -223,6 +234,11 @@ comparison where required. Do not import N9 exceptions into unrelated pressure,
 heat or scheduling comparisons. Full coupled C4, actual successor reader/width
 tables and pressure/heat propagation remain separate unproved scope.
 
+In the [working snapshot](../working-snapshot-20261113/README.md#the-order-fix-15-november) collar, face, basal-stock and carried-region
+keys are made from content without run identifiers, so two chains of the same inputs order their results
+the same way; a decoded comparison of two such chains found every stored number equal, with only
+identifiers different.
+
 ## Width gates and continuation stop
 
 Every compact integer is limited to **1 MiB / 8,388,608 bits**. The independent
@@ -277,6 +293,11 @@ incomplete), owner opens and last unflushed count for every owner open in a guar
 stage. No live owner means null counts, never invented zeros. It wraps neither
 owner nor guard/query; phase names/order stay unchanged. This observation does not
 change physical results, admission or execution order.
+
+In the [working snapshot](../working-snapshot-20261113/README.md#unit-a-the-records-only-reader-15-november) the producer records the
+width table while it publishes its records, and the records-only reader applies these gates to that
+table; the widths fix stops the producer's width check from asking for identities that need a partition
+view it does not have. The gate rule above is unchanged.
 
 ## Reader live-producer accounting
 
@@ -365,6 +386,11 @@ partial/garbled/stale/premature gate, wrong process/attempt/receipt, launcher lo
 wait expiry/cancel/free-floor refusal before store access, Windows replacement/race
 handling, missing/extra finalise fields and fresh-directory fallback. Reuse adequate
 unchanged evidence; do not run an unrelated suite or turn this list into new authority.
+
+The [working snapshot](../working-snapshot-20261113/README.md#the-wired-set-15-november) is the package the 15 November diagnostic chains ran with this overlap (the reader
+beside its producer), with 64 jobs per admission batch, eight heat workers and four-worker interval-1
+geometry. These are execution choices with diagnostic chain timings only; they are not acceptance of the
+overlap route.
 
 ## Composition order and frozen source locations
 

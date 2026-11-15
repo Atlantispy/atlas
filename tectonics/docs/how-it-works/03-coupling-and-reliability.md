@@ -473,6 +473,22 @@ batch instead of around every read, and still verifies every chunk's checksum
 and content hash. It is published for visibility only; it is not a selected
 route and its checks establish nothing beyond their focused tests.
 
+Five later updates of that snapshot (15 November) each remove repeated work or
+make results independent of run identifiers, without changing what is
+calculated. The [wired set](../../optimisation/working-snapshot-20261113/README.md#the-wired-set-15-november) schedules
+admission in batches of 64, uses eight heat workers and four geometry workers,
+runs the reader beside its producer and publishes held query and measurement
+records in groups after one strict check each. The
+[recheck removal](../../optimisation/working-snapshot-20261113/README.md#the-recheck-removal-15-november) and the
+[step 6 open](../../optimisation/working-snapshot-20261113/README.md#the-step-6-open-15-november) stop later steps repeating
+checks and proofs an earlier step made on the same bytes or objects. The
+[order fix](../../optimisation/working-snapshot-20261113/README.md#the-order-fix-15-november) builds identifiers from content,
+so results no longer move with the execution identity. [Unit A](../../optimisation/working-snapshot-20261113/README.md#unit-a-the-records-only-reader-15-november)
+lets the independent reader of a non-review interval read the producer's
+recorded widths instead of measuring again. Each was run only by a diagnostic
+chain: the timings come from those runs, value comparisons found the stored
+numbers unchanged, and none of this is review or scientific acceptance.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell
