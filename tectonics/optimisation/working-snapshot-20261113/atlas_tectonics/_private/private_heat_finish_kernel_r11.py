@@ -168,9 +168,8 @@ def _run(work, budget, converted, check, observe):
         bounds, set(fixed), budget=budget, cancelled=check), 'correction')
     corrected, faces, alphas, correction = correction_owner.value
     ar = correction_owner._workspace.arithmetic
+    # C-1 (ruling 4d; decisions 634, 637): the correction keeps this ledger; the re-check lives in its test only.
     residual = Q._residual(ar, low_energy, low_faces, load)
-    if not Q._equal_arrays(ar, Q._residual(ar, corrected, faces, load), residual):
-        raise ArithmeticError('Physical correction changed the exact low ledger')
     ar.settle((correction_owner.value, residual))
     closed = not fixed and not any(source_energy) and not any(prescribed.values())
     stability = dict(kind='loaded-temperature-convex-hull', closed_source_free=closed,
