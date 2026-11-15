@@ -25,6 +25,9 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
 - 15 November 2026: duplicate-removal unit A with its widths fix, as run by its diagnostic chain: the
   independent reader reads records only, without repeating work an earlier step did (see
   [unit A](#unit-a-the-records-only-reader-15-november)).
+- 15 November 2026: batch 2, as run by its diagnostic chain: the restart seed carried across
+  intervals, duplicate-removal unit C, the next producer's open (units P and Q), root initial workers,
+  geometry workers kept between batches, the geometry id memo and source checks once per heat worker.
 
 Each update is one commit, so its diff shows exactly what changed. The five 15 November sections were read
 from the code at `f29ca36`; the other sections were written for the 13 November contents, and their line
@@ -40,7 +43,7 @@ none of the 15 November changes has a review record in this repository.
 
 ## The one difference from the working arm
 
-`atlas_tectonics/_private/run_fresh_interval.py` line 1277: a machine-specific path to the real-input
+`atlas_tectonics/_private/run_fresh_interval.py` line 1312: a machine-specific path to the real-input
 qualification folder is replaced by `Path(os.environ['ATLAS_REAL_INPUT_QUALIFICATION'])`. Because of that edit,
 this file's row in `_application_sources.json` does not match its bytes here. Every other file is identical to
 the arm.
@@ -212,7 +215,7 @@ reader also `--finalise`), plus the start-gate arguments.
 | `ATLAS_EXACT_ARITHMETIC` | `exact_arithmetic.py` line 181 | `auto` (default), `python` or `gmpy2`; any other value refuses. |
 | `ATLAS_DEV_STAGE_TIMING` | `_private/dev_stage_timing.py` line 33 | Development stage timing; see the [compact plan](../docs/COMPACT_EVERYWHERE_PLAN.md). |
 | `ATLAS_INITIAL_MEASUREMENT_SEED` | `_private/run_fresh_interval.py` lines 134, 1081; `_private/reopen_fresh_restart.py` line 185 | Never read: the runner and the reader refuse to start if it is set. Seeds are explicit arguments only. |
-| `ATLAS_REAL_INPUT_QUALIFICATION` | `_private/run_fresh_interval.py` line 1277 | The qualification folder (the one difference from the arm, above). |
+| `ATLAS_REAL_INPUT_QUALIFICATION` | `_private/run_fresh_interval.py` line 1312 | The qualification folder (the one difference from the arm, above). |
 | `ATLAS_RECORD_SPILL_DIR` | `_private/record_tables.py` line 213 | Spill folder for record tables when the module setting is not given. |
 | `ATLAS_INTERFACE_PARALLEL`, `ATLAS_INTERFACE_PROFILE` | `_private/runtime_joined_control.py` lines 147-150 | Interface parallel mode `auto` (default), `serial` or `off`, and an optional profile path. |
 | `ATLAS_HEAT_WORKERS_STRICT` | `_private/private_heat_functionals_parallel_r1.py` line 219 | `1`: a recorded heat-worker problem raises instead of falling back to the serial calculation; unset or empty is off. |
