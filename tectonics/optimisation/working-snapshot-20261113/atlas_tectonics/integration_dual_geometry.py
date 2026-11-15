@@ -696,8 +696,63 @@ def measure_initial_component(support, cell_id, *, relative_error, absolute_widt
             rule='every allocation and every true volume in this enclosure obey |B/V-1| <= r')
 
 
+class MeasurementGroup:
+    """One strict execution check for a group of cached_initial_component calls.
+
+    Every call of the group, hit or miss, is followed by that check before any
+    miss of the group is published and before the group closes. A stopped
+    process loses the held misses; they are measured again.
+    """
+    CALLS = 64          # calls that one check may cover
+    BYTES = 4 << 20     # encoded misses held; one more record of up to 1 MiB may join
+
+    def __init__(self, store, context, budget):
+        self.store, self.context, self.budget = store, context, budget
+        self.identity = context.identity        # the property runs the strict check, once
+        self.held, self.bytes, self.calls = {}, 0, 0
+        self._lease = budget.reserve(self.BYTES+(1 << 20), category='initial-measurement-cache-held')
+
+    def __enter__(self):
+        self._lease.__enter__()
+        return self
+
+    def __exit__(self, kind, error, traceback):
+        try:
+            if kind is None:
+                self.flush()
+        finally:
+            self.held.clear()
+            self._lease.__exit__(kind, error, traceback)
+        return False
+
+    def hold(self, key, payload, metadata):
+        if self.bytes+len(payload) > self.BYTES:
+            self.flush()
+        self.held[key] = payload, metadata
+        self.bytes += len(payload)
+
+    def called(self):
+        self.calls += 1
+        if self.calls >= self.CALLS:
+            self.flush()
+
+    def flush(self):
+        """ONE fresh strict check, then publish every held miss."""
+        import numpy as np
+        self.context.verify()
+        with self.budget.reserve(4 << 20, category='initial-measurement-cache-codec'):
+            while self.held:
+                key = next(iter(self.held))
+                payload, metadata = self.held[key]
+                self.store.put(key, {'measurement': np.frombuffer(payload, dtype=np.uint8)}, metadata,
+                               budget=self.budget)
+                del self.held[key]
+                self.bytes -= len(payload)
+        self.calls = 0
+
+
 def cached_initial_component(support, cell_id, *, relative_error, absolute_width_m3,
-                             max_leaves_per_query, budget, store, context, _volume=None):
+                             max_leaves_per_query, budget, store, context, _volume=None, _group=None):
     """Explicit lossless reuse of successful static measurements, not material.
 
     Use the existing verified ArrayStore and full ExecutionContext identity.
@@ -721,15 +776,21 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
             max_leaves_per_query < 1 or type(store) is not ArrayStore or
             type(context) is not ExecutionContext or context.backend != 'reference'):
         raise V.VolumeError('explicit initial query, ArrayStore and reference ExecutionContext required')
+    if _group is not None and (type(_group) is not MeasurementGroup or _group.store is not store or
+                               _group.context is not context or _group.budget is not budget):
+        raise V.VolumeError('measurement group must be built on this call\'s store, context and budget')
     raw = support.record()
     if (W._decode(raw['duration_s']) != 0 or raw['start_time_s'] != raw['end_time_s'] or
             not any(c['logical_cell_id'] == cell_id for c in raw['components'])):
         raise V.VolumeError('cached initial query requires the same static physical component')
     r, width = Q(relative_error), Q(absolute_width_m3)
-    metadata = dict(schema='atlas.initial-component-cache.v1', execution_identity=context.identity,
+    metadata = dict(schema='atlas.initial-component-cache.v1',
+        execution_identity=context.identity if _group is None else _group.identity,
         support_id=support.support_id, cell_id=cell_id, relative_error=str(r),
         absolute_width_m3=str(width), max_leaves_per_query=max_leaves_per_query)
     key = W._hash(metadata)
+    if _group is not None and key in _group.held:
+        _group.flush()
     with budget.reserve(4 << 20, category='initial-measurement-cache-codec'):
         restored = store.get(key, budget=budget)
         if restored is None:
@@ -740,9 +801,12 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
                                  allow_nan=False).encode('utf8')
             if len(payload) > 1 << 20:
                 raise V.VolumeError('initial measurement exceeds bounded cache record size')
-            context.verify()
-            store.put(key, {'measurement': np.frombuffer(payload, dtype=np.uint8)}, metadata,
-                      publication_check=context.verify, budget=budget)
+            if _group is None:
+                context.verify()
+                store.put(key, {'measurement': np.frombuffer(payload, dtype=np.uint8)}, metadata,
+                          publication_check=context.verify, budget=budget)
+            else:
+                _group.hold(key, payload, metadata)
         else:
             if (set(restored) != {'measurement'} or store.metadata(key) != metadata or
                     restored['measurement'].dtype != np.dtype('uint8') or
@@ -775,5 +839,8 @@ def cached_initial_component(support, cell_id, *, relative_error, absolute_width
                               not query.get('positive_witness_point_m') or
                               len(query['positive_witness_point_m']) != 3)):
             raise V.VolumeError('cached initial measurement does not certify the requested bounds')
-        context.verify()
-        return result
+        if _group is None:
+            context.verify()
+            return result
+    _group.called()     # after the codec lease: a flush never holds two
+    return result

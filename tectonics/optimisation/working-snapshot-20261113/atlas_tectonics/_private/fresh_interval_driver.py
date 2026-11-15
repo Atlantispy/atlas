@@ -43,11 +43,13 @@ INITIAL_METRICS = {'physical_volume_error_m3': Q(32000), 'thermal_volume_error_m
                    'max_leaves': 2**30, 'max_witness_refinements': 32}
 CREATED_TRACERS = ('tracer:accumulated_strain_ii',)
 PRESSURE_FORCE = {'pressure_max_leaves': 2**19, 'initial_trace_max_leaves': 2**19}
-# Plan07 pressure scheduling is unchanged. Plan11's first comparable arms use
-# fixed serial ALE separately, at interval 1 AND ordinary successor intervals.
-# These arms establish no auto/parallel ALE worker parity.
+# Plan07 pressure scheduling is unchanged. Interval 1 runs ALE under the automatic four-worker
+# policy (o3). A successor entered without a measured
+# worker selection keeps fixed serial ALE: that is Plan11's comparison arm, and it establishes
+# no automatic or parallel ALE parity of its own.
 PARALLEL = {'mode': 'auto', 'workers': 2}
-ALE_PARALLEL = {'mode': 'serial', 'workers': 2}
+ALE_PARALLEL = {'mode': 'auto', 'workers': 4}    # o3: execution-only policy; no result depends on it
+SUCCESSOR_COMPARISON_ALE = {'mode': 'serial', 'workers': 2}    # the one explicit policy prepared_interval_driver accepts
 SUCCESSOR_ALE_POLICY = 'authenticated-parent-four-or-six'
 # The runner's sealed-lineage record for interval N >= 2 (prepared_interval_driver checks the same schema).
 LINEAGE_SCHEMA = 'atlas.fresh-interval-lineage.v1'
@@ -119,12 +121,17 @@ def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers
                                       measurements=measurements, initial_workers=initial_workers)
 
 
+# A2: queries per Plan09 admission batch (the pool accepts 1 to 64; its default is 16).
+INITIAL_BATCH_JOBS = 64
+
+
 def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0):
-    # Plan09: producer-only initial parallel admission; readers default to serial.
+    # Plan09 two-worker initial admission: producers, and since o2 the ordinary reader. 0 = serial (an overlap
+    # reader, Plan11 section 4).
     _require(type(initial_workers) is int and initial_workers in (0, 2),
              'initial admission requires the serial reader or selected two-worker producer route')
     phase('begin-fresh-native-admission')
-    m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=6)
+    m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=8)    # H1: one face per task, rows by index
     with m.ExecutionContext('reference') as reference_execution, \
             m.ExecutionContext('scipy') as heat_execution, \
             m.ArrayStore(artifacts/'initial-measurements.sqlite', m.StoreLimits(**MEASUREMENT_CACHE),
@@ -135,7 +142,8 @@ def _admission(m, *, budget, artifacts, phase, measurements=None, initial_worker
         initial_pass = None
         if initial_workers:
             from atlas_tectonics.integration_initial_parallel import InitialParallel
-            initial_pass = InitialParallel(workers=initial_workers, budget=budget, context=reference_execution)
+            initial_pass = InitialParallel(workers=initial_workers, budget=budget, context=reference_execution,
+                                           batch_jobs=INITIAL_BATCH_JOBS)
         with (nullcontext() if initial_pass is None else initial_pass):
             bounds, mesh = m.spatial.initial_metrics(case, partition, **INITIAL_METRICS, measure_policy=m.D.POLICY,
                 measurement_store=cache, measurement_context=reference_execution)
@@ -374,7 +382,7 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
                 m.prepared_interval_driver.advance_prepared_interval(case=a.case, workflow=workflow, base=None,
                     execution=a.heat_execution, guard=guard, record=record, save=save, artifacts=artifacts,
                     query_checkpoints=checkpoints, lineage=lineage, joined_module=m.joined,
-                    ale_policy=ALE_PARALLEL if worker_selection is None else None,
+                    ale_policy=SUCCESSOR_COMPARISON_ALE if worker_selection is None else None,
                     worker_selection=worker_selection)
                 after = workflow.inspect()
                 _require(after['intervals'] == interval+1 and after['funding_id'] == before['funding_id'] and

@@ -217,9 +217,9 @@ def expected_gate(spec, waiter):
 def admitted_before_gate(*, admission, spec, record, save, guard, verify_sources,
                          producer_inputs, producer_pins, memory_admit, available_memory,
                          waiter=None, clock=time.monotonic, source_check_seconds=10.0):
-    """Enter independent serial admission, wait, authenticate, re-admit memory.
+    """Enter independent admission, wait, authenticate, re-admit memory.
 
-    admission is the caller's FRESH.admission(... initial_workers=0) context,
+    admission is the caller's FRESH.admission(... initial_workers=2, or 0 on an interval) context,
     created from its own budget and fresh output. producer_inputs is the original
     store-free validator with only the receipt SHA supplied later. producer_pins
     obtains the actual referenced immutable bytes after that preflight; it must

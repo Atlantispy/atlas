@@ -70,6 +70,14 @@ SCHEMA = 'private.completed-endpoint-query.v1'
 # Maximum age (monotonic seconds) of the last full source re-hash that a
 # boundary check may reuse; older, the check re-reads and re-hashes everything.
 MAX_CACHED_SOURCE_AGE_S = 300
+# Completed misses that one publication check may cover (files store). Each
+# held record is written and synced, then published with its group after ONE
+# fresh strict check; a stopped process leaves at most HOLD_ENTRIES-1 partial
+# files, which no reader opens and which are recomputed.
+HOLD_ENTRIES = 64
+# 64 x 22,096, the median work_units of the b0 interval's 7,181 completed
+# records: a costly record publishes at once, alone if need be. No clock.
+HOLD_WORK = 64*22096
 
 
 class CheckpointRefused(ValueError):
@@ -253,6 +261,8 @@ class EndpointCheckpoints:
         self.hits_restart = self.hits_after_write = self.hits_warm = 0
         # Key prefix -> False (written in this open, not hit yet) or True (hit in this open).
         self.split_status, self.entries_at_open, self._seen = 'COMPLETE', None, {}
+        # key -> (partial path, final path): written and synced, not yet visible.
+        self._held, self._held_work = {}, 0
 
     def _live(self):
         if not self._active:
@@ -263,7 +273,9 @@ class EndpointCheckpoints:
     def _check(self, *, boundary=True):
         # Fresh strict identity. After entry it runs exactly at the two
         # boundaries that can expose disk state: before a hit is issued, before
-        # a miss is published. Entry (boundary=False) is always the full native
+        # a group of held misses is published (at most HOLD_ENTRIES, or HOLD_WORK
+        # of work: flush()). Every miss is still checked after it was computed
+        # and before any process can read it. Entry (boundary=False) is always the full native
         # check; a boundary check skips only the source re-read, and only when
         # the source-identity record allows it (module docstring).
         self._live()
@@ -370,9 +382,39 @@ class EndpointCheckpoints:
         # of the OS lock, which must close immediately for an explicit reopen.
         self._owner = None
 
-    def __exit__(self, *_):
-        self.close()
+    def __exit__(self, kind, *_):
+        try:
+            if kind is None:
+                self.flush()
+        finally:
+            self.close()
         return False
+
+    @property
+    def unflushed(self):
+        return len(self._held)
+
+    def flush(self):
+        """Publish every held completed miss after ONE fresh strict check."""
+        if self._owner is None:
+            raise RuntimeError('checkpoint store is closed')
+        if not self._held:
+            return
+        try:
+            self._check()
+        except BaseException:
+            # A refused check drops its group, never retried: base never publishes a refused record.
+            # The partial files stay, already counted, as after a stopped process.
+            self._held, self._held_work = {}, 0
+            raise
+        while self._held:
+            key, (partial, path) = next(iter(self._held.items()))
+            if path.exists():
+                raise CheckpointRefused('checkpoint appeared outside the single writer')
+            os.replace(partial, path)
+            del self._held[key]
+            self.written += 1
+        self._held_work = 0
 
     @property
     def last_completed(self):
@@ -439,6 +481,8 @@ class EndpointCheckpoints:
         if len(binding) > MAX_BINDING:
             raise CheckpointRefused('endpoint request exceeds checkpoint binding bound')
         key = hashlib.sha256(binding).hexdigest()
+        if key in self._held:
+            self.flush()
         self._pending = (binding, key, False)
         with _QueryArena(budget) as arena:
             payload = (None if self._compact is None else
@@ -558,17 +602,19 @@ class EndpointCheckpoints:
                             raise OSError('short checkpoint write')
                         offset += count
                 os.fsync(target.fileno())
-            self._check()
-            os.replace(partial, path)
+            # Held, not visible: flush() checks once, then publishes the group.
+            self._held[key] = (partial, path)
+            self._held_work += record['work_units']
             # File fsync + same-directory atomic replace guarantee no accepted
             # half-entry. Power loss may lose a completed entry; that is a miss,
             # never proof of whole-filesystem durability.
             self._entries += 1
             self._used += size
-            self.written += 1
             self._split_written(key)
             self._last_completed = (key, False)
             self._pending = None
+            if len(self._held) >= HOLD_ENTRIES or self._held_work >= HOLD_WORK:
+                self.flush()
 
 
 # Files-only selected generation: no static or dynamic import of the

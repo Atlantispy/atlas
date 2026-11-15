@@ -161,6 +161,13 @@ def require(condition, message):
         raise ReopenRefused(message)
 
 
+def prior(ok, message, recorded):
+    """A test of how an earlier step ended (decision 285). recorded is None unless the run records: refuse, as before."""
+    if not ok:
+        require(recorded is not None, message)
+        recorded.append(message)
+
+
 def _identity(value):
     return type(value) is str and bool(value)
 
@@ -389,15 +396,16 @@ def endpoint_record_identities(workflow):
     return canonical_record_identities(result, successor=successor)
 
 
-def validate_guard(guard, control, *, pid, supervisor_pid, limits=None):
+def validate_guard(guard, control, *, pid, supervisor_pid, limits=None, recorded=None):
     """Clean worker exit and ownership release for one guarded process."""
     require(type(guard) is dict and type(control) is dict, 'guardian receipt and control required')
     parent = guard.get('parent')
     require(guard.get('schema') == GUARD_SCHEMA and guard.get('status') == 'STOPPED' and
             not guard.get('reason') and guard.get('workload_exit_confirmed') is True and
-            guard.get('workload_exit_code') == 0 and
+            type(guard.get('workload_exit_code')) is int and
             guard.get('cleanup') == dict(remaining=[], action_errors=[]),
-            'guardian did not stop cleanly with a confirmed zero exit and empty job')
+            'guardian did not stop cleanly with a confirmed exit and empty job')
+    prior(guard['workload_exit_code'] == 0, f'workload exited {guard["workload_exit_code"]}', recorded)
     require(type(parent) is dict and type(pid) is int and parent.get('pid') == pid and
             type(parent.get('created_ticks')) is int and parent['created_ticks'] > 0 and
             control.get('parent') == parent, 'guardian parent differs from the recorded workload process')

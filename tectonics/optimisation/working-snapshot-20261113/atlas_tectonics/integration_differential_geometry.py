@@ -2985,40 +2985,44 @@ def enclose_initial_partition(partition, *, max_volume_error_m3, max_leaves, bud
         cells.append(dict(cell_id=W._hash(dict(kind='collar', funding_id=p['funding_id'], cell_id=box.cell_id)),
             kind='collar', index=index, physical_cell_id=box.cell_id,
             volume_bounds_m3=[_qtext(box.volume_m3)]*2))
-    for support in partition.supports:
-        row = support.record()
-        for component in row['components']:
-            accuracy = None
-            if relative_error is None:
-                measured = component_volume_bounds(support, component['logical_cell_id'], endpoint='start',
-                    max_width_m3=local_width, max_leaves=max_leaves, positive_witness=True, budget=budget).record()
-                if not measured['met']:
-                    raise V.VolumeError('initial physical component exceeds the declared measure/work request')
-            else:
-                from .integration_dual_geometry import measure_initial_component, cached_initial_component
-                measure = measure_initial_component if measurement_store is None else cached_initial_component
-                reuse = {} if measurement_store is None else dict(store=measurement_store, context=measurement_context)
-                if prefetch is not None:
-                    reuse['_volume'] = prefetch
-                accuracy = measure(support, component['logical_cell_id'],
-                    relative_error=relative_error, absolute_width_m3=local_width,
-                    max_leaves_per_query=max_leaves, budget=budget, **reuse)
-                measured = dict(max(accuracy['queries'], key=lambda q: W._decode(q['positive_witness_m3'])),
-                    lower_m3=_qtext(accuracy['bounds'][0]), upper_m3=_qtext(accuracy['bounds'][1]))
-            cells.append(dict(cell_id=component['logical_cell_id'], kind='exterior',
-                source_key=row['source_key'], voxel_index=row['voxel_index'], radial_band=row['radial_band'],
-                chart=row['chart'], source_chart_id=row['source_chart_id'], support_id=support.support_id,
-                volume_bounds_m3=[measured['lower_m3'], measured['upper_m3']],
-                positive_witness_m3=measured['positive_witness_m3']))
-            if accuracy is not None:
-                cells[-1]['initial_accuracy'] = dict(accuracy,
-                    bounds=list(map(_qtext, accuracy['bounds'])),
-                    relative_error_bound=_qtext(accuracy['relative_error_bound']),
-                    requested_relative_error=_qtext(accuracy['requested_relative_error']),
-                    absolute_width_m3=_qtext(accuracy['absolute_width_m3']))
-            if 'positive_witness_point_m' in measured:
-                cells[-1]['positive_witness_point_m'] = measured['positive_witness_point_m']
-                cells[-1]['positive_witness_point_rule'] = measured['positive_witness_point_rule']
+    from .integration_dual_geometry import MeasurementGroup
+    with (nullcontext() if measurement_store is None else
+          MeasurementGroup(measurement_store, measurement_context, budget)) as group:
+        for support in partition.supports:
+            row = support.record()
+            for component in row['components']:
+                accuracy = None
+                if relative_error is None:
+                    measured = component_volume_bounds(support, component['logical_cell_id'], endpoint='start',
+                        max_width_m3=local_width, max_leaves=max_leaves, positive_witness=True, budget=budget).record()
+                    if not measured['met']:
+                        raise V.VolumeError('initial physical component exceeds the declared measure/work request')
+                else:
+                    from .integration_dual_geometry import measure_initial_component, cached_initial_component
+                    measure = measure_initial_component if measurement_store is None else cached_initial_component
+                    reuse = {} if measurement_store is None else dict(store=measurement_store,
+                        context=measurement_context, _group=group)
+                    if prefetch is not None:
+                        reuse['_volume'] = prefetch
+                    accuracy = measure(support, component['logical_cell_id'],
+                        relative_error=relative_error, absolute_width_m3=local_width,
+                        max_leaves_per_query=max_leaves, budget=budget, **reuse)
+                    measured = dict(max(accuracy['queries'], key=lambda q: W._decode(q['positive_witness_m3'])),
+                        lower_m3=_qtext(accuracy['bounds'][0]), upper_m3=_qtext(accuracy['bounds'][1]))
+                cells.append(dict(cell_id=component['logical_cell_id'], kind='exterior',
+                    source_key=row['source_key'], voxel_index=row['voxel_index'], radial_band=row['radial_band'],
+                    chart=row['chart'], source_chart_id=row['source_chart_id'], support_id=support.support_id,
+                    volume_bounds_m3=[measured['lower_m3'], measured['upper_m3']],
+                    positive_witness_m3=measured['positive_witness_m3']))
+                if accuracy is not None:
+                    cells[-1]['initial_accuracy'] = dict(accuracy,
+                        bounds=list(map(_qtext, accuracy['bounds'])),
+                        relative_error_bound=_qtext(accuracy['relative_error_bound']),
+                        requested_relative_error=_qtext(accuracy['requested_relative_error']),
+                        absolute_width_m3=_qtext(accuracy['absolute_width_m3']))
+                if 'positive_witness_point_m' in measured:
+                    cells[-1]['positive_witness_point_m'] = measured['positive_witness_point_m']
+                    cells[-1]['positive_witness_point_rule'] = measured['positive_witness_point_rule']
     if prefetch is not None:
         prefetch.finish()
     result = dict(schema='atlas.differential-initial-bounds.v1', scope='initial-current',

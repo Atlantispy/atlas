@@ -531,7 +531,30 @@ def _pin_sha(value):
     return value.get('sha256') if type(value) is dict else None
 
 
-def root_anchor(chain, interval_one):
+def _prior(ok, message, recorded, found):
+    """Decision 289: a test of how an earlier producer ended. Refused as before unless the run records."""
+    if not ok:
+        require(recorded is not None, message)
+        recorded.append('%s: %s' % (message, found))
+
+
+def _recording(sources, asked):
+    """The list recorded tests go to, or None. Only a diagnostic tree records (RFR's _recording, decision 285)."""
+    if not asked:
+        return None
+    manifest = RUN.pinned_json(sources.manifest_path, sources.manifest_pin)
+    require(manifest['installed_binding']['qualification_status'] == 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION',
+            '--record-failed-prior is for diagnostic trees only')
+    return []
+
+
+def _errors_text(errors):
+    if type(errors) is not list:
+        return repr(errors)
+    return '; '.join('%s: %s' % (e.get('type'), e.get('message')) if type(e) is dict else repr(e) for e in errors)
+
+
+def root_anchor(chain, interval_one, recorded=None):
     """Interval 2's gate: verdict(0) and adopted(0) as interval 1's seeded runner hashed them.
 
     adopted(1) (explicitly pinned) -> verdict(1).producer_receipt_sha256 -> interval 1's run.json,
@@ -551,8 +574,10 @@ def root_anchor(chain, interval_one):
             receipt.get('interval') == 1 and receipt.get('profile_sha256') == interval_one['profile_sha256'] and
             _pin_sha(receipt.get('runner_record')) == first['link']['runner_sha256'] and
             _pin_sha(receipt.get('sealed_awaiting_reader')) == first['link']['sealed_sha256'] and
-            receipt.get('final_reserved_bytes') == 0 and receipt.get('production_acceptance') is False,
+            receipt.get('production_acceptance') is False,
             "interval 1's producer receipt does not bind interval 1 of this lineage")
+    _prior(receipt.get('final_reserved_bytes') == 0, "interval 1's producer receipt does not bind interval 1 of this lineage",
+           recorded, 'final_reserved_bytes %r' % (receipt.get('final_reserved_bytes'),))
     reused, errors = receipt.get('reused_initial_cache'), receipt.get('errors')
     require(type(reused) is dict and reused.get('schema') == SEED_SCHEMA,
             'interval 1 recorded no seeded root capture: an unseeded interval 1 cannot continue to interval 2')
@@ -563,8 +588,10 @@ def root_anchor(chain, interval_one):
                    type(state) is dict and state.get('state') == REVIEW_STATUS and
                    reused.get('status') == 'COPIED_BEFORE_ADMISSION')
     else:
-        outcome = (receipt.get('status') == SEALED_STATUS['interval'] and errors == [] and
-                   reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True)
+        _prior(receipt.get('status') == SEALED_STATUS['interval'], 'interval 1 is neither a completed nor an approved review producer with a valid seed capture',
+               recorded, 'status %r' % (receipt.get('status'),))
+        _prior(errors == [], 'interval 1 is neither a completed nor an approved review producer with a valid seed capture', recorded, 'errors '+_errors_text(errors))
+        outcome = reused.get('status') in SEED_REUSED and reused.get('counts_agree_with_bytes') is True
     require(outcome, 'interval 1 is neither a completed nor an approved review producer with a valid seed capture')
     require(reused.get('composition_equal') is True and
             _pin_sha(reused.get('receipt')) == root['verdict'].get('producer_receipt_sha256') and
@@ -573,7 +600,7 @@ def root_anchor(chain, interval_one):
             "run A's verdict or adoption differs from interval 1's seeded capture of them")
 
 
-def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval_one=None):
+def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval_one=None, recorded=None):
     """Item 21's gate for interval N >= 2, on records only, before the catalog opens.
 
     From the explicit adopted(N-1) pin down to the root, each interval k must have a runner
@@ -649,7 +676,7 @@ def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval
         head = after['head']
     last = chain[-1]
     if interval == 2:
-        root_anchor(chain, interval_one)
+        root_anchor(chain, interval_one, recorded)
     else:
         recorded = last['runner'].get('lineage')
         require(type(recorded) is dict and recorded.get('records') == [item['link'] for item in chain[:-1]],
@@ -665,7 +692,7 @@ def sealed_lineage(store_directory, interval, parent_adopted_sha256, *, interval
             'parent_adopted_sha256': parent_adopted_sha256}
 
 
-def measured_successor_workers(profile, lineage, number, selector):
+def measured_successor_workers(profile, lineage, number, selector, recorded=None):
     """Bind N>=2 worker selection to the adopted parent's exact producer receipt."""
     require(type(number) is int and number >= 2 and lineage['lineage']['interval'] == number-1,
             'successor worker selection requires its adopted parent')
@@ -678,15 +705,21 @@ def measured_successor_workers(profile, lineage, number, selector):
             receipt.get('profile_sha256') == profile.sha256 and
             _pin_sha(receipt.get('runner_record')) == link['runner_sha256'] and
             _pin_sha(receipt.get('sealed_awaiting_reader')) == link['sealed_sha256'] and
-            receipt.get('final_reserved_bytes') == 0 and receipt.get('production_acceptance') is False,
+            receipt.get('production_acceptance') is False,
             'parent worker receipt does not bind the adopted parent and current profile')
+    _prior(receipt.get('final_reserved_bytes') == 0, 'parent worker receipt does not bind the adopted parent and current profile',
+           recorded, 'final_reserved_bytes %r' % (receipt.get('final_reserved_bytes'),))
     if 'review_approval_sha256' in lineage['parent_adopted']:
         review = receipt.get('review_only')
         valid = (receipt.get('status') == REVIEW_STATUS and type(review) is dict and
                  review.get('state') == REVIEW_STATUS and type(receipt.get('errors')) is list and
                  [e.get('type') if type(e) is dict else None for e in receipt['errors']] == ['PresealSealedForReview'])
     else:
-        valid = receipt.get('status') == SEALED_STATUS['interval'] and receipt.get('errors') == []
+        _prior(receipt.get('status') == SEALED_STATUS['interval'], 'parent worker receipt is neither complete nor an explicitly approved review producer',
+               recorded, 'status %r' % (receipt.get('status'),))
+        _prior(receipt.get('errors') == [], 'parent worker receipt is neither complete nor an explicitly approved review producer',
+               recorded, 'errors '+_errors_text(receipt.get('errors')))
+        valid = True
     require(valid, 'parent worker receipt is neither complete nor an explicitly approved review producer')
     parent = {'real_peak_bytes': receipt.get('resources', {}).get('sampled_peak_bytes', {}).get('parent_rss'),
               'logical_peak_bytes': receipt.get('logical_budget_final', {}).get('peak_reserved_bytes')}
@@ -786,7 +819,7 @@ def _copy_pinned(source, target, pin, check):
 
 
 def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_directory, root_output, artifacts,
-                              binding, check=lambda: None):
+                              binding, check=lambda: None, recorded=None):
     """Item 7: copy run A's closed, pinned measurement store before this producer's admission.
 
     ``root_runner`` is require_promoted_root's: run A's root has its reader PASS for exactly
@@ -814,10 +847,11 @@ def seed_initial_measurements(seed, *, profile_sha256, root_runner, store_direct
     receipt_path = Path(root_output)/'run.json'
     receipt = RUN.pinned_json(receipt_path, receipt_sha256, MAX_RECEIPT)
     require(type(receipt) is dict and receipt.get('schema') == RESULT_SCHEMA and receipt.get('mode') == 'root' and
-            receipt.get('status') == SEALED_STATUS['root'] and receipt.get('errors') == [] and
             receipt.get('profile_sha256') == profile_sha256 and receipt.get('pid') == root_runner['producer_pid'] and
             receipt.get('workflow_id') == root_runner['workflow_id'],
             'the seed receipt is not run A clean sealed root of this profile')
+    _prior(receipt.get('status') == SEALED_STATUS['root'], 'the seed receipt is not run A clean sealed root of this profile', recorded, 'status %r' % (receipt.get('status'),))
+    _prior(receipt.get('errors') == [], 'the seed receipt is not run A clean sealed root of this profile', recorded, 'errors '+_errors_text(receipt.get('errors')))
     stored = receipt.get('initial_measurement_store')
     require(type(stored) is dict and stored.get('filename') == MEASUREMENT_STORE and stored.get('sha256') == pin and
             type(stored.get('statistics')) is dict and type(stored['statistics'].get('snapshots')) is int,
@@ -1060,7 +1094,8 @@ def _store_configuration(store):
 
 
 def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_before_advance=False, seed=None,
-                       start_gate=None, query_stages=None, interval=None, parent_adopted_sha256=None, production_release=False):
+                       start_gate=None, query_stages=None, interval=None, parent_adopted_sha256=None, production_release=False,
+                       recorded=None):
     """Run A or run B under the selected pinned sources and the live external guard.
 
     ``stop_before_advance`` (run B only, the smoke): stop after the adopted root is
@@ -1167,10 +1202,11 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
             if number >= 2:
                 guard.phase('sealed-lineage-gate')
                 lineage = sealed_lineage(store_directory, number, parent_adopted_sha256,
-                                         interval_one=interval_one_route(profile) if number == 2 else None)
+                                         interval_one=interval_one_route(profile) if number == 2 else None,
+                                         recorded=recorded)
                 record['lineage'] = lineage['lineage']
                 lineage['worker_selection'] = measured_successor_workers(
-                    profile, lineage, number, bound['interface_worker_selection'])
+                    profile, lineage, number, bound['interface_worker_selection'], recorded=recorded)
                 record['interface_worker_selection'] = lineage['worker_selection']
                 save()
             with CRS.CompactRestartStore.open_catalog(catalog, scope=scope) as store:
@@ -1185,7 +1221,8 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                     try:
                         reused = seed_initial_measurements(seed, profile_sha256=profile.sha256,
                             root_runner=root_runner, store_directory=store_directory,
-                            root_output=mode_output(row, 'root'), artifacts=output, binding=binding, check=check)
+                            root_output=mode_output(row, 'root'), artifacts=output, binding=binding, check=check,
+                            recorded=recorded)
                     except Exception as error:  # recorded with its refusal, then raised: no fallback
                         record['reused_initial_cache'] = {'schema': SEED_SCHEMA, 'status': 'REFUSED_BEFORE_ADMISSION',
                                                           'requested': seed, 'refusal': _error(error)}
@@ -1240,12 +1277,12 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             record['q297_end_geometry'].update(selection='issued for actual END mesh', **selection)
             save()
         end_provider_factory = make_factory(run_root=qualification/'runs',
-            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-candidate.json',
+            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-wc2.json',
             selected_observer=note_q297_provider)
         record['q297_end_geometry'] = dict(selection='configured first-interval END provider',
-            scientific_changes=True, grid_sha256='9b9abbf95f17fdd771fff0ca565599707def2c1c3d929f668d7d13d83f133d67',
+            scientific_changes=True, grid_sha256='7ce520e2fa99620b87e121d52649e8f22a4f19d438ee16c05b8a2fbbd90197a9',
             sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-            carry_proof_sha256='44b889737d1f9a08def913ec9209d1203b996d6ef69f35803f36c6a2fc9334f5',
+            carry_proof_sha256='7cf943fa19cd6eb9f29bdb0fe0a06c48f1d860fa920985c4cef0c414464b2c54',
             inherited_witness_refinements=1, qualification_grid_split='-33/8',
             graph_id='not yet issued', scientifically_certified=False)
         save()
@@ -1380,7 +1417,7 @@ def pressure_entry_point(argv, step, profile):
 
 
 def command(profile, python, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
-            interval=None, parent_adopted_sha256=None, production_release=False):
+            interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False):
     """Inspectable guarded command only; never launches or reads a store. ``start_gate`` goes last."""
     require(type(dev_timing) is bool, 'dev timing flag must be boolean')
     require(type(production_release) is bool and not (production_release and dev_timing),
@@ -1411,6 +1448,7 @@ def command(profile, python, *, mode, dev_timing=False, stop_before_advance=Fals
               if seed else []),
             *(['--stop-before-advance'] if stop_before_advance else []),
             *(['--interval', str(number), '--parent-adopted-sha256', pin] if number >= 2 else []),
+            *(['--record-failed-prior'] if record_failed_prior else []),
             *([SG.ARGUMENT, SG.encode(start_gate)] if start_gate is not None else [])]
 
 
@@ -1428,8 +1466,54 @@ def _error(error):
             'innermost_selected_frame': selected}
 
 
+def _profile_sampler(folder, mode):
+    """PROFILING ARM ONLY. Every 0.2 s count the stacks of all other threads; a finished minute keeps its top 50."""
+    import collections, threading
+
+    def top(pair):
+        return {'samples': sum(pair[0].values()), 'stacks': pair[0].most_common(50), 'top3': pair[1].most_common(50)}
+
+    def run():
+        try:
+            folder.mkdir(exist_ok=True)
+            out = str(folder/('stacks-%s-%d.json' % (mode, os.getpid())))
+            me, t0 = threading.get_ident(), time.monotonic()
+            done, minute, pair, last = {}, 0, (collections.Counter(), collections.Counter()), t0
+            while True:
+                time.sleep(0.2)
+                now = time.monotonic()
+                if int((now-t0)//60) != minute:
+                    done[str(minute*60)] = top(pair)
+                    minute, pair = int((now-t0)//60), (collections.Counter(), collections.Counter())
+                for ident, frame in sys._current_frames().items():
+                    stack = []
+                    while frame is not None and ident != me and len(stack) < 40:
+                        code = frame.f_code
+                        stack.append('%s:%s:%d' % (os.path.basename(code.co_filename), code.co_name, frame.f_lineno))
+                        frame = frame.f_back
+                    if stack:
+                        pair[0][' < '.join(stack)] += 1
+                        pair[1][' < '.join(s.rsplit(':', 1)[0] for s in stack[:3])] += 1
+                frame = None
+                if now-last >= 30:
+                    last = now
+                    try:
+                        with open(out+'.tmp', 'w') as stream:
+                            json.dump({**done, str(minute*60): top(pair)}, stream)
+                        os.replace(out+'.tmp', out)
+                    except OSError:  # an open handle on the file makes the replace fail on Windows; next try in 30 s
+                        pass
+        except Exception:  # a profiler failure never stops the step (rule 18)
+            pass
+
+    try:
+        threading.Thread(target=run, name='profile-stack-sampler', daemon=True).start()
+    except Exception:  # G-3: a thread that cannot start never stops the step either
+        pass
+
+
 def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, seed=None, start_gate=None,
-              interval=None, parent_adopted_sha256=None, production_release=False):
+              interval=None, parent_adopted_sha256=None, production_release=False, record_failed_prior=False):
     dev_timing = RUN._dev_timing_enabled(dev_timing)
     require(sys.dont_write_bytecode, 'run with -B to preserve frozen sources')
     seed = _seed(seed, mode)
@@ -1438,8 +1522,10 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
     require(type(production_release) is bool and not (production_release and dev_timing),
             'production Release is explicit and development diagnostics remain strict-only')
     sources = FreshSources(profile)
+    recorded = _recording(sources, record_failed_prior)
     admitted = RUN.production_admission(sources,'fresh-'+mode,start_gate) if production_release else None
     output = mode_output(profile.record(), mode, interval)/'run.json'
+    _profile_sampler(Path(profile.record()['output_directory']).parent/'profile-stacks', mode)
     record: dict = {'schema': RESULT_SCHEMA, 'status': 'STARTED', 'pid': os.getpid(), 'mode': mode,
                     'profile_sha256': profile.sha256, 'errors': [], 'production_acceptance': False,
                     'stop_before_advance': stop_before_advance, 'initial_measurement_seed': seed}
@@ -1467,7 +1553,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
                                             stop_before_advance=stop_before_advance, seed=seed,
                                             start_gate=start_gate, query_stages=query_stages,
                                             interval=interval, parent_adopted_sha256=parent_adopted_sha256,
-                                            production_release=production_release)
+                                            production_release=production_release, recorded=recorded)
             record['status'] = 'VERIFYING_FINALISATION'
         except BaseException as error:  # noqa: BLE001 - every failure, guard aborts included, is recorded in run.json
             record['status'] = 'FAILED'
@@ -1496,6 +1582,8 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
             except BaseException as error:  # noqa: BLE001 - a finalisation failure is recorded, never lost
                 record['errors'].append(_error(error))
             query_stages.finish()
+            if recorded:
+                record['recorded'] = recorded
             record['status'] = final_status(record['errors'], mode, record)
             save()
     return 0 if not record['errors'] else 1
@@ -1513,6 +1601,8 @@ def main(argv=None):
     parser.add_argument('--seed-store-sha256', help='run B only: the measurement store SHA-256 run A recorded')
     parser.add_argument('--interval', type=int, help='run B only, item 21: the interval N >= 2 to seal')
     parser.add_argument('--parent-adopted-sha256', help='with --interval N >= 2: the adopted(N-1) file SHA-256')
+    parser.add_argument('--record-failed-prior', action='store_true',
+                        help='diagnostic trees only: record how an earlier producer ended (decision 289)')
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--launch', action='store_true')
     action.add_argument('--workload', action='store_true')
@@ -1541,12 +1631,14 @@ def main(argv=None):
     if args.workload:
         return _workload(profile, mode=args.mode, dev_timing=dev_timing, stop_before_advance=args.stop_before_advance,
                          seed=seed, start_gate=args.start_gate, interval=args.interval,
-                         parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release)
+                         parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
+                         record_failed_prior=args.record_failed_prior)
     if args.production_release:
         gate = RUN.production_decision(FreshSources(profile),'fresh-'+args.mode)
     argv = command(profile, sys.executable, mode=args.mode, dev_timing=dev_timing,
                    stop_before_advance=args.stop_before_advance, seed=seed, start_gate=gate, interval=args.interval,
-                   parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release)
+                   parent_adopted_sha256=args.parent_adopted_sha256, production_release=args.production_release,
+                   record_failed_prior=args.record_failed_prior)
     print(json.dumps({'status': 'SOURCE_BOUND_COMMAND_ONLY_NOT_ADMISSION', 'command': argv,
                       'production_acceptance': False}), flush=True)
     if not args.launch:
