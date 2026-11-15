@@ -662,7 +662,6 @@ def _advance_verified(call, meta, plan, cancel):
             _verify_call(call, cancel)
             # All borrowed numerical records die before their owning workspace.
             del projected, private, record, fixed, powers, actual_fixed, actual_power
-    _verify_call(call, cancel)
     return result
 
 
@@ -747,7 +746,6 @@ def _advance_legacy_packaging_verified(call, meta, plan, cancel):
             _verify_call(call, cancel)
             # All borrowed numerical records die before their owning workspace.
             del produced, diagnostics, projected, private, record, fixed, powers, actual_fixed, actual_power
-    _verify_call(call, cancel)
     return result
 
 # Capture already imported dependencies ONCE, before a caller can request an
