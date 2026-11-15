@@ -125,13 +125,15 @@ def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers
 
 # A2: queries per Plan09 admission batch (the pool accepts 1 to 64; its default is 16).
 INITIAL_BATCH_JOBS = 64
+# R1 (decision 384): producer admission workers, one per core; 16 batches run in two rounds.
+INITIAL_WORKERS = 8
 
 
 def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None):
-    # Plan09 two-worker initial admission: producers, and since o2 the ordinary reader. 0 = serial (an overlap
+    # Plan09 eight-worker initial admission (R1): producers, and since o2 the ordinary reader. 0 = serial (an overlap
     # reader, Plan11 section 4).
-    _require(type(initial_workers) is int and initial_workers in (0, 2),
-             'initial admission requires the serial reader or selected two-worker producer route')
+    _require(type(initial_workers) is int and initial_workers in (0, INITIAL_WORKERS),
+             'initial admission requires the serial reader or selected eight-worker producer route')
     phase('begin-fresh-native-admission')
     m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=8)    # H1: one face per task, rows by index
     with m.ExecutionContext('reference') as reference_execution, \
@@ -190,7 +192,7 @@ def create_root(m, *, open_store, budget, artifacts, phase, finish_root, measure
     """
     _seed_pinned()
     with admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=2) as a:
+                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
         collar, funding = a.case['collar'], a.case['funding']
         workflow_id = m.Workflow._identity(collar, funding,
                                            m.Workflow._exterior_inputs(a.owner, collar, funding, budget))
@@ -226,7 +228,7 @@ def reopen_root(m, *, store, expected_root, budget, artifacts, phase, measuremen
     """
     _seed_pinned()
     with admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=2) as a:
+                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
         phase('reopen-adopted-fresh-root')
         with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
                              a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
@@ -266,7 +268,7 @@ def advance_first_interval(m, *, store, expected_root, budget, artifacts, phase,
     with guard.check3.forward(budget, [name for _, name in _stages(m)
                                       if name != 'actual-differential-geometry'], __file__), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=2) as a, \
+                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a, \
             m.geometry_observer.observe(guard, stages, ticks, joined=m.joined,
                                         geometry=m.G.enclose_differential_ale), \
             m.threadpool_limits(1), query_checkpoints(a.heat_execution) as checkpoints:
@@ -362,7 +364,7 @@ def advance_successor_interval(m, *, store, expected_root, lineage, budget, arti
     with guard.check3.forward(budget, [name for _, name in _stages(m)
                                       if name != 'actual-differential-geometry'], __file__), \
             admission(m, budget=budget, artifacts=artifacts, phase=phase,
-                   measurements=measurements, initial_workers=2) as a:
+                   measurements=measurements, initial_workers=INITIAL_WORKERS) as a:
         _bind_record_scope(store, a.owner, budget)
         phase('reopen-adopted-successor-head')
         with m.Workflow.open(store, expected_root['workflow_id'], a.case['collar'], a.case['owner'],
