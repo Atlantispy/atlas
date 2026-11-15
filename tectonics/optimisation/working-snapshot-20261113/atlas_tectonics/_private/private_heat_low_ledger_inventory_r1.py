@@ -36,7 +36,7 @@ from atlas_tectonics._private import private_heat_interval_inventory_r1 as I
 HERE = Path(__file__).resolve().parent
 _PINS = {
     'private_heat_low_solver_kernel_r2.py': 'a2a4443d20eebb2388e33bb5206bf1f20efb331ed7c551d0363fa45cbd8f1a11',
-    'private_heat_interval_inventory_r1.py': '9c41efb2a6406c0f1455322ba9277fcffea5c1c6ec33f9364eaccd237081467c',
+    'private_heat_interval_inventory_r1.py': 'e83a13052c413672f17f84f145ca4bdb1f273735e041a9d20c3d773735895bb9',
 }
 CONTAINER_UNIT = D.CONTAINER_UNIT
 ZERO = I.Shape(1, 1, True)

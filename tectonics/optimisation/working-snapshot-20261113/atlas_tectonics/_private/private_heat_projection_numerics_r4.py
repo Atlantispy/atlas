@@ -30,7 +30,7 @@ source_hash, stream_hash, target_bytes = BASE.source_hash, BASE.stream_hash, BAS
 verified_private = BASE.verified_private
 owner_projection_bytes = BASE.owner_projection_bytes
 projection_output_plan = BASE.projection_output_plan
-_OWNER_SHA = 'd98a4db10b705bed39e7fb3177ce1e5f8c4ae4e54602ba19a41630c26bb68ac5'
+_OWNER_SHA = '60fd26276d8c225dd13f38b2efafb90c28473d2ffc3c9b1169624d09cdb5c180'
 _SOURCES = dict(O._SOURCES, **{_atlas_identity.relkey(BASE.__file__):
     '8171c908e9fb5489765a1e185d18f63621a20f17344c2cf3456769519692e0b2'})
 _SOURCES[_atlas_identity.relkey(__file__)] = sha256(Path(__file__).read_bytes()).hexdigest()

@@ -42,8 +42,8 @@ from atlas_tectonics._private import private_heat_process_meter_r1 as METER
 
 HERE = Path(__file__).resolve().parent
 _PINS = {
-    'private_heat_geometry_inventory_r1.py': '7709f9fcadb24267dc7143c7b92764340a010f86764e43945cc4249fcda68701',
-    'private_heat_issuer_resources_r4.py': '4b42978b3edab325e8d52fad7de8d970e98ac124951b7db02823479c46516e11',
+    'private_heat_geometry_inventory_r1.py': '68450aea3d487cbb7e2ba7182df8755cbb4679c09e180982146f6d0bf29a52e5',
+    'private_heat_issuer_resources_r4.py': '8faeddcee7296c472a5a824d0f9f201fb2549d6fa46b55839ad9d0b594697329',
 }
 for _name, _pin in _PINS.items():
     if sha256((HERE/_name).read_bytes()).hexdigest() != _pin:

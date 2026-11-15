@@ -29,6 +29,8 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   intervals, duplicate-removal unit C, the next producer's open (units P and Q), root initial workers,
   geometry workers kept between batches, the geometry id memo and source checks once per heat worker
   (see [batch 2](#batch-2-15-november)).
+- 15 November 2026: the next private batch, as run by its diagnostic chain (coverage sidecar buffer,
+  heat solver picks, single decodes and verifies, bounds from bytes held and related removals, the heat predictor beside the reconstruction).
 
 Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
 from the code at `f29ca36` and the batch 2 section from the code at `9f5080c`; the other sections were written for the 13 November contents, and their line

@@ -25,7 +25,7 @@ _context = B1._context
 _expected_bindings = B1._expected_bindings
 _inputs = B1._inputs
 _equations = B1._equations
-_BINDING_SHA = 'fdf0cb894c86c001ff03dd8a507426efc67abc4353d0b92e2013d0e5f5dc3ff0'
+_BINDING_SHA = 'ab885f77960f5cf340ed262e506a7ecfe304df1da000062033499211476463fd'
 _SELF_SHA = R.source_hash(__file__)
 
 

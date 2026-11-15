@@ -31,7 +31,7 @@ from atlas_tectonics._private import private_heat_interval_assembly_kernel_r1 as
 HERE = Path(__file__).resolve().parent
 PINS = {'private_heat_finish_kernel_r1.py': 'f6b97a19212e78e5241885423dfba0e7a39535b5f67ef88264e1e6c4d350ea04',
         'private_heat_finish_arithmetic_r1.py': '1088c87849ba4c579a978a5105a070552c2ee228ad005c34bb72102065ca7cfc',
-        'private_heat_low_ledger_inventory_r1.py': 'bf8e4f806b8ea7a775673de20cbbb43fcb98d2f668dda911acd9db60197822dd'}
+        'private_heat_low_ledger_inventory_r1.py': 'bb480d2e79aceea5987d69a5bf641c4ba4745c9d0113d3ef48c69c39cd98bdc6'}
 UNIT = D.CONTAINER_UNIT
 ZERO, ONE, TWO = E.Shape(1, 1, True), E.Shape(1, 1, True), E.Shape(2, 1, True)
 PUBLIC = L.PUBLIC_BINARY64

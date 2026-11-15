@@ -31,7 +31,7 @@ CertifiedAssembly = A.CertifiedAssembly
 RefinementRequired = A.RefinementRequired
 UnresolvedRounding = A.UnresolvedRounding
 HERE = Path(__file__).resolve().parent
-INVENTORY_SHA = '40d5ed1f41f40b5d39c6def113a38525a5f89cae21f5e4b016ceaedc3238e132'
+INVENTORY_SHA = 'fe4321e34dda75ee252c85a92bfed9ab050a870f50bbc8c619641b2c1ddd9403'
 SOURCE_PATHS = (_atlas_identity.relkey(__file__), _atlas_identity.relkey(I.__file__),
                 *(str(path) for path in I.source_paths().values()))
 
