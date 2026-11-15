@@ -117,7 +117,9 @@ first step made. Review intervals keep the full core. Its
 made on the same objects in the same process, and its
 [recheck removal](../working-snapshot-20261113/README.md#the-recheck-removal-15-november) drops the pre-seal read-and-hash of every chunk
 and the final re-verification after read-only; chunk checksums and content hashes are still verified on
-every read.
+every read. Since [batch 2](../working-snapshot-20261113/README.md#the-next-producers-open-units-p-and-q) the next producer's open of an
+adopted head proves nothing in an ordinary run: its proofs run only in proof mode (`--open-proofs`), in the
+reader's full core and in the tests, while the store's chunk checks and the typed descriptor comparisons stay.
 
 ### Preseal refusal and explicit review adoption
 
@@ -166,7 +168,11 @@ At N=2 the ROOT anchor follows interval-1 producer receipt to its run record und
 the current profile route; Run A seed capture must match its receipt, verdict and
 adoption. At N>=3 all earlier links also equal runner(N−1)'s recorded lineage.
 A profile repin between interval 1 and 2 therefore fails closed; repin must precede
-interval 1 or have a separately designed lineage route.
+interval 1 or have a separately designed lineage route. In the
+[working snapshot](../working-snapshot-20261113/README.md#the-restart-seed-across-intervals) (batch 2) a diagnostic tree may carry a
+seed recorded under an earlier profile, named by path and SHA-256: the compositions are compared member by
+member, the differences are recorded in the seed record, and the gate accepts that interval 1 only on a
+diagnostic tree. Proof, real and Release runs refuse such a seed.
 
 The lineage record (atlas.fresh-interval-lineage.v1) contains interval, workflow,
 root/head keys, catalog digest/hash and per-link runner/verdict/adoption record
@@ -390,7 +396,9 @@ unchanged evidence; do not run an unrelated suite or turn this list into new aut
 The [working snapshot](../working-snapshot-20261113/README.md#the-wired-set-15-november) is the package the 15 November diagnostic chains ran with this overlap (the reader
 beside its producer), with 64 jobs per admission batch, eight heat workers and four-worker interval-1
 geometry. These are execution choices with diagnostic chain timings only; they are not acceptance of the
-overlap route.
+overlap route. [Batch 2](../working-snapshot-20261113/README.md#batch-2-15-november) adds eight root admission workers, geometry workers kept
+between batches, the partition opened once per successor restore, a memoised geometry id and strict source
+checks once per process; these too are execution choices run only by a diagnostic chain.
 
 ## Composition order and frozen source locations
 

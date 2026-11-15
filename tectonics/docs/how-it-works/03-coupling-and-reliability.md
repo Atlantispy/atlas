@@ -489,6 +489,16 @@ recorded widths instead of measuring again. Each was run only by a diagnostic
 chain: the timings come from those runs, value comparisons found the stored
 numbers unchanged, and none of this is review or scientific acceptance.
 
+A later [batch 2](../../optimisation/working-snapshot-20261113/README.md#batch-2-15-november) of the same snapshot makes the next
+producer's open of an adopted head load what the next interval reads without
+proving it again, except in proof mode, in the reader's full core and in the
+tests. It also adds eight root admission workers, keeps geometry workers between
+batches, opens a successor's partition once, memoises geometry ids, checks each
+strict source once per process and, on diagnostic trees only, lets a measurement
+seed recorded under an earlier profile be reused with its differences recorded.
+It too was run only by a diagnostic chain; it is not review or scientific
+acceptance.
+
 ### Keep physical correspondence separate from row names
 
 The separate optimisation review route found that provenance-dependent cell

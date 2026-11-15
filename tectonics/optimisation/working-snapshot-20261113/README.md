@@ -27,10 +27,11 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   [unit A](#unit-a-the-records-only-reader-15-november)).
 - 15 November 2026: batch 2, as run by its diagnostic chain: the restart seed carried across
   intervals, duplicate-removal unit C, the next producer's open (units P and Q), root initial workers,
-  geometry workers kept between batches, the geometry id memo and source checks once per heat worker.
+  geometry workers kept between batches, the geometry id memo and source checks once per heat worker
+  (see [batch 2](#batch-2-15-november)).
 
-Each update is one commit, so its diff shows exactly what changed. The five 15 November sections were read
-from the code at `f29ca36`; the other sections were written for the 13 November contents, and their line
+Each update is one commit, so its diff shows exactly what changed. The first five 15 November sections were read
+from the code at `f29ca36` and the batch 2 section from the code at `9f5080c`; the other sections were written for the 13 November contents, and their line
 numbers may have moved since. Every chain named here is diagnostic only; none is scientific acceptance, and
 none of the 15 November changes has a review record in this repository.
 
@@ -76,11 +77,12 @@ Six execution choices that change how work is scheduled or checked, not what is 
 
 - **64 jobs per admission batch.** `_private/fresh_interval_driver.py` line 127 sets `INITIAL_BATCH_JOBS = 64`
   for the initial admission pool (the pool accepts 1 to 64; its default is 16).
-- **Eight heat workers.** The same file, line 136, sets the heat functionals' worker pool to eight; each task is
+- **Eight heat workers.** The same file, line 138, sets the heat functionals' worker pool to eight; each task is
   one face and rows are put back by index.
 - **Parallel geometry.** Line 51 sets `ALE_PARALLEL` to automatic with four workers for interval 1; the code
   states that no result depends on it. A successor entered without a measured worker selection keeps the
-  fixed serial policy of line 52, the comparison arm.
+  fixed serial policy of line 52, the comparison arm. Since batch 2 the four workers are kept between
+  batches ([Part B](#geometry-workers-kept-between-batches-part-b)).
 - **The reader beside its producer.** The independent reader starts while its producer is still running and
   waits at a gate (`_private/overlap_reader.py` `admitted_before_gate`, line 219): before the gate it uses only the producer's
   closed measurement record, and it tests that record against the authenticated producer receipt after the
@@ -173,6 +175,98 @@ render's flag clears only after it passes. The widths fix makes the producer's w
 identities that need a partition view it does not have. The chain's values equal the previous chain's; only
 identifiers differ.
 
+## Batch 2 (15 November)
+
+Seven changes, one commit each, then one commit that repins the source tables. None changes what is
+calculated; each removes repeated work or allows a diagnostic reuse.
+
+### The restart seed across intervals
+
+Run B of an interval may reuse the measurement store that run A recorded (the seed). Until now the seed was
+refused unless run A's measurement composition equalled run B's. `_private/run_fresh_interval.py` now also
+accepts a seed recorded under an earlier profile, named by path and SHA-256 (`--reuse-previous-run`):
+
+- only on a diagnostic tree, whose manifest says `DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION`
+  (`diagnostic_tree`, line 536); proof and real trees refuse it, and a Release step refuses it
+  (`_across_refused_in_release`, line 1424);
+- the earlier profile is read against its pin before admission;
+- `_across_change` (line 895) compares the two compositions member by member. Unknown members and a
+  different interpreter seed refuse; differences in the profile, source proof, advance driver and helper
+  digests are listed in the seed record under `across_change`, and `composition_equal` is false when any is
+  listed.
+
+Interval 2's gate (`root_anchor`) accepts such an interval 1 only when interval 1's tree is diagnostic and
+its seed record carries that list. A seed across a change is a recorded diagnostic reuse, never a proof that
+the two compositions agree.
+
+### Duplicate-removal unit C: the partition opened once
+
+When a successor's workflow restores its compact partition, the partition view that the restored thermal
+mesh's support source already holds is reused (`_private/partition_workflow_patch.py` `held_partition`, line
+399, passed from `integration_regional_workflow.py` line 1313). It is reused only when it is sealed and has
+the same segment reference on the same store scope; otherwise the partition is opened as before
+(`restore`, line 404). The heat module's pin of `integration_regional_workflow.py` moves with that file.
+
+### The next producer's open (units P and Q)
+
+In an ordinary run the open of an adopted head now loads what the next interval reads and proves nothing
+about it. One run-time switch, `open_proofs` in `_private/compact_contracts.py` (line 261, false by
+default, read by `proving()`), decides; the proofs sit behind it in fourteen files. It is turned on:
+
+- by a producer started with `--open-proofs` (proof mode; `_private/run_fresh_interval.py` line 1584),
+  which records `open_proofs` in its run record;
+- by the independent reader's full core (`_private/reopen_fresh_restart.py` line 801);
+- by the tests, through the `proofs()` context manager (line 269).
+
+With the switch on, the open is exactly the open before this change. With it off, the open skips, among
+others, the parent validation and the eight snapshot identities, the spatial owner's measure and saved-cell
+checks (`integration_spatial_owner.py` line 930), the cold restore's transport identity comparison and the
+column digests and canonical re-encodes of stored records; the mesh's logical identity is taken from the
+record. What stays: the store's check of every chunk it reads (for disk damage), the typed descriptor
+comparisons, and the comparison of the stored heat record's libraries, execution and sources with this
+process. A stream that also feeds unit A's width table keeps running. The encoder round trip that the
+proofs show is shown by the tests and by any run in proof mode, not by an ordinary run.
+
+### Root initial workers (R1)
+
+Initial admission now runs eight producer workers, one per core, instead of two
+(`_private/fresh_interval_driver.py` `INITIAL_WORKERS`, line 129; `integration_initial_parallel.py`
+`MAX_WORKERS`, line 35). The serial route (0 workers) for an overlap reader is unchanged.
+
+### Geometry workers kept between batches (Part B)
+
+`ALE_PARALLEL` (`_private/fresh_interval_driver.py` line 51) now sets `keep_workers`
+(`integration_parallel_selection.py` line 134, off by default). A kept geometry worker
+(`integration_parallel_dispatch.py` `_kept_worker`, line 365) holds one context for its life and serves one
+batch at a time, read from its standard input (`serve`, line 658; the session's handle is `_Served`, line
+1247). Each batch is still bound by its inputs and checked before and after its members run; the package
+source is read once per worker process. Each kept worker holds its own memory baseline, charged within the
+session's budget share; after a batch the worker is idle again, or is ended if it is above its baseline
+(`_release`, line 1764). Per-batch time marks are written to the resource report only and never stop a run.
+With `keep_workers` off, the one-shot worker per batch is unchanged.
+
+### The geometry id memo
+
+`DifferentialInterval.interval_id` and `DifferentialSupport.support_id`
+(`integration_differential_geometry.py`, `_memo_id` at line 114) hash the object's canonical JSON once and
+keep the digest in a slot. The JSON is immutable and set once at issue, so the digest cannot change.
+
+### Source checks once per heat worker (R-B)
+
+In strict mode `helper_source_digest` (`reuse.py` line 947) reads each source and owner pair in full once
+per process and keeps the digest (line 944); a later call in the same process returns it without re-reading
+or re-walking the two paths. The cancellation check stays on every call. Release mode is unchanged: external
+or uncovered sources are read in full on every call.
+
+### The repin
+
+The last commit regenerates `_application_sources.json` and `.sha256` for the changed files and moves the
+END factory and provider (`_private/q297_end_factory_v2.py`, `_private/q297_end_provider_v2.py`) to the
+correspondence proof, grid, graph, partition and carry digests of batch 2's tree.
+
+Batch 2 was run by one diagnostic chain. That establishes only that the package ran as published; it is not
+review and not scientific acceptance.
+
 ## Reader process census
 
 The independent reader is launched under the continuation guard with `--diagnostic-reader-integrity`
@@ -203,7 +297,7 @@ reader also `--finalise`), plus the start-gate arguments.
 
 | Runner (`_private/`) | Other options, as declared in the code |
 | --- | --- |
-| `run_fresh_interval.py` (lines 1506-1520) | `--mode`; `--production-release` (explicit authenticated packaged production only); `--dev-timing` (opt-in timing and memory diagnostics); `--stop-before-advance` (run B smoke, interval 1 only); `--seed-receipt-sha256` with `--seed-store-sha256` (run B reuses the measurement store run A recorded); `--interval N` (N >= 2) with `--parent-adopted-sha256` |
+| `run_fresh_interval.py` (lines 1664-1684) | `--mode`; `--production-release` (explicit authenticated packaged production only); `--dev-timing` (opt-in timing and memory diagnostics); `--stop-before-advance` (run B smoke, interval 1 only); `--seed-receipt-sha256` with `--seed-store-sha256` (run B reuses the measurement store run A recorded); `--reuse-previous-run` with `--reuse-previous-run-sha256` (with a seed, diagnostic trees only: the earlier profile the seed was recorded under); `--open-proofs` (proof mode: the open of an adopted head proves what it loads); `--interval N` (N >= 2) with `--parent-adopted-sha256` |
 | `run_prepared_restart.py` (lines 1757-1766) | `--stop-before-advance`, `--dev-timing`, `--production-release` |
 | `reopen_fresh_restart.py` (lines 1246-1265) | `--mode`, `--interval`; the receipt pins `--producer-receipt-sha256`, `--reopen-receipt-sha256`, `--guard-receipt-sha256`, `--guard-control-sha256`, `--verdict-sha256`; `--overlap-spec` with `--overlap-gate-sha256`; `--reader-fallback` with `--fallback-claim-sha256`; `--review` with `--review-approval-sha256` |
 | `reopen_prepared_restart.py` (lines 1404-1416) | `--producer-receipt-sha256`, `--output-directory`, `--mode` (default `successor`), `--store-route` (default `readonly`), `--reopen-receipt-sha256` |
