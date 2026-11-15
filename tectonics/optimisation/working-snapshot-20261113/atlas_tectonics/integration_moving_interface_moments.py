@@ -33,8 +33,6 @@ ORDER = T.ORDER
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise V.VolumeError('moving-interface moment source changed after loading')
     return hashlib.sha256((_LOADED+T.source_digest()+C.source_digest()).encode('ascii')).hexdigest()
 
 

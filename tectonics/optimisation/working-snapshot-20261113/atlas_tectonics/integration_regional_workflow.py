@@ -1049,10 +1049,11 @@ class CollarWorkflow:
             from atlas_tectonics._private.workflow_transfer import verify_migrated_workflow
             verify_migrated_workflow(self)
             return
-        self._collar._verify()
+        if self._exterior_owner is None:
+            self._collar._verify()
         self._owner._verify()
         if self._exterior_owner is not None:
-            self._exterior_owner._verify()
+            self._exterior_owner._verify()      # verifies the collar itself
 
     def _r2_metadata_chain(self):
         """R2 (WP-owned): _refresh's metadata-only chain loop, verbatim; no payload read."""
@@ -1656,7 +1657,7 @@ class CollarWorkflow:
             heat = self._exterior_owner.heat(step, mesh, boundary=heat_boundary, cancel=cancel,
                 execution=heat_execution, absolute_residual_target=absolute_heat_residual_target,
                 checkpoint_store=self._store)
-            self._r3_after_heat_checkpoint(heat, _r3_mark)
+            self._r3_after_heat_checkpoint(_r3_mark)
         else:
             heat = self._exterior_owner.heat(step, mesh, boundary=heat_boundary, cancel=cancel)
         adopted_heat = self._collar.heat_from_spatial(transport, heat, mesh, cancel=cancel)
@@ -1688,107 +1689,36 @@ class CollarWorkflow:
             token = self._store.change_token()
             if token != self._token:
                 return None
-            with candidate._lock:
-                chunks = candidate._db.execute('SELECT max(rowid) FROM chunks').fetchone()[0] or 0
-                manifests = candidate._db.execute('SELECT max(rowid) FROM snapshots').fetchone()[0] or 0
-            return {'token': token, 'candidate': candidate, 'stats': candidate.local_statistics(),
-                    'chunks': chunks, 'manifests': manifests}
+            return {'token': token, 'candidate': candidate}
         except (KeyError, ValueError, TypeError, AttributeError, sqlite3.Error):
             return None
 
-    def _r3_heat_checkpoint_reason(self, heat, mark):
-        """R3: why the token this workflow's own heat checkpoint save produced cannot be
-        kept, or None. Reads tokens, counters, the kinds of the rows inserted since the
-        mark and two root manifests; decodes no payload and reads no record."""
-        from atlas_tectonics._private import segment_store
-        from atlas_tectonics._private.compact_contracts import SEGMENT_MANIFEST_BYTES, SegmentRef
+    def _r3_heat_checkpoint_reason(self, mark):
+        """R3: why the token after this workflow's own heat checkpoint save cannot be kept, or None.
+        Compares tokens only: the save is not read back (decision 327)."""
         candidate, before = mark['candidate'], mark['token']
         after = self._store.change_token()
         if self._token != before or self._store.candidate is not candidate:
-            return 'workflow token or candidate changed during the heat step', after, None
+            return 'workflow token or candidate changed during the heat step', after
         if after[:2] != before[:2] or after[2][0] != before[2][0]:
-            return 'catalog or interval changed during the heat step', after, None
-        stats = candidate.local_statistics()
-        rows = {'chunks': stats['local_chunks'] - mark['stats']['local_chunks'],
-                'manifests': stats['manifests'] - mark['stats']['manifests'],
-                'changes': after[2][1] - before[2][1]}
-        if rows['changes'] != rows['chunks'] + rows['manifests']:
-            return 'store changes not counted as inserted rows', after, rows
-        receipt = heat.reference()['checkpoint']
-        meta = receipt['metadata']
-        if (type(receipt) is not dict or set(receipt) != {'invocation', 'metadata'} or type(meta) is not dict or
-                meta.get('schema') != 'atlas.private.exact-snapshot-compact-store.r4' or
-                _hash(meta) != receipt['invocation']):
-            return 'heat checkpoint receipt is not the compact record it names', after, rows
-        roots = {}
-        for name in ('ledger', 'field_payload'):
-            locator = SegmentRef.from_wire(meta[name]).root_key
-            if locator.workflow_id != candidate.workflow_id or locator.interval != candidate.interval:
-                return 'heat checkpoint root is not in this interval', after, rows
-            roots[locator.snapshot_key] = (locator, meta[name])
-        with self._store._workspace(4*SEGMENT_MANIFEST_BYTES+(1 << 20), self._budget,
-                                    category='r3-heat-token-check'):
-            with candidate._lock:
-                if candidate._db.execute('SELECT count(*) FROM chunks WHERE rowid>?',
-                                         (mark['chunks'],)).fetchone()[0] != rows['chunks']:
-                    return 'chunk rows inserted since the mark differ from the counter', after, rows
-                cursor = candidate._db.execute('SELECT id,body FROM snapshots WHERE rowid>? ORDER BY rowid',
-                                               (mark['manifests'],))
-                try:
-                    seen = 0
-                    for key, body in cursor:
-                        seen += 1
-                        if len(body) > SEGMENT_MANIFEST_BYTES:
-                            return 'oversized manifest inserted during the heat step', after, rows
-                        metadata = json.loads(body)['metadata']
-                        del body
-                        # A row is the save's own only under the key segment_store derives
-                        # from its content (_IndexBuilder._page; SegmentBackend.publish), never
-                        # under a chosen key such as a restart alias read candidate-first.
-                        kind = metadata.get('schema')
-                        if kind == segment_store.PAGE_SCHEMA:
-                            derived = segment_store.h('atlas.binding-page-key.v1',
-                                                      {'digest': segment_store.h(segment_store.PAGE_SCHEMA, metadata)})
-                        elif kind == segment_store.ROOT_SCHEMA and key in roots:
-                            derived = segment_store.h(segment_store.ROOT_SCHEMA, {
-                                name: metadata[name] for name in ('identity', 'producer', 'representation_profile')})
-                        else:
-                            derived = None
-                        del metadata
-                        if key != derived:
-                            return 'a write other than the heat checkpoint intervened', after, rows
-                finally:
-                    cursor.close()
-            if seen != rows['manifests']:
-                return 'manifests inserted since the mark differ from the counter', after, rows
-            for locator, wire in roots.values():
-                with candidate.resolve_manifest(locator) as held:
-                    bound = json.loads(held.value)['metadata']
-                if (type(bound) is not dict or bound.get('schema') != 'atlas.segment-root.v1' or
-                        _json(bound.get('reference')) != _json(wire)):
-                    return 'persisted heat checkpoint root differs from the produced reference', after, rows
-                del bound
-        if self._r2_metadata_chain() != self._head:
-            return 'workflow chain changed during the heat step', after, rows
-        if self._store.change_token() != after:
-            return 'store changed during the R3 checks', after, rows
-        return None, after, rows
+            return 'catalog or interval changed during the heat step', after
+        return None, after
 
-    def _r3_after_heat_checkpoint(self, heat, mark):
+    def _r3_after_heat_checkpoint(self, mark):
         """R3 (WP-owned): keep the token across this workflow's OWN heat checkpoint save.
 
         Adopted only when _r3_heat_checkpoint_reason finds nothing; otherwise nothing is
         set and the next _refresh() runs in full, exactly as today."""
         import sqlite3
-        reason, rows = 'workflow not current on a compact candidate before the save', None
+        reason = 'workflow not current on a compact candidate before the save'
         if mark is not None:
             try:
-                reason, after, rows = self._r3_heat_checkpoint_reason(heat, mark)
+                reason, after = self._r3_heat_checkpoint_reason(mark)
             except (KeyError, ValueError, TypeError, AttributeError, sqlite3.Error) as error:
                 reason = 'check refused: ' + type(error).__name__
             if reason is None:
                 self._token = after
-        self._r3_heat_checkpoint = {'token_kept': reason is None, 'reason': reason, 'rows': rows}
+        self._r3_heat_checkpoint = {'token_kept': reason is None, 'reason': reason}
 
     def _publish(self, parent, result, exterior_advance, *, differential_interval=None,
                  differential_partition=None, differential_solution=None, cancel=None):

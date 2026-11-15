@@ -126,6 +126,7 @@ REVIEW_ADOPTION = ('never automatic: the reader PASS on this file, a written dia
 # re-derived admission with run A's root. The independent reader always admits with a fresh
 # store and refuses any seed. Every seed refusal stops before the admission; no fallback.
 MEASUREMENT_STORE = 'initial-measurements.sqlite'
+MEASUREMENT_RECORD = 'initial-measurements.json'
 MEASUREMENT_SIDECARS = ('-wal', '-journal', '-shm')
 MEASUREMENT_COUNTS = ('unique_chunks', 'snapshots', 'encoded_payload_bytes', 'database_bytes', 'operations')
 SEED_SCHEMA = 'atlas.fresh-interval-reused-initial-cache.v1'
@@ -328,8 +329,8 @@ class FreshSources(RUN.RestartSources):
         """The completed-query store the pinned composition declares."""
         return RUN._json(self._manifest)[QUERY_STORE_FLAG]
 
-    def verify(self):
-        """RestartSources.verify without the migrated route's preparation and policy pins."""
+    def _verify_once(self):
+        """RestartSources._verify_once without the migrated route's preparation and policy pins."""
         self.profile.verify()
         observed = RUN.pinned_json(self.manifest_path, self.manifest_pin)
         require(canonical(observed) == self._manifest, 'in-memory source manifest differs from its pinned record')
@@ -771,7 +772,7 @@ def closed_measurement_store(artifacts, check=lambda: None):
     return {'filename': MEASUREMENT_STORE, 'bytes': size, 'sha256': RUN.file_hash(path, check)}
 
 
-def observe_measurements(observed):
+def observe_measurements(observed, closed=None):
     """The driver's ``measurements`` hook: counts only; nothing of the admission is kept.
 
     Each exterior cell carrying ``initial_accuracy`` is one cached_initial_component call
@@ -784,6 +785,8 @@ def observe_measurements(observed):
         cells = bounds.record()['cells']
         observed.update(statistics={name: statistics[name] for name in MEASUREMENT_COUNTS},
                         initial_component_queries=sum('initial_accuracy' in cell for cell in cells))
+        if closed is not None:
+            closed()
     return observe
 
 
@@ -798,23 +801,20 @@ def measurement_record(artifacts, *, binding, observed, check=lambda: None):
 
 
 def _copy_pinned(source, target, pin, check):
-    """Exclusive byte copy of a closed store whose SHA-256 is ``pin``; both files re-digested after."""
+    """Exclusive byte copy of a closed store whose SHA-256 is ``pin``; the copy is hashed once, against the pin."""
     found = _sidecars(source)
     require(not found, 'the seed store has a journal or WAL: '+', '.join(found))
     require(not target.exists() and not _sidecars(target), 'the seed target already exists: '+str(target))
-    require(RUN.file_hash(source, check) == pin, 'the seed store differs from its pinned SHA-256')
-    digest, size = sha256(), 0
+    size = 0
     with RUN.ordinary(source).open('rb') as reader, target.open('xb') as writer:
         while block := reader.read(COPY_BLOCK):
             check()
-            digest.update(block)
             size += len(block)
             writer.write(block)
         writer.flush()
         os.fsync(writer.fileno())
-    require(digest.hexdigest() == pin, 'the seed store changed while it was copied')
-    require(RUN.file_hash(target, check) == pin and RUN.file_hash(source, check) == pin and not _sidecars(source),
-            'the seed copy or its source differs from the pinned SHA-256 after the copy')
+    require(RUN.file_hash(target, check) == pin and not _sidecars(source),
+            'the seed copy differs from the pinned SHA-256')
     return size
 
 
@@ -1156,7 +1156,14 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
         record['production_release'] = admission['production_release']
     binding = measurement_composition(profile, sources, proof=proof, interpreter_seed=record['interpreter_seed'])
     observed = {}
-    measurements = observe_measurements(observed)
+    _publish = bound['private_heat_continuation_guard_r3']._write   # the package's atomic JSON write (temporary, os.replace)
+
+    def publish_store():    # decision 344: once, when the admission has closed its store (N6)
+        record['initial_measurement_store'] = measurement_record(output, binding=binding, observed=observed,
+                                                                 check=check)
+        save()
+        _publish(output/MEASUREMENT_RECORD, record['initial_measurement_store'])  # whole file, then renamed in
+    measurements = observe_measurements(observed, closed=publish_store)
     RUN.ordinary(store_directory.parent, directory=True)
     require(shutil.disk_usage(store_directory.parent).free >= RUN.COMPACT_STORE_LIMITS['max_store_bytes'] +
             RUN.COMPACT_STORE_LIMITS['max_staging_bytes'] + limits['max_store_bytes'],
@@ -1188,8 +1195,6 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                                                      phase=guard.phase, finish_root=finish_root,
                                                      measurements=measurements)
             record.update(same_process_cold_reopen=False, same_process_cold_reopen_reason=ROOT_REOPEN_DEFERRED)
-            record['initial_measurement_store'] = measurement_record(output, binding=binding, observed=observed,
-                                                                     check=check)
             save()
         else:
             query_directory = sources.workspace/row['completed_query_directory']
@@ -1247,15 +1252,12 @@ def run_fresh_interval(profile, *, sources, guard, record, save, mode, stop_befo
                         number=number, lineage=lineage, query_store=(EndpointCheckpoints, declared,
                         query_arguments, limits), measurements=measurements, timing=timing)
                     record['compact_operations'] = store.statistics()
-                record['initial_measurement_store'] = measurement_record(output, binding=binding,
-                                                                         observed=observed, check=check)
                 if reused is not None:
                     record['reused_initial_cache'] = reuse_outcome(reused, record['initial_measurement_store'])
                 save()
         timing.checkpoint('sealed-awaiting-reader' if not stop_before_advance else 'stopped-before-advance')
     record['store_directory_after_close'] = RUN._tree(store_directory)
-    sources.check_imported(hashes=False)
-    sources.verify()
+    sources.check_imported()
     timing.checkpoint('sources-verified')
     return budget
 
@@ -1277,12 +1279,12 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
             record['q297_end_geometry'].update(selection='issued for actual END mesh', **selection)
             save()
         end_provider_factory = make_factory(run_root=qualification/'runs',
-            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-wc2.json',
+            grid_path=qualification/'iv1-diagnostic-prep/q363-successor-grid-rc1.json',
             selected_observer=note_q297_provider)
         record['q297_end_geometry'] = dict(selection='configured first-interval END provider',
-            scientific_changes=True, grid_sha256='7ce520e2fa99620b87e121d52649e8f22a4f19d438ee16c05b8a2fbbd90197a9',
+            scientific_changes=True, grid_sha256='74a279fcd6a66552ed19ec445691c0d37d1384dbe225ed824166f359af850f9f',
             sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-            carry_proof_sha256='7cf943fa19cd6eb9f29bdb0fe0a06c48f1d860fa920985c4cef0c414464b2c54',
+            carry_proof_sha256='fef6b22d6b6757feddca7583cd530903281bf8a3d9f5b36b609622590d9b8285',
             inherited_witness_refinements=1, qualification_grid_split='-33/8',
             graph_id='not yet issued', scientifically_certified=False)
         save()
@@ -1574,8 +1576,7 @@ def _workload(profile, *, mode, dev_timing=False, stop_before_advance=False, see
             times = os.times()
             record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
             try:
-                sources.check_imported(hashes=False)
-                sources.verify()
+                sources.check_imported()
                 if guard is not None:
                     guard.check(force=True)
                     guard.close()

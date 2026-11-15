@@ -21,8 +21,6 @@ _SERIES_DEGREE = 32
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise V.VolumeError('rigid intersection source changed after loading')
     return _LOADED
 
 

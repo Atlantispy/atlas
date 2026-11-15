@@ -42,6 +42,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from hashlib import sha256
 from pathlib import Path
 
@@ -179,19 +180,43 @@ def _own_pin(sources):
     return own
 
 
-def require_fresh_measurement_store(output, *, argv=None, environ=None):
-    """Item 7: this reader recomputes every initial measurement (review condition 3).
+def seed_from_producer(stored, source, output, check, *, binding, previous):
+    """Decision 326: the reader admits from its producer's closed measurement store, copied by the receipt's pin.
 
-    No seed argument or seed variable may be present, and no measurement store (or its
-    journal) may exist in the reader's output before its own admission creates one.
-    """
-    argv = sys.argv if argv is None else argv
-    environ = os.environ if environ is None else environ
-    require(not any(str(argument).startswith('--seed') for argument in argv) and F.SEED_ENVIRONMENT not in environ,
-            'the independent reader takes no measurement seed')
-    store = Path(output)/F.MEASUREMENT_STORE
-    require(not store.exists() and not any(Path(str(store)+suffix).exists() for suffix in F.MEASUREMENT_SIDECARS),
-            'the independent reader admits with a new measurement store only')
+    The reader measures nothing the producer measured. Its PASS does not attest the initial metrics a second time.
+    ``stored`` is the store's record: the receipt's, or the one an overlap reader's producer published (decision 344).
+    ``binding`` is this reader's F.measurement_composition; the store's must equal it field by field, as the
+    producer's own seed requires. ``previous``: the producer is a previous run's (decision 278, diagnostic trees
+    only); the fields that differ are then recorded and the store is used (rulings 4a, 6)."""
+    require(type(stored) is dict and stored.get('filename') == F.MEASUREMENT_STORE and RO._digest(stored.get('sha256'))
+            and type(stored.get('statistics')) is dict and type(stored['statistics'].get('snapshots')) is int
+            and type(stored.get('composition')) is dict,
+            'the producer receipt does not name its closed measurement store and its composition')
+    theirs = stored['composition']
+    differing = sorted(name for name in set(binding) | set(theirs)
+                       if name not in theirs or name not in binding or theirs[name] != binding[name])
+    require(previous or not differing,
+            'the producer measurement composition differs from this reader: '+', '.join(differing))
+    size = F._copy_pinned(Path(source)/F.MEASUREMENT_STORE, Path(output)/F.MEASUREMENT_STORE, stored['sha256'], check)
+    return {'source': 'producer-store', 'pinned_sha256': stored['sha256'], 'bytes': size,
+            'seed_snapshots': stored['statistics']['snapshots'], 'composition_differing': differing, 'store': stored}
+
+
+def _published_store(source, spec, check, *, clock=time.monotonic, sleep=time.sleep):
+    """Decision 344: an overlap reader's measurement store, taken at its point of use.
+
+    Waits, under the gate's own bounds (the specification's timeout, its launcher, the live guard), for the record
+    the producer publishes when it closes its store (F.MEASUREMENT_RECORD). Nothing in it is authenticated yet:
+    the store is copied by its pin, and after the gate the receipt must name the same record."""
+    path, deadline = Path(source)/F.MEASUREMENT_RECORD, clock()+spec['timeout_seconds']
+    while not path.exists():
+        check()
+        if not OG.process_alive(spec['launcher']):
+            raise OG.WaitFailure('launcher_lost', 'before the producer published its measurement store')
+        if clock() >= deadline:
+            raise OG.WaitFailure('wait_expired', 'before the producer published its measurement store')
+        sleep(1.0)
+    return OR.read_json(path)[0]
 
 
 def _root_record(root, *, execution_mode='strict'):
@@ -379,7 +404,8 @@ def validate_producer_receipt(receipt, *, profile, receipt_sha256, runner, seale
     RO.validate_guard(guard, guard_control, pid=pid, supervisor_pid=supervisor.get('pid'),
                       limits=producer_limits, recorded=recorded)
     return dict(expected, mode=mode, interval=interval, receipt_sha256=receipt_sha256, producer_pid=pid,
-                runner=runner, runner_sha256=runner_sha, sealed=sealed, entry=entry, review=review)
+                runner=runner, runner_sha256=runner_sha, sealed=sealed, entry=entry, review=review,
+                measurement_store=receipt.get('initial_measurement_store'))
 
 
 def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, review=False, interval=None,
@@ -738,27 +764,42 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
             from atlas_tectonics._private import cold_bridge_r1 as COLD_BRIDGE
             contexts.enter_context(COLD_BRIDGE.selected())
             guard.phase('rebuild-fresh-admission')
-            require_fresh_measurement_store(output)
-            record['measurement_store_new_before_admission'] = True
-            # o2 r5 (ruling 67): two workers, root overlap reader included; an interval overlap reader stays serial.
-            requested = 2 if overlap_spec is None or mode == 'root' else 0
-            admission = FRESH.admission(m, budget=budget, artifacts=output, phase=guard.phase,
-                                        initial_workers=requested)
+            then = row if reuse is None else reuse['previous'].record()     # as _read_store has it (:675)
+            source = F.mode_output(then, mode, _explicit(number))
+            binding = F.measurement_composition(profile, sources, proof=record['source_proof'],
+                                                interpreter_seed=record['interpreter_seed'])
+            seeded = {}
+
+            def seed():     # N6 calls it at the point of use: after the fixture and partition, before the store opens
+                if overlap_spec is None:
+                    stored = producer['measurement_store']
+                else:       # decision 344: the producer is still running
+                    guard.phase('wait-for-producer-measurement-store')
+                    stored = _published_store(source, overlap_spec, check)
+                seeded.update(seed_from_producer(stored, source, output, check, binding=binding,
+                                                 previous=reuse is not None))
+                record['initial_measurements'] = seeded
+                save()
+            requested = 0                                   # decision 326: nothing is measured, so no pool
+            admission = FRESH.admission(m, budget=budget, artifacts=output, phase=guard.phase, initial_workers=requested,
+                before_measurements=seed,
+                measurements=lambda statistics, bounds: seeded.update(measured=statistics['snapshots']-seeded['seed_snapshots']))
             if overlap_spec is not None:
                 a, producer = contexts.enter_context(OR.admitted_before_gate(
                     admission=admission, spec=overlap_spec, record=record, save=save, guard=guard,
-                    verify_sources=lambda: (sources.check_imported(hashes=False), sources.verify()),
+                    verify_sources=sources.check_imported,
                     producer_inputs=lambda pin: _producer_inputs_retry(profile, sources=sources, mode=mode,
                         receipt_sha256=pin, consumer_pid=os.getpid(), review=False, interval=_explicit(number)),
                     producer_pins=lambda value: producer_gate_pins(profile, value, mode=mode, interval=_explicit(number)),
                     memory_admit=lambda free: SG.child_admit(start_gate, free),
                     available_memory=lambda: psutil.virtual_memory().available, waiter=guard.identity))
+                require(producer['measurement_store'] == seeded['store'],
+                        'the producer receipt names another measurement store than the one this reader admitted from')
             else:
                 a = contexts.enter_context(admission)
                 # Comparable normal readers use the same admission ordering and
                 # repeat the unchanged prediction immediately before pending access.
-                sources.check_imported(hashes=False)
-                sources.verify()
+                sources.check_imported()
                 guard.check(force=True)
                 record['memory_before_open_pending'] = SG.child_admit(start_gate, psutil.virtual_memory().available)
                 save()
@@ -852,8 +893,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                 require(store.change_token() == token, 'independent reopen wrote to the pending view')
                 checks['store_unchanged'] = True
                 record['compact_store_statistics'] = store.statistics()
-        sources.check_imported(hashes=False)
-        sources.verify()
+        sources.check_imported()
         record['independent_checks'] = checks
         return budget
     finally:
@@ -1039,8 +1079,7 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
                 times = os.times()
                 record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
                 if guard is not None:
-                    sources.check_imported(hashes=False)
-                    sources.verify()
+                    sources.check_imported()
                     guard.check(force=True)
             except BaseException as error:  # noqa: BLE001 - retain accounting and verification failures
                 record['errors'].append(_reader_error(error))
@@ -1334,8 +1373,7 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
                 if active_error is None:
                     raise
                 active_error.add_note('Adoption scope finalisation also failed: '+repr(release_error))
-        sources.check_imported(hashes=False)
-    sources.verify()
+        sources.check_imported()
     value = {'schema': ADOPTED_SCHEMA, 'status': ADOPTED_STATUS, 'interval': interval, 'entry': entry,
              'catalog_digest': catalog_digest, 'catalog_sha256': RUN.file_hash(catalog),
              'verdict_sha256': verdict_sha256, 'runner_record_sha256': verdict['runner_record_sha256'],

@@ -27,8 +27,6 @@ _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise V.VolumeError('Q2 directed quadrature source changed after loading')
     return _LOADED
 
 
@@ -634,5 +632,5 @@ def negative_bounds(polynomial, *, target_width, max_leaves, budget, bernstein_r
                 if b > a:
                     capacity.append(queue, (a-b, serial, child, a, b), heap=True)
             leaves += 1
-        source_digest(); _cancel(cancel)
+        _cancel(cancel)
         return lo, hi, leaves

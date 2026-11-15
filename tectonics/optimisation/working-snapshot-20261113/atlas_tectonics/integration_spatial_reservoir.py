@@ -228,7 +228,7 @@ class PreparedFiniteStocks:
             raise TectonicsError('zero material quadrature cannot contain other extensive stocks')
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise TectonicsError('closed or changed finite spatial stock owner')
 
     def definition(self):

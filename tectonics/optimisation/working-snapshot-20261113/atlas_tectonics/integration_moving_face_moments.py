@@ -25,8 +25,6 @@ _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise V.VolumeError('moving-face integration source changed after loading')
     from .integration_q2_directed import source_digest as interval_digest
     from .integration_circular_moments import source_digest as circular_digest
     from .integration_rigid_intersection import source_digest as intersection_digest

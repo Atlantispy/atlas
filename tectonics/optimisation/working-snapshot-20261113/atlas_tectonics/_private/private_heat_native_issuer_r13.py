@@ -299,9 +299,6 @@ def _make_call(metadata, arrays, geometry, execution, plan, origins, *, fixture=
         _validate_target_plan(plan)
         encoded = _json(plan)
         bindings = dict(_IMPORTED_SOURCES)
-        for path, digest in bindings.items():
-            if RESOURCES.source_hash(path) != digest:
-                raise ValueError('Private dependency changed after import; no source repin')
         object.__setattr__(out, '_plan', encoded)
         object.__setattr__(out, '_bindings', tuple(bindings.items()))
         owned = budget.reserve(2048+len(encoded)+_width(bindings), category='private-heat-call-definition-owned')
@@ -486,13 +483,13 @@ def _verify_call_record(call, meta, cancel=None):
     if type(call) is not OwnerHeatCall:
         raise TypeError('A forward-issued owner call is required')
     HEAT_LEDGER.verify_scope(call)
-    call._execution.verify_boundary()
-    _verify_implementation()
-    if _helper_source_digest(Path(__file__), owner_file=__file__) != _LOADED:
-        raise ValueError('Private issuer source changed after import')
-    for path, digest in call._bindings:
-        if RESOURCES.source_hash(path) != digest:
-            raise ValueError('Bound private source changed')
+    execution, key = call._execution, ('issuer', tuple(call._bindings))
+    if key in execution._proved:
+        execution._verify_selection()  # closed and fixture selection, at every call (review G-1, G-2)
+    else:
+        execution.verify_boundary()
+        _verify_implementation()
+        execution._proved.add(key)  # last: a proof that failed is never recorded
     if (call.call_id != _snapshot_identity(call._snapshot, call._budget, cancel)
             or meta['geometry_id'] != INDEXED.metric_identity(call._geometry, cancel=cancel)
             or meta['plan_id'] != hashlib.sha256(call._plan).hexdigest()

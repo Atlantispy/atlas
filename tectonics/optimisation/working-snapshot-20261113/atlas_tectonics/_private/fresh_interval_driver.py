@@ -102,30 +102,32 @@ def preparation_ids(case, owner):
             'collar': collar.plan_id, 'map': collar._map.volume_map_id, 'funding': case['funding'].funding_id}
 
 
-def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0):
+def admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None):
     """r9's deterministic admission with r9's execution contexts and measurement cache open.
 
     A plain function returning the context manager, not a decorated one: the loaded-source
     fence compares each module-level function's loaded code with the pinned source, and a
     decorated function's loaded code is the decorator's wrapper.
 
-    ``measurements`` (item 7) observes only: when given, it
-    is called once, right after the initial metrics (the store's only use), with the
-    measurement store's own statistics() and the initial bounds. The producer runner records
-    the snapshot count and the initial component queries the bounds carry, which give its cache
-    hits and misses; the independent reader never passes it. The store's path and contents
-    are this function's alone: a seeded store is the runner's copy, made before this
-    admission begins.
+    ``measurements`` (item 7) observes only: when given, it is called once, right after the
+    initial metrics (the store's only use) and after the store has closed, with the store's own
+    statistics() and the initial bounds. The producer runner records the snapshot count and the
+    initial component queries the bounds carry, which give its cache hits and misses, and
+    publishes the closed store; the reader passes it to count what it measured (decisions 326,
+    344). ``before_measurements``: called once, after the fixture and the partition and before
+    the store opens; a reader copies its producer's store there. The store's path and contents
+    are this function's alone: a seeded store is the runner's copy, made before the store opens.
     """
     return contextmanager(_admission)(m, budget=budget, artifacts=artifacts, phase=phase,
-                                      measurements=measurements, initial_workers=initial_workers)
+                                      measurements=measurements, initial_workers=initial_workers,
+                                      before_measurements=before_measurements)
 
 
 # A2: queries per Plan09 admission batch (the pool accepts 1 to 64; its default is 16).
 INITIAL_BATCH_JOBS = 64
 
 
-def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0):
+def _admission(m, *, budget, artifacts, phase, measurements=None, initial_workers=0, before_measurements=None):
     # Plan09 two-worker initial admission: producers, and since o2 the ordinary reader. 0 = serial (an overlap
     # reader, Plan11 section 4).
     _require(type(initial_workers) is int and initial_workers in (0, 2),
@@ -134,21 +136,24 @@ def _admission(m, *, budget, artifacts, phase, measurements=None, initial_worker
     m.J.I.F.FUNCTIONS.PARALLEL.configure(workers=8)    # H1: one face per task, rows by index
     with m.ExecutionContext('reference') as reference_execution, \
             m.ExecutionContext('scipy') as heat_execution, \
-            m.ArrayStore(artifacts/'initial-measurements.sqlite', m.StoreLimits(**MEASUREMENT_CACHE),
-                         m.Compression(codec=MEASUREMENT_CODEC), budget=budget) as cache, \
             m.radial_differential_fixture(budget=budget, **FIXTURE) as case:
         current, partition = m.spatial.initial_partition(case, **INITIAL_PARTITION)
+        if before_measurements is not None:
+            before_measurements()
         phase('initial-physical-and-thermal-metrics')
         initial_pass = None
         if initial_workers:
             from atlas_tectonics.integration_initial_parallel import InitialParallel
             initial_pass = InitialParallel(workers=initial_workers, budget=budget, context=reference_execution,
                                            batch_jobs=INITIAL_BATCH_JOBS)
-        with (nullcontext() if initial_pass is None else initial_pass):
-            bounds, mesh = m.spatial.initial_metrics(case, partition, **INITIAL_METRICS, measure_policy=m.D.POLICY,
-                measurement_store=cache, measurement_context=reference_execution)
+        with m.ArrayStore(artifacts/'initial-measurements.sqlite', m.StoreLimits(**MEASUREMENT_CACHE),
+                          m.Compression(codec=MEASUREMENT_CODEC), budget=budget) as cache:
+            with (nullcontext() if initial_pass is None else initial_pass):
+                bounds, mesh = m.spatial.initial_metrics(case, partition, **INITIAL_METRICS, measure_policy=m.D.POLICY,
+                    measurement_store=cache, measurement_context=reference_execution)
+            statistics = cache.statistics()
         if measurements is not None:
-            measurements(cache.statistics(), bounds)
+            measurements(statistics, bounds)            # the store is closed: its bytes are final
         with m.spatial.initial_spatial_owner(case, partition, bounds, mesh, created_tracers=CREATED_TRACERS,
                 measure_policy=m.D.POLICY, heat_method=m.J.METHOD) as owner:
             yield SimpleNamespace(case=case, current=current, partition=partition, owner=owner,

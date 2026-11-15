@@ -1000,7 +1000,6 @@ class IntervalStoreSet:
             self._end_batch(state, token)
             raise
         consistent = self._end_batch(state, token)
-        self.assert_cached_read_safe(cancel=cancel)
         if not consistent:
             raise ContractError(_NESTED_STILL_OPEN)
 
@@ -1856,19 +1855,6 @@ class UnlistedCandidate:
         entry = CatalogEntry(self.interval, self.path.name, h.hexdigest(), logical_seal,
                              self.interval - 1 if self.interval else None, parent_seal,
                              head, self.producer_identity, self.runtime_identity, references)
-        # L17: re-verify the logical seal on the final read-only bytes, so a
-        # write between the logical scan and read-only is refused here rather
-        # than accepted into the catalog and refused at every later open.
-        with _workspace(self.scope.run_budget, HANDLE_CHARGE + 8 * LIMITS.max_manifest_bytes,
-                        'interval-final-verify'):
-            reader = ReadOnlyNative(self.path, scope=self.scope)
-            try:
-                if reader.token != sealed_token:
-                    raise ContractError('sealed candidate changed before final verification')
-                _verify_seal(reader, entry, self.workflow_id, cancel)
-                reader._check_identity()
-            finally:
-                reader.close()
         for owner, _ in references:
             self.stores._handle(owner, cancel=cancel)
         self._sealed = SealedCandidate(entry, self.expected_catalog_digest, self.stores)

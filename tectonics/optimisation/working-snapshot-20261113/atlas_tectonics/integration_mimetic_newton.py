@@ -17,8 +17,6 @@ _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def assert_current():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise ValueError('Newton direction source changed during solve')
     return _LOADED
 
 

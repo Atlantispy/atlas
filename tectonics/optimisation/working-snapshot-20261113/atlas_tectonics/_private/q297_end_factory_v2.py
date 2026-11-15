@@ -13,7 +13,7 @@ from types import MappingProxyType
 from pathlib import Path
 
 PINS = {
-    'provider': ('q297_end_provider_v2.py', '15628ea0778779ad85508a9fb99d8ae3bbf8424166780bd833878d72607e0f4c'),
+    'provider': ('q297_end_provider_v2.py', 'dc535cbb3422036c0a7674dd64fdd07d2bccb3357a3eb853536068f9fcbe6eed'),
     'pieces': ('q297_end_pieces_v2.py', '946d19590eea9ef0cb06174eef418ced0be70b7e0ed54529afc3038997adafa3'),
     'piece_builder': ('interval_piece_candidate.py', '9d59425bc25a312e5f5c2455f070068a298906c3a9604a008cf84d0cf4f0531e'),
     'rays': ('interval_shared_ray_candidate.py', 'bd3608c72f8092791ffcb0c4c35b6df8e8d735193217d02d6abd9c4f4c1d7825'),
@@ -21,7 +21,7 @@ PINS = {
     'start': ('material_start_candidate.py', '03c0dba5331bc4702254a3dcffcc888ad7326dc70b4e2b692956a7e207e95acf'),
     'checkpoint': ('tile_checkpoint_candidate.py', '05aca97ba4b17357339895475a81b5cf67086f2563ee390671c6f461a5a0d135'),
 }
-GRID_SHA = '7ce520e2fa99620b87e121d52649e8f22a4f19d438ee16c05b8a2fbbd90197a9'
+GRID_SHA = '74a279fcd6a66552ed19ec445691c0d37d1384dbe225ed824166f359af850f9f'
 RUNS = (
     ('q297-q336-production-attempt-g-r1', '06b9cb35-ee24-4796-bf15-1b8395390514',
      'da4027b5a8e6b61b0e5b88a14cd1b2de113050643e4b1f59dd6656d4ea5e4283',
@@ -31,10 +31,10 @@ RUNS = (
      'e1c84553a4f489d29d5d6ca46dcd1120e87cfe214c9445b563a5b7f31cfceda9',
      'e66b9500d93b4115daebffd97835222b327ab82f502266af58c7b3ed903b9376',
      'e80aad2b147c09ef63fd1a9e1ec0a0667a7e32582e52988e14b9f5798549a00d', 7200),
-    ('q363-correspondence-wc2-r1', '042cb27b-286d-485b-ba4c-74f36832eada',
-     '60fe2cb0ca292f9864471d2d057a270d89dc47551d8650b76a37c7c89b24835f'.replace(' ',''),
-     '7d94da4345c07cc639c26eff5f6ac8128a72c124151d37f34b99c6f5ae91467e',
-     '81947e2b3ccca70d75c61407b4b2555b0b9ed134e43a45cd454829a7c831b2b7', 7200),
+    ('q363-correspondence-rc1-r1', 'e913a4b9-10b5-4975-9f76-23cd2b5773a0',
+     'ec4424102d888aac064cc6924cb4270617facbf2cdbf19681c37db77d6dc518c'.replace(' ',''),
+     '37f631b58de757882e9d136970c1dfdff0aaf99cd418360c3017debb91a83662',
+     '72762f91f4b27e80b6fd86d9bde0db96f7aa3a24e9c9b503f3593c2d33980c85', 7200),
 )
 
 
@@ -80,20 +80,20 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
     grid_path = Path(grid_path)
     for spec in RUNS:
         _process_record(run_root, spec)
-    proof_root=run_root/'q363-correspondence-wc2-r1'
+    proof_root=run_root/'q363-correspondence-rc1-r1'
     request=json.loads(_pinned(proof_root/'request.json',RUNS[2][3],1 << 20))
     command=json.loads(_pinned(proof_root/'process/command.json',
-        '400c381ee40453caabee017c1441498b04ea7831ed09a3d95a21551074186ab9',1 << 20))
-    entry=run_root.parent/'iv1-diagnostic-prep/q363_correspondence_candidate_r3.py'
-    _pinned(entry,'86a91991e1a010616d66d14962b1e9b660961b762e0c7c1aa4f564668c10f00c',2 << 20)
+        'e32802ca17c8abfa836634cb2ceb781f28eba00e2ed35a96d90cb9e0c41117fa',1 << 20))
+    entry=run_root.parent/'iv1-diagnostic-prep/q363_correspondence_candidate_r4.py'
+    _pinned(entry,'5eb391471223a89a6c87c5bcbfbc0eaeac7ef96df5010804c2d7350bcdae5968',2 << 20)
     if (request.get('argv')!=command.get('argv') or request.get('cwd')!=command.get('cwd') or
             len(command['argv'])!=22 or Path(command['argv'][20]).resolve()!=entry.resolve() or
             Path(command['argv'][21]).resolve()!=(proof_root/'result-data.json').resolve()):
         raise ValueError('correspondence producer command differs')
     output=_pinned(proof_root/'process/stdout.log',
-        'cd8233c5159034ebff94337f24daef182cb401a8bb89055d61de00a7059d6b15',4096)
+        'bb5641fec8d6547cdcc73df79582635f442998f81352d34ea3df090992c0fb20',4096)
     records=[json.loads(line) for line in output.splitlines() if line.startswith(b'{')]
-    if len(records)!=1 or records[0].get('sha256')!='7cf943fa19cd6eb9f29bdb0fe0a06c48f1d860fa920985c4cef0c414464b2c54':
+    if len(records)!=1 or records[0].get('sha256')!='fef6b22d6b6757feddca7583cd530903281bf8a3d9f5b36b609622590d9b8285':
         raise ValueError('correspondence producer output differs')
     _pinned(grid_path, GRID_SHA, 4 << 20)
     modules = {}
@@ -137,7 +137,7 @@ def make_factory(*, run_root, grid_path, selected_observer=None):
             if selected_observer is not None:
                 selected_observer(dict(graph_id=closed_graph.geometry_id, grid_sha256=GRID_SHA,
                     sweep_payload_sha256='290d83c1afc94a0917078b01175d0f5aa3ee18edb8561d373a9d311de054accc',
-                    carry_proof_sha256='7cf943fa19cd6eb9f29bdb0fe0a06c48f1d860fa920985c4cef0c414464b2c54',
+                    carry_proof_sha256='fef6b22d6b6757feddca7583cd530903281bf8a3d9f5b36b609622590d9b8285',
                     inherited_witness_refinements=1, qualification_grid_split='-33/8'))
         except BaseException:
             release(result)

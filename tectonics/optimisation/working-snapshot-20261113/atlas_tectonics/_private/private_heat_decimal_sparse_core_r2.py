@@ -39,13 +39,16 @@ context_signature, boundary_signature = P.context_signature, P.boundary_signatur
 HERE = Path(__file__).resolve().parent
 PINS = {
     'private_heat_decimal_sparse_core_r1.py': '01bf9a05c51edcda5a7426fdda32bb49835566c36b2eb2fe397540e604bf0cd0',
-    'private_heat_decimal_inventory_r1.py': '47084f3f96b8f7d7475b802f38fb1916070e1d19d94cff058a10d0eb8b4d1197',
-    'private_heat_mpfr_lu_resources_r1.py': 'a5f7a5a7f61e4adeef4fd5a3bbf7179138161374f251985eea88d9746e150e90',
+    'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26',
+    'private_heat_mpfr_lu_resources_r1.py': '4e5bafc3c9812dbc176a16a388923a9c774dba266eded9ed5e343da43f5f466d',
     'private_heat_rational_decimal_r1.py': 'c21d1ec5163e5c5b18da637823d70a86d76ab6818a87ab2634ade044456df112',
     'private_heat_sparse_resources_r1.py': '63f677352a5d9d4a65ad2fe94a044c26957211aa225121f083f48b555d5e2294',
 }
 _SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()
             for path in (__file__, *(HERE/name for name in PINS))}
+for _name, _pin in PINS.items():
+    if _SOURCES[_atlas_identity.relkey(HERE/_name)] != _pin:
+        raise ValueError('Reviewed MPFR sparse dependency changed')
 PRECISION = 512
 
 
@@ -128,12 +131,6 @@ def _conversion_inventory(nbits, dbits, plan, R):
 def _runtime(cancel):
     G = M._runtime(cancel)
     _require_mpfr_context(G)
-    for name, expected in PINS.items():
-        if I._sha(HERE/name, cancel) != expected:
-            raise ValueError('Reviewed MPFR sparse dependency changed')
-    for path, expected in _SOURCES.items():
-        if I._sha(_atlas_identity.as_path(path), cancel) != expected:
-            raise ValueError('MPFR sparse source changed since import')
     import scipy
     if scipy.__version__ != '1.17.1':
         raise RuntimeError('RCM policy requires reviewed scipy1.17.1')

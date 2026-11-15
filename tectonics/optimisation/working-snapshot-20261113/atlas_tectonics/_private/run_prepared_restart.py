@@ -479,6 +479,9 @@ def spelt_on_disk(path):
     return path.name in os.listdir(path.parent)
 
 
+_UNBUILT = object()
+
+
 class RestartSources:
     """Parameterised I/runtime.py fence; complete package and helper membership.
 
@@ -488,7 +491,8 @@ class RestartSources:
     discovered from unrelated work. No source alias is installed.
     """
     __slots__ = ('profile', 'workspace', 'native_root', 'import_roots', 'manifest_path',
-                 'manifest_pin', '_manifest', 'historical_inputs', 'selected_now', '_sealed')
+                 'manifest_pin', '_manifest', 'historical_inputs', 'selected_now', '_sealed',
+                 '_fixtures', '_proof', '_bound')  # set once each by object.__setattr__ (K35, K44, K37)
 
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False):
@@ -535,6 +539,15 @@ class RestartSources:
         return _json(self._manifest)[QUERY_STORE_FLAG]
 
     def fixtures(self):
+        built = getattr(self, '_fixtures', _UNBUILT)  # K35: built once for a sources object; a None is kept too
+        if built is _UNBUILT:
+            built = self._build_fixtures()
+            object.__setattr__(self, '_fixtures', built)
+        elif built is not None:
+            built.verify()  # registry and module-file tests at every call, as each new build ran them; no hash (K34)
+        return built
+
+    def _build_fixtures(self):
         manifest = _json(self._manifest)
         if 'fixture_source_map' not in manifest:
             return None
@@ -551,6 +564,13 @@ class RestartSources:
         return adapter.FixtureSources(manifest, self.workspace)
 
     def verify(self):
+        proof = getattr(self, '_proof', None)
+        if proof is None:  # decision 275: the sources are checked once for each sources object
+            proof = self._verify_once()
+            object.__setattr__(self, '_proof', proof)
+        return dict(proof)
+
+    def _verify_once(self):
         self.profile.verify()
         observed = pinned_json(self.manifest_path, self.manifest_pin)
         require(json.dumps(observed, sort_keys=True, separators=(',', ':')).encode() == self._manifest,
@@ -631,9 +651,21 @@ class RestartSources:
         pins, data = manifest['files'], manifest['data_only']
         fixtures = self.fixtures()
         proved = {}  # path -> pin: what verify_installed_modules has just hashed, in this call (repeat fix K22)
+        bound = getattr(self, '_bound', None)
+        if bound is None:
+            bound = {}
+            object.__setattr__(self, '_bound', bound)
+
+        def hashed(path, pin):  # one hash for each loaded file in a process (K37)
+            if proved.get(path) == pin or bound.get(path) == pin:
+                return True
+            if file_hash(path) != pin:
+                return False
+            bound[path] = pin
+            return True
         if __package__ == 'atlas_tectonics._private':
             from atlas_tectonics.integration_worker_bootstrap import _INSTALLED_REGISTRY, verify_installed_modules
-            verify_installed_modules(self.native_root, pins, self.workspace, manifest=manifest)
+            verify_installed_modules(self.native_root, pins, self.workspace)  # fixtures: self.fixtures() above (K35)
             records = getattr(sys.modules.get(_INSTALLED_REGISTRY), 'records', {})
             proved = {row[1]: row[2] for name, row in records.items()
                       if (name == 'atlas_tectonics' or name.startswith('atlas_tectonics.'))
@@ -650,8 +682,7 @@ class RestartSources:
                 native_path = ordinary(filename)
                 native_key = native_path.relative_to(self.workspace).as_posix()
                 require(native_path.suffix == '.py' and native_key in pins and
-                        (not hashes or proved.get(native_path) == pins[native_key]
-                         or file_hash(native_path) == pins[native_key]),
+                        (not hashes or hashed(native_path, pins[native_key])),
                         'unbound or changed preloaded native module: '+name)
             if not filename:
                 continue
@@ -663,8 +694,7 @@ class RestartSources:
             # R6-IMPORTABLES: a loaded workspace importable is never skipped as "not .py".
             require(checked_source(path), 'loaded importable is not an exact .py source: '+relative)
             require(relative not in data, 'data-only reference imported as code: '+relative)
-            require(relative in pins and (not hashes or proved.get(path) == pins[relative]
-                                          or file_hash(path) == pins[relative]),
+            require(relative in pins and (not hashes or hashed(path, pins[relative])),
                     'unbound participating import: '+relative)
             if ('.' not in name and name != '__main__' and path.stem == name
                     and not (fixtures and name in fixtures.modules)):
@@ -828,7 +858,6 @@ class RestartSources:
             object.__setattr__(self, 'selected_now', False)
             sys.meta_path.remove(finder)
             sys.path[:] = before
-            self.verify()
 
 
 def interpreter_gate():

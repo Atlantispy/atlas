@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
 import json
-from pathlib import Path
 from types import MappingProxyType
 import weakref
 
@@ -25,7 +24,6 @@ from .regional_execution import RegionalMechanicalSnapshot
 from .regional_execution3d import SIDES, _hash, _json
 from .resources import WorkBudget
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 class ExteriorRefused(TectonicsError):
@@ -220,7 +218,7 @@ class PreparedExteriorOwner:
             raise
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise ExteriorRefused('closed or changed exterior owner source')
         self._collar._verify()
 

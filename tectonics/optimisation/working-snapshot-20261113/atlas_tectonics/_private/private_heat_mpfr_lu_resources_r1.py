@@ -38,7 +38,7 @@ from atlas_tectonics._private import private_heat_decimal_sparse_core_r1 as P
 HERE = Path(__file__).resolve().parent
 PINS = {'private_heat_mpfr_lu_r1.py': 'd1c53db2b1fd65b94b20c70d1229a24cc2f93c6c0ed57b77903e2d78c29e974e',
         'private_heat_gmp_resources_r1.py': '5ada7b86bc189393d74b20aad1f5eb312b0398f25dd74710f6209dfb94f2edca',
-        'private_heat_decimal_inventory_r1.py': '47084f3f96b8f7d7475b802f38fb1916070e1d19d94cff058a10d0eb8b4d1197'}
+        'private_heat_decimal_inventory_r1.py': 'b005c9b48a1fad993a1255e25a1126199f545075fa6e5d0877943d84784fcb26'}
 _SOURCE_PATHS = (__file__, A.__file__, P.__file__, D.POLICY_PATH,
                  *(HERE/name for name in PINS))
 _SOURCES = {_atlas_identity.relkey(path): sha256(Path(path).read_bytes()).hexdigest()

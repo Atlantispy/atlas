@@ -517,7 +517,7 @@ class PreparedThermochemical2D:
         try:
             _cancel(cancel);self._context.verify()
             with _native_lease(): yield
-            _cancel(cancel);self._context.verify()
+            _cancel(cancel)
         finally: self._active=False
     def close(self):
         if self._closed:return

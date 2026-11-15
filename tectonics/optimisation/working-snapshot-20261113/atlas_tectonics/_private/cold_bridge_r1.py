@@ -21,10 +21,10 @@ import atlas_tectonics.integration_private_heat_cold as PUBLIC
 NAME = 'integration_private_heat_cold'
 PUBLIC_SHA = 'e7dc4bddc71ef355fff4fbead34717a8a1d868ade8d606a9c0f8d02e0750c59d'
 # Equal to the reviewed diag21 public file b9d44e30: the derived text is exactly that source.
-DERIVED_SHA = 'b9d44e300e3cf2fa7aef9d557f700a0aba8483c8af808fa22e3d8102bad182de'
+DERIVED_SHA = '2668950b72f9e35ab1844902b1fa114a2f080e0f6cf0157c5713320a54b8a289'
 _EDITS = (
     ("_BINDING_SHA = '29ad6024cfe0125f5424b38648cf212e60bbf6a958a8a6e89ddd327fb3de5ae2'",
-     "_BINDING_SHA = '3f9a0642c3f8052a2bf96557ead047f1aa055dea5928ec94a1c925fe6d6aa967'"),
+     "_BINDING_SHA = '68b4199e8de4f77844747a2cd89605fe2d05bf8e6c7c2aceb9874aa6ab67d795'"),
     ("""            metadata = {k: v for k, v in exchange['transport'].items() if k != 'result_id'}
             work.stack.enter_context(budget.reserve(
                 _snapshot_charge(metadata, transport_fields), category='private-cold-transport-retained'))

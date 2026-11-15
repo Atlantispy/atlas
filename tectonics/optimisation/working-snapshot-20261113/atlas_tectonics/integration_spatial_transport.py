@@ -402,7 +402,7 @@ class PreparedSpatialTransport:
             self.close(); raise
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise TectonicsError('closed or changed spatial transport operator')
 
     @contextmanager

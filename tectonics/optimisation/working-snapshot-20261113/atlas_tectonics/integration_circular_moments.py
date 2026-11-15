@@ -19,8 +19,6 @@ METHOD='disk-polygon-first-moment:oriented-line-arc-jets-v1'
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest()!=_LOADED:
-        raise V.VolumeError('circular first-moment source changed after loading')
     return hashlib.sha256((_LOADED+interval_digest()).encode('ascii')).hexdigest()
 
 

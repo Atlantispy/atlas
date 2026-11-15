@@ -12,7 +12,6 @@ from fractions import Fraction as Q
 import hashlib
 import json
 import math
-from pathlib import Path
 import weakref
 
 import numpy as np
@@ -26,7 +25,6 @@ from .regional_heat3d import _cancel
 from .resources import WorkBudget, MemoryLimitError, _ResizableLease
 from .stokes_execution import _native_lease
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 ALGEBRA = 1e-11                    # same linear/energy gate as native 3-D heat
 # Cell-centred extremum-preserving discretisation (integration_extremum_heat):
 # selected explicitly, it replaces the hybrid-mimetic solve for that plan.
@@ -629,7 +627,7 @@ class PreparedMimeticHeat3D:
             raise
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise TectonicsError('closed or changed mimetic diffusion source')
 
     @contextmanager

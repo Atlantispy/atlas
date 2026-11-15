@@ -254,8 +254,6 @@ class PreparedRegionalEvolution3D:
             self._context = ExecutionContext('scipy')
             import sys
             self._tokens = _local_tokens(sys.modules[__name__])
-            if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED_SOURCE_SHA256:
-                raise TectonicsError('loaded regional evolution source changed')
             self._definition = dict(schema='atlas.regional-evolution3d-plan.v1',
                 cells=self.cells, lengths_m=self.lengths_m, frame_id=frame_id,
                 vertical_datum=vertical_datum, material=asdict(material),

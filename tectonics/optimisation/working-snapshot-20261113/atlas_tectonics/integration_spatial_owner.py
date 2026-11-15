@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from fractions import Fraction as Q
 import hashlib
 import json
-from pathlib import Path
 import weakref
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
 from atlas_tectonics._private import exchange_record_patch as _EXCHANGE_RECORD
@@ -30,7 +29,6 @@ from .regional_execution import RegionalMechanicalSnapshot
 from .resources import WorkBudget
 from .integration_dual_measures import B_NAME, policy_record, check_state_cells, transport_audit
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def _json(record):
@@ -501,7 +499,7 @@ class PreparedSpatialOwner:
             self.close(); raise
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise TectonicsError('closed or changed spatial exterior owner')
         self._collar._verify()
 

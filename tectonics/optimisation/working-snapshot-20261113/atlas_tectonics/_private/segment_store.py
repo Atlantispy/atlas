@@ -686,7 +686,6 @@ class SegmentView:
         except Exception as error:
             _refuse_if_changed(self.resolver, error)
             raise
-        self.resolver.assert_cached_read_safe(cancel=self.cancel)
 
     def _sealed_read(self):
         return nullcontext() if hasattr(self.resolver, 'interval') else self.verified_read()

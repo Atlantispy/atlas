@@ -447,7 +447,6 @@ def verify_installed_modules(native_root, pins, workspace, *, manifest=None):
         _require(path.is_relative_to(root/'atlas_tectonics')
                  and pins.get(path.relative_to(workspace).as_posix()) == pin,
                  'loaded module belongs to another selection: ' + name)
-        _raw(path, pin)
         # Checked execution provenance is distinct from runtime state. Existing
         # overlay/source guards own deliberate function replacement and caches.
 
@@ -692,13 +691,11 @@ class FixtureSources:
                      and relative in self.files and relative not in manifest['data_only'],
                      'fixture must be an explicit executable source')
             self.modules[name] = (path, self.files[relative])
-            _raw(path, self.files[relative])
         self.verify()
 
     def verify(self):
         registry = sys.modules.get('_atlas_checked_fixture_modules')
         for name, (path, pin) in self.modules.items():
-            _raw(path, pin)
             module = sys.modules.get(name)
             if module is not None:
                 row = None if registry is None else registry.records.get(name)

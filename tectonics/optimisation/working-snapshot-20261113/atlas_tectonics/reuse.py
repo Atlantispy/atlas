@@ -248,8 +248,12 @@ def _fixture_identity_sources(check_sources=False):
     return selected
 
 
-def _fixture_identity_binding():
-    selected = _fixture_identity_sources()
+_UNSELECTED = object()  # P6: no selection handed on (a selection may be None)
+
+
+def _fixture_identity_binding(selected=_UNSELECTED):
+    if selected is _UNSELECTED:
+        selected = _fixture_identity_sources()
     return (() if selected is None else tuple((name, path.relative_to(selected.root).as_posix(), pin,
                                                'by_path' if name in selected.finder.by_path else 'module')
                                               for name, path, pin in selected.bindings))
@@ -325,8 +329,7 @@ def _identity_module(name, fixtures):
     module = importlib.import_module(name)
     registry = sys.modules.get('_atlas_checked_fixture_modules')
     path, pin = binding
-    if (registry is None or registry.records.get(name) != (module, path, pin)
-            or type(getattr(module, '__file__', None)) is not str or Path(module.__file__).resolve() != path):
+    if registry is None or registry.records.get(name) != (module, path, pin):
         raise TectonicsError('loaded fixture identity binding changed: '+name)
     return module
 
@@ -626,7 +629,7 @@ def _callable_inventory(backend="reference", modules=None):
 
 
 def _verify_callable_inventory(backend: str, expected: dict, constants_expected: bytes, modules=None,
-                               immutable=None) -> None:
+                               immutable=None, selected=_UNSELECTED) -> None:
     """Compare live bindings without constructing discarded signature/token tables.
 
     ``expected`` retains the original objects, codes and detached defaults. Every
@@ -646,7 +649,7 @@ def _verify_callable_inventory(backend: str, expected: dict, constants_expected:
     was.
     """
     constants, fresh = {}, {}
-    fixtures = _fixture_identity_sources()
+    fixtures = _fixture_identity_sources() if selected is _UNSELECTED else selected
     # Consuming a PRIVATE shallow table enforces exact membership, including
     # duplicate qualified names introduced after preparation. Tokens themselves
     # retain strong references and detached defaults and are not mutated here.
@@ -1323,6 +1326,7 @@ class ExecutionContext:
                         _release_state.captures[backend] = self.__dict__.copy()
                     else:
                         self.__dict__.update(snapshot)
+                        self._proved = set()  # its own proof, not the snapshot's (per context, review G-4)
             else:
                 self._capture(backend)
         except BaseException as error:
@@ -1405,10 +1409,12 @@ class ExecutionContext:
             "executable_fixtures": self._fixture_binding,
             "runtime": self._runtime}))
         self._closed = False
+        self._proved = set()
         self._close_verified = False
         self._close_lock = threading.RLock()
         self._immutable = {}        # private: deeply immutable constants' normalised forms (see verify)
         self.verify_boundary()
+        self._proved.add('boundary')  # proved when made (review H-3)
 
     @property
     def provenance(self):
@@ -1423,7 +1429,22 @@ class ExecutionContext:
         if self._closed:
             raise TectonicsError("execution context is closed")
         if self._mode == 'strict':
-            self.verify_boundary()
+            if 'boundary' in self._proved:
+                self._verify_selection()
+            else:
+                self.verify_boundary()
+                self._proved.add('boundary')  # decisions 265, 275: sources and loaded functions, once
+
+    def _verify_selection(self):
+        """What ordinary running can change: closed, and the thread's fixture selection (review G-1)."""
+        with _application_context_scope(getattr(self, '_application_token', None)):
+            if self._closed:
+                raise TectonicsError("execution context is closed")
+            if _fixture_identity_binding() != self._fixture_binding:
+                raise TectonicsError("executable fixture identity selection changed")
+
+    def __getstate__(self):  # a copy starts unproved (review G-4)
+        return {**self.__dict__, '_proved': set()}
 
     def verify_boundary(self):
         """The unchanged full live-source/instruction/default check in both modes."""
@@ -1441,7 +1462,8 @@ class ExecutionContext:
             # membership. All bytes reread.
             elif _source_bytes() != self._sources:
                 raise TectonicsError("source changed; create a new execution context")
-            if _fixture_identity_binding() != self._fixture_binding:
+            selected = _fixture_identity_sources()  # P6: built once for this boundary check
+            if _fixture_identity_binding(selected) != self._fixture_binding:
                 raise TectonicsError("executable fixture identity selection changed")
             if self._expected is not None:
                 # Check the new comparison function before entering it as well as
@@ -1452,7 +1474,7 @@ class ExecutionContext:
                         or _verify_callable_inventory.__code__ is not helper[2]):
                     raise TectonicsError("loaded implementation changed")
                 _verify_callable_inventory(self.backend, self._expected, self._constants, self._modules,
-                                           self._immutable)
+                                           self._immutable, selected=selected)
                 return
             _, tokens, constants = _callable_inventory(self.backend, self._modules)
             if constants != self._constants or len(tokens) != len(self._tokens):

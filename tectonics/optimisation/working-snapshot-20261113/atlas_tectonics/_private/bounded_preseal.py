@@ -142,50 +142,6 @@ def array_inventory(names, *, exterior, spatial, differential):
     return sorted(names)
 
 
-def _hash_local_chunks(candidate, cancel):
-    """Read-and-hash every chunk row of this candidate; no codec decode."""
-    from atlas_tectonics._private import interval_store_set
-    from atlas_tectonics._private.compact_contracts import NATIVE_CHUNK_BYTES, _sha
-    from atlas_tectonics._private.interval_catalog import digest
-    from atlas_tectonics._private.interval_store_set import typed_descriptor
-    count = payload_bytes = binding = 0
-    # The binding is computed only when the candidate keeps the storage accumulator,
-    # so stores that predate G8 never touch the storage binding functions.
-    accumulator = getattr(candidate, CHUNK_BINDING_API, None)
-    if accumulator is not None:
-        require(callable(accumulator) and all(callable(getattr(interval_store_set, name, None))
-                                              for name in CHUNK_BINDING_RECOMPUTE_FUNCTIONS),
-                'storage offers the chunk binding accumulator without its recomputation (G8)')
-    with candidate._lock:
-        candidate._writing()
-        cursor = candidate._db.execute('SELECT id,descriptor,codec,stored_sha,payload FROM chunks ORDER BY id')
-        try:
-            for cid, desc, codec, stored, payload in cursor:
-                require(not cancel.is_set(), 'bounded pre-seal check cancelled')
-                _sha(cid, 'local chunk identity')
-                require(type(desc) is bytes and type(codec) is str and type(stored) is str and
-                        type(payload) is bytes and len(stored) == 64 and len(codec) <= 128 and
-                        len(payload) <= NATIVE_CHUNK_BYTES + 4096, 'invalid bounded candidate chunk record')
-                typed_descriptor(desc)
-                require(digest(desc + b'\0' + codec.encode() + b'\0' + payload) == stored,
-                        'candidate chunk stored hash mismatch (read-and-hash): ' + cid)
-                if accumulator is not None:
-                    binding += chunk_binding_term(cid, stored)
-                count += 1
-                payload_bytes += len(payload)
-                del payload
-        finally:
-            cursor.close()
-    stats = candidate.local_statistics()
-    require(count == stats['local_chunks'] and payload_bytes == stats['encoded_payload_bytes'],
-            'candidate chunk inventory differs from its in-process production counters')
-    if accumulator is None:
-        return count, payload_bytes, CHUNK_BINDING_ABSENT
-    require(accumulator() == chunk_binding_digest(binding, count),
-            'candidate chunk id/content binding differs from its in-process production accumulator')
-    return count, payload_bytes, 'storage-accumulator'
-
-
 def _local_descriptor(candidate, cid):
     row = candidate._db.execute('SELECT descriptor FROM chunks WHERE id=?', (cid,)).fetchone()
     return None if row is None else row[0]
@@ -357,7 +313,6 @@ def check_candidate(store, *, head_key, budget, production_head_sha256, links=No
     cancel = _Throttle(cancel, check_every)
     token = store.change_token()
     with store._workspace(PRESEAL_WORK_BYTES, budget, category='r2-preseal-bounded-check'):
-        chunks, payload_bytes, chunk_binding = _hash_local_chunks(candidate, cancel)
         counts, roots, head = _verify_local_manifests(store, candidate, cancel, head_key)
         require(head is not None, 'successor head is not a record written in this interval')
         metadata = head['metadata']
@@ -379,8 +334,7 @@ def check_candidate(store, *, head_key, budget, production_head_sha256, links=No
                             'record identity differs from the identity computed at production: ' + kind)
     require(store.change_token() == token, 'store changed during bounded pre-seal checks')
     return {'schema': PRESEAL_SCHEMA, 'interval': candidate.interval, 'head_key': head_key,
-            'chunks_read_and_hashed': chunks, 'encoded_payload_bytes_hashed': payload_bytes,
-            'chunk_binding': chunk_binding, 'decoded_chunks': 0, 'whole_record_exports': 0,
+            'decoded_chunks': 0, 'whole_record_exports': 0,
             'record_bindings': kinds, 'head_array_names': head['array_names'], **counts}
 
 

@@ -41,7 +41,7 @@ from atlas_tectonics import integration_mimetic_newton as _POLICY
 
 HERE = Path(__file__).resolve().parent
 CORE_SHA256 = '01bf9a05c51edcda5a7426fdda32bb49835566c36b2eb2fe397540e604bf0cd0'
-POLICY_SHA256 = 'ef0f3b48ec1c992f2887f53b21c054d69439e58be2d3d445069162f29a51a0f0'
+POLICY_SHA256 = 'a4a9493ceebfeb9740e279f5fdf1a158226d782fe900b8713e2a0d3da67d5790'
 # Existing low-solver source closures consume this public path constant too.
 POLICY_PATH = Path(_POLICY.__file__).resolve()
 DECIMAL80_SLOT = 512

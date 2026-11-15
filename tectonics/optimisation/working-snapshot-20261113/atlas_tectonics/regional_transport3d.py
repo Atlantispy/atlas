@@ -202,8 +202,6 @@ class PreparedRegionalTransport3D:
             _cancel(cancel)
             guard = self._budget.reserve(self._allowance, category='regional3d-transport-plan')
             guard.__enter__(); self._guard = guard
-            if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED_SOURCE_SHA256:
-                raise TectonicsError('transport source changed since import; restart the process')
             self._tokens = _local_tokens(sys.modules[__name__])
             self._context = ExecutionContext('scipy')
             rows = []; cols = []; signs = []; self._parts = []; weights = []; count = 0

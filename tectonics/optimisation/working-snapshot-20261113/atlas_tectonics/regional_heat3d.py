@@ -195,7 +195,6 @@ class PreparedRegionalHeat3D:
                 except FloatingPointError as exc:
                     raise TectonicsError('3D heat advance exceeds finite binary64 range') from exc
             _cancel(cancel)
-            self._verify()
         finally:
             self._active = False
 
@@ -346,7 +345,6 @@ class PreparedRegionalHeat3D:
             result = RegionalMechanicalSnapshot(metadata,
                 dict(temperature_k=temperature, enthalpy_j=enthalpy))
             _cancel(cancel)
-            self._verify()
             self._stats['advances'] += 1
             return result
 

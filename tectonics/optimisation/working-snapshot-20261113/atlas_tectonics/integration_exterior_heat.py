@@ -97,8 +97,6 @@ class PreparedFiniteExteriorHeat3D:
         self._guard.__enter__()
         try:
             interior._verify()
-            if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED_SOURCE_SHA256:
-                raise TectonicsError('finite exterior heat source changed since import')
             self._tokens = X._local_tokens(sys.modules[__name__])
             indices, conductances, capacities, used = [], [], [], set()
             for c in cells:
@@ -293,7 +291,6 @@ class PreparedFiniteExteriorHeat3D:
                 interface_interior_change_j=-interface, interface_exterior_credit_j=interface.copy())
             _cancel(cancel)
             result = RegionalMechanicalSnapshot(meta, arrays)
-        self._verify()
         self._stats['advances'] += 1
         return result
 

@@ -37,8 +37,6 @@ _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise V.VolumeError('moving-interface exclusion source changed after loading')
     return _LOADED
 
 

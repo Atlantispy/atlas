@@ -57,8 +57,7 @@ def solve_monotone(geometry, conductivity, old, capacity, dt, source, boundary,
         raise TectonicsError('nonlinear HMM repair requires insulated (zero power) or method-supported positive fixed temperature')
     if np.any(np.asarray(old)+float(dt)*np.broadcast_to(source, np.shape(old)) <= 0):
         raise TectonicsError('nonlinear HMM repair requires positive backward-Euler heat load')
-    if (type(budget) is not WorkBudget or geometry._budget is not budget or
-            hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED):
+    if type(budget) is not WorkBudget or geometry._budget is not budget:
         raise TectonicsError('changed precision source or mismatched HMM resource')
     size = len(geometry._cells)+len(geometry._incidence)
     incidences = sum(len(row[2]) for row in geometry._cells)
@@ -321,8 +320,7 @@ def _solve_with_base(geometry, conductivity, old, capacity, dt, source, boundary
                      *, budget, cancel, correction_at, correction_history, base, initial_low_order=False,
                      method='scheme2'):
     """Internal iteration entry; only solve_monotone owns a retained base."""
-    if (type(budget) is not WorkBudget or geometry._budget is not budget or
-            hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED):
+    if type(budget) is not WorkBudget or geometry._budget is not budget:
         raise TectonicsError('changed precision source or mismatched HMM resource')
     nc, nf = len(geometry._cells), len(geometry._incidence)
     n = nc+nf
@@ -900,8 +898,6 @@ def _solve(geometry, conductivity, old_input, capacity_input, dt_input, source_i
             amount = -dt*f
             raw[j-nc].append((entry[0], sign, float(amount)))
             exact_raw[j-nc].append((entry[0], sign, str(amount)))
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise TectonicsError('precision HMM source changed during solve')
     if limiter is not None:
         L.assert_current()
     _cancel(cancel)

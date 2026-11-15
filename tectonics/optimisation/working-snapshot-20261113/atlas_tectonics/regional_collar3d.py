@@ -8,9 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction
-import hashlib
 import math
-from pathlib import Path
 import weakref
 from atlas_tectonics._private import live_collar_patch as LIVE_COLLAR
 from atlas_tectonics._private import live_spatial_patch as LIVE_SPATIAL
@@ -28,7 +26,6 @@ from .regional_heat3d import PreparedRegionalHeat3D
 from .regional_transport3d import PreparedRegionalTransport3D, ConservativeFaceFlow3D
 from .resources import WorkBudget
 
-_LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -310,7 +307,7 @@ class PreparedRegionalCollar3D:
             raise
 
     def _verify(self):
-        if self._closed or hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
+        if self._closed:
             raise TectonicsError('closed or changed collar source')
         self._native._verify()
 

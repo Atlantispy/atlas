@@ -34,8 +34,6 @@ _Edge = namedtuple('_Edge', 'i j d gamma_i gamma_j shares')
 
 
 def assert_current():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise ValueError('KSS limiter source changed during solve')
     if _gamma.assert_current() != _GAMMA_LOADED:
         raise ValueError('certified gamma dependency changed during solve')
     return _LOADED

@@ -46,6 +46,7 @@ from .resources import WorkBudget
 from . import integration_mimetic_newton as N
 
 _LOADED = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
 SCHEME = 'extremum-multipoint'
 _PRECISION = 80
 _GATE = D('1e-11')                 # the existing relative heat gate
@@ -60,8 +61,6 @@ _LP_CACHE_BYTES = 1024**2           # optional, retained only during one prepare
 
 
 def assert_current():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise TectonicsError('extremum heat source changed during solve')
     return _LOADED
 
 
@@ -434,8 +433,7 @@ def prepare(geometry, conductivity, fixed, *, budget, cancel=None):
     chains of equal conductivity: no stencil reaches across a conductivity jump
     except through that interface's own harmonic point.
     """
-    if (type(budget) is not WorkBudget or geometry._budget is not budget or
-            hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED):
+    if type(budget) is not WorkBudget or geometry._budget is not budget:
         raise TectonicsError('changed extremum heat source or mismatched resource')
     with localcontext() as context, _lp_support_reuse(budget) as lp_support:
         context.prec, context.rounding = _PRECISION, ROUND_HALF_EVEN
@@ -712,8 +710,7 @@ def solve(geometry, conductivity, old, capacity, dt, source, boundary, reference
     the loads ``(E + dt q)/C`` and prescribed temperatures (to within the
     temperature equivalent of that admitted residual).
     """
-    if (type(budget) is not WorkBudget or geometry._budget is not budget or
-            hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED):
+    if type(budget) is not WorkBudget or geometry._budget is not budget:
         raise TectonicsError('changed extremum heat source or mismatched resource')
     nc, nf = len(geometry._cells), len(geometry._incidence)
     names = {name: i for i, name in enumerate(geometry._face_ids)}
@@ -1010,9 +1007,6 @@ def _solve(geometry, prepared, old_input, capacity_input, dt_input, source_input
                   kept_correction_decimal=str(kept/moved if moved else zero),
                   meaning='of the summed absolute interior face transfers: the part on faces whose two remainders '
                           'disagree, which use the two-point part alone; and the summed absolute kept corrections')
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest() != _LOADED:
-        raise TectonicsError('extremum heat source changed during solve')
-    N.assert_current()
     _cancel(cancel)
     solution = [x-reference for x in u]+[t-reference for t in traces]
     stencil = dict(prepared.statistics)

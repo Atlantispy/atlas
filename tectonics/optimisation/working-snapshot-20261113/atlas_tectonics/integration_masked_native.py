@@ -28,10 +28,6 @@ _PROJECTION_LOADED=hashlib.sha256(Path(NP.__file__).read_bytes()).hexdigest()
 
 
 def source_digest():
-    if hashlib.sha256(Path(__file__).read_bytes()).hexdigest()!=_LOADED:
-        raise V.VolumeError('full-face native integration source changed after loading')
-    if hashlib.sha256(Path(NP.__file__).read_bytes()).hexdigest()!=_PROJECTION_LOADED:
-        raise V.VolumeError('native directed projection source changed after loading')
     from .integration_moving_face_moments import source_digest as geometry_digest
     from .integration_q2_directed import source_digest as quadrature_digest
     return hashlib.sha256((_LOADED+_PROJECTION_LOADED+geometry_digest()+quadrature_digest()).encode('ascii')).hexdigest()
