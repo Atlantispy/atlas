@@ -63,10 +63,17 @@ BATCH_LOG = 32                # finished batches named in a session's report
 SURVEY = 0.25                 # seconds between two system-wide process surveys of one batch child
 
 
+_source_digests = None    # lower case: an upper-case module value would enter the execution identity
+
+
 def _inventory(inputs):
-    from .reuse import _source_bytes
-    result = {'src/atlas_tectonics/'+k: hashlib.sha256(v).hexdigest()
-              for k, v in _source_bytes().items()}
+    global _source_digests
+    if _source_digests is None:
+        from .reuse import _source_bytes
+        # Ruling 1: the package source is read once per process; the inputs bind each batch.
+        _source_digests = {'src/atlas_tectonics/'+k: hashlib.sha256(v).hexdigest()
+                           for k, v in _source_bytes().items()}
+    result = dict(_source_digests)
     result.update({'input:'+name: hashlib.sha256(raw).hexdigest()
                    for name, raw in inputs.items()})
     return result
@@ -161,7 +168,7 @@ def _replace(source, target, tries=50, pause=0.02):
             time.sleep(pause)
 
 
-def _resource_report(directory, process, body_seconds=None, ledger_peak=None):
+def _resource_report(directory, process, body_seconds=None, ledger_peak=None, marks=None):
     memory = process.memory_info()
     report = dict(pid=process.pid, create_time=process.create_time(),
         rss=memory.rss, peak_rss=getattr(memory, 'peak_wset', memory.rss))
@@ -172,6 +179,9 @@ def _resource_report(directory, process, body_seconds=None, ledger_peak=None):
     if ledger_peak is not None:
         # The largest accounted peak of a batch's child ledgers: for the report only.
         report['ledger_peak'] = ledger_peak
+    if marks is not None:
+        # Part B per-batch marks: seconds after create_time, for the report only (never a receipt).
+        report['marks'] = marks
     with (directory/'resource-next.json').open('wb') as stream:
         stream.write(canonical(report))
     _replace(directory/'resource-next.json', directory/'resource.json')
@@ -190,11 +200,15 @@ def worker_main(directory):
     directory = Path(directory)
     import psutil
     process = psutil.Process()
+    marks = {}
+    _mark(marks, 'imports', process)
     # The START report identifies this worker to its parent: it must succeed.
     _resource_report(directory, process)
+    if (directory/'kept').is_file():           # written by the parent before the launch
+        return _kept_worker(directory, process, marks)
     binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
     if is_batch(binding_bytes):
-        return _batch_worker(directory, process, binding_bytes)
+        return _batch_worker(directory, process, binding_bytes, marks)
     binding = JobBinding(binding_bytes)
     record = binding.record()
     request = record['request']
@@ -235,7 +249,7 @@ def worker_main(directory):
         pass
 
 
-def _batch_worker(directory, process, binding_bytes):
+def _batch_worker(directory, process, binding_bytes, marks):
     """worker_main for a batch binding: every member through the unchanged issuer call.
 
     Members that share their supports run on one ledger of exactly the bound
@@ -247,12 +261,34 @@ def _batch_worker(directory, process, binding_bytes):
     worker without a completion.
     """
     from .reuse import ExecutionContext
+    _mark(marks, 'begun', process)
     requests = BatchBinding(binding_bytes).record()['requests']
     if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
         # Pressure P1: pressure walls load and answer their own digest-checked inputs.
         from .integration_pressure_walls import batch_worker
         return batch_worker(directory, process, binding_bytes, requests)
-    wall = requests[0].get('kind') == WALL_KIND
+    inputs = _read_inputs(directory, requests)
+    _mark(marks, 'inputs', process)
+    observed = dict(body=0.0, peak=0)
+    with ExecutionContext('reference') as context:
+        _mark(marks, 'context', process)
+        _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process)
+    try:
+        _resource_report(directory, process, observed['body'], observed['peak'], marks)
+    except Exception:
+        pass    # as for a one-job worker: the completion is already verified
+
+
+def _mark(marks, name, process):
+    # Part B marks (recorded, never stopping): seconds after this process was created.
+    try:
+        marks[name] = round(time.time()-process.create_time(), 6)
+    except Exception:
+        pass    # a mark that cannot be taken is left out
+
+
+def _read_inputs(directory, requests):
+    """The batch's encoded supports, each read once, within the transport envelope."""
     inputs, size = {}, 0
     for request in requests:
         for identity in (request['support_id'], request.get('other_support_id')):
@@ -265,60 +301,115 @@ def _batch_worker(directory, process, binding_bytes):
             size += len(raw)
             if size > MAX_BATCH_INPUT:
                 raise ValueError('batch inputs exceed the optional transport envelope')
-    observed = dict(body=0.0, peak=0)
-    with ExecutionContext('reference') as context:
-        def run(new_ledger):
-            # The completion repeats the binding; each result is carried as one JSON string.
-            answers, held, room = [], None, MAX_RECEIPT-2*len(binding_bytes)-65536
-            if requests[0].get('schema') == VOLUME_SCHEMA:
-                from .integration_component_volume_parallel import component_answers
-                return component_answers(requests, inputs, new_ledger, room, observed)
-            for request in requests:
-                pair = request['support_id'], request.get('other_support_id')
-                try:
-                    if held is not None and held[0] == pair and held[1].reserved_bytes != held[4]:
-                        # Garbage of the previous member still holds a lease.
-                        gc.collect()
-                    if held is None or held[0] != pair or held[1].reserved_bytes != held[4]:
-                        if held is not None:
-                            observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
-                        held = None
-                        ledger = new_ledger()
-                        # Reissued support retention is inside E too, as for a one-job worker.
-                        support = _support(inputs[pair[0]], pair[0], ledger)
-                        other = None if pair[1] is None else _support(inputs[pair[1]], pair[1], ledger)
-                        held = pair, ledger, support, other, ledger.reserved_bytes
-                    begun = time.perf_counter()
-                    raw = _call(held[2], held[3], request, held[1])._json
-                    observed['body'] += time.perf_counter()-begun
-                    if wall and json.loads(raw).keys() & {'exact_zero_normal_flux', 'exact_zero_wall_measure'}:
-                        answers.append('decided')
-                    elif len(raw) > MAX_RESULT or 2*len(raw)+256 > room:
-                        answers.append('declined')    # the bounded completion has no room for it
-                    else:
-                        answers.append(raw)
-                        room -= 2*len(raw)+256
-                except ValueError:
-                    answers.append('declined')
+    return inputs
+
+
+def _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process):
+    """Every member through the unchanged issuer call between the two binding checks; result.json written."""
+    wall = requests[0].get('kind') == WALL_KIND
+
+    def run(new_ledger):
+        _mark(marks, 'identity', process)    # the context is held and the first binding check has passed
+        try:
+            return answer(new_ledger)
+        finally:
+            _mark(marks, 'body', process)
+
+    def answer(new_ledger):
+        # The completion repeats the binding; each result is carried as one JSON string.
+        answers, held, room = [], None, MAX_RECEIPT-2*len(binding_bytes)-65536
+        if requests[0].get('schema') == VOLUME_SCHEMA:
+            from .integration_component_volume_parallel import component_answers
+            return component_answers(requests, inputs, new_ledger, room, observed)
+        for request in requests:
+            pair = request['support_id'], request.get('other_support_id')
+            try:
+                if held is not None and held[0] == pair and held[1].reserved_bytes != held[4]:
+                    # Garbage of the previous member still holds a lease.
+                    gc.collect()
+                if held is None or held[0] != pair or held[1].reserved_bytes != held[4]:
+                    if held is not None:
+                        observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
                     held = None
-            if held is not None:
-                observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
-            return answers
-        receipt = batch_worker_complete(binding_bytes, context=context,
-            read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
-        if len(receipt) > MAX_RECEIPT:
-            raise ValueError('receipt exceeds optional wire envelope')
-        with (directory/'result.json').open('xb') as stream:
-            stream.write(receipt)
-    try:
-        _resource_report(directory, process, observed['body'], observed['peak'])
-    except Exception:
-        pass    # as for a one-job worker: the completion is already verified
+                    ledger = new_ledger()
+                    # Reissued support retention is inside E too, as for a one-job worker.
+                    support = _support(inputs[pair[0]], pair[0], ledger)
+                    other = None if pair[1] is None else _support(inputs[pair[1]], pair[1], ledger)
+                    held = pair, ledger, support, other, ledger.reserved_bytes
+                begun = time.perf_counter()
+                raw = _call(held[2], held[3], request, held[1])._json
+                observed['body'] += time.perf_counter()-begun
+                if wall and json.loads(raw).keys() & {'exact_zero_normal_flux', 'exact_zero_wall_measure'}:
+                    answers.append('decided')
+                elif len(raw) > MAX_RESULT or 2*len(raw)+256 > room:
+                    answers.append('declined')    # the bounded completion has no room for it
+                else:
+                    answers.append(raw)
+                    room -= 2*len(raw)+256
+            except ValueError:
+                answers.append('declined')
+                held = None
+        if held is not None:
+            observed['peak'] = max(observed['peak'], held[1].statistics()['peak_reserved_bytes'])
+        return answers
+
+    receipt = batch_worker_complete(binding_bytes, context=context,
+        read_bindings=lambda: _inventory(inputs), requests=requests, run=run)
+    if len(receipt) > MAX_RECEIPT:
+        raise ValueError('receipt exceeds optional wire envelope')
+    with (directory/'result.json').open('xb') as stream:
+        stream.write(receipt)
+    _mark(marks, 'result', process)    # after the second binding check and the write
+
+
+def _kept_worker(home, process, marks):
+    """One context for the worker's life; one batch folder per line on standard input (decision 143).
+
+    Each batch keeps both binding checks, a new ledger for each member and a
+    collection of garbage before it. A batch is finished only when its
+    result.json is closed and then its done file created. Nothing is caught:
+    an exception leaves the loop, the context's exit runs and the process
+    exits non-zero. The context's closing check runs once, at the end.
+    """
+    from .reuse import ExecutionContext
+    beside = home.resolve().parent
+    with ExecutionContext('reference') as context:
+        _mark(marks, 'context', process)
+        once = dict(marks)
+        for line in sys.stdin.buffer:          # end of input: the parent has finished with this worker, or is gone
+            directory = Path(line.rstrip(b'\r\n').decode('utf8')).resolve()
+            if directory.parent != beside or not directory.name.startswith('batch-'):
+                raise ValueError('batch folder is not beside this worker')
+            marks = dict(once)
+            _mark(marks, 'begun', process)
+            gc.collect()
+            binding_bytes = _mapped_read(directory/'binding.json', MAX_RECEIPT)
+            requests = BatchBinding(binding_bytes).record()['requests']
+            if requests[0].get('schema') == 'atlas.private.pressure-wall.r1':
+                raise ValueError('a kept worker does not answer pressure walls')
+            inputs = _read_inputs(directory, requests)
+            _mark(marks, 'inputs', process)
+            observed = dict(body=0.0, peak=0)
+            _complete(directory, binding_bytes, requests, inputs, context, observed, marks, process)
+            # V-1: the figure the recycle rule reads is taken after the batch is dropped and collected.
+            del binding_bytes, requests, inputs
+            gc.collect()
+            try:
+                _resource_report(home, process, observed['body'], observed['peak'], marks)
+            except Exception:
+                pass    # the completion is already verified
+            with (directory/'done').open('xb'):
+                pass
 
 
 class _Child:
-    def __init__(self, directory, deadline, rss_limit, interval=None):
+    served = False    # a one-shot child is adopted only after its exit is confirmed
+
+    def __init__(self, directory, deadline, rss_limit, interval=None, kept=False):
         self.directory, self.deadline, self.rss_limit = directory, deadline, rss_limit
+        # A kept worker (decision 143) serves one batch at a time: the session sets batch and baseline.
+        self.kept, self.batch, self.baseline, self.rss, self.bad_end = kept, None, None, None, None
+        self.stop_seconds = 0.0
         # None surveys the whole system in every round, as the one-job routes always did.
         self.interval, self._surveyed = interval, None
         self.lock = threading.Lock()
@@ -329,7 +420,7 @@ class _Child:
         self.peak_rss = 0
         # Scheduling observations only: launch-to-return seconds measured here
         # and the body seconds the worker reports. Neither is ever evidence.
-        self.elapsed = self.body_seconds = self.ledger_peak = None
+        self.elapsed = self.body_seconds = self.ledger_peak = self.marks = None
         self._owned = {}
         self._worker_identity = None
         self._launched_at = None
@@ -410,6 +501,9 @@ class _Child:
         reported = record.get('peak_rss')
         if type(reported) is int and reported >= 0:
             self.peak_rss = max(self.peak_rss, reported)
+        rss = record.get('rss')
+        if type(rss) is int and rss >= 0:
+            self.rss = rss    # the recycle rule's input
         body = record.get('body_seconds')
         # The range alone refuses NaN and infinity, and compares an integer
         # beyond float range exactly where math.isfinite would raise on it.
@@ -418,6 +512,11 @@ class _Child:
         peak = record.get('ledger_peak')
         if type(peak) is int and 0 <= peak < 1 << 62:
             self.ledger_peak = peak
+        marks = record.get('marks')
+        # Part B marks: kept only when well formed; a bad one is ignored, never raised.
+        if (type(marks) is dict and len(marks) <= 8 and all(type(k) is str and len(k) <= 16
+                and type(v) in (int, float) and 0 <= v <= 1e9 for k, v in marks.items())):
+            self.marks = {k: float(v) for k, v in marks.items()}
 
     def _discover(self):
         import psutil
@@ -506,29 +605,11 @@ class _Child:
         command, env = _worker_launch(self.directory)
         started = time.monotonic()
         launched = time.perf_counter()
-        with self.lock:
-            if self.cancelled:
-                raise RuntimeError('optional child cancelled before launch')
-            self._launched_at = time.time()
-            with (self.directory/'stderr.txt').open('wb') as errors:
-                self.process = subprocess.Popen(
-                    command,
-                    env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=errors,
-                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-            process = self.process
+        process = self._popen(command, env, subprocess.DEVNULL)
         try:
-            import psutil
             while True:
                 with self.lock:
-                    live, whole = self._survey(process)
-                    rss = 0
-                    for identity, monitor in live:
-                        try:
-                            if self._alive(identity, monitor):
-                                rss += monitor.memory_info().rss
-                        except psutil.NoSuchProcess:
-                            pass
-                    self.peak_rss = max(self.peak_rss, rss)
+                    live, whole = self._measure(process)
                     finished = whole and process.poll() is not None and not live and self._worker_known()
                     if process.poll() is not None and not live and not self._worker_known():
                         raise RuntimeError('optional worker identity unconfirmed after redirector exit')
@@ -538,15 +619,111 @@ class _Child:
                     raise RuntimeError('optional child resource guard reached')
                 time.sleep(0.05)
             if process.returncode:
-                with (self.directory/'stderr.txt').open('rb') as errors:
-                    detail = errors.read(4096).decode('utf8', errors='replace')
-                raise RuntimeError('optional exact child declined: '+detail)
+                raise RuntimeError('optional exact child declined: '+self._stderr())
             return _mapped_read(self.directory/'result.json', MAX_RECEIPT)
         finally:
             self.elapsed = time.perf_counter()-launched
             self.stop()
 
+    def _popen(self, command, env, stdin):
+        with self.lock:
+            if self.cancelled:
+                raise RuntimeError('optional child cancelled before launch')
+            self._launched_at = time.time()
+            with (self.directory/'stderr.txt').open('wb') as errors:
+                self.process = subprocess.Popen(
+                    command,
+                    env=env, stdin=stdin, stdout=subprocess.DEVNULL, stderr=errors,
+                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            return self.process
+
+    def _measure(self, process):
+        # One monitoring round, under the lock: (live owned processes, whether surveyed); peak_rss updated.
+        import psutil
+        live, whole = self._survey(process)
+        rss = 0
+        for identity, monitor in live:
+            try:
+                if self._alive(identity, monitor):
+                    rss += monitor.memory_info().rss
+            except psutil.NoSuchProcess:
+                pass
+        self.peak_rss = max(self.peak_rss, rss)
+        return live, whole
+
+    def _stderr(self):
+        with (self.directory/'stderr.txt').open('rb') as errors:
+            return errors.read(4096).decode('utf8', errors='replace')
+
+    def serve(self, path, binding_bytes):
+        """A kept worker's next batch (decision 143): its result once its done file is seen.
+
+        The launch, if this is the worker's first batch; the folder's line;
+        then the one-shot loop's memory and deadline guards, counted for this
+        batch. A launcher that has exited, or no live owned process, before
+        the done file is a failure. On any exception the worker is stopped.
+        """
+        path = Path(path)
+        if (path/'binding.json').read_bytes() != binding_bytes:
+            raise ValueError('dispatch file changed before launch')
+        started, launched = time.monotonic(), time.perf_counter()
+        self.peak_rss, self.rss = 0, None
+        self.body_seconds = self.ledger_peak = self.marks = None
+        try:
+            if self.process is None:
+                command, env = _worker_launch(self.directory)
+                self._popen(command, env, subprocess.PIPE)
+            process = self.process
+            with self.lock:
+                if self.cancelled:
+                    raise RuntimeError('optional child cancelled before launch')
+                process.stdin.write(str(path.absolute()).encode('utf8')+b'\n')
+                process.stdin.flush()
+            done = path/'done'
+            while True:
+                with self.lock:
+                    live, whole = self._measure(process)
+                    finished = done.exists() and self._worker_known()
+                    if not finished and (process.poll() is not None or whole and not live and self._worker_known()):
+                        raise RuntimeError('kept worker ended before its batch was done: '+self._stderr())
+                if finished:
+                    break
+                if self.peak_rss > self.rss_limit or time.monotonic()-started > self.deadline:
+                    raise RuntimeError('optional child resource guard reached')
+                time.sleep(0.05)
+            with self.lock:
+                self._worker_record()
+            return _mapped_read(path/'result.json', MAX_RECEIPT)
+        except BaseException:
+            self.stop()
+            raise
+        finally:
+            self.elapsed = time.perf_counter()-launched
+
     def stop(self):
+        begun = time.perf_counter()
+        try:
+            if self.kept and self.batch is None:
+                self._close_input()
+            self._halt()
+        finally:
+            self.stop_seconds += time.perf_counter()-begun
+
+    def _close_input(self):
+        # An idle kept worker leaves its loop by itself, so its context's closing check runs (design 4.1).
+        with self.lock:
+            process = self.process
+            if process is None or self.exited or process.stdin is None or process.stdin.closed:
+                return
+            try:
+                process.stdin.close()
+                code = process.wait(10)
+            except (OSError, subprocess.TimeoutExpired):
+                return    # today's terminate and kill follow
+            if code:
+                self.bad_end = 'kept worker ended with exit %s: %s' % (code, self._stderr())
+
+    def _halt(self):
         import psutil
         # Lock closes queued-launch and monitoring races. Each phase has one
         # ten-second bound for the entire tracked set, not ten seconds per PID.
@@ -1067,6 +1244,38 @@ class WallParallelSession(InterfaceParallelSession):
     _make_request = staticmethod(_wall_request)
 
 
+class _Served:
+    """One batch's child when its worker is kept (decision 143): the session's per-batch handle.
+
+    run() serves the batch through the worker; served is set once the worker
+    has closed the result and created the done file. stop() stops the worker.
+    """
+    exited = served = False
+
+    def __init__(self, worker, path):
+        self.worker, self.path = worker, path
+        self.done = threading.Event()
+        self.elapsed = self.body_seconds = self.ledger_peak = self.marks = None
+        self.peak_rss, self.stop_seconds = 0, 0.0
+
+    def run(self, binding_bytes):
+        worker = self.worker
+        try:
+            result = worker.serve(self.path, binding_bytes)
+            self.served = True
+            return result
+        finally:
+            self.elapsed, self.body_seconds, self.peak_rss = worker.elapsed, worker.body_seconds, worker.peak_rss
+            self.ledger_peak, self.marks = worker.ledger_peak, worker.marks
+
+    def stop(self):
+        begun = time.perf_counter()
+        try:
+            self.worker.stop()
+        finally:
+            self.stop_seconds += time.perf_counter()-begun
+
+
 class BatchParallelSession(InterfaceParallelSession):
     """Rolling one-shot workers, each answering one bounded batch of exact requests.
 
@@ -1093,7 +1302,9 @@ class BatchParallelSession(InterfaceParallelSession):
     do not make the lower-level funding operations interruption-atomic.
     """
     def __init__(self, *, budget, max_width_m3, max_leaves, wall, workers=2, child_bytes=128 << 20,
-                 predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0):
+                 predicate_units=1 << 34, timeout_seconds=1800, budget_fraction=1.0, keep_workers=False):
+        if type(keep_workers) is not bool:
+            raise ValueError('keep_workers must be a boolean')
         if (type(workers) is not int or workers < 1 or type(wall) is not bool
                 or type(budget_fraction) not in (int, float) or not 0 < budget_fraction <= 1):
             raise ValueError('a positive worker count, an explicit request kind and a fraction in (0, 1] required')
@@ -1109,6 +1320,10 @@ class BatchParallelSession(InterfaceParallelSession):
         self.stats.update(jobs=0, results=0, decided=0, refused=0, retired=0, peak_child_ledger=0)
         # Parent seconds spent on the optional route, for the scheduler's own accounting.
         self.seconds = dict(launch=0.0, receive=0.0, adopt=0.0, waited=0.0)
+        # Kept workers (decision 143): each holds its own baseline for its life; off is the one-shot path.
+        self.keep, self.kept, self._homes = keep_workers, [], 0
+        if keep_workers:
+            self.stats['recycled'] = 0
 
     def prepare(self, jobs):
         raise RuntimeError('a batch session is opened and launched by its scheduler')
@@ -1275,14 +1490,25 @@ class BatchParallelSession(InterfaceParallelSession):
         return requests, tokens, inputs
 
     def _start(self, requests, tokens, inputs, timeout):
+        begun = time.perf_counter()
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError('finite positive batch timeout required')
         timeout = min(self.timeout, timeout)    # never beyond the ceiling this session was built with
-        # Everything this session holds, with one more worker, stays inside its share of what
-        # the budget would have available without it. A finished worker has returned its baseline.
-        held = PARENT_STORAGE+sum(self.child_bytes+(0 if batch['answers'] is not None else CHILD_BASELINE)
-                                  for batch in self.batches)
-        if held+self.child_bytes+CHILD_BASELINE > self.fraction*(self.budget.available_bytes+held):
+        worker = None
+        if self.keep:
+            # One baseline for each live kept worker, one envelope for each batch.
+            worker = next((kept for kept in self.kept if kept.batch is None), None)
+            if worker is None and len(self.kept) >= self.workers:
+                return None
+            held = PARENT_STORAGE+self.child_bytes*len(self.batches)+CHILD_BASELINE*len(self.kept)
+            need = self.child_bytes+(0 if worker is not None else CHILD_BASELINE)
+        else:
+            # Everything this session holds, with one more worker, stays inside its share of what
+            # the budget would have available without it. A finished worker has returned its baseline.
+            held = PARENT_STORAGE+sum(self.child_bytes+(0 if batch['answers'] is not None else CHILD_BASELINE)
+                                      for batch in self.batches)
+            need = self.child_bytes+CHILD_BASELINE
+        if held+need > self.fraction*(self.budget.available_bytes+held):
             self.stats['refused'] += 1
             return None
         fit = FitWitness.attempt(R, self.budget, self.child_bytes, self.units)
@@ -1291,11 +1517,12 @@ class BatchParallelSession(InterfaceParallelSession):
             return None
         baseline = batch = None
         try:
-            baseline = SlotLease.attempt(R, self.budget, CHILD_BASELINE)
-            if baseline is None:
-                fit.release()
-                self.stats['refused'] += 1
-                return None
+            if worker is None:
+                baseline = SlotLease.attempt(R, self.budget, CHILD_BASELINE)
+                if baseline is None:
+                    fit.release()
+                    self.stats['refused'] += 1
+                    return None
             binding = BatchBinding.create(requests=requests, source_bindings=_inventory(inputs),
                 context=self.context, child_bytes=self.child_bytes, predicate_units=self.units)
             path = Path(self.directory.name)/('batch-%d' % self.stats['started'])
@@ -1306,7 +1533,21 @@ class BatchParallelSession(InterfaceParallelSession):
                     stream.write(raw)
             with (path/'binding.json').open('xb') as stream:
                 stream.write(binding.encoded)
-            child = _Child(path, timeout, CHILD_BASELINE+self.child_bytes, interval=SURVEY)
+            if not self.keep:
+                child = _Child(path, timeout, CHILD_BASELINE+self.child_bytes, interval=SURVEY)
+            else:
+                if worker is None:
+                    home = Path(self.directory.name)/('worker-%d' % self._homes)
+                    home.mkdir()
+                    with (home/'kept').open('xb'):
+                        pass
+                    worker = _Child(home, timeout, CHILD_BASELINE+self.child_bytes, interval=SURVEY, kept=True)
+                    # From here the worker owns the baseline; _stop closes it after its stop is confirmed.
+                    worker.baseline, baseline = baseline, None
+                    self._homes += 1
+                    self.kept.append(worker)
+                worker.deadline = timeout
+                child = _Served(worker, path)
             batch = dict(index=self.stats['started'], fit=fit, baseline=baseline, child=child,
                 dispatch=OwnedBatchDispatch(binding), inputs=inputs, requests=requests, tokens=tokens,
                 binding=binding, digest=hashlib.sha256(binding.encoded).hexdigest(), path=str(path),
@@ -1315,6 +1556,8 @@ class BatchParallelSession(InterfaceParallelSession):
             if self.pool is None:
                 self.pool = ThreadPoolExecutor(max_workers=self.workers, thread_name_prefix='atlas-batch')
             # From here the stop path owns the batch: it confirms the child before any release.
+            if worker is not None:
+                worker.batch = batch
             self.batches.append(batch)
             for index, token in enumerate(tokens):
                 self.members[token] = batch, index
@@ -1328,6 +1571,7 @@ class BatchParallelSession(InterfaceParallelSession):
             raise
         self.stats['started'] += 1
         self.stats['jobs'] += len(requests)
+        batch['start_seconds'] = time.perf_counter()-begun    # Part B parent mark
         return batch
 
     def claim(self, request, budget):
@@ -1398,12 +1642,14 @@ class BatchParallelSession(InterfaceParallelSession):
             answers = batch['dispatch'].result(timeout=batch['timeout']+15, requests=batch['requests'],
                 source_bindings=_inventory(batch['inputs']), context=self.context,
                 child_bytes=self.child_bytes, predicate_units=self.units)
-            if not child.exited:
+            if not (child.exited or child.served):
                 raise RuntimeError('worker exit not confirmed before adoption')
             self.stats['peak_child_rss'] = max(self.stats['peak_child_rss'], child.peak_rss)
             batch['fit'].complete()
-            # The child process is gone. Its envelope stays charged until the last adoption.
-            batch['baseline'].close()
+            # The child process is gone, or a kept worker has finished with this batch and keeps
+            # its own baseline. The envelope stays charged until the last adoption.
+            if batch['baseline'] is not None:
+                batch['baseline'].close()
             batch['answers'] = answers
             for index, answer in enumerate(answers):
                 if type(answer) is bytes:
@@ -1417,6 +1663,8 @@ class BatchParallelSession(InterfaceParallelSession):
                         batch['left'] -= 1
             self.stats['results'] += batch['results']
             self.stats['decided'] += batch['decided']
+            if self.keep:
+                self._release(child.worker)
         except Exception as error:
             # As _claim_ready: the Future's exception must not pin these frames.
             error.__traceback__ = None
@@ -1424,7 +1672,8 @@ class BatchParallelSession(InterfaceParallelSession):
             batch['failed'] = True
             self.cause = self.cause or 'worker failure'
         finally:
-            self.seconds['receive'] += time.perf_counter()-begun
+            batch['receive_seconds'] = time.perf_counter()-begun    # Part B parent mark
+            self.seconds['receive'] += batch['receive_seconds']
 
     def _adopt(self, batch, index, request, budget, answer):
         begun = time.perf_counter()
@@ -1478,7 +1727,8 @@ class BatchParallelSession(InterfaceParallelSession):
         may be repeated.
         """
         batch['fit'].release()
-        batch['baseline'].close()
+        if batch['baseline'] is not None:    # never a kept worker's baseline
+            batch['baseline'].close()
         self.batches = [held for held in self.batches if held is not batch]
         for token in batch['tokens']:
             if self.members.get(token, (None,))[0] is batch:
@@ -1490,7 +1740,9 @@ class BatchParallelSession(InterfaceParallelSession):
         self.log.append(dict(index=batch['index'], jobs=len(batch['requests']), results=batch['results'],
             decided=batch['decided'], adopted=batch['adopted'], declined=batch['declined'],
             failed=batch['failed'], total_seconds=child.elapsed, body_seconds=child.body_seconds,
-            peak_rss=child.peak_rss, ledger_peak=child.ledger_peak, waited_seconds=batch['clock'][0]))
+            peak_rss=child.peak_rss, ledger_peak=child.ledger_peak, waited_seconds=batch['clock'][0],
+            marks=child.marks, start_seconds=batch.get('start_seconds'),
+            receive_seconds=batch.get('receive_seconds'), stop_seconds=child.stop_seconds))
         batch['answers'] = batch['inputs'] = None
         shutil.rmtree(batch['path'], ignore_errors=True)
 
@@ -1501,17 +1753,46 @@ class BatchParallelSession(InterfaceParallelSession):
             return
         with owner.condition:
             if owner.state == 'ACTIVE' and any(held is batch for held in self.batches):
-                batch['child'].stop()
+                if not self.keep:
+                    batch['child'].stop()
+                elif batch['answers'] is None:
+                    # Its worker is still on it: stopped, as a one-shot worker is.
+                    batch['child'].stop()
+                    self._end_worker(batch['child'].worker)
                 self._finish(batch)
+
+    def _release(self, worker):
+        """After a received batch: the worker is idle again, or ended above its baseline (design 4.4).
+
+        A worker being recycled keeps its batch and its place in kept until its stop is confirmed (V-4):
+        if stop() raises, no batch is handed to it and _stop tries it again.
+        """
+        if worker.rss is None or worker.rss > CHILD_BASELINE:
+            self.stats['recycled'] += 1
+            self._end_worker(worker)
+        else:
+            worker.batch = None
+
+    def _end_worker(self, worker):
+        worker.stop()
+        # Its stop is confirmed: only now is its baseline returned.
+        self.kept = [kept for kept in self.kept if kept is not worker]
+        worker.baseline.close()
+        self._ended(worker)
+
+    def _ended(self, worker):
+        if worker.bad_end is not None:
+            self.cause = self.cause or 'worker failure'
+            self.last_error = worker.bad_end[:4096]
 
     def _stop(self):
         # ALL children confirmed stopped before ANY child funding is released. One that
         # cannot be confirmed must not leave the others unsignalled: each stop
         # is attempted, then shutdown failure or cancellation propagates without release.
         unconfirmed = interrupted = None
-        for batch in self.batches:
+        for child in [batch['child'] for batch in self.batches]+self.kept:
             try:
-                batch['child'].stop()
+                child.stop()
             except BaseException as error:
                 if isinstance(error, (KeyboardInterrupt, SystemExit)):
                     interrupted = interrupted or error
@@ -1532,6 +1813,10 @@ class BatchParallelSession(InterfaceParallelSession):
             self.pool = None
         for batch in tuple(self.batches):
             self._finish(batch)
+        for worker in self.kept:
+            worker.baseline.close()
+            self._ended(worker)
+        self.kept = []
         self.members.clear()
         if self.storage is not None:
             self.storage.close()

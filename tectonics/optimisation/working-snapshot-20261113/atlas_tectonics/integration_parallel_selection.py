@@ -105,7 +105,8 @@ class InterfaceParallelPolicy:
     requests a pass may read ahead of its parent. The rolling schedule applies
     minimum_seconds to the eligible work it expects in the whole pass, and
     rates the parent's own stretches beside its workers instead of using
-    parent_slowdown.
+    parent_slowdown. keep_workers keeps each batch worker for the session's
+    life, one batch at a time (decision 143); False is the one-shot worker.
     """
     mode: str = 'auto'
     minimum_seconds: float = 120.0
@@ -130,6 +131,7 @@ class InterfaceParallelPolicy:
     batch_seconds: object = 20.0
     batch_jobs: int = 512
     horizon: int = 4096
+    keep_workers: bool = False
 
     def __post_init__(self):
         if self.mode not in MODES:
@@ -155,6 +157,8 @@ class InterfaceParallelPolicy:
             raise ValueError('profile path must be a file name or None')
         if type(self.use_exact) is not bool:
             raise ValueError('use_exact must be a boolean')
+        if type(self.keep_workers) is not bool:
+            raise ValueError('keep_workers must be a boolean')
         if (self.batch_seconds is not None and (not _real(self.batch_seconds, 0) or not self.batch_seconds)
                 or not _whole(self.batch_jobs, 1, BATCH_LIMIT)
                 or not _whole(self.horizon, self.batch_jobs, MAX_HORIZON)):
@@ -1404,7 +1408,8 @@ class _Rolling:
         session = D.BatchParallelSession(budget=parent.budget, max_width_m3=G.W._decode(parent.width_text),
             max_leaves=parent.leaves, wall=self.family == 'wall', workers=self.workers,
             child_bytes=policy.child_bytes, predicate_units=policy.predicate_units,
-            timeout_seconds=policy.timeout_seconds, budget_fraction=policy.budget_fraction)
+            timeout_seconds=policy.timeout_seconds, budget_fraction=policy.budget_fraction,
+            keep_workers=policy.keep_workers)
         self.schedule.workers = self.workers
         # Known to this pass before it funds anything: whatever interrupts its opening, the
         # pass's close reaches it.

@@ -48,7 +48,7 @@ PRESSURE_FORCE = {'pressure_max_leaves': 2**19, 'initial_trace_max_leaves': 2**1
 # worker selection keeps fixed serial ALE: that is Plan11's comparison arm, and it establishes
 # no automatic or parallel ALE parity of its own.
 PARALLEL = {'mode': 'auto', 'workers': 2}
-ALE_PARALLEL = {'mode': 'auto', 'workers': 4}    # o3: execution-only policy; no result depends on it
+ALE_PARALLEL = {'mode': 'auto', 'workers': 4, 'keep_workers': True}    # o3, Part B: execution-only policy; no result depends on it
 SUCCESSOR_COMPARISON_ALE = {'mode': 'serial', 'workers': 2}    # the one explicit policy prepared_interval_driver accepts
 SUCCESSOR_ALE_POLICY = 'authenticated-parent-four-or-six'
 # The runner's sealed-lineage record for interval N >= 2 (prepared_interval_driver checks the same schema).
