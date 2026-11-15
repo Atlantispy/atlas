@@ -111,18 +111,29 @@ def _issue(cls, record, budget, endpoint=None):
         raise
 
 
+def _memo_id(obj, slot):
+    # _json is immutable and set once at issue, so its digest never changes.
+    try:
+        return getattr(obj, slot)
+    except AttributeError:
+        value = hashlib.sha256(obj._json).hexdigest()
+        object.__setattr__(obj, slot, value)
+        return value
+
+
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False)
 class DifferentialInterval:
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
     _endpoint: object = field(repr=False, compare=False)
+    _interval_id: str = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialInterval is issued by prepare_differential_interval')
 
     @property
     def interval_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return _memo_id(self, '_interval_id')
 
     @property
     def endpoint_network(self):
@@ -206,13 +217,14 @@ class DifferentialSupport:
     _json: bytes = field(repr=False)
     _resource: object = field(repr=False, compare=False)
     _compact_ref: object = field(repr=False, compare=False)
+    _support_id: str = field(repr=False, compare=False)
 
     def __init__(self, *args, **kwargs):
         raise TypeError('DifferentialSupport is issued by partition_physical_support')
 
     @property
     def support_id(self):
-        return hashlib.sha256(self._json).hexdigest()
+        return _memo_id(self, '_support_id')
 
     def record(self):
         return json.loads(self._json)
