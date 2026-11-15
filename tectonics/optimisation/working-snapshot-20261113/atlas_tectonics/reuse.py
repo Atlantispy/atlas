@@ -941,11 +941,17 @@ def _helper_source_hash(path, cancel):
     return digest.hexdigest()
 
 
+_strict_source_digests = {}    # lower case: an upper-case module value would enter the execution identity
+
+
 def helper_source_digest(path, *, owner_file, cancel=None):
     """Source SHA-256; share only package-private members of a verified held set.
 
-    Strict and external/uncovered source files are read in full on every call.
-    Release never creates a capture or acquires a hold here: a cold/partial
+    Strict mode reads each source and owner pair in full once per process
+    (ruling 1). A later call skips the read and the link/reparse walk of both
+    paths: those are edit checks, proved when first read, not kept safety
+    checks. The cancellation check stays on every call. In release, external/
+    uncovered source files are read in full on every call. Release never creates a capture or acquires a hold here: a cold/partial
     first capture stays fresh. A completed capture is published to captures
     only after its unchanged full verification. No policy flag or caller
     assertion can make an uncovered file eligible. Full callable, class-A,
@@ -953,10 +959,18 @@ def helper_source_digest(path, *, owner_file, cancel=None):
     """
     if cancel is not None and cancel():
         raise CancelledError("helper source scan cancelled")
+    strict = execution_mode() != "release"
+    if strict:
+        # Ruling 1: a source is checked once per process (as K40's verify).
+        key = (_atlas_identity.as_path(path).absolute(), _atlas_identity.as_path(owner_file).absolute())
+        found = _strict_source_digests.get(key)
+        if found is not None:
+            return found
     source = _helper_source_plain(path)
     owner = _helper_source_plain(owner_file)
-    if execution_mode() != "release":
-        return _helper_source_hash(source, cancel)
+    if strict:
+        found = _strict_source_digests[key] = _helper_source_hash(source, cancel)
+        return found
     with _release_state.lock:
         handles = _release_state.handles
         captures = _release_state.captures
