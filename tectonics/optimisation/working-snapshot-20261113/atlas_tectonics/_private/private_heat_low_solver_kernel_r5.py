@@ -167,13 +167,30 @@ def _bindings(incoming, cancel):
     return values
 
 
+_GMP_RESIDUAL_BITS = 12275   # set from check 3: GMP rationals are slower below this width, faster from it up
+
+
 def _residual(energy, faces, load):
+    # A cell's sum moves to GMP rationals once its denominator reaches the measured crossover.
+    # Both forms are canonical, so the Fractions returned are the same values either way.
+    q, wide = A.rational, _GMP_RESIDUAL_BITS
     values = [e-b for e, b in zip(energy, load, strict=True)]
     for i, j, amount in faces:
-        values[i] += amount
-        if j is not None:
-            values[j] -= amount
-    return values
+        native = None
+        for k, sign in ((i, 1), (j, -1)):
+            if k is None:
+                continue
+            value = values[k]
+            if type(value) is Q and value.denominator.bit_length() < wide:
+                values[k] = value+amount if sign > 0 else value-amount
+                continue
+            if native is None:
+                native = q(amount)
+            if type(value) is Q:
+                value = q(value)
+            values[k] = value+native if sign > 0 else value-native
+    # Pick 1b: mpq is in lowest terms with a positive denominator, so no second reduction.
+    return [v if type(v) is Q else Q._from_coprime_ints(int(v.numerator), int(v.denominator)) for v in values]
 
 
 def singleton_rows(prepared, *, cancel=None):
@@ -347,11 +364,12 @@ def _solve(prepared, old, capacity, dt, source, *, target, budget, workspace,
     public_temperature = [e/float(c) for e, c in zip(public_energy, cap, strict=True)]
     if not all(math.isfinite(value) and lower <= Q(value) <= upper for value in public_temperature):
         raise ValueError('Actual public stock/capacity outside exact loaded bounds; no clipping')
-    public_balance = _residual(list(map(Q, public_energy)), faces, load)
+    public_exact = list(map(Q, public_energy))    # o1 (C18): one exact conversion, read-only below
+    public_balance = _residual(public_exact, faces, load)
     source_energy = delta*sum(src)
-    global_balance = A.paired_global_balance(list(map(Q, public_energy)), load, faces, cancel=cancel)
+    global_balance = A.paired_global_balance(public_exact, load, faces, cancel=cancel)
     outward = Q(global_balance['outward'])
-    scale = max(sum(map(abs, e0)), sum(map(abs, map(Q, public_energy))), abs(source_energy), abs(outward))
+    scale = max(sum(map(abs, e0)), sum(map(abs, public_exact)), abs(source_energy), abs(outward))
     relative = Q(abs(global_balance['total']))/scale if scale else Q(0)
     if relative > PUBLIC_GLOBAL_GATE:
         raise ValueError('Actual public stock ledger failed existing global heat gate')
