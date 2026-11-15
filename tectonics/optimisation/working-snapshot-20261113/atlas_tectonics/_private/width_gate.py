@@ -26,6 +26,9 @@ lengths come from the hex digit count and the first digit; no integer is parsed.
 Nothing here writes, changes a value or touches an identity.
 """
 from builtins import AssertionError as _release_assertion_error
+from contextlib import contextmanager
+from contextvars import ContextVar
+from hashlib import sha256
 import json
 import re
 
@@ -239,7 +242,10 @@ class WidthTable:
         scanner = StreamScanner()
         for chunk in chunks:
             scanner.feed(chunk)
-        fields = scanner.finish()
+        return self.merge(kind, scanner.finish(), scanner.trajectory_steps)
+
+    def merge(self, kind, fields, trajectory_steps):
+        """Merge one finished scan of a record under ``kind``; returns its fields."""
         merged = self.records.setdefault(kind, {})
         for name, value in fields.items():
             old = merged.setdefault(name, {'count': 0, 'integers': 0,
@@ -248,8 +254,8 @@ class WidthTable:
             old['integers'] += value['integers']
             old['max_numerator_bits'] = max(old['max_numerator_bits'], value['max_numerator_bits'])
             old['max_denominator_bits'] = max(old['max_denominator_bits'], value['max_denominator_bits'])
-        if scanner.trajectory_steps is not None:
-            self.trajectory_steps = max(self.trajectory_steps or 0, scanner.trajectory_steps)
+        if trajectory_steps is not None:
+            self.trajectory_steps = max(self.trajectory_steps or 0, trajectory_steps)
         return fields
 
     def widths(self):
@@ -283,6 +289,89 @@ class WidthTable:
         if table.wire() != value:
             raise ValueError('recorded exact-width table is not canonical')
         return table
+
+
+class OptionalScan:
+    """A width scan riding on a proving stream. Item 14's rule: an optional speed-up never turns a stream that
+    passes into a refusal, so any scanner error turns the scan off and the reader streams the record itself."""
+
+    def __init__(self):
+        self._scanner = StreamScanner()
+
+    def feed(self, chunk):
+        if self._scanner is not None:
+            try:
+                self._scanner.feed(chunk)
+            except Exception:  # noqa: BLE001 - any scanner error only turns the optional scan off
+                self._scanner = None
+
+    def result(self):
+        """(fields, trajectory steps), or None if the scan was turned off."""
+        if self._scanner is None:
+            return None
+        try:
+            return self._scanner.finish(), self._scanner.trajectory_steps
+        except Exception:  # noqa: BLE001 - as in feed
+            self._scanner = None
+            return None
+
+
+_PROOFS = ContextVar('atlas_reader_proofs', default=None)
+
+
+class Proofs:
+    """What the reader's own block proved on one store object: identity and widths per whole descriptor.
+
+    The key is the canonical JSON of the whole descriptor, so a different segment, recipe or identity misses.
+    Only a stream that passed its descriptor comparison enters, and only with its scan on.
+    """
+
+    def __init__(self, store):
+        self.store, self._proved = store, {}
+
+    @staticmethod
+    def _key(descriptor):
+        return json.dumps(descriptor, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False)
+
+    def enter(self, descriptor, identity, scan):
+        result = scan.result()
+        if result is not None:
+            self._proved[self._key(descriptor)] = (dict(identity), *result)
+
+    def get(self, descriptor):
+        """(identity {'bytes', 'sha256'}, fields, trajectory steps), or None."""
+        return self._proved.get(self._key(descriptor))
+
+    def __len__(self):
+        return len(self._proved)
+
+
+@contextmanager
+def collect_proofs(store):
+    """The reader's block on its sealed store: proving opens on ``store`` inside it record their widths.
+
+    Nothing outside the block scans or enters a proof; the interval producer opens one around its advance
+    (unit A). The proofs end with the block,
+    on any exit.
+    """
+    proofs = Proofs(store)
+    token = _PROOFS.set(proofs)
+    try:
+        yield proofs
+    finally:
+        _PROOFS.reset(token)
+
+
+def active(store):
+    """The current reader block's proofs if it collects for this very store object, else None."""
+    proofs = _PROOFS.get()
+    return proofs if proofs is not None and proofs.store is store else None
+
+
+def collecting():
+    """True inside any collect_proofs block. A CompactMesh render then scans its widths onto the mesh object
+    itself (unit A), so no store match is needed."""
+    return _PROOFS.get() is not None
 
 
 def gate(root, interval1):
@@ -342,3 +431,175 @@ def compare(reference, measured):
                 out.append({'record': kind, 'field': name, 'reference': left.get(name),
                             'measured': right.get(name)})
     return out
+
+# Unit A (design duplicate-removal-r1 A-1): the width pass the interval producer and the reader share, moved here
+# from reopen_fresh_restart with its bytes unchanged but for function-local imports. require raises ValueError here
+# (ReaderRefused there).
+ROOT_RECORDS = frozenset(('state', 'mesh'))
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def _scanned(table, kind, chunks):
+    """Scan one record's canonical chunks into ``table``; returns the bytes' SHA-256 and length."""
+    digest, size = sha256(), 0
+
+    def counted():
+        nonlocal size
+        for chunk in chunks:
+            digest.update(chunk)
+            size += memoryview(chunk).nbytes
+            yield chunk
+    table.scan(kind, counted())
+    return {'sha256': digest.hexdigest(), 'nbytes': size}
+
+
+def _proved_records(store, refs, *, budget, scope, source_producer, table, proofs=None):
+    """One stream per record is both its proof and its widths (repeat fix K12).
+
+    A record the restore already proved in this reader block, under this exact descriptor, is adopted with the
+    widths its proving stream scanned (I1; proofs from WG.collect_proofs). The rest are opened with
+    prove=False and streamed here: the SHA-256 and length are compared with the reference before the widths count.
+    """
+    from atlas_tectonics._private import spatial_records_patch as SR
+    result, misses = {}, {}
+    for name, descriptor in refs.items():
+        hit = None if proofs is None else proofs.get(descriptor)
+        if hit is None:
+            misses[name] = descriptor
+            continue
+        identity, fields, steps = hit
+        require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
+                'adopted record differs from its reference: '+name)
+        table.merge(name, fields, steps)
+        result[name] = {'sha256': descriptor['sha256'], 'nbytes': descriptor['bytes']}
+    if not misses:
+        return result
+    with SR.open_records(store, misses, budget=budget, scope=scope, source_producer=source_producer,
+                         prove=False) as opened:
+        require(set(opened) == set(misses), 'compact record inventory differs from its references')
+        for name, child in opened.items():
+            proved = {'sha256': misses[name]['sha256'], 'nbytes': misses[name]['bytes']}
+            with child.iter_json() as stream:
+                def parts(stream=stream):
+                    for block in stream:
+                        with block:
+                            yield block.value
+                require(_scanned(table, name, parts()) == proved,
+                        'width stream differs from the proved record: '+name)
+            result[name] = proved
+            child.close()
+    return result
+
+
+def _mesh(workflow, scope, table):
+    from atlas_tectonics._private import spatial_indexed_patch as SI
+    from atlas_tectonics._private.mesh_tables import CompactMesh
+    held = workflow.exterior_state.indexed_record()
+    mesh = held.value['thermal_mesh']
+    require(type(mesh) is CompactMesh and mesh.scope is scope, 'compact endpoint requires its retained v3 mesh')
+    scan = getattr(mesh, '_width_scan', None)
+    if scan is not None:
+        # I3: the restore's open rendered and proved these bytes in this reader block and scanned them as it did.
+        identity = mesh.identity()
+        table.merge('mesh', *scan)
+        result = {'sha256': identity.sha256, 'nbytes': identity.canonical_bytes}
+    else:
+        result = _scanned(table, 'mesh', SI.iter_logical_json(mesh))
+    del held, mesh
+    return result
+
+
+def _native_records(store, root_key, refs, *, budget, table):
+    """A native root's records: each is one canonical JSON byte array of the root, streamed in
+    stored chunks; the width stream is the proved bytes (SHA-256 and length equal the header)."""
+    result = {}
+    for name in sorted(refs):
+        reference = refs[name]
+        require(type(reference) is dict and set(reference) == {'array', 'bytes', 'sha256'} and
+                reference['array'] == 'spatial-record:'+name, 'native root record reference differs: '+name)
+        chunks = (memoryview(chunk).cast('B') for _, chunk in store.iter_chunks(root_key, reference['array'],
+                                                                                budget=budget))
+        proved = {'sha256': reference['sha256'], 'nbytes': reference['bytes']}
+        require(_scanned(table, name, chunks) == proved, 'width stream differs from the proved record: '+name)
+        result[name] = proved
+    return result
+
+
+def root_record_identities(workflow, table):
+    """The fresh root's records, widths recorded on the proved bytes.
+
+    Workflow.create stores the sequence-0 exterior state natively (record_blobs
+    state and mesh, as JSON byte arrays of the root); a compact root (record_blobs
+    state plus a compact v3 mesh reference) is read through its proved records.
+    """
+    store, budget, head = workflow._store, workflow._budget, workflow._head
+    scope = getattr(store, 'scope', None)
+    require(scope is not None and scope.run_budget is budget,
+            'root identities require the shared retained store scope')
+    require(type(head) is dict and head.get('kind') == 'root', 'fresh root required')
+    state = head['exterior_state']
+    refs = dict(state['record_blobs'])
+    if 'compact_mesh' in state:
+        require(set(refs) == {'state'}, 'complete compact root state record required')
+        result = _proved_records(store, refs, budget=budget, scope=scope,
+                                 source_producer=state['compact_mesh']['source_producer'], table=table)
+        result['mesh'] = _mesh(workflow, scope, table)
+    else:
+        require(set(refs) == ROOT_RECORDS, 'complete native root state and mesh records required')
+        result = _native_records(store, head['key'], refs, budget=budget, table=table)
+    require(set(result) == ROOT_RECORDS, 'complete root record identities required')
+    return result
+
+
+def _successor_records(workflow, table, proofs):
+    """The successor's records, proved and their widths recorded: (result, scope)."""
+    store, budget, head = workflow._store, workflow._budget, workflow._head
+    scope = getattr(store, 'scope', None)
+    require(scope is not None and scope.run_budget is budget,
+            'compact endpoint identities require the shared retained store scope')
+    require(type(head) is dict and head.get('kind') == 'successor', 'compact fresh successor required')
+    state = head['exterior_state']
+    refs = dict(state['record_blobs'])
+    require(set(refs) == {'state'}, 'complete compact state record required')
+    exchange = head['exterior_advance']['record_blobs']
+    require(set(exchange) == {'exchange', 'graph', 'transport', 'heat'}, 'complete compact exchange records required')
+    refs.update(exchange)
+    for header, kind in (('differential_certification', 'certification'), ('differential_geometry', 'differential')):
+        refs[kind] = head[header]['record_blob']
+    result = _proved_records(store, refs, budget=budget, scope=scope,
+                             source_producer=state['compact_mesh']['source_producer'], table=table, proofs=proofs)
+    return result, scope
+
+
+def successor_record_identities(workflow, table, proofs=None):
+    """reopen_prepared_restart.endpoint_record_identities in one proved pass, widths recorded.
+
+    Same inventory, refusals and canonical result; the records are opened once
+    for both the identity proof and the width stream.
+    """
+    from atlas_tectonics._private import partition_native_patch as PN
+    from atlas_tectonics._private import partition_workflow_patch as PW
+    from atlas_tectonics._private.partition_v2 import PartitionV2
+    from atlas_tectonics._private import reopen_prepared_restart as RO
+    result, scope = _successor_records(workflow, table, proofs)
+    partition = PN.compact_view(workflow.differential_partition)
+    require(type(partition) is PartitionV2 and partition.scope is scope,
+            'compact endpoint requires its retained v2 partition')
+    result['partition'] = PW.descriptor_stats(partition)
+    result['mesh'] = _mesh(workflow, scope, table)
+    return RO.canonical_record_identities(result, successor=True)
+
+
+def producer_widths(workflow, store, number):
+    """Unit A: the interval producer's width table, from the proofs its publications entered in this collector
+    block on ``store``; a record with no proof is streamed. Returns the runner record's widths and width_proofs.
+    The partition is not read here: it has no widths, and the producer holds no compact view of it."""
+    proofs = active(store)
+    table = WidthTable(number)
+    _, scope = _successor_records(workflow, table, proofs)
+    _mesh(workflow, scope, table)
+    return {'widths': table.wire(), 'width_proofs': 0 if proofs is None else len(proofs)}

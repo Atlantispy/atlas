@@ -1333,16 +1333,23 @@ def _advance(*, record, save, guard, store, m, FRESH, PRESEAL, sources, root_run
         evidence = preseal_or_review(lambda: PRESEAL.bounded_preseal(workflow, store=store, before=before,
             after=after, budget=budget, cancel=check), seal_for_review=seal_for_review, check=check)
         identities_record = evidence.pop('record_identities')
-        record.update(record_identities=identities_record, preseal_bounded_check=evidence)
+        # Unit A: the widths from the publication's renders. Its identities are not compared with
+        # identities_record at run time (ruling 4d; test T-9).
+        from atlas_tectonics._private import width_gate as WG   # function-local: not a pressure-startup module
+        widths = WG.producer_widths(workflow, store, number)
+        record.update(record_identities=identities_record, preseal_bounded_check=evidence, **widths)
         RUN.storage_point(record, 'after-advance', checkpoint=catalog, query_directory=query_directory, store=store)
         save()
         guard.phase('seal-interval-awaiting-reader')
         return seal_with_records(store, after['head'], store_directory=store_directory, interval=number,
-            identities=identities, record=record, save=save, extra=dict(base, record_identities=identities_record))
+            identities=identities, record=record, save=save,
+            extra=dict(base, record_identities=identities_record, **widths))
     RUN.storage_point(record, 'before-advance', checkpoint=catalog, query_directory=query_directory, store=store)
     save()
     guard.phase('advance-exactly-one-fresh-interval')
-    with _focused_capture(output, sources.check_imported):
+    # Unit A: the publications inside the advance enter their proofs for finish's width pass.
+    from atlas_tectonics._private import width_gate as WG       # function-local: not a pressure-startup module
+    with _focused_capture(output, sources.check_imported), WG.collect_proofs(store):
         if lineage is None:
             return FRESH.advance_first_interval(m, store=store, expected_root=root_runner['root'], budget=budget,
                 artifacts=output, phase=guard.phase, guard=guard, record=record, save=save,

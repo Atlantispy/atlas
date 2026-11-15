@@ -103,7 +103,7 @@ def _prepare_packaged_script(argv):
     exec(compile(raw, str(bootstrap), 'exec', dont_inherit=True), helper.__dict__)
     package = helper.prepare_installed_runner(profile_path, profile_pin, __file__, runner_modules=(
         'reopen_prepared_restart', 'run_fresh_interval', 'run_prepared_restart', 'start_gate', 'overlap_reader',
-        'reader_overlap_gate', 'reuse_previous_run'))
+        'reader_overlap_gate', 'reuse_previous_run', 'width_gate'))
     return package, (profile_path, profile_pin)
 
 
@@ -120,6 +120,9 @@ from atlas_tectonics._private import start_gate as SG
 from atlas_tectonics._private import overlap_reader as OR
 from atlas_tectonics._private import reader_overlap_gate as OG
 from atlas_tectonics._private import reuse_previous_run as REUSE
+# Unit A: the shared width pass lives in width_gate, so the producer imports nothing of this reader.
+from atlas_tectonics._private.width_gate import (ROOT_RECORDS, _mesh, _native_records,  # noqa: F401
+    _proved_records, _scanned, root_record_identities, successor_record_identities)
 
 READER_SCHEMA = 'atlas.fresh-interval-reopen-result.v1'
 FINAL_SCHEMA = 'atlas.fresh-interval-reopen-final.v1'
@@ -138,13 +141,18 @@ CHECKS = {
 # A review-only interval (bounded pre-seal refused, file sealed for diagnosis) is read with
 # --review: its identities are recorded, not compared, since the refusal left none to compare.
 REVIEW_CHECKS = (CHECKS['interval']-{'compact_record_identities_identical'}) | {'compact_record_identities_recorded'}
+# Unit A (design duplicate-removal-r1 A-2): the records-only core runs no admission and opens no workflow.
+RECORDS_CHECKS = {
+    'root': frozenset(('pending_file_verified', 'root_record_identities', 'widths_recorded',
+                       'retained_scope_released')),
+    'interval': frozenset(('pending_file_verified', 'widths_adopted', 'widths_recorded', 'width_gate_evaluated',
+                           'retained_scope_released'))}
 # The review approval is checked by the runner's sealed-lineage gate as well, so it lives there (item 21).
 REVIEW_APPROVAL_SCHEMA, REVIEW_APPROVERS = F.REVIEW_APPROVAL_SCHEMA, F.REVIEW_APPROVERS
 REOPEN_REASON = {'root': F.ROOT_REOPEN_DEFERRED, 'interval': RUN.SAME_PROCESS_REOPEN_DROPPED}
 ROOT_FIELDS = frozenset(('workflow_id', 'root_key', 'kind', 'sequence', 'inspect', 'producer_pid',
                          'root_metadata_sha256', 'store_limits', 'store_compression', 'execution_provenance',
                          'preparation_ids'))
-ROOT_RECORDS = frozenset(('state', 'mesh'))
 # Item 21: what an interval N >= 2 runner record adds to bind its sealed lineage.
 LINEAGE_FIELDS = ('parent_runner_record_sha256', 'parent_adopted_sha256', 'lineage')
 
@@ -457,10 +465,12 @@ def producer_inputs(profile, *, sources, mode, receipt_sha256, consumer_pid, rev
         sealed=sealed, guard_receipt=guard, guard_control=control, consumer_pid=consumer_pid, mode=mode,
         root_runner=root_runner, review=review, interval=interval, lineage=gate,
         production_policy=RUN.producer_policy(receipt, sources, expected_route='fresh-'+mode), recorded=recorded)
-    # source_proof: a verify() the caller has just made (repeat fix K15); None verifies here.
-    proof = sources.verify() if source_proof is None else source_proof
-    require(receipt.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
-            'producer source proof differs from the selected sources')
+    # source_proof: a verify() the caller has just made (repeat fix K15); None verifies here, except for the
+    # records-only core, which checks no sources (unit A; the chain's first step did, decision 516).
+    if source_proof is not None or not records_only(mode, review, runner):
+        proof = sources.verify() if source_proof is None else source_proof
+        require(receipt.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
+                'producer source proof differs from the selected sources')
     if parent_widths is not None:
         expected['parent_widths'] = parent_widths
     return expected
@@ -508,135 +518,68 @@ def _reader_options(profile, *, mode, interval, producer_receipt_sha256, review,
     return overlap_spec
 
 
+def records_only(mode, review, runner):
+    """Unit A: which core reads this producer. A non-review interval whose runner record carries widths, or a
+    root (a fresh root is native, Workflow.create); anything else runs the full core."""
+    return not review and (mode == 'root' or 'widths' in runner)
+
+
+def _records_only(CRS, *, catalog, scope, producer, mode, record, save, checks, guard):
+    """Unit A's records-only core (A-2 steps 2-6): open-pending hashes the sealed file; the interval takes the
+    producer's width table, the root scans its two native records; then the width gate."""
+    from atlas_tectonics._private import interval_store_set as IS
+    from atlas_tectonics._private import width_gate as WG
+    from atlas_tectonics._private.compact_contracts import SegmentRef
+    entry, runner, sealed, root = producer['entry'], producer['runner'], producer['sealed'], producer['root']
+    guard.phase('open-pending-sealed-interval')
+    view = IS.IntervalStoreSet.open_pending(catalog, entry['filename'], scope=scope,
+        workflow_id=runner['workflow_id'], expected_catalog_digest=sealed['expected_catalog_digest'],
+        expected_sha256=entry['file_sha256'], expected_logical_seal=entry['logical_seal'],
+        head=SegmentRef.from_wire(runner['head']), producer_identity=runner['producer_identity'],
+        runtime_identity=runner['runtime_identity'])
+    try:
+        store = CRS.CompactRestartStore(view, scope=scope, owns_resolver=True)
+    except BaseException:
+        view.close()
+        raise
+    with store:
+        require(view.pending_entry.to_wire() == entry and store.readonly, 'pending view differs from the sealed entry')
+        F._store_configuration(store)
+        record.update(view_digest=view.catalog_digest, accepted_catalog_digest=view.accepted_catalog_digest)
+        checks['pending_file_verified'] = True
+        guard.phase('records-only-widths')
+        if mode == 'root':
+            head = store.metadata(root['root_key'])
+            require(type(head) is dict and head.get('kind') == 'root' and head.get('key') == root['root_key'],
+                    'fresh root required')
+            state = head['exterior_state']
+            # A compact root would need the full core; a fresh-route root is native (Workflow.create).
+            require('compact_mesh' not in state and set(state['record_blobs']) == ROOT_RECORDS,
+                    'records-only reader requires a native root')
+            table = WG.WidthTable(producer['interval'])
+            record['root_record_identities'] = _native_records(store, head['key'], state['record_blobs'],
+                                                               budget=scope.run_budget, table=table)
+            checks['root_record_identities'] = True
+        else:
+            table = WG.WidthTable.from_wire(runner['widths'])
+            checks['widths_adopted'] = True
+        record['widths'] = table.wire()
+        checks['widths_recorded'] = True
+        if mode == 'interval':
+            record['width_gate'] = (
+                WG.gate(WG.WidthTable.from_wire(producer['parent_widths']), table)
+                if producer['interval'] == 1 else
+                WG.gate_next(WG.WidthTable.from_wire(producer['parent_widths']), table))
+            checks['width_gate_evaluated'] = True
+        record['reader_core'] = 'records'
+        save()
+
+
 def _fallback_binding(row, mode, interval, pin):
     original = reader_output(row, mode, interval)
     target = reader_output(row, mode, interval, fallback=True)
     return OR.validate_fallback_claim(original/'sequential-fallback.claim.json', pin=pin,
                                       original=original, directory=target, receipt_limit=RO.MAX_RECEIPT)
-
-
-def _scanned(table, kind, chunks):
-    """Scan one record's canonical chunks into ``table``; returns the bytes' SHA-256 and length."""
-    digest, size = sha256(), 0
-
-    def counted():
-        nonlocal size
-        for chunk in chunks:
-            digest.update(chunk)
-            size += memoryview(chunk).nbytes
-            yield chunk
-    table.scan(kind, counted())
-    return {'sha256': digest.hexdigest(), 'nbytes': size}
-
-
-def _proved_records(store, refs, *, budget, scope, source_producer, table):
-    """One stream per record is both its proof and its widths (repeat fix K12).
-
-    open_records leaves the identity to this stream (prove=False): its SHA-256
-    and length are compared with the reference before the widths count.
-    """
-    from atlas_tectonics._private import spatial_records_patch as SR
-    result = {}
-    with SR.open_records(store, refs, budget=budget, scope=scope, source_producer=source_producer,
-                         prove=False) as opened:
-        require(set(opened) == set(refs), 'compact record inventory differs from its references')
-        for name, child in opened.items():
-            proved = {'sha256': refs[name]['sha256'], 'nbytes': refs[name]['bytes']}
-            with child.iter_json() as stream:
-                def parts(stream=stream):
-                    for block in stream:
-                        with block:
-                            yield block.value
-                require(_scanned(table, name, parts()) == proved,
-                        'width stream differs from the proved record: '+name)
-            result[name] = proved
-            child.close()
-    return result
-
-
-def _mesh(workflow, scope, table):
-    from atlas_tectonics._private import spatial_indexed_patch as SI
-    from atlas_tectonics._private.mesh_tables import CompactMesh
-    held = workflow.exterior_state.indexed_record()
-    mesh = held.value['thermal_mesh']
-    require(type(mesh) is CompactMesh and mesh.scope is scope, 'compact endpoint requires its retained v3 mesh')
-    result = _scanned(table, 'mesh', SI.iter_logical_json(mesh))
-    del held, mesh
-    return result
-
-
-def _native_records(store, root_key, refs, *, budget, table):
-    """A native root's records: each is one canonical JSON byte array of the root, streamed in
-    stored chunks; the width stream is the proved bytes (SHA-256 and length equal the header)."""
-    result = {}
-    for name in sorted(refs):
-        reference = refs[name]
-        require(type(reference) is dict and set(reference) == {'array', 'bytes', 'sha256'} and
-                reference['array'] == 'spatial-record:'+name, 'native root record reference differs: '+name)
-        chunks = (memoryview(chunk).cast('B') for _, chunk in store.iter_chunks(root_key, reference['array'],
-                                                                                budget=budget))
-        proved = {'sha256': reference['sha256'], 'nbytes': reference['bytes']}
-        require(_scanned(table, name, chunks) == proved, 'width stream differs from the proved record: '+name)
-        result[name] = proved
-    return result
-
-
-def root_record_identities(workflow, table):
-    """The fresh root's records, widths recorded on the proved bytes.
-
-    Workflow.create stores the sequence-0 exterior state natively (record_blobs
-    state and mesh, as JSON byte arrays of the root); a compact root (record_blobs
-    state plus a compact v3 mesh reference) is read through its proved records.
-    """
-    store, budget, head = workflow._store, workflow._budget, workflow._head
-    scope = getattr(store, 'scope', None)
-    require(scope is not None and scope.run_budget is budget,
-            'root identities require the shared retained store scope')
-    require(type(head) is dict and head.get('kind') == 'root', 'fresh root required')
-    state = head['exterior_state']
-    refs = dict(state['record_blobs'])
-    if 'compact_mesh' in state:
-        require(set(refs) == {'state'}, 'complete compact root state record required')
-        result = _proved_records(store, refs, budget=budget, scope=scope,
-                                 source_producer=state['compact_mesh']['source_producer'], table=table)
-        result['mesh'] = _mesh(workflow, scope, table)
-    else:
-        require(set(refs) == ROOT_RECORDS, 'complete native root state and mesh records required')
-        result = _native_records(store, head['key'], refs, budget=budget, table=table)
-    require(set(result) == ROOT_RECORDS, 'complete root record identities required')
-    return result
-
-
-def successor_record_identities(workflow, table):
-    """reopen_prepared_restart.endpoint_record_identities in one proved pass, widths recorded.
-
-    Same inventory, refusals and canonical result; the records are opened once
-    for both the identity proof and the width stream.
-    """
-    from atlas_tectonics._private import partition_native_patch as PN
-    from atlas_tectonics._private import partition_workflow_patch as PW
-    from atlas_tectonics._private.partition_v2 import PartitionV2
-    store, budget, head = workflow._store, workflow._budget, workflow._head
-    scope = getattr(store, 'scope', None)
-    require(scope is not None and scope.run_budget is budget,
-            'compact endpoint identities require the shared retained store scope')
-    require(type(head) is dict and head.get('kind') == 'successor', 'compact fresh successor required')
-    state = head['exterior_state']
-    refs = dict(state['record_blobs'])
-    require(set(refs) == {'state'}, 'complete compact state record required')
-    exchange = head['exterior_advance']['record_blobs']
-    require(set(exchange) == {'exchange', 'graph', 'transport', 'heat'}, 'complete compact exchange records required')
-    refs.update(exchange)
-    for header, kind in (('differential_certification', 'certification'), ('differential_geometry', 'differential')):
-        refs[kind] = head[header]['record_blob']
-    result = _proved_records(store, refs, budget=budget, scope=scope,
-                             source_producer=state['compact_mesh']['source_producer'], table=table)
-    partition = PN.compact_view(workflow.differential_partition)
-    require(type(partition) is PartitionV2 and partition.scope is scope,
-            'compact endpoint requires its retained v2 partition')
-    result['partition'] = PW.descriptor_stats(partition)
-    result['mesh'] = _mesh(workflow, scope, table)
-    return RO.canonical_record_identities(result, successor=True)
 
 
 def validate_fresh_lineage(*, root, head, observed, parent_interval=0):
@@ -723,17 +666,22 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
         review=False if producer is None else producer['review'], overlap_spec=overlap_spec,
         fallback=fallback, fallback_claim_sha256=fallback_claim_sha256)
     row = profile.record()
-    bound = {name: sources.module(name) for name in (F.DRIVER, *F.FRESH_MODULES)}
-    FRESH, CRS, H = bound[F.DRIVER], bound['compact_restart_store'], bound['historical_admission']
-    D = bound['heat_interval_r9_spec']
+    # Unit A: a sequential reader of a producer records_only accepts reads the records only.
+    records = overlap_spec is None and records_only(mode, producer['review'], producer['runner'])
+    bound = {name: sources.module(name) for name in
+             (('compact_restart_store',) if records else (F.DRIVER, *F.FRESH_MODULES))}
+    CRS = bound['compact_restart_store']
+    if not records:
+        FRESH, H, D = bound[F.DRIVER], bound['historical_admission'], bound['heat_interval_r9_spec']
     from atlas_tectonics._private import interval_store_set as IS
     from atlas_tectonics._private import width_gate as WG
     from atlas_tectonics._private import workflow_transfer as W
     from atlas_tectonics.resources import WorkBudget
     from atlas_tectonics.reuse import require_strict_execution
     from atlas_tectonics._private.compact_contracts import SegmentRef
-    _own_pin(sources)
-    m = F.composition(sources)
+    if not records:
+        _own_pin(sources)
+        m = F.composition(sources)
     require_strict_execution()
     record.update(RUN.interpreter_gate())
     output = guard.output.parent
@@ -746,19 +694,26 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
     guard.budget = budget = WorkBudget(RUN.LOGICAL_BYTES, max_predicate_work_units=1 << 44)
     RUN._guard_boundary(sources, guard, budget)
     check = lambda: guard.check(force=True)
-    H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
+    if not records:
+        H._loaded_source_fence(FRESH, row['advance_driver']['sha256'], check)
+        record['source_proof'] = sources.verify()
     record.update(guard_limits=SG.guard_limits(admitted), start_gate=admitted,
-                  memory_at_start={'available_bytes': available}, source_proof=sources.verify(),
+                  memory_at_start={'available_bytes': available},
                   launch_environment={name: os.environ.get(name) for name in sorted(RUN.LAUNCH_ENV)},
                   production_acceptance=False)
     catalog = _read_store(row, reuse)/F.CATALOG
     review = False if producer is None else producer['review']
-    checks = dict.fromkeys(REVIEW_CHECKS if review else CHECKS[mode], False)
+    checks = dict.fromkeys(RECORDS_CHECKS[mode] if records else REVIEW_CHECKS if review else CHECKS[mode], False)
     record['review_only'] = review
     scope = RUN.new_retained_scope(budget)
     if scope_state is not None:
         scope_state['scope'] = scope
     try:
+        if records:
+            _records_only(CRS, catalog=catalog, scope=scope, producer=producer, mode=mode, record=record, save=save,
+                          checks=checks, guard=guard)
+            record['independent_checks'] = checks
+            return budget
         with ExitStack() as contexts:
             # diag22: CollarWorkflow's cold restore resolves the private derived bridge in this scope.
             from atlas_tectonics._private import cold_bridge_r1 as COLD_BRIDGE
@@ -844,8 +799,9 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                 checks['source_bound_admission'] = True
                 guard.phase('independent-open-fresh-workflow')
                 # One store-set read batch for the whole stage: one file check before, one after.
-                with view.read_batch(), m.Workflow.open(store, runner['workflow_id'], a.case['collar'],
-                        a.case['owner'], a.case['funding'], budget=budget, exterior_owner=a.owner) as workflow:
+                with WG.collect_proofs(store) as proofs, view.read_batch(), m.Workflow.open(
+                        store, runner['workflow_id'], a.case['collar'], a.case['owner'], a.case['funding'],
+                        budget=budget, exterior_owner=a.owner) as workflow:
                     found = FRESH.published_root(workflow, store, a)
                     differing = [name for name in FRESH.ROOT_IDENTITY if name != 'execution_provenance' and
                                  found[name] != root[name]]
@@ -868,7 +824,7 @@ def reopen_fresh_interval(profile, *, sources, guard, record, save, producer, mo
                         evidence = _successor(workflow, store, producer, D=D, W=W)
                         checks.update(successor_identity=True, state_identities=True,
                                       all_six_field_groups_identical=True, fresh_lineage=True)
-                        identities = successor_record_identities(workflow, table)
+                        identities = successor_record_identities(workflow, table, proofs)
                         record['record_identities'] = identities
                         if review:
                             # The refused pre-seal left no production identities to compare with:
@@ -1079,7 +1035,8 @@ def _workload(profile, *, mode, producer_receipt_sha256, review=False, start_gat
                 times = os.times()
                 record['parent_cpu_seconds'] = {'user': times.user, 'system': times.system}
                 if guard is not None:
-                    sources.check_imported()
+                    if record.get('reader_core') != 'records':    # unit A: the records-only core checks no sources
+                        sources.check_imported()
                     guard.check(force=True)
             except BaseException as error:  # noqa: BLE001 - retain accounting and verification failures
                 record['errors'].append(_reader_error(error))
@@ -1118,7 +1075,11 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
     require(type(pid) is int and pid > 0 and pid != producer['producer_pid'],
             'reader must run in a process separate from the producer')
     checks = reopen.get('independent_checks')
-    expected = REVIEW_CHECKS if review else CHECKS[mode]
+    core = reopen.get('reader_core', 'full')
+    # Unit A: a records-only record only for a producer that core reads, never a review-only one.
+    require(core == 'full' or core == 'records' and records_only(mode, review, producer['runner']),
+            'records-only reader result of a producer it cannot read')
+    expected = RECORDS_CHECKS[mode] if core == 'records' else REVIEW_CHECKS if review else CHECKS[mode]
     require(type(checks) is dict and set(checks) == expected, 'every independent reopen check must have run')
     false = sorted(name for name, value in checks.items() if value is not True)
     RO.prior(not false, 'independent reopen checks not passed: '+', '.join(false), recorded)
@@ -1134,7 +1095,7 @@ def validate_reopen_receipt(reopen, *, guard_receipt, guard_control, profile, pr
     else:
         if review:
             RO.canonical_record_identities(reopen.get('record_identities'), successor=True)
-        else:
+        elif core == 'full':
             require(reopen.get('record_identities') == producer['runner']['record_identities'],
                     'independent compact logical records differ')
         gate, number = reopen.get('width_gate'), producer['interval']
@@ -1233,16 +1194,18 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
     output = reader_output(row, mode, interval, fallback=fallback)
     final = output/'reopen-final.json'
     require(RUN.ordinary(output, directory=True) == output and not final.exists(), 'reader final record already exists')
-    errors, verdict_sha256, gate, reuse, recorded = [], None, None, None, None
+    errors, verdict_sha256, gate, reuse, recorded, core = [], None, None, None, None, None
     try:
         recorded = _recording(sources, record_failed_prior)
         reuse = None if reuse_previous is None else REUSE.plan(profile, sources, *reuse_previous)
         then = profile if reuse is None else reuse['previous']
-        proof = sources.verify()
+        reopen, _ = OR.read_json(output/'reopen.json', pin=reopen_receipt_sha256, limit=RO.MAX_RECEIPT)
+        core = reopen.get('reader_core', 'full') if type(reopen) is dict else None
+        # Unit A (NR33): a records-only result is finalised without the source checks; the chain's first step made them.
+        proof = None if core == 'records' else sources.verify()
         producer = _producer_inputs_retry(then, sources=sources, mode=mode, receipt_sha256=producer_receipt_sha256,
                                           consumer_pid=os.getpid(), review=review, interval=interval,
                                           source_proof=proof, reuse=reuse, recorded=recorded)
-        reopen, _ = OR.read_json(output/'reopen.json', pin=reopen_receipt_sha256, limit=RO.MAX_RECEIPT)
         require(not (output/'reopen.guard-abort.json').exists() and not (output/'reopen.cancel').exists(),
                 'reader was aborted or cancelled')
         reader_guard, _ = OR.read_json(output/'reopen.guard.json', pin=guard_receipt_sha256)
@@ -1275,16 +1238,17 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
                 OR.validate_finalise(reopen, expected=expected, path=published, pin=overlap_gate_sha256,
                     producer_pins=producer_gate_pins(profile, producer, mode=mode, interval=interval),
                     waiter=reader_guard['parent'], memory_validator=SG.admit)
-        require(reopen.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
-                'reader source proof differs from the selected sources')
-        # This store-free process imported its validators normally: each must be a pinned source.
-        _imported(sources, recorded)
+        if core != 'records':
+            require(reopen.get('source_proof') == (proof if reuse is None else reuse['source_proof']),
+                    'reader source proof differs from the selected sources')
+            # This store-free process imported its validators normally: each must be a pinned source.
+            _imported(sources, recorded)
         gate = reopen.get('width_gate')
         verdict = {'schema': F.VERDICT_SCHEMA, 'status': F.READER_PASS[mode], 'interval': producer['interval'],
                    'entry': producer['entry'], 'runner_record_sha256': producer['runner_sha256'],
                    'view_digest': reopen['view_digest'], 'accepted_catalog_digest': reopen['accepted_catalog_digest'],
                    'producer_receipt_sha256': producer_receipt_sha256, 'reopen_receipt_sha256': reopen_receipt_sha256,
-                   'reader_pid': reopen['pid'], 'widths': reopen['widths'],
+                   'reader_pid': reopen['pid'], 'widths': reopen['widths'], 'reader_core': core,
                    **({} if gate is None else {'width_gate': gate}),
                    **({'review_only': True, 'preseal_refused': producer['runner']['preseal_refused'],
                        'record_identities': reopen['record_identities']} if review else {})}
@@ -1295,6 +1259,7 @@ def finalise(profile, *, mode, producer_receipt_sha256, reopen_receipt_sha256, g
               'profile_sha256': profile.sha256, 'producer_receipt_sha256': producer_receipt_sha256,
               'reopen_receipt_sha256': reopen_receipt_sha256, 'verdict_sha256': verdict_sha256,
               'width_gate_passed': None if gate is None else gate['passed'], 'errors': errors,
+              **({} if core is None else {'reader_core': core}),
               **({'overlap_gate_sha256': overlap_gate_sha256} if overlap_gate_sha256 is not None else {}),
               **({'reader_fallback': True, 'fallback_claim_sha256': fallback_claim_sha256} if fallback else {}),
               **({'recorded': recorded} if recorded else {}),
@@ -1340,7 +1305,6 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
     path = adopted_path(store_directory, interval)
     require(not path.exists(), 'this interval was already adopted')
     verdict, runner, sealed = adoption_inputs(store_directory, interval, verdict_sha256, approval_sha256)
-    sources.check_imported()
     entry = sealed['entry']
     with sources.selected():
         from atlas_tectonics._private import interval_store_set as IS
@@ -1373,7 +1337,6 @@ def adopt(profile, *, mode, verdict_sha256, approval_sha256=None, interval=None)
                 if active_error is None:
                     raise
                 active_error.add_note('Adoption scope finalisation also failed: '+repr(release_error))
-        sources.check_imported()
     value = {'schema': ADOPTED_SCHEMA, 'status': ADOPTED_STATUS, 'interval': interval, 'entry': entry,
              'catalog_digest': catalog_digest, 'catalog_sha256': RUN.file_hash(catalog),
              'verdict_sha256': verdict_sha256, 'runner_record_sha256': verdict['runner_record_sha256'],

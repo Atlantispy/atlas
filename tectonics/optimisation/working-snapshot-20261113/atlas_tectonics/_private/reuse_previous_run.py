@@ -14,7 +14,7 @@ DIAGNOSTIC = 'DIAGNOSTIC_UNCERTIFIED_NO_QUALIFICATION'
 BRAND = 'NOT SCIENTIFICALLY PERMISSIBLE'
 # The only files a reusing reader may differ in: outside the execution identity and the heat source binding.
 FREE = frozenset('atlas_tectonics/_private/'+name for name in (
-    'reopen_fresh_restart.py', 'reopen_prepared_restart.py', 'width_gate.py', 'overlap_reader.py',
+    'reopen_fresh_restart.py', 'reopen_prepared_restart.py', 'overlap_reader.py',
     'reader_overlap_gate.py', 'reuse_previous_run.py'))
 # Written by the package build from the tree's own files; `changed` compares every file they list.
 DERIVED = frozenset('atlas_tectonics/'+name for name in ('_application_sources.json', '_application_sources.sha256'))

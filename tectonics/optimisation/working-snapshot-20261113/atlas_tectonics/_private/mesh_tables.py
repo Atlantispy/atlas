@@ -748,7 +748,7 @@ class CompactMesh:
     """Authenticated storage view, NOT an issued scientific ExteriorMesh."""
     __slots__ = ('_metadata', '_budget', '_reader', '_check', '_arrays', 'geometry_id',
                  '_header', 'cell_count', 'face_count', '_grids', '_tables', '_required', '_sealed',
-                 '_scope', '_owner', '_segment', '_logical_identity')
+                 '_scope', '_owner', '_segment', '_logical_identity', '_width_scan')
 
     def __setattr__(self, name, value):
         if getattr(self, '_sealed', False):
@@ -806,10 +806,16 @@ class CompactMesh:
                 None, dependencies=(immutable_owner, *dependencies))
         self._validate()
         found, size = sha256(), 0
+        from atlas_tectonics._private import width_gate as WG
+        # Unit A: inside a collect_proofs block the same stream also scans the widths (I3's rule, :1419).
+        scan = WG.OptionalScan() if WG.collecting() else None
         for part in self.iter_legacy_json():
             check(); found.update(part)
             size += len(part)
+            if scan is not None:
+                scan.feed(part)
         require(found.hexdigest() == expected_geometry_id, 'streamed original geometry identity differs')
+        self._width_scan = None if scan is None else scan.result()
         from atlas_tectonics._private.compact_contracts import LogicalIdentity
         self._logical_identity = LogicalIdentity(LEGACY, expected_geometry_id, size)
         self._sealed = True
@@ -1388,6 +1394,7 @@ class DerivedSupportColumn:
 
 def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
     """Cold v3 admission: authenticate all columns and exactly one logical stream."""
+    from atlas_tectonics._private import width_gate as WG
     from atlas_tectonics._private.compact_contracts import LogicalIdentity
     from atlas_tectonics._private.content_cache import ChargeSpec
     scope = segment.scope
@@ -1415,12 +1422,17 @@ def mesh_from_segment(segment, metadata, arrays, reader, *, check=lambda: None):
     with arrays['id.bytes'].columns.read_batch(), reader.source._partition.record._read_batch():
         view._validate()
         found, length = sha256(), 0
+        # Inside the reader's collect_proofs block on this store the same stream also scans the widths (I3).
+        scan = WG.OptionalScan() if WG.active(segment.resolver) is not None else None
         for part in view.iter_legacy_json():
             check(); found.update(part); length += len(part)
+            if scan is not None:
+                scan.feed(part)
     identity = LogicalIdentity(LEGACY, found.hexdigest(), length)
     require(identity == segment.info.ref.identity and identity.sha256 == view.geometry_id,
             'streamed original geometry identity differs')
     view._logical_identity = identity
+    view._width_scan = None if scan is None else scan.result()
     view._sealed = True
     return view
 
@@ -1469,5 +1481,6 @@ def bind_published(view, segment, source, *, check=lambda: None):
                  '_grids', '_tables', '_required', '_scope', '_logical_identity'):
         setattr(bound, name, getattr(view, name))
     bound._owner, bound._segment, bound._reader, bound._check = owner, segment, reader, check
+    bound._width_scan = getattr(view, '_width_scan', None)     # unit A: the produced mesh's scan
     bound._sealed = True
     return bound

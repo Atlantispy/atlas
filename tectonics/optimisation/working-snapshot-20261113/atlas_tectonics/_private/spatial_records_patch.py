@@ -18,6 +18,7 @@ from atlas_tectonics._private.record_views import (CompactRecord, RecordRef, Log
                           _owned)
 from atlas_tectonics._private.segment_store import SegmentBackend
 from atlas_tectonics._private import spatial_record_recipes as RECIPES
+from atlas_tectonics._private import width_gate as WG
 
 
 BUNDLE_SCHEMA = 'atlas.spatial-record-bundle.v1'
@@ -103,16 +104,23 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
     bundle_rows = dict(plain)
     if planner.fragments:
         bundle_rows[RECIPES.FRAGMENTS] = planner.fragments
-    result, packed, bundle_ref = {}, None, None
+    # Unit A: inside the producer's collect_proofs block on this store, each render also scans the widths.
+    result, packed, bundle_ref, proofs = {}, None, None, WG.active(store)
     if bundle_rows:
         packed = RecordCodec().pack_record(bundle_rows, record_schema=BUNDLE_SCHEMA, scope=scope,
                                           check=check)
         root = packed.root()
-        identities = {}
+        identities, scans = {}, {}
         for kind in sorted(bundle_rows):
             child = root.field(kind)
-            identity = child.identity()
-            identities[kind] = dict(bytes=identity.canonical_bytes, sha256=identity.sha256)
+            if proofs is not None and kind in plain:
+                # The read path's feeding stream (open_records); the fragments row gets no scan.
+                require(child._fields is None, 'projection has no implicit full-record identity')
+                scans[kind] = WG.OptionalScan()
+                identities[kind] = RECIPES.stream_identity(child, check, feed=scans[kind].feed)
+            else:
+                identity = child.identity()
+                identities[kind] = dict(bytes=identity.canonical_bytes, sha256=identity.sha256)
             child.close()
         root.close()
         with packed.metadata_bytes() as held:
@@ -122,6 +130,8 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
                 representation_profile=CODEC_SCHEMA, scope=scope, cancel=cancel)
         result = {kind: dict(identities[kind], compact=dict(schema=REFERENCE_SCHEMA,
                   segment=bundle_ref.to_wire(), field=kind)) for kind in plain}
+        for kind, scan in scans.items():
+            proofs.enter(result[kind], identities[kind], scan)     # the descriptor the head stores
     direct_refs = [RECIPES.publish_direct(store, view, producer=producer, scope=scope, cancel=cancel)
                    for view in planner.direct]
     nodes = RECIPES.fragment_nodes(packed, len(planner.fragments)) if planner.fragments else []
@@ -136,11 +146,14 @@ def publish_records(store, rows, *, budget, source_producer, scope=None, cancel=
         segments = [bundle_ref if key == ('bundle',) else direct_refs[key[1]] for key in order]
         records = [packed if key == ('bundle',) else planner.direct[key[1]] for key in order]
         rebuilt = RECIPES.build(wire, records)
-        got = RECIPES.stream_identity(rebuilt, check)
+        scan = None if proofs is None else WG.OptionalScan()
+        got = RECIPES.stream_identity(rebuilt, check, feed=None if scan is None else scan.feed)
         rebuilt.close()
         expected = RECIPES.value_identity(rows[kind], scope=scope, check=check)
         require(got == expected, 'record recipe does not reproduce its exact logical bytes: '+kind)
         result[kind] = RECIPES.descriptor_wire(kind, got, segments, wire)
+        if scan is not None:
+            proofs.enter(result[kind], got, scan)
     planner.close()
     if packed is not None:
         packed.close()
@@ -230,8 +243,9 @@ def verify_records(store, refs, *, budget, scope=None, cancel=None, source_produ
 class _Opened:
     """Each authenticated segment record is opened and validated once."""
 
-    def __init__(self, store, scope, cancel, source_producer):
+    def __init__(self, store, scope, cancel, source_producer, render_direct=True):
         self.store, self.scope, self.cancel = store, scope, cancel
+        self.render_direct = render_direct   # I1b: False defers a direct root render to its first whole use
         self.source_producer = source_producer
         self.records, self.metadata = {}, {}
 
@@ -251,7 +265,7 @@ class _Opened:
                 self.metadata[key] = metadata
             else:
                 producer = None if self.source_producer is None else _producer(self.source_producer)
-                record = RECIPES.open_direct(segment, producer, check=check)
+                record = RECIPES.open_direct(segment, producer, check=check, render=self.render_direct)
             # The record holds the segment as a paid dependency; the local
             # SegmentView carrier retires with this frame, as before.
             self.records[key] = record
@@ -265,12 +279,17 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
     each one's single stream proves the same exact bytes and length against
     the same authenticated descriptor before any decoded value escapes
     (x-mesh-cert, M17; repeat fix K12).
+
+    Inside the reader's collect_proofs block on this store, the prove=True streams also scan the widths and,
+    after each passes its descriptor comparison, enter it; the reader's identity pass then adopts those records
+    instead of decoding them a second time (I1). Outside a collector nothing scans.
     """
     scope = _scope(store, budget, scope)
     require(type(refs) is dict and 0 < len(refs) <= 16, 'bounded record references required')
     groups, recipes = _split_refs(refs)
-    opened = _Opened(store, scope, cancel, source_producer)
+    opened = _Opened(store, scope, cancel, source_producer, render_direct=not prove)
     roots, children = [], {}
+    proofs = WG.active(store) if prove else None
     for ref, selected in groups.values():
         require(ref.identity.record_schema == BUNDLE_SCHEMA, 'foreign record bundle schema')
         record = opened.record(ref, selected)
@@ -279,7 +298,15 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
         roots.append(root)
         for kind, descriptor in selected.items():
             child = root.field(kind)
-            if prove:
+            if proofs is not None:
+                # identity()'s projection guard, kept: stream_identity has none of its own.
+                require(child._fields is None, 'projection has no implicit full-record identity')
+                scan = WG.OptionalScan()
+                identity = RECIPES.stream_identity(child, lambda: _check(cancel), feed=scan.feed)
+                require(identity == {k: descriptor[k] for k in ('bytes', 'sha256')},
+                        'record logical identity differs from its authenticated descriptor')
+                proofs.enter(descriptor, identity, scan)
+            elif prove:
                 identity = child.identity()
                 require(identity.sha256 == descriptor['sha256'] and identity.canonical_bytes == descriptor['bytes'],
                         'record logical identity differs from its authenticated descriptor')
@@ -287,9 +314,13 @@ def _children(store, refs, *, budget, scope, cancel, source_producer, prove):
     for kind, (segments, recipe) in recipes.items():
         child = RECIPES.build(recipe, [opened.record(ref) for ref in segments])
         if prove:
-            identity = RECIPES.stream_identity(child, lambda: _check(cancel))
+            scan = WG.OptionalScan() if proofs is not None else None
+            identity = RECIPES.stream_identity(child, lambda: _check(cancel),
+                                               feed=None if scan is None else scan.feed)
             require(identity == {k: refs[kind][k] for k in ('bytes', 'sha256')},
                     'record logical identity differs from its authenticated descriptor')
+            if scan is not None:
+                proofs.enter(refs[kind], identity, scan)
         children[kind] = child
     return roots, children
 

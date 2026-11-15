@@ -20,6 +20,8 @@ this code builds on, read [the interval chain](../drivers/INTERVAL_CHAIN.md).
   identifier order (an order derived from content).
 - 15 November 2026: the step 6 open patch, as run by its diagnostic chain: the interval reader's open no
   longer repeats the heat binding's proof.
+- 15 November 2026: duplicate-removal unit A with its widths fix, as run by its diagnostic chain: the
+  independent reader reads records only, without repeating work an earlier step did.
 
 Each update is one commit, so its diff shows exactly what changed. The sections below were written for the
 13 November contents; their line numbers may have moved since, and a later update may change what they

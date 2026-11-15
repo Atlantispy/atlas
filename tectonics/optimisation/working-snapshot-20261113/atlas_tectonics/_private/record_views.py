@@ -1101,6 +1101,8 @@ class _CanonicalMemo:
 
 class CompactRecord:
     """Sealed exact logical identity with explicitly owned traversal/expansion."""
+    # I1b: True only after a from_segment(render=False) open, until the root render passes.
+    _render_pending = False
     def __init__(self, owner, metadata, identity, columns, check):
         self._owner, self._meta, self._identity = owner, metadata, identity
         self._columns, self._check = columns, check
@@ -1150,7 +1152,7 @@ class CompactRecord:
         return result
 
     @classmethod
-    def from_segment(cls, segment, metadata=None, *, check=lambda: None, use_page_cache=True):
+    def from_segment(cls, segment, metadata=None, *, check=lambda: None, use_page_cache=True, render=True):
         """Own the SegmentView until all child references/streams are released.
 
         Metadata is the original bounded codec payload. WP1 authenticates the
@@ -1213,7 +1215,7 @@ class CompactRecord:
                        dependencies=(segment._owner,))
         result = cls(owner, parsed, identity, _Segment(segment, parsed['arrays'],
                      use_page_cache=use_page_cache), check)
-        result._validate()
+        result._validate(render)
         del metadata_scratch
         return result
 
@@ -1231,10 +1233,14 @@ class CompactRecord:
 
     def identity(self):
         self._live()
+        if self._render_pending:
+            self._render_root()
         return self._identity
 
     def root(self):
         self._live()
+        if self._render_pending:
+            self._render_root()
         return RecordRef(self, self._root)
 
     def close(self):
@@ -1591,6 +1597,8 @@ class CompactRecord:
         return OwnedStream(generate(), owners=(anchor,), scope=self.scope)
 
     def iter_json(self, *, max_chunk_bytes=T.CHUNK):
+        if self._render_pending:
+            self._render_root()
         return self._stream(self._root, max_chunk_bytes)
 
     def _export(self, node, *, max_logical_bytes, max_owned_bytes):
@@ -1599,10 +1607,14 @@ class CompactRecord:
                                max_owned_bytes=max_owned_bytes)
 
     def export(self, *, max_logical_bytes, max_owned_bytes):
+        if self._render_pending:
+            self._render_root()
         return self._export(self._root, max_logical_bytes=max_logical_bytes, max_owned_bytes=max_owned_bytes)
 
     def metadata_bytes(self):
         self._live()
+        if self._render_pending:
+            self._render_root()
         return _owned(self.scope, 65536, lambda: T.canonical(self._meta), 'record-metadata')
 
     def storage_payload(self):
@@ -1613,6 +1625,8 @@ class CompactRecord:
 
     def array_sources(self):
         self._live()
+        if self._render_pending:
+            self._render_root()
         for name in sorted(self._meta['arrays'], key=lambda n: n.encode('utf-8')):
             source = _ArraySource(self, name)
             try:
@@ -1620,7 +1634,7 @@ class CompactRecord:
             finally:
                 source.close()
 
-    def _validate(self):
+    def _validate(self, render=True):
         # Item 14: the optional high-byte memo must never turn an open that
         # fits without it into a refusal. If it was admitted and the scan runs
         # out of memory, the failed frame is collected (its leases with it) and
@@ -1628,7 +1642,7 @@ class CompactRecord:
         admitted, retry = [], False
         try:
             with self._read_batch():
-                self._validate_batch(keep_highs=admitted)
+                self._validate_batch(keep_highs=admitted, render=render)
         except MemoryLimitError:
             if not admitted:
                 raise
@@ -1636,9 +1650,9 @@ class CompactRecord:
         if retry:
             gc.collect()
             with self._read_batch():
-                self._validate_batch()
+                self._validate_batch(render=render)
 
-    def _validate_batch(self, keep_highs=None):
+    def _validate_batch(self, keep_highs=None, render=True):
         """Bounded structural scan plus exact identity; no recursive expansion."""
         work_budget = WorkBudget(T.MAX_BUILD_BYTES, parent=self.scope.run_budget)
         n = self._n('node.kind')
@@ -1849,6 +1863,16 @@ class CompactRecord:
                 for j in range(node_offsets[i], node_offsets[i+1]):
                     reachable[edges[j]] = 1
         require(bool(np.all(reachable)), 'unreachable hidden scientific node')
+        if render:
+            self._render_stream(work_budget)
+        else:
+            # I1b: only the O(1) part of the identity tie at open; the root render waits for a whole-record use.
+            T.require(self._identity.canonical_bytes == self._v('node.length', self._root),
+                      'logical canonical identity differs')
+            self._render_pending = True
+        del scratch, highs, highs_scratch
+
+    def _render_stream(self, work_budget):
         digest, length = sha256(), 0
         stream_scratch = T.Scratch(work_budget, 65536*4+T.MAX_DEPTH*1024)
         memo = _CanonicalMemo(self.scope)
@@ -1856,7 +1880,15 @@ class CompactRecord:
             digest.update(part); length += len(part)
         T.require(length == self._identity.canonical_bytes == self._v('node.length', self._root) and
                   digest.hexdigest() == self._identity.sha256, 'logical canonical identity differs')
-        del stream_scratch, scratch, memo, highs, highs_scratch
+        del stream_scratch, memo
+
+    def _render_root(self):
+        """I1b: the root render deferred from a render=False open. The flag clears only after the comparison
+        passes, so a refused render refuses again at every later use."""
+        self._live()
+        with self._read_batch():
+            self._render_stream(WorkBudget(T.MAX_BUILD_BYTES, parent=self.scope.run_budget))
+        self._render_pending = False
 
 
 class RecordRef:

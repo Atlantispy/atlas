@@ -259,7 +259,7 @@ def check_direct_metadata(segment, producer=None):
     return metadata
 
 
-def stream_identity(value, check):
+def stream_identity(value, check, feed=None):
     digest, length = sha256(), 0
     with value.iter_json() as stream:
         for block in stream:
@@ -267,6 +267,8 @@ def stream_identity(value, check):
                 check()
                 digest.update(block.value)
                 length += len(block.value)
+                if feed is not None:
+                    feed(block.value)
     return {'bytes': length, 'sha256': digest.hexdigest()}
 
 
@@ -296,10 +298,10 @@ def publish_direct(store, view, *, producer, scope, cancel):
         representation_profile=CODEC_SCHEMA, scope=scope, cancel=cancel)
 
 
-def open_direct(segment, producer=None, check=lambda: None):
+def open_direct(segment, producer=None, check=lambda: None, render=True):
     """Authenticated direct segment metadata, then the exact validated record."""
     metadata = check_direct_metadata(segment, producer)
-    return CompactRecord.from_segment(segment, canonical(metadata['codec']), check=check)
+    return CompactRecord.from_segment(segment, canonical(metadata['codec']), check=check, render=render)
 
 
 def descriptor_wire(kind, identity, segments, recipe):
