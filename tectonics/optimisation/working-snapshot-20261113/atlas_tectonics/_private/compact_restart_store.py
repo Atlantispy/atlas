@@ -19,7 +19,7 @@ import numpy as np
 
 from atlas_tectonics import storage as N
 from atlas_tectonics._private.compact_contracts import (ContractError, LogicalIdentity, SegmentRef,
-                               SnapshotLocator, ROOT_METADATA_MAX)
+                               ROOT_METADATA_MAX)
 from atlas_tectonics._private.content_cache import ChargeSpec, OwnedStream
 from atlas_tectonics._private.interval_catalog import file_token
 from atlas_tectonics._private.interval_store_set import IntervalStoreSet, UnlistedCandidate, LIMITS
@@ -260,27 +260,15 @@ class CompactRestartStore:
             return ()
         return tuple(sorted({head.interval, *(i for i, _ in head.references)}, reverse=True))
 
-    def _locator(self, key):
-        N._sha(key)
-        if self.candidate is not None:
-            return self.candidate.find_manifest(key)
-        for interval in self._intervals():
-            owner = self.store_set._handle(interval)
-            try:
-                owner.value.manifest(key, batched=self.store_set._batched())
-            except KeyError:
-                continue
-            return SnapshotLocator(self.store_set.workflow_id, interval, key)
-        return None
-
     def _alias(self, invocation):
-        locator = self._locator(invocation)
-        if locator is None:
-            return None
+        N._sha(invocation)
         if self.candidate is not None:
-            held = self.candidate.resolve_manifest(locator)
+            locator = self.candidate.find_manifest(invocation)
+            held = None if locator is None else self.candidate.resolve_manifest(locator)
         else:
-            held = self.store_set.resolve_manifest(self.store_set.head.interval, locator)
+            held = self.store_set.held_manifest(invocation)   # C-5: found and held in one call
+        if held is None:
+            return None
         with held:
             manifest = parse(held.value)
             value = manifest['metadata']

@@ -1011,6 +1011,22 @@ class IntervalStoreSet:
         return consistent
 
     @_serial
+    def held_manifest(self, snapshot_key, *, cancel=None):
+        """The head's or a referenced interval's manifest, held; None when none has it. A miss takes no lease."""
+        head = self.head
+        if head is None:
+            return None
+        for interval in sorted({head.interval, *(i for i, _ in head.references)}, reverse=True):
+            handle = self._handle(interval, cancel=cancel)
+            try:
+                body = handle.value.manifest(snapshot_key, batched=self._batched())
+            except KeyError:
+                continue
+            return _owned(self.scope, LIMITS.max_manifest_bytes, lambda: body, cancel=cancel,
+                          dependencies=(handle,))
+        return None
+
+    @_serial
     def resolve_manifest(self, requester_interval, locator, *, cancel=None):
         if type(locator) is not SnapshotLocator or locator.workflow_id != self.workflow_id:
             raise ContractError('foreign/invalid snapshot locator')
