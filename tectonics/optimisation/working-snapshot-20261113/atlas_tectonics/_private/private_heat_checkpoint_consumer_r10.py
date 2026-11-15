@@ -6,8 +6,11 @@ original call, exact sources and runtime. It returns a detached data view, not
 I12/native heat and not a new endpoint. No LOW/HIGH/FCT solve, native dispatch,
 fixture promotion, source repinning or storage schema/limit change occurs.
 
-Independent checks repeat exact input, physical face, per-cell/projection,
-loaded-bound and stock/source/exterior equations from stored bytes. They do not
+With proofs on (compact_contracts.proving(), decision 542; F-3, decisions 668,
+669, 672), independent checks repeat exact input, physical face,
+per-cell/projection, loaded-bound and stock/source/exterior equations from
+stored bytes; in ordinary runs the projection step's audit of the private record
+stands for them and the stored arrays' form and inputs are still tested. They do not
 rerun the closed quadratic scalar selection; its original forward provenance
 is retained, not converted into a fresh scientific acceptance claim.
 JSON views follow resources r4: the saved identity is computed before, not
@@ -24,12 +27,12 @@ from atlas_tectonics._private import private_heat_issuer_resources_r4 as R
 from atlas_tectonics._private import private_heat_snapshot_store_r4 as STORE
 
 SCHEMA = 'atlas.private.i12-detached-checkpoint-consumer.r10'
-_ISSUER_SHA = '171e153ea1eb15af89e4a0bfdf550deab0d18442a97b8d306c8f88922cdacfde'
+_ISSUER_SHA = 'b553e11e8cfe37faa0566c244c9dee7a37aaaeb6ae4ffde05620bc1813dc3c17'
 _PINS = {
     'private_heat_snapshot_store_r4.py': 'e78001983fa96d4d212e0d142dd391c9837c48543b44fc2738d221c64b593a24',
-    'private_heat_issuer_resources_r4.py': '4b42978b3edab325e8d52fad7de8d970e98ac124951b7db02823479c46516e11',
+    'private_heat_issuer_resources_r4.py': '8faeddcee7296c472a5a824d0f9f201fb2549d6fa46b55839ad9d0b594697329',
     'private_heat_native_projection_r5.py': 'fbb940aa89846274cfbf4c9d5c185f69b0958a4fa4884a6b2b67fb84e0bb95a6',
-    'private_heat_forward_kernel_r13.py': '793dee9c65006b586c302a3768ee68bb61f2666dd4a475ae5722b376b7e279f4',
+    'private_heat_forward_kernel_r13.py': 'b5d48a44f5ff1b244cdd1ac03e9bc49ef4310753003134037b38f74f540cf039',
     'private_heat_native_issuer_r13.py': _ISSUER_SHA,
 }
 HERE = Path(__file__).resolve().parent
@@ -195,7 +198,9 @@ def _validate(snapshot, call, *, expected_result_id, cancel=None):
                     if not I.np.array_equal(arrays[output].view(I.np.uint8),
                                            call._snapshot.array(incoming).view(I.np.uint8)):
                         raise ValueError('Stored actual input arrays differ from original call')
-                _equations(ar, meta, call._geometry, arrays, plan_owner.value, origin['duration_s'])
+                from atlas_tectonics._private.compact_contracts import proving
+                if proving():    # F-3 (step5-6-twice s4, decisions 668, 669): proofs on only
+                    _equations(ar, meta, call._geometry, arrays, plan_owner.value, origin['duration_s'])
                 # No arithmetic result escapes this fixed validation frame.
                 ar.settle(())
                 owner.__exit__(None, None, None)
