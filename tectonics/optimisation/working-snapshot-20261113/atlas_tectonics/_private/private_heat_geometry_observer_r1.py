@@ -8,11 +8,13 @@ return counts and cooperative checks are intentionally not collected.
 """
 from contextlib import contextmanager
 import sys
+import threading
 
 
 class _Observer:
     def __init__(self, guard, stages, ticks, geometry):
         self.guard = guard
+        self.thread = threading.get_ident()     # made, installed and removed by the driver's own thread
         self.monitoring = sys.monitoring
         self.tool = 3
         self.name = 'private-original-heat-control'
@@ -26,6 +28,8 @@ class _Observer:
         self.suspended = False
 
     def on_start(self, code, offset):
+        if threading.get_ident() != self.thread:
+            return     # a watched start on another thread (H9's predictor) is not a phase mark
         self.guard.phase(self.started[code])
 
     def on_return(self, code, offset, value):

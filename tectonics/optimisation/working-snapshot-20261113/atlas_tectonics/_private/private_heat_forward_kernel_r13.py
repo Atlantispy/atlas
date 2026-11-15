@@ -54,6 +54,7 @@ from hashlib import sha256
 import math
 from pathlib import Path
 import sys
+import threading
 from time import perf_counter
 from types import ModuleType
 
@@ -74,6 +75,9 @@ HERE = Path(__file__).resolve().parent
 # lists of the interpreter (at most about 5.5 MB), the exact library's object
 # cache (about 0.5 MB) and modules a process imports on its first call (0.7 MB).
 RESIDUE = 8388608
+# The predictor's working set while it runs beside the reconstruction, reserved on the run's ledger first
+# (design s4 ruling 2, dec 111): twice b0's 35,975,168 B growth across LOW.solve, rounded up to 64 MiB.
+PREDICTOR_PIN = 128 << 20
 
 
 def _source_paths():
@@ -234,6 +238,33 @@ def _exact_route(selected, used, first, ladder):
     return [(None, stuck)] if stuck and len(ladder) > 1 else []
 
 
+def _beside(solve, stop):
+    """Start the predictor in one thread. The caller joins before using box[0]."""
+    import contextvars
+    import decimal
+    import gmpy2
+    contexts = decimal.getcontext().copy(), gmpy2.get_context().copy()
+    events, box = [], []
+
+    def stopped():
+        if stop.is_set():
+            raise CancelledError('Private composed heat cancelled')
+        return False
+
+    def body():
+        # A thread starts with default numeric contexts, not this thread's.
+        decimal.setcontext(contexts[0])
+        gmpy2.set_context(contexts[1])
+        try:
+            box.append(solve(stopped, lambda *event: events.append(event)))
+        except BaseException as error:
+            box.append(error)
+
+    thread = threading.Thread(target=contextvars.copy_context().run, args=(body,), name='heat-predictor')
+    thread.start()
+    return thread, box, events
+
+
 def _run(geometry, old, capacity, dt, source, boundary, k, target, budget, check, stage, observe):
     """Own all producer frames until success; return before final union transfer.
 
@@ -287,12 +318,52 @@ frame disappears before the returned result graph replaces its entire stack.
         powers = set(normalized)-temperatures
         refinements = []
         with threadpool_limits(1):
-            low = complete(LOW.solve(prepared, old, capacity, dt, source,
-                target=target, budget=budget, source_bindings=_SOURCES, cancel=check, observe=observe))
-            stage('certify-full-polygon-functionals')
-            row_owner = complete(FUNCTIONS.reconstruct(payload,
-                boundary_point_faces=temperatures, boundary_power_faces=powers,
-                conductivity=k, budget=budget, cancelled=check))
+            # Errata r2: beside only where the pool can start workers (FP's three tests); otherwise base order.
+            meter = METER.active(budget)
+            beside = (meter is not None and getattr(meter, 'categories', None) is None
+                      and not getattr(meter, 'failed', False))
+            if not beside:
+                low = complete(LOW.solve(prepared, old, capacity, dt, source,
+                    target=target, budget=budget, source_bindings=_SOURCES, cancel=check, observe=observe))
+                stage('certify-full-polygon-functionals')
+                row_owner = complete(FUNCTIONS.reconstruct(payload,
+                    boundary_point_faces=temperatures, boundary_power_faces=powers,
+                    conductivity=k, budget=budget, cancelled=check))
+            else:
+                stage('certify-full-polygon-functionals')
+                stop = threading.Event()
+                side = type(budget)(METER.SIDE_BYTES)     # as the meter builds its side ledger (MT:181)
+                with budget.reserve(PREDICTOR_PIN, category='predictor-beside-pin'):
+                    thread, box, events = _beside(lambda stopped, note: LOW.solve(prepared, old, capacity, dt,
+                        source, target=target, budget=side, source_bindings=_SOURCES, cancel=stopped,
+                        observe=note), stop)
+
+                    def guarded():
+                        if box and isinstance(box[0], BaseException):
+                            raise box[0]          # the predictor failed: end the reconstruction now
+                        return check()
+
+                    try:
+                        row_owner = complete(FUNCTIONS.reconstruct(payload,
+                            boundary_point_faces=temperatures, boundary_power_faces=powers,
+                            conductivity=k, budget=budget, cancelled=guarded))
+                    except BaseException:
+                        stop.set()
+                        thread.join()
+                        if box and not isinstance(box[0], BaseException):
+                            retain(box[0])        # a finished predictor stays in this frame's custody
+                        raise
+                    thread.join()
+                    if not isinstance(box[0], BaseException):
+                        retain(box[0])            # custody first: the fresh guard below may raise
+                    check()                       # the caller's guard, fresh, before the result is used
+                    if isinstance(box[0], BaseException):
+                        raise box[0]
+                    if observe is not None:
+                        for event in events:
+                            observe(*event)
+                    # Errata r3: the run's ledger takes the result before the side lease is released.
+                    low = retain(LIFE.compact(box[0], budget=budget, source=side, cancelled=check))
             rows, proof = row_owner.value
             witness = proof
             assessment = None

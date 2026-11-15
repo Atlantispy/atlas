@@ -142,7 +142,7 @@ def _select(value, path):
     return value
 
 
-def _transfer(owner, *, path, boundary, assessment, budget, cancelled, category):
+def _transfer(owner, *, path, boundary, assessment, budget, cancelled, category, source=None):
     _check(cancelled)
     _sources(cancelled)
     from atlas_tectonics._private import private_heat_gmp_resources_r1 as R
@@ -153,7 +153,8 @@ def _transfer(owner, *, path, boundary, assessment, budget, cancelled, category)
     if type(owner) not in (P.OwnedSolve, GEOMETRY.OwnedPreparation, A.OwnedAssessment, OwnedValue, OwnedAssessment):
         raise TypeError('Fixed completed private stage owner required')
     old_work = owner._workspace
-    if type(old_work) is not R.OwnedWorkspace or old_work.lease.budgets != (budget,):
+    held = budget if source is None else source     # the ledger the producer's workspace must be on
+    if type(old_work) is not R.OwnedWorkspace or old_work.lease.budgets != (held,):
         raise TypeError('Live completed stage must have this exact caller budget')
     owner.value
     if type(category) is not str or not category:
@@ -308,7 +309,7 @@ def _transfer(owner, *, path, boundary, assessment, budget, cancelled, category)
         raise
 
 
-def compact(owner, *, budget, path=(), cancelled=None, category='heat-completed-stage-output'):
+def compact(owner, *, budget, path=(), cancelled=None, category='heat-completed-stage-output', source=None):
     """Own a complete output (or fixed projection), atomically retire producer.
 
     For example FUNCTIONS.value=(rows,proof): compact(...,path=(1,)) retains
@@ -320,7 +321,7 @@ def compact(owner, *, budget, path=(), cancelled=None, category='heat-completed-
     if type(owner) in (A.OwnedAssessment, OwnedAssessment) and not path:
         raise TypeError('Use compact_assessment to preserve certificate/view custody')
     return _transfer(owner, path=path, boundary=None, assessment=False, budget=budget,
-                     cancelled=cancelled, category=category)
+                     cancelled=cancelled, category=category, source=source)
 
 
 def compact_assessment(owner, boundary, *, budget, cancelled=None):
