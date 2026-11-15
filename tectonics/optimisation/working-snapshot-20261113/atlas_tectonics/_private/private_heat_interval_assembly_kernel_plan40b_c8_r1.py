@@ -84,7 +84,8 @@ class OwnedAssessment(B.OwnedAssembly):
 
 def _rounded(bounds, label, gmp, cancel=None):
     lo, hi = bounds
-    lower, upper = dec(lo, cancelled=cancel), dec(hi, cancelled=cancel)
+    lower = dec(lo, cancelled=cancel)
+    upper = lower if lo == hi else dec(hi, cancelled=cancel)    # decision 569: one value is decoded once
     if not lower.is_finite() or not upper.is_finite() or lower != upper:
         raise UnresolvedRounding(label+': endpoint Decimal-80 rounding differs or is nonfinite')
     if lo == hi:

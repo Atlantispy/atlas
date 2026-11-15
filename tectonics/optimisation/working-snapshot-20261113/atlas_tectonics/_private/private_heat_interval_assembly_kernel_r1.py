@@ -158,7 +158,8 @@ def _boundary_signature(boundary, gmp, cancel):
 
 def _rounded(bounds, label, gmp):
     lo, hi = bounds
-    lower, upper = _dec(lo), _dec(hi)
+    lower = _dec(lo)
+    upper = lower if lo == hi else _dec(hi)    # decision 569: one value is decoded once
     if not lower.is_finite() or not upper.is_finite() or lower != upper:
         raise UnresolvedRounding(label+': endpoint Decimal-80 rounding differs or is nonfinite')
     if lo == hi:
